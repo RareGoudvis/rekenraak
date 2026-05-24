@@ -27,24 +27,10 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'hr-std-optellen', label: 'Optellen' },
                     { id: 'hr-std-aftrekken', label: 'Aftrekken' },
                     { id: 'hr-std-vermenigvuldigen', label: 'Vermenigvuldigen' },
-                    { id: 'hr-std-delen', label: 'Delen' }
+                    { id: 'hr-std-delen', label: 'Delen (komt later)' }
                 ]
             }
         ]
     },
-    // 👇 Of je voegt een compleet nieuw hoofddomein toe:
-    {
-        id: 'meten',
-        label: 'Metend rekenen',
-        subdomains: [
-            {
-                id: 'klok',
-                label: 'kloklezen',
-                types: [
-                    { id: 'meten-klok-analoog', label: 'Analoge klok' },
-                    { id: 'meten-klok-digitaal', label: 'Digitale klok' }
-                ]
-            }
-        ]
-    }
+        
 ];

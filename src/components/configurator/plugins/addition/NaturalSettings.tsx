@@ -6,7 +6,7 @@ interface Props { block: MathBlock; }
 
 export default function NaturalSettings({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 1000, bridges = {}, operand1Mask = {}, operand2Mask = {} } = block.constraints;
+    const { maxGetal = 1000, bridges = {} } = block.constraints;
 
     // Haal de juiste arrays op (Zijn al gesorteerd Groot -> Klein!)
     const maskPlaces = getMaskPlaces(maxGetal, 'natural');

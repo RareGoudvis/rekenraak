@@ -6,7 +6,7 @@ interface Props { block: MathBlock; }
 
 export default function DecimalSettings({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 100, decimalPlaces = 2, bridges = {}, operand1Mask = {}, operand2Mask = {} } = block.constraints;
+    const { maxGetal = 100, decimalPlaces = 2, bridges = {} } = block.constraints;
 
     const minWeight = Math.pow(10, -decimalPlaces);
 
