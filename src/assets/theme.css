@@ -1,0 +1,59 @@
+:root {
+    --bg-dark: #0f0f12;
+    --bg-panel: #16161a;
+    --bg-input: #222227;
+    --accent-purple: #8a22b9;
+    --accent-getallenkennis: #ff0000;
+    --accent-bewerkingen: #1919f3;
+    --accent-metendrekenen: #338e1e;
+    --accent-meetkunde: #8a22b9;
+    --text-main: #ffffff;
+    --text-muted: #c8c8c8;
+    --border-color: #2c2c35;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+}
+
+/* 🔥 DIT SLAAT DE VITE-STANDAARD PLAT 🔥 */
+#root {
+    max-width: none !important;
+    margin: 0 !important;
+    text-align: left !important;
+    /* Dwingt alles naar links */
+    width: 100vw;
+    height: 100vh;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
