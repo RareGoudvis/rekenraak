@@ -30,18 +30,6 @@ export default function MultiplicationConfig({ block }: Props) {
                 </div>
             </div>
 
-            {/* VERZAMELING (Hier kiest de gebruiker welk sub-paneel hij wil zien) */}
-            <div style={styles.section}>
-                <label style={styles.label}>Verzameling:</label>
-                <div style={styles.buttonGroup}>
-                    {(['natural', 'decimal', 'rational'] as const).map(type => (
-                        <button key={type} onClick={() => updateConstraint('numberType', type)} style={styles.radioBtn(numberType === type)}>
-                            {type === 'natural' ? 'Natuurlijke getallen' : type === 'decimal' ? 'Decimale getallen' : 'Rationale getallen'}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             {/* LAAD DE JUISTE UI GEBASEERD OP DE KEUZE HIERBOVEN */}
             {numberType === 'natural' && <NaturalSettings block={block} />}
             {numberType === 'decimal' && <DecimalSettings block={block} />}

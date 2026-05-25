@@ -4,16 +4,6 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 
 interface Props { block: MathBlock; }
 
-type DropdownGroup = Exclude<FractionSubType, 'hoeveelheid' | 'hoeveelheid-rechthoek' | 'hoeveelheid-abstract'> | 'hoeveelheid-groep';
-
-const DROPDOWN_OPTIONS: { value: DropdownGroup; label: string }[] = [
-    { value: 'kleuren',           label: 'Breuken kleuren' },
-    { value: 'herkennen',         label: 'Breuken herkennen' },
-    { value: 'hoeveelheid-groep', label: 'Breuk van een hoeveelheid' },
-    { value: 'lijnstuk',          label: 'Lijnstuk verdelen' },
-    { value: 'veelhoek',          label: 'Breuk van een veelhoek' },
-];
-
 const HOEVEELHEID_VARIANTS: { value: FractionSubType; label: string; description: string }[] = [
     { value: 'hoeveelheid',          label: 'Concreet',    description: 'Objecten (cirkels of vierkanten)' },
     { value: 'hoeveelheid-rechthoek',label: 'Schematisch', description: 'Lege rechthoek om in te delen' },
@@ -50,24 +40,13 @@ export default function FractionConfig({ block }: Props) {
         });
     };
 
-    const handleDropdownChange = (group: DropdownGroup) => {
-        if (group === 'hoeveelheid-groep') {
-            handleSubTypeChange('hoeveelheid');
-        } else {
-            handleSubTypeChange(group as FractionSubType);
-        }
-    };
-
     const isHoeveelheid       = subType === 'hoeveelheid';
     const isRechthoek         = subType === 'hoeveelheid-rechthoek';
     const isAbstract          = subType === 'hoeveelheid-abstract';
     const isHoeveelheidGroep  = isHoeveelheid || isRechthoek || isAbstract;
     const isShape             = subType === 'kleuren' || subType === 'herkennen';
-    const isHerkennen         = subType === 'herkennen';
     const isLijnstuk          = subType === 'lijnstuk';
     const isVeelhoek          = subType === 'veelhoek';
-
-    const dropdownValue: DropdownGroup = isHoeveelheidGroep ? 'hoeveelheid-groep' : subType as DropdownGroup;
 
     const minDen = c.minDenominator ?? 2;
     const maxDen = c.maxDenominator ?? 8;
@@ -78,20 +57,6 @@ export default function FractionConfig({ block }: Props) {
 
     return (
         <div style={styles.container}>
-
-            {/* ── SUBTYPE DROPDOWN ── */}
-            <div style={styles.section}>
-                <label style={styles.label}>Type oefening:</label>
-                <select
-                    value={dropdownValue}
-                    onChange={(e) => handleDropdownChange(e.target.value as DropdownGroup)}
-                    style={selectStyle}
-                >
-                    {DROPDOWN_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
-            </div>
 
             {/* ── HOEVEELHEID VARIANT RADIO ── */}
             {isHoeveelheidGroep && (
@@ -186,60 +151,6 @@ export default function FractionConfig({ block }: Props) {
                 </div>
             )}
 
-            {/* ── ABSTRACT LEVEL ── */}
-            {isAbstract && (
-                <div style={styles.section}>
-                    <label style={styles.label}>Niveau:</label>
-                    {[
-                        { val: 1, label: 'N1 — Geheel max. 10× de noemer', desc: 'bv. ¼ van 40' },
-                        { val: 2, label: 'N2 — Geheel max. 100×, eindigt op 0', desc: 'bv. ¼ van 200' },
-                        { val: 3, label: 'N3 — Geheel deelbaar, tot max.', desc: 'bv. ¼ van 864' },
-                    ].map(({ val, label, desc }) => (
-                        <button key={val} onClick={() => updateConstraint('level', val)}
-                            style={{
-                                ...styles.radioBtn(c.level === val || (!c.level && val === 1)),
-                                display: 'flex', flexDirection: 'column', width: '100%',
-                                marginBottom: '6px', textAlign: 'left', justifyContent: 'flex-start', padding: '8px 10px',
-                            }}>
-                            <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{label}</span>
-                            <span style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>{desc}</span>
-                        </button>
-                    ))}
-                    {(c.level === 3 || (!c.level)) && (
-                        <div style={{ marginTop: '6px' }}>
-                            <label style={styles.label}>Max. getal (N3):</label>
-                            <input type="number" min="100" max="100000" step="100"
-                                value={c.maxAbstractN3 ?? 1000}
-                                onChange={(e) => updateConstraint('maxAbstractN3', Number(e.target.value))}
-                                style={inputStyle} />
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* ── ANSWER MODE (abstract + lijnstuk) ── */}
-            {(isAbstract || isLijnstuk) && (
-                <div style={styles.section}>
-                    <label style={styles.label}>Antwoordvorm:</label>
-                    {[
-                        { val: 'berekeningslijnen', label: 'Berekeningslijnen', desc: 'Rekenstappen met blanco vakjes' },
-                        { val: 'structuurlijnen',   label: 'Structuurlijnen',   desc: '_____ : _____ = _________' },
-                        { val: 'blanco',            label: 'Blanco',            desc: 'Twee schrijflijnen' },
-                    ].map(({ val, label, desc }) => (
-                        <button key={val}
-                            onClick={() => updateConstraint('answerMode', val)}
-                            style={{
-                                ...styles.radioBtn((c.answerMode ?? 'berekeningslijnen') === val),
-                                display: 'flex', flexDirection: 'column', width: '100%',
-                                marginBottom: '6px', textAlign: 'left', justifyContent: 'flex-start', padding: '8px 10px',
-                            }}>
-                            <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{label}</span>
-                            <span style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>{desc}</span>
-                        </button>
-                    ))}
-                </div>
-            )}
-
             {/* ── LINE LENGTH SLIDERS (lijnstuk) ── */}
             {isLijnstuk && (
                 <div style={styles.section}>
@@ -282,24 +193,6 @@ export default function FractionConfig({ block }: Props) {
                 </div>
             )}
 
-            {/* ── ANSWER FORMAT (herkennen) ── */}
-            {isHerkennen && (
-                <div style={styles.section}>
-                    <label style={styles.label}>Antwoordvorm:</label>
-                    {[
-                        { val: 'fraction-questions', label: 'Breukvragen' },
-                        { val: 'phrase',             label: 'Zin invullen' },
-                        { val: 'blank-fraction',     label: 'Blanco breuk' },
-                        { val: 'line',               label: 'Blanco lijn' },
-                    ].map(({ val, label }) => (
-                        <button key={val} onClick={() => updateConstraint('answerFormat', val)}
-                            style={{ ...styles.radioBtn(c.answerFormat === val), display: 'flex', width: '100%', marginBottom: '6px', textAlign: 'left', justifyContent: 'flex-start' }}>
-                            {label}
-                        </button>
-                    ))}
-                </div>
-            )}
-
             {/* ── ANSWER FORMAT (hoeveelheid concreet) ── */}
             {isHoeveelheid && (
                 <div style={styles.section}>
@@ -317,42 +210,9 @@ export default function FractionConfig({ block }: Props) {
                 </div>
             )}
 
-            {/* ── ANSWER FORMAT (hoeveelheid-rechthoek) ── */}
-            {isRechthoek && (
-                <div style={styles.section}>
-                    <label style={styles.label}>Antwoordvorm:</label>
-                    {[
-                        { val: 'met-berekening',    label: 'Met berekeningslijnen' },
-                        { val: 'zonder-berekening', label: 'Zonder berekeningslijnen' },
-                    ].map(({ val, label }) => (
-                        <button key={val} onClick={() => updateConstraint('answerFormat', val)}
-                            style={{ ...styles.radioBtn(c.answerFormat === val), display: 'flex', width: '100%', marginBottom: '6px', textAlign: 'left', justifyContent: 'flex-start' }}>
-                            {label}
-                        </button>
-                    ))}
-                </div>
-            )}
-
         </div>
     );
 }
-
-const selectStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 12px',
-    backgroundColor: '#1a1a1f',
-    border: '1px solid var(--border-color)',
-    borderRadius: '6px',
-    color: 'white',
-    outline: 'none',
-    fontSize: '13px',
-    cursor: 'pointer',
-    appearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' strokeWidth='1.5' fill='none'/%3E%3C/svg%3E")`,
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 12px center',
-    paddingRight: '32px',
-};
 
 const inputStyle: React.CSSProperties = {
     width: '100%',

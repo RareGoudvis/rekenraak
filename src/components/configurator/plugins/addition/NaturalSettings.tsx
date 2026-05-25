@@ -29,7 +29,7 @@ export default function NaturalSettings({ block }: Props) {
                 </div>
             </div>
 
-            <div style={panelStyle}>
+            <div style={{ marginBottom: '24px' }}>
                 <h4 style={headerStyle}>Specifieke getalopbouw</h4>
                 {['operand1Mask', 'operand2Mask'].map((op, idx) => (
                     <div key={op} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
@@ -65,7 +65,6 @@ export default function NaturalSettings({ block }: Props) {
 }
 
 const labelStyle = { display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' };
-const panelStyle = { backgroundColor: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', marginBottom: '24px', border: '1px solid var(--border-color)' };
 const headerStyle = { fontSize: '13px', margin: '0 0 12px 0', color: 'var(--text-main)' };
 const radioBtnStyle = (active: boolean) => ({ padding: '6px 10px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid var(--border-color)', backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)', color: active ? 'white' : 'var(--text-muted)', fontWeight: active ? 'bold' : 'normal' });
 const maskBtnStyle = (active: boolean) => ({ width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', borderRadius: '4px', border: '1px solid var(--border-color)', backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)', color: active ? '#fff' : 'var(--text-muted)' });

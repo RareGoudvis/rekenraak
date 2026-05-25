@@ -30,18 +30,6 @@ export default function DivisionConfig({ block }: Props) {
                 </div>
             </div>
 
-            {/* VERZAMELING */}
-            <div style={styles.section}>
-                <label style={styles.label}>Verzameling:</label>
-                <div style={styles.buttonGroup}>
-                    {(['natural', 'decimal', 'rational'] as const).map(type => (
-                        <button key={type} onClick={() => updateConstraint('numberType', type)} style={styles.radioBtn(numberType === type)}>
-                            {type === 'natural' ? 'Natuurlijke getallen' : type === 'decimal' ? 'Decimale getallen' : 'Rationale getallen'}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             {/* SUB-CONFIGURATIE per getaltype */}
             {numberType === 'natural' && <NaturalSettings block={block} isDivision={true} />}
             {numberType === 'decimal' && <DecimalSettings block={block} isDivision={true} />}

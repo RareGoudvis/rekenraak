@@ -49,21 +49,6 @@ export default function AdditionConfig({ block }: Props) {
                 </div>
             </div>
 
-            {/* DOMEIN SELECTOR */}
-            <div style={styles.section}>
-                <label style={styles.label}>Verzameling:</label>
-                <div style={styles.buttonGroup}>
-                    {(['natural', 'decimal', 'rational'] as const).map(type => (
-                        <button key={type}
-                            onClick={() => updateConstraint('numberType', type)}
-                            style={styles.radioBtn(numberType === type)}
-                        >
-                            {type === 'natural' ? 'Natuurlijke getallen' : type === 'decimal' ? 'Decimale getallen' : 'Rationale getallen'}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             {/* LAAD DE DOMEIN-SPECIFIEKE UI */}
             <ActiveSubConfig block={block} />
 

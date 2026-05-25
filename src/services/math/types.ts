@@ -62,7 +62,8 @@ export interface MathBlock {
     typeId: string;
     instructionText: string;
     layoutPreset: LayoutPreset;
-    instructionMode: 'geen' | 'mag' | 'moet' | 'plus'
+    instructionMode: 'geen' | 'mag' | 'moet' | 'plus' | 'aangepast';
+    customInstructionText?: string;
     steppedLines: number;
     numberOfExercises: number;
     totalPoints: number;
@@ -90,4 +91,6 @@ export interface FooterData {
     showKlas: boolean;
     showLeerkracht: boolean;
     showPagina: boolean;
+    centerText: string;
+    showCenterText: boolean;
 }

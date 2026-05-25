@@ -1,12 +1,12 @@
 import { useWorksheetStore } from './store/useWorksheetStore';
 import Inspector from './components/configurator/Inspector';
 import Sidebar from './components/layout/Sidebar';
+import TopBar from './components/layout/TopBar';
 import type { Fraction, ClockExercise, MathBlock, FractionExercise } from './services/math/types';
 import type { ClockType, ExerciseMode, HandChoice } from './services/clock/clockTypes';
 import AnalogClockSVG from './components/viewer/AnalogClockSVG';
 import FractionShapeSVG from './components/viewer/FractionShapeSVG';
 
-// 🔥 NIEUW: Importeer de PDF generator en je PDF component
 import { pdf } from '@react-pdf/renderer';
 import { WorksheetPDF } from './components/pdf/WorksheetPDF';
 
@@ -533,15 +533,10 @@ export default function App() {
   const showSolutions = useWorksheetStore((state) => state.showSolutions);
   const activeSelectionId = useWorksheetStore((state) => state.activeBlockId);
 
-  const activeBlock = blocks.find(b => b.id === activeSelectionId);
-
   const removeBlock = useWorksheetStore((state) => state.removeBlock);
   const moveBlockUp = useWorksheetStore((state) => state.moveBlockUp);
   const moveBlockDown = useWorksheetStore((state) => state.moveBlockDown);
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
-  const updateBlockInstruction = useWorksheetStore((state) => state.updateBlockInstruction);
-  const updateBlockLayout = useWorksheetStore((state) => state.updateBlockLayout);
-  const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
   const updateExercise = useWorksheetStore((state) => state.updateExercise);
 
   const totalScore = blocks.reduce((sum, block) => sum + (block.totalPoints || 0), 0);
@@ -638,80 +633,15 @@ export default function App() {
       {/* =========================================================
                 LINKER SIDEBAR
                 ========================================================= */}
-      <Sidebar
-        onOpenSettings={() => setActiveSelection('document')}
-        onDownloadPDF={handleDownloadPDF}
-        isGenerating={isGenerating}
-      />
+      <Sidebar />
 
       {/* =========================================================
                 CENTRALE WERKOMGEVING
                 ========================================================= */}
-      <main style={styles.mainContent}>
+      <main style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
-        <div className="no-print opdracht-settings-panel" style={styles.opdrachtSettingsContainer}>
-          {activeBlock ? (
-            <div style={styles.settingsGrid}>
-              <div>
-                <label style={styles.panelLabel}>Opdracht Titel:</label>
-                <input type="text" value={activeBlock.instructionText || ''} onChange={(e) => updateBlockInstruction(activeBlock.id, e.target.value)} style={styles.panelInput} />
-              </div>
-              <div>
-                <label style={styles.panelLabel}>Instructie Modus:</label>
-                <div style={styles.btnGroup}>
-                  {(['mag', 'moet', 'plus'] as const).map(mode => {
-                    const isActive = activeBlock.instructionMode === mode;
-                    return (
-                      <button key={mode}
-                        onClick={() => updateBlockSettings(activeBlock.id, { instructionMode: isActive ? 'geen' : mode })}
-                        style={styles.panelRadioBtn(isActive)}
-                        title={mode === 'plus' ? 'Plusoefening (voor hoogbegaafde leerlingen)' : undefined}>
-                        {mode === 'plus' ? '★' : mode.toUpperCase()}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <label style={styles.panelLabel}>Weergave Stijl:</label>
-                {(() => {
-                  const locked = activeBlock.typeId === 'breuken' || activeBlock.typeId.startsWith('klok-');
-                  return (
-                    <div style={{ ...styles.btnGroup, opacity: locked ? 0.4 : 1, pointerEvents: locked ? 'none' : 'auto' }}>
-                      {(['inline-short', 'inline-long', 'stepped'] as const).map(layout => (
-                        <button key={layout} onClick={() => updateBlockLayout(activeBlock.id, layout)} style={styles.panelRadioBtn(activeBlock.layoutPreset === layout)} disabled={locked}>
-                          {layout === 'inline-short' ? 'Kort' : layout === 'inline-long' ? 'Lang' : 'Stappen'}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              <div>
-                <label style={styles.panelLabel}>Aantal Oefeningen:</label>
-                <input type="number" min="1" value={activeBlock.numberOfExercises || 10} onChange={(e) => updateBlockSettings(activeBlock.id, { numberOfExercises: Number(e.target.value) })} style={styles.panelInput} />
-              </div>
-              <div>
-                <label style={styles.panelLabel}>Punten:</label>
-                <input type="number" step="0.5" min="0" value={activeBlock.totalPoints || 0} onChange={(e) => updateBlockSettings(activeBlock.id, { totalPoints: Number(e.target.value) })} style={styles.panelInput} />
-              </div>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={styles.panelLabel}>Spatiëring ({activeBlock.verticalSpacing || 14}px):</label>
-                  <input type="range" min="8" max="40" value={activeBlock.verticalSpacing || 14} onChange={(e) => updateBlockSettings(activeBlock.id, { verticalSpacing: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--accent-purple)' }} />
-                </div>
-                {activeBlock.layoutPreset === 'stepped' && (
-                  <div style={{ width: '60px' }}>
-                    <label style={styles.panelLabel}>Lijntjes:</label>
-                    <input type="number" min="1" max="10" value={activeBlock.steppedLines || 3} onChange={(e) => updateBlockSettings(activeBlock.id, { steppedLines: Number(e.target.value) })} style={styles.panelInput} />
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div style={styles.panelEmptyState}>Selecteer een oefeningenblok op het blad om de Opdrachtinstellingen te activeren.</div>
-          )}
+        <div onClick={(e) => e.stopPropagation()}>
+          <TopBar onDownloadPDF={handleDownloadPDF} isGenerating={isGenerating} />
         </div>
 
         <div className="print-area" style={styles.a4Sheet}>
