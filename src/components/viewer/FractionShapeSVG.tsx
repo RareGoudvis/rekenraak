@@ -28,7 +28,7 @@ function piePath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 }
 
 export default function FractionShapeSVG({
-    numerator, denominator, shape, coloredIndices,
+    denominator, shape, coloredIndices,
     gridRows, gridCols, showColored = true, cellSize = 35, style,
 }: Props) {
     if (shape === 'circle') {
