@@ -89,7 +89,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {CENTEN_OPTIES.map(opt => (
                         <button key={opt.value}
-                            style={{ ...S.radioBtn(centenDeel === opt.value), justifyContent: 'flex-start', textAlign: 'left', display: 'flex', justifyContent: 'space-between' } as React.CSSProperties}
+                            style={{ ...S.radioBtn(centenDeel === opt.value), textAlign: 'left', display: 'flex', justifyContent: 'space-between' } as React.CSSProperties}
                             onClick={() => set('centenDeel', opt.value)}>
                             <span>{opt.label}</span>
                             <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'normal' }}>{opt.hint}</span>
