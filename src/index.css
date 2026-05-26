@@ -1,2 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:ital,wght@0,100..900;1,100..900&display=swap');
 @import './assets/theme.css';
+
+/* Azeret Mono — bundled locally (offline-safe) */
+@font-face {
+  font-family: 'Azeret Mono';
+  src: url('@fontsource/azeret-mono/files/azeret-mono-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Azeret Mono';
+  src: url('@fontsource/azeret-mono/files/azeret-mono-latin-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Azeret Mono';
+  src: url('@fontsource/azeret-mono/files/azeret-mono-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Azeret Mono';
+  src: url('@fontsource/azeret-mono/files/azeret-mono-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Footer bar — screen: hidden; print: fixed at bottom (see @media print below) */
+.print-footer-bar { display: none; }
+
+/* === PRINT === */
+@page {
+  size: A4;
+  /* 0 all sides → Chrome has no space for its date/title/URL headers.
+     HTML fixed footer handles the footer zone. */
+  margin: 0;
+}
+
+@media print {
+  body { background: white !important; }
+
+  .no-print { display: none !important; }
+
+  /* Collapse the 3-panel flex shell */
+  .print-root {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Collapse the scrollable center column */
+  .print-main {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  /* A4 card: remove chrome; own padding for top/side/content margins.
+     Bottom padding is 0 — the @page 14mm bottom margin is the footer zone. */
+  .print-area {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 8mm 18mm 14mm !important;
+  }
+
+  /* Keep exercises together across page breaks */
+  .print-block { page-break-inside: avoid; }
+
+  /* Footer: hidden in viewer, fixed at page bottom in print */
+  .print-footer-bar {
+    display: flex !important;
+    position: fixed !important;
+    bottom: 5mm !important;
+    left: 0 !important;
+    right: 0 !important;
+    padding: 5px 18mm !important;
+    font-family: 'Azeret Mono', monospace !important;
+    font-size: 10pt !important;
+    color: #666 !important;
+    background: white !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+}

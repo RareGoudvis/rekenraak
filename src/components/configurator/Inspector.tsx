@@ -137,6 +137,7 @@ export default function Inspector() {
                 {/* ── Voettekst ── */}
                 <div style={S.card}>
                     <h4 style={S.cardTitle}>Voettekst</h4>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px' }}>Voettekst wordt zichtbaar bij afdrukken.</p>
                     <div style={S.col}>
                         <label style={S.footerGroupLabel}>Links</label>
                         <div style={{ paddingLeft: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>

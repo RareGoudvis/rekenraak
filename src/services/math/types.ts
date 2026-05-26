@@ -1,5 +1,8 @@
 export type ConstraintType = 'FREE' | 'REQUIRED' | 'FORBIDDEN';
 
+export const isFraction = (val: any): val is Fraction =>
+    typeof val === 'object' && val !== null && 'n' in val && 'd' in val;
+
 export interface BridgeConstraints {
     units: ConstraintType;
     tens: ConstraintType;

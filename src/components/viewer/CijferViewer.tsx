@@ -7,8 +7,8 @@ const SOL_COLOR = '#e11d48';
 const PLACE_ABBREVS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M'];
 const DEC_ABBREVS = ['t', 'h', 'd'];
 
-// A4 content width in px (595 - 2×30 margins)
-const A4_CONTENT_PX = 535;
+// A4 content width in px: 793px (210mm@96dpi) - 2×68px (18mm margins) - 2×16px (block padding)
+const A4_CONTENT_PX = 625;
 const ROW_GAP_PX = 12;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -383,6 +383,7 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
 
     // Working area always has at least 3 decimal cols so students can work past dp if needed
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
+    const dividendDecStr = dp > 0 ? (dividend.toFixed(dp).split('.')[1] || '') : '';
     const leftCols = dividendIntCols + workingDecCols;
     const rightContentCols = Math.max(divisorCols, quotientIntCols + dp);
     const rightCols = rightContentCols + 1; // +1 right-side padding
@@ -419,9 +420,9 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
             {scaffolding <= 1 && getDigitCols(dividend, 0, dividendIntCols).map((d, i) => (
                 <DC key={`dv${i}`} col={d.col} row={0} char={d.char} CELL={CELL} />
             ))}
-            {/* Decimal zeros for dividend (only dp zeros; remaining workingDecCols are blank for working) */}
+            {/* Decimal digits of dividend (actual digits if dividend is decimal, else "0") */}
             {scaffolding <= 1 && workingDecCols > 0 && Array.from({ length: dp }, (_, i) => (
-                <DC key={`dvd${i}`} col={dividendIntCols + i} row={0} char="0" CELL={CELL} />
+                <DC key={`dvd${i}`} col={dividendIntCols + i} row={0} char={dividendDecStr[i] || '0'} CELL={CELL} />
             ))}
             {/* Comma after dividend units column */}
             {scaffolding <= 1 && workingDecCols > 0 && (
@@ -463,8 +464,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
     const extraRows = c.extraRows || 0;
 
     const opStr = ex.operator === 'x' ? '×' : ex.operator;
-    const headerText = ex.operands.map((o, i) => fmtDisplay(o, isDivision ? 0 : (isMultiplication && i > 0) ? 0 : dp)).join(` ${opStr} `) + ' =';
-    const decLabel = dp > 0 ? ` (tot op ${dp === 1 ? '0,1' : dp === 2 ? '0,01' : '0,001'})` : '';
+    const headerText = ex.operands.map((o, i) => fmtDisplay(o, (isDivision && i === 1) ? 0 : (isMultiplication && i > 0) ? 0 : dp)).join(` ${opStr} `) + ' =';
 
     const confirmEdit = () => {
         const operands = editValues.map(v => parseFloat(v.replace(',', '.')));
@@ -520,7 +520,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                 : <AddSubGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
             }
             {isDivision && (c.showQR !== false) && (
-                <div style={{ border: '0.5px solid #aaa', borderTop: 'none', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 2, fontFamily: 'Azeret Mono, monospace', fontSize: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (
                         <>
                             <span>q  {fmtDisplay(ex.answer, dp)}</span>
@@ -566,7 +566,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
 
     if (exPerRow === 1) {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
                 {exercises.map(ex => <CijferExercisePreview key={ex.id} ex={ex} c={c} showSolutions={showSolutions} blockId={block.id} />)}
             </div>
         );

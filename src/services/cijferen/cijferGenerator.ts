@@ -220,11 +220,15 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     if (isDecimal) {
         const maskDiv = getMask(c, 0);
         const hasMaskDiv = Object.values(maskDiv).some(v => v);
-        const maskedDiv = applyMask(maskDiv, maxVal, 0);
+        const decimalKeys = ['t', 'h', 'd', 'td'];
+        const maskHasDecimal = decimalKeys.some(k => (maskDiv as Record<string, boolean>)[k]);
+        const dividendDp = maskHasDecimal ? dp : 0;
+        const maskedDiv = applyMask(maskDiv, maxVal, dividendDp);
         let dividend: number;
         if (maskedDiv !== null) {
-            const base = Math.round(maskedDiv);
-            if (base < divisor * 2 || base > maxVal) return null;
+            const scale = Math.pow(10, dividendDp);
+            const base = Math.round(maskedDiv * scale) / scale;
+            if (base < (dividendDp > 0 ? 0.1 : divisor) || base > maxVal) return null;
             dividend = base;
         } else if (hasMaskDiv) {
             return null;

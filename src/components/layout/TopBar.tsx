@@ -1,11 +1,10 @@
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 
 interface Props {
-    onDownloadPDF: (withSolutions: boolean) => void;
-    isGenerating: boolean;
+    onPrint: (withSolutions: boolean) => void;
 }
 
-export default function TopBar({ onDownloadPDF, isGenerating }: Props) {
+export default function TopBar({ onPrint }: Props) {
     const undo = useWorksheetStore((s) => s.undo);
     const redo = useWorksheetStore((s) => s.redo);
     const canUndo = useWorksheetStore((s) => s.canUndo());
@@ -46,21 +45,13 @@ export default function TopBar({ onDownloadPDF, isGenerating }: Props) {
                 {showSolutions ? '🔴 Oplossingen aan' : 'Toon oplossingen'}
             </button>
 
-            {/* Download buttons */}
+            {/* Print buttons */}
             <div style={S.group}>
-                <button
-                    style={S.downloadBtn}
-                    onClick={() => onDownloadPDF(false)}
-                    disabled={isGenerating}
-                >
-                    {isGenerating ? '⏳ Genereren...' : '↓ Oefenbundel'}
+                <button style={S.downloadBtn} onClick={() => onPrint(false)}>
+                    🖨 Afdrukken
                 </button>
-                <button
-                    style={S.downloadSolBtn}
-                    onClick={() => onDownloadPDF(true)}
-                    disabled={isGenerating}
-                >
-                    {isGenerating ? '⏳ Genereren...' : '↓ Oplossingen'}
+                <button style={S.downloadSolBtn} onClick={() => onPrint(true)}>
+                    🖨 + Oplossingen
                 </button>
             </div>
         </div>

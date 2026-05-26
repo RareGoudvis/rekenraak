@@ -2,7 +2,8 @@
  * Zet een getal om naar een string met decimale komma en spaties per duizendtal.
  * Voorbeeld: 1234.56 -> "1 234,56"
  */
-export const formatMathNumber = (num: number | string): string => {
+export const formatMathNumber = (num: number | string | undefined): string => {
+    if (num === undefined || num === '') return '';
     const str = String(num);
     const [integerPart, decimalPart] = str.split('.');
 

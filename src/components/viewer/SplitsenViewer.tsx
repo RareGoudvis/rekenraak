@@ -57,7 +57,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
             ex.pairs.map((p, i) => ({ ...p, total: ex.total, uid: `${ex.id}-${i}` }))
         );
         return (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: `${gap}px`, justifyContent: 'space-evenly' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: `${gap}px`, justifyContent: 'space-evenly' }}>
                 {allItems.map(item => (
                     <HeartItem
                         key={item.uid}
