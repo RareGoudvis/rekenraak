@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { MathBlock, Equation, ClockExercise, FractionExercise, SplitsenExercise, CijferExercise, GeldExercise, GeldWisselExercise, GeldTeruggevenExercise, MabExercise, FooterData, LayoutPreset } from '../services/math/types';
 import { regenerateBlock } from '../services/generateDispatch';
+import { saveAutosave } from '../services/persistence';
 
 interface HeaderData {
     naam: boolean;
@@ -53,6 +54,7 @@ interface WorksheetState {
     updateCijferExercise: (blockId: string, exerciseId: string, updates: Partial<CijferExercise>) => void;
     setActiveSelection: (id: string | 'document' | null) => void;
     toggleBlockLock: (id: string) => void;
+    duplicateBlock: (id: string) => void;
     generateAllBlocks: () => void;
     loadWorksheet: (file: { blocks: MathBlock[]; header: HeaderData; footer: FooterData; docSettings: DocSettings }) => void;
     updateHeader: (updates: Partial<HeaderData>) => void;
@@ -318,5 +320,34 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         applyTheme(theme);
         try { localStorage.setItem('theme', theme); } catch { /* ignore */ }
         set({ theme });
-    }
+    },
+    duplicateBlock: (id) => set((state) => {
+        const index = state.blocks.findIndex(b => b.id === id);
+        if (index === -1) return state;
+        const src = state.blocks[index];
+        const clone: MathBlock = JSON.parse(JSON.stringify(src));
+        clone.id = Math.random().toString(36).substring(2, 9);
+        clone.locked = false;
+        const newBlocks = [...state.blocks.slice(0, index + 1), clone, ...state.blocks.slice(index + 1)];
+        return { blocks: newBlocks, activeBlockId: clone.id, ...pushHistory(state._history, state._historyIndex, newBlocks) };
+    }),
 }));
+
+// Auto-save: debounced 1.5 s after the worksheet payload (blocks/header/footer/docSettings)
+// changes. UI-only state (activeBlockId, showSolutions, theme, history) is excluded — those
+// shouldn't trigger a write nor should they pollute the saved snapshot.
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+useWorksheetStore.subscribe((state, prev) => {
+    const changed =
+        state.blocks !== prev.blocks ||
+        state.header !== prev.header ||
+        state.footer !== prev.footer ||
+        state.docSettings !== prev.docSettings;
+    if (!changed) return;
+    // Don't overwrite a populated autosave with an empty fresh-tab state.
+    if (state.blocks.length === 0) return;
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+        saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings });
+    }, 1500);
+});

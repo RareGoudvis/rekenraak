@@ -1,8 +1,39 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import logo from '../../assets/enderklas-logo.png';
-import { APP_STRUCTURE } from '../../config/appstructure';
+import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import HelpModal from './HelpModal';
+
+// Walk the domain tree keeping only entries whose label matches the search needle.
+// A parent survives when any of its descendants match. Returns the filtered tree.
+function filterTree(domains: Domain[], query: string): Domain[] {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return domains;
+    const result: Domain[] = [];
+    for (const dom of domains) {
+        const subs = [];
+        for (const sub of dom.subdomains) {
+            const types = [];
+            for (const type of sub.types) {
+                if (type.children) {
+                    const kids = type.children.filter(l => l.label.toLowerCase().includes(needle));
+                    if (kids.length > 0 || type.label.toLowerCase().includes(needle)) {
+                        types.push({ ...type, children: kids.length > 0 ? kids : type.children });
+                    }
+                } else if (type.label.toLowerCase().includes(needle)) {
+                    types.push(type);
+                }
+            }
+            if (types.length > 0 || sub.label.toLowerCase().includes(needle)) {
+                subs.push({ ...sub, types });
+            }
+        }
+        if (subs.length > 0 || dom.label.toLowerCase().includes(needle)) {
+            result.push({ ...dom, subdomains: subs });
+        }
+    }
+    return result;
+}
 
 export default function Sidebar() {
     const addBlockFromType = useWorksheetStore((state) => state.addBlockFromType);
@@ -12,14 +43,20 @@ export default function Sidebar() {
     const [openSubdomain, setOpenSubdomain] = useState<string | null>(null);
     const [openType, setOpenType] = useState<string | null>(null);
     const [helpOpen, setHelpOpen] = useState(false);
+    const [search, setSearch] = useState('');
+
+    const isSearching = search.trim().length > 0;
+    const tree = useMemo(() => filterTree(APP_STRUCTURE, search), [search]);
 
     const toggleSubdomain = (id: string) => {
+        if (isSearching) return;  // tree is force-expanded during search
         const next = openSubdomain === id ? null : id;
         setOpenSubdomain(next);
         setOpenType(null);
     };
 
     const toggleType = (id: string) => {
+        if (isSearching) return;
         setOpenType(openType === id ? null : id);
     };
 
@@ -33,10 +70,23 @@ export default function Sidebar() {
                 <p style={S.subtitle}>Basisonderwijs Vlaanderen</p>
             </div>
 
+            <div style={S.searchWrap}>
+                <input
+                    type="text"
+                    placeholder="🔎 Zoek oefening…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={S.searchInput}
+                />
+            </div>
+
             <hr style={S.divider} />
 
             <div style={S.navArea}>
-                {APP_STRUCTURE.map((domain) => {
+                {tree.length === 0 && isSearching && (
+                    <div style={S.noResults}>Geen oefening gevonden voor "{search}".</div>
+                )}
+                {tree.map((domain) => {
                     const accent = `var(${domain.accentVar})`;
 
                     return (
@@ -44,7 +94,7 @@ export default function Sidebar() {
                             {/* Domain content — accent border runs full height, always visible */}
                             <div style={S.domainContent(accent)}>
                                     {domain.subdomains.map((subdomain) => {
-                                        const subOpen = openSubdomain === subdomain.id;
+                                        const subOpen = isSearching || openSubdomain === subdomain.id;
 
                                         return (
                                             <div key={subdomain.id}>
@@ -88,7 +138,7 @@ export default function Sidebar() {
                                                             }
 
                                                             // Accordion type (has children)
-                                                            const typeOpen = openType === type.id;
+                                                            const typeOpen = isSearching || openType === type.id;
                                                             const isPhAcc = !!type.placeholder;
                                                             return (
                                                                 <div key={type.id}>
@@ -154,6 +204,10 @@ export default function Sidebar() {
                     <button style={S.footerIconBtn} onClick={() => setHelpOpen(true)} title="Help / uitleg">
                         <span>?</span>
                     </button>
+                    {/* TODO: replace REPLACE_ME with the real Buy Me a Coffee handle before merging */}
+                    <a href="https://buymeacoffee.com/REPLACE_ME" target="_blank" rel="noopener noreferrer" style={S.footerIconBtn} title="Steun deze tool met een koffie ☕">
+                        <span style={{ color: '#e11d48' }}>❤</span>
+                    </a>
                 </div>
                 <div style={S.footerText}>
                     Gemaakt door Ruben V.H. — gratis beschikbaar.<br/>
@@ -176,6 +230,13 @@ const S = {
     title: { margin: 0, fontSize: '17px', color: 'var(--text-main)', fontWeight: 700 } as React.CSSProperties,
     subtitle: { margin: '4px 0 0 0', fontSize: '12px', color: 'var(--accent-purple)', fontWeight: 400 } as React.CSSProperties,
     divider: { border: 'none', height: '1px', backgroundColor: 'var(--border-color)', margin: '0 16px' } as React.CSSProperties,
+    searchWrap: { padding: '4px 16px 8px' } as React.CSSProperties,
+    searchInput: {
+        width: '100%', padding: '6px 10px', fontSize: '12px', fontFamily: "'Azeret Mono', monospace",
+        backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px',
+        color: 'var(--text-main)', outline: 'none', boxSizing: 'border-box',
+    } as React.CSSProperties,
+    noResults: { padding: '12px 18px', fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' } as React.CSSProperties,
     navArea: { flex: 1, overflowY: 'auto', padding: '10px 0' } as React.CSSProperties,
 
     domainWrap: { marginBottom: '14px' } as React.CSSProperties,

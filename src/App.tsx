@@ -14,8 +14,11 @@ import GeldWisselViewer from './components/viewer/GeldWisselViewer';
 import GeldTeruggevenViewer from './components/viewer/GeldTeruggevenViewer';
 import MabViewer from './components/viewer/MabViewer';
 import AlphaPopup from './components/layout/AlphaPopup';
+import HelpModal from './components/layout/HelpModal';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
+import { loadAutosave, clearAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
+import { RELEASE_VERSION, RELEASE_SUMMARY } from './config/version';
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
@@ -34,6 +37,56 @@ export default function App() {
   const moveBlockDown = useWorksheetStore((state) => state.moveBlockDown);
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   const toggleBlockLock = useWorksheetStore((state) => state.toggleBlockLock);
+  const duplicateBlock = useWorksheetStore((state) => state.duplicateBlock);
+  const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
+
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [autosaveOffer, setAutosaveOffer] = useState<{ savedAt: string; titel: string } | null>(null);
+  const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
+
+  // Boot-time hooks: share-link, autosave-restore offer, release-banner check.
+  // Each runs exactly once. Order matters — a shared link wins over an autosave.
+  useEffect(() => {
+    // 1. Shared link in URL hash.
+    const shared = decodeShareHash(window.location.hash);
+    if (shared) {
+      if (window.confirm('Werkbundel gedeeld via link laden? Huidige werkbundel wordt vervangen.')) {
+        loadWorksheet(shared);
+      }
+      window.history.replaceState(null, '', window.location.pathname);
+      return;
+    }
+    // 2. Auto-save: only offer when current sheet is empty (fresh tab).
+    const auto = loadAutosave();
+    if (auto && useWorksheetStore.getState().blocks.length === 0) {
+      setAutosaveOffer({ savedAt: auto.savedAt, titel: auto.payload.header?.titel || 'Naamloos' });
+    }
+    // 3. Release banner: shown until user dismisses this exact version.
+    try {
+      if (localStorage.getItem(RELEASE_SEEN_KEY) !== RELEASE_VERSION) setReleaseBannerVisible(true);
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Browser tab title follows the worksheet title.
+  useEffect(() => {
+    const t = headerData?.titel?.trim();
+    document.title = t ? `${t} — Enderklas Builder` : 'Enderklas Builder';
+  }, [headerData?.titel]);
+
+  const acceptAutosave = () => {
+    const auto = loadAutosave();
+    if (auto) loadWorksheet(auto.payload);
+    setAutosaveOffer(null);
+  };
+  const declineAutosave = () => {
+    clearAutosave();
+    setAutosaveOffer(null);
+  };
+  const dismissReleaseBanner = () => {
+    try { localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION); } catch { /* ignore */ }
+    setReleaseBannerVisible(false);
+  };
 
   const totalScore = blocks.reduce((sum, block) => sum + (block.totalPoints || 0), 0);
 
@@ -62,8 +115,25 @@ export default function App() {
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
         <div className="no-print" onClick={(e) => e.stopPropagation()}>
-          <TopBar onPrint={handlePrint} />
+          <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
         </div>
+
+        {autosaveOffer && (
+          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.autosave}>
+            <span>📂 Vorige werkbundel ("{autosaveOffer.titel}") gevonden. Terughalen?</span>
+            <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+              <button onClick={acceptAutosave} style={bannerStyles.bannerPrimary}>Ja, terughalen</button>
+              <button onClick={declineAutosave} style={bannerStyles.bannerSecondary}>Nee, nieuw beginnen</button>
+            </div>
+          </div>
+        )}
+
+        {releaseBannerVisible && (
+          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
+            <span>✨ Nieuw: {RELEASE_SUMMARY}. <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees meer in Help</button>.</span>
+            <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
+          </div>
+        )}
 
         <div ref={a4Ref} className="print-area" style={styles.a4Sheet}>
           {/* ── HEADER ── */}
@@ -144,6 +214,11 @@ export default function App() {
                       >
                         {block.locked ? '🔒' : '🔓'}
                       </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }}
+                        title="Blok dupliceren"
+                        style={styles.iconBtn}
+                      >🗐</button>
                       <button onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }} style={styles.deleteBtn}>🗑</button>
                     </div>
                   )}
@@ -236,6 +311,44 @@ export default function App() {
       {/* RIGHT INSPECTOR */}
       <div className="no-print"><Inspector /></div>
     </div>
+    {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
     </>
   );
 }
+
+const bannerStyles = {
+  autosave: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    padding: '10px 16px', marginBottom: '12px',
+    backgroundColor: 'rgba(155, 48, 255, 0.10)',
+    border: '1px solid var(--accent-purple)',
+    borderRadius: '8px',
+    fontSize: '13px', color: 'var(--text-main)',
+    fontFamily: "'Azeret Mono', monospace",
+  } as React.CSSProperties,
+  release: {
+    display: 'flex', alignItems: 'center', gap: '12px',
+    padding: '8px 16px', marginBottom: '12px',
+    backgroundColor: 'var(--bg-panel)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
+    fontSize: '12px', color: 'var(--text-muted)',
+    fontFamily: "'Azeret Mono', monospace",
+  } as React.CSSProperties,
+  bannerPrimary: {
+    padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12px',
+    border: 'none', backgroundColor: 'var(--accent-purple)', color: '#fff',
+  } as React.CSSProperties,
+  bannerSecondary: {
+    padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
+    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)',
+  } as React.CSSProperties,
+  bannerClose: {
+    marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)',
+    fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1,
+  } as React.CSSProperties,
+  inlineLink: {
+    background: 'none', border: 'none', padding: 0, color: 'var(--accent-purple)',
+    textDecoration: 'underline', cursor: 'pointer', font: 'inherit',
+  } as React.CSSProperties,
+};

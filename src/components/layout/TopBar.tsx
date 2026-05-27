@@ -1,9 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
-import { exportWorksheet, parseWorksheetFile } from '../../services/persistence';
+import { exportWorksheet, parseWorksheetFile, encodeShareLink } from '../../services/persistence';
+import PresetModal from './PresetModal';
 
 interface Props {
     onPrint: (withSolutions: boolean) => void;
+    onOpenHelp?: () => void;
 }
 
 export default function TopBar({ onPrint }: Props) {
@@ -18,6 +20,8 @@ export default function TopBar({ onPrint }: Props) {
     const hasBlocks = useWorksheetStore((s) => s.blocks.length > 0);
 
     const importInputRef = useRef<HTMLInputElement>(null);
+    const [presetOpen, setPresetOpen] = useState(false);
+    const [shareFlash, setShareFlash] = useState(false);
 
     const handleExport = () => {
         const st = useWorksheetStore.getState();
@@ -28,7 +32,7 @@ export default function TopBar({ onPrint }: Props) {
 
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        e.target.value = '';  // reset so picking the same file again still fires onchange
+        e.target.value = '';
         if (!file) return;
         const reader = new FileReader();
         reader.onload = () => {
@@ -44,45 +48,43 @@ export default function TopBar({ onPrint }: Props) {
         reader.readAsText(file);
     };
 
+    const handleShare = async () => {
+        const st = useWorksheetStore.getState();
+        const link = encodeShareLink({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings });
+        if (!link) {
+            window.alert('Werkbundel te groot voor een deelbare link. Gebruik Exporteer i.p.v.');
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(link);
+            setShareFlash(true);
+            setTimeout(() => setShareFlash(false), 2000);
+        } catch {
+            window.prompt('Kopieer deze link:', link);
+        }
+    };
+
     return (
         <div style={S.bar}>
             {/* Undo / Redo */}
             <div style={S.group}>
-                <button
-                    style={S.iconBtn(canUndo)}
-                    onClick={undo}
-                    disabled={!canUndo}
-                    title="Ongedaan maken (Ctrl+Z)"
-                >
-                    ↩
-                </button>
-                <button
-                    style={S.iconBtn(canRedo)}
-                    onClick={redo}
-                    disabled={!canRedo}
-                    title="Opnieuw (Ctrl+Y)"
-                >
-                    ↪
-                </button>
+                <button style={S.iconBtn(canUndo)} onClick={undo} disabled={!canUndo} title="Ongedaan maken (Ctrl+Z)">↩</button>
+                <button style={S.iconBtn(canRedo)} onClick={redo} disabled={!canRedo} title="Opnieuw (Ctrl+Y)">↪</button>
             </div>
 
-            {/* Generate all */}
             <button
                 style={S.actionBtn(hasBlocks)}
                 onClick={() => hasBlocks && generateAllBlocks()}
                 disabled={!hasBlocks}
                 title="Alle niet-vergrendelde blokken opnieuw genereren"
-            >
-                ✨ Genereer alles
-            </button>
+            >✨ Genereer alles</button>
 
-            {/* Export / Import */}
             <div style={S.group}>
-                <button style={S.secondaryBtn} onClick={handleExport} title="Bewaar werkbundel als JSON">
-                    💾 Exporteer
-                </button>
-                <button style={S.secondaryBtn} onClick={handleImportClick} title="Open opgeslagen werkbundel">
-                    📂 Importeer
+                <button style={S.secondaryBtn} onClick={handleExport} title="Bewaar werkbundel als JSON-bestand">💾 Exporteer</button>
+                <button style={S.secondaryBtn} onClick={handleImportClick} title="Open opgeslagen werkbundel">📂 Importeer</button>
+                <button style={S.secondaryBtn} onClick={() => setPresetOpen(true)} title="Presets beheren">📑 Presets</button>
+                <button style={S.secondaryBtn} onClick={handleShare} title="Deelbare link kopiëren">
+                    {shareFlash ? '✓ Link gekopieerd' : '🔗 Deel'}
                 </button>
                 <input
                     ref={importInputRef}
@@ -95,7 +97,6 @@ export default function TopBar({ onPrint }: Props) {
 
             <div style={S.spacer} />
 
-            {/* Solutions toggle */}
             <button
                 style={S.solToggle(showSolutions)}
                 onClick={() => setShowSolutions(!showSolutions)}
@@ -104,15 +105,12 @@ export default function TopBar({ onPrint }: Props) {
                 {showSolutions ? '🔴 Oplossingen aan' : 'Toon oplossingen'}
             </button>
 
-            {/* Print buttons */}
             <div style={S.group}>
-                <button style={S.downloadBtn} onClick={() => onPrint(false)}>
-                    🖨 Afdrukken
-                </button>
-                <button style={S.downloadSolBtn} onClick={() => onPrint(true)}>
-                    🖨 + Oplossingen
-                </button>
+                <button style={S.downloadBtn} onClick={() => onPrint(false)}>🖨 Afdrukken</button>
+                <button style={S.downloadSolBtn} onClick={() => onPrint(true)}>🖨 + Oplossingen</button>
             </div>
+
+            {presetOpen && <PresetModal onClose={() => setPresetOpen(false)} />}
         </div>
     );
 }
