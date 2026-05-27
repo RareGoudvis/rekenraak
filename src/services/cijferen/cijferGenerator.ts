@@ -58,6 +58,23 @@ function checkSubtractionBridges(a: number, b: number, dp: number, bridges: Reco
     return true;
 }
 
+// Check whether an integer satisfies a place-value mask: masked positions
+// must be non-zero, unmasked integer positions must be zero. Used after the
+// generator adjusts a mask-conforming `base` for divisibility — the rounding
+// can introduce non-zero digits where the mask said "must be zero".
+function matchesIntegerMask(value: number, mask: Record<string, boolean>): boolean {
+    const hasAny = Object.values(mask).some(v => v);
+    if (!hasAny) return true;
+    const abs = Math.abs(Math.round(value));
+    for (const place of PLACE_VALUES) {
+        if (place.weight < 1) continue;
+        const digit = Math.floor(abs / place.weight) % 10;
+        if (mask[place.key] && digit === 0) return false;
+        if (!mask[place.key] && digit !== 0) return false;
+    }
+    return true;
+}
+
 function applyMask(
     mask: Record<string, boolean>,
     maxVal: number,
@@ -254,7 +271,13 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     }
 
     // Resolve dividend (operand0 mask or random)
-    const maskedDividend = applyMask(getMask(c, 0), maxVal, 0);
+    const mask0 = getMask(c, 0);
+    const hasMask0 = Object.values(mask0).some(v => v);
+    const maskedDividend = applyMask(mask0, maxVal, 0);
+    // If a mask was requested but applyMask couldn't satisfy it on this roll, bail
+    // so the retry loop tries again — otherwise we'd silently fall through to the
+    // unmasked random path below.
+    if (hasMask0 && maskedDividend === null) return null;
     if (maskedDividend !== null) {
         const base = Math.round(maskedDividend);
         if (base < divisor * 2 || base > maxVal) return null;
@@ -263,6 +286,9 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
             const adjustedBase = base - (base % divisor) + rem;
             const dividend = adjustedBase <= maxVal ? adjustedBase : base - (base % divisor) - divisor + rem;
             if (dividend < divisor + rem || dividend > maxVal) return null;
+            // Rounding to a multiple of `divisor` (± `rem`) can re-introduce digits
+            // at positions the mask said must be zero. Re-check and retry on a miss.
+            if (!matchesIntegerMask(dividend, mask0)) return null;
             const quotient = Math.floor(dividend / divisor);
             if (quotient < 1) return null;
             return { id: genId(), operands: [dividend, divisor], operator: ':', answer: quotient, remainder: rem, isManuallyEdited: false };
@@ -271,6 +297,7 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
         if (quotient < 2) return null;
         const dividend = quotient * divisor;
         if (dividend > maxVal || dividend < 2) return null;
+        if (!matchesIntegerMask(dividend, mask0)) return null;
         return { id: genId(), operands: [dividend, divisor], operator: ':', answer: quotient, remainder: 0, isManuallyEdited: false };
     }
 

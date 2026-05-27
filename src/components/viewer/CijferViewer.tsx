@@ -143,7 +143,10 @@ function DC({ col, row, char, CELL, color = '#000', small = false }: DCProps) {
             left: col * CELL, top: row * CELL,
             width: CELL, height: CELL,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: small ? CELL * 0.42 : CELL * 0.60,
+            // Multipliers chosen so the main digit lands at 17 px at the default CELL=25,
+            // matching MathBlockRenderer's font size and avoiding the "cijferen looks
+            // smaller than mental math" regression.
+            fontSize: small ? CELL * 0.48 : CELL * 0.68,
             fontFamily: 'Azeret Mono, monospace',
             fontWeight: 'normal',
             color, userSelect: 'none', boxSizing: 'border-box', pointerEvents: 'none',
@@ -162,7 +165,7 @@ function CommaEdge({ afterGridCol, row, CELL }: { afterGridCol: number; row: num
             height: CELL,
             display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
             paddingBottom: CELL * 0.04,
-            fontSize: CELL * 0.52,
+            fontSize: CELL * 0.60,
             fontFamily: 'Azeret Mono, monospace',
             color: '#888888',
             userSelect: 'none', pointerEvents: 'none',
@@ -220,7 +223,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                         position: 'absolute', left: c * CELL, top: 0,
                         width: CELL, height: CELL,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: CELL * 0.38, fontFamily: 'Azeret Mono, monospace',
+                        fontSize: CELL * 0.44, fontFamily: 'Azeret Mono, monospace',
                         color: '#888', userSelect: 'none', pointerEvents: 'none',
                     }}>{label}</div>
                 );
@@ -320,7 +323,7 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                         position: 'absolute', left: c * CELL, top: 0,
                         width: CELL, height: CELL,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: CELL * 0.38, fontFamily: 'Azeret Mono, monospace',
+                        fontSize: CELL * 0.44, fontFamily: 'Azeret Mono, monospace',
                         color: '#888', userSelect: 'none', pointerEvents: 'none',
                     }}>{label}</div>
                 );
