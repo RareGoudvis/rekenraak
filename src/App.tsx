@@ -20,6 +20,7 @@ import { ArrowUp, ArrowDown, Lock, Unlock, Copy, Trash2 } from 'lucide-react';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
 import { loadAutosave, clearAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
+import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from './store/useWorksheetStore';
 import { RELEASE_VERSION, RELEASE_SUMMARY } from './config/version';
 
 export default function App() {
@@ -146,54 +147,55 @@ export default function App() {
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', padding: '12px', borderRadius: '6px', boxSizing: 'border-box', border: docSettings.headerStyle === 'kader' ? '1.5px solid #000' : '1px solid transparent' }}>
             {(() => {
               const showScore = docSettings.showScores && totalScore > 0;
+              const hasTitle = !!headerData?.titel;
               const gap = docSettings.titleFieldsGap ?? 16;
-              const topFields = (
-                <div style={{ display: 'flex', gap: '16px', width: '100%' }}>
-                  {headerData?.naam && <div style={{ display: 'flex', alignItems: 'flex-end', flex: '1 1 200px' }}><span style={styles.sheetHeaderLabel}>Naam:</span><div style={styles.sheetHeaderLine}></div></div>}
-                  {headerData?.klas && <div style={{ display: 'flex', alignItems: 'flex-end', width: '90px' }}><span style={styles.sheetHeaderLabel}>Klas:</span><div style={styles.sheetHeaderLine}></div></div>}
-                  {headerData?.nummer && <div style={{ display: 'flex', alignItems: 'flex-end', width: '80px' }}><span style={styles.sheetHeaderLabel}>Nr:</span><div style={styles.sheetHeaderLine}></div></div>}
-                </div>
-              );
-              const datumField = headerData?.datum ? (
-                <div style={{ display: 'flex', alignItems: 'flex-end', width: '100%' }}>
-                  <span style={styles.sheetHeaderLabel}>Datum:</span><div style={styles.sheetHeaderLine}></div>
+              const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
+              const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
+              const LABELS: Record<HeaderField, string> = { naam: 'Naam:', klas: 'Klas:', nummer: 'Nr:', datum: 'Datum:' };
+              const visibleFields = order.filter(f => headerData?.[f]);
+              const fieldsRow = visibleFields.length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', rowGap: '8px', width: '100%' }}>
+                  {visibleFields.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'flex-end', width: `${widths[f] ?? DEFAULT_FIELD_WIDTHS[f]}px` }}>
+                      <span style={styles.sheetHeaderLabel}>{LABELS[f]}</span>
+                      <div style={styles.sheetHeaderLine}></div>
+                    </div>
+                  ))}
                 </div>
               ) : null;
-              const titleScore = (align: 'left' | 'right') => (headerData?.titel || showScore) ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (headerData?.titel && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1 / 3' }}>
-                  {headerData?.titel && <h1 style={{ margin: 0, fontSize: '22px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: align }}>{headerData.titel}</h1>}
+              const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
+                  {hasTitle && <h1 style={{ margin: 0, fontSize: '22px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: align }}>{headerData!.titel}</h1>}
                   {showScore && <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
                 </div>
               ) : null;
               if (docSettings.titlePosition === 'right') return (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', columnGap: `${gap}px`, rowGap: '8px' }}>
-                  <div style={{ gridColumn: '1', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{topFields}</div>
+                  {fieldsRow && <div style={{ gridColumn: '1', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fieldsRow}</div>}
                   {titleScore('right')}
-                  {datumField && <div style={{ gridColumn: '1', gridRow: '2', display: 'flex', alignItems: 'flex-end' }}>{datumField}</div>}
                 </div>
               );
               if (docSettings.titlePosition === 'left') return (
                 <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: `${gap}px`, rowGap: '8px' }}>
                   {titleScore('left')}
-                  <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{topFields}</div>
-                  {datumField && <div style={{ gridColumn: '2', gridRow: '2', display: 'flex', alignItems: 'flex-end' }}>{datumField}</div>}
+                  {fieldsRow && <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fieldsRow}</div>}
                 </div>
               );
               // center
               return (
                 <>
-                  {(headerData?.naam || headerData?.klas || headerData?.nummer) && (
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', marginBottom: '8px' }}>
-                      {headerData?.naam && <div style={{ display: 'flex', alignItems: 'flex-end', flex: '1 1 200px' }}><span style={styles.sheetHeaderLabel}>Naam:</span><div style={styles.sheetHeaderLine}></div></div>}
-                      {headerData?.klas && <div style={{ display: 'flex', alignItems: 'flex-end', width: '90px' }}><span style={styles.sheetHeaderLabel}>Klas:</span><div style={styles.sheetHeaderLine}></div></div>}
-                      {headerData?.nummer && <div style={{ display: 'flex', alignItems: 'flex-end', width: '80px' }}><span style={styles.sheetHeaderLabel}>Nr:</span><div style={styles.sheetHeaderLine}></div></div>}
-                    </div>
-                  )}
-                  {datumField && <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '8px' }}>{datumField}</div>}
-                  {(headerData?.titel || showScore) && (
-                    <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '4px' }}>
-                      {headerData?.titel && <h1 style={{ margin: 0, fontSize: '24px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: 'center' }}>{headerData.titel}</h1>}
-                      {showScore && <div style={{ ...styles.scoreBox, position: 'absolute', right: 0 }}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
+                  {fieldsRow && <div style={{ marginBottom: '8px' }}>{fieldsRow}</div>}
+                  {(hasTitle || showScore) && (
+                    <div style={{
+                      position: 'relative',
+                      display: 'flex',
+                      // No title? push score right (in flow, not absolute) so it doesn't sit on top of the answer lines above.
+                      justifyContent: hasTitle ? 'center' : 'flex-end',
+                      alignItems: 'center',
+                      marginTop: '4px',
+                    }}>
+                      {hasTitle && <h1 style={{ margin: 0, fontSize: '24px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: 'center' }}>{headerData!.titel}</h1>}
+                      {showScore && <div style={{ ...styles.scoreBox, ...(hasTitle ? { position: 'absolute', right: 0 } : {}) }}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
                     </div>
                   )}
                 </>
@@ -211,12 +213,6 @@ export default function App() {
                 <div key={block.id} className="print-block" onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
                   {isActive && (
                     <div className="no-print" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
-                      {index > 0 && (
-                        <IconButton icon={ArrowUp} label="Blok omhoog" onClick={() => moveBlockUp(block.id)} size={16} />
-                      )}
-                      {index < blocks.length - 1 && (
-                        <IconButton icon={ArrowDown} label="Blok omlaag" onClick={() => moveBlockDown(block.id)} size={16} />
-                      )}
                       <IconButton
                         icon={block.locked ? Lock : Unlock}
                         label={block.locked ? 'Ontgrendel (massa-regeneratie zal dit blok wel vernieuwen)' : 'Vergrendel (massa-regeneratie laat dit blok ongemoeid)'}
@@ -226,6 +222,12 @@ export default function App() {
                       />
                       <IconButton icon={Copy} label="Blok dupliceren" onClick={() => duplicateBlock(block.id)} size={16} />
                       <IconButton icon={Trash2} label="Blok verwijderen" onClick={() => removeBlock(block.id)} variant="danger" size={16} />
+                      {index > 0 && (
+                        <IconButton icon={ArrowUp} label="Blok omhoog" onClick={() => moveBlockUp(block.id)} size={16} />
+                      )}
+                      {index < blocks.length - 1 && (
+                        <IconButton icon={ArrowDown} label="Blok omlaag" onClick={() => moveBlockDown(block.id)} size={16} />
+                      )}
                     </div>
                   )}
 
@@ -270,8 +272,8 @@ export default function App() {
                     <GeldWisselViewer block={block} showSolutions={showSolutions} />
                   ) : block.typeId === 'geld-teruggeven' ? (
                     <GeldTeruggevenViewer block={block} showSolutions={showSolutions} />
-                  ) : block.typeId === 'mab-herkennen' ? (
-                    <MabViewer block={block} showSolutions={showSolutions} />
+                  ) : (block.typeId === 'mab-herkennen' || block.typeId === 'mab-tekenen') ? (
+                    <MabViewer block={block} showSolutions={showSolutions} mode={block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen'} />
                   ) : block.typeId === 'breuken' ? (() => {
                     const subType = block.constraints.subType || 'kleuren';
                     const answerFmt = block.constraints.answerFormat as string | undefined;

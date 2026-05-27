@@ -33,7 +33,7 @@ export function regenerateBlock(block: MathBlock, setters: BlockSetters): void {
     else if (t === 'geld-herkennen' || t === 'geld-tekenen') setters.setGeldExercises(block.id, generateGeldExercises(block));
     else if (t === 'geld-wissel')                    setters.setGeldWisselExercises(block.id, generateGeldWisselExercises(block));
     else if (t === 'geld-teruggeven')                setters.setGeldTeruggevenExercises(block.id, generateGeldTeruggevenExercises(block));
-    else if (t === 'mab-herkennen')                  setters.setMabExercises(block.id, generateMabExercises(block));
+    else if (t === 'mab-herkennen' || t === 'mab-tekenen') setters.setMabExercises(block.id, generateMabExercises(block));
     else if (t.includes('optellen'))                 setters.setBlockExercises(block.id, generateAdditionExercises(block));
     else if (t.includes('aftrekken'))                setters.setBlockExercises(block.id, generateSubtractionExercises(block));
     else if (t.includes('vermenigvuldigen'))         setters.setBlockExercises(block.id, generateMultiplicationExercises(block));

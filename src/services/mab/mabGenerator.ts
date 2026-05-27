@@ -28,42 +28,14 @@ function maskMatches(n: number, mask: Record<string, boolean>, maxNumber: number
     return true;
 }
 
-function hasInternalZero(n: number, maxNumber: number): boolean {
-    const { thousands, hundreds, tens, units } = decompose(n);
-    if (maxNumber >= 1000 && thousands >= 1) {
-        if (hundreds === 0 || tens === 0) return true;
-        if (units === 0 && (hundreds > 0 || tens > 0)) return true;
-    } else if (hundreds >= 1) {
-        if (tens === 0 && units !== 0) return true;
-    }
-    return false;
-}
-
 export function generateMabExercises(block: MathBlock): MabExercise[] {
     const {
         maxNumber = 100,
         operand1Mask = {},
-        specifiekeGetallen = [],
-        useSpecifiek = false,
-        allowInternalZero = true,
     } = block.constraints;
 
     const n = block.numberOfExercises;
     const results: MabExercise[] = [];
-
-    // Manual list path: iterate provided numbers, clamp to range, dedupe.
-    if (useSpecifiek && Array.isArray(specifiekeGetallen) && specifiekeGetallen.length > 0) {
-        const seen = new Set<number>();
-        for (const raw of specifiekeGetallen) {
-            const v = Math.max(1, Math.min(Math.floor(Number(raw)), maxNumber));
-            if (Number.isFinite(v) && !seen.has(v)) {
-                seen.add(v);
-                results.push({ id: Math.random().toString(36).substring(2, 9), value: v, ...decompose(v), isManuallyEdited: false });
-            }
-            if (results.length >= n) break;
-        }
-        return results;
-    }
 
     // Random path with mask + uniqueness retry loop.
     const used = new Set<number>();
@@ -73,7 +45,6 @@ export function generateMabExercises(block: MathBlock): MabExercise[] {
         const v = randInt(1, maxNumber);
         if (used.has(v)) continue;
         if (!maskMatches(v, operand1Mask, maxNumber)) continue;
-        if (!allowInternalZero && hasInternalZero(v, maxNumber)) continue;
         used.add(v);
         results.push({ id: Math.random().toString(36).substring(2, 9), value: v, ...decompose(v), isManuallyEdited: false });
     }

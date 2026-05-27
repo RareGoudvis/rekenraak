@@ -176,8 +176,8 @@ export interface CijferExercise {
     isManuallyEdited: boolean;
 }
 
-export type MabStyle = 'symbolic' | 'realistic';
-export type MabScaffolding = 'lijn' | 'tabel';
+export type MabStyle = 'symbolic' | 'mab-bw' | 'mab-color';
+export type MabScaffolding = 'positietabel' | 'kader' | 'geen';
 
 export interface MabExercise {
     id: string;

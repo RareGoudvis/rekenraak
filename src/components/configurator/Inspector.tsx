@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { ArrowUp, ArrowDown } from 'lucide-react';
+import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
 import AdditionConfig from './plugins/AdditionConfig';
 import SubtractionConfig from './plugins/SubtractionConfig';
 import MultiplicationConfig from './plugins/MultiplicationConfig';
@@ -18,8 +19,16 @@ import { regenerateBlock } from '../../services/generateDispatch';
 const HR_STD_TYPES = ['optellen', 'aftrekken', 'vermenigvuldigen', 'delen'];
 const isHrStd = (typeId: string) => HR_STD_TYPES.some(t => typeId.includes(t));
 
+const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string }> = {
+    naam:   { min: 100, max: 500, label: 'Naam' },
+    klas:   { min: 60,  max: 300, label: 'Klas' },
+    nummer: { min: 50,  max: 200, label: 'Nummer' },
+    datum:  { min: 80,  max: 500, label: 'Datum' },
+};
+
 export default function Inspector() {
     const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
 
     const activeBlockId = useWorksheetStore((state) => state.activeBlockId);
     const activeBlock = useWorksheetStore((state) => state.blocks.find(b => b.id === activeBlockId));
@@ -100,12 +109,72 @@ export default function Inspector() {
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
 
                         <label style={{ ...S.label, marginTop: '12px' }}>Koptekst velden</label>
-                        <div style={S.checkboxGrid}>
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={headerData.naam} onChange={(e) => updateHeader({ naam: e.target.checked })} style={S.checkbox} /> Naam</label>
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={headerData.klas} onChange={(e) => updateHeader({ klas: e.target.checked })} style={S.checkbox} /> Klas</label>
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={headerData.nummer} onChange={(e) => updateHeader({ nummer: e.target.checked })} style={S.checkbox} /> Nummer</label>
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={headerData.datum} onChange={(e) => updateHeader({ datum: e.target.checked })} style={S.checkbox} /> Datum</label>
-                        </div>
+                        {(() => {
+                            const order = headerData.fieldOrder ?? DEFAULT_FIELD_ORDER;
+                            const widths = headerData.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
+                            const moveField = (field: HeaderField, dir: -1 | 1) => {
+                                const idx = order.indexOf(field);
+                                if (idx === -1) return;
+                                const newIdx = idx + dir;
+                                if (newIdx < 0 || newIdx >= order.length) return;
+                                const next = [...order];
+                                [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
+                                updateHeader({ fieldOrder: next });
+                            };
+                            const setFieldWidth = (field: HeaderField, w: number) => {
+                                updateHeader({ fieldWidths: { ...DEFAULT_FIELD_WIDTHS, ...widths, [field]: w } });
+                            };
+                            const toggleField = (field: HeaderField) => updateHeader({ [field]: !headerData[field] } as Partial<typeof headerData>);
+                            return (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                                    {order.map((field, idx) => {
+                                        const range = FIELD_RANGE[field];
+                                        const w = widths[field] ?? DEFAULT_FIELD_WIDTHS[field];
+                                        const enabled = headerData[field] as boolean;
+                                        const hovered = hoveredField === field;
+                                        return (
+                                            <div
+                                                key={field}
+                                                onMouseEnter={() => setHoveredField(field)}
+                                                onMouseLeave={() => setHoveredField(null)}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    padding: '4px 6px', borderRadius: '6px',
+                                                    backgroundColor: hovered ? 'var(--bg-input)' : 'transparent',
+                                                    transition: 'background-color 0.15s',
+                                                }}
+                                            >
+                                                <label style={{ ...S.checkboxLabel, minWidth: '70px', flexShrink: 0 }}>
+                                                    <input type="checkbox" checked={enabled} onChange={() => toggleField(field)} style={S.checkbox} />
+                                                    {range.label}
+                                                </label>
+                                                <input
+                                                    type="range" min={range.min} max={range.max} step={5}
+                                                    value={w}
+                                                    disabled={!enabled}
+                                                    onChange={(e) => setFieldWidth(field, Number(e.target.value))}
+                                                    style={{ flex: 1, accentColor: 'var(--accent-purple)', cursor: enabled ? 'pointer' : 'not-allowed', opacity: enabled ? 1 : 0.4 }}
+                                                />
+                                                <span style={{ minWidth: '40px', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'right', flexShrink: 0 }}>{w}px</span>
+                                                <div style={{
+                                                    display: 'flex', gap: '2px', flexShrink: 0,
+                                                    opacity: hovered ? 1 : 0,
+                                                    pointerEvents: hovered ? 'auto' : 'none',
+                                                    transition: 'opacity 0.15s',
+                                                }}>
+                                                    <button onClick={() => moveField(field, -1)} disabled={idx === 0} title="Veld omhoog" aria-label="Veld omhoog" style={miniMoveBtn(idx === 0)}>
+                                                        <ArrowUp size={12} />
+                                                    </button>
+                                                    <button onClick={() => moveField(field, 1)} disabled={idx === order.length - 1} title="Veld omlaag" aria-label="Veld omlaag" style={miniMoveBtn(idx === order.length - 1)}>
+                                                        <ArrowDown size={12} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
 
@@ -232,7 +301,7 @@ export default function Inspector() {
                     {(activeBlock.typeId === 'geld-herkennen' || activeBlock.typeId === 'geld-tekenen') && <GeldConfig block={activeBlock} />}
                     {activeBlock.typeId === 'geld-wissel' && <GeldWisselConfig block={activeBlock} />}
                     {activeBlock.typeId === 'geld-teruggeven' && <GeldTeruggevenConfig block={activeBlock} />}
-                    {activeBlock.typeId === 'mab-herkennen' && <MabConfig block={activeBlock} />}
+                    {(activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen') && <MabConfig block={activeBlock} />}
                 </div>
             </div>
 
@@ -448,24 +517,6 @@ export default function Inspector() {
                         </>
                     )}
 
-                    {/* ── Scaffolding (mab-herkennen): lijn vs tabel ── */}
-                    {activeBlock.typeId === 'mab-herkennen' && (
-                        <>
-                            <label style={{ ...S.label, marginTop: '12px' }}>Scaffolding</label>
-                            <div style={S.btnGroup}>
-                                <button onClick={() => updateConstraint('scaffolding', 'lijn')} style={S.radioBtn((c.scaffolding ?? 'lijn') === 'lijn')}>Lijn</button>
-                                <button onClick={() => updateConstraint('scaffolding', 'tabel')} style={S.radioBtn((c.scaffolding ?? 'lijn') === 'tabel')}>Tabel (H/T/E)</button>
-                            </div>
-                            <label style={{ ...S.label, marginTop: '12px' }}>Oefeningen per rij ({c.exercisesPerRow ?? 3})</label>
-                            <input
-                                type="range" min={1} max={4}
-                                value={c.exercisesPerRow ?? 3}
-                                onChange={(e) => updateConstraint('exercisesPerRow', Number(e.target.value))}
-                                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
-                            />
-                        </>
-                    )}
-
                     {/* ── Scaffolding (geld-teruggeven) ── */}
                     {activeBlock.typeId === 'geld-teruggeven' && (() => {
                         const scaffolding: string = c.scaffolding ?? 'ingevuld';
@@ -486,6 +537,25 @@ export default function Inspector() {
                                             {opt.label}
                                         </button>
                                     ))}
+                                </div>
+                            </>
+                        );
+                    })()}
+
+                    {/* ── Scaffolding (mab-herkennen + mab-tekenen) ── */}
+                    {(activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen') && (() => {
+                        // Back-compat: blocks saved before the rename used `showBox: boolean`.
+                        const scaff: string = c.scaffolding ?? (c.showBox === false ? 'geen' : 'positietabel');
+                        const isHerkennen = activeBlock.typeId === 'mab-herkennen';
+                        return (
+                            <>
+                                <label style={{ ...S.label, marginTop: '12px' }}>Scaffolding</label>
+                                <div style={S.btnGroup}>
+                                    <button onClick={() => updateConstraint('scaffolding', 'positietabel')} style={S.radioBtn(scaff === 'positietabel')}>Positietabel</button>
+                                    <button onClick={() => updateConstraint('scaffolding', 'kader')}        style={S.radioBtn(scaff === 'kader')}>Kader</button>
+                                    {isHerkennen && (
+                                        <button onClick={() => updateConstraint('scaffolding', 'geen')} style={S.radioBtn(scaff === 'geen')}>Geen</button>
+                                    )}
                                 </div>
                             </>
                         );
@@ -568,7 +638,7 @@ export default function Inspector() {
             </div>
 
             {/* ── 4. Geavanceerd (accordion) ── */}
-            {(activeBlock.typeId.startsWith('cijferen-') || activeBlock.typeId.startsWith('geld-')) && (
+            {(activeBlock.typeId.startsWith('cijferen-') || activeBlock.typeId.startsWith('geld-') || activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen') && (
                 <div style={S.advancedWrap}>
                     <button style={S.advancedToggle} onClick={() => setAdvancedOpen(!advancedOpen)}>
                         <span>Geavanceerd</span>
@@ -602,6 +672,33 @@ export default function Inspector() {
                                         />
                                     </>
                                 )}
+                                {(activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen') && (() => {
+                                    const perRow       = (c.exercisesPerRow ?? 3) as number;
+                                    const boxHeight    = (c.boxHeight       ?? 60) as number;
+                                    const answerHeight = (c.answerHeight    ?? 36) as number;
+                                    return (
+                                        <>
+                                            <label style={S.label}>Oefeningen per rij ({perRow})</label>
+                                            <input
+                                                type="range" min={1} max={4} value={perRow}
+                                                onChange={e => updateConstraint('exercisesPerRow', Number(e.target.value))}
+                                                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
+                                            />
+                                            <label style={{ ...S.label, marginTop: '10px' }}>Tekenvak hoogte ({boxHeight}px)</label>
+                                            <input
+                                                type="range" min={40} max={200} step={5} value={boxHeight}
+                                                onChange={e => updateConstraint('boxHeight', Number(e.target.value))}
+                                                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
+                                            />
+                                            <label style={{ ...S.label, marginTop: '10px' }}>Antwoordlijn hoogte ({answerHeight}px)</label>
+                                            <input
+                                                type="range" min={20} max={80} step={2} value={answerHeight}
+                                                onChange={e => updateConstraint('answerHeight', Number(e.target.value))}
+                                                style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
+                                            />
+                                        </>
+                                    );
+                                })()}
                                 {activeBlock.typeId.startsWith('geld-') && activeBlock.typeId !== 'geld-teruggeven' && (() => {
                                     const isGeldHerkennen = activeBlock.typeId === 'geld-herkennen';
                                     const currentPerRow = (c.exercisesPerRow ?? 4) as number;
@@ -663,3 +760,13 @@ const S = {
     advancedWrap: { marginBottom: '8px' } as React.CSSProperties,
     advancedToggle: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '10px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' } as React.CSSProperties,
 };
+
+const miniMoveBtn = (disabled: boolean): React.CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    width: '22px', height: '22px',
+    background: 'var(--bg-input)', border: '1px solid var(--border-color)',
+    borderRadius: '4px', color: 'var(--text-main)',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.35 : 1,
+    padding: 0,
+});

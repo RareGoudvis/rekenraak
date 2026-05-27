@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { HelpCircle, Heart, Sun, Moon, Contrast } from 'lucide-react';
 import logo from '../../assets/enderklas-logo.png';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
@@ -46,6 +46,16 @@ export default function Sidebar() {
     const [helpOpen, setHelpOpen] = useState(false);
     const [search, setSearch] = useState('');
 
+    // Sidebar branding — editable site title + subtitle, persisted per-browser.
+    const [siteTitle, setSiteTitle] = useState<string>(() => {
+        try { return localStorage.getItem('enderklas_site_title_v1') ?? 'Enderklas Builder'; } catch { return 'Enderklas Builder'; }
+    });
+    const [siteSubtitle, setSiteSubtitle] = useState<string>(() => {
+        try { return localStorage.getItem('enderklas_site_subtitle_v1') ?? ''; } catch { return ''; }
+    });
+    useEffect(() => { try { localStorage.setItem('enderklas_site_title_v1', siteTitle); } catch { /* ignore */ } }, [siteTitle]);
+    useEffect(() => { try { localStorage.setItem('enderklas_site_subtitle_v1', siteSubtitle); } catch { /* ignore */ } }, [siteSubtitle]);
+
     const isSearching = search.trim().length > 0;
     const tree = useMemo(() => filterTree(APP_STRUCTURE, search), [search]);
 
@@ -63,12 +73,24 @@ export default function Sidebar() {
 
     return (
         <aside style={S.aside}>
-            <div style={S.header}>
+            <div style={S.headerRow}>
                 <div style={S.logoWrap}>
                     <img src={logo} alt="Enderklas Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                 </div>
-                <h2 style={S.title}>Enderklas Builder</h2>
-                <p style={S.subtitle}>Basisonderwijs Vlaanderen</p>
+                <div style={S.headerText}>
+                    <input
+                        value={siteTitle}
+                        onChange={(e) => setSiteTitle(e.target.value)}
+                        placeholder="Enderklas Builder"
+                        style={S.siteTitleInput}
+                    />
+                    <input
+                        value={siteSubtitle}
+                        onChange={(e) => setSiteSubtitle(e.target.value)}
+                        placeholder="using Basisonderwijs Vlaanderen"
+                        style={S.siteSubtitleInput}
+                    />
+                </div>
             </div>
 
             <div style={S.searchWrap}>
@@ -226,10 +248,11 @@ export default function Sidebar() {
 
 const S = {
     aside: { width: '300px', minWidth: '300px', backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' } as React.CSSProperties,
-    header: { padding: '24px 20px 16px 20px' } as React.CSSProperties,
-    logoWrap: { width: '100%', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', padding: '5px', overflow: 'hidden' } as React.CSSProperties,
-    title: { margin: 0, fontSize: '17px', color: 'var(--text-main)', fontWeight: 700 } as React.CSSProperties,
-    subtitle: { margin: '4px 0 0 0', fontSize: '12px', color: 'var(--accent-purple)', fontWeight: 400 } as React.CSSProperties,
+    headerRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '20px 16px 14px 16px' } as React.CSSProperties,
+    logoWrap: { width: '56px', height: '56px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as React.CSSProperties,
+    headerText: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } as React.CSSProperties,
+    siteTitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: '17px', fontWeight: 700, color: 'var(--text-main)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,
+    siteSubtitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: '12px', fontWeight: 400, color: 'var(--accent-purple)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,
     divider: { border: 'none', height: '1px', backgroundColor: 'var(--border-color)', margin: '0 16px' } as React.CSSProperties,
     searchWrap: { padding: '4px 16px 8px' } as React.CSSProperties,
     searchInput: {

@@ -11,7 +11,7 @@ export const styles = {
     borderBottom: !isActive && isNotLastBlock && showDividers ? '1px solid #e5e5e5' : (isActive ? '2px dashed var(--accent-purple)' : 'none'),
     backgroundColor: isActive ? 'rgba(155, 48, 255, 0.02)' : 'transparent',
   }),
-  blockControls: { position: 'absolute', right: '12px', top: '12px', display: 'flex', gap: '6px', zIndex: 10 } as React.CSSProperties,
+  blockControls: { position: 'absolute', left: '100%', top: '0', marginLeft: '8px', display: 'flex', flexDirection: 'column', gap: '6px', zIndex: 10 } as React.CSSProperties,
   iconBtn: { background: 'var(--bg-input)', border: '1px solid var(--border-color)', color: 'var(--text-main)', borderRadius: '4px', cursor: 'pointer', padding: '4px 10px', fontSize: '14px', fontWeight: 'bold' } as React.CSSProperties,
   deleteBtn: { background: '#ff4d4d', border: 'none', color: 'white', borderRadius: '4px', cursor: 'pointer', padding: '4px 10px', fontSize: '12px', fontWeight: 'bold' } as React.CSSProperties,
   badge: (_type: 'mag' | 'moet' | 'plus' | 'aangepast'): React.CSSProperties => ({ backgroundColor: 'white', color: '#000', padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: 'bold', border: '1.5px solid #000' }),

@@ -3,13 +3,20 @@ import type { MathBlock, Equation, ClockExercise, FractionExercise, SplitsenExer
 import { regenerateBlock } from '../services/generateDispatch';
 import { saveAutosave } from '../services/persistence';
 
-interface HeaderData {
+export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
+
+export interface HeaderData {
     naam: boolean;
     klas: boolean;
     nummer: boolean;
     datum: boolean;
-    titel:string;
+    titel: string;
+    fieldOrder?: HeaderField[];
+    fieldWidths?: Record<HeaderField, number>;
 }
+
+export const DEFAULT_FIELD_ORDER: HeaderField[] = ['naam', 'klas', 'nummer', 'datum'];
+export const DEFAULT_FIELD_WIDTHS: Record<HeaderField, number> = { naam: 240, klas: 90, nummer: 80, datum: 140 };
 
 export interface DocSettings {
     showScores: boolean;
@@ -98,7 +105,7 @@ applyTheme(INITIAL_THEME);
 export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     blocks: [],
     activeBlockId: null,
-    header: { naam: true, klas: true, nummer: false, datum: false, titel: '' },
+    header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS } },
     footer: { school: '', klas: '', leerkracht: '', showSchool: true, showKlas: true, showLeerkracht: true, showPagina: true, centerText: '', showCenterText: false },
     docSettings: { showScores: true, opdrachtTitelStyle: 'regular', showDividers: true, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, numberBlocks: false },
     showSolutions: false,
@@ -135,18 +142,15 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         const isGeldBlock = typeId === 'geld-herkennen' || typeId === 'geld-tekenen';
         const isGeldWissel = typeId === 'geld-wissel';
         const isGeldTeruggeven = typeId === 'geld-teruggeven';
-        const isMabBlock = typeId === 'mab-herkennen';
+        const isMabBlock = typeId === 'mab-herkennen' || typeId === 'mab-tekenen';
         const defaultConstraints = isMabBlock ? {
             mabStyle: 'symbolic' as 'symbolic' | 'realistic',
             maxNumber: 100 as 10 | 20 | 100 | 1000,
             operand1Mask: {} as Record<string, boolean>,
-            specifiekeGetallen: [] as number[],
-            useSpecifiek: false,
-            scaffolding: 'lijn' as 'lijn' | 'tabel',
+            scaffolding: 'positietabel' as 'positietabel' | 'kader' | 'geen',
             exercisesPerRow: 3,
-            boxBorderColor: 'red' as 'red' | 'black',
-            allowInternalZero: true,
-            boxHeight: 100,
+            boxHeight: 60,
+            answerHeight: 36,
         } : isGeldBlock ? {
             maxGetal: 10,
             format: 'euros',

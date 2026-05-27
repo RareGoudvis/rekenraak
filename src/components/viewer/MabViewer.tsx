@@ -1,14 +1,17 @@
 import type { MathBlock, MabExercise, MabStyle, MabScaffolding } from '../../services/math/types';
-import MabBlocksSVG from './MabBlocksSVG';
+import { MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
 
 interface Props {
     block: MathBlock;
     showSolutions: boolean;
+    mode: 'herkennen' | 'tekenen';
 }
 
 const fmt = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
-export default function MabViewer({ block, showSolutions }: Props) {
+interface ColDef { key: string; place: MabPlace; }
+
+export default function MabViewer({ block, showSolutions, mode }: Props) {
     const exercises: MabExercise[] = block.mabExercises || [];
     if (exercises.length === 0) {
         return (
@@ -19,15 +22,22 @@ export default function MabViewer({ block, showSolutions }: Props) {
     }
 
     const c = block.constraints;
-    const style: MabStyle = c.mabStyle || 'symbolic';
+    // Back-compat: blocks saved before the rename used 'realistic'.
+    const style: MabStyle = (c.mabStyle === 'realistic' ? 'mab-bw' : c.mabStyle) || 'symbolic';
     const maxNumber: number = c.maxNumber || 100;
-    const scaffolding: MabScaffolding = c.scaffolding || 'lijn';
     const perRow: number = c.exercisesPerRow || 3;
-    const borderColor: string = c.boxBorderColor === 'black' ? '#000' : '#dc2626';
-    const boxHeight: number = c.boxHeight || 100;
+    // Back-compat: blocks saved before the rename used `showBox: boolean`.
+    const scaffolding: MabScaffolding = c.scaffolding ?? (c.showBox === false ? 'geen' : 'positietabel');
+    const boxHeight: number = c.boxHeight || 60;
+    const answerHeight: number = c.answerHeight || 36;
     const gap = block.verticalSpacing || 14;
 
-    const cols = maxNumber >= 1000 ? ['D', 'H', 'T', 'E'] : maxNumber >= 100 ? ['H', 'T', 'E'] : maxNumber >= 20 ? ['T', 'E'] : ['E'];
+    // Columns left → right in place-value order (largest place first).
+    const cols: ColDef[] = [];
+    if (maxNumber >= 1000) cols.push({ key: 'D', place: 'thousands' });
+    if (maxNumber >= 100)  cols.push({ key: 'H', place: 'hundreds' });
+    if (maxNumber >= 20)   cols.push({ key: 'T', place: 'tens' });
+    cols.push({ key: 'E', place: 'units' });
 
     return (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, 1fr)`, gap: `${gap}px`, width: '100%' }}>
@@ -36,11 +46,12 @@ export default function MabViewer({ block, showSolutions }: Props) {
                     key={ex.id}
                     ex={ex}
                     style={style}
-                    scaffolding={scaffolding}
                     cols={cols}
-                    borderColor={borderColor}
+                    scaffolding={scaffolding}
                     boxHeight={boxHeight}
+                    answerHeight={answerHeight}
                     showSolutions={showSolutions}
+                    mode={mode}
                 />
             ))}
         </div>
@@ -50,86 +61,104 @@ export default function MabViewer({ block, showSolutions }: Props) {
 interface ItemProps {
     ex: MabExercise;
     style: MabStyle;
+    cols: ColDef[];
     scaffolding: MabScaffolding;
-    cols: string[];
-    borderColor: string;
     boxHeight: number;
+    answerHeight: number;
     showSolutions: boolean;
+    mode: 'herkennen' | 'tekenen';
 }
 
-function MabItem({ ex, style, scaffolding, cols, borderColor, boxHeight, showSolutions }: ItemProps) {
+function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSolutions, mode }: ItemProps) {
+    const digits: Record<MabPlace, number> = {
+        thousands: ex.thousands,
+        hundreds: ex.hundreds,
+        tens: ex.tens,
+        units: ex.units,
+    };
+    const gridCols = `repeat(${cols.length}, 1fr)`;
+    const hasBorder = scaffolding === 'positietabel' || scaffolding === 'kader';
+    const hasHeader = scaffolding === 'positietabel';
+    const hasDividers = scaffolding === 'positietabel';
+    // In tekenen mode the student draws — only render glyphs when showing solutions.
+    const showGlyphs = mode === 'herkennen' || showSolutions;
+    // In tekenen mode the number is printed on the answer line by default; in
+    // herkennen mode the line stays empty unless solutions are shown.
+    const showNumberOnLine = mode === 'tekenen' || showSolutions;
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: "'Azeret Mono', monospace" }}>
+            {/* BOX = optional outer border + optional H/T/E header row + drawing area */}
             <div style={{
                 width: '100%',
-                height: `${boxHeight}px`,
-                border: `1.5px solid ${borderColor}`,
-                borderRadius: '8px',
-                padding: '8px',
+                border: hasBorder ? '1.5px solid #000' : 'none',
                 boxSizing: 'border-box',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                flexDirection: 'column',
+                borderRadius: hasBorder ? '4px' : 0,
+                overflow: 'hidden',
             }}>
-                <MabBlocksSVG
-                    thousands={ex.thousands}
-                    hundreds={ex.hundreds}
-                    tens={ex.tens}
-                    units={ex.units}
-                    style={style}
-                />
-            </div>
-            {scaffolding === 'lijn'
-                ? <AnswerLine value={ex.value} showSolutions={showSolutions} />
-                : <AnswerTable value={ex.value} cols={cols} showSolutions={showSolutions} thousands={ex.thousands} hundreds={ex.hundreds} tens={ex.tens} units={ex.units} />
-            }
-        </div>
-    );
-}
-
-function AnswerLine({ value, showSolutions }: { value: number; showSolutions: boolean }) {
-    return (
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', minHeight: '24px', fontFamily: "'Azeret Mono', monospace" }}>
-            {showSolutions
-                ? <span style={{ color: '#e11d48', fontWeight: 'bold', fontSize: '15px' }}>{fmt(value)}</span>
-                : <div style={{ width: '60%', borderBottom: '1.5px dotted #000', height: '20px' }} />
-            }
-        </div>
-    );
-}
-
-function AnswerTable({ cols, showSolutions, thousands, hundreds, tens, units }: {
-    value: number; cols: string[]; showSolutions: boolean;
-    thousands: number; hundreds: number; tens: number; units: number;
-}) {
-    const digits: Record<string, number> = { D: thousands, H: hundreds, T: tens, E: units };
-    const cellW = 28;
-    return (
-        <table style={{ borderCollapse: 'collapse', fontFamily: "'Azeret Mono', monospace" }}>
-            <thead>
-                <tr>
-                    {cols.map(c => (
-                        <th key={c} style={{ border: '1px solid #000', width: `${cellW}px`, height: '20px', fontSize: '11px', fontWeight: 'bold', background: '#f3f4f6' }}>{c}</th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    {cols.map(c => (
-                        <td key={c} style={{
-                            border: '1px solid #000',
-                            width: `${cellW}px`,
-                            height: '26px',
-                            textAlign: 'center',
-                            fontSize: '14px',
-                            color: showSolutions ? '#e11d48' : 'transparent',
-                            fontWeight: 'bold',
+                {hasHeader && (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: gridCols,
+                        borderBottom: '1.5px solid #000',
+                        background: '#f3f4f6',
+                    }}>
+                        {cols.map((col, i) => (
+                            <div key={col.key} style={{
+                                textAlign: 'center',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                padding: '4px 0',
+                                borderRight: i < cols.length - 1 ? '1.5px solid #000' : 'none',
+                            }}>
+                                {col.key}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: gridCols,
+                    height: `${boxHeight}px`,
+                }}>
+                    {cols.map((col, i) => (
+                        <div key={col.key} style={{
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            justifyContent: 'center',
+                            padding: '6px',
+                            borderRight: hasDividers && i < cols.length - 1 ? '1.5px solid #000' : 'none',
+                            overflow: 'hidden',
+                            boxSizing: 'border-box',
                         }}>
-                            {digits[c]}
-                        </td>
+                            <MabPlaceColumn
+                                count={showGlyphs ? digits[col.place] : 0}
+                                place={col.place}
+                                style={style}
+                                color={mode === 'tekenen' && showSolutions ? '#e11d48' : '#000'}
+                            />
+                        </div>
                     ))}
-                </tr>
-            </tbody>
-        </table>
+                </div>
+            </div>
+            {/* ANSWER LINE — always shown */}
+            <div style={{
+                width: '100%',
+                height: `${answerHeight}px`,
+                marginTop: '8px',
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'center',
+                paddingBottom: '4px',
+                boxSizing: 'border-box',
+            }}>
+                {showNumberOnLine
+                    ? <span style={{ color: showSolutions && mode === 'herkennen' ? '#e11d48' : '#000', fontWeight: 'bold', fontSize: '16px' }}>{fmt(ex.value)}</span>
+                    : <div style={{ width: '70%', borderBottom: '1.5px solid #000' }} />
+                }
+            </div>
+        </div>
     );
 }
