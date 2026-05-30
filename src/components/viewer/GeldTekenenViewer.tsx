@@ -1,6 +1,7 @@
 import type { MathBlock, GeldExercise } from '../../services/math/types';
 import { formatAmount } from '../../services/geld/geldGenerator';
 import { VoorbeeldenBar } from './GeldViewer';
+import FragmentableGrid from './FragmentableGrid';
 
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
@@ -61,11 +62,14 @@ export default function GeldTekenenViewer({ block, showSolutions }: Props) {
             {showVoorbeelden && voorbeeldTypes.length > 0 && (
                 <VoorbeeldenBar allowedDenominations={allowedDenominations} voorbeeldTypes={voorbeeldTypes} />
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, 1fr)`, gap: `${gap}px` }}>
-                {exercises.map(ex => (
+            <FragmentableGrid
+                cols={perRow}
+                columnGap={gap}
+                rowGap={gap}
+                items={exercises.map(ex => (
                     <TekenenCell key={ex.id} ex={ex} block={block} showSolutions={showSolutions} />
                 ))}
-            </div>
+            />
         </div>
     );
 }

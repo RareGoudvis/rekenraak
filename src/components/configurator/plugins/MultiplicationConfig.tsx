@@ -11,7 +11,7 @@ export default function MultiplicationConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const { numberType = 'natural', equationType = 'normal' } = block.constraints;
 
-    const updateConstraint = (key: string, value: any) => {
+    const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
     };
 

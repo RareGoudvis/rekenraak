@@ -21,7 +21,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
         simplifyMaxDenominator = 10
     } = block.constraints;
 
-    const updateConstraint = (key: string, value: any) => {
+    const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
     };
 

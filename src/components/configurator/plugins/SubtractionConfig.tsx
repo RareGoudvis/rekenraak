@@ -21,7 +21,7 @@ export default function SubtractionConfig({ block }: Props) {
 
     const ActiveSubConfig = SubConfigMap[numberType as keyof typeof SubConfigMap] || NaturalSettings;
 
-    const updateConstraint = (key: string, value: any) => {
+    const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, {
             constraints: { ...block.constraints, [key]: value }
         });

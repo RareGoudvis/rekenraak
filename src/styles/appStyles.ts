@@ -1,12 +1,12 @@
 export const styles = {
   appContainer: { display: 'flex', width: '100vw', height: '100vh', padding: '16px', gap: '16px', overflow: 'hidden', backgroundColor: 'var(--bg-dark)' } as React.CSSProperties,
   mainContent: { position: 'relative', flex: 1, backgroundColor: 'var(--bg-dark)', borderRadius: '12px', overflowY: 'auto', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' } as React.CSSProperties,
-  a4Sheet: { backgroundColor: '#ffffff', color: '#000000', width: '100%', maxWidth: '800px', minHeight: '1130px', height: 'max-content', flex: '0 0 auto', padding: '45px 50px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', borderRadius: '4px', display: 'flex', flexDirection: 'column', position: 'relative', boxSizing: 'border-box' } as React.CSSProperties,
+  a4Sheet: { backgroundColor: '#ffffff', color: '#000000', width: '100%', maxWidth: '920px', minHeight: '1130px', height: 'max-content', flex: '0 0 auto', padding: '45px 50px', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', borderRadius: '4px', display: 'flex', flexDirection: 'column', position: 'relative', boxSizing: 'border-box' } as React.CSSProperties,
   sheetHeaderLabel: { fontSize: '13px', fontWeight: 'bold' as const, marginRight: '6px', color: '#000', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
   sheetHeaderLine: { flex: 1, borderBottom: '1.5px solid #000', height: '16px' } as React.CSSProperties,
   scoreBox: { border: '2px solid #000', padding: '8px 14px', fontSize: '15px', fontWeight: 'bold', borderRadius: '4px', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
-  blockContainer: (isActive: boolean, isNotLastBlock: boolean, showDividers: boolean = true): React.CSSProperties => ({
-    padding: '16px', position: 'relative', cursor: 'pointer', borderRadius: '8px', boxSizing: 'border-box', margin: '4px', marginBottom: '12px', transition: 'all 0.2s',
+  blockContainer: (isActive: boolean, isNotLastBlock: boolean, showDividers: boolean = true, blockSpacing: number = 12): React.CSSProperties => ({
+    padding: '16px', position: 'relative', cursor: 'pointer', borderRadius: '8px', boxSizing: 'border-box', margin: '4px', marginBottom: `${blockSpacing}px`, transition: 'all 0.2s',
     border: isActive ? '2px dashed var(--accent-purple)' : '2px dashed transparent',
     borderBottom: !isActive && isNotLastBlock && showDividers ? '1px solid #e5e5e5' : (isActive ? '2px dashed var(--accent-purple)' : 'none'),
     backgroundColor: isActive ? 'rgba(155, 48, 255, 0.02)' : 'transparent',

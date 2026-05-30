@@ -98,7 +98,7 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
 
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let d1 = 1, d2 = 1, n1 = 1, n2 = 1;
+        let d1: number, d2: number, n1: number, n2: number;
 
         if (fractionDifficulty === 'same') {
             const maxD = Math.min(maxDenominator1, maxDenominator2);
@@ -156,7 +156,7 @@ export const generateAdditionExercises = (block: MathBlock): Equation[] => {
     let attempts = 0;
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let intA = 0, intB = 0;
+        let intA: number, intB: number;
 
         if (useSpecificStructure) {
             const maskA = generateMaskedInt(operand1Mask);
@@ -214,7 +214,7 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
 
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let d1 = 1, d2 = 1, n1 = 1, n2 = 1;
+        let d1: number, d2: number, n1: number, n2: number;
 
         if (fractionDifficulty === 'same') {
             const maxD = Math.min(maxDenominator1, maxDenominator2);
@@ -280,7 +280,7 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
     let attempts = 0;
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let intA = 0, intB = 0;
+        let intA: number, intB: number;
 
         if (useSpecificStructure) {
             const maskA = generateMaskedInt(operand1Mask);
@@ -344,13 +344,13 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS * 2) {
             attempts++;
-            let op1: any, op2: Fraction;
+            let op1: number | Fraction = 0;
             let ansN = 0, ansD = 1;
 
             // Factor 2 is altijd een breuk
             const n2 = randInt(1, maxNumerator2);
             const d2 = randInt(2, maxDenominator2);
-            op2 = { n: n2, d: d2 };
+            const op2: Fraction = { n: n2, d: d2 };
 
             if (fractionMultMode === 'fraction_fraction') {
                 const n1 = randInt(1, maxNumerator1);
@@ -360,7 +360,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
             } else if (fractionMultMode === 'natural_fraction') {
                 const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal = 1;
+                let intVal: number;
                 if (useSpecificStructure) {
                     const maskA = generateMaskedInt(operand1Mask);
                     intVal = maskA !== null ? (maskA / INTERNAL_SCALE) : randInt(1, maxGetal);
@@ -373,7 +373,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             } else if (fractionMultMode === 'decimal_fraction') {
                 const scale = Math.pow(10, decimalPlaces);
                 const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal = 1;
+                let intVal: number;
                 if (useSpecificStructure) {
                     const maskA = generateMaskedInt(operand1Mask);
                     intVal = maskA !== null ? maskA : randInt(1, maxGetal * scale);
@@ -447,7 +447,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
-            let intA = 0, intB = 0;
+            let intA: number, intB: number;
 
             if (useSpecificStructure) {
                 const maskA = generateMaskedInt(operand1Mask);
@@ -506,13 +506,13 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS * 2) {
             attempts++;
-            let op1: any, op2: Fraction;
+            let op1: number | Fraction = 0;
             let ansN = 0, ansD = 1;
 
             // Deler (factor 2) is altijd een breuk
             const n2 = randInt(1, maxNumerator2);
             const d2 = randInt(2, maxDenominator2);
-            op2 = { n: n2, d: d2 };
+            const op2: Fraction = { n: n2, d: d2 };
 
             if (fractionMultMode === 'fraction_fraction') {
                 // (n1/d1) ÷ (n2/d2) = (n1*d2) / (d1*n2)
@@ -524,7 +524,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             } else if (fractionMultMode === 'natural_fraction') {
                 // n ÷ (n2/d2) = (n*d2) / n2
                 const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal = 1;
+                let intVal: number;
                 if (useSpecificStructure) {
                     const maskA = generateMaskedInt(operand1Mask);
                     intVal = maskA !== null ? (maskA / INTERNAL_SCALE) : randInt(1, maxGetal);
@@ -538,7 +538,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 // dec ÷ (n2/d2) = (dec*d2) / n2
                 const scale = Math.pow(10, decimalPlaces);
                 const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal = 1;
+                let intVal: number;
                 if (useSpecificStructure) {
                     const maskA = generateMaskedInt(operand1Mask);
                     intVal = maskA !== null ? maskA : randInt(1, maxGetal * scale);
@@ -628,8 +628,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             if (divisor <= 1) continue;
 
             const remainder = randInt(1, divisor - 1);
-            let quotient = 0;
-            let dividend = 0;
+            let quotient: number, dividend: number;
 
             if (metRestLevel === 1) {
                 // TE ≤ 10*y: enkelvoudig quotiënt (1-9)
@@ -679,7 +678,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
-            let dividendVal = 0, divisorVal = 0, quotientVal = 0;
+            let dividendVal: number, divisorVal: number, quotientVal: number;
 
             if (divisionLevel >= 1 && divisionLevel <= 5 && numberType === 'natural') {
                 // Niveau-presets: achterwaarts genereren (quotiënt × deler = deeltal)

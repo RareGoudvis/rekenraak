@@ -13,7 +13,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
     // Stuur decimalPlaces mee, zodat de maskers dynamisch inkrimpen!
     const availablePlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces);
 
-    const updateConstraint = (key: string, value: any) => {
+    const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
     };
 

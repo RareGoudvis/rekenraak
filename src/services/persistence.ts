@@ -1,3 +1,4 @@
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import type { MathBlock, FooterData } from './math/types';
 import type { DocSettings } from '../store/useWorksheetStore';
 
@@ -9,7 +10,10 @@ export const AUTOSAVE_KEY = 'enderklas_autosave_v1';
 export const PRESETS_KEY = 'enderklas_presets_v1';
 export const RELEASE_SEEN_KEY = 'enderklas_release_seen_v1';
 export const MAX_PRESETS = 20;
-const MAX_SHARE_BYTES = 6000;  // ~6 KB stays comfortably under every mainstream browser's URL limit
+// Measured against the LZ-compressed, URL-safe payload (not raw JSON). 30 KB of
+// such text stays under mainstream browser URL limits incl. mobile, and — since
+// worksheet JSON compresses ~8× — covers ~100+ blocks before this backstop trips.
+const MAX_SHARE_BYTES = 30000;
 
 interface HeaderData {
     naam: boolean;
@@ -201,10 +205,10 @@ export function renamePreset(id: string, name: string): void {
 export function encodeShareLink(state: SerialisableState, opts: { template?: boolean } = {}): string | null {
     try {
         const json = JSON.stringify(buildPayload(state, opts.template ? 'template' : 'full'));
-        // encodeURIComponent first so non-ASCII titles survive btoa's latin-1 restriction.
-        const b64 = btoa(encodeURIComponent(json));
-        if (b64.length > MAX_SHARE_BYTES) return null;
-        return `${location.origin}${location.pathname}#share=${b64}`;
+        // LZ-compress to URL-safe text — repetitive worksheet JSON shrinks ~8×.
+        const data = compressToEncodedURIComponent(json);
+        if (data.length > MAX_SHARE_BYTES) return null;
+        return `${location.origin}${location.pathname}#share=${data}`;
     } catch { return null; }
 }
 
@@ -212,7 +216,9 @@ export function decodeShareHash(hash: string): WorksheetFile | null {
     const m = /^#share=(.+)$/.exec(hash);
     if (!m) return null;
     try {
-        const json = decodeURIComponent(atob(m[1]));
+        // Old base64 links are intentionally not supported (alpha, links ephemeral).
+        const json = decompressFromEncodedURIComponent(m[1]);
+        if (!json) return null;
         return parseWorksheetFile(json);
     } catch { return null; }
 }

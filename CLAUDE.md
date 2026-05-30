@@ -26,7 +26,11 @@ Most recent entry goes at the top, below the `---` divider. Do this before the f
 
 ## What this is
 
-Dutch primary-school **worksheet generator**. Teachers compose math exercise blocks, preview them on a virtual A4 sheet, and export to PDF. UI is in Dutch.
+Dutch primary-school **worksheet generator**. Teachers compose math exercise blocks, preview them on a virtual A4 sheet, and export via the browser print dialog (Save as PDF). UI is in Dutch.
+
+> See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system map (data flow, the
+> add-a-type wiring contract, generator contract, per-type registry table). Keep
+> both files in sync.
 
 ---
 
@@ -50,15 +54,17 @@ src/
 ├── store/
 │   └── useWorksheetStore.tsx      # Single Zustand store, undo/redo, all state
 ├── hooks/
-│   └── usePrint.ts                # Browser print / PDF export trigger
+│   └── usePrint.ts                # Browser print trigger (window.print + dynamic @page)
 ├── styles/
 │   └── appStyles.ts               # CSS-in-JS inline styles for layout
 ├── services/
+│   ├── generateDispatch.ts        # typeId → generator → store-setter map (single source)
+│   ├── persistence.ts             # Autosave / presets / share-link / file import-export
 │   ├── math/
 │   │   ├── types.ts               # All interfaces: MathBlock, Equation, Fraction, etc.
 │   │   ├── mathEngine.ts          # Addition/subtraction/multiplication/division generator
 │   │   ├── formatters.ts          # Number display helpers (decimals, thousands separator)
-│   │   └── validators.ts          # Input validation helpers
+│   │   └── validators.ts          # (currently empty)
 │   ├── clock/
 │   │   ├── clockTypes.ts          # Time categories, Dutch time text formatting
 │   │   └── clockGenerator.ts      # Clock exercise generator
@@ -68,16 +74,28 @@ src/
 │   │   └── splitsenGenerator.ts   # Decomposition (splitsen) exercise generator
 │   ├── cijferen/
 │   │   └── cijferGenerator.ts     # Column arithmetic generator
-│   └── geld/
-│       └── geldGenerator.ts       # Money exercise generator
+│   ├── geld/
+│   │   └── geldGenerator.ts       # Money: herkennen/tekenen + wissel + teruggeven (3 exports)
+│   └── mab/
+│       └── mabGenerator.ts        # MAB (Dienes place-value blocks) generator
+├── config/
+│   ├── appstructure.ts            # APP_STRUCTURE tree (above)
+│   ├── exerciseRegistry.ts        # REGISTRY: typeId → generator/field/defaults (pure data)
+│   ├── exerciseUI.tsx             # EXERCISE_UI: typeId → Viewer/Config (React)
+│   └── version.ts                 # RELEASE_VERSION / RELEASE_SUMMARY for the "Nieuw" banner
 └── components/
     ├── layout/
     │   ├── sidebar.tsx            # Left panel: APP_STRUCTURE tree nav
-    │   └── TopBar.tsx             # Print/export buttons
+    │   ├── TopBar.tsx             # Print / generate-all / presets / share / theme / solutions
+    │   ├── AlphaPopup.tsx         # One-time alpha warning
+    │   ├── HelpModal.tsx          # Sectioned usage guide
+    │   └── PresetModal.tsx        # Save/load/delete named presets
+    ├── ui/
+    │   └── IconButton.tsx         # Shared icon button (block controls)
     ├── configurator/
     │   ├── Inspector.tsx          # Right panel: routes to doc or block config
     │   ├── sharedPluginStyles.ts  # Shared button/input styles for config plugins
-    │   └── plugins/               # One *Config.tsx per exercise type
+    │   └── plugins/               # One *Config.tsx per exercise family
     │       ├── AdditionConfig.tsx
     │       ├── SubtractionConfig.tsx
     │       ├── MultiplicationConfig.tsx
@@ -87,6 +105,9 @@ src/
     │       ├── CijferConfig.tsx
     │       ├── SplitsenConfig.tsx
     │       ├── GeldConfig.tsx
+    │       ├── GeldWisselConfig.tsx
+    │       ├── GeldTeruggevenConfig.tsx
+    │       ├── MabConfig.tsx
     │       ├── addition/          # Sub-configs per number type
     │       │   ├── NaturalSettings.tsx
     │       │   ├── DecimalSettings.tsx
@@ -95,7 +116,7 @@ src/
     │           ├── NaturalSettings.tsx
     │           ├── DecimalSettings.tsx
     │           └── RationalSettings.tsx
-    └── viewer/                    # HTML preview renderers (one per exercise type)
+    └── viewer/                    # HTML preview renderers (one per exercise family)
         ├── MathBlockRenderer.tsx  # Standard equations (inline / stepped layout)
         ├── ClockExerciseItem.tsx  # Single clock exercise display
         ├── AnalogClockSVG.tsx     # SVG clock face (preview only)
@@ -104,7 +125,14 @@ src/
         ├── SplitsenViewer.tsx     # Decomposition pair boxes
         ├── CijferViewer.tsx       # Column arithmetic grid
         ├── GeldViewer.tsx         # Money recognition coins/bills
-        └── GeldTekenenViewer.tsx  # Money drawing exercises
+        ├── GeldTekenenViewer.tsx  # Money drawing exercises
+        ├── GeldWisselViewer.tsx   # Money exchange exercises
+        ├── GeldTeruggevenViewer.tsx # Money change-making exercises
+        ├── ClockViewer.tsx        # Clock grid wrapper (maps to ClockExerciseItem)
+        ├── FractionViewer.tsx     # Fraction grid wrapper (maps to FractionExerciseItem)
+        ├── MabViewer.tsx          # MAB blocks (mode derived from typeId)
+        ├── MabBlocksSVG.tsx       # SVG Dienes blocks (symbolic / bw / color)
+        └── FragmentableGrid.tsx   # row-chunked grid so items flow across print page breaks
 ```
 
 ---
@@ -137,11 +165,15 @@ User clicks exercise in Sidebar
 User adjusts settings in Inspector
   → updateBlockSettings(id, { constraints: {...} })   [store]
 User clicks "Genereer"
-  → Inspector dispatches to correct generator service
-  → generator reads block.constraints, returns typed exercise array
-  → set*Exercises(id, exercises[])   [store]
-  → viewer component re-renders with new data
+  → regenerateBlock(block, setExercises)   [generateDispatch.ts]
+  → REGISTRY[typeId].generate(block) → exercise array
+  → setExercises(id, REGISTRY[typeId].exerciseField, array)   [store, generic]
+  → EXERCISE_UI[typeId].Viewer re-renders with new data
 ```
+
+Both the per-block "Genereer" (Inspector) and "Genereer alles" (TopBar) route
+through `regenerateBlock` in [generateDispatch.ts](src/services/generateDispatch.ts),
+which looks the type up in the registry ([exerciseRegistry.ts](src/config/exerciseRegistry.ts)).
 
 ---
 
@@ -156,10 +188,13 @@ Single Zustand store. Everything is in memory (no persistence). Key slices:
 | `header` | `HeaderData` | Naam/klas/nummer/datum toggles + title |
 | `footer` | `FooterData` | School/klas/leerkracht/pagina toggles + values |
 | `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers |
-| `showSolutions` | `boolean` | Toggles red solution overlay in preview and PDF |
+| `showSolutions` | `boolean` | Toggles red solution overlay in preview and print |
+| `theme` | `'dark' \| 'light' \| 'colorblind'` | Persisted to localStorage, applied as `data-theme` on `<html>` |
 | `_history` / `_historyIndex` | `MathBlock[][]` / `number` | Undo/redo stack, max 50 snapshots |
 
-Every mutation that changes `blocks` calls `pushHistory` to snapshot the new state. `updateHeader`, `updateFooter`, `updateDocSettings`, `setShowSolutions` do **not** push history.
+Every mutation that changes `blocks` calls `pushHistory` to snapshot the new state. `updateHeader`, `updateFooter`, `updateDocSettings`, `setShowSolutions`, `setTheme`, `toggleBlockLock` do **not** push history. Generated exercises are written by one generic action `setExercises(id, field, data)` (field = the registry's `exerciseField`), not a setter per type.
+
+A store subscription auto-saves the worksheet to localStorage (1.5 s debounce) — see [persistence.ts](src/services/persistence.ts).
 
 `MathBlock.constraints` is typed as `any` — a loose bag of options read differently by each generator. Default constraints per block type are set in `addBlockFromType`.
 
@@ -180,6 +215,11 @@ All types defined in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.
 | `cijferen` | `cijferExercises: CijferExercise[]` | `cijferGenerator.ts` | `CijferViewer` |
 | `geld-herkennen` | `geldExercises: GeldExercise[]` | `geldGenerator.ts` | `GeldViewer` |
 | `geld-tekenen` | `geldExercises: GeldExercise[]` | `geldGenerator.ts` | `GeldTekenenViewer` |
+| `geld-wissel` | `geldWisselExercises: GeldWisselExercise[]` | `geldGenerator.ts` | `GeldWisselViewer` |
+| `geld-teruggeven` | `geldTeruggevenExercises: GeldTeruggevenExercise[]` | `geldGenerator.ts` | `GeldTeruggevenViewer` |
+| `mab-herkennen`, `mab-tekenen` | `mabExercises: MabExercise[]` | `mabGenerator.ts` | `MabViewer` |
+
+Placeholder leaves in `appstructure.ts` (`placeholder: true` / `typeId: '__placeholder__'`) are **not implemented** — they show as greyed tree entries only. See the full per-typeId registry table in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -197,16 +237,18 @@ The "Genereer" button in Inspector dispatches to the right generator based on `b
 
 ## Adding a new exercise type
 
-1. Add types to [src/services/math/types.ts](src/services/math/types.ts)
-2. Create generator at `src/services/[type]/[type]Generator.ts`
-3. Add the exercise array field to `MathBlock` in `types.ts`
-4. Create viewer at `src/components/viewer/[Type]Viewer.tsx`
-5. Create config plugin at `src/components/configurator/plugins/[Type]Config.tsx`
-6. Register in `Inspector.tsx`: add to generator dispatch + plugin mount logic
-7. Register in `App.tsx`: add viewer to block routing
-8. Add to `APP_STRUCTURE` in `appstructure.ts` with `typeId` + `defaultConstraints`
-9. Add default constraints to `addBlockFromType` in `useWorksheetStore.tsx`
-10. Mirror rendering in [WorksheetPDF.tsx](src/components/pdf/WorksheetPDF.tsx) using react-pdf primitives
+Types are declared in a **central registry** keyed by exact `typeId`:
+[exerciseRegistry.ts](src/config/exerciseRegistry.ts) (pure data — generator,
+field, defaults) + [exerciseUI.tsx](src/config/exerciseUI.tsx) (Viewer + Config).
+Dispatch / Inspector / App / `addBlockFromType` are registry lookups, **not**
+if-else branches. Don't add `typeId ===` branches. See [ARCHITECTURE.md](ARCHITECTURE.md) §5.
+
+1. Add the exercise interface + its array field to `MathBlock` in [src/services/math/types.ts](src/services/math/types.ts) (optionally a `[Type]Constraints` interface)
+2. Create generator at `src/services/[type]/[type]Generator.ts` (returns `[Type]Exercise[]`)
+3. Create viewer at `src/components/viewer/[Type]Viewer.tsx` taking uniform `{ block, showSolutions }`
+4. Create config plugin at `src/components/configurator/plugins/[Type]Config.tsx` taking `{ block }`
+5. Add **one row** to `REGISTRY` in `exerciseRegistry.ts` and **one row** to `EXERCISE_UI` in `exerciseUI.tsx` (same `typeId` key)
+6. Add to `APP_STRUCTURE` in `appstructure.ts` with `typeId` + optional `defaultConstraints` (merged on top of registry defaults)
 
 ---
 
@@ -230,20 +272,38 @@ Each `*Config` component in [src/components/configurator/plugins/](src/component
 
 ---
 
-## PDF export — [WorksheetPDF.tsx](src/components/pdf/WorksheetPDF.tsx)
+## Print / PDF export
 
-Uses `@react-pdf/renderer`. Receives the same props as the preview (`blocks`, `headerData`, `footerData`, `showSolutions`, `docSettings`) and mirrors all rendering logic using `react-pdf` primitives (`View`, `Text`, `Svg`, `Line`, `Rect`, `Path`, `Circle`) instead of HTML/CSS.
+**There is no react-pdf / `WorksheetPDF.tsx`** (it was removed). Export is the
+browser print dialog → Save as PDF — the on-screen preview *is* what prints.
 
-**Critical rules when editing rendering logic:**
-- Any visual change to the preview (`App.tsx`) must be mirrored in `WorksheetPDF.tsx`, and vice versa. They are parallel — not shared.
-- Fonts are loaded via `Font.register` at module load from `@fontsource` WOFF files (imported with `?url`). Do not use `.ttf` paths here.
-- The analog clock SVG is hand-drawn in both files independently (`AnalogClockSVG.tsx` for preview, `renderAnalogClockPDF` inside `WorksheetPDF.tsx` for PDF).
-- 1-column layouts (`inline-long`, `stepped`) use `wrap={false}` on each exercise `View` to prevent page-break mid-exercise.
-- Footer uses `fixed` prop so it appears on every PDF page.
-- Solution color is `#e11d48` (red) throughout — `S.sol` style in the PDF stylesheet.
-- The PDF stylesheet (`S`) is a `StyleSheet.create({})` object at the bottom of the file — `react-pdf` does not accept arbitrary CSS, only its own subset.
+- [usePrint.ts](src/hooks/usePrint.ts) — `handlePrint(withSolutions)` deselects the
+  active block, optionally flips `showSolutions`, injects a dynamic style that blanks
+  the browser's header/footer margin boxes, then calls `window.print()`.
+- **The A4 card is a real `<table>`** (`.print-area`), wrapped in `.print-area-shell`
+  (the screen card + `a4Ref`). Chrome only repeats `<thead>`/`<tfoot>` across pages
+  for *real* table markup, so `thead.print-thead` carries the top margin (+ optional
+  repeating Naam/Klas strip via `header.repeatHeader`) and `tfoot.print-tfoot` carries
+  the footer (school/klas/leerkracht left, vrije tekst right) — both repeat every page
+  and reserve height, so nothing overlaps. **No page number** (Chrome can't count pages
+  from HTML/CSS). On screen the table is flattened to block flow.
+- **`@page { margin: 0 }`** on purpose: the dialog's "Margins: None" overrides `@page`
+  margins, so all margins come from the table groups (thead height, `.print-body-cell`
+  16mm side padding, tfoot height) instead — dialog-proof.
+- **[FragmentableGrid](src/components/viewer/FragmentableGrid.tsx)** — multi-item
+  viewers route items through it (block stack of per-row grids, each row
+  `.print-row` = `break-inside:avoid`). A single CSS grid does NOT fragment across
+  pages in Chrome; this lets exercises flow across page breaks. `.print-exercise`
+  (and `.print-row`) never split mid-item; `.print-block.page-break-before` forces a
+  fresh page; `.print-opdracht` never orphans the instruction line.
+- Page-break indicators (screen only) draw every `PAGE_H = 1044px` (A4 @ 96dpi) in
+  [App.tsx](src/App.tsx).
 
-Fonts (Roboto, Roboto Mono) are also available as `.ttf` assets in [src/assets/fonts/](src/assets/fonts/) (used only by the HTML preview via CSS `@font-face`, not by the PDF).
+**SYNC rule:** there's no separate PDF file to mirror, but any viewer change must
+still print correctly — verify the print CSS classes above still apply, and that
+multi-item viewers go through `FragmentableGrid`.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) §9–10 for print + persistence/sharing detail.
 
 ---
 
@@ -279,7 +339,7 @@ interface ClockExercise {
 // Fraction visual exercise
 interface FractionExercise {
   id: string;
-  subType: 'kleuren' | 'herkennen' | 'hoeveelheid' | 'hoeveelheid-rechthoek' | 'lijnstuk' | 'veelhoek';
+  subType: 'kleuren' | 'herkennen' | 'hoeveelheid' | 'hoeveelheid-rechthoek' | 'hoeveelheid-abstract' | 'lijnstuk' | 'veelhoek';
   numerator: number; denominator: number;
   shape?: 'rectangle' | 'circle';
   coloredIndices?: number[];
@@ -329,14 +389,22 @@ interface MathBlock {
   totalPoints: number;
   verticalSpacing: number;
   constraints: any;            // loose bag — see each generator for expected keys
+  locked?: boolean;            // locked blocks are skipped by "Genereer alles"
   exercises: Equation[];
   clockExercises?: ClockExercise[];
   fractionExercises?: FractionExercise[];
   splitsenExercises?: SplitsenExercise[];
   cijferExercises?: CijferExercise[];
   geldExercises?: GeldExercise[];
+  geldWisselExercises?: GeldWisselExercise[];
+  geldTeruggevenExercises?: GeldTeruggevenExercise[];
+  mabExercises?: MabExercise[];
 }
 ```
+
+> The full set of exercise interfaces (incl. `GeldWisselExercise`,
+> `GeldTeruggevenExercise`, `MabExercise`, `CijferConstraints`) lives in
+> [types.ts](src/services/math/types.ts); see [ARCHITECTURE.md](ARCHITECTURE.md) §4.
 
 ---
 
@@ -359,9 +427,9 @@ Comment the **WHY**, not the WHAT. Well-named identifiers already describe what 
    - Example: `// 1044px = A4 height at 96dpi screen resolution`
    - Example: `// MAX_ATTEMPTS = 20000 prevents infinite loop when constraints are over-restrictive`
 
-5. **Parallel logic** — mark code that must stay in sync with its twin in the other file.
-   - Example: `// SYNC: mirror this change in WorksheetPDF.tsx renderAnalogClockPDF()`
-   - This applies to anything in both `App.tsx` viewer components and `WorksheetPDF.tsx`
+5. **Parallel logic** — mark code that must stay in sync with its twin elsewhere.
+   - Example: `// SYNC: keep MabViewer.tsx and MabBlocksSVG.tsx block sizing aligned`
+   - Applies to any logic duplicated across files (e.g. a viewer and its SVG helper).
 
 6. **No comment needed for:** standard React hooks usage, obvious state setters, self-explanatory JSX structure, imported library calls where the function name is clear.
 

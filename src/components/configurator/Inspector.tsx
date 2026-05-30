@@ -1,18 +1,7 @@
 import { useState } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
-import AdditionConfig from './plugins/AdditionConfig';
-import SubtractionConfig from './plugins/SubtractionConfig';
-import MultiplicationConfig from './plugins/MultiplicationConfig';
-import DivisionConfig from './plugins/DivisionConfig';
-import ClockConfig from './plugins/ClockConfig';
-import FractionConfig from './plugins/FractionConfig';
-import SplitsenConfig from './plugins/SplitsenConfig';
-import CijferConfig from './plugins/CijferConfig';
-import GeldConfig from './plugins/GeldConfig';
-import GeldWisselConfig from './plugins/GeldWisselConfig';
-import GeldTeruggevenConfig from './plugins/GeldTeruggevenConfig';
-import MabConfig from './plugins/MabConfig';
+import { EXERCISE_UI } from '../../config/exerciseUI';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../services/geld/geldGenerator';
 import { regenerateBlock } from '../../services/generateDispatch';
 
@@ -43,23 +32,11 @@ export default function Inspector() {
     const updateBlockInstruction = useWorksheetStore((state) => state.updateBlockInstruction);
     const updateBlockLayout = useWorksheetStore((state) => state.updateBlockLayout);
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const setBlockExercises = useWorksheetStore((state) => state.setBlockExercises);
-    const setClockExercises = useWorksheetStore((state) => state.setClockExercises);
-    const setFractionExercises = useWorksheetStore((state) => state.setFractionExercises);
-    const setSplitsenExercises = useWorksheetStore((state) => state.setSplitsenExercises);
-    const setCijferExercises = useWorksheetStore((state) => state.setCijferExercises);
-    const setGeldExercises = useWorksheetStore((state) => state.setGeldExercises);
-    const setGeldWisselExercises = useWorksheetStore((state) => state.setGeldWisselExercises);
-    const setGeldTeruggevenExercises = useWorksheetStore((state) => state.setGeldTeruggevenExercises);
-    const setMabExercises = useWorksheetStore((state) => state.setMabExercises);
+    const setExercises = useWorksheetStore((state) => state.setExercises);
 
     const handleGenerate = () => {
         if (!activeBlock) return;
-        regenerateBlock(activeBlock, {
-            setBlockExercises, setClockExercises, setFractionExercises, setSplitsenExercises,
-            setCijferExercises, setGeldExercises, setGeldWisselExercises, setGeldTeruggevenExercises,
-            setMabExercises,
-        });
+        regenerateBlock(activeBlock, setExercises);
     };
 
     // No block selected or document → document settings
@@ -106,6 +83,12 @@ export default function Inspector() {
                         <input type="range" min="0" max="60" step="2"
                             value={docSettings.headerContentGap ?? 12}
                             onChange={(e) => updateDocSettings({ headerContentGap: Number(e.target.value) })}
+                            style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+
+                        <label style={{ ...S.label, marginTop: '12px' }}>Ruimte tussen oefenreeksen: {docSettings.blockSpacing ?? 12}px</label>
+                        <input type="range" min="4" max="48" step="2"
+                            value={docSettings.blockSpacing ?? 12}
+                            onChange={(e) => updateDocSettings({ blockSpacing: Number(e.target.value) })}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
 
                         <label style={{ ...S.label, marginTop: '12px' }}>Koptekst velden</label>
@@ -175,6 +158,12 @@ export default function Inspector() {
                                 </div>
                             );
                         })()}
+
+                        <label style={{ ...S.checkboxLabel, marginTop: '12px' }}>
+                            <input type="checkbox" checked={!!headerData.repeatHeader} onChange={(e) => updateHeader({ repeatHeader: e.target.checked })} style={S.checkbox} />
+                            Koptekst op elke pagina herhalen
+                        </label>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '2px 0 0 24px' }}>Enkel bij afdrukken: de naamvelden komen bovenaan elke pagina.</p>
                     </div>
                 </div>
 
@@ -212,15 +201,10 @@ export default function Inspector() {
                             {footerData.showLeerkracht && <input style={{ ...S.input, marginBottom: '4px' }} value={footerData.leerkracht || ''} onChange={(e) => updateFooter({ leerkracht: e.target.value })} placeholder="Bv. Meester Ruben" />}
                         </div>
 
-                        <label style={{ ...S.footerGroupLabel, marginTop: '10px' }}>Centraal</label>
+                        <label style={{ ...S.footerGroupLabel, marginTop: '10px' }}>Rechts</label>
                         <div style={{ paddingLeft: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <label style={S.checkboxLabel}><input type="checkbox" checked={footerData.showCenterText} onChange={(e) => updateFooter({ showCenterText: e.target.checked })} style={S.checkbox} /> Vrije tekst</label>
-                            {footerData.showCenterText && <input style={S.input} value={footerData.centerText || ''} onChange={(e) => updateFooter({ centerText: e.target.value })} placeholder="Centrale voettekst" />}
-                        </div>
-
-                        <label style={{ ...S.footerGroupLabel, marginTop: '10px' }}>Rechts</label>
-                        <div style={{ paddingLeft: '8px' }}>
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={footerData.showPagina} onChange={(e) => updateFooter({ showPagina: e.target.checked })} style={S.checkbox} /> Paginanummering</label>
+                            {footerData.showCenterText && <input style={S.input} value={footerData.centerText || ''} onChange={(e) => updateFooter({ centerText: e.target.value })} placeholder="Voettekst rechts" />}
                         </div>
                     </div>
                 </div>
@@ -290,18 +274,11 @@ export default function Inspector() {
                     <button onClick={handleGenerate} style={S.generateBtn}>✨ Genereer</button>
                 </div>
                 <div style={S.engineBody}>
-                    {activeBlock.typeId.includes('optellen') && !activeBlock.typeId.startsWith('cijferen-') && <AdditionConfig block={activeBlock} />}
-                    {activeBlock.typeId.includes('aftrekken') && !activeBlock.typeId.startsWith('cijferen-') && <SubtractionConfig block={activeBlock} />}
-                    {activeBlock.typeId.includes('vermenigvuldigen') && !activeBlock.typeId.startsWith('cijferen-') && <MultiplicationConfig block={activeBlock} />}
-                    {activeBlock.typeId.includes('delen') && !activeBlock.typeId.startsWith('cijferen-') && <DivisionConfig block={activeBlock} />}
-                    {activeBlock.typeId.startsWith('klok-') && <ClockConfig block={activeBlock} />}
-                    {activeBlock.typeId === 'breuken' && <FractionConfig block={activeBlock} />}
-                    {activeBlock.typeId === 'splitsen' && <SplitsenConfig block={activeBlock} />}
-                    {activeBlock.typeId.startsWith('cijferen-') && <CijferConfig block={activeBlock} />}
-                    {(activeBlock.typeId === 'geld-herkennen' || activeBlock.typeId === 'geld-tekenen') && <GeldConfig block={activeBlock} />}
-                    {activeBlock.typeId === 'geld-wissel' && <GeldWisselConfig block={activeBlock} />}
-                    {activeBlock.typeId === 'geld-teruggeven' && <GeldTeruggevenConfig block={activeBlock} />}
-                    {(activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen') && <MabConfig block={activeBlock} />}
+                    {(() => {
+                        // Registry decides which config plugin this typeId mounts.
+                        const Config = EXERCISE_UI[activeBlock.typeId]?.Config;
+                        return Config ? <Config block={activeBlock} /> : null;
+                    })()}
                 </div>
             </div>
 

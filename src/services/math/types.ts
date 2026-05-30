@@ -1,6 +1,6 @@
 export type ConstraintType = 'FREE' | 'REQUIRED' | 'FORBIDDEN';
 
-export const isFraction = (val: any): val is Fraction =>
+export const isFraction = (val: unknown): val is Fraction =>
     typeof val === 'object' && val !== null && 'n' in val && 'd' in val;
 
 export interface BridgeConstraints {
@@ -71,6 +71,7 @@ export interface MathBlock {
     id: string;
     typeId: string;
     locked?: boolean;
+    pageBreakBefore?: boolean;   // force this set to start on a new printed page
     instructionText: string;
     layoutPreset: LayoutPreset;
     instructionMode: 'geen' | 'mag' | 'moet' | 'plus' | 'aangepast';
@@ -78,6 +79,9 @@ export interface MathBlock {
     steppedLines: number;
     numberOfExercises: number;
     totalPoints: number;
+    // Intentionally `any`: a loose per-type bag read differently by each generator
+    // (see ARCHITECTURE.md §6). Typing it would cascade casts across every plugin.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constraints: any;
     exercises: Equation[];
     clockExercises?: ClockExercise[];
@@ -188,4 +192,119 @@ export interface MabExercise {
     tens: number;
     units: number;
     isManuallyEdited: boolean;
+}
+
+// ── Per-family constraint shapes ─────────────────────────────────────────────
+// MathBlock.constraints stays `any` (blocks are heterogeneous); these interfaces
+// type the registry's default-constraint factories and let config plugins cast.
+// They describe the DEFAULT key set per family — generators may read extra
+// optional keys, so all are loose supersets, not exhaustive contracts.
+
+type PlaceMask = Record<string, boolean>;
+type NumberType = 'natural' | 'decimal' | 'rational';
+
+// Mental-math: optellen / aftrekken (mathEngine addition/subtraction).
+export interface AddSubConstraints {
+    numberType: NumberType;
+    decimalPlaces: number;
+    maxGetal: number;
+    bridges: Record<string, ConstraintType>;
+    operand1Mask: PlaceMask;
+    operand2Mask: PlaceMask;
+    equationType?: 'normal' | 'puntoefening';
+    // Rational (fraction) sub-settings.
+    fractionDifficulty?: string;
+    mixedNumber1?: boolean;
+    mixedNumber2?: boolean;
+    maxNumerator1?: number;
+    maxDenominator1?: number;
+    maxNumerator2?: number;
+    maxDenominator2?: number;
+    linkFractions?: boolean;
+}
+
+// Mental-math: vermenigvuldigen / delen (mathEngine multiplication/division).
+export interface MulDivConstraints extends AddSubConstraints {
+    multiplicationMode?: 'tafels' | 'vrij';
+    selectedTables?: number[];
+    tableLimit?: number;
+    fractionMultMode?: string;
+    fractionOrderMode?: string;
+    divisionLevel?: number;
+    metRestLevel?: number;
+}
+
+export interface ClockConstraints {
+    clockType: 'analoog' | 'digitaal';
+    exerciseMode: string;
+    is24hour: boolean;
+    timeTypes: string[];
+    minuteDirection: string;
+    handChoice: string;
+}
+
+export interface FractionConstraints {
+    subType: FractionSubType;
+    shape: FractionShape;
+    minDenominator: number;
+    maxDenominator: number;
+    answerFormat: string;
+    objectShape: 'circle' | 'square';
+    maxTotal: number;
+    minLineLength: number;
+    maxLineLength: number;
+    level: number;
+    answerMode: string;
+    maxDimension: number;
+    maxAbstractN3: number;
+}
+
+export interface SplitsenConstraints {
+    maxGetal: number;
+    operand1Mask: PlaceMask;
+    operand2Mask: PlaceMask;
+    fixedTotal: number | null;
+    layout: string;
+    rowsPerBox: number;
+    rowHeight: number;
+}
+
+export interface GeldConstraints {
+    maxGetal: number;
+    format: string;
+    scaffolding: string;
+    geldLayout: 'samen' | 'gescheiden';
+    showVoorbeelden: boolean;
+    voorbeeldTypes: number[];
+    exercisesPerRow: number | null;
+    allowedDenominations: number[];
+    boxHeight: number;
+}
+
+export interface GeldWisselConstraints {
+    exerciseBills: number[];
+    exercisesPerRow: number;
+    boxHeight: number;
+}
+
+export interface GeldTeruggevenConstraints {
+    minPriceEuros: number;
+    maxPriceEuros: number;
+    payWithOptions: number[];
+    centenDeel: string;
+    scaffolding: string;
+    antwoordType: string;
+    antwoordFormat: string;
+    betalenMetTekening: boolean;
+    boxHeight: number;
+}
+
+export interface MabConstraints {
+    mabStyle: MabStyle;
+    maxNumber: number;
+    operand1Mask: PlaceMask;
+    scaffolding: MabScaffolding;
+    exercisesPerRow: number;
+    boxHeight: number;
+    answerHeight: number;
 }

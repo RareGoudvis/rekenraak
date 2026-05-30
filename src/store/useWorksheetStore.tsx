@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { MathBlock, Equation, ClockExercise, FractionExercise, SplitsenExercise, CijferExercise, GeldExercise, GeldWisselExercise, GeldTeruggevenExercise, MabExercise, FooterData, LayoutPreset } from '../services/math/types';
+import type { MathBlock, Equation, CijferExercise, FooterData, LayoutPreset } from '../services/math/types';
 import { regenerateBlock } from '../services/generateDispatch';
+import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave } from '../services/persistence';
 
 export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
@@ -13,6 +14,7 @@ export interface HeaderData {
     titel: string;
     fieldOrder?: HeaderField[];
     fieldWidths?: Record<HeaderField, number>;
+    repeatHeader?: boolean;   // print only: repeat the name fields strip at the top of every page
 }
 
 export const DEFAULT_FIELD_ORDER: HeaderField[] = ['naam', 'klas', 'nummer', 'datum'];
@@ -26,6 +28,7 @@ export interface DocSettings {
     titlePosition: 'left' | 'center' | 'right';
     titleFieldsGap: number;
     headerContentGap: number;
+    blockSpacing: number;   // vertical gap between exercise sets (blocks)
     numberBlocks: boolean;
 }
 
@@ -48,15 +51,9 @@ interface WorksheetState {
     updateBlockInstruction: (id: string, text: string) => void;
     updateBlockLayout: (id: string, layout: LayoutPreset, steppedLines?: number) => void;
     updateBlockSettings: (id: string, updates: Partial<MathBlock>) => void;
-    setBlockExercises: (id: string, exercises: Equation[]) => void;
-    setClockExercises: (id: string, exercises: ClockExercise[]) => void;
-    setFractionExercises: (id: string, exercises: FractionExercise[]) => void;
-    setSplitsenExercises: (id: string, exercises: SplitsenExercise[]) => void;
-    setCijferExercises: (id: string, exercises: CijferExercise[]) => void;
-    setGeldExercises: (id: string, exercises: GeldExercise[]) => void;
-    setGeldWisselExercises: (id: string, exercises: GeldWisselExercise[]) => void;
-    setGeldTeruggevenExercises: (id: string, exercises: GeldTeruggevenExercise[]) => void;
-    setMabExercises: (id: string, exercises: MabExercise[]) => void;
+    // Generic exercise setter: writes a generated array to the given MathBlock
+    // field (e.g. 'exercises', 'mabExercises'). Replaces the old per-type setters.
+    setExercises: (id: string, field: keyof MathBlock, data: unknown[]) => void;
     updateExercise: (blockId: string, exerciseId: string, updates: Partial<Equation>) => void;
     updateCijferExercise: (blockId: string, exerciseId: string, updates: Partial<CijferExercise>) => void;
     setActiveSelection: (id: string | 'document' | null) => void;
@@ -105,9 +102,9 @@ applyTheme(INITIAL_THEME);
 export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     blocks: [],
     activeBlockId: null,
-    header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS } },
+    header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
     footer: { school: '', klas: '', leerkracht: '', showSchool: true, showKlas: true, showLeerkracht: true, showPagina: true, centerText: '', showCenterText: false },
-    docSettings: { showScores: true, opdrachtTitelStyle: 'regular', showDividers: true, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, numberBlocks: false },
+    docSettings: { showScores: true, opdrachtTitelStyle: 'regular', showDividers: true, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: false },
     showSolutions: false,
     theme: INITIAL_THEME,
     _history: [[]],
@@ -126,117 +123,14 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     canUndo: () => get()._historyIndex > 0,
     canRedo: () => get()._historyIndex < get()._history.length - 1,
 
-    setFractionExercises: (id: string, exercises: FractionExercise[]) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, fractionExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setSplitsenExercises: (id: string, exercises: SplitsenExercise[]) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, splitsenExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setCijferExercises: (id: string, exercises: CijferExercise[]) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, cijferExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setGeldExercises: (id: string, exercises: GeldExercise[]) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, geldExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setGeldWisselExercises: (id: string, exercises: GeldWisselExercise[]) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, geldWisselExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setGeldTeruggevenExercises: (id: string, exercises: GeldTeruggevenExercise[]) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, geldTeruggevenExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setMabExercises: (id: string, exercises: MabExercise[]) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, mabExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
+    setExercises: (id, field, data) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, [field]: data } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
 
     addBlockFromType: (typeId, label, overrideConstraints) => set((state) => {
-        const isClockBlock = typeId.startsWith('klok-');
-        const isFractionBlock = typeId === 'breuken';
-        const isSplitsenBlock = typeId === 'splitsen';
-        const isCijferBlock = typeId.startsWith('cijferen-');
-        const isGeldBlock = typeId === 'geld-herkennen' || typeId === 'geld-tekenen';
-        const isGeldWissel = typeId === 'geld-wissel';
-        const isGeldTeruggeven = typeId === 'geld-teruggeven';
-        const isMabBlock = typeId === 'mab-herkennen' || typeId === 'mab-tekenen';
-        const defaultConstraints = isMabBlock ? {
-            mabStyle: 'symbolic' as 'symbolic' | 'realistic',
-            maxNumber: 100 as 10 | 20 | 100 | 1000,
-            operand1Mask: {} as Record<string, boolean>,
-            scaffolding: 'positietabel' as 'positietabel' | 'kader' | 'geen',
-            exercisesPerRow: 3,
-            boxHeight: 60,
-            answerHeight: 36,
-        } : isGeldBlock ? {
-            maxGetal: 10,
-            format: 'euros',
-            scaffolding: typeId === 'geld-tekenen' ? 'eenvoudig' : 'invullen',
-            geldLayout: 'samen' as 'samen' | 'gescheiden',
-            showVoorbeelden: false,
-            voorbeeldTypes: [] as number[],
-            exercisesPerRow: null as number | null,
-            allowedDenominations: [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5],
-            boxHeight: 80,
-        } : isGeldWissel ? {
-            exerciseBills: [500, 1000],
-            exercisesPerRow: 2,
-            boxHeight: 100,
-        } : isGeldTeruggeven ? {
-            minPriceEuros: 1,
-            maxPriceEuros: 49,
-            payWithOptions: [1000, 2000, 5000],
-            centenDeel: 'vijf',
-            scaffolding: 'ingevuld',
-            antwoordType: 'schrijven',
-            antwoordFormat: 'euro-cent',
-            betalenMetTekening: false,
-            boxHeight: 120,
-        } : isCijferBlock ? {
-            operator: '+',
-            numberType: 'natural',
-            maxRange: 1000,
-            decimalPlaces: 2,
-            withEstimation: false,
-            scaffolding: 3,
-            withRemainder: false,
-            numberOfTerms: 2,
-            gridCellSize: 25,
-            operand0Mask: {},
-            operand1Mask: {},
-            operand2Mask: {},
-            operand3Mask: {},
-            bridges: {},
-            extraCols: 0,
-            extraRows: 0,
-        } : isSplitsenBlock ? {
-            maxGetal: 10,
-            operand1Mask: {},
-            operand2Mask: {},
-            fixedTotal: null,
-            layout: 'basic',
-            rowsPerBox: 4,
-            rowHeight: 28,
-        } : isFractionBlock ? {
-            subType: 'kleuren',
-            shape: 'rectangle',
-            minDenominator: 2,
-            maxDenominator: 8,
-            answerFormat: 'fraction-questions',
-            objectShape: 'circle',
-            maxTotal: 20,
-            minLineLength: 4,
-            maxLineLength: 12,
-            level: 1,
-            answerMode: 'berekeningslijnen',
-            maxDimension: 6,
-            maxAbstractN3: 1000,
-        } : isClockBlock ? {
-            clockType: 'analoog',
-            exerciseMode: 'lezen',
-            is24hour: false,
-            timeTypes: ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor'],
-            minuteDirection: 'beide',
-            handChoice: 'beide',
-        } : {
-            numberType: 'natural', decimalPlaces: 2, maxGetal: 1000,
-            bridges: { E: 'FREE', T: 'FREE' },
-            operand1Mask: {}, operand2Mask: {},
-            fractionDifficulty: 'same',
-            mixedNumber1: false,
-            mixedNumber2: false,
-            maxNumerator1: 10,
-            maxDenominator1: 10,
-            maxNumerator2: 10,
-            maxDenominator2: 10,
-            linkFractions: true,
-            multiplicationMode: 'tafels',
-            selectedTables: [2, 3, 4, 5, 10],
-            tableLimit: 10
-        };
+        // All per-type defaults live in the registry. The appstructure leaf's
+        // defaultConstraints (e.g. { numberType:'decimal' }) arrive as
+        // overrideConstraints and are merged on top.
+        const def = REGISTRY[typeId];
+        const defaultConstraints = def ? def.defaultConstraints(typeId) : {};
 
         const newBlock: MathBlock = {
             id: Math.random().toString(36).substring(2, 9),
@@ -245,7 +139,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             instructionMode: 'geen',
             layoutPreset: 'inline-short',
             steppedLines: 3,
-            numberOfExercises: isFractionBlock ? 6 : isSplitsenBlock ? 5 : isCijferBlock ? 2 : isGeldBlock ? 6 : (isGeldWissel || isGeldTeruggeven) ? 4 : isMabBlock ? 6 : 10,
+            numberOfExercises: def ? def.defaultCount : 10,
             totalPoints: 5,
             verticalSpacing: 14,
             constraints: { ...defaultConstraints, ...overrideConstraints },
@@ -280,8 +174,6 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     updateBlockInstruction: (id, text) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, instructionText: text } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     updateBlockLayout: (id, layout, steppedLines) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, layoutPreset: layout, steppedLines: steppedLines ?? b.steppedLines } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     updateBlockSettings: (id, updates) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, ...updates } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setBlockExercises: (id, exercises) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setClockExercises: (id, exercises) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, clockExercises: exercises } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     updateExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, exercises: b.exercises.map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     updateCijferExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, cijferExercises: (b.cijferExercises || []).map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     setActiveSelection: (id) => set({ activeBlockId: id }),
@@ -296,23 +188,13 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         _historyIndex: 0,
     })),
     generateAllBlocks: () => {
-        // Loop over the current snapshot. Each setter call inside regenerateBlock
-        // schedules a set() that pushes history individually, so iteration over the
-        // pre-call snapshot is safe — we don't read state during the loop.
+        // Loop over the current snapshot. Each setExercises call inside
+        // regenerateBlock schedules a set() that pushes history individually, so
+        // iterating the pre-call snapshot is safe — we don't read state mid-loop.
         const state = get();
         for (const block of state.blocks) {
             if (block.locked) continue;
-            regenerateBlock(block, {
-                setBlockExercises: state.setBlockExercises,
-                setClockExercises: state.setClockExercises,
-                setFractionExercises: state.setFractionExercises,
-                setSplitsenExercises: state.setSplitsenExercises,
-                setCijferExercises: state.setCijferExercises,
-                setGeldExercises: state.setGeldExercises,
-                setGeldWisselExercises: state.setGeldWisselExercises,
-                setGeldTeruggevenExercises: state.setGeldTeruggevenExercises,
-                setMabExercises: state.setMabExercises,
-            });
+            regenerateBlock(block, state.setExercises);
         }
     },
     updateHeader: (updates) => set((state) => ({ header: { ...state.header, ...updates } })),

@@ -1,13 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const STORAGE_KEY = 'enderklas_alpha_seen_v1';
 
 export default function AlphaPopup() {
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-        if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
-    }, []);
+    // Lazy init reads localStorage once at mount — no effect needed.
+    const [visible, setVisible] = useState(() => !localStorage.getItem(STORAGE_KEY));
 
     const dismiss = () => {
         localStorage.setItem(STORAGE_KEY, '1');

@@ -14,7 +14,7 @@ export default function RationalSettings({ block }: Props) {
     } = block.constraints;
 
     // Helper om constraints te updaten
-    const updateConstraint = (updates: any) => {
+    const updateConstraint = (updates: Record<string, unknown>) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, ...updates } });
     };
 

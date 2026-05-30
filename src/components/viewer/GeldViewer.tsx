@@ -1,5 +1,6 @@
 import type { MathBlock, GeldExercise, GeldDenomination } from '../../services/math/types';
 import { DENOMINATION_CATALOGUE, formatAmount, denominationLabel } from '../../services/geld/geldGenerator';
+import FragmentableGrid from './FragmentableGrid';
 
 // ── SVG helpers (print-friendly: white fill, black outline, no colour) ────────
 
@@ -159,11 +160,15 @@ export default function GeldViewer({ block, showSolutions }: Props) {
             {showVoorbeelden && voorbeeldTypes.length > 0 && (
                 <VoorbeeldenBar allowedDenominations={allowedDenominations} voorbeeldTypes={voorbeeldTypes} />
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, 1fr)`, gap: `${gap}px`, alignItems: 'stretch' }}>
-                {exercises.map(ex => (
+            <FragmentableGrid
+                cols={perRow}
+                columnGap={gap}
+                rowGap={gap}
+                alignItems="stretch"
+                items={exercises.map(ex => (
                     <HerkennenCell key={ex.id} ex={ex} block={block} showSolutions={showSolutions} />
                 ))}
-            </div>
+            />
         </div>
     );
 }

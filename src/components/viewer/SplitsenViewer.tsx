@@ -1,4 +1,5 @@
 import type { MathBlock, SplitsenExercise } from '../../services/math/types';
+import FragmentableGrid from './FragmentableGrid';
 
 const fmt = (n: number): string =>
     String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -25,11 +26,14 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     if (layout === 'basic') {
         const cols = Math.min(exercises.length, 4);
         return (
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: `${gap}px`, width: '100%' }}>
-                {exercises.map(ex => (
+            <FragmentableGrid
+                cols={cols}
+                columnGap={gap}
+                rowGap={gap}
+                items={exercises.map(ex => (
                     <BasicBox key={ex.id} ex={ex} showSolutions={showSolutions} rowHeight={rowHeight} />
                 ))}
-            </div>
+            />
         );
     }
 
@@ -38,8 +42,11 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
             ex.pairs.map((p, i) => ({ ...p, total: ex.total, uid: `${ex.id}-${i}` }))
         );
         return (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: `${gap}px` }}>
-                {allItems.map(item => (
+            <FragmentableGrid
+                cols={2}
+                columnGap={gap}
+                rowGap={gap}
+                items={allItems.map(item => (
                     <MathematicRow
                         key={item.uid}
                         total={item.total}
@@ -48,7 +55,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
                         showSolutions={showSolutions}
                     />
                 ))}
-            </div>
+            />
         );
     }
 

@@ -10,9 +10,13 @@ export function usePrint() {
 
         const style = document.createElement('style');
         style.id = 'print-dynamic';
-        // Suppress browser-injected header (top) + footer (bottom). Chrome/Edge honour
-        // these margin-box rules; Firefox ignores them (user must uncheck in dialog).
-        style.textContent = `@page { @top-left { content: ""; } @top-center { content: ""; } @top-right { content: ""; } @bottom-left { content: ""; } @bottom-center { content: ""; } @bottom-right { content: ""; } }`;
+        // Blank the browser-injected header/footer boxes only. Chrome does NOT render
+        // @page margin-box `content`, so the actual footer is a fixed HTML bar
+        // (.print-footer-bar in index.css / App.tsx), not injected here.
+        style.textContent = `@page {
+            @top-left { content: ""; } @top-center { content: ""; } @top-right { content: ""; }
+            @bottom-left { content: ""; } @bottom-center { content: ""; } @bottom-right { content: ""; }
+        }`;
         document.head.appendChild(style);
 
         window.addEventListener('afterprint', () => {

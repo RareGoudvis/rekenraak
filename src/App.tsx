@@ -3,20 +3,11 @@ import { useWorksheetStore } from './store/useWorksheetStore';
 import Inspector from './components/configurator/Inspector';
 import Sidebar from './components/layout/sidebar';
 import TopBar from './components/layout/TopBar';
-import ClockExerciseItem from './components/viewer/ClockExerciseItem';
-import FractionExerciseItem from './components/viewer/FractionExerciseItem';
-import MathBlockRenderer from './components/viewer/MathBlockRenderer';
-import SplitsenViewer from './components/viewer/SplitsenViewer';
-import CijferViewer from './components/viewer/CijferViewer';
-import GeldViewer from './components/viewer/GeldViewer';
-import GeldTekenenViewer from './components/viewer/GeldTekenenViewer';
-import GeldWisselViewer from './components/viewer/GeldWisselViewer';
-import GeldTeruggevenViewer from './components/viewer/GeldTeruggevenViewer';
-import MabViewer from './components/viewer/MabViewer';
+import { EXERCISE_UI } from './config/exerciseUI';
 import AlphaPopup from './components/layout/AlphaPopup';
 import HelpModal from './components/layout/HelpModal';
 import IconButton from './components/ui/IconButton';
-import { ArrowUp, ArrowDown, Lock, Unlock, Copy, Trash2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, Lock, Unlock, Copy, Trash2, CornerDownRight } from 'lucide-react';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
 import { loadAutosave, clearAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
@@ -41,6 +32,7 @@ export default function App() {
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   const toggleBlockLock = useWorksheetStore((state) => state.toggleBlockLock);
   const duplicateBlock = useWorksheetStore((state) => state.duplicateBlock);
+  const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
   const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
 
   const [helpOpen, setHelpOpen] = useState(false);
@@ -66,6 +58,9 @@ export default function App() {
     // 2. Auto-save: only offer when current sheet is empty (fresh tab).
     const auto = loadAutosave();
     if (auto && useWorksheetStore.getState().blocks.length === 0) {
+      // Boot-time one-shot offer (runs once on mount) — not a render-driven update,
+      // so the cascading-render concern this rule guards against doesn't apply.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAutosaveOffer({ savedAt: auto.savedAt, titel: auto.payload.header?.titel || 'Naamloos' });
     }
     // 3. Release banner: shown until user dismisses this exact version.
@@ -107,6 +102,26 @@ export default function App() {
     setPageBreaks(breaks);
   }, [blocks, docSettings]);
 
+  // Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
+  // optional repeating print header (.print-repeat-fields). Null if no field is enabled.
+  const renderFields = (align: 'left' | 'right' = 'left') => {
+    const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
+    const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
+    const LABELS: Record<HeaderField, string> = { naam: 'Naam:', klas: 'Klas:', nummer: 'Nr:', datum: 'Datum:' };
+    const visibleFields = order.filter(f => headerData?.[f]);
+    if (visibleFields.length === 0) return null;
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', rowGap: '8px', width: '100%', justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
+        {visibleFields.map(f => (
+          <div key={f} style={{ display: 'flex', alignItems: 'flex-end', width: `${widths[f] ?? DEFAULT_FIELD_WIDTHS[f]}px` }}>
+            <span style={styles.sheetHeaderLabel}>{LABELS[f]}</span>
+            <div style={styles.sheetHeaderLine}></div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
     <div className="mobile-block">
@@ -142,49 +157,57 @@ export default function App() {
           </div>
         )}
 
-        <div ref={a4Ref} className="print-area" style={styles.a4Sheet}>
+        <div ref={a4Ref} className="print-area-shell" style={styles.a4Sheet}>
+          {/* Real <table> markup: Chrome only repeats <thead>/<tfoot> across printed pages
+              for true table elements, not for div-based display:table-*-group. */}
+          <table className={`print-area${headerData?.repeatHeader ? ' repeat-header' : ''}`}>
+          <thead className="print-thead" aria-hidden="true"><tr><td>
+            {/* spacer = top margin every page; name strip repeats when repeatHeader is on */}
+            <div className="print-thead-spacer" />
+            <div className="print-repeat-fields">{renderFields()}</div>
+          </td></tr></thead>
+          <tbody className="print-body"><tr><td className="print-body-cell">
           {/* ── HEADER ── */}
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', padding: '12px', borderRadius: '6px', boxSizing: 'border-box', border: docSettings.headerStyle === 'kader' ? '1.5px solid #000' : '1px solid transparent' }}>
             {(() => {
               const showScore = docSettings.showScores && totalScore > 0;
               const hasTitle = !!headerData?.titel;
               const gap = docSettings.titleFieldsGap ?? 16;
-              const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
-              const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
-              const LABELS: Record<HeaderField, string> = { naam: 'Naam:', klas: 'Klas:', nummer: 'Nr:', datum: 'Datum:' };
-              const visibleFields = order.filter(f => headerData?.[f]);
-              const fieldsRow = visibleFields.length > 0 ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', rowGap: '8px', width: '100%' }}>
-                  {visibleFields.map(f => (
-                    <div key={f} style={{ display: 'flex', alignItems: 'flex-end', width: `${widths[f] ?? DEFAULT_FIELD_WIDTHS[f]}px` }}>
-                      <span style={styles.sheetHeaderLabel}>{LABELS[f]}</span>
-                      <div style={styles.sheetHeaderLine}></div>
-                    </div>
-                  ))}
-                </div>
-              ) : null;
+              // Wrapped so print CSS can hide this page-1 copy when repeatHeader moves the strip to .print-thead.
+              // Fields align opposite the title: title-left → fields flush right, title-right → fields left.
+              const fieldsRowAligned = (align: 'left' | 'right') => {
+                const f = renderFields(align);
+                return f ? <div className="print-body-fields">{f}</div> : null;
+              };
               const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
                   {hasTitle && <h1 style={{ margin: 0, fontSize: '22px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: align }}>{headerData!.titel}</h1>}
                   {showScore && <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
                 </div>
               ) : null;
-              if (docSettings.titlePosition === 'right') return (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', columnGap: `${gap}px`, rowGap: '8px' }}>
-                  {fieldsRow && <div style={{ gridColumn: '1', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fieldsRow}</div>}
-                  {titleScore('right')}
-                </div>
-              );
-              if (docSettings.titlePosition === 'left') return (
-                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: `${gap}px`, rowGap: '8px' }}>
-                  {titleScore('left')}
-                  {fieldsRow && <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fieldsRow}</div>}
-                </div>
-              );
+              if (docSettings.titlePosition === 'right') {
+                const fr = fieldsRowAligned('left');
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', columnGap: `${gap}px`, rowGap: '8px' }}>
+                    {fr && <div style={{ gridColumn: '1', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fr}</div>}
+                    {titleScore('right')}
+                  </div>
+                );
+              }
+              if (docSettings.titlePosition === 'left') {
+                const fr = fieldsRowAligned('right');
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: `${gap}px`, rowGap: '8px' }}>
+                    {titleScore('left')}
+                    {fr && <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fr}</div>}
+                  </div>
+                );
+              }
               // center
+              const centerFields = fieldsRowAligned('left');
               return (
                 <>
-                  {fieldsRow && <div style={{ marginBottom: '8px' }}>{fieldsRow}</div>}
+                  {centerFields && <div style={{ marginBottom: '8px' }}>{centerFields}</div>}
                   {(hasTitle || showScore) && (
                     <div style={{
                       position: 'relative',
@@ -210,7 +233,7 @@ export default function App() {
               const isNotLastBlock = index < blocks.length - 1;
 
               return (
-                <div key={block.id} className="print-block" onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
+                <div key={block.id} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers, docSettings.blockSpacing ?? 12)}>
                   {isActive && (
                     <div className="no-print" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
                       <IconButton
@@ -221,6 +244,13 @@ export default function App() {
                         size={16}
                       />
                       <IconButton icon={Copy} label="Blok dupliceren" onClick={() => duplicateBlock(block.id)} size={16} />
+                      <IconButton
+                        icon={CornerDownRight}
+                        label={block.pageBreakBefore ? 'Begin niet op nieuwe pagina' : 'Begin op nieuwe pagina (bij afdrukken)'}
+                        onClick={() => updateBlockSettings(block.id, { pageBreakBefore: !block.pageBreakBefore })}
+                        variant={block.pageBreakBefore ? 'active' : 'neutral'}
+                        size={16}
+                      />
                       <IconButton icon={Trash2} label="Blok verwijderen" onClick={() => removeBlock(block.id)} variant="danger" size={16} />
                       {index > 0 && (
                         <IconButton icon={ArrowUp} label="Blok omhoog" onClick={() => moveBlockUp(block.id)} size={16} />
@@ -231,7 +261,11 @@ export default function App() {
                     </div>
                   )}
 
-                  <div style={{
+                  {block.pageBreakBefore && (
+                    <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'Azeret Mono, monospace', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>
+                  )}
+
+                  <div className="print-opdracht" style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
                     ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
@@ -253,70 +287,37 @@ export default function App() {
                     {docSettings.showScores && (block.totalPoints || 0) > 0 && <div style={styles.pointsText}>__ / {block.totalPoints}</div>}
                   </div>
 
-                  {block.typeId.startsWith('klok-') ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: `${block.verticalSpacing || 14}px` }}>
-                      {!block.clockExercises || block.clockExercises.length === 0
-                        ? <div className="no-print" style={styles.emptyStateText}>(Genereer oefeningen via het rechterpaneel)</div>
-                        : block.clockExercises.map((ex) => <ClockExerciseItem key={ex.id} ex={ex} block={block} showSolutions={showSolutions} />)
-                      }
-                    </div>
-                  ) : block.typeId === 'splitsen' ? (
-                    <SplitsenViewer block={block} showSolutions={showSolutions} />
-                  ) : block.typeId.startsWith('cijferen-') ? (
-                    <CijferViewer block={block} showSolutions={showSolutions} />
-                  ) : block.typeId === 'geld-herkennen' ? (
-                    <GeldViewer block={block} showSolutions={showSolutions} />
-                  ) : block.typeId === 'geld-tekenen' ? (
-                    <GeldTekenenViewer block={block} showSolutions={showSolutions} />
-                  ) : block.typeId === 'geld-wissel' ? (
-                    <GeldWisselViewer block={block} showSolutions={showSolutions} />
-                  ) : block.typeId === 'geld-teruggeven' ? (
-                    <GeldTeruggevenViewer block={block} showSolutions={showSolutions} />
-                  ) : (block.typeId === 'mab-herkennen' || block.typeId === 'mab-tekenen') ? (
-                    <MabViewer block={block} showSolutions={showSolutions} mode={block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen'} />
-                  ) : block.typeId === 'breuken' ? (() => {
-                    const subType = block.constraints.subType || 'kleuren';
-                    const answerFmt = block.constraints.answerFormat as string | undefined;
-                    const is1Col = subType === 'lijnstuk' || subType === 'veelhoek' || (subType === 'hoeveelheid' && answerFmt === 'met-breukvragen');
-                    const exList = block.fractionExercises || [];
-                    return (
-                      <div style={{ display: 'grid', gridTemplateColumns: is1Col ? '1fr' : '1fr 1fr', gap: `${block.verticalSpacing || 14}px` }}>
-                        {exList.length === 0
-                          ? <div className="no-print" style={styles.emptyStateText}>(Genereer oefeningen via het rechterpaneel)</div>
-                          : exList.map((ex) => (
-                              <div key={ex.id} className="print-exercise" style={{ display: 'flex', justifyContent: 'center', padding: '8px', boxSizing: 'border-box' }}>
-                                <FractionExerciseItem ex={ex} block={block} showSolutions={showSolutions} />
-                              </div>
-                            ))
-                        }
-                      </div>
-                    );
-                  })() : (
-                    <MathBlockRenderer block={block} showSolutions={showSolutions} />
-                  )}
+                  {(() => {
+                    // Registry decides which viewer renders this typeId.
+                    const Viewer = EXERCISE_UI[block.typeId]?.Viewer;
+                    return Viewer ? <Viewer block={block} showSolutions={showSolutions} /> : null;
+                  })()}
                 </div>
               );
             })}
           </div>
 
-          {/* ── PAGE BREAK INDICATORS ── */}
+          </td></tr></tbody>
+          {/* Print-only running footer (real <tfoot>): repeats every page + reserves its
+              height, so content can never overlap it. */}
+          <tfoot className="print-tfoot"><tr><td>
+            <div className="print-tfoot-inner">
+              <span>{[
+                footerData?.showSchool ? (footerData.school || 'School') : null,
+                footerData?.showKlas ? (footerData.klas || 'Klas') : null,
+                footerData?.showLeerkracht ? (footerData.leerkracht || 'Leerkracht') : null,
+              ].filter(Boolean).join(' | ')}</span>
+              <span>{footerData?.showCenterText ? footerData.centerText : ''}</span>
+            </div>
+          </td></tr></tfoot>
+          </table>
+
+          {/* ── PAGE BREAK INDICATORS ── (table siblings, anchored to the relative shell) */}
           {pageBreaks.map((y) => (
             <div key={y} className="no-print" style={{ position: 'absolute', top: `${y}px`, left: 0, right: 0, borderTop: '2px dashed rgba(220,38,38,0.55)', zIndex: 5, pointerEvents: 'none' }}>
               <span style={{ position: 'absolute', right: '12px', top: '-16px', fontSize: '10px', color: 'rgba(220,38,38,0.6)', fontFamily: 'Azeret Mono, monospace', letterSpacing: '0.5px', userSelect: 'none' }}>— paginaeinde —</span>
             </div>
           ))}
-        </div>
-
-        {/* PRINT FOOTER */}
-        <div className="print-footer-bar" style={{ fontFamily: "'Azeret Mono', monospace" }}>
-          <span>
-            {[
-              footerData?.showSchool     ? (footerData.school      || 'School')     : null,
-              footerData?.showKlas       ? (footerData.klas        || 'Klas')       : null,
-              footerData?.showLeerkracht ? (footerData.leerkracht  || 'Leerkracht') : null,
-            ].filter(Boolean).join(' | ')}
-          </span>
-          {footerData?.showPagina && <span>Pagina 1</span>}
         </div>
       </main>
 

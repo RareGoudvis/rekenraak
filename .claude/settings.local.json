@@ -1,7 +1,68 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(python3 -c \"import sys,json; lines=sys.stdin.read\\(\\).strip\\(\\).split\\('\\\\n'\\); [print\\(json.loads\\(l\\).get\\('content',''\\)[:500] if isinstance\\(json.loads\\(l\\).get\\('content',''\\),str\\) else ''\\) for l in lines[-20:] if l]\")",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git commit -m ' *)",
+      "Bash(Get-ChildItem -Recurse -Path \"c:\\\\Users\\\\ruben\\\\enderklas-v2\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Select-Object -Skip 1)",
+      "Bash(Sort-Object)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ruben\\\\enderklas-v2\\\\src\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell(ls -Recurse \"c:\\\\Users\\\\ruben\\\\enderklas-v2\" | ForEach-Object { $_.FullName })",
+      "Bash(Find-ChildItem -Path \"c:\\\\Users\\\\ruben\\\\enderklas-v2\\\\src\" -Name \"App.tsx\" -o -Name \"main.tsx\" -o -Name \"index.tsx\")",
+      "Bash(gh api *)",
+      "Bash(python -c \"import sys,json,base64; d=json.load\\(sys.stdin\\); print\\(base64.b64decode\\(d['content']\\).decode\\(\\)\\)\")",
+      "Bash(git remote *)",
+      "Bash(git ls-remote *)",
+      "Bash(git fetch *)",
+      "PowerShell(git add src/index.css UpdateState.md)",
+      "PowerShell(git push origin dev:main)",
+      "PowerShell(git add src/index.css)",
+      "PowerShell(git commit -m $msg)",
+      "PowerShell(npx tsc -b --noEmit 2>&1)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(git push origin dev)",
+      "PowerShell(git add README.md src/components/configurator/Inspector.tsx src/components/layout/sidebar.tsx)",
+      "PowerShell(git add src/App.tsx src/components/layout/TopBar.tsx src/services/persistence.ts)",
+      "PowerShell(npm install lucide-react 2>&1)",
+      "PowerShell(git add package.json package-lock.json src/App.tsx src/components/layout/TopBar.tsx src/components/layout/sidebar.tsx src/components/ui/IconButton.tsx)",
+      "Bash(Get-ChildItem -Path \"src\\\\components\\\\configurator\" -Filter \"*Config.tsx\" -Recurse)",
+      "Bash(xargs grep -l \"MAB\\\\|Mab\")",
+      "Bash(grep -E '\\\\.\\(ts|tsx|css\\)$')",
+      "Bash(awk 'NR>=72 && NR<=185' CLAUDE.md)",
+      "PowerShell($c = Get-Content \"C:\\\\Users\\\\ruben\\\\enderklas-v2\\\\CLAUDE.md\"; \"TOTAL LINES: $\\($c.Count\\)\"; \"---\"; $c[71..184] -join \"`n\")",
+      "Bash(awk 'NR==19||NR==20 || \\(/isHrStd/\\) || \\(/Config /\\) || \\(/Config>/\\) || \\(/setMabExercises/\\) {print NR\": \"$0}' \"C:/Users/ruben/enderklas-v2/src/components/configurator/Inspector.tsx\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npm install *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(node -e \"console.log\\('lz-string', require\\('lz-string/package.json'\\).version\\)\")",
+      "Bash(echo \"BUILD=$?\")",
+      "Read(//tmp/**)",
+      "Bash(echo \"LINT=$?\")",
+      "Bash(node -e ' *)"
     ]
-  }
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -Command \"$today = Get-Date -Format 'yyyy-MM-dd'; $file = 'UpdateState.md'; if (Test-Path $file) { $content = Get-Content $file -Raw; if (-not $content.Contains($today)) { Write-Host ('WARNING: UpdateState.md not updated today (' + $today + ') - add a summary entry before closing.') } } else { Write-Host 'WARNING: UpdateState.md missing.' }\""
+          }
+        ]
+      }
+    ]
+  },
+  "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true
 }

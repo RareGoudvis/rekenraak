@@ -1,7 +1,7 @@
 {
   "name": "enderklas-v2",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "@fontsource/azeret-mono": "^5.2.11",
     "@react-pdf/renderer": "^4.5.1",
     "lucide-react": "^1.16.0",
+    "lz-string": "^1.5.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "zustand": "^5.0.13"

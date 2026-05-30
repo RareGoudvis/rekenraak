@@ -1,5 +1,6 @@
 import type { MathBlock, GeldWisselExercise } from '../../services/math/types';
 import { Bill } from './GeldViewer';
+import FragmentableGrid from './FragmentableGrid';
 
 function WisselCell({ ex, boxHeight }: { ex: GeldWisselExercise; boxHeight: number }) {
     return (
@@ -17,7 +18,8 @@ function WisselCell({ ex, boxHeight }: { ex: GeldWisselExercise; boxHeight: numb
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
-export default function GeldWisselViewer({ block, showSolutions: _showSolutions }: Props) {
+// showSolutions unused — wissel has no solution overlay (student draws the answer).
+export default function GeldWisselViewer({ block }: Props) {
     const exercises: GeldWisselExercise[] = block.geldWisselExercises || [];
     const gap: number = block.verticalSpacing || 14;
     const exercisesPerRow: number = block.constraints.exercisesPerRow ?? 2;
@@ -28,10 +30,13 @@ export default function GeldWisselViewer({ block, showSolutions: _showSolutions 
     }
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${exercisesPerRow}, 1fr)`, gap: `${gap}px` }}>
-            {exercises.map(ex => (
+        <FragmentableGrid
+            cols={exercisesPerRow}
+            columnGap={gap}
+            rowGap={gap}
+            items={exercises.map(ex => (
                 <WisselCell key={ex.id} ex={ex} boxHeight={boxHeight} />
             ))}
-        </div>
+        />
     );
 }

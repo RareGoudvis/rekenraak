@@ -31,12 +31,12 @@ export default function NaturalSettings({ block }: Props) {
 
             <div style={{ marginBottom: '24px' }}>
                 <h4 style={headerStyle}>Specifieke getalopbouw</h4>
-                {['operand1Mask', 'operand2Mask'].map((op, idx) => (
+                {(['operand1Mask', 'operand2Mask'] as const).map((op, idx) => (
                     <div key={op} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                         <span style={{ fontSize: '11px', width: '50px' }}>Getal {idx + 1}:</span>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {maskPlaces.map(p => (
-                                <button key={p.key} onClick={() => toggleMask(op as any, p.key)} style={maskBtnStyle(block.constraints[op]?.[p.key])}>{p.key}</button>
+                                <button key={p.key} onClick={() => toggleMask(op, p.key)} style={maskBtnStyle(block.constraints[op]?.[p.key])}>{p.key}</button>
                             ))}
                         </div>
                     </div>

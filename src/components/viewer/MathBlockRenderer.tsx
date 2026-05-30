@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { isFraction } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { MathBlock, Fraction } from '../../services/math/types';
+import FragmentableGrid from './FragmentableGrid';
 
 interface Props {
     block: MathBlock;
@@ -87,9 +88,15 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         return <div className="no-print" style={styles.emptyStateText}>(Genereer oefeningen via het rechterpaneel)</div>;
     }
 
+    const isInlineShort = block.layoutPreset === 'inline-short';
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: block.layoutPreset === 'inline-short' ? '1fr 1fr' : '1fr', justifyItems: block.layoutPreset === 'inline-short' ? 'center' : 'stretch', columnGap: '50px', rowGap: `${block.verticalSpacing || 14}px` }}>
-            {block.exercises.map((ex) => {
+        <FragmentableGrid
+            cols={isInlineShort ? 2 : 1}
+            gridTemplateColumns={isInlineShort ? '1fr 1fr' : '1fr'}
+            columnGap={50}
+            rowGap={block.verticalSpacing || 14}
+            justifyItems={isInlineShort ? 'center' : 'stretch'}
+            items={block.exercises.map((ex) => {
                 if (!ex || !ex.operands) return null;
 
                 // MET REST
@@ -149,6 +156,6 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     </div>
                 );
             })}
-        </div>
+        />
     );
 }

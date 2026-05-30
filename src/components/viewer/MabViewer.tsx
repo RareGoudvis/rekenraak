@@ -1,17 +1,19 @@
 import type { MathBlock, MabExercise, MabStyle, MabScaffolding } from '../../services/math/types';
 import { MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
+import FragmentableGrid from './FragmentableGrid';
 
 interface Props {
     block: MathBlock;
     showSolutions: boolean;
-    mode: 'herkennen' | 'tekenen';
 }
 
 const fmt = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 interface ColDef { key: string; place: MabPlace; }
 
-export default function MabViewer({ block, showSolutions, mode }: Props) {
+export default function MabViewer({ block, showSolutions }: Props) {
+    // herkennen = read drawn blocks → write number; tekenen = reverse (draw blocks).
+    const mode: 'herkennen' | 'tekenen' = block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen';
     const exercises: MabExercise[] = block.mabExercises || [];
     if (exercises.length === 0) {
         return (
@@ -40,8 +42,11 @@ export default function MabViewer({ block, showSolutions, mode }: Props) {
     cols.push({ key: 'E', place: 'units' });
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, 1fr)`, gap: `${gap}px`, width: '100%' }}>
-            {exercises.map(ex => (
+        <FragmentableGrid
+            cols={perRow}
+            columnGap={gap}
+            rowGap={gap}
+            items={exercises.map(ex => (
                 <MabItem
                     key={ex.id}
                     ex={ex}
@@ -54,7 +59,7 @@ export default function MabViewer({ block, showSolutions, mode }: Props) {
                     mode={mode}
                 />
             ))}
-        </div>
+        />
     );
 }
 

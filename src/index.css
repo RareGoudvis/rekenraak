@@ -30,8 +30,15 @@
   font-display: swap;
 }
 
-/* Footer bar — screen: hidden; print: fixed at bottom (see @media print below) */
-.print-footer-bar { display: none; }
+/* The print card is real <table> markup (Chrome only repeats <thead>/<tfoot> across
+   printed pages for true tables). On screen, flatten the table to block flow so the
+   preview is identical; the running header/footer bands are print-only. */
+.print-area { display: block; width: 100%; border-collapse: collapse; }
+.print-area > thead.print-thead, .print-area > tfoot.print-tfoot { display: none; }
+.print-area > tbody.print-body,
+.print-area > tbody.print-body > tr,
+.print-area > tbody.print-body > tr > .print-body-cell { display: block; width: 100%; }
+.print-thead-spacer { display: none; }
 
 /* Mobile/tablet block — hidden on large screens, covers everything on small screens */
 .mobile-block { display: none; }
@@ -86,9 +93,11 @@
 /* === PRINT === */
 @page {
   size: A4;
-  /* left/right/bottom: 0 — HTML footer handles bottom zone.
-     top: 15mm — ensures content on continuation pages starts ~1.5cm from top. */
-  margin: 15mm 0 0 0;
+  /* margin:0 on purpose — the print dialog's "Margins: None/Minimum" silently overrides
+     @page margins, so we can't rely on them. All visible margins come instead from the
+     table groups: .print-thead height (top), .print-body-inner padding (sides), and
+     .print-tfoot height (bottom). Those survive any dialog setting. */
+  margin: 0;
   /* Suppress browser-injected headers/footers (Chrome/Edge honour this;
      Firefox ignores margin-box content rules — user must uncheck in print dialog). */
   @top-left      { content: ""; }
@@ -128,49 +137,74 @@
     padding: 0 !important;
   }
 
-  /* A4 card: remove chrome; own padding for top/side/content margins.
-     Bottom padding is 0 — the @page 14mm bottom margin is the footer zone.
-     position: static removes relative context that blocks Chrome's break-inside: avoid. */
-  .print-area {
+  /* The shell stops constraining; the real <table> inside becomes the paginated card.
+     display:block !important is required to override a4Sheet's inline display:flex —
+     flex on the shell is fine, but it must not reach the <table> element. */
+  .print-area-shell {
     box-shadow: none !important;
     border-radius: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
     min-height: auto !important;
     height: auto !important;
-    display: block !important;
-    /* top: 0 — @page margin-top: 15mm handles the gap on all pages.
-       bottom: 14mm — reserve space for the fixed footer bar. */
-    padding: 0 18mm 14mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
     overflow: visible !important;
     position: static !important;
+    display: block !important;
   }
 
-  /* Blocks may split across pages; position:static is still required so Chrome
-     respects break-inside:avoid on child .print-exercise elements. Soft hint
-     to keep whole blocks on one page when they fit. */
+  /* Real <table>: Chrome repeats its <thead>/<tfoot> on every page and reserves their
+     height. table-layout:fixed pins content to printable width (wide-SVG guard). */
+  .print-area {
+    display: table !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  /* Top margin on EVERY page (incl. continuation) — the <thead> repeats. Use a real
+     spacer element, not a ::before (pseudo-elements on table-internal boxes are flaky). */
+  .print-area > thead.print-thead { display: table-header-group !important; }
+  .print-thead-spacer { display: block !important; height: 16mm; }
+  /* Repeating name strip — hidden unless the "herhaal koptekst" toggle is on. */
+  .print-repeat-fields { display: none !important; }
+  .print-area.repeat-header .print-repeat-fields { display: block !important; padding: 0 16mm 4mm !important; box-sizing: border-box; }
+  .print-area.repeat-header .print-thead-spacer { height: 6mm; }
+  /* When the strip repeats up top, drop the page-1 body copy so it isn't duplicated. */
+  .print-area.repeat-header .print-body-fields { display: none !important; }
+
+  /* Content cell. A real <td> honours its own padding, so the 16mm side margins live here. */
+  .print-area > tbody.print-body { display: table-row-group !important; }
+  .print-body-cell { display: table-cell !important; padding: 0 16mm !important; box-sizing: border-box !important; }
+
+  /* Running footer — reserves height + repeats every page. school left, vrije tekst right. */
+  .print-area > tfoot.print-tfoot { display: table-footer-group !important; }
+  .print-tfoot-inner {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 4mm 16mm 6mm !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    font-family: 'Azeret Mono', monospace !important;
+    font-size: 9pt !important;
+    color: #666 !important;
+  }
+
+  /* Sets may split across pages freely. */
   .print-block {
     position: static !important;
     transition: none !important;
-    break-inside: avoid-page;
   }
+  /* Force a set onto a fresh page (per-block toggle). */
+  .print-block.page-break-before { break-before: page; }
+  /* Opdracht line stays glued to the first row of its set — never orphaned at a
+     page bottom. break-after:avoid keeps the following content with it. */
+  .print-opdracht { break-after: avoid; break-inside: avoid; }
   /* Individual exercises must never be split mid-exercise. */
   .print-exercise { page-break-inside: avoid !important; break-inside: avoid !important; }
-
-  /* Footer: hidden in viewer, fixed at page bottom in print */
-  .print-footer-bar {
-    display: flex !important;
-    position: fixed !important;
-    bottom: 5mm !important;
-    left: 0 !important;
-    right: 0 !important;
-    padding: 5px 18mm !important;
-    font-family: 'Azeret Mono', monospace !important;
-    font-size: 10pt !important;
-    color: #666 !important;
-    background: white !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    box-sizing: border-box !important;
-  }
+  /* A FragmentableGrid row stays whole; the block stack breaks between rows instead
+     (a single grid container does not fragment across pages in Chrome). */
+  .print-row { page-break-inside: avoid !important; break-inside: avoid !important; }
 }
