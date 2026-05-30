@@ -25,8 +25,8 @@ export default function SplitsenConfig({ block }: Props) {
     } = block.constraints;
 
     const isPositie = typeof layout === 'string' && layout.startsWith('positie');
-    // Decimals: Rooster (basic) + splitsbenen + plaatswaarden (not positietabel / harten).
-    const decimalsAllowed = layout === 'basic' || layout === 'positie-benen' || layout === 'positie-math';
+    // Decimals: Rooster (basic) + all place-value layouts (not verliefde harten).
+    const decimalsAllowed = layout === 'basic' || (typeof layout === 'string' && layout.startsWith('positie'));
     const decimalPlaces = decimalsAllowed ? Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0)) : 0;
     const maskPlaces = decimalPlaces > 0 ? getMaskPlaces(maxGetal, 'decimal', decimalPlaces) : getMaskPlaces(maxGetal, 'natural');
 
@@ -85,16 +85,16 @@ export default function SplitsenConfig({ block }: Props) {
             {currentLayout === 'positie-benen' && (
                 <div style={styles.section}>
                     <label style={styles.label}>Soorten (wat mag voorkomen):</label>
-                    <div style={styles.buttonGroup}>
-                        {([
-                            { key: 'legs-letters', label: 'Benen · 3T' },
-                            { key: 'legs-value', label: 'Benen · 30' },
-                            { key: 'top-letters', label: 'Getal · 3T' },
-                            { key: 'top-value', label: 'Getal · 30' },
-                        ]).map(o => (
-                            <button key={o.key} onClick={() => toggleBenen(o.key)} style={styles.pill(benenVariants.includes(o.key))}>{o.label}</button>
-                        ))}
-                    </div>
+                    {([
+                        [{ key: 'legs-letters', label: 'Benen · 3T' }, { key: 'legs-value', label: 'Benen · 30' }],
+                        [{ key: 'top-letters', label: 'Getal · 3T' }, { key: 'top-value', label: 'Getal · 30' }],
+                    ]).map((row, r) => (
+                        <div key={r} style={{ ...styles.buttonGroup, marginBottom: '6px' }}>
+                            {row.map(o => (
+                                <button key={o.key} onClick={() => toggleBenen(o.key)} style={styles.pill(benenVariants.includes(o.key))}>{o.label}</button>
+                            ))}
+                        </div>
+                    ))}
                 </div>
             )}
 
@@ -164,6 +164,19 @@ export default function SplitsenConfig({ block }: Props) {
                     ))}
                 </div>
             </div>
+
+            {/* SPECIFIC NUMBER STRUCTURE — place-value layouts (which places the number has) */}
+            {isPositie && (
+                <div style={styles.section}>
+                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                        {maskPlaces.map(p => (
+                            <button key={p.key} onClick={() => toggleMask(p.key)} style={maskBtnStyle(operand1Mask?.[p.key])}>{p.key}</button>
+                        ))}
+                    </div>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw. Bv. enkel T, E en t.</p>
+                </div>
+            )}
 
             {/* FIXED TOTAL OVERRIDE */}
             {!isPositie && (<>

@@ -7,7 +7,8 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const MAX_T = 30;
+const MAX_T = 25;          // top labelled tick
+const HEAD = 12;           // glass headroom above MAX_T (no ticks)
 const SOL = '#e11d48';
 
 // Glass thermometer: rounded tube with a subtle glass gradient, bulb, major (5°) +
@@ -46,9 +47,9 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
                 </linearGradient>
             </defs>
 
-            {/* glass: bulb + tube as one outlined body */}
+            {/* glass: bulb + tube as one outlined body (tube extends HEAD px above the top tick) */}
             <circle cx={cx} cy={bulbCY} r={bulbR} fill={`url(#${glass})`} stroke="#5b6b73" strokeWidth="1.5" />
-            <rect x={cx - tubeW / 2} y={top} width={tubeW} height={tubeBottom - top + 4} rx={tubeW / 2} fill={`url(#${glass})`} stroke="#5b6b73" strokeWidth="1.5" />
+            <rect x={cx - tubeW / 2} y={top - HEAD} width={tubeW} height={tubeBottom - (top - HEAD) + 4} rx={tubeW / 2} fill={`url(#${glass})`} stroke="#5b6b73" strokeWidth="1.5" />
 
             {/* mercury: bulb + column up to fillTo */}
             {filled && <>
@@ -96,7 +97,7 @@ function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number
 export default function TemperatuurViewer({ block, showSolutions }: Props) {
     const exercises = block.temperatuurExercises || [];
     const includeNegatives = !!block.constraints.includeNegatives;
-    const minT = includeNegatives ? -20 : 0;
+    const minT = includeNegatives ? -15 : 0;
     const perRow: number = block.constraints.perRow ?? 4;
     const gap = block.verticalSpacing || 14;
 
@@ -108,7 +109,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
 
     return (
         <FragmentableGrid
-            cols={isVerschil ? Math.min(perRow, 2) : perRow}
+            cols={isVerschil ? 1 : perRow}
             columnGap={gap}
             rowGap={gap}
             items={exercises.map((ex: TemperatuurExercise) => {

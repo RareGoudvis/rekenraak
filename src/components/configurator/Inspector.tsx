@@ -4,6 +4,8 @@ import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type Head
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../services/geld/geldGenerator';
 import { regenerateBlock } from '../../services/generateDispatch';
+import { recomputeSplitsenExercise } from '../../services/splitsen/splitsenGenerator';
+import { formatMathNumber } from '../../services/math/formatters';
 
 const HR_STD_TYPES = ['optellen', 'aftrekken', 'vermenigvuldigen', 'delen'];
 const isHrStd = (typeId: string) => HR_STD_TYPES.some(t => typeId.includes(t));
@@ -34,6 +36,7 @@ export default function Inspector() {
     const updateBlockLayout = useWorksheetStore((state) => state.updateBlockLayout);
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const setExercises = useWorksheetStore((state) => state.setExercises);
+    const patchExercise = useWorksheetStore((state) => state.patchExercise);
 
     const handleGenerate = () => {
         if (!activeBlock) return;
@@ -637,7 +640,7 @@ export default function Inspector() {
             )}
 
             {/* ── 4. Geavanceerd (accordion) ── */}
-            {!locked && (activeBlock.typeId.startsWith('cijferen-') || activeBlock.typeId.startsWith('geld-') || activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen') && (
+            {!locked && (activeBlock.typeId.startsWith('cijferen-') || activeBlock.typeId.startsWith('geld-') || activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen' || activeBlock.typeId === 'splitsen') && (
                 <div style={S.advancedWrap}>
                     <button style={S.advancedToggle} onClick={() => setAdvancedOpen(!advancedOpen)}>
                         <span>Geavanceerd</span>
@@ -646,6 +649,26 @@ export default function Inspector() {
                     {advancedOpen && (
                         <div style={{ ...S.card, marginTop: '8px' }}>
                             <div style={S.col}>
+                                {activeBlock.typeId === 'splitsen' && (
+                                    <>
+                                        <label style={S.label}>Getallen (typ zelf een getal)</label>
+                                        {(activeBlock.splitsenExercises || []).map((ex, i) => (
+                                            <input
+                                                key={ex.id}
+                                                style={{ ...S.input, marginBottom: '4px' }}
+                                                defaultValue={formatMathNumber(ex.total)}
+                                                onBlur={(e) => {
+                                                    const v = Number(e.target.value.replace(',', '.').trim());
+                                                    if (Number.isFinite(v)) patchExercise(activeBlock.id, 'splitsenExercises', ex.id, recomputeSplitsenExercise(activeBlock, ex, v));
+                                                }}
+                                                placeholder={`Getal ${i + 1}`}
+                                            />
+                                        ))}
+                                        {(activeBlock.splitsenExercises || []).length === 0 && (
+                                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>Genereer eerst oefeningen.</p>
+                                        )}
+                                    </>
+                                )}
                                 {activeBlock.typeId.startsWith('cijferen-') && (
                                     <>
                                         <label style={S.label}>Ruitjesgrootte: {c.gridCellSize || 25}pt (~{Math.round((c.gridCellSize || 25) / 2.835)}mm)</label>

@@ -49,18 +49,20 @@ export default function TemperatuurConfig({ block }: Props) {
             <div style={styles.section}>
                 <label style={styles.label}>Negatieve temperaturen:</label>
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('includeNegatives', false)} style={styles.radioBtn(!includeNegatives)}>Nee (0…30°)</button>
-                    <button onClick={() => set('includeNegatives', true)} style={styles.radioBtn(includeNegatives)}>Ja (−20…30°)</button>
+                    <button onClick={() => set('includeNegatives', false)} style={styles.radioBtn(!includeNegatives)}>Nee (0…25°)</button>
+                    <button onClick={() => set('includeNegatives', true)} style={styles.radioBtn(includeNegatives)}>Ja (−15…25°)</button>
                 </div>
             </div>
 
-            {/* PER ROW */}
-            <div style={styles.section}>
-                <label style={styles.label}>Per rij: {perRow}</label>
-                <input type="range" min="2" max="6" step="1" value={perRow}
-                    onChange={(e) => set('perRow', Number(e.target.value))}
-                    style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
-            </div>
+            {/* PER ROW — not for verschil (always 1 per row) */}
+            {variant !== 'verschil' && (
+                <div style={styles.section}>
+                    <label style={styles.label}>Per rij: {perRow}</label>
+                    <input type="range" min="2" max="6" step="1" value={perRow}
+                        onChange={(e) => set('perRow', Number(e.target.value))}
+                        style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+                </div>
+            )}
         </div>
     );
 }

@@ -159,10 +159,10 @@ function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
         alignItems: 'center', justifyContent: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: '16px', boxSizing: 'border-box',
     };
     return (
-        <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            {/* Right-align the word so every table starts at the same x → calmer worksheet. */}
-            <div style={{ width: '260px', textAlign: 'right', fontFamily: "'Azeret Mono', monospace", fontSize: '16px' }}>{ex.words}</div>
-            <div>
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', width: '100%' }}>
+            {/* Word fills the left; tables pin to the far right so all line up with room to spare. */}
+            <div style={{ flex: 1, minWidth: 0, fontFamily: "'Azeret Mono', monospace", fontSize: '16px' }}>{ex.words}</div>
+            <div style={{ flexShrink: 0 }}>
                 <div style={{ display: 'flex' }}>
                     {cols.map(p => <div key={p.key} style={{ ...cell, backgroundColor: '#f4cbb8', fontWeight: 'bold' }}>{p.key}</div>)}
                 </div>

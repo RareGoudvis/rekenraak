@@ -22,7 +22,7 @@ function underThousand(n: number): string {
     return (h === 1 ? '' : ONES[h]) + 'honderd' + (r ? underHundred(r) : '');
 }
 
-export function numberToDutchWords(n: number): string {
+function intToDutchWords(n: number): string {
     if (n === 0) return 'nul';
     if (n === 1000000) return 'een miljoen';
     let out = '';
@@ -31,4 +31,15 @@ export function numberToDutchWords(n: number): string {
     if (th) out += (th === 1 ? '' : underThousand(th)) + 'duizend';
     if (rest) out += underThousand(rest);
     return out || underThousand(n);
+}
+
+export function numberToDutchWords(n: number): string {
+    if (Number.isInteger(n)) return intToDutchWords(n);
+    // Decimal: "<int> komma <digit> <digit> …" (e.g. 3,45 → "drie komma vier vijf").
+    const neg = n < 0;
+    const trimmed = Math.abs(n).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    const [ip, dp = ''] = trimmed.split('.');
+    const intWords = intToDutchWords(Number(ip));
+    const decWords = dp.split('').map(d => ONES[Number(d)]).join(' ');
+    return (neg ? 'min ' : '') + intWords + (decWords ? ' komma ' + decWords : '');
 }

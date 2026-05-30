@@ -46,14 +46,31 @@ function nonZeroPlaces(num: number, dp: number): Place[] {
         .filter(p => p.digit !== 0);
 }
 
+// A number whose nonzero places match the mask (else a random one), in [min, maxGetal].
+function numFromMask(maxGetal: number, mask: Record<string, boolean>, dp: number): number {
+    const scale = Math.pow(10, dp);
+    const scaledCap = Math.round(maxGetal * scale);
+    const hasMask = PLACE_VALUES.some(p => mask[p.key]);
+    if (!hasMask) return randInt(Math.min(scaledCap, dp > 0 ? 1 : 11), scaledCap) / scale;
+    let s = 0;
+    for (const p of PLACE_VALUES) {
+        if (mask[p.key]) {
+            const w = Math.round(p.weight * scale);
+            const maxd = Math.floor(scaledCap / Math.max(1, w));
+            if (maxd >= 1) s += randInt(1, Math.min(9, maxd)) * w;
+        }
+    }
+    return Math.max(1, Math.min(s, scaledCap)) / scale;
+}
+
 function generatePlaceValueExercises(block: MathBlock): SplitsenExercise[] {
     const {
         layout,
         maxGetal = 1000,
         mathDirection = 'decompose',
+        operand1Mask = {},
     } = block.constraints;
-    // Decimals apply to splitsbenen + plaatswaarden, NOT positietabel (word-based).
-    const dp = layout === 'positie-tabel' ? 0 : Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0));
+    const dp = Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0));
     const scale = Math.pow(10, dp);
     const benenCombos = parseBenenCombos(block.constraints);
     const mathFormList: string[] = Array.isArray(block.constraints.mathForms) && block.constraints.mathForms.length
@@ -65,18 +82,15 @@ function generatePlaceValueExercises(block: MathBlock): SplitsenExercise[] {
 
     for (let i = 0; i < n; i++) {
         const cap = layout === 'positie-tabel' ? Math.min(maxGetal, 1_000_000) : maxGetal;
-        const scaledCap = Math.round(cap * scale);
-        const scaledMin = Math.min(scaledCap, dp > 0 ? 1 : 11);
-        let scaled = randInt(scaledMin, scaledCap);
+        let num = numFromMask(cap, operand1Mask, dp);
         let attempts = 0;
-        while (used.has(scaled) && attempts < 200) { scaled = randInt(scaledMin, scaledCap); attempts++; }
-        used.add(scaled);
-        const num = scaled / scale;
+        while (used.has(Math.round(num * scale)) && attempts < 200) { num = numFromMask(cap, operand1Mask, dp); attempts++; }
+        used.add(Math.round(num * scale));
 
         const base: SplitsenExercise = { id: rndId(), total: num, pairs: [], isManuallyEdited: false };
 
         if (layout === 'positie-tabel') {
-            results.push({ ...base, placeBreakdown: fullColumns(num, maxGetal, 0), words: numberToDutchWords(num) });
+            results.push({ ...base, placeBreakdown: fullColumns(num, maxGetal, dp), words: numberToDutchWords(num) });
         } else if (layout === 'positie-benen') {
             const combo = benenCombos[randInt(0, benenCombos.length - 1)];
             results.push({ ...base, placeBreakdown: nonZeroPlaces(num, dp), blankSide: combo.blankSide, notation: combo.notation });
@@ -106,7 +120,8 @@ function generateTotal(maxGetal: number, mask: Record<string, boolean>, fixedTot
     const scale = Math.pow(10, dp);
     if (fixedTotal && fixedTotal >= 2 && fixedTotal <= maxGetal) return fixedTotal;
 
-    const places = [...PLACE_VALUES, ...DEC_PLACES.slice(0, dp)];
+    // PLACE_VALUES already includes the decimal places (t/h/d) — don't re-append.
+    const places = PLACE_VALUES;
     const hasMask = places.some(p => mask[p.key]);
     if (!hasMask) {
         const minScaled = dp > 0 ? 1 : 2;
@@ -127,7 +142,7 @@ function generateTotal(maxGetal: number, mask: Record<string, boolean>, fixedTot
 function generateGiven(total: number, mask: Record<string, boolean>, dp: number): number {
     const scale = Math.pow(10, dp);
     const totalScaled = Math.round(total * scale);
-    const places = [...PLACE_VALUES, ...DEC_PLACES.slice(0, dp)];
+    const places = PLACE_VALUES;   // already includes decimal places
     const hasMask = places.some(p => mask[p.key]);
     if (!hasMask) return randInt(0, totalScaled) / scale;
 
@@ -140,6 +155,37 @@ function generateGiven(total: number, mask: Record<string, boolean>, dp: number)
         }
     }
     return Math.max(0, Math.min(givenScaled, totalScaled)) / scale;
+}
+
+// Recompute one exercise's derived fields when a teacher types a new top number
+// (manual edit in the inspector). Keeps layout-specific extras (blankSide, etc.).
+export function recomputeSplitsenExercise(block: MathBlock, ex: SplitsenExercise, newTotal: number): Partial<SplitsenExercise> {
+    const c = block.constraints;
+    const layout: string = c.layout || 'basic';
+    const dpAllowed = layout === 'basic' || (typeof layout === 'string' && layout.startsWith('positie'));
+    const dp = dpAllowed ? Math.min(3, Math.max(0, c.decimalPlaces ?? 0)) : 0;
+    const scale = Math.pow(10, dp);
+    const maxGetal: number = c.maxGetal ?? 1000;
+
+    if (layout === 'positie-tabel') {
+        return { total: newTotal, placeBreakdown: fullColumns(newTotal, maxGetal, dp), words: numberToDutchWords(newTotal), isManuallyEdited: true };
+    }
+    if (layout === 'positie-benen' || layout === 'positie-math') {
+        return { total: newTotal, placeBreakdown: nonZeroPlaces(newTotal, dp), isManuallyEdited: true };
+    }
+    // basic / mathematic: regenerate the given/answer pairs against the new total.
+    const totalScaled = Math.round(newTotal * scale);
+    const pairsPerItem = ex.pairs.length || (c.rowsPerBox || 4);
+    const usedGivens = new Set<number>();
+    const pairs: Array<{ given: number; answer: number }> = [];
+    for (let j = 0; j < pairsPerItem; j++) {
+        let given: number; let attempts = 0;
+        do { given = generateGiven(newTotal, c.operand2Mask || {}, dp); attempts++; }
+        while (usedGivens.has(Math.round(given * scale)) && attempts < 100);
+        usedGivens.add(Math.round(given * scale));
+        pairs.push({ given, answer: (totalScaled - Math.round(given * scale)) / scale });
+    }
+    return { total: newTotal, pairs, isManuallyEdited: true };
 }
 
 export function generateSplitsenExercises(block: MathBlock): SplitsenExercise[] {
