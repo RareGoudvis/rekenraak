@@ -21,8 +21,12 @@ export default function SplitsenConfig({ block }: Props) {
         layout = 'basic',
         rowsPerBox = 4,
         rowHeight = 28,
+        blankSide = 'legs',
+        mathForm = 'letters',
+        mathDirection = 'decompose',
     } = block.constraints;
 
+    const isPositie = typeof layout === 'string' && layout.startsWith('positie');
     const maskPlaces = getMaskPlaces(maxGetal, 'natural');
 
     const set = (key: string, value: unknown) =>
@@ -38,11 +42,20 @@ export default function SplitsenConfig({ block }: Props) {
         set('operand2Mask', { ...cur, [posKey]: !cur[posKey] });
     };
 
-    const availableLayouts = maxGetal > 100
+    const partLayouts = maxGetal > 100
         ? [{ val: 'basic', label: 'Basis' }, { val: 'mathematic', label: 'Wiskundig' }]
         : [{ val: 'basic', label: 'Basis' }, { val: 'mathematic', label: 'Wiskundig' }, { val: 'verliefde-harten', label: '♥ Harten' }];
+    const positieLayouts = [
+        { val: 'positie-tabel', label: 'Positietabel' },
+        { val: 'positie-benen', label: 'Splitsbenen' },
+        { val: 'positie-math', label: 'Plaatswaarden' },
+    ];
+    const availableLayouts = [...partLayouts, ...positieLayouts];
 
     const currentLayout = availableLayouts.some(l => l.val === layout) ? layout : 'basic';
+    const maxPresets = isPositie && currentLayout !== 'positie-tabel'
+        ? [...MAX_PRESETS, 1000000000]
+        : MAX_PRESETS;
 
     return (
         <div style={styles.container}>
@@ -62,6 +75,38 @@ export default function SplitsenConfig({ block }: Props) {
                     ))}
                 </div>
             </div>
+
+            {/* POSITIE-BENEN — which side the pupil fills */}
+            {currentLayout === 'positie-benen' && (
+                <div style={styles.section}>
+                    <label style={styles.label}>Leerling vult in:</label>
+                    <div style={styles.buttonGroup}>
+                        <button onClick={() => set('blankSide', 'legs')} style={styles.radioBtn(blankSide === 'legs')}>De benen (H/T/E)</button>
+                        <button onClick={() => set('blankSide', 'top')} style={styles.radioBtn(blankSide === 'top')}>Het getal</button>
+                    </div>
+                </div>
+            )}
+
+            {/* POSITIE-MATH — notation + direction */}
+            {currentLayout === 'positie-math' && (
+                <>
+                    <div style={styles.section}>
+                        <label style={styles.label}>Notatie:</label>
+                        <div style={styles.buttonGroup}>
+                            <button onClick={() => set('mathForm', 'letters')} style={styles.radioBtn(mathForm === 'letters')}>Met letters (7H+9T+2E)</button>
+                            <button onClick={() => set('mathForm', 'expanded')} style={styles.radioBtn(mathForm === 'expanded')}>Uitgebreid (300+70+8)</button>
+                        </div>
+                    </div>
+                    <div style={styles.section}>
+                        <label style={styles.label}>Richting:</label>
+                        <div style={styles.buttonGroup}>
+                            <button onClick={() => set('mathDirection', 'decompose')} style={styles.radioBtn(mathDirection === 'decompose')}>Splitsen (942=…)</button>
+                            <button onClick={() => set('mathDirection', 'compose')} style={styles.radioBtn(mathDirection === 'compose')}>Samenstellen (…=942)</button>
+                            <button onClick={() => set('mathDirection', 'beide')} style={styles.radioBtn(mathDirection === 'beide')}>Beide</button>
+                        </div>
+                    </div>
+                </>
+            )}
 
             {/* ROWS PER BOX — only for basic */}
             {currentLayout === 'basic' && (
@@ -93,7 +138,7 @@ export default function SplitsenConfig({ block }: Props) {
             <div style={styles.section}>
                 <label style={styles.label}>Maximum getal:</label>
                 <div style={styles.buttonGroup}>
-                    {(currentLayout === 'verliefde-harten' ? HEART_PRESETS : MAX_PRESETS).map(val => (
+                    {(currentLayout === 'verliefde-harten' ? HEART_PRESETS : maxPresets).map(val => (
                         <button
                             key={val}
                             onClick={() => {
@@ -110,6 +155,7 @@ export default function SplitsenConfig({ block }: Props) {
             </div>
 
             {/* FIXED TOTAL OVERRIDE */}
+            {!isPositie && (<>
             <div style={styles.section}>
                 <label style={styles.label}>Altijd splitsen van:</label>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -162,6 +208,7 @@ export default function SplitsenConfig({ block }: Props) {
                     ))}
                 </div>
             </div>
+            </>)}
 
         </div>
     );

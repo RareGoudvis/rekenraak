@@ -56,19 +56,38 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'mab-tekenen', label: 'Getallen tekenen', typeId: 'mab-tekenen' },
                         ],
                     },
-                    { id: 'getalbegrip-splitsen', label: 'Splitsen', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'basic', rowsPerBox: 4 } },
-                    phAcc('getalbegrip-ordenen', 'Ordenen', [
-                        phLeaf('getalbegrip-ordenen-nat', 'Natuurlijke getallen'),
-                        phLeaf('getalbegrip-ordenen-dec', 'Decimale getallen'),
-                        phLeaf('getalbegrip-ordenen-rat', 'Rationale getallen'),
-                        phLeaf('getalbegrip-ordenen-geh', 'Gehele getallen'),
-                    ]),
-                    phAcc('getalbegrip-getallenassen', 'Getallenassen', [
-                        phLeaf('getalbegrip-getallenassen-nat', 'Natuurlijke getallen'),
-                        phLeaf('getalbegrip-getallenassen-dec', 'Decimale getallen'),
-                        phLeaf('getalbegrip-getallenassen-rat', 'Rationale getallen'),
-                        phLeaf('getalbegrip-getallenassen-geh', 'Gehele getallen'),
-                    ]),
+                    {
+                        id: 'getalbegrip-splitsen',
+                        label: 'Splitsen',
+                        children: [
+                            { id: 'splitsen-basis', label: 'Splitsen (basis)', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'basic', rowsPerBox: 4 } },
+                            { id: 'splitsen-math', label: 'Splitsen (wiskundig)', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'mathematic' } },
+                            { id: 'splitsen-harten', label: 'Verliefde harten', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'verliefde-harten' } },
+                            { id: 'splitsen-positietabel', label: 'Positietabel', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-tabel' } },
+                            { id: 'splitsen-benen', label: 'Splitsbenen (H/T/E)', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-benen', blankSide: 'legs' } },
+                            { id: 'splitsen-plaatswaarden', label: 'Plaatswaarden', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-math', mathForm: 'letters', mathDirection: 'decompose' } },
+                        ],
+                    },
+                    {
+                        id: 'getalbegrip-ordenen',
+                        label: 'Ordenen',
+                        children: [
+                            { id: 'getalbegrip-ordenen-nat', label: 'Natuurlijke getallen', typeId: 'ordenen', defaultConstraints: { numberType: 'natural' } },
+                            { id: 'getalbegrip-ordenen-dec', label: 'Decimale getallen', typeId: 'ordenen', defaultConstraints: { numberType: 'decimal' } },
+                            { id: 'getalbegrip-ordenen-rat', label: 'Rationale getallen', typeId: 'ordenen', defaultConstraints: { numberType: 'rational' } },
+                            { id: 'getalbegrip-ordenen-geh', label: 'Gehele getallen', typeId: 'ordenen', defaultConstraints: { numberType: 'geheel' } },
+                        ],
+                    },
+                    {
+                        id: 'getalbegrip-getallenassen',
+                        label: 'Getallenassen',
+                        children: [
+                            { id: 'getalbegrip-getallenassen-nat', label: 'Natuurlijke getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'natural' } },
+                            phLeaf('getalbegrip-getallenassen-dec', 'Decimale getallen'),
+                            phLeaf('getalbegrip-getallenassen-rat', 'Rationale getallen'),
+                            phLeaf('getalbegrip-getallenassen-geh', 'Gehele getallen'),
+                        ],
+                    },
                     ph('getalbegrip-functie', 'Functie van getallen'),
                 ],
             },
@@ -99,8 +118,10 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'deelbaarheid',
                 label: 'Deelbaarheid',
-                placeholder: true,
-                types: [ph('deelbaarheid-item', 'Deelbaarheid')],
+                types: [
+                    { id: 'deelbaarheid-tabel', label: 'Deelbaarheidstabel', typeId: 'deelbaarheid', defaultConstraints: { layout: 'tabel' } },
+                    { id: 'deelbaarheid-veelvouden', label: 'Veelvouden aanvullen', typeId: 'deelbaarheid', defaultConstraints: { layout: 'veelvouden' } },
+                ],
             },
             {
                 id: 'romeinse-cijfers',
@@ -247,6 +268,14 @@ export const APP_STRUCTURE: Domain[] = [
                         phLeaf('geld-rekenen-intrest', 'Intrest'),
                         phLeaf('geld-rekenen-winst', 'Winst / Verlies'),
                     ]),
+                ],
+            },
+            {
+                id: 'temperatuur',
+                label: 'Temperatuur',
+                types: [
+                    { id: 'temperatuur-kleuren', label: 'Meter kleuren', typeId: 'temperatuur', defaultConstraints: { variant: 'kleuren' } },
+                    { id: 'temperatuur-aflezen', label: 'Meter aflezen', typeId: 'temperatuur', defaultConstraints: { variant: 'aflezen' } },
                 ],
             },
         ],

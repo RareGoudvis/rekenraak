@@ -64,6 +64,50 @@ export interface SplitsenExercise {
     id: string;
     total: number;
     pairs: Array<{ given: number; answer: number }>;
+    // Place-value variants (positie-* layouts). One non-null set of these per item.
+    placeBreakdown?: Array<{ key: string; label: string; digit: number; weight: number }>;
+    blankSide?: 'legs' | 'top';                 // positie-benen: which side the pupil fills
+    mathForm?: 'letters' | 'expanded';          // positie-math: 7H+9T+2E  vs  300+70+8
+    mathDirection?: 'decompose' | 'compose';    // N=__+__+__  vs  __+__+__=N
+    words?: string;                             // positie-tabel: Dutch number-word prompt
+    isManuallyEdited: boolean;
+}
+
+// #4 Ordenen — order a small set of numbers with < or >
+export interface OrdenenExercise {
+    id: string;
+    values: (number | Fraction)[];   // ordered per operator (the answer)
+    display: (number | Fraction)[];  // shuffled prompt shown on top
+    operator: '<' | '>';
+    isManuallyEdited: boolean;
+}
+
+// #2 Deelbaarheid — divisibility tick-table OR a multiples (veelvouden) fill-row
+export interface DeelbaarheidExercise {
+    id: string;
+    number?: number;          // tabel layout: one number per row
+    base?: number;            // veelvouden layout: the multiple base
+    sequence?: number[];      // veelvouden: full multiples run
+    givenCount?: number;      // veelvouden: how many shown before blanks
+    isManuallyEdited: boolean;
+}
+
+// #6 Getallenas — a number line; pupil fills the blank ticks
+export interface GetallenasExercise {
+    id: string;
+    start: number;
+    step: number;
+    tickCount: number;
+    blankMask: boolean[];     // true = pupil fills this tick
+    direction: 'left' | 'right';
+    isManuallyEdited: boolean;
+}
+
+// #8 Temperatuur — thermometer: colour to a temp, or read a coloured one
+export interface TemperatuurExercise {
+    id: string;
+    celsius: number;
+    variant: 'kleuren' | 'aflezen';
     isManuallyEdited: boolean;
 }
 
@@ -92,6 +136,10 @@ export interface MathBlock {
     geldWisselExercises?: GeldWisselExercise[];
     geldTeruggevenExercises?: GeldTeruggevenExercise[];
     mabExercises?: MabExercise[];
+    ordenenExercises?: OrdenenExercise[];
+    deelbaarheidExercises?: DeelbaarheidExercise[];
+    getallenasExercises?: GetallenasExercise[];
+    temperatuurExercises?: TemperatuurExercise[];
     verticalSpacing: number;
 }
 

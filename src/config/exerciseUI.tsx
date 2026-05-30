@@ -12,6 +12,10 @@ import GeldTekenenViewer from '../components/viewer/GeldTekenenViewer';
 import GeldWisselViewer from '../components/viewer/GeldWisselViewer';
 import GeldTeruggevenViewer from '../components/viewer/GeldTeruggevenViewer';
 import MabViewer from '../components/viewer/MabViewer';
+import OrdenenViewer from '../components/viewer/OrdenenViewer';
+import DeelbaarheidViewer from '../components/viewer/DeelbaarheidViewer';
+import GetallenasViewer from '../components/viewer/GetallenasViewer';
+import TemperatuurViewer from '../components/viewer/TemperatuurViewer';
 
 // Config plugins (one per family). All take {block}.
 import AdditionConfig from '../components/configurator/plugins/AdditionConfig';
@@ -26,6 +30,10 @@ import GeldConfig from '../components/configurator/plugins/GeldConfig';
 import GeldWisselConfig from '../components/configurator/plugins/GeldWisselConfig';
 import GeldTeruggevenConfig from '../components/configurator/plugins/GeldTeruggevenConfig';
 import MabConfig from '../components/configurator/plugins/MabConfig';
+import OrdenenConfig from '../components/configurator/plugins/OrdenenConfig';
+import DeelbaarheidConfig from '../components/configurator/plugins/DeelbaarheidConfig';
+import GetallenasConfig from '../components/configurator/plugins/GetallenasConfig';
+import TemperatuurConfig from '../components/configurator/plugins/TemperatuurConfig';
 
 // ── React side of the registry ──────────────────────────────────────────────
 // Keyed by the SAME typeIds as REGISTRY in exerciseRegistry.ts. Split out so the
@@ -68,4 +76,9 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
 
     'mab-herkennen': { Viewer: MabViewer, Config: MabConfig },
     'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig },
+
+    'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig },
+    'deelbaarheid': { Viewer: DeelbaarheidViewer, Config: DeelbaarheidConfig },
+    'getallenas':   { Viewer: GetallenasViewer,   Config: GetallenasConfig },
+    'temperatuur':  { Viewer: TemperatuurViewer,  Config: TemperatuurConfig },
 };

@@ -218,6 +218,10 @@ All types defined in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.
 | `geld-wissel` | `geldWisselExercises: GeldWisselExercise[]` | `geldGenerator.ts` | `GeldWisselViewer` |
 | `geld-teruggeven` | `geldTeruggevenExercises: GeldTeruggevenExercise[]` | `geldGenerator.ts` | `GeldTeruggevenViewer` |
 | `mab-herkennen`, `mab-tekenen` | `mabExercises: MabExercise[]` | `mabGenerator.ts` | `MabViewer` |
+| `ordenen` | `ordenenExercises: OrdenenExercise[]` | `ordenenGenerator.ts` | `OrdenenViewer` |
+| `deelbaarheid` | `deelbaarheidExercises: DeelbaarheidExercise[]` | `deelbaarheidGenerator.ts` | `DeelbaarheidViewer` |
+| `getallenas` | `getallenasExercises: GetallenasExercise[]` | `getallenasGenerator.ts` | `GetallenasViewer` |
+| `temperatuur` | `temperatuurExercises: TemperatuurExercise[]` | `temperatuurGenerator.ts` | `TemperatuurViewer` |
 
 Placeholder leaves in `appstructure.ts` (`placeholder: true` / `typeId: '__placeholder__'`) are **not implemented** — they show as greyed tree entries only. See the full per-typeId registry table in [ARCHITECTURE.md](ARCHITECTURE.md).
 

@@ -79,7 +79,124 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         );
     }
 
+    if (layout === 'positie-benen') {
+        return (
+            <FragmentableGrid cols={2} columnGap={gap} rowGap={gap + 10}
+                items={exercises.map(ex => <PositieBenenItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+        );
+    }
+
+    if (layout === 'positie-tabel') {
+        return (
+            <FragmentableGrid cols={1} rowGap={gap + 6}
+                items={exercises.map(ex => <PositieTabelItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+        );
+    }
+
+    if (layout === 'positie-math') {
+        return (
+            <FragmentableGrid cols={2} columnGap={gap + 20} rowGap={gap + 4}
+                items={exercises.map(ex => <PositieMathRow key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+        );
+    }
+
     return null;
+}
+
+// ── Place-value: blank vs solution helpers ────────────────────────────────────
+
+const SOL: React.CSSProperties = { color: '#e11d48', fontWeight: 'bold' };
+const blankLine = (w = 44) => <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${w}px`, height: '18px' }} />;
+
+// ── Place-value: splitsbenen (legs) ───────────────────────────────────────────
+
+function PositieBenenItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+    const places = ex.placeBreakdown || [];
+    const topBlank = ex.blankSide === 'top';
+    const W = Math.max(120, places.length * 56);
+    const xs = places.map((_, i) => ((i + 0.5) / places.length) * W);
+
+    return (
+        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontFamily: "'Azeret Mono', monospace", fontSize: '18px' }}>
+            {/* top number */}
+            <div style={{ height: '26px', display: 'flex', alignItems: 'center' }}>
+                {topBlank
+                    ? (showSolutions ? <span style={SOL}>{fmt(ex.total)}</span> : blankLine(60))
+                    : <span style={{ fontWeight: 'bold' }}>{fmt(ex.total)}</span>}
+            </div>
+            {/* legs */}
+            <svg width={W} height="26" style={{ display: 'block' }}>
+                {xs.map((x, i) => <line key={i} x1={W / 2} y1="2" x2={x} y2="24" stroke="#000" strokeWidth="1.5" />)}
+            </svg>
+            {/* place boxes */}
+            <div style={{ display: 'flex', justifyContent: 'space-around', width: W }}>
+                {places.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                        {topBlank
+                            ? <span style={{ fontWeight: 'bold' }}>{p.digit}</span>
+                            : (showSolutions ? <span style={SOL}>{p.digit}</span> : blankLine(24))}
+                        <span style={{ fontWeight: 'bold' }}>{p.key}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ── Place-value: positietabel (word → digit grid) ─────────────────────────────
+
+function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+    const cols = ex.placeBreakdown || [];
+    const cell: React.CSSProperties = {
+        border: '1px solid #000', width: '42px', height: '36px', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: '16px', boxSizing: 'border-box',
+    };
+    return (
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ minWidth: '220px', fontFamily: "'Azeret Mono', monospace", fontSize: '16px' }}>{ex.words}</div>
+            <div>
+                <div style={{ display: 'flex' }}>
+                    {cols.map(p => <div key={p.key} style={{ ...cell, backgroundColor: '#f4cbb8', fontWeight: 'bold' }}>{p.key}</div>)}
+                </div>
+                <div style={{ display: 'flex' }}>
+                    {cols.map(p => <div key={p.key} style={{ ...cell, color: '#e11d48', fontWeight: 'bold' }}>{showSolutions ? p.digit : ''}</div>)}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Place-value: mathematical (letters / expanded × decompose / compose) ──────
+
+function PositieMathRow({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+    const places = ex.placeBreakdown || [];
+    const letters = ex.mathForm === 'letters';
+    const compose = ex.mathDirection === 'compose';
+
+    const termGiven = (p: { digit: number; key: string; weight: number }) =>
+        <span style={{ fontWeight: 'bold' }}>{letters ? `${p.digit}${p.key}` : fmt(p.digit * p.weight)}</span>;
+    const termBlank = (p: { key: string }) =>
+        showSolutions
+            ? <span style={SOL}>{letters ? `${(places.find(x => x.key === p.key)?.digit)}${p.key}` : fmt((places.find(x => x.key === p.key)?.digit ?? 0) * (places.find(x => x.key === p.key)?.weight ?? 1))}</span>
+            : <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '1px' }}>{blankLine(letters ? 24 : 40)}{letters && <span style={{ fontWeight: 'bold' }}>{p.key}</span>}</span>;
+
+    const result = () => showSolutions ? <span style={SOL}>{fmt(ex.total)}</span> : blankLine(60);
+
+    return (
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', fontFamily: "'Azeret Mono', monospace", fontSize: '18px' }}>
+            {compose ? (
+                <>
+                    {places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)}
+                    <span>=</span>{result()}
+                </>
+            ) : (
+                <>
+                    <span style={{ fontWeight: 'bold' }}>{fmt(ex.total)}</span><span>=</span>
+                    {places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termBlank(p)}</span>)}
+                </>
+            )}
+        </div>
+    );
 }
 
 // ── Basic box layout ──────────────────────────────────────────────────────────

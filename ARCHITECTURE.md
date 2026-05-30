@@ -118,6 +118,10 @@ one exercise array **per family** (only one is populated per block, keyed by
 | `geldWisselExercises` | `GeldWisselExercise` | `geld-wissel` |
 | `geldTeruggevenExercises` | `GeldTeruggevenExercise` | `geld-teruggeven` |
 | `mabExercises` | `MabExercise` | `mab-herkennen`, `mab-tekenen` |
+| `ordenenExercises` | `OrdenenExercise` | `ordenen` |
+| `deelbaarheidExercises` | `DeelbaarheidExercise` | `deelbaarheid` |
+| `getallenasExercises` | `GetallenasExercise` | `getallenas` |
+| `temperatuurExercises` | `TemperatuurExercise` | `temperatuur` |
 
 Every exercise element has `id: string` and `isManuallyEdited: boolean` (set
 `false` on generation; flipped `true` when a teacher hand-edits via
@@ -253,6 +257,11 @@ only.
 | `geld-teruggeven` | `geldTeruggevenExercises` | `generateGeldTeruggevenExercises` | `GeldTeruggevenViewer` | `GeldTeruggevenConfig` | min/maxPriceEuros, payWithOptions, centenDeel, antwoordType |
 | `mab-herkennen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=herkennen) | `MabConfig` | maxNumber, operand1Mask, mabStyle, scaffolding |
 | `mab-tekenen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=tekenen) | `MabConfig` | maxNumber, operand1Mask, mabStyle, scaffolding |
+| `ordenen` | `ordenenExercises` | `generateOrdenenExercises` | `OrdenenViewer` | `OrdenenConfig` | numberType, count(3–5), operatorMode (oplopend/aflopend/beide), maxGetal |
+| `deelbaarheid` | `deelbaarheidExercises` | `generateDeelbaarheidExercises` | `DeelbaarheidViewer` | `DeelbaarheidConfig` | layout (tabel/veelvouden), divisors[], maxGetal, base, terms, givenCount |
+| `splitsen` (positie-*) | `splitsenExercises` | `generateSplitsenExercises` | `SplitsenViewer` | `SplitsenConfig` | layout positie-tabel/-benen/-math, maxGetal(≤1e9), blankSide, mathForm, mathDirection |
+| `getallenas` | `getallenasExercises` | `generateGetallenasExercises` | `GetallenasViewer` | `GetallenasConfig` | maxGetal, step, direction, hardMode, ticks (natural only) |
+| `temperatuur` | `temperatuurExercises` | `generateTemperatuurExercises` | `TemperatuurViewer` | `TemperatuurConfig` | variant (kleuren/aflezen), includeNegatives, perRow |
 
 > Note: matching is now exact-key, so the old substring collision between
 > `hr-std-optellen` and `cijferen-optellen-*` (which forced

@@ -6,6 +6,10 @@ import { generateSplitsenExercises } from '../services/splitsen/splitsenGenerato
 import { generateCijferExercises } from '../services/cijferen/cijferGenerator';
 import { generateGeldExercises, generateGeldWisselExercises, generateGeldTeruggevenExercises } from '../services/geld/geldGenerator';
 import { generateMabExercises } from '../services/mab/mabGenerator';
+import { generateOrdenenExercises } from '../services/ordenen/ordenenGenerator';
+import { generateDeelbaarheidExercises } from '../services/deelbaarheid/deelbaarheidGenerator';
+import { generateGetallenasExercises } from '../services/getallenas/getallenasGenerator';
+import { generateTemperatuurExercises } from '../services/temperatuur/temperatuurGenerator';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -18,7 +22,8 @@ import { generateMabExercises } from '../services/mab/mabGenerator';
 type ExerciseField = Extract<keyof MathBlock,
     | 'exercises' | 'clockExercises' | 'fractionExercises' | 'splitsenExercises'
     | 'cijferExercises' | 'geldExercises' | 'geldWisselExercises'
-    | 'geldTeruggevenExercises' | 'mabExercises'>;
+    | 'geldTeruggevenExercises' | 'mabExercises'
+    | 'ordenenExercises' | 'deelbaarheidExercises' | 'getallenasExercises' | 'temperatuurExercises'>;
 
 export interface ExerciseTypeDef {
     // The array field on MathBlock that holds this type's exercises.
@@ -97,6 +102,22 @@ const mabDefaults = (): Record<string, unknown> => ({
     scaffolding: 'positietabel', exercisesPerRow: 3, boxHeight: 60, answerHeight: 36,
 });
 
+const ordenenDefaults = (): Record<string, unknown> => ({
+    numberType: 'natural', count: 3, operatorMode: 'oplopend', maxGetal: 100,
+});
+
+const deelbaarheidDefaults = (): Record<string, unknown> => ({
+    layout: 'tabel', divisors: [2, 5, 10], maxGetal: 1000, base: 9, terms: 6, givenCount: 2,
+});
+
+const getallenasDefaults = (): Record<string, unknown> => ({
+    numberType: 'natural', maxGetal: 100, step: 5, direction: 'right', hardMode: false, ticks: 6,
+});
+
+const temperatuurDefaults = (): Record<string, unknown> => ({
+    variant: 'kleuren', includeNegatives: false, perRow: 4,
+});
+
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => ({
@@ -132,4 +153,9 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
 
     'mab-herkennen': { exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6 },
     'mab-tekenen':   { exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6 },
+
+    'ordenen':      { exerciseField: 'ordenenExercises',      generate: generateOrdenenExercises,      defaultConstraints: ordenenDefaults,      defaultCount: 6 },
+    'deelbaarheid': { exerciseField: 'deelbaarheidExercises', generate: generateDeelbaarheidExercises, defaultConstraints: deelbaarheidDefaults, defaultCount: 6 },
+    'getallenas':   { exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   defaultConstraints: getallenasDefaults,   defaultCount: 5 },
+    'temperatuur':  { exerciseField: 'temperatuurExercises',  generate: generateTemperatuurExercises,  defaultConstraints: temperatuurDefaults,  defaultCount: 4 },
 };
