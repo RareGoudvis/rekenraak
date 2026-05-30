@@ -58,7 +58,7 @@ export default function TemperatuurConfig({ block }: Props) {
             {variant !== 'verschil' && (
                 <div style={styles.section}>
                     <label style={styles.label}>Per rij: {perRow}</label>
-                    <input type="range" min="2" max="6" step="1" value={perRow}
+                    <input type="range" min="2" max="4" step="1" value={perRow}
                         onChange={(e) => set('perRow', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
                 </div>

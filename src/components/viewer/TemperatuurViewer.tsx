@@ -98,7 +98,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
     const exercises = block.temperatuurExercises || [];
     const includeNegatives = !!block.constraints.includeNegatives;
     const minT = includeNegatives ? -15 : 0;
-    const perRow: number = block.constraints.perRow ?? 4;
+    const perRow: number = Math.min(4, block.constraints.perRow ?? 4);
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
@@ -109,9 +109,9 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
 
     return (
         <FragmentableGrid
-            cols={isVerschil ? 1 : perRow}
-            columnGap={gap}
-            rowGap={gap}
+            cols={isVerschil ? 2 : perRow}
+            columnGap={isVerschil ? gap + 48 : gap}
+            rowGap={isVerschil ? gap + 14 : gap}
             items={exercises.map((ex: TemperatuurExercise) => {
                 if (ex.variant === 'verschil') {
                     const c2 = ex.celsius2 ?? 0;
