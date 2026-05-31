@@ -109,6 +109,16 @@ export interface EvenOnevenExercise {
     isManuallyEdited: boolean;
 }
 
+// Vergelijken — fill <, > or = between two numbers, or circle the largest/smallest
+export interface VergelijkenExercise {
+    id: string;
+    a?: number;           // getallen view
+    b?: number;
+    numbers?: number[];   // kiezen view
+    target?: string;      // kiezen: 'grootste' | 'kleinste'
+    isManuallyEdited: boolean;
+}
+
 // #6 Getallenas — a number line; pupil fills the blank ticks
 export interface GetallenasExercise {
     id: string;
@@ -167,6 +177,7 @@ export interface MathBlock {
     temperatuurExercises?: TemperatuurExercise[];
     plaatswaardeExercises?: PlaatswaardeExercise[];
     evenOnevenExercises?: EvenOnevenExercise[];
+    vergelijkenExercises?: VergelijkenExercise[];
     verticalSpacing: number;
 }
 

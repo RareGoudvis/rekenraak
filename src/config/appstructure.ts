@@ -88,7 +88,13 @@ export const APP_STRUCTURE: Domain[] = [
                         ],
                     },
                     ph('getalbegrip-functie', 'Functie van getallen'),
-                    ph('getalbegrip-vergelijken', 'Vergelijken (<, >, =)'),
+                    {
+                        id: 'getalbegrip-vergelijken', label: 'Vergelijken (<, >, =)',
+                        children: [
+                            { id: 'vergelijken-getallen', label: 'Twee getallen', typeId: 'vergelijken', defaultConstraints: { subType: 'getallen' } },
+                            { id: 'vergelijken-kiezen',   label: 'Grootste / kleinste', typeId: 'vergelijken', defaultConstraints: { subType: 'kiezen' } },
+                        ],
+                    },
                     ph('getalbegrip-verbanden', 'Verbanden (breuk · decimaal · procent)'),
                     {
                         id: 'getalbegrip-even-oneven', label: 'Even en oneven',
