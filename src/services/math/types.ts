@@ -109,6 +109,14 @@ export interface EvenOnevenExercise {
     isManuallyEdited: boolean;
 }
 
+// Romeinse cijfers — recognise (Roman→number) or write (number→Roman)
+export interface RomeinseExercise {
+    id: string;
+    value: number;
+    roman: string;
+    isManuallyEdited: boolean;
+}
+
 // Afronden — round a natural number to a place (rooster of targets, or one ≈ line)
 export interface AfrondenExercise {
     id: string;
@@ -187,6 +195,7 @@ export interface MathBlock {
     evenOnevenExercises?: EvenOnevenExercise[];
     vergelijkenExercises?: VergelijkenExercise[];
     afrondenExercises?: AfrondenExercise[];
+    romeinseExercises?: RomeinseExercise[];
     verticalSpacing: number;
 }
 

@@ -20,6 +20,7 @@ import PlaatswaardeViewer from '../components/viewer/PlaatswaardeViewer';
 import EvenOnevenViewer from '../components/viewer/EvenOnevenViewer';
 import VergelijkenViewer from '../components/viewer/VergelijkenViewer';
 import AfrondenViewer from '../components/viewer/AfrondenViewer';
+import RomeinseViewer from '../components/viewer/RomeinseViewer';
 
 // Config plugins (one per family). All take {block}.
 import AdditionConfig from '../components/configurator/plugins/AdditionConfig';
@@ -42,6 +43,7 @@ import PlaatswaardeConfig from '../components/configurator/plugins/PlaatswaardeC
 import EvenOnevenConfig from '../components/configurator/plugins/EvenOnevenConfig';
 import VergelijkenConfig from '../components/configurator/plugins/VergelijkenConfig';
 import AfrondenConfig from '../components/configurator/plugins/AfrondenConfig';
+import RomeinseConfig from '../components/configurator/plugins/RomeinseConfig';
 
 // ── React side of the registry ──────────────────────────────────────────────
 // Keyed by the SAME typeIds as REGISTRY in exerciseRegistry.ts. Split out so the
@@ -93,4 +95,5 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'even-oneven':  { Viewer: EvenOnevenViewer,   Config: EvenOnevenConfig },
     'vergelijken':  { Viewer: VergelijkenViewer,  Config: VergelijkenConfig },
     'afronden':     { Viewer: AfrondenViewer,     Config: AfrondenConfig },
+    'romeinse-cijfers': { Viewer: RomeinseViewer, Config: RomeinseConfig },
 };

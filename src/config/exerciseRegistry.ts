@@ -14,6 +14,7 @@ import { generatePlaatswaardeExercises } from '../services/plaatswaarde/plaatswa
 import { generateEvenOnevenExercises } from '../services/evenoneven/evenOnevenGenerator';
 import { generateVergelijkenExercises } from '../services/vergelijken/vergelijkenGenerator';
 import { generateAfrondenExercises } from '../services/afronden/afrondenGenerator';
+import { generateRomeinseExercises } from '../services/romeinse/romeinseGenerator';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -28,7 +29,8 @@ type ExerciseField = Extract<keyof MathBlock,
     | 'cijferExercises' | 'geldExercises' | 'geldWisselExercises'
     | 'geldTeruggevenExercises' | 'mabExercises'
     | 'ordenenExercises' | 'deelbaarheidExercises' | 'getallenasExercises' | 'temperatuurExercises'
-    | 'plaatswaardeExercises' | 'evenOnevenExercises' | 'vergelijkenExercises' | 'afrondenExercises'>;
+    | 'plaatswaardeExercises' | 'evenOnevenExercises' | 'vergelijkenExercises' | 'afrondenExercises'
+    | 'romeinseExercises'>;
 
 export interface ExerciseTypeDef {
     // The array field on MathBlock that holds this type's exercises.
@@ -144,6 +146,10 @@ const afrondenDefaults = (): Record<string, unknown> => ({
     subType: 'rooster', maxGetal: 1000, numberMask: {}, roundTargets: ['T', 'H'],
 });
 
+const romeinseDefaults = (): Record<string, unknown> => ({
+    subType: 'herkennen', niveau: 2, subtractief: true, numberMask: {},
+});
+
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => ({
@@ -188,4 +194,5 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'even-oneven':  { exerciseField: 'evenOnevenExercises',   generate: generateEvenOnevenExercises,   defaultConstraints: evenOnevenDefaults,   defaultCount: 3 },
     'vergelijken':  { exerciseField: 'vergelijkenExercises',  generate: generateVergelijkenExercises,  defaultConstraints: vergelijkenDefaults,  defaultCount: 6 },
     'afronden':     { exerciseField: 'afrondenExercises',     generate: generateAfrondenExercises,     defaultConstraints: afrondenDefaults,     defaultCount: 6 },
+    'romeinse-cijfers': { exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 },
 };

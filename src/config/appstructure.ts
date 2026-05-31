@@ -153,8 +153,10 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'romeinse-cijfers',
                 label: 'Romeinse cijfers',
-                placeholder: true,
-                types: [ph('romeinse-cijfers-item', 'Romeinse cijfers')],
+                types: [
+                    { id: 'romeinse-herkennen', label: 'Herkennen (→ getal)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'herkennen' } },
+                    { id: 'romeinse-schrijven', label: 'Schrijven (→ Romeins)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'schrijven' } },
+                ],
             },
             {
                 id: 'procenten',
