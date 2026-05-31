@@ -36,7 +36,6 @@ function buildNumber(maxGetal: number, numberMask: Record<string, boolean>): num
 
 export function generateRomeinseExercises(block: MathBlock): RomeinseExercise[] {
     const niveau: number = block.constraints.niveau ?? 2;
-    const subtractief: boolean = block.constraints.subtractief ?? true;
     const numberMask: Record<string, boolean> = block.constraints.numberMask ?? {};
     const maxGetal = NIVEAU_MAX[niveau] ?? 39;
     const count = block.numberOfExercises || 8;
@@ -49,7 +48,8 @@ export function generateRomeinseExercises(block: MathBlock): RomeinseExercise[] 
         const value = buildNumber(maxGetal, numberMask);
         if (seen.has(value)) continue;
         seen.add(value);
-        out.push({ id: Math.random().toString(36).substring(2, 9), value, roman: toRoman(value, subtractief), isManuallyEdited: false });
+        // Always subtractive notation (IV, not IIII) — curriculum standard.
+        out.push({ id: Math.random().toString(36).substring(2, 9), value, roman: toRoman(value, true), isManuallyEdited: false });
     }
     return out;
 }

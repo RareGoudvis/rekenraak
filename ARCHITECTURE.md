@@ -283,8 +283,8 @@ only.
 | `plaatswaarde` | `plaatswaardeExercises` | `generatePlaatswaardeExercises` | `PlaatswaardeViewer` | `PlaatswaardeConfig` | subType (waarde/plaats/tabel — sidebar leaf), maxGetal, numberMask |
 | `even-oneven` | `evenOnevenExercises` | `generateEvenOnevenExercises` | `EvenOnevenViewer` | `EvenOnevenConfig` | subType (rooster/cirkels), maxGetal, target (even/oneven), perRow |
 | `vergelijken` | `vergelijkenExercises` | `generateVergelijkenExercises` | `VergelijkenViewer` | `VergelijkenConfig` | subType (getallen/kiezen), maxGetal, numberMask, chooseTarget, setSize |
-| `afronden` | `afrondenExercises` | `generateAfrondenExercises` | `AfrondenViewer` | `AfrondenConfig` | subType (rooster/simpel), maxGetal, numberMask, roundTargets[] (T/H/D/TD) |
-| `romeinse-cijfers` | `romeinseExercises` | `generateRomeinseExercises` | `RomeinseViewer` | `RomeinseConfig` | subType (herkennen/schrijven), niveau (1–4), subtractief, numberMask |
+| `afronden` | `afrondenExercises` | `generateAfrondenExercises` | `AfrondenViewer` | `AfrondenConfig` | subType (rooster/simpel), numberType (natural/decimal — sidebar leaf), maxGetal, decimalPlaces, numberMask (natural), roundTargets[] (T/H/D/TD or E/t/h), roosterSize (rooster = one rooster per exercise, 2-up) |
+| `romeinse-cijfers` | `romeinseExercises` | `generateRomeinseExercises` | `RomeinseViewer` | `RomeinseConfig` | subType (herkennen/schrijven), niveau (1–4); always-subtractive notation, numberMask |
 
 > Note: matching is now exact-key, so the old substring collision between
 > `hr-std-optellen` and `cijferen-optellen-*` (which forced
@@ -471,7 +471,7 @@ src/
 │   ├── plaatswaarde/plaatswaardeGenerator.ts # waarde / plaats / tabel
 │   ├── evenoneven/evenOnevenGenerator.ts     # rooster / cirkels
 │   ├── vergelijken/vergelijkenGenerator.ts   # getallen / kiezen
-│   ├── afronden/afrondenGenerator.ts         # rooster / simpel (ROUND_TARGETS, roundTo)
+│   ├── afronden/afrondenGenerator.ts         # natural+decimal rooster / simpel (targetsFor, roundTo)
 │   └── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
 └── components/
     ├── layout/{sidebar.tsx,TopBar.tsx,AlphaPopup.tsx,HelpModal.tsx,PresetModal.tsx,

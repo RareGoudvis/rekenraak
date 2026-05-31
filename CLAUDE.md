@@ -108,7 +108,7 @@ src/
 │   ├── plaatswaarde/plaatswaardeGenerator.ts # waarde / plaats / tabel
 │   ├── evenoneven/evenOnevenGenerator.ts     # rooster / cirkels
 │   ├── vergelijken/vergelijkenGenerator.ts   # getallen / kiezen
-│   ├── afronden/afrondenGenerator.ts         # rooster / simpel (ROUND_TARGETS, roundTo)
+│   ├── afronden/afrondenGenerator.ts         # natural+decimal rooster / simpel (targetsFor, roundTo)
 │   └── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
 ├── config/
 │   ├── appstructure.ts            # APP_STRUCTURE tree (above)

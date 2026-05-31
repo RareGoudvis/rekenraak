@@ -117,11 +117,13 @@ export interface RomeinseExercise {
     isManuallyEdited: boolean;
 }
 
-// Afronden — round a natural number to a place (rooster of targets, or one ≈ line)
+// Afronden — round numbers (natural/decimal) to a place: a rooster of numbers × targets,
+// or a single "getal ≈ ___" line.
 export interface AfrondenExercise {
     id: string;
-    number: number;
-    targetKey?: string;   // simpel view: which place to round to (T/H/D/TD)
+    number?: number;      // simpel view: the single number
+    targetKey?: string;   // simpel view: which place to round to (T/H/D/TD or E/t/h)
+    numbers?: number[];   // rooster view: the left-column numbers
     isManuallyEdited: boolean;
 }
 

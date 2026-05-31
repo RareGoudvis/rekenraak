@@ -217,7 +217,9 @@ export default function Inspector() {
     }
 
     const c = activeBlock.constraints;
-    const subType: string = c.subType ?? '';
+    // subType-keyed Differentiatie blocks below are fraction-only; scope to 'breuken'
+    // so e.g. romeinse-cijfers (subType 'herkennen') doesn't inherit fraction scaffolding.
+    const subType: string = activeBlock.typeId === 'breuken' ? (c.subType ?? '') : '';
     const updateConstraint = (key: string, value: unknown) =>
         updateBlockSettings(activeBlock.id, { constraints: { ...c, [key]: value } });
 

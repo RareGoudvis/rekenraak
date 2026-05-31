@@ -7,7 +7,7 @@ interface Props { block: MathBlock; }
 
 export default function RomeinseConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { niveau = 2, subtractief = true } = block.constraints;
+    const { niveau = 2 } = block.constraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
@@ -28,16 +28,6 @@ export default function RomeinseConfig({ block }: Props) {
                             </button>
                         );
                     })}
-                </div>
-            </div>
-
-            {/* Subtractieve notatie (IV) vs additief (IIII) — easier when off */}
-            <div style={styles.section}>
-                <div style={styles.onOffRow}>
-                    <span style={styles.onOffLabel}>Subtractieve notatie (IV i.p.v. IIII)</span>
-                    <button onClick={() => set('subtractief', !subtractief)} style={styles.onOffBtn(!!subtractief)}>
-                        {subtractief ? 'AAN' : 'UIT'}
-                    </button>
                 </div>
             </div>
         </div>

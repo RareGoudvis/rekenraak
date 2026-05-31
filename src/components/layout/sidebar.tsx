@@ -45,7 +45,8 @@ export default function Sidebar() {
     const locked = !!curriculum?.locked;
 
     const [openSubdomain, setOpenSubdomain] = useState<string | null>(null);
-    const [openType, setOpenType] = useState<string | null>(null);
+    // Multiple type-accordions can be open at once — opening a subdomain expands them all.
+    const [openTypes, setOpenTypes] = useState<Set<string>>(new Set());
     const [helpOpen, setHelpOpen] = useState(false);
     const [search, setSearch] = useState('');
 
@@ -64,14 +65,21 @@ export default function Sidebar() {
 
     const toggleSubdomain = (id: string) => {
         if (isSearching) return;  // tree is force-expanded during search
-        const next = openSubdomain === id ? null : id;
-        setOpenSubdomain(next);
-        setOpenType(null);
+        if (openSubdomain === id) { setOpenSubdomain(null); setOpenTypes(new Set()); return; }
+        setOpenSubdomain(id);
+        // Auto-expand every accordion type under this subdomain (fewer clicks).
+        const sub = APP_STRUCTURE.flatMap(d => d.subdomains).find(s => s.id === id);
+        const typeIds = (sub?.types ?? []).filter(t => t.children).map(t => t.id);
+        setOpenTypes(new Set(typeIds));
     };
 
     const toggleType = (id: string) => {
         if (isSearching) return;
-        setOpenType(openType === id ? null : id);
+        setOpenTypes(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
     };
 
     return (
@@ -194,7 +202,7 @@ export default function Sidebar() {
                                                             }
 
                                                             // Accordion type (has children)
-                                                            const typeOpen = isSearching || openType === type.id;
+                                                            const typeOpen = isSearching || openTypes.has(type.id);
                                                             const isPhAcc = !!type.placeholder;
                                                             return (
                                                                 <div key={type.id}>

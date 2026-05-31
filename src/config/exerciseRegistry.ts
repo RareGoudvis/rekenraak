@@ -143,11 +143,12 @@ const vergelijkenDefaults = (): Record<string, unknown> => ({
 });
 
 const afrondenDefaults = (): Record<string, unknown> => ({
-    subType: 'rooster', maxGetal: 1000, numberMask: {}, roundTargets: ['T', 'H'],
+    subType: 'rooster', numberType: 'natural', maxGetal: 1000, numberMask: {},
+    roundTargets: ['T', 'H'], roosterSize: 6, decimalPlaces: 2,
 });
 
 const romeinseDefaults = (): Record<string, unknown> => ({
-    subType: 'herkennen', niveau: 2, subtractief: true, numberMask: {},
+    subType: 'herkennen', niveau: 2, numberMask: {},
 });
 
 // All cijferen leaves share the same generator/field/defaults (operator + numberType

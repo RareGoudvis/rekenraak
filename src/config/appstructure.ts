@@ -120,11 +120,17 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'afronden-nat', label: 'Natuurlijke getallen',
                         children: [
-                            { id: 'afronden-nat-rooster', label: 'Rooster', typeId: 'afronden', defaultConstraints: { subType: 'rooster' } },
-                            { id: 'afronden-nat-simpel',  label: 'Eenvoudig (≈)', typeId: 'afronden', defaultConstraints: { subType: 'simpel' } },
+                            { id: 'afronden-nat-rooster', label: 'Rooster', typeId: 'afronden', defaultConstraints: { subType: 'rooster', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] } },
+                            { id: 'afronden-nat-simpel',  label: 'Eenvoudig (≈)', typeId: 'afronden', defaultConstraints: { subType: 'simpel', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] } },
                         ],
                     },
-                    ph('afronden-dec', 'Decimale getallen'),
+                    {
+                        id: 'afronden-dec', label: 'Decimale getallen',
+                        children: [
+                            { id: 'afronden-dec-rooster', label: 'Rooster', typeId: 'afronden', defaultConstraints: { subType: 'rooster', numberType: 'decimal', maxGetal: 100, decimalPlaces: 2, roundTargets: ['E', 't'] } },
+                            { id: 'afronden-dec-simpel',  label: 'Eenvoudig (≈)', typeId: 'afronden', defaultConstraints: { subType: 'simpel', numberType: 'decimal', maxGetal: 100, decimalPlaces: 2, roundTargets: ['E', 't'] } },
+                        ],
+                    },
                 ],
             },
             {
