@@ -104,7 +104,12 @@ src/
 │   │   └── ordenenGenerator.ts
 │   ├── deelbaarheid/deelbaarheidGenerator.ts
 │   ├── getallenas/getallenasGenerator.ts
-│   └── temperatuur/temperatuurGenerator.ts   # kleuren / aflezen / verschil
+│   ├── temperatuur/temperatuurGenerator.ts   # kleuren / aflezen / verschil
+│   ├── plaatswaarde/plaatswaardeGenerator.ts # waarde / plaats / tabel
+│   ├── evenoneven/evenOnevenGenerator.ts     # rooster / cirkels
+│   ├── vergelijken/vergelijkenGenerator.ts   # getallen / kiezen
+│   ├── afronden/afrondenGenerator.ts         # rooster / simpel (ROUND_TARGETS, roundTo)
+│   └── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
 ├── config/
 │   ├── appstructure.ts            # APP_STRUCTURE tree (above)
 │   ├── exerciseRegistry.ts        # REGISTRY: typeId → generator/field/defaults (pure data)
@@ -270,6 +275,15 @@ All types defined in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.
 | `deelbaarheid` | `deelbaarheidExercises: DeelbaarheidExercise[]` | `deelbaarheidGenerator.ts` | `DeelbaarheidViewer` |
 | `getallenas` | `getallenasExercises: GetallenasExercise[]` | `getallenasGenerator.ts` | `GetallenasViewer` |
 | `temperatuur` | `temperatuurExercises: TemperatuurExercise[]` | `temperatuurGenerator.ts` | `TemperatuurViewer` |
+| `plaatswaarde` | `plaatswaardeExercises: PlaatswaardeExercise[]` | `plaatswaardeGenerator.ts` | `PlaatswaardeViewer` |
+| `even-oneven` | `evenOnevenExercises: EvenOnevenExercise[]` | `evenOnevenGenerator.ts` | `EvenOnevenViewer` |
+| `vergelijken` | `vergelijkenExercises: VergelijkenExercise[]` | `vergelijkenGenerator.ts` | `VergelijkenViewer` |
+| `afronden` | `afrondenExercises: AfrondenExercise[]` | `afrondenGenerator.ts` | `AfrondenViewer` |
+| `romeinse-cijfers` | `romeinseExercises: RomeinseExercise[]` | `romeinseGenerator.ts` | `RomeinseViewer` |
+
+`subType` (in `constraints`) selects the view within a family, set by the sidebar leaf
+(plaatswaarde waarde/plaats/tabel · even-oneven rooster/cirkels · vergelijken getallen/kiezen
+· afronden rooster/simpel · romeinse herkennen/schrijven).
 
 Placeholder leaves in `appstructure.ts` (`placeholder: true` / `typeId: '__placeholder__'`) are **not implemented** — they show as greyed tree entries only. See the full per-typeId registry table in [ARCHITECTURE.md](ARCHITECTURE.md).
 

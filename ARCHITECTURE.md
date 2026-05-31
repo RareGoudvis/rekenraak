@@ -135,6 +135,11 @@ one exercise array **per family** (only one is populated per block, keyed by
 | `deelbaarheidExercises` | `DeelbaarheidExercise` | `deelbaarheid` |
 | `getallenasExercises` | `GetallenasExercise` | `getallenas` |
 | `temperatuurExercises` | `TemperatuurExercise` | `temperatuur` |
+| `plaatswaardeExercises` | `PlaatswaardeExercise` | `plaatswaarde` |
+| `evenOnevenExercises` | `EvenOnevenExercise` | `even-oneven` |
+| `vergelijkenExercises` | `VergelijkenExercise` | `vergelijken` |
+| `afrondenExercises` | `AfrondenExercise` | `afronden` |
+| `romeinseExercises` | `RomeinseExercise` | `romeinse-cijfers` |
 
 Every exercise element has `id: string` and `isManuallyEdited: boolean` (set
 `false` on generation; flipped `true` when a teacher hand-edits via
@@ -275,6 +280,11 @@ only.
 | `splitsen` (positie-*) | `splitsenExercises` | `generateSplitsenExercises` | `SplitsenViewer` | `SplitsenConfig` | layout positie-tabel/-benen/-math (sidebar leaf), maxGetal(≤1e9), decimalPlaces, operand1Mask, benenVariants[], mathForms[], mathDirection |
 | `getallenas` | `getallenasExercises` | `generateGetallenasExercises` | `GetallenasViewer` | `GetallenasConfig` | numberType (natural/decimal/rational/geheel), maxGetal, minGetal, step, fractionStep, direction(+beide), allowMixed, gelijknamig, hardMode, ticks |
 | `temperatuur` | `temperatuurExercises` | `generateTemperatuurExercises` | `TemperatuurViewer` | `TemperatuurConfig` | variant (kleuren/aflezen/verschil — sidebar leaf), mode1/mode2 (verschil), includeNegatives, perRow |
+| `plaatswaarde` | `plaatswaardeExercises` | `generatePlaatswaardeExercises` | `PlaatswaardeViewer` | `PlaatswaardeConfig` | subType (waarde/plaats/tabel — sidebar leaf), maxGetal, numberMask |
+| `even-oneven` | `evenOnevenExercises` | `generateEvenOnevenExercises` | `EvenOnevenViewer` | `EvenOnevenConfig` | subType (rooster/cirkels), maxGetal, target (even/oneven), perRow |
+| `vergelijken` | `vergelijkenExercises` | `generateVergelijkenExercises` | `VergelijkenViewer` | `VergelijkenConfig` | subType (getallen/kiezen), maxGetal, numberMask, chooseTarget, setSize |
+| `afronden` | `afrondenExercises` | `generateAfrondenExercises` | `AfrondenViewer` | `AfrondenConfig` | subType (rooster/simpel), maxGetal, numberMask, roundTargets[] (T/H/D/TD) |
+| `romeinse-cijfers` | `romeinseExercises` | `generateRomeinseExercises` | `RomeinseViewer` | `RomeinseConfig` | subType (herkennen/schrijven), niveau (1–4), subtractief, numberMask |
 
 > Note: matching is now exact-key, so the old substring collision between
 > `hr-std-optellen` and `cijferen-optellen-*` (which forced
@@ -457,7 +467,12 @@ src/
 │   ├── ordenen/ordenenGenerator.ts          # + recompute for manual edits
 │   ├── deelbaarheid/deelbaarheidGenerator.ts
 │   ├── getallenas/getallenasGenerator.ts
-│   └── temperatuur/temperatuurGenerator.ts  # kleuren / aflezen / verschil
+│   ├── temperatuur/temperatuurGenerator.ts  # kleuren / aflezen / verschil
+│   ├── plaatswaarde/plaatswaardeGenerator.ts # waarde / plaats / tabel
+│   ├── evenoneven/evenOnevenGenerator.ts     # rooster / cirkels
+│   ├── vergelijken/vergelijkenGenerator.ts   # getallen / kiezen
+│   ├── afronden/afrondenGenerator.ts         # rooster / simpel (ROUND_TARGETS, roundTo)
+│   └── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
 └── components/
     ├── layout/{sidebar.tsx,TopBar.tsx,AlphaPopup.tsx,HelpModal.tsx,PresetModal.tsx,
     │           BaseSettingsPanel.tsx,BaseSettingsModal.tsx}   # §13 sidebar Geavanceerd + base modal
