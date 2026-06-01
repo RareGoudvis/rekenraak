@@ -138,18 +138,40 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         const tableAnswer: string = c.tableAnswer ?? 'blank';
         const cw: number = c.tableCellW ?? 60;
         const ch: number = c.tableCellH ?? 30;
-        const units = ladderFor(measure).filter(u => (c.units ?? []).includes(u.key));
         const showHeaders = scaffolding === 'tabel-headers';
         const unitCell: React.CSSProperties = { border: '1px solid #000', width: `${cw}px`, height: `${ch}px`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: '13px' };
+
+        // Oppervlakte steps ×100 → each ²-unit holds 2 digits, so 2 (half-width) cells per column.
+        const cellsPerUnit = measure === 'oppervlakte' ? 2 : 1;
+        const subW = Math.max(16, Math.floor(cw / cellsPerUnit));
+        // Header width = the column's REAL width: sub-cells minus the (cellsPerUnit-1) collapsed
+        // 1px inner borders, else the header overhangs the body cumulatively (right-edge drift).
+        const colW = subW * cellsPerUnit - (cellsPerUnit - 1);
+        // One column per distinct factor (descending). Equal-factor aliases share a column,
+        // are-unit (ha/a/ca) stacked on top of its square (hm²/dam²/m²).
+        const ARE = new Set(['ha', 'a', 'ca']);
+        const enabled = ladderFor(measure).filter(u => (c.units ?? []).includes(u.key));
+        const byFactor = new Map<number, string[]>();
+        for (const u of enabled) { const arr = byFactor.get(u.factor) ?? []; arr.push(u.key); byFactor.set(u.factor, arr); }
+        const cols = [...byFactor.entries()]
+            .sort((x, y) => y[0] - x[0])
+            .map(([, keys]) => keys.sort((a, b) => Number(ARE.has(b)) - Number(ARE.has(a))));
+        const headCell: React.CSSProperties = { border: '1px solid #000', width: `${colW}px`, minHeight: `${ch}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: '13px', fontWeight: 'bold', lineHeight: 1.1, backgroundColor: SALMON, padding: '2px 0' };
         const sideCell: React.CSSProperties = { height: `${ch}px`, display: 'flex', alignItems: 'center', fontFamily: mono, fontSize: '14px', whiteSpace: 'nowrap' };
 
         const promptStr = (ex: HerleidingExercise) => ex.fromParts.map(p => `${formatMathNumber(p.value)} ${p.key}`).join('  ');
+        // Fixed prompt-column width (≈8.4px/char at 14px Azeret Mono) so every row's unit
+        // cells start at the same x — without it the variable-width prompt staircases them.
+        const promptW = Math.round(Math.max(0, ...exercises.map(ex => promptStr(ex).length)) * 8.4) + 8;
         const ansEl = (ex: HerleidingExercise) => {
             if (tableAnswer === 'blank') return <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px' }}>= <span style={{ borderBottom: '1.5px solid #000', width: '90px', display: 'inline-block', height: '15px' }} /></span>;
-            return <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>= {ex.toParts.map((p, i) => (
-                <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px' }}>
-                    {ex.blank === 'number' ? numLine() : <span>{formatMathNumber(p.value)}</span>}
-                    {ex.blank === 'unit' ? unitLine() : <span>{p.key}</span>}
+            // Shrink the blank lines when the answer has many parts (volledig) so the row fits.
+            const many = ex.toParts.length >= 3;
+            const line = (w: number) => <span style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '15px', display: 'inline-block' }} />;
+            return <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: many ? '4px' : '6px' }}>= {ex.toParts.map((p, i) => (
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: many ? '3px' : '4px' }}>
+                    {ex.blank === 'number' ? line(many ? 30 : 56) : <span>{formatMathNumber(p.value)}</span>}
+                    {ex.blank === 'unit' ? line(many ? 22 : 30) : <span>{p.key}</span>}
                 </span>
             ))}</span>;
         };
@@ -157,14 +179,20 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         table = (
             <div style={{ margin: '0 auto', width: 'fit-content', marginBottom: `${gap + 6}px` }}>
                 <div className="print-row" style={{ display: 'flex', alignItems: 'stretch' }}>
-                    {tablePrompt && <div style={{ ...sideCell, marginRight: '10px' }} />}
-                    {units.map(u => <div key={u.key} style={{ ...unitCell, backgroundColor: SALMON, fontWeight: 'bold' }}>{showHeaders ? u.key : ''}</div>)}
+                    {tablePrompt && <div style={{ ...sideCell, width: `${promptW}px`, flexShrink: 0, marginRight: '10px' }} />}
+                    {cols.map((labels, ci) => <div key={ci} style={headCell}>{showHeaders ? labels.map(l => <span key={l}>{l}</span>) : null}</div>)}
                     {tableAnswer !== 'hidden' && <div style={{ ...sideCell, marginLeft: '10px' }} />}
                 </div>
                 {exercises.map(ex => (
                     <div key={ex.id} className="print-row" style={{ display: 'flex', alignItems: 'stretch' }}>
-                        {tablePrompt && <div style={{ ...sideCell, marginRight: '10px', justifyContent: 'flex-end' }}>{promptStr(ex)}</div>}
-                        {units.map(u => <div key={u.key} style={unitCell} />)}
+                        {tablePrompt && <div style={{ ...sideCell, width: `${promptW}px`, flexShrink: 0, marginRight: '10px', justifyContent: 'flex-end' }}>{promptStr(ex)}</div>}
+                        {cols.map((_c, ci) => (
+                            <div key={ci} style={{ display: 'flex' }}>
+                                {Array.from({ length: cellsPerUnit }).map((_, k) => (
+                                    <div key={k} style={{ ...unitCell, width: `${subW}px`, marginLeft: k > 0 ? '-1px' : 0 }} />
+                                ))}
+                            </div>
+                        ))}
                         {tableAnswer !== 'hidden' && <div style={{ ...sideCell, marginLeft: '10px' }}>{ansEl(ex)}</div>}
                     </div>
                 ))}

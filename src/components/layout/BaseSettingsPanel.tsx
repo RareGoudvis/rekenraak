@@ -12,7 +12,7 @@ export default function BaseSettingsPanel() {
 
     return (
         <div style={S.wrap}>
-            <button style={S.gearBtn} onClick={() => setOpen(o => !o)} title="Geavanceerd" aria-label="Geavanceerd">
+            <button className="ui-icon-btn" style={S.gearBtn} onClick={() => setOpen(o => !o)} title="Geavanceerd" aria-label="Geavanceerd">
                 <Settings size={16} />
             </button>
 

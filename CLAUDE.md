@@ -110,7 +110,7 @@ src/
 │   ├── vergelijken/vergelijkenGenerator.ts   # getallen / kiezen
 │   ├── afronden/afrondenGenerator.ts         # natural+decimal rooster / simpel (targetsFor, roundTo)
 │   ├── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
-│   └── herleidingen/herleidingenGenerator.ts # metric unit conversions (ladderFor; integer-exact)
+│   └── herleidingen/herleidingenGenerator.ts # metric unit conversions (ladderFor; integer-exact; oppervlakte vierkant↔are)
 ├── config/
 │   ├── appstructure.ts            # APP_STRUCTURE tree (above)
 │   ├── exerciseRegistry.ts        # REGISTRY: typeId → generator/field/defaults (pure data)
@@ -287,7 +287,12 @@ All types defined in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.
 
 `subType` (in `constraints`) selects the view within a family, set by the sidebar leaf
 (plaatswaarde waarde/plaats/tabel · even-oneven rooster/cirkels · vergelijken getallen/kiezen
-· afronden rooster/simpel · romeinse herkennen/schrijven · herleidingen measure lengte/inhoud/massa).
+· afronden rooster/simpel · romeinse herkennen/schrijven · herleidingen measure lengte/inhoud/massa/oppervlakte).
+
+For **herleidingen** the `constraints.formats[]` pick the exercise shapes (enkel-getal/-eenheid,
+samengesteld↔enkel); **oppervlakte** adds `vierkant-are`/`are-vierkant` (square↔are ha/a/ca) with
+an `areMode` (`enkel` 1-op-1 / `samengesteld` are-stelsel). The Hulptabel scaffold renders 2
+sub-cells per ²-unit and stacks are-aliases on their squares.
 
 Placeholder leaves in `appstructure.ts` (`placeholder: true` / `typeId: '__placeholder__'`) are **not implemented** — they show as greyed tree entries only. See the full per-typeId registry table in [ARCHITECTURE.md](ARCHITECTURE.md).
 

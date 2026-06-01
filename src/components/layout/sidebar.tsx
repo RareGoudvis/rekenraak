@@ -55,10 +55,10 @@ export default function Sidebar() {
         try { return localStorage.getItem('enderklas_site_title_v1') ?? 'Enderklas Builder'; } catch { return 'Enderklas Builder'; }
     });
     const [siteSubtitle, setSiteSubtitle] = useState<string>(() => {
-        try { return localStorage.getItem('enderklas_site_subtitle_v2') ?? 'By Ruben Van Handenhove.'; } catch { return 'By Ruben Van Handenhove.'; }
+        try { return localStorage.getItem('enderklas_site_subtitle_v3') ?? 'By Ruben Van Handenhove'; } catch { return 'By Ruben Van Handenhove'; }
     });
     useEffect(() => { try { localStorage.setItem('enderklas_site_title_v1', siteTitle); } catch { /* ignore */ } }, [siteTitle]);
-    useEffect(() => { try { localStorage.setItem('enderklas_site_subtitle_v2', siteSubtitle); } catch { /* ignore */ } }, [siteSubtitle]);
+    useEffect(() => { try { localStorage.setItem('enderklas_site_subtitle_v3', siteSubtitle); } catch { /* ignore */ } }, [siteSubtitle]);
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(() => filterTree(APP_STRUCTURE, search), [search]);
@@ -168,6 +168,7 @@ export default function Sidebar() {
                                             <div key={subdomain.id}>
                                                 {/* Subdomain header */}
                                                 <button
+                                                    className="sidebar-row"
                                                     style={S.subdomainBtn(subOpen, accent, subdomain.placeholder)}
                                                     onClick={() => toggleSubdomain(subdomain.id)}
                                                 >
@@ -210,6 +211,7 @@ export default function Sidebar() {
                                                             return (
                                                                 <div key={type.id}>
                                                                     <button
+                                                                        className={isPhAcc ? undefined : 'sidebar-row'}
                                                                         style={isPhAcc ? S.placeholderTypeBtn(typeOpen, accent) : S.typeBtn(typeOpen, accent)}
                                                                         onClick={() => toggleType(type.id)}
                                                                     >
@@ -266,14 +268,14 @@ export default function Sidebar() {
             <div style={S.footer}>
                 <div style={S.footerActions}>
                     <span style={{ ...S.footerText, flex: 1 }}>
-                        Updated: 01/06/2026<br />
-                        Code onder <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</a>.
+                        Updated: 02/06/2026<br />
+                        License: <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</a>.
                     </span>
                     {!locked && <BaseSettingsPanel />}
-                    <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" data-tour="feedback" style={S.footerIconBtn} title="Feedback geven" aria-label="Feedback">
+                    <a className="ui-icon-btn" href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" data-tour="feedback" style={S.footerIconBtn} title="Feedback geven" aria-label="Feedback">
                         <MessageSquare size={16} />
                     </a>
-                    <a href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" style={{ ...S.footerIconBtn, color: '#e11d48', border: '1px solid #e11d48' }} title="Steun deze tool met een koffie ☕" aria-label="Doneer">
+                    <a className="ui-icon-btn" href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" style={{ ...S.footerIconBtn, color: '#e11d48', border: '1px solid #e11d48' }} title="Steun deze tool met een koffie ☕" aria-label="Doneer">
                         <Heart size={16} fill="#e11d48" />
                     </a>
                 </div>

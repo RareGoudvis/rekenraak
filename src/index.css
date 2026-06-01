@@ -62,7 +62,7 @@ textarea:focus-visible,
 /* Shared icon button (TopBar / sidebar / block overlay). Hover lifts, press dips —
    inline styles can't express :hover/:active so the interaction lives here. */
 .ui-icon-btn:not(:disabled):hover { filter: brightness(1.10); }
-[data-theme="light"] .ui-icon-btn:not(:disabled):hover { filter: brightness(0.97); }
+[data-theme="light"] .ui-icon-btn:not(:disabled):hover { filter: brightness(0.95); }
 [data-theme="colorblind"] .ui-icon-btn:not(:disabled):hover { filter: none; background-color: var(--bg-hover); }
 .ui-icon-btn:not(:disabled):active { transform: scale(0.96); }
 
@@ -73,10 +73,16 @@ textarea:focus-visible,
 /* Sidebar exercise leaves — rounded hover fill + text lift (replaces the old
    inline onMouseEnter/Leave colour hacks). */
 .sidebar-leaf { transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out); }
-.sidebar-leaf:hover { background-color: var(--bg-hover); color: var(--text-main); }
+/* !important: the leaf/badge set background/color inline, which would otherwise beat these
+   hover rules — so the tree only changed the cursor. Scoped to :hover, resting look unchanged. */
+.sidebar-leaf:hover { background-color: var(--bg-hover) !important; color: var(--text-main) !important; }
 /* The add-badge (first child) tints accent when its row is hovered. */
 .sidebar-leaf > span:first-child { transition: color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out); }
-.sidebar-leaf:hover > span:first-child { color: var(--accent); border-color: var(--accent); }
+.sidebar-leaf:hover > span:first-child { color: var(--accent) !important; border-color: var(--accent) !important; }
+
+/* Collapsible subdomain / type-accordion headers — subtle row-fill on hover (same inline-override caveat). */
+.sidebar-row { transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out); }
+.sidebar-row:hover { background-color: var(--bg-hover) !important; color: var(--text-main) !important; border-radius: var(--radius-sm); }
 
 /* macOS-style unified segmented control: one bezel, thin internal dividers, the selected
    segment tinted in place (not a per-segment box, not a floating thumb). Used for small
@@ -222,10 +228,13 @@ textarea:focus-visible,
     height: 100% !important;
     padding: 0 !important;
     overflow: visible !important;
+    background: white !important;
   }
 
-  /* The viewer scroll container must not clip the multi-page sheet in print. */
-  .print-scroll { display: block !important; overflow: visible !important; height: auto !important; min-height: 0 !important; }
+  /* The viewer scroll container must not clip the multi-page sheet in print. padding:0
+     drops the screen-only shadow breathing room — otherwise the inset sheet exposes the
+     gray --bg-base behind it (print-color-adjust:exact forces it to print). */
+  .print-scroll { display: block !important; overflow: visible !important; height: auto !important; min-height: 0 !important; padding: 0 !important; }
 
   /* Collapse the scrollable center column */
   .print-main {

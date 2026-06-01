@@ -42,34 +42,63 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
     if (units.length < 2) units = ladder;
     const fOf = (k: string) => units.find(u => u.key === k)?.factor ?? ladder.find(u => u.key === k)?.factor ?? 1;
 
+    // Standard formats use ONE unit per factor (the square — listed before its are-alias in
+    // LADDERS), so a compound never shows a unit and its alias together (m² + ca).
+    const seenF = new Set<number>();
+    const gridUnits = units.filter(u => seenF.has(u.factor) ? false : (seenF.add(u.factor), true));
+
+    // Are-stelsel: ha/a/ca are equal-factor aliases of hm²/dam²/m². Used only by the are formats.
+    const areMode: string = c.areMode ?? 'samengesteld';
+    const AREL = [{ key: 'ha', factor: 1e10 }, { key: 'a', factor: 1e8 }, { key: 'ca', factor: 1e6 }];
+    const sqHigh = ladder.filter(u => u.factor >= 1e6 && !['ha', 'a', 'ca'].includes(u.key)); // km²,hm²,dam²,m²
+
     // A strictly-descending pair (big.factor > small.factor) — skips equal-factor aliases.
     const pickPair = (): [Unit, Unit] => {
         for (let t = 0; t < 60; t++) {
-            const i = Math.floor(Math.random() * (units.length - 1));
-            const j = i + 1 + Math.floor(Math.random() * (units.length - 1 - i));
-            if (units[i].factor > units[j].factor) return [units[i], units[j]];
+            const i = Math.floor(Math.random() * (gridUnits.length - 1));
+            const j = i + 1 + Math.floor(Math.random() * (gridUnits.length - 1 - i));
+            if (gridUnits[i].factor > gridUnits[j].factor) return [gridUnits[i], gridUnits[j]];
         }
-        for (let i = 0; i < units.length; i++) for (let j = i + 1; j < units.length; j++) if (units[i].factor > units[j].factor) return [units[i], units[j]];
-        return [units[0], units[units.length - 1]];
+        for (let i = 0; i < gridUnits.length; i++) for (let j = i + 1; j < gridUnits.length; j++) if (gridUnits[i].factor > gridUnits[j].factor) return [gridUnits[i], gridUnits[j]];
+        return [gridUnits[0], gridUnits[gridUnits.length - 1]];
     };
 
     // "Volledig": a contiguous run of enabled units down to the lowest enabled unit (the given
     // unit), top coeff 1..max, every lower coeff 0..ratio-1. ≥3 units when ≥3 are enabled.
     const buildRun = (max: number): { run: HerleidingPart[]; bottomKey: string; baseInBottom: number } => {
-        const eIdx = units.length - 1;
-        const maxTop = Math.max(0, eIdx - (units.length >= 3 ? 2 : 1));
+        const eIdx = gridUnits.length - 1;
+        const maxTop = Math.max(0, eIdx - (gridUnits.length >= 3 ? 2 : 1));
         const tIdx = Math.floor(Math.random() * (maxTop + 1));
         const run: HerleidingPart[] = [];
         for (let i = tIdx; i <= eIdx; i++) {
-            const value = i === tIdx ? ri(max) : Math.floor(Math.random() * (units[i - 1].factor / units[i].factor));
-            run.push({ key: units[i].key, value });
+            const value = i === tIdx ? ri(max) : Math.floor(Math.random() * (gridUnits[i - 1].factor / gridUnits[i].factor));
+            run.push({ key: gridUnits[i].key, value });
         }
-        const bottom = units[eIdx];
+        const bottom = gridUnits[eIdx];
         const baseInBottom = run.reduce((s, p) => s + p.value * (fOf(p.key) / bottom.factor), 0);
         return { run, bottomKey: bottom.key, baseInBottom };
     };
 
     const build = (format: string): HerleidingExercise | null => {
+        // Square ⟷ are conversions (oppervlakte). 'enkel' = single-unit swap; 'samengesteld' =
+        // are-compound (ha/a/ca, ×100 steps) ⟷ a single m² value.
+        if (format === 'vierkant-are' || format === 'are-vierkant') {
+            if (areMode === 'enkel') {
+                const T = pick(AREL);
+                const vT = ri(maxEnkel);
+                const S = pick(sqHigh.filter(s => s.factor <= T.factor));   // square ≤ are factor → integer
+                const sq = { key: S.key, value: vT * (T.factor / S.factor) };
+                const are = { key: T.key, value: vT };
+                return format === 'vierkant-are' ? mk(format, [sq], [are], 'number') : mk(format, [are], [sq], 'number');
+            }
+            const top = Math.floor(Math.random() * AREL.length);
+            const run: HerleidingPart[] = [];
+            for (let i = top; i <= AREL.length - 1; i++) run.push({ key: AREL[i].key, value: i === top ? ri(maxSam) : Math.floor(Math.random() * 100) });
+            if (run.length < 2) return null;                                 // need a real compound
+            const baseCa = run.reduce((s, p) => s + p.value * (fOf(p.key) / 1e6), 0); // ca == m²
+            const sq = { key: 'm²', value: baseCa };
+            return format === 'vierkant-are' ? mk(format, [sq], run, 'number') : mk(format, run, [sq], 'number');
+        }
         if (format === 'enkel-getal') {
             const [big, small] = pickPair();
             const coeff = ri(maxEnkel);
@@ -102,7 +131,7 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
             return mk(format, [{ key: bottomKey, value: baseInBottom }], run, 'number');
         }
         const [A, B] = pickPair();
-        const lowers = units.filter(u => u.factor <= B.factor);
+        const lowers = gridUnits.filter(u => u.factor <= B.factor);
         const C = pick(lowers);
         const cA = ri(maxSam);
         const cB = ri(Math.min(maxSam, A.factor / B.factor - 1));

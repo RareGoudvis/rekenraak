@@ -132,7 +132,7 @@ export interface AfrondenExercise {
 export interface HerleidingPart { key: string; value: number; }
 export interface HerleidingExercise {
     id: string;
-    format: 'enkel-getal' | 'enkel-eenheid' | 'samengesteld-enkel' | 'enkel-samengesteld';
+    format: 'enkel-getal' | 'enkel-eenheid' | 'samengesteld-enkel' | 'enkel-samengesteld' | 'vierkant-are' | 'are-vierkant';
     fromParts: HerleidingPart[];
     toParts: HerleidingPart[];
     blank: 'number' | 'unit';

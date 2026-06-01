@@ -9,6 +9,11 @@ const FORMATS = [
     { key: 'samengesteld-enkel', label: 'Samengesteld → enkel' }, // 3 m 6 cm = ___ cm
     { key: 'enkel-samengesteld', label: 'Enkel → samengesteld' }, // 540 cm = ___ m ___ dm
 ];
+// Oppervlakte-only: convert between squares (m²/dam²/hm²) and ares (ca/a/ha).
+const OPP_FORMATS = [
+    { key: 'vierkant-are', label: 'Vierkant → are (ha/a/ca)' },
+    { key: 'are-vierkant', label: 'Are → vierkant' },
+];
 const SAM_STOPS = [10, 100, 1000, 10000, 100000, 1000000];
 
 export default function HerleidingenConfig({ block }: { block: MathBlock }) {
@@ -21,9 +26,13 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const maxEnkel: number = c.maxEnkel ?? 100;
     const maxSam: number = c.maxSamengesteld ?? 1000;
     const compoundMode: string = c.compoundMode ?? '2';
+    const areMode: string = c.areMode ?? 'samengesteld';
+    const hasAre = formats.some(f => f === 'vierkant-are' || f === 'are-vierkant');
+    const allFormats = measure === 'oppervlakte' ? [...FORMATS, ...OPP_FORMATS] : FORMATS;
 
-    const hasEnkel = formats.some(f => f === 'enkel-getal' || f === 'enkel-eenheid');
-    const hasSam = formats.some(f => f === 'samengesteld-enkel' || f === 'enkel-samengesteld');
+    // are formats reuse the maxEnkel / maxSamengesteld sliders depending on areMode.
+    const hasEnkel = formats.some(f => f === 'enkel-getal' || f === 'enkel-eenheid') || (hasAre && areMode === 'enkel');
+    const hasSam = formats.some(f => f === 'samengesteld-enkel' || f === 'enkel-samengesteld') || (hasAre && areMode === 'samengesteld');
 
     const set = (k: string, v: unknown) => update(block.id, { constraints: { ...c, [k]: v } });
     const toggleUnit = (k: string) => { const next = units.includes(k) ? units.filter(x => x !== k) : [...units, k]; if (next.length) set('units', next); };
@@ -57,7 +66,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
             <div style={styles.section}>
                 <label style={styles.groupLabel}>Soorten oefeningen</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {FORMATS.map(f => (
+                    {allFormats.map(f => (
                         <button key={f.key} onClick={() => toggleFormat(f.key)} style={{ ...styles.pill(formats.includes(f.key)), width: '100%', textAlign: 'left' }}>{f.label}</button>
                     ))}
                 </div>
@@ -79,6 +88,16 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                     <div className="seg-group">
                         <button className="seg-btn" aria-pressed={compoundMode === '2'} onClick={() => set('compoundMode', '2')}>2 eenheden</button>
                         <button className="seg-btn" aria-pressed={compoundMode === 'volledig'} onClick={() => set('compoundMode', 'volledig')}>Volledig</button>
+                    </div>
+                </div>
+            )}
+
+            {hasAre && (
+                <div style={styles.section}>
+                    <label style={styles.label}>Are-omzetting:</label>
+                    <div className="seg-group">
+                        <button className="seg-btn" aria-pressed={areMode === 'enkel'} onClick={() => set('areMode', 'enkel')}>Enkelvoudig</button>
+                        <button className="seg-btn" aria-pressed={areMode === 'samengesteld'} onClick={() => set('areMode', 'samengesteld')}>Are-stelsel</button>
                     </div>
                 </div>
             )}
