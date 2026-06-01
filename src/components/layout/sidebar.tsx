@@ -154,8 +154,12 @@ export default function Sidebar() {
 
                     return (
                         <div key={domain.id} style={S.domainWrap}>
-                            {/* Domain content — accent border runs full height, always visible */}
-                            <div style={S.domainContent(accent)}>
+                            {/* macOS source-list section header: a domain-color dot + the domain name. */}
+                            <div style={S.sectionHeader}>
+                                <span style={S.sectionDot(accent)} />
+                                <span>{domain.label}</span>
+                            </div>
+                            <div style={S.domainContent}>
                                     {domain.subdomains.map((subdomain) => {
                                         const subOpen = isSearching || openSubdomain === subdomain.id;
 
@@ -309,10 +313,11 @@ const S = {
 
     domainWrap: { marginBottom: 'var(--sp-3)' } as React.CSSProperties,
 
-    // Domain accent reads as a soft inset rail (no extra marginLeft — reclaim width).
-    domainContent: (accent: string): React.CSSProperties => ({
-        borderLeft: `2px solid ${accent}`,
-    }),
+    // macOS source-list section header + leading domain-color dot.
+    sectionHeader: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-2) var(--sp-3) var(--sp-1)', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.01em' } as React.CSSProperties,
+    sectionDot: (accent: string): React.CSSProperties => ({ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: accent, flexShrink: 0 }),
+
+    domainContent: { paddingLeft: 'var(--sp-1)' } as React.CSSProperties,
 
     subdomainBtn: (open: boolean, _accent: string, placeholder?: boolean): React.CSSProperties => ({
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-1)',
