@@ -87,20 +87,29 @@ panel: **Opdrachtblok → Engine (Config plugin) → Differentiatie → Geavance
 - Keyboard focus rings are global in [index.css](src/index.css) via `:focus-visible` +
   `--shadow-focus` — don't hand-roll outlines. `prefers-reduced-motion` is honored globally.
 
-### Mask-button canon (place-value "Specifieke getalopbouw" TD D H T E …)
-Every config that shows place-value masks uses **exactly** this — copy it verbatim:
-```ts
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({
-  width: 28, height: 28, fontSize: 10, fontWeight: 'bold', borderRadius: 4, cursor: 'pointer',
-  border: '1px solid var(--border-color)',
-  backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-  color: active ? '#fff' : 'var(--text-muted)',
-});
-```
-Wrap the block in `styles.section` + `styles.label`; factor-label width 56px, row
-`marginBottom:10`, mask `gap:6`. (Reference: SplitsenConfig.tsx, addition/NaturalSettings.tsx.)
-Mask data + helpers (`PLACE_VALUES`, `getMaskPlaces`, `generateMaskedInt`,
-`numberMatchesMask`) live in [mathEngine.ts](src/services/math/mathEngine.ts).
+### Place-value mask canon ("Specifieke getalopbouw" TD D H T E …)
+**Call `styles.maskBtn(active)` — do NOT write a local `maskBtnStyle`.** (The whole app
+was just swept to remove ~12 local copies; re-introducing one is a regression.) Wrap the
+block in `styles.section` + a `styles.groupLabel`; factor-label `width:56px`, mask row
+`gap:6`. Reference: `addition/NaturalSettings.tsx`, `SplitsenConfig.tsx`. Mask data +
+helpers (`PLACE_VALUES`, `getMaskPlaces`, `generateMaskedInt`, `numberMatchesMask`) live in
+[mathEngine.ts](src/services/math/mathEngine.ts).
+
+### THE selected-state rule (one look, everywhere)
+Every toggle — segmented `radioBtn`, `maskBtn`, `bridgeBtn`, `pill`, theme switch, the
+Inspector segments, bespoke list-rows — shows the **same** selected treatment:
+**`--accent-soft` fill + `--accent` text + a 1px `--accent` ring.** Never a solid accent
+fill, never `white`/`#fff` text, never a per-domain accent (`--accent-bewerkingen` etc.) on
+a control. The 1px ring is load-bearing in the colorblind theme (where `--accent-soft` is a
+faint gray) — keep it. The lone exception is `onOffBtn`, a binary switch that earns a solid
+`--accent` fill when ON. A genuinely bespoke control (e.g. a list-row selector) may have a
+local style **only if** it expresses this same rule with tokens and adapts a shared helper
+(`{ ...styles.radioBtn(active), … }`) — see `multiplication/RationalSettings.tsx`.
+
+### IconButton — [IconButton.tsx](src/components/ui/IconButton.tsx)
+34px tall, `--radius-sm`; variants: `primary` (`--accent` bg / `--accent-on`), `neutral`
+(`--bg-surface-2` / main text, default), `danger` (`--danger-soft` bg / `--danger`),
+`active` (`--accent-soft` bg / `--accent`). Hover/press live in `.ui-icon-btn` (index.css).
 
 ### IconButton — [IconButton.tsx](src/components/ui/IconButton.tsx)
 34px tall, `--radius-sm`; variants: `primary` (`--accent` bg / `--accent-on`), `neutral`
@@ -134,10 +143,23 @@ tokens. Reuse these exact values — don't pick new ones:
 
 ---
 
-## 4. Checklist for any new config / UI control
+## 4. Compliance checklist (run against EVERY UI change)
 
-1. Backgrounds / text / borders / accents → `var(--token)`, never raw hex.
-2. Reuse a `sharedPluginStyles` / Inspector `S` helper before writing a local style object.
-3. Place-value masks → the mask-button canon above (28×28, bg-input, 1px border).
-4. Worksheet ink → the §3 table values.
-5. Eyeball the result in **all three themes** (dark / light / colorblind) before committing.
+1. **No local control styles.** A config plugin must not define `maskBtnStyle` /
+   `radioBtnStyle` / `bridgeBtnStyle` / `pill` / `toggle` / `tableBtn` / `headerStyle`.
+   Import and call `styles.maskBtn` / `styles.radioBtn` / `styles.bridgeBtn` / `styles.pill`
+   / `styles.onOffBtn` / `<Switch>`. (Grep guard — must return nothing:
+   `rg "(maskBtnStyle|radioBtnStyle|bridgeBtnStyle|tableBtnStyle)\s*=|const (pill|toggle)\s*=" src/components/configurator/plugins`.
+   Note: `toggleMask`/`toggleDenom`-style *event handlers* are fine — the guard targets
+   style functions only.)
+2. **One selected look** — `--accent-soft` + `--accent` text + 1px `--accent` ring (§2).
+   No solid accent fill, no `white`/`#fff`, no domain accent on a control.
+3. **Two label tiers** — `styles.groupLabel` (600, `--text-main`) for a cluster header;
+   `styles.label` (500, muted) for a single-control label. Nothing else; no `<h4>`.
+4. **Tokens only** — bg / text / border / accent / spacing / radius / shadow / motion via
+   `var(--token)`. No raw hex except the §3 worksheet-ink list. (Grep guard: `rg "#[0-9a-fA-F]{3,6}"
+   src/components` — every hit must be a §3 ink color or a deliberate, commented exception.)
+5. **Worksheet ink** → the §3 table values; the printed A4 is never re-skinned.
+6. **Switch over checkbox** for standalone booleans; **IconButton** for icon actions.
+7. **Eyeball all three themes** (dark / light / colorblind) — and **Ctrl/Cmd+P** to confirm
+   the worksheet still prints identically — before committing.
