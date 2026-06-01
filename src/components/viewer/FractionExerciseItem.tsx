@@ -341,11 +341,13 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const partLength = parseFloat((cm / ex.denominator).toFixed(2));
         const arcLength  = parseFloat((partLength * ex.numerator).toFixed(2));
 
+        // Borders (not background-color) so the segment line always prints, even with
+        // the print dialog's "Background graphics" off.
         const lineEl = (
             <div style={{ width: `${cm * 38}px`, display: 'flex', alignItems: 'center', margin: '10px 0' }}>
-                <div style={{ width: '2px', height: '16px', backgroundColor: '#000' }} />
-                <div style={{ flex: 1, height: '2px', backgroundColor: '#000' }} />
-                <div style={{ width: '2px', height: '16px', backgroundColor: '#000' }} />
+                <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
+                <div style={{ flex: 1, height: 0, borderTop: '2px solid #000' }} />
+                <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
             </div>
         );
 

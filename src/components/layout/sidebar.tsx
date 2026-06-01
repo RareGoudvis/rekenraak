@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { HelpCircle, Heart, Sun, Moon, Contrast } from 'lucide-react';
+import { HelpCircle, Heart, Sun, Moon, Contrast, MessageSquare } from 'lucide-react';
 import logo from '../../assets/enderklas-logo.png';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
@@ -265,9 +265,9 @@ export default function Sidebar() {
 
             <div style={S.footer}>
                 <div style={S.footerActions}>
-                    <span style={{ ...S.footerText, flex: 1 }}>Gemaakt door Ruben V.H.</span>
-                    <a href="https://x.com/ruben_vah" target="_blank" rel="noopener noreferrer" style={S.footerIconBtn} title="Contact via X" aria-label="Contact via X">
-                        <span style={{ fontFamily: 'serif', fontWeight: 700, fontSize: '16px' }}>𝕏</span>
+                    <span style={{ ...S.footerText, flex: 1 }}>Gemaakt door Ruben Van Handenhove</span>
+                    <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={S.footerIconBtn} title="Feedback geven" aria-label="Feedback">
+                        <MessageSquare size={16} />
                     </a>
                     <a href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" style={{ ...S.footerIconBtn, color: '#e11d48', borderColor: '#e11d48' }} title="Steun deze tool met een koffie ☕" aria-label="Doneer">
                         <Heart size={16} fill="#e11d48" />

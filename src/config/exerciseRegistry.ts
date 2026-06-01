@@ -131,7 +131,7 @@ const temperatuurDefaults = (): Record<string, unknown> => ({
 });
 
 const plaatswaardeDefaults = (): Record<string, unknown> => ({
-    subType: 'waarde', maxGetal: 1000, numberMask: {},
+    subType: 'waarde', maxGetal: 1000, numberMask: {}, decimalPlaces: 0,
 });
 
 const evenOnevenDefaults = (): Record<string, unknown> => ({
@@ -139,7 +139,7 @@ const evenOnevenDefaults = (): Record<string, unknown> => ({
 });
 
 const vergelijkenDefaults = (): Record<string, unknown> => ({
-    subType: 'getallen', maxGetal: 1000, numberMask: {}, chooseTarget: 'grootste', setSize: 4,
+    subType: 'getallen', maxGetal: 1000, numberMask: {}, chooseTarget: 'grootste', setSize: 4, decimalPlaces: 0,
 });
 
 const afrondenDefaults = (): Record<string, unknown> => ({

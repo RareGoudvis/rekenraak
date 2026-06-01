@@ -9,13 +9,13 @@ const MAX_PRESETS = [100, 1000, 10000, 100000, 1000000];
 
 export default function PlaatswaardeConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 1000, numberMask = {} } = block.constraints;
+    const { maxGetal = 1000, numberMask = {}, decimalPlaces = 0 } = block.constraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
 
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
-    const places = getMaskPlaces(maxGetal, 'natural');
+    const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
 
     // subType (view) is chosen by the sidebar leaf — not repeated here.
     return (
@@ -25,6 +25,15 @@ export default function PlaatswaardeConfig({ block }: Props) {
                 <div style={styles.buttonGroup}>
                     {MAX_PRESETS.map(val => (
                         <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
+                    ))}
+                </div>
+            </div>
+
+            <div style={styles.section}>
+                <label style={styles.label}>Decimalen:</label>
+                <div style={styles.buttonGroup}>
+                    {[0, 1, 2, 3].map(dp => (
+                        <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
                     ))}
                 </div>
             </div>

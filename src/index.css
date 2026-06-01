@@ -112,7 +112,9 @@
   /* height:100% chain (here down through .print-area) makes the print <table> fill the
      page, so its tbody cell absorbs the slack and <tfoot> sinks to the page bottom even
      on a short last page. overflow:visible keeps multi-page content from clipping. */
-  html, body { height: 100% !important; overflow: visible !important; background: white !important; }
+  /* Force background colors/fills to print (lijnstuk line, salmon rooster headers,
+     fraction fills, tints, solution overlays) — WYSIWYG: the preview is what prints. */
+  html, body { height: 100% !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   #root { height: 100% !important; overflow: visible !important; }
 
   .no-print { display: none !important; }
