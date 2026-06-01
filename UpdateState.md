@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-06-02** — Added a favicon (the Enderklas logo) via `<link rel="icon">` in index.html (Vite hashes/bundles it). Note: it's the full 331 KB PNG — downscale later if needed.
+
 **2026-06-01** — Fixed gray print background (regression): the shadow-clip `.print-scroll` padding wasn't reset in `@media print`, so the inset sheet exposed the gray `--bg-base` (forced to print by `print-color-adjust:exact`). Added `padding:0` to the print `.print-scroll` rule + `background:white` on `.print-root`. Also fixed oppervlakte Hulptabel header/body right-edge drift (header `colW` now matches the collapsed 2-cell column width).
 
 **2026-06-01** — Oppervlakte herleidingen: (1) fixed a generator bug where compounds emitted a square **and** its are-alias in the same place (`47 m² 0 ca`) — standard formats now dedupe to one unit per factor (`gridUnits`, squares win). (2) New oppervlakte-only "Soorten oefeningen" **Vierkant → are** and **Are → vierkant** (ca=m², a=dam², ha=hm²) with an **Are-omzetting** toggle (Enkelvoudig 1-op-1 / Are-stelsel samengesteld) shown when an are-type is picked; reuses the max-getal sliders. New constraint `areMode` (default `samengesteld`); format union + `herleidingenDefaults` extended. Integer-exact (isExact guard) and recompute unchanged.
