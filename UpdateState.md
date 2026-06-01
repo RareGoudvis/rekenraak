@@ -5,7 +5,7 @@ Most recent entry first.
 
 ---
 
-**2026-06-02** — Added a favicon (the Enderklas logo) via `<link rel="icon">` in index.html (Vite hashes/bundles it). Note: it's the full 331 KB PNG — downscale later if needed.
+**2026-06-02** — Added a favicon: the Enderklas logo downscaled to a 64×64 `src/assets/favicon.png` (~2 KB, from the 1024² source), linked via `<link rel="icon">` in index.html (Vite hashes/bundles it).
 
 **2026-06-01** — Fixed gray print background (regression): the shadow-clip `.print-scroll` padding wasn't reset in `@media print`, so the inset sheet exposed the gray `--bg-base` (forced to print by `print-color-adjust:exact`). Added `padding:0` to the print `.print-scroll` rule + `background:white` on `.print-root`. Also fixed oppervlakte Hulptabel header/body right-edge drift (header `colW` now matches the collapsed 2-cell column width).
 
