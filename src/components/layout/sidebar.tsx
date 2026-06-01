@@ -55,7 +55,7 @@ export default function Sidebar() {
         try { return localStorage.getItem('enderklas_site_title_v1') ?? 'Enderklas Builder'; } catch { return 'Enderklas Builder'; }
     });
     const [siteSubtitle, setSiteSubtitle] = useState<string>(() => {
-        try { return localStorage.getItem('enderklas_site_subtitle_v1') ?? ''; } catch { return ''; }
+        try { return localStorage.getItem('enderklas_site_subtitle_v1') ?? 'Gemaakt door Ruben Van Handenhove'; } catch { return 'Gemaakt door Ruben Van Handenhove'; }
     });
     useEffect(() => { try { localStorage.setItem('enderklas_site_title_v1', siteTitle); } catch { /* ignore */ } }, [siteTitle]);
     useEffect(() => { try { localStorage.setItem('enderklas_site_subtitle_v1', siteSubtitle); } catch { /* ignore */ } }, [siteSubtitle]);
@@ -98,7 +98,7 @@ export default function Sidebar() {
                     <input
                         value={siteSubtitle}
                         onChange={(e) => setSiteSubtitle(e.target.value)}
-                        placeholder="Werkbundels maken, snel en simpel."
+                        placeholder="Gemaakt door Ruben Van Handenhove"
                         style={S.siteSubtitleInput}
                     />
                 </div>
@@ -145,7 +145,7 @@ export default function Sidebar() {
 
             <hr style={S.divider} />
 
-            <div style={S.navArea}>
+            <div style={S.navArea} data-tour="sidebar-nav">
                 {tree.length === 0 && isSearching && (
                     <div style={S.noResults}>Geen oefening gevonden voor "{search}".</div>
                 )}
@@ -263,16 +263,13 @@ export default function Sidebar() {
                 </div>
             </div>
 
-            {!locked && <BaseSettingsPanel />}
-
             <div style={S.footer}>
-                {/* Name on its own full-width line so it never wraps; links + actions below. */}
-                <div style={S.footerText}>Gemaakt door Ruben Van Handenhove</div>
                 <div style={S.footerActions}>
                     <span style={{ ...S.footerText, flex: 1 }}>
                         Code onder <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</a>.
                     </span>
-                    <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={S.footerIconBtn} title="Feedback geven" aria-label="Feedback">
+                    {!locked && <BaseSettingsPanel />}
+                    <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" data-tour="feedback" style={S.footerIconBtn} title="Feedback geven" aria-label="Feedback">
                         <MessageSquare size={16} />
                     </a>
                     <a href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" style={{ ...S.footerIconBtn, color: '#e11d48', border: '1px solid #e11d48' }} title="Steun deze tool met een koffie ☕" aria-label="Doneer">
@@ -294,7 +291,7 @@ const S = {
     headerRow: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-5) var(--sp-4) var(--sp-3)' } as React.CSSProperties,
     logoWrap: { width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as React.CSSProperties,
     headerText: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } as React.CSSProperties,
-    siteTitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: 'var(--text-lg)', fontWeight: 700, letterSpacing: '-0.01em', color: 'var(--text-main)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,
+    siteTitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: 'var(--text-lg)', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-main)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,
     siteSubtitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--accent)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,
     divider: { border: 'none', height: '1px', backgroundColor: 'var(--separator)', margin: '0 var(--sp-4)' } as React.CSSProperties,
     searchWrap: { padding: 'var(--sp-2) var(--sp-4)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' } as React.CSSProperties,
