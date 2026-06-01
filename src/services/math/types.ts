@@ -127,6 +127,18 @@ export interface AfrondenExercise {
     isManuallyEdited: boolean;
 }
 
+// Herleidingen — metric unit conversions (lengte/inhoud/massa). from/to are 1- or 2-part
+// (compound), `blank` says whether the student fills the number(s) or the unit.
+export interface HerleidingPart { key: string; value: number; }
+export interface HerleidingExercise {
+    id: string;
+    format: 'enkel-getal' | 'enkel-eenheid' | 'samengesteld-enkel' | 'enkel-samengesteld';
+    fromParts: HerleidingPart[];
+    toParts: HerleidingPart[];
+    blank: 'number' | 'unit';
+    isManuallyEdited: boolean;
+}
+
 // Vergelijken — fill <, > or = between two numbers, or circle the largest/smallest
 export interface VergelijkenExercise {
     id: string;
@@ -198,6 +210,7 @@ export interface MathBlock {
     vergelijkenExercises?: VergelijkenExercise[];
     afrondenExercises?: AfrondenExercise[];
     romeinseExercises?: RomeinseExercise[];
+    herleidingExercises?: HerleidingExercise[];
     verticalSpacing: number;
 }
 

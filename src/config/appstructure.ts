@@ -57,6 +57,14 @@ export const APP_STRUCTURE: Domain[] = [
                         ],
                     },
                     {
+                        id: 'getalbegrip-plaatswaarde', label: 'Plaatswaarde benoemen',
+                        children: [
+                            { id: 'plaatswaarde-waarde', label: 'Waarde van cijfer', typeId: 'plaatswaarde', defaultConstraints: { subType: 'waarde' } },
+                            { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' } },
+                            { id: 'plaatswaarde-tabel',  label: 'Tabel invullen',     typeId: 'plaatswaarde', defaultConstraints: { subType: 'tabel' } },
+                        ],
+                    },
+                    {
                         id: 'getalbegrip-splitsen',
                         label: 'Splitsen',
                         children: [
@@ -65,6 +73,13 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'splitsen-positietabel', label: 'Positietabel', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-tabel' } },
                             { id: 'splitsen-benen', label: 'Splitsbenen (H/T/E)', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-benen', benenVariants: ['legs-letters'] } },
                             { id: 'splitsen-plaatswaarden', label: 'Plaatswaarden', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-math', mathForms: ['letters'], mathDirection: 'decompose' } },
+                        ],
+                    },
+                    {
+                        id: 'getalbegrip-vergelijken', label: 'Vergelijken (<, >, =)',
+                        children: [
+                            { id: 'vergelijken-getallen', label: 'Twee getallen', typeId: 'vergelijken', defaultConstraints: { subType: 'getallen' } },
+                            { id: 'vergelijken-kiezen',   label: 'Grootste / kleinste', typeId: 'vergelijken', defaultConstraints: { subType: 'kiezen' } },
                         ],
                     },
                     {
@@ -88,29 +103,19 @@ export const APP_STRUCTURE: Domain[] = [
                         ],
                     },
                     ph('getalbegrip-functie', 'Functie van getallen'),
-                    {
-                        id: 'getalbegrip-vergelijken', label: 'Vergelijken (<, >, =)',
-                        children: [
-                            { id: 'vergelijken-getallen', label: 'Twee getallen', typeId: 'vergelijken', defaultConstraints: { subType: 'getallen' } },
-                            { id: 'vergelijken-kiezen',   label: 'Grootste / kleinste', typeId: 'vergelijken', defaultConstraints: { subType: 'kiezen' } },
-                        ],
-                    },
                     ph('getalbegrip-verbanden', 'Verbanden (breuk · decimaal · procent)'),
-                    {
-                        id: 'getalbegrip-even-oneven', label: 'Even en oneven',
-                        children: [
-                            { id: 'even-oneven-rooster', label: 'Rooster kleuren', typeId: 'even-oneven', defaultConstraints: { subType: 'rooster' } },
-                            { id: 'even-oneven-cirkels', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' } },
-                        ],
-                    },
-                    {
-                        id: 'getalbegrip-plaatswaarde', label: 'Plaatswaarde benoemen',
-                        children: [
-                            { id: 'plaatswaarde-waarde', label: 'Waarde van cijfer', typeId: 'plaatswaarde', defaultConstraints: { subType: 'waarde' } },
-                            { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' } },
-                            { id: 'plaatswaarde-tabel',  label: 'Tabel invullen',     typeId: 'plaatswaarde', defaultConstraints: { subType: 'tabel' } },
-                        ],
-                    },
+                ],
+            },
+            {
+                id: 'breuken',
+                label: 'Breuken',
+                types: [
+                    { id: 'breuken-kleuren', label: 'Breuken kleuren', typeId: 'breuken', defaultConstraints: { subType: 'kleuren' } },
+                    { id: 'breuken-herkennen', label: 'Breuken herkennen', typeId: 'breuken', defaultConstraints: { subType: 'herkennen' } },
+                    { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid' } },
+                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' } },
+                    { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' } },
+                    ph('breuken-rangschikken', 'Breuken rangschikken'),
                 ],
             },
             {
@@ -154,14 +159,13 @@ export const APP_STRUCTURE: Domain[] = [
                 label: 'Deelbaarheid',
                 types: [
                     { id: 'deelbaarheid-tabel', label: 'Deelbaarheidstabel', typeId: 'deelbaarheid', defaultConstraints: { layout: 'tabel' } },
-                ],
-            },
-            {
-                id: 'romeinse-cijfers',
-                label: 'Romeinse cijfers',
-                types: [
-                    { id: 'romeinse-herkennen', label: 'Herkennen (→ getal)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'herkennen' } },
-                    { id: 'romeinse-schrijven', label: 'Schrijven (→ Romeins)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'schrijven' } },
+                    {
+                        id: 'getalbegrip-even-oneven', label: 'Even en oneven',
+                        children: [
+                            { id: 'even-oneven-rooster', label: 'Rooster kleuren', typeId: 'even-oneven', defaultConstraints: { subType: 'rooster' } },
+                            { id: 'even-oneven-cirkels', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' } },
+                        ],
+                    },
                 ],
             },
             {
@@ -171,22 +175,12 @@ export const APP_STRUCTURE: Domain[] = [
                 types: [ph('procenten-item', 'Procenten')],
             },
             {
-                id: 'breuken',
-                label: 'Breuken',
+                id: 'romeinse-cijfers',
+                label: 'Romeinse cijfers',
                 types: [
-                    { id: 'breuken-kleuren', label: 'Breuken kleuren', typeId: 'breuken', defaultConstraints: { subType: 'kleuren' } },
-                    { id: 'breuken-herkennen', label: 'Breuken herkennen', typeId: 'breuken', defaultConstraints: { subType: 'herkennen' } },
-                    { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid' } },
-                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' } },
-                    { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' } },
-                    ph('breuken-rangschikken', 'Breuken rangschikken'),
+                    { id: 'romeinse-herkennen', label: 'Herkennen (→ getal)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'herkennen' } },
+                    { id: 'romeinse-schrijven', label: 'Schrijven (→ Romeins)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'schrijven' } },
                 ],
-            },
-            {
-                id: 'gehele-getallen',
-                label: 'Gehele getallen',
-                placeholder: true,
-                types: [ph('gehele-getallen-item', 'Gehele getallen')],
             },
         ],
     },
@@ -238,6 +232,17 @@ export const APP_STRUCTURE: Domain[] = [
                 ],
             },
             {
+                id: 'hoofdrekenen-handig',
+                label: 'Hoofdrekenen (handig rekenen)',
+                placeholder: true,
+                types: [
+                    ph('handig-tienvoud', '× / : met 10, 100, 1000'),
+                    ph('handig-compenseren', 'Handig rekenen (compenseren, splitsen)'),
+                    ph('handig-rekenvolgorde', 'Rekenvolgorde en haakjes'),
+                    ph('handig-kettingsommen', 'Kettingsommen'),
+                ],
+            },
+            {
                 id: 'cijferen',
                 label: 'Cijferen',
                 types: [
@@ -273,17 +278,6 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'cijferen-delen-dec', label: 'Kommagetallen', typeId: 'cijferen-delen-dec', defaultConstraints: { operator: ':', numberType: 'decimal' } },
                         ],
                     },
-                ],
-            },
-            {
-                id: 'hoofdrekenen-handig',
-                label: 'Hoofdrekenen (handig rekenen)',
-                placeholder: true,
-                types: [
-                    ph('handig-tienvoud', '× / : met 10, 100, 1000'),
-                    ph('handig-compenseren', 'Handig rekenen (compenseren, splitsen)'),
-                    ph('handig-rekenvolgorde', 'Rekenvolgorde en haakjes'),
-                    ph('handig-kettingsommen', 'Kettingsommen'),
                 ],
             },
             {
@@ -385,12 +379,11 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'herleidingen',
                 label: 'Herleidingen',
-                placeholder: true,
                 types: [
-                    ph('herleidingen-lengte', 'Lengte'),
+                    { id: 'herleidingen-lengte', label: 'Lengte', typeId: 'herleidingen', defaultConstraints: { measure: 'lengte', units: ['m', 'dm', 'cm', 'mm'] } },
+                    { id: 'herleidingen-inhoud', label: 'Inhoud', typeId: 'herleidingen', defaultConstraints: { measure: 'inhoud', units: ['l', 'dl', 'cl', 'ml'] } },
+                    { id: 'herleidingen-massa', label: 'Massa', typeId: 'herleidingen', defaultConstraints: { measure: 'massa', units: ['kg', 'dag', 'g', 'dg'] } },
                     ph('herleidingen-oppervlakte', 'Oppervlakte'),
-                    ph('herleidingen-inhoud', 'Inhoud'),
-                    ph('herleidingen-massa', 'Massa'),
                 ],
             },
         ],
@@ -424,7 +417,7 @@ export const APP_STRUCTURE: Domain[] = [
     },
     {
         id: 'vraagstukken',
-        label: 'Vraagstukken',
+        label: 'Probleemoplossend denken',
         accentVar: '--accent-vraagstukken',
         subdomains: [
             {
