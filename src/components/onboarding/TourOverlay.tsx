@@ -30,11 +30,19 @@ export default function TourOverlay({ onClose }: Props) {
     const cur = STEPS[step];
 
     // Keep the spotlight glued to the current target (re-measure on resize/scroll + late mount).
+    // scrollIntoView runs ONCE per step (not inside the scroll listener) and setRect bails when
+    // the rect is unchanged — otherwise scrollIntoView→scroll→measure→setRect loops forever.
     useLayoutEffect(() => {
+        const once = document.querySelector(cur.sel) as HTMLElement | null;
+        if (once) once.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         const measure = () => {
             const el = document.querySelector(cur.sel) as HTMLElement | null;
-            if (el) { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); setRect(el.getBoundingClientRect()); }
-            else setRect(null);
+            setRect(prev => {
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                if (prev && prev.left === r.left && prev.top === r.top && prev.width === r.width && prev.height === r.height) return prev;
+                return r;
+            });
         };
         measure();
         const t1 = setTimeout(measure, 140);
