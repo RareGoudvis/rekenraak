@@ -224,6 +224,9 @@ textarea:focus-visible,
     overflow: visible !important;
   }
 
+  /* The viewer scroll container must not clip the multi-page sheet in print. */
+  .print-scroll { display: block !important; overflow: visible !important; height: auto !important; min-height: 0 !important; }
+
   /* Collapse the scrollable center column */
   .print-main {
     display: block !important;

@@ -45,7 +45,8 @@ const S = {
         boxShadow: 'var(--shadow-1)',
     } as React.CSSProperties,
     backdrop: { position: 'fixed', inset: 0, zIndex: 30 } as React.CSSProperties,
-    // Opens upward — the gear lives at the bottom of the sidebar.
+    // Opens upward, rightward into the canvas (sidebar is at the screen's left edge, so it
+    // must NOT open left). The sidebar drops overflow:hidden so this isn't clipped.
     menu: {
         position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 31,
         minWidth: '210px', background: 'var(--bg-surface)', border: '1px solid var(--separator)',

@@ -98,7 +98,7 @@ export default function Sidebar() {
                     <input
                         value={siteSubtitle}
                         onChange={(e) => setSiteSubtitle(e.target.value)}
-                        placeholder="By Ruben Van Handenhove."
+                        placeholder="By Ruben Van Handenhove"
                         style={S.siteSubtitleInput}
                     />
                 </div>
@@ -287,8 +287,8 @@ export default function Sidebar() {
 
 
 const S = {
-    aside: { width: '300px', minWidth: '300px', border: '1px solid var(--separator)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-1)', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' } as React.CSSProperties,
-    headerRow: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-5) var(--sp-4) var(--sp-3)' } as React.CSSProperties,
+    aside: { width: '300px', minWidth: '300px', border: '1px solid var(--separator)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-1)', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
+    headerRow: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-3) var(--sp-4) var(--sp-3)' } as React.CSSProperties,
     logoWrap: { width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as React.CSSProperties,
     headerText: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } as React.CSSProperties,
     siteTitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: 'var(--text-lg)', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-main)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,

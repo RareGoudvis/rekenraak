@@ -183,9 +183,12 @@ export default function App() {
       {/* CENTRAL WORK AREA */}
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
-        <div className="no-print" onClick={(e) => e.stopPropagation()} style={{ position: 'sticky', top: 0, zIndex: 20, width: '100%', background: 'transparent' }}>
+        <div className="no-print" onClick={(e) => e.stopPropagation()} style={{ width: '100%' }}>
           <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
         </div>
+
+        {/* Scroll container starts BELOW the topbar so its scrollbar only spans the viewer. */}
+        <div className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
         {autosaveOffer && (
           <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.autosave}>
@@ -360,6 +363,7 @@ export default function App() {
               <span style={{ position: 'absolute', right: '12px', top: '-16px', fontSize: '10px', color: 'rgba(220,38,38,0.6)', fontFamily: 'Azeret Mono, monospace', letterSpacing: '0.5px', userSelect: 'none' }}>— paginaeinde —</span>
             </div>
           ))}
+        </div>
         </div>
       </main>
 

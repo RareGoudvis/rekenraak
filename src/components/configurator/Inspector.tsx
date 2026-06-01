@@ -856,7 +856,7 @@ export default function Inspector() {
 }
 
 const S = {
-    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-base)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
+    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-base)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     lockBanner: { padding: 'var(--sp-3)', fontSize: 'var(--text-sm)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
     card: { backgroundColor: 'var(--bg-surface)', padding: 'var(--sp-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
     // Section title: calm, sentence-case, weight-driven (not tiny UPPERCASE tracked).
@@ -880,7 +880,7 @@ const S = {
 
     // Engine header: title row with the Genereer CTA on the right (plain card chrome).
     engineHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-2)', marginBottom: 'var(--sp-3)' } as React.CSSProperties,
-    engineBody: { maxHeight: '520px', overflowY: 'auto' } as React.CSSProperties,
+    engineBody: {} as React.CSSProperties,
 
     advancedWrap: { marginBottom: 'var(--sp-2)' } as React.CSSProperties,
     advancedToggle: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-4)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontWeight: 600 } as React.CSSProperties,
