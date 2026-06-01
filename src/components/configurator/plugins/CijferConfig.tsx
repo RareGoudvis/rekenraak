@@ -1,4 +1,3 @@
-import React from 'react';
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock, ConstraintType } from '../../../services/math/types';
 import type { CijferConstraints } from '../../../services/math/types';
@@ -44,9 +43,9 @@ export default function CijferConfig({ block }: Props) {
             {/* MAXIMUM BEREIK */}
             <div style={styles.section}>
                 <label style={styles.label}>Maximum bereik:</label>
-                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                <div style={styles.buttonGroup}>
                     {MAX_RANGES.map(val => (
-                        <button key={val} onClick={() => set('maxRange', val)} style={radioBtnStyle(c.maxRange === val)}>
+                        <button key={val} onClick={() => set('maxRange', val)} style={styles.radioBtn(c.maxRange === val)}>
                             {val.toLocaleString('nl-BE')}
                         </button>
                     ))}
@@ -93,7 +92,7 @@ export default function CijferConfig({ block }: Props) {
                         type="range" min="2" max="4" step="1"
                         value={n}
                         onChange={(e) => set('numberOfTerms', Number(e.target.value))}
-                        style={{ width: '100%', accentColor: 'var(--accent-bewerkingen)', cursor: 'pointer' }}
+                        style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
                     />
                 </div>
             )}
@@ -101,16 +100,16 @@ export default function CijferConfig({ block }: Props) {
             {/* BRUGINSTELLINGEN (+ and - only) */}
             {hasBridges && bridgePlaces.length > 0 && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Bruginstellingen:</label>
+                    <label style={styles.groupLabel}>Bruginstellingen</label>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {bridgePlaces.map((place) => {
                             const cur = (c.bridges || {})[place.key] as ConstraintType | undefined;
                             return (
                                 <div key={place.key} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', width: '28px', flexShrink: 0 }}>{place.key}:</span>
+                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', width: '28px', flexShrink: 0 }}>{place.key}:</span>
                                     <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
                                         {(['FORBIDDEN', 'FREE', 'REQUIRED'] as ConstraintType[]).map(opt => (
-                                            <button key={opt} onClick={() => setBridge(place.key, opt)} style={bridgeBtnStyle((cur ?? 'FREE') === opt)}>
+                                            <button key={opt} onClick={() => setBridge(place.key, opt)} style={styles.bridgeBtn((cur ?? 'FREE') === opt)}>
                                                 {opt === 'FORBIDDEN' ? 'GEEN' : opt === 'FREE' ? 'MAG' : 'MOET'}
                                             </button>
                                         ))}
@@ -125,16 +124,16 @@ export default function CijferConfig({ block }: Props) {
             {/* SPECIFIEKE GETALOPBOUW */}
             {maskPlaces.length > 0 && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <label style={styles.groupLabel}>Specifieke getalopbouw</label>
                     {Array.from({ length: n }, (_, i) => {
                         const maskKey = maskKeys[i];
                         const mask = (block.constraints[maskKey] || {}) as Record<string, boolean>;
                         return (
                             <div key={i} style={{ marginBottom: '8px' }}>
-                                <label style={{ ...styles.label, fontSize: '11px', marginBottom: '4px' }}>Getal {i + 1}:</label>
+                                <label style={{ ...styles.label, fontSize: 'var(--text-xs)', marginBottom: '4px' }}>Getal {i + 1}:</label>
                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                     {maskPlaces.map(p => (
-                                        <button key={p.key} onClick={() => setMask(maskKey, p.key, !mask[p.key])} style={maskBtnStyle(!!mask[p.key])}>
+                                        <button key={p.key} onClick={() => setMask(maskKey, p.key, !mask[p.key])} style={styles.maskBtn(!!mask[p.key])}>
                                             {p.key}
                                         </button>
                                     ))}
@@ -148,27 +147,3 @@ export default function CijferConfig({ block }: Props) {
         </div>
     );
 }
-
-const radioBtnStyle = (active: boolean): React.CSSProperties => ({
-    padding: '5px 9px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer',
-    border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-bewerkingen)' : 'var(--bg-input)',
-    color: active ? 'white' : 'var(--text-muted)',
-    fontWeight: active ? 'bold' : 'normal',
-    whiteSpace: 'nowrap',
-});
-
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({
-    width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer',
-    borderRadius: '4px', border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-bewerkingen)' : 'var(--bg-input)',
-    color: active ? '#fff' : 'var(--text-muted)',
-});
-
-const bridgeBtnStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1, fontSize: '10px', padding: '6px 0', cursor: 'pointer',
-    borderRadius: '4px', border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-bewerkingen)' : 'var(--bg-input)',
-    color: active ? 'white' : 'var(--text-muted)',
-    fontWeight: active ? 'bold' : 'normal',
-});

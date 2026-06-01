@@ -42,7 +42,7 @@ export default function PlaatswaardeConfig({ block }: Props) {
                 <label style={styles.label}>Specifieke getalopbouw:</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     {places.map(p => (
-                        <button key={p.key} onClick={() => toggleMask(p.key)} style={maskBtnStyle(!!numberMask[p.key])} title={p.label}>{p.key}</button>
+                        <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                     ))}
                 </div>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>
@@ -50,11 +50,3 @@ export default function PlaatswaardeConfig({ block }: Props) {
         </div>
     );
 }
-
-// Canonical mask button — see UI-GUIDE.md.
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({
-    width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer',
-    border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? '#fff' : 'var(--text-muted)',
-});

@@ -58,7 +58,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
                     {/* flexWrap: 'wrap' zorgt dat lange rijen maskers netjes op een nieuwe lijn komen */}
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         {availablePlaces.map(place => (
-                            <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(1, place.key)} style={maskBtnStyle(operand1Mask[place.key])} title={place.label}>
+                            <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(1, place.key)} style={styles.maskBtn(operand1Mask[place.key])} title={place.label}>
                                 {place.key}
                             </button>
                         ))}
@@ -69,7 +69,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', width: '56px', flexShrink: 0 }}>{isDivision ? 'Deler:' : 'Factor 2:'}</span>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         {availablePlaces.map(place => (
-                            <button key={`op2-${place.key}`} onClick={() => handleMaskToggle(2, place.key)} style={maskBtnStyle(operand2Mask[place.key])} title={place.label}>
+                            <button key={`op2-${place.key}`} onClick={() => handleMaskToggle(2, place.key)} style={styles.maskBtn(operand2Mask[place.key])} title={place.label}>
                                 {place.key}
                             </button>
                         ))}
@@ -79,11 +79,3 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
         </div>
     );
 }
-
-// Canonical mask button — matches optellen / splitsen (see UI-GUIDE.md).
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({
-    width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer',
-    border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? '#fff' : 'var(--text-muted)',
-});

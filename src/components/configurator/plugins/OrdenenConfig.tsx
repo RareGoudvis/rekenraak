@@ -14,11 +14,6 @@ const OPERATORS = [
     { val: 'beide', label: 'Beide' },
 ];
 
-const maskBtn = (active: boolean): React.CSSProperties => ({
-    width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer',
-    borderRadius: '4px', border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)', color: active ? '#fff' : 'var(--text-muted)',
-});
 const numInput: React.CSSProperties = { width: '70px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px' };
 
 export default function OrdenenConfig({ block }: Props) {
@@ -115,7 +110,7 @@ export default function OrdenenConfig({ block }: Props) {
                     <label style={styles.label}>Specifieke getalopbouw:</label>
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={maskBtn(!!numberMask?.[p.key])}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask?.[p.key])}>{p.key}</button>
                         ))}
                     </div>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>

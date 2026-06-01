@@ -86,7 +86,7 @@ export default function MabConfig({ block }: Props) {
                 <label style={styles.label}>Specifieke getalopbouw:</label>
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {keys.map(k => (
-                        <button key={k} onClick={() => toggleMask(k)} style={maskBtnStyle(!!operand1Mask?.[k])}>
+                        <button key={k} onClick={() => toggleMask(k)} style={styles.maskBtn(!!operand1Mask?.[k])}>
                             {k}
                         </button>
                     ))}
@@ -99,10 +99,3 @@ export default function MabConfig({ block }: Props) {
         </div>
     );
 }
-
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({
-    width: '32px', height: '32px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer',
-    borderRadius: '4px', border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? '#fff' : 'var(--text-muted)',
-});

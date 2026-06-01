@@ -81,11 +81,11 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
 
             {/* TAFELS / DEELTAFELS */}
             {multiplicationMode === 'tafels' && (
-                <div style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <div style={{ padding: 'var(--sp-4)', backgroundColor: 'var(--bg-surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)' }}>
                     <label style={styles.label}>{isDivision ? 'Selecteer delers:' : 'Selecteer tafels:'}</label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                         {AVAILABLE_TABLES.map(t => (
-                            <button key={t} onClick={() => toggleTable(t)} style={tableBtnStyle(selectedTables.includes(t))}>
+                            <button key={t} onClick={() => toggleTable(t)} style={styles.maskBtn(selectedTables.includes(t))}>
                                 {t}
                             </button>
                         ))}
@@ -100,11 +100,11 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
 
             {/* DELEN MET REST (alleen voor deling) */}
             {isDivision && multiplicationMode === 'met_rest' && (
-                <div style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <div style={{ padding: 'var(--sp-4)', backgroundColor: 'var(--bg-surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)' }}>
                     <label style={styles.label}>Selecteer delers:</label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                         {MET_REST_TABLES.map(t => (
-                            <button key={t} onClick={() => toggleTable(t)} style={tableBtnStyle(selectedTables.includes(t))}>
+                            <button key={t} onClick={() => toggleTable(t)} style={styles.maskBtn(selectedTables.includes(t))}>
                                 {t}
                             </button>
                         ))}
@@ -170,15 +170,15 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                         {/* Maskers: verborgen als een niveau-preset actief is */}
                         {(!isDivision || divisionLevel === 0) && (
                             <div style={styles.section}>
-                                <label style={styles.label}>Specifieke getalopbouw</label>
+                                <label style={styles.groupLabel}>Specifieke getalopbouw</label>
 
                                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-                                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', width: '56px', flexShrink: 0 }}>
+                                    <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', width: '56px', flexShrink: 0 }}>
                                         {isDivision ? 'Deeltal:' : 'Factor 1:'}
                                     </span>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                         {availablePlaces.map(place => (
-                                            <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(1, place.key)} style={maskBtnStyle(operand1Mask[place.key])} title={place.label}>
+                                            <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(1, place.key)} style={styles.maskBtn(operand1Mask[place.key])} title={place.label}>
                                                 {place.key}
                                             </button>
                                         ))}
@@ -191,7 +191,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                                     </span>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                         {availablePlaces.map(place => (
-                                            <button key={`op2-${place.key}`} onClick={() => handleMaskToggle(2, place.key)} style={maskBtnStyle(operand2Mask[place.key])} title={place.label}>
+                                            <button key={`op2-${place.key}`} onClick={() => handleMaskToggle(2, place.key)} style={styles.maskBtn(operand2Mask[place.key])} title={place.label}>
                                                 {place.key}
                                             </button>
                                         ))}
@@ -206,31 +206,18 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
     );
 }
 
+// Bespoke "list-row selector" (N1–N5 levels) — same tint+ring selected language as
+// the shared controls, expressed with tokens (no hardcoded hex).
 const levelRowStyle = (active: boolean): React.CSSProperties => ({
-    display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', borderRadius: '6px',
-    cursor: 'pointer', border: `1px solid ${active ? 'var(--accent-purple)' : 'transparent'}`,
-    backgroundColor: active ? 'rgba(155,48,255,0.15)' : 'rgba(0,0,0,0.12)',
+    display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', borderRadius: 'var(--radius-sm)',
+    cursor: 'pointer', border: `1px solid ${active ? 'var(--accent)' : 'var(--separator)'}`,
+    backgroundColor: active ? 'var(--accent-soft)' : 'var(--bg-surface-2)',
+    transition: 'background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out)',
 });
 const levelLabelStyle = (active: boolean): React.CSSProperties => ({
-    fontSize: '12px', fontWeight: 'bold', minWidth: '28px', flexShrink: 0,
-    color: active ? 'var(--accent-purple)' : 'var(--text-muted)',
+    fontSize: 'var(--text-sm)', fontWeight: 600, minWidth: '28px', flexShrink: 0,
+    color: active ? 'var(--accent)' : 'var(--text-muted)',
 });
 const levelExampleStyle: React.CSSProperties = {
-    fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace',
+    fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontFamily: 'monospace',
 };
-
-const tableBtnStyle = (active: boolean): React.CSSProperties => ({
-    width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '12px', fontWeight: 'bold', borderRadius: '4px', border: 'none', cursor: 'pointer',
-    backgroundColor: active ? 'var(--accent-purple)' : '#222226',
-    color: active ? 'white' : 'var(--text-muted)',
-    transition: 'all 0.15s'
-});
-
-// Canonical mask button — matches optellen / splitsen (see UI-GUIDE.md).
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({
-    width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer',
-    border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? '#fff' : 'var(--text-muted)',
-});

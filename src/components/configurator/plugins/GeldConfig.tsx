@@ -3,15 +3,6 @@ import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
 
-const pill = (active: boolean): React.CSSProperties => ({
-    padding: '4px 8px', fontSize: '11px', borderRadius: '12px', cursor: 'pointer',
-    border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? 'white' : 'var(--text-muted)',
-    fontWeight: active ? 'bold' : 'normal',
-    transition: 'all 0.15s', userSelect: 'none',
-});
-
 export default function GeldConfig({ block }: { block: MathBlock }) {
     const updateBlockSettings = useWorksheetStore(s => s.updateBlockSettings);
     const isHerkennen = block.typeId === 'geld-herkennen';
@@ -56,7 +47,7 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
                 <div style={{ marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>Biljetten</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
                     {DENOMINATION_CATALOGUE.filter(d => d.type === 'bill').map(d => (
-                        <span key={d.valueCents} style={pill(allowedDenominations.includes(d.valueCents))} onClick={() => toggleDenom(d.valueCents)}>
+                        <span key={d.valueCents} style={S.pill(allowedDenominations.includes(d.valueCents))} onClick={() => toggleDenom(d.valueCents)}>
                             {denominationLabel(d.valueCents)}
                         </span>
                     ))}
@@ -64,7 +55,7 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
                 <div style={{ marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>Munten (€)</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
                     {DENOMINATION_CATALOGUE.filter(d => d.type === 'euro-coin').map(d => (
-                        <span key={d.valueCents} style={pill(allowedDenominations.includes(d.valueCents))} onClick={() => toggleDenom(d.valueCents)}>
+                        <span key={d.valueCents} style={S.pill(allowedDenominations.includes(d.valueCents))} onClick={() => toggleDenom(d.valueCents)}>
                             {denominationLabel(d.valueCents)}
                         </span>
                     ))}
@@ -72,7 +63,7 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
                 <div style={{ marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>Munten (ct)</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {DENOMINATION_CATALOGUE.filter(d => d.type === 'cent-coin').map(d => (
-                        <span key={d.valueCents} style={pill(allowedDenominations.includes(d.valueCents))} onClick={() => toggleDenom(d.valueCents)}>
+                        <span key={d.valueCents} style={S.pill(allowedDenominations.includes(d.valueCents))} onClick={() => toggleDenom(d.valueCents)}>
                             {denominationLabel(d.valueCents)}
                         </span>
                     ))}

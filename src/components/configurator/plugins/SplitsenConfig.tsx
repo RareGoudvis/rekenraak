@@ -157,7 +157,7 @@ export default function SplitsenConfig({ block }: Props) {
                                 if (fixedTotal && fixedTotal > val) set('fixedTotal', null);
                                 if (val > 100 && currentLayout === 'verliefde-harten') set('layout', 'basic');
                             }}
-                            style={radioBtnStyle(maxGetal === val)}
+                            style={styles.radioBtn(maxGetal === val)}
                         >
                             Tot {val.toLocaleString('nl-BE')}
                         </button>
@@ -171,7 +171,7 @@ export default function SplitsenConfig({ block }: Props) {
                     <label style={styles.label}>Specifieke getalopbouw:</label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={maskBtnStyle(operand1Mask?.[p.key])}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(operand1Mask?.[p.key])}>{p.key}</button>
                         ))}
                     </div>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw. Bv. enkel T, E en t.</p>
@@ -209,7 +209,7 @@ export default function SplitsenConfig({ block }: Props) {
                         <button
                             key={p.key}
                             onClick={() => toggleMask(p.key)}
-                            style={maskBtnStyle(operand1Mask?.[p.key])}
+                            style={styles.maskBtn(operand1Mask?.[p.key])}
                         >
                             {p.key}
                         </button>
@@ -225,7 +225,7 @@ export default function SplitsenConfig({ block }: Props) {
                         <button
                             key={p.key}
                             onClick={() => toggleMask2(p.key)}
-                            style={maskBtnStyle(operand2Mask?.[p.key])}
+                            style={styles.maskBtn(operand2Mask?.[p.key])}
                         >
                             {p.key}
                         </button>
@@ -237,21 +237,6 @@ export default function SplitsenConfig({ block }: Props) {
         </div>
     );
 }
-
-const radioBtnStyle = (active: boolean): React.CSSProperties => ({
-    padding: '6px 10px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer',
-    border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? 'white' : 'var(--text-muted)',
-    fontWeight: active ? 'bold' : 'normal',
-});
-
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({
-    width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer',
-    borderRadius: '4px', border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? '#fff' : 'var(--text-muted)',
-});
 
 const inputStyle: React.CSSProperties = {
     flex: 1, padding: '8px 10px', backgroundColor: 'var(--bg-input)',

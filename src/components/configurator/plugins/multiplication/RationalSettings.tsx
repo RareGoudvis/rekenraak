@@ -100,7 +100,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
                                 onClick={() => updateConstraint('linkFractions', !linkFractions)}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', opacity: linkFractions ? 1 : 0.4 }}
                             >
-                                <span style={{ fontSize: '20px', color: linkFractions ? 'var(--accent-purple)' : 'var(--text-muted)' }}>{linkFractions ? '🔗' : '⛓️‍💥'}</span>
+                                <span style={{ fontSize: '20px', color: linkFractions ? 'var(--accent)' : 'var(--text-muted)' }}>{linkFractions ? '🔗' : '⛓️‍💥'}</span>
                             </button>
 
                             <div style={{ ...fractionColStyle, opacity: linkFractions ? 0.6 : 1 }}>
@@ -129,7 +129,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
                                 )}
                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
                                     {availablePlaces.map(place => (
-                                        <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(place.key)} style={maskBtnStyle(operand1Mask[place.key])} title={place.label}>
+                                        <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(place.key)} style={styles.maskBtn(operand1Mask[place.key])} title={place.label}>
                                             {place.key}
                                         </button>
                                     ))}
@@ -154,13 +154,13 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
             </div>
 
             {/* VEREENVOUDIGINGS LIMIET */}
-            <div style={{ padding: '16px', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'white', fontWeight: 'bold' }}>
+            <div style={{ padding: 'var(--sp-4)', backgroundColor: 'var(--bg-surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-main)', fontWeight: 600 }}>
                     <input
                         type="checkbox"
                         checked={simplifyMaxDenominatorChecked}
                         onChange={(e) => updateConstraint('simplifyMaxDenominatorChecked', e.target.checked)}
-                        style={{ accentColor: 'var(--accent-purple)', width: '16px', height: '16px' }}
+                        style={{ accentColor: 'var(--accent)', width: '16px', height: '16px' }}
                     />
                     Product te vereenvoudigen naar noemer met max.
                 </label>
@@ -169,13 +169,13 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
                     <div style={{ marginTop: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
                             <span>Max. toegelaten eindnoemer:</span>
-                            <span style={{ color: 'var(--accent-purple)', fontWeight: 'bold' }}>{simplifyMaxDenominator}</span>
+                            <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{simplifyMaxDenominator}</span>
                         </div>
                         <input
                             type="range" min="2" max="100"
                             value={simplifyMaxDenominator}
                             onChange={(e) => updateConstraint('simplifyMaxDenominator', Number(e.target.value))}
-                            style={{ width: '100%', accentColor: 'var(--accent-purple)' }}
+                            style={{ width: '100%', accentColor: 'var(--accent)' }}
                         />
                     </div>
                 )}
@@ -184,12 +184,12 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
     );
 }
 
-// Lokale stijlen
-const radioListBtnStyle = (active: boolean): React.CSSProperties => ({ padding: '10px 12px', fontSize: '12px', borderRadius: '6px', cursor: 'pointer', border: '1px solid transparent', backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)', color: active ? 'white' : 'var(--text-muted)', fontWeight: active ? 'bold' : 'normal', textAlign: 'left' });
+// Thin adapters over the canonical controls (sharedPluginStyles) — same tint+ring
+// selected look, just laid out left-aligned (list) / compact (tab).
+const radioListBtnStyle = (active: boolean): React.CSSProperties => ({ ...styles.radioBtn(active), flex: 'unset', width: '100%', padding: '10px 12px', textAlign: 'left', justifyContent: 'flex-start' });
 const fractionColStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '70px' };
 const numInputStyle: React.CSSProperties = { width: '100%', padding: '8px 0', textAlign: 'center', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', outline: 'none', fontSize: '14px', fontWeight: 'bold' };
 const fractionLineStyle: React.CSSProperties = { width: '100%', border: 'none', borderBottom: '2px solid var(--text-muted)', margin: '8px 0' };
 // Canonical mask button — matches optellen / splitsen (see UI-GUIDE.md).
-const maskBtnStyle = (active: boolean): React.CSSProperties => ({ width: '28px', height: '28px', fontSize: '10px', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer', backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)', color: active ? '#fff' : 'var(--text-muted)', border: '1px solid var(--border-color)' });
-const smallTabBtn = (active: boolean): React.CSSProperties => ({ padding: '4px 8px', fontSize: '10px', borderRadius: '4px', border: 'none', cursor: 'pointer', backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)', color: active ? 'white' : 'var(--text-muted)' });
+const smallTabBtn = (active: boolean): React.CSSProperties => ({ ...styles.maskBtn(active), width: 'auto', height: 'auto', padding: '4px 8px', fontSize: 'var(--text-xs)' });
 const miniLabelStyle: React.CSSProperties = { fontSize: '10px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' };

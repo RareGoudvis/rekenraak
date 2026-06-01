@@ -1,22 +1,8 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { sharedPluginStyles as S } from './sharedPluginStyles';
+import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
-
-const pill = (active: boolean): React.CSSProperties => ({
-    padding: '4px 8px', fontSize: '11px', borderRadius: '12px', cursor: 'pointer',
-    border: '1px solid var(--border-color)',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    color: active ? 'white' : 'var(--text-muted)',
-    fontWeight: active ? 'bold' : 'normal',
-    transition: 'all 0.15s', userSelect: 'none',
-});
-
-const toggle = (active: boolean): React.CSSProperties => ({
-    width: '36px', height: '20px', borderRadius: '10px', cursor: 'pointer', border: 'none',
-    backgroundColor: active ? 'var(--accent-purple)' : 'var(--bg-input)',
-    position: 'relative', flexShrink: 0, transition: 'background 0.15s',
-});
 
 const BILL_DENOMS = DENOMINATION_CATALOGUE.filter(d => d.type === 'bill');
 
@@ -103,7 +89,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
                 <label style={S.label}>Betalen met (biljetten)</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {BILL_DENOMS.map(d => (
-                        <span key={d.valueCents} style={pill(payWithOptions.includes(d.valueCents))}
+                        <span key={d.valueCents} style={S.pill(payWithOptions.includes(d.valueCents))}
                             onClick={() => togglePayWith(d.valueCents)}>
                             {denominationLabel(d.valueCents)}
                         </span>
@@ -141,7 +127,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
             {/* ── Betalen met tekening ── */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
                 <label style={{ ...S.label, marginBottom: 0 }}>Betalen met (tekening)</label>
-                <button style={toggle(betalenMetTekening)} onClick={() => set('betalenMetTekening', !betalenMetTekening)} />
+                <Switch checked={betalenMetTekening} onChange={(v) => set('betalenMetTekening', v)} aria-label="Betalen met tekening" />
             </div>
         </div>
     );
