@@ -7,12 +7,12 @@ import { EXERCISE_UI } from './config/exerciseUI';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
-import { ArrowUp, ArrowDown, Lock, Unlock, Copy, Trash2, CornerDownRight } from 'lucide-react';
+import { ArrowUp, ArrowDown, Lock, Unlock, Copy, Trash2, CornerDownRight, Hand } from 'lucide-react';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
 import { loadAutosave, clearAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from './store/useWorksheetStore';
-import { RELEASE_VERSION, RELEASE_SUMMARY } from './config/version';
+import { RELEASE_VERSION } from './config/version';
 import type { MathBlock } from './services/math/types';
 
 // Click-to-edit the opdracht title directly on the A4 preview (mirrors the
@@ -151,11 +151,11 @@ export default function App() {
 
   // Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
   // optional repeating print header (.print-repeat-fields). Null if no field is enabled.
-  const renderFields = (align: 'left' | 'right' = 'left') => {
+  const renderFields = (align: 'left' | 'right' = 'left', subset?: HeaderField[]) => {
     const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
     const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
     const LABELS: Record<HeaderField, string> = { naam: 'Naam:', klas: 'Klas:', nummer: 'Nr:', datum: 'Datum:' };
-    const visibleFields = order.filter(f => headerData?.[f]);
+    const visibleFields = subset ?? order.filter(f => headerData?.[f]);
     if (visibleFields.length === 0) return null;
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', rowGap: '8px', width: '100%', justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
@@ -184,25 +184,25 @@ export default function App() {
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
         <div className="no-print" onClick={(e) => e.stopPropagation()} style={{ width: '100%' }}>
-          <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
+          {/* Autosave prompt renders as a wrapped row INSIDE the top bar (see TopBar). */}
+          <TopBar
+            onPrint={handlePrint}
+            onOpenHelp={() => setHelpOpen(true)}
+            autosaveTitle={autosaveOffer?.titel ?? null}
+            onAcceptAutosave={acceptAutosave}
+            onDeclineAutosave={declineAutosave}
+          />
         </div>
 
-        {/* Scroll container starts BELOW the topbar so its scrollbar only spans the viewer. */}
-        <div className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-
-        {autosaveOffer && (
-          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.autosave}>
-            <span>📂 Vorige werkbundel ("{autosaveOffer.titel}") gevonden. Terughalen?</span>
-            <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
-              <button onClick={acceptAutosave} style={bannerStyles.bannerPrimary}>Ja, terughalen</button>
-              <button onClick={declineAutosave} style={bannerStyles.bannerSecondary}>Nee, nieuw beginnen</button>
-            </div>
-          </div>
-        )}
+        {/* Scroll container starts BELOW the topbar so its scrollbar only spans the viewer.
+            Padding ≥ the sheet's shadow reach (--shadow-3 = 48px blur): overflowY:auto forces
+            overflow-x to compute as auto too, so without this the side/bottom shadow is clipped. */}
+        <div className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 48px 48px' }}>
 
         {releaseBannerVisible && (
           <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
-            <span>✨ Nieuw: {RELEASE_SUMMARY}. <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees meer in Help</button>.</span>
+            <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
+            <span>Welkom bij Enderklas! Stel links je oefenblad samen, pas het aan in het rechterpaneel en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
             <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
           </div>
         )}
@@ -218,7 +218,17 @@ export default function App() {
           </td></tr></thead>
           <tbody className="print-body"><tr><td className="print-body-cell">
           {/* ── HEADER ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', padding: '12px', borderRadius: '6px', boxSizing: 'border-box', border: docSettings.headerStyle === 'kader' ? '1.5px solid #000' : '1px solid transparent' }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', width: '100%', padding: '12px', boxSizing: 'border-box',
+            // 'onderstreept' = one line under the whole header (separates it from the body);
+            // 'kader' = full box. All-longhand borders avoid the shorthand/longhand React warning.
+            borderRadius: docSettings.headerStyle === 'onderstreept' ? 0 : '6px',
+            borderStyle: 'solid',
+            borderWidth: docSettings.headerStyle === 'kader' ? '1.5px' : '1px',
+            borderColor: docSettings.headerStyle === 'kader' ? '#000' : 'transparent',
+            borderBottomWidth: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '1.5px' : '1px',
+            borderBottomColor: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '#000' : 'transparent',
+          }}>
             {(() => {
               const showScore = docSettings.showScores && totalScore > 0;
               const hasTitle = !!headerData?.titel;
@@ -254,6 +264,35 @@ export default function App() {
                 );
               }
               // center
+              const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
+              const fWidths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
+              const visible = order.filter(f => headerData?.[f]);
+              const wOf = (f: HeaderField) => fWidths[f] ?? DEFAULT_FIELD_WIDTHS[f];
+              const rowW = (fs: HeaderField[]) => fs.reduce((s, f) => s + wOf(f), 0) + Math.max(0, fs.length - 1) * 16;
+              // When score is shown it claims the right side, so all fields go left; otherwise
+              // split the fields half/half to flank the centred title (Naam left, Datum right).
+              const splitIdx = showScore ? visible.length : Math.ceil(visible.length / 2);
+              const leftFs = visible.slice(0, splitIdx);
+              const rightFs = showScore ? [] : visible.slice(splitIdx);
+              const titleW = hasTitle ? (headerData!.titel.length * 15 + 24) : 0;   // ~15px/char Azeret 24px bold + slack
+              const rightW = showScore ? 160 : rowW(rightFs);
+              // Inline-flank only if the whole thing comfortably fits one A4 line (~760px usable);
+              // otherwise fall back to the stacked layout (fields row on top, title beneath).
+              const inlineFlank = hasTitle && visible.length > 0 && (rowW(leftFs) + titleW + rightW + 2 * gap) <= 760;
+
+              if (inlineFlank) {
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', columnGap: `${gap}px`, alignItems: 'flex-end' }}>
+                    {/* Left fields hug the title (right-aligned); columnGap is the small margin. */}
+                    <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', minWidth: 0 }}>{renderFields('right', leftFs)}</div>
+                    <h1 style={{ margin: 0, fontSize: '24px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap' }}>{headerData!.titel}</h1>
+                    <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', minWidth: 0 }}>
+                      {showScore ? <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div> : renderFields('left', rightFs)}
+                    </div>
+                  </div>
+                );
+              }
+
               const centerFields = fieldsRowAligned('left');
               return (
                 <>

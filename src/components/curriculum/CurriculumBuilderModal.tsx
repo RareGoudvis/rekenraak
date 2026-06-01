@@ -7,6 +7,7 @@ import { EXERCISE_UI } from '../../config/exerciseUI';
 import { encodeShareLink } from '../../services/persistence';
 import type { MathBlock } from '../../services/math/types';
 import ExercisePreview from '../shared/ExercisePreview';
+import ModalPortal from '../ui/ModalPortal';
 
 interface Props {
     onClose: () => void;
@@ -107,6 +108,7 @@ export default function CurriculumBuilderModal({ onClose }: Props) {
     const Config = focusedItem ? EXERCISE_UI[focusedItem.typeId]?.Config : undefined;
 
     return (
+        <ModalPortal>
         <div style={S.overlay} onClick={onClose}>
             <div style={S.modal} onClick={(e) => e.stopPropagation()}>
                 <div style={S.header}>
@@ -216,6 +218,7 @@ export default function CurriculumBuilderModal({ onClose }: Props) {
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 }
 

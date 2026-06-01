@@ -80,7 +80,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         return <div className="no-print" style={styles.emptyStateText}>(Genereer oefeningen via het rechterpaneel)</div>;
     }
 
-    const isInlineShort = block.layoutPreset === 'inline-short';
+    // Puntoefeningen (a + . = c) are by definition single short lines — force inline-short
+    // regardless of the stored preset (the Kort/Lang/Stappen control is hidden for them).
+    const isPunt = block.constraints?.equationType === 'puntoefening';
+    const layout = isPunt ? 'inline-short' : block.layoutPreset;
+    const isInlineShort = layout === 'inline-short';
     return (
         <FragmentableGrid
             cols={isInlineShort ? 2 : 1}
@@ -119,7 +123,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 const isMissing2 = ex.missingTerm === 'operand2';
 
                 return (
-                    <div key={ex.id} style={{ ...styles.exerciseRow, alignItems: block.layoutPreset === 'stepped' ? 'flex-start' : 'flex-end' }}>
+                    <div key={ex.id} style={{ ...styles.exerciseRow, alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end' }}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                             <div style={{ width: '85px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                                 {renderTerm(ex.operands[0], isMissing1, block.id, ex.id, 0)}
@@ -130,12 +134,12 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             </div>
                         </div>
 
-                        <div style={{ ...(block.layoutPreset !== 'inline-short' && { flex: 1 }), display: 'flex', flexDirection: 'column', marginLeft: '8px', gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
+                        <div style={{ ...(layout !== 'inline-short' && { flex: 1 }), display: 'flex', flexDirection: 'column', marginLeft: '8px', gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
                             {(!isMissing1 && !isMissing2) ? (
-                                Array.from({ length: block.layoutPreset === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
+                                Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: '32px' }}>
                                         <span style={{ marginRight: '10px' }}>=</span>
-                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(block.layoutPreset)}></div>}
+                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(layout)}></div>}
                                     </div>
                                 ))
                             ) : (

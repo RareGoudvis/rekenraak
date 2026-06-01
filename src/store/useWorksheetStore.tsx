@@ -25,7 +25,7 @@ export interface DocSettings {
     showScores: boolean;
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
-    headerStyle: 'geen' | 'kader';
+    headerStyle: 'geen' | 'onderstreept' | 'kader';
     titlePosition: 'left' | 'center' | 'right';
     titleFieldsGap: number;
     headerContentGap: number;
@@ -86,14 +86,14 @@ interface WorksheetState {
 
 const MAX_HISTORY = 50;
 
-// Read persisted theme once at module load. Default 'dark' for first-time users
+// Read persisted theme once at module load. Default 'light' for first-time users
 // or when localStorage is unavailable (SSR / privacy modes).
 function loadInitialTheme(): ThemeName {
     try {
         const v = localStorage.getItem('theme');
         if (v === 'light' || v === 'dark' || v === 'colorblind') return v;
     } catch { /* ignore */ }
-    return 'dark';
+    return 'light';
 }
 
 // Apply theme attribute to <html> so CSS variables switch immediately. Called
@@ -115,7 +115,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     blocks: [],
     activeBlockId: null,
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
-    footer: { school: '', klas: '', leerkracht: '', showSchool: true, showKlas: true, showLeerkracht: true, showPagina: true, centerText: '', showCenterText: false },
+    footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: true, centerText: '', showCenterText: false },
     docSettings: { showScores: true, opdrachtTitelStyle: 'regular', showDividers: true, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: false },
     baseSettings: { ...DEFAULT_BASE },
     curriculum: null,

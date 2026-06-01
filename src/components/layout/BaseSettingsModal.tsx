@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { getMaskPlaces, getBridgePlaces } from '../../services/math/mathEngine';
 import type { BaseBridgePolicy, BaseNumberType } from '../../config/baseSettings';
+import ModalPortal from '../ui/ModalPortal';
 
 interface Props {
     onClose: () => void;
@@ -30,6 +31,7 @@ export default function BaseSettingsModal({ onClose }: Props) {
         updateBase({ baseBridges: { ...base.baseBridges, [key]: opt } });
 
     return (
+        <ModalPortal>
         <div style={S.overlay} onClick={onClose}>
             <div style={S.modal} onClick={(e) => e.stopPropagation()}>
                 <div style={S.header}>
@@ -140,6 +142,7 @@ export default function BaseSettingsModal({ onClose }: Props) {
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 }
 

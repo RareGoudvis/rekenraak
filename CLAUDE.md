@@ -132,7 +132,8 @@ src/
     ├── shared/ExercisePreview.tsx # Fit-to-card live example (mass-add + curriculum)
     ├── ui/
     │   ├── IconButton.tsx         # Shared icon button (block controls)
-    │   └── Switch.tsx             # iOS-style toggle for boolean controls
+    │   ├── Switch.tsx             # iOS-style toggle for boolean controls
+    │   └── ModalPortal.tsx        # createPortal(→ body) wrapper so modals escape the .mac-vibrant containing block
     ├── configurator/
     │   ├── Inspector.tsx          # Right panel: routes to doc or block config; locked gating
     │   ├── sharedPluginStyles.ts  # Shared button/pill/on-off styles for config plugins

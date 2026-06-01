@@ -266,6 +266,7 @@ export default function Sidebar() {
             <div style={S.footer}>
                 <div style={S.footerActions}>
                     <span style={{ ...S.footerText, flex: 1 }}>
+                        Updated: 01/06/2026<br />
                         Code onder <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</a>.
                     </span>
                     {!locked && <BaseSettingsPanel />}

@@ -88,11 +88,14 @@ export default function ExercisePreview({ typeId, constraints, nonce = 0, height
         const inner = innerRef.current;
         if (!box || !inner || !block) return;
         const fit = () => {
-            // Fit by WIDTH only (don't distort by squashing height); tall content clips.
+            // Fit by width AND height (uniform scale, no distortion) so the whole example
+            // always shrinks to fit inside the card instead of clipping.
             const boxW = box.clientWidth - PAD * 2;
+            const boxH = box.clientHeight - PAD * 2;
             const contentW = inner.scrollWidth;
-            if (!contentW || boxW <= 0) { setScale(1); return; }
-            const raw = Math.min(1, boxW / contentW);
+            const contentH = inner.scrollHeight;
+            if (!contentW || !contentH || boxW <= 0 || boxH <= 0) { setScale(1); return; }
+            const raw = Math.min(1, boxW / contentW, boxH / contentH);
             setScale(raw > 0 && Number.isFinite(raw) ? raw : 1);
         };
         fit();
@@ -126,7 +129,11 @@ const wrapStyle: React.CSSProperties = {
     fontSize: '13px', color: '#000', background: '#fff',
     borderRadius: '6px', padding: `${PAD}px`, boxSizing: 'border-box',
 };
-// Inner fills the box width so viewers lay out as on the sheet; scaled by width to fit.
+// Inner fills the box width so viewers lay out as on the sheet; scaled to fit.
+// DECISION (UpdateState 2026-06-01): do NOT horizontally center the example. Centering needs
+// the wrap shrunk to fit-content, which collapses width:100% viewers (getallenas number line,
+// temperatuur thermometer, MAB) to min-content — broken/tiny previews. Left-aligned is fine.
+// Don't retry.
 const scaleWrap: React.CSSProperties = {
     transformOrigin: 'top left', width: '100%',
 };

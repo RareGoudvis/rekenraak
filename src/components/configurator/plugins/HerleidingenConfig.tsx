@@ -29,17 +29,6 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const toggleUnit = (k: string) => { const next = units.includes(k) ? units.filter(x => x !== k) : [...units, k]; if (next.length) set('units', next); };
     const toggleFormat = (k: string) => { const next = formats.includes(k) ? formats.filter(x => x !== k) : [...formats, k]; if (next.length) set('formats', next); };
 
-    // Illustrative pill labels using a representative big→small unit pair from the enabled units.
-    const en = ladder.filter(u => units.includes(u.key));
-    const big = (en[0] ?? ladder[0]).key;
-    const small = (en[en.length - 1] ?? ladder[ladder.length - 1]).key;
-    const patterns: Record<string, string> = {
-        'enkel-getal': `__ ${small}`,
-        'enkel-eenheid': `5 __`,
-        'samengesteld-enkel': `${big} ${small} → __`,
-        'enkel-samengesteld': `__ ${big} __ ${small}`,
-    };
-
     // Breakpoint slider — snaps to power-of-10 stops.
     const stopSlider = (key: string, val: number, stops: number[], label: string) => {
         const idx = Math.max(0, stops.indexOf(val));
@@ -67,9 +56,9 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
 
             <div style={styles.section}>
                 <label style={styles.groupLabel}>Soorten oefeningen</label>
-                <div style={styles.buttonGroup}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {FORMATS.map(f => (
-                        <button key={f.key} title={f.label} onClick={() => toggleFormat(f.key)} style={styles.pill(formats.includes(f.key))}>{patterns[f.key]}</button>
+                        <button key={f.key} onClick={() => toggleFormat(f.key)} style={{ ...styles.pill(formats.includes(f.key)), width: '100%', textAlign: 'left' }}>{f.label}</button>
                     ))}
                 </div>
             </div>

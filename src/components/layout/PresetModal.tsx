@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { loadPresets, savePreset, deletePreset, MAX_PRESETS, type Preset } from '../../services/persistence';
+import ModalPortal from '../ui/ModalPortal';
 
 interface Props {
     onClose: () => void;
@@ -50,6 +51,7 @@ export default function PresetModal({ onClose }: Props) {
     };
 
     return (
+        <ModalPortal>
         <div className="no-print" onClick={onClose} style={S.backdrop}>
             <div onClick={(e) => e.stopPropagation()} style={S.modal}>
                 <div style={S.header}>
@@ -95,6 +97,7 @@ export default function PresetModal({ onClose }: Props) {
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 }
 

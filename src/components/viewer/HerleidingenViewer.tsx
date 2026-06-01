@@ -53,6 +53,9 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     const measure: string = block.constraints.measure ?? 'lengte';
     const scaffolding: string = block.constraints.scaffolding ?? 'geen';
     const writeUnits: boolean = !!block.constraints.writeUnits;
+    // 'uitlijnen' = given always left, right-aligned to a shared '=' column;
+    // 'compact' = the single-part side goes left so the long compound always sits right.
+    const layout: string = block.constraints.herleidingLayout ?? 'uitlijnen';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
@@ -95,22 +98,34 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     // overflow into the block controls.
     const sideLen = (ps: HerleidingPart[]) => ps.map(p => `${formatMathNumber(p.value)} ${p.key}`).join('  ').length;
     const cols = Math.max(...exercises.map(ex => sideLen(ex.fromParts) + 3 + sideLen(ex.toParts))) > 38 ? 1 : 2;
-    // From-box sized to the block's widest from (≈9.5px/char Azeret Mono @16px) so a wide
-    // compound from never overflows the box; all '=' columns stay aligned.
-    const fromW = Math.max(150, Math.round(Math.max(...exercises.map(ex => sideLen(ex.fromParts))) * 9.5) + 12);
+
+    // Width estimates: a SHOWN side ≈ 9.5px/char (Azeret Mono @16px); a BLANK side renders
+    // as fixed lines (numLine 60 + unitLine 34 + gaps ≈ 100px/part) regardless of its value.
+    const givenPx = (ps: HerleidingPart[]) => sideLen(ps) * 9.5;
+    const blankPx = (ps: HerleidingPart[]) => ps.length * 100;
+    // In 'compact' the single-part (shorter) side anchors the left; in 'uitlijnen' the given
+    // is always left. The long compound therefore always lands on the (wrapping) right side.
+    const leftIsFrom = (ex: HerleidingExercise) => layout === 'uitlijnen' || ex.fromParts.length <= ex.toParts.length;
+    const leftPx = (ex: HerleidingExercise) => leftIsFrom(ex) ? givenPx(ex.fromParts) : blankPx(ex.toParts);
+    // Left box sized to the widest left side so every '=' column stays aligned.
+    const leftW = Math.max(150, Math.round(Math.max(...exercises.map(leftPx))) + 12);
 
     const exerciseGrid = (
         <FragmentableGrid
             cols={cols}
             columnGap={28}
             rowGap={gap + 2}
-            items={exercises.map(ex => (
-                <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
-                    <span style={{ display: 'inline-block', width: `${fromW}px`, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{renderFrom(ex)}</span>
-                    <span>=</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '10px' }}>{renderTo(ex)}</span>
-                </div>
-            ))}
+            items={exercises.map(ex => {
+                const lf = leftIsFrom(ex);
+                return (
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
+                        <span style={{ display: 'inline-block', width: `${leftW}px`, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{lf ? renderFrom(ex) : renderTo(ex)}</span>
+                        <span style={{ flexShrink: 0 }}>=</span>
+                        {/* Wrap the long side onto a second row instead of overflowing the page. */}
+                        <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: '10px', rowGap: '6px', minWidth: 0 }}>{lf ? renderTo(ex) : renderFrom(ex)}</span>
+                    </div>
+                );
+            })}
         />
     );
 

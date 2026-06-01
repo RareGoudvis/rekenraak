@@ -59,9 +59,9 @@ export default function Inspector() {
 
                         <label style={{ ...S.label, marginTop: '12px' }}>Koptekst stijl</label>
                         <div className="seg-group">
-                            {(['geen', 'kader'] as const).map((s) => (
+                            {(['geen', 'onderstreept', 'kader'] as const).map((s) => (
                                 <button key={s} onClick={() => updateDocSettings({ headerStyle: s })} className="seg-btn" aria-pressed={docSettings.headerStyle === s}>
-                                    {s === 'geen' ? 'Geen' : 'Kader'}
+                                    {s === 'geen' ? 'Geen' : s === 'onderstreept' ? 'Onderstreept' : 'Kader'}
                                 </button>
                             ))}
                         </div>
@@ -563,7 +563,8 @@ export default function Inspector() {
                     )}
 
                     {/* ── Scaffolding (hr-std: Kort / Lang / Stappen) ── */}
-                    {isHrStd(activeBlock.typeId) && !activeBlock.typeId.startsWith('cijferen-') && (
+                    {/* Puntoefeningen (a + . = c) staan per definitie op één korte lijn — geen layoutkeuze. */}
+                    {isHrStd(activeBlock.typeId) && !activeBlock.typeId.startsWith('cijferen-') && activeBlock.constraints.equationType !== 'puntoefening' && (
                         <>
                             <label style={{ ...S.label, marginTop: '12px' }}>Scaffolding</label>
                             <div className="seg-group">
@@ -707,7 +708,7 @@ export default function Inspector() {
             )}
 
             {/* ── 4. Geavanceerd (accordion) ── */}
-            {!locked && (activeBlock.typeId.startsWith('cijferen-') || activeBlock.typeId.startsWith('geld-') || activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen' || activeBlock.typeId === 'splitsen' || (activeBlock.typeId === 'breuken' && ((subType === 'kleuren' || subType === 'herkennen') && (Array.isArray(c.shapes) ? c.shapes.length === 1 : true) && c.staticSize || subType === 'hoeveelheid-rechthoek'))) && (
+            {!locked && (activeBlock.typeId.startsWith('cijferen-') || activeBlock.typeId.startsWith('geld-') || activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen' || activeBlock.typeId === 'splitsen' || activeBlock.typeId === 'herleidingen' || (activeBlock.typeId === 'breuken' && ((subType === 'kleuren' || subType === 'herkennen') && (Array.isArray(c.shapes) ? c.shapes.length === 1 : true) && c.staticSize || subType === 'hoeveelheid-rechthoek'))) && (
                 <div style={S.advancedWrap}>
                     <button style={S.advancedToggle} onClick={() => setAdvancedOpen(!advancedOpen)}>
                         <span>Geavanceerd</span>
@@ -716,6 +717,16 @@ export default function Inspector() {
                     {advancedOpen && (
                         <div style={{ ...S.card, marginTop: '8px' }}>
                             <div style={S.col}>
+                                {activeBlock.typeId === 'herleidingen' && (
+                                    <>
+                                        <label style={S.label}>Uitlijning</label>
+                                        <div className="seg-group">
+                                            {([['uitlijnen', 'Uitgelijnd'], ['compact', 'Kort getal links']] as const).map(([v, lbl]) => (
+                                                <button key={v} className="seg-btn" aria-pressed={(c.herleidingLayout ?? 'uitlijnen') === v} onClick={() => updateConstraint('herleidingLayout', v)}>{lbl}</button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                                 {activeBlock.typeId === 'splitsen' && (
                                     <>
                                         <label style={S.label}>Getallen (typ zelf een getal)</label>
@@ -874,7 +885,7 @@ export default function Inspector() {
 }
 
 const S = {
-    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-base)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
+    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-base)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: '0 var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     lockBanner: { padding: 'var(--sp-3)', fontSize: 'var(--text-sm)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
     card: { backgroundColor: 'var(--bg-surface)', padding: 'var(--sp-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
     // Section title: calm, sentence-case, weight-driven (not tiny UPPERCASE tracked).

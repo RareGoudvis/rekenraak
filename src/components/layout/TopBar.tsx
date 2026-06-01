@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Undo2, Redo2, Sparkles, Download, Upload, Bookmark, Share2, Eye, EyeOff, Printer, Key, Check, LayoutGrid, MoreHorizontal, FileText, LayoutTemplate } from 'lucide-react';
+import { Undo2, Redo2, Sparkles, Download, Upload, Bookmark, Share2, Eye, EyeOff, Printer, Key, Check, LayoutGrid, MoreHorizontal, FileText, LayoutTemplate, RotateCcw } from 'lucide-react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { exportWorksheet, parseWorksheetFile, encodeShareLink } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
@@ -9,9 +9,12 @@ import MassAddModal from '../massadd/MassAddModal';
 interface Props {
     onPrint: (withSolutions: boolean) => void;
     onOpenHelp?: () => void;
+    autosaveTitle?: string | null;          // non-null = show the "vorige werkbundel" row
+    onAcceptAutosave?: () => void;
+    onDeclineAutosave?: () => void;
 }
 
-export default function TopBar({ onPrint }: Props) {
+export default function TopBar({ onPrint, autosaveTitle, onAcceptAutosave, onDeclineAutosave }: Props) {
     const undo = useWorksheetStore((s) => s.undo);
     const redo = useWorksheetStore((s) => s.redo);
     const canUndo = useWorksheetStore((s) => s.canUndo());
@@ -94,7 +97,18 @@ export default function TopBar({ onPrint }: Props) {
                 variant="primary"
             />
 
-            <div style={S.spacer} />
+            {/* Center slot: doubles as the flex spacer, and hosts the autosave prompt
+                (accent-tinted pill) in the middle of the bar when an autosave exists. */}
+            <div style={S.center}>
+                {autosaveTitle != null && (
+                    <div style={S.autosavePill} onClick={(e) => e.stopPropagation()}>
+                        <RotateCcw size={15} style={{ flexShrink: 0, color: 'var(--accent)' }} aria-hidden="true" />
+                        <span style={S.autosaveText}>Vorige werkbundel ("{autosaveTitle}") gevonden. Terughalen?</span>
+                        <button onClick={onAcceptAutosave} style={S.autosavePrimary}>Ja</button>
+                        <button onClick={onDeclineAutosave} style={S.autosaveSecondary}>Nee</button>
+                    </div>
+                )}
+            </div>
 
             {/* Delen — prompt sheet vs template */}
             <div style={S.menuWrap}>
@@ -212,4 +226,24 @@ const S = {
         background: 'transparent', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
     menuHint: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 } as React.CSSProperties,
+    // Flex spacer that also centers the autosave pill in the middle of the bar.
+    center: { flex: 1, minWidth: 0, display: 'flex', justifyContent: 'center' } as React.CSSProperties,
+    // Accent-tinted pill so the prompt reads as a distinct, temporary callout.
+    autosavePill: {
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0,
+        padding: '5px 6px 5px 12px', borderRadius: 'var(--radius-md)',
+        backgroundColor: 'transparent', border: '1px solid var(--accent)',
+    } as React.CSSProperties,
+    autosaveText: {
+        fontSize: 'var(--text-sm)', color: 'var(--accent)', fontWeight: 600,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
+    } as React.CSSProperties,
+    autosavePrimary: {
+        flexShrink: 0, padding: '4px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-sm)',
+        border: '1px solid var(--accent)', backgroundColor: 'transparent', color: 'var(--accent)',
+    } as React.CSSProperties,
+    autosaveSecondary: {
+        flexShrink: 0, padding: '4px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: 'var(--text-sm)',
+        border: '1px solid var(--accent)', backgroundColor: 'transparent', color: 'var(--accent)',
+    } as React.CSSProperties,
 };

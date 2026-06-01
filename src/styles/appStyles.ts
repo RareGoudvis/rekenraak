@@ -3,7 +3,10 @@ export const styles = {
   mainContent: { position: 'relative', flex: 1, backgroundColor: 'var(--bg-base)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
   // Worksheet stays white ink-on-paper (it prints); only the screen-side shadow/radius soften.
   // marginTop clears the sticky topbar so the sheet's full top border is visible (print resets margin:0).
-  a4Sheet: { backgroundColor: '#ffffff', color: '#000000', width: '100%', maxWidth: '920px', minHeight: '1130px', height: 'max-content', flex: '0 0 auto', marginTop: 'var(--sp-3)', padding: '34px 50px 45px', boxShadow: 'var(--shadow-3)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', position: 'relative', boxSizing: 'border-box' } as React.CSSProperties,
+  // height:auto (not max-content): the child is a real <table>, whose intrinsic max-content
+  // height is unreliable — the sheet would stop at its basic size while content overflows
+  // below the white card. `auto` sizes the sheet to the table's actual laid-out height.
+  a4Sheet: { backgroundColor: '#ffffff', color: '#000000', width: '100%', maxWidth: '920px', minHeight: '1130px', height: 'auto', flex: '0 0 auto', marginTop: 'var(--sp-3)', padding: '34px 50px 45px', boxShadow: 'var(--shadow-3)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', position: 'relative', boxSizing: 'border-box' } as React.CSSProperties,
   sheetHeaderLabel: { fontSize: '13px', fontWeight: 'bold' as const, marginRight: '6px', color: '#000', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
   sheetHeaderLine: { flex: 1, borderBottom: '1.5px solid #000', height: '16px' } as React.CSSProperties,
   scoreBox: { border: '2px solid #000', padding: '8px 14px', fontSize: '15px', fontWeight: 'bold', borderRadius: '4px', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,

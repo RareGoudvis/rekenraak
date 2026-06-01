@@ -489,6 +489,7 @@ src/
     ├── shared/ExercisePreview.tsx                              # §13 fit-to-card live example
     ├── ui/IconButton.tsx
     ├── ui/Switch.tsx           # iOS-style toggle (boolean controls)
+    ├── ui/ModalPortal.tsx      # createPortal(→ body) so modals escape the .mac-vibrant containing-block trap
     ├── configurator/
     │   ├── Inspector.tsx        # mounts EXERCISE_UI[typeId].Config; locked-mode gating; splitsen manual-number boxes
     │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff helpers

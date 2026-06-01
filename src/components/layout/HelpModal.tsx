@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ModalPortal from '../ui/ModalPortal';
 
 interface Props {
     onClose: () => void;
@@ -19,6 +20,7 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
     }, [onClose]);
 
     return (
+        <ModalPortal>
         <div
             className="no-print"
             onClick={onClose}
@@ -74,6 +76,9 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                         <Section title="4. Thema">
                             Onderaan de zijbalk wissel je tussen Licht (☀), Donker (☽) en Hoog contrast (◐, kleurenblind-veilig).
                         </Section>
+                        <Section title="5. Steun deze tool">
+                            Vind je deze tool nuttig? Trakteer me op een koffie via de <a href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" style={linkStyle}>❤-knop</a> onderaan de zijbalk.
+                        </Section>
                     </>
                 )}
 
@@ -108,14 +113,17 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                         </Section>
 
                         <Section title="Bugs of suggesties?">
-                            Stuur een DM via X (𝕏-knop onderaan de zijbalk). Vind je deze tool nuttig? Trakteer me op een koffie via de ❤-knop ernaast.
+                            Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (de 💬-knop onderaan de zijbalk).
                         </Section>
                     </>
                 )}
             </div>
         </div>
+        </ModalPortal>
     );
 }
+
+const linkStyle: React.CSSProperties = { color: 'var(--accent-purple)', textDecoration: 'underline' };
 
 function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
     return (

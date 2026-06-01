@@ -5,6 +5,7 @@ import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exe
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { baseApply } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
+import ModalPortal from '../ui/ModalPortal';
 
 interface Props {
     onClose: () => void;
@@ -59,6 +60,7 @@ export default function MassAddModal({ onClose }: Props) {
     };
 
     return (
+        <ModalPortal>
         <div style={S.overlay} onClick={onClose}>
             <div style={S.modal} onClick={(e) => e.stopPropagation()}>
                 <div style={S.header}>
@@ -144,6 +146,7 @@ export default function MassAddModal({ onClose }: Props) {
                 </div>
             </div>
         </div>
+        </ModalPortal>
     );
 }
 
