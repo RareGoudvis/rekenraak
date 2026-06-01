@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Undo2, Redo2, Sparkles, Download, Upload, Bookmark, Share2, Eye, EyeOff, Printer, Check, LayoutGrid, MoreHorizontal, FileText, LayoutTemplate } from 'lucide-react';
+import { Undo2, Redo2, Sparkles, Download, Upload, Bookmark, Share2, Eye, EyeOff, Printer, Key, Check, LayoutGrid, MoreHorizontal, FileText, LayoutTemplate } from 'lucide-react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { exportWorksheet, parseWorksheetFile, encodeShareLink } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
@@ -162,8 +162,8 @@ export default function TopBar({ onPrint }: Props) {
                     variant="primary"
                 />
                 <IconButton
-                    icon={Printer}
-                    label="Afdrukken met oplossingen"
+                    icon={Key}
+                    label="Afdrukken met oplossingen (sleutel)"
                     onClick={() => onPrint(true)}
                     variant="primary"
                 />

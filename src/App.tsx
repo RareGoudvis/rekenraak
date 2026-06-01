@@ -13,6 +13,42 @@ import { styles } from './styles/appStyles';
 import { loadAutosave, clearAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from './store/useWorksheetStore';
 import { RELEASE_VERSION, RELEASE_SUMMARY } from './config/version';
+import type { MathBlock } from './services/math/types';
+
+// Click-to-edit the opdracht title directly on the A4 preview (mirrors the
+// OrdenenViewer inline-edit pattern). Commit on blur/Enter, Esc cancels; frozen
+// in locked (curriculum) mode. The index prefix stays non-editable.
+function EditableInstruction({ block, prefix }: { block: MathBlock; prefix: string }) {
+  const updateBlockInstruction = useWorksheetStore((s) => s.updateBlockInstruction);
+  const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState('');
+
+  if (editing && !locked) {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+        {prefix && <span style={styles.instructionDisplay}>{prefix}</span>}
+        <input
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={() => { updateBlockInstruction(block.id, text); setEditing(false); }}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
+          style={{ ...styles.instructionDisplay, border: '1px solid var(--accent)', borderRadius: '4px', padding: '0 4px', background: 'transparent', outline: 'none', minWidth: '180px' }}
+        />
+      </span>
+    );
+  }
+  return (
+    <span
+      onClick={locked ? undefined : (e) => { e.stopPropagation(); setText(block.instructionText || ''); setEditing(true); }}
+      title={locked ? undefined : 'Klik om aan te passen'}
+      style={{ ...styles.instructionDisplay, cursor: locked ? 'default' : 'text' }}
+    >
+      {prefix}{block.instructionText || ''}
+    </span>
+  );
+}
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
@@ -249,13 +285,15 @@ export default function App() {
                         variant={block.pageBreakBefore ? 'active' : 'neutral'}
                         size={16}
                       />
-                      <IconButton icon={Trash2} label="Blok verwijderen" onClick={() => removeBlock(block.id)} variant="danger" size={16} />
                       {index > 0 && (
                         <IconButton icon={ArrowUp} label="Blok omhoog" onClick={() => moveBlockUp(block.id)} size={16} />
                       )}
                       {index < blocks.length - 1 && (
                         <IconButton icon={ArrowDown} label="Blok omlaag" onClick={() => moveBlockDown(block.id)} size={16} />
                       )}
+                      {/* Delete sits apart at the bottom, behind a divider, to avoid mis-clicks. */}
+                      <div style={styles.blockControlsDivider} />
+                      <IconButton icon={Trash2} label="Blok verwijderen" onClick={() => removeBlock(block.id)} variant="danger" size={16} />
                     </div>
                   )}
 
@@ -278,9 +316,7 @@ export default function App() {
                           <Lock size={14} />
                         </span>
                       )}
-                      <span style={styles.instructionDisplay}>
-                          {docSettings.numberBlocks ? `${index + 1}. ` : ''}{block.instructionText || ''}
-                      </span>
+                      <EditableInstruction block={block} prefix={docSettings.numberBlocks ? `${index + 1}. ` : ''} />
                     </div>
                     {docSettings.showScores && (block.totalPoints || 0) > 0 && <div style={styles.pointsText}>__ / {block.totalPoints}</div>}
                   </div>
