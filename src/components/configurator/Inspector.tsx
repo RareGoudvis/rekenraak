@@ -6,6 +6,7 @@ import { DENOMINATION_CATALOGUE, denominationLabel } from '../../services/geld/g
 import { regenerateBlock } from '../../services/generateDispatch';
 import { recomputeSplitsenExercise } from '../../services/splitsen/splitsenGenerator';
 import { formatMathNumber } from '../../services/math/formatters';
+import Switch from '../ui/Switch';
 
 const HR_STD_TYPES = ['optellen', 'aftrekken', 'vermenigvuldigen', 'delen'];
 const isHrStd = (typeId: string) => HR_STD_TYPES.some(t => typeId.includes(t));
@@ -175,9 +176,9 @@ export default function Inspector() {
                 <div style={S.card}>
                     <h4 style={S.cardTitle}>Opdrachtinstellingen</h4>
                     <div style={S.col}>
-                        <label style={S.checkboxLabel}><input type="checkbox" checked={docSettings.showScores} onChange={(e) => updateDocSettings({ showScores: e.target.checked })} style={S.checkbox} /> Scores tonen</label>
-                        <label style={S.checkboxLabel}><input type="checkbox" checked={docSettings.showDividers} onChange={(e) => updateDocSettings({ showDividers: e.target.checked })} style={S.checkbox} /> Scheidingslijn tussen oefeningen</label>
-                        <label style={S.checkboxLabel}><input type="checkbox" checked={docSettings.numberBlocks} onChange={(e) => updateDocSettings({ numberBlocks: e.target.checked })} style={S.checkbox} /> Opdrachten nummeren</label>
+                        <div style={S.switchRow}><span style={S.switchText}>Scores tonen</span><Switch checked={docSettings.showScores} onChange={(v) => updateDocSettings({ showScores: v })} aria-label="Scores tonen" /></div>
+                        <div style={S.switchRow}><span style={S.switchText}>Scheidingslijn tussen oefeningen</span><Switch checked={docSettings.showDividers} onChange={(v) => updateDocSettings({ showDividers: v })} aria-label="Scheidingslijn tussen oefeningen" /></div>
+                        <div style={S.switchRow}><span style={S.switchText}>Opdrachten nummeren</span><Switch checked={docSettings.numberBlocks} onChange={(v) => updateDocSettings({ numberBlocks: v })} aria-label="Opdrachten nummeren" /></div>
 
                         <label style={{ ...S.label, marginTop: '10px' }}>Opdracht stijl</label>
                         <div style={S.btnGroup}>
@@ -841,37 +842,42 @@ export default function Inspector() {
 }
 
 const S = {
-    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-dark)', borderLeft: '1px solid var(--border-color)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' } as React.CSSProperties,
-    lockBanner: { padding: '10px 12px', fontSize: '12px', lineHeight: 1.4, color: 'var(--text-main)', background: 'rgba(172,41,233,0.10)', border: '1px solid var(--accent-purple)', borderRadius: '8px' } as React.CSSProperties,
-    card: { backgroundColor: 'var(--bg-panel)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)' } as React.CSSProperties,
-    cardTitle: { color: 'var(--accent-purple)', margin: '0 0 14px 0', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 } as React.CSSProperties,
-    col: { display: 'flex', flexDirection: 'column', gap: '4px' } as React.CSSProperties,
-    row: { display: 'flex', gap: '12px', alignItems: 'flex-end' } as React.CSSProperties,
-    label: { display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 } as React.CSSProperties,
-    footerGroupLabel: { display: 'block', fontSize: '11px', color: 'var(--text-main)', marginBottom: '6px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' } as React.CSSProperties,
-    input: { width: '100%', padding: '9px 10px', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', outline: 'none', boxSizing: 'border-box', fontSize: '13px' } as React.CSSProperties,
-    select: { width: '100%', padding: '9px 10px', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-muted)', outline: 'none', fontSize: '13px', cursor: 'pointer' } as React.CSSProperties,
-    checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: 'var(--text-main)' } as React.CSSProperties,
-    checkboxGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', marginTop: '4px' } as React.CSSProperties,
-    checkbox: { accentColor: 'var(--accent-purple)', width: '15px', height: '15px', cursor: 'pointer', flexShrink: 0 } as React.CSSProperties,
-    btnGroup: { display: 'flex', gap: '3px', backgroundColor: 'var(--bg-input)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-color)' } as React.CSSProperties,
-    radioBtn: (active: boolean): React.CSSProperties => ({ padding: '6px 10px', fontSize: '12px', border: 'none', borderRadius: '4px', cursor: 'pointer', backgroundColor: active ? 'var(--accent-purple)' : 'transparent', color: active ? 'white' : 'var(--text-muted)', fontWeight: active ? 'bold' : 'normal', flex: 1, whiteSpace: 'nowrap' }),
+    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-base)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
+    lockBanner: { padding: 'var(--sp-3)', fontSize: 'var(--text-sm)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
+    card: { backgroundColor: 'var(--bg-surface)', padding: 'var(--sp-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
+    // Section title: calm, sentence-case, weight-driven (not tiny UPPERCASE tracked).
+    cardTitle: { color: 'var(--text-main)', margin: '0 0 var(--sp-3) 0', fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em' } as React.CSSProperties,
+    col: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)' } as React.CSSProperties,
+    row: { display: 'flex', gap: 'var(--sp-3)', alignItems: 'flex-end' } as React.CSSProperties,
+    label: { display: 'block', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--sp-2)', fontWeight: 500 } as React.CSSProperties,
+    footerGroupLabel: { display: 'block', fontSize: 'var(--text-sm)', color: 'var(--text-main)', marginBottom: 'var(--sp-2)', fontWeight: 600 } as React.CSSProperties,
+    input: { width: '100%', padding: '9px 10px', backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)', color: 'var(--text-main)', outline: 'none', boxSizing: 'border-box', fontSize: 'var(--text-sm)' } as React.CSSProperties,
+    select: { width: '100%', padding: '9px 10px', backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)', color: 'var(--text-main)', outline: 'none', fontSize: 'var(--text-sm)', cursor: 'pointer' } as React.CSSProperties,
+    checkboxLabel: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-main)' } as React.CSSProperties,
+    switchRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)', padding: '3px 0' } as React.CSSProperties,
+    switchText: { fontSize: 'var(--text-sm)', color: 'var(--text-main)' } as React.CSSProperties,
+    checkboxGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-2) var(--sp-3)', marginTop: 'var(--sp-1)' } as React.CSSProperties,
+    checkbox: { accentColor: 'var(--accent)', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 } as React.CSSProperties,
+    // Segmented control: neutral track, selected segment = accent-soft tint + accent
+    // text + accent ring (the one canonical selected look — same as sharedPluginStyles).
+    btnGroup: { display: 'flex', gap: '2px', backgroundColor: 'var(--bg-surface-2)', padding: '3px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--separator)' } as React.CSSProperties,
+    radioBtn: (active: boolean): React.CSSProperties => ({ padding: '6px 10px', fontSize: 'var(--text-sm)', border: `1px solid ${active ? 'var(--accent)' : 'transparent'}`, borderRadius: 'var(--radius-xs)', cursor: 'pointer', backgroundColor: active ? 'var(--accent-soft)' : 'transparent', color: active ? 'var(--accent)' : 'var(--text-muted)', fontWeight: active ? 600 : 500, flex: 1, whiteSpace: 'nowrap', transition: 'background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out)' }),
 
-    engineCard: { backgroundColor: 'var(--bg-panel)', borderRadius: '10px', border: '1px solid rgba(172,41,233,0.35)' } as React.CSSProperties,
-    engineHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', backgroundColor: 'rgba(172,41,233,0.08)', borderBottom: '1px solid rgba(172,41,233,0.2)', borderRadius: '10px 10px 0 0' } as React.CSSProperties,
-    engineLabel: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, color: 'var(--accent-purple)' } as React.CSSProperties,
-    engineBody: { padding: '14px 16px', maxHeight: '520px', overflowY: 'auto' } as React.CSSProperties,
-    generateBtn: { padding: '6px 14px', backgroundColor: 'var(--accent-purple)', border: 'none', color: 'white', borderRadius: '20px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' } as React.CSSProperties,
+    engineCard: { backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', border: '1px solid var(--accent-soft)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
+    engineHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-4)', backgroundColor: 'var(--accent-soft)', borderBottom: '1px solid var(--separator)', borderRadius: 'var(--radius-md) var(--radius-md) 0 0' } as React.CSSProperties,
+    engineLabel: { fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--accent)' } as React.CSSProperties,
+    engineBody: { padding: 'var(--sp-4)', maxHeight: '520px', overflowY: 'auto' } as React.CSSProperties,
+    generateBtn: { padding: '8px 16px', backgroundColor: 'var(--accent)', border: 'none', color: 'var(--accent-on)', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontWeight: 600, fontSize: 'var(--text-sm)', boxShadow: 'var(--shadow-2)' } as React.CSSProperties,
 
-    advancedWrap: { marginBottom: '8px' } as React.CSSProperties,
-    advancedToggle: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '10px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' } as React.CSSProperties,
+    advancedWrap: { marginBottom: 'var(--sp-2)' } as React.CSSProperties,
+    advancedToggle: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-4)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontWeight: 600 } as React.CSSProperties,
 };
 
 const miniMoveBtn = (disabled: boolean): React.CSSProperties => ({
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     width: '22px', height: '22px',
-    background: 'var(--bg-input)', border: '1px solid var(--border-color)',
-    borderRadius: '4px', color: 'var(--text-main)',
+    background: 'var(--bg-surface-2)', border: '1px solid var(--separator)',
+    borderRadius: 'var(--radius-xs)', color: 'var(--text-main)',
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.35 : 1,
     padding: 0,

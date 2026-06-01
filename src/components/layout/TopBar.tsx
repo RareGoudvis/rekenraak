@@ -109,10 +109,10 @@ export default function TopBar({ onPrint }: Props) {
                     <>
                         <div style={S.backdrop} onClick={() => setMenu(null)} />
                         <div style={S.menu}>
-                            <button style={S.menuItem} onClick={() => handleShare('full')}>
+                            <button className="ui-hover" style={S.menuItem} onClick={() => handleShare('full')}>
                                 <FileText size={15} /> <span><b>Blad delen</b><br /><span style={S.menuHint}>volledige werkbundel</span></span>
                             </button>
-                            <button style={S.menuItem} onClick={() => handleShare('template')}>
+                            <button className="ui-hover" style={S.menuItem} onClick={() => handleShare('template')}>
                                 <LayoutTemplate size={15} /> <span><b>Sjabloon delen</b><br /><span style={S.menuHint}>enkel instellingen</span></span>
                             </button>
                         </div>
@@ -132,13 +132,13 @@ export default function TopBar({ onPrint }: Props) {
                     <>
                         <div style={S.backdrop} onClick={() => setMenu(null)} />
                         <div style={S.menu}>
-                            <button style={S.menuItem} onClick={() => { setMenu(null); handleExport(); }}>
+                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); handleExport(); }}>
                                 <Download size={15} /> Exporteer als bestand
                             </button>
-                            <button style={S.menuItem} onClick={() => { setMenu(null); handleImportClick(); }}>
+                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); handleImportClick(); }}>
                                 <Upload size={15} /> Importeer bestand
                             </button>
-                            <button style={S.menuItem} onClick={() => { setMenu(null); setPresetOpen(true); }}>
+                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setPresetOpen(true); }}>
                                 <Bookmark size={15} /> Presets beheren
                             </button>
                         </div>
@@ -185,29 +185,30 @@ export default function TopBar({ onPrint }: Props) {
 
 const S = {
     bar: {
-        display: 'flex', alignItems: 'center', gap: '8px',
-        padding: '8px 16px',
-        backgroundColor: 'var(--bg-panel)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '10px',
-        marginBottom: '12px',
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
+        padding: 'var(--sp-3) var(--sp-4)',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid var(--separator)',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-1)',
+        marginBottom: 'var(--sp-4)',
         flexShrink: 0,
         flexWrap: 'wrap',
     } as React.CSSProperties,
-    group: { display: 'flex', gap: '4px' } as React.CSSProperties,
+    group: { display: 'flex', gap: 'var(--sp-1)' } as React.CSSProperties,
     spacer: { flex: 1 } as React.CSSProperties,
     menuWrap: { position: 'relative', display: 'flex' } as React.CSSProperties,
     backdrop: { position: 'fixed', inset: 0, zIndex: 30 } as React.CSSProperties,
     menu: {
         position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 31,
-        minWidth: '210px', background: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-        borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', padding: '6px',
+        minWidth: '210px', background: 'var(--bg-surface)', border: '1px solid var(--separator)',
+        borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-2)', padding: 'var(--sp-1)',
         display: 'flex', flexDirection: 'column', gap: '2px',
     } as React.CSSProperties,
     menuItem: {
-        display: 'flex', alignItems: 'center', gap: '10px', width: '100%', textAlign: 'left',
-        padding: '8px 10px', borderRadius: '6px', cursor: 'pointer', border: 'none',
-        background: 'transparent', color: 'var(--text-main)', fontSize: '13px', fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', width: '100%', textAlign: 'left',
+        padding: '8px 10px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: 'none',
+        background: 'transparent', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
-    menuHint: { fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400 } as React.CSSProperties,
+    menuHint: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 } as React.CSSProperties,
 };

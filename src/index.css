@@ -40,6 +40,51 @@
 .print-area > tbody.print-body > tr > .print-body-cell { display: block; width: 100%; }
 .print-thead-spacer { display: none; }
 
+/* === APP CHROME (screen only — never affects the printed worksheet) === */
+
+/* Form controls don't inherit font-family by default — pull them onto the UI font. */
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+/* Apple-style keyboard focus: a soft accent ring, only for keyboard users
+   (:focus-visible), never a hard browser outline. */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-xs);
+}
+
+/* Shared icon button (TopBar / sidebar / block overlay). Hover lifts, press dips —
+   inline styles can't express :hover/:active so the interaction lives here. */
+.ui-icon-btn:not(:disabled):hover { filter: brightness(1.10); }
+[data-theme="light"] .ui-icon-btn:not(:disabled):hover { filter: brightness(0.97); }
+[data-theme="colorblind"] .ui-icon-btn:not(:disabled):hover { filter: none; background-color: var(--bg-hover); }
+.ui-icon-btn:not(:disabled):active { transform: scale(0.96); }
+
+/* Generic hover affordance for non-IconButton clickables that opt in. */
+.ui-hover { transition: background-color var(--dur) var(--ease-out); }
+.ui-hover:hover { background-color: var(--bg-hover); }
+
+/* Sidebar exercise leaves — rounded hover fill + text lift (replaces the old
+   inline onMouseEnter/Leave colour hacks). */
+.sidebar-leaf { transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out); }
+.sidebar-leaf:hover { background-color: var(--bg-hover); color: var(--text-main); }
+
+/* Respect the OS "reduce motion" setting — calm, no transitions/animations. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Mobile/tablet block — hidden on large screens, covers everything on small screens */
 .mobile-block { display: none; }
 .mobile-block-hint { display: none; }

@@ -23,55 +23,170 @@
     font-weight: 700;
 }
 
+/* ============================================================================
+   DESIGN SYSTEM — Apple-HIG-inspired scales (theme-independent).
+   Hierarchy comes from weight + size + tone, not UPPERCASE + letter-spacing.
+   Per-theme color/elevation tokens live in the theme blocks below; the legacy
+   names (--bg-dark/--bg-panel/--bg-input/--border-color/--accent-purple) are
+   kept as aliases so existing inline styles keep working during migration.
+   ============================================================================ */
 :root {
-    --bg-dark: #0f0f12;
-    --bg-panel: #16161a;
-    --bg-input: #2a2a33;
-    --accent-purple: #ac29e9;
-    --accent-purple-dark: #3f0c5d;
+    /* Spacing — strict 8pt grid (sp-N ≈ N*4px), so every gap snaps to a rhythm */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 20px;
+    --sp-6: 24px;
+    --sp-8: 32px;
+    --sp-10: 40px;
+
+    /* Corner radii — one ramp; Apple favours larger, softer corners */
+    --radius-xs: 6px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+    --radius-pill: 999px;
+
+    /* Type ramp (px) — hierarchy via weight, not caps */
+    --text-xs: 11px;
+    --text-sm: 13px;
+    --text-base: 14px;
+    --text-md: 15px;
+    --text-lg: 17px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+
+    /* UI font — SF on Apple devices, graceful fallback elsewhere. Roboto Mono /
+       Azeret Mono stay reserved for the printed worksheet, never UI chrome. */
+    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Roboto", system-ui, sans-serif;
+
+    /* Motion — ease-out for entrances, gentle spring for selection thumbs */
+    --dur-fast: 120ms;
+    --dur: 180ms;
+    --dur-slow: 260ms;
+    --ease-out: cubic-bezier(.22, .61, .36, 1);
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* ---- DARK (default) — deep neutral grays, restrained desaturated violet ---- */
+:root {
+    /* Layered surfaces: base < surface < surface-2 separate by tone, not borders */
+    --bg-base: #131316;
+    --bg-surface: #1c1c21;
+    --bg-surface-2: #26262d;
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --separator: rgba(255, 255, 255, 0.09);
+
+    --text-main: #f5f5f7;
+    --text-muted: #9b9ba8;
+
+    /* Desaturated from the old neon #ac29e9 → a calmer violet */
+    --accent: #8a6fe8;
+    --accent-strong: #7b5fe0;
+    --accent-soft: rgba(138, 111, 232, 0.16);
+    --accent-on: #ffffff;
+    --danger: #ff6b6b;
+    --danger-soft: rgba(255, 107, 107, 0.14);
+
     --accent-getallenkennis: #f05252;
     --accent-bewerkingen: #4d7fff;
     --accent-metendrekenen: #3db870;
     --accent-meetkunde: #b06eff;
     --accent-vraagstukken: #e0a030;
-    --text-main: #ffffff;
-    --text-muted: #b8b8c8;
-    --border-color: #3a3a48;
+
+    /* Soft layered elevation — dark needs deeper alpha to read */
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0, 0, 0, 0.30);
+    --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55), 0 6px 14px rgba(0, 0, 0, 0.35);
+    --shadow-focus: 0 0 0 3px rgba(138, 111, 232, 0.45);
+
+    /* Legacy aliases — map old names onto the new surfaces */
+    --bg-dark: var(--bg-base);
+    --bg-panel: var(--bg-surface);
+    --bg-input: var(--bg-surface-2);
+    --border-color: var(--separator);
+    --accent-purple: var(--accent);
+    --accent-purple-dark: var(--accent-strong);
 }
 
+/* ---- LIGHT — soft off-white surfaces, hairline separators, airy ---- */
 [data-theme="light"] {
-    --bg-dark: #eeede6;
-    --bg-panel: #fafaf7;
-    --bg-input: #f0efe8;
-    --accent-purple: #c48b00;
-    --accent-purple-dark: #3d2a00;
+    --bg-base: #ecebe5;
+    --bg-surface: #ffffff;
+    --bg-surface-2: #f4f3ee;
+    --bg-hover: rgba(0, 0, 0, 0.05);
+    --separator: rgba(0, 0, 0, 0.10);
+
+    --text-main: #1d1d1f;
+    --text-muted: #6e6d66;
+
+    --accent: #6b4fc4;
+    --accent-strong: #57409e;
+    --accent-soft: rgba(107, 79, 196, 0.12);
+    --accent-on: #ffffff;
+    --danger: #d93b3b;
+    --danger-soft: rgba(217, 59, 59, 0.10);
+
     --accent-getallenkennis: #d93b3b;
     --accent-bewerkingen: #2d63e0;
     --accent-metendrekenen: #1f9950;
     --accent-meetkunde: #8040d0;
     --accent-vraagstukken: #c87f1a;
-    --text-main: #1a1a14;
-    --text-muted: #6b6a5e;
-    --border-color: #d4d2c8;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.08);
+    --shadow-focus: 0 0 0 3px rgba(107, 79, 196, 0.30);
+
+    --bg-dark: var(--bg-base);
+    --bg-panel: var(--bg-surface);
+    --bg-input: var(--bg-surface-2);
+    --border-color: var(--separator);
+    --accent-purple: var(--accent);
+    --accent-purple-dark: var(--accent-strong);
 }
 
-/* High-contrast / colorblind-safe theme. Domain accents drawn from the IBM
-   colorblind-safe palette so deuteranopia/protanopia users can still tell
-   Getallenkennis/Bewerkingen/Meten/Meetkunde apart by hue+luminance. */
+/* ---- High-contrast / colorblind-safe. Domain accents from the IBM
+   colorblind-safe palette so deuteranopia/protanopia users tell
+   Getallenkennis/Bewerkingen/Meten/Meetkunde apart by hue+luminance.
+   Keep accent black, separators solid, shadows near-off so the soft-depth
+   treatment never erodes the high contrast this theme exists for. ---- */
 [data-theme="colorblind"] {
-    --bg-dark: #ffffff;
-    --bg-panel: #ffffff;
-    --bg-input: #ffffff;
-    --accent-purple: #000000;
-    --accent-purple-dark: #000000;
+    --bg-base: #ffffff;
+    --bg-surface: #ffffff;
+    --bg-surface-2: #ffffff;
+    --bg-hover: rgba(0, 0, 0, 0.08);
+    --separator: #000000;
+
+    --text-main: #000000;
+    --text-muted: #000000;
+
+    --accent: #000000;
+    --accent-strong: #000000;
+    --accent-soft: rgba(0, 0, 0, 0.10);
+    --accent-on: #ffffff;
+    --danger: #000000;
+    --danger-soft: rgba(0, 0, 0, 0.10);
+
     --accent-getallenkennis: #DC267F;
     --accent-bewerkingen: #648FFF;
     --accent-metendrekenen: #FE6100;
     --accent-meetkunde: #785EF0;
     --accent-vraagstukken: #FFB000;
-    --text-main: #000000;
-    --text-muted: #000000;
-    --border-color: #000000;
+
+    --shadow-1: 0 0 0 1px #000000;
+    --shadow-2: 0 0 0 1px #000000;
+    --shadow-3: 0 0 0 2px #000000;
+    --shadow-focus: 0 0 0 3px rgba(0, 0, 0, 0.55);
+
+    --bg-dark: var(--bg-base);
+    --bg-panel: var(--bg-surface);
+    --bg-input: var(--bg-surface-2);
+    --border-color: var(--separator);
+    --accent-purple: var(--accent);
+    --accent-purple-dark: var(--accent-strong);
 }
 
 *,
@@ -86,9 +201,11 @@ body {
     padding: 0;
     width: 100vw;
     height: 100vh;
-    background-color: var(--bg-dark);
+    background-color: var(--bg-base);
     color: var(--text-main);
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
 }
 
@@ -103,19 +220,24 @@ body {
 }
 
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
     background: transparent;
 }
 
+/* Thin, low-contrast thumb with padding so it floats inside the track (macOS feel) */
 ::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 3px;
+    background: var(--separator);
+    border-radius: var(--radius-pill);
+    border: 3px solid transparent;
+    background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
+    background-clip: padding-box;
+    border: 3px solid transparent;
 }

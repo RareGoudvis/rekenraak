@@ -24,6 +24,7 @@ export default function IconButton({
     return (
         <button
             type="button"
+            className="ui-icon-btn"
             onClick={onClick}
             disabled={disabled}
             title={label}
@@ -42,17 +43,18 @@ function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: b
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: hasLabel ? '6px' : 0,
-        height: '32px',
-        minWidth: hasLabel ? undefined : '32px',
-        padding: hasLabel ? '0 12px' : 0,
-        borderRadius: '6px',
+        gap: hasLabel ? 'var(--sp-2)' : 0,
+        height: '34px',
+        minWidth: hasLabel ? undefined : '34px',
+        padding: hasLabel ? '0 14px' : 0,
+        borderRadius: 'var(--radius-sm)',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        border: '1px solid var(--border-color)',
-        fontSize: '12px',
-        fontWeight: 700,
+        border: '1px solid var(--separator)',
+        fontSize: 'var(--text-sm)',
+        fontWeight: 600,
         fontFamily: 'inherit',
-        transition: 'background-color 0.15s, border-color 0.15s, color 0.15s',
+        // hover/active live in index.css (.ui-icon-btn) — inline can't do :hover
+        transition: 'background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out)',
         opacity: disabled ? 0.5 : 1,
     };
 
@@ -60,36 +62,36 @@ function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: b
         case 'primary':
             return {
                 ...base,
-                backgroundColor: 'var(--accent-purple)',
-                color: '#fff',
-                borderColor: 'var(--accent-purple)',
+                backgroundColor: 'var(--accent)',
+                color: 'var(--accent-on)',
+                border: '1px solid var(--accent)',
             };
         case 'danger':
             return {
                 ...base,
-                backgroundColor: 'rgba(225,29,72,0.12)',
-                color: '#e11d48',
-                borderColor: '#e11d48',
+                backgroundColor: 'var(--danger-soft)',
+                color: 'var(--danger)',
+                border: '1px solid var(--danger)',
             };
         case 'active':
             return {
                 ...base,
-                backgroundColor: 'rgba(172,41,233,0.15)',
-                color: 'var(--accent-purple)',
-                borderColor: 'var(--accent-purple)',
+                backgroundColor: 'var(--accent-soft)',
+                color: 'var(--accent)',
+                border: '1px solid var(--accent)',
             };
         case 'neutral':
         default:
             return {
                 ...base,
-                backgroundColor: 'var(--bg-input)',
+                backgroundColor: 'var(--bg-surface-2)',
                 color: 'var(--text-main)',
             };
     }
 }
 
 const labelTextStyle: React.CSSProperties = {
-    fontSize: '12px',
-    fontWeight: 700,
+    fontSize: 'var(--text-sm)',
+    fontWeight: 600,
     whiteSpace: 'nowrap',
 };
