@@ -4,8 +4,8 @@ import Inspector from './components/configurator/Inspector';
 import Sidebar from './components/layout/sidebar';
 import TopBar from './components/layout/TopBar';
 import { EXERCISE_UI } from './config/exerciseUI';
-import AlphaPopup from './components/layout/AlphaPopup';
 import HelpModal from './components/layout/HelpModal';
+import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
 import { ArrowUp, ArrowDown, Lock, Unlock, Copy, Trash2, CornerDownRight } from 'lucide-react';
 import { usePrint } from './hooks/usePrint';
@@ -72,6 +72,14 @@ export default function App() {
   const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
 
   const [helpOpen, setHelpOpen] = useState(false);
+  // First-run interactive tour (replaces the old AlphaPopup). Shown once; replayable from Help.
+  const [tourOpen, setTourOpen] = useState<boolean>(() => {
+    try { return !localStorage.getItem('enderklas_tour_seen_v1'); } catch { return false; }
+  });
+  const closeTour = () => {
+    try { localStorage.setItem('enderklas_tour_seen_v1', '1'); } catch { /* ignore */ }
+    setTourOpen(false);
+  };
   const [autosaveOffer, setAutosaveOffer] = useState<{ savedAt: string; titel: string } | null>(null);
   const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
 
@@ -167,7 +175,7 @@ export default function App() {
       <span>Deze tool werkt enkel op een groot scherm. Kom later nog eens terug.</span>
       <span className="mobile-block-hint">Tip: probeer landscape modus.</span>
     </div>
-    <AlphaPopup />
+    {tourOpen && <TourOverlay onClose={closeTour} />}
     <div className="print-root" style={styles.appContainer}>
       {/* LEFT SIDEBAR */}
       <div className="no-print"><Sidebar /></div>
@@ -358,7 +366,7 @@ export default function App() {
       {/* RIGHT INSPECTOR */}
       <div className="no-print"><Inspector /></div>
     </div>
-    {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
+    {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
     </>
   );
 }

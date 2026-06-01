@@ -160,6 +160,7 @@ export default function TopBar({ onPrint }: Props) {
                     visibleLabel="Afdrukken"
                     onClick={() => onPrint(false)}
                     variant="primary"
+                    dataTour="print"
                 />
                 <IconButton
                     icon={Key}

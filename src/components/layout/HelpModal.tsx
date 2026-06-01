@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 
 interface Props {
     onClose: () => void;
+    onStartTour?: () => void;
 }
 
 type Tab = 'ouders' | 'leerkrachten';
 
 // Sectional usage guide, split into a parent view and a teacher view (basis +
 // geavanceerd). Reuses theme CSS variables so it follows the active theme.
-export default function HelpModal({ onClose }: Props) {
+export default function HelpModal({ onClose, onStartTour }: Props) {
     const [tab, setTab] = useState<Tab>('ouders');
 
     useEffect(() => {
@@ -47,9 +48,16 @@ export default function HelpModal({ onClose }: Props) {
                 </div>
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', alignItems: 'center' }}>
                     <TabBtn active={tab === 'ouders'} onClick={() => setTab('ouders')}>Voor ouders</TabBtn>
                     <TabBtn active={tab === 'leerkrachten'} onClick={() => setTab('leerkrachten')}>Voor leerkrachten</TabBtn>
+                    {onStartTour && (
+                        <button
+                            onClick={onStartTour}
+                            style={{ marginLeft: 'auto', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', border: '1px solid var(--accent-purple)', background: 'transparent', color: 'var(--accent-purple)' }}
+                            title="Start de rondleiding opnieuw"
+                        >▶ Rondleiding</button>
+                    )}
                 </div>
 
                 {tab === 'ouders' && (
@@ -93,10 +101,10 @@ export default function HelpModal({ onClose }: Props) {
 
                         <GroupHeader>Geavanceerd</GroupHeader>
                         <Section title="Basisinstellingen">
-                            Zijbalk → <strong>Geavanceerd → Basisinstellingen</strong>. Stel één keer een standaard moeilijkheidsgraad in (maximum getal, getalsoort, getalopbouw en bruggetjes). Die wordt overgenomen door elk <strong>nieuw</strong> blok dat je toevoegt — bestaande blokken blijven ongewijzigd. Zo hoef je niet telkens alles opnieuw in te stellen. Getalopbouw en bruggetjes gelden enkel voor hoofdrekenen, cijferen en splitsen.
+                            Zijbalk → het <strong>⚙ tandwiel</strong> onderaan → <strong>Basisinstellingen</strong>. Stel één keer een standaard moeilijkheidsgraad in (maximum getal, getalsoort, getalopbouw en bruggetjes). Die wordt overgenomen door elk <strong>nieuw</strong> blok dat je toevoegt — bestaande blokken blijven ongewijzigd. Zo hoef je niet telkens alles opnieuw in te stellen. Getalopbouw en bruggetjes gelden enkel voor hoofdrekenen, cijferen en splitsen.
                         </Section>
                         <Section title="Curriculum samenstellen">
-                            Zijbalk → <strong>Geavanceerd → Curriculum samenstellen</strong>. Kies welke oefentypes ouders mogen toevoegen (toon/verberg, ook per leerdomein in bulk) en stel per type de moeilijkheidsgraad in met een voorbeeld ernaast. Klik op <strong>Deel curriculum-link</strong>: de ouder opent die link en kan dan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek te delen.
+                            Zijbalk → het <strong>⚙ tandwiel</strong> onderaan → <strong>Curriculum samenstellen</strong>. Kies welke oefentypes ouders mogen toevoegen (toon/verberg, ook per leerdomein in bulk) en stel per type de moeilijkheidsgraad in met een voorbeeld ernaast. Klik op <strong>Deel curriculum-link</strong>: de ouder opent die link en kan dan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek te delen.
                         </Section>
 
                         <Section title="Bugs of suggesties?">
