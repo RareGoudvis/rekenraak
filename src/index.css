@@ -138,6 +138,54 @@ textarea:focus-visible,
   }
 }
 
+/* ── Collapsible side panels ─────────────────────────────────────────────
+   Default (≥1536px or pinned): the shell is a transparent passthrough — the
+   wrapped panel sizes itself exactly as before. Below 1800px an unpinned panel
+   collapses to an edge trigger strip and slides over the viewer on hover/focus. */
+.panel-shell { display: flex; height: 100%; flex: 0 0 auto; position: relative; }
+.panel-body { display: flex; height: 100%; }
+.panel-trigger { display: none; }
+.panel-pin {
+  position: absolute; top: 8px; z-index: 3;
+  width: 28px; height: 28px; border-radius: var(--radius-sm);
+  background: var(--bg-surface-2); border: 1px solid var(--separator);
+  color: var(--text-muted); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: var(--shadow-1);
+}
+.panel-left .panel-pin { right: 8px; }
+.panel-right .panel-pin { left: 8px; }
+
+@media screen and (max-width: 1799px) {
+  .panel-shell.compact:not(.pinned) { width: 36px; min-width: 36px; }
+
+  .panel-shell.compact:not(.pinned) .panel-trigger {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    width: 36px; height: 100%; padding-top: 16px;
+    border: 1px solid var(--separator); border-radius: var(--radius-md);
+    background: var(--bg-surface); box-shadow: var(--shadow-1);
+    color: var(--text-main); cursor: pointer; user-select: none;
+  }
+  /* Accent edge so the trigger is unmistakable (clear hover target). */
+  .panel-left.compact:not(.pinned) .panel-trigger { border-left: 3px solid var(--accent); }
+  .panel-right.compact:not(.pinned) .panel-trigger { border-right: 3px solid var(--accent); }
+  .panel-trigger-label {
+    writing-mode: vertical-rl; text-orientation: mixed;
+    font-size: var(--text-sm); font-weight: 600; letter-spacing: .02em;
+  }
+  .panel-left.compact:not(.pinned) .panel-trigger-label { transform: rotate(180deg); }
+
+  /* Flyout: body keeps its natural width, slides in over the viewer. */
+  .panel-shell.compact:not(.pinned) .panel-body {
+    position: absolute; top: 0; height: 100%; z-index: 40;
+    transition: transform var(--dur) var(--ease-out);
+    box-shadow: var(--shadow-3);
+  }
+  .panel-left.compact:not(.pinned) .panel-body { left: 0; transform: translateX(calc(-100% - 24px)); }
+  .panel-right.compact:not(.pinned) .panel-body { right: 0; transform: translateX(calc(100% + 24px)); }
+  .panel-shell.compact:not(.pinned):hover .panel-body,
+  .panel-shell.compact:not(.pinned):focus-within .panel-body { transform: translateX(0); }
+}
+
 /* Mobile/tablet block — hidden on large screens, covers everything on small screens */
 .mobile-block { display: none; }
 .mobile-block-hint { display: none; }

@@ -24,6 +24,7 @@ export default function MassAddModal({ onClose }: Props) {
     const [nonceByType, setNonceByType] = useState<Record<string, number>>({});
     const [selected, setSelected] = useState<Record<string, boolean>>({});
     const [activeDomains, setActiveDomains] = useState<Set<string>>(new Set());   // empty = all
+    const [search, setSearch] = useState('');
 
     const chosenVariant = (item: CatalogItem) => {
         const key = variantByType[item.typeId];
@@ -45,7 +46,16 @@ export default function MassAddModal({ onClose }: Props) {
         return next;
     });
 
-    const visible = activeDomains.size === 0 ? catalog : catalog.filter(i => activeDomains.has(i.domainId));
+    // Domain chips + free-text search both narrow the grid (AND). Search matches the
+    // label, the context line, and any variant label (same .includes() as the sidebar).
+    const needle = search.trim().toLowerCase();
+    const visible = catalog.filter(i => {
+        if (activeDomains.size > 0 && !activeDomains.has(i.domainId)) return false;
+        if (!needle) return true;
+        return i.label.toLowerCase().includes(needle)
+            || i.context.toLowerCase().includes(needle)
+            || i.variants.some(v => v.label.toLowerCase().includes(needle));
+    });
     const selectedCount = Object.values(selected).filter(Boolean).length;
 
     const handleAddAll = () => {
@@ -71,20 +81,32 @@ export default function MassAddModal({ onClose }: Props) {
                     <button style={S.closeBtn} onClick={onClose} title="Sluiten" aria-label="Sluiten"><X size={20} /></button>
                 </div>
 
-                {domains.length > 1 && (
-                    <div style={S.filterBar}>
-                        <button onClick={() => setActiveDomains(new Set())} style={S.filterChip(activeDomains.size === 0, 'var(--text-muted)')}>
-                            Alles
-                        </button>
-                        {domains.map(d => (
-                            <button key={d.id} onClick={() => toggleDomain(d.id)} style={S.filterChip(activeDomains.has(d.id), `var(${d.accentVar})`)}>
-                                {d.label}
+                <div style={S.filterBar}>
+                    <div style={S.chipGroup}>
+                        {domains.length > 1 && (<>
+                            <button onClick={() => setActiveDomains(new Set())} style={S.filterChip(activeDomains.size === 0, 'var(--text-muted)')}>
+                                Alles
                             </button>
-                        ))}
+                            {domains.map(d => (
+                                <button key={d.id} onClick={() => toggleDomain(d.id)} style={S.filterChip(activeDomains.has(d.id), `var(${d.accentVar})`)}>
+                                    {d.label}
+                                </button>
+                            ))}
+                        </>)}
                     </div>
-                )}
+                    <input
+                        type="text"
+                        placeholder="🔎 Zoek oefening…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        style={S.searchInput}
+                    />
+                </div>
 
                 <div style={S.grid}>
+                    {visible.length === 0 && (
+                        <div style={S.noResults}>Geen oefening gevonden voor "{search.trim()}".</div>
+                    )}
                     {visible.map((item) => {
                         const variant = chosenVariant(item);
                         const isSel = !!selected[item.typeId];
@@ -173,8 +195,18 @@ const S = {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
     } as React.CSSProperties,
     filterBar: {
-        display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '12px 20px',
+        display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 20px',
         borderBottom: '1px solid var(--border-color)', flexShrink: 0,
+    } as React.CSSProperties,
+    chipGroup: { display: 'flex', flexWrap: 'wrap', gap: '6px', flex: 1, minWidth: 0 } as React.CSSProperties,
+    searchInput: {
+        flexShrink: 0, width: '240px', padding: '7px 12px', fontSize: '12px', fontFamily: 'inherit',
+        background: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '8px',
+        color: 'var(--text-main)', outline: 'none', boxSizing: 'border-box',
+    } as React.CSSProperties,
+    noResults: {
+        gridColumn: '1 / -1', padding: '24px 4px', fontSize: '13px',
+        color: 'var(--text-muted)', fontStyle: 'italic',
     } as React.CSSProperties,
     filterChip: (active: boolean, accent: string): React.CSSProperties => ({
         padding: '5px 12px', fontSize: '12px', borderRadius: '14px', cursor: 'pointer', fontWeight: 600,

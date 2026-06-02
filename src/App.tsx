@@ -3,6 +3,7 @@ import { useWorksheetStore } from './store/useWorksheetStore';
 import Inspector from './components/configurator/Inspector';
 import Sidebar from './components/layout/sidebar';
 import TopBar from './components/layout/TopBar';
+import PanelShell from './components/layout/PanelShell';
 import { EXERCISE_UI } from './config/exerciseUI';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
@@ -177,8 +178,8 @@ export default function App() {
     </div>
     {tourOpen && <TourOverlay onClose={closeTour} />}
     <div className="print-root" style={styles.appContainer}>
-      {/* LEFT SIDEBAR */}
-      <div className="no-print"><Sidebar /></div>
+      {/* LEFT SIDEBAR — collapses to a hover flyout below 1536px (PanelShell) */}
+      <PanelShell side="left" label="Oefeningen"><Sidebar /></PanelShell>
 
       {/* CENTRAL WORK AREA */}
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
@@ -406,8 +407,8 @@ export default function App() {
         </div>
       </main>
 
-      {/* RIGHT INSPECTOR */}
-      <div className="no-print"><Inspector /></div>
+      {/* RIGHT INSPECTOR — collapses to a hover flyout below 1536px (PanelShell) */}
+      <PanelShell side="right" label="Instellingen"><Inspector /></PanelShell>
     </div>
     {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
     </>

@@ -55,13 +55,26 @@ export default function Sidebar() {
         try { return localStorage.getItem('enderklas_site_title_v1') ?? 'Enderklas Builder'; } catch { return 'Enderklas Builder'; }
     });
     const [siteSubtitle, setSiteSubtitle] = useState<string>(() => {
-        try { return localStorage.getItem('enderklas_site_subtitle_v3') ?? 'By Ruben Van Handenhove'; } catch { return 'By Ruben Van Handenhove'; }
+        // v4 reseeds the default to the abbreviated name (was 'By Ruben Van Handenhove' under v3).
+        try { return localStorage.getItem('enderklas_site_subtitle_v4') ?? 'Ruben V.H.'; } catch { return 'Ruben V.H.'; }
     });
     useEffect(() => { try { localStorage.setItem('enderklas_site_title_v1', siteTitle); } catch { /* ignore */ } }, [siteTitle]);
-    useEffect(() => { try { localStorage.setItem('enderklas_site_subtitle_v3', siteSubtitle); } catch { /* ignore */ } }, [siteSubtitle]);
+    useEffect(() => { try { localStorage.setItem('enderklas_site_subtitle_v4', siteSubtitle); } catch { /* ignore */ } }, [siteSubtitle]);
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(() => filterTree(APP_STRUCTURE, search), [search]);
+
+    // Theme is a single cycling icon (declutters the footer): light → dark → colorblind → light.
+    // Icon shows the CURRENT theme; title announces the NEXT one for discoverability.
+    const themeOrder = ['light', 'dark', 'colorblind'] as const;
+    const themeMeta = {
+        light: { Icon: Sun, label: 'Licht thema' },
+        dark: { Icon: Moon, label: 'Donker thema' },
+        colorblind: { Icon: Contrast, label: 'Hoog contrast' },
+    } as const;
+    const cycleTheme = () => setTheme(themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length]);
+    const ThemeIcon = themeMeta[theme].Icon;
+    const nextTheme = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
 
     const toggleSubdomain = (id: string) => {
         if (isSearching) return;  // tree is force-expanded during search
@@ -98,7 +111,7 @@ export default function Sidebar() {
                     <input
                         value={siteSubtitle}
                         onChange={(e) => setSiteSubtitle(e.target.value)}
-                        placeholder="By Ruben Van Handenhove"
+                        placeholder="Ruben V.H."
                         style={S.siteSubtitleInput}
                     />
                 </div>
@@ -138,7 +151,10 @@ export default function Sidebar() {
                     onChange={(e) => setSearch(e.target.value)}
                     style={S.searchInput}
                 />
-                <button style={S.footerIconBtn} onClick={() => setHelpOpen(true)} title="Help / uitleg" aria-label="Help">
+                <button className="ui-icon-btn" style={S.footerIconBtn} onClick={cycleTheme} title={`Thema: ${themeMeta[theme].label} — klik voor ${themeMeta[nextTheme].label}`} aria-label={`Thema wisselen (nu ${themeMeta[theme].label})`}>
+                    <ThemeIcon size={16} />
+                </button>
+                <button className="ui-icon-btn" style={S.footerIconBtn} onClick={() => setHelpOpen(true)} title="Help / uitleg" aria-label="Help">
                     <HelpCircle size={16} />
                 </button>
             </div>
@@ -255,15 +271,6 @@ export default function Sidebar() {
                 })}
             </div>
             </>)}
-
-            <div style={S.themeRow}>
-                <span style={S.themeLabel}>Thema</span>
-                <div className="seg-group" style={{ flex: '0 0 auto' }}>
-                    <button className="seg-btn" aria-pressed={theme === 'light'} style={{ width: '40px' }} onClick={() => setTheme('light')} title="Licht thema" aria-label="Licht thema"><Sun size={14} /></button>
-                    <button className="seg-btn" aria-pressed={theme === 'dark'} style={{ width: '40px' }} onClick={() => setTheme('dark')} title="Donker thema" aria-label="Donker thema"><Moon size={14} /></button>
-                    <button className="seg-btn" aria-pressed={theme === 'colorblind'} style={{ width: '40px' }} onClick={() => setTheme('colorblind')} title="Hoog contrast / kleurenblind-veilig" aria-label="Hoog contrast"><Contrast size={14} /></button>
-                </div>
-            </div>
 
             <div style={S.footer}>
                 <div style={S.footerActions}>
@@ -384,8 +391,6 @@ const S = {
         transition: 'color var(--dur) var(--ease-out)',
     }),
 
-    themeRow: { padding: 'var(--sp-3) var(--sp-4)', borderTop: '1px solid var(--separator)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)' } as React.CSSProperties,
-    themeLabel: { fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-muted)' } as React.CSSProperties,
     footer: { padding: 'var(--sp-3) var(--sp-4)', borderTop: '1px solid var(--separator)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' } as React.CSSProperties,
     footerActions: { display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' } as React.CSSProperties,
     footerText: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.4 } as React.CSSProperties,

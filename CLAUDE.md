@@ -76,7 +76,8 @@ src/
 ├── store/
 │   └── useWorksheetStore.tsx      # Single Zustand store, undo/redo, all state
 ├── hooks/
-│   └── usePrint.ts                # Browser print trigger (window.print + dynamic @page)
+│   ├── usePrint.ts                # Browser print trigger (window.print + dynamic @page)
+│   └── useMediaQuery.ts           # matchMedia subscription (drives PanelShell compact collapse)
 ├── styles/
 │   └── appStyles.ts               # CSS-in-JS inline styles for layout
 ├── services/
@@ -120,9 +121,10 @@ src/
 │   └── version.ts                 # RELEASE_VERSION / RELEASE_SUMMARY for the "Nieuw" banner
 └── components/
     ├── layout/
-    │   ├── sidebar.tsx            # Left panel: source-list nav (domain bands) + gear menu + locked palette
-    │   ├── TopBar.tsx             # Toevoegen / Genereer alles / Delen dropdown / ⋯ Meer / print
-    │   ├── BaseSettingsPanel.tsx  # Sidebar footer gear (⚙) popover: Basisinstellingen + Curriculum
+    │   ├── sidebar.tsx            # Left panel: source-list nav (domain bands) + theme-cycle/help row + gear menu + locked palette
+    │   ├── PanelShell.tsx         # Wraps Sidebar/Inspector: <1800px collapses to a hover/focus flyout + pin (localStorage)
+    │   ├── TopBar.tsx             # Row1: Toevoegen / Genereer alles / Delen (icon) / oplossingen / Afdrukken (menu: blad ± oplossingen). Row2: autosave prompt
+    │   ├── BaseSettingsPanel.tsx  # Sidebar footer gear (⚙) popover: Basisinstellingen + Curriculum + Exporteer/Importeer/Presets (file-ops, moved from TopBar)
     │   ├── BaseSettingsModal.tsx  # Global base-difficulty modal
     │   ├── HelpModal.tsx          # Ouders / Leerkrachten tabs + "Rondleiding" replay
     │   └── PresetModal.tsx        # Save/load/delete named presets

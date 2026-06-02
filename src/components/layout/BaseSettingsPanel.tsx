@@ -1,14 +1,46 @@
-import { useState } from 'react';
-import { Settings, SlidersHorizontal, BookLock } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Settings, SlidersHorizontal, BookLock, Download, Upload, Bookmark } from 'lucide-react';
 import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
+import PresetModal from './PresetModal';
+import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { exportWorksheet, parseWorksheetFile } from '../../services/persistence';
 
 // "Geavanceerd" tucked behind a gear icon in the sidebar footer (declutter). The gear
-// toggles an upward popover with the two teacher tools, which open their existing modals.
+// toggles an upward popover with the teacher tools + file operations (moved here from
+// the TopBar's old "⋯ Meer" menu to keep the top bar uncluttered on small laptops).
 export default function BaseSettingsPanel() {
     const [open, setOpen] = useState(false);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
+    const [presetOpen, setPresetOpen] = useState(false);
+    const importInputRef = useRef<HTMLInputElement>(null);
+    const loadWorksheet = useWorksheetStore((s) => s.loadWorksheet);
+
+    const handleExport = () => {
+        const st = useWorksheetStore.getState();
+        exportWorksheet({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings });
+    };
+
+    const handleImportClick = () => importInputRef.current?.click();
+
+    const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = parseWorksheetFile(String(reader.result));
+                if (!window.confirm('Huidige werkbundel wordt vervangen. Doorgaan?')) return;
+                loadWorksheet(parsed);
+            } catch (err) {
+                window.alert(`Importeren mislukt: ${(err as Error).message}`);
+            }
+        };
+        reader.onerror = () => window.alert('Bestand kon niet gelezen worden.');
+        reader.readAsText(file);
+    };
 
     return (
         <div style={S.wrap}>
@@ -26,12 +58,31 @@ export default function BaseSettingsPanel() {
                         <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); setCurriculumOpen(true); }}>
                             <BookLock size={14} /> Curriculum samenstellen
                         </button>
+                        <hr style={S.sep} />
+                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); handleExport(); }}>
+                            <Download size={14} /> Exporteer als bestand
+                        </button>
+                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); handleImportClick(); }}>
+                            <Upload size={14} /> Importeer bestand
+                        </button>
+                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); setPresetOpen(true); }}>
+                            <Bookmark size={14} /> Presets beheren
+                        </button>
                     </div>
                 </>
             )}
 
+            <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={handleImportFile}
+                style={{ display: 'none' }}
+            />
+
             {baseOpen && <BaseSettingsModal onClose={() => setBaseOpen(false)} />}
             {curriculumOpen && <CurriculumBuilderModal onClose={() => setCurriculumOpen(false)} />}
+            {presetOpen && <PresetModal onClose={() => setPresetOpen(false)} />}
         </div>
     );
 }
@@ -58,4 +109,5 @@ const S = {
         padding: '8px 10px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: 'none',
         background: 'transparent', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
+    sep: { margin: '4px 6px', border: 'none', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
 };

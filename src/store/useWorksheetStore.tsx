@@ -53,6 +53,7 @@ interface WorksheetState {
     _historyIndex: number;
     addBlockFromType: (typeId: string, label: string, overrideConstraints?: Record<string, unknown>) => void;
     removeBlock: (id: string) => void;
+    clearBlocks: () => void;
     moveBlockUp: (id: string) => void;
     moveBlockDown: (id: string) => void;
     updateBlockInstruction: (id: string, text: string) => void;
@@ -173,6 +174,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         const newBlocks = state.blocks.filter(b => b.id !== id);
         return { blocks: newBlocks, activeBlockId: state.activeBlockId === id ? null : state.activeBlockId, ...pushHistory(state._history, state._historyIndex, newBlocks) };
     }),
+
+    // Wipe all blocks at once. Pushes history so Ctrl+Z restores them (guarded by a confirm in the UI).
+    clearBlocks: () => set((state) => ({ blocks: [], activeBlockId: null, ...pushHistory(state._history, state._historyIndex, []) })),
 
     moveBlockUp: (id) => set((state) => {
         const index = state.blocks.findIndex(b => b.id === id);

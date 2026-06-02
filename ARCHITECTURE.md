@@ -457,7 +457,8 @@ src/
 ├── store/
 │   └── useWorksheetStore.tsx    # single Zustand store: state, actions, history, autosave subscription
 ├── hooks/
-│   └── usePrint.ts              # window.print() trigger + dynamic @page injection
+│   ├── usePrint.ts              # window.print() trigger + dynamic @page injection
+│   └── useMediaQuery.ts         # matchMedia subscription (PanelShell compact collapse)
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
@@ -481,8 +482,8 @@ src/
 │   ├── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
 │   └── herleidingen/herleidingenGenerator.ts # metric unit conversions (ladderFor; integer-exact)
 └── components/
-    ├── layout/{sidebar.tsx,TopBar.tsx,HelpModal.tsx,PresetModal.tsx,
-    │           BaseSettingsPanel.tsx,BaseSettingsModal.tsx}   # §13 sidebar gear menu + base modal
+    ├── layout/{sidebar.tsx,TopBar.tsx,PanelShell.tsx,HelpModal.tsx,PresetModal.tsx,
+    │           BaseSettingsPanel.tsx,BaseSettingsModal.tsx}   # §13 sidebar gear menu + base modal; PanelShell = responsive panel collapse
     ├── onboarding/TourOverlay.tsx                              # first-run spotlight tutorial
     ├── massadd/MassAddModal.tsx                                # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx                   # §13 curriculum builder
@@ -584,8 +585,16 @@ count + page-break. The lock is enforced in the store, so it holds regardless of
 - [VerticalFraction.tsx](src/components/viewer/VerticalFraction.tsx) — single stacked
   numerator/bar/denominator (+ optional whole) component; used by every fraction render
   (mental-math, fraction viewer, ordenen, getallenas rational lines).
-- [TopBar.tsx](src/components/layout/TopBar.tsx) — "Toevoegen" (mass-add), "Genereer
-  alles", a **Delen** dropdown (Blad / Sjabloon), and a **⋯ Meer** overflow
-  (Exporteer / Importeer / Presets).
+- [TopBar.tsx](src/components/layout/TopBar.tsx) — row 1: "Toevoegen" (mass-add),
+  "Genereer alles", a **Delen** dropdown (icon-only; Blad / Sjabloon), the oplossingen
+  toggle, and one **Afdrukken** button whose menu prints the blad with/without
+  oplossingen. Row 2 holds the autosave "vorige werkbundel" prompt on its own line so
+  it never clips. File-ops (Exporteer / Importeer / Presets) moved to the sidebar gear
+  ([BaseSettingsPanel.tsx](src/components/layout/BaseSettingsPanel.tsx)).
+- [PanelShell.tsx](src/components/layout/PanelShell.tsx) — wraps Sidebar + Inspector;
+  below 1800px ([useMediaQuery](src/hooks/useMediaQuery.ts)) an unpinned panel collapses
+  to an edge trigger strip and slides over the viewer on hover/`:focus-within` (pure CSS
+  in [index.css](src/index.css)); a pin button (per-side localStorage) keeps it in-flow.
+  The A4 card stays 1:1, so the print path + page-break math are untouched.
 - `numberMatchesMask` / `digitAtPlace` in [mathEngine.ts](src/services/math/mathEngine.ts)
   — place-mask filtering reused by ordenen (and the splitsen decimal masks).

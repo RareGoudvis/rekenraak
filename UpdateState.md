@@ -5,6 +5,10 @@ Most recent entry first.
 
 ---
 
+**2026-06-02** — Added a far-right search bar to the MassAdd ("Oefeningen toevoegen") modal (sidebar-style, live-filters cards by label/context/variant, with a "geen oefening gevonden" empty state). Added an icon-only "Alle blokken wissen" button to the TopBar (Trash2, confirm-guarded, spaced left of Delen) backed by a new `clearBlocks` store action that pushes history so Ctrl+Z restores.
+
+**2026-06-02** — Responsive rework for small laptops: decluttered the TopBar (autosave prompt moved to a dedicated second row so it never clips; one **Afdrukken** button with a blad/blad+oplossingen menu instead of two; Delen is now icon-only; Exporteer/Importeer/Presets moved into the sidebar gear). Added `PanelShell` + `useMediaQuery` so below 1800px the Sidebar and Inspector collapse to hover/focus flyouts with a per-side pin (localStorage); A4 stays 1:1 so print is untouched. Theme moved to a cycling icon next to Help (removed the Thema row); sidebar subtitle default → "Ruben V.H." (localStorage key bumped v3→v4).
+
 **2026-06-02** — Added a favicon: the Enderklas logo downscaled to a 64×64 `src/assets/favicon.png` (~2 KB, from the 1024² source), linked via `<link rel="icon">` in index.html (Vite hashes/bundles it).
 
 **2026-06-01** — Fixed gray print background (regression): the shadow-clip `.print-scroll` padding wasn't reset in `@media print`, so the inset sheet exposed the gray `--bg-base` (forced to print by `print-color-adjust:exact`). Added `padding:0` to the print `.print-scroll` rule + `background:white` on `.print-root`. Also fixed oppervlakte Hulptabel header/body right-edge drift (header `colW` now matches the collapsed 2-cell column width).
