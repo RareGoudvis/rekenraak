@@ -70,38 +70,39 @@
     --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
 
-/* ---- DARK (default) — deep neutral grays, restrained desaturated violet ---- */
+/* ---- DARK (default) — Apple system-gray surface ramp + systemBlue accent ---- */
 :root {
-    /* Layered surfaces — Apple-system comfort: a soft dark gray base (not near-black),
-       surfaces lifted by tone + elevation + hairline rather than a harsh tone jump. */
-    --bg-base: #161619;
-    --bg-surface: #202024;
-    --bg-surface-2: #2b2b31;
+    /* Surfaces ride Apple's dark systemGray ramp (6→4): a soft gray base (not
+       near-black), each surface lifted one neutral step + hairline + elevation. */
+    --bg-base: #1C1C1E;       /* systemGray6 dark — window base */
+    --bg-surface: #2C2C2E;    /* systemGray5 — raised card */
+    --bg-surface-2: #3A3A3C;  /* systemGray4 — inset input/track */
     --bg-hover: rgba(255, 255, 255, 0.06);
-    --separator: rgba(255, 255, 255, 0.11);
+    --separator: rgba(255, 255, 255, 0.15);
 
-    --text-main: #ececef;
-    --text-muted: #9b9ba7;
+    --text-main: #F5F5F7;     /* Apple label (dark) */
+    --text-muted: #98989F;    /* secondaryLabel ≈ rgba(235,235,245,.6) */
 
-    /* Desaturated from the old neon #ac29e9 → a calmer violet */
-    --accent: #8a6fe8;
-    --accent-strong: #7b5fe0;
-    --accent-soft: rgba(138, 111, 232, 0.16);
+    /* systemBlue (dark variant) — Apple's signature/default app accent */
+    --accent: #0A84FF;
+    --accent-strong: #0060DF;
+    --accent-soft: rgba(10, 132, 255, 0.16);
     --accent-on: #ffffff;
-    --danger: #ff6b6b;
-    --danger-soft: rgba(255, 107, 107, 0.14);
+    --danger: #FF453A;        /* systemRed dark */
+    --danger-soft: rgba(255, 69, 58, 0.14);
 
-    --accent-getallenkennis: #f05252;
-    --accent-bewerkingen: #4d7fff;
-    --accent-metendrekenen: #3db870;
-    --accent-meetkunde: #b06eff;
-    --accent-vraagstukken: #e0a030;
+    /* Domain tags = Apple system colors (dark variants) */
+    --accent-getallenkennis: #FF453A;  /* systemRed */
+    --accent-bewerkingen: #0A84FF;     /* systemBlue */
+    --accent-metendrekenen: #30D158;   /* systemGreen */
+    --accent-meetkunde: #BF5AF2;       /* systemPurple — keeps brand violet alive */
+    --accent-vraagstukken: #FF9F0A;    /* systemOrange */
 
     /* Soft layered elevation — dark needs deeper alpha to read */
     --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.45);
     --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0, 0, 0, 0.30);
     --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55), 0 6px 14px rgba(0, 0, 0, 0.35);
-    --shadow-focus: 0 0 0 3px rgba(138, 111, 232, 0.45);
+    --shadow-focus: 0 0 0 3px rgba(10, 132, 255, 0.45);
 
     /* Legacy aliases — map old names onto the new surfaces */
     --bg-dark: var(--bg-base);
@@ -112,34 +113,36 @@
     --accent-purple-dark: var(--accent-strong);
 }
 
-/* ---- LIGHT — soft off-white surfaces, hairline separators, airy ---- */
+/* ---- LIGHT — macOS window gray + white content, hairline separators ---- */
 [data-theme="light"] {
-    --bg-base: #efeee9;
-    --bg-surface: #ffffff;
-    --bg-surface-2: #f3f2ec;
+    --bg-base: #ECECEC;       /* macOS window bg */
+    --bg-surface: #FFFFFF;    /* content card */
+    --bg-surface-2: #F2F2F7;  /* systemGray6 light — inset */
     --bg-hover: rgba(0, 0, 0, 0.05);
     --separator: rgba(0, 0, 0, 0.12);
 
-    --text-main: #1d1d1f;
-    --text-muted: #6e6d66;
+    --text-main: #1D1D1F;
+    --text-muted: #6C6C70;    /* secondaryLabel ≈ rgba(60,60,67,.6) */
 
-    --accent: #6b4fc4;
-    --accent-strong: #57409e;
-    --accent-soft: rgba(107, 79, 196, 0.12);
+    /* systemBlue (light variant) */
+    --accent: #007AFF;
+    --accent-strong: #0060DF;
+    --accent-soft: rgba(0, 122, 255, 0.12);
     --accent-on: #ffffff;
-    --danger: #d93b3b;
-    --danger-soft: rgba(217, 59, 59, 0.10);
+    --danger: #FF3B30;        /* systemRed light */
+    --danger-soft: rgba(255, 59, 48, 0.10);
 
-    --accent-getallenkennis: #d93b3b;
-    --accent-bewerkingen: #2d63e0;
-    --accent-metendrekenen: #1f9950;
-    --accent-meetkunde: #8040d0;
-    --accent-vraagstukken: #c87f1a;
+    /* Domain tags = Apple system colors (light variants) */
+    --accent-getallenkennis: #FF3B30;  /* systemRed */
+    --accent-bewerkingen: #007AFF;     /* systemBlue */
+    --accent-metendrekenen: #34C759;   /* systemGreen */
+    --accent-meetkunde: #AF52DE;       /* systemPurple */
+    --accent-vraagstukken: #FF9500;    /* systemOrange */
 
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
     --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
     --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.08);
-    --shadow-focus: 0 0 0 3px rgba(107, 79, 196, 0.30);
+    --shadow-focus: 0 0 0 3px rgba(0, 122, 255, 0.30);
 
     --bg-dark: var(--bg-base);
     --bg-panel: var(--bg-surface);

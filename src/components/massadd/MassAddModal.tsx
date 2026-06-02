@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { X, RotateCw, Check, Plus } from 'lucide-react';
+import { X, ArrowClockwise as RotateCw, Check, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
 import { REGISTRY } from '../../config/exerciseRegistry';

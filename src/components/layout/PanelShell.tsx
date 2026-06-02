@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronRight, ChevronLeft, Pin, PinOff } from 'lucide-react';
+import { CaretRight as ChevronRight, CaretLeft as ChevronLeft, PushPin as Pin, PushPinSlash as PinOff } from '@phosphor-icons/react';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 // Below this width the side panels collapse to a hover/focus flyout so the center
@@ -12,7 +12,7 @@ const COMPACT_Q = '(max-width: 1799px)';
 // (compact only, persisted per-side) keeps it open in normal in-flow layout instead.
 export default function PanelShell({ side, label, children }: { side: 'left' | 'right'; label: string; children: React.ReactNode }) {
     const compact = useMediaQuery(COMPACT_Q);
-    const storageKey = side === 'left' ? 'enderklas_pin_left' : 'enderklas_pin_right';
+    const storageKey = side === 'left' ? 'rekenraak_pin_left' : 'rekenraak_pin_right';
     const [pinned, setPinned] = useState<boolean>(() => {
         try { return localStorage.getItem(storageKey) === '1'; } catch { return false; }
     });

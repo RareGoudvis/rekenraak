@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Undo2, Redo2, Sparkles, Share2, Eye, EyeOff, Printer, Check, LayoutGrid, FileText, LayoutTemplate, Key, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, ShareNetwork as Share2, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, ArrowCounterClockwise as RotateCcw, Trash as Trash2 } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { encodeShareLink } from '../../services/persistence';
 import IconButton from '../ui/IconButton';

@@ -37,7 +37,7 @@ Defined once in `:root`. **Snap every size to these** instead of inventing pixel
 | `--bg-surface-2` | inset: inputs, segmented track, raised-within-panel |
 | `--bg-hover` | subtle hover fill (low-alpha neutral) |
 | `--separator` | **hairline** divider/border (much softer than the old `--border-color`) |
-| `--accent` | **primary accent** — desaturated violet (dark `#8a6fe8` / light `#6b4fc4` / black colorblind) |
+| `--accent` | **primary accent** — Apple systemBlue (dark `#0A84FF` / light `#007AFF` / black colorblind) |
 | `--accent-strong` | pressed / stronger accent |
 | `--accent-soft` | tinted selection fill (accent @ ~12–16%) |
 | `--accent-on` | text/icon on a filled accent surface |
@@ -122,7 +122,19 @@ local style **only if** it expresses this same rule with tokens and adapts a sha
 34px tall, `--radius-sm`, whisper-light bezel (`--shadow-1`, off in colorblind); `dataTour`
 prop forwards a `data-tour` anchor. Variants: `primary` (`--accent` bg / `--accent-on`),
 `neutral` (`--bg-surface-2` / main text, default), `danger` (`--danger-soft` bg / `--danger`),
-`active` (`--accent-soft` bg / `--accent`). Hover/press live in `.ui-icon-btn` (index.css).
+`active` (`--accent-soft` bg / `--accent`). Hover/press (brightness + scale) live in
+`.ui-icon-btn` (index.css). The `icon` prop takes a **Phosphor** component
+(`@phosphor-icons/react`) — not lucide.
+
+### Icon library — Phosphor + weight-on-interaction
+Icons are **Phosphor** (`@phosphor-icons/react`). App-wide defaults (size 18, weight
+`regular`) come from an `IconContext.Provider` in [main.tsx](src/main.tsx) so raw-rendered
+icons stay consistent without per-site props. **SF-Symbols feel:** emphasis = heavier glyph.
+IconButton drives `weight` from interaction state (`iconWeight(variant, emphasized)`):
+`active`/`primary` sit `bold` at rest; `neutral`/`danger` thicken to `bold` on hover/focus.
+The sidebar theme-cycle button mirrors this. Phosphor `weight` is a **prop, not CSS** — so
+weight-on-hover needs React hover state, it can't ride the `.ui-icon-btn` filter. Phosphor
+has no `strokeWidth`; use `weight` (`bold`/`fill`) for a heavier glyph.
 
 ### Other reusable building blocks
 - nl-BE number formatting → `formatMathNumber` ([formatters.ts](src/services/math/formatters.ts)); preset buttons use `val.toLocaleString('nl-BE')`.

@@ -1,10 +1,10 @@
-import type { LucideIcon } from 'lucide-react';
-import type { MouseEvent } from 'react';
+import type { Icon as PhosphorIcon, IconWeight } from '@phosphor-icons/react';
+import { useState, type MouseEvent } from 'react';
 
 export type IconButtonVariant = 'primary' | 'neutral' | 'danger' | 'active';
 
 interface Props {
-    icon: LucideIcon;
+    icon: PhosphorIcon;
     label: string;                // tooltip + aria-label
     visibleLabel?: string;        // text shown alongside the icon (used for CTAs)
     onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
@@ -22,6 +22,9 @@ export default function IconButton({
     variant = 'neutral', size = 18, dataTour,
 }: Props) {
     const style = computeStyle(variant, disabled, !!visibleLabel);
+    // Phosphor weight is a prop (not CSS), so the hover thickening can't live in
+    // index.css like the brightness/scale — track hover/focus here to drive it.
+    const [emphasized, setEmphasized] = useState(false);
     return (
         <button
             type="button"
@@ -33,11 +36,22 @@ export default function IconButton({
             aria-disabled={disabled || undefined}
             data-tour={dataTour}
             style={style}
+            onMouseEnter={() => setEmphasized(true)}
+            onMouseLeave={() => setEmphasized(false)}
+            onFocus={() => setEmphasized(true)}
+            onBlur={() => setEmphasized(false)}
         >
-            <Icon size={size} strokeWidth={2} aria-hidden="true" />
+            <Icon size={size} weight={iconWeight(variant, emphasized)} aria-hidden="true" />
             {visibleLabel && <span style={labelTextStyle}>{visibleLabel}</span>}
         </button>
     );
+}
+
+// SF-Symbols feel: emphasis = heavier glyph. Selected/CTA icons sit bold at rest;
+// neutral/danger icons thicken to bold on hover or keyboard focus.
+function iconWeight(variant: IconButtonVariant, emphasized: boolean): IconWeight {
+    if (variant === 'active' || variant === 'primary') return 'bold';
+    return emphasized ? 'bold' : 'regular';
 }
 
 function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: boolean): React.CSSProperties {

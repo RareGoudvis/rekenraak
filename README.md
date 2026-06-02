@@ -1,4 +1,4 @@
-# Enderklas Builder
+# Rekenraak
 
 Werkbladengenerator voor het Vlaamse basisonderwijs. Leerkrachten stellen wiskundige oefeningenblokken samen, configureren de moeilijkheidsgraad per blok, bekijken het resultaat live op een virtueel A4-blad, en drukken af of slaan op als PDF.
 

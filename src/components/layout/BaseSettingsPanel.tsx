@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
-import { Settings, SlidersHorizontal, BookLock, Download, Upload, Bookmark } from 'lucide-react';
+import { Gear as Settings, SlidersHorizontal, BookBookmark as BookLock, DownloadSimple as Download, UploadSimple as Upload, BookmarkSimple as Bookmark } from '@phosphor-icons/react';
 import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import PresetModal from './PresetModal';
+import ModalPortal from '../ui/ModalPortal';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { exportWorksheet, parseWorksheetFile } from '../../services/persistence';
 
@@ -15,7 +16,20 @@ export default function BaseSettingsPanel() {
     const [curriculumOpen, setCurriculumOpen] = useState(false);
     const [presetOpen, setPresetOpen] = useState(false);
     const importInputRef = useRef<HTMLInputElement>(null);
+    const gearRef = useRef<HTMLButtonElement>(null);
+    // Fixed menu coords (viewport-relative) so the popover can be portaled out of the
+    // .mac-vibrant sidebar, whose backdrop-filter would otherwise clip an absolute child.
+    const [coords, setCoords] = useState<{ left: number; bottom: number }>({ left: 0, bottom: 0 });
     const loadWorksheet = useWorksheetStore((s) => s.loadWorksheet);
+
+    const toggleMenu = () => {
+        if (!open && gearRef.current) {
+            const r = gearRef.current.getBoundingClientRect();
+            // Open upward (bottom anchored above the gear) and aligned to its left edge.
+            setCoords({ left: r.left, bottom: window.innerHeight - r.top + 6 });
+        }
+        setOpen(o => !o);
+    };
 
     const handleExport = () => {
         const st = useWorksheetStore.getState();
@@ -44,32 +58,32 @@ export default function BaseSettingsPanel() {
 
     return (
         <div style={S.wrap}>
-            <button className="ui-icon-btn" style={S.gearBtn} onClick={() => setOpen(o => !o)} title="Geavanceerd" aria-label="Geavanceerd">
+            <button ref={gearRef} className="ui-icon-btn" style={S.gearBtn} onClick={toggleMenu} title="Geavanceerd" aria-label="Geavanceerd">
                 <Settings size={16} />
             </button>
 
             {open && (
-                <>
+                <ModalPortal>
                     <div style={S.backdrop} onClick={() => setOpen(false)} />
-                    <div style={S.menu}>
-                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); setBaseOpen(true); }}>
+                    <div style={{ ...S.menu, left: coords.left, bottom: coords.bottom }}>
+                        <button className="menu-item" style={S.item} onClick={() => { setOpen(false); setBaseOpen(true); }}>
                             <SlidersHorizontal size={14} /> Basisinstellingen
                         </button>
-                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); setCurriculumOpen(true); }}>
+                        <button className="menu-item" style={S.item} onClick={() => { setOpen(false); setCurriculumOpen(true); }}>
                             <BookLock size={14} /> Curriculum samenstellen
                         </button>
                         <hr style={S.sep} />
-                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); handleExport(); }}>
+                        <button className="menu-item" style={S.item} onClick={() => { setOpen(false); handleExport(); }}>
                             <Download size={14} /> Exporteer als bestand
                         </button>
-                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); handleImportClick(); }}>
+                        <button className="menu-item" style={S.item} onClick={() => { setOpen(false); handleImportClick(); }}>
                             <Upload size={14} /> Importeer bestand
                         </button>
-                        <button className="ui-hover" style={S.item} onClick={() => { setOpen(false); setPresetOpen(true); }}>
+                        <button className="menu-item" style={S.item} onClick={() => { setOpen(false); setPresetOpen(true); }}>
                             <Bookmark size={14} /> Presets beheren
                         </button>
                     </div>
-                </>
+                </ModalPortal>
             )}
 
             <input
@@ -95,19 +109,21 @@ const S = {
         color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: 'var(--shadow-1)',
     } as React.CSSProperties,
-    backdrop: { position: 'fixed', inset: 0, zIndex: 30 } as React.CSSProperties,
-    // Opens upward, rightward into the canvas (sidebar is at the screen's left edge, so it
-    // must NOT open left). The sidebar drops overflow:hidden so this isn't clipped.
+    backdrop: { position: 'fixed', inset: 0, zIndex: 50 } as React.CSSProperties,
+    // Portaled to <body> (the .mac-vibrant sidebar's backdrop-filter would clip an
+    // absolute child), so position:fixed with viewport coords computed from the gear
+    // rect. zIndex > the compact panel flyout (z40). left/bottom are set inline.
     menu: {
-        position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 31,
+        position: 'fixed', zIndex: 51,
         minWidth: '210px', background: 'var(--bg-surface)', border: '1px solid var(--separator)',
         borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-2)', padding: 'var(--sp-1)',
         display: 'flex', flexDirection: 'column', gap: '2px',
     } as React.CSSProperties,
+    // No `background` here — the .menu-item class owns base + :hover (inline bg would shadow :hover).
     item: {
         display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', width: '100%', textAlign: 'left',
         padding: '8px 10px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: 'none',
-        background: 'transparent', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
+        color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
     sep: { margin: '4px 6px', border: 'none', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
 };

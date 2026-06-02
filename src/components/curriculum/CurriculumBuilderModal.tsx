@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Check, Eye, EyeOff } from 'lucide-react';
+import { X, Check, Eye, EyeSlash as EyeOff } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
 import { REGISTRY } from '../../config/exerciseRegistry';

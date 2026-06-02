@@ -1,6 +1,6 @@
 # ARCHITECTURE.md
 
-System map of the Enderklas worksheet generator, written for future Claude agents
+System map of the Rekenraak worksheet generator, written for future Claude agents
 (and humans). Read this once and you should know where everything lives and how a
 new exercise type flows through the app.
 
@@ -411,10 +411,10 @@ All localStorage; nothing leaves the browser except share links the user copies.
   `stripBlock`), so the recipient configures-then-Genereer to populate.
 - **`CurriculumLock`** (`{ locked, allowedTypes: [{typeId, label, lockedConstraints}] }`)
   rides in the payload for locked curriculum share links (§13).
-- **Autosave** — single slot `enderklas_autosave_v1`; `saveAutosave` /
+- **Autosave** — single slot `rekenraak_autosave_v1`; `saveAutosave` /
   `loadAutosave` / `clearAutosave`. App.tsx offers to restore on boot if the
   current sheet is empty.
-- **Presets** — named library `enderklas_presets_v1`, `MAX_PRESETS = 20`. CRUD via
+- **Presets** — named library `rekenraak_presets_v1`, `MAX_PRESETS = 20`. CRUD via
   `loadPresets` / `savePreset` / `deletePreset` / `renamePreset`. Managed in
   [PresetModal.tsx](src/components/layout/PresetModal.tsx).
 - **Share link** — `encodeShareLink` → JSON → **lz-string**
@@ -428,11 +428,11 @@ All localStorage; nothing leaves the browser except share links the user copies.
   `werkbundel-<slug>-<YYYYMMDD>.json`) / `parseWorksheetFile`.
 - **Release banner** — [version.ts](src/config/version.ts) `RELEASE_VERSION` +
   `RELEASE_SUMMARY`; shown until the user dismisses the current version
-  (`enderklas_release_seen_v1`). Details live in
+  (`rekenraak_release_seen_v1`). Details live in
   [HelpModal.tsx](src/components/layout/HelpModal.tsx).
 - **First-run tutorial** — [TourOverlay.tsx](src/components/onboarding/TourOverlay.tsx),
   an interactive spotlight tour (add → settings → generate → print → WIP/feedback finale).
-  One-time via `localStorage` `enderklas_tour_seen_v1`; replayable from HelpModal's
+  One-time via `localStorage` `rekenraak_tour_seen_v1`; replayable from HelpModal's
   "Rondleiding" button. Targets elements by `data-tour="…"` anchors (sidebar-nav, inspector,
   generate-block, print, feedback); advances on real store changes (block added / exercises
   generated). Replaced the old AlphaPopup (its WIP warning is now the final step).
@@ -446,7 +446,7 @@ src/
 ├── App.tsx                      # 3-panel layout, header render, viewer routing, page-breaks, boot hooks
 ├── main.tsx                     # React entry
 ├── index.css                    # global + ALL print CSS (@page, @media print)
-├── assets/{theme.css,fonts/,enderklas-logo.png}   # fonts used by HTML preview only
+├── assets/{theme.css,fonts/}     # fonts used by HTML preview only (favicons live in public/)
 ├── config/
 │   ├── appstructure.ts          # APP_STRUCTURE tree (Domain→Subdomain→ExerciseType), placeholders
 │   ├── exerciseRegistry.ts      # REGISTRY: typeId → {exerciseField, generate, defaultConstraints, defaultCount} (pure data)
@@ -482,13 +482,14 @@ src/
 │   ├── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
 │   └── herleidingen/herleidingenGenerator.ts # metric unit conversions (ladderFor; integer-exact)
 └── components/
-    ├── layout/{sidebar.tsx,TopBar.tsx,PanelShell.tsx,HelpModal.tsx,PresetModal.tsx,
-    │           BaseSettingsPanel.tsx,BaseSettingsModal.tsx}   # §13 sidebar gear menu + base modal; PanelShell = responsive panel collapse
+    ├── layout/{sidebar.tsx,TopBar.tsx,PanelShell.tsx,HelpModal.tsx,AboutModal.tsx,PresetModal.tsx,
+    │           BaseSettingsPanel.tsx,BaseSettingsModal.tsx}   # §13 sidebar gear menu + base modal; PanelShell = responsive panel collapse; AboutModal = "Over dit project" (logo + footer license open it)
     ├── onboarding/TourOverlay.tsx                              # first-run spotlight tutorial
     ├── massadd/MassAddModal.tsx                                # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx                   # §13 curriculum builder
     ├── shared/ExercisePreview.tsx                              # §13 fit-to-card live example
     ├── ui/IconButton.tsx
+    ├── ui/Wordmark.tsx         # shared rekenraak wordmark SVG (sidebar header + AboutModal)
     ├── ui/Switch.tsx           # iOS-style toggle (boolean controls)
     ├── ui/ModalPortal.tsx      # createPortal(→ body) so modals escape the .mac-vibrant containing-block trap
     ├── configurator/

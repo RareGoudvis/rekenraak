@@ -64,7 +64,6 @@ src/
 ├── main.tsx                       # React entry point
 ├── index.css
 ├── assets/
-│   ├── enderklas-logo.png
 │   ├── theme.css
 │   └── fonts/                     # .ttf files — used by HTML preview only (not PDF)
 │       ├── Roboto-Regular.ttf
@@ -127,6 +126,7 @@ src/
     │   ├── BaseSettingsPanel.tsx  # Sidebar footer gear (⚙) popover: Basisinstellingen + Curriculum + Exporteer/Importeer/Presets (file-ops, moved from TopBar)
     │   ├── BaseSettingsModal.tsx  # Global base-difficulty modal
     │   ├── HelpModal.tsx          # Ouders / Leerkrachten tabs + "Rondleiding" replay
+    │   ├── AboutModal.tsx         # "Over dit project" — manifesto + tech + AGPL license (logo opens it)
     │   └── PresetModal.tsx        # Save/load/delete named presets
     ├── onboarding/TourOverlay.tsx # First-run interactive spotlight tutorial (one-time + replay)
     ├── massadd/MassAddModal.tsx   # "Toevoegen" mass-add modal
@@ -134,6 +134,7 @@ src/
     ├── shared/ExercisePreview.tsx # Fit-to-card live example (mass-add + curriculum)
     ├── ui/
     │   ├── IconButton.tsx         # Shared icon button (block controls)
+    │   ├── Wordmark.tsx           # Shared rekenraak wordmark SVG (sidebar header + AboutModal)
     │   ├── Switch.tsx             # iOS-style toggle for boolean controls
     │   └── ModalPortal.tsx        # createPortal(→ body) wrapper so modals escape the .mac-vibrant containing block
     ├── configurator/

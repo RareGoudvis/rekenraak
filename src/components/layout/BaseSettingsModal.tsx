@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { getMaskPlaces, getBridgePlaces } from '../../services/math/mathEngine';
 import type { BaseBridgePolicy, BaseNumberType } from '../../config/baseSettings';

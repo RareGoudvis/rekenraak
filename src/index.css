@@ -70,6 +70,11 @@ textarea:focus-visible,
 .ui-hover { transition: background-color var(--dur) var(--ease-out); }
 .ui-hover:hover { background-color: var(--bg-hover); }
 
+/* Popover/menu row — base transparent + hover fill via CSS (not inline) so the
+   :hover rule isn't shadowed by an inline background. */
+.menu-item { background: transparent; transition: background-color var(--dur) var(--ease-out); }
+.menu-item:hover { background: var(--bg-hover); }
+
 /* Sidebar exercise leaves — rounded hover fill + text lift (replaces the old
    inline onMouseEnter/Leave colour hacks). */
 .sidebar-leaf { transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out); }

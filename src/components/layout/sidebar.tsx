@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { HelpCircle, Heart, Sun, Moon, Contrast, MessageSquare, Plus } from 'lucide-react';
-import logo from '../../assets/enderklas-logo.png';
+import { useMemo, useState } from 'react';
+import { Question as HelpCircle, Heart, Sun, Moon, CircleHalf as Contrast, ChatText as MessageSquare, Plus } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import HelpModal from './HelpModal';
+import AboutModal from './AboutModal';
+import Wordmark from '../ui/Wordmark';
 import BaseSettingsPanel from './BaseSettingsPanel';
 
 // Walk the domain tree keeping only entries whose label matches the search needle.
@@ -50,16 +51,8 @@ export default function Sidebar() {
     const [helpOpen, setHelpOpen] = useState(false);
     const [search, setSearch] = useState('');
 
-    // Sidebar branding — editable site title + subtitle, persisted per-browser.
-    const [siteTitle, setSiteTitle] = useState<string>(() => {
-        try { return localStorage.getItem('enderklas_site_title_v1') ?? 'Enderklas Builder'; } catch { return 'Enderklas Builder'; }
-    });
-    const [siteSubtitle, setSiteSubtitle] = useState<string>(() => {
-        // v4 reseeds the default to the abbreviated name (was 'By Ruben Van Handenhove' under v3).
-        try { return localStorage.getItem('enderklas_site_subtitle_v4') ?? 'Ruben V.H.'; } catch { return 'Ruben V.H.'; }
-    });
-    useEffect(() => { try { localStorage.setItem('enderklas_site_title_v1', siteTitle); } catch { /* ignore */ } }, [siteTitle]);
-    useEffect(() => { try { localStorage.setItem('enderklas_site_subtitle_v4', siteSubtitle); } catch { /* ignore */ } }, [siteSubtitle]);
+    // Sidebar branding is now a static wordmark; clicking it opens the About modal.
+    const [aboutOpen, setAboutOpen] = useState(false);
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(() => filterTree(APP_STRUCTURE, search), [search]);
@@ -74,6 +67,8 @@ export default function Sidebar() {
     } as const;
     const cycleTheme = () => setTheme(themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length]);
     const ThemeIcon = themeMeta[theme].Icon;
+    // Match IconButton's SF-feel: the theme glyph thickens on hover/focus.
+    const [themeHover, setThemeHover] = useState(false);
     const nextTheme = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
 
     const toggleSubdomain = (id: string) => {
@@ -97,24 +92,10 @@ export default function Sidebar() {
 
     return (
         <aside className="mac-vibrant" style={S.aside}>
-            <div style={S.headerRow}>
-                <div style={S.logoWrap}>
-                    <img src={logo} alt="Enderklas Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                </div>
-                <div style={S.headerText}>
-                    <input
-                        value={siteTitle}
-                        onChange={(e) => setSiteTitle(e.target.value)}
-                        placeholder="Enderklas Builder"
-                        style={S.siteTitleInput}
-                    />
-                    <input
-                        value={siteSubtitle}
-                        onChange={(e) => setSiteSubtitle(e.target.value)}
-                        placeholder="Ruben V.H."
-                        style={S.siteSubtitleInput}
-                    />
-                </div>
+            <div style={S.headerCol}>
+                <button type="button" className="ui-hover" style={S.logoBtn} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
+                    <Wordmark />
+                </button>
             </div>
 
             {locked && (
@@ -131,7 +112,7 @@ export default function Sidebar() {
                                 style={S.leafBtn}
                                 onClick={() => addBlockFromType(t.typeId, t.label, t.lockedConstraints)}
                             >
-                                <span style={S.addBadge}><Plus size={13} strokeWidth={2.5} /></span>
+                                <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                 <span>{t.label}</span>
                             </button>
                         ))}
@@ -151,8 +132,10 @@ export default function Sidebar() {
                     onChange={(e) => setSearch(e.target.value)}
                     style={S.searchInput}
                 />
-                <button className="ui-icon-btn" style={S.footerIconBtn} onClick={cycleTheme} title={`Thema: ${themeMeta[theme].label} — klik voor ${themeMeta[nextTheme].label}`} aria-label={`Thema wisselen (nu ${themeMeta[theme].label})`}>
-                    <ThemeIcon size={16} />
+                <button className="ui-icon-btn" style={S.footerIconBtn} onClick={cycleTheme} title={`Thema: ${themeMeta[theme].label} — klik voor ${themeMeta[nextTheme].label}`} aria-label={`Thema wisselen (nu ${themeMeta[theme].label})`}
+                    onMouseEnter={() => setThemeHover(true)} onMouseLeave={() => setThemeHover(false)}
+                    onFocus={() => setThemeHover(true)} onBlur={() => setThemeHover(false)}>
+                    <ThemeIcon size={16} weight={themeHover ? 'bold' : 'regular'} />
                 </button>
                 <button className="ui-icon-btn" style={S.footerIconBtn} onClick={() => setHelpOpen(true)} title="Help / uitleg" aria-label="Help">
                     <HelpCircle size={16} />
@@ -215,7 +198,7 @@ export default function Sidebar() {
                                                                         style={S.leafBtn}
                                                                         onClick={() => addBlockFromType(type.typeId!, type.label, type.defaultConstraints)}
                                                                     >
-                                                                        <span style={S.addBadge}><Plus size={13} strokeWidth={2.5} /></span>
+                                                                        <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                         <span>{type.label}</span>
                                                                     </button>
                                                                 );
@@ -250,7 +233,7 @@ export default function Sidebar() {
                                                                                         style={S.leafBtn}
                                                                                         onClick={() => addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints)}
                                                                                     >
-                                                                                        <span style={S.addBadge}><Plus size={13} strokeWidth={2.5} /></span>
+                                                                                        <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                                         <span>{leaf.label}</span>
                                                                                     </button>
                                                                                 )
@@ -276,7 +259,7 @@ export default function Sidebar() {
                 <div style={S.footerActions}>
                     <span style={{ ...S.footerText, flex: 1 }}>
                         Updated: 02/06/2026<br />
-                        License: <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</a>.
+                        License: <button type="button" onClick={() => setAboutOpen(true)} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</button>.
                     </span>
                     {!locked && <BaseSettingsPanel />}
                     <a className="ui-icon-btn" href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" data-tour="feedback" style={S.footerIconBtn} title="Feedback geven" aria-label="Feedback">
@@ -288,6 +271,7 @@ export default function Sidebar() {
                 </div>
             </div>
             {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
+            {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
         </aside>
     );
 }
@@ -298,11 +282,9 @@ export default function Sidebar() {
 
 const S = {
     aside: { width: '300px', minWidth: '300px', border: '1px solid var(--separator)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-1)', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
-    headerRow: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-3) var(--sp-4) var(--sp-3)' } as React.CSSProperties,
-    logoWrap: { width: '48px', height: '48px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as React.CSSProperties,
-    headerText: { flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } as React.CSSProperties,
-    siteTitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: 'var(--text-lg)', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-main)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,
-    siteSubtitleInput: { background: 'transparent', border: 'none', outline: 'none', padding: 0, fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--accent)', width: '100%', fontFamily: 'inherit' } as React.CSSProperties,
+    headerCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-3) var(--sp-4)', color: 'var(--text-main)' } as React.CSSProperties,
+    // Negative margin so the hover fill pads the wordmark without nudging it.
+    logoBtn: { background: 'transparent', border: 'none', padding: '2px 4px', margin: '-2px -4px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex' } as React.CSSProperties,
     divider: { border: 'none', height: '1px', backgroundColor: 'var(--separator)', margin: '0 var(--sp-4)' } as React.CSSProperties,
     searchWrap: { padding: 'var(--sp-2) var(--sp-4)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' } as React.CSSProperties,
     searchInput: {

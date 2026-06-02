@@ -8,7 +8,7 @@ import { EXERCISE_UI } from './config/exerciseUI';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
-import { ArrowUp, ArrowDown, Lock, Unlock, Copy, Trash2, CornerDownRight, Hand } from 'lucide-react';
+import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
 import { loadAutosave, clearAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
@@ -75,10 +75,10 @@ export default function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   // First-run interactive tour (replaces the old AlphaPopup). Shown once; replayable from Help.
   const [tourOpen, setTourOpen] = useState<boolean>(() => {
-    try { return !localStorage.getItem('enderklas_tour_seen_v1'); } catch { return false; }
+    try { return !localStorage.getItem('rekenraak_tour_seen_v1'); } catch { return false; }
   });
   const closeTour = () => {
-    try { localStorage.setItem('enderklas_tour_seen_v1', '1'); } catch { /* ignore */ }
+    try { localStorage.setItem('rekenraak_tour_seen_v1', '1'); } catch { /* ignore */ }
     setTourOpen(false);
   };
   const [autosaveOffer, setAutosaveOffer] = useState<{ savedAt: string; titel: string } | null>(null);
@@ -121,7 +121,7 @@ export default function App() {
   // Browser tab title follows the worksheet title.
   useEffect(() => {
     const t = headerData?.titel?.trim();
-    document.title = t ? `${t} — Enderklas Builder` : 'Enderklas Builder';
+    document.title = t ? `${t} — Rekenraak` : 'Rekenraak';
   }, [headerData?.titel]);
 
   const acceptAutosave = () => {
@@ -203,7 +203,7 @@ export default function App() {
         {releaseBannerVisible && (
           <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
             <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
-            <span>Welkom bij Enderklas! Stel links je oefenblad samen, pas het aan in het rechterpaneel en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
+            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het aan in het rechterpaneel en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
             <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
           </div>
         )}

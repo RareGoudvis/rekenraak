@@ -1,7 +1,8 @@
 {
-  "name": "enderklas-v2",
+  "name": "rekenraak",
   "private": true,
   "version": "0.5.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,8 +12,7 @@
   },
   "dependencies": {
     "@fontsource/azeret-mono": "^5.2.11",
-    "@react-pdf/renderer": "^4.5.1",
-    "lucide-react": "^1.16.0",
+    "@phosphor-icons/react": "^2.1.10",
     "lz-string": "^1.5.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
