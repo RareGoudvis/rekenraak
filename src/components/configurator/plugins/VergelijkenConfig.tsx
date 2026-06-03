@@ -1,27 +1,36 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
+import { REP_OPTIONS } from '../../../services/vergelijken/representations';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import FractionMaxField from './FractionMaxField';
 
 interface Props { block: MathBlock; }
 
 const MAX_PRESETS = [100, 1000, 10000, 100000, 1000000];
+const REP_MAX_PRESETS = [10, 100, 1000];   // representaties: tienden/honderdsten range
 
 export default function VergelijkenConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { subType = 'getallen', maxGetal = 1000, numberMask = {}, chooseTarget = 'grootste', setSize = 4, decimalPlaces = 0 } = block.constraints;
+    const { subType = 'getallen', maxGetal = 1000, numberMask = {}, chooseTarget = 'grootste', setSize = 4, decimalPlaces = 0, leftRep = 'breuk', rightRep = 'kommagetal', leftMask = {}, rightMask = {},
+        leftFracN = 4, leftFracD = 8, rightFracN = 4, rightFracD = 8 } = block.constraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
     const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
+    const isRep = subType === 'representaties';
+    // representaties: each side has its own representation + getalopbouw mask.
+    const repPlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces || 1);
+    const toggleSideMask = (side: 'leftMask' | 'rightMask', mask: Record<string, boolean>, k: string) =>
+        set(side, { ...mask, [k]: !mask[k] });
 
     return (
         <div style={styles.container}>
             <div style={styles.section}>
                 <label style={styles.label}>Maximum getal:</label>
                 <div style={styles.buttonGroup}>
-                    {MAX_PRESETS.map(val => (
+                    {(isRep ? REP_MAX_PRESETS : MAX_PRESETS).map(val => (
                         <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
                     ))}
                 </div>
@@ -30,11 +39,48 @@ export default function VergelijkenConfig({ block }: Props) {
             <div style={styles.section}>
                 <label style={styles.label}>Decimalen:</label>
                 <div style={styles.buttonGroup}>
-                    {[0, 1, 2, 3].map(dp => (
+                    {(isRep ? [1, 2] : [0, 1, 2, 3]).map(dp => (
                         <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
                     ))}
                 </div>
             </div>
+
+            {/* REPRESENTATIES — two columns: each side owns its representation + getalopbouw */}
+            {isRep && (
+                <div style={{ ...styles.section, display: 'flex', gap: '14px' }}>
+                    {([
+                        { title: 'Linkerkant', rep: leftRep, repKey: 'leftRep', maskKey: 'leftMask' as const, mask: leftMask, fnKey: 'leftFracN', fdKey: 'leftFracD', fn: leftFracN, fd: leftFracD },
+                        { title: 'Rechterkant', rep: rightRep, repKey: 'rightRep', maskKey: 'rightMask' as const, mask: rightMask, fnKey: 'rightFracN', fdKey: 'rightFracD', fn: rightFracN, fd: rightFracD },
+                    ]).map((col, i) => (
+                        <div key={col.repKey} style={{ flex: 1, minWidth: 0, ...(i === 1 ? { borderLeft: '1px solid var(--separator)', paddingLeft: '14px' } : {}) }}>
+                            <label style={styles.label}>{col.title}:</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+                                {REP_OPTIONS.map(o => (
+                                    <button key={o.key} onClick={() => set(col.repKey, o.key)} style={styles.radioBtn(col.rep === o.key)}>{o.label}</button>
+                                ))}
+                            </div>
+                            <label style={styles.label}>Getalopbouw:</label>
+                            {/* A breuk side uses the teller/noemer widget; other reps use the place mask. */}
+                            {col.rep === 'breuk' ? (
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <FractionMaxField
+                                        numerator={col.fn}
+                                        denominator={col.fd}
+                                        onNumerator={(v) => set(col.fnKey, v)}
+                                        onDenominator={(v) => set(col.fdKey, v)}
+                                    />
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    {repPlaces.map(p => (
+                                        <button key={p.key} onClick={() => toggleSideMask(col.maskKey, col.mask, p.key)} style={styles.maskBtn(!!col.mask[p.key])} title={p.label}>{p.key}</button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {subType === 'kiezen' && (
                 <>
@@ -54,15 +100,17 @@ export default function VergelijkenConfig({ block }: Props) {
                 </>
             )}
 
-            <div style={styles.section}>
-                <label style={styles.label}>Specifieke getalopbouw:</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    {places.map(p => (
-                        <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
-                    ))}
+            {!isRep && (
+                <div style={styles.section}>
+                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        {places.map(p => (
+                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
+                        ))}
+                    </div>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>
                 </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>
-            </div>
+            )}
         </div>
     );
 }

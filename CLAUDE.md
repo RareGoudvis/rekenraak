@@ -91,9 +91,10 @@ src/
 │   │   ├── clockTypes.ts          # Time categories, Dutch time text formatting
 │   │   └── clockGenerator.ts      # Clock exercise generator
 │   ├── fractions/
-│   │   └── fractionGenerator.ts   # Fraction exercise generator (shapes, coloring)
+│   │   ├── fractionGenerator.ts   # Fraction exercise generator (shapes, coloring)
+│   │   └── breukBewerkGenerator.ts # gemengd↔breuk / gelijknamig maken / vereenvoudigen
 │   ├── splitsen/
-│   │   └── splitsenGenerator.ts   # Decomposition (splitsen) exercise generator
+│   │   └── splitsenGenerator.ts   # Decomposition: basic/splitsboom/verliefde-harten/positie-*
 │   ├── cijferen/
 │   │   └── cijferGenerator.ts     # Column arithmetic generator
 │   ├── geld/
@@ -101,13 +102,21 @@ src/
 │   ├── mab/
 │   │   └── mabGenerator.ts        # MAB (Dienes place-value blocks) generator
 │   ├── ordenen/                   # Ordering numbers (+ recomputeSplitsenExercise lives in splitsen)
-│   │   └── ordenenGenerator.ts
-│   ├── deelbaarheid/deelbaarheidGenerator.ts
+│   │   ├── ordenenGenerator.ts
+│   │   └── breukenRangschikkenGenerator.ts # order 2-5 fractions → OrdenenExercise[] (reuses OrdenenViewer)
+│   ├── deelbaarheid/
+│   │   ├── deelbaarheidGenerator.ts
+│   │   └── deelbaarheidKleurGenerator.ts     # kleur veelvouden: strip / markeren / kleurraster
 │   ├── getallenas/getallenasGenerator.ts
+│   ├── getallenrij/getallenrijGenerator.ts   # number sequences (getallenas minus the axis line)
+│   ├── patroon/patroonGenerator.ts           # getalpatronen: 1–4-step op-cycle (+ − × :)
+│   ├── meten/metenGenerator.ts               # lengte meten (polyline) + omtrek (shapes); cm-scale, π·d circles
 │   ├── temperatuur/temperatuurGenerator.ts   # kleuren / aflezen / verschil
 │   ├── plaatswaarde/plaatswaardeGenerator.ts # waarde / plaats / tabel
 │   ├── evenoneven/evenOnevenGenerator.ts     # rooster / cirkels
-│   ├── vergelijken/vergelijkenGenerator.ts   # getallen / kiezen
+│   ├── vergelijken/
+│   │   ├── vergelijkenGenerator.ts   # getallen / kiezen / representaties
+│   │   └── representations.ts        # breuk/kommagetal/plaatswaarde/woorden text helpers (RepValue in viewer/)
 │   ├── afronden/afrondenGenerator.ts         # natural+decimal rooster / simpel (targetsFor, roundTo)
 │   ├── romeinse/romeinseGenerator.ts         # herkennen / schrijven (toRoman, NIVEAU_MAX)
 │   └── herleidingen/herleidingenGenerator.ts # metric unit conversions (ladderFor; integer-exact; oppervlakte vierkant↔are)
@@ -153,9 +162,16 @@ src/
     │       ├── GeldWisselConfig.tsx
     │       ├── GeldTeruggevenConfig.tsx
     │       ├── MabConfig.tsx
+    │       ├── FractionMaxField.tsx            # shared teller/noemer getalopbouw widget (addition "Breuk 1" style)
     │       ├── OrdenenConfig.tsx
+    │       ├── BreukBewerkConfig.tsx           # gemengd/gelijknamig/vereenvoudigen
+    │       ├── BreukenRangschikkenConfig.tsx   # fractionMode + count(2-5)
     │       ├── DeelbaarheidConfig.tsx
     │       ├── GetallenasConfig.tsx
+    │       ├── GetallenrijenConfig.tsx         # direction/custom-jump/mask for sequences
+    │       ├── PatroonConfig.tsx               # getalpatronen: steps + per-op operand/mask
+    │       ├── DeelbaarheidKleurConfig.tsx     # strip/markeren/raster + delers + rest
+    │       ├── MetenConfig.tsx                 # shared: lengte-meten + omtrek (meet-model/precision/shapes)
     │       ├── TemperatuurConfig.tsx
     │       ├── addition/          # Sub-configs per number type
     │       │   ├── NaturalSettings.tsx
@@ -181,9 +197,15 @@ src/
         ├── FractionViewer.tsx     # Fraction grid wrapper (maps to FractionExerciseItem)
         ├── MabViewer.tsx          # MAB blocks (mode derived from typeId)
         ├── MabBlocksSVG.tsx       # SVG Dienes blocks (symbolic / bw / color)
-        ├── OrdenenViewer.tsx      # Ordering (click a number to edit)
+        ├── OrdenenViewer.tsx      # Ordering (click a number to edit) — reused by breuken-rangschikken
+        ├── BreukBewerkViewer.tsx  # gemengd/gelijknamig/vereenvoudigen (VerticalFraction + answer boxes)
+        ├── RepValue.tsx           # one value as breuk/kommagetal/plaatswaarde/woorden (vergelijken representaties)
         ├── DeelbaarheidViewer.tsx
+        ├── DeelbaarheidKleurViewer.tsx # Veelvouden kleuren/markeren/raster (+ rest)
+        ├── PatroonViewer.tsx      # Getalpatronen row (–/arrow connectors, operator scaffolds)
         ├── GetallenasViewer.tsx   # Number line (decimal/rational/geheel ticks)
+        ├── GetallenrijenViewer.tsx # Sequence pill with dotted blanks (no axis line)
+        ├── MetenViewer.tsx        # lengte-meten + omtrek: to-scale SVG (1cm≈37.8px) + side labels/blanks
         ├── TemperatuurViewer.tsx  # Thermometer(s): kleuren / aflezen / verschil
         ├── VerticalFraction.tsx   # Shared stacked-fraction component
         └── FragmentableGrid.tsx   # row-chunked grid so items flow across print page breaks
@@ -287,10 +309,19 @@ All types defined in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.
 | `afronden` | `afrondenExercises: AfrondenExercise[]` | `afrondenGenerator.ts` | `AfrondenViewer` |
 | `romeinse-cijfers` | `romeinseExercises: RomeinseExercise[]` | `romeinseGenerator.ts` | `RomeinseViewer` |
 | `herleidingen` | `herleidingExercises: HerleidingExercise[]` | `herleidingenGenerator.ts` | `HerleidingenViewer` |
+| `getallenrijen` | `getallenasExercises` (reused) | `getallenrijGenerator.ts` | `GetallenrijenViewer` |
+| `breuken-bewerken` | `breukBewerkExercises: BreukBewerkExercise[]` | `breukBewerkGenerator.ts` | `BreukBewerkViewer` |
+| `breuken-rangschikken` | `ordenenExercises` (reused) | `breukenRangschikkenGenerator.ts` | `OrdenenViewer` (reused) |
+| `lengte-meten` | `meetExercises: MeetExercise[]` | `metenGenerator.ts` | `MetenViewer` |
+| `omtrek` | `meetExercises` (shared) | `metenGenerator.ts` | `MetenViewer` |
+| `getalpatronen` | `patroonExercises: PatroonExercise[]` | `patroonGenerator.ts` | `PatroonViewer` |
+| `deelbaarheid-kleuren` | `deelbaarheidKleurExercises: DeelbaarheidKleurExercise[]` | `deelbaarheidKleurGenerator.ts` | `DeelbaarheidKleurViewer` |
 
 `subType` (in `constraints`) selects the view within a family, set by the sidebar leaf
-(plaatswaarde waarde/plaats/tabel · even-oneven rooster/cirkels · vergelijken getallen/kiezen
-· afronden rooster/simpel · romeinse herkennen/schrijven · herleidingen measure lengte/inhoud/massa/oppervlakte).
+(plaatswaarde waarde/plaats/tabel · even-oneven rooster/cirkels · vergelijken getallen/kiezen/representaties
+· afronden rooster/simpel · romeinse herkennen/schrijven · herleidingen measure lengte/inhoud/massa/oppervlakte
+· breuken-bewerken gemengd/gelijknamig/vereenvoudigen). Splitsen selects its view via `constraints.layout`
+(basic/splitsboom/verliefde-harten/positie-*).
 
 For **herleidingen** the `constraints.formats[]` pick the exercise shapes (enkel-getal/-eenheid,
 samengesteld↔enkel); **oppervlakte** adds `vierkant-are`/`are-vierkant` (square↔are ha/a/ca) with

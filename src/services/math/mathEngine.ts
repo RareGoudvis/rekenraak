@@ -30,16 +30,16 @@ const randInt = (min: number, max: number): number => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-const gcd = (a: number, b: number): number => {
+export const gcd = (a: number, b: number): number => {
     return b === 0 ? a : gcd(b, a % b);
 };
 
-const simplifyFraction = (n: number, d: number): Fraction => {
+export const simplifyFraction = (n: number, d: number): Fraction => {
     const common = gcd(n, d);
     return { n: n / common, d: d / common };
 };
 
-const toMixedNumber = (n: number, d: number): Fraction => {
+export const toMixedNumber = (n: number, d: number): Fraction => {
     const common = gcd(n, d);
     const simpN = n / common;
     const simpD = d / common;

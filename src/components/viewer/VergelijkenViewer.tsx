@@ -1,5 +1,7 @@
 import type { MathBlock, VergelijkenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
+import type { RepKind } from '../../services/vergelijken/representations';
+import RepValue from './RepValue';
 import FragmentableGrid from './FragmentableGrid';
 
 interface Props {
@@ -50,8 +52,38 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
         );
     }
 
-    // ── GETALLEN: fill <, > or = between two numbers ──────────────────────────
     const op = (a: number, b: number) => (a < b ? '<' : a > b ? '>' : '=');
+
+    // ── REPRESENTATIES: each side in a chosen representation, fill <, > or = ────
+    if (subType === 'representaties') {
+        const leftRep: RepKind = block.constraints.leftRep ?? 'breuk';
+        const rightRep: RepKind = block.constraints.rightRep ?? 'kommagetal';
+        return (
+            <FragmentableGrid
+                cols={2}
+                columnGap={24}
+                rowGap={gap + 4}
+                items={exercises.map(ex => {
+                    const a = ex.a ?? 0, b = ex.b ?? 0;
+                    return (
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: mono, fontSize: '18px' }}>
+                            <span style={{ minWidth: '80px', display: 'inline-flex', justifyContent: 'flex-end', alignItems: 'center' }}><RepValue value={a} rep={leftRep} frac={ex.aFrac} /></span>
+                            <span style={{
+                                width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                color: SOL, fontWeight: 'bold', flexShrink: 0,
+                            }}>
+                                {showSolutions ? op(a, b) : ''}
+                            </span>
+                            <span style={{ minWidth: '80px', display: 'inline-flex', alignItems: 'center' }}><RepValue value={b} rep={rightRep} frac={ex.bFrac} /></span>
+                        </div>
+                    );
+                })}
+            />
+        );
+    }
+
+    // ── GETALLEN: fill <, > or = between two numbers ──────────────────────────
     return (
         <FragmentableGrid
             cols={2}

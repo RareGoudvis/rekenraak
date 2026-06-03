@@ -29,6 +29,7 @@ export interface Domain {
     label: string;
     accentVar: string;
     subdomains: Subdomain[];
+    hidden?: boolean;   // hidden from the sidebar (not implemented / not coming soon)
 }
 
 // ── placeholder helpers ──────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Splitsen',
                         children: [
                             { id: 'splitsen-basis', label: 'Rooster', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'basic', rowsPerBox: 4 } },
+                            { id: 'splitsen-boom', label: 'Splitsboom', typeId: 'splitsen', defaultConstraints: { maxGetal: 100, layout: 'splitsboom', blankPositions: ['right'] } },
                             { id: 'splitsen-harten', label: 'Verliefde harten', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'verliefde-harten' } },
                             { id: 'splitsen-positietabel', label: 'Positietabel', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-tabel' } },
                             { id: 'splitsen-benen', label: 'Splitsbenen (H/T/E)', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-benen', benenVariants: ['legs-letters'] } },
@@ -80,6 +82,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'vergelijken-getallen', label: 'Twee getallen', typeId: 'vergelijken', defaultConstraints: { subType: 'getallen' } },
                             { id: 'vergelijken-kiezen',   label: 'Grootste / kleinste', typeId: 'vergelijken', defaultConstraints: { subType: 'kiezen' } },
+                            { id: 'vergelijken-representaties', label: 'Breuken & kommagetallen', typeId: 'vergelijken', defaultConstraints: { subType: 'representaties', leftRep: 'breuk', rightRep: 'kommagetal', maxGetal: 10, decimalPlaces: 1 } },
                         ],
                     },
                     {
@@ -102,6 +105,16 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'getalbegrip-getallenassen-geh', label: 'Gehele getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 } },
                         ],
                     },
+                    {
+                        id: 'getalbegrip-getallenrijen',
+                        label: 'Getallenrijen',
+                        children: [
+                            { id: 'getalbegrip-getallenrijen-nat', label: 'Natuurlijke getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'natural' } },
+                            { id: 'getalbegrip-getallenrijen-dec', label: 'Decimale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'decimal', step: 0.1, maxGetal: 10 } },
+                            { id: 'getalbegrip-getallenrijen-rat', label: 'Rationale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'rational', fractionStep: 4, ticks: 6 } },
+                            { id: 'getalbegrip-getallenrijen-geh', label: 'Gehele getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 } },
+                        ],
+                    },
                     ph('getalbegrip-functie', 'Functie van getallen'),
                     ph('getalbegrip-verbanden', 'Verbanden (breuk · decimaal · procent)'),
                 ],
@@ -115,7 +128,10 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid' } },
                     { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' } },
                     { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' } },
-                    ph('breuken-rangschikken', 'Breuken rangschikken'),
+                    { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' } },
+                    { id: 'breuken-gelijknamig', label: 'Gelijknamig maken', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gelijknamig' } },
+                    { id: 'breuken-vereenvoudigen', label: 'Vereenvoudigen', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'vereenvoudigen' } },
+                    { id: 'breuken-rangschikken', label: 'Breuken rangschikken', typeId: 'breuken-rangschikken' },
                 ],
             },
             {
@@ -141,10 +157,10 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'patronen',
                 label: 'Patronen',
-                placeholder: true,
                 types: [
-                    ph('patronen-nat', 'Natuurlijke getallen'),
-                    ph('patronen-dec', 'Decimale getallen'),
+                    { id: 'patronen-nat', label: 'Natuurlijke getallen', typeId: 'getalpatronen', defaultConstraints: { numberType: 'natural' } },
+                    { id: 'patronen-dec', label: 'Decimale getallen', typeId: 'getalpatronen', defaultConstraints: { numberType: 'decimal', maxGetal: 100 } },
+                    { id: 'patronen-geh', label: 'Gehele getallen', typeId: 'getalpatronen', defaultConstraints: { numberType: 'geheel', maxGetal: 100 } },
                 ],
             },
             {
@@ -164,6 +180,15 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'even-oneven-rooster', label: 'Rooster kleuren', typeId: 'even-oneven', defaultConstraints: { subType: 'rooster' } },
                             { id: 'even-oneven-cirkels', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' } },
+                        ],
+                    },
+                    {
+                        id: 'deelbaarheid-kleuren-acc', label: 'Deelbaarheid (kleuren)',
+                        children: [
+                            { id: 'deelbaarheid-2-5-10', label: 'Door 2, 5, 10', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [2, 5, 10] } },
+                            { id: 'deelbaarheid-4-8', label: 'Door 4, 8', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [4, 8] } },
+                            { id: 'deelbaarheid-3-6-9', label: 'Door 3, 6, 9', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [3, 6, 9] } },
+                            { id: 'deelbaarheid-gemengd', label: 'Gemengde reeksen', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [2, 3, 4, 5, 6, 8, 9, 10] } },
                         ],
                     },
                 ],
@@ -357,10 +382,9 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'lengte-oppervlakte',
                 label: 'Lengte en oppervlakte',
-                placeholder: true,
                 types: [
-                    ph('meten-liniaal', 'Meten met liniaal'),
-                    ph('omtrek', 'Omtrek'),
+                    { id: 'lengte-meten', label: 'Lengte meten', typeId: 'lengte-meten' },
+                    { id: 'omtrek', label: 'Omtrek', typeId: 'omtrek' },
                     ph('oppervlakte', 'Oppervlakte'),
                 ],
             },
@@ -419,6 +443,7 @@ export const APP_STRUCTURE: Domain[] = [
         id: 'vraagstukken',
         label: 'Probleemoplossend denken',
         accentVar: '--accent-vraagstukken',
+        hidden: true,   // not coming soon — hidden from the sidebar
         subdomains: [
             {
                 id: 'vraagstukken-sub',

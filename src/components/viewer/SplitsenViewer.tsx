@@ -40,6 +40,20 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         );
     }
 
+    if (layout === 'splitsboom') {
+        const cols = Math.min(exercises.length, 4);
+        return (
+            <FragmentableGrid
+                cols={cols}
+                columnGap={gap + 10}
+                rowGap={gap + 14}
+                items={exercises.map(ex => (
+                    <SplitsboomItem key={ex.id} ex={ex} showSolutions={showSolutions} />
+                ))}
+            />
+        );
+    }
+
     if (layout === 'mathematic') {
         const allItems = exercises.flatMap(ex =>
             ex.pairs.map((p, i) => ({ ...p, total: ex.total, uid: `${ex.id}-${i}` }))
@@ -66,9 +80,15 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         const allItems = exercises.flatMap(ex =>
             ex.pairs.map((p, i) => ({ ...p, total: ex.total, uid: `${ex.id}-${i}` }))
         );
+        // Fixed grid (not flex-wrap) so screen and the narrower print body share the
+        // same column count — otherwise print bumps the last heart to a new row.
         return (
-            <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: `${gap}px`, justifyContent: 'space-evenly' }}>
-                {allItems.map(item => (
+            <FragmentableGrid
+                cols={Math.min(allItems.length, 4)}
+                columnGap={gap}
+                rowGap={gap}
+                justifyItems="center"
+                items={allItems.map(item => (
                     <HeartItem
                         key={item.uid}
                         pairId={item.uid}
@@ -78,7 +98,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
                         showSolutions={showSolutions}
                     />
                 ))}
-            </div>
+            />
         );
     }
 
@@ -237,6 +257,38 @@ function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; show
                     </div>
                 </div>
             ))}
+        </div>
+    );
+}
+
+// ── Splitsboom layout (single split-tree, one blank slot) ─────────────────────
+
+function SplitsboomItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+    const left = ex.pairs[0]?.given ?? 0;
+    const right = ex.pairs[0]?.answer ?? 0;
+    const blank: 'top' | 'left' | 'right' = ex.blankPos ?? 'right';
+
+    const box = (value: number, isBlank: boolean) => (
+        <div style={{
+            border: '1.5px solid #000', borderRadius: '4px', minWidth: '46px', height: '38px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: "'Azeret Mono', monospace", fontSize: '18px', boxSizing: 'border-box', padding: '0 6px',
+        }}>
+            {isBlank ? (showSolutions ? <span style={SOL}>{fmt(value)}</span> : '') : fmt(value)}
+        </div>
+    );
+
+    return (
+        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
+            {box(ex.total, blank === 'top')}
+            <svg width="92" height="26" style={{ display: 'block' }}>
+                <line x1="46" y1="2" x2="16" y2="24" stroke="#000" strokeWidth="1.5" />
+                <line x1="46" y1="2" x2="76" y2="24" stroke="#000" strokeWidth="1.5" />
+            </svg>
+            <div style={{ display: 'flex', gap: '18px' }}>
+                {box(left, blank === 'left')}
+                {box(right, blank === 'right')}
+            </div>
         </div>
     );
 }

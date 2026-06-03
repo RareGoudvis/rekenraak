@@ -188,6 +188,41 @@ export function recomputeSplitsenExercise(block: MathBlock, ex: SplitsenExercise
     return { total: newTotal, pairs, isManuallyEdited: true };
 }
 
+// Splitsboom = a single split-tree: total on top, two legs (left + right). One slot
+// per item is blank, picked at random from the teacher-selected positions.
+function parseBlankPositions(c: Record<string, unknown>): Array<'top' | 'left' | 'right'> {
+    const list = Array.isArray(c.blankPositions) ? (c.blankPositions as string[]) : [];
+    const valid = list.filter(p => p === 'top' || p === 'left' || p === 'right') as Array<'top' | 'left' | 'right'>;
+    return valid.length ? valid : ['right'];
+}
+
+function generateSplitsboomExercises(block: MathBlock): SplitsenExercise[] {
+    const { maxGetal = 100, operand1Mask = {}, operand2Mask = {}, fixedTotal = null } = block.constraints;
+    const dp = Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0));
+    const scale = Math.pow(10, dp);
+    const positions = parseBlankPositions(block.constraints);
+    const n = block.numberOfExercises;
+    const results: SplitsenExercise[] = [];
+    const used = new Set<string>();
+
+    for (let i = 0; i < n; i++) {
+        let total: number, left: number, attempts = 0;
+        do {
+            total = generateTotal(maxGetal, operand1Mask, fixedTotal, dp);
+            left = generateGiven(total, operand2Mask, dp);
+            attempts++;
+            // Avoid the trivial 0+total tree and duplicates within this block.
+        } while ((used.has(`${Math.round(total * scale)}|${Math.round(left * scale)}`)
+            || (total >= (dp > 0 ? 2 / scale : 2) && (left <= 0 || left >= total))) && attempts < 400);
+        used.add(`${Math.round(total * scale)}|${Math.round(left * scale)}`);
+
+        const right = (Math.round(total * scale) - Math.round(left * scale)) / scale;
+        const blankPos = positions[randInt(0, positions.length - 1)];
+        results.push({ id: rndId(), total, pairs: [{ given: left, answer: right }], blankPos, isManuallyEdited: false });
+    }
+    return results;
+}
+
 export function generateSplitsenExercises(block: MathBlock): SplitsenExercise[] {
     const {
         maxGetal = 10,
@@ -200,6 +235,9 @@ export function generateSplitsenExercises(block: MathBlock): SplitsenExercise[] 
 
     if (layout === 'positie-tabel' || layout === 'positie-benen' || layout === 'positie-math') {
         return generatePlaceValueExercises(block);
+    }
+    if (layout === 'splitsboom') {
+        return generateSplitsboomExercises(block);
     }
 
     // Decimals only for Rooster (basic); verliefde-harten + mathematic stay integer.

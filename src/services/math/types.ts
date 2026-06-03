@@ -71,6 +71,20 @@ export interface SplitsenExercise {
     mathForm?: 'letters' | 'expanded';          // positie-math: 7H+9T+2E  vs  300+70+8
     mathDirection?: 'decompose' | 'compose';    // N=__+__+__  vs  __+__+__=N
     words?: string;                             // positie-tabel: Dutch number-word prompt
+    blankPos?: 'top' | 'left' | 'right';        // splitsboom: which slot the pupil fills
+    isManuallyEdited: boolean;
+}
+
+// Breuken bewerken — symbolic fraction work. One shape covers three subTypes:
+//  gemengd        — improper↔mixed (direction set per item)
+//  gelijknamig    — rewrite two fractions to a common (LCM) denominator
+//  vereenvoudigen — reduce a fraction to lowest terms
+export interface BreukBewerkExercise {
+    id: string;
+    subType: 'gemengd' | 'gelijknamig' | 'vereenvoudigen';
+    direction?: 'naar-gemengd' | 'naar-breuk';   // gemengd: which way to convert
+    inputs: Fraction[];     // the given fraction(s)
+    answers: Fraction[];    // the target fraction(s) the pupil writes
     isManuallyEdited: boolean;
 }
 
@@ -142,10 +156,49 @@ export interface HerleidingExercise {
 // Vergelijken — fill <, > or = between two numbers, or circle the largest/smallest
 export interface VergelijkenExercise {
     id: string;
-    a?: number;           // getallen view
+    a?: number;           // getallen view (numeric value, also used for comparison)
     b?: number;
+    aFrac?: Fraction;     // representaties: set when that side is a breuk (rendered verbatim)
+    bFrac?: Fraction;
     numbers?: number[];   // kiezen view
     target?: string;      // kiezen: 'grootste' | 'kleinste'
+    isManuallyEdited: boolean;
+}
+
+// Meten — measure a line/polyline (lengte meten) or a shape's perimeter (omtrek).
+// Coordinates are in cm so the viewer can draw genuinely to scale (1cm ≈ 37.8px).
+export interface MeetPoint { x: number; y: number; }
+export interface MeetExercise {
+    id: string;
+    kind: 'lijn' | 'veelhoek' | 'cirkel';
+    shape?: string;             // omtrek shape key (driehoek/vierkant/…)
+    points?: MeetPoint[];       // lijn = polyline, veelhoek = closed polygon (cm)
+    sides?: number[];           // side lengths in draw order (cm)
+    radius?: number;            // cirkel (cm)
+    perimeter: number;          // answer: Σ sides, or π·d
+    claim?: number;             // lengte-meten 'gegeven': stated length to judge
+    claimCorrect?: boolean;     // whether the stated claim matches the real length
+    isManuallyEdited: boolean;
+}
+
+// Getalpatronen — a row that follows an operation pattern from the left. The op between
+// value i and i+1 is cycle[i % cycle.length]; `steps` = cycle length (1–4 repeating).
+export interface PatroonStep { op: '+' | '-' | 'x' | ':'; operand: number; }
+export interface PatroonExercise {
+    id: string;
+    values: number[];
+    blankMask: boolean[];        // true = pupil fills this number
+    cycle: PatroonStep[];
+    numberType?: string;
+    isManuallyEdited: boolean;
+}
+
+// Deelbaarheid (kleuren) — colour/circle the multiples of a divisor (+ optional remainder)
+export interface DeelbaarheidKleurExercise {
+    id: string;
+    divisor: number;
+    numbers: number[];
+    cols?: number;               // raster: numbers laid out in a grid this wide
     isManuallyEdited: boolean;
 }
 
@@ -202,8 +255,12 @@ export interface MathBlock {
     geldTeruggevenExercises?: GeldTeruggevenExercise[];
     mabExercises?: MabExercise[];
     ordenenExercises?: OrdenenExercise[];
+    breukBewerkExercises?: BreukBewerkExercise[];
     deelbaarheidExercises?: DeelbaarheidExercise[];
     getallenasExercises?: GetallenasExercise[];
+    patroonExercises?: PatroonExercise[];
+    deelbaarheidKleurExercises?: DeelbaarheidKleurExercise[];
+    meetExercises?: MeetExercise[];
     temperatuurExercises?: TemperatuurExercise[];
     plaatswaardeExercises?: PlaatswaardeExercise[];
     evenOnevenExercises?: EvenOnevenExercise[];

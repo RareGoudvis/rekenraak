@@ -55,7 +55,7 @@ export default function Sidebar() {
     const [aboutOpen, setAboutOpen] = useState(false);
 
     const isSearching = search.trim().length > 0;
-    const tree = useMemo(() => filterTree(APP_STRUCTURE, search), [search]);
+    const tree = useMemo(() => filterTree(APP_STRUCTURE.filter(d => !d.hidden), search), [search]);
 
     // Theme is a single cycling icon (declutters the footer): light → dark → colorblind → light.
     // Icon shows the CURRENT theme; title announces the NEXT one for discoverability.
@@ -94,7 +94,7 @@ export default function Sidebar() {
         <aside className="mac-vibrant" style={S.aside}>
             <div style={S.headerCol}>
                 <button type="button" className="ui-hover" style={S.logoBtn} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
-                    <Wordmark />
+                    <Wordmark height={38} />
                 </button>
             </div>
 
@@ -258,7 +258,7 @@ export default function Sidebar() {
             <div style={S.footer}>
                 <div style={S.footerActions}>
                     <span style={{ ...S.footerText, flex: 1 }}>
-                        Updated: 02/06/2026<br />
+                        Updated: 03/06/2026<br />
                         License: <button type="button" onClick={() => setAboutOpen(true)} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</button>.
                     </span>
                     {!locked && <BaseSettingsPanel />}

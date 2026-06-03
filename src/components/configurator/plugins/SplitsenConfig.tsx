@@ -25,8 +25,9 @@ export default function SplitsenConfig({ block }: Props) {
     } = block.constraints;
 
     const isPositie = typeof layout === 'string' && layout.startsWith('positie');
-    // Decimals: Rooster (basic) + all place-value layouts (not verliefde harten).
-    const decimalsAllowed = layout === 'basic' || (typeof layout === 'string' && layout.startsWith('positie'));
+    const isBoom = layout === 'splitsboom';
+    // Decimals: Rooster (basic) + Splitsboom + all place-value layouts (not verliefde harten).
+    const decimalsAllowed = layout === 'basic' || isBoom || (typeof layout === 'string' && layout.startsWith('positie'));
     const decimalPlaces = decimalsAllowed ? Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0)) : 0;
     const maskPlaces = decimalPlaces > 0 ? getMaskPlaces(maxGetal, 'decimal', decimalPlaces) : getMaskPlaces(maxGetal, 'natural');
 
@@ -50,6 +51,15 @@ export default function SplitsenConfig({ block }: Props) {
         set('mathForms', next.length ? next : mathForms);
     };
 
+    // Splitsboom: which slot(s) may be blank (≥1). Generator picks one at random per item.
+    const blankPositions: string[] = Array.isArray(block.constraints.blankPositions) && block.constraints.blankPositions.length
+        ? block.constraints.blankPositions : ['right'];
+    const toggleBlank = (key: string) => {
+        const has = blankPositions.includes(key);
+        const next = has ? blankPositions.filter(v => v !== key) : [...blankPositions, key];
+        set('blankPositions', next.length ? next : blankPositions);   // keep ≥1
+    };
+
     const toggleMask = (posKey: string) => {
         const cur = operand1Mask || {};
         set('operand1Mask', { ...cur, [posKey]: !cur[posKey] });
@@ -65,9 +75,22 @@ export default function SplitsenConfig({ block }: Props) {
     const maxPresets = isPositie && currentLayout !== 'positie-tabel'
         ? [...MAX_PRESETS, 1000000000]
         : MAX_PRESETS;
+    const BOOM_PRESETS = [10, 20, 100, 1000];   // splitsboom capped at 1 000
 
     return (
         <div style={styles.container}>
+
+            {/* SPLITSBOOM — which slot(s) the pupil fills (random among the selected) */}
+            {isBoom && (
+                <div style={styles.section}>
+                    <label style={styles.label}>Welk getal ontbreekt (mag meerdere):</label>
+                    <div style={styles.buttonGroup}>
+                        {[{ key: 'top', label: 'Bovenaan' }, { key: 'left', label: 'Links' }, { key: 'right', label: 'Rechts' }].map(o => (
+                            <button key={o.key} onClick={() => toggleBlank(o.key)} style={styles.pill(blankPositions.includes(o.key))}>{o.label}</button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* DECIMALEN — decimal place-values (not positietabel / verliefde harten) */}
             {decimalsAllowed && (
@@ -149,7 +172,7 @@ export default function SplitsenConfig({ block }: Props) {
             <div style={styles.section}>
                 <label style={styles.label}>Maximum getal:</label>
                 <div style={styles.buttonGroup}>
-                    {(currentLayout === 'verliefde-harten' ? HEART_PRESETS : maxPresets).map(val => (
+                    {(currentLayout === 'verliefde-harten' ? HEART_PRESETS : isBoom ? BOOM_PRESETS : maxPresets).map(val => (
                         <button
                             key={val}
                             onClick={() => {
@@ -217,9 +240,9 @@ export default function SplitsenConfig({ block }: Props) {
                 </div>
             </div>
 
-            {/* SPECIFIC NUMBER STRUCTURE — getal 2 (given part) */}
+            {/* SPECIFIC NUMBER STRUCTURE — getal 2 (given part / side legs) */}
             <div style={styles.section}>
-                <label style={styles.label}>Specifieke getalopbouw — Ingevuld getal:</label>
+                <label style={styles.label}>{isBoom ? 'Specifieke getalopbouw — Zijgetal' : 'Specifieke getalopbouw — Ingevuld getal'}:</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                     {maskPlaces.map(p => (
                         <button

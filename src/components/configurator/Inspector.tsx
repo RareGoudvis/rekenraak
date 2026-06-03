@@ -703,6 +703,65 @@ export default function Inspector() {
                             </>
                         );
                     })()}
+
+                    {/* ── Getalpatronen: arrow + operator scaffolds ── */}
+                    {activeBlock.typeId === 'getalpatronen' && (() => {
+                        const maxOps = Math.max(0, (c.ticks ?? 6) - 1);
+                        const operatorsShown = Math.min(c.operatorsShown ?? 0, maxOps);
+                        return (
+                            <>
+                                <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                                    <span style={S.switchText}>Pijl + schrijflijn</span>
+                                    <Switch checked={!!c.showArrows} onChange={(v) => updateConstraint('showArrows', v)} aria-label="Pijl + schrijflijn" />
+                                </div>
+                                <div style={S.switchRow}>
+                                    <span style={S.switchText}>Operatoren invullen</span>
+                                    <Switch checked={!!c.showOperators} onChange={(v) => updateConstraint('showOperators', v)} aria-label="Operatoren invullen" />
+                                </div>
+                                {c.showOperators && (
+                                    <>
+                                        <label style={{ ...S.label, marginTop: '8px' }}>Aantal ingevuld: {operatorsShown}</label>
+                                        <input type="range" min={0} max={maxOps} step={1} value={operatorsShown}
+                                            onChange={(e) => updateConstraint('operatorsShown', Number(e.target.value))}
+                                            style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+                                        <label style={{ ...S.label, marginTop: '8px' }}>Operatorweergave</label>
+                                        <div className="seg-group">
+                                            <button className="seg-btn" aria-pressed={(c.operatorStyle ?? 'symbol') === 'symbol'} onClick={() => updateConstraint('operatorStyle', 'symbol')}>Enkel teken</button>
+                                            <button className="seg-btn" aria-pressed={(c.operatorStyle ?? 'symbol') === 'full'} onClick={() => updateConstraint('operatorStyle', 'full')}>Volledig</button>
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        );
+                    })()}
+
+                    {/* ── Meten (lengte-meten + omtrek): scaffold + answer style ── */}
+                    {(activeBlock.typeId === 'lengte-meten' || activeBlock.typeId === 'omtrek') && (() => {
+                        const isOmtrek = activeBlock.typeId === 'omtrek';
+                        // The lengte juist/fout variant has no writing line, so answer options don't apply.
+                        const showAnswerOpts = isOmtrek || (c.measureModel ?? 'meten') === 'meten';
+                        if (!showAnswerOpts) return null;
+                        return (
+                            <>
+                                {isOmtrek && (
+                                    <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                                        <span style={S.switchText}>___ cm bij elke zijde</span>
+                                        <Switch checked={!!c.perSideScaffold} onChange={(v) => updateConstraint('perSideScaffold', v)} aria-label="___ cm bij elke zijde" />
+                                    </div>
+                                )}
+                                <label style={{ ...S.label, marginTop: '12px' }}>Antwoord</label>
+                                <div className="seg-group">
+                                    <button className="seg-btn" aria-pressed={(c.answerMode ?? 'single') === 'single'} onClick={() => updateConstraint('answerMode', 'single')}>Eén lijn</button>
+                                    <button className="seg-btn" aria-pressed={(c.answerMode ?? 'single') === 'sum'} onClick={() => updateConstraint('answerMode', 'sum')}>Som van zijden</button>
+                                </div>
+                                <label style={{ ...S.label, marginTop: '12px' }}>Antwoordeenheid</label>
+                                <div className="seg-group">
+                                    <button className="seg-btn" aria-pressed={(c.answerUnit ?? 'cm') === 'cm'} onClick={() => updateConstraint('answerUnit', 'cm')}>Met cm</button>
+                                    <button className="seg-btn" aria-pressed={(c.answerUnit ?? 'cm') === 'plain'} onClick={() => updateConstraint('answerUnit', 'plain')}>Enkel lijn</button>
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
             </div>
             )}

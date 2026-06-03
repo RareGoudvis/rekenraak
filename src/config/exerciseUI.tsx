@@ -13,8 +13,13 @@ import GeldWisselViewer from '../components/viewer/GeldWisselViewer';
 import GeldTeruggevenViewer from '../components/viewer/GeldTeruggevenViewer';
 import MabViewer from '../components/viewer/MabViewer';
 import OrdenenViewer from '../components/viewer/OrdenenViewer';
+import BreukBewerkViewer from '../components/viewer/BreukBewerkViewer';
 import DeelbaarheidViewer from '../components/viewer/DeelbaarheidViewer';
 import GetallenasViewer from '../components/viewer/GetallenasViewer';
+import GetallenrijenViewer from '../components/viewer/GetallenrijenViewer';
+import MetenViewer from '../components/viewer/MetenViewer';
+import PatroonViewer from '../components/viewer/PatroonViewer';
+import DeelbaarheidKleurViewer from '../components/viewer/DeelbaarheidKleurViewer';
 import TemperatuurViewer from '../components/viewer/TemperatuurViewer';
 import PlaatswaardeViewer from '../components/viewer/PlaatswaardeViewer';
 import EvenOnevenViewer from '../components/viewer/EvenOnevenViewer';
@@ -37,8 +42,14 @@ import GeldWisselConfig from '../components/configurator/plugins/GeldWisselConfi
 import GeldTeruggevenConfig from '../components/configurator/plugins/GeldTeruggevenConfig';
 import MabConfig from '../components/configurator/plugins/MabConfig';
 import OrdenenConfig from '../components/configurator/plugins/OrdenenConfig';
+import BreukBewerkConfig from '../components/configurator/plugins/BreukBewerkConfig';
+import BreukenRangschikkenConfig from '../components/configurator/plugins/BreukenRangschikkenConfig';
 import DeelbaarheidConfig from '../components/configurator/plugins/DeelbaarheidConfig';
 import GetallenasConfig from '../components/configurator/plugins/GetallenasConfig';
+import GetallenrijenConfig from '../components/configurator/plugins/GetallenrijenConfig';
+import MetenConfig from '../components/configurator/plugins/MetenConfig';
+import PatroonConfig from '../components/configurator/plugins/PatroonConfig';
+import DeelbaarheidKleurConfig from '../components/configurator/plugins/DeelbaarheidKleurConfig';
 import TemperatuurConfig from '../components/configurator/plugins/TemperatuurConfig';
 import PlaatswaardeConfig from '../components/configurator/plugins/PlaatswaardeConfig';
 import EvenOnevenConfig from '../components/configurator/plugins/EvenOnevenConfig';
@@ -90,8 +101,15 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig },
 
     'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig },
+    'breuken-bewerken':     { Viewer: BreukBewerkViewer, Config: BreukBewerkConfig },
+    'breuken-rangschikken': { Viewer: OrdenenViewer,     Config: BreukenRangschikkenConfig },
     'deelbaarheid': { Viewer: DeelbaarheidViewer, Config: DeelbaarheidConfig },
+    'getalpatronen': { Viewer: PatroonViewer, Config: PatroonConfig },
+    'deelbaarheid-kleuren': { Viewer: DeelbaarheidKleurViewer, Config: DeelbaarheidKleurConfig },
     'getallenas':   { Viewer: GetallenasViewer,   Config: GetallenasConfig },
+    'getallenrijen':{ Viewer: GetallenrijenViewer, Config: GetallenrijenConfig },
+    'lengte-meten': { Viewer: MetenViewer, Config: MetenConfig },
+    'omtrek':       { Viewer: MetenViewer, Config: MetenConfig },
     'temperatuur':  { Viewer: TemperatuurViewer,  Config: TemperatuurConfig },
     'plaatswaarde': { Viewer: PlaatswaardeViewer, Config: PlaatswaardeConfig },
     'even-oneven':  { Viewer: EvenOnevenViewer,   Config: EvenOnevenConfig },
