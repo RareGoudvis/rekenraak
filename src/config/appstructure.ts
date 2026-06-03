@@ -185,10 +185,9 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'deelbaarheid-kleuren-acc', label: 'Deelbaarheid (kleuren)',
                         children: [
-                            { id: 'deelbaarheid-2-5-10', label: 'Door 2, 5, 10', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [2, 5, 10] } },
-                            { id: 'deelbaarheid-4-8', label: 'Door 4, 8', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [4, 8] } },
-                            { id: 'deelbaarheid-3-6-9', label: 'Door 3, 6, 9', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [3, 6, 9] } },
-                            { id: 'deelbaarheid-gemengd', label: 'Gemengde reeksen', typeId: 'deelbaarheid-kleuren', defaultConstraints: { divisors: [2, 3, 4, 5, 6, 8, 9, 10] } },
+                            { id: 'deelbaarheid-rooster', label: 'Rooster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'strip', divisors: [2, 5, 10] } },
+                            { id: 'deelbaarheid-omcirkelen', label: 'Omcirkelen', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'markeren', divisors: [2, 5, 10] } },
+                            { id: 'deelbaarheid-kleurraster', label: 'Kleurraster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'raster', divisors: [2, 5, 10] } },
                         ],
                     },
                 ],

@@ -157,7 +157,7 @@ const getallenasDefaults = (): Record<string, unknown> => ({
 
 const getallenrijDefaults = (): Record<string, unknown> => ({
     numberType: 'natural', maxGetal: 100, step: 5, direction: 'right', hardMode: false, ticks: 6, numberMask: {},
-    fractionStep: 4, maxTeller: 25,
+    fractionStep: 4, maxTeller: 25, showFrame: true,
 });
 
 const metenDefaults = (): Record<string, unknown> => ({

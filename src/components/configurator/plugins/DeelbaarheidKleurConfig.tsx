@@ -38,7 +38,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                 <label style={styles.label}>Soort:</label>
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('viewMode', 'strip')} style={styles.radioBtn(viewMode === 'strip')}>Rooster</button>
-                    <button onClick={() => set('viewMode', 'markeren')} style={styles.radioBtn(viewMode === 'markeren')}>Markeren</button>
+                    <button onClick={() => set('viewMode', 'markeren')} style={styles.radioBtn(viewMode === 'markeren')}>Omcirkelen</button>
                     <button onClick={() => set('viewMode', 'raster')} style={styles.radioBtn(viewMode === 'raster')}>Kleurraster</button>
                 </div>
             </div>

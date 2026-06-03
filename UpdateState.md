@@ -5,6 +5,8 @@ Most recent entry first.
 
 ---
 
+**2026-06-03** — Post-ship polish: getalpatronen rows now use a 1fr grid (columns align across rows) with bottom-aligned connectors so the `–` sits on the number line. Getallenrijen gained a **Kader tonen** toggle (Differentiatie, default on) to drop the rounded frame. Deelbaarheid (kleuren) sidebar/mass-add variants are now the **view modes** (Rooster / Omcirkelen / Kleurraster) instead of divisor groups (divisors stay configurable); config segment relabelled Markeren → Omcirkelen.
+
 **2026-06-03** — Shipped "Getalbegrip uitbreiden" to dev + main: bumped the sidebar "Updated" date to 03/06/2026.
 
 **2026-06-03** — Fixed deelbaarheid-kleuren: the divisor is now **random per row** (was a fixed rotation that never changed on Genereer), and the **kleurraster** holds **non-repeating random numbers** with a configurable Maximum getal instead of a static 1..N (so the coloured answer actually varies). Markeren numbers now align in a grid; raster cells widened for up to 4-digit numbers.

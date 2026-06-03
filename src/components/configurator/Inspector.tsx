@@ -704,6 +704,14 @@ export default function Inspector() {
                         );
                     })()}
 
+                    {/* ── Getallenrijen: frame toggle ── */}
+                    {activeBlock.typeId === 'getallenrijen' && (
+                        <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                            <span style={S.switchText}>Kader tonen</span>
+                            <Switch checked={c.showFrame !== false} onChange={(v) => updateConstraint('showFrame', v)} aria-label="Kader tonen" />
+                        </div>
+                    )}
+
                     {/* ── Getalpatronen: arrow + operator scaffolds ── */}
                     {activeBlock.typeId === 'getalpatronen' && (() => {
                         const maxOps = Math.max(0, (c.ticks ?? 6) - 1);
