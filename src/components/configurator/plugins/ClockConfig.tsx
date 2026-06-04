@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 import type { ClockType, ExerciseMode, MinuteDirection, HandChoice, TimeCategory } from '../../../services/clock/clockTypes';
 
 interface Props { block: MathBlock; }
@@ -55,7 +56,7 @@ export default function ClockConfig({ block }: Props) {
 
             {/* TIJDSSYSTEEM */}
             <div style={styles.section}>
-                <label style={styles.label}>Tijdssysteem:</label>
+                <SettingLabel text="Tijdssysteem:" info="12-uurnotatie (1–12) of 24-uurnotatie (0–23)." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => updateConstraint('is24hour', false)} style={styles.radioBtn(!is24hour)}>12 uur  (1–12)</button>
                     <button onClick={() => updateConstraint('is24hour', true)} style={styles.radioBtn(is24hour)}>24 uur  (0–23)</button>
@@ -64,7 +65,7 @@ export default function ClockConfig({ block }: Props) {
 
             {/* TIJDSTYPES */}
             <div style={styles.section}>
-                <label style={styles.label}>Tijdstypes:</label>
+                <SettingLabel text="Tijdstypes:" info="Welke tijden mogen voorkomen (uren, halve uren, kwartieren, …)." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {(Object.keys(TIME_TYPE_LABELS) as TimeCategory[]).map(type => (
                         <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: 'var(--text-main)', cursor: 'pointer' }}>
@@ -83,7 +84,7 @@ export default function ClockConfig({ block }: Props) {
             {/* RICHTING (voor nauwkeurig types) */}
             {showMinuteDirection && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Richting:</label>
+                    <SettingLabel text="Richting:" info="Minuten 'over' of 'voor' het uur, of beide." />
                     <div style={styles.buttonGroup}>
                         <button onClick={() => updateConstraint('minuteDirection', 'over')} style={styles.radioBtn(minuteDirection === 'over')}>Over</button>
                         <button onClick={() => updateConstraint('minuteDirection', 'voor')} style={styles.radioBtn(minuteDirection === 'voor')}>Voor</button>
@@ -95,7 +96,7 @@ export default function ClockConfig({ block }: Props) {
             {/* TE TEKENEN WIJZER (analoog + tekenen) */}
             {clockType === 'analoog' && exerciseMode === 'tekenen' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Te tekenen wijzer(s):</label>
+                    <SettingLabel text="Te tekenen wijzer(s):" info="Welke wijzer(s) de leerling zelf moet tekenen." />
                     <div style={styles.buttonGroup}>
                         <button onClick={() => updateConstraint('handChoice', 'uur')} style={styles.radioBtn(handChoice === 'uur')}>Uurwijzer</button>
                         <button onClick={() => updateConstraint('handChoice', 'minuut')} style={styles.radioBtn(handChoice === 'minuut')}>Minutenwijzer</button>

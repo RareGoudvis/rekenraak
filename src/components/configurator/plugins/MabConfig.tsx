@@ -1,6 +1,9 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
+import PopupSelect from '../../ui/PopupSelect';
+import StylePicker from '../StylePicker';
 
 interface Props {
     block: MathBlock;
@@ -47,43 +50,47 @@ export default function MabConfig({ block }: Props) {
     return (
         <div style={styles.container}>
 
-            {/* STYLE */}
+            {/* STYLE — visual variant, so a modal card-gallery with live examples. */}
             <div style={styles.section}>
-                <label style={styles.label}>Stijl:</label>
-                <div style={styles.buttonGroup}>
-                    {STYLE_OPTIONS.map(o => (
-                        <button key={o.val} onClick={() => set('mabStyle', o.val)} style={styles.radioBtn(mabStyle === o.val)}>
-                            {o.label}
-                        </button>
-                    ))}
-                </div>
+                <SettingLabel text="Stijl:" info="Hoe de oefening getoond wordt (symbolisch of met MAB-blokken)." />
+                <StylePicker
+                    typeId={block.typeId}
+                    value={mabStyle}
+                    title="Kies stijl"
+                    options={STYLE_OPTIONS.map(o => ({
+                        value: o.val,
+                        label: o.label,
+                        previewConstraints: { ...block.constraints, mabStyle: o.val },
+                    }))}
+                    onChange={(v) => set('mabStyle', v)}
+                />
             </div>
 
             {/* MAX NUMBER */}
             <div style={styles.section}>
-                <label style={styles.label}>Maximum getal:</label>
-                <div style={styles.buttonGroup}>
-                    {MAX_PRESETS.map(v => (
-                        <button key={v} onClick={() => {
-                            // Drop mask keys that no longer apply to the new range so the
-                            // generator doesn't try to satisfy an impossible constraint.
-                            const allowed = new Set(placeKeysFor(v));
-                            const cleaned: Record<string, boolean> = {};
-                            for (const k of Object.keys(operand1Mask || {})) if (allowed.has(k)) cleaned[k] = operand1Mask[k];
-                            updateBlockSettings(block.id, {
-                                constraints: { ...block.constraints, maxNumber: v, operand1Mask: cleaned },
-                                mabExercises: [],
-                            });
-                        }} style={styles.radioBtn(maxNumber === v)}>
-                            Tot {v.toLocaleString('nl-BE')}
-                        </button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum getal:" info="Het grootste getal dat mag voorkomen." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxNumber}
+                    options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    onChange={(v) => {
+                        // Drop mask keys that no longer apply to the new range so the
+                        // generator doesn't try to satisfy an impossible constraint.
+                        const allowed = new Set(placeKeysFor(v));
+                        const cleaned: Record<string, boolean> = {};
+                        for (const k of Object.keys(operand1Mask || {})) if (allowed.has(k)) cleaned[k] = operand1Mask[k];
+                        updateBlockSettings(block.id, {
+                            constraints: { ...block.constraints, maxNumber: v, operand1Mask: cleaned },
+                            mabExercises: [],
+                        });
+                    }}
+                    ariaLabel="Maximum getal"
+                />
             </div>
 
             {/* SPECIFIC NUMBER GENERATOR — mask */}
             <div style={styles.section}>
-                <label style={styles.label}>Specifieke getalopbouw:</label>
+                <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {keys.map(k => (
                         <button key={k} onClick={() => toggleMask(k)} style={styles.maskBtn(!!operand1Mask?.[k])}>
@@ -91,7 +98,7 @@ export default function MabConfig({ block }: Props) {
                         </button>
                     ))}
                 </div>
-                <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '6px 0 0', fontStyle: 'italic' }}>
+                <p style={styles.hint}>
                     Aangevinkte posities verplicht ≥ 1.
                 </p>
             </div>

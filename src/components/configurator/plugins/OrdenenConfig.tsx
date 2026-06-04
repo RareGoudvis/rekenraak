@@ -2,6 +2,8 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import PopupSelect from '../../ui/PopupSelect';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -44,7 +46,7 @@ export default function OrdenenConfig({ block }: Props) {
         <div style={styles.container}>
             {/* OPERATOR */}
             <div style={styles.section}>
-                <label style={styles.label}>Volgorde:</label>
+                <SettingLabel text="Volgorde:" info="Of de reeksen oplopend, aflopend of door elkaar staan." />
                 <div style={styles.buttonGroup}>
                     {OPERATORS.map(o => (
                         <button key={o.val} onClick={() => set('operatorMode', o.val)} style={styles.radioBtn(operatorMode === o.val)}>
@@ -68,14 +70,14 @@ export default function OrdenenConfig({ block }: Props) {
             {/* MAX — natural/decimal/geheel only (rationals use denominators) */}
             {numberType !== 'rational' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Maximum getal:</label>
-                    <div style={styles.buttonGroup}>
-                        {MAX_PRESETS.map(val => (
-                            <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>
-                                Tot {val.toLocaleString('nl-BE')}
-                            </button>
-                        ))}
-                    </div>
+                    <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de reeksen mag voorkomen." />
+                    <PopupSelect
+                        clampToLowest
+                        value={maxGetal}
+                        options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                        onChange={(v) => set('maxGetal', v)}
+                        ariaLabel="Maximum getal"
+                    />
                 </div>
             )}
 
@@ -95,32 +97,33 @@ export default function OrdenenConfig({ block }: Props) {
             {/* DECIMALEN — decimal depth (tienden/honderdsten/duizendsten) */}
             {numberType === 'decimal' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Decimalen:</label>
-                    <div style={styles.buttonGroup}>
-                        {[1, 2, 3].map(dp => (
-                            <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp}</button>
-                        ))}
-                    </div>
+                    <SettingLabel text="Decimalen:" info="Aantal decimalen achter de komma." />
+                    <PopupSelect
+                        value={decimalPlaces}
+                        options={[1, 2, 3].map(v => ({ value: v, label: String(v) }))}
+                        onChange={(v) => set('decimalPlaces', v)}
+                        ariaLabel="Decimalen"
+                    />
                 </div>
             )}
 
             {/* SPECIFIEKE GETALOPBOUW — masks for natural + decimal */}
             {(numberType === 'natural' || numberType === 'decimal') && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
                             <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask?.[p.key])}>{p.key}</button>
                         ))}
                     </div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>
+                    <p style={styles.hint}>Leeg = vrije opbouw.</p>
                 </div>
             )}
 
             {/* RATIONALE GETALLEN — denominator range + stambreuk / gemengd */}
             {numberType === 'rational' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <SettingLabel text="Specifieke getalopbouw:" info="Stel het bereik van de noemers en het soort breuken in." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Noemer van</span>
                         <input type="number" min={2} max={20} value={minDenominator} onChange={(e) => set('minDenominator', Math.max(2, Number(e.target.value)))} style={numInput} />

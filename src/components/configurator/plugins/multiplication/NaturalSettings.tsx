@@ -2,6 +2,8 @@ import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
+import PopupSelect from '../../../ui/PopupSelect';
+import SettingLabel from '../SettingLabel';
 
 interface Props { block: MathBlock; isDivision?: boolean; }
 
@@ -82,7 +84,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
             {/* TAFELS / DEELTAFELS */}
             {multiplicationMode === 'tafels' && (
                 <div style={{ padding: 'var(--sp-4)', backgroundColor: 'var(--bg-surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)' }}>
-                    <label style={styles.label}>{isDivision ? 'Selecteer delers:' : 'Selecteer tafels:'}</label>
+                    <SettingLabel text={isDivision ? 'Selecteer delers:' : 'Selecteer tafels:'} info={isDivision ? 'Kies de deeltafels die in de oefeningen mogen voorkomen.' : 'Kies de tafels die in de oefeningen mogen voorkomen.'} />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                         {AVAILABLE_TABLES.map(t => (
                             <button key={t} onClick={() => toggleTable(t)} style={styles.maskBtn(selectedTables.includes(t))}>
@@ -90,18 +92,20 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             </button>
                         ))}
                     </div>
-                    <label style={styles.label}>{isDivision ? 'Quotiënt tot:' : 'Vermenigvuldig tot:'}</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={() => updateConstraint('tableLimit', 10)} style={styles.radioBtn(tableLimit === 10)}>Tot 10×</button>
-                        <button onClick={() => updateConstraint('tableLimit', 20)} style={styles.radioBtn(tableLimit === 20)}>Tot 20×</button>
-                    </div>
+                    <SettingLabel text={isDivision ? 'Quotiënt tot:' : 'Vermenigvuldig tot:'} info={isDivision ? 'Tot welk veelvoud van de tafel je deelt (bv. tot 10× of 20×).' : 'Tot welk veelvoud van de tafel je vermenigvuldigt (bv. tot 10× of 20×).'} />
+                    <PopupSelect
+                        value={tableLimit}
+                        options={[10, 20].map(val => ({ value: val, label: `Tot ${val}×` }))}
+                        onChange={(val) => updateConstraint('tableLimit', val)}
+                        ariaLabel={isDivision ? 'Quotiënt tot' : 'Vermenigvuldig tot'}
+                    />
                 </div>
             )}
 
             {/* DELEN MET REST (alleen voor deling) */}
             {isDivision && multiplicationMode === 'met_rest' && (
                 <div style={{ padding: 'var(--sp-4)', backgroundColor: 'var(--bg-surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)' }}>
-                    <label style={styles.label}>Selecteer delers:</label>
+                    <SettingLabel text="Selecteer delers:" info="Kies de delers die in de oefeningen met rest mogen voorkomen." />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                         {MET_REST_TABLES.map(t => (
                             <button key={t} onClick={() => toggleTable(t)} style={styles.maskBtn(selectedTables.includes(t))}>
@@ -109,7 +113,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             </button>
                         ))}
                     </div>
-                    <label style={styles.label}>Niveau:</label>
+                    <SettingLabel text="Niveau:" info="Moeilijkheidsgraad van de deling met rest (zie voorbeeld per niveau)." />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {([
                             { level: 1, label: 'N1', example: 'TE ≤ 10×deler  (Bv. 52 : 6 = 8 r 4)' },
@@ -134,20 +138,20 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                 return (
                     <div>
                         <div style={styles.section}>
-                            <label style={styles.label}>{isDivision ? 'Maximum deeltal:' : 'Maximum uitkomst:'}</label>
-                            <div style={styles.buttonGroup}>
-                                {[1000, 10000, 100000, 1000000].map(val => (
-                                    <button key={val} onClick={() => updateConstraint('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>
-                                        Tot {val.toLocaleString('nl-BE')}
-                                    </button>
-                                ))}
-                            </div>
+                            <SettingLabel text={isDivision ? 'Maximum deeltal:' : 'Maximum uitkomst:'} info={isDivision ? 'Het grootste deeltal (het getal dat gedeeld wordt).' : 'Het grootste antwoord dat mag voorkomen.'} />
+                            <PopupSelect
+                                clampToLowest
+                                value={maxGetal}
+                                options={[1000, 10000, 100000, 1000000].map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                                onChange={(val) => updateConstraint('maxGetal', val)}
+                                ariaLabel={isDivision ? 'Maximum deeltal' : 'Maximum uitkomst'}
+                            />
                         </div>
 
                         {/* Niveau-presets voor deling */}
                         {isDivision && (
                             <div style={styles.section}>
-                                <label style={styles.label}>Niveau preset (deler = 1 cijfer):</label>
+                                <SettingLabel text="Niveau preset (deler = 1 cijfer):" info="Kies een kant-en-klaar niveau voor delingen met een deler van 1 cijfer." />
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                     {[1, 2, 3, 4, 5].map(level => {
                                         const isActive = divisionLevel === level;
@@ -170,7 +174,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                         {/* Maskers: verborgen als een niveau-preset actief is */}
                         {(!isDivision || divisionLevel === 0) && (
                             <div style={styles.section}>
-                                <label style={styles.groupLabel}>Specifieke getalopbouw</label>
+                                <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
 
                                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                                     <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', width: '56px', flexShrink: 0 }}>

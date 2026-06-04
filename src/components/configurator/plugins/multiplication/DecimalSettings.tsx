@@ -2,6 +2,8 @@ import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
+import PopupSelect from '../../../ui/PopupSelect';
+import SettingLabel from '../SettingLabel';
 
 interface Props { block: MathBlock; isDivision?: boolean; }
 
@@ -27,31 +29,30 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
         <div>
             {/* AANTAL DECIMALEN */}
             <div style={styles.section}>
-                <label style={styles.label}>Aantal cijfers na de komma (precisie):</label>
-                <div style={styles.buttonGroup}>
-                    {[1, 2, 3].map(val => (
-                        <button key={val} onClick={() => updateConstraint('decimalPlaces', val)} style={styles.radioBtn(decimalPlaces === val)}>
-                            {val} {val === 1 ? 'cijfer' : 'cijfers'}
-                        </button>
-                    ))}
-                </div>
+                <SettingLabel text="Aantal cijfers na de komma (precisie):" info="Aantal decimalen achter de komma." />
+                <PopupSelect
+                    value={decimalPlaces}
+                    options={[1, 2, 3].map(val => ({ value: val, label: String(val) }))}
+                    onChange={(val) => updateConstraint('decimalPlaces', val)}
+                    ariaLabel="Aantal cijfers na de komma (precisie)"
+                />
             </div>
 
             {/* MAXIMUM UITKOMST */}
             <div style={styles.section}>
-                <label style={styles.label}>Maximum uitkomst:</label>
-                <div style={styles.buttonGroup}>
-                    {[10, 100, 1000].map(val => (
-                        <button key={val} onClick={() => updateConstraint('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>
-                            Tot {val}
-                        </button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum uitkomst:" info="Het grootste antwoord dat mag voorkomen." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxGetal}
+                    options={[10, 100, 1000].map(val => ({ value: val, label: `Tot ${val}` }))}
+                    onChange={(val) => updateConstraint('maxGetal', val)}
+                    ariaLabel="Maximum uitkomst"
+                />
             </div>
 
             {/* SPECIFIEKE GETALOPBOUW */}
             <div style={styles.section}>
-                <label style={styles.label}>Specifieke getalopbouw</label>
+                <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
 
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)', width: '56px', flexShrink: 0 }}>{isDivision ? 'Deeltal:' : 'Factor 1:'}</span>

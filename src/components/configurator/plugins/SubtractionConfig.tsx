@@ -4,6 +4,7 @@ import NaturalSettings from './addition/NaturalSettings';
 import DecimalSettings from './addition/DecimalSettings';
 import RationalSettings from './addition/RationalSettings';
 import { sharedPluginStyles as styles } from './sharedPluginStyles'; // 🔥 Zelfde import!
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -32,7 +33,7 @@ export default function SubtractionConfig({ block }: Props) {
 
             {/* TYPE OEFENING */}
             <div style={styles.section}>
-                <label style={styles.label}>Type oefening:</label>
+                <SettingLabel text="Type oefening:" info="Gewone som (a - b = …) of puntoefening (a - … = c)." />
                 <div style={styles.buttonGroup}>
                     <button
                         onClick={() => updateConstraint('equationType', 'normal')}

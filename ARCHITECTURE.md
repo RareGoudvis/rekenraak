@@ -80,6 +80,7 @@ lives in memory.
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `theme` | `'dark' \| 'light' \| 'colorblind'` | Persisted to localStorage, applied as `data-theme` on `<html>` |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
+| `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point: seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
 | `curriculum` | `CurriculumLock \| null` | Non-null + `locked` = restricted parent mode (whitelisted sidebar + frozen difficulty) — see §13 |
 | `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks the curriculum builder edits via the real config plugins; not rendered/autosaved/historied — see §13 |
 | `_history` / `_historyIndex` | `MathBlock[][]` / `number` | Undo/redo, max `MAX_HISTORY = 50` |
@@ -464,6 +465,8 @@ src/
 │   ├── exerciseUI.tsx           # EXERCISE_UI: typeId → {Viewer, Config} (React)
 │   ├── baseSettings.ts          # BaseSettings + baseApply (global snapshot-on-add, §13)
 │   ├── exerciseCatalog.ts       # flat addable catalog for mass-add / curriculum (§13)
+│   ├── instructionPresets.ts    # quick-pick opdracht-titel texts (generic + per-type suggestions)
+│   ├── gradePresets.ts          # Leerjaar 1–6: base-difficulty seed + leaf grade-gate (soft starting point)
 │   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner
 ├── store/
 │   └── useWorksheetStore.tsx    # single Zustand store: state, actions, history, autosave subscription
@@ -506,10 +509,14 @@ src/
     ├── ui/IconButton.tsx
     ├── ui/Wordmark.tsx         # shared rekenraak wordmark SVG (sidebar header + AboutModal)
     ├── ui/Switch.tsx           # iOS-style toggle (boolean controls)
+    ├── ui/PopupSelect.tsx      # themed single-select pop-up menu (value pickers: max getal, decimalen…)
+    ├── ui/InfoTip.tsx          # ⓘ icon + hover/focus tooltip (one-line per-setting help)
     ├── ui/ModalPortal.tsx      # createPortal(→ body) so modals escape the .mac-vibrant containing-block trap
     ├── configurator/
     │   ├── Inspector.tsx        # mounts EXERCISE_UI[typeId].Config; locked-mode gating; splitsen manual-number boxes
-    │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff helpers
+    │   ├── StylePicker.tsx      # visual-variant modal card-gallery (ExercisePreview cards; e.g. MAB Stijl)
+    │   ├── BridgeControl.tsx    # carry-arrow ('bruggetje') diagram: per-place geen/mag/moet via tappable gap arrows
+    │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff + divider/sectionBox/select + hint/label text tiers
     │   └── plugins/*Config.tsx  # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField.tsx = shared teller/noemer getalopbouw widget)
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components

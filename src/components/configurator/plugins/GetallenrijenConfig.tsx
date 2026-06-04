@@ -4,6 +4,8 @@ import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import FractionMaxField from './FractionMaxField';
+import PopupSelect from '../../ui/PopupSelect';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -61,7 +63,7 @@ export default function GetallenrijenConfig({ block }: Props) {
         <div style={styles.container}>
             {/* DIRECTION — ascending adds, descending subtracts as you read right */}
             <div style={styles.section}>
-                <label style={styles.label}>Richting:</label>
+                <SettingLabel text="Richting:" info="Loopt de reeks stijgend, dalend of beide." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('direction', 'right')} style={styles.radioBtn(direction === 'right')}>↑ Stijgend</button>
                     <button onClick={() => set('direction', 'left')} style={styles.radioBtn(direction === 'left')}>↓ Dalend</button>
@@ -71,7 +73,7 @@ export default function GetallenrijenConfig({ block }: Props) {
 
             {/* BLANK DENSITY */}
             <div style={styles.section}>
-                <label style={styles.label}>Moeilijkheid:</label>
+                <SettingLabel text="Moeilijkheid:" info="Bepaalt hoeveel vakjes leeg blijven." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('hardMode', false)} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
                     <button onClick={() => set('hardMode', true)} style={styles.radioBtn(hardMode)}>Moeilijk</button>
@@ -80,7 +82,7 @@ export default function GetallenrijenConfig({ block }: Props) {
 
             {/* STEP — preset set depends on numberType + custom jump */}
             <div style={styles.section}>
-                <label style={styles.label}>Sprong:</label>
+                <SettingLabel text="Sprong:" info="De stap tussen opeenvolgende getallen." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {isRational
                         ? FRACTION_STEPS.map(d => (
@@ -109,19 +111,21 @@ export default function GetallenrijenConfig({ block }: Props) {
             {/* MAX — not for rationals (range driven by step + cells) */}
             {!isRational && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Maximum getal:</label>
-                    <div style={styles.buttonGroup}>
-                        {MAX_PRESETS.map(val => (
-                            <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                        ))}
-                    </div>
+                    <SettingLabel text="Maximum getal:" info="Het grootste getal in de reeks." />
+                    <PopupSelect
+                        clampToLowest
+                        value={maxGetal}
+                        options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                        onChange={(val) => set('maxGetal', val)}
+                        ariaLabel="Maximum getal"
+                    />
                 </div>
             )}
 
             {/* GEHELE GETALLEN — lower bound */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Ondergrens: {lowerBound.toLocaleString('nl-BE')}</label>
+                    <SettingLabel text={`Ondergrens: ${lowerBound.toLocaleString('nl-BE')}`} info="Het kleinste (negatieve) getal in de reeks." />
                     <input
                         type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound}
@@ -134,7 +138,7 @@ export default function GetallenrijenConfig({ block }: Props) {
             {/* RATIONALE GETALLEN — fraction display toggles */}
             {isRational && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Breuken:</label>
+                    <SettingLabel text="Breuken:" info="Weergave-opties voor breuken in de reeks." />
                     <div style={styles.onOffRow}>
                         <span style={styles.onOffLabel}>Gemengde getallen (1 1/4 i.p.v. 5/4)</span>
                         <button onClick={() => set('allowMixed', !allowMixed)} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
@@ -149,17 +153,17 @@ export default function GetallenrijenConfig({ block }: Props) {
             {/* SPECIFIEKE GETALOPBOUW — place mask (natural/decimal) or teller/noemer (rational) */}
             {!isRational ? (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <SettingLabel text="Specifieke getalopbouw:" info="Welke posities in de getallen mogen voorkomen." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
                             <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                         ))}
                     </div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>
+                    <p style={styles.hint}>Leeg = vrije opbouw.</p>
                 </div>
             ) : (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <SettingLabel text="Specifieke getalopbouw:" info="Hoogste teller en de noemer (sprong) van de breuken." />
                     {/* noemer = de sprong (1/d); teller = hoogste teller in de rij */}
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                         <FractionMaxField
@@ -174,7 +178,7 @@ export default function GetallenrijenConfig({ block }: Props) {
 
             {/* AANTAL CELLEN */}
             <div style={styles.section}>
-                <label style={styles.label}>Aantal vakjes: {ticks}</label>
+                <SettingLabel text={`Aantal vakjes: ${ticks}`} info="Hoeveel vakjes de reeks bevat." />
                 <input type="range" min="4" max="10" step="1" value={ticks}
                     onChange={(e) => set('ticks', Number(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />

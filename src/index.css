@@ -191,9 +191,20 @@ textarea:focus-visible,
   .panel-shell.compact:not(.pinned):focus-within .panel-body { transform: translateX(0); }
 }
 
-/* Mobile/tablet block — hidden on large screens, covers everything on small screens */
+/* Mobile/tablet block — hidden on large screens, covers everything on small screens.
+   When shown it's a teaser: a looping demo of the desktop UI + why-copy + nudge. */
 .mobile-block { display: none; }
 .mobile-block-hint { display: none; }
+/* These only render while the parent .mobile-block is shown (it's display:none otherwise). */
+.mobile-block-demo {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
+  background: #111;
+}
+.mobile-block-title { font-size: 20px; font-weight: 700; }
+.mobile-block > span:not(.mobile-block-title) { max-width: 420px; font-size: 15px; }
 
 @media screen and (max-width: 768px) {
   .mobile-block {
@@ -351,8 +362,9 @@ textarea:focus-visible,
     box-sizing: border-box !important;
     width: 100% !important;
     font-family: 'Azeret Mono', monospace !important;
-    font-size: 9pt !important;
-    color: #666 !important;
+    /* No !important on font-size/color: lets the style-builder's inline footerCustom override them. */
+    font-size: 9pt;
+    color: #666;
   }
 
   /* Sets may split across pages freely. */

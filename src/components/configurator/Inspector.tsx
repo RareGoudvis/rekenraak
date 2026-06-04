@@ -7,6 +7,8 @@ import { DENOMINATION_CATALOGUE, denominationLabel } from '../../services/geld/g
 import { regenerateBlock } from '../../services/generateDispatch';
 import { recomputeSplitsenExercise } from '../../services/splitsen/splitsenGenerator';
 import { formatMathNumber } from '../../services/math/formatters';
+import { suggestionsFor } from '../../config/instructionPresets';
+import StyleBuilderModal from './StyleBuilderModal';
 import Switch from '../ui/Switch';
 
 const HR_STD_TYPES = ['optellen', 'aftrekken', 'vermenigvuldigen', 'delen'];
@@ -21,6 +23,7 @@ const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string
 
 export default function Inspector() {
     const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
 
     const activeBlockId = useWorksheetStore((state) => state.activeBlockId);
@@ -56,6 +59,14 @@ export default function Inspector() {
                     <div style={S.col}>
                         <label style={S.label}>Documenttitel</label>
                         <input style={S.input} value={headerData.titel || ''} onChange={(e) => updateHeader({ titel: e.target.value })} placeholder="Bv. Herhalingstoets" />
+
+                        <button
+                            onClick={() => setStyleBuilderOpen(true)}
+                            style={{ marginTop: '12px', width: '100%', padding: '9px 12px', fontSize: 'var(--text-sm)', fontWeight: 600, borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid var(--accent)', background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                        >
+                            🎨 Stijl aanpassen…
+                        </button>
+                        {styleBuilderOpen && <StyleBuilderModal onClose={() => setStyleBuilderOpen(false)} />}
 
                         <label style={{ ...S.label, marginTop: '12px' }}>Koptekst stijl</label>
                         <div className="seg-group">
@@ -251,6 +262,18 @@ export default function Inspector() {
                                 placeholder="Los op."
                                 disabled={locked}
                             />
+                            {/* Quick-pick standard texts so the titel is one click, not a retype. */}
+                            <select
+                                style={{ ...S.input, marginTop: '6px', cursor: locked ? 'not-allowed' : 'pointer', color: 'var(--text-muted)' }}
+                                value=""
+                                disabled={locked}
+                                onChange={(e) => { if (e.target.value) updateBlockInstruction(activeBlock.id, e.target.value); }}
+                            >
+                                <option value="">Standaardtekst…</option>
+                                {suggestionsFor(activeBlock.typeId).map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
 
                             <label style={{ ...S.label, marginTop: '14px' }}>Score ({activeBlock.totalPoints || 0})</label>
                             <input
@@ -480,7 +503,8 @@ export default function Inspector() {
                             <label style={{ ...S.label, marginTop: '12px' }}>Scaffolding</label>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {([
-                                    { val: 'berekeningslijnen', label: 'Berekeningslijnen', hint: '___ : ___ = ___  en  ___ × ___ = ___' },
+                                    // lijnstuk works in cm (line lengths); hoeveelheid-abstract is unitless.
+                                    { val: 'berekeningslijnen', label: 'Berekeningslijnen', hint: subType === 'lijnstuk' ? '___ cm : ___ = ___ cm  en  ___ × ___ cm = ___ cm' : '___ : ___ = ___  en  ___ × ___ = ___' },
                                     { val: 'structuurlijnen',   label: 'Structuurlijnen',   hint: '___ : ___ = ___   /   ___ × ___ = ___' },
                                     { val: 'blanco',            label: 'Blanco',            hint: '2 lege lijnen' },
                                 ] as const).map(({ val, label, hint }) => {

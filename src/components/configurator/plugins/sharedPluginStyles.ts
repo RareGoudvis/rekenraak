@@ -13,6 +13,44 @@ export const sharedPluginStyles = {
         marginBottom: 'var(--sp-5)'
     } as React.CSSProperties,
 
+    // Hairline between two logical groups (e.g. getalopbouw | bruginstellingen).
+    divider: {
+        height: '1px', border: 'none', background: 'var(--separator)',
+        margin: 'var(--sp-4) 0'
+    } as React.CSSProperties,
+
+    // Grey sub-panel wrapping a self-contained cluster (e.g. tafel selection).
+    sectionBox: {
+        backgroundColor: 'var(--bg-surface-2)',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--separator)',
+        padding: 'var(--sp-4)'
+    } as React.CSSProperties,
+
+    // PopupSelect (dropdown for value pickers). Trigger mirrors radioBtn's calm
+    // accent-soft selected look; menu is a token-styled popover.
+    selectTrigger: {
+        width: '100%', padding: '8px 10px', fontSize: 'var(--text-sm)', fontWeight: 500,
+        borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+        border: '1px solid var(--separator)', backgroundColor: 'var(--bg-surface-2)',
+        color: 'var(--text-main)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-2)',
+        transition: 'border-color var(--dur) var(--ease-out)',
+    } as React.CSSProperties,
+    selectMenu: {
+        position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 50,
+        maxHeight: '260px', overflowY: 'auto',
+        background: 'var(--bg-surface)', border: '1px solid var(--separator)',
+        borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-2)', padding: '4px',
+    } as React.CSSProperties,
+    selectItem: (active: boolean): React.CSSProperties => ({
+        padding: '7px 10px', fontSize: 'var(--text-sm)', borderRadius: 'var(--radius-xs)',
+        cursor: 'pointer', textAlign: 'left',
+        backgroundColor: active ? 'var(--accent-soft)' : 'transparent',
+        color: active ? 'var(--accent)' : 'var(--text-main)',
+        fontWeight: active ? 600 : 500,
+    }),
+
     // Field label — titles a SINGLE control (e.g. "Maximum uitkomst").
     label: {
         display: 'block',
@@ -30,6 +68,25 @@ export const sharedPluginStyles = {
         fontWeight: 600,
         color: 'var(--text-main)',
         margin: '0 0 var(--sp-3)'
+    } as React.CSSProperties,
+
+    // ── Text tiers (use these instead of inline fontSize/color one-offs) ──
+    // Explanatory paragraph under a control ("Leeg = vrije opbouw.").
+    hint: {
+        fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontStyle: 'italic',
+        margin: 'var(--sp-2) 0 0', lineHeight: 1.4,
+    } as React.CSSProperties,
+    // Secondary description INSIDE a radio/option button (deemphasised).
+    optionHint: {
+        fontSize: '10px', opacity: 0.8, fontWeight: 400, lineHeight: 1.3,
+    } as React.CSSProperties,
+    // Inline mini-label ("Getal 1:", "van", "tot", a single place key).
+    miniLabel: {
+        fontSize: 'var(--text-xs)', color: 'var(--text-muted)',
+    } as React.CSSProperties,
+    // Numeric <input> text (the bold figures in fraction / range fields).
+    numInput: {
+        fontSize: 'var(--text-base)', fontWeight: 700,
     } as React.CSSProperties,
 
     buttonGroup: {

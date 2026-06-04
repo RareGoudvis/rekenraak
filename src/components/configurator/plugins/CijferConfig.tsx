@@ -3,6 +3,9 @@ import type { MathBlock, ConstraintType } from '../../../services/math/types';
 import type { CijferConstraints } from '../../../services/math/types';
 import { getMaskPlaces, getBridgePlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import PopupSelect from '../../ui/PopupSelect';
+import BridgeControl from '../BridgeControl';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -42,32 +45,33 @@ export default function CijferConfig({ block }: Props) {
 
             {/* MAXIMUM BEREIK */}
             <div style={styles.section}>
-                <label style={styles.label}>Maximum bereik:</label>
-                <div style={styles.buttonGroup}>
-                    {MAX_RANGES.map(val => (
-                        <button key={val} onClick={() => set('maxRange', val)} style={styles.radioBtn(c.maxRange === val)}>
-                            {val.toLocaleString('nl-BE')}
-                        </button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de oefeningen mag voorkomen." />
+                <PopupSelect
+                    clampToLowest
+                    value={c.maxRange}
+                    options={MAX_RANGES.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    onChange={(v) => set('maxRange', v)}
+                    ariaLabel="Maximum getal"
+                />
             </div>
 
             {/* DECIMAL PLACES */}
             {isDecimal && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Cijfers na de komma:</label>
-                    <div style={styles.buttonGroup}>
-                        {([1, 2, 3] as const).map(dp => (
-                            <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(c.decimalPlaces === dp)}>{dp}</button>
-                        ))}
-                    </div>
+                    <SettingLabel text="Cijfers na de komma:" info="Aantal decimalen achter de komma." />
+                    <PopupSelect
+                        value={c.decimalPlaces ?? 2}
+                        options={[1, 2, 3].map(v => ({ value: v, label: String(v) }))}
+                        onChange={(v) => set('decimalPlaces', v)}
+                        ariaLabel="Cijfers na de komma"
+                    />
                 </div>
             )}
 
             {/* MET REST */}
             {isDivision && !isDecimal && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Uitkomst:</label>
+                    <SettingLabel text="Uitkomst:" info="Of de deling exact opgaat of een rest mag overhouden." />
                     <div style={styles.buttonGroup}>
                         <button onClick={() => set('withRemainder', false)} style={styles.radioBtn(!c.withRemainder)}>Exact</button>
                         <button onClick={() => set('withRemainder', true)} style={styles.radioBtn(!!c.withRemainder)}>Met rest</button>
@@ -77,7 +81,7 @@ export default function CijferConfig({ block }: Props) {
 
             {/* SCHATTING */}
             <div style={styles.section}>
-                <label style={styles.label}>Voorafgaande schatting:</label>
+                <SettingLabel text="Voorafgaande schatting:" info="Voeg een schattingsregel toe vóór de berekening." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('withEstimation', false)} style={styles.radioBtn(!c.withEstimation)}>Geen</button>
                     <button onClick={() => set('withEstimation', true)} style={styles.radioBtn(!!c.withEstimation)}>Toevoegen</button>
@@ -97,34 +101,10 @@ export default function CijferConfig({ block }: Props) {
                 </div>
             )}
 
-            {/* BRUGINSTELLINGEN (+ and - only) */}
-            {hasBridges && bridgePlaces.length > 0 && (
-                <div style={styles.section}>
-                    <label style={styles.groupLabel}>Bruginstellingen</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        {bridgePlaces.map((place) => {
-                            const cur = (c.bridges || {})[place.key] as ConstraintType | undefined;
-                            return (
-                                <div key={place.key} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', width: '28px', flexShrink: 0 }}>{place.key}:</span>
-                                    <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
-                                        {(['FORBIDDEN', 'FREE', 'REQUIRED'] as ConstraintType[]).map(opt => (
-                                            <button key={opt} onClick={() => setBridge(place.key, opt)} style={styles.bridgeBtn((cur ?? 'FREE') === opt)}>
-                                                {opt === 'FORBIDDEN' ? 'GEEN' : opt === 'FREE' ? 'MAG' : 'MOET'}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* SPECIFIEKE GETALOPBOUW */}
+            {/* SPECIFIEKE GETALOPBOUW — getalopbouw precedes bruggen (canonical order) */}
             {maskPlaces.length > 0 && (
                 <div style={styles.section}>
-                    <label style={styles.groupLabel}>Specifieke getalopbouw</label>
+                    <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     {Array.from({ length: n }, (_, i) => {
                         const maskKey = maskKeys[i];
                         const mask = (block.constraints[maskKey] || {}) as Record<string, boolean>;
@@ -141,6 +121,21 @@ export default function CijferConfig({ block }: Props) {
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {/* Divider between the getalopbouw and bruggen groups — only when both render. */}
+            {maskPlaces.length > 0 && hasBridges && bridgePlaces.length > 0 && <hr style={styles.divider} />}
+
+            {/* BRUGINSTELLINGEN (+ and - only) */}
+            {hasBridges && bridgePlaces.length > 0 && (
+                <div style={styles.section}>
+                    <SettingLabel text="Bruginstellingen" info="Per positie: brug (overdracht) mag, moet of niet." />
+                    <BridgeControl
+                        places={bridgePlaces}
+                        bridges={(c.bridges || {}) as Record<string, ConstraintType>}
+                        onChange={(key, val) => setBridge(key, val)}
+                    />
                 </div>
             )}
 

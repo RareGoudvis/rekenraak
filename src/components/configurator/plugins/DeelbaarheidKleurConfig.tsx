@@ -1,6 +1,8 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import PopupSelect from '../../ui/PopupSelect';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -35,7 +37,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
         <div style={styles.container}>
             {/* VIEW MODE */}
             <div style={styles.section}>
-                <label style={styles.label}>Soort:</label>
+                <SettingLabel text="Soort:" info="De weergave: rooster, omcirkelen of kleurraster." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('viewMode', 'strip')} style={styles.radioBtn(viewMode === 'strip')}>Rooster</button>
                     <button onClick={() => set('viewMode', 'markeren')} style={styles.radioBtn(viewMode === 'markeren')}>Omcirkelen</button>
@@ -45,7 +47,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
 
             {/* DIVISORS */}
             <div style={styles.section}>
-                <label style={styles.label}>Delers:</label>
+                <SettingLabel text="Delers:" info="Welke veelvouden gekleurd of gemarkeerd worden." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {DIVISORS.map(d => (
                         <button key={d} onClick={() => toggleDivisor(d)} style={styles.pill(divisors.includes(d))}>{d}</button>
@@ -56,21 +58,23 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
             {isRaster ? (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Maximum getal:</label>
-                        <div style={styles.buttonGroup}>
-                            {[100, 1000].map(val => (
-                                <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                            ))}
-                        </div>
+                        <SettingLabel text="Maximum getal:" info="Het grootste getal in het raster." />
+                        <PopupSelect
+                            clampToLowest
+                            value={maxGetal}
+                            options={[100, 1000].map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            onChange={(val) => set('maxGetal', val)}
+                            ariaLabel="Maximum getal"
+                        />
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Aantal getallen: {rasterCount}</label>
+                        <SettingLabel text={`Aantal getallen: ${rasterCount}`} info="Hoeveel getallen het raster bevat." />
                         <input type="range" min="20" max="120" step="10" value={rasterCount}
                             onChange={(e) => set('rasterCount', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Kolommen: {rasterCols}</label>
+                        <SettingLabel text={`Kolommen: ${rasterCols}`} info="Aantal kolommen in het raster." />
                         <input type="range" min="5" max="12" step="1" value={rasterCols}
                             onChange={(e) => set('rasterCols', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
@@ -79,15 +83,17 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
             ) : (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Maximum getal:</label>
-                        <div style={styles.buttonGroup}>
-                            {MAX_PRESETS.map(val => (
-                                <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                            ))}
-                        </div>
+                        <SettingLabel text="Maximum getal:" info="Het grootste getal in de strook." />
+                        <PopupSelect
+                            clampToLowest
+                            value={maxGetal}
+                            options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            onChange={(val) => set('maxGetal', val)}
+                            ariaLabel="Maximum getal"
+                        />
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Getallen per rij: {perRow}</label>
+                        <SettingLabel text={`Getallen per rij: ${perRow}`} info="Hoeveel getallen er per rij staan." />
                         <input type="range" min="5" max="14" step="1" value={perRow}
                             onChange={(e) => set('perRow', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />

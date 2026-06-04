@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import PopupSelect from '../../ui/PopupSelect';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -45,7 +47,7 @@ export default function GetallenasConfig({ block }: Props) {
         <div style={styles.container}>
             {/* DIRECTION */}
             <div style={styles.section}>
-                <label style={styles.label}>Richting van de pijl:</label>
+                <SettingLabel text="Richting van de pijl:" info="Loopt de getallenas stijgend, dalend of beide." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('direction', 'right')} style={styles.radioBtn(direction === 'right')}>→ Stijgend</button>
                     <button onClick={() => set('direction', 'left')} style={styles.radioBtn(direction === 'left')}>← Dalend</button>
@@ -55,7 +57,7 @@ export default function GetallenasConfig({ block }: Props) {
 
             {/* HARD MODE */}
             <div style={styles.section}>
-                <label style={styles.label}>Moeilijkheid:</label>
+                <SettingLabel text="Moeilijkheid:" info="Makkelijk plaatst ronde getallen, moeilijk niet." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('hardMode', false)} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
                     <button onClick={() => set('hardMode', true)} style={styles.radioBtn(hardMode)}>Moeilijk</button>
@@ -64,7 +66,7 @@ export default function GetallenasConfig({ block }: Props) {
 
             {/* STEP — preset set depends on numberType */}
             <div style={styles.section}>
-                <label style={styles.label}>Sprong:</label>
+                <SettingLabel text="Sprong:" info="De afstand tussen twee streepjes op de as." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {isRational
                         ? FRACTION_STEPS.map(d => (
@@ -93,19 +95,21 @@ export default function GetallenasConfig({ block }: Props) {
             {/* MAX — not for rationals (range driven by step + ticks) */}
             {!isRational && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Maximum getal:</label>
-                    <div style={styles.buttonGroup}>
-                        {MAX_PRESETS.map(val => (
-                            <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                        ))}
-                    </div>
+                    <SettingLabel text="Maximum getal:" info="Het grootste getal op de getallenas." />
+                    <PopupSelect
+                        clampToLowest
+                        value={maxGetal}
+                        options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                        onChange={(val) => set('maxGetal', val)}
+                        ariaLabel="Maximum getal"
+                    />
                 </div>
             )}
 
             {/* GEHELE GETALLEN — lower bound */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Ondergrens: {lowerBound.toLocaleString('nl-BE')}</label>
+                    <SettingLabel text={`Ondergrens: ${lowerBound.toLocaleString('nl-BE')}`} info="Het kleinste (negatieve) getal op de as." />
                     <input
                         type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound}
@@ -118,7 +122,7 @@ export default function GetallenasConfig({ block }: Props) {
             {/* RATIONALE GETALLEN — fraction display toggles */}
             {isRational && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Breuken:</label>
+                    <SettingLabel text="Breuken:" info="Weergave-opties voor breuken op de as." />
                     <div style={styles.onOffRow}>
                         <span style={styles.onOffLabel}>Gemengde getallen (1 1/4 i.p.v. 5/4)</span>
                         <button onClick={() => set('allowMixed', !allowMixed)} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
@@ -132,7 +136,7 @@ export default function GetallenasConfig({ block }: Props) {
 
             {/* TICKS */}
             <div style={styles.section}>
-                <label style={styles.label}>Aantal streepjes: {ticks}</label>
+                <SettingLabel text={`Aantal streepjes: ${ticks}`} info="Hoeveel streepjes de getallenas toont." />
                 <input type="range" min="4" max="10" step="1" value={ticks}
                     onChange={(e) => set('ticks', Number(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />

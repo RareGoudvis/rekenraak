@@ -2,6 +2,8 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
+import PopupSelect from '../../ui/PopupSelect';
 
 interface Props {
     block: MathBlock;
@@ -83,7 +85,7 @@ export default function SplitsenConfig({ block }: Props) {
             {/* SPLITSBOOM — which slot(s) the pupil fills (random among the selected) */}
             {isBoom && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Welk getal ontbreekt (mag meerdere):</label>
+                    <SettingLabel text="Welk getal ontbreekt (mag meerdere):" info="Welke plek(ken) in de splitsboom de leerling invult." />
                     <div style={styles.buttonGroup}>
                         {[{ key: 'top', label: 'Bovenaan' }, { key: 'left', label: 'Links' }, { key: 'right', label: 'Rechts' }].map(o => (
                             <button key={o.key} onClick={() => toggleBlank(o.key)} style={styles.pill(blankPositions.includes(o.key))}>{o.label}</button>
@@ -95,7 +97,7 @@ export default function SplitsenConfig({ block }: Props) {
             {/* DECIMALEN — decimal place-values (not positietabel / verliefde harten) */}
             {decimalsAllowed && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Decimalen:</label>
+                    <SettingLabel text="Decimalen:" info="Aantal cijfers na de komma (0 = enkel gehele getallen)." />
                     <div style={styles.buttonGroup}>
                         {[0, 1, 2, 3].map(dp => (
                             <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
@@ -107,7 +109,7 @@ export default function SplitsenConfig({ block }: Props) {
             {/* POSITIE-BENEN — include any of the 4 (benen/getal × 30/3T) combos */}
             {currentLayout === 'positie-benen' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Soorten (wat mag voorkomen):</label>
+                    <SettingLabel text="Soorten (wat mag voorkomen):" info="Welke notatievormen (benen/getal · 3T/30) mogen voorkomen." />
                     {([
                         [{ key: 'legs-letters', label: 'Benen · 3T' }, { key: 'legs-value', label: 'Benen · 30' }],
                         [{ key: 'top-letters', label: 'Getal · 3T' }, { key: 'top-value', label: 'Getal · 30' }],
@@ -125,14 +127,14 @@ export default function SplitsenConfig({ block }: Props) {
             {currentLayout === 'positie-math' && (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Notatie (wat mag voorkomen):</label>
+                        <SettingLabel text="Notatie (wat mag voorkomen):" info="Met letters (7H+9T+2E) of uitgebreid (300+70+8)." />
                         <div style={styles.buttonGroup}>
                             <button onClick={() => toggleMathForm('letters')} style={styles.pill(mathForms.includes('letters'))}>Letters (7H+9T+2E)</button>
                             <button onClick={() => toggleMathForm('expanded')} style={styles.pill(mathForms.includes('expanded'))}>Uitgebreid (300+70+8)</button>
                         </div>
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Richting:</label>
+                        <SettingLabel text="Richting:" info="Splitsen (942=…) of samenstellen (…=942), of beide." />
                         <div style={styles.buttonGroup}>
                             <button onClick={() => set('mathDirection', 'decompose')} style={styles.radioBtn(mathDirection === 'decompose')}>Splitsen (942=…)</button>
                             <button onClick={() => set('mathDirection', 'compose')} style={styles.radioBtn(mathDirection === 'compose')}>Samenstellen (…=942)</button>
@@ -145,7 +147,7 @@ export default function SplitsenConfig({ block }: Props) {
             {/* ROWS PER BOX — only for basic */}
             {currentLayout === 'basic' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Rijen per box: {rowsPerBox}</label>
+                    <SettingLabel text={`Rijen per box: ${rowsPerBox}`} info="Aantal splitsrijen per oefenvak." />
                     <input
                         type="range" min="2" max="8" step="1"
                         value={rowsPerBox}
@@ -158,7 +160,7 @@ export default function SplitsenConfig({ block }: Props) {
             {/* ROW HEIGHT — only for basic */}
             {currentLayout === 'basic' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Rijhoogte: {rowHeight}px</label>
+                    <SettingLabel text={`Rijhoogte: ${rowHeight}px`} info="Hoogte van elke splitsrij in pixels (meer schrijfruimte)." />
                     <input
                         type="range" min="22" max="70" step="2"
                         value={rowHeight}
@@ -170,41 +172,37 @@ export default function SplitsenConfig({ block }: Props) {
 
             {/* MAXIMUM GETAL */}
             <div style={styles.section}>
-                <label style={styles.label}>Maximum getal:</label>
-                <div style={styles.buttonGroup}>
-                    {(currentLayout === 'verliefde-harten' ? HEART_PRESETS : isBoom ? BOOM_PRESETS : maxPresets).map(val => (
-                        <button
-                            key={val}
-                            onClick={() => {
-                                set('maxGetal', val);
-                                if (fixedTotal && fixedTotal > val) set('fixedTotal', null);
-                                if (val > 100 && currentLayout === 'verliefde-harten') set('layout', 'basic');
-                            }}
-                            style={styles.radioBtn(maxGetal === val)}
-                        >
-                            Tot {val.toLocaleString('nl-BE')}
-                        </button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum getal:" info="Het grootste getal dat gesplitst mag worden." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxGetal}
+                    options={(currentLayout === 'verliefde-harten' ? HEART_PRESETS : isBoom ? BOOM_PRESETS : maxPresets).map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    onChange={(val) => {
+                        set('maxGetal', val);
+                        if (fixedTotal && fixedTotal > val) set('fixedTotal', null);
+                        if (val > 100 && currentLayout === 'verliefde-harten') set('layout', 'basic');
+                    }}
+                    ariaLabel="Maximum getal"
+                />
             </div>
 
             {/* SPECIFIC NUMBER STRUCTURE — place-value layouts (which places the number has) */}
             {isPositie && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
                             <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(operand1Mask?.[p.key])}>{p.key}</button>
                         ))}
                     </div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw. Bv. enkel T, E en t.</p>
+                    <p style={styles.hint}>Leeg = vrije opbouw. Bv. enkel T, E en t.</p>
                 </div>
             )}
 
             {/* FIXED TOTAL OVERRIDE */}
             {!isPositie && (<>
             <div style={styles.section}>
-                <label style={styles.label}>Altijd splitsen van:</label>
+                <SettingLabel text="Altijd splitsen van:" info="Vast getal dat in elke oefening gesplitst wordt (leeg = vrij)." />
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input
                         type="number"
@@ -226,7 +224,7 @@ export default function SplitsenConfig({ block }: Props) {
 
             {/* SPECIFIC NUMBER STRUCTURE — getal 1 (total) */}
             <div style={styles.section}>
-                <label style={styles.label}>Specifieke getalopbouw — Getal bovenaan:</label>
+                <SettingLabel text="Specifieke getalopbouw — Getal bovenaan:" info="Welke posities het te splitsen getal mag bevatten. Leeg = vrij." />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                     {maskPlaces.map(p => (
                         <button
@@ -242,7 +240,7 @@ export default function SplitsenConfig({ block }: Props) {
 
             {/* SPECIFIC NUMBER STRUCTURE — getal 2 (given part / side legs) */}
             <div style={styles.section}>
-                <label style={styles.label}>{isBoom ? 'Specifieke getalopbouw — Zijgetal' : 'Specifieke getalopbouw — Ingevuld getal'}:</label>
+                <SettingLabel text={isBoom ? 'Specifieke getalopbouw — Zijgetal:' : 'Specifieke getalopbouw — Ingevuld getal:'} info="Welke posities het gegeven getal mag bevatten. Leeg = vrij." />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                     {maskPlaces.map(p => (
                         <button

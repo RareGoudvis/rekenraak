@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
+import SettingLabel from '../SettingLabel';
 
 interface Props { block: MathBlock; isDivision?: boolean; }
 
@@ -50,7 +51,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
         <div>
             {/* MOEILIJKHEIDSGRAAD (COMBINATIES) */}
             <div style={styles.section}>
-                <label style={styles.label}>Moeilijkheidsgraad (Combinatie):</label>
+                <SettingLabel text="Moeilijkheidsgraad (Combinatie):" info="Welke soorten getallen je combineert (natuurlijk, breuk of kommagetal)." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <button onClick={() => updateConstraint('fractionMultMode', 'natural_fraction')} style={radioListBtnStyle(fractionMultMode === 'natural_fraction')}>Natuurlijk getal {isDivision ? '÷' : '×'} Breuk</button>
                     <button onClick={() => updateConstraint('fractionMultMode', 'fraction_fraction')} style={radioListBtnStyle(fractionMultMode === 'fraction_fraction')}>Breuk {isDivision ? '÷' : '×'} Breuk</button>
@@ -69,7 +70,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
                 ];
                 return (
                     <div style={styles.section}>
-                        <label style={styles.label}>{isDivision ? 'Deeltal / Deler:' : 'Volgorde:'}</label>
+                        <SettingLabel text={isDivision ? 'Deeltal / Deler:' : 'Volgorde:'} info="In welke volgorde het getal en de breuk staan." />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             {options.map(opt => (
                                 <button key={opt.key} onClick={() => updateConstraint('fractionOrderMode', opt.key)} style={radioListBtnStyle(fractionOrderMode === opt.key || (!fractionOrderMode && opt.key === 'AB'))}>
@@ -83,7 +84,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
 
             {/* DYNAMISCHE GETALOPBOUW */}
             <div style={styles.section}>
-                <label style={styles.label}>Specifieke getalopbouw</label>
+                <SettingLabel text="Specifieke getalopbouw" info="Stel de maximale teller/noemer en de getalopbouw van de factoren in." />
 
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
 

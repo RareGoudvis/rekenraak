@@ -1,19 +1,16 @@
 import { useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, ShareNetwork as Share2, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, ArrowCounterClockwise as RotateCcw, Trash as Trash2 } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, ShareNetwork as Share2, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2 } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
-import { encodeShareLink } from '../../services/persistence';
+import { encodeShareLink, clearAutosave } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
 import MassAddModal from '../massadd/MassAddModal';
 
 interface Props {
     onPrint: (withSolutions: boolean) => void;
     onOpenHelp?: () => void;
-    autosaveTitle?: string | null;          // non-null = show the "vorige werkbundel" row
-    onAcceptAutosave?: () => void;
-    onDeclineAutosave?: () => void;
 }
 
-export default function TopBar({ onPrint, autosaveTitle, onAcceptAutosave, onDeclineAutosave }: Props) {
+export default function TopBar({ onPrint }: Props) {
     const undo = useWorksheetStore((s) => s.undo);
     const redo = useWorksheetStore((s) => s.redo);
     const canUndo = useWorksheetStore((s) => s.canUndo());
@@ -26,6 +23,15 @@ export default function TopBar({ onPrint, autosaveTitle, onAcceptAutosave, onDec
 
     const handleClearBlocks = () => {
         if (window.confirm('Alle blokken wissen?')) clearBlocks();
+    };
+
+    // Start fresh: clear the sheet AND the autosave, otherwise the next load would
+    // silently auto-resume the old worksheet again.
+    const handleNewSheet = () => {
+        if (!hasBlocks || window.confirm('Nieuw blad starten? De huidige werkbundel wordt gewist.')) {
+            clearBlocks();
+            clearAutosave();
+        }
     };
 
     const [massAddOpen, setMassAddOpen] = useState(false);
@@ -51,7 +57,6 @@ export default function TopBar({ onPrint, autosaveTitle, onAcceptAutosave, onDec
 
     return (
         <div className="mac-vibrant" style={S.bar}>
-            {/* Row 1 — actions. Row 2 (autosave prompt) sits below so it never clips the bar. */}
             <div style={S.row}>
                 <div style={S.group}>
                     <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={undo} disabled={!canUndo} />
@@ -59,11 +64,17 @@ export default function TopBar({ onPrint, autosaveTitle, onAcceptAutosave, onDec
                 </div>
 
                 <IconButton
+                    icon={FilePlus}
+                    label="Nieuw blad (huidige werkbundel wissen)"
+                    onClick={handleNewSheet}
+                />
+
+                <IconButton
                     icon={LayoutGrid}
                     label="Meerdere oefeningen tegelijk toevoegen"
                     visibleLabel="Toevoegen"
                     onClick={() => setMassAddOpen(true)}
-                    variant="primary"
+                    variant="secondary"
                 />
 
                 <IconButton
@@ -144,17 +155,6 @@ export default function TopBar({ onPrint, autosaveTitle, onAcceptAutosave, onDec
                 </div>
             </div>
 
-            {autosaveTitle != null && (
-                <div style={S.autosaveRow} onClick={(e) => e.stopPropagation()}>
-                    <div style={S.autosavePill}>
-                        <RotateCcw size={15} style={{ flexShrink: 0, color: 'var(--accent)' }} aria-hidden="true" />
-                        <span style={S.autosaveText}>Vorige werkbundel ("{autosaveTitle}") gevonden. Terughalen?</span>
-                        <button onClick={onAcceptAutosave} style={S.autosavePrimary}>Ja</button>
-                        <button onClick={onDeclineAutosave} style={S.autosaveSecondary}>Nee</button>
-                    </div>
-                </div>
-            )}
-
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
         </div>
     );
@@ -188,24 +188,4 @@ const S = {
         background: 'transparent', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
     menuHint: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 } as React.CSSProperties,
-    // Second row: the autosave prompt gets its own full-width line so it never clips the action row.
-    autosaveRow: { display: 'flex', justifyContent: 'center', width: '100%' } as React.CSSProperties,
-    // Accent-tinted pill so the prompt reads as a distinct, temporary callout.
-    autosavePill: {
-        display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', maxWidth: '100%',
-        padding: '5px 6px 5px 12px', borderRadius: 'var(--radius-md)',
-        backgroundColor: 'transparent', border: '1px solid var(--accent)',
-    } as React.CSSProperties,
-    autosaveText: {
-        fontSize: 'var(--text-sm)', color: 'var(--accent)', fontWeight: 600,
-        overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
-    } as React.CSSProperties,
-    autosavePrimary: {
-        flexShrink: 0, padding: '4px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 700, fontSize: 'var(--text-sm)',
-        border: '1px solid var(--accent)', backgroundColor: 'transparent', color: 'var(--accent)',
-    } as React.CSSProperties,
-    autosaveSecondary: {
-        flexShrink: 0, padding: '4px 12px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: 'var(--text-sm)',
-        border: '1px solid var(--accent)', backgroundColor: 'transparent', color: 'var(--accent)',
-    } as React.CSSProperties,
 };

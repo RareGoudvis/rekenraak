@@ -2,6 +2,8 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
+import PopupSelect from '../../ui/PopupSelect';
+import SettingLabel from './SettingLabel';
 
 export default function GeldConfig({ block }: { block: MathBlock }) {
     const updateBlockSettings = useWorksheetStore(s => s.updateBlockSettings);
@@ -31,19 +33,19 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
 
             {/* ── Maximum getal ── */}
             <div style={S.section}>
-                <label style={S.label}>Maximum getal</label>
-                <div style={S.buttonGroup}>
-                    {[10, 20, 100, 1000].map(v => (
-                        <button key={v} style={S.radioBtn(maxGetal === v)} onClick={() => set('maxGetal', v)}>
-                            Tot {v}
-                        </button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum getal" info="Het grootste bedrag dat mag voorkomen." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxGetal}
+                    options={[10, 20, 100, 1000].map(v => ({ value: v, label: `Tot ${v}` }))}
+                    onChange={(v) => set('maxGetal', v)}
+                    ariaLabel="Maximum getal"
+                />
             </div>
 
             {/* ── Toegestane coupures ── */}
             <div style={S.section}>
-                <label style={S.label}>Toegestane coupures</label>
+                <SettingLabel text="Toegestane coupures" info="Welke biljetten en munten gebruikt mogen worden." />
                 <div style={{ marginBottom: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>Biljetten</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
                     {DENOMINATION_CATALOGUE.filter(d => d.type === 'bill').map(d => (
@@ -73,7 +75,7 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
             {/* ── Geldlayout (herkennen only) ── */}
             {isHerkennen && (
                 <div style={S.section}>
-                    <label style={S.label}>Geldlayout</label>
+                    <SettingLabel text="Geldlayout" info="Toont het geld samen of gescheiden per soort." />
                     <div style={S.buttonGroup}>
                         <button style={S.radioBtn(geldLayout !== 'gescheiden')} onClick={() => set('geldLayout', 'samen')}>Samen</button>
                         <button style={S.radioBtn(geldLayout === 'gescheiden')} onClick={() => set('geldLayout', 'gescheiden')}>Gescheiden</button>

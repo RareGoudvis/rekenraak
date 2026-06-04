@@ -14,6 +14,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     const exercises: EvenOnevenExercise[] = block.evenOnevenExercises || [];
     const subType: string = block.constraints.subType ?? 'rooster';
     const target: string = block.constraints.target ?? 'even';
+    const perRow: number = block.constraints.perRow ?? 10;   // 'Getallen per rij' — fixed grid width
     const gap = block.verticalSpacing || 14;
     const isTarget = (n: number) => (target === 'even' ? n % 2 === 0 : n % 2 !== 0);
 
@@ -66,18 +67,23 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     }
 
     // ── ROOSTER: colour the even (or oneven) numbers ──────────────────────────
+    // Fixed `perRow`-column grid (NOT width-based flex-wrap) so cells align and the
+    // 'Getallen per rij' setting is honoured. marginLeft/-Top:-1 collapse shared borders.
     const cellW = 46, cellH = 34;
     return (
         <FragmentableGrid
             cols={1}
             rowGap={gap}
             items={exercises.map(ex => (
-                <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '0' }}>
+                <div key={ex.id} className="print-exercise" style={{
+                    display: 'grid', gridTemplateColumns: `repeat(${perRow}, ${cellW}px)`, width: 'fit-content',
+                }}>
                     {(ex.numbers || []).map((num, i) => (
                         <div key={i} style={{
                             width: cellW, height: cellH, display: 'flex', alignItems: 'center', justifyContent: 'center',
                             border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: '14px',
-                            marginLeft: i === 0 ? 0 : -1, marginTop: -1,
+                            // collapse with left neighbour (same row) and the row above
+                            marginLeft: i % perRow === 0 ? 0 : -1, marginTop: i >= perRow ? -1 : 0,
                             backgroundColor: showSolutions && isTarget(num) ? FILL : 'white',
                         }}>
                             {formatMathNumber(num)}

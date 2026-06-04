@@ -398,10 +398,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                 {lineEl}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        {showSolutions ? sol(String(cm)) : blank(28)}<span>:</span>{showSolutions ? sol(String(ex.denominator)) : blank(24)}<span>=</span>{showSolutions ? sol(String(partLength)) : blank(28)}
+                        {showSolutions ? sol(String(cm)) : blank(28)}<span>cm</span><span>:</span>{showSolutions ? sol(String(ex.denominator)) : blank(24)}<span>=</span>{showSolutions ? sol(String(partLength)) : blank(28)}<span>cm</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        {showSolutions ? sol(String(ex.numerator)) : blank(24)}<span>×</span>{showSolutions ? sol(String(partLength)) : blank(28)}<span>=</span>{showSolutions ? sol(String(arcLength)) : blank(28)}
+                        {showSolutions ? sol(String(ex.numerator)) : blank(24)}<span>×</span>{showSolutions ? sol(String(partLength)) : blank(28)}<span>cm</span><span>=</span>{showSolutions ? sol(String(arcLength)) : blank(28)}<span>cm</span>
                     </div>
                 </div>
             </div>

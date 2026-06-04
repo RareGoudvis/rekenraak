@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -36,7 +37,7 @@ export default function TemperatuurConfig({ block }: Props) {
                 { key: 'mode2', label: 'Thermometer 2', value: mode2 },
             ]).map(t => (
                 <div key={t.key} style={styles.section}>
-                    <label style={styles.label}>{t.label}:</label>
+                    <SettingLabel text={`${t.label}:`} info="Wat er op deze thermometer gegeven is (kleur, getal of beide)." />
                     <div style={styles.buttonGroup}>
                         {MODES.map(m => (
                             <button key={m.val} onClick={() => set(t.key, m.val)} style={styles.radioBtn(t.value === m.val)}>{m.label}</button>
@@ -47,7 +48,7 @@ export default function TemperatuurConfig({ block }: Props) {
 
             {/* NEGATIVES */}
             <div style={styles.section}>
-                <label style={styles.label}>Negatieve temperaturen:</label>
+                <SettingLabel text="Negatieve temperaturen:" info="Of er ook temperaturen onder nul mogen voorkomen." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('includeNegatives', false)} style={styles.radioBtn(!includeNegatives)}>Nee (0…25°)</button>
                     <button onClick={() => set('includeNegatives', true)} style={styles.radioBtn(includeNegatives)}>Ja (−15…25°)</button>
@@ -57,7 +58,7 @@ export default function TemperatuurConfig({ block }: Props) {
             {/* PER ROW — not for verschil (always 1 per row) */}
             {variant !== 'verschil' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Per rij: {perRow}</label>
+                    <SettingLabel text={`Per rij: ${perRow}`} info="Hoeveel thermometers er naast elkaar staan." />
                     <input type="range" min="2" max="4" step="1" value={perRow}
                         onChange={(e) => set('perRow', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />

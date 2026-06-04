@@ -81,6 +81,7 @@ src/
 │   └── appStyles.ts               # CSS-in-JS inline styles for layout
 ├── services/
 │   ├── generateDispatch.ts        # typeId → generator → store-setter map (single source)
+│   ├── regionStyle.ts             # overlayRegionStyle(base, RegionStyle): style-builder custom-wins overlay (header/footer/titel)
 │   ├── persistence.ts             # Autosave / presets / share-link / file import-export
 │   ├── math/
 │   │   ├── types.ts               # All interfaces: MathBlock, Equation, Fraction, etc.
@@ -126,6 +127,9 @@ src/
 │   ├── exerciseUI.tsx             # EXERCISE_UI: typeId → Viewer/Config (React)
 │   ├── baseSettings.ts            # BaseSettings + baseApply (global snapshot-on-add)
 │   ├── exerciseCatalog.ts         # flat addable catalog for mass-add / curriculum
+│   ├── instructionPresets.ts      # quick-pick opdracht-titel texts (generic + per-type suggestions)
+│   ├── gradePresets.ts            # Leerjaar 1-6: leerplan-grounded base seed + leaf grade-gate (numberType+typeId+label → minLeerjaar)
+│   ├── printPalette.ts            # Curated print-safe color swatches + STYLE_BOUNDS clamps (style builder)
 │   └── version.ts                 # RELEASE_VERSION / RELEASE_SUMMARY for the "Nieuw" banner
 └── components/
     ├── layout/
@@ -145,11 +149,17 @@ src/
     │   ├── IconButton.tsx         # Shared icon button (block controls)
     │   ├── Wordmark.tsx           # Shared rekenraak wordmark SVG (sidebar header + AboutModal)
     │   ├── Switch.tsx             # iOS-style toggle for boolean controls
+    │   ├── PopupSelect.tsx        # Themed single-select pop-up menu (value pickers: max getal, decimalen…)
+    │   ├── InfoTip.tsx            # ⓘ icon + portal tooltip (one-line per-setting help; viewport-clamped)
+    │   ├── Swatch.tsx             # Color swatch + SwatchRow (curated palette picker for the style builder)
     │   └── ModalPortal.tsx        # createPortal(→ body) wrapper so modals escape the .mac-vibrant containing block
     ├── configurator/
     │   ├── Inspector.tsx          # Right panel: routes to doc or block config; locked gating
-    │   ├── sharedPluginStyles.ts  # Shared button/pill/on-off styles for config plugins
-    │   └── plugins/               # One *Config.tsx per exercise family
+    │   ├── StylePicker.tsx        # Visual-variant modal card-gallery (ExercisePreview cards; e.g. MAB Stijl)
+    │   ├── StyleBuilderModal.tsx  # Header/footer/opdracht-titel style builder (size/color/lines/fill/align) + live preview
+    │   ├── BridgeControl.tsx      # 'bruggetje' carry-arrow diagram: per-place geen/mag/moet via tappable arrows
+    │   ├── sharedPluginStyles.ts  # Shared button/pill/on-off/divider/sectionBox/select + text tiers (label/hint/miniLabel/numInput)
+    │   └── plugins/               # One *Config.tsx per exercise family (+ SettingLabel.tsx = label + ⓘ tooltip wrapper)
     │       ├── AdditionConfig.tsx
     │       ├── SubtractionConfig.tsx
     │       ├── MultiplicationConfig.tsx
@@ -267,11 +277,12 @@ Single Zustand store. Everything is in memory (no persistence). Key slices:
 | `showSolutions` | `boolean` | Toggles red solution overlay in preview and print |
 | `theme` | `'dark' \| 'light' \| 'colorblind'` | Persisted to localStorage, applied as `data-theme` on `<html>` |
 | `baseSettings` | `BaseSettings` | Global default difficulty snapshotted into each new block (`baseApply`) — see ARCHITECTURE §13 |
+| `selectedGrade` | `Leerjaar \| null` | Soft leerjaar starting point: seeds `baseSettings` + filters sidebar leaves (`gradePresets`). Not a lock; session-only |
 | `curriculum` | `CurriculumLock \| null` | Non-null + `locked` = restricted parent mode (whitelist sidebar, frozen difficulty) |
 | `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks the curriculum builder edits via the real config plugins |
 | `_history` / `_historyIndex` | `MathBlock[][]` / `number` | Undo/redo stack, max 50 snapshots |
 
-Every mutation that changes `blocks` calls `pushHistory` to snapshot the new state. `updateHeader`, `updateFooter`, `updateDocSettings`, `setShowSolutions`, `setTheme`, `toggleBlockLock`, `updateBaseSettings`, `setDraftBlocks` do **not** push history. Generated exercises are written by one generic action `setExercises(id, field, data)` (field = the registry's `exerciseField`); `patchExercise(id, field, exerciseId, patch)` edits a single element (ordenen click-to-edit, splitsen manual numbers). When `curriculum?.locked`, `updateBlockSettings`/`updateBlockLayout`/`updateBlockInstruction` freeze everything but count + page-break.
+Every mutation that changes `blocks` calls `pushHistory` to snapshot the new state. `updateHeader`, `updateFooter`, `updateDocSettings`, `setShowSolutions`, `setTheme`, `toggleBlockLock`, `updateBaseSettings`, `setSelectedGrade`, `setDraftBlocks` do **not** push history. Generated exercises are written by one generic action `setExercises(id, field, data)` (field = the registry's `exerciseField`); `patchExercise(id, field, exerciseId, patch)` edits a single element (ordenen click-to-edit, splitsen manual numbers). When `curriculum?.locked`, `updateBlockSettings`/`updateBlockLayout`/`updateBlockInstruction` freeze everything but count + page-break.
 
 A store subscription auto-saves the worksheet to localStorage (1.5 s debounce; payload includes `baseSettings` + `curriculum`) — see [persistence.ts](src/services/persistence.ts). **Share/file format is v2** (lz-string compressed `#share=` hash; optional `baseSettings` + `curriculum` for locked curriculum links).
 

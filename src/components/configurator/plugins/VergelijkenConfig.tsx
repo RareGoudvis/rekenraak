@@ -3,7 +3,9 @@ import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { REP_OPTIONS } from '../../../services/vergelijken/representations';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 import FractionMaxField from './FractionMaxField';
+import PopupSelect from '../../ui/PopupSelect';
 
 interface Props { block: MathBlock; }
 
@@ -28,16 +30,18 @@ export default function VergelijkenConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <label style={styles.label}>Maximum getal:</label>
-                <div style={styles.buttonGroup}>
-                    {(isRep ? REP_MAX_PRESETS : MAX_PRESETS).map(val => (
-                        <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum getal:" info="Het grootste getal dat vergeleken wordt." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxGetal}
+                    options={(isRep ? REP_MAX_PRESETS : MAX_PRESETS).map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    onChange={(val) => set('maxGetal', val)}
+                    ariaLabel="Maximum getal"
+                />
             </div>
 
             <div style={styles.section}>
-                <label style={styles.label}>Decimalen:</label>
+                <SettingLabel text="Decimalen:" info="Hoeveel cijfers er na de komma staan." />
                 <div style={styles.buttonGroup}>
                     {(isRep ? [1, 2] : [0, 1, 2, 3]).map(dp => (
                         <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
@@ -53,13 +57,13 @@ export default function VergelijkenConfig({ block }: Props) {
                         { title: 'Rechterkant', rep: rightRep, repKey: 'rightRep', maskKey: 'rightMask' as const, mask: rightMask, fnKey: 'rightFracN', fdKey: 'rightFracD', fn: rightFracN, fd: rightFracD },
                     ]).map((col, i) => (
                         <div key={col.repKey} style={{ flex: 1, minWidth: 0, ...(i === 1 ? { borderLeft: '1px solid var(--separator)', paddingLeft: '14px' } : {}) }}>
-                            <label style={styles.label}>{col.title}:</label>
+                            <SettingLabel text={`${col.title}:`} info="In welke vorm deze kant getoond wordt (breuk, kommagetal, ...)." />
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
                                 {REP_OPTIONS.map(o => (
                                     <button key={o.key} onClick={() => set(col.repKey, o.key)} style={styles.radioBtn(col.rep === o.key)}>{o.label}</button>
                                 ))}
                             </div>
-                            <label style={styles.label}>Getalopbouw:</label>
+                            <SettingLabel text="Getalopbouw:" info="Welke posities (eenheden, tienden, ...) het getal mag bevatten." />
                             {/* A breuk side uses the teller/noemer widget; other reps use the place mask. */}
                             {col.rep === 'breuk' ? (
                                 <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -85,14 +89,14 @@ export default function VergelijkenConfig({ block }: Props) {
             {subType === 'kiezen' && (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Omcirkel het:</label>
+                        <SettingLabel text="Omcirkel het:" info="Of de leerling het grootste of het kleinste getal kiest." />
                         <div style={styles.buttonGroup}>
                             <button onClick={() => set('chooseTarget', 'grootste')} style={styles.radioBtn(chooseTarget === 'grootste')}>Grootste</button>
                             <button onClick={() => set('chooseTarget', 'kleinste')} style={styles.radioBtn(chooseTarget === 'kleinste')}>Kleinste</button>
                         </div>
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Getallen per oefening: {setSize}</label>
+                        <SettingLabel text={`Getallen per oefening: ${setSize}`} info="Uit hoeveel getallen de leerling moet kiezen." />
                         <input type="range" min="3" max="6" step="1" value={setSize}
                             onChange={(e) => set('setSize', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
@@ -102,13 +106,13 @@ export default function VergelijkenConfig({ block }: Props) {
 
             {!isRep && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <SettingLabel text="Specifieke getalopbouw:" info="Welke posities de getallen mogen bevatten. Leeg = vrije opbouw." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {places.map(p => (
                             <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                         ))}
                     </div>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>
+                    <p style={styles.hint}>Leeg = vrije opbouw.</p>
                 </div>
             )}
         </div>

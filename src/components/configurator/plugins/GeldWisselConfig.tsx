@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
+import SettingLabel from './SettingLabel';
 
 const EXERCISE_LABELS = ['links', 'rechts', '3', '4', '5', '6', '7', '8', '9', '10'];
 
@@ -27,7 +28,7 @@ export default function GeldWisselConfig({ block }: { block: MathBlock }) {
                 const label = EXERCISE_LABELS[i] ?? `${i + 1}`;
                 return (
                     <div key={i} style={{ ...S.section, marginBottom: '10px' }}>
-                        <label style={S.label}>Oefening {label}</label>
+                        <SettingLabel text={`Oefening ${label}`} info="Het biljet dat in deze oefening gewisseld wordt." />
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                             {DENOMINATION_CATALOGUE.map(d => (
                                 <span key={d.valueCents} style={S.pill(current === d.valueCents)}

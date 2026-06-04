@@ -2,6 +2,7 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import type { MathBlock, FooterData } from './math/types';
 import type { DocSettings } from '../store/useWorksheetStore';
 import type { BaseSettings } from '../config/baseSettings';
+import type { Leerjaar } from '../config/gradePresets';
 
 // Bump this when the JSON schema gains/loses required fields so older files
 // fail loudly instead of half-loading. Keep the parser strict on read.
@@ -51,6 +52,7 @@ export interface WorksheetFile {
     docSettings: DocSettings;
     baseSettings?: BaseSettings;   // v2+; absent → receiver keeps DEFAULT_BASE
     curriculum?: CurriculumLock;   // v2+; absent → normal (unlocked) editing
+    selectedGrade?: Leerjaar | null;   // v2+; soft leerjaar starting point (absent → null)
 }
 
 export interface SerialisableState {
@@ -59,6 +61,7 @@ export interface SerialisableState {
     footer: FooterData;
     docSettings: DocSettings;
     baseSettings: BaseSettings;
+    selectedGrade?: Leerjaar | null;
 }
 
 export interface AutosaveRecord {
@@ -116,6 +119,7 @@ function buildPayload(state: SerialisableState, mode: WorksheetFileMode = 'full'
         docSettings: state.docSettings,
         baseSettings: state.baseSettings,
         ...(curriculum ? { curriculum } : {}),
+        ...(state.selectedGrade != null ? { selectedGrade: state.selectedGrade } : {}),
     };
 }
 

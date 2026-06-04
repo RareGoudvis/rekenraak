@@ -1,5 +1,6 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 import { ladderFor } from '../../../services/herleidingen/herleidingenGenerator';
 import type { MathBlock } from '../../../services/math/types';
 
@@ -43,7 +44,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
         const idx = Math.max(0, stops.indexOf(val));
         return (
             <div style={styles.section}>
-                <label style={styles.label}>{label}: {val.toLocaleString('nl-BE')}</label>
+                <SettingLabel text={`${label}: ${val.toLocaleString('nl-BE')}`} info="De bovengrens voor de getallen in deze oefeningen." />
                 <input type="range" min={0} max={stops.length - 1} step={1} value={idx}
                     onChange={e => set(key, stops[Number(e.target.value)])}
                     style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
@@ -54,17 +55,17 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <label style={styles.label}>Maateenheden:</label>
+                <SettingLabel text="Maateenheden:" info="Tussen welke eenheden er omgerekend wordt." />
                 <div style={styles.buttonGroup}>
                     {ladder.map(u => (
                         <button key={u.key} onClick={() => toggleUnit(u.key)} style={styles.pill(units.includes(u.key))}>{u.key}</button>
                     ))}
                 </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Kies minstens twee eenheden.</p>
+                <p style={styles.hint}>Kies minstens twee eenheden.</p>
             </div>
 
             <div style={styles.section}>
-                <label style={styles.groupLabel}>Soorten oefeningen</label>
+                <SettingLabel text="Soorten oefeningen" info="Welke vraagvormen er gebruikt worden (getal/eenheid invullen, samengesteld)." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {allFormats.map(f => (
                         <button key={f.key} onClick={() => toggleFormat(f.key)} style={{ ...styles.pill(formats.includes(f.key)), width: '100%', textAlign: 'left' }}>{f.label}</button>
@@ -74,7 +75,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
 
             {hasEnkel && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Maximum getal (enkelvoudig): {maxEnkel.toLocaleString('nl-BE')}</label>
+                    <SettingLabel text={`Maximum getal (enkelvoudig): ${maxEnkel.toLocaleString('nl-BE')}`} info="De bovengrens voor enkelvoudige omzettingen." />
                     <input type="range" min={10} max={1000} step={10} value={Math.min(1000, Math.max(10, maxEnkel))}
                         onChange={e => set('maxEnkel', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
@@ -84,7 +85,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
 
             {hasSam && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Samengesteld in:</label>
+                    <SettingLabel text="Samengesteld in:" info="Of samengestelde getallen 2 eenheden of alle eenheden gebruiken." />
                     <div className="seg-group">
                         <button className="seg-btn" aria-pressed={compoundMode === '2'} onClick={() => set('compoundMode', '2')}>2 eenheden</button>
                         <button className="seg-btn" aria-pressed={compoundMode === 'volledig'} onClick={() => set('compoundMode', 'volledig')}>Volledig</button>
@@ -94,7 +95,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
 
             {hasAre && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Are-omzetting:</label>
+                    <SettingLabel text="Are-omzetting:" info="Enkelvoudig (1-op-1) of via het are-stelsel (ha/a/ca)." />
                     <div className="seg-group">
                         <button className="seg-btn" aria-pressed={areMode === 'enkel'} onClick={() => set('areMode', 'enkel')}>Enkelvoudig</button>
                         <button className="seg-btn" aria-pressed={areMode === 'samengesteld'} onClick={() => set('areMode', 'samengesteld')}>Are-stelsel</button>

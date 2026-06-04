@@ -3,6 +3,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { getMaskPlaces, getBridgePlaces } from '../../services/math/mathEngine';
 import type { BaseBridgePolicy, BaseNumberType } from '../../config/baseSettings';
 import ModalPortal from '../ui/ModalPortal';
+import BridgeControl from '../configurator/BridgeControl';
 
 interface Props {
     onClose: () => void;
@@ -114,24 +115,11 @@ export default function BaseSettingsModal({ onClose }: Props) {
 
                             <div style={S.section}>
                                 <h4 style={S.h4}>Bruginstellingen</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {bridgePlaces.map(place => (
-                                        <div key={place.key} style={S.bridgeRow}>
-                                            <span style={S.bridgeLabel}>{place.key}:</span>
-                                            <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
-                                                {([
-                                                    { val: 'FORBIDDEN', label: 'GEEN' },
-                                                    { val: 'FREE', label: 'MAG' },
-                                                    { val: 'REQUIRED', label: 'MOET' },
-                                                ] as Array<{ val: BaseBridgePolicy; label: string }>).map(({ val, label }) => (
-                                                    <button key={val} onClick={() => setBridge(place.key, val)} style={S.bridgeBtn((base.baseBridges[place.key] || 'FREE') === val)}>
-                                                        {label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <BridgeControl
+                                    places={bridgePlaces}
+                                    bridges={base.baseBridges as Record<string, BaseBridgePolicy>}
+                                    onChange={(key, val) => setBridge(key, val as BaseBridgePolicy)}
+                                />
                             </div>
                         </>
                     )}

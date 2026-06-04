@@ -1,7 +1,10 @@
 import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
-import type { MathBlock, ConstraintType } from '../../../../services/math/types';
+import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
+import SettingLabel from '../SettingLabel';
+import PopupSelect from '../../../ui/PopupSelect';
+import BridgeControl from '../../BridgeControl';
 
 interface Props { block: MathBlock; }
 
@@ -22,25 +25,28 @@ export default function DecimalSettings({ block }: Props) {
     return (
         <div>
             <div style={styles.section}>
-                <label style={styles.label}>Aantal cijfers na de komma:</label>
-                <div style={styles.buttonGroup}>
-                    {[1, 2, 3].map(num => (
-                        <button key={num} onClick={() => updateBlockSettings(block.id, { constraints: { ...block.constraints, decimalPlaces: num } })} style={styles.radioBtn(decimalPlaces === num)}>{num}</button>
-                    ))}
-                </div>
+                <SettingLabel text="Aantal cijfers na de komma:" info="Hoeveel decimalen de getallen hebben (1, 2 of 3)." />
+                <PopupSelect
+                    value={decimalPlaces}
+                    options={[1, 2, 3].map(num => ({ value: num, label: String(num) }))}
+                    onChange={(num) => updateBlockSettings(block.id, { constraints: { ...block.constraints, decimalPlaces: num } })}
+                    ariaLabel="Aantal cijfers na de komma"
+                />
             </div>
 
             <div style={styles.section}>
-                <label style={styles.label}>Maximum uitkomst:</label>
-                <div style={styles.buttonGroup}>
-                    {maxPresets.map(val => (
-                        <button key={val} onClick={() => updateBlockSettings(block.id, { constraints: { ...block.constraints, maxGetal: val } })} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum uitkomst:" info="Het grootste antwoord dat in de oefeningen mag voorkomen." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxGetal}
+                    options={maxPresets.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    onChange={(val) => updateBlockSettings(block.id, { constraints: { ...block.constraints, maxGetal: val } })}
+                    ariaLabel="Maximum uitkomst"
+                />
             </div>
 
             <div style={styles.section}>
-                <label style={styles.groupLabel}>Specifieke getalopbouw</label>
+                <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities (H/T/E/t/h) een cijfer mogen bevatten. Leeg = vrij." />
                 {(['operand1Mask', 'operand2Mask'] as const).map((op, idx) => (
                     <div key={op} style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--sp-2)' }}>
                         <span style={{ fontSize: 'var(--text-xs)', width: '50px' }}>Getal {idx + 1}:</span>
@@ -53,22 +59,15 @@ export default function DecimalSettings({ block }: Props) {
                 ))}
             </div>
 
+            <hr style={styles.divider} />
+
             <div>
-                <label style={styles.groupLabel}>Bruginstellingen</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
-                    {bridgePlaces.map((place) => (
-                        <div key={place.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', width: '40px' }}>{place.key}:</span>
-                            <div style={{ display: 'flex', gap: '4px', flex: 1 }}>
-                                {(['FORBIDDEN', 'FREE', 'REQUIRED'] as ConstraintType[]).map((opt) => (
-                                    <button key={opt} onClick={() => updateBlockSettings(block.id, { constraints: { ...block.constraints, bridges: { ...bridges, [place.key]: opt } } })} style={styles.bridgeBtn((bridges[place.key] || 'FREE') === opt)}>
-                                        {opt === 'FORBIDDEN' ? 'GEEN' : opt === 'FREE' ? 'MAG' : 'MOET'}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <SettingLabel text="Bruginstellingen" info="Bepaal per positie of er een brug (overdracht) mag, moet of niet mag." />
+                <BridgeControl
+                    places={bridgePlaces}
+                    bridges={bridges}
+                    onChange={(key, val) => updateBlockSettings(block.id, { constraints: { ...block.constraints, bridges: { ...bridges, [key]: val } } })}
+                />
             </div>
         </div>
     );

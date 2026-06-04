@@ -3,6 +3,7 @@ import { sharedPluginStyles as S } from './sharedPluginStyles';
 import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
+import SettingLabel from './SettingLabel';
 
 const BILL_DENOMS = DENOMINATION_CATALOGUE.filter(d => d.type === 'bill');
 
@@ -58,7 +59,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
 
             {/* ── Prijsbereik ── */}
             <div style={S.section}>
-                <label style={S.label}>Prijsbereik</label>
+                <SettingLabel text="Prijsbereik" info="Bereik van de prijs waarover teruggegeven wordt." />
                 <div style={S.buttonGroup}>
                     {PRICE_PRESETS.map(p => (
                         <button key={p.max} style={S.radioBtn(activePreset?.max === p.max)}
@@ -71,7 +72,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
 
             {/* ── Centpatroon (getalopbouw equivalent for money) ── */}
             <div style={S.section}>
-                <label style={S.label}>Centpatroon</label>
+                <SettingLabel text="Centpatroon" info="Welke centen in de prijzen kunnen voorkomen." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {CENTEN_OPTIES.map(opt => (
                         <button key={opt.value}
@@ -86,7 +87,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
 
             {/* ── Betalen met ── */}
             <div style={S.section}>
-                <label style={S.label}>Betalen met (biljetten)</label>
+                <SettingLabel text="Betalen met (biljetten)" info="Met welke biljetten de klant kan betalen." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {BILL_DENOMS.map(d => (
                         <span key={d.valueCents} style={S.pill(payWithOptions.includes(d.valueCents))}
@@ -99,7 +100,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
 
             {/* ── Antwoord invullen ── */}
             <div style={S.section}>
-                <label style={S.label}>Antwoord invullen</label>
+                <SettingLabel text="Antwoord invullen" info="Hoe de leerling het wisselgeld noteert." />
                 <div style={S.buttonGroup}>
                     <button style={S.radioBtn(antwoordType === 'schrijven')} onClick={() => set('antwoordType', 'schrijven')}>Schrijven</button>
                     <button style={S.radioBtn(antwoordType === 'tekenen-schrijven')} onClick={() => set('antwoordType', 'tekenen-schrijven')}>Tekenen + schrijven</button>
@@ -108,7 +109,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
 
             {/* ── Antwoordformat ── */}
             <div style={S.section}>
-                <label style={S.label}>Antwoordformat</label>
+                <SettingLabel text="Antwoordformat" info="De schrijfwijze van het bedrag in het antwoord." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {[
                         { value: 'euro-cent', label: '___ euro en ___ cent' },

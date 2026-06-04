@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 import FractionMaxField from './FractionMaxField';
 
 interface Props {
@@ -30,7 +31,7 @@ export default function BreukBewerkConfig({ block }: Props) {
             {/* GEMENGD — conversion direction */}
             {subType === 'gemengd' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Richting:</label>
+                    <SettingLabel text="Richting:" info="Van breuk naar gemengd getal, omgekeerd, of beide." />
                     <div style={styles.buttonGroup}>
                         <button onClick={() => set('direction', 'naar-gemengd')} style={styles.radioBtn(direction === 'naar-gemengd')}>Breuk → gemengd</button>
                         <button onClick={() => set('direction', 'naar-breuk')} style={styles.radioBtn(direction === 'naar-breuk')}>Gemengd → breuk</button>
@@ -43,7 +44,7 @@ export default function BreukBewerkConfig({ block }: Props) {
             {subType === 'vereenvoudigen' && (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Voorinstelling:</label>
+                        <SettingLabel text="Voorinstelling:" info="Snelkeuze voor de moeilijkheidsgraad van de breuken." />
                         <div style={styles.buttonGroup}>
                             <button onClick={() => setMany({ maxNumerator: 20, maxDenominator: 24, tablesOnly: true })} style={styles.radioBtn(tablesOnly)}>Binnen de maaltafels</button>
                             <button onClick={() => setMany({ maxNumerator: 60, maxDenominator: 100, tablesOnly: false })} style={styles.radioBtn(!tablesOnly)}>Grotere breuken</button>
@@ -61,7 +62,7 @@ export default function BreukBewerkConfig({ block }: Props) {
             {/* SPECIFIEKE GETALOPBOUW — fraction teller/noemer caps (gemengd + vereenvoudigen) */}
             {(subType === 'gemengd' || subType === 'vereenvoudigen') && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Specifieke getalopbouw:</label>
+                    <SettingLabel text="Specifieke getalopbouw:" info="Maximale teller en noemer van de breuken." />
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                         <FractionMaxField
                             label="Breuk"
@@ -78,7 +79,7 @@ export default function BreukBewerkConfig({ block }: Props) {
             {subType === 'gelijknamig' && (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Noemer (gegeven breuken):</label>
+                        <SettingLabel text="Noemer (gegeven breuken):" info="Bereik van de noemer van de gegeven breuken." />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>van</span>
                             <input type="number" min={2} max={maxDenominator} value={minDenominator}
@@ -91,7 +92,7 @@ export default function BreukBewerkConfig({ block }: Props) {
                         </div>
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Doelnoemer (leeg = automatisch KGV):</label>
+                        <SettingLabel text="Doelnoemer (leeg = automatisch KGV):" info="Vaste gemeenschappelijke noemer; leeg laat het KGV automatisch kiezen." />
                         <input type="number" min={2} max={100} value={targetDen}
                             placeholder="bv. 12"
                             onChange={(e) => set('targetDen', e.target.value === '' ? '' : Math.max(2, Number(e.target.value)))}

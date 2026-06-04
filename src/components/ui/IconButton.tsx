@@ -1,7 +1,7 @@
 import type { Icon as PhosphorIcon, IconWeight } from '@phosphor-icons/react';
 import { useState, type MouseEvent } from 'react';
 
-export type IconButtonVariant = 'primary' | 'neutral' | 'danger' | 'active';
+export type IconButtonVariant = 'primary' | 'secondary' | 'neutral' | 'danger' | 'active';
 
 interface Props {
     icon: PhosphorIcon;
@@ -50,7 +50,7 @@ export default function IconButton({
 // SF-Symbols feel: emphasis = heavier glyph. Selected/CTA icons sit bold at rest;
 // neutral/danger icons thicken to bold on hover or keyboard focus.
 function iconWeight(variant: IconButtonVariant, emphasized: boolean): IconWeight {
-    if (variant === 'active' || variant === 'primary') return 'bold';
+    if (variant === 'active' || variant === 'primary' || variant === 'secondary') return 'bold';
     return emphasized ? 'bold' : 'regular';
 }
 
@@ -82,6 +82,15 @@ function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: b
                 ...base,
                 backgroundColor: 'var(--accent)',
                 color: 'var(--accent-on)',
+                border: '1px solid var(--accent)',
+            };
+        // Tinted CTA — secondary emphasis (one solid primary per region; this de-escalates
+        // a competing primary like "Toevoegen" without dropping it to plain neutral).
+        case 'secondary':
+            return {
+                ...base,
+                backgroundColor: 'var(--accent-soft)',
+                color: 'var(--accent)',
                 border: '1px solid var(--accent)',
             };
         case 'danger':

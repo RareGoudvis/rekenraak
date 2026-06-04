@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { NIVEAU_MAX, NIVEAU_HINT } from '../../../services/romeinse/romeinseGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 
 interface Props { block: MathBlock; }
 
@@ -15,7 +16,7 @@ export default function RomeinseConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <label style={styles.label}>Niveau:</label>
+                <SettingLabel text="Niveau:" info="Tot welk Romeins getal er gewerkt wordt." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {Object.keys(NIVEAU_MAX).map(k => {
                         const n = Number(k);

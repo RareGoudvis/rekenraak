@@ -2,6 +2,8 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import PopupSelect from '../../ui/PopupSelect';
+import SettingLabel from './SettingLabel';
 
 interface Props { block: MathBlock; }
 
@@ -21,31 +23,34 @@ export default function PlaatswaardeConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <label style={styles.label}>Maximum getal:</label>
-                <div style={styles.buttonGroup}>
-                    {MAX_PRESETS.map(val => (
-                        <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de oefeningen mag voorkomen." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxGetal}
+                    options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    onChange={(v) => set('maxGetal', v)}
+                    ariaLabel="Maximum getal"
+                />
             </div>
 
             <div style={styles.section}>
-                <label style={styles.label}>Decimalen:</label>
-                <div style={styles.buttonGroup}>
-                    {[0, 1, 2, 3].map(dp => (
-                        <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
-                    ))}
-                </div>
+                <SettingLabel text="Decimalen:" info="Aantal decimalen achter de komma." />
+                <PopupSelect
+                    value={decimalPlaces}
+                    options={[0, 1, 2, 3].map(v => ({ value: v, label: v === 0 ? 'Geen' : String(v) }))}
+                    onChange={(v) => set('decimalPlaces', v)}
+                    ariaLabel="Decimalen"
+                />
             </div>
 
             <div style={styles.section}>
-                <label style={styles.label}>Specifieke getalopbouw:</label>
+                <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     {places.map(p => (
                         <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                     ))}
                 </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>Leeg = vrije opbouw.</p>
+                <p style={styles.hint}>Leeg = vrije opbouw.</p>
             </div>
         </div>
     );

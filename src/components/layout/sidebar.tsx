@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { Question as HelpCircle, Heart, Sun, Moon, CircleHalf as Contrast, ChatText as MessageSquare, Plus } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
+import PopupSelect from '../ui/PopupSelect';
 import HelpModal from './HelpModal';
 import AboutModal from './AboutModal';
 import Wordmark from '../ui/Wordmark';
@@ -38,11 +40,37 @@ function filterTree(domains: Domain[], query: string): Domain[] {
     return result;
 }
 
+// Soft leerjaar filter: drop leaves above the chosen grade and prune now-empty
+// parents. grade == null → unchanged (Alle leerjaren).
+function filterByGrade(domains: Domain[], grade: Leerjaar | null): Domain[] {
+    if (grade == null) return domains;
+    const result: Domain[] = [];
+    for (const dom of domains) {
+        const subs = [];
+        for (const sub of dom.subdomains) {
+            const types = [];
+            for (const type of sub.types) {
+                if (type.children) {
+                    const kids = type.children.filter(l => leafAllowedForGrade(l, grade));
+                    if (kids.length > 0) types.push({ ...type, children: kids });
+                } else if (leafAllowedForGrade(type, grade)) {
+                    types.push(type);
+                }
+            }
+            if (types.length > 0) subs.push({ ...sub, types });
+        }
+        if (subs.length > 0) result.push({ ...dom, subdomains: subs });
+    }
+    return result;
+}
+
 export default function Sidebar() {
     const addBlockFromType = useWorksheetStore((state) => state.addBlockFromType);
     const theme = useWorksheetStore((state) => state.theme);
     const setTheme = useWorksheetStore((state) => state.setTheme);
     const curriculum = useWorksheetStore((state) => state.curriculum);
+    const selectedGrade = useWorksheetStore((state) => state.selectedGrade);
+    const setSelectedGrade = useWorksheetStore((state) => state.setSelectedGrade);
     const locked = !!curriculum?.locked;
 
     const [openSubdomain, setOpenSubdomain] = useState<string | null>(null);
@@ -55,7 +83,10 @@ export default function Sidebar() {
     const [aboutOpen, setAboutOpen] = useState(false);
 
     const isSearching = search.trim().length > 0;
-    const tree = useMemo(() => filterTree(APP_STRUCTURE.filter(d => !d.hidden), search), [search]);
+    const tree = useMemo(
+        () => filterByGrade(filterTree(APP_STRUCTURE.filter(d => !d.hidden), search), selectedGrade),
+        [search, selectedGrade],
+    );
 
     // Theme is a single cycling icon (declutters the footer): light → dark → colorblind → light.
     // Icon shows the CURRENT theme; title announces the NEXT one for discoverability.
@@ -140,6 +171,16 @@ export default function Sidebar() {
                 <button className="ui-icon-btn" style={S.footerIconBtn} onClick={() => setHelpOpen(true)} title="Help / uitleg" aria-label="Help">
                     <HelpCircle size={16} />
                 </button>
+            </div>
+
+            {/* Leerjaar — soft starting point: seeds base difficulty + hides later-grade leaves. */}
+            <div style={S.gradeWrap}>
+                <PopupSelect
+                    value={selectedGrade ?? 0}
+                    options={[{ value: 0, label: 'Alle leerjaren' }, ...LEERJAREN.map(g => ({ value: g, label: `Leerjaar ${g}` }))]}
+                    onChange={(v) => setSelectedGrade(v === 0 ? null : (v as Leerjaar))}
+                    ariaLabel="Leerjaar kiezen"
+                />
             </div>
 
             <hr style={S.divider} />
@@ -287,6 +328,7 @@ const S = {
     logoBtn: { background: 'transparent', border: 'none', padding: '2px 4px', margin: '-2px -4px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex' } as React.CSSProperties,
     divider: { border: 'none', height: '1px', backgroundColor: 'var(--separator)', margin: '0 var(--sp-4)' } as React.CSSProperties,
     searchWrap: { padding: 'var(--sp-2) var(--sp-4)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' } as React.CSSProperties,
+    gradeWrap: { padding: '0 var(--sp-4) var(--sp-2)' } as React.CSSProperties,
     searchInput: {
         flex: 1, padding: '8px 12px', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
         backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-sm)',

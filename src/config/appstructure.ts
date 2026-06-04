@@ -4,6 +4,7 @@ export interface LeafExercise {
     typeId: string;
     defaultConstraints?: Record<string, unknown>;
     placeholder?: boolean;
+    minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // explicit grade gate; else inferred (gradePresets)
 }
 
 export interface ExerciseType {
@@ -15,6 +16,7 @@ export interface ExerciseType {
     // Accordion: has children, no typeId
     children?: LeafExercise[];
     placeholder?: boolean;
+    minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // leaf-type grade gate (see gradePresets)
 }
 
 export interface Subdomain {
@@ -128,9 +130,6 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid' } },
                     { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' } },
                     { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' } },
-                    { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' } },
-                    { id: 'breuken-gelijknamig', label: 'Gelijknamig maken', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gelijknamig' } },
-                    { id: 'breuken-vereenvoudigen', label: 'Vereenvoudigen', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'vereenvoudigen' } },
                     { id: 'breuken-rangschikken', label: 'Breuken rangschikken', typeId: 'breuken-rangschikken' },
                 ],
             },
@@ -164,24 +163,19 @@ export const APP_STRUCTURE: Domain[] = [
                 ],
             },
             {
-                id: 'veelvouden-delers',
-                label: 'Veelvouden en delers',
+                id: 'even-oneven',
+                label: 'Even en oneven',
                 types: [
-                    { id: 'deelbaarheid-veelvouden', label: 'Veelvouden aanvullen', typeId: 'deelbaarheid', defaultConstraints: { layout: 'veelvouden' } },
+                    { id: 'even-oneven-rooster', label: 'Rooster kleuren', typeId: 'even-oneven', defaultConstraints: { subType: 'rooster' } },
+                    { id: 'even-oneven-cirkels', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' } },
                 ],
             },
             {
-                id: 'deelbaarheid',
-                label: 'Deelbaarheid',
+                id: 'veelvouden-deelbaarheid',
+                label: 'Veelvouden en deelbaarheid',
                 types: [
+                    { id: 'deelbaarheid-veelvouden', label: 'Veelvouden aanvullen', typeId: 'deelbaarheid', defaultConstraints: { layout: 'veelvouden' } },
                     { id: 'deelbaarheid-tabel', label: 'Deelbaarheidstabel', typeId: 'deelbaarheid', defaultConstraints: { layout: 'tabel' } },
-                    {
-                        id: 'getalbegrip-even-oneven', label: 'Even en oneven',
-                        children: [
-                            { id: 'even-oneven-rooster', label: 'Rooster kleuren', typeId: 'even-oneven', defaultConstraints: { subType: 'rooster' } },
-                            { id: 'even-oneven-cirkels', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' } },
-                        ],
-                    },
                     {
                         id: 'deelbaarheid-kleuren-acc', label: 'Deelbaarheid (kleuren)',
                         children: [
@@ -223,7 +217,6 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'hr-std-optellen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-optellen-dec', label: 'Decimale getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'decimal' } },
-                            { id: 'hr-std-optellen-rat', label: 'Rationale getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'rational' } },
                         ],
                     },
                     {
@@ -232,7 +225,6 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'hr-std-aftrekken-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-aftrekken-dec', label: 'Decimale getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'decimal' } },
-                            { id: 'hr-std-aftrekken-rat', label: 'Rationale getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'rational' } },
                         ],
                     },
                     {
@@ -241,7 +233,6 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'hr-std-vermenigvuldigen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-vermenigvuldigen-dec', label: 'Decimale getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'decimal' } },
-                            { id: 'hr-std-vermenigvuldigen-rat', label: 'Rationale getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'rational' } },
                         ],
                     },
                     {
@@ -250,7 +241,6 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'hr-std-delen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-delen-dec', label: 'Decimale getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'decimal' } },
-                            { id: 'hr-std-delen-rat', label: 'Rationale getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'rational' } },
                         ],
                     },
                 ],
@@ -316,6 +306,47 @@ export const APP_STRUCTURE: Domain[] = [
                 placeholder: true,
                 types: [ph('controleren-negenproef', 'Negenproef / omgekeerde bewerking')],
             },
+            {
+                id: 'bewerkingen-breuken',
+                label: 'Bewerkingen met breuken',
+                types: [
+                    // Fraction arithmetic (+ − × :) — leerplan "Bewerkingen met breuken", introduced L4.
+                    { id: 'hr-std-optellen-rat', label: 'Optellen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4 },
+                    { id: 'hr-std-aftrekken-rat', label: 'Aftrekken', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4 },
+                    { id: 'hr-std-vermenigvuldigen-rat', label: 'Vermenigvuldigen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4 },
+                    { id: 'hr-std-delen-rat', label: 'Delen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4 },
+                    { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' } },
+                    { id: 'breuken-gelijknamig', label: 'Gelijknamig maken', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gelijknamig' } },
+                    { id: 'breuken-vereenvoudigen', label: 'Vereenvoudigen', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'vereenvoudigen' } },
+                ],
+            },
+        ],
+    },
+    {
+        id: 'meetkunde',
+        label: 'Meetkunde',
+        accentVar: '--accent-meetkunde',
+        subdomains: [
+            {
+                id: 'vormleer',
+                label: 'Vormleer',
+                placeholder: true,
+                types: [
+                    phAcc('vormleer-punt-lijn', 'Punt / lijn / rechte', [
+                        phLeaf('vormleer-punt-lijn-herkennen', 'Herkennen'),
+                        phLeaf('vormleer-punt-lijn-tekenen', 'Tekenen'),
+                    ]),
+                    phAcc('vormleer-hoeken', 'Hoeken', [
+                        phLeaf('vormleer-hoeken-herkennen', 'Herkennen'),
+                        phLeaf('vormleer-hoeken-tekenen', 'Tekenen'),
+                    ]),
+                    phAcc('vormleer-vlakke-figuren', 'Vlakke figuren', [
+                        phLeaf('vormleer-driehoeken-hoeken', 'Driehoeken (volgens hoeken)'),
+                        phLeaf('vormleer-driehoeken-zijden', 'Driehoeken (volgens zijden)'),
+                        phLeaf('vormleer-vierhoeken', 'Vierhoeken'),
+                    ]),
+                ],
+            },
         ],
     },
     {
@@ -324,8 +355,8 @@ export const APP_STRUCTURE: Domain[] = [
         accentVar: '--accent-metendrekenen',
         subdomains: [
             {
-                id: 'kloklezen',
-                label: 'Kloklezen',
+                id: 'tijd',
+                label: 'Tijdstip en tijdsduur',
                 types: [
                     {
                         id: 'klok-analoog', label: 'Analoge klok',
@@ -342,6 +373,8 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'klok-digitaal-tekenen', label: 'Tekenen', typeId: 'klok-kloklezen', defaultConstraints: { clockType: 'digitaal', exerciseMode: 'tekenen' } },
                         ],
                     },
+                    ph('tijdsduur-berekenen', 'Tijdsduur berekenen'),
+                    ph('kalender-datum', 'Kalender / datum lezen'),
                 ],
             },
             {
@@ -365,18 +398,6 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'temperatuur-aflezen', label: 'Meter aflezen', typeId: 'temperatuur', defaultConstraints: { variant: 'aflezen' } },
                     { id: 'temperatuur-verschil', label: 'Verschil', typeId: 'temperatuur', defaultConstraints: { variant: 'verschil', mode1: 'gekleurd', mode2: 'getal' } },
                 ],
-            },
-            {
-                id: 'tijdsduur',
-                label: 'Tijdsduur',
-                placeholder: true,
-                types: [ph('tijdsduur-berekenen', 'Tijdsduur berekenen')],
-            },
-            {
-                id: 'kalender',
-                label: 'Kalender',
-                placeholder: true,
-                types: [ph('kalender-datum', 'Kalender / datum lezen')],
             },
             {
                 id: 'lengte-oppervlakte',
@@ -407,33 +428,6 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'herleidingen-inhoud', label: 'Inhoud', typeId: 'herleidingen', defaultConstraints: { measure: 'inhoud', units: ['l', 'dl', 'cl', 'ml'] } },
                     { id: 'herleidingen-massa', label: 'Massa', typeId: 'herleidingen', defaultConstraints: { measure: 'massa', units: ['kg', 'dag', 'g', 'dg'] } },
                     { id: 'herleidingen-oppervlakte', label: 'Oppervlakte', typeId: 'herleidingen', defaultConstraints: { measure: 'oppervlakte', units: ['m²', 'dm²', 'cm²', 'a', 'ca', 'ha'] } },
-                ],
-            },
-        ],
-    },
-    {
-        id: 'meetkunde',
-        label: 'Meetkunde',
-        accentVar: '--accent-meetkunde',
-        subdomains: [
-            {
-                id: 'vormleer',
-                label: 'Vormleer',
-                placeholder: true,
-                types: [
-                    phAcc('vormleer-punt-lijn', 'Punt / lijn / rechte', [
-                        phLeaf('vormleer-punt-lijn-herkennen', 'Herkennen'),
-                        phLeaf('vormleer-punt-lijn-tekenen', 'Tekenen'),
-                    ]),
-                    phAcc('vormleer-hoeken', 'Hoeken', [
-                        phLeaf('vormleer-hoeken-herkennen', 'Herkennen'),
-                        phLeaf('vormleer-hoeken-tekenen', 'Tekenen'),
-                    ]),
-                    phAcc('vormleer-vlakke-figuren', 'Vlakke figuren', [
-                        phLeaf('vormleer-driehoeken-hoeken', 'Driehoeken (volgens hoeken)'),
-                        phLeaf('vormleer-driehoeken-zijden', 'Driehoeken (volgens zijden)'),
-                        phLeaf('vormleer-vierhoeken', 'Vierhoeken'),
-                    ]),
                 ],
             },
         ],

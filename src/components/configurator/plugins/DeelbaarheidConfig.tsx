@@ -1,6 +1,8 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import PopupSelect from '../../ui/PopupSelect';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -35,7 +37,7 @@ export default function DeelbaarheidConfig({ block }: Props) {
             {layout === 'tabel' ? (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Deelbaar door:</label>
+                        <SettingLabel text="Deelbaar door:" info="Welke delers in de oefening gecontroleerd worden." />
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {DIVISOR_OPTIONS.map(d => (
                                 <button key={d} onClick={() => toggleDivisor(d)} style={styles.radioBtn(divisors.includes(d))}>{d}</button>
@@ -43,30 +45,32 @@ export default function DeelbaarheidConfig({ block }: Props) {
                         </div>
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Maximum getal:</label>
-                        <div style={styles.buttonGroup}>
-                            {MAX_PRESETS.map(val => (
-                                <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                            ))}
-                        </div>
+                        <SettingLabel text="Maximum getal:" info="Het grootste getal dat gecontroleerd wordt." />
+                        <PopupSelect
+                            clampToLowest
+                            value={maxGetal}
+                            options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            onChange={(val) => set('maxGetal', val)}
+                            ariaLabel="Maximum getal"
+                        />
                     </div>
                 </>
             ) : (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Veelvouden van: {base}</label>
+                        <SettingLabel text={`Veelvouden van: ${base}`} info="Het getal waarvan de veelvouden gezocht worden." />
                         <input type="range" min="2" max="25" step="1" value={base}
                             onChange={(e) => set('base', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Aantal getallen: {terms}</label>
+                        <SettingLabel text={`Aantal getallen: ${terms}`} info="Hoeveel getallen in de reeks staan." />
                         <input type="range" min="4" max="12" step="1" value={terms}
                             onChange={(e) => set('terms', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
                     </div>
                     <div style={styles.section}>
-                        <label style={styles.label}>Reeds ingevuld: {givenCount}</label>
+                        <SettingLabel text={`Reeds ingevuld: ${givenCount}`} info="Hoeveel getallen al voorgedrukt staan." />
                         <input type="range" min="1" max={Math.max(1, terms - 1)} step="1" value={givenCount}
                             onChange={(e) => set('givenCount', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />

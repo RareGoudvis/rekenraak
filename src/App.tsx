@@ -11,7 +11,8 @@ import IconButton from './components/ui/IconButton';
 import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
-import { loadAutosave, clearAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
+import { overlayRegionStyle } from './services/regionStyle';
+import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from './store/useWorksheetStore';
 import { RELEASE_VERSION } from './config/version';
 import type { MathBlock } from './services/math/types';
@@ -81,7 +82,6 @@ export default function App() {
     try { localStorage.setItem('rekenraak_tour_seen_v1', '1'); } catch { /* ignore */ }
     setTourOpen(false);
   };
-  const [autosaveOffer, setAutosaveOffer] = useState<{ savedAt: string; titel: string } | null>(null);
   const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
 
   // Boot-time hooks: share-link, autosave-restore offer, release-banner check.
@@ -103,13 +103,11 @@ export default function App() {
       window.history.replaceState(null, '', window.location.pathname);
       return;
     }
-    // 2. Auto-save: only offer when current sheet is empty (fresh tab).
+    // 2. Auto-resume: silently restore the last session on a fresh tab so the user
+    // picks up where they left off. "Nieuw blad" (TopBar) clears it to start over.
     const auto = loadAutosave();
     if (auto && useWorksheetStore.getState().blocks.length === 0) {
-      // Boot-time one-shot offer (runs once on mount) — not a render-driven update,
-      // so the cascading-render concern this rule guards against doesn't apply.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAutosaveOffer({ savedAt: auto.savedAt, titel: auto.payload.header?.titel || 'Naamloos' });
+      loadWorksheet(auto.payload);
     }
     // 3. Release banner: shown until user dismisses this exact version.
     try {
@@ -124,15 +122,6 @@ export default function App() {
     document.title = t ? `${t} — Rekenraak` : 'Rekenraak';
   }, [headerData?.titel]);
 
-  const acceptAutosave = () => {
-    const auto = loadAutosave();
-    if (auto) loadWorksheet(auto.payload);
-    setAutosaveOffer(null);
-  };
-  const declineAutosave = () => {
-    clearAutosave();
-    setAutosaveOffer(null);
-  };
   const dismissReleaseBanner = () => {
     try { localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION); } catch { /* ignore */ }
     setReleaseBannerVisible(false);
@@ -173,8 +162,10 @@ export default function App() {
   return (
     <>
     <div className="mobile-block">
-      <span>Deze tool werkt enkel op een groot scherm. Kom later nog eens terug.</span>
-      <span className="mobile-block-hint">Tip: probeer landscape modus.</span>
+      <video className="mobile-block-demo" src="/rekenraak-demo.mp4" autoPlay loop muted playsInline />
+      <span className="mobile-block-title">RekenRaak werkt op een groot scherm</span>
+      <span>Hiermee maak je werkbladen op A4-formaat — daarvoor staan het blad én alle instellingen naast elkaar. Open de tool op een computer, laptop of tablet om aan de slag te gaan.</span>
+      <span className="mobile-block-hint">Tip: draai je tablet in liggende stand (landscape).</span>
     </div>
     {tourOpen && <TourOverlay onClose={closeTour} />}
     <div className="print-root" style={styles.appContainer}>
@@ -185,13 +176,9 @@ export default function App() {
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
         <div className="no-print" onClick={(e) => e.stopPropagation()} style={{ width: '100%' }}>
-          {/* Autosave prompt renders as a wrapped row INSIDE the top bar (see TopBar). */}
           <TopBar
             onPrint={handlePrint}
             onOpenHelp={() => setHelpOpen(true)}
-            autosaveTitle={autosaveOffer?.titel ?? null}
-            onAcceptAutosave={acceptAutosave}
-            onDeclineAutosave={declineAutosave}
           />
         </div>
 
@@ -218,8 +205,8 @@ export default function App() {
             <div className="print-repeat-fields">{renderFields()}</div>
           </td></tr></thead>
           <tbody className="print-body"><tr><td className="print-body-cell">
-          {/* ── HEADER ── */}
-          <div style={{
+          {/* ── HEADER ── (enum base style + optional style-builder overlay; custom wins) */}
+          <div style={overlayRegionStyle({
             display: 'flex', flexDirection: 'column', width: '100%', padding: '12px', boxSizing: 'border-box',
             // 'onderstreept' = one line under the whole header (separates it from the body);
             // 'kader' = full box. All-longhand borders avoid the shorthand/longhand React warning.
@@ -229,7 +216,7 @@ export default function App() {
             borderColor: docSettings.headerStyle === 'kader' ? '#000' : 'transparent',
             borderBottomWidth: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '1.5px' : '1px',
             borderBottomColor: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '#000' : 'transparent',
-          }}>
+          }, docSettings.headerCustom)}>
             {(() => {
               const showScore = docSettings.showScores && totalScore > 0;
               const hasTitle = !!headerData?.titel;
@@ -352,16 +339,29 @@ export default function App() {
                     <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'Azeret Mono, monospace', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>
                   )}
 
-                  <div className="print-opdracht" style={{
+                  <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
                     ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
-                  }}>
+                  }, docSettings.titelCustom)}>
                     <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '12px' }}>
-                      {block.instructionMode === 'mag' && <span style={styles.badge('mag')}>MAG</span>}
-                      {block.instructionMode === 'moet' && <span style={styles.badge('moet')}>MOET</span>}
-                      {block.instructionMode === 'plus' && <span style={styles.badge('plus')}>★</span>}
-                      {block.instructionMode === 'aangepast' && block.customInstructionText && <span style={styles.badge('aangepast')}>{block.customInstructionText}</span>}
+                      {(() => {
+                        // The prefix marks differentiatie (MAG/MOET/★ or custom text).
+                        const mode = block.instructionMode;
+                        const label = mode === 'mag' ? 'MAG' : mode === 'moet' ? 'MOET' : mode === 'plus' ? '★'
+                          : mode === 'aangepast' ? (block.customInstructionText || '') : '';
+                        if (!label) return null;
+                        // Inside a Kader titel the pill's own border would double the frame —
+                        // render it as plain bold text + a vertical rule instead.
+                        const boxed = docSettings.opdrachtTitelStyle === 'boxed';
+                        if (boxed) return (
+                          <>
+                            <span style={{ fontWeight: 'bold', fontSize: '12px', whiteSpace: 'nowrap' }}>{label}</span>
+                            <span style={{ width: '1.5px', alignSelf: 'stretch', background: '#000' }} />
+                          </>
+                        );
+                        return <span style={styles.badge(mode as 'mag' | 'moet' | 'plus' | 'aangepast')}>{label}</span>;
+                      })()}
                       {block.locked && (
                         <span className="no-print" title="Vergrendeld" style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent-purple)' }}>
                           <Lock size={14} />
@@ -386,7 +386,7 @@ export default function App() {
           {/* Print-only running footer (real <tfoot>): repeats every page + reserves its
               height, so content can never overlap it. */}
           <tfoot className="print-tfoot"><tr><td>
-            <div className="print-tfoot-inner">
+            <div className="print-tfoot-inner" style={overlayRegionStyle({}, docSettings.footerCustom)}>
               <span>{[
                 footerData?.showSchool ? (footerData.school || 'School') : null,
                 footerData?.showKlas ? (footerData.klas || 'Klas') : null,

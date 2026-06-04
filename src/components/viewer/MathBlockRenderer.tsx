@@ -124,7 +124,10 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
                 return (
                     <div key={ex.id} style={{ ...styles.exerciseRow, alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end' }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        {/* In stepped mode the row is flex-start so extra lines flow below; pin the
+                            operand to the first 32px line height + flex-end so it sits ON line 1's
+                            baseline instead of floating above it. */}
+                        <div style={{ display: 'flex', alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
                             <div style={{ width: '85px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                                 {renderTerm(ex.operands[0], isMissing1, block.id, ex.id, 0)}
                             </div>

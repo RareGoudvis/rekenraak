@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -31,7 +32,7 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <label style={styles.label}>Soort breuken:</label>
+                <SettingLabel text="Soort breuken:" info="Welk type breuken er gerangschikt wordt." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {MODES.map(m => (
                         <button key={m.key} onClick={() => set('fractionMode', m.key)} style={styles.radioBtn(fractionMode === m.key)}>{m.label}</button>
@@ -40,7 +41,7 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
             </div>
 
             <div style={styles.section}>
-                <label style={styles.label}>Volgorde:</label>
+                <SettingLabel text="Volgorde:" info="Rangschikken van klein naar groot, omgekeerd, of beide." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('operatorMode', 'oplopend')} style={styles.radioBtn(operatorMode === 'oplopend')}>Oplopend (&lt;)</button>
                     <button onClick={() => set('operatorMode', 'aflopend')} style={styles.radioBtn(operatorMode === 'aflopend')}>Aflopend (&gt;)</button>
@@ -49,7 +50,7 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
             </div>
 
             <div style={styles.section}>
-                <label style={styles.label}>Aantal breuken: {count}</label>
+                <SettingLabel text={`Aantal breuken: ${count}`} info="Hoeveel breuken er per oefening gerangschikt worden." />
                 <input type="range" min="2" max="5" step="1" value={count}
                     onChange={(e) => set('count', Number(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
@@ -57,7 +58,7 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
 
             {showDenoms && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Noemer:</label>
+                    <SettingLabel text="Noemer:" info="Bereik van de noemer van de breuken." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>van</span>
                         <input type="number" min={2} max={maxDenominator} value={minDenominator}

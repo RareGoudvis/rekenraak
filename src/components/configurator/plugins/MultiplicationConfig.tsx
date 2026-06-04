@@ -4,6 +4,7 @@ import NaturalSettings from './multiplication/NaturalSettings';
 import DecimalSettings from './multiplication/DecimalSettings';
 import RationalSettings from './multiplication/RationalSettings'; 
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 
 interface Props { block: MathBlock; }
 
@@ -19,7 +20,7 @@ export default function MultiplicationConfig({ block }: Props) {
         <div style={styles.container}>
             {/* TYPE OEFENING */}
             <div style={styles.section}>
-                <label style={styles.label}>Type oefening:</label>
+                <SettingLabel text="Type oefening:" info="Gewone som (a x b = …) of puntoefening (a x … = c)." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => updateConstraint('equationType', 'normal')} style={styles.radioBtn(equationType === 'normal' || !equationType)}>
                         Gewone (a x b = ...)

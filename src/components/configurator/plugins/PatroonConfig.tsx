@@ -2,6 +2,8 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
+import PopupSelect from '../../ui/PopupSelect';
 
 interface Props {
     block: MathBlock;
@@ -52,18 +54,20 @@ export default function PatroonConfig({ block }: Props) {
         <div style={styles.container}>
             {/* MAX */}
             <div style={styles.section}>
-                <label style={styles.label}>Maximum getal:</label>
-                <div style={styles.buttonGroup}>
-                    {MAX_PRESETS.map(val => (
-                        <button key={val} onClick={() => set('maxGetal', val)} style={styles.radioBtn(maxGetal === val)}>Tot {val.toLocaleString('nl-BE')}</button>
-                    ))}
-                </div>
+                <SettingLabel text="Maximum getal:" info="Het grootste getal dat in het patroon mag voorkomen." />
+                <PopupSelect
+                    clampToLowest
+                    value={maxGetal}
+                    options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    onChange={(val) => set('maxGetal', val)}
+                    ariaLabel="Maximum getal"
+                />
             </div>
 
             {/* GEHELE — lower bound */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Ondergrens: {lowerBound.toLocaleString('nl-BE')}</label>
+                    <SettingLabel text={`Ondergrens: ${lowerBound.toLocaleString('nl-BE')}`} info="Hoe ver het patroon onder nul mag gaan (negatieve getallen)." />
                     <input type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound} onChange={(e) => set('minGetal', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
@@ -73,7 +77,7 @@ export default function PatroonConfig({ block }: Props) {
             {/* MAX DECIMALEN — decimal patterns only */}
             {isDecimal && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Max decimalen:</label>
+                    <SettingLabel text="Max decimalen:" info="Hoeveel cijfers er na de komma mogen staan." />
                     <div style={styles.buttonGroup}>
                         {[1, 2, 3].map(d => (
                             <button key={d} onClick={() => set('maxDecimals', d)} style={styles.radioBtn(dp === d)}>{d}</button>
@@ -84,13 +88,13 @@ export default function PatroonConfig({ block }: Props) {
 
             {/* STEPS + TICKS */}
             <div style={styles.section}>
-                <label style={styles.label}>Stappen in het patroon: {steps}</label>
+                <SettingLabel text={`Stappen in het patroon: ${steps}`} info="Hoeveel reken-stappen het patroon per keer doorloopt." />
                 <input type="range" min="1" max="4" step="1" value={steps}
                     onChange={(e) => set('steps', Number(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
             </div>
             <div style={styles.section}>
-                <label style={styles.label}>Aantal getallen: {ticks}</label>
+                <SettingLabel text={`Aantal getallen: ${ticks}`} info="Hoeveel getallen er in de reeks getoond worden." />
                 <input type="range" min="4" max="10" step="1" value={ticks}
                     onChange={(e) => set('ticks', Number(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
@@ -98,7 +102,7 @@ export default function PatroonConfig({ block }: Props) {
 
             {/* OPERATIONS */}
             <div style={styles.section}>
-                <label style={styles.label}>Bewerkingen:</label>
+                <SettingLabel text="Bewerkingen:" info="Welke bewerkingen het patroon mag gebruiken (+ − × :)." />
                 <div style={styles.buttonGroup}>
                     {OPS.map(o => (
                         <button key={o.key} onClick={() => toggleOp(o.key)} style={styles.pill(ops.includes(o.key))}>{o.label}</button>
@@ -114,7 +118,7 @@ export default function PatroonConfig({ block }: Props) {
                 const maskPlaces = getMaskPlaces(maxGetal, isDecimal ? 'decimal' : 'natural', dp);
                 return (
                     <div key={o.key} style={{ ...styles.section, paddingLeft: '8px', borderLeft: '2px solid var(--separator)' }}>
-                        <label style={styles.label}>{o.label} — {isAddSub ? 'stap' : (o.key === 'x' ? 'factor' : 'deler')} (max):</label>
+                        <SettingLabel text={`${o.label} — ${isAddSub ? 'stap' : (o.key === 'x' ? 'factor' : 'deler')} (max):`} info="De grootste waarde die deze bewerking per stap mag gebruiken." />
                         <input type="number" min={isAddSub ? 1 : 2} max={isAddSub ? 1000 : 12} value={s.max ?? 10}
                             onChange={(e) => setOp(o.key, { max: Math.max(isAddSub ? 1 : 2, Number(e.target.value)) })}
                             style={inputStyle} />

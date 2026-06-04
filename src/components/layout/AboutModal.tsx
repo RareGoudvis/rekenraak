@@ -44,7 +44,6 @@ export default function AboutModal({ onClose }: Props) {
                 {/* Fixed header */}
                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp-1)', padding: 'var(--sp-6) var(--sp-6) var(--sp-4)', borderBottom: '1px solid var(--separator)' }}>
                     <Wordmark height={40} />
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-muted)' }}>Gemaakt door Ruben V.H.</span>
                     <button
                         type="button"
                         onClick={onClose}
@@ -71,7 +70,7 @@ export default function AboutModal({ onClose }: Props) {
                         en laat de generator zijn werk doen.
                     </p>
                     <p style={S.p}>
-                        Het is een work in progress, het project zelf is dus zeker nog niet af. Feedback is daarbij
+                        Het is een 'work in progress', het project zelf is dus zeker nog niet af. Feedback is daarbij
                         belangrijk. Werkt iets niet? Mis je een bepaald type oefening? Denk je aan een andere visuele
                         voorstelling bij een oefening? Geef het door via het{' '}
                         <A href="https://forms.gle/jc1LcMXaRG3V3M556">feedbackformulier</A>. Ik kan niet beloven dat
@@ -86,10 +85,10 @@ export default function AboutModal({ onClose }: Props) {
                     </p>
                     <p style={S.p}>
                         Werkbladen zijn daar het mooiste voorbeeld van. Facebookgroepen voor leerkrachten staan vol met
-                        webpagina's die jou een bundel willen verkopen. Jammer genoeg gaan we daar al te lang in mee.
+                        webpagina's die jou een bundel willen verkopen. Jammer genoeg gaan we daar al te lang in mee. Vandaar dit open source project.<br />
                     </p>
                     <p style={S.p}>
-                        Beschouw dit als mijn middelvinger richting die industrie. Delen is een morele plicht. Kennis
+                        Delen is een morele plicht. Kennis
                         moet vrij toegankelijk zijn.
                     </p>
                     <p style={S.italic}>
@@ -146,11 +145,14 @@ export default function AboutModal({ onClose }: Props) {
                         kan dit dichttimmeren en als gesloten product verkopen. Wat vrij is, blijft vrij.
                     </p>
                     <p style={{ ...S.p, marginBottom: 0 }}>
-                        Wil je toch iets geven? Koop mij dan een pintje via het hartje onderaan.
+                        Wil je toch iets geven? Koop mij dan een pintje via het hartje onderaan.<br />  
                     </p>
+                        <span style={{ display: 'block', textAlign: 'right', marginTop: '20px', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-muted)' }}>Gemaakt door Ruben V.H.</span>
                 </div>
             </div>
+            
         </div>
+            
         </ModalPortal>
     );
 }

@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 
 interface Props {
     block: MathBlock;
@@ -45,7 +46,7 @@ export default function MetenConfig({ block }: Props) {
         <div style={styles.container}>
             {/* MEET-MODEL — lengte: meten/juist-fout · omtrek: op-schaal/gegeven */}
             <div style={styles.section}>
-                <label style={styles.label}>{isOmtrek ? 'Lengtes:' : 'Soort:'}</label>
+                <SettingLabel text={isOmtrek ? 'Lengtes:' : 'Soort:'} info="Wat er gemeten wordt (lijnstuk of omtrek van vormen)." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('measureModel', 'meten')} style={styles.radioBtn(measureModel === 'meten')}>{isOmtrek ? 'Op schaal (meten)' : 'Meten (schrijven)'}</button>
                     <button onClick={() => set('measureModel', 'gegeven')} style={styles.radioBtn(measureModel === 'gegeven')}>{isOmtrek ? 'Gegeven' : 'Juist of fout'}</button>
@@ -55,7 +56,7 @@ export default function MetenConfig({ block }: Props) {
             {/* PRECISION — only meaningful for measuring */}
             {measureModel === 'meten' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Nauwkeurigheid:</label>
+                    <SettingLabel text="Nauwkeurigheid:" info="Op hele cm of op de millimeter nauwkeurig meten." />
                     <div style={styles.buttonGroup}>
                         <button onClick={() => set('precision', 'cm')} style={styles.radioBtn(precision === 'cm')}>Hele cm</button>
                         <button onClick={() => set('precision', 'mm')} style={styles.radioBtn(precision === 'mm')}>Mm-nauwkeurig</button>
@@ -65,7 +66,7 @@ export default function MetenConfig({ block }: Props) {
 
             {/* LENGTH RANGE */}
             <div style={styles.section}>
-                <label style={styles.label}>{isOmtrek ? 'Lengte per zijde (cm):' : 'Lengte (cm):'}</label>
+                <SettingLabel text={isOmtrek ? 'Lengte per zijde (cm):' : 'Lengte (cm):'} info="Het bereik waarbinnen de lengtes vallen." />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>van</span>
                     <input type="number" min={1} max={maxLength} value={minLength}
@@ -81,7 +82,7 @@ export default function MetenConfig({ block }: Props) {
             {/* LENGTE METEN — number of corners */}
             {!isOmtrek && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Aantal hoeken: {maxCorners}</label>
+                    <SettingLabel text={`Aantal hoeken: ${maxCorners}`} info="Hoeveel knikpunten het te meten lijnstuk heeft." />
                     <input type="range" min="0" max="4" step="1" value={maxCorners}
                         onChange={(e) => set('maxCorners', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
@@ -91,7 +92,7 @@ export default function MetenConfig({ block }: Props) {
             {/* OMTREK — shape selection */}
             {isOmtrek && SHAPE_GROUPS.map(group => (
                 <div key={group.title} style={styles.section}>
-                    <label style={styles.label}>{group.title}:</label>
+                    <SettingLabel text={`${group.title}:`} info="Welke vormen er voor de omtrek-oefeningen gebruikt mogen worden." />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {group.items.map(o => (
                             <button key={o.key} onClick={() => toggleShape(o.key)} style={styles.pill(shapes.includes(o.key))}>{o.label}</button>

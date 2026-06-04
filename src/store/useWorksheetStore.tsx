@@ -4,6 +4,7 @@ import { regenerateBlock } from '../services/generateDispatch';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
+import { GRADE_PRESETS, type Leerjaar } from '../config/gradePresets';
 
 export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
 
@@ -21,6 +22,24 @@ export interface HeaderData {
 export const DEFAULT_FIELD_ORDER: HeaderField[] = ['naam', 'klas', 'nummer', 'datum'];
 export const DEFAULT_FIELD_WIDTHS: Record<HeaderField, number> = { naam: 240, klas: 90, nummer: 80, datum: 140 };
 
+// Power-user style overrides for one chrome region (header / opdracht-titel / footer).
+// All optional; absent keys fall back to the region's default look. Deliberately has
+// NO width/margin/position — those would break the dialog-proof A4 print layout.
+export interface RegionStyle {
+    fontSize?: number;
+    bold?: boolean;
+    color?: string;         // text color (from the curated print palette)
+    background?: string;    // fill color ('' / undefined = none)
+    align?: 'left' | 'center' | 'right';
+    borderTop?: boolean;
+    borderBottom?: boolean;
+    borderBox?: boolean;
+    borderWidth?: number;
+    borderColor?: string;
+    padX?: number;
+    padY?: number;
+}
+
 export interface DocSettings {
     showScores: boolean;
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
@@ -31,6 +50,10 @@ export interface DocSettings {
     headerContentGap: number;
     blockSpacing: number;   // vertical gap between exercise sets (blocks)
     numberBlocks: boolean;
+    // Style-builder overrides (custom wins over the enum presets above). Optional → back-compat.
+    headerCustom?: RegionStyle;
+    titelCustom?: RegionStyle;
+    footerCustom?: RegionStyle;
 }
 
 export type ThemeName = 'dark' | 'light' | 'colorblind';
@@ -42,6 +65,7 @@ interface WorksheetState {
     footer: FooterData;
     docSettings: DocSettings;
     baseSettings: BaseSettings;
+    selectedGrade: Leerjaar | null;      // soft leerjaar starting point (seeds base + filters sidebar)
     curriculum: CurriculumLock | null;   // non-null + locked = restricted parent mode
     // Off-sheet scratch blocks edited by the curriculum builder so the real config
     // plugins can run unchanged (they target updateBlockSettings(block.id)). Not
@@ -72,11 +96,12 @@ interface WorksheetState {
     toggleBlockLock: (id: string) => void;
     duplicateBlock: (id: string) => void;
     generateAllBlocks: () => void;
-    loadWorksheet: (file: { blocks: MathBlock[]; header: HeaderData; footer: FooterData; docSettings: DocSettings; baseSettings?: BaseSettings; curriculum?: CurriculumLock }) => void;
+    loadWorksheet: (file: { blocks: MathBlock[]; header: HeaderData; footer: FooterData; docSettings: DocSettings; baseSettings?: BaseSettings; curriculum?: CurriculumLock; selectedGrade?: Leerjaar | null }) => void;
     updateHeader: (updates: Partial<HeaderData>) => void;
     updateFooter: (updates: Partial<FooterData>) => void;
     updateDocSettings: (updates: Partial<DocSettings>) => void;
     updateBaseSettings: (updates: Partial<BaseSettings>) => void;
+    setSelectedGrade: (grade: Leerjaar | null) => void;
     setShowSolutions: (show: boolean) => void;
     setTheme: (theme: ThemeName) => void;
     undo: () => void;
@@ -119,6 +144,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: false, centerText: '', showCenterText: false },
     docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true },
     baseSettings: { ...DEFAULT_BASE },
+    selectedGrade: null,
     curriculum: null,
     draftBlocks: [],
     showSolutions: false,
@@ -230,6 +256,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         docSettings: file.docSettings,
         baseSettings: file.baseSettings ? { ...DEFAULT_BASE, ...file.baseSettings } : { ...DEFAULT_BASE },
         curriculum: file.curriculum ?? null,
+        // Set the grade value directly — base is already restored above, so we must
+        // NOT re-run setSelectedGrade's preset seeding here.
+        selectedGrade: file.selectedGrade ?? null,
         activeBlockId: null,
         _history: [file.blocks],
         _historyIndex: 0,
@@ -248,6 +277,13 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     updateFooter: (updates) => set((state) => ({ footer: { ...state.footer, ...updates } })),
     updateDocSettings: (updates) => set((state) => ({ docSettings: { ...state.docSettings, ...updates } })),
     updateBaseSettings: (updates) => set((state) => ({ baseSettings: { ...state.baseSettings, ...updates } })),
+
+    // Soft leerjaar pick: seed the base difficulty (only affects new blocks) and
+    // remember the grade so the sidebar can hide later-grade leaves. Not a lock.
+    setSelectedGrade: (grade) => set((state) => ({
+        selectedGrade: grade,
+        baseSettings: grade == null ? state.baseSettings : { ...state.baseSettings, ...GRADE_PRESETS[grade] },
+    })),
     setShowSolutions: (show) => set({ showSolutions: show }),
     setTheme: (theme) => {
         applyTheme(theme);
@@ -276,12 +312,13 @@ useWorksheetStore.subscribe((state, prev) => {
         state.header !== prev.header ||
         state.footer !== prev.footer ||
         state.docSettings !== prev.docSettings ||
-        state.baseSettings !== prev.baseSettings;
+        state.baseSettings !== prev.baseSettings ||
+        state.selectedGrade !== prev.selectedGrade;
     if (!changed) return;
     // Don't overwrite a populated autosave with an empty fresh-tab state.
     if (state.blocks.length === 0) return;
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
-        saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings, baseSettings: state.baseSettings }, state.curriculum);
+        saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings, baseSettings: state.baseSettings, selectedGrade: state.selectedGrade }, state.curriculum);
     }, 1500);
 });

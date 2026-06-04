@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock, FractionSubType } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
+import SettingLabel from './SettingLabel';
 
 interface Props { block: MathBlock; }
 
@@ -69,7 +70,7 @@ export default function FractionConfig({ block }: Props) {
             {/* ── HOEVEELHEID VARIANT RADIO ── */}
             {isHoeveelheidGroep && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Variant:</label>
+                    <SettingLabel text="Variant:" info="Hoe de breuk getoond wordt: concreet, schematisch of abstract." />
                     {HOEVEELHEID_VARIANTS.map(({ value, label, description }) => {
                         const isActive = subType === value;
                         return (
@@ -95,7 +96,7 @@ export default function FractionConfig({ block }: Props) {
             {isShape && (
                 <>
                     <div style={styles.section}>
-                        <label style={styles.label}>Vorm:</label>
+                        <SettingLabel text="Vorm:" info="De vorm die in stukken wordt verdeeld (mengen kan)." />
                         <div style={styles.buttonGroup}>
                             {([
                                 { val: 'rectangle', label: 'Rechthoek' },
@@ -118,7 +119,7 @@ export default function FractionConfig({ block }: Props) {
                                     {c.staticSize ? 'AAN' : 'UIT'}
                                 </button>
                             </div>
-                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0' }}>
+                            <p style={styles.hint}>
                                 Vorm blijft even groot, ook als de breuk verandert. Stel de maat in onder Geavanceerd.
                             </p>
                         </div>
@@ -129,7 +130,7 @@ export default function FractionConfig({ block }: Props) {
             {/* ── OBJECT SHAPE (hoeveelheid concreet) ── */}
             {isHoeveelheid && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Objectvorm:</label>
+                    <SettingLabel text="Objectvorm:" info="De vorm van de te verdelen objecten." />
                     <div style={styles.buttonGroup}>
                         <button onClick={() => updateConstraint('objectShape', 'circle')} style={styles.radioBtn(c.objectShape === 'circle')}>Cirkels</button>
                         <button onClick={() => updateConstraint('objectShape', 'square')} style={styles.radioBtn(c.objectShape === 'square')}>Vierkanten</button>
@@ -139,7 +140,7 @@ export default function FractionConfig({ block }: Props) {
 
             {/* ── DENOMINATOR RANGE (sliders) ── */}
             <div style={styles.section}>
-                <label style={styles.label}>Noemer bereik: {minDen} – {maxDen}</label>
+                <SettingLabel text={`Noemer bereik: ${minDen} – ${maxDen}`} info="Bereik van de noemer van de breuken." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
                     <div>
                         <label style={{ ...styles.label, marginBottom: '3px' }}>Min: {minDen}</label>
@@ -169,12 +170,12 @@ export default function FractionConfig({ block }: Props) {
             {/* ── MAX TOTAL (hoeveelheid concreet / rechthoek) ── */}
             {(isHoeveelheid || isRechthoek) && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Max. aantal objecten:</label>
+                    <SettingLabel text="Max. aantal objecten:" info="Het grootste aantal objecten dat verdeeld wordt." />
                     <input type="number" min="4" max="50" step="2"
                         value={c.maxTotal ?? 20}
                         onChange={(e) => updateConstraint('maxTotal', Number(e.target.value))}
                         style={inputStyle} />
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    <p style={styles.hint}>
                         Totaal wordt deelbaar door de noemer.
                     </p>
                 </div>
@@ -183,7 +184,7 @@ export default function FractionConfig({ block }: Props) {
             {/* ── LINE LENGTH SLIDERS (lijnstuk) ── */}
             {isLijnstuk && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Lijnlengte (cm): {minLen} – {maxLen}</label>
+                    <SettingLabel text={`Lijnlengte (cm): ${minLen} – ${maxLen}`} info="Bereik van de lengte van het lijnstuk in cm." />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
                         <div>
                             <label style={{ ...styles.label, marginBottom: '4px' }}>Min: {minLen} cm</label>
@@ -214,7 +215,7 @@ export default function FractionConfig({ block }: Props) {
             {/* ── MAX DIMENSIONS (veelhoek) ── */}
             {isVeelhoek && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Max. breedte (vakjes): {c.maxWidth ?? 6}</label>
+                    <SettingLabel text={`Max. breedte (vakjes): ${c.maxWidth ?? 6}`} info="Grootste breedte van de veelhoek in roostervakjes." />
                     <input type="range" min="1" max="10" step="1"
                         value={c.maxWidth ?? 6}
                         onChange={(e) => updateConstraint('maxWidth', Number(e.target.value))}
