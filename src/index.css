@@ -300,6 +300,10 @@ textarea:focus-visible,
      gray --bg-base behind it (print-color-adjust:exact forces it to print). */
   .print-scroll { display: block !important; overflow: visible !important; height: auto !important; min-height: 0 !important; padding: 0 !important; }
 
+  /* The full-width-topbar shell's body row: must not clip the multi-page sheet in print
+     (it has inline overflow:hidden + flex for the on-screen layout). */
+  .print-body-row { display: block !important; overflow: visible !important; height: auto !important; min-height: 0 !important; }
+
   /* Collapse the scrollable center column */
   .print-main {
     display: block !important;

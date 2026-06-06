@@ -1,5 +1,8 @@
 export const styles = {
   appContainer: { display: 'flex', width: '100vw', height: '100vh', padding: 'var(--sp-4)', gap: 'var(--sp-4)', overflow: 'hidden', backgroundColor: 'var(--bg-base)' } as React.CSSProperties,
+  // Full-width-topbar shell: a column (topbar on top, panels row below).
+  appShell: { display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--bg-base)' } as React.CSSProperties,
+  appBody: { display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' } as React.CSSProperties,
   mainContent: { position: 'relative', flex: 1, backgroundColor: 'var(--bg-base)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
   // Worksheet stays white ink-on-paper (it prints); only the screen-side shadow/radius soften.
   // marginTop clears the sticky topbar so the sheet's full top border is visible (print resets margin:0).

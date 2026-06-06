@@ -6,12 +6,13 @@ interface Props {
     onStartTour?: () => void;
 }
 
-type Tab = 'ouders' | 'leerkrachten';
+type Tab = 'maken' | 'opslaan' | 'delen';
 
-// Sectional usage guide, split into a parent view and a teacher view (basis +
-// geavanceerd). Reuses theme CSS variables so it follows the active theme.
+// Step-by-step usage guide in three levels: build a worksheet, save/load worksheets,
+// share worksheets. Kept in sync with the current chrome (topbar ≡ Menu + ⚙ Instellingen,
+// Oefeningen/Overzicht tabs, Bibliotheek presets). Reuses theme CSS variables.
 export default function HelpModal({ onClose, onStartTour }: Props) {
-    const [tab, setTab] = useState<Tab>('ouders');
+    const [tab, setTab] = useState<Tab>('maken');
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -49,10 +50,11 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                     >×</button>
                 </div>
 
-                {/* Tabs */}
-                <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', alignItems: 'center' }}>
-                    <TabBtn active={tab === 'ouders'} onClick={() => setTab('ouders')}>Voor ouders</TabBtn>
-                    <TabBtn active={tab === 'leerkrachten'} onClick={() => setTab('leerkrachten')}>Voor leerkrachten</TabBtn>
+                {/* Tabs = three levels */}
+                <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <TabBtn active={tab === 'maken'} onClick={() => setTab('maken')}>Eigen werkblad maken</TabBtn>
+                    <TabBtn active={tab === 'opslaan'} onClick={() => setTab('opslaan')}>Werkbladen opslaan</TabBtn>
+                    <TabBtn active={tab === 'delen'} onClick={() => setTab('delen')}>Werkbladen delen</TabBtn>
                     {onStartTour && (
                         <button
                             onClick={onStartTour}
@@ -62,58 +64,65 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                     )}
                 </div>
 
-                {tab === 'ouders' && (
+                {/* LEVEL 1 — build & adjust a worksheet end-to-end */}
+                {tab === 'maken' && (
                     <>
-                        <Section title="1. Oefeningen toevoegen">
-                            Klik in de linker zijbalk op een oefening uit de toegestane lijst. Ze verschijnt onmiddellijk op het werkblad in het midden. Je kan meerdere oefeningen onder elkaar zetten.
+                        <Section title="1. Oefening kiezen">
+                            In de linker zijbalk, tabblad <strong>Oefeningen</strong>, klik je op een leerdomein, dan een onderdeel, dan het type oefening. Het blok verschijnt meteen op het blad in het midden. Wil je er meerdere tegelijk? Gebruik <strong>Toevoegen</strong> bovenaan — daar zoek je en zie je een voorbeeld van elk type.
                         </Section>
-                        <Section title="2. Aantal aanpassen en genereren">
-                            Klik op een blok om het rechterpaneel te openen. Versleep <strong>Aantal oefeningen</strong> om meer of minder te maken, en klik op <strong>Genereer</strong> voor nieuwe getallen. <strong>Genereer alles</strong> bovenaan vernieuwt elk blok in één klik. De moeilijkheidsgraad ligt vast.
+                        <Section title="2. Het blok aanpassen">
+                            Klik op een blok om het <strong>rechterpaneel</strong> te openen. Daar stel je in: aantal oefeningen, getalbereik (maximum getal), getalsoort, niveau/moeilijkheid, en voor hoofdrekenen/cijferen ook de getalopbouw en de bruggetjes. Onder <strong>Geavanceerd</strong> vind je witruimte en tekstgrootte van het blok.
                         </Section>
-                        <Section title="3. Afdrukken">
-                            Druk op <strong>Afdrukken</strong> in de bovenbalk (of Ctrl+P). Kies in het afdrukvenster van je browser "Opslaan als PDF" om een digitaal bestand te maken in plaats van op papier.
+                        <Section title="3. Genereren">
+                            Klik op <strong>Genereer</strong> in het blok-paneel om de getallen te maken of te vernieuwen. <strong>Genereer alles</strong> bovenaan vernieuwt elk blok in één klik. Vergrendel een blok met het <strong>slotje</strong> zodat het overgeslagen wordt bij Genereer alles — handig voor blokken die je met de hand aanpaste.
                         </Section>
-                        <Section title="4. Thema">
-                            Onderaan de zijbalk wissel je tussen Licht (☀), Donker (☽) en Hoog contrast (◐, kleurenblind-veilig).
+                        <Section title="4. Het blad opmaken">
+                            Klik op een lege plek naast de blokken (of deselecteer) → het rechterpaneel toont de <strong>documentinstellingen</strong>: titel en titelpositie, koptekst (naam/klas/nummer/datum), voettekst, scores tonen, en de opdracht-stijl. Via <strong>Stijl aanpassen</strong> regel je lettergrootte, kleur en opvulling per zone.
                         </Section>
-                        <Section title="5. Steun deze tool">
-                            Vind je deze tool nuttig? Trakteer me op een koffie via de <a href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" style={linkStyle}>❤-knop</a> onderaan de zijbalk.
+                        <Section title="5. Overzicht en ordenen">
+                            Het tabblad <strong>Overzicht</strong> (links) toont alle blokken op een rij. Versleep om te herordenen, dupliceer of verwijder een blok, en zie waar de pagina’s eindigen. Klik op een rij om naar dat blok op het blad te springen.
+                        </Section>
+                        <Section title="6. Thema en voorbeelden">
+                            Onder <strong>⚙ Instellingen</strong> bovenaan kies je het thema (licht, donker, hoog contrast) en zet je <strong>Voorbeeld bij zweven</strong> aan of uit (een voorbeeldkaartje wanneer je over een oefening in de lijst zweeft).
+                        </Section>
+                        <Section title="7. Afdrukken of als PDF">
+                            Klik op <strong>Afdrukken</strong> bovenaan (of Ctrl+P) en kies in je browser “Opslaan als PDF”. Met <strong>Oplossingen</strong> druk je de antwoorden mee af. Wat je op het scherm ziet, is precies wat afgedrukt wordt.
                         </Section>
                     </>
                 )}
 
-                {tab === 'leerkrachten' && (
+                {/* LEVEL 2 — save / load / presets */}
+                {tab === 'opslaan' && (
                     <>
-                        <GroupHeader>Basis</GroupHeader>
-                        <Section title="1. Oefeningen toevoegen">
-                            Klik in de linker zijbalk op een leerdomein, dan op een onderdeel, en uiteindelijk op het type oefening. Het verschijnt onmiddellijk op het werkblad. Of gebruik <strong>Toevoegen</strong> bovenaan om er meerdere tegelijk te kiezen.
+                        <Section title="1. Automatisch bewaard">
+                            Je werk wordt voortdurend in je browser bewaard — bovenaan zie je de chip <strong>Automatisch bewaard</strong>. Sluit je per ongeluk het tabblad, dan staat alles er nog wanneer je terugkomt.
                         </Section>
-                        <Section title="2. Configureren en genereren">
-                            Klik op een blok om het rechterpaneel te openen. Stel de parameters in (aantal, moeilijkheidsgraad, masker, …) en klik op <strong>Genereer</strong>. <strong>Genereer alles</strong> vernieuwt alle blokken.
+                        <Section title="2. Mijn bladen">
+                            Via <strong>≡ Menu → Mijn bladen</strong> open je je eigen bibliotheek. Bewaar het huidige blad, of open, hernoem, dupliceer en verwijder een bewaard blad. Elk blad krijgt een miniatuur. Je kan tot 50 bladen bewaren.
                         </Section>
-                        <Section title="3. Blokken vergrendelen">
-                            Klik op het 🔓 / 🔒 slot bij een actief blok. Vergrendelde blokken worden overgeslagen bij <strong>Genereer alles</strong> — handig voor handmatig aangepaste blokken.
+                        <Section title="3. Kant-en-klare bladen">
+                            Via <strong>≡ Menu → Kant-en-klare bladen</strong> kies je een kant-en-klaar voorbeeldblad. Filter op leerjaar, rekenmethode of domein. <strong>Gebruik sjabloon</strong> laadt het blad in de editor — daarna pas je het vrij aan en bewaar je het bij Mijn bladen.
                         </Section>
-                        <Section title="4. Automatisch opslaan">
-                            Je werk wordt voortdurend in je browser bewaard. Sluit je per ongeluk het tabblad, dan vraagt de tool bij de volgende keer of je de vorige werkbundel wil terughalen.
+                        <Section title="4. Bestand bewaren en openen">
+                            <strong>≡ Menu → Exporteren…</strong> bewaart het blad als <strong>.rekenraak</strong>-bestand op je computer (een back-up of om door te sturen). <strong>Importeren…</strong> opent zo’n bestand opnieuw (ook oudere .json-bestanden werken nog).
                         </Section>
-                        <Section title="5. Presets, bestanden en delen">
-                            Onder <strong>⋯ Meer</strong>: <strong>Presets</strong> (lokaal bewaren, tot 20), <strong>Exporteer</strong> / <strong>Importeer</strong> (JSON-bestand). Met <strong>Delen</strong> kies je tussen <strong>Blad</strong> (volledige werkbundel) of <strong>Sjabloon</strong> (enkel instellingen).
-                        </Section>
-                        <Section title="6. Dupliceren en afdrukken">
-                            Het 🗐 icoontje kopieert een blok. Druk af met <strong>Afdrukken</strong> (Ctrl+P) → "Opslaan als PDF" voor een digitaal bestand.
-                        </Section>
+                    </>
+                )}
 
-                        <GroupHeader>Geavanceerd</GroupHeader>
-                        <Section title="Basisinstellingen">
-                            Zijbalk → het <strong>⚙ tandwiel</strong> onderaan → <strong>Basisinstellingen</strong>. Stel één keer een standaard moeilijkheidsgraad in (maximum getal, getalsoort, getalopbouw en bruggetjes). Die wordt overgenomen door elk <strong>nieuw</strong> blok dat je toevoegt — bestaande blokken blijven ongewijzigd. Zo hoef je niet telkens alles opnieuw in te stellen. Getalopbouw en bruggetjes gelden enkel voor hoofdrekenen, cijferen en splitsen.
+                {/* LEVEL 3 — share */}
+                {tab === 'delen' && (
+                    <>
+                        <Section title="1. Een link delen">
+                            Via <strong>≡ Menu → Delen</strong> heb je twee opties. <strong>Blad delen</strong> maakt een link met de volledige werkbundel (oefeningen én de gegenereerde getallen). <strong>Sjabloon delen</strong> deelt enkel de instellingen, zonder getallen — wie de link opent, genereert zelf verse oefeningen met dezelfde opbouw.
                         </Section>
-                        <Section title="Curriculum samenstellen">
-                            Zijbalk → het <strong>⚙ tandwiel</strong> onderaan → <strong>Curriculum samenstellen</strong>. Kies welke oefentypes ouders mogen toevoegen (toon/verberg, ook per leerdomein in bulk) en stel per type de moeilijkheidsgraad in met een voorbeeld ernaast. Klik op <strong>Deel curriculum-link</strong>: de ouder opent die link en kan dan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek te delen.
+                        <Section title="2. Een bestand delen">
+                            Liever offline? <strong>≡ Menu → Exporteren…</strong> geeft je een .rekenraak-bestand dat je via mail of een gedeelde map doorstuurt. De ontvanger opent het met <strong>Importeren…</strong>.
                         </Section>
-
+                        <Section title="3. Een curriculum delen (leerkrachten)">
+                            Via <strong>⚙ Instellingen → Curriculum samenstellen</strong> kies je welke oefentypes toegestaan zijn en zet je per type de moeilijkheid vast. Klik op <strong>Deel curriculum-link</strong>: wie die link opent, kan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek of klas te delen.
+                        </Section>
                         <Section title="Bugs of suggesties?">
-                            Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (de 💬-knop onderaan de zijbalk).
+                            Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (⚙ Instellingen → Feedback geven).
                         </Section>
                     </>
                 )}
@@ -135,14 +144,6 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
                 background: active ? 'var(--accent-purple)' : 'var(--bg-input)', color: active ? '#fff' : 'var(--text-muted)',
             }}
         >{children}</button>
-    );
-}
-
-function GroupHeader({ children }: { children: React.ReactNode }) {
-    return (
-        <h3 style={{ fontSize: '13px', color: 'var(--text-main)', margin: '6px 0 14px', paddingBottom: '6px', borderBottom: '1px solid var(--border-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            {children}
-        </h3>
     );
 }
 

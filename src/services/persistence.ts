@@ -12,7 +12,7 @@ export const WORKSHEET_FORMAT_VERSION = 2;
 export const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
 export const PRESETS_KEY = 'rekenraak_presets_v1';
 export const RELEASE_SEEN_KEY = 'rekenraak_release_seen_v1';
-export const MAX_PRESETS = 20;
+export const MAX_PRESETS = 50;
 // Measured against the LZ-compressed, URL-safe payload (not raw JSON). 30 KB of
 // such text stays under mainstream browser URL limits incl. mobile, and — since
 // worksheet JSON compresses ~8× — covers ~100+ blocks before this backstop trips.
@@ -125,16 +125,30 @@ function buildPayload(state: SerialisableState, mode: WorksheetFileMode = 'full'
 
 // ── File export / import ──────────────────────────────────────────────────────
 
-export function exportWorksheet(state: SerialisableState): void {
-    const blob = new Blob([JSON.stringify(buildPayload(state), null, 2)], { type: 'application/json' });
+// Files use the .rekenraak extension (still JSON inside) so they're recognisable +
+// associatable; import still accepts .json for back-compat.
+export const WORKSHEET_FILE_EXT = '.rekenraak';
+
+function downloadJson(filename: string, json: string): void {
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `werkbundel-${safeSlug(state.header.titel)}-${todayStamp()}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+export function exportWorksheet(state: SerialisableState): void {
+    downloadJson(`werkbundel-${safeSlug(state.header.titel)}-${todayStamp()}${WORKSHEET_FILE_EXT}`, JSON.stringify(buildPayload(state), null, 2));
+}
+
+// Export an already-built WorksheetFile (e.g. a saved-sheet payload from the library)
+// without a lossy rebuild through SerialisableState.
+export function exportWorksheetFile(file: WorksheetFile, title: string): void {
+    downloadJson(`werkbundel-${safeSlug(title)}-${todayStamp()}${WORKSHEET_FILE_EXT}`, JSON.stringify(file, null, 2));
 }
 
 export function parseWorksheetFile(json: string): WorksheetFile {
@@ -228,6 +242,37 @@ export function deletePreset(id: string): void {
 export function renamePreset(id: string, name: string): void {
     const trimmed = (name || '').trim().slice(0, 80) || 'Naamloos';
     persistPresets(loadPresets().map(p => p.id === id ? { ...p, name: trimmed } : p));
+}
+
+function newPresetId(): string {
+    return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+// Duplicate a saved sheet ("Mijn bladen" card action). Returns the new entry, or null
+// if the source id is gone.
+export function duplicatePreset(id: string): Preset | null {
+    const list = loadPresets();
+    const src = list.find(p => p.id === id);
+    if (!src) return null;
+    const entry: Preset = { ...src, id: newPresetId(), name: `${src.name} (kopie)`.slice(0, 80), savedAt: new Date().toISOString() };
+    persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS));
+    return entry;
+}
+
+// Add an imported .rekenraak payload to the library, preserving its exercises (no
+// SerialisableState round-trip). Used by Mijn bladen "Importeer…".
+export function savePresetFromFile(file: WorksheetFile, name: string): Preset {
+    const list = loadPresets();
+    const trimmed = (name || '').trim() || (file.header?.titel || 'Naamloos').trim() || 'Naamloos';
+    const entry: Preset = {
+        id: newPresetId(),
+        name: trimmed.slice(0, 80),
+        savedAt: new Date().toISOString(),
+        blockCount: Array.isArray(file.blocks) ? file.blocks.length : 0,
+        payload: file,
+    };
+    persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS));
+    return entry;
 }
 
 // ── Share via URL hash (base64 in fragment, not query — never leaves browser) ─

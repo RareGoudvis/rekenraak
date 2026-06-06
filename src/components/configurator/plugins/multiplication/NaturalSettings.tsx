@@ -12,11 +12,13 @@ const MET_REST_TABLES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 const LEVEL_DESCRIPTIONS: Record<number, string> = {
     1: 'N1 — 360 : 6 = 60  (quotiënt = T)',
-    2: 'N2 — 636 : 6 = 106  (quotiënt = H+E)',
-    3: 'N3 — 678 : 6 = 113  (quotiënt = H+T+E)',
-    4: 'N4 — 396 : 6 = 66  (quotiënt = T+E)',
-    5: 'N5 — 711 : 6 = 118,5  (uitkomst max 1 decimaal)',
+    2: 'N2 — 84 : 7 = 12  (TE : E, 2 cijfers)',
+    3: 'N3 — 636 : 6 = 106  (quotiënt = H+E)',
+    4: 'N4 — 678 : 6 = 113  (quotiënt = H+T+E)',
+    5: 'N5 — 396 : 6 = 66  (quotiënt = T+E)',
+    6: 'N6 — 711 : 6 = 118,5  (uitkomst max 1 decimaal)',
 };
+const DIVISION_LEVELS = [1, 2, 3, 4, 5, 6];
 
 export default function NaturalSettings({ block, isDivision = false }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
@@ -29,7 +31,13 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         operand2Mask = {},
         metRestLevel = 1,
         divisionLevel = 0,
+        divisionLevels,
     } = block.constraints;
+
+    // Multi-select niveaus: array wins; back-compat seed from the old single `divisionLevel`.
+    const selectedLevels: number[] = Array.isArray(divisionLevels)
+        ? divisionLevels
+        : (divisionLevel >= 1 ? [divisionLevel] : []);
 
     const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
@@ -49,9 +57,19 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         updateConstraint(key, { ...currentMask, [place]: !currentMask[place] });
     };
 
-    const applyLevelPreset = (level: number) => {
+    // Toggle a niveau in/out of the multi-select set. Selecting any level clears the masks
+    // (niveau presets and masks are mutually exclusive) and the legacy single `divisionLevel`.
+    const toggleLevel = (level: number) => {
+        const next = selectedLevels.includes(level)
+            ? selectedLevels.filter(l => l !== level)
+            : [...selectedLevels, level].sort((a, b) => a - b);
         updateBlockSettings(block.id, {
-            constraints: { ...block.constraints, divisionLevel: level, operand1Mask: {}, operand2Mask: {} }
+            constraints: { ...block.constraints, divisionLevels: next, divisionLevel: 0, operand1Mask: {}, operand2Mask: {} }
+        });
+    };
+    const clearLevels = () => {
+        updateBlockSettings(block.id, {
+            constraints: { ...block.constraints, divisionLevels: [], divisionLevel: 0 }
         });
     };
 
@@ -95,7 +113,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                     <SettingLabel text={isDivision ? 'Quotiënt tot:' : 'Vermenigvuldig tot:'} info={isDivision ? 'Tot welk veelvoud van de tafel je deelt (bv. tot 10× of 20×).' : 'Tot welk veelvoud van de tafel je vermenigvuldigt (bv. tot 10× of 20×).'} />
                     <PopupSelect
                         value={tableLimit}
-                        options={[10, 20].map(val => ({ value: val, label: `Tot ${val}×` }))}
+                        options={[10, 20, 50, 100].map(val => ({ value: val, label: `Tot ${val}×` }))}
                         onChange={(val) => updateConstraint('tableLimit', val)}
                         ariaLabel={isDivision ? 'Quotiënt tot' : 'Vermenigvuldig tot'}
                     />
@@ -151,20 +169,20 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                         {/* Niveau-presets voor deling */}
                         {isDivision && (
                             <div style={styles.section}>
-                                <SettingLabel text="Niveau preset (deler = 1 cijfer):" info="Kies een kant-en-klaar niveau voor delingen met een deler van 1 cijfer." />
+                                <SettingLabel text="Niveau preset (deler = 1 cijfer):" info="Kies één of meerdere niveaus; bij meerdere worden de oefeningen gemengd." />
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                    {[1, 2, 3, 4, 5].map(level => {
-                                        const isActive = divisionLevel === level;
+                                    {DIVISION_LEVELS.map(level => {
+                                        const isActive = selectedLevels.includes(level);
                                         const [, example] = LEVEL_DESCRIPTIONS[level].split(' — ');
                                         return (
-                                            <div key={level} onClick={() => applyLevelPreset(level)} style={levelRowStyle(isActive)}>
+                                            <div key={level} onClick={() => toggleLevel(level)} style={levelRowStyle(isActive)}>
                                                 <span style={levelLabelStyle(isActive)}>N{level}</span>
                                                 <span style={levelExampleStyle}>{example}</span>
                                             </div>
                                         );
                                     })}
-                                    <div onClick={() => applyLevelPreset(0)} style={levelRowStyle(divisionLevel === 0)}>
-                                        <span style={levelLabelStyle(divisionLevel === 0)}>Vrij</span>
+                                    <div onClick={clearLevels} style={levelRowStyle(selectedLevels.length === 0)}>
+                                        <span style={levelLabelStyle(selectedLevels.length === 0)}>Vrij</span>
                                         <span style={levelExampleStyle}>Vrij via maskers</span>
                                     </div>
                                 </div>
@@ -172,7 +190,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                         )}
 
                         {/* Maskers: verborgen als een niveau-preset actief is */}
-                        {(!isDivision || divisionLevel === 0) && (
+                        {(!isDivision || selectedLevels.length === 0) && (
                             <div style={styles.section}>
                                 <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
 

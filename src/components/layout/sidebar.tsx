@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Question as HelpCircle, Heart, Sun, Moon, CircleHalf as Contrast, ChatText as MessageSquare, Plus } from '@phosphor-icons/react';
+import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { REGISTRY } from '../../config/exerciseRegistry';
+import { baseApply } from '../../config/baseSettings';
+import ExercisePreview from '../shared/ExercisePreview';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 import PopupSelect from '../ui/PopupSelect';
-import HelpModal from './HelpModal';
-import AboutModal from './AboutModal';
-import Wordmark from '../ui/Wordmark';
-import BaseSettingsPanel from './BaseSettingsPanel';
+import OverzichtPanel from './OverzichtPanel';
 
 // Walk the domain tree keeping only entries whose label matches the search needle.
 // A parent survives when any of its descendants match. Returns the filtered tree.
@@ -66,21 +67,46 @@ function filterByGrade(domains: Domain[], grade: Leerjaar | null): Domain[] {
 
 export default function Sidebar() {
     const addBlockFromType = useWorksheetStore((state) => state.addBlockFromType);
-    const theme = useWorksheetStore((state) => state.theme);
-    const setTheme = useWorksheetStore((state) => state.setTheme);
     const curriculum = useWorksheetStore((state) => state.curriculum);
     const selectedGrade = useWorksheetStore((state) => state.selectedGrade);
     const setSelectedGrade = useWorksheetStore((state) => state.setSelectedGrade);
+    const baseSettings = useWorksheetStore((state) => state.baseSettings);
+    const sidebarPreview = useWorksheetStore((state) => state.sidebarPreview);
     const locked = !!curriculum?.locked;
+
+    // Hover example: after a short delay over a leaf, show a live preview card anchored
+    // to its right (or left if it would overflow). Gated on the sidebarPreview setting.
+    const [preview, setPreview] = useState<{ typeId: string; constraints: Record<string, unknown>; top: number; left: number } | null>(null);
+    const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const resolveConstraints = (typeId: string, override?: Record<string, unknown>): Record<string, unknown> | null => {
+        const def = REGISTRY[typeId];
+        if (!def) return null;
+        const defaults = def.defaultConstraints(typeId);
+        return { ...defaults, ...baseApply(baseSettings, defaults), ...(override ?? {}) };
+    };
+    const leafHover = (typeId: string, override?: Record<string, unknown>) => ({
+        onMouseEnter: (e: React.MouseEvent) => {
+            if (!sidebarPreview) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const W = 290;
+            const left = rect.right + 12 + W > window.innerWidth ? rect.left - W - 12 : rect.right + 12;
+            if (hoverTimer.current) clearTimeout(hoverTimer.current);
+            hoverTimer.current = setTimeout(() => {
+                const constraints = resolveConstraints(typeId, override);
+                if (constraints) setPreview({ typeId, constraints, top: rect.top, left });
+            }, 250);
+        },
+        onMouseLeave: () => {
+            if (hoverTimer.current) clearTimeout(hoverTimer.current);
+            setPreview(null);
+        },
+    });
 
     const [openSubdomain, setOpenSubdomain] = useState<string | null>(null);
     // Multiple type-accordions can be open at once — opening a subdomain expands them all.
     const [openTypes, setOpenTypes] = useState<Set<string>>(new Set());
-    const [helpOpen, setHelpOpen] = useState(false);
     const [search, setSearch] = useState('');
-
-    // Sidebar branding is now a static wordmark; clicking it opens the About modal.
-    const [aboutOpen, setAboutOpen] = useState(false);
+    const [tab, setTab] = useState<'oefeningen' | 'overzicht'>('oefeningen');
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(
@@ -88,19 +114,6 @@ export default function Sidebar() {
         [search, selectedGrade],
     );
 
-    // Theme is a single cycling icon (declutters the footer): light → dark → colorblind → light.
-    // Icon shows the CURRENT theme; title announces the NEXT one for discoverability.
-    const themeOrder = ['light', 'dark', 'colorblind'] as const;
-    const themeMeta = {
-        light: { Icon: Sun, label: 'Licht thema' },
-        dark: { Icon: Moon, label: 'Donker thema' },
-        colorblind: { Icon: Contrast, label: 'Hoog contrast' },
-    } as const;
-    const cycleTheme = () => setTheme(themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length]);
-    const ThemeIcon = themeMeta[theme].Icon;
-    // Match IconButton's SF-feel: the theme glyph thickens on hover/focus.
-    const [themeHover, setThemeHover] = useState(false);
-    const nextTheme = themeOrder[(themeOrder.indexOf(theme) + 1) % themeOrder.length];
 
     const toggleSubdomain = (id: string) => {
         if (isSearching) return;  // tree is force-expanded during search
@@ -123,11 +136,14 @@ export default function Sidebar() {
 
     return (
         <aside className="mac-vibrant" style={S.aside}>
-            <div style={S.headerCol}>
-                <button type="button" className="ui-hover" style={S.logoBtn} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
-                    <Wordmark height={38} />
-                </button>
+            {/* Tab switch: exercise palette vs the block outline (Overzicht). The logo now
+                lives in the full-width topbar, so the sidebar starts straight at the tabs. */}
+            <div className="seg-group" style={{ ...S.tabSwitch, marginTop: 'var(--sp-3)' }}>
+                <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => setTab('oefeningen')}>Oefeningen</button>
+                <button className="seg-btn" aria-pressed={tab === 'overzicht'} onClick={() => setTab('overzicht')} data-tour="overzicht-tab">Overzicht</button>
             </div>
+
+            {tab === 'overzicht' ? <OverzichtPanel /> : (<>
 
             {locked && (
                 <div style={S.lockedPalette}>
@@ -142,6 +158,7 @@ export default function Sidebar() {
                                 className="sidebar-leaf"
                                 style={S.leafBtn}
                                 onClick={() => addBlockFromType(t.typeId, t.label, t.lockedConstraints)}
+                                {...leafHover(t.typeId, t.lockedConstraints)}
                             >
                                 <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                 <span>{t.label}</span>
@@ -155,32 +172,23 @@ export default function Sidebar() {
             )}
 
             {!locked && (<>
+            {/* Search + leerjaar share one row. Leerjaar shortened (L1…L6) to stay compact. */}
             <div style={S.searchWrap}>
                 <input
                     type="text"
                     placeholder="🔎 Zoek oefening…"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    style={S.searchInput}
+                    style={{ ...S.searchInput, flex: 1 }}
                 />
-                <button className="ui-icon-btn" style={S.footerIconBtn} onClick={cycleTheme} title={`Thema: ${themeMeta[theme].label} — klik voor ${themeMeta[nextTheme].label}`} aria-label={`Thema wisselen (nu ${themeMeta[theme].label})`}
-                    onMouseEnter={() => setThemeHover(true)} onMouseLeave={() => setThemeHover(false)}
-                    onFocus={() => setThemeHover(true)} onBlur={() => setThemeHover(false)}>
-                    <ThemeIcon size={16} weight={themeHover ? 'bold' : 'regular'} />
-                </button>
-                <button className="ui-icon-btn" style={S.footerIconBtn} onClick={() => setHelpOpen(true)} title="Help / uitleg" aria-label="Help">
-                    <HelpCircle size={16} />
-                </button>
-            </div>
-
-            {/* Leerjaar — soft starting point: seeds base difficulty + hides later-grade leaves. */}
-            <div style={S.gradeWrap}>
-                <PopupSelect
-                    value={selectedGrade ?? 0}
-                    options={[{ value: 0, label: 'Alle leerjaren' }, ...LEERJAREN.map(g => ({ value: g, label: `Leerjaar ${g}` }))]}
-                    onChange={(v) => setSelectedGrade(v === 0 ? null : (v as Leerjaar))}
-                    ariaLabel="Leerjaar kiezen"
-                />
+                <div style={{ flexShrink: 0 }}>
+                    <PopupSelect
+                        value={selectedGrade ?? 0}
+                        options={[{ value: 0, label: 'Alle' }, ...LEERJAREN.map(g => ({ value: g, label: `L${g}` }))]}
+                        onChange={(v) => setSelectedGrade(v === 0 ? null : (v as Leerjaar))}
+                        ariaLabel="Leerjaar kiezen"
+                    />
+                </div>
             </div>
 
             <hr style={S.divider} />
@@ -238,6 +246,7 @@ export default function Sidebar() {
                                                                         className="sidebar-leaf"
                                                                         style={S.leafBtn}
                                                                         onClick={() => addBlockFromType(type.typeId!, type.label, type.defaultConstraints)}
+                                                                        {...leafHover(type.typeId!, type.defaultConstraints)}
                                                                     >
                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                         <span>{type.label}</span>
@@ -273,6 +282,7 @@ export default function Sidebar() {
                                                                                         className="sidebar-leaf"
                                                                                         style={S.leafBtn}
                                                                                         onClick={() => addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints)}
+                                                                                        {...leafHover(leaf.typeId, leaf.defaultConstraints)}
                                                                                     >
                                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                                         <span>{leaf.label}</span>
@@ -296,23 +306,16 @@ export default function Sidebar() {
             </div>
             </>)}
 
-            <div style={S.footer}>
-                <div style={S.footerActions}>
-                    <span style={{ ...S.footerText, flex: 1 }}>
-                        Updated: 03/06/2026<br />
-                        License: <button type="button" onClick={() => setAboutOpen(true)} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'underline' }}>AGPL-3.0</button>.
-                    </span>
-                    {!locked && <BaseSettingsPanel />}
-                    <a className="ui-icon-btn" href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" data-tour="feedback" style={S.footerIconBtn} title="Feedback geven" aria-label="Feedback">
-                        <MessageSquare size={16} />
-                    </a>
-                    <a className="ui-icon-btn" href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" style={{ ...S.footerIconBtn, color: '#e11d48', border: '1px solid #e11d48' }} title="Steun deze tool met een koffie ☕" aria-label="Doneer">
-                        <Heart size={16} fill="#e11d48" />
-                    </a>
-                </div>
-            </div>
-            {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
-            {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
+            </>)}
+
+            {/* Hover example card — portal so it escapes the sidebar's overflow/clip. */}
+            {preview && createPortal(
+                <div style={{ ...S.previewCard, top: Math.min(preview.top, window.innerHeight - 210), left: Math.max(8, preview.left) }}>
+                    <div style={S.previewLabel}>Voorbeeld</div>
+                    <ExercisePreview typeId={preview.typeId} constraints={preview.constraints} height={150} />
+                </div>,
+                document.body,
+            )}
         </aside>
     );
 }
@@ -322,11 +325,14 @@ export default function Sidebar() {
 
 
 const S = {
-    aside: { width: '300px', minWidth: '300px', border: '1px solid var(--separator)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-1)', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
+    aside: { width: '300px', minWidth: '300px', borderRight: '1px solid var(--separator)', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
     headerCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-3) var(--sp-4)', color: 'var(--text-main)' } as React.CSSProperties,
     // Negative margin so the hover fill pads the wordmark without nudging it.
     logoBtn: { background: 'transparent', border: 'none', padding: '2px 4px', margin: '-2px -4px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex' } as React.CSSProperties,
     divider: { border: 'none', height: '1px', backgroundColor: 'var(--separator)', margin: '0 var(--sp-4)' } as React.CSSProperties,
+    tabSwitch: { margin: '0 var(--sp-4) var(--sp-2)' } as React.CSSProperties,
+    previewCard: { position: 'fixed', zIndex: 400, width: '290px', background: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-2)', padding: 'var(--sp-2)', pointerEvents: 'none' } as React.CSSProperties,
+    previewLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '6px', padding: '0 2px' } as React.CSSProperties,
     searchWrap: { padding: 'var(--sp-2) var(--sp-4)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' } as React.CSSProperties,
     gradeWrap: { padding: '0 var(--sp-4) var(--sp-2)' } as React.CSSProperties,
     searchInput: {

@@ -10,11 +10,14 @@ interface Step { sel: string; title: string; body: string; advance: Advance; }
 // and advances either on a real action (block added / exercises generated) or a Next click.
 // The overlay is non-blocking (pointer-events:none) so the user can actually do each step.
 const STEPS: Step[] = [
-    { sel: '[data-tour="sidebar-nav"]', title: 'Kies een oefening', body: 'Klik op een oefening in de lijst links om ze aan je blad toe te voegen.', advance: 'blocks' },
-    { sel: '[data-tour="inspector"]', title: 'Pas de instellingen aan', body: 'In dit paneel stel je het blok in: aantal oefeningen, moeilijkheidsgraad en meer.', advance: 'next' },
-    { sel: '[data-tour="generate-block"]', title: 'Genereer', body: 'Klik op Genereer om de oefeningen te maken (of opnieuw te maken).', advance: 'exercises' },
-    { sel: '[data-tour="print"]', title: 'Afdrukken', body: 'Klaar! Hier druk je af of bewaar je als PDF. Je hoeft nu niet te klikken.', advance: 'next' },
-    { sel: '[data-tour="feedback"]', title: 'Werk in uitvoering', body: 'Alles wordt aangeboden zoals het is — deze website is volop in ontwikkeling. Feedback is welkom via deze knop linksonder.', advance: 'finish' },
+    { sel: '[data-tour="sidebar-nav"]', title: '1. Kies een oefening', body: 'Klik op een oefening in de lijst links om ze aan je blad toe te voegen.', advance: 'blocks' },
+    { sel: '[data-tour="inspector"]', title: '2. Pas ze aan', body: 'In dit paneel rechts stel je het blok in: aantal oefeningen, moeilijkheidsgraad, getalbereik en meer.', advance: 'next' },
+    { sel: '[data-tour="generate-block"]', title: '3. Genereer', body: 'Klik op Genereer om de oefeningen te maken (of opnieuw te maken met andere getallen).', advance: 'exercises' },
+    { sel: '[data-tour="print"]', title: '4. Afdrukken', body: 'Klaar! Hier druk je af of bewaar je als PDF — met of zonder oplossingen. Je hoeft nu niet te klikken.', advance: 'next' },
+    { sel: '[data-tour="menu"]', title: '5. Menu', body: 'Via ≡ Menu beheer je je werkbladen: open “Mijn bladen”, importeer of exporteer een blad, of deel het via een link.', advance: 'next' },
+    { sel: '[data-tour="settings"]', title: '6. Instellingen', body: 'Onder ⚙ Instellingen stel je de basis-moeilijkheid en het thema in, en vind je hulp en info over het project.', advance: 'next' },
+    { sel: '[data-tour="menu"]', title: '7. Laad een voorbeeldblad', body: 'Geen tijd om zelf te bouwen? Open ≡ Menu → “Kant-en-klare bladen” en kies een kant-en-klaar blad dat je daarna nog kan aanpassen.', advance: 'next' },
+    { sel: '[data-tour="overzicht-tab"]', title: '8. Overzicht', body: 'In het tabblad “Overzicht” zie je alle blokken op een rij: versleep om te ordenen, dupliceer of verwijder, en zie waar de pagina’s eindigen.', advance: 'finish' },
 ];
 
 const TT_W = 290;

@@ -28,3 +28,8 @@ export const STYLE_BOUNDS = {
     titel:  { fontMin: 12, fontMax: 28, padMax: 14, borderMax: 4 },
     footer: { fontMin: 7,  fontMax: 14, padMax: 8,  borderMax: 3 },
 } as const;
+
+// Exercise-body text size, shown in px for the UI (nominal base — viewers cluster
+// 14–18px). Stored as a zoom factor = px / base; applied via CSS `zoom` in ScaledBlock,
+// which auto-fits wide blocks so an enlarged grid/number-line can't clip in print.
+export const BODY_FONT_PX = { base: 14, min: 11, max: 18, step: 1 } as const;

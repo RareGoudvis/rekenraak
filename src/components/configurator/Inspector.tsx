@@ -8,6 +8,7 @@ import { regenerateBlock } from '../../services/generateDispatch';
 import { recomputeSplitsenExercise } from '../../services/splitsen/splitsenGenerator';
 import { formatMathNumber } from '../../services/math/formatters';
 import { suggestionsFor } from '../../config/instructionPresets';
+import { BODY_FONT_PX } from '../../config/printPalette';
 import StyleBuilderModal from './StyleBuilderModal';
 import Switch from '../ui/Switch';
 
@@ -23,6 +24,7 @@ const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string
 
 export default function Inspector() {
     const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [blockAdvancedOpen, setBlockAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
 
@@ -297,15 +299,62 @@ export default function Inspector() {
                                 style={sliderStyle(true)}
                             />
 
-                            {!locked && !activeBlock.typeId.startsWith('cijferen-') && (
+                            {/* Fine-tuning (spacing + per-block text size) tucked behind a
+                                disclosure so the common controls stay short. */}
+                            {!locked && (
                                 <>
-                                    <label style={{ ...S.label, marginTop: '14px' }}>Witruimte ({activeBlock.verticalSpacing || 14}px)</label>
-                                    <input
-                                        type="range" min="8" max="40"
-                                        value={activeBlock.verticalSpacing || 14}
-                                        onChange={(e) => updateBlockSettings(activeBlock.id, { verticalSpacing: Number(e.target.value) })}
-                                        style={sliderStyle(true)}
-                                    />
+                                    <button
+                                        onClick={() => setBlockAdvancedOpen(o => !o)}
+                                        style={{ ...S.label, marginTop: '14px', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                                    >
+                                        Geavanceerd <span style={{ fontSize: '10px' }}>{blockAdvancedOpen ? '▾' : '▸'}</span>
+                                    </button>
+
+                                    {blockAdvancedOpen && (
+                                        <>
+                                            {!activeBlock.typeId.startsWith('cijferen-') && (
+                                                <>
+                                                    <label style={{ ...S.label, marginTop: '10px' }}>Witruimte ({activeBlock.verticalSpacing || 14}px)</label>
+                                                    <input
+                                                        type="range" min="8" max="40"
+                                                        value={activeBlock.verticalSpacing || 14}
+                                                        onChange={(e) => updateBlockSettings(activeBlock.id, { verticalSpacing: Number(e.target.value) })}
+                                                        style={sliderStyle(true)}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {/* Per-block text-size override (CSS zoom). Falls back to the global
+                                                'Tekstgrootte oefeningen' when no override is set. */}
+                                            {(() => {
+                                                const override: number | undefined = activeBlock.constraints?.bodyFontScale;
+                                                const effective = override ?? docSettings.bodyFontScale ?? 1;
+                                                const px = Math.round(effective * BODY_FONT_PX.base);
+                                                return (
+                                                    <>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
+                                                            <label style={{ ...S.label, marginTop: 0 }}>
+                                                                Tekstgrootte blok ({px} px){override == null ? ' · volgt blad' : ''}
+                                                            </label>
+                                                            {override != null && (
+                                                                <button
+                                                                    onClick={() => updateBlockSettings(activeBlock.id, { constraints: { ...activeBlock.constraints, bodyFontScale: undefined } })}
+                                                                    style={{ background: 'none', border: 'none', color: 'var(--accent-purple)', cursor: 'pointer', fontSize: '11px', padding: 0 }}>
+                                                                    ↺ volg blad
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <input
+                                                            type="range" min={BODY_FONT_PX.min} max={BODY_FONT_PX.max} step={BODY_FONT_PX.step}
+                                                            value={px}
+                                                            onChange={(e) => updateBlockSettings(activeBlock.id, { constraints: { ...activeBlock.constraints, bodyFontScale: Number(e.target.value) / BODY_FONT_PX.base } })}
+                                                            style={sliderStyle(true)}
+                                                        />
+                                                    </>
+                                                );
+                                            })()}
+                                        </>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -976,9 +1025,11 @@ export default function Inspector() {
 }
 
 const S = {
-    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-base)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: '0 var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
+    sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-surface)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     lockBanner: { padding: 'var(--sp-3)', fontSize: 'var(--text-sm)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
-    card: { backgroundColor: 'var(--bg-surface)', padding: 'var(--sp-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
+    // Flat section (no boxed "pill") — header + content separated by a hairline; reclaims the
+    // horizontal space the card border/padding used to eat. Panel bg comes from the frosted aside.
+    card: { padding: '0 0 var(--sp-4)', borderBottom: '1px solid var(--separator)' } as React.CSSProperties,
     // Section title: calm, sentence-case, weight-driven (not tiny UPPERCASE tracked).
     cardTitle: { color: 'var(--text-main)', margin: '0 0 var(--sp-3) 0', fontSize: 'var(--text-md)', fontWeight: 600, letterSpacing: '-0.01em' } as React.CSSProperties,
     col: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)' } as React.CSSProperties,

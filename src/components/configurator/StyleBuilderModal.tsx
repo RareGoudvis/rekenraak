@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { X } from '@phosphor-icons/react';
+import { X, Warning } from '@phosphor-icons/react';
 import ModalPortal from '../ui/ModalPortal';
 import Switch from '../ui/Switch';
 import { SwatchRow } from '../ui/Swatch';
 import { useWorksheetStore, type RegionStyle } from '../../store/useWorksheetStore';
-import { PRINT_PALETTE, PRINT_FILLS, STYLE_BOUNDS } from '../../config/printPalette';
+import { PRINT_PALETTE, PRINT_FILLS, STYLE_BOUNDS, BODY_FONT_PX } from '../../config/printPalette';
 import { overlayRegionStyle } from '../../services/regionStyle';
 
 type Region = 'header' | 'titel' | 'footer';
@@ -35,6 +35,28 @@ export default function StyleBuilderModal({ onClose }: { onClose: () => void }) 
                         <button type="button" onClick={onClose} style={closeBtn} aria-label="Sluiten"><X size={18} /></button>
                     </div>
 
+                    {/* Global exercise-body text size — not a region; scales every block's
+                        exercise + opdracht-titel together (a per-block override lives in the
+                        Inspector). Shown in px (≈base 14); stored as a zoom factor px/base.
+                        16px+ is flagged: that large, wide blocks get auto-fit-shrunk to fit. */}
+                    {(() => {
+                        const px = Math.round((docSettings.bodyFontScale ?? 1) * BODY_FONT_PX.base);
+                        const bigText = px >= 16;
+                        return (
+                            <Field label={
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: bigText ? '#b91c1c' : undefined }}
+                                    title={bigText ? 'Grote tekst kan brede oefeningen automatisch verkleinen om op de pagina te passen.' : undefined}>
+                                    {bigText && <Warning size={14} weight="fill" />}
+                                    Tekstgrootte oefeningen: {px} px
+                                </span>
+                            }>
+                                <input type="range" min={BODY_FONT_PX.min} max={BODY_FONT_PX.max} step={BODY_FONT_PX.step}
+                                    value={px}
+                                    onChange={(e) => updateDocSettings({ bodyFontScale: Number(e.target.value) / BODY_FONT_PX.base })} style={range} />
+                            </Field>
+                        );
+                    })()}
+
                     {/* Region switch */}
                     <div className="seg-group" style={{ marginBottom: 'var(--sp-4)' }}>
                         {REGIONS.map((r) => (
@@ -60,34 +82,8 @@ export default function StyleBuilderModal({ onClose }: { onClose: () => void }) 
                                 <SwatchRow options={PRINT_FILLS} value={cur.background ?? ''} onChange={(v) => patch({ background: v })} />
                             </Field>
 
-                            <Field label="Uitlijning">
-                                <div className="seg-group">
-                                    {(['left', 'center', 'right'] as const).map((a) => (
-                                        <button key={a} className="seg-btn" aria-pressed={(cur.align ?? 'left') === a} onClick={() => patch({ align: a })}>
-                                            {a === 'left' ? 'Links' : a === 'center' ? 'Midden' : 'Rechts'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </Field>
-
-                            <Field label="Lijnen">
-                                <div className="seg-group">
-                                    <button className="seg-btn" aria-pressed={!!cur.borderTop} onClick={() => patch({ borderTop: !cur.borderTop, borderBox: false })}>Boven</button>
-                                    <button className="seg-btn" aria-pressed={!!cur.borderBottom} onClick={() => patch({ borderBottom: !cur.borderBottom, borderBox: false })}>Onder</button>
-                                    <button className="seg-btn" aria-pressed={!!cur.borderBox} onClick={() => patch({ borderBox: !cur.borderBox, borderTop: false, borderBottom: false })}>Kader</button>
-                                </div>
-                            </Field>
-                            {(cur.borderTop || cur.borderBottom || cur.borderBox) && (
-                                <>
-                                    <Field label={`Lijndikte: ${cur.borderWidth ?? 1.5}px`}>
-                                        <input type="range" min={1} max={b.borderMax} step={0.5} value={cur.borderWidth ?? 1.5}
-                                            onChange={(e) => patch({ borderWidth: Number(e.target.value) })} style={range} />
-                                    </Field>
-                                    <Field label="Lijnkleur">
-                                        <SwatchRow options={PRINT_PALETTE} value={cur.borderColor ?? '#000000'} onChange={(v) => patch({ borderColor: v })} />
-                                    </Field>
-                                </>
-                            )}
+                            {/* Lijnen (Geen/Onderstreept/Kader) + uitlijning/positie staan in het
+                                rechterpaneel (Koptekst-/Opdracht-stijl, Titel positie) — hier niet dubbel. */}
 
                             {/* Footer side-padding is the print margin — only header/titel expose padding. */}
                             {region !== 'footer' && (
@@ -132,7 +128,7 @@ export default function StyleBuilderModal({ onClose }: { onClose: () => void }) 
     );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
     return (
         <div style={{ marginBottom: 'var(--sp-4)' }}>
             <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-muted)', marginBottom: 'var(--sp-2)' }}>{label}</label>

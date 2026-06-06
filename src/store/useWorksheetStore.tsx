@@ -54,9 +54,17 @@ export interface DocSettings {
     headerCustom?: RegionStyle;
     titelCustom?: RegionStyle;
     footerCustom?: RegionStyle;
+    // Global content zoom for block bodies (exercise + opdracht-titel); 1 = 100%.
+    // A per-block override lives in block.constraints.bodyFontScale. Optional → back-compat.
+    bodyFontScale?: number;
 }
 
 export type ThemeName = 'dark' | 'light' | 'colorblind';
+// Which full-screen view is active. 'editor' = normal 3-panel editor; the others are
+// full-screen library overlays. UI-only — never persisted/serialised.
+export type WorksheetView = 'editor' | 'mijn-bladen' | 'bibliotheek';
+// Autosave status surfaced in the top bar. UI-only.
+export type SaveState = 'idle' | 'saving' | 'saved';
 
 interface WorksheetState {
     blocks: MathBlock[];
@@ -73,6 +81,11 @@ interface WorksheetState {
     draftBlocks: MathBlock[];
     showSolutions: boolean;
     theme: ThemeName;
+    view: WorksheetView;             // active full-screen view (UI-only, not persisted)
+    sidebarPreview: boolean;         // show a live example card when hovering a sidebar leaf (localStorage-backed)
+    saveState: SaveState;            // autosave status for the top-bar tracker (UI-only)
+    lastSavedAt: number | null;      // epoch ms of last successful autosave (UI-only)
+    blockPages: Record<string, number>;  // measured page index per block (for Overzicht page-break markers; UI-only)
     _history: MathBlock[][];
     _historyIndex: number;
     addBlockFromType: (typeId: string, label: string, overrideConstraints?: Record<string, unknown>) => void;
@@ -80,6 +93,7 @@ interface WorksheetState {
     clearBlocks: () => void;
     moveBlockUp: (id: string) => void;
     moveBlockDown: (id: string) => void;
+    reorderBlocks: (fromIndex: number, toIndex: number) => void;
     updateBlockInstruction: (id: string, text: string) => void;
     updateBlockLayout: (id: string, layout: LayoutPreset, steppedLines?: number) => void;
     updateBlockSettings: (id: string, updates: Partial<MathBlock>) => void;
@@ -104,6 +118,9 @@ interface WorksheetState {
     setSelectedGrade: (grade: Leerjaar | null) => void;
     setShowSolutions: (show: boolean) => void;
     setTheme: (theme: ThemeName) => void;
+    setView: (view: WorksheetView) => void;
+    setSidebarPreview: (on: boolean) => void;
+    setBlockPages: (pages: Record<string, number>) => void;
     undo: () => void;
     redo: () => void;
     canUndo: () => boolean;
@@ -137,18 +154,31 @@ function pushHistory(history: MathBlock[][], index: number, blocks: MathBlock[])
 const INITIAL_THEME = loadInitialTheme();
 applyTheme(INITIAL_THEME);
 
+// Sidebar hover-preview toggle persists across sessions (default on). Same localStorage
+// pattern as theme; absent/unavailable → true.
+const SIDEBAR_PREVIEW_KEY = 'rekenraak_sidebar_preview';
+function loadInitialSidebarPreview(): boolean {
+    try { return localStorage.getItem(SIDEBAR_PREVIEW_KEY) !== '0'; } catch { return true; }
+}
+const INITIAL_SIDEBAR_PREVIEW = loadInitialSidebarPreview();
+
 export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     blocks: [],
     activeBlockId: null,
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
     footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: false, centerText: '', showCenterText: false },
-    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true },
+    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
     baseSettings: { ...DEFAULT_BASE },
     selectedGrade: null,
     curriculum: null,
     draftBlocks: [],
     showSolutions: false,
     theme: INITIAL_THEME,
+    view: 'editor',
+    sidebarPreview: INITIAL_SIDEBAR_PREVIEW,
+    saveState: 'idle',
+    lastSavedAt: null,
+    blockPages: {},
     _history: [[]],
     _historyIndex: 0,
 
@@ -217,6 +247,17 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         if (index === -1 || index === state.blocks.length - 1) return state;
         const newBlocks = [...state.blocks];
         [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
+        return { blocks: newBlocks, ...pushHistory(state._history, state._historyIndex, newBlocks) };
+    }),
+
+    // Drag-reorder from the Overzicht outline: move one block to an arbitrary index.
+    // Order isn't frozen by curriculum lock (move-up/down already work locked).
+    reorderBlocks: (fromIndex, toIndex) => set((state) => {
+        const n = state.blocks.length;
+        if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= n || toIndex >= n) return state;
+        const newBlocks = [...state.blocks];
+        const [moved] = newBlocks.splice(fromIndex, 1);
+        newBlocks.splice(toIndex, 0, moved);
         return { blocks: newBlocks, ...pushHistory(state._history, state._historyIndex, newBlocks) };
     }),
 
@@ -290,6 +331,12 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         try { localStorage.setItem('theme', theme); } catch { /* ignore */ }
         set({ theme });
     },
+    setView: (view) => set({ view }),
+    setBlockPages: (pages) => set({ blockPages: pages }),
+    setSidebarPreview: (on) => {
+        try { localStorage.setItem(SIDEBAR_PREVIEW_KEY, on ? '1' : '0'); } catch { /* ignore */ }
+        set({ sidebarPreview: on });
+    },
     duplicateBlock: (id) => set((state) => {
         const index = state.blocks.findIndex(b => b.id === id);
         if (index === -1) return state;
@@ -317,8 +364,12 @@ useWorksheetStore.subscribe((state, prev) => {
     if (!changed) return;
     // Don't overwrite a populated autosave with an empty fresh-tab state.
     if (state.blocks.length === 0) return;
+    // Flag 'saving' for the top-bar tracker. This set() re-fires this subscription, but
+    // the watched-ref check above is false for a saveState-only change → no loop.
+    if (state.saveState !== 'saving') useWorksheetStore.setState({ saveState: 'saving' });
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
         saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings, baseSettings: state.baseSettings, selectedGrade: state.selectedGrade }, state.curriculum);
+        useWorksheetStore.setState({ saveState: 'saved', lastSavedAt: Date.now() });
     }, 1500);
 });

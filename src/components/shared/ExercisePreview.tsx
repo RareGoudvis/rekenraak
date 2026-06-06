@@ -10,11 +10,25 @@ interface Props {
     height?: number;                         // clip-box height; default 150
 }
 
+// A preview never needs huge numbers, and a generator fed an out-of-range max (e.g. the
+// global baseMaxGetal from a high leerjaar = 1e6/1e10) can allocate until it OOMs. Cap the
+// max keys to a safe ceiling before generating — protects MassAdd / Bibliotheek / hover card.
+const PREVIEW_MAX = 1000;
+function clampForPreview(constraints: Record<string, unknown>): Record<string, unknown> {
+    const out = { ...constraints };
+    for (const key of ['maxGetal', 'maxRange', 'maxNumber'] as const) {
+        const v = out[key];
+        if (typeof v === 'number' && v > PREVIEW_MAX) out[key] = PREVIEW_MAX;
+    }
+    return out;
+}
+
 // Build a throwaway block and call the generator DIRECTLY — never touches the
 // store / setExercises. Caller passes the already-resolved constraints.
-function buildPreviewBlock(typeId: string, constraints: Record<string, unknown>): MathBlock | null {
+function buildPreviewBlock(typeId: string, rawConstraints: Record<string, unknown>): MathBlock | null {
     const def = REGISTRY[typeId];
     if (!def) return null;
+    const constraints = clampForPreview(rawConstraints);
     const block: MathBlock = {
         id: `preview-${typeId}`,
         typeId,

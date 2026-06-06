@@ -5,6 +5,9 @@ import Sidebar from './components/layout/sidebar';
 import TopBar from './components/layout/TopBar';
 import PanelShell from './components/layout/PanelShell';
 import { EXERCISE_UI } from './config/exerciseUI';
+import { ScaledBlock } from './components/viewer/ScaledBlock';
+import MijnBladenView from './components/library/MijnBladenView';
+import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
@@ -63,6 +66,8 @@ export default function App() {
   const docSettings = useWorksheetStore((state) => state.docSettings);
   const showSolutions = useWorksheetStore((state) => state.showSolutions);
   const activeSelectionId = useWorksheetStore((state) => state.activeBlockId);
+  const view = useWorksheetStore((state) => state.view);
+  const setBlockPages = useWorksheetStore((state) => state.setBlockPages);
 
   const removeBlock = useWorksheetStore((state) => state.removeBlock);
   const moveBlockUp = useWorksheetStore((state) => state.moveBlockUp);
@@ -111,6 +116,7 @@ export default function App() {
     }
     // 3. Release banner: shown until user dismisses this exact version.
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time boot init
       if (localStorage.getItem(RELEASE_SEEN_KEY) !== RELEASE_VERSION) setReleaseBannerVisible(true);
     } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,7 +143,19 @@ export default function App() {
     let p = PAGE_H;
     while (p < totalH) { breaks.push(p); p += PAGE_H; }
     setPageBreaks(breaks);
-  }, [blocks, docSettings]);
+
+    // Per-block page index (for the Overzicht auto page-break markers). Measured in the
+    // same coordinate space as the dashed indicators (offset from the sheet top / PAGE_H).
+    const a4Top = a4Ref.current.getBoundingClientRect().top;
+    const pages: Record<string, number> = {};
+    for (const b of blocks) {
+      const el = document.getElementById(`block-${b.id}`);
+      if (!el) continue;
+      const rel = el.getBoundingClientRect().top - a4Top;
+      pages[b.id] = Math.max(0, Math.floor(rel / PAGE_H));
+    }
+    setBlockPages(pages);
+  }, [blocks, docSettings, showSolutions, setBlockPages]);
 
   // Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
   // optional repeating print header (.print-repeat-fields). Null if no field is enabled.
@@ -168,21 +186,20 @@ export default function App() {
       <span className="mobile-block-hint">Tip: draai je tablet in liggende stand (landscape).</span>
     </div>
     {tourOpen && <TourOverlay onClose={closeTour} />}
-    <div className="print-root" style={styles.appContainer}>
+    <div className="print-root" style={styles.appShell}>
+      {/* FULL-WIDTH TOP BAR — spans the window; the three panels sit directly underneath it. */}
+      <div className="no-print" onClick={(e) => e.stopPropagation()}>
+        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
+      </div>
+
+      <div className="print-body-row" style={styles.appBody}>
       {/* LEFT SIDEBAR — collapses to a hover flyout below 1536px (PanelShell) */}
       <PanelShell side="left" label="Oefeningen"><Sidebar /></PanelShell>
 
       {/* CENTRAL WORK AREA */}
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
-        <div className="no-print" onClick={(e) => e.stopPropagation()} style={{ width: '100%' }}>
-          <TopBar
-            onPrint={handlePrint}
-            onOpenHelp={() => setHelpOpen(true)}
-          />
-        </div>
-
-        {/* Scroll container starts BELOW the topbar so its scrollbar only spans the viewer.
+        {/* Scroll container holds the banners + sheet (the topbar is now a sibling above).
             Padding ≥ the sheet's shadow reach (--shadow-3 = 48px blur): overflowY:auto forces
             overflow-x to compute as auto too, so without this the side/bottom shadow is clipped. */}
         <div className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 48px 48px' }}>
@@ -305,7 +322,7 @@ export default function App() {
               const isNotLastBlock = index < blocks.length - 1;
 
               return (
-                <div key={block.id} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers, docSettings.blockSpacing ?? 12)}>
+                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers, docSettings.blockSpacing ?? 12)}>
                   {isActive && (
                     <div className="no-print" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
                       <IconButton
@@ -339,6 +356,11 @@ export default function App() {
                     <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'Azeret Mono, monospace', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>
                   )}
 
+                  {/* Body zoom: scales the opdracht-titel + exercise viewer together (text AND
+                      its coupled SVG/boxes), auto-fitting to width so a wide block can't clip in
+                      print. Per-block override wins over the global default; block chrome
+                      (controls/spacing/dividers/page-break) stays outside, unscaled. */}
+                  <ScaledBlock scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}>
                   <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
@@ -377,6 +399,7 @@ export default function App() {
                     const Viewer = EXERCISE_UI[block.typeId]?.Viewer;
                     return Viewer ? <Viewer block={block} showSolutions={showSolutions} /> : null;
                   })()}
+                  </ScaledBlock>
                 </div>
               );
             })}
@@ -409,8 +432,12 @@ export default function App() {
 
       {/* RIGHT INSPECTOR — collapses to a hover flyout below 1536px (PanelShell) */}
       <PanelShell side="right" label="Instellingen"><Inspector /></PanelShell>
+      </div>
     </div>
     {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
+    {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
+    {view === 'mijn-bladen' && <MijnBladenView />}
+    {view === 'bibliotheek' && <BibliotheekView />}
     </>
   );
 }

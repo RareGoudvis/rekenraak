@@ -708,7 +708,12 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     // maxGetal is het maximum van het deeltal
     else {
         const displayScale = numberType === 'decimal' ? Math.pow(10, decimalPlaces) : 1;
-        const { divisionLevel = 0 } = constraints;
+        // Niveau-presets (deler = 1 cijfer). `divisionLevels` = multi-select array (combine niveaus);
+        // falls back to the single `divisionLevel`. Empty → masker/vrij mode.
+        const { divisionLevel = 0, divisionLevels } = constraints;
+        const activeLevels: number[] = Array.isArray(divisionLevels) && divisionLevels.length
+            ? divisionLevels
+            : (divisionLevel >= 1 ? [divisionLevel] : []);
         const useDividendMask = Object.values(operand1Mask).some(v => v);
         const useDivisorMask = Object.values(operand2Mask).some(v => v);
 
@@ -716,26 +721,33 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             attempts++;
             let dividendVal: number, divisorVal: number, quotientVal: number;
 
-            if (divisionLevel >= 1 && divisionLevel <= 5 && numberType === 'natural') {
-                // Niveau-presets: achterwaarts genereren (quotiënt × deler = deeltal)
-                if (divisionLevel === 5) {
-                    // Niveau 5: voorwaarts, quotiënt met max 1 decimaal
-                    divisorVal = randInt(2, 9);
+            if (activeLevels.length && numberType === 'natural') {
+                // Pick one of the selected niveaus per exercise so combined levels interleave.
+                const lvl = activeLevels[randInt(0, activeLevels.length - 1)];
+                divisorVal = randInt(2, 9);
+                if (lvl === 6) {
+                    // N6: voorwaarts, quotiënt met max 1 decimaal (bv. 711:6=118,5)
                     dividendVal = randInt(Math.max(10, Math.ceil(maxGetal * 0.1)), maxGetal);
                     if (dividendVal % divisorVal === 0) continue;
                     if ((dividendVal * 10) % divisorVal !== 0) continue;
                     quotientVal = Math.round((dividendVal / divisorVal) * 10) / 10;
+                } else if (lvl === 2) {
+                    // N2 (NIEUW): TE : E — 2-cijferig deeltal (≤99), 2-cijferig non-rond quotiënt (bv. 84:7=12)
+                    const maxQ = Math.floor(99 / divisorVal);
+                    if (maxQ < 11) continue;
+                    quotientVal = randInt(10, maxQ);
+                    if (quotientVal % 10 === 0) continue; // round quotients zijn N1-achtig
+                    dividendVal = quotientVal * divisorVal; // ≤ 99 by construction → geen maxGetal-check
                 } else {
-                    // Niveau 1-4: achterwaarts vanuit quotiëntstructuur
-                    divisorVal = randInt(2, 9);
-                    if (divisionLevel === 1) {
+                    // Achterwaarts vanuit quotiëntstructuur
+                    if (lvl === 1) {
                         quotientVal = randInt(1, 9) * 10; // T
-                    } else if (divisionLevel === 2) {
+                    } else if (lvl === 3) {
                         quotientVal = randInt(1, 9) * 100 + randInt(1, 9); // H+E
-                    } else if (divisionLevel === 3) {
+                    } else if (lvl === 4) {
                         quotientVal = randInt(1, 9) * 100 + randInt(1, 9) * 10 + randInt(1, 9); // H+T+E
                     } else {
-                        quotientVal = randInt(1, 9) * 10 + randInt(1, 9); // T+E
+                        quotientVal = randInt(1, 9) * 10 + randInt(1, 9); // N5: T+E
                     }
                     dividendVal = quotientVal * divisorVal;
                     if (dividendVal > maxGetal || dividendVal <= 0) continue;
