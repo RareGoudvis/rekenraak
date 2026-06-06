@@ -76,7 +76,7 @@ lives in memory.
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector context |
 | `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths** |
 | `footer` | `FooterData` | school/klas/leerkracht/pagina + centerText toggles |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, numberBlocks, gaps |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`) |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `theme` | `'dark' \| 'light' \| 'colorblind'` | Persisted to localStorage, applied as `data-theme` on `<html>` |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
@@ -521,6 +521,7 @@ src/
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components
         ├── VerticalFraction.tsx        # shared stacked-fraction component
+        ├── ScaledBlock.tsx             # per-block body-zoom wrapper (bodyFontScale); auto-fits to width (scrollWidth/clientWidth ratio) so a wide block can't clip in print
         └── FragmentableGrid.tsx        # block-stack-of-rows layout so items flow across print page breaks
 ```
 

@@ -15,6 +15,10 @@ dist-ssr
 # Local Claude Code settings (per-machine, not shared)
 .claude/settings.local.json
 
+# Markdown docs are kept local-only — never pushed (except README)
+*.md
+!README.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

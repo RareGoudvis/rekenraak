@@ -218,6 +218,7 @@ src/
         ├── MetenViewer.tsx        # lengte-meten + omtrek: to-scale SVG (1cm≈37.8px) + side labels/blanks
         ├── TemperatuurViewer.tsx  # Thermometer(s): kleuren / aflezen / verschil
         ├── VerticalFraction.tsx   # Shared stacked-fraction component
+        ├── ScaledBlock.tsx        # Body-zoom wrapper (bodyFontScale); auto-fits to width so a wide block can't clip in print
         └── FragmentableGrid.tsx   # row-chunked grid so items flow across print page breaks
 ```
 
@@ -273,7 +274,7 @@ Single Zustand store. Everything is in memory (no persistence). Key slices:
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector panel context |
 | `header` | `HeaderData` | Naam/klas/nummer/datum toggles + title |
 | `footer` | `FooterData` | School/klas/leerkracht/pagina toggles + values |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, bodyFontScale (global exercise-body zoom; per-block override via `constraints.bodyFontScale`) |
 | `showSolutions` | `boolean` | Toggles red solution overlay in preview and print |
 | `theme` | `'dark' \| 'light' \| 'colorblind'` | Persisted to localStorage, applied as `data-theme` on `<html>` |
 | `baseSettings` | `BaseSettings` | Global default difficulty snapshotted into each new block (`baseApply`) — see ARCHITECTURE §13 |
