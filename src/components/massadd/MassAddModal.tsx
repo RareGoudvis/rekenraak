@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { X, ArrowClockwise as RotateCw, Check, Plus } from '@phosphor-icons/react';
+import { ArrowClockwise as RotateCw, Check, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { baseApply } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
-import ModalPortal from '../ui/ModalPortal';
+import ModalShell from '../ui/ModalShell';
 
 interface Props {
     onClose: () => void;
@@ -70,15 +70,12 @@ export default function MassAddModal({ onClose }: Props) {
     };
 
     return (
-        <ModalPortal>
-        <div style={S.overlay} onClick={onClose}>
-            <div style={S.modal} onClick={(e) => e.stopPropagation()}>
+        <ModalShell onClose={onClose} ariaLabel="Oefeningen toevoegen" variant="dialog" maxWidth={1200}>
                 <div style={S.header}>
                     <div>
                         <h2 style={S.title}>Oefeningen toevoegen</h2>
                         <p style={S.subtitle}>Kies oefeningen, stel varianten in, en voeg ze in één keer toe. De basisinstellingen (zijbalk) bepalen de moeilijkheidsgraad.</p>
                     </div>
-                    <button style={S.closeBtn} onClick={onClose} title="Sluiten" aria-label="Sluiten"><X size={20} /></button>
                 </div>
 
                 <div style={S.filterBar}>
@@ -166,34 +163,17 @@ export default function MassAddModal({ onClose }: Props) {
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
-        </ModalPortal>
+        </ModalShell>
     );
 }
 
 const S = {
-    overlay: {
-        position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '24px',
-    } as React.CSSProperties,
-    modal: {
-        width: '100%', maxWidth: '1200px', height: '100%', maxHeight: '90vh',
-        background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-    } as React.CSSProperties,
     header: {
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px',
-        padding: '18px 20px', borderBottom: '1px solid var(--border-color)', flexShrink: 0,
+        padding: '18px 44px 18px 20px', borderBottom: '1px solid var(--border-color)', flexShrink: 0,
     } as React.CSSProperties,
     title: { margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-main)' } as React.CSSProperties,
     subtitle: { margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)', maxWidth: '720px' } as React.CSSProperties,
-    closeBtn: {
-        flexShrink: 0, width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer',
-        border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-    } as React.CSSProperties,
     filterBar: {
         display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 20px',
         borderBottom: '1px solid var(--border-color)', flexShrink: 0,

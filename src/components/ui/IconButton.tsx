@@ -60,19 +60,18 @@ function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: b
         alignItems: 'center',
         justifyContent: 'center',
         gap: hasLabel ? 'var(--sp-2)' : 0,
-        height: '34px',
-        minWidth: hasLabel ? undefined : '34px',
-        padding: hasLabel ? '0 14px' : 0,
+        height: '30px',
+        minWidth: hasLabel ? undefined : '30px',
+        padding: hasLabel ? '0 12px' : 0,
         borderRadius: 'var(--radius-sm)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         border: '1px solid var(--separator)',
         fontSize: 'var(--text-sm)',
         fontWeight: 600,
         fontFamily: 'inherit',
-        // Subtle macOS bezel (soft drop shadow); off in colorblind where shadow-1 is none.
-        boxShadow: 'var(--shadow-1)',
-        // hover/active live in index.css (.ui-icon-btn) — inline can't do :hover
-        transition: 'background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out)',
+        // Bezel + hover/active overlay live in index.css (.ui-icon-btn). The shadow is NOT set
+        // inline so the CSS hover/active rules can re-declare box-shadow without !important.
+        transition: 'background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out)',
         opacity: disabled ? 0.5 : 1,
     };
 

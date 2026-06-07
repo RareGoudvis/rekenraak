@@ -1,8 +1,7 @@
-import { X } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { getMaskPlaces, getBridgePlaces } from '../../services/math/mathEngine';
 import type { BaseBridgePolicy, BaseNumberType } from '../../config/baseSettings';
-import ModalPortal from '../ui/ModalPortal';
+import ModalShell from '../ui/ModalShell';
 import BridgeControl from '../configurator/BridgeControl';
 
 interface Props {
@@ -32,15 +31,12 @@ export default function BaseSettingsModal({ onClose }: Props) {
         updateBase({ baseBridges: { ...base.baseBridges, [key]: opt } });
 
     return (
-        <ModalPortal>
-        <div style={S.overlay} onClick={onClose}>
-            <div style={S.modal} onClick={(e) => e.stopPropagation()}>
+        <ModalShell onClose={onClose} ariaLabel="Basisinstellingen" variant="sheet" maxWidth={640}>
                 <div style={S.header}>
                     <div>
                         <h2 style={S.title}>Basisinstellingen</h2>
                         <p style={S.subtitle}>Standaard voor nieuwe oefeningen. Bestaande blokken blijven ongewijzigd. Getalopbouw en bruggetjes gelden enkel voor hoofdrekenen, cijferen en splitsen.</p>
                     </div>
-                    <button style={S.closeBtn} onClick={onClose} title="Sluiten" aria-label="Sluiten"><X size={20} /></button>
                 </div>
 
                 <div style={S.body}>
@@ -128,19 +124,14 @@ export default function BaseSettingsModal({ onClose }: Props) {
                 <div style={S.footer}>
                     <button style={S.doneBtn} onClick={onClose}>Klaar</button>
                 </div>
-            </div>
-        </div>
-        </ModalPortal>
+        </ModalShell>
     );
 }
 
 const S = {
-    overlay: { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' } as React.CSSProperties,
-    modal: { width: '100%', maxWidth: '640px', maxHeight: '90vh', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' } as React.CSSProperties,
-    header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', padding: '18px 20px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 } as React.CSSProperties,
+    header: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', padding: '18px 44px 18px 20px', borderBottom: '1px solid var(--border-color)', flexShrink: 0 } as React.CSSProperties,
     title: { margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-main)' } as React.CSSProperties,
     subtitle: { margin: '4px 0 0', fontSize: '12px', color: 'var(--text-muted)' } as React.CSSProperties,
-    closeBtn: { flexShrink: 0, width: '34px', height: '34px', borderRadius: '8px', cursor: 'pointer', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)', display: 'flex', alignItems: 'center', justifyContent: 'center' } as React.CSSProperties,
     body: { flex: 1, overflowY: 'auto', padding: '20px' } as React.CSSProperties,
     section: { marginBottom: '24px' } as React.CSSProperties,
     label: { display: 'block', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px' } as React.CSSProperties,

@@ -30,7 +30,7 @@ export const sharedPluginStyles = {
     // PopupSelect (dropdown for value pickers). Trigger mirrors radioBtn's calm
     // accent-soft selected look; menu is a token-styled popover.
     selectTrigger: {
-        width: '100%', padding: '8px 10px', fontSize: 'var(--text-sm)', fontWeight: 500,
+        width: '100%', padding: '6px 10px', fontSize: 'var(--text-sm)', fontWeight: 500,
         borderRadius: 'var(--radius-sm)', cursor: 'pointer',
         border: '1px solid var(--separator)', backgroundColor: 'var(--bg-surface-2)',
         color: 'var(--text-main)',
@@ -95,22 +95,24 @@ export const sharedPluginStyles = {
         flexWrap: 'wrap' // wrap onto a new line when the sidebar gets narrow
     } as React.CSSProperties,
 
-    // Single-select segment. Active = accent-soft thumb + accent ring + soft lift.
+    // Single-select segment. Active = macOS raised thumb (lighter surface + soft lift +
+    // PRIMARY-text label), matching the .seg-btn control. Colorblind distinction comes
+    // from --seg-thumb-shadow (a 2px black ring in that theme).
     radioBtn: (active: boolean): React.CSSProperties => ({
         flex: 1,
-        padding: '8px 10px',
+        padding: '6px 10px',
         fontSize: 'var(--text-sm)',
         borderRadius: 'var(--radius-sm)',
         cursor: 'pointer',
         // Unselected uses a --separator border (not transparent) so the button stays
         // visible in the colorblind theme, where every surface is white.
-        border: `1px solid ${active ? 'var(--accent)' : 'var(--separator)'}`,
-        backgroundColor: active ? 'var(--accent-soft)' : 'var(--bg-surface-2)',
-        color: active ? 'var(--accent)' : 'var(--text-muted)',
+        border: `1px solid ${active ? 'var(--seg-thumb-border)' : 'var(--separator)'}`,
+        backgroundColor: active ? 'var(--seg-thumb)' : 'var(--bg-surface-2)',
+        color: active ? 'var(--text-main)' : 'var(--text-muted)',
         fontWeight: active ? 600 : 500,
-        boxShadow: active ? 'var(--shadow-1)' : 'none',
+        boxShadow: active ? 'var(--seg-thumb-shadow)' : 'none',
         textAlign: 'center',
-        transition: 'background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out)',
+        transition: 'background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -158,13 +160,14 @@ export const sharedPluginStyles = {
         transition: 'background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out)',
     }),
 
-    // Bridge / 3-way segment (GEEN/MAG/MOET): flex:1 segment, same tint+ring.
+    // Bridge / 3-way segment (GEEN/MAG/MOET): flex:1 segment, same raised-thumb selection.
     bridgeBtn: (active: boolean): React.CSSProperties => ({
         flex: 1, padding: '6px 4px', fontSize: 'var(--text-xs)', fontWeight: active ? 600 : 500, cursor: 'pointer',
         borderRadius: 'var(--radius-xs)', textAlign: 'center',
-        border: `1px solid ${active ? 'var(--accent)' : 'var(--separator)'}`,
-        backgroundColor: active ? 'var(--accent-soft)' : 'var(--bg-surface-2)',
-        color: active ? 'var(--accent)' : 'var(--text-muted)',
-        transition: 'background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out)',
+        border: `1px solid ${active ? 'var(--seg-thumb-border)' : 'var(--separator)'}`,
+        backgroundColor: active ? 'var(--seg-thumb)' : 'var(--bg-surface-2)',
+        color: active ? 'var(--text-main)' : 'var(--text-muted)',
+        boxShadow: active ? 'var(--seg-thumb-shadow)' : 'none',
+        transition: 'background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out)',
     }),
 };

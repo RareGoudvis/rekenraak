@@ -47,6 +47,42 @@ button, input, select, textarea {
   font-family: inherit;
 }
 
+/* macOS slider: thin pill track + round white knob with a hairline + soft lift, replacing
+   the raw browser default. Track border keeps it visible in the colorblind theme (white-on-
+   white). The filled-left tint is dropped on purpose — a uniform track reads calmer and the
+   knob carries the value. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;                 /* comfortable hit area around the 4px track */
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: var(--radius-pill);
+  background: var(--bg-surface-2); border: 1px solid var(--separator);
+}
+input[type="range"]::-moz-range-track {
+  height: 4px; border-radius: var(--radius-pill);
+  background: var(--bg-surface-2); border: 1px solid var(--separator);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; margin-top: -7px;   /* centre on the 4px track */
+  border-radius: 50%; background: #fff;
+  border: 1px solid var(--separator); box-shadow: var(--shadow-1);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px; height: 16px; border: 1px solid var(--separator);
+  border-radius: 50%; background: #fff; box-shadow: var(--shadow-1);
+}
+input[type="range"]:disabled { opacity: 0.4; }
+/* Ring the knob, not the whole track — overrides the generic input:focus-visible ring below. */
+input[type="range"]:focus-visible { box-shadow: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: var(--shadow-focus); }
+input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: var(--shadow-focus); }
+
 /* Apple-style keyboard focus: a soft accent ring, only for keyboard users
    (:focus-visible), never a hard browser outline. */
 button:focus-visible,
@@ -55,16 +91,30 @@ select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: none;
+  /* The ring (box-shadow) already follows each control's own border-radius — don't force a
+     radius here, or controls visibly reshape to 6px when focused. */
   box-shadow: var(--shadow-focus);
-  border-radius: var(--radius-xs);
 }
 
-/* Shared icon button (TopBar / sidebar / block overlay). Hover lifts, press dips —
-   inline styles can't express :hover/:active so the interaction lives here. */
-.ui-icon-btn:not(:disabled):hover { filter: brightness(1.10); }
-[data-theme="light"] .ui-icon-btn:not(:disabled):hover { filter: brightness(0.95); }
-[data-theme="colorblind"] .ui-icon-btn:not(:disabled):hover { filter: none; background-color: var(--bg-hover); }
-.ui-icon-btn:not(:disabled):active { transform: scale(0.96); }
+/* Shared icon button (TopBar / sidebar / block overlay). The macOS bezel lives here (moved
+   out of IconButton's inline style) so hover/active can re-declare it + stack a tint overlay.
+   The inset overlay paints over any inline background but BEHIND the glyph (icon stays crisp),
+   respects border-radius, and flips polarity per theme via --bg-hover (darken light / lighten
+   dark) — exactly macOS. Press deepens the overlay; no scale (that's a touch idiom). */
+.ui-icon-btn { box-shadow: var(--shadow-1); }
+.ui-icon-btn:not(:disabled):hover { box-shadow: var(--shadow-1), inset 0 0 0 999px var(--bg-hover); }
+.ui-icon-btn:not(:disabled):active { box-shadow: var(--shadow-1), inset 0 0 0 999px var(--bg-active); }
+/* Colorblind: --shadow-1 is `none`, which can't sit in a shadow list — drop the bezel here. */
+[data-theme="colorblind"] .ui-icon-btn { box-shadow: none; }
+[data-theme="colorblind"] .ui-icon-btn:not(:disabled):hover { box-shadow: inset 0 0 0 999px var(--bg-hover); }
+[data-theme="colorblind"] .ui-icon-btn:not(:disabled):active { box-shadow: inset 0 0 0 999px var(--bg-active); }
+
+/* Per-block canvas controls: hidden until the block is hovered or selected (discoverable
+   without committing a selection). pointer-events off while hidden so invisible chips aren't
+   clickable; the block's paddingLeft gutter keeps :hover alive across the gap to the buttons. */
+.block-controls { opacity: 0; pointer-events: none; transition: opacity var(--dur) var(--ease-out); }
+.print-block:hover > .block-controls,
+.print-block.is-active > .block-controls { opacity: 1; pointer-events: auto; }
 
 /* Generic hover affordance for non-IconButton clickables that opt in. */
 .ui-hover { transition: background-color var(--dur) var(--ease-out); }
@@ -74,6 +124,13 @@ textarea:focus-visible,
    :hover rule isn't shadowed by an inline background. */
 .menu-item { background: transparent; transition: background-color var(--dur) var(--ease-out); }
 .menu-item:hover { background: var(--bg-hover); }
+
+/* TopBar dropdown rows (className="ui-hover" inside a .ui-menu): native macOS menu hover —
+   full-width accent fill + white text. !important beats the items' inline color, and the
+   descendant rule flips child spans (menu hints) + icons (currentColor) to white too. */
+.ui-menu .ui-hover { transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out); }
+.ui-menu .ui-hover:hover { background: var(--accent) !important; color: #fff !important; }
+.ui-menu .ui-hover:hover * { color: #fff !important; }
 
 /* Sidebar exercise leaves — rounded hover fill + text lift (replaces the old
    inline onMouseEnter/Leave colour hacks). */
@@ -94,30 +151,41 @@ textarea:focus-visible,
    fixed single-select groups; wrapping/multi-select groups stay as separated buttons. */
 .seg-group {
   display: flex;
-  background: var(--bg-surface-2);
+  /* Recessed track. padding gives the raised thumb a gutter to float in; no
+     overflow:hidden (it would clip the thumb's shadow). */
+  background: var(--seg-track);
   border: 1px solid var(--separator);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  padding: 2px;
 }
 .seg-btn {
   flex: 1;
-  padding: 6px 10px;
+  padding: 5px 10px;            /* -1px absorbs the 2px track padding, keeps height stable */
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--text-muted);
   background: transparent;
-  border: none;
+  border: none;                 /* dividers dropped — the thumb now carries the selection */
+  border-radius: calc(var(--radius-sm) - 2px);
   cursor: pointer;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+  transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
 }
-.seg-btn:not(:first-child) { border-left: 1px solid var(--separator); }
-.seg-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.seg-btn:not([aria-pressed="true"]):hover { background: var(--bg-hover); }
+/* Unselected hover: faint text lift only — never competes with the thumb. */
+.seg-btn:not([aria-pressed="true"]):hover { color: var(--text-main); }
+/* The raised thumb: lighter surface, PRIMARY-text label (macOS look, not accent), soft lift. */
+.seg-btn[aria-pressed="true"] {
+  background: var(--seg-thumb);
+  color: var(--text-main);
+  font-weight: 600;
+  box-shadow: var(--seg-thumb-shadow);
+  border: 1px solid var(--seg-thumb-border);
+}
+/* Colorblind selection reads via the 2px black ring carried by --seg-thumb-shadow. */
 
 /* macOS vibrancy: frosted-translucent material (toolbar frosts content scrolling under it;
    sidebar gets a subtle translucency). High surface-% so it stays readable if a browser
@@ -132,6 +200,15 @@ textarea:focus-visible,
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
+
+/* Modal entrance (ModalShell). Sheet drops from the window edge; dialog scales in; scrim fades.
+   prefers-reduced-motion (below) neutralises these by collapsing animation-duration. */
+@keyframes modal-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-card-in  { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes modal-sheet-in { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
+.modal-scrim { animation: modal-scrim-in var(--dur) var(--ease-out); }
+.modal-card { animation: modal-card-in var(--dur) var(--ease-out); }
+.modal-card.modal-sheet { animation: modal-sheet-in var(--dur) var(--ease-out); }
 
 /* Respect the OS "reduce motion" setting — calm, no transitions/animations. */
 @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus } from '@phosphor-icons/react';
+import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { REGISTRY } from '../../config/exerciseRegistry';
@@ -174,13 +174,16 @@ export default function Sidebar() {
             {!locked && (<>
             {/* Search + leerjaar share one row. Leerjaar shortened (L1…L6) to stay compact. */}
             <div style={S.searchWrap}>
-                <input
-                    type="text"
-                    placeholder="🔎 Zoek oefening…"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    style={{ ...S.searchInput, flex: 1 }}
-                />
+                <div style={{ position: 'relative', flex: 1 }}>
+                    <MagnifyingGlass size={15} weight="bold" style={S.searchIcon} aria-hidden="true" />
+                    <input
+                        type="text"
+                        placeholder="Zoek oefening…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        style={{ ...S.searchInput, width: '100%' }}
+                    />
+                </div>
                 <div style={{ flexShrink: 0 }}>
                     <PopupSelect
                         value={selectedGrade ?? 0}
@@ -336,10 +339,11 @@ const S = {
     searchWrap: { padding: 'var(--sp-2) var(--sp-4)', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' } as React.CSSProperties,
     gradeWrap: { padding: '0 var(--sp-4) var(--sp-2)' } as React.CSSProperties,
     searchInput: {
-        flex: 1, padding: '8px 12px', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
+        flex: 1, padding: '6px 12px 6px 30px', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
         backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-sm)',
         color: 'var(--text-main)', outline: 'none', boxSizing: 'border-box',
     } as React.CSSProperties,
+    searchIcon: { position: 'absolute', left: '9px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' } as React.CSSProperties,
     noResults: { padding: 'var(--sp-3) var(--sp-5)', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontStyle: 'italic' } as React.CSSProperties,
     navArea: { flex: 1, overflowY: 'auto', padding: 'var(--sp-2) var(--sp-1)' } as React.CSSProperties,
     // Truncate long nav labels with an ellipsis instead of colliding with the chevron.

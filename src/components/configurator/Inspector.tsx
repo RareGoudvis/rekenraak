@@ -178,11 +178,11 @@ export default function Inspector() {
                             );
                         })()}
 
-                        <label style={{ ...S.checkboxLabel, marginTop: '12px' }}>
-                            <input type="checkbox" checked={!!headerData.repeatHeader} onChange={(e) => updateHeader({ repeatHeader: e.target.checked })} style={S.checkbox} />
-                            Koptekst op elke pagina herhalen
-                        </label>
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '2px 0 0 24px' }}>Enkel bij afdrukken: de naamvelden komen bovenaan elke pagina.</p>
+                        <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                            <span style={S.switchText}>Koptekst op elke pagina herhalen</span>
+                            <Switch checked={!!headerData.repeatHeader} onChange={(v) => updateHeader({ repeatHeader: v })} aria-label="Koptekst op elke pagina herhalen" />
+                        </div>
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '2px 0 0 0' }}>Enkel bij afdrukken: de naamvelden komen bovenaan elke pagina.</p>
                     </div>
                 </div>
 
@@ -749,9 +749,9 @@ export default function Inspector() {
                                     </>
                                 )}
 
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px' }}>
-                                    <label style={{ ...S.label, marginBottom: 0 }}>Voorbeelden tonen</label>
-                                    <input type="checkbox" checked={gShowVoorbeelden} onChange={e => updateConstraint('showVoorbeelden', e.target.checked)} style={S.checkbox} />
+                                <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                                    <span style={S.switchText}>Voorbeelden tonen</span>
+                                    <Switch checked={gShowVoorbeelden} onChange={(v) => updateConstraint('showVoorbeelden', v)} aria-label="Voorbeelden tonen" />
                                 </div>
                                 {gShowVoorbeelden && (
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
@@ -850,9 +850,11 @@ export default function Inspector() {
             {/* ── 4. Geavanceerd (accordion) ── */}
             {!locked && (activeBlock.typeId.startsWith('cijferen-') || activeBlock.typeId.startsWith('geld-') || activeBlock.typeId === 'mab-herkennen' || activeBlock.typeId === 'mab-tekenen' || activeBlock.typeId === 'splitsen' || activeBlock.typeId === 'herleidingen' || (activeBlock.typeId === 'breuken' && ((subType === 'kleuren' || subType === 'herkennen') && (Array.isArray(c.shapes) ? c.shapes.length === 1 : true) && c.staticSize || subType === 'hoeveelheid-rechthoek'))) && (
                 <div style={S.advancedWrap}>
-                    <button style={S.advancedToggle} onClick={() => setAdvancedOpen(!advancedOpen)}>
-                        <span>Geavanceerd</span>
-                        <span style={{ fontSize: '14px', transform: advancedOpen ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block', transition: 'transform 0.2s' }}>›</span>
+                    <button
+                        onClick={() => setAdvancedOpen(!advancedOpen)}
+                        style={{ ...S.label, marginBottom: 0, display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                    >
+                        Geavanceerd <span style={{ fontSize: '10px' }}>{advancedOpen ? '▾' : '▸'}</span>
                     </button>
                     {advancedOpen && (
                         <div style={{ ...S.card, marginTop: '8px' }}>
@@ -1036,8 +1038,8 @@ const S = {
     row: { display: 'flex', gap: 'var(--sp-3)', alignItems: 'flex-end' } as React.CSSProperties,
     label: { display: 'block', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--sp-2)', fontWeight: 500 } as React.CSSProperties,
     footerGroupLabel: { display: 'block', fontSize: 'var(--text-sm)', color: 'var(--text-main)', marginBottom: 'var(--sp-2)', fontWeight: 600 } as React.CSSProperties,
-    input: { width: '100%', padding: '9px 10px', backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)', color: 'var(--text-main)', outline: 'none', boxSizing: 'border-box', fontSize: 'var(--text-sm)' } as React.CSSProperties,
-    select: { width: '100%', padding: '9px 10px', backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)', color: 'var(--text-main)', outline: 'none', fontSize: 'var(--text-sm)', cursor: 'pointer' } as React.CSSProperties,
+    input: { width: '100%', padding: '7px 10px', backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)', color: 'var(--text-main)', outline: 'none', boxSizing: 'border-box', fontSize: 'var(--text-sm)' } as React.CSSProperties,
+    select: { width: '100%', padding: '7px 10px', backgroundColor: 'var(--bg-surface-2)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)', color: 'var(--text-main)', outline: 'none', fontSize: 'var(--text-sm)', cursor: 'pointer' } as React.CSSProperties,
     checkboxLabel: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--text-main)' } as React.CSSProperties,
     switchRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)', padding: '3px 0' } as React.CSSProperties,
     switchText: { fontSize: 'var(--text-sm)', color: 'var(--text-main)' } as React.CSSProperties,
@@ -1054,7 +1056,6 @@ const S = {
     engineBody: {} as React.CSSProperties,
 
     advancedWrap: { marginBottom: 'var(--sp-2)' } as React.CSSProperties,
-    advancedToggle: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-4)', backgroundColor: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-md)', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontWeight: 600 } as React.CSSProperties,
 };
 
 const miniMoveBtn = (disabled: boolean): React.CSSProperties => ({

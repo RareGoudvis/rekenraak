@@ -1,5 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
-import ModalPortal from '../ui/ModalPortal';
+import { type ReactNode } from 'react';
+import ModalShell from '../ui/ModalShell';
 import Wordmark from '../ui/Wordmark';
 
 interface Props {
@@ -14,45 +14,11 @@ function A({ href, children }: { href: string; children: ReactNode }) {
 // "Over dit project" — the project's manifesto + tech + license. Long-form, so the
 // header (wordmark + tagline + close) is fixed and the body scrolls.
 export default function AboutModal({ onClose }: Props) {
-    useEffect(() => {
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [onClose]);
-
     return (
-        <ModalPortal>
-        <div
-            className="no-print"
-            onClick={onClose}
-            style={{
-                position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
-                zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--sp-4)',
-            }}
-        >
-            <div
-                onClick={(e) => e.stopPropagation()}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Over dit project"
-                style={{
-                    backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-                    borderRadius: '12px', maxWidth: '640px', width: '100%', maxHeight: '85vh',
-                    display: 'flex', flexDirection: 'column', overflow: 'hidden', color: 'var(--text-main)',
-                }}
-            >
+        <ModalShell onClose={onClose} ariaLabel="Over dit project" variant="sheet" maxWidth={640}>
                 {/* Fixed header */}
-                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp-1)', padding: 'var(--sp-6) var(--sp-6) var(--sp-4)', borderBottom: '1px solid var(--separator)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp-1)', padding: 'var(--sp-6) var(--sp-6) var(--sp-4)', borderBottom: '1px solid var(--separator)' }}>
                     <Wordmark height={40} />
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        aria-label="Sluiten"
-                        className="ui-hover"
-                        style={{ position: 'absolute', top: 'var(--sp-3)', right: 'var(--sp-3)', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 'var(--text-xl)', lineHeight: 1, padding: '2px 8px', borderRadius: 'var(--radius-sm)' }}
-                    >
-                        ×
-                    </button>
                 </div>
 
                 {/* Scrollable body */}
@@ -149,11 +115,7 @@ export default function AboutModal({ onClose }: Props) {
                     </p>
                         <span style={{ display: 'block', textAlign: 'right', marginTop: '20px', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-muted)' }}>Gemaakt door Ruben V.H.</span>
                 </div>
-            </div>
-            
-        </div>
-            
-        </ModalPortal>
+        </ModalShell>
     );
 }
 

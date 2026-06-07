@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { X, Warning } from '@phosphor-icons/react';
-import ModalPortal from '../ui/ModalPortal';
+import { Warning } from '@phosphor-icons/react';
+import ModalShell from '../ui/ModalShell';
 import Switch from '../ui/Switch';
 import { SwatchRow } from '../ui/Swatch';
 import { useWorksheetStore, type RegionStyle } from '../../store/useWorksheetStore';
@@ -27,12 +27,10 @@ export default function StyleBuilderModal({ onClose }: { onClose: () => void }) 
     const reset = () => updateDocSettings({ [REGION_KEY[region]]: {} });
 
     return (
-        <ModalPortal>
-            <div style={overlay} onClick={onClose}>
-                <div style={panel} onClick={(e) => e.stopPropagation()}>
+        <ModalShell onClose={onClose} ariaLabel="Stijl aanpassen" variant="dialog" maxWidth="min(760px, 94vw)">
+                <div style={panelBody}>
                     <div style={head}>
                         <h3 style={{ margin: 0, fontSize: 'var(--text-lg)', color: 'var(--text-main)' }}>Stijl aanpassen</h3>
-                        <button type="button" onClick={onClose} style={closeBtn} aria-label="Sluiten"><X size={18} /></button>
                     </div>
 
                     {/* Global exercise-body text size — not a region; scales every block's
@@ -123,8 +121,7 @@ export default function StyleBuilderModal({ onClose }: { onClose: () => void }) 
                         </div>
                     </div>
                 </div>
-            </div>
-        </ModalPortal>
+        </ModalShell>
     );
 }
 
@@ -151,10 +148,8 @@ const headerBase: React.CSSProperties = { display: 'flex', flexDirection: 'colum
 const opdrachtBase: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', fontSize: '14px', color: '#000', margin: '14px 0' };
 const footerBase: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', fontFamily: 'Azeret Mono, monospace', fontSize: '9pt', color: '#666' };
 
-const overlay: React.CSSProperties = { position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' };
-const panel: React.CSSProperties = { width: 'min(760px, 94vw)', maxHeight: '88vh', overflowY: 'auto', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-2)', padding: 'var(--sp-5)' };
+const panelBody: React.CSSProperties = { overflowY: 'auto', padding: 'var(--sp-5)' };
 const head: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-4)' };
-const closeBtn: React.CSSProperties = { border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex', padding: '4px' };
 const grid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 'var(--sp-5)' };
 const col: React.CSSProperties = { minWidth: 0 };
 const range: React.CSSProperties = { width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' };

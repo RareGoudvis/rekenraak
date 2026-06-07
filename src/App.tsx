@@ -322,9 +322,10 @@ export default function App() {
               const isNotLastBlock = index < blocks.length - 1;
 
               return (
-                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers, docSettings.blockSpacing ?? 12)}>
-                  {isActive && (
-                    <div className="no-print" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
+                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers, docSettings.blockSpacing ?? 12)}>
+                  {/* Controls render for every block but stay hidden until the block is hovered or
+                      active (CSS in index.css) — discoverable without selecting, no App re-render. */}
+                  <div className="no-print block-controls" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
                       <IconButton
                         icon={block.locked ? Lock : Unlock}
                         label={block.locked ? 'Ontgrendel (massa-regeneratie zal dit blok wel vernieuwen)' : 'Vergrendel (massa-regeneratie laat dit blok ongemoeid)'}
@@ -350,7 +351,6 @@ export default function App() {
                       <div style={styles.blockControlsDivider} />
                       <IconButton icon={Trash2} label="Blok verwijderen" onClick={() => removeBlock(block.id)} variant="danger" size={16} />
                     </div>
-                  )}
 
                   {block.pageBreakBefore && (
                     <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'Azeret Mono, monospace', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>

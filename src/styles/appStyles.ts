@@ -27,7 +27,9 @@ export const styles = {
     boxShadow: isActive ? '0 0 0 1.5px var(--accent)' : 'none',
     backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
   }),
-  blockControls: { position: 'absolute', left: '100%', top: '0', marginLeft: 'var(--sp-2)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', zIndex: 10 } as React.CSSProperties,
+  // paddingLeft (not marginLeft) keeps the controls' hit area touching the block's right edge —
+  // no dead gap that would drop the :hover state as the pointer travels to the buttons.
+  blockControls: { position: 'absolute', left: '100%', top: '0', paddingLeft: 'var(--sp-2)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', zIndex: 10 } as React.CSSProperties,
   // Hairline + breathing room that pushes the danger (delete) button clear of the move buttons.
   blockControlsDivider: { height: '1px', alignSelf: 'stretch', backgroundColor: 'var(--separator)', margin: 'var(--sp-2) 4px var(--sp-1)' } as React.CSSProperties,
   iconBtn: { background: 'var(--bg-surface-2)', border: '1px solid var(--separator)', color: 'var(--text-main)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '14px', fontWeight: 'bold' } as React.CSSProperties,

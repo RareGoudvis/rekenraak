@@ -128,7 +128,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     />
                     {menu === 'menu' && (
                         <>
-                            <div style={{ ...S.menu, left: 0, right: 'auto', minWidth: '230px' }}>
+                            <div className="ui-menu" style={{ ...S.menu, left: 0, right: 'auto', minWidth: '230px' }}>
                                 <div style={S.sectionLabel}>Werkbladen</div>
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('mijn-bladen'); }}>
                                     <FolderOpen size={15} /> Mijn bladen
@@ -164,7 +164,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     <IconButton icon={SettingsIcon} label="Instellingen" onClick={() => setMenu(menu === 'settings' ? null : 'settings')} dataTour="settings" />
                     {menu === 'settings' && (
                         <>
-                            <div style={{ ...S.menu, left: 0, right: 'auto', minWidth: '240px' }}>
+                            <div className="ui-menu" style={{ ...S.menu, left: 0, right: 'auto', minWidth: '240px' }}>
                                 {!locked && (
                                     <>
                                         <div style={S.sectionLabel}>Werkblad</div>
@@ -233,7 +233,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     visibleLabel="Genereer alles"
                     onClick={() => hasBlocks && generateAllBlocks()}
                     disabled={!hasBlocks}
-                    variant="primary"
+                    variant="secondary"
                 />
 
                 <div style={S.spacer} />
@@ -279,7 +279,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     />
                     {menu === 'print' && (
                         <>
-                            <div style={S.menu}>
+                            <div className="ui-menu" style={S.menu}>
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onPrint(false); }}>
                                     <FileText size={15} /> Werkblad
                                 </button>
@@ -322,17 +322,17 @@ const S = {
     menu: {
         position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 31,
         minWidth: '210px', background: 'var(--bg-surface)', border: '1px solid var(--separator)',
-        borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-2)', padding: 'var(--sp-1)',
-        display: 'flex', flexDirection: 'column', gap: '2px',
+        borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-2)', padding: 'var(--sp-1)',
+        display: 'flex', flexDirection: 'column', gap: '1px',
     } as React.CSSProperties,
     menuItem: {
-        display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', width: '100%', textAlign: 'left',
-        padding: '8px 10px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: 'none',
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', width: '100%', textAlign: 'left',
+        padding: '5px 10px', borderRadius: 'var(--radius-xs)', cursor: 'pointer', border: 'none',
         background: 'transparent', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
     menuHint: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 } as React.CSSProperties,
     menuDivider: { height: '1px', background: 'var(--separator)', margin: '4px 6px' } as React.CSSProperties,
-    sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', padding: '6px 10px 2px' } as React.CSSProperties,
+    sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
     shareFlash: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
     saveChip: {
         display: 'flex', alignItems: 'center', gap: '6px', marginRight: 'var(--sp-3)',

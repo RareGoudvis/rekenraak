@@ -104,6 +104,15 @@
     --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55), 0 6px 14px rgba(0, 0, 0, 0.35);
     --shadow-focus: 0 0 0 3px rgba(10, 132, 255, 0.45);
 
+    /* Segmented control (macOS): recessed track + raised thumb. Track sits one step
+       BELOW the thumb so the selected segment reads as lifted, label stays primary. */
+    --seg-track: #2C2C2E;
+    --seg-thumb: #48484A;            /* systemGray3-ish — lighter than the track */
+    --seg-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 0 .5px rgba(0, 0, 0, 0.30);
+    --seg-thumb-border: transparent;
+    /* Press overlay — stronger sibling of --bg-hover, stacks over any inline bg. */
+    --bg-active: rgba(255, 255, 255, 0.14);
+
     /* Legacy aliases — map old names onto the new surfaces */
     --bg-dark: var(--bg-base);
     --bg-panel: var(--bg-surface);
@@ -143,6 +152,13 @@
     --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
     --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.08);
     --shadow-focus: 0 0 0 3px rgba(0, 122, 255, 0.30);
+
+    /* Segmented control: recessed track (darker than the #ECECEC window) + white thumb. */
+    --seg-track: #E3E3E8;
+    --seg-thumb: #FFFFFF;
+    --seg-thumb-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 .5px rgba(0, 0, 0, 0.04);
+    --seg-thumb-border: transparent;
+    --bg-active: rgba(0, 0, 0, 0.10);
 
     --bg-dark: var(--bg-base);
     --bg-panel: var(--bg-surface);
@@ -187,6 +203,14 @@
     --shadow-2: none;
     --shadow-3: 0 0 0 1px #000000;
     --shadow-focus: 0 0 0 3px rgba(0, 0, 0, 0.55);
+
+    /* Segmented control: no elevation in high-contrast — selection reads via a 2px black
+       ring (carried by the shadow token so inline radioBtn/bridgeBtn get it too). */
+    --seg-track: #ffffff;
+    --seg-thumb: #ffffff;
+    --seg-thumb-shadow: 0 0 0 2px #000000;
+    --seg-thumb-border: transparent;
+    --bg-active: rgba(0, 0, 0, 0.16);
 
     --bg-dark: var(--bg-base);
     --bg-panel: var(--bg-surface);

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import ModalPortal from '../ui/ModalPortal';
+import { useState } from 'react';
+import ModalShell from '../ui/ModalShell';
 
 interface Props {
     onClose: () => void;
@@ -14,40 +14,11 @@ type Tab = 'maken' | 'opslaan' | 'delen';
 export default function HelpModal({ onClose, onStartTour }: Props) {
     const [tab, setTab] = useState<Tab>('maken');
 
-    useEffect(() => {
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [onClose]);
-
     return (
-        <ModalPortal>
-        <div
-            className="no-print"
-            onClick={onClose}
-            style={{
-                position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)',
-                zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-        >
-            <div
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                    backgroundColor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-                    borderRadius: '12px', padding: '28px 32px', maxWidth: '680px', width: '90%',
-                    maxHeight: '85vh', overflowY: 'auto', fontFamily: "'Azeret Mono', monospace",
-                    color: 'var(--text-main)',
-                }}
-            >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 style={{ color: 'var(--accent-purple)', margin: 0, fontSize: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                        Hulp
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer', padding: '4px 8px' }}
-                        title="Sluiten (Esc)"
-                    >×</button>
+        <ModalShell onClose={onClose} ariaLabel="Hulp" variant="sheet" maxWidth={680}>
+            <div style={{ padding: '28px 32px', overflowY: 'auto', fontFamily: "'Azeret Mono', monospace", color: 'var(--text-main)' }}>
+                <div style={{ marginBottom: '16px' }}>
+                    <h2 style={{ color: 'var(--accent)', margin: 0, fontSize: '16px', fontWeight: 700 }}>Hulp</h2>
                 </div>
 
                 {/* Tabs = three levels */}
@@ -127,8 +98,7 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                     </>
                 )}
             </div>
-        </div>
-        </ModalPortal>
+        </ModalShell>
     );
 }
 
