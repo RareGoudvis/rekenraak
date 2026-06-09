@@ -86,8 +86,6 @@ const breukBewerkViews = (count: number): BlockSpec[] => [
     { typeId: 'breuken-bewerken', label: 'Gelijknamig maken', constraints: { subType: 'gelijknamig' }, count },
     { typeId: 'breuken-bewerken', label: 'Vereenvoudigen', constraints: { subType: 'vereenvoudigen' }, count },
 ];
-const plaatswaardeViews = (maxGetal: number, count: number): BlockSpec[] =>
-    (['waarde', 'plaats', 'tabel'] as const).map(s => ({ typeId: 'plaatswaarde', label: `Plaatswaarde (${s})`, constraints: { subType: s, maxGetal }, count }));
 const vergelijkenViews = (maxGetal: number, count: number): BlockSpec[] => [
     { typeId: 'vergelijken', label: 'Vergelijken (< > =)', constraints: { subType: 'getallen', maxGetal }, count },
     { typeId: 'vergelijken', label: 'Grootste / kleinste', constraints: { subType: 'kiezen', maxGetal }, count },
@@ -121,7 +119,7 @@ const mabViews = (maxNumber: number, count: number): BlockSpec[] => [
 // ── 20 method-independent (methode-onafhankelijk) starter sheets. Counts sized to fill ≥1 A4 page. ──
 const METHODE_ONAFHANKELIJK: WorksheetTemplate[] = [
     makeTemplate('t-splitsen-10', 'Splitsen tot 10', 1, GK, [
-        { typeId: 'splitsen', label: 'Splits', constraints: { layout: 'verliefde-harten', maxGetal: 10 }, count: 12 },
+        { typeId: 'splitsen', label: 'Splits', constraints: { layout: 'verliefde-harten', maxGetal: 10 }, count: 24 },
     ]),
     makeTemplate('t-opt-aft-20-zonder', 'Optellen en aftrekken tot 20 (zonder brug)', 1, BW, [
         { typeId: 'hr-std-optellen', label: 'Tel op', constraints: { numberType: 'natural', maxGetal: 20, bridges: NOBRIDGE }, count: 16 },
@@ -132,62 +130,69 @@ const METHODE_ONAFHANKELIJK: WorksheetTemplate[] = [
         { typeId: 'hr-std-aftrekken', label: 'Trek af', constraints: { numberType: 'natural', maxGetal: 20, bridges: BRIDGE }, count: 16 },
     ]),
     makeTemplate('t-getalbegrip-100', 'Getalbegrip tot 100', 2, GK, [
-        ...mabViews(100, 9),
-        ...plaatswaardeViews(100, 8),
+        ...mabViews(100, 4),
+        { typeId: 'plaatswaarde', label: 'Plaatswaarde (waarde)', constraints: { subType: 'waarde', maxGetal: 100 }, count: 6 },
     ]),
     makeTemplate('t-opt-aft-100', 'Optellen en aftrekken tot 100', 2, BW, [
         { typeId: 'hr-std-optellen', label: 'Tel op', constraints: { numberType: 'natural', maxGetal: 100 }, count: 16 },
         { typeId: 'hr-std-aftrekken', label: 'Trek af', constraints: { numberType: 'natural', maxGetal: 100 }, count: 16 },
     ]),
     makeTemplate('t-maaltafels', 'Maaltafels 1–10', 2, BW, [
-        { typeId: 'hr-std-vermenigvuldigen', label: 'Maaltafels', constraints: tafels(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), count: 28 },
+        { typeId: 'hr-std-vermenigvuldigen', label: 'Maaltafels', constraints: tafels(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), count: 36 },
     ]),
     makeTemplate('t-delen-tafels', 'Delen binnen de tafels', 3, BW, [
-        { typeId: 'hr-std-delen', label: 'Deel', constraints: tafels(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), count: 28 },
+        { typeId: 'hr-std-delen', label: 'Deel', constraints: tafels(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), count: 36 },
     ]),
     makeTemplate('t-ordenen-1000', 'Getallen tot 1000 ordenen en vergelijken', 3, GK, [
-        ...vergelijkenViews(1000, 12),
-        { typeId: 'ordenen', label: 'Rangschik', constraints: { maxGetal: 1000 }, count: 6 },
+        ...vergelijkenViews(1000, 6),
+        { typeId: 'ordenen', label: 'Rangschik', constraints: { maxGetal: 1000 }, count: 4 },
     ]),
     makeTemplate('t-afronden', 'Afronden op tiental en honderdtal', 3, GK, [
-        ...afrondenViews(1000, ['T', 'H'], 8),
+        ...afrondenViews(1000, ['T', 'H'], 5),
     ]),
     makeTemplate('t-cijferen-opt-aft', 'Cijferend optellen en aftrekken', 3, BW, [
         { typeId: 'cijferen-optellen-nat', label: 'Cijferend optellen', constraints: { operator: '+', maxRange: 1000 }, count: 8 },
         { typeId: 'cijferen-aftrekken-nat', label: 'Cijferend aftrekken', constraints: { operator: '-', maxRange: 1000 }, count: 8 },
     ]),
     makeTemplate('t-cijferen-verm', 'Cijferend vermenigvuldigen', 4, BW, [
-        { typeId: 'cijferen-vermenigvuldigen-nat', label: 'Cijferend vermenigvuldigen', constraints: { operator: 'x', maxRange: 10000 }, count: 10 },
+        { typeId: 'cijferen-vermenigvuldigen-nat', label: 'Cijferend vermenigvuldigen', constraints: { operator: 'x', maxRange: 10000 }, count: 11 },
     ]),
     makeTemplate('t-cijferen-delen', 'Cijferend delen (staartdeling)', 4, BW, [
-        { typeId: 'cijferen-delen-nat', label: 'Staartdeling', constraints: { operator: ':', maxRange: 10000, withRemainder: true }, count: 8 },
+        { typeId: 'cijferen-delen-nat', label: 'Staartdeling', constraints: { operator: ':', maxRange: 10000, withRemainder: true }, count: 4 },
+        { typeId: 'hr-std-delen', label: 'Deel uit het hoofd', constraints: tafels(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), count: 4 },
     ]),
     makeTemplate('t-breuken-geheel', 'Breuken: deel van een geheel', 3, GK, [
-        ...breukenViews(8),
+        { typeId: 'breuken', label: 'Breuken (kleuren)', constraints: { subType: 'kleuren' }, count: 6 },
+        { typeId: 'breuken', label: 'Breuken (herkennen)', constraints: { subType: 'herkennen' }, count: 4 },
     ]),
     makeTemplate('t-breuken-vereenvoudigen', 'Breuken vereenvoudigen en gelijkwaardig', 4, GK, [
-        ...breukBewerkViews(10),
+        ...breukBewerkViews(8),
     ]),
     makeTemplate('t-kommagetallen', 'Kommagetallen optellen en aftrekken', 4, BW, [
-        { typeId: 'hr-std-optellen', label: 'Tel op', constraints: { numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, count: 14 },
-        { typeId: 'hr-std-aftrekken', label: 'Trek af', constraints: { numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, count: 14 },
+        { typeId: 'hr-std-optellen', label: 'Tel op', constraints: { numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, count: 16 },
+        { typeId: 'hr-std-aftrekken', label: 'Trek af', constraints: { numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, count: 16 },
     ]),
     makeTemplate('t-klok', 'Kloklezen (uur, half, kwart)', 2, MT, [
-        ...klokViews(10),
+        { typeId: 'klok-kloklezen', label: 'Klok lezen', constraints: { clockType: 'analoog', exerciseMode: 'lezen' }, count: 4 },
+        { typeId: 'klok-kloklezen', label: 'Klok tekenen', constraints: { clockType: 'analoog', exerciseMode: 'tekenen' }, count: 3 },
+        { typeId: 'klok-kloklezen', label: 'Tijd omzetten', constraints: { clockType: 'analoog', exerciseMode: 'omzetten' }, count: 3 },
     ]),
     makeTemplate('t-geld', 'Geld: betalen en teruggeven', 2, MT, [
-        ...geldViews(6),
+        { typeId: 'geld-herkennen', label: 'Geld herkennen', count: 4 },
+        { typeId: 'geld-wissel', label: 'Geld wisselen', count: 2 },
+        { typeId: 'geld-teruggeven', label: 'Teruggeven', count: 2 },
     ]),
     makeTemplate('t-lengte', 'Lengte omzetten (km, m, cm, mm)', 4, MT, [
-        { typeId: 'herleidingen', label: 'Zet om', constraints: { measure: 'lengte', units: ['km', 'm', 'cm', 'mm'] }, count: 12 },
+        { typeId: 'herleidingen', label: 'Zet om', constraints: { measure: 'lengte', units: ['km', 'm', 'cm', 'mm'] }, count: 44 },
     ]),
     makeTemplate('t-even-veelvouden', 'Even en oneven, veelvouden', 2, GK, [
         ...evenOnevenViews(100, 3),
-        ...deelbaarheidKleurViews(100, [2, 5, 10], 3),
+        { typeId: 'deelbaarheid-kleuren', label: 'Veelvouden (strip)', constraints: { viewMode: 'strip', maxGetal: 100, divisors: [2, 5, 10] }, count: 2 },
+        { typeId: 'deelbaarheid-kleuren', label: 'Veelvouden (markeren)', constraints: { viewMode: 'markeren', maxGetal: 100, divisors: [2, 5, 10] }, count: 2 },
     ]),
     makeTemplate('t-getallenas-patronen', 'Getallenas en getalpatronen', 3, GK, [
-        { typeId: 'getallenas', label: 'Vul de getallenas in', constraints: { maxGetal: 100 }, count: 6 },
-        { typeId: 'getalpatronen', label: 'Zet het patroon voort', constraints: { maxGetal: 100 }, count: 8 },
+        { typeId: 'getallenas', label: 'Vul de getallenas in', constraints: { maxGetal: 100 }, count: 5 },
+        { typeId: 'getalpatronen', label: 'Zet het patroon voort', constraints: { maxGetal: 100 }, count: 7 },
     ]),
 ];
 
