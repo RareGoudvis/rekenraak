@@ -38,4 +38,13 @@ export const styles = {
   instructionDisplay: { fontSize: '16px', fontWeight: 'bold', color: '#000', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
   pointsText: { fontSize: '14px', fontWeight: 'bold', fontFamily: 'Azeret Mono, monospace', marginRight: '24px', color: '#000' } as React.CSSProperties,
   emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
+  // Cold-load hero shown only when blocks.length === 0. Lives ON the white A4 sheet, so
+  // it uses ink colors (not theme --text-* tokens, which go white-on-white in dark mode);
+  // --accent stays readable on white across all three themes. no-print hides it on paper.
+  heroEmpty: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '80px 24px 64px', color: '#1a1a1a' } as React.CSSProperties,
+  heroTitle: { margin: 0, fontSize: '26px', lineHeight: 1.25, fontWeight: 'bold', fontFamily: 'Azeret Mono, monospace', color: '#1a1a1a', maxWidth: '600px' } as React.CSSProperties,
+  heroPitch: { margin: '16px 0 0', fontSize: '16px', lineHeight: 1.5, color: '#555', maxWidth: '480px' } as React.CSSProperties,
+  heroBullets: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px 20px', margin: '28px 0 0', padding: 0, listStyle: 'none' } as React.CSSProperties,
+  heroBullet: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 600, color: '#333' } as React.CSSProperties,
+  heroHint: { margin: '36px 0 0', fontSize: '13px', fontStyle: 'italic', color: '#999', maxWidth: '420px' } as React.CSSProperties,
 };

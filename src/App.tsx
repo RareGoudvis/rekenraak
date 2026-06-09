@@ -11,7 +11,7 @@ import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
-import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand } from '@phosphor-icons/react';
+import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
 import { overlayRegionStyle } from './services/regionStyle';
@@ -317,6 +317,24 @@ export default function App() {
 
           {/* ── BLOCKS ── */}
           <div style={{ width: '100%', marginTop: `${docSettings.headerContentGap ?? 12}px` }}>
+            {/* Cold-load hero: real visible h1 + intro for first-time visitors and SEO.
+                Shows only on an empty sheet; the moment a block is added it's gone.
+                no-print keeps it off paper. */}
+            {blocks.length === 0 && (
+              <div className="no-print" style={styles.heroEmpty}>
+                <h1 style={styles.heroTitle}>RekenRaak — gratis werkbladgenerator voor wiskunde in het lager onderwijs</h1>
+                <p style={styles.heroPitch}>
+                  Stel in enkele minuten een eigen wiskundewerkblad samen voor het lager onderwijs —
+                  kies oefeningen, regel de moeilijkheidsgraad en druk af of bewaar als pdf.
+                </p>
+                <ul style={styles.heroBullets}>
+                  <li style={styles.heroBullet}><ListChecks size={20} color="var(--accent)" weight="bold" />Kies oefeningen</li>
+                  <li style={styles.heroBullet}><SlidersHorizontal size={20} color="var(--accent)" weight="bold" />Stel de moeilijkheidsgraad in</li>
+                  <li style={styles.heroBullet}><Printer size={20} color="var(--accent)" weight="bold" />Druk af of bewaar als pdf</li>
+                </ul>
+                <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen — deze tekst verdwijnt zodra je eerste blok op het blad staat.</p>
+              </div>
+            )}
             {blocks.map((block, index) => {
               const isActive = block.id === activeSelectionId;
               const isNotLastBlock = index < blocks.length - 1;

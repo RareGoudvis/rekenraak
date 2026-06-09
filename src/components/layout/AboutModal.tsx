@@ -111,7 +111,10 @@ export default function AboutModal({ onClose }: Props) {
                         kan dit dichttimmeren en als gesloten product verkopen. Wat vrij is, blijft vrij.
                     </p>
                     <p style={{ ...S.p, marginBottom: 0 }}>
-                        Wil je toch iets geven? Koop mij dan een pintje via het hartje onderaan.<br />  
+                        Wil je toch iets geven? Koop mij dan een pintje via het hartje onderaan.<br />
+                    </p>
+                    <p style={{ ...S.p, marginTop: 'var(--sp-4)', marginBottom: 0 }}>
+                        <a href="/about" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>Meer over RekenRaak &rarr;</a>
                     </p>
                         <span style={{ display: 'block', textAlign: 'right', marginTop: '20px', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-muted)' }}>Gemaakt door Ruben V.H.</span>
                 </div>
