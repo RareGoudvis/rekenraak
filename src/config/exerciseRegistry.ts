@@ -298,7 +298,9 @@ const vormleerDefaults = (typeId: string): Record<string, unknown> => ({
     concepts: typeId === 'vormleer-hoeken' ? ['scherp', 'recht', 'stomp']
         : typeId === 'vormleer-figuren' ? ['vierkant', 'rechthoek', 'ruit', 'parallellogram', 'trapezium']
         : ['punt', 'rechte', 'halfrechte', 'lijnstuk'],
-    randomRotation: typeId === 'vormleer-hoeken', showMarks: true, showBoog: true,
+    randomRotation: typeId === 'vormleer-hoeken', showBoog: true,
+    // Figure marks split per notation kind; haakje = bare L-corner, vierkantje = closed square.
+    showEqualSides: true, showRightAngles: true, showParallel: false, rightAngleStyle: 'vierkantje',
     raster: true, boxHeight: 4, exercisesPerRow: 3,
 });
 

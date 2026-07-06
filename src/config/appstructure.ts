@@ -357,8 +357,8 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'vormleer-vlakke-figuren', label: 'Vlakke figuren',
                         children: [
-                            { id: 'vormleer-driehoeken-hoeken', label: 'Driehoeken (volgens hoeken)', typeId: 'vormleer-figuren', defaultConstraints: { classify: 'driehoeken-hoeken', concepts: ['scherphoekig', 'rechthoekig', 'stomphoekig'] }, minLeerjaar: 4 },
-                            { id: 'vormleer-driehoeken-zijden', label: 'Driehoeken (volgens zijden)', typeId: 'vormleer-figuren', defaultConstraints: { classify: 'driehoeken-zijden', concepts: ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'] }, minLeerjaar: 4 },
+                            // One driehoeken leaf: the config offers both classification axes (hoeken + zijden).
+                            { id: 'vormleer-driehoeken', label: 'Driehoeken', typeId: 'vormleer-figuren', defaultConstraints: { classify: 'driehoeken', concepts: ['scherphoekig', 'rechthoekig', 'stomphoekig', 'gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'] }, minLeerjaar: 4 },
                             { id: 'vormleer-vierhoeken', label: 'Vierhoeken', typeId: 'vormleer-figuren', defaultConstraints: { classify: 'vierhoeken' }, minLeerjaar: 4 },
                         ],
                     },

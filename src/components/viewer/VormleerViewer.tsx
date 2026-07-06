@@ -13,32 +13,67 @@ const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
-// Eigenschappen columns per classify axis (leerplan formulations).
-const EIGENSCHAP_COLS: Record<string, { label: string; test: (c: string) => boolean }[]> = {
-    'driehoeken-hoeken': [
-        { label: 'alle hoeken scherp', test: c => c === 'scherphoekig' },
-        { label: 'één rechte hoek', test: c => c === 'rechthoekig' },
-        { label: 'één stompe hoek', test: c => c === 'stomphoekig' },
-    ],
-    'driehoeken-zijden': [
-        { label: '3 gelijke zijden', test: c => c === 'gelijkzijdig' },
-        { label: 'juist 2 gelijke zijden', test: c => c === 'gelijkbenig' },
-        { label: 'geen gelijke zijden', test: c => c === 'ongelijkzijdig' },
-    ],
-    'vierhoeken': [
-        { label: '4 rechte hoeken', test: c => c === 'vierkant' || c === 'rechthoek' },
-        { label: '4 gelijke zijden', test: c => c === 'vierkant' || c === 'ruit' },
-        { label: '2 paar evenwijdige zijden', test: c => c !== 'trapezium' },
-    ],
-};
+// Eigenschappen columns. Triangles are classified GEOMETRICALLY (sides/angles from the
+// drawn figure) so a gelijkbenige driehoek also ticks its hoek-column when both axes
+// are on the sheet; vierhoeken tick by concept.
+type EigCol = { label: string; test: (ex: VormleerExercise) => boolean };
+
+// Count side-length groups with ≥2 members (0.05 cm tolerance).
+function equalSideGroups(sides: number[]): number[] {
+    const counts = new Map<number, number>();
+    sides.forEach(s => { const k = Math.round(s * 20); counts.set(k, (counts.get(k) ?? 0) + 1); });
+    return [...counts.values()];
+}
+
+// Largest interior angle in degrees, from the polygon points.
+function maxAngleDeg(pts: MeetPoint[]): number {
+    let max = 0;
+    for (let i = 0; i < pts.length; i++) {
+        const p = pts[i], a = pts[(i - 1 + pts.length) % pts.length], b = pts[(i + 1) % pts.length];
+        const v1 = { x: a.x - p.x, y: a.y - p.y }, v2 = { x: b.x - p.x, y: b.y - p.y };
+        const cos = (v1.x * v2.x + v1.y * v2.y) / ((Math.hypot(v1.x, v1.y) || 1) * (Math.hypot(v2.x, v2.y) || 1));
+        max = Math.max(max, (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI);
+    }
+    return max;
+}
+
+const HOEK_COLS: EigCol[] = [
+    { label: 'alle hoeken scherp', test: ex => maxAngleDeg(ex.points ?? []) < 88 },
+    { label: 'één rechte hoek', test: ex => Math.abs(maxAngleDeg(ex.points ?? []) - 90) <= 2 },
+    { label: 'één stompe hoek', test: ex => maxAngleDeg(ex.points ?? []) > 92 },
+];
+const ZIJDEN_COLS: EigCol[] = [
+    { label: '3 gelijke zijden', test: ex => equalSideGroups(ex.sides ?? []).some(n => n === 3) },
+    { label: 'juist 2 gelijke zijden', test: ex => equalSideGroups(ex.sides ?? []).some(n => n === 2) && !equalSideGroups(ex.sides ?? []).some(n => n === 3) },
+    { label: 'geen gelijke zijden', test: ex => equalSideGroups(ex.sides ?? []).every(n => n === 1) },
+];
+const VIERHOEK_COLS: EigCol[] = [
+    { label: '4 rechte hoeken', test: ex => ex.concept === 'vierkant' || ex.concept === 'rechthoek' },
+    { label: '4 gelijke zijden', test: ex => ex.concept === 'vierkant' || ex.concept === 'ruit' },
+    { label: '2 paar evenwijdige zijden', test: ex => ex.concept !== 'trapezium' },
+];
+
+const HOEK_CONCEPTS = ['scherphoekig', 'rechthoekig', 'stomphoekig'];
+const ZIJDEN_CONCEPTS = ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'];
+
+// Columns follow the axes of the ENABLED concepts (hoeken / zijden / both / vierhoeken).
+function eigenschapCols(classify: string, concepts: string[]): EigCol[] {
+    if (classify === 'vierhoeken') return VIERHOEK_COLS;
+    const cols: EigCol[] = [];
+    if (concepts.some(k => HOEK_CONCEPTS.includes(k)) || !concepts.length) cols.push(...HOEK_COLS);
+    if (concepts.some(k => ZIJDEN_CONCEPTS.includes(k))) cols.push(...ZIJDEN_COLS);
+    return cols.length ? cols : HOEK_COLS;
+}
 
 const rot = (p: MeetPoint, deg: number): MeetPoint => {
     const r = (deg * Math.PI) / 180;
     return { x: p.x * Math.cos(r) - p.y * Math.sin(r), y: p.x * Math.sin(r) + p.y * Math.cos(r) };
 };
 
-// ── figure mini (driehoeken/vierhoeken) with equal-side ticks + right-angle marks ──
-function FigureSVG({ ex, size, showMarks }: { ex: VormleerExercise; size: number; showMarks: boolean }) {
+// ── figure mini (driehoeken/vierhoeken) with per-notation marks ──────────────
+interface FigureMarks { equalSides: boolean; rightAngles: boolean; parallel: boolean; rightAngleStyle: string; }
+
+function FigureSVG({ ex, size, marks: opt }: { ex: VormleerExercise; size: number; marks: FigureMarks }) {
     const scale = 0.55;   // minis: ~55% of true size so a row of them fits
     const raw = (ex.points ?? []).map(p => rot(p, ex.rotation ?? 0)).map(p => ({ x: p.x * CM * scale, y: -p.y * CM * scale }));
     const minX = Math.min(...raw.map(p => p.x)), minY = Math.min(...raw.map(p => p.y));
@@ -48,33 +83,69 @@ function FigureSVG({ ex, size, showMarks }: { ex: VormleerExercise; size: number
     const sides = ex.sides ?? [];
 
     const marks: React.ReactNode[] = [];
-    if (showMarks) {
+    // Per-side unit vectors, reused by all three notations.
+    const sideGeom = pts.map((a, i) => {
+        const b = pts[(i + 1) % pts.length];
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        return { a, b, mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, ux: (b.x - a.x) / len, uy: (b.y - a.y) / len };
+    });
+
+    if (opt.equalSides) {
         // Equal-side tick marks: sides with (rounded) equal length share a tick count.
         const groups = new Map<number, number>();
         sides.forEach(s => { const k = Math.round(s * 10); if (!groups.has(k)) groups.set(k, groups.size + 1); });
-        // Only mark groups that actually contain ≥2 sides.
         const counts = new Map<number, number>();
         sides.forEach(s => { const k = Math.round(s * 10); counts.set(k, (counts.get(k) ?? 0) + 1); });
-        pts.forEach((a, i) => {
-            const b = pts[(i + 1) % pts.length];
+        sideGeom.forEach((g, i) => {
             const k = Math.round((sides[i] ?? 0) * 10);
             if ((counts.get(k) ?? 0) < 2) return;
             const n = groups.get(k) ?? 1;
-            const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-            const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;   // along the side
-            const nx = -uy, ny = ux;                                 // perpendicular
+            const nx = -g.uy, ny = g.ux;
             for (let t = 0; t < n; t++) {
                 const off = (t - (n - 1) / 2) * 5;
                 marks.push(
                     <line key={`tick${i}-${t}`}
-                        x1={mid.x + ux * off - nx * 4} y1={mid.y + uy * off - ny * 4}
-                        x2={mid.x + ux * off + nx * 4} y2={mid.y + uy * off + ny * 4}
+                        x1={g.mid.x + g.ux * off - nx * 4} y1={g.mid.y + g.uy * off - ny * 4}
+                        x2={g.mid.x + g.ux * off + nx * 4} y2={g.mid.y + g.uy * off + ny * 4}
                         stroke="#000" strokeWidth={1.4} />
                 );
             }
         });
-        // Right-angle squares at ~90° corners.
+    }
+
+    if (opt.parallel) {
+        // Parallel-pair chevrons: pair 1 = single >, pair 2 = double >>, pointing along the side.
+        const used = new Set<number>();
+        let pairNo = 0;
+        for (let i = 0; i < sideGeom.length; i++) {
+            if (used.has(i)) continue;
+            for (let j = i + 1; j < sideGeom.length; j++) {
+                if (used.has(j)) continue;
+                const cross = sideGeom[i].ux * sideGeom[j].uy - sideGeom[i].uy * sideGeom[j].ux;
+                if (Math.abs(cross) > 0.06) continue;
+                used.add(i); used.add(j);
+                pairNo++;
+                [i, j].forEach(s => {
+                    const g = sideGeom[s];
+                    // Chevrons point in one consistent direction per pair.
+                    const dir = s === i ? 1 : (sideGeom[i].ux * g.ux + sideGeom[i].uy * g.uy) >= 0 ? 1 : -1;
+                    const nx = -g.uy, ny = g.ux;
+                    for (let t = 0; t < pairNo; t++) {
+                        const off = (t - (pairNo - 1) / 2) * 6;
+                        const cx = g.mid.x + g.ux * off, cy = g.mid.y + g.uy * off;
+                        marks.push(
+                            <polyline key={`par${s}-${t}`}
+                                points={`${cx - dir * g.ux * 4 + nx * 4},${cy - dir * g.uy * 4 + ny * 4} ${cx + dir * g.ux * 4},${cy + dir * g.uy * 4} ${cx - dir * g.ux * 4 - nx * 4},${cy - dir * g.uy * 4 - ny * 4}`}
+                                fill="none" stroke="#000" strokeWidth={1.3} />
+                        );
+                    }
+                });
+                break;
+            }
+        }
+    }
+
+    if (opt.rightAngles) {
         pts.forEach((p, i) => {
             const prev = pts[(i - 1 + pts.length) % pts.length];
             const next = pts[(i + 1) % pts.length];
@@ -84,11 +155,21 @@ function FigureSVG({ ex, size, showMarks }: { ex: VormleerExercise; size: number
             if (Math.abs(cos) > 0.05) return;
             const s = 8;
             const u1 = { x: (v1.x / l1) * s, y: (v1.y / l1) * s }, u2 = { x: (v2.x / l2) * s, y: (v2.y / l2) * s };
-            marks.push(
-                <polyline key={`ra${i}`}
-                    points={`${p.x + u1.x},${p.y + u1.y} ${p.x + u1.x + u2.x},${p.y + u1.y + u2.y} ${p.x + u2.x},${p.y + u2.y}`}
-                    fill="none" stroke="#000" strokeWidth={1.2} />
-            );
+            if (opt.rightAngleStyle === 'haakje') {
+                // Bare L-corner just inside the vertex (Ruben's preferred notation).
+                const c = { x: p.x + (u1.x + u2.x) * 0.45, y: p.y + (u1.y + u2.y) * 0.45 };
+                marks.push(
+                    <polyline key={`ra${i}`}
+                        points={`${c.x + u1.x * 0.6},${c.y + u1.y * 0.6} ${c.x},${c.y} ${c.x + u2.x * 0.6},${c.y + u2.y * 0.6}`}
+                        fill="none" stroke="#000" strokeWidth={1.2} />
+                );
+            } else {
+                marks.push(
+                    <polyline key={`ra${i}`}
+                        points={`${p.x + u1.x},${p.y + u1.y} ${p.x + u1.x + u2.x},${p.y + u1.y + u2.y} ${p.x + u2.x},${p.y + u2.y}`}
+                        fill="none" stroke="#000" strokeWidth={1.2} />
+                );
+            }
         });
     }
 
@@ -192,7 +273,12 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     const kind: string = c.kind ?? 'punt-lijn';
     const mode: string = c.mode ?? 'herkennen';
     const answerMode: string = c.answerMode ?? 'woordbank';
-    const showMarks: boolean = c.showMarks ?? true;
+    const figMarks: FigureMarks = {
+        equalSides: c.showEqualSides ?? c.showMarks ?? true,
+        rightAngles: c.showRightAngles ?? c.showMarks ?? true,
+        parallel: c.showParallel ?? false,
+        rightAngleStyle: c.rightAngleStyle ?? 'vierkantje',
+    };
     const showBoog: boolean = c.showBoog ?? true;
     const raster: boolean = c.raster ?? true;
     const boxH: number = c.boxHeight ?? 4;   // tekenen box height in cm
@@ -206,7 +292,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     }
 
     const mini = (ex: VormleerExercise, size: number) =>
-        ex.kind === 'figuur' ? <FigureSVG ex={ex} size={size} showMarks={showMarks} />
+        ex.kind === 'figuur' ? <FigureSVG ex={ex} size={size} marks={figMarks} />
             : ex.kind === 'hoek' ? <HoekSVG ex={ex} size={size} showBoog={showBoog} />
             : <PuntLijnSVG ex={ex} size={size} />;
 
@@ -249,7 +335,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
 
     // ── EIGENSCHAPPEN: tick-table — figure column + property columns ──────────
     if (mode === 'eigenschappen' && kind === 'figuur') {
-        const cols = EIGENSCHAP_COLS[classify] ?? EIGENSCHAP_COLS['vierhoeken'];
+        const cols = eigenschapCols(classify, concepts);
         const grid = `120px ${cols.map(() => '130px').join(' ')}`;
         const cell: React.CSSProperties = {
             border: '1px solid #000', minHeight: '40px', display: 'flex', alignItems: 'center',
@@ -270,7 +356,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                             <div style={{ ...cell, minHeight: '86px' }}>{mini(ex, 76)}</div>
                             {cols.map(col => (
                                 <div key={col.label} style={{ ...cell, color: SOL, fontFamily: mono, fontWeight: 'bold', fontSize: '15px' }}>
-                                    {showSolutions && col.test(ex.concept) ? '✕' : ''}
+                                    {showSolutions && col.test(ex) ? '✕' : ''}
                                 </div>
                             ))}
                         </div>
