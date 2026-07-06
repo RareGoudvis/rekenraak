@@ -54,7 +54,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     if (!isNaN(nVal)) {
                         const currentEx = blocks.find(b => b.id === blockId)?.exercises.find(ex => ex.id === exId);
                         if (currentEx) {
-                            const newOps = opIdx === 0 ? [nVal, currentEx.operands[1]] : [currentEx.operands[0], nVal];
+                            const newOps = currentEx.operands.map((o, i) => (i === opIdx ? nVal : o));
                             updateExercise(blockId, exId, { operands: newOps });
                         }
                     }
@@ -118,9 +118,16 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     );
                 }
 
-                // NORMAL MATH
-                const isMissing1 = ex.missingTerm === 'operand1';
-                const isMissing2 = ex.missingTerm === 'operand2';
+                // NORMAL MATH — operands render generically so 2-4-term chains work.
+                const isMissing = (i: number) =>
+                    ex.missingIndex !== undefined ? ex.missingIndex === i
+                        : (ex.missingTerm === 'operand1' && i === 0) || (ex.missingTerm === 'operand2' && i === 1);
+                const anyMissing = ex.operands.some((_, i) => isMissing(i));
+                const opGlyph = (gap: number) => ex.operators?.[gap] ?? ex.operator ?? '+';
+                const multi = ex.operands.length > 2;
+                // 2-term keeps the classic fixed 85px columns (aligned worksheets);
+                // longer chains use compact auto-width cells so 4 terms still fit a line.
+                const cellW = multi ? undefined : '85px';
 
                 return (
                     <div key={ex.id} style={{ ...styles.exerciseRow, alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end' }}>
@@ -128,17 +135,18 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             operand to the first 32px line height + flex-end so it sits ON line 1's
                             baseline instead of floating above it. */}
                         <div style={{ display: 'flex', alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
-                            <div style={{ width: '85px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                {renderTerm(ex.operands[0], isMissing1, block.id, ex.id, 0)}
-                            </div>
-                            <span style={{ width: '26px', textAlign: 'center', flexShrink: 0 }}>{ex.operator || '+'}</span>
-                            <div style={{ width: '85px', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                {renderTerm(ex.operands[1], isMissing2, block.id, ex.id, 1)}
-                            </div>
+                            {ex.operands.map((operand, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                                    {i > 0 && <span style={{ width: multi ? '20px' : '26px', textAlign: 'center', flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
+                                    <div style={{ width: cellW, display: 'flex', justifyContent: i === 0 ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
+                                        {renderTerm(operand, isMissing(i), block.id, ex.id, i)}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
                         <div style={{ ...(layout !== 'inline-short' && { flex: 1 }), display: 'flex', flexDirection: 'column', marginLeft: '8px', gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
-                            {(!isMissing1 && !isMissing2) ? (
+                            {!anyMissing ? (
                                 Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: '32px' }}>
                                         <span style={{ marginRight: '10px' }}>=</span>

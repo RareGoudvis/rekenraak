@@ -21,10 +21,15 @@ export interface Equation {
     id: string;
     operands: (number | Fraction)[];
     operator: '+' | '-' | 'x' | ':';
+    // Multi-term chains (2-4 operands): one operator per gap. Absent = the single
+    // `operator` applies to every gap (legacy 2-term equations stay untouched).
+    operators?: ('+' | '-' | 'x' | ':')[];
     answer: number | Fraction; // we willen een getal of een breuk krijgen, voor de breuk roepen we het type van hierboven aan
     steps?: number[];
     isManuallyEdited: boolean;
     missingTerm?: 'result' | 'operand1' | 'operand2';
+    // Puntoefening blank at operand N (multi-term); overrides missingTerm's 2-term addressing.
+    missingIndex?: number;
     remainder?: number;
 }
 
