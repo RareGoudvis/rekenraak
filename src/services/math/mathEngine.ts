@@ -64,6 +64,81 @@ const generateMaskedInt = (mask: Record<string, boolean>): number | null => {
 };
 
 // ============================================================================
+// 2b. MULTI-TERM HELPERS (2-4 operands per equation)
+// ============================================================================
+
+// termCount: 2-4 operands; presets (compenseren / tienvoud) pin it to 2.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const termCountOf = (c: any): number => {
+    if (c.preset === 'compenseren' || c.preset === 'tienvoud') return 2;
+    return Math.min(4, Math.max(2, c.termCount ?? 2));
+};
+
+// Mask for operand i: new operandMasks[] wins; legacy operand1Mask/operand2Mask cover i 0/1.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const maskFor = (c: any, i: number): Record<string, boolean> =>
+    c.operandMasks?.[i] ?? (i === 0 ? c.operand1Mask : i === 1 ? c.operand2Mask : undefined) ?? {};
+
+// Optional per-operand ceiling (geavanceerde opties), in display units; null = free.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const maxOpFor = (c: any, i: number): number | null => {
+    const v = c.operandMax?.[i];
+    return typeof v === 'number' && v > 0 ? v : null;
+};
+
+const digitAtScaled = (intVal: number, placeWeightScaled: number): number =>
+    Math.floor(intVal / placeWeightScaled) % 10;
+
+// Places (keys) where base-10 addition of the whole CHAIN carries — column addition
+// with running carry, so the pairwise 2-term test generalizes exactly.
+function additionCarryPlaces(ints: number[]): Set<string> {
+    const out = new Set<string>();
+    let carry = 0;
+    // ascending place weight (PLACE_VALUES is descending)
+    for (let p = PLACE_VALUES.length - 1; p >= 0; p--) {
+        const w = Math.round(PLACE_VALUES[p].weight * INTERNAL_SCALE);
+        const s = ints.reduce((acc, v) => acc + digitAtScaled(v, w), 0) + carry;
+        carry = Math.floor(s / 10);
+        if (carry > 0) out.add(PLACE_VALUES[p].key);
+    }
+    return out;
+}
+
+// Places where ANY step of the sequential subtraction chain (a − b − c …) borrows.
+function subtractionBorrowPlaces(ints: number[]): Set<string> {
+    const out = new Set<string>();
+    let running = ints[0];
+    for (let i = 1; i < ints.length; i++) {
+        for (const place of PLACE_VALUES) {
+            const divisor = Math.round(place.weight * INTERNAL_SCALE) * 10;
+            if ((running % divisor) < (ints[i] % divisor)) out.add(place.key);
+        }
+        running -= ints[i];
+    }
+    return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function bridgesSatisfied(bridges: any, hits: Set<string>): boolean {
+    for (const place of PLACE_VALUES) {
+        const constraint = bridges?.[place.key] ?? 'FREE';
+        if (constraint === 'FREE') continue;
+        if (constraint === 'REQUIRED' && !hits.has(place.key)) return false;
+        if (constraint === 'FORBIDDEN' && hits.has(place.key)) return false;
+    }
+    return true;
+}
+
+// Compenseren preset: an operand just under a round number (29 = 30 − 1), scaled units.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function compenserenOperand(c: any, maxGetal: number): number {
+    const unit = maxGetal > 100 ? 100 : 10;
+    const distance = Math.max(1, Math.min(2, c.presetDistance ?? 1));
+    const tens = randInt(2, Math.max(2, Math.floor(maxGetal / unit) - 1)) * unit;
+    return tens - randInt(1, distance);
+}
+
+// ============================================================================
 // 3. UI HELPERS VOOR CONFIGURATOR PANELEN
 // ============================================================================
 
@@ -114,7 +189,91 @@ export const numberMatchesMask = (
 // 4. OPTELLEN (ADDITION)
 // ============================================================================
 
+// 2-4 fraction chains for + and −. 'same' difficulty shares one denominator; anything
+// else accumulates the common denominator pairwise (answers stay exact integers).
+const generateFractionChain = (block: MathBlock, op: '+' | '-'): Equation[] => {
+    const { numberOfExercises, constraints } = block;
+    const {
+        fractionDifficulty = 'same',
+        maxNumerator1 = 10, maxDenominator1 = 10, maxNumerator2 = 10, maxDenominator2 = 10,
+    } = constraints;
+    const N = termCountOf(constraints);
+    const exercises: Equation[] = [];
+    const usedCombinations = new Set<string>();
+    let attempts = 0;
+    while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        const sameD = fractionDifficulty === 'same';
+        const d0 = randInt(2, Math.max(2, sameD ? Math.min(maxDenominator1, maxDenominator2) : maxDenominator1));
+        const fracs: Fraction[] = Array.from({ length: N }, (_, i) => ({
+            n: randInt(1, i === 0 ? maxNumerator1 : maxNumerator2),
+            d: sameD ? d0 : (i === 0 ? d0 : randInt(2, Math.max(2, maxDenominator2))),
+        }));
+        // Accumulate: ansN/ansD ± n_i/d_i.
+        let ansN = fracs[0].n, ansD = fracs[0].d;
+        let ok = true;
+        for (let i = 1; i < N; i++) {
+            const next = op === '+' ? ansN * fracs[i].d + fracs[i].n * ansD : ansN * fracs[i].d - fracs[i].n * ansD;
+            ansD = ansD * fracs[i].d;
+            ansN = next;
+            if (op === '-' && ansN <= 0) { ok = false; break; }
+            if (ansD > 100000) { ok = false; break; }   // keep denominators leerplan-sized
+        }
+        if (!ok) continue;
+        const comboId = fracs.map(f => `${f.n}/${f.d}`).join(op);
+        if (usedCombinations.has(comboId)) continue;
+        usedCombinations.add(comboId);
+        const eqType = constraints.equationType || 'normal';
+        const missingIndex = eqType === 'puntoefening' ? randInt(0, N - 1) : undefined;
+        exercises.push({
+            id: Math.random().toString(36).substring(2, 9), operands: fracs, operator: op,
+            answer: simplifyFraction(ansN, ansD), isManuallyEdited: false,
+            missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+            missingIndex,
+        });
+    }
+    return exercises;
+};
+
+// 3-4 fraction ×/: chains — all-fraction terms (the natural/decimal mixed modes stay
+// 2-term). Division works via reciprocals; answers simplified like the 2-term path.
+const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[] => {
+    const { numberOfExercises, constraints } = block;
+    const { maxNumerator1 = 10, maxDenominator1 = 10, maxNumerator2 = 10, maxDenominator2 = 10 } = constraints;
+    const N = termCountOf(constraints);
+    const exercises: Equation[] = [];
+    const usedCombinations = new Set<string>();
+    let attempts = 0;
+    while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        const fracs: Fraction[] = Array.from({ length: N }, (_, i) => ({
+            n: randInt(1, i === 0 ? maxNumerator1 : maxNumerator2),
+            d: randInt(2, Math.max(2, i === 0 ? maxDenominator1 : maxDenominator2)),
+        }));
+        let ansN = fracs[0].n, ansD = fracs[0].d;
+        for (let i = 1; i < N; i++) {
+            // ÷ (n/d) = × (d/n)
+            ansN *= op === 'x' ? fracs[i].n : fracs[i].d;
+            ansD *= op === 'x' ? fracs[i].d : fracs[i].n;
+        }
+        if (ansD > 100000 || ansN > 100000) continue;
+        const comboId = fracs.map(f => `${f.n}/${f.d}`).join(op);
+        if (usedCombinations.has(comboId)) continue;
+        usedCombinations.add(comboId);
+        const eqType = constraints.equationType || 'normal';
+        const missingIndex = eqType === 'puntoefening' ? randInt(0, N - 1) : undefined;
+        exercises.push({
+            id: Math.random().toString(36).substring(2, 9), operands: fracs, operator: op,
+            answer: simplifyFraction(ansN, ansD), isManuallyEdited: false,
+            missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+            missingIndex,
+        });
+    }
+    return exercises;
+};
+
 const generateFractionAddition = (block: MathBlock): Equation[] => {
+    if (termCountOf(block.constraints) > 2) return generateFractionChain(block, '+');
     const { numberOfExercises, constraints } = block;
     const {
         fractionDifficulty = 'same', mixedNumber1 = false, mixedNumber2 = false,
@@ -175,53 +334,61 @@ export const generateAdditionExercises = (block: MathBlock): Equation[] => {
     if (block.constraints.numberType === 'rational') return generateFractionAddition(block);
 
     const { numberOfExercises, constraints } = block;
-    const { maxGetal = 1000, bridges, operand1Mask = {}, operand2Mask = {}, numberType, decimalPlaces = 2 } = constraints;
+    const { maxGetal = 1000, bridges, numberType, decimalPlaces = 2 } = constraints;
     const displayScale = numberType === 'decimal' ? Math.pow(10, decimalPlaces) : 1;
     const intMaxGetal = Math.round(maxGetal * INTERNAL_SCALE);
+    const N = termCountOf(constraints);
     const exercises: Equation[] = [];
     const usedCombinations = new Set<string>();
-    const useSpecificStructure = Object.values(operand1Mask).some(v => v) || Object.values(operand2Mask).some(v => v);
 
     let attempts = 0;
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let intA: number, intB: number;
-
-        if (useSpecificStructure) {
-            const maskA = generateMaskedInt(operand1Mask);
-            const maskB = generateMaskedInt(operand2Mask);
-            intA = maskA !== null ? maskA : randInt(1, intMaxGetal - 1);
-            const maxB = intMaxGetal - intA;
-            if (maxB <= 0) continue;
-            intB = maskB !== null ? maskB : randInt(1, maxB);
-        } else {
-            intA = randInt(1, intMaxGetal - 1);
-            intB = randInt(1, intMaxGetal - intA);
+        // Build N operands on the display grid (whole numbers, or the smallest decimal
+        // step) — off-grid scaled ints would round to 0 and desync the carry check.
+        const step = Math.max(1, Math.round(INTERNAL_SCALE / displayScale));
+        const ints: number[] = [];
+        let remaining = intMaxGetal;
+        let bad = false;
+        for (let i = 0; i < N; i++) {
+            const masked = generateMaskedInt(maskFor(constraints, i));
+            const opCeil = maxOpFor(constraints, i);
+            const ceil = Math.min(remaining - (N - 1 - i) * step, opCeil !== null ? Math.round(opCeil * INTERNAL_SCALE) : Infinity);
+            let v: number;
+            if (constraints.preset === 'compenseren' && i === 1) {
+                v = Math.round(compenserenOperand(constraints, maxGetal) * INTERNAL_SCALE);
+            } else if (masked !== null) {
+                v = masked;
+            } else {
+                const hi = Math.floor(ceil / step);
+                if (hi < 1) { bad = true; break; }
+                v = randInt(1, hi) * step;
+            }
+            if (v < step || v > ceil + 0.5) { bad = true; break; }
+            ints.push(v);
+            remaining -= v;
         }
+        if (bad || ints.length !== N || ints.reduce((a, b) => a + b, 0) > intMaxGetal) continue;
+        // Compenseren is pointless when the first term is itself round.
+        if (constraints.preset === 'compenseren' && ints[0] % Math.round((maxGetal > 100 ? 100 : 10) * INTERNAL_SCALE) === 0) continue;
 
-        if (intA + intB > intMaxGetal || intA <= 0 || intB <= 0) continue;
+        // Brugcontrole — column addition with running carry (exact for any N).
+        if (!bridgesSatisfied(bridges, additionCarryPlaces(ints))) continue;
 
-        // Brugcontrole
-        let bridgesOk = true;
-        for (const place of PLACE_VALUES) {
-            const constraint = (bridges && bridges[place.key]) ? bridges[place.key] : 'FREE';
-            if (constraint === 'FREE') continue;
-            const divisor = Math.round(place.weight * INTERNAL_SCALE) * 10;
-            const hasBridge = ((intA % divisor) + (intB % divisor)) >= divisor;
-            if (constraint === 'REQUIRED' && !hasBridge) { bridgesOk = false; break; }
-            if (constraint === 'FORBIDDEN' && hasBridge) { bridgesOk = false; break; }
-        }
-        if (!bridgesOk) continue;
-
-        const a = Math.round((intA / INTERNAL_SCALE) * displayScale) / displayScale;
-        const b = Math.round((intB / INTERNAL_SCALE) * displayScale) / displayScale;
-        const comboId = `${a}+${b}`;
+        const vals = ints.map(v => Math.round((v / INTERNAL_SCALE) * displayScale) / displayScale);
+        const comboId = vals.join('+');
         if (usedCombinations.has(comboId)) continue;
         usedCombinations.add(comboId);
 
         const eqType = constraints.equationType || 'normal';
-        const missingTerm = eqType === 'puntoefening' ? (Math.random() < 0.5 ? 'operand1' : 'operand2') : 'result';
-        exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: [a, b], operator: '+', answer: Math.round((a + b) * displayScale) / displayScale, isManuallyEdited: false, missingTerm });
+        const missingIndex = eqType === 'puntoefening' ? randInt(0, N - 1) : undefined;
+        exercises.push({
+            id: Math.random().toString(36).substring(2, 9), operands: vals, operator: '+',
+            answer: Math.round(vals.reduce((a, b) => a + b, 0) * displayScale) / displayScale,
+            isManuallyEdited: false,
+            missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+            missingIndex,
+        });
     }
     return exercises;
 };
@@ -231,6 +398,7 @@ export const generateAdditionExercises = (block: MathBlock): Equation[] => {
 // ============================================================================
 
 const generateFractionSubtraction = (block: MathBlock): Equation[] => {
+    if (termCountOf(block.constraints) > 2) return generateFractionChain(block, '-');
     const { numberOfExercises, constraints } = block;
     const {
         fractionDifficulty = 'same', mixedNumber1 = false, mixedNumber2 = false,
@@ -299,52 +467,66 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
     if (block.constraints.numberType === 'rational') return generateFractionSubtraction(block);
 
     const { numberOfExercises, constraints } = block;
-    const { maxGetal = 1000, bridges, operand1Mask = {}, operand2Mask = {}, numberType, decimalPlaces = 2 } = constraints;
+    const { maxGetal = 1000, bridges, numberType, decimalPlaces = 2 } = constraints;
     const displayScale = numberType === 'decimal' ? Math.pow(10, decimalPlaces) : 1;
     const intMaxGetal = Math.round(maxGetal * INTERNAL_SCALE);
+    const N = termCountOf(constraints);
     const exercises: Equation[] = [];
     const usedCombinations = new Set<string>();
-    const useSpecificStructure = Object.values(operand1Mask).some(v => v) || Object.values(operand2Mask).some(v => v);
 
     let attempts = 0;
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let intA: number, intB: number;
+        // Minuend first, then N−1 subtrahends; everything on the display grid and the
+        // running result stays > 0.
+        const step = Math.max(1, Math.round(INTERNAL_SCALE / displayScale));
+        const maskedA = generateMaskedInt(maskFor(constraints, 0));
+        const ceilA = maxOpFor(constraints, 0);
+        let intA = maskedA ?? randInt(2, Math.floor(intMaxGetal / step)) * step;
+        if (ceilA !== null) intA = Math.min(intA, Math.round(ceilA * INTERNAL_SCALE));
+        if (intA < 2 * step || intA > intMaxGetal) continue;
 
-        if (useSpecificStructure) {
-            const maskA = generateMaskedInt(operand1Mask);
-            const maskB = generateMaskedInt(operand2Mask);
-            intA = maskA !== null ? maskA : randInt(1, intMaxGetal - 1);
-            intB = maskB !== null ? maskB : randInt(1, intA);
-        } else {
-            intA = randInt(1, intMaxGetal);
-            intB = randInt(1, intA);
+        const ints = [intA];
+        let running = intA;
+        let bad = false;
+        for (let i = 1; i < N; i++) {
+            const masked = generateMaskedInt(maskFor(constraints, i));
+            const opCeil = maxOpFor(constraints, i);
+            const ceil = Math.min(running - step, opCeil !== null ? Math.round(opCeil * INTERNAL_SCALE) : Infinity);
+            let v: number;
+            if (constraints.preset === 'compenseren' && i === 1) {
+                v = Math.round(compenserenOperand(constraints, maxGetal) * INTERNAL_SCALE);
+            } else if (masked !== null) {
+                v = masked;
+            } else {
+                const hi = Math.floor(ceil / step);
+                if (hi < 1) { bad = true; break; }
+                v = randInt(1, hi) * step;
+            }
+            if (v < step || v >= running) { bad = true; break; }
+            ints.push(v);
+            running -= v;
         }
+        if (bad || ints.length !== N || running <= 0) continue;
+        if (constraints.preset === 'compenseren' && ints[0] % Math.round((maxGetal > 100 ? 100 : 10) * INTERNAL_SCALE) === 0) continue;
 
-        if (intA < intB) { const temp = intA; intA = intB; intB = temp; }
-        if (intA <= 0 || intB <= 0 || intA === intB) continue;
+        // Brugcontrole (lenen) — any borrow in the sequential chain counts.
+        if (!bridgesSatisfied(bridges, subtractionBorrowPlaces(ints))) continue;
 
-        // Brugcontrole (Lenen)
-        let bridgesOk = true;
-        for (const place of PLACE_VALUES) {
-            const constraint = (bridges && bridges[place.key]) ? bridges[place.key] : 'FREE';
-            if (constraint === 'FREE') continue;
-            const divisor = Math.round(place.weight * INTERNAL_SCALE) * 10;
-            const hasBridge = (intA % divisor) < (intB % divisor);
-            if (constraint === 'REQUIRED' && !hasBridge) { bridgesOk = false; break; }
-            if (constraint === 'FORBIDDEN' && hasBridge) { bridgesOk = false; break; }
-        }
-        if (!bridgesOk) continue;
-
-        const a = Math.round((intA / INTERNAL_SCALE) * displayScale) / displayScale;
-        const b = Math.round((intB / INTERNAL_SCALE) * displayScale) / displayScale;
-        const comboId = `${a}-${b}`;
+        const vals = ints.map(v => Math.round((v / INTERNAL_SCALE) * displayScale) / displayScale);
+        const comboId = vals.join('-');
         if (usedCombinations.has(comboId)) continue;
         usedCombinations.add(comboId);
 
+        const answer = Math.round(vals.reduce((a, b, i) => (i === 0 ? b : a - b), 0) * displayScale) / displayScale;
         const eqType = constraints.equationType || 'normal';
-        const missingTerm = eqType === 'puntoefening' ? (Math.random() < 0.5 ? 'operand1' : 'operand2') : 'result';
-        exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: [a, b], operator: '-', answer: Math.round((a - b) * displayScale) / displayScale, isManuallyEdited: false, missingTerm });
+        const missingIndex = eqType === 'puntoefening' ? randInt(0, N - 1) : undefined;
+        exercises.push({
+            id: Math.random().toString(36).substring(2, 9), operands: vals, operator: '-', answer,
+            isManuallyEdited: false,
+            missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+            missingIndex,
+        });
     }
     return exercises;
 };
@@ -359,6 +541,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
     // A. RATIONALE GETALLEN (Breuken, eventueel in combinatie met natuurlijke/decimale getallen)
     if (constraints.numberType === 'rational') {
+        if (termCountOf(constraints) > 2) return generateFractionMulDivChain(block, 'x');
         const {
             fractionMultMode = 'fraction_fraction',
             fractionOrderMode = 'AB',
@@ -451,6 +634,69 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
     const usedCombinations = new Set<string>();
     let attempts = 0;
 
+    // Preset '× met 10/100/1000': base × tienvoud (comma shift). Decimal bases allowed.
+    if (constraints.preset === 'tienvoud') {
+        const factors: number[] = (constraints.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
+        const pool = factors.length ? factors : [10, 100, 1000];
+        const scale = Math.pow(10, decimalPlaces);
+        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            const factor = pool[randInt(0, pool.length - 1)];
+            const base = numberType === 'decimal'
+                ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                : randInt(2, Math.max(2, maxGetal));
+            const answer = Number((base * factor).toFixed(6));
+            const comboId = `${base}*${factor}`;
+            if (usedCombinations.has(comboId)) continue;
+            usedCombinations.add(comboId);
+            const eqType = constraints.equationType || 'normal';
+            const missingIndex = eqType === 'puntoefening' ? randInt(0, 1) : undefined;
+            exercises.push({
+                id: Math.random().toString(36).substring(2, 9), operands: [base, factor], operator: 'x', answer,
+                isManuallyEdited: false,
+                missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+                missingIndex,
+            });
+        }
+        return exercises;
+    }
+
+    // Multi-term chains (3-4 factors): small factors so the product stays hoofdrekenbaar.
+    const N_MUL = termCountOf(constraints);
+    if (N_MUL > 2 && numberType === 'natural') {
+        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            const factors: number[] = [];
+            let product = 1;
+            let bad = false;
+            for (let i = 0; i < N_MUL; i++) {
+                const fromTables = multiplicationMode === 'tafels' && selectedTables.length > 0 && i === 0;
+                const opCeil = maxOpFor(constraints, i);
+                const budget = Math.floor(maxGetal / product);
+                const hi = Math.min(opCeil ?? tableLimit, budget);
+                if (hi < 2) { bad = true; break; }
+                const f = fromTables ? selectedTables[randInt(0, selectedTables.length - 1)] : randInt(2, Math.max(2, Math.min(hi, 12)));
+                if (f * product > maxGetal) { bad = true; break; }
+                factors.push(f);
+                product *= f;
+            }
+            if (bad || factors.length !== N_MUL) continue;
+            if (excludeOne && factors.includes(1)) continue;
+            const comboId = factors.join('*');
+            if (usedCombinations.has(comboId)) continue;
+            usedCombinations.add(comboId);
+            const eqType = constraints.equationType || 'normal';
+            const missingIndex = eqType === 'puntoefening' ? randInt(0, N_MUL - 1) : undefined;
+            exercises.push({
+                id: Math.random().toString(36).substring(2, 9), operands: factors, operator: 'x', answer: product,
+                isManuallyEdited: false,
+                missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+                missingIndex,
+            });
+        }
+        return exercises;
+    }
+
     // Sub-scenario B1: Tafels automatiseren
     if (multiplicationMode === 'tafels' && numberType === 'natural') {
         if (selectedTables.length === 0) return [];
@@ -528,6 +774,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
 
     // A. RATIONALE GETALLEN (Breuken)
     if (constraints.numberType === 'rational') {
+        if (termCountOf(constraints) > 2) return generateFractionMulDivChain(block, ':');
         const {
             fractionMultMode = 'fraction_fraction',
             fractionOrderMode = 'AB',
@@ -632,6 +879,67 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     const exercises: Equation[] = [];
     const usedCombinations = new Set<string>();
     let attempts = 0;
+
+    // Preset ': met 10/100/1000' — answer-first so the quotient stays clean; dividends
+    // legitimately exceed maxGetal (that's the point of ": 1000").
+    if (constraints.preset === 'tienvoud') {
+        const factors: number[] = (constraints.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
+        const pool = factors.length ? factors : [10, 100, 1000];
+        const scale = Math.pow(10, decimalPlaces);
+        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            const factor = pool[randInt(0, pool.length - 1)];
+            const quotient = numberType === 'decimal'
+                ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                : randInt(2, Math.max(2, maxGetal));
+            const dividend = Number((quotient * factor).toFixed(6));
+            const comboId = `${dividend}:${factor}`;
+            if (usedCombinations.has(comboId)) continue;
+            usedCombinations.add(comboId);
+            const eqType = constraints.equationType || 'normal';
+            const missingIndex = eqType === 'puntoefening' ? randInt(0, 1) : undefined;
+            exercises.push({
+                id: Math.random().toString(36).substring(2, 9), operands: [dividend, factor], operator: ':', answer: quotient,
+                isManuallyEdited: false,
+                missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+                missingIndex,
+            });
+        }
+        return exercises;
+    }
+
+    // Multi-term chains (a : b : c): answer-first, every intermediate step exact.
+    const N_DIV = termCountOf(constraints);
+    if (N_DIV > 2 && numberType === 'natural' && multiplicationMode !== 'met_rest') {
+        const divisorPool = selectedTables.length ? selectedTables.filter((t: number) => t > 1) : null;
+        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            const divisors = Array.from({ length: N_DIV - 1 }, (_, i) => {
+                const opCeil = maxOpFor(constraints, i + 1);
+                const hi = Math.min(opCeil ?? tableLimit, 12);
+                return divisorPool ? divisorPool[randInt(0, divisorPool.length - 1)] : randInt(2, Math.max(2, hi));
+            });
+            const divProduct = divisors.reduce((a, b) => a * b, 1);
+            const maxQ = Math.floor(maxGetal / divProduct);
+            if (maxQ < 1) continue;
+            const quotient = randInt(1, Math.max(1, Math.min(maxQ, tableLimit * 2)));
+            const dividend = quotient * divProduct;
+            if (dividend > maxGetal) continue;
+            const operands = [dividend, ...divisors];
+            const comboId = operands.join(':');
+            if (usedCombinations.has(comboId)) continue;
+            usedCombinations.add(comboId);
+            const eqType = constraints.equationType || 'normal';
+            const missingIndex = eqType === 'puntoefening' ? randInt(0, N_DIV - 1) : undefined;
+            exercises.push({
+                id: Math.random().toString(36).substring(2, 9), operands, operator: ':', answer: quotient,
+                isManuallyEdited: false,
+                missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
+                missingIndex,
+            });
+        }
+        return exercises;
+    }
 
     // Sub-scenario B1: Deeltafels
     if (multiplicationMode === 'tafels' && numberType === 'natural') {
