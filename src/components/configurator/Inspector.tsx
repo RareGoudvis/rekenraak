@@ -619,6 +619,41 @@ export default function Inspector() {
                         </>
                     )}
 
+                    {/* ── Controleer met omgekeerde bewerking (cijferen) ── */}
+                    {activeBlock.typeId.startsWith('cijferen-') && (c.operator === '+' || c.operator === '-') && (
+                        <>
+                            <label style={{ ...S.label, marginTop: '12px' }}>Controleren</label>
+                            <label style={S.checkboxLabel}>
+                                <input
+                                    type="checkbox"
+                                    checked={!!c.omgekeerdeControle}
+                                    onChange={(e) => updateConstraint('omgekeerdeControle', e.target.checked)}
+                                    style={S.checkbox}
+                                />
+                                Controlelijn (omgekeerde bewerking)
+                            </label>
+                        </>
+                    )}
+
+                    {/* ── Omgekeerde bewerking: wat staat al ingevuld op de controlelijn ── */}
+                    {activeBlock.typeId === 'controleren' && c.subType === 'omgekeerde' && (
+                        <>
+                            <label style={{ ...S.label, marginTop: '12px' }}>Controlelijn</label>
+                            <div className="seg-group">
+                                {([
+                                    { key: 'niets', label: 'Leeg' },
+                                    { key: 'teken', label: 'Bewerkingsteken' },
+                                    { key: 'alles', label: 'Ook getallen' },
+                                ] as const).map(({ key, label }) => (
+                                    <button key={key} className="seg-btn" aria-pressed={(c.prefill ?? 'niets') === key}
+                                        onClick={() => updateConstraint('prefill', key)}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
                     {/* ── Q/R-vak toggle (cijferen delen only) ── */}
                     {activeBlock.typeId.startsWith('cijferen-') && c.operator === ':' && (
                         <>

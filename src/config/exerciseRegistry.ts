@@ -255,7 +255,7 @@ const handigDefaults = (): Record<string, unknown> => ({
 });
 
 const rekenvolgordeDefaults = (): Record<string, unknown> => ({
-    operators: ['+', '-', 'x'], haakjes: true, opsCount: 2, maxGetal: 100, tableLimit: 10, scaffold: false,
+    operators: ['+', '-', 'x'], haakjesMode: 'MAG', opsCount: 2, maxGetal: 100, tableLimit: 10,
 });
 
 // Renders via PatroonViewer: all operators shown with operand, blank at the end.

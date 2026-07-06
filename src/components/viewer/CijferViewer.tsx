@@ -533,6 +533,19 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                 ? <MultiplicationGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
                 : <AddSubGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
             }
+            {/* Controle via de omgekeerde bewerking (add/sub only): write-line under the sum. */}
+            {!isDivision && !isMultiplication && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: '11px' }}>
+                    <span style={{ flexShrink: 0 }}>controle:</span>
+                    {showSolutions
+                        ? <span style={{ color: '#e11d48', marginLeft: '4px' }}>
+                            {ex.operator === '+'
+                                ? `${fmtDisplay(ex.answer, dp)} − ${fmtDisplay(ex.operands[1], dp)} = ${fmtDisplay(ex.operands[0], dp)}`
+                                : `${fmtDisplay(ex.answer, dp)} + ${fmtDisplay(ex.operands[1], dp)} = ${fmtDisplay(ex.operands[0], dp)}`}
+                        </span>
+                        : <div style={{ flex: 1, borderBottom: '1px solid #aaa', height: '13px', marginLeft: '2px' }} />}
+                </div>
+            )}
             {isDivision && (c.showQR !== false) && (
                 <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (

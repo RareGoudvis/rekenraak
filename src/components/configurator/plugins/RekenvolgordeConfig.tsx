@@ -14,10 +14,9 @@ export default function RekenvolgordeConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const c = block.constraints;
     const operators: string[] = c.operators ?? ['+', '-', 'x'];
-    const haakjes: boolean = c.haakjes ?? true;
+    const haakjesMode: string = c.haakjesMode ?? 'MAG';
     const opsCount: number = c.opsCount ?? 2;
     const maxGetal = c.maxGetal ?? 100;
-    const scaffold: boolean = c.scaffold ?? false;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
@@ -39,10 +38,11 @@ export default function RekenvolgordeConfig({ block }: Props) {
             </div>
 
             <div style={styles.section}>
-                <SettingLabel text="Aantal bewerkingen:" info="Twee bewerkingen (drie getallen) of drie bewerkingen (vier getallen)." />
+                <SettingLabel text="Aantal bewerkingen:" info="Bij 3–4 bewerkingen zit er altijd een handig paar in (150 + 50, 750 − 250, 4 × 25)." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('opsCount', 2)} style={styles.radioBtn(opsCount === 2)}>2</button>
-                    <button onClick={() => set('opsCount', 3)} style={styles.radioBtn(opsCount === 3)}>3</button>
+                    {[2, 3, 4].map(n => (
+                        <button key={n} onClick={() => set('opsCount', n)} style={styles.radioBtn(opsCount === n)}>{n}</button>
+                    ))}
                 </div>
             </div>
 
@@ -57,14 +57,13 @@ export default function RekenvolgordeConfig({ block }: Props) {
                 />
             </div>
 
-            <div style={styles.onOffRow}>
-                <SettingLabel text="Haakjes" info="Bij de helft van de oefeningen staan haakjes die de volgorde veranderen." />
-                <button onClick={() => set('haakjes', !haakjes)} style={styles.onOffBtn(haakjes)}>{haakjes ? 'Aan' : 'Uit'}</button>
-            </div>
-
-            <div style={styles.onOffRow}>
-                <SettingLabel text="Hulplijn 'eerst:'" info="Toont onder elke oefening een lijntje voor de eerste tussenstap." />
-                <button onClick={() => set('scaffold', !scaffold)} style={styles.onOffBtn(scaffold)}>{scaffold ? 'Aan' : 'Uit'}</button>
+            <div style={styles.section}>
+                <SettingLabel text="Haakjes:" info="Geen = nooit haakjes · Mag = bij ongeveer de helft · Moet = bij elke oefening. Haakjes veranderen altijd echt de uitkomst." />
+                <div style={styles.buttonGroup}>
+                    {(['GEEN', 'MAG', 'MOET'] as const).map(m => (
+                        <button key={m} onClick={() => set('haakjesMode', m)} style={styles.bridgeBtn(haakjesMode === m)}>{m}</button>
+                    ))}
+                </div>
             </div>
         </div>
     );

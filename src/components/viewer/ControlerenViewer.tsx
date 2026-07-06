@@ -81,25 +81,44 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
         );
     }
 
-    // ── OMGEKEERDE BEWERKING: verify via the inverse sum ───────────────────────
+    // ── OMGEKEERDE BEWERKING: exercise on top, full write-line for the check below ──
+    // prefill: 'niets' = empty line · 'teken' = inverse operator hinted · 'alles' = numbers filled.
+    const prefill: string = block.constraints.prefill ?? 'niets';
     return (
         <FragmentableGrid
             cols={1}
             columnGap={24}
-            rowGap={gap}
+            rowGap={gap + 6}
             items={exercises.map(ex => {
                 const inv = INVERSE[ex.operator] ?? '−';
                 // Inverse check for a op b = r: r − b (bij +) of r + b (bij −) moet a geven.
                 const checkVal = ex.operator === '+' ? ex.shownAnswer - ex.b : ex.shownAnswer + ex.b;
+                const solution = `${formatMathNumber(ex.shownAnswer)} ${inv} ${formatMathNumber(ex.b)} = ${formatMathNumber(checkVal)}`;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontFamily: mono, fontSize: '15px', flexWrap: 'wrap' }}>
-                        <span>{formatMathNumber(ex.a)} {GLYPH[ex.operator]} {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}</span>
-                        <span style={{ fontSize: '13px', color: '#555' }}>controleer:</span>
-                        <span>{formatMathNumber(ex.shownAnswer)} {inv} {formatMathNumber(ex.b)} =</span>
-                        {showSolutions
-                            ? <span style={{ color: SOL, minWidth: '56px', textAlign: 'center' }}>{formatMathNumber(checkVal)}</span>
-                            : <span style={{ borderBottom: '1.5px solid #000', minWidth: '56px', height: '15px', display: 'inline-block' }} />}
-                        {juistFout(ex)}
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: mono, fontSize: '15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px' }}>
+                            <span>{formatMathNumber(ex.a)} {GLYPH[ex.operator]} {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}</span>
+                            {juistFout(ex)}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', paddingLeft: '16px' }}>
+                            <span style={{ fontSize: '12px', color: '#555' }}>controle:</span>
+                            {showSolutions
+                                ? <span style={{ color: SOL }}>{solution}</span>
+                                : prefill === 'alles'
+                                    ? <>
+                                        <span>{formatMathNumber(ex.shownAnswer)} {inv} {formatMathNumber(ex.b)} =</span>
+                                        <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                    </>
+                                    : prefill === 'teken'
+                                        ? <>
+                                            <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                            <span>{inv}</span>
+                                            <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                            <span>=</span>
+                                            <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                        </>
+                                        : <span style={{ borderBottom: '1.5px solid #000', flex: 1, height: '15px', display: 'inline-block' }} />}
+                        </div>
                     </div>
                 );
             })}
