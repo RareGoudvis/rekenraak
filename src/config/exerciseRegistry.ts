@@ -22,13 +22,11 @@ import { generateVergelijkenExercises } from '../services/vergelijken/vergelijke
 import { generateAfrondenExercises } from '../services/afronden/afrondenGenerator';
 import { generateRomeinseExercises } from '../services/romeinse/romeinseGenerator';
 import { generateHerleidingExercises } from '../services/herleidingen/herleidingenGenerator';
-import { generateTienvoudExercises } from '../services/handig/tienvoudGenerator';
 import { generateSchattendExercises } from '../services/schattend/schattendGenerator';
 import { generateVerbandExercises } from '../services/verbanden/verbandenGenerator';
 import { generateProcentExercises } from '../services/procenten/procentenGenerator';
 import { generateMaateenheidExercises } from '../services/maateenheid/maateenheidGenerator';
 import { generateGeldRekenenExercises } from '../services/geld/geldRekenenGenerator';
-import { generateHandigExercises } from '../services/handig/handigGenerator';
 import { generateRekenvolgordeExercises } from '../services/rekenvolgorde/rekenvolgordeGenerator';
 import { generateKettingExercises } from '../services/patroon/kettingGenerator';
 import { generateGetalFunctieExercises } from '../services/getalfunctie/getalfunctieGenerator';
@@ -56,7 +54,7 @@ type ExerciseField = Extract<keyof MathBlock,
     | 'patroonExercises' | 'deelbaarheidKleurExercises'
     | 'schattendExercises' | 'verbandExercises' | 'procentExercises'
     | 'maateenheidExercises' | 'geldRekenenExercises'
-    | 'handigExercises' | 'rekenvolgordeExercises' | 'getalFunctieExercises'
+    | 'rekenvolgordeExercises' | 'getalFunctieExercises'
     | 'tijdsduurExercises' | 'kalenderExercises' | 'controleExercises'
     | 'weegschaalExercises' | 'vormleerExercises'>;
 
@@ -222,11 +220,6 @@ const herleidingenDefaults = (): Record<string, unknown> => ({
     tablePrompt: false, tableAnswer: 'blank', tableCellW: 60, tableCellH: 30,
 });
 
-const tienvoudDefaults = (): Record<string, unknown> => ({
-    operators: ['x', ':'], factors: [10, 100, 1000], numberType: 'natural',
-    maxGetal: 1000, decimalPlaces: 2, missingFactor: false,
-});
-
 const schattendDefaults = (): Record<string, unknown> => ({
     operators: ['+', '-'], numberType: 'natural', maxGetal: 1000, decimalPlaces: 2,
     roundTargets: ['H'], scaffolding: 'tussenstappen',
@@ -248,10 +241,6 @@ const maateenheidDefaults = (): Record<string, unknown> => ({
 // subType + percent pool come from the appstructure leaf (korting/winst/intrest).
 const geldRekenenDefaults = (): Record<string, unknown> => ({
     subType: 'korting', percents: [10, 25, 50], maxEuro: 100, wholeEuros: true, halfYear: false,
-});
-
-const handigDefaults = (): Record<string, unknown> => ({
-    subType: 'compenseren', operators: ['+'], maxGetal: 100, distance: 1, scaffolding: 'tussenstap',
 });
 
 const rekenvolgordeDefaults = (): Record<string, unknown> => ({
@@ -358,8 +347,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'romeinse-cijfers': { exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 },
     'herleidingen': { exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, defaultConstraints: herleidingenDefaults, defaultCount: 8 },
 
-    // Handig rekenen + schattend rekenen.
-    'tienvoud':  { exerciseField: 'exercises',          generate: generateTienvoudExercises,  defaultConstraints: tienvoudDefaults,  defaultCount: 10 },
+    // Schattend rekenen (compenseren + tienvoud are hr-std presets, not types).
     'schattend': { exerciseField: 'schattendExercises', generate: generateSchattendExercises, defaultConstraints: schattendDefaults, defaultCount: 8 },
 
     // Procenten + verbanden breuk·decimaal·procent.
@@ -369,7 +357,6 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'maateenheid':  { exerciseField: 'maateenheidExercises', generate: generateMaateenheidExercises, defaultConstraints: maateenheidDefaults, defaultCount: 8 },
     'geld-rekenen': { exerciseField: 'geldRekenenExercises', generate: generateGeldRekenenExercises, defaultConstraints: geldRekenenDefaults, defaultCount: 5 },
 
-    'handig-rekenen': { exerciseField: 'handigExercises',        generate: generateHandigExercises,        defaultConstraints: handigDefaults,        defaultCount: 8 },
     'rekenvolgorde':  { exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10 },
     'kettingsommen':  { exerciseField: 'patroonExercises',       generate: generateKettingExercises,       defaultConstraints: kettingDefaults,       defaultCount: 6 },
     'getalfunctie':   { exerciseField: 'getalFunctieExercises',  generate: generateGetalFunctieExercises,  defaultConstraints: getalfunctieDefaults,  defaultCount: 6 },

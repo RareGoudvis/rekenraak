@@ -5,12 +5,14 @@ import DecimalSettings from './multiplication/DecimalSettings';
 import RationalSettings from './multiplication/RationalSettings'; 
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import HrPresetRow from './HrPresetRow';
 
 interface Props { block: MathBlock; }
 
 export default function MultiplicationConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { numberType = 'natural', equationType = 'normal', excludeOne = false } = block.constraints;
+    const { numberType = 'natural', equationType = 'normal', excludeOne = false, preset = 'vrij' } = block.constraints;
+    const isTienvoud = preset === 'tienvoud';
 
     const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
@@ -18,6 +20,9 @@ export default function MultiplicationConfig({ block }: Props) {
 
     return (
         <div style={styles.container}>
+            {/* OEFENVORM + AANTAL FACTOREN */}
+            {numberType !== 'rational' && <HrPresetRow block={block} variant="muldiv" />}
+
             {/* TYPE OEFENING */}
             <div style={styles.section}>
                 <SettingLabel text="Type oefening:" info="Gewone som (a x b = …) of puntoefening (a x … = c)." />
@@ -31,9 +36,10 @@ export default function MultiplicationConfig({ block }: Props) {
                 </div>
             </div>
 
-            {/* LAAD DE JUISTE UI GEBASEERD OP DE KEUZE HIERBOVEN */}
-            {numberType === 'natural' && <NaturalSettings block={block} />}
-            {numberType === 'decimal' && <DecimalSettings block={block} />}
+            {/* LAAD DE JUISTE UI — bij het tienvoud-preset bepalen de factorknoppen alles,
+                dus de tafel/masker-instellingen verdwijnen (enkel max getal blijft relevant). */}
+            {numberType === 'natural' && !isTienvoud && <NaturalSettings block={block} />}
+            {numberType === 'decimal' && !isTienvoud && <DecimalSettings block={block} />}
 
             {/* 🔥 Hier vertellen we React om jouw nieuwe paneel te tonen */}
             {numberType === 'rational' && <RationalSettings block={block} />}

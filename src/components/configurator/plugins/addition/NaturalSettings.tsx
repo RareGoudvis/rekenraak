@@ -11,15 +11,33 @@ interface Props { block: MathBlock; }
 export default function NaturalSettings({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const { maxGetal = 1000, bridges = {} } = block.constraints;
+    const termCount: number = Math.min(4, Math.max(2, block.constraints.termCount ?? 2));
+    const operandMax: (number | null)[] = block.constraints.operandMax ?? [];
 
     // Haal de juiste arrays op (Zijn al gesorteerd Groot -> Klein!)
     const maskPlaces = getMaskPlaces(maxGetal, 'natural');
     const bridgePlaces = getBridgePlaces(maxGetal, 'natural');
     const maxPresets = [10, 20, 100, 1000, 10000, 100000, 1000000];
 
-    const toggleMask = (operand: 'operand1Mask' | 'operand2Mask', posKey: string) => {
-        const currentMask = block.constraints[operand] || {};
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [operand]: { ...currentMask, [posKey]: !currentMask[posKey] } } });
+    // Term i mask: legacy operand1/2Mask for 0/1, operandMasks[] beyond (SYNC: maskFor in mathEngine).
+    const maskAt = (i: number): Record<string, boolean> =>
+        block.constraints.operandMasks?.[i] ?? (i === 0 ? block.constraints.operand1Mask : i === 1 ? block.constraints.operand2Mask : undefined) ?? {};
+    const toggleMaskAt = (i: number, posKey: string) => {
+        const next = { ...maskAt(i), [posKey]: !maskAt(i)[posKey] };
+        if (i <= 1) {
+            const key = i === 0 ? 'operand1Mask' : 'operand2Mask';
+            updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: next } });
+        } else {
+            const masks = [...(block.constraints.operandMasks ?? [])];
+            masks[i] = next;
+            updateBlockSettings(block.id, { constraints: { ...block.constraints, operandMasks: masks } });
+        }
+    };
+    const setOperandMax = (i: number, raw: string) => {
+        const v = raw === '' ? null : Math.max(1, Number(raw.replace(/\D/g, '')) || 1);
+        const next = [...operandMax];
+        next[i] = v;
+        updateBlockSettings(block.id, { constraints: { ...block.constraints, operandMax: next } });
     };
 
     return (
@@ -37,17 +55,31 @@ export default function NaturalSettings({ block }: Props) {
 
             <div style={styles.section}>
                 <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities (D/H/T/E) een cijfer mogen bevatten. Leeg = vrij." />
-                {(['operand1Mask', 'operand2Mask'] as const).map((op, idx) => (
-                    <div key={op} style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--sp-2)' }}>
-                        <span style={{ fontSize: 'var(--text-xs)', width: '50px' }}>Getal {idx + 1}:</span>
+                {Array.from({ length: termCount }, (_, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--sp-2)' }}>
+                        <span style={{ fontSize: 'var(--text-xs)', width: '50px' }}>Getal {i + 1}:</span>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {maskPlaces.map(p => (
-                                <button key={p.key} onClick={() => toggleMask(op, p.key)} style={styles.maskBtn(block.constraints[op]?.[p.key])}>{p.key}</button>
+                                <button key={p.key} onClick={() => toggleMaskAt(i, p.key)} style={styles.maskBtn(!!maskAt(i)[p.key])}>{p.key}</button>
                             ))}
                         </div>
                     </div>
                 ))}
             </div>
+
+            <details>
+                <summary style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', cursor: 'pointer', marginBottom: 'var(--sp-2)' }}>Geavanceerde opties</summary>
+                <div style={styles.section}>
+                    <SettingLabel text="Maximum per getal" info="Bovengrens per afzonderlijk getal; leeg = vrij binnen de maximum uitkomst." />
+                    {Array.from({ length: termCount }, (_, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--sp-2)' }}>
+                            <span style={{ fontSize: 'var(--text-xs)', width: '50px' }}>Getal {i + 1}:</span>
+                            <input type="text" inputMode="numeric" value={operandMax[i] ?? ''} placeholder="vrij"
+                                onChange={(e) => setOperandMax(i, e.target.value)} style={{ ...styles.numInput, width: '90px' }} />
+                        </div>
+                    ))}
+                </div>
+            </details>
 
             <hr style={styles.divider} />
 

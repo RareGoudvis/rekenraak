@@ -32,7 +32,6 @@ import VerbandenViewer from '../components/viewer/VerbandenViewer';
 import ProcentenViewer from '../components/viewer/ProcentenViewer';
 import MaateenheidViewer from '../components/viewer/MaateenheidViewer';
 import GeldRekenenViewer from '../components/viewer/GeldRekenenViewer';
-import HandigViewer from '../components/viewer/HandigViewer';
 import RekenvolgordeViewer from '../components/viewer/RekenvolgordeViewer';
 import GetalFunctieViewer from '../components/viewer/GetalFunctieViewer';
 import TijdsduurViewer from '../components/viewer/TijdsduurViewer';
@@ -71,13 +70,11 @@ import VergelijkenConfig from '../components/configurator/plugins/VergelijkenCon
 import AfrondenConfig from '../components/configurator/plugins/AfrondenConfig';
 import RomeinseConfig from '../components/configurator/plugins/RomeinseConfig';
 import HerleidingenConfig from '../components/configurator/plugins/HerleidingenConfig';
-import TienvoudConfig from '../components/configurator/plugins/TienvoudConfig';
 import SchattendConfig from '../components/configurator/plugins/SchattendConfig';
 import VerbandenConfig from '../components/configurator/plugins/VerbandenConfig';
 import ProcentenConfig from '../components/configurator/plugins/ProcentenConfig';
 import MaateenheidConfig from '../components/configurator/plugins/MaateenheidConfig';
 import GeldRekenenConfig from '../components/configurator/plugins/GeldRekenenConfig';
-import HandigConfig from '../components/configurator/plugins/HandigConfig';
 import RekenvolgordeConfig from '../components/configurator/plugins/RekenvolgordeConfig';
 import KettingConfig from '../components/configurator/plugins/KettingConfig';
 import GetalFunctieConfig from '../components/configurator/plugins/GetalFunctieConfig';
@@ -148,9 +145,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'romeinse-cijfers': { Viewer: RomeinseViewer, Config: RomeinseConfig },
     'herleidingen': { Viewer: HerleidingenViewer, Config: HerleidingenConfig },
 
-    // Handig rekenen + schattend rekenen — tienvoud prints like standard equations.
-    'tienvoud':  { Viewer: MathBlockRenderer, Config: TienvoudConfig },
-    'schattend': { Viewer: SchattendViewer,   Config: SchattendConfig },
+    'schattend': { Viewer: SchattendViewer, Config: SchattendConfig },
 
     'verbanden': { Viewer: VerbandenViewer, Config: VerbandenConfig },
     'procenten': { Viewer: ProcentenViewer, Config: ProcentenConfig },
@@ -158,7 +153,6 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'maateenheid':  { Viewer: MaateenheidViewer, Config: MaateenheidConfig },
     'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig },
 
-    'handig-rekenen': { Viewer: HandigViewer,        Config: HandigConfig },
     'rekenvolgorde':  { Viewer: RekenvolgordeViewer, Config: RekenvolgordeConfig },
     'kettingsommen':  { Viewer: PatroonViewer,       Config: KettingConfig },
     'getalfunctie':   { Viewer: GetalFunctieViewer,  Config: GetalFunctieConfig },

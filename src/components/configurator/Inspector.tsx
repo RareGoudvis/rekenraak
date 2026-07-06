@@ -619,6 +619,24 @@ export default function Inspector() {
                         </>
                     )}
 
+                    {/* ── Compenseren-preset: tussenstap aan/uit (hr-std optellen/aftrekken) ── */}
+                    {isHrStd(activeBlock.typeId) && !activeBlock.typeId.startsWith('cijferen-') && c.preset === 'compenseren' && (
+                        <>
+                            <label style={{ ...S.label, marginTop: '12px' }}>Compenseren</label>
+                            <div className="seg-group">
+                                {([
+                                    { key: 'tussenstap', label: 'Tussenstap invullen' },
+                                    { key: 'geen', label: 'Enkel antwoord' },
+                                ] as const).map(({ key, label }) => (
+                                    <button key={key} className="seg-btn" aria-pressed={(c.compenserenScaffold ?? 'tussenstap') === key}
+                                        onClick={() => updateConstraint('compenserenScaffold', key)}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
                     {/* ── Controleer met omgekeerde bewerking (cijferen) ── */}
                     {activeBlock.typeId.startsWith('cijferen-') && (c.operator === '+' || c.operator === '-') && (
                         <>

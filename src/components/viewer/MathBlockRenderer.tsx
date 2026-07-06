@@ -129,6 +129,23 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 // longer chains use compact auto-width cells so 4 terms still fit a line.
                 const cellW = multi ? undefined : '85px';
 
+                // Compenseren-preset tussenstap: "= a + ___ − ___" fill-in under the sum
+                // (30 − 1 for 29). Only for plain 2-term numeric +/− with the scaffold on.
+                const compScaffold = block.constraints?.preset === 'compenseren'
+                    && (block.constraints?.compenserenScaffold ?? 'tussenstap') === 'tussenstap'
+                    && !anyMissing && ex.operands.length === 2
+                    && typeof ex.operands[0] === 'number' && typeof ex.operands[1] === 'number';
+                let compParts: { tienvoud: number; delta: number } | null = null;
+                if (compScaffold) {
+                    const b = ex.operands[1] as number;
+                    const unit = (100 - (b % 100)) % 100 <= 2 && b > 90 ? 100 : 10;
+                    const tienvoud = b + ((unit - (b % unit)) % unit);
+                    compParts = { tienvoud, delta: tienvoud - b };
+                }
+                const compBlank = (v: number) => showSolutions
+                    ? <span style={{ color: '#e11d48', padding: '0 4px' }}>{formatMathNumber(v)}</span>
+                    : <div style={styles.mathDottedLine}></div>;
+
                 return (
                     <div key={ex.id} style={{ ...styles.exerciseRow, alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end' }}>
                         {/* In stepped mode the row is flex-start so extra lines flow below; pin the
@@ -146,6 +163,16 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         </div>
 
                         <div style={{ ...(layout !== 'inline-short' && { flex: 1 }), display: 'flex', flexDirection: 'column', marginLeft: '8px', gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
+                            {compParts && (
+                                <div style={{ display: 'flex', alignItems: 'center', height: '32px', whiteSpace: 'nowrap' }}>
+                                    <span style={{ marginRight: '10px' }}>=</span>
+                                    <span>{formatMathNumber(ex.operands[0] as number)}</span>
+                                    <span style={{ margin: '0 6px' }}>{ex.operator === '-' ? '−' : '+'}</span>
+                                    {compBlank(compParts.tienvoud)}
+                                    <span style={{ margin: '0 6px' }}>{ex.operator === '-' ? '+' : '−'}</span>
+                                    {compBlank(compParts.delta)}
+                                </div>
+                            )}
                             {!anyMissing ? (
                                 Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: '32px' }}>

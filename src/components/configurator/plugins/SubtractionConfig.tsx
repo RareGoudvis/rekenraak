@@ -5,6 +5,7 @@ import DecimalSettings from './addition/DecimalSettings';
 import RationalSettings from './addition/RationalSettings';
 import { sharedPluginStyles as styles } from './sharedPluginStyles'; // 🔥 Zelfde import!
 import SettingLabel from './SettingLabel';
+import HrPresetRow from './HrPresetRow';
 
 interface Props {
     block: MathBlock;
@@ -30,6 +31,9 @@ export default function SubtractionConfig({ block }: Props) {
 
     return (
         <div style={styles.container}>
+
+            {/* OEFENVORM + AANTAL TERMEN */}
+            <HrPresetRow block={block} variant="addsub" />
 
             {/* TYPE OEFENING */}
             <div style={styles.section}>

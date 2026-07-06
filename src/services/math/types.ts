@@ -289,18 +289,6 @@ export interface GeldRekenenExercise {
     isManuallyEdited: boolean;
 }
 
-// Handig rekenen — compenseren (47 + 29 = 47 + 30 − 1) or splitsen (56 + 38 = 56 + 30 + 8).
-export interface HandigExercise {
-    id: string;
-    a: number;
-    b: number;
-    operator: '+' | '-';
-    strategy: 'compenseren' | 'splitsen';
-    steps: [number, number];   // compenseren: [tienvoud, correctie] · splitsen: [T-deel, E-deel]
-    answer: number;
-    isManuallyEdited: boolean;
-}
-
 // Rekenvolgorde — expression printed verbatim from tokens (numbers + operators + haakjes).
 export interface RekenvolgordeExercise {
     id: string;
@@ -419,7 +407,6 @@ export interface MathBlock {
     procentExercises?: ProcentExercise[];
     maateenheidExercises?: MaateenheidExercise[];
     geldRekenenExercises?: GeldRekenenExercise[];
-    handigExercises?: HandigExercise[];
     rekenvolgordeExercises?: RekenvolgordeExercise[];
     getalFunctieExercises?: GetalFunctieExercise[];
     tijdsduurExercises?: TijdsduurExercise[];
