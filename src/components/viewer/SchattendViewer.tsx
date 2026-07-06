@@ -44,18 +44,19 @@ export default function SchattendViewer({ block, showSolutions }: Props) {
                     : Number((ra / rb).toFixed(6));
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px', flexWrap: 'nowrap' }}>
-                        <span>{formatMathNumber(ex.a)} {OP_GLYPH[ex.operator]} {formatMathNumber(ex.b)}</span>
+                        {/* Compact target prefix + fixed-width expression column keep ≈ and blanks aligned. */}
+                        <span style={{ fontSize: '12px', color: '#555', minWidth: '30px' }}>({t.key})</span>
+                        <span style={{ minWidth: '128px', textAlign: 'right' }}>{formatMathNumber(ex.a)} {OP_GLYPH[ex.operator]} {formatMathNumber(ex.b)}</span>
                         <span>≈</span>
                         {scaffolding === 'tussenstappen' && (
                             <>
                                 {blank(ra, 60)}
                                 <span>{OP_GLYPH[ex.operator]}</span>
-                                {roundsB ? blank(rb, 60) : <span>{formatMathNumber(ex.b)}</span>}
+                                {roundsB ? blank(rb, 60) : <span style={{ minWidth: '32px', textAlign: 'center', display: 'inline-block' }}>{formatMathNumber(ex.b)}</span>}
                                 <span>≈</span>
                             </>
                         )}
                         {blank(estimate, 70)}
-                        <span style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap' }}>(op {t.label})</span>
                     </div>
                 );
             })}

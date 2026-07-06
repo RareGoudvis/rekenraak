@@ -162,6 +162,7 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'patronen-nat', label: 'Natuurlijke getallen', typeId: 'getalpatronen', defaultConstraints: { numberType: 'natural' } },
                     { id: 'patronen-dec', label: 'Decimale getallen', typeId: 'getalpatronen', defaultConstraints: { numberType: 'decimal', maxGetal: 100 } },
                     { id: 'patronen-geh', label: 'Gehele getallen', typeId: 'getalpatronen', defaultConstraints: { numberType: 'geheel', maxGetal: 100 } },
+                    { id: 'patronen-kettingsommen', label: 'Kettingsommen', typeId: 'kettingsommen', minLeerjaar: 2 },
                 ],
             },
             {
@@ -214,11 +215,11 @@ export const APP_STRUCTURE: Domain[] = [
         subdomains: [
             {
                 id: 'hoofdrekenen-standaardprocedure',
-                label: 'Hoofdrekenen (standaardprocedure)',
+                label: 'Hoofdrekenen',
                 types: [
                     {
                         id: 'hr-std-optellen',
-                        label: 'Optellen',
+                        label: 'Optellen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-optellen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-optellen-dec', label: 'Decimale getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'decimal' } },
@@ -226,7 +227,7 @@ export const APP_STRUCTURE: Domain[] = [
                     },
                     {
                         id: 'hr-std-aftrekken',
-                        label: 'Aftrekken',
+                        label: 'Aftrekken (standaardprocedure)',
                         children: [
                             { id: 'hr-std-aftrekken-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-aftrekken-dec', label: 'Decimale getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'decimal' } },
@@ -234,7 +235,7 @@ export const APP_STRUCTURE: Domain[] = [
                     },
                     {
                         id: 'hr-std-vermenigvuldigen',
-                        label: 'Vermenigvuldigen',
+                        label: 'Vermenigvuldigen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-vermenigvuldigen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-vermenigvuldigen-dec', label: 'Decimale getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'decimal' } },
@@ -242,7 +243,7 @@ export const APP_STRUCTURE: Domain[] = [
                     },
                     {
                         id: 'hr-std-delen',
-                        label: 'Delen',
+                        label: 'Delen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-delen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'natural' } },
                             { id: 'hr-std-delen-dec', label: 'Decimale getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'decimal' } },
@@ -252,24 +253,11 @@ export const APP_STRUCTURE: Domain[] = [
             },
             {
                 id: 'hoofdrekenen-handig',
-                label: 'Hoofdrekenen (handig rekenen)',
+                label: 'Handig hoofdrekenen',
                 types: [
-                    {
-                        id: 'handig-tienvoud', label: '× / : met 10, 100, 1000',
-                        children: [
-                            { id: 'handig-tienvoud-nat', label: 'Natuurlijke getallen', typeId: 'tienvoud', defaultConstraints: { numberType: 'natural' } },
-                            { id: 'handig-tienvoud-dec', label: 'Kommagetallen', typeId: 'tienvoud', defaultConstraints: { numberType: 'decimal', maxGetal: 100 }, minLeerjaar: 4 },
-                        ],
-                    },
-                    {
-                        id: 'handig-compenseren', label: 'Handig rekenen (compenseren, splitsen)',
-                        children: [
-                            { id: 'handig-compenseren-comp', label: 'Compenseren', typeId: 'handig-rekenen', defaultConstraints: { subType: 'compenseren' }, minLeerjaar: 2 },
-                            { id: 'handig-compenseren-splits', label: 'Splitsen', typeId: 'handig-rekenen', defaultConstraints: { subType: 'splitsen' }, minLeerjaar: 2 },
-                        ],
-                    },
+                    // Compenseren + ×/: met tienvoud live as presets inside the standard
+                    // hoofdrekenen configs; kettingsommen moved to Getallenkennis › Patronen.
                     { id: 'handig-rekenvolgorde', label: 'Rekenvolgorde en haakjes', typeId: 'rekenvolgorde', minLeerjaar: 4 },
-                    { id: 'handig-kettingsommen', label: 'Kettingsommen', typeId: 'kettingsommen', minLeerjaar: 2 },
                 ],
             },
             {
@@ -308,6 +296,8 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'cijferen-delen-dec', label: 'Kommagetallen', typeId: 'cijferen-delen-dec', defaultConstraints: { operator: ':', numberType: 'decimal' } },
                         ],
                     },
+                    // Negenproef checks a worked cijfer-multiplication — it belongs with cijferen.
+                    { id: 'controleren-negenproef', label: 'Negenproef', typeId: 'controleren', defaultConstraints: { subType: 'negenproef' }, minLeerjaar: 5 },
                 ],
             },
             {
@@ -322,7 +312,6 @@ export const APP_STRUCTURE: Domain[] = [
                 id: 'controleren',
                 label: 'Controleren',
                 types: [
-                    { id: 'controleren-negenproef', label: 'Negenproef', typeId: 'controleren', defaultConstraints: { subType: 'negenproef' }, minLeerjaar: 5 },
                     { id: 'controleren-omgekeerde', label: 'Omgekeerde bewerking', typeId: 'controleren', defaultConstraints: { subType: 'omgekeerde', maxGetal: 1000 }, minLeerjaar: 3 },
                 ],
             },
