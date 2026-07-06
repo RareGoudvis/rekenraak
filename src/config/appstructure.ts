@@ -117,7 +117,7 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'getalbegrip-getallenrijen-geh', label: 'Gehele getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 } },
                         ],
                     },
-                    ph('getalbegrip-functie', 'Functie van getallen'),
+                    { id: 'getalbegrip-functie', label: 'Functie van getallen', typeId: 'getalfunctie', minLeerjaar: 2 },
                     {
                         id: 'getalbegrip-verbanden', label: 'Verbanden (breuk · decimaal · procent)',
                         children: [
@@ -265,9 +265,15 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'handig-tienvoud-dec', label: 'Kommagetallen', typeId: 'tienvoud', defaultConstraints: { numberType: 'decimal', maxGetal: 100 }, minLeerjaar: 4 },
                         ],
                     },
-                    ph('handig-compenseren', 'Handig rekenen (compenseren, splitsen)'),
-                    ph('handig-rekenvolgorde', 'Rekenvolgorde en haakjes'),
-                    ph('handig-kettingsommen', 'Kettingsommen'),
+                    {
+                        id: 'handig-compenseren', label: 'Handig rekenen (compenseren, splitsen)',
+                        children: [
+                            { id: 'handig-compenseren-comp', label: 'Compenseren', typeId: 'handig-rekenen', defaultConstraints: { subType: 'compenseren' }, minLeerjaar: 2 },
+                            { id: 'handig-compenseren-splits', label: 'Splitsen', typeId: 'handig-rekenen', defaultConstraints: { subType: 'splitsen' }, minLeerjaar: 2 },
+                        ],
+                    },
+                    { id: 'handig-rekenvolgorde', label: 'Rekenvolgorde en haakjes', typeId: 'rekenvolgorde', minLeerjaar: 4 },
+                    { id: 'handig-kettingsommen', label: 'Kettingsommen', typeId: 'kettingsommen', minLeerjaar: 2 },
                 ],
             },
             {
@@ -319,8 +325,10 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'controleren',
                 label: 'Controleren',
-                placeholder: true,
-                types: [ph('controleren-negenproef', 'Negenproef / omgekeerde bewerking')],
+                types: [
+                    { id: 'controleren-negenproef', label: 'Negenproef', typeId: 'controleren', defaultConstraints: { subType: 'negenproef' }, minLeerjaar: 5 },
+                    { id: 'controleren-omgekeerde', label: 'Omgekeerde bewerking', typeId: 'controleren', defaultConstraints: { subType: 'omgekeerde', maxGetal: 1000 }, minLeerjaar: 3 },
+                ],
             },
             {
                 id: 'bewerkingen-breuken',
@@ -389,8 +397,15 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'klok-digitaal-tekenen', label: 'Tekenen', typeId: 'klok-kloklezen', defaultConstraints: { clockType: 'digitaal', exerciseMode: 'tekenen' } },
                         ],
                     },
-                    ph('tijdsduur-berekenen', 'Tijdsduur berekenen'),
-                    ph('kalender-datum', 'Kalender / datum lezen'),
+                    { id: 'tijdsduur-berekenen', label: 'Tijdsduur berekenen', typeId: 'tijdsduur', minLeerjaar: 3 },
+                    {
+                        id: 'kalender-datum', label: 'Kalender / datum lezen',
+                        children: [
+                            { id: 'kalender-maandrooster', label: 'Maandrooster lezen', typeId: 'kalender', defaultConstraints: { subType: 'maandrooster' }, minLeerjaar: 2 },
+                            { id: 'kalender-datum-rekenen', label: 'Rekenen met dagen', typeId: 'kalender', defaultConstraints: { subType: 'datum-rekenen' }, minLeerjaar: 3 },
+                            { id: 'kalender-notatie', label: 'Datumnotatie', typeId: 'kalender', defaultConstraints: { subType: 'notatie' }, minLeerjaar: 3 },
+                        ],
+                    },
                 ],
             },
             {

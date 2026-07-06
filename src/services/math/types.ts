@@ -283,6 +283,71 @@ export interface GeldRekenenExercise {
     isManuallyEdited: boolean;
 }
 
+// Handig rekenen — compenseren (47 + 29 = 47 + 30 − 1) or splitsen (56 + 38 = 56 + 30 + 8).
+export interface HandigExercise {
+    id: string;
+    a: number;
+    b: number;
+    operator: '+' | '-';
+    strategy: 'compenseren' | 'splitsen';
+    steps: [number, number];   // compenseren: [tienvoud, correctie] · splitsen: [T-deel, E-deel]
+    answer: number;
+    isManuallyEdited: boolean;
+}
+
+// Rekenvolgorde — expression printed verbatim from tokens (numbers + operators + haakjes).
+export interface RekenvolgordeExercise {
+    id: string;
+    tokens: (number | string)[];
+    answer: number;
+    firstStep: number;       // value of the sub-expression that must be computed first
+    isManuallyEdited: boolean;
+}
+
+// Functie van getallen — hoeveelheidsgetal / rangordegetal / maatgetal / codegetal.
+export type GetalFunctie = 'hoeveelheid' | 'rang' | 'maat' | 'code';
+export interface GetalFunctieExercise {
+    id: string;
+    sentence: string;
+    number: string;          // as printed (codegetallen keep leading zeros / formats)
+    functie: GetalFunctie;
+    isManuallyEdited: boolean;
+}
+
+// Tijdsduur — begin/einde/duur row with one blank. Times as minutes since 00:00.
+export interface TijdsduurExercise {
+    id: string;
+    startMin: number;
+    endMin: number;          // may pass midnight (endMin > 1440 means next day)
+    blank: 'duur' | 'einde' | 'begin';
+    isManuallyEdited: boolean;
+}
+
+// Kalender — month-grid questions, date arithmetic, or notation conversion.
+export interface KalenderExercise {
+    id: string;
+    subType: 'maandrooster' | 'datum-rekenen' | 'notatie';
+    year: number;
+    month: number;                                   // 0-based like JS Date
+    questions?: { text: string; answer: string }[];  // maandrooster
+    baseDate?: number;                               // datum-rekenen: day of month
+    offsetDays?: number;                             // datum-rekenen: days ahead (may be negative)
+    day?: number;                                    // notatie: the date to convert
+    direction?: 'naar-cijfers' | 'naar-woorden';     // notatie
+    isManuallyEdited: boolean;
+}
+
+// Controleren — negenproef cross for a worked ×, or verify via the inverse operation.
+export interface ControleExercise {
+    id: string;
+    a: number;
+    b: number;
+    operator: '+' | '-' | 'x';
+    shownAnswer: number;     // printed result (sometimes deliberately wrong)
+    correctAnswer: number;
+    isManuallyEdited: boolean;
+}
+
 export interface MathBlock {
     id: string;
     typeId: string;
@@ -327,6 +392,12 @@ export interface MathBlock {
     procentExercises?: ProcentExercise[];
     maateenheidExercises?: MaateenheidExercise[];
     geldRekenenExercises?: GeldRekenenExercise[];
+    handigExercises?: HandigExercise[];
+    rekenvolgordeExercises?: RekenvolgordeExercise[];
+    getalFunctieExercises?: GetalFunctieExercise[];
+    tijdsduurExercises?: TijdsduurExercise[];
+    kalenderExercises?: KalenderExercise[];
+    controleExercises?: ControleExercise[];
     verticalSpacing: number;
 }
 

@@ -32,6 +32,12 @@ import VerbandenViewer from '../components/viewer/VerbandenViewer';
 import ProcentenViewer from '../components/viewer/ProcentenViewer';
 import MaateenheidViewer from '../components/viewer/MaateenheidViewer';
 import GeldRekenenViewer from '../components/viewer/GeldRekenenViewer';
+import HandigViewer from '../components/viewer/HandigViewer';
+import RekenvolgordeViewer from '../components/viewer/RekenvolgordeViewer';
+import GetalFunctieViewer from '../components/viewer/GetalFunctieViewer';
+import TijdsduurViewer from '../components/viewer/TijdsduurViewer';
+import KalenderViewer from '../components/viewer/KalenderViewer';
+import ControlerenViewer from '../components/viewer/ControlerenViewer';
 
 // Config plugins (one per family). All take {block}.
 import AdditionConfig from '../components/configurator/plugins/AdditionConfig';
@@ -68,6 +74,13 @@ import VerbandenConfig from '../components/configurator/plugins/VerbandenConfig'
 import ProcentenConfig from '../components/configurator/plugins/ProcentenConfig';
 import MaateenheidConfig from '../components/configurator/plugins/MaateenheidConfig';
 import GeldRekenenConfig from '../components/configurator/plugins/GeldRekenenConfig';
+import HandigConfig from '../components/configurator/plugins/HandigConfig';
+import RekenvolgordeConfig from '../components/configurator/plugins/RekenvolgordeConfig';
+import KettingConfig from '../components/configurator/plugins/KettingConfig';
+import GetalFunctieConfig from '../components/configurator/plugins/GetalFunctieConfig';
+import TijdsduurConfig from '../components/configurator/plugins/TijdsduurConfig';
+import KalenderConfig from '../components/configurator/plugins/KalenderConfig';
+import ControlerenConfig from '../components/configurator/plugins/ControlerenConfig';
 
 // ── React side of the registry ──────────────────────────────────────────────
 // Keyed by the SAME typeIds as REGISTRY in exerciseRegistry.ts. Split out so the
@@ -138,4 +151,12 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
 
     'maateenheid':  { Viewer: MaateenheidViewer, Config: MaateenheidConfig },
     'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig },
+
+    'handig-rekenen': { Viewer: HandigViewer,        Config: HandigConfig },
+    'rekenvolgorde':  { Viewer: RekenvolgordeViewer, Config: RekenvolgordeConfig },
+    'kettingsommen':  { Viewer: PatroonViewer,       Config: KettingConfig },
+    'getalfunctie':   { Viewer: GetalFunctieViewer,  Config: GetalFunctieConfig },
+    'tijdsduur':      { Viewer: TijdsduurViewer,     Config: TijdsduurConfig },
+    'kalender':       { Viewer: KalenderViewer,      Config: KalenderConfig },
+    'controleren':    { Viewer: ControlerenViewer,   Config: ControlerenConfig },
 };

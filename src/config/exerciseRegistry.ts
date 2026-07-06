@@ -28,6 +28,13 @@ import { generateVerbandExercises } from '../services/verbanden/verbandenGenerat
 import { generateProcentExercises } from '../services/procenten/procentenGenerator';
 import { generateMaateenheidExercises } from '../services/maateenheid/maateenheidGenerator';
 import { generateGeldRekenenExercises } from '../services/geld/geldRekenenGenerator';
+import { generateHandigExercises } from '../services/handig/handigGenerator';
+import { generateRekenvolgordeExercises } from '../services/rekenvolgorde/rekenvolgordeGenerator';
+import { generateKettingExercises } from '../services/patroon/kettingGenerator';
+import { generateGetalFunctieExercises } from '../services/getalfunctie/getalfunctieGenerator';
+import { generateTijdsduurExercises } from '../services/tijdsduur/tijdsduurGenerator';
+import { generateKalenderExercises } from '../services/kalender/kalenderGenerator';
+import { generateControleExercises } from '../services/controleren/controlerenGenerator';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -46,7 +53,9 @@ type ExerciseField = Extract<keyof MathBlock,
     | 'romeinseExercises' | 'herleidingExercises' | 'meetExercises'
     | 'patroonExercises' | 'deelbaarheidKleurExercises'
     | 'schattendExercises' | 'verbandExercises' | 'procentExercises'
-    | 'maateenheidExercises' | 'geldRekenenExercises'>;
+    | 'maateenheidExercises' | 'geldRekenenExercises'
+    | 'handigExercises' | 'rekenvolgordeExercises' | 'getalFunctieExercises'
+    | 'tijdsduurExercises' | 'kalenderExercises' | 'controleExercises'>;
 
 export interface ExerciseTypeDef {
     // The array field on MathBlock that holds this type's exercises.
@@ -238,6 +247,38 @@ const geldRekenenDefaults = (): Record<string, unknown> => ({
     subType: 'korting', percents: [10, 25, 50], maxEuro: 100, wholeEuros: true, halfYear: false,
 });
 
+const handigDefaults = (): Record<string, unknown> => ({
+    subType: 'compenseren', operators: ['+'], maxGetal: 100, distance: 1, scaffolding: 'tussenstap',
+});
+
+const rekenvolgordeDefaults = (): Record<string, unknown> => ({
+    operators: ['+', '-', 'x'], haakjes: true, opsCount: 2, maxGetal: 100, tableLimit: 10, scaffold: false,
+});
+
+// Renders via PatroonViewer: all operators shown with operand, blank at the end.
+const kettingDefaults = (): Record<string, unknown> => ({
+    numberType: 'natural', maxGetal: 100, chainLength: 4, ops: ['+', '-'],
+    opSettings: { '+': { max: 10 }, '-': { max: 10 } }, blankMiddle: false,
+    showArrows: true, showOperators: true, operatorsShown: 99, operatorStyle: 'full',
+});
+
+const getalfunctieDefaults = (): Record<string, unknown> => ({
+    functies: ['hoeveelheid', 'rang', 'maat', 'code'], answerMode: 'aankruisen', maxGetal: 1000,
+});
+
+const tijdsduurDefaults = (): Record<string, unknown> => ({
+    granularity: ['kwartier'], blanks: ['duur'], maxDuurMin: 240, overMidnight: false,
+});
+
+const kalenderDefaults = (): Record<string, unknown> => ({
+    subType: 'maandrooster', questionTypes: ['dag-van-datum', 'datum-van-dag', 'tellen'],
+    questionCount: 5, month: 'random', year: 2026,
+});
+
+const controlerenDefaults = (): Record<string, unknown> => ({
+    subType: 'negenproef', operators: ['+', '-'], maxGetal: 1000, foutAandeel: 'helft', showKruis: true,
+});
+
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => ({
@@ -302,4 +343,12 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
 
     'maateenheid':  { exerciseField: 'maateenheidExercises', generate: generateMaateenheidExercises, defaultConstraints: maateenheidDefaults, defaultCount: 8 },
     'geld-rekenen': { exerciseField: 'geldRekenenExercises', generate: generateGeldRekenenExercises, defaultConstraints: geldRekenenDefaults, defaultCount: 5 },
+
+    'handig-rekenen': { exerciseField: 'handigExercises',        generate: generateHandigExercises,        defaultConstraints: handigDefaults,        defaultCount: 8 },
+    'rekenvolgorde':  { exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10 },
+    'kettingsommen':  { exerciseField: 'patroonExercises',       generate: generateKettingExercises,       defaultConstraints: kettingDefaults,       defaultCount: 6 },
+    'getalfunctie':   { exerciseField: 'getalFunctieExercises',  generate: generateGetalFunctieExercises,  defaultConstraints: getalfunctieDefaults,  defaultCount: 6 },
+    'tijdsduur':      { exerciseField: 'tijdsduurExercises',     generate: generateTijdsduurExercises,     defaultConstraints: tijdsduurDefaults,     defaultCount: 6 },
+    'kalender':       { exerciseField: 'kalenderExercises',      generate: generateKalenderExercises,      defaultConstraints: kalenderDefaults,      defaultCount: 1 },
+    'controleren':    { exerciseField: 'controleExercises',      generate: generateControleExercises,      defaultConstraints: controlerenDefaults,   defaultCount: 4 },
 };
