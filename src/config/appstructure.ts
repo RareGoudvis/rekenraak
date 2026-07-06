@@ -34,12 +34,8 @@ export interface Domain {
     hidden?: boolean;   // hidden from the sidebar (not implemented / not coming soon)
 }
 
-// ── placeholder helpers ──────────────────────────────────────────────────────
+// ── placeholder helper (only the hidden vraagstukken domain still uses it) ───
 const ph = (id: string, label: string): ExerciseType => ({ id, label, placeholder: true });
-const phLeaf = (id: string, label: string): LeafExercise => ({ id, label, typeId: '__placeholder__', placeholder: true });
-const phAcc = (id: string, label: string, children: LeafExercise[]): ExerciseType => ({
-    id, label, placeholder: true, children,
-});
 
 export const APP_STRUCTURE: Domain[] = [
     {
@@ -354,21 +350,29 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'vormleer',
                 label: 'Vormleer',
-                placeholder: true,
                 types: [
-                    phAcc('vormleer-punt-lijn', 'Punt / lijn / rechte', [
-                        phLeaf('vormleer-punt-lijn-herkennen', 'Herkennen'),
-                        phLeaf('vormleer-punt-lijn-tekenen', 'Tekenen'),
-                    ]),
-                    phAcc('vormleer-hoeken', 'Hoeken', [
-                        phLeaf('vormleer-hoeken-herkennen', 'Herkennen'),
-                        phLeaf('vormleer-hoeken-tekenen', 'Tekenen'),
-                    ]),
-                    phAcc('vormleer-vlakke-figuren', 'Vlakke figuren', [
-                        phLeaf('vormleer-driehoeken-hoeken', 'Driehoeken (volgens hoeken)'),
-                        phLeaf('vormleer-driehoeken-zijden', 'Driehoeken (volgens zijden)'),
-                        phLeaf('vormleer-vierhoeken', 'Vierhoeken'),
-                    ]),
+                    {
+                        id: 'vormleer-punt-lijn', label: 'Punt / lijn / rechte',
+                        children: [
+                            { id: 'vormleer-punt-lijn-herkennen', label: 'Herkennen', typeId: 'vormleer-punt-lijn', defaultConstraints: { mode: 'herkennen' }, minLeerjaar: 3 },
+                            { id: 'vormleer-punt-lijn-tekenen', label: 'Tekenen', typeId: 'vormleer-punt-lijn', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 3 },
+                        ],
+                    },
+                    {
+                        id: 'vormleer-hoeken', label: 'Hoeken',
+                        children: [
+                            { id: 'vormleer-hoeken-herkennen', label: 'Herkennen', typeId: 'vormleer-hoeken', defaultConstraints: { mode: 'herkennen' }, minLeerjaar: 3 },
+                            { id: 'vormleer-hoeken-tekenen', label: 'Tekenen', typeId: 'vormleer-hoeken', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 3 },
+                        ],
+                    },
+                    {
+                        id: 'vormleer-vlakke-figuren', label: 'Vlakke figuren',
+                        children: [
+                            { id: 'vormleer-driehoeken-hoeken', label: 'Driehoeken (volgens hoeken)', typeId: 'vormleer-figuren', defaultConstraints: { classify: 'driehoeken-hoeken', concepts: ['scherphoekig', 'rechthoekig', 'stomphoekig'] }, minLeerjaar: 4 },
+                            { id: 'vormleer-driehoeken-zijden', label: 'Driehoeken (volgens zijden)', typeId: 'vormleer-figuren', defaultConstraints: { classify: 'driehoeken-zijden', concepts: ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'] }, minLeerjaar: 4 },
+                            { id: 'vormleer-vierhoeken', label: 'Vierhoeken', typeId: 'vormleer-figuren', defaultConstraints: { classify: 'vierhoeken' }, minLeerjaar: 4 },
+                        ],
+                    },
                 ],
             },
         ],
@@ -436,14 +440,22 @@ export const APP_STRUCTURE: Domain[] = [
                 types: [
                     { id: 'lengte-meten', label: 'Lengte meten', typeId: 'lengte-meten' },
                     { id: 'omtrek', label: 'Omtrek', typeId: 'omtrek' },
-                    ph('oppervlakte', 'Oppervlakte'),
+                    {
+                        id: 'oppervlakte', label: 'Oppervlakte',
+                        children: [
+                            { id: 'oppervlakte-rooster', label: 'Rooster tellen', typeId: 'oppervlakte', defaultConstraints: { subType: 'rooster', shapes: ['rechthoek', 'l-figuur'] }, minLeerjaar: 3 },
+                            { id: 'oppervlakte-berekenen', label: 'Berekenen', typeId: 'oppervlakte', defaultConstraints: { subType: 'berekenen' }, minLeerjaar: 5 },
+                        ],
+                    },
                 ],
             },
             {
                 id: 'massa',
                 label: 'Massa',
-                placeholder: true,
-                types: [ph('massa-weegschaal', 'Meten met weegschaal')],
+                types: [
+                    { id: 'massa-weegschaal-aflezen', label: 'Weegschaal aflezen', typeId: 'weegschaal', defaultConstraints: { mode: 'aflezen' }, minLeerjaar: 2 },
+                    { id: 'massa-weegschaal-tekenen', label: 'Wijzer tekenen', typeId: 'weegschaal', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 2 },
+                ],
             },
             {
                 id: 'maateenheden',

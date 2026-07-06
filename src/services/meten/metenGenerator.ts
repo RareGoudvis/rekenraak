@@ -122,6 +122,58 @@ function buildShape(shape: string, min: number, max: number, precision: string):
     return { id: rndId(), kind: 'veelhoek', shape, points: pts, sides, perimeter: sum(sides), isManuallyEdited: false };
 }
 
+// ── oppervlakte ───────────────────────────────────────────────────────────────
+// rooster: rectilinear figure on the 1 cm grid → count squares (exact by construction).
+// berekenen: to-scale figure with labelled sides → l × b (or ½ · b · h).
+export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
+    const c = block.constraints;
+    const subType: string = c.subType ?? 'berekenen';
+    const minL: number = c.minLength ?? 2;
+    const maxL: number = c.maxLength ?? 8;
+    const enabled: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['rechthoek', 'vierkant'];
+    const n = block.numberOfExercises;
+
+    const make = (): MeetExercise => {
+        const shape = enabled[randInt(0, enabled.length - 1)];
+
+        if (subType === 'rooster') {
+            // Whole-cm rectangles or L-figures so counting squares is exact.
+            const w = randInt(Math.max(2, minL), maxL);
+            const h = randInt(2, Math.min(6, maxL));
+            if (shape === 'l-figuur' && w >= 3 && h >= 3) {
+                const cutW = randInt(1, w - 2), cutH = randInt(1, h - 2);
+                const pts: MeetPoint[] = [
+                    { x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h - cutH },
+                    { x: w - cutW, y: h - cutH }, { x: w - cutW, y: h }, { x: 0, y: h },
+                ];
+                const sides = pts.map((p, i) => dist(p, pts[(i + 1) % pts.length]));
+                return { id: rndId(), kind: 'veelhoek', shape: 'l-figuur', points: pts, sides, perimeter: sum(sides), area: w * h - cutW * cutH, isManuallyEdited: false };
+            }
+            const s = shape === 'vierkant' ? Math.min(w, h) : 0;
+            const pts: MeetPoint[] = s
+                ? [{ x: 0, y: 0 }, { x: s, y: 0 }, { x: s, y: s }, { x: 0, y: s }]
+                : [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }];
+            const sides = s ? [s, s, s, s] : [w, h, w, h];
+            return { id: rndId(), kind: 'veelhoek', shape: shape === 'vierkant' ? 'vierkant' : 'rechthoek', points: pts, sides, perimeter: sum(sides), area: s ? s * s : w * h, isManuallyEdited: false };
+        }
+
+        // berekenen — right triangle gets its own constructor (legs on the axes).
+        if (shape === 'rechthoekige-driehoek') {
+            const a = pickLen(minL, maxL, 'cm'), b = pickLen(minL, maxL, 'cm');
+            const pts: MeetPoint[] = [{ x: 0, y: 0 }, { x: a, y: 0 }, { x: 0, y: b }];
+            const hyp = round1(Math.hypot(a, b));
+            // Halve oppervlaktes zijn toegestaan (½ · b · h); ,5 blijft exact.
+            return { id: rndId(), kind: 'veelhoek', shape, points: pts, sides: [a, hyp, b], perimeter: round1(a + b + hyp), area: round1((a * b) / 2), isManuallyEdited: false };
+        }
+        const ex = buildShape(shape, minL, maxL, 'cm');
+        const s = ex.sides ?? [];
+        ex.area = shape === 'vierkant' ? s[0] * s[0] : s[0] * s[1];
+        return ex;
+    };
+
+    return Array.from({ length: n }, make);
+}
+
 export function generateOmtrekExercises(block: MathBlock): MeetExercise[] {
     const c = block.constraints;
     const precision: string = c.precision ?? 'cm';

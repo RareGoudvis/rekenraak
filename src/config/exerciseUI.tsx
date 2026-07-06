@@ -38,6 +38,9 @@ import GetalFunctieViewer from '../components/viewer/GetalFunctieViewer';
 import TijdsduurViewer from '../components/viewer/TijdsduurViewer';
 import KalenderViewer from '../components/viewer/KalenderViewer';
 import ControlerenViewer from '../components/viewer/ControlerenViewer';
+import OppervlakteViewer from '../components/viewer/OppervlakteViewer';
+import WeegschaalViewer from '../components/viewer/WeegschaalViewer';
+import VormleerViewer from '../components/viewer/VormleerViewer';
 
 // Config plugins (one per family). All take {block}.
 import AdditionConfig from '../components/configurator/plugins/AdditionConfig';
@@ -81,6 +84,9 @@ import GetalFunctieConfig from '../components/configurator/plugins/GetalFunctieC
 import TijdsduurConfig from '../components/configurator/plugins/TijdsduurConfig';
 import KalenderConfig from '../components/configurator/plugins/KalenderConfig';
 import ControlerenConfig from '../components/configurator/plugins/ControlerenConfig';
+import OppervlakteConfig from '../components/configurator/plugins/OppervlakteConfig';
+import WeegschaalConfig from '../components/configurator/plugins/WeegschaalConfig';
+import VormleerConfig from '../components/configurator/plugins/VormleerConfig';
 
 // ── React side of the registry ──────────────────────────────────────────────
 // Keyed by the SAME typeIds as REGISTRY in exerciseRegistry.ts. Split out so the
@@ -159,4 +165,11 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'tijdsduur':      { Viewer: TijdsduurViewer,     Config: TijdsduurConfig },
     'kalender':       { Viewer: KalenderViewer,      Config: KalenderConfig },
     'controleren':    { Viewer: ControlerenViewer,   Config: ControlerenConfig },
+
+    // Meetkunde + SVG-heavy meten types — vormleer shares one viewer/config trio.
+    'oppervlakte': { Viewer: OppervlakteViewer, Config: OppervlakteConfig },
+    'weegschaal':  { Viewer: WeegschaalViewer,  Config: WeegschaalConfig },
+    'vormleer-punt-lijn': { Viewer: VormleerViewer, Config: VormleerConfig },
+    'vormleer-hoeken':    { Viewer: VormleerViewer, Config: VormleerConfig },
+    'vormleer-figuren':   { Viewer: VormleerViewer, Config: VormleerConfig },
 };

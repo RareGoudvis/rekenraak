@@ -79,6 +79,9 @@ export const MAAT_ITEMS: Record<string, MaatItem[]> = {
         { sentence: 'Water bevriest bij 0 ___.', value: 0, unit: '°C' },
         { sentence: 'Je lichaamstemperatuur is ongeveer 37 ___.', value: 37, unit: '°C' },
         { sentence: 'In de koelkast is het ongeveer 4 ___.', value: 4, unit: '°C' },
+        { sentence: 'In de diepvriezer is het ongeveer −18 ___.', value: -18, unit: '°C' },
+        { sentence: 'Bij koorts is je temperatuur ongeveer 39 ___.', value: 39, unit: '°C' },
+        { sentence: 'Het water in het zwembad is ongeveer 27 ___.', value: 27, unit: '°C' },
     ],
 };
 

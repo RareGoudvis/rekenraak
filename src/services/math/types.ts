@@ -176,6 +176,7 @@ export interface MeetExercise {
     sides?: number[];           // side lengths in draw order (cm)
     radius?: number;            // cirkel (cm)
     perimeter: number;          // answer: Σ sides, or π·d
+    area?: number;              // oppervlakte: cm² (rooster count or l×b / ½·b·h)
     claim?: number;             // lengte-meten 'gegeven': stated length to judge
     claimCorrect?: boolean;     // whether the stated claim matches the real length
     isManuallyEdited: boolean;
@@ -348,6 +349,27 @@ export interface ControleExercise {
     isManuallyEdited: boolean;
 }
 
+// Weegschaal — kitchen-scale dial: read the needle (aflezen) or draw it (tekenen).
+export interface WeegschaalExercise {
+    id: string;
+    grams: number;
+    isManuallyEdited: boolean;
+}
+
+// Vormleer — punt/lijn, hoeken and vlakke figuren share one exercise shape; the
+// viewer branches on `kind`. Coordinates in cm like MeetExercise.
+export interface VormleerExercise {
+    id: string;
+    kind: 'punt-lijn' | 'hoek' | 'figuur';
+    concept: string;             // 'rechte' | 'lijnstuk' | … | 'scherp' | … | 'ruit' | 'gelijkzijdig' | …
+    points?: MeetPoint[];        // figuur: polygon (cm) · punt-lijn: endpoints
+    labels?: string[];           // point letters (A, B, …)
+    angleDeg?: number;           // hoek: opening in degrees
+    rotation?: number;           // hoek/figuur: random rotation (deg)
+    sides?: number[];            // figuur: side lengths (cm) for tick-mark grouping
+    isManuallyEdited: boolean;
+}
+
 export interface MathBlock {
     id: string;
     typeId: string;
@@ -398,6 +420,8 @@ export interface MathBlock {
     tijdsduurExercises?: TijdsduurExercise[];
     kalenderExercises?: KalenderExercise[];
     controleExercises?: ControleExercise[];
+    weegschaalExercises?: WeegschaalExercise[];
+    vormleerExercises?: VormleerExercise[];
     verticalSpacing: number;
 }
 

@@ -12,7 +12,7 @@ import { generateOrdenenExercises } from '../services/ordenen/ordenenGenerator';
 import { generateDeelbaarheidExercises } from '../services/deelbaarheid/deelbaarheidGenerator';
 import { generateGetallenasExercises } from '../services/getallenas/getallenasGenerator';
 import { generateGetallenrijExercises } from '../services/getallenrij/getallenrijGenerator';
-import { generateLengteMetenExercises, generateOmtrekExercises } from '../services/meten/metenGenerator';
+import { generateLengteMetenExercises, generateOmtrekExercises, generateOppervlakteExercises } from '../services/meten/metenGenerator';
 import { generatePatroonExercises } from '../services/patroon/patroonGenerator';
 import { generateDeelbaarheidKleurExercises } from '../services/deelbaarheid/deelbaarheidKleurGenerator';
 import { generateTemperatuurExercises } from '../services/temperatuur/temperatuurGenerator';
@@ -35,6 +35,8 @@ import { generateGetalFunctieExercises } from '../services/getalfunctie/getalfun
 import { generateTijdsduurExercises } from '../services/tijdsduur/tijdsduurGenerator';
 import { generateKalenderExercises } from '../services/kalender/kalenderGenerator';
 import { generateControleExercises } from '../services/controleren/controlerenGenerator';
+import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGenerator';
+import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -55,7 +57,8 @@ type ExerciseField = Extract<keyof MathBlock,
     | 'schattendExercises' | 'verbandExercises' | 'procentExercises'
     | 'maateenheidExercises' | 'geldRekenenExercises'
     | 'handigExercises' | 'rekenvolgordeExercises' | 'getalFunctieExercises'
-    | 'tijdsduurExercises' | 'kalenderExercises' | 'controleExercises'>;
+    | 'tijdsduurExercises' | 'kalenderExercises' | 'controleExercises'
+    | 'weegschaalExercises' | 'vormleerExercises'>;
 
 export interface ExerciseTypeDef {
     // The array field on MathBlock that holds this type's exercises.
@@ -279,6 +282,26 @@ const controlerenDefaults = (): Record<string, unknown> => ({
     subType: 'negenproef', operators: ['+', '-'], maxGetal: 1000, foutAandeel: 'helft', showKruis: true,
 });
 
+const oppervlakteDefaults = (): Record<string, unknown> => ({
+    subType: 'berekenen', shapes: ['rechthoek', 'vierkant'], minLength: 2, maxLength: 8,
+    askOmtrek: false, scaffoldFormule: true,
+});
+
+const weegschaalDefaults = (): Record<string, unknown> => ({
+    mode: 'aflezen', bereikGram: 1000, stepGram: 50, notatie: 'g', exercisesPerRow: 2, boxHeight: 170,
+});
+
+// kind + concepts come from the appstructure leaf (punt-lijn / hoek / figuur classify).
+const vormleerDefaults = (typeId: string): Record<string, unknown> => ({
+    kind: typeId === 'vormleer-hoeken' ? 'hoek' : typeId === 'vormleer-figuren' ? 'figuur' : 'punt-lijn',
+    mode: 'herkennen', answerMode: 'woordbank', classify: 'vierhoeken',
+    concepts: typeId === 'vormleer-hoeken' ? ['scherp', 'recht', 'stomp']
+        : typeId === 'vormleer-figuren' ? ['vierkant', 'rechthoek', 'ruit', 'parallellogram', 'trapezium']
+        : ['punt', 'rechte', 'halfrechte', 'lijnstuk'],
+    randomRotation: typeId === 'vormleer-hoeken', showMarks: true, showBoog: true,
+    raster: true, boxHeight: 4, exercisesPerRow: 3,
+});
+
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => ({
@@ -351,4 +374,11 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'tijdsduur':      { exerciseField: 'tijdsduurExercises',     generate: generateTijdsduurExercises,     defaultConstraints: tijdsduurDefaults,     defaultCount: 6 },
     'kalender':       { exerciseField: 'kalenderExercises',      generate: generateKalenderExercises,      defaultConstraints: kalenderDefaults,      defaultCount: 1 },
     'controleren':    { exerciseField: 'controleExercises',      generate: generateControleExercises,      defaultConstraints: controlerenDefaults,   defaultCount: 4 },
+
+    // Meetkunde + SVG-heavy meten types.
+    'oppervlakte': { exerciseField: 'meetExercises',       generate: generateOppervlakteExercises, defaultConstraints: oppervlakteDefaults, defaultCount: 4 },
+    'weegschaal':  { exerciseField: 'weegschaalExercises', generate: generateWeegschaalExercises,  defaultConstraints: weegschaalDefaults,  defaultCount: 4 },
+    'vormleer-punt-lijn': { exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 },
+    'vormleer-hoeken':    { exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 },
+    'vormleer-figuren':   { exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 },
 };

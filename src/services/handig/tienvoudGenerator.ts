@@ -38,8 +38,9 @@ export function generateTienvoudExercises(block: MathBlock): Equation[] {
             const scale = Math.pow(10, decimalPlaces);
             base = Number((randInt(1, maxGetal * scale - 1) / scale).toFixed(decimalPlaces));
         } else {
-            // For ':' pre-multiply so the quotient stays natural.
-            base = operator === ':' ? randInt(1, Math.max(1, Math.floor(maxGetal / factor))) * factor : randInt(1, maxGetal);
+            // For ':' build answer-first: quotient ≤ maxGetal, dividend = quotient × factor
+            // (dividends legitimately exceed maxGetal — that's the point of ": 1000").
+            base = operator === ':' ? randInt(1, maxGetal) * factor : randInt(1, maxGetal);
         }
         const answer = shift(base, factor, operator === ':');
         // Natural mode must never produce a decimal answer.
