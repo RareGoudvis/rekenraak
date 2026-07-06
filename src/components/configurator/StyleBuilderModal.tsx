@@ -19,12 +19,30 @@ const DEFAULT_SIZE: Record<Region, number> = { header: 22, titel: 16, footer: 9 
 export default function StyleBuilderModal({ onClose }: { onClose: () => void }) {
     const docSettings = useWorksheetStore((s) => s.docSettings);
     const updateDocSettings = useWorksheetStore((s) => s.updateDocSettings);
+    const blocks = useWorksheetStore((s) => s.blocks);
+    const updateBlockSettings = useWorksheetStore((s) => s.updateBlockSettings);
     const [region, setRegion] = useState<Region>('header');
 
     const b = STYLE_BOUNDS[region];
     const cur: RegionStyle = docSettings[REGION_KEY[region]] ?? {};
     const patch = (p: Partial<RegionStyle>) => updateDocSettings({ [REGION_KEY[region]]: { ...cur, ...p } });
     const reset = () => updateDocSettings({ [REGION_KEY[region]]: {} });
+    // Full reset: every style-related doc setting back to the store defaults, all three
+    // region customs cleared (shallow merge needs the explicit undefined), and every
+    // per-block bodyFontScale override removed.
+    const resetAll = () => {
+        updateDocSettings({
+            showScores: false, opdrachtTitelStyle: 'regular', showDividers: false,
+            headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16,
+            headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1,
+            headerCustom: undefined, titelCustom: undefined, footerCustom: undefined,
+        });
+        blocks.forEach((blk) => {
+            if (blk.constraints?.bodyFontScale !== undefined) {
+                updateBlockSettings(blk.id, { constraints: { ...blk.constraints, bodyFontScale: undefined } });
+            }
+        });
+    };
 
     return (
         <ModalShell onClose={onClose} ariaLabel="Stijl aanpassen" variant="dialog" maxWidth="min(760px, 94vw)">
@@ -96,6 +114,10 @@ export default function StyleBuilderModal({ onClose }: { onClose: () => void }) 
                             )}
 
                             <button type="button" onClick={reset} style={resetBtn}>Stijl terugzetten</button>
+                            <button type="button" onClick={resetAll} style={resetAllBtn}
+                                title="Zet alle stijlen terug: koptekst, opdracht-titel, voettekst, tekstgrootte en per-blok afwijkingen.">
+                                Alle stijlen terugzetten
+                            </button>
                         </div>
 
                         {/* ── Live preview (same overlay helper as the real sheet) ── */}
@@ -156,3 +178,4 @@ const range: React.CSSProperties = { width: '100%', accentColor: 'var(--accent)'
 const previewWrap: React.CSSProperties = { minWidth: 0 };
 const previewSheet: React.CSSProperties = { display: 'flex', flexDirection: 'column', minHeight: '260px', background: '#fff', borderRadius: '4px', padding: '12px', boxShadow: 'var(--shadow-1)' };
 const resetBtn: React.CSSProperties = { marginTop: 'var(--sp-2)', padding: '7px 12px', fontSize: 'var(--text-sm)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid var(--separator)', background: 'var(--bg-surface-2)', color: 'var(--text-muted)' };
+const resetAllBtn: React.CSSProperties = { ...resetBtn, marginLeft: 'var(--sp-2)', borderColor: '#b91c1c55', color: '#b91c1c' };

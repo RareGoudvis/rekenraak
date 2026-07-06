@@ -82,9 +82,10 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         );
         // Fixed grid (not flex-wrap) so screen and the narrower print body share the
         // same column count — otherwise print bumps the last heart to a new row.
+        // 5-up: 5 × 120px hearts ≈ the full printable width (~625px), no dead right margin.
         return (
             <FragmentableGrid
-                cols={Math.min(allItems.length, 4)}
+                cols={Math.min(allItems.length, 5)}
                 columnGap={gap}
                 rowGap={gap}
                 justifyItems="center"
