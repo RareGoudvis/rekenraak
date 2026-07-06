@@ -118,7 +118,13 @@ export const APP_STRUCTURE: Domain[] = [
                         ],
                     },
                     ph('getalbegrip-functie', 'Functie van getallen'),
-                    ph('getalbegrip-verbanden', 'Verbanden (breuk · decimaal · procent)'),
+                    {
+                        id: 'getalbegrip-verbanden', label: 'Verbanden (breuk · decimaal · procent)',
+                        children: [
+                            { id: 'verbanden-tabel', label: 'Tabel invullen', typeId: 'verbanden', defaultConstraints: { subType: 'tabel' }, minLeerjaar: 5 },
+                            { id: 'verbanden-paren', label: 'Omzettingen', typeId: 'verbanden', defaultConstraints: { subType: 'paren' }, minLeerjaar: 5 },
+                        ],
+                    },
                 ],
             },
             {
@@ -189,8 +195,11 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'procenten',
                 label: 'Procenten',
-                placeholder: true,
-                types: [ph('procenten-item', 'Procenten')],
+                types: [
+                    { id: 'procenten-nemen', label: 'Percent van een getal', typeId: 'procenten', defaultConstraints: { subType: 'nemen' }, minLeerjaar: 5 },
+                    { id: 'procenten-welk', label: 'Hoeveel procent?', typeId: 'procenten', defaultConstraints: { subType: 'welk-percent' }, minLeerjaar: 5 },
+                    { id: 'procenten-verbanden', label: 'Breuk · decimaal · procent', typeId: 'verbanden', minLeerjaar: 5 },
+                ],
             },
             {
                 id: 'romeinse-cijfers',
@@ -248,9 +257,14 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'hoofdrekenen-handig',
                 label: 'Hoofdrekenen (handig rekenen)',
-                placeholder: true,
                 types: [
-                    ph('handig-tienvoud', '× / : met 10, 100, 1000'),
+                    {
+                        id: 'handig-tienvoud', label: '× / : met 10, 100, 1000',
+                        children: [
+                            { id: 'handig-tienvoud-nat', label: 'Natuurlijke getallen', typeId: 'tienvoud', defaultConstraints: { numberType: 'natural' } },
+                            { id: 'handig-tienvoud-dec', label: 'Kommagetallen', typeId: 'tienvoud', defaultConstraints: { numberType: 'decimal', maxGetal: 100 }, minLeerjaar: 4 },
+                        ],
+                    },
                     ph('handig-compenseren', 'Handig rekenen (compenseren, splitsen)'),
                     ph('handig-rekenvolgorde', 'Rekenvolgorde en haakjes'),
                     ph('handig-kettingsommen', 'Kettingsommen'),
@@ -297,8 +311,10 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'schattend-rekenen',
                 label: 'Schattend rekenen',
-                placeholder: true,
-                types: [ph('schattend-rekenen-item', 'Schattend rekenen')],
+                types: [
+                    { id: 'schattend-nat', label: 'Natuurlijke getallen', typeId: 'schattend', defaultConstraints: { numberType: 'natural' }, minLeerjaar: 3 },
+                    { id: 'schattend-dec', label: 'Kommagetallen', typeId: 'schattend', defaultConstraints: { numberType: 'decimal', maxGetal: 100, roundTargets: ['E'] }, minLeerjaar: 4 },
+                ],
             },
             {
                 id: 'controleren',
@@ -385,9 +401,9 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'geld-tekenen',     label: 'Bedrag tekenen', typeId: 'geld-tekenen'     },
                     { id: 'geld-wissel',      label: 'Wissel',         typeId: 'geld-wissel'      },
                     { id: 'geld-teruggeven',  label: 'Teruggeven',     typeId: 'geld-teruggeven'  },
-                    ph('geld-rekenen-korting', 'Korting'),
-                    ph('geld-rekenen-intrest', 'Intrest'),
-                    ph('geld-rekenen-winst', 'Winst / Verlies'),
+                    { id: 'geld-rekenen-korting', label: 'Korting', typeId: 'geld-rekenen', defaultConstraints: { subType: 'korting', percents: [10, 25, 50] }, minLeerjaar: 5 },
+                    { id: 'geld-rekenen-intrest', label: 'Intrest', typeId: 'geld-rekenen', defaultConstraints: { subType: 'intrest', percents: [1, 2, 5], maxEuro: 10000 }, minLeerjaar: 6 },
+                    { id: 'geld-rekenen-winst', label: 'Winst / Verlies', typeId: 'geld-rekenen', defaultConstraints: { subType: 'winst' }, minLeerjaar: 5 },
                 ],
             },
             {
@@ -417,8 +433,9 @@ export const APP_STRUCTURE: Domain[] = [
             {
                 id: 'maateenheden',
                 label: 'Maateenheden',
-                placeholder: true,
-                types: [ph('maateenheid-kiezen', 'Passende maateenheid kiezen')],
+                types: [
+                    { id: 'maateenheid-kiezen', label: 'Passende maateenheid kiezen', typeId: 'maateenheid', minLeerjaar: 2 },
+                ],
             },
             {
                 id: 'herleidingen',

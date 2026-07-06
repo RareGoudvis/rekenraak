@@ -229,6 +229,60 @@ export interface TemperatuurExercise {
     isManuallyEdited: boolean;
 }
 
+// Schattend rekenen — estimate a sum/difference/product by rounding both operands first.
+export interface SchattendExercise {
+    id: string;
+    a: number;
+    b: number;
+    operator: '+' | '-' | 'x' | ':';
+    targetKey: string;    // rounding place (afronden RoundTarget key: T/H/D or E/t)
+    isManuallyEdited: boolean;
+}
+
+// Verbanden breuk · decimaal · procent — one benchmark value shown in one representation,
+// the pupil fills the other(s). Decimal/percent are derived from the fraction (n/d).
+export type VerbandRep = 'breuk' | 'decimaal' | 'procent';
+export interface VerbandExercise {
+    id: string;
+    fraction: Fraction;
+    given: VerbandRep;          // which representation is printed
+    target?: VerbandRep;        // paren view: the single asked representation
+    isManuallyEdited: boolean;
+}
+
+// Procenten — take a percent of a number, or express a part as a percent.
+export interface ProcentExercise {
+    id: string;
+    percent: number;
+    base: number;
+    answer: number;       // nemen: percent van base · welk-percent: the part (answer = percent)
+    isManuallyEdited: boolean;
+}
+
+// Maateenheid kiezen — pick/write the sensible unit (or measurement) for a real-world item.
+export interface MaateenheidExercise {
+    id: string;
+    sentence: string;     // with '___' where the unit/measurement goes
+    value: number;
+    unit: string;         // correct unit symbol
+    grootheid: string;    // lengte/massa/inhoud/tijd/temperatuur
+    choices?: string[];   // omcirkelen: shuffled options incl. the correct one
+    isManuallyEdited: boolean;
+}
+
+// Geld rekenen — korting/winst/intrest rooster rows. All money in cents (house convention).
+export interface GeldRekenenExercise {
+    id: string;
+    subType: 'korting' | 'winst' | 'intrest';
+    percent?: number;        // korting %, or intrest rentevoet
+    priceCents?: number;     // korting: original price
+    buyCents?: number;       // winst: aankoopprijs
+    sellCents?: number;      // winst: verkoopprijs
+    capitalCents?: number;   // intrest: kapitaal
+    months?: number;         // intrest: looptijd in maanden (12 = 1 jaar)
+    isManuallyEdited: boolean;
+}
+
 export interface MathBlock {
     id: string;
     typeId: string;
@@ -268,6 +322,11 @@ export interface MathBlock {
     afrondenExercises?: AfrondenExercise[];
     romeinseExercises?: RomeinseExercise[];
     herleidingExercises?: HerleidingExercise[];
+    schattendExercises?: SchattendExercise[];
+    verbandExercises?: VerbandExercise[];
+    procentExercises?: ProcentExercise[];
+    maateenheidExercises?: MaateenheidExercise[];
+    geldRekenenExercises?: GeldRekenenExercise[];
     verticalSpacing: number;
 }
 

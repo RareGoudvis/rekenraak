@@ -22,6 +22,12 @@ import { generateVergelijkenExercises } from '../services/vergelijken/vergelijke
 import { generateAfrondenExercises } from '../services/afronden/afrondenGenerator';
 import { generateRomeinseExercises } from '../services/romeinse/romeinseGenerator';
 import { generateHerleidingExercises } from '../services/herleidingen/herleidingenGenerator';
+import { generateTienvoudExercises } from '../services/handig/tienvoudGenerator';
+import { generateSchattendExercises } from '../services/schattend/schattendGenerator';
+import { generateVerbandExercises } from '../services/verbanden/verbandenGenerator';
+import { generateProcentExercises } from '../services/procenten/procentenGenerator';
+import { generateMaateenheidExercises } from '../services/maateenheid/maateenheidGenerator';
+import { generateGeldRekenenExercises } from '../services/geld/geldRekenenGenerator';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -38,7 +44,9 @@ type ExerciseField = Extract<keyof MathBlock,
     | 'ordenenExercises' | 'breukBewerkExercises' | 'deelbaarheidExercises' | 'getallenasExercises' | 'temperatuurExercises'
     | 'plaatswaardeExercises' | 'evenOnevenExercises' | 'vergelijkenExercises' | 'afrondenExercises'
     | 'romeinseExercises' | 'herleidingExercises' | 'meetExercises'
-    | 'patroonExercises' | 'deelbaarheidKleurExercises'>;
+    | 'patroonExercises' | 'deelbaarheidKleurExercises'
+    | 'schattendExercises' | 'verbandExercises' | 'procentExercises'
+    | 'maateenheidExercises' | 'geldRekenenExercises'>;
 
 export interface ExerciseTypeDef {
     // The array field on MathBlock that holds this type's exercises.
@@ -202,6 +210,34 @@ const herleidingenDefaults = (): Record<string, unknown> => ({
     tablePrompt: false, tableAnswer: 'blank', tableCellW: 60, tableCellH: 30,
 });
 
+const tienvoudDefaults = (): Record<string, unknown> => ({
+    operators: ['x', ':'], factors: [10, 100, 1000], numberType: 'natural',
+    maxGetal: 1000, decimalPlaces: 2, missingFactor: false,
+});
+
+const schattendDefaults = (): Record<string, unknown> => ({
+    operators: ['+', '-'], numberType: 'natural', maxGetal: 1000, decimalPlaces: 2,
+    roundTargets: ['H'], scaffolding: 'tussenstappen',
+});
+
+const verbandenDefaults = (): Record<string, unknown> => ({
+    subType: 'tabel', reps: ['breuk', 'decimaal', 'procent'],
+    denominators: [2, 4, 5, 10, 100], given: 'random',
+});
+
+const procentenDefaults = (): Record<string, unknown> => ({
+    subType: 'nemen', percents: [10, 25, 50], maxGetal: 1000, scaffold: false,
+});
+
+const maateenheidDefaults = (): Record<string, unknown> => ({
+    grootheden: ['lengte', 'massa', 'inhoud'], answerMode: 'omcirkelen', subType: 'eenheid',
+});
+
+// subType + percent pool come from the appstructure leaf (korting/winst/intrest).
+const geldRekenenDefaults = (): Record<string, unknown> => ({
+    subType: 'korting', percents: [10, 25, 50], maxEuro: 100, wholeEuros: true, halfYear: false,
+});
+
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => ({
@@ -255,4 +291,15 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'afronden':     { exerciseField: 'afrondenExercises',     generate: generateAfrondenExercises,     defaultConstraints: afrondenDefaults,     defaultCount: 6 },
     'romeinse-cijfers': { exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 },
     'herleidingen': { exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, defaultConstraints: herleidingenDefaults, defaultCount: 8 },
+
+    // Handig rekenen + schattend rekenen.
+    'tienvoud':  { exerciseField: 'exercises',          generate: generateTienvoudExercises,  defaultConstraints: tienvoudDefaults,  defaultCount: 10 },
+    'schattend': { exerciseField: 'schattendExercises', generate: generateSchattendExercises, defaultConstraints: schattendDefaults, defaultCount: 8 },
+
+    // Procenten + verbanden breuk·decimaal·procent.
+    'verbanden': { exerciseField: 'verbandExercises', generate: generateVerbandExercises, defaultConstraints: verbandenDefaults, defaultCount: 8 },
+    'procenten': { exerciseField: 'procentExercises', generate: generateProcentExercises, defaultConstraints: procentenDefaults, defaultCount: 8 },
+
+    'maateenheid':  { exerciseField: 'maateenheidExercises', generate: generateMaateenheidExercises, defaultConstraints: maateenheidDefaults, defaultCount: 8 },
+    'geld-rekenen': { exerciseField: 'geldRekenenExercises', generate: generateGeldRekenenExercises, defaultConstraints: geldRekenenDefaults, defaultCount: 5 },
 };

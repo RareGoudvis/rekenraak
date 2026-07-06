@@ -27,6 +27,11 @@ import VergelijkenViewer from '../components/viewer/VergelijkenViewer';
 import AfrondenViewer from '../components/viewer/AfrondenViewer';
 import RomeinseViewer from '../components/viewer/RomeinseViewer';
 import HerleidingenViewer from '../components/viewer/HerleidingenViewer';
+import SchattendViewer from '../components/viewer/SchattendViewer';
+import VerbandenViewer from '../components/viewer/VerbandenViewer';
+import ProcentenViewer from '../components/viewer/ProcentenViewer';
+import MaateenheidViewer from '../components/viewer/MaateenheidViewer';
+import GeldRekenenViewer from '../components/viewer/GeldRekenenViewer';
 
 // Config plugins (one per family). All take {block}.
 import AdditionConfig from '../components/configurator/plugins/AdditionConfig';
@@ -57,6 +62,12 @@ import VergelijkenConfig from '../components/configurator/plugins/VergelijkenCon
 import AfrondenConfig from '../components/configurator/plugins/AfrondenConfig';
 import RomeinseConfig from '../components/configurator/plugins/RomeinseConfig';
 import HerleidingenConfig from '../components/configurator/plugins/HerleidingenConfig';
+import TienvoudConfig from '../components/configurator/plugins/TienvoudConfig';
+import SchattendConfig from '../components/configurator/plugins/SchattendConfig';
+import VerbandenConfig from '../components/configurator/plugins/VerbandenConfig';
+import ProcentenConfig from '../components/configurator/plugins/ProcentenConfig';
+import MaateenheidConfig from '../components/configurator/plugins/MaateenheidConfig';
+import GeldRekenenConfig from '../components/configurator/plugins/GeldRekenenConfig';
 
 // ── React side of the registry ──────────────────────────────────────────────
 // Keyed by the SAME typeIds as REGISTRY in exerciseRegistry.ts. Split out so the
@@ -117,4 +128,14 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'afronden':     { Viewer: AfrondenViewer,     Config: AfrondenConfig },
     'romeinse-cijfers': { Viewer: RomeinseViewer, Config: RomeinseConfig },
     'herleidingen': { Viewer: HerleidingenViewer, Config: HerleidingenConfig },
+
+    // Handig rekenen + schattend rekenen — tienvoud prints like standard equations.
+    'tienvoud':  { Viewer: MathBlockRenderer, Config: TienvoudConfig },
+    'schattend': { Viewer: SchattendViewer,   Config: SchattendConfig },
+
+    'verbanden': { Viewer: VerbandenViewer, Config: VerbandenConfig },
+    'procenten': { Viewer: ProcentenViewer, Config: ProcentenConfig },
+
+    'maateenheid':  { Viewer: MaateenheidViewer, Config: MaateenheidConfig },
+    'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig },
 };
