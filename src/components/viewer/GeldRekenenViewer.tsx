@@ -30,7 +30,9 @@ export default function GeldRekenenViewer({ block, showSolutions }: Props) {
         : subType === 'winst'
             ? ['aankoopprijs', 'verkoopprijs', 'winst of verlies?']
             : ['kapitaal', 'rentevoet', 'tijd', 'intrest'];
-    const widths = subType === 'winst' ? '120px 120px 150px' : '110px 90px 110px 110px';
+    // Fill the page width (was 390-420px); the wider answer cells also give pupils
+    // more room to write amounts, and a 4-digit price no longer risks wrapping.
+    const widths = subType === 'winst' ? '190px 190px 220px' : '160px 120px 160px 160px';
 
     const answer = (text: string) => (
         <div style={{ ...cell, color: SOL }}>{showSolutions ? text : ''}</div>

@@ -59,9 +59,15 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
             border: '1px solid #000', width: '40px', height: '34px', display: 'flex',
             alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: '16px', boxSizing: 'border-box',
         };
+        // Two-up when a row is narrow enough (default maxGetal 1000 = 4 places ≈ 266px),
+        // so small place-value tables don't waste the right half of the page.
+        const placeCount = placesOf(maxGetal, maxGetal, decimalPlaces).length;
+        const rowW = 90 + 16 + placeCount * 40;
+        const tabCols = rowW * 2 + 24 <= 625 ? 2 : 1;
         return (
             <FragmentableGrid
-                cols={1}
+                cols={tabCols}
+                columnGap={24}
                 rowGap={gap + 4}
                 items={exercises.map(ex => {
                     const places = placesOf(ex.number, maxGetal, decimalPlaces);

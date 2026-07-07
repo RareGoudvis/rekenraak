@@ -76,9 +76,15 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
         patchExercise(block.id, 'ordenenExercises', exId, { display: nextDisplay, values: nextValues, isManuallyEdited: true });
     };
 
+    // Short series (default 3 numbers) only fill ~40% of the width one-up; place them
+    // two-up so the right half isn't dead. Longer series stay full width (they wrap).
+    const maxLen = Math.max(...exercises.map((e) => e.display.length));
+    const ordCols = maxLen <= 4 ? 2 : 1;
+
     return (
         <FragmentableGrid
-            cols={1}
+            cols={ordCols}
+            columnGap={28}
             rowGap={gap + 6}
             items={exercises.map((ex) => (
                 <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: mono, fontSize: '17px' }}>

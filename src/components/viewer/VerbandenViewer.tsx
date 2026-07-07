@@ -60,13 +60,17 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
         border: '1px solid #000', minHeight: '38px', display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: '14px', boxSizing: 'border-box', padding: '2px 6px',
     };
+    // Widen columns so the table fills the page instead of hugging the left third
+    // (values are short, so wider cells just give more writing room).
+    const colW = Math.floor(Math.min(220, 600 / reps.length));
+    const grid = reps.map(() => `${colW}px`).join(' ');
     return (
         <div className="print-exercise" style={{ width: 'fit-content' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: reps.map(() => '110px').join(' ') }}>
+            <div style={{ display: 'grid', gridTemplateColumns: grid }}>
                 {reps.map(rep => <div key={rep} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '12px' }}>{REP_LABEL[rep]}</div>)}
             </div>
             {exercises.map(ex => (
-                <div key={ex.id} style={{ display: 'grid', gridTemplateColumns: reps.map(() => '110px').join(' ') }}>
+                <div key={ex.id} style={{ display: 'grid', gridTemplateColumns: grid }}>
                     {reps.map(rep => (
                         <div key={rep} style={cell}>
                             {rep === ex.given ? renderRep(ex, rep, false) : showSolutions ? renderRep(ex, rep, true) : ''}

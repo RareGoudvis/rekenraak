@@ -39,7 +39,9 @@ export default function TijdsduurViewer({ block, showSolutions }: Props) {
         return showSolutions ? <span style={{ color: SOL }}>{value}</span> : '';
     };
 
-    const grid = '120px 150px 130px';
+    // Fill the page (was 400px = 64%); the wider einde column also fits "(volgende dag)"
+    // on one line instead of wrapping and making that row taller.
+    const grid = '180px 230px 190px';
     return (
         <FragmentableGrid
             cols={1}

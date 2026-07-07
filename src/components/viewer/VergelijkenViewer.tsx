@@ -31,7 +31,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                     const nums = ex.numbers || [];
                     const answer = (ex.target ?? 'grootste') === 'kleinste' ? Math.min(...nums) : Math.max(...nums);
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', fontFamily: mono, fontSize: '17px' }}>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between', width: '100%', fontFamily: mono, fontSize: '17px' }}>
                             {nums.map((n, i) => {
                                 const isAns = showSolutions && n === answer;
                                 return (
