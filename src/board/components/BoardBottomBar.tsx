@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon } from '@phosphor-icons/react';
+import { useRef, useState } from 'react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { PATTERN_LABELS } from '../backgrounds';
+import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
 import type { BackgroundPattern } from '../boardTypes';
 
 interface Props {
@@ -20,7 +21,40 @@ export default function BoardBottomBar({ onAdd }: Props) {
     const setGridSnap = useBoardStore((s) => s.setGridSnap);
     const gridSize = useBoardStore((s) => s.gridSize);
     const setGridSize = useBoardStore((s) => s.setGridSize);
-    const [menu, setMenu] = useState<'background' | 'grid' | null>(null);
+    const activePageIdx = useBoardStore((s) => s.activePageIdx);
+    const pageCount = useBoardStore((s) => s.pages.length);
+    const gotoPage = useBoardStore((s) => s.gotoPage);
+    const addPage = useBoardStore((s) => s.addPage);
+    const duplicatePage = useBoardStore((s) => s.duplicatePage);
+    const removePage = useBoardStore((s) => s.removePage);
+    const [menu, setMenu] = useState<'background' | 'grid' | 'page' | 'save' | null>(null);
+    const [presets, setPresets] = useState<BoardPreset[]>([]);
+    const importRef = useRef<HTMLInputElement>(null);
+
+    const handleSavePreset = () => {
+        const name = window.prompt('Naam voor dit bord:', 'Mijn bord');
+        if (name === null) return;
+        const st = useBoardStore.getState();
+        setPresets(saveBoardPreset(name, st.pages, st.activePageIdx));
+    };
+    const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const parsed = parseBoardFile(String(reader.result));
+            if (!parsed) { window.alert('Dit bestand is geen geldig Rekenraak-bord.'); return; }
+            useBoardStore.getState().loadBoard(parsed.pages, parsed.activePageIdx);
+            setMenu(null);
+        };
+        reader.readAsText(file);
+    };
+    const handleClearBoard = () => {
+        if (!window.confirm('Het hele bord leegmaken (alle pagina’s)?')) return;
+        useBoardStore.getState().resetBoard();
+        setMenu(null);
+    };
 
     // P1: selection is the only tool; the rest are visible-but-disabled placeholders
     // so the final layout is judgeable from day 1.
@@ -116,16 +150,78 @@ export default function BoardBottomBar({ onAdd }: Props) {
 
             {/* Pagination */}
             <div style={S.group}>
-                <button type="button" title="Vorige pagina" aria-label="Vorige pagina" disabled style={{ ...S.toolBtn, ...S.toolDisabled }}>
+                <button type="button" className="ui-hover" title="Vorige pagina" aria-label="Vorige pagina"
+                    disabled={activePageIdx === 0} style={{ ...S.toolBtn, ...(activePageIdx === 0 ? S.toolDisabled : {}) }}
+                    onClick={() => gotoPage(activePageIdx - 1)}>
                     <CaretLeft size={22} />
                 </button>
-                <span style={S.pageLabel}>1 / 1</span>
-                <button type="button" title="Volgende pagina" aria-label="Volgende pagina" disabled style={{ ...S.toolBtn, ...S.toolDisabled }}>
+                <div style={{ position: 'relative' }}>
+                    <button type="button" className="ui-hover" title="Pagina-opties" aria-label="Pagina-opties" style={{ ...S.toolBtn, width: 'auto', padding: '0 8px' }}
+                        onClick={() => setMenu(menu === 'page' ? null : 'page')}>
+                        <span style={S.pageLabel}>{activePageIdx + 1} / {pageCount}</span>
+                    </button>
+                    {menu === 'page' && (
+                        <div style={{ ...S.popup, left: 'auto', right: 0 }}>
+                            <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { duplicatePage(); setMenu(null); }}>
+                                <Copy size={16} /> Pagina dupliceren
+                            </button>
+                            <button type="button" className="ui-hover" style={{ ...S.popupItem, color: 'var(--danger)' }} onClick={() => { removePage(); setMenu(null); }}>
+                                <Trash size={16} /> Pagina verwijderen
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <button type="button" className="ui-hover" title="Volgende pagina" aria-label="Volgende pagina"
+                    disabled={activePageIdx >= pageCount - 1} style={{ ...S.toolBtn, ...(activePageIdx >= pageCount - 1 ? S.toolDisabled : {}) }}
+                    onClick={() => gotoPage(activePageIdx + 1)}>
                     <CaretRight size={22} />
                 </button>
-                <button type="button" title="Pagina toevoegen (binnenkort)" aria-label="Pagina toevoegen" disabled style={{ ...S.toolBtn, ...S.toolDisabled }}>
+                <button type="button" className="ui-hover" title="Pagina toevoegen" aria-label="Pagina toevoegen" style={S.toolBtn} onClick={addPage}>
                     <Plus size={22} />
                 </button>
+            </div>
+
+            <div style={S.sep} />
+
+            {/* Save / boards */}
+            <div style={{ position: 'relative' }}>
+                <input ref={importRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleImportFile} />
+                <button type="button" className="ui-hover" title="Bewaren / mijn borden" aria-label="Bewaren"
+                    style={{ ...S.toolBtn, ...(menu === 'save' ? S.toolActive : {}) }}
+                    onClick={() => { setPresets(loadBoardPresets()); setMenu(menu === 'save' ? null : 'save'); }}>
+                    <FloppyDisk size={22} />
+                </button>
+                {menu === 'save' && (
+                    <div style={{ ...S.popup, left: 'auto', right: 0, minWidth: '240px', maxHeight: '50vh', overflowY: 'auto' }}>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={handleSavePreset}>
+                            <FloppyDisk size={16} /> Bord bewaren als…
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { exportBoardFile(useBoardStore.getState().pages, useBoardStore.getState().activePageIdx); setMenu(null); }}>
+                            <DownloadSimple size={16} /> Exporteren…
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => importRef.current?.click()}>
+                            <UploadSimple size={16} /> Importeren…
+                        </button>
+                        <button type="button" className="ui-hover" style={{ ...S.popupItem, color: 'var(--danger)' }} onClick={handleClearBoard}>
+                            <Trash size={16} /> Bord leegmaken
+                        </button>
+                        {presets.length > 0 && <div style={S.popupDivider} />}
+                        {presets.map(p => (
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                <button type="button" className="ui-hover" style={{ ...S.popupItem, flex: 1, minWidth: 0 }}
+                                    title={`${p.name} (${p.pageCount} pagina's)`}
+                                    onClick={() => { useBoardStore.getState().loadBoard(p.payload.pages, p.payload.activePageIdx); setMenu(null); }}>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                                </button>
+                                <button type="button" className="ui-hover" title="Verwijderen" aria-label={`Verwijder ${p.name}`}
+                                    style={{ ...S.popupItem, padding: '0 8px', color: 'var(--danger)' }}
+                                    onClick={() => setPresets(deleteBoardPreset(p.id))}>
+                                    <Trash size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div style={S.sep} />

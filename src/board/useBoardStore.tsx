@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { BoardPage, BoardWidget, BoardTool, BoardBackground } from './boardTypes';
 import { emptyPage, rndId } from './boardTypes';
+import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
 
 // Whiteboard app store — deliberately separate from useWorksheetStore so the
 // worksheet editor and bordmodus can't corrupt each other's state. Everything
@@ -42,9 +43,13 @@ function withActivePage(state: BoardState, fn: (p: BoardPage) => BoardPage): Pic
     return { pages: state.pages.map((p, i) => (i === state.activePageIdx ? fn(p) : p)) };
 }
 
+// Hydrate the last board from localStorage at module init so bordmodus reopens
+// where the teacher left off (mid-lesson browser hiccups included).
+const restored = loadBoardAutosave();
+
 export const useBoardStore = create<BoardState>((set, get) => ({
-    pages: [emptyPage()],
-    activePageIdx: 0,
+    pages: restored?.pages ?? [emptyPage()],
+    activePageIdx: Math.min(restored?.activePageIdx ?? 0, (restored?.pages.length ?? 1) - 1),
     selectedWidgetId: null,
     tool: 'select',
     gridSnap: false,
@@ -125,3 +130,12 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
     resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null }),
 }));
+
+// Debounced autosave — 1.5s after the last board mutation (same cadence as the
+// worksheet autosave). Only pages/activePageIdx are persisted; tool state is not.
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+useBoardStore.subscribe((state, prev) => {
+    if (state.pages === prev.pages && state.activePageIdx === prev.activePageIdx) return;
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => saveBoardAutosave(useBoardStore.getState().pages, useBoardStore.getState().activePageIdx), 1500);
+});
