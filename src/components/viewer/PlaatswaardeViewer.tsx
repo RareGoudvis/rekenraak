@@ -102,7 +102,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
                         {/* Fixed-width right-aligned so the arrow + answer line align across rows. */}
-                        <span style={{ display: 'inline-block', width: '120px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
+                        <span style={{ display: 'inline-block', minWidth: '120px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
                         <span style={{ alignSelf: 'center' }}>→</span>
                         {showSolutions ? sol(answer) : blank(subType === 'plaats' ? 110 : 70)}
                     </div>

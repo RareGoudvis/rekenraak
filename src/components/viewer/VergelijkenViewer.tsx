@@ -58,9 +58,12 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
     if (subType === 'representaties') {
         const leftRep: RepKind = block.constraints.leftRep ?? 'breuk';
         const rightRep: RepKind = block.constraints.rightRep ?? 'kommagetal';
+        // 'woorden' spells a value out ("9 honderdtallen 8 tientallen …") and wraps to
+        // several lines in a 2-up track — keep those comparisons full width (1-up).
+        const hasWoorden = leftRep === 'woorden' || rightRep === 'woorden';
         return (
             <FragmentableGrid
-                cols={2}
+                cols={hasWoorden ? 1 : 2}
                 columnGap={24}
                 rowGap={gap + 4}
                 items={exercises.map(ex => {

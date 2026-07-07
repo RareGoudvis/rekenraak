@@ -41,12 +41,13 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                     const t = all.find(x => x.key === ex.targetKey) ?? all[0];
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
-                            <span style={{ minWidth: '78px', textAlign: 'right' }}>{formatMathNumber(ex.number ?? 0)}</span>
+                            <span style={{ minWidth: '60px', textAlign: 'right' }}>{formatMathNumber(ex.number ?? 0)}</span>
                             <span>≈</span>
                             {showSolutions
-                                ? <span style={{ color: SOL, minWidth: '70px' }}>{formatMathNumber(roundTo(ex.number ?? 0, t.weight))}</span>
-                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: '70px', height: '15px', display: 'inline-block' }} />}
-                            <span style={{ fontSize: '12px', color: '#555' }}>(op {t.label})</span>
+                                ? <span style={{ color: SOL, minWidth: '58px' }}>{formatMathNumber(roundTo(ex.number ?? 0, t.weight))}</span>
+                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: '58px', height: '15px', display: 'inline-block' }} />}
+                            {/* nowrap + trimmed min-widths so the long 'tienduizendtal' hint doesn't wrap the 2-up row */}
+                            <span style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap' }}>(op {t.label})</span>
                         </div>
                     );
                 })}
