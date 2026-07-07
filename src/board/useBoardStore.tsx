@@ -20,8 +20,12 @@ interface BoardState {
     addWidget: (w: Omit<BoardWidget, 'id' | 'z'>) => string;
     updateWidget: (id: string, patch: Partial<BoardWidget>) => void;
     removeWidget: (id: string) => void;
+    duplicateWidget: (id: string) => void;
     bringToFront: (id: string) => void;
     selectWidget: (id: string | null) => void;
+    // Inspector opens via the ⚙ in the widget's title bar, not on mere selection.
+    inspectorOpen: boolean;
+    setInspectorOpen: (open: boolean) => void;
 
     // pages
     addPage: () => void;
@@ -89,12 +93,34 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         selectedWidgetId: state.selectedWidgetId === id ? null : state.selectedWidgetId,
     })),
 
+    duplicateWidget: (id) => set((state) => {
+        const page = state.pages[state.activePageIdx];
+        const src = page.widgets.find(w => w.id === id);
+        if (!src) return state;
+        const copy: BoardWidget = JSON.parse(JSON.stringify(src));
+        copy.id = rndId();
+        copy.x += 28; copy.y += 28;
+        copy.z = Math.max(...page.widgets.map(w => w.z)) + 1;
+        // Exercise copies need a fresh block id — the inspector's draft mirror and
+        // future edits key on it.
+        if (copy.block) copy.block = { ...copy.block, id: `bw-${rndId()}` };
+        return {
+            ...withActivePage(state, (p) => ({ ...p, widgets: [...p.widgets, copy] })),
+            selectedWidgetId: copy.id,
+        };
+    }),
+
     bringToFront: (id) => set((state) => withActivePage(state, (p) => {
         const top = p.widgets.length ? Math.max(...p.widgets.map(x => x.z)) : 0;
         return { ...p, widgets: p.widgets.map(w => w.id === id ? { ...w, z: top + 1 } : w) };
     })),
 
-    selectWidget: (id) => set({ selectedWidgetId: id }),
+    selectWidget: (id) => set((state) => ({
+        selectedWidgetId: id,
+        inspectorOpen: id === null ? false : state.inspectorOpen && id === state.selectedWidgetId,
+    })),
+    inspectorOpen: false,
+    setInspectorOpen: (open) => set({ inspectorOpen: open }),
 
     addPage: () => set((state) => ({
         pages: [...state.pages, emptyPage()],

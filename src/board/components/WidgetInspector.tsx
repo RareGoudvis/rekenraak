@@ -27,6 +27,7 @@ export default function WidgetInspector({ widget }: Props) {
                 {widget.kind === 'klok' && <KlokSettings widget={widget} />}
                 {widget.kind === 'weer' && <WeerSettings widget={widget} />}
                 {widget.kind === 'namen' && <NamenSettings />}
+                <HeaderToggle widget={widget} />
             </div>
         </div>
     );
@@ -69,6 +70,17 @@ function KlokSettings({ widget }: { widget: BoardWidget }) {
             <div style={{ ...S.rowLabel, padding: '4px 0' }}>
                 Sleep de wijzers op de klok: buitenkant = minuten, binnenkant = uren.
             </div>
+        </div>
+    );
+}
+
+function HeaderToggle({ widget }: { widget: BoardWidget }) {
+    const updateWidget = useBoardStore((s) => s.updateWidget);
+    return (
+        <div style={S.row}>
+            <span style={S.rowLabel}>Titelbalk tonen</span>
+            <Switch checked={widget.props?.showHeader !== false} aria-label="Titelbalk tonen"
+                onChange={(v) => updateWidget(widget.id, { props: { ...widget.props, showHeader: v } })} />
         </div>
     );
 }

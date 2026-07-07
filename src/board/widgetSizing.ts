@@ -19,6 +19,20 @@ export function naturalWidth(kind: WidgetKind): number {
     return NATURAL_W[kind] ?? 400;
 }
 
+// Default title-bar text per kind; exercise widgets get the catalog label at add time.
+export const TITLE_DEFAULTS: Record<WidgetKind, string> = {
+    exercise: 'Oefeningen', tekst: 'Notitie', datum: 'Datum', klok: 'Klok',
+    afbeelding: 'Afbeelding', namen: 'Namenkiezer', weer: 'Weer', geluid: 'Geluidsmeter',
+};
+
+// Kinds whose title bar shows the ⚙ (they have an inspector panel).
+export const KINDS_WITH_SETTINGS: WidgetKind[] = ['exercise', 'klok', 'weer', 'namen'];
+
+export function widgetTitle(widget: BoardWidget): string {
+    const t = widget.props?.title;
+    return typeof t === 'string' && t.trim() ? t : (TITLE_DEFAULTS[widget.kind] ?? 'Widget');
+}
+
 // ── Klok widget props (shared by KlokWidget + its settings panel) ────────────
 export interface KlokProps {
     hours: number;

@@ -10,11 +10,9 @@ export default function ExerciseWidget({ widget }: { widget: BoardWidget }) {
     if (!block || !Viewer) {
         return <div style={{ padding: '16px', background: '#fff', borderRadius: '8px' }}>Onbekend oefeningtype</div>;
     }
+    // The WidgetFrame card provides border/shadow/background — just pad the viewer.
     return (
-        <div style={{
-            background: '#ffffff', borderRadius: '8px', padding: '14px 16px',
-            border: '1px solid rgba(0,0,0,0.15)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
-        }}>
+        <div style={{ padding: '12px 16px' }}>
             <Viewer block={block} showSolutions={!!widget.showAnswer} />
         </div>
     );

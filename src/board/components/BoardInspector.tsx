@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { X, ArrowCounterClockwise } from '@phosphor-icons/react';
+import Switch from '../../components/ui/Switch';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { useBoardStore } from '../useBoardStore';
@@ -85,6 +86,12 @@ export default function BoardInspector({ widget }: Props) {
                     <input type="range" min={0.6} max={2} step={0.1} value={widget.scale ?? 1}
                         style={S.slider}
                         onChange={(e) => updateWidget(widgetId, { scale: Number(e.target.value) })} />
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0 2px' }}>
+                        <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>Titelbalk tonen</span>
+                        <Switch checked={widget.props?.showHeader !== false} aria-label="Titelbalk tonen"
+                            onChange={(v) => updateWidget(widgetId, { props: { ...widget.props, showHeader: v } })} />
+                    </div>
                 </div>
 
                 {/* The type's real config plugin, edits the draft mirror. */}

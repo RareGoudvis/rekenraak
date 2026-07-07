@@ -42,8 +42,9 @@ export default function BoardAddModal({ onClose }: Props) {
         const block = makeBoardBlock(item.typeId, variant.constraints);
         if (!block) return;
         // 660px ≈ a full exercise row (625px viewer budget + card padding), so every
-        // type shows complete rows out of the box; the corner handle scales from there.
-        addWidget({ kind: 'exercise', ...staggerPos(), w: 660, block, showAnswer: false });
+        // type shows complete rows out of the box; the corner grip scales from there.
+        const title = item.variants.length > 1 ? `${item.label} — ${variantLabel(item, variant)}` : item.label;
+        addWidget({ kind: 'exercise', ...staggerPos(), w: 660, block, showAnswer: false, props: { title } });
         onClose();
     };
 

@@ -14,15 +14,16 @@ export default function WhiteboardView() {
     const [addOpen, setAddOpen] = useState(false);
     const selectedWidget = useBoardStore((s) =>
         s.pages[s.activePageIdx].widgets.find(w => w.id === s.selectedWidgetId));
+    const inspectorOpen = useBoardStore((s) => s.inspectorOpen);
     const tool = useBoardStore((s) => s.tool);
 
     return (
         <div style={S.overlay}>
             <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex' }}>
                 <BoardPageCanvas />
-                {/* Inspector flyouts — only while a widget with settings is selected. */}
-                {selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
-                {selectedWidget && ['klok', 'weer', 'namen'].includes(selectedWidget.kind) && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
+                {/* Inspector flyouts — opened via the ⚙ in the widget's title bar. */}
+                {inspectorOpen && selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
+                {inspectorOpen && selectedWidget && ['klok', 'weer', 'namen'].includes(selectedWidget.kind) && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {/* Ink tool settings strip (colors + widths) while pen/marker is active. */}
                 {(tool === 'pen' || tool === 'marker') && <InkSettingsBar tool={tool} />}
             </div>
