@@ -10,13 +10,19 @@ function randInt(min: number, max: number) {
 function buildNumber(maxGetal: number, numberMask: Record<string, boolean>, decimalPlaces: number): number {
     const numberType = decimalPlaces > 0 ? 'decimal' : 'natural';
     const active = getMaskPlaces(maxGetal, numberType, decimalPlaces).filter(p => numberMask[p.key]);
-    if (!active.length) {
-        const scale = Math.pow(10, decimalPlaces);
-        return Number((randInt(1, maxGetal * scale - 1) / scale).toFixed(decimalPlaces));
+    const scale = Math.pow(10, decimalPlaces);
+    const freeNumber = () => Number((randInt(1, maxGetal * scale - 1) / scale).toFixed(decimalPlaces));
+    if (!active.length) return freeNumber();
+    // A masked place can carry digit 1-9, so a top place at/near maxGetal can overshoot
+    // (mask {D} at maxGetal 1000 → 1000-9000). Retry until in range; only an impossible
+    // mask (min masked value already > maxGetal) falls back to a free in-range number.
+    for (let tries = 0; tries < 200; tries++) {
+        let n = 0;
+        for (const p of active) n += randInt(1, 9) * p.weight;
+        const v = Number(n.toFixed(decimalPlaces));
+        if (v <= maxGetal) return v;
     }
-    let n = 0;
-    for (const p of active) n += randInt(1, 9) * p.weight;
-    return Number(n.toFixed(decimalPlaces));
+    return freeNumber();
 }
 
 export function generateVergelijkenExercises(block: MathBlock): VergelijkenExercise[] {

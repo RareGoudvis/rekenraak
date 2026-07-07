@@ -1,6 +1,6 @@
 import type { MathBlock, AfrondenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
-import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
+import { targetsFor, roundTo, usableTargets } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 
 interface Props {
@@ -17,11 +17,13 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     const subType: string = block.constraints.subType ?? 'rooster';
     const numberType: string = block.constraints.numberType ?? 'natural';
     const maxGetal: number = block.constraints.maxGetal ?? (numberType === 'decimal' ? 100 : 1000);
+    const decimalPlaces: number = block.constraints.decimalPlaces ?? 2;
     const targetKeys: string[] = block.constraints.roundTargets ?? (numberType === 'decimal' ? ['E', 't'] : ['T', 'H']);
     const gap = block.verticalSpacing || 14;
 
     const all = targetsFor(numberType);
-    const cols = all.filter(t => targetKeys.includes(t.key) && (numberType === 'decimal' || t.weight < maxGetal));
+    // SYNC with the generator: only targets that actually change the number.
+    const cols = usableTargets(numberType, maxGetal, decimalPlaces, targetKeys);
     const targets = cols.length ? cols : [all[0]];
 
     if (exercises.length === 0) {

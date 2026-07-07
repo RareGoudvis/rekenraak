@@ -22,6 +22,18 @@ export function targetsFor(numberType: string): RoundTarget[] {
     return numberType === 'decimal' ? DECIMAL_TARGETS : NATURAL_TARGETS;
 }
 
+// Targets that actually CHANGE a number under these settings:
+//  - natural: weight must be below maxGetal (rounding to a place ≥ the max is a no-op).
+//  - decimal: weight must exceed the number's granularity 10^-decimalPlaces (rounding
+//    to the same-or-finer place than the number's precision leaves it unchanged).
+// SYNC: AfrondenViewer uses this so its rooster/simpel columns match the generator.
+export function usableTargets(numberType: string, maxGetal: number, decimalPlaces: number, selected: string[]): RoundTarget[] {
+    const minChanging = Math.pow(10, -decimalPlaces);
+    return targetsFor(numberType).filter(t => selected.includes(t.key) && (
+        numberType === 'decimal' ? t.weight > minChanging + 1e-9 : t.weight < maxGetal
+    ));
+}
+
 // Decimal-safe round to a place weight (10, 100, 0.1, 0.01, …).
 export function roundTo(n: number, weight: number): number {
     return Number((Math.round(n / weight) * weight).toFixed(6));
@@ -34,9 +46,15 @@ function randInt(min: number, max: number) {
 function buildNatural(maxGetal: number, numberMask: Record<string, boolean>): number {
     const active = getMaskPlaces(maxGetal, 'natural').filter(p => numberMask[p.key]);
     if (!active.length) return randInt(1, maxGetal);
-    let n = 0;
-    for (const p of active) n += randInt(1, 9) * p.weight;
-    return n > maxGetal ? randInt(1, maxGetal) : n;
+    // Retry the masked build until it fits (a top place near maxGetal can overshoot);
+    // only an impossible mask drops to a free number, so the mask is honored whenever
+    // it can produce an in-range value (was: silently random on the first overshoot).
+    for (let tries = 0; tries < 200; tries++) {
+        let n = 0;
+        for (const p of active) n += randInt(1, 9) * p.weight;
+        if (n <= maxGetal) return n;
+    }
+    return randInt(1, maxGetal);
 }
 
 // Decimal number with `decimalPlaces` digits after the comma, in [0.1, maxGetal].
@@ -55,8 +73,9 @@ export function generateAfrondenExercises(block: MathBlock): AfrondenExercise[] 
     const roosterSize: number = block.constraints.roosterSize ?? 6;
     const targets: string[] = block.constraints.roundTargets ?? (numberType === 'decimal' ? ['E', 't'] : ['T', 'H']);
     const all = targetsFor(numberType);
-    // Only targets that make sense for this range (natural: weight below maxGetal).
-    const usable = all.filter(t => targets.includes(t.key) && (numberType === 'decimal' || t.weight < maxGetal)).map(t => t.key);
+    // Only targets that actually change the number (excludes decimal no-ops like rounding
+    // a 1-decimal number "to tiende"). Falls back to the coarsest target if none qualify.
+    const usable = usableTargets(numberType, maxGetal, decimalPlaces, targets).map(t => t.key);
     const pool = usable.length ? usable : [all[0].key];
 
     const newNumber = () => (numberType === 'decimal' ? buildDecimal(maxGetal, decimalPlaces) : buildNatural(maxGetal, numberMask));
