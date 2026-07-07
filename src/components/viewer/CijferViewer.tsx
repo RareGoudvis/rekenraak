@@ -484,6 +484,12 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
         if (ex.operator === '+') answer = parseFloat(operands.reduce((a, b) => a + b, 0).toFixed(dp));
         else if (ex.operator === '-') answer = parseFloat((operands[0] - operands[1]).toFixed(dp));
         else if (ex.operator === 'x') answer = parseFloat((operands[0] * operands[1]).toFixed(dp));
+        else if (dp > 0) {
+            // Decimal division: quotient rounded to dp, remainder = |dividend − q×divisor|
+            // (mirror cijferGenerator so an edited exercise recomputes like the generator).
+            answer = parseFloat((operands[0] / operands[1]).toFixed(dp));
+            remainder = parseFloat(Math.abs(operands[0] - answer * operands[1]).toFixed(dp));
+        }
         else { answer = Math.floor(operands[0] / operands[1]); remainder = operands[0] % operands[1]; }
         updateCijferExercise(blockId, ex.id, { operands, answer, remainder, isManuallyEdited: true });
         setEditing(false);

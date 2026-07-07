@@ -118,7 +118,10 @@ function parseBenenCombos(c: Record<string, unknown>): BenenCombo[] {
 // Build a total from a place mask (integer + decimal places), in scaled-int space.
 function generateTotal(maxGetal: number, mask: Record<string, boolean>, fixedTotal: number | null, dp: number): number {
     const scale = Math.pow(10, dp);
-    if (fixedTotal && fixedTotal >= 2 && fixedTotal <= maxGetal) return fixedTotal;
+    // Snap a fixed total to the decimal grid — otherwise a non-integer total (7,3) at
+    // decimalPlaces=0 is shown verbatim in the header but the pairs round it to 7, so
+    // given+answer no longer equals the printed total.
+    if (fixedTotal && fixedTotal >= 2 && fixedTotal <= maxGetal) return Math.round(fixedTotal * scale) / scale;
 
     // PLACE_VALUES already includes the decimal places (t/h/d) — don't re-append.
     const places = PLACE_VALUES;
@@ -162,30 +165,35 @@ function generateGiven(total: number, mask: Record<string, boolean>, dp: number)
 export function recomputeSplitsenExercise(block: MathBlock, ex: SplitsenExercise, newTotal: number): Partial<SplitsenExercise> {
     const c = block.constraints;
     const layout: string = c.layout || 'basic';
-    const dpAllowed = layout === 'basic' || (typeof layout === 'string' && layout.startsWith('positie'));
+    // SYNC with SplitsenConfig.decimalsAllowed (basic | splitsboom | positie*): splitsboom
+    // was omitted here, so editing a decimal splitsboom forced dp=0 and the legs no longer
+    // summed to the typed total (7,5 → legs 3 and 5).
+    const dpAllowed = layout === 'basic' || layout === 'splitsboom' || (typeof layout === 'string' && layout.startsWith('positie'));
     const dp = dpAllowed ? Math.min(3, Math.max(0, c.decimalPlaces ?? 0)) : 0;
     const scale = Math.pow(10, dp);
     const maxGetal: number = c.maxGetal ?? 1000;
+    // Snap the typed total to the decimal grid so header and pairs agree.
+    const total = Math.round(newTotal * scale) / scale;
 
     if (layout === 'positie-tabel') {
-        return { total: newTotal, placeBreakdown: fullColumns(newTotal, maxGetal, dp), words: numberToDutchWords(newTotal), isManuallyEdited: true };
+        return { total, placeBreakdown: fullColumns(total, maxGetal, dp), words: numberToDutchWords(total), isManuallyEdited: true };
     }
     if (layout === 'positie-benen' || layout === 'positie-math') {
-        return { total: newTotal, placeBreakdown: nonZeroPlaces(newTotal, dp), isManuallyEdited: true };
+        return { total, placeBreakdown: nonZeroPlaces(total, dp), isManuallyEdited: true };
     }
-    // basic / mathematic: regenerate the given/answer pairs against the new total.
-    const totalScaled = Math.round(newTotal * scale);
+    // basic / mathematic / splitsboom: regenerate the given/answer pairs against the new total.
+    const totalScaled = Math.round(total * scale);
     const pairsPerItem = ex.pairs.length || (c.rowsPerBox || 4);
     const usedGivens = new Set<number>();
     const pairs: Array<{ given: number; answer: number }> = [];
     for (let j = 0; j < pairsPerItem; j++) {
         let given: number; let attempts = 0;
-        do { given = generateGiven(newTotal, c.operand2Mask || {}, dp); attempts++; }
+        do { given = generateGiven(total, c.operand2Mask || {}, dp); attempts++; }
         while (usedGivens.has(Math.round(given * scale)) && attempts < 100);
         usedGivens.add(Math.round(given * scale));
         pairs.push({ given, answer: (totalScaled - Math.round(given * scale)) / scale });
     }
-    return { total: newTotal, pairs, isManuallyEdited: true };
+    return { total, pairs, isManuallyEdited: true };
 }
 
 // Splitsboom = a single split-tree: total on top, two legs (left + right). One slot
