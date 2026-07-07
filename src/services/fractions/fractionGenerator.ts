@@ -87,28 +87,35 @@ function makeLijnstukExercise(block: MathBlock): FractionExercise {
     };
 }
 
+// All w×h rectangles fitting the box whose area is a whole multiple of `d`
+// (so numerator/d shades whole cells — the viewer needs d | w*h).
+function veelhoekRects(d: number, mW: number, mH: number): [number, number][] {
+    const rects: [number, number][] = [];
+    for (let w = 1; w <= mW; w++)
+        for (let h = 1; h <= mH; h++)
+            if (w * h >= d && (w * h) % d === 0) rects.push([w, h]);
+    return rects;
+}
+
 function makeVeelhoekExercise(block: MathBlock): FractionExercise {
     const { minDenominator = 2, maxDenominator = 9, maxWidth = 6, maxHeight = 6, maxDimension = 6 } = block.constraints;
     const mW = maxWidth ?? maxDimension;
     const mH = maxHeight ?? maxDimension;
-    const denominator = randInt(minDenominator, maxDenominator);
+
+    // Only offer denominators that can actually be tiled with whole cells inside mW×mH.
+    // (e.g. 7 has no rectangle ≤6×6 with area divisible by 7 → it would otherwise force
+    //  an out-of-bounds fallback rectangle.)
+    const denChoices: number[] = [];
+    for (let d = Math.max(2, minDenominator); d <= maxDenominator; d++)
+        if (veelhoekRects(d, mW, mH).length) denChoices.push(d);
+    const denominator = denChoices.length ? denChoices[randInt(0, denChoices.length - 1)] : Math.max(2, minDenominator);
     const numerator = randInt(1, denominator - 1);
 
-    // Find w×h pairs where w*h is divisible by denominator, w ≤ mW and h ≤ mH
-    const maxMult = Math.floor((mW * mH) / denominator);
-    const multiplier = Math.max(1, randInt(1, Math.max(1, maxMult)));
-    const total = denominator * multiplier;
-
-    const factors: [number, number][] = [];
-    for (let w = 1; w <= Math.min(total, mW); w++) {
-        if (total % w === 0) {
-            const h = total / w;
-            if (h <= mH) factors.push([w, h]);
-        }
-    }
-    const [width, height] = factors.length
-        ? factors[randInt(0, factors.length - 1)]
-        : [denominator, multiplier];
+    const rects = veelhoekRects(denominator, mW, mH);
+    // Fallback (impossible box, e.g. 1×1) fills the box — still within bounds.
+    const [width, height] = rects.length
+        ? rects[randInt(0, rects.length - 1)]
+        : [Math.max(1, Math.min(denominator, mW)), Math.min(denominator, mH)];
 
     return {
         id: Math.random().toString(36).substring(2, 9),
