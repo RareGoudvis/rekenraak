@@ -60,10 +60,16 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     // right rooster clips/overlaps in print (fixed-px inner grid can't shrink to a 1fr track).
     const A4_CONTENT_PX = 625;
     const ROOSTER_GAP = 20;
-    const numberColPx = numberType === 'decimal' ? 90 : 110;
-    const roosterW = numberColPx + targets.length * 104;
+    const numberColPx = numberType === 'decimal' ? 90 : 104;
+    // 96px target columns at ≤ 2 targets keep the common T+H rooster 2-up (2×296+20 ≤ 625);
+    // 3+ targets get the roomier 104px and fall back to 1-up.
+    const targetColPx = targets.length <= 2 ? 96 : 104;
+    const roosterW = numberColPx + targets.length * targetColPx;
     const roosterCols = roosterW * 2 + ROOSTER_GAP <= A4_CONTENT_PX ? 2 : 1;
-    const grid = `${numberColPx}px ${targets.map(() => '104px').join(' ')}`;
+    const grid = `${numberColPx}px ${targets.map(() => `${targetColPx}px`).join(' ')}`;
+    // Long headers like "op tienduizendtal" shrink to stay inside their column.
+    const maxLabelLen = Math.max(...targets.map(t => t.label.length)) + 3;
+    const headerFs = Math.max(9, Math.min(11, Math.floor(targetColPx / (maxLabelLen * 0.62))));
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '32px', display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: '14px', boxSizing: 'border-box',
@@ -78,7 +84,8 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                 <div key={ex.id} className="print-exercise" style={{ width: 'fit-content' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: grid }}>
                         <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>afronden</div>
-                        {targets.map(t => <div key={t.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '11px' }}>op {t.label}</div>)}
+                        {/* Long headers ("op tienduizendtal") may wrap to 2 lines inside the 32px cell */}
+                        {targets.map(t => <div key={t.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: `${headerFs}px`, textAlign: 'center', lineHeight: 1.15 }}>op {t.label}</div>)}
                     </div>
                     {(ex.numbers || []).map((num, i) => (
                         <div key={i} style={{ display: 'grid', gridTemplateColumns: grid }}>
