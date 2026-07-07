@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, SpeakerHigh, CloudSun } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, SpeakerHigh, CloudSun, HandPointing } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
@@ -106,8 +106,11 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('namen', {}, 340); setMenu(null); }}>
                             <UsersThree size={16} /> Namenkiezer
                         </button>
-                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('geluid', {}, 340); setMenu(null); }}>
-                            <SpeakerHigh size={16} /> Geluidsmeter
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('geluid', {}, 360); setMenu(null); }}>
+                            <SpeakerHigh size={16} /> Geluidsniveau
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('werksymbolen', {}, 440); setMenu(null); }}>
+                            <HandPointing size={16} /> Werksymbolen
                         </button>
                         <div style={S.popupSection}>Organisatie</div>
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('datum', {}, 340); setMenu(null); }}>

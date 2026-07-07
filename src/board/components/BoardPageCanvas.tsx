@@ -8,6 +8,7 @@ import AfbeeldingWidget from './widgets/AfbeeldingWidget';
 import NamenWidget from './widgets/NamenWidget';
 import WeerWidget from './widgets/WeerWidget';
 import GeluidWidget from './widgets/GeluidWidget';
+import WerksymbolenWidget from './widgets/WerksymbolenWidget';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
 import InkLayer from './InkLayer';
@@ -71,12 +72,13 @@ function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean })
     switch (widget.kind) {
         case 'exercise': return <ExerciseWidget widget={widget} />;
         case 'tekst': return <TekstWidget widget={widget} dark={dark} />;
-        case 'datum': return <DatumWidget dark={dark} />;
+        case 'datum': return <DatumWidget widget={widget} />;
         case 'klok': return <KlokWidget widget={widget} dark={dark} />;
         case 'afbeelding': return <AfbeeldingWidget widget={widget} />;
         case 'namen': return <NamenWidget dark={dark} />;
         case 'weer': return <WeerWidget widget={widget} dark={dark} />;
-        case 'geluid': return <GeluidWidget dark={dark} />;
+        case 'geluid': return <GeluidWidget widget={widget} />;
+        case 'werksymbolen': return <WerksymbolenWidget widget={widget} />;
         default: return null;
     }
 }

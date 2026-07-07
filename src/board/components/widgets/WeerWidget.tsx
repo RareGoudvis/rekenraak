@@ -21,12 +21,16 @@ interface WeerData {
     sunrise: string; sunset: string; rainPct: number; rainMm: number;
 }
 
-// Live weather via open-meteo (free, no API key). Location = browser
-// geolocation, falls back to Brussels when denied.
+// Live weather via open-meteo (free, no API key). Location = a teacher-chosen
+// place (props.lat/lon/placeName via the settings' city search) or browser
+// geolocation, falling back to Brussels when denied.
 export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
     const p = weerProps(widget);
     const [data, setData] = useState<WeerData | null>(null);
     const [error, setError] = useState(false);
+    const fixedLat = typeof widget.props?.lat === 'number' ? widget.props.lat : null;
+    const fixedLon = typeof widget.props?.lon === 'number' ? widget.props.lon : null;
+    const placeName = typeof widget.props?.placeName === 'string' ? widget.props.placeName : null;
 
     useEffect(() => {
         let cancelled = false;
@@ -49,13 +53,17 @@ export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark
                 });
             }).catch(() => { if (!cancelled) setError(true); });
         };
-        navigator.geolocation.getCurrentPosition(
-            (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
-            () => fetchWeather(50.85, 4.35),   // geolocation denied → Brussels
-            { timeout: 5000 },
-        );
+        if (fixedLat !== null && fixedLon !== null) {
+            fetchWeather(fixedLat, fixedLon);
+        } else {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+                () => fetchWeather(50.85, 4.35),   // geolocation denied → Brussels
+                { timeout: 5000 },
+            );
+        }
         return () => { cancelled = true; };
-    }, []);
+    }, [fixedLat, fixedLon]);
 
     const textColor = dark ? '#fff' : '#111';
     const muted = dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
@@ -68,6 +76,7 @@ export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark
             border: `1px solid ${dark ? 'rgba(255,255,255,0.2)' : 'rgba(30,64,175,0.25)'}`, borderRadius: '10px',
             color: textColor, fontFamily: mono,
         }}>
+            <span style={{ fontSize: '13px', color: muted }}>📍 {placeName ?? 'Huidige locatie'}</span>
             {error && <span style={{ fontSize: '13px', color: muted }}>Weer niet beschikbaar</span>}
             {!data && !error && <span style={{ fontSize: '13px', color: muted }}>Weer laden…</span>}
             {data && (

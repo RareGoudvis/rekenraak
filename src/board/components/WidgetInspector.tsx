@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { klokProps, type KlokProps, weerProps, type WeerProps, NAMES_KEY } from '../widgetSizing';
+import { klokProps, type KlokProps, weerProps, type WeerProps, NAMES_KEY, datumProps, type DatumProps, DATUM_COLORS, werksymbolenProps, WERKSYMBOLEN } from '../widgetSizing';
 import type { BoardWidget } from '../boardTypes';
 
 interface Props {
@@ -27,6 +27,8 @@ export default function WidgetInspector({ widget }: Props) {
                 {widget.kind === 'klok' && <KlokSettings widget={widget} />}
                 {widget.kind === 'weer' && <WeerSettings widget={widget} />}
                 {widget.kind === 'namen' && <NamenSettings />}
+                {widget.kind === 'datum' && <DatumSettings widget={widget} />}
+                {widget.kind === 'werksymbolen' && <WerksymbolenSettings widget={widget} />}
                 <HeaderToggle widget={widget} />
             </div>
         </div>
@@ -89,6 +91,25 @@ function WeerSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const w = weerProps(widget);
     const set = (patch: Partial<WeerProps>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState<Array<{ name: string; admin1?: string; latitude: number; longitude: number }>>([]);
+
+    const search = () => {
+        if (!query.trim()) return;
+        fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=6&language=nl`)
+            .then(r => r.json())
+            .then(j => setResults(j.results ?? []))
+            .catch(() => setResults([]));
+    };
+    const pick = (r: { name: string; admin1?: string; latitude: number; longitude: number }) => {
+        updateWidget(widget.id, { props: { ...widget.props, lat: r.latitude, lon: r.longitude, placeName: r.name } });
+        setResults([]); setQuery('');
+    };
+    const useCurrent = () => {
+        const props = { ...widget.props };
+        delete props.lat; delete props.lon; delete props.placeName;
+        updateWidget(widget.id, { props });
+    };
 
     const row = (label: string, checked: boolean, onChange: (v: boolean) => void) => (
         <div style={S.row}>
@@ -98,6 +119,25 @@ function WeerSettings({ widget }: { widget: BoardWidget }) {
     );
     return (
         <div>
+            <div style={S.sectionLabel}>Locatie ({typeof widget.props?.placeName === 'string' ? widget.props.placeName : 'huidige locatie'})</div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                    value={query} placeholder="Zoek gemeente…"
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') search(); }}
+                    style={S.textInput}
+                />
+                <button type="button" className="ui-hover" style={S.smallBtn} onClick={search}>Zoek</button>
+            </div>
+            {results.map((r, i) => (
+                <button key={i} type="button" className="ui-hover" style={{ ...S.smallBtn, width: '100%', justifyContent: 'flex-start', marginTop: '4px' }} onClick={() => pick(r)}>
+                    {r.name}{r.admin1 ? ` (${r.admin1})` : ''}
+                </button>
+            ))}
+            <button type="button" className="ui-hover" style={{ ...S.smallBtn, marginTop: '6px' }} onClick={useCurrent}>
+                Gebruik huidige locatie
+            </button>
+
             <div style={S.sectionLabel}>Weergave</div>
             {row('Weer (icoon + naam)', w.showWeather, (v) => set({ showWeather: v }))}
             {row('Temperatuur nu', w.showTemp, (v) => set({ showTemp: v }))}
@@ -106,8 +146,66 @@ function WeerSettings({ widget }: { widget: BoardWidget }) {
             {row('Kans op neerslag', w.showRainPct, (v) => set({ showRainPct: v }))}
             {row('Hoeveelheid neerslag', w.showRainMm, (v) => set({ showRainMm: v }))}
             <div style={{ ...S.rowLabel, padding: '8px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
-                Locatie volgt de browser (of Brussel zonder toestemming). Bron: open-meteo.com.
+                Bron: open-meteo.com.
             </div>
+        </div>
+    );
+}
+
+function DatumSettings({ widget }: { widget: BoardWidget }) {
+    const updateWidget = useBoardStore((s) => s.updateWidget);
+    const d = datumProps(widget);
+    const set = (patch: Partial<DatumProps>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
+    const row = (label: string, checked: boolean, onChange: (v: boolean) => void) => (
+        <div style={S.row}>
+            <span style={S.rowLabel}>{label}</span>
+            <Switch checked={checked} onChange={onChange} aria-label={label} />
+        </div>
+    );
+    return (
+        <div>
+            <div style={S.sectionLabel}>Weergave</div>
+            {row('Weekdag', d.showWeekday, (v) => set({ showWeekday: v }))}
+            {row('Datum', d.showDate, (v) => set({ showDate: v }))}
+            {row('Tijd (live)', d.showTime, (v) => set({ showTime: v }))}
+            {d.showTime && row('Seconden', d.showSeconds, (v) => set({ showSeconds: v }))}
+            <div style={S.sectionLabel}>Kleur</div>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {Object.entries(DATUM_COLORS).map(([key, c]) => (
+                    <button key={key} type="button" aria-label={`Kleur ${key}`} title={key}
+                        onClick={() => set({ color: key })}
+                        style={{
+                            width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer',
+                            background: c.text, border: '2px solid var(--bg-panel)',
+                            outline: d.color === key ? '3px solid var(--accent-purple)' : 'none',
+                        }} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function WerksymbolenSettings({ widget }: { widget: BoardWidget }) {
+    const updateWidget = useBoardStore((s) => s.updateWidget);
+    const p = werksymbolenProps(widget);
+    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
+    const toggleMode = (key: string) => {
+        const next = p.enabled.includes(key) ? p.enabled.filter(k => k !== key) : [...p.enabled, key];
+        if (next.length) set({ enabled: next });
+    };
+    const row = (label: string, checked: boolean, onChange: (v: boolean) => void) => (
+        <div style={S.row}>
+            <span style={S.rowLabel}>{label}</span>
+            <Switch checked={checked} onChange={onChange} aria-label={label} />
+        </div>
+    );
+    return (
+        <div>
+            <div style={S.sectionLabel}>Layout</div>
+            {row('Verticaal', p.vertical, (v) => set({ vertical: v }))}
+            {row('Enkel icoon', p.iconOnly, (v) => set({ iconOnly: v }))}
+            <div style={S.sectionLabel}>Zichtbare symbolen</div>
+            {WERKSYMBOLEN.map(m => row(m.label, p.enabled.includes(m.key), () => toggleMode(m.key)))}
         </div>
     );
 }
@@ -161,4 +259,14 @@ const S = {
     } as React.CSSProperties,
     row: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' } as React.CSSProperties,
     rowLabel: { fontSize: '13px', color: 'var(--text-main)' } as React.CSSProperties,
+    textInput: {
+        flex: 1, minWidth: 0, height: '36px', padding: '0 10px', borderRadius: '8px',
+        border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
+        fontSize: '13px', outline: 'none',
+    } as React.CSSProperties,
+    smallBtn: {
+        display: 'inline-flex', alignItems: 'center', gap: '6px', height: '36px', padding: '0 12px',
+        borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent',
+        color: 'var(--text-main)', fontSize: '12px', cursor: 'pointer',
+    } as React.CSSProperties,
 };
