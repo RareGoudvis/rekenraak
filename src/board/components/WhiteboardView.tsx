@@ -1,4 +1,5 @@
 import BoardBottomBar from './BoardBottomBar';
+import BoardPageCanvas from './BoardPageCanvas';
 
 // Full-screen "Bordmodus" overlay — the digibord whiteboard app. Mounted by App.tsx
 // when view === 'whiteboard'; the worksheet editor stays mounted underneath so
@@ -6,10 +7,7 @@ import BoardBottomBar from './BoardBottomBar';
 export default function WhiteboardView() {
     return (
         <div style={S.overlay}>
-            {/* Board surface — the page canvas (widgets + ink) mounts here. */}
-            <div style={S.surfaceWrap}>
-                <div style={S.surface} />
-            </div>
+            <BoardPageCanvas />
             <BoardBottomBar />
         </div>
     );
@@ -21,11 +19,5 @@ const S = {
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
         // Digibord: never let a stray touch scroll/zoom the page behind the board.
         touchAction: 'none', overscrollBehavior: 'none',
-    } as React.CSSProperties,
-    surfaceWrap: {
-        flex: 1, minHeight: 0, display: 'flex',
-    } as React.CSSProperties,
-    surface: {
-        flex: 1, background: '#ffffff',
     } as React.CSSProperties,
 };
