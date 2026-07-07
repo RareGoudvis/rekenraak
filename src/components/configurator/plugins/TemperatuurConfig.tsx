@@ -55,7 +55,7 @@ export default function TemperatuurConfig({ block }: Props) {
                 </div>
             </div>
 
-            {/* PER ROW — not for verschil (always 1 per row) */}
+            {/* PER ROW — hidden for verschil (the viewer renders verschil in a fixed 2 columns) */}
             {variant !== 'verschil' && (
                 <div style={styles.section}>
                     <SettingLabel text={`Per rij: ${perRow}`} info="Hoeveel thermometers er naast elkaar staan." />

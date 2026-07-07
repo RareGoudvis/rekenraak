@@ -106,9 +106,9 @@ function veelhoekRects(d: number, mW: number, mH: number): [number, number][] {
 }
 
 function makeVeelhoekExercise(block: MathBlock): FractionExercise {
-    const { minDenominator = 2, maxDenominator = 9, maxWidth = 6, maxHeight = 6, maxDimension = 6 } = block.constraints;
-    const mW = maxWidth ?? maxDimension;
-    const mH = maxHeight ?? maxDimension;
+    const { minDenominator = 2, maxDenominator = 9, maxWidth = 6, maxHeight = 6 } = block.constraints;
+    const mW = maxWidth;
+    const mH = maxHeight;
 
     // Only offer denominators that can actually be tiled with whole cells inside mW×mH.
     // (e.g. 7 has no rectangle ≤6×6 with area divisible by 7 → it would otherwise force

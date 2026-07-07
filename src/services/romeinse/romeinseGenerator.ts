@@ -1,5 +1,4 @@
 import type { MathBlock, RomeinseExercise } from '../math/types';
-import { getMaskPlaces } from '../math/mathEngine';
 
 // Difficulty levels (shared by herkennen + schrijven). Higher niveau = bigger range
 // and therefore more Roman symbols in play (I V X → L → C D M).
@@ -26,17 +25,8 @@ function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function buildNumber(maxGetal: number, numberMask: Record<string, boolean>): number {
-    const active = getMaskPlaces(maxGetal, 'natural').filter(p => numberMask[p.key]);
-    if (!active.length) return randInt(1, maxGetal);
-    let n = 0;
-    for (const p of active) n += randInt(1, 9) * p.weight;
-    return n < 1 || n > maxGetal ? randInt(1, maxGetal) : n;
-}
-
 export function generateRomeinseExercises(block: MathBlock): RomeinseExercise[] {
     const niveau: number = block.constraints.niveau ?? 2;
-    const numberMask: Record<string, boolean> = block.constraints.numberMask ?? {};
     const maxGetal = NIVEAU_MAX[niveau] ?? 39;
     const count = block.numberOfExercises || 8;
 
@@ -45,7 +35,7 @@ export function generateRomeinseExercises(block: MathBlock): RomeinseExercise[] 
     let attempts = 0;
     while (out.length < count && attempts < 20000) {
         attempts++;
-        const value = buildNumber(maxGetal, numberMask);
+        const value = randInt(1, maxGetal);
         if (seen.has(value)) continue;
         seen.add(value);
         // Always subtractive notation (IV, not IIII) — curriculum standard.

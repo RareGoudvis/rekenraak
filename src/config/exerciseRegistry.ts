@@ -100,7 +100,7 @@ const fractionDefaults = (): Record<string, unknown> => ({
     subType: 'kleuren', shape: 'rectangle', shapes: ['rectangle'], minDenominator: 2, maxDenominator: 8,
     answerFormat: 'fraction-questions', objectShape: 'circle', maxTotal: 20,
     minLineLength: 4, maxLineLength: 12, level: 1, answerMode: 'berekeningslijnen',
-    maxDimension: 6, maxAbstractN3: 1000,
+    maxAbstractN3: 1000,
     // teacher refinements: shape mix + static size, concreet grouping, schematisch box, veelhoek grid
     staticSize: false, staticW: 4, staticH: 3, staticSide: 4, staticDiam: 4,
     groupingMode: 'standaard', drawBoxH: 3, showGrid: true,
@@ -209,7 +209,7 @@ const afrondenDefaults = (): Record<string, unknown> => ({
 });
 
 const romeinseDefaults = (): Record<string, unknown> => ({
-    subType: 'herkennen', niveau: 2, numberMask: {},
+    subType: 'herkennen', niveau: 2,
 });
 
 // measure + units come from the appstructure leaf's defaultConstraints (lengte/inhoud/massa).
