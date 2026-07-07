@@ -52,16 +52,23 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
         );
     }
 
-    // ── ROOSTER: one rooster per exercise (numbers × round-to columns), 2-up ───
-    const grid = `${numberType === 'decimal' ? '90px' : '110px'} ${targets.map(() => '104px').join(' ')}`;
+    // ── ROOSTER: one rooster per exercise (numbers × round-to columns) ─────────
+    // Drop to 1-up when two roosters + gap can't fit the printable width, else the
+    // right rooster clips/overlaps in print (fixed-px inner grid can't shrink to a 1fr track).
+    const A4_CONTENT_PX = 625;
+    const ROOSTER_GAP = 20;
+    const numberColPx = numberType === 'decimal' ? 90 : 110;
+    const roosterW = numberColPx + targets.length * 104;
+    const roosterCols = roosterW * 2 + ROOSTER_GAP <= A4_CONTENT_PX ? 2 : 1;
+    const grid = `${numberColPx}px ${targets.map(() => '104px').join(' ')}`;
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '32px', display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: '14px', boxSizing: 'border-box',
     };
     return (
         <FragmentableGrid
-            cols={2}
-            columnGap={20}
+            cols={roosterCols}
+            columnGap={ROOSTER_GAP}
             rowGap={gap + 6}
             alignItems="flex-start"
             items={exercises.map(ex => (
