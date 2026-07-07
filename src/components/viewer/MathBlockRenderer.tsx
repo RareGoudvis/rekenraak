@@ -59,7 +59,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         }
                     }
                 }}
-                style={styles.mathInput}
+                // Input tracks the adaptive column width (minus slack) so 9+-digit
+                // operands aren't clipped by the old fixed 70px input box.
+                style={{ ...styles.mathInput, width: `${Math.max(70, cellPx - 4)}px` }}
             />
         );
     };
@@ -85,13 +87,47 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const isPunt = block.constraints?.equationType === 'puntoefening';
     const layout = isPunt ? 'inline-short' : block.layoutPreset;
     const isInlineShort = layout === 'inline-short';
+
+    // Adaptive sizing: the classic fixed 85px operand column fits 8 mono chars, so
+    // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
+    // longest formatted operand, and drop the 2-up grid to 1-up when two widened rows
+    // no longer fit the printable width (A4 content ≈ 625px).
+    const A4_CONTENT_PX = 625;
+    const CHAR_PX = 11.1; // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
+    let maxChars = 0;
+    let maxTerms = 2;
+    let anyRemainder = false;
+    for (const ex of block.exercises) {
+        if (!ex?.operands) continue;
+        maxTerms = Math.max(maxTerms, ex.operands.length);
+        if (ex.remainder !== undefined) anyRemainder = true;
+        for (const o of ex.operands) {
+            if (typeof o === 'number') maxChars = Math.max(maxChars, formatMathNumber(o).length);
+        }
+        // With a missing operand the (red) solution renders inside the operand cell too.
+        const hasMissing = ex.missingIndex !== undefined || ex.missingTerm === 'operand1' || ex.missingTerm === 'operand2';
+        if (hasMissing && typeof ex.answer === 'number') maxChars = Math.max(maxChars, formatMathNumber(ex.answer).length);
+    }
+    const cellPx = Math.max(85, Math.ceil(maxChars * CHAR_PX) + 6);
+    // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
+    // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
+    const compScaffoldOn = block.constraints?.preset === 'compenseren'
+        && (block.constraints?.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
+    const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : 94;
+    const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
+        + 8 + answerW + (anyRemainder ? 90 : 0);
+    // Keep the classic 2-up look as long as two rows fit with at least a 20px gap;
+    // the gap then stretches up to the traditional 50px when there's room.
+    const COL_GAP_MIN = 20;
+    const gridCols = isInlineShort && (rowEstimate * 2 + COL_GAP_MIN <= A4_CONTENT_PX) ? 2 : 1;
+    const colGap = gridCols === 2 ? Math.min(50, A4_CONTENT_PX - 2 * rowEstimate) : 50;
     return (
         <FragmentableGrid
-            cols={isInlineShort ? 2 : 1}
-            gridTemplateColumns={isInlineShort ? '1fr 1fr' : '1fr'}
-            columnGap={50}
+            cols={gridCols}
+            gridTemplateColumns={gridCols === 2 ? '1fr 1fr' : '1fr'}
+            columnGap={colGap}
             rowGap={block.verticalSpacing || 14}
-            justifyItems={isInlineShort ? 'center' : 'stretch'}
+            justifyItems={gridCols === 2 ? 'center' : 'stretch'}
             items={block.exercises.map((ex) => {
                 if (!ex || !ex.operands) return null;
 
@@ -125,9 +161,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 const anyMissing = ex.operands.some((_, i) => isMissing(i));
                 const opGlyph = (gap: number) => ex.operators?.[gap] ?? ex.operator ?? '+';
                 const multi = ex.operands.length > 2;
-                // 2-term keeps the classic fixed 85px columns (aligned worksheets);
-                // longer chains use compact auto-width cells so 4 terms still fit a line.
-                const cellW = multi ? undefined : '85px';
+                // 2-term keeps fixed columns (aligned worksheets) sized to the block's
+                // widest operand; longer chains use compact auto-width cells.
+                const cellW = multi ? undefined : `${cellPx}px`;
 
                 // Compenseren-preset tussenstap: "= a + ___ − ___" fill-in under the sum
                 // (30 − 1 for 29). Only for plain 2-term numeric +/− with the scaffold on.
