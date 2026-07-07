@@ -1,9 +1,9 @@
-import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, type Icon } from '@phosphor-icons/react';
+import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, ArrowsHorizontal, Table, GridNine, ChartPieSlice, type Icon } from '@phosphor-icons/react';
 import { addBasicWidget } from './addWidgets';
 import type { WidgetKind } from './boardTypes';
 
 // Widget-tool catalog for the Toevoegen category panels + the favorites bar.
-export type ToolCategory = 'klasmanagement' | 'organisatie';
+export type ToolCategory = 'wiskunde' | 'klasmanagement' | 'organisatie';
 
 export interface BoardToolDef {
     id: string;
@@ -16,6 +16,11 @@ export interface BoardToolDef {
 }
 
 export const TOOL_CATALOG: BoardToolDef[] = [
+    // Wiskunde-gereedschap (manipulatives, geen oefening-generatoren)
+    { id: 'getallenlijn', label: 'Getallenlijn', icon: ArrowsHorizontal, category: 'wiskunde', kind: 'getallenlijn', w: 640 },
+    { id: 'positietabel', label: 'Positietabel', icon: Table, category: 'wiskunde', kind: 'positietabel', w: 480 },
+    { id: 'honderdveld', label: 'Honderdveld', icon: GridNine, category: 'wiskunde', kind: 'honderdveld', w: 470 },
+    { id: 'breukviz', label: 'Breuken', icon: ChartPieSlice, category: 'wiskunde', kind: 'breukviz', w: 300 },
     // Klasmanagement
     { id: 'namen', label: 'Namenkiezer', icon: UsersThree, category: 'klasmanagement', kind: 'namen', w: 340 },
     { id: 'groepjes', label: 'Groepjesmaker', icon: UsersFour, category: 'klasmanagement', kind: 'groepjes', w: 460 },

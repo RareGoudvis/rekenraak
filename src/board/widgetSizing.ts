@@ -21,6 +21,10 @@ export const NATURAL_W: Record<WidgetKind, number> = {
     groepjes: 460,
     checklist: 360,
     stappenplan: 400,
+    getallenlijn: 640,
+    positietabel: 480,
+    honderdveld: 470,
+    breukviz: 300,
 };
 
 export function naturalWidth(kind: WidgetKind): number {
@@ -34,12 +38,14 @@ export const TITLE_DEFAULTS: Record<WidgetKind, string> = {
     geluid: 'Geluidsniveau', werksymbolen: 'Werksymbolen',
     timer: 'Timer', stopwatch: 'Stopwatch', dobbelsteen: 'Dobbelstenen', adem: 'Ademhaling',
     groepjes: 'Groepjesmaker', checklist: 'Checklist', stappenplan: 'Stappenplan',
+    getallenlijn: 'Getallenlijn', positietabel: 'Positietabel', honderdveld: 'Honderdveld', breukviz: 'Breuken',
 };
 
 // Kinds whose title bar shows the ⚙ (they have an inspector panel).
 export const KINDS_WITH_SETTINGS: WidgetKind[] = [
     'exercise', 'klok', 'weer', 'namen', 'datum', 'werksymbolen',
     'timer', 'dobbelsteen', 'adem', 'groepjes', 'checklist', 'stappenplan',
+    'getallenlijn', 'positietabel', 'honderdveld', 'breukviz',
 ];
 
 export function widgetTitle(widget: BoardWidget): string {
@@ -221,6 +227,43 @@ export function makeGroups(names: string[], cfg: GroepjesProps): { groups: strin
 export function checklistItems(widget: BoardWidget): string[] {
     const t = typeof widget.props?.items === 'string' ? widget.props.items : 'boek klaar\npotlood klaar\naan de slag!';
     return t.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+// ── Getallenlijn (leeg, wiskunde-gereedschap) ────────────────────────────────
+export interface GetallenlijnProps { min: number; max: number; ticks: number; labels: 'alles' | 'uiteinden' | 'geen'; }
+export function getallenlijnProps(widget: BoardWidget): GetallenlijnProps {
+    const p = widget.props ?? {};
+    return {
+        min: Number(p.min ?? 0),
+        max: Number(p.max ?? 100),
+        ticks: Math.min(21, Math.max(2, Number(p.ticks ?? 11))),
+        labels: p.labels === 'uiteinden' || p.labels === 'geen' ? p.labels : 'alles',
+    };
+}
+
+// ── Positietabel (leeg) ──────────────────────────────────────────────────────
+export const POSITIE_KOLOMMEN = [
+    { key: 'D', label: 'D' }, { key: 'H', label: 'H' }, { key: 'T', label: 'T' }, { key: 'E', label: 'E' },
+    { key: 't', label: 't' }, { key: 'h', label: 'h' },
+] as const;
+export function positietabelProps(widget: BoardWidget): { columns: string[]; rows: number } {
+    const p = widget.props ?? {};
+    const cols = Array.isArray(p.columns) ? (p.columns as string[]).filter(c => POSITIE_KOLOMMEN.some(k => k.key === c)) : ['H', 'T', 'E'];
+    return { columns: cols.length ? cols : ['H', 'T', 'E'], rows: Math.min(8, Math.max(1, Number(p.rows ?? 3))) };
+}
+
+// ── Breukenvisualisatie ──────────────────────────────────────────────────────
+export interface BreukvizProps { n: number; d: number; shape: 'cirkel' | 'pizza' | 'lijn'; stambreuk: boolean; }
+export function breukvizProps(widget: BoardWidget): BreukvizProps {
+    const p = widget.props ?? {};
+    const d = Math.min(12, Math.max(2, Number(p.d ?? 4)));
+    const stambreuk = p.stambreuk === true;
+    return {
+        d,
+        n: stambreuk ? 1 : Math.min(d, Math.max(1, Number(p.n ?? 1))),
+        shape: p.shape === 'pizza' || p.shape === 'lijn' ? p.shape : 'cirkel',
+        stambreuk,
+    };
 }
 
 // ── Werksymbolen widget props ────────────────────────────────────────────────

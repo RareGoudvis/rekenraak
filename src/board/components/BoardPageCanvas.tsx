@@ -16,6 +16,10 @@ import AdemWidget from './widgets/AdemWidget';
 import GroepjesWidget from './widgets/GroepjesWidget';
 import ChecklistWidget from './widgets/ChecklistWidget';
 import StappenplanWidget from './widgets/StappenplanWidget';
+import GetallenlijnWidget from './widgets/GetallenlijnWidget';
+import PositietabelWidget from './widgets/PositietabelWidget';
+import HonderdveldWidget from './widgets/HonderdveldWidget';
+import BreukvizWidget from './widgets/BreukvizWidget';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
 import InkLayer from './InkLayer';
@@ -106,6 +110,10 @@ function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean })
         case 'groepjes': return <GroepjesWidget widget={widget} />;
         case 'checklist': return <ChecklistWidget widget={widget} />;
         case 'stappenplan': return <StappenplanWidget widget={widget} />;
+        case 'getallenlijn': return <GetallenlijnWidget widget={widget} />;
+        case 'positietabel': return <PositietabelWidget widget={widget} />;
+        case 'honderdveld': return <HonderdveldWidget widget={widget} />;
+        case 'breukviz': return <BreukvizWidget widget={widget} />;
         default: return null;
     }
 }

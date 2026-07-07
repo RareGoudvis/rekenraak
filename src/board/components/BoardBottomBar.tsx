@@ -115,8 +115,9 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { setMenu(null); setAddSub(null); onOpenWiskunde(); }}>
                             <MathOperations size={16} /> RekenRaak blok…
                         </button>
-                        <button type="button" title="Binnenkort" disabled style={{ ...S.popupItem, ...S.toolDisabled }}>
-                            <Wrench size={16} /> Wiskunde-gereedschap (binnenkort)
+                        <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(addSub === 'wiskunde' ? S.popupItemOn : {}) }}
+                            onClick={() => setAddSub(addSub === 'wiskunde' ? null : 'wiskunde')}>
+                            <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}><Wrench size={16} /> Wiskunde-gereedschap</span> <SubCaret size={14} />
                         </button>
                         <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(addSub === 'klasmanagement' ? S.popupItemOn : {}) }}
                             onClick={() => setAddSub(addSub === 'klasmanagement' ? null : 'klasmanagement')}>
