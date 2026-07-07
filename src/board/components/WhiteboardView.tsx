@@ -23,7 +23,7 @@ export default function WhiteboardView() {
                 <BoardPageCanvas />
                 {/* Inspector flyouts — opened via the ⚙ in the widget's title bar. */}
                 {inspectorOpen && selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
-                {inspectorOpen && selectedWidget && ['klok', 'weer', 'namen', 'datum', 'werksymbolen'].includes(selectedWidget.kind) && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
+                {inspectorOpen && selectedWidget && selectedWidget.kind !== 'exercise' && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {/* Ink tool settings strip (colors + widths) while pen/marker is active. */}
                 {(tool === 'pen' || tool === 'marker') && <InkSettingsBar tool={tool} />}
             </div>

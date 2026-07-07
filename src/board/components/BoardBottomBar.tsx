@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, SpeakerHigh, CloudSun, HandPointing } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, SpeakerHigh, CloudSun, HandPointing, UsersFour, Timer as TimerIcon, DiceFive, Wind, ListChecks, ListNumbers } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
@@ -112,6 +112,21 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('werksymbolen', {}, 440); setMenu(null); }}>
                             <HandPointing size={16} /> Werksymbolen
                         </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('groepjes', {}, 460); setMenu(null); }}>
+                            <UsersFour size={16} /> Groepjesmaker
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('timer', {}, 300); setMenu(null); }}>
+                            <TimerIcon size={16} /> Timer
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('stopwatch', {}, 320); setMenu(null); }}>
+                            <TimerIcon size={16} /> Stopwatch
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('dobbelsteen', {}, 320); setMenu(null); }}>
+                            <DiceFive size={16} /> Dobbelstenen
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('adem', {}, 320); setMenu(null); }}>
+                            <Wind size={16} /> Ademhaling
+                        </button>
                         <div style={S.popupSection}>Organisatie</div>
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('datum', {}, 340); setMenu(null); }}>
                             <CalendarBlank size={16} /> Datum
@@ -121,6 +136,12 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         </button>
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('weer', {}, 360); setMenu(null); }}>
                             <CloudSun size={16} /> Weer
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('checklist', {}, 360); setMenu(null); }}>
+                            <ListChecks size={16} /> Checklist
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('stappenplan', {}, 400); setMenu(null); }}>
+                            <ListNumbers size={16} /> Stappenplan
                         </button>
                         <div style={S.popupDivider} />
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('tekst', { text: '' }, 360); setMenu(null); }}>

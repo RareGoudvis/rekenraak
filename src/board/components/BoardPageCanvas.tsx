@@ -9,6 +9,13 @@ import NamenWidget from './widgets/NamenWidget';
 import WeerWidget from './widgets/WeerWidget';
 import GeluidWidget from './widgets/GeluidWidget';
 import WerksymbolenWidget from './widgets/WerksymbolenWidget';
+import TimerWidget from './widgets/TimerWidget';
+import StopwatchWidget from './widgets/StopwatchWidget';
+import DobbelsteenWidget from './widgets/DobbelsteenWidget';
+import AdemWidget from './widgets/AdemWidget';
+import GroepjesWidget from './widgets/GroepjesWidget';
+import ChecklistWidget from './widgets/ChecklistWidget';
+import StappenplanWidget from './widgets/StappenplanWidget';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
 import InkLayer from './InkLayer';
@@ -79,6 +86,13 @@ function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean })
         case 'weer': return <WeerWidget widget={widget} dark={dark} />;
         case 'geluid': return <GeluidWidget widget={widget} />;
         case 'werksymbolen': return <WerksymbolenWidget widget={widget} />;
+        case 'timer': return <TimerWidget widget={widget} />;
+        case 'stopwatch': return <StopwatchWidget />;
+        case 'dobbelsteen': return <DobbelsteenWidget widget={widget} />;
+        case 'adem': return <AdemWidget widget={widget} />;
+        case 'groepjes': return <GroepjesWidget widget={widget} />;
+        case 'checklist': return <ChecklistWidget widget={widget} />;
+        case 'stappenplan': return <StappenplanWidget widget={widget} />;
         default: return null;
     }
 }
