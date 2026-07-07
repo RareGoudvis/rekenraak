@@ -129,7 +129,9 @@ export const APP_STRUCTURE: Domain[] = [
                 types: [
                     { id: 'breuken-kleuren', label: 'Breuken kleuren', typeId: 'breuken', defaultConstraints: { subType: 'kleuren' } },
                     { id: 'breuken-herkennen', label: 'Breuken herkennen', typeId: 'breuken', defaultConstraints: { subType: 'herkennen' } },
-                    { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid' } },
+                    // answerFormat must be set here: the registry default ('fraction-questions') is a
+                    // herkennen value, and defaultsFor() only runs on a variant switch, not on block add.
+                    { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid', answerFormat: 'met-hulp', maxDenominator: 5, maxTotal: 20 } },
                     { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' } },
                     { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' } },
                     { id: 'breuken-rangschikken', label: 'Breuken rangschikken', typeId: 'breuken-rangschikken' },
