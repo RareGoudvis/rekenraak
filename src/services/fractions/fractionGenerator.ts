@@ -28,8 +28,11 @@ function makeShapeExercise(subType: FractionSubType, block: MathBlock): Fraction
     // Teacher may enable several shapes; pick one per exercise (back-compat: fall back to single `shape`).
     const shapeOptions: FractionShape[] = Array.isArray(shapes) && shapes.length ? shapes : [shape as FractionShape];
     const chosenShape = shapeOptions[randInt(0, shapeOptions.length - 1)];
-    const valid = [2, 3, 4, 5, 6, 8, 9, 10, 12].filter(d => d >= minDenominator && d <= maxDenominator);
-    const denominator = valid.length ? valid[randInt(0, valid.length - 1)] : 4;
+    // Any denominator in range renders: getGridLayout gives a nice grid for composite
+    // values and falls back to a 1×d strip otherwise. (Was restricted to a 9-value list
+    // that silently substituted 4 for ranges like 7-7 or 13-16 — outside the range.)
+    const lo = Math.max(2, minDenominator), hi = Math.max(lo, maxDenominator);
+    const denominator = randInt(lo, hi);
     const numerator = randInt(1, denominator - 1);
     // Square = single row of `denominator` vertical strips; rectangle uses the per-denominator grid.
     const { rows, cols } = chosenShape === 'square' ? { rows: 1, cols: denominator } : getGridLayout(denominator);
@@ -47,10 +50,15 @@ function makeShapeExercise(subType: FractionSubType, block: MathBlock): Fraction
 
 function makeAmountExercise(subType: FractionSubType, block: MathBlock): FractionExercise {
     const { objectShape = 'circle', maxTotal = 20, minDenominator = 2, maxDenominator = 5 } = block.constraints;
-    const denominator = randInt(minDenominator, maxDenominator);
+    // Total = denominator × multiplier must stay ≤ maxTotal, so the denominator can't
+    // exceed maxTotal and the multiplier is bounded (was forced ≥2 → total up to 2×den
+    // overshot maxTotal when maxTotal < 2×denominator).
+    const lo = Math.max(2, minDenominator);
+    const hi = Math.max(lo, Math.min(maxDenominator, maxTotal));
+    const denominator = randInt(lo, hi);
     const numerator = randInt(1, denominator - 1);
-    const maxMult = Math.floor(maxTotal / denominator);
-    const multiplier = Math.max(2, randInt(2, maxMult));
+    const maxMult = Math.max(1, Math.floor(maxTotal / denominator));
+    const multiplier = randInt(Math.min(2, maxMult), maxMult);
     return {
         id: Math.random().toString(36).substring(2, 9),
         subType,
