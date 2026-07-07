@@ -1,10 +1,14 @@
 import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 
+interface Props {
+    onAdd: () => void;
+}
+
 // Bottom toolbar of the whiteboard (replaces the TopBar in bordmodus). Digibord-first:
 // every control is a ≥44px touch target, no hover-only affordances.
 // P1 ships the chrome with only 'select' live; ink/shape tools activate in P2/P3.
-export default function BoardBottomBar() {
+export default function BoardBottomBar({ onAdd }: Props) {
     const setView = useWorksheetStore((s) => s.setView);
 
     // P1: selection is the only tool; the rest are visible-but-disabled placeholders
@@ -21,6 +25,13 @@ export default function BoardBottomBar() {
 
     return (
         <div className="mac-vibrant" style={S.bar}>
+            {/* Add exercise / widget — the board's primary action. */}
+            <button type="button" className="ui-hover" style={S.addBtn} aria-label="Toevoegen aan bord" onClick={onAdd}>
+                <Plus size={18} /> Toevoegen
+            </button>
+
+            <div style={S.sep} />
+
             {/* Tools */}
             <div style={S.group}>
                 {tools.map(t => (
@@ -105,6 +116,13 @@ const S = {
         height: '44px', padding: '0 16px', borderRadius: '10px',
         border: '1px solid var(--border-color)', background: 'transparent',
         color: 'var(--text-main)', cursor: 'pointer',
+        fontSize: '13px', fontFamily: "'Azeret Mono', monospace",
+    } as React.CSSProperties,
+    addBtn: {
+        display: 'inline-flex', alignItems: 'center', gap: '8px',
+        height: '44px', padding: '0 18px', borderRadius: '10px',
+        border: '1px solid var(--accent-purple)', background: 'var(--bg-active)',
+        color: 'var(--text-main)', cursor: 'pointer', fontWeight: 600,
         fontSize: '13px', fontFamily: "'Azeret Mono', monospace",
     } as React.CSSProperties,
 };

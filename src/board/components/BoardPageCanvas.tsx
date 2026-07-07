@@ -1,5 +1,8 @@
 import { useBoardStore } from '../useBoardStore';
 import WidgetFrame from './WidgetFrame';
+import ExerciseWidget from './widgets/ExerciseWidget';
+import { regenerateBoardBlock } from '../boardBlocks';
+import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { BoardWidget } from '../boardTypes';
 
 // The active board page: background + widget layer (+ ink layer in P2).
@@ -9,6 +12,17 @@ export default function BoardPageCanvas() {
     const page = useBoardStore((s) => s.pages[s.activePageIdx]);
     const selectedWidgetId = useBoardStore((s) => s.selectedWidgetId);
     const selectWidget = useBoardStore((s) => s.selectWidget);
+    const updateWidget = useBoardStore((s) => s.updateWidget);
+
+    // Quick 🔄 on the widget frame: reroll exercises without opening the inspector.
+    // Keep the inspector's draft mirror in sync when it's open for this block.
+    const regenerate = (w: BoardWidget) => {
+        if (!w.block) return;
+        const fresh = regenerateBoardBlock(w.block);
+        updateWidget(w.id, { block: fresh });
+        const ws = useWorksheetStore.getState();
+        if (ws.draftBlocks.some(b => b.id === fresh.id)) ws.setDraftBlocks([fresh]);
+    };
 
     return (
         <div
@@ -21,7 +35,11 @@ export default function BoardPageCanvas() {
             onPointerDown={() => selectWidget(null)}
         >
             {page.widgets.map((w) => (
-                <WidgetFrame key={w.id} widget={w} selected={w.id === selectedWidgetId}>
+                <WidgetFrame
+                    key={w.id} widget={w} selected={w.id === selectedWidgetId}
+                    onRegenerate={w.kind === 'exercise' ? () => regenerate(w) : undefined}
+                    onToggleAnswer={w.kind === 'exercise' ? () => updateWidget(w.id, { showAnswer: !w.showAnswer }) : undefined}
+                >
                     <WidgetContent widget={w} />
                 </WidgetFrame>
             ))}
@@ -29,9 +47,9 @@ export default function BoardPageCanvas() {
     );
 }
 
-// Placeholder content per kind — replaced by real widget components in the
-// exercise/basic-widget commits.
+// Content per widget kind; non-exercise widgets land in the basic-widgets commit.
 function WidgetContent({ widget }: { widget: BoardWidget }) {
+    if (widget.kind === 'exercise') return <ExerciseWidget widget={widget} />;
     return (
         <div style={{
             padding: '16px', background: 'var(--bg-panel)', borderRadius: '8px',

@@ -1,14 +1,27 @@
+import { useState } from 'react';
 import BoardBottomBar from './BoardBottomBar';
 import BoardPageCanvas from './BoardPageCanvas';
+import BoardAddModal from './BoardAddModal';
+import BoardInspector from './BoardInspector';
+import { useBoardStore } from '../useBoardStore';
 
 // Full-screen "Bordmodus" overlay — the digibord whiteboard app. Mounted by App.tsx
 // when view === 'whiteboard'; the worksheet editor stays mounted underneath so
 // switching back loses nothing. Everything whiteboard lives under src/board/.
 export default function WhiteboardView() {
+    const [addOpen, setAddOpen] = useState(false);
+    const selectedWidget = useBoardStore((s) =>
+        s.pages[s.activePageIdx].widgets.find(w => w.id === s.selectedWidgetId));
+
     return (
         <div style={S.overlay}>
-            <BoardPageCanvas />
-            <BoardBottomBar />
+            <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex' }}>
+                <BoardPageCanvas />
+                {/* Inspector flyout — only for a selected exercise widget (Ruben decision). */}
+                {selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
+            </div>
+            <BoardBottomBar onAdd={() => setAddOpen(true)} />
+            {addOpen && <BoardAddModal onClose={() => setAddOpen(false)} />}
         </div>
     );
 }
