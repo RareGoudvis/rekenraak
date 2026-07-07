@@ -176,9 +176,14 @@ export const numberMatchesMask = (
     numberType: 'natural' | 'decimal' | 'rational' = 'natural',
     decimalPlaces: number = 0,
 ): boolean => {
-    const trueKeys = Object.keys(mask || {}).filter(k => mask[k]);
+    const places = getMaskPlaces(maxGetal, numberType, decimalPlaces);
+    // Only honor mask keys for places that exist at the current maxGetal. A stale key
+    // (e.g. D set at maxGetal 1000, then lowered to 100) would otherwise be an
+    // unsatisfiable requirement, forcing every candidate to fail except 0.
+    const validKeys = new Set(places.map(p => p.key));
+    const trueKeys = Object.keys(mask || {}).filter(k => mask[k] && validKeys.has(k));
     if (trueKeys.length === 0) return true;
-    for (const p of getMaskPlaces(maxGetal, numberType, decimalPlaces)) {
+    for (const p of places) {
         const present = digitAtPlace(num, p.weight) > 0;
         if (present !== !!mask[p.key]) return false;
     }

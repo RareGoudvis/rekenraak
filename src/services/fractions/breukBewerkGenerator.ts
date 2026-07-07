@@ -10,7 +10,9 @@ const lcm = (a: number, b: number): number => (a * b) / gcd(a, b);
 function makeGemengd(maxNum: number, maxDen: number, dirMode: string): BreukBewerkExercise {
     const direction: 'naar-gemengd' | 'naar-breuk' =
         dirMode === 'beide' ? (Math.random() < 0.5 ? 'naar-gemengd' : 'naar-breuk') : (dirMode as 'naar-gemengd' | 'naar-breuk');
-    const d = randInt(2, Math.max(2, maxDen));
+    // Cap the denominator so the smallest improper teller (d+1) still fits maxNumerator —
+    // otherwise a large d forced the numerator above the cap (n=11 at maxNum=10).
+    const d = randInt(2, Math.max(2, Math.min(maxDen, maxNum - 1)));
     // Improper teller in (d, maxNumerator], not a multiple of d → a real mixed number.
     const lo = d + 1, hi = Math.max(lo, maxNum);
     let n = randInt(lo, hi), guard = 0;
