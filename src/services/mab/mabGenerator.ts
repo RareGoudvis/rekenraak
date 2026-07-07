@@ -3,11 +3,6 @@ import type { MathBlock, MabExercise } from '../math/types';
 // 'MAB' = Multibase Arithmetic Blocks (Dienes blocks). Exercise asks pupil
 // to read a quantity drawn as place-value blocks and write the matching number.
 
-const MAX_ATTEMPTS = 5000;
-
-const randInt = (min: number, max: number): number =>
-    Math.floor(Math.random() * (max - min + 1)) + min;
-
 function decompose(n: number): { thousands: number; hundreds: number; tens: number; units: number } {
     return {
         thousands: Math.floor(n / 1000),
@@ -28,6 +23,15 @@ function maskMatches(n: number, mask: Record<string, boolean>, maxNumber: number
     return true;
 }
 
+function shuffle(arr: number[]): number[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
 export function generateMabExercises(block: MathBlock): MabExercise[] {
     const {
         maxNumber = 100,
@@ -35,17 +39,21 @@ export function generateMabExercises(block: MathBlock): MabExercise[] {
     } = block.constraints;
 
     const n = block.numberOfExercises;
-    const results: MabExercise[] = [];
 
-    // Random path with mask + uniqueness retry loop.
-    const used = new Set<number>();
-    let attempts = 0;
-    while (results.length < n && attempts < MAX_ATTEMPTS) {
-        attempts++;
-        const v = randInt(1, maxNumber);
-        if (used.has(v)) continue;
-        if (!maskMatches(v, operand1Mask, maxNumber)) continue;
-        used.add(v);
+    // Enumerate the valid pool up front (maxNumber ≤ 1000, cheap) rather than sampling and
+    // giving up at MAX_ATTEMPTS with a short/empty block. A near-empty mask (e.g. H at
+    // maxNumber 100 → only {100}) or an impossible one (D+H at 1000 → none) previously
+    // returned fewer or zero exercises silently.
+    let pool = shuffle(Array.from({ length: maxNumber }, (_, i) => i + 1)
+        .filter(v => maskMatches(v, operand1Mask, maxNumber)));
+    // Impossible mask → relax it so the block isn't empty (better than a blank worksheet).
+    if (pool.length === 0) pool = shuffle(Array.from({ length: maxNumber }, (_, i) => i + 1));
+
+    const results: MabExercise[] = [];
+    // Prefer distinct values; only repeat (cycling the shuffled pool) when the pool is
+    // smaller than the requested count, so the teacher still gets `n` exercises.
+    for (let i = 0; i < n; i++) {
+        const v = pool[i % pool.length];
         results.push({ id: Math.random().toString(36).substring(2, 9), value: v, ...decompose(v), isManuallyEdited: false });
     }
 
