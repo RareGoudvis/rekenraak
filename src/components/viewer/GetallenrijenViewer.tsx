@@ -12,10 +12,10 @@ const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 
-function Cell({ value, blank, showSolutions }: { value: number | Fraction; blank: boolean; showSolutions: boolean }) {
+function Cell({ value, blank, showSolutions, fontSize }: { value: number | Fraction; blank: boolean; showSolutions: boolean; fontSize: number }) {
     const color = blank && showSolutions ? SOL : undefined;
     const content = isFrac(value)
-        ? <VerticalFraction value={value} color={color} fontSize={15} mono />
+        ? <VerticalFraction value={value} color={color} fontSize={Math.min(15, fontSize)} mono />
         : <span style={{ color: color ?? 'inherit', fontWeight: 'normal' }}>{formatMathNumber(value)}</span>;
 
     // Filled cell shows the value; blank shows a dotted writing line (or red solution).
@@ -43,13 +43,19 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
             rowGap={gap + 8}
             items={exercises.map(ex => {
                 const vals = ex.values ?? [];
+                // Shrink the font until all values fit one printable-width pill: cells
+                // are at least 44px (or the longest value at ~0.62em/char mono) + 14px gaps.
+                const maxChars = Math.max(1, ...vals.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
+                let fontSize = 18;
+                const rowW = (fs: number) => vals.length * Math.max(44, maxChars * fs * 0.62 + 4) + (vals.length - 1) * 14 + (showFrame ? 47 : 0);
+                while (fontSize > 12 && rowW(fontSize) > 625) fontSize -= 1;
                 return (
                     <div key={ex.id} className="print-exercise" style={{
                         ...(showFrame ? { border: '1.5px solid #000', borderRadius: '22px', padding: '10px 22px' } : { padding: '6px 0' }),
-                        display: 'flex', alignItems: 'center', gap: '14px', fontFamily: mono, fontSize: '18px',
+                        display: 'flex', alignItems: 'center', gap: '14px', fontFamily: mono, fontSize: `${fontSize}px`,
                     }}>
                         {vals.map((v, i) => (
-                            <Cell key={i} value={v} blank={ex.blankMask[i]} showSolutions={showSolutions} />
+                            <Cell key={i} value={v} blank={ex.blankMask[i]} showSolutions={showSolutions} fontSize={fontSize} />
                         ))}
                     </div>
                 );

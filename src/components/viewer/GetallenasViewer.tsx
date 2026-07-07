@@ -11,9 +11,9 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 
-function label(v: number | Fraction, color?: string) {
-    if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={13} mono />;
-    return <span style={{ fontSize: '15px', fontWeight: 'normal', color: color || '#000', fontFamily: mono }}>{formatMathNumber(v)}</span>;
+function label(v: number | Fraction, fontSize: number, color?: string) {
+    if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={Math.min(13, fontSize)} mono />;
+    return <span style={{ fontSize: `${fontSize}px`, fontWeight: 'normal', color: color || '#000', fontFamily: mono, whiteSpace: 'nowrap' }}>{formatMathNumber(v)}</span>;
 }
 
 function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutions: boolean }) {
@@ -25,8 +25,16 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
         : Array.from({ length: tickCount }, (_, i) => (arrowLeft ? ex.start - i * ex.step : ex.start + i * ex.step));
     const hasFrac = values.some(isFrac);
 
+    // Fit the axis to the printable width: shrink the classic 96px tick gap when many
+    // ticks won't fit, and step the label font down until neighbouring labels can't
+    // collide (mono advance ≈ 0.62em). Big maxGetal + 10 ticks used to run off-page.
+    const A4_CONTENT_PX = 625;
     const pad = 24;
-    const gap = 96;
+    const gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
+    const labelChars = Math.max(1, ...values.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
+    let fontSize = 15;
+    while (fontSize > 11 && labelChars * fontSize * 0.62 + 12 > gap) fontSize -= 2;
+
     const W = pad * 2 + gap * (tickCount - 1);
     const axisY = 30;
     const H = hasFrac ? 88 : 70;
@@ -50,8 +58,8 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
                 return (
                     <div key={i} style={{ position: 'absolute', left: tickX(i), top: axisY + 12, transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                         {blank
-                            ? (showSolutions ? label(v, '#e11d48') : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '32px', height: '16px' }} />)
-                            : label(v)}
+                            ? (showSolutions ? label(v, fontSize, '#e11d48') : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: '16px' }} />)
+                            : label(v, fontSize)}
                     </div>
                 );
             })}
