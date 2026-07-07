@@ -539,9 +539,12 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                     <span style={{ flexShrink: 0 }}>controle:</span>
                     {showSolutions
                         ? <span style={{ color: '#e11d48', marginLeft: '4px' }}>
-                            {ex.operator === '+'
-                                ? `${fmtDisplay(ex.answer, dp)} − ${fmtDisplay(ex.operands[1], dp)} = ${fmtDisplay(ex.operands[0], dp)}`
-                                : `${fmtDisplay(ex.answer, dp)} + ${fmtDisplay(ex.operands[1], dp)} = ${fmtDisplay(ex.operands[0], dp)}`}
+                            {/* Inverse check over ALL terms: a+b+c=S → S−b−c=a; a−b−c=R → R+b+c=a */}
+                            {(() => {
+                                const invOp = ex.operator === '+' ? '−' : '+';
+                                const rest = ex.operands.slice(1).map(o => `${invOp} ${fmtDisplay(o, dp)}`).join(' ');
+                                return `${fmtDisplay(ex.answer, dp)} ${rest} = ${fmtDisplay(ex.operands[0], dp)}`;
+                            })()}
                         </span>
                         : <div style={{ flex: 1, borderBottom: '1px solid #aaa', height: '13px', marginLeft: '2px' }} />}
                 </div>
