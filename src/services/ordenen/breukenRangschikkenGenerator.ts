@@ -29,23 +29,26 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
     }
 
     if (mode === 'gelijknamige') {
-        // One shared denominator big enough to host `count` distinct numerators.
-        let d = randInt(Math.max(lo, count + 1), Math.max(lo, count + 1, hi));
-        if (d - 1 < count) d = count + 1;
+        // One shared denominator hosting `count` distinct numerators (needs d-1 >= count).
+        // Honor maxD: if hi is too small, keep d = hi and emit fewer fractions rather than
+        // bumping past the configured ceiling (caller degrades gracefully on short arrays).
+        const dLo = Math.min(hi, Math.max(lo, count + 1));
+        const d = randInt(dLo, hi);
         const nums = shuffle(Array.from({ length: d - 1 }, (_, i) => i + 1)).slice(0, count);
         return nums.map(n => ({ n, d }));
     }
 
     if (mode === 'gelijknamig-te-maken') {
         // Distinct small denominators (unlike) — pupil makes them gelijknamig first.
-        const pool = [2, 3, 4, 5, 6, 8, 10, 12].filter(d => d >= lo && d <= Math.max(hi, 12));
-        const dens = shuffle(pool.length >= count ? pool : [2, 3, 4, 5, 6, 8, 10, 12]).slice(0, count);
+        // Strictly within [lo, hi]; if the range holds fewer than `count`, emit fewer.
+        const pool = [2, 3, 4, 5, 6, 8, 10, 12].filter(d => d >= lo && d <= hi);
+        const dens = shuffle(pool).slice(0, count);
         return dens.map(d => ({ n: randInt(1, d - 1), d }));
     }
 
-    // stambreuken — numerator 1, distinct denominators.
+    // stambreuken — numerator 1, distinct denominators strictly within [lo, hi].
     const denPool = Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
-    const dens = shuffle(denPool.length >= count ? denPool : Array.from({ length: Math.max(count + 1, 2) }, (_, i) => i + 2)).slice(0, count);
+    const dens = shuffle(denPool).slice(0, count);
     return dens.map(d => ({ n: 1, d }));
 }
 
