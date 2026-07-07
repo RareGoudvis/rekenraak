@@ -16,9 +16,13 @@ export function generateDeelbaarheidExercises(block: MathBlock): DeelbaarheidExe
     const results: DeelbaarheidExercise[] = [];
 
     if (layout === 'veelvouden') {
+        // Clamp givenCount to terms-1 so at least one blank always remains: a stale
+        // givenCount (set high at a larger `terms`, then terms lowered) would otherwise
+        // pre-fill the whole row and leave nothing to solve.
+        const given = Math.max(0, Math.min(givenCount, terms - 1));
         for (let i = 0; i < n; i++) {
             const sequence = Array.from({ length: terms }, (_, k) => base * k); // 0, base, 2·base, …
-            results.push({ id: rndId(), base, sequence, givenCount, isManuallyEdited: false });
+            results.push({ id: rndId(), base, sequence, givenCount: given, isManuallyEdited: false });
         }
         return results;
     }

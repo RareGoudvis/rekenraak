@@ -68,8 +68,11 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                         />
                     </div>
                     <div style={styles.section}>
-                        <SettingLabel text={`Aantal getallen: ${rasterCount}`} info="Hoeveel getallen het raster bevat." />
-                        <input type="range" min="20" max="120" step="10" value={rasterCount}
+                        {/* Cap at maxGetal: the raster holds distinct numbers ≤ maxGetal, so you
+                            can't have 120 cells when the max is 100 — the generator clamps and the
+                            label must reflect the real count. */}
+                        <SettingLabel text={`Aantal getallen: ${Math.min(rasterCount, maxGetal)}`} info="Hoeveel getallen het raster bevat." />
+                        <input type="range" min="20" max={Math.min(120, maxGetal)} step="10" value={Math.min(rasterCount, maxGetal)}
                             onChange={(e) => set('rasterCount', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
                     </div>
