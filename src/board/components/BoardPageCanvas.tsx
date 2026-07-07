@@ -51,8 +51,21 @@ export default function BoardPageCanvas() {
                 ...backgroundStyle(page.background),
                 touchAction: 'none',
             }}
-            // Tap on empty board = deselect (closes the inspector flyout).
-            onPointerDown={() => selectWidget(null)}
+            // Tap on empty board = deselect; with the T-tool active, place a text
+            // widget at the tap point and hop back to select.
+            onPointerDown={(e) => {
+                if (tool === 'text') {
+                    const r = e.currentTarget.getBoundingClientRect();
+                    const board = useBoardStore.getState();
+                    board.addWidget({
+                        kind: 'tekst', x: Math.max(0, e.clientX - r.left), y: Math.max(0, e.clientY - r.top),
+                        w: 360, props: { text: '' },
+                    });
+                    board.setTool('select');
+                    return;
+                }
+                selectWidget(null);
+            }}
         >
             {/* Widget layer goes inert while an ink tool is active — one routing rule. */}
             <div style={{ position: 'absolute', inset: 0, pointerEvents: inkActive ? 'none' : 'auto' }}>
