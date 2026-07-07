@@ -260,11 +260,18 @@ export default function App() {
                 );
               }
               if (docSettings.titlePosition === 'left') {
-                const fr = fieldsRowAligned('right');
+                // Fields hug the sheet's right edge as a block with a straight LEFT edge
+                // (left-aligned rows inside a right-pushed fit-content wrapper) — plain
+                // renderFields('right') right-justified each wrapped row raggedly.
+                const fr = renderFields('left');
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: `${gap}px`, rowGap: '8px' }}>
                     {titleScore('left')}
-                    {fr && <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fr}</div>}
+                    {fr && (
+                      <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+                        <div className="print-body-fields" style={{ width: 'fit-content', maxWidth: '100%' }}>{fr}</div>
+                      </div>
+                    )}
                   </div>
                 );
               }
