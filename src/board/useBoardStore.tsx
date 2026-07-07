@@ -26,6 +26,9 @@ interface BoardState {
     // Inspector opens via the ⚙ in the widget's title bar, not on mere selection.
     inspectorOpen: boolean;
     setInspectorOpen: (open: boolean) => void;
+    // Geld-sleeppalet dock (UI-only, not persisted).
+    geldPaletOpen: boolean;
+    setGeldPaletOpen: (open: boolean) => void;
 
     // pages
     addPage: () => void;
@@ -121,6 +124,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     })),
     inspectorOpen: false,
     setInspectorOpen: (open) => set({ inspectorOpen: open }),
+    geldPaletOpen: false,
+    setGeldPaletOpen: (open) => set({ geldPaletOpen: open }),
 
     addPage: () => set((state) => ({
         pages: [...state.pages, emptyPage()],

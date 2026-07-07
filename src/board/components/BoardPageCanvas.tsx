@@ -20,6 +20,9 @@ import GetallenlijnWidget from './widgets/GetallenlijnWidget';
 import PositietabelWidget from './widgets/PositietabelWidget';
 import HonderdveldWidget from './widgets/HonderdveldWidget';
 import BreukvizWidget from './widgets/BreukvizWidget';
+import MabMatWidget from './widgets/MabMatWidget';
+import GeldItemWidget from './widgets/GeldItemWidget';
+import GeldPalet from './GeldPalet';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
 import InkLayer from './InkLayer';
@@ -36,6 +39,7 @@ export default function BoardPageCanvas() {
     const selectWidget = useBoardStore((s) => s.selectWidget);
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const tool = useBoardStore((s) => s.tool);
+    const geldPaletOpen = useBoardStore((s) => s.geldPaletOpen);
     const inkActive = tool === 'pen' || tool === 'marker' || tool === 'eraser';
 
     // Quick 🔄 on the widget frame: reroll exercises without opening the inspector.
@@ -50,6 +54,7 @@ export default function BoardPageCanvas() {
 
     return (
         <div
+            data-board-canvas
             style={{
                 position: 'relative', flex: 1, overflow: 'hidden',
                 ...backgroundStyle(page.background),
@@ -88,6 +93,7 @@ export default function BoardPageCanvas() {
             <BoardErrorBoundary label="Inktlaag">
                 <InkLayer active={inkActive} />
             </BoardErrorBoundary>
+            {geldPaletOpen && <GeldPalet />}
         </div>
     );
 }
@@ -114,6 +120,8 @@ function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean })
         case 'positietabel': return <PositietabelWidget widget={widget} />;
         case 'honderdveld': return <HonderdveldWidget widget={widget} />;
         case 'breukviz': return <BreukvizWidget widget={widget} />;
+        case 'mabmat': return <MabMatWidget widget={widget} />;
+        case 'geld-item': return <GeldItemWidget widget={widget} />;
         default: return null;
     }
 }

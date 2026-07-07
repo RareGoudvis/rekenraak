@@ -39,6 +39,7 @@ export default function WidgetInspector({ widget }: Props) {
                 {widget.kind === 'positietabel' && <PositietabelSettings widget={widget} />}
                 {widget.kind === 'honderdveld' && <HonderdveldSettings widget={widget} />}
                 {widget.kind === 'breukviz' && <BreukvizSettings widget={widget} />}
+                {widget.kind === 'mabmat' && <MabMatSettings widget={widget} />}
                 <HeaderToggle widget={widget} />
             </div>
         </div>
@@ -519,6 +520,30 @@ function BreukvizSettings({ widget }: { widget: BoardWidget }) {
                     <input type="range" min={1} max={b.d} step={1} value={b.n} style={{ width: '100%' }} onChange={(e) => set({ n: Number(e.target.value) })} />
                 </>
             )}
+        </div>
+    );
+}
+
+function MabMatSettings({ widget }: { widget: BoardWidget }) {
+    const updateWidget = useBoardStore((s) => s.updateWidget);
+    const style = String(widget.props?.mabStyle ?? 'mab-color');
+    const showTotal = widget.props?.showTotal === true;
+    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
+    return (
+        <div>
+            <div style={S.sectionLabel}>Stijl</div>
+            <div className="seg-group">
+                <button type="button" className="seg-btn" aria-pressed={style === 'mab-color'} onClick={() => set({ mabStyle: 'mab-color' })}>Realistisch</button>
+                <button type="button" className="seg-btn" aria-pressed={style === 'mab-bw'} onClick={() => set({ mabStyle: 'mab-bw' })}>Zwart-wit</button>
+                <button type="button" className="seg-btn" aria-pressed={style === 'symbolic'} onClick={() => set({ mabStyle: 'symbolic' })}>Symbolisch</button>
+            </div>
+            <div style={S.row}>
+                <span style={S.rowLabel}>Toon totaal</span>
+                <Switch checked={showTotal} onChange={(v) => set({ showTotal: v })} aria-label="Toon totaal" />
+            </div>
+            <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ d: 0, h: 0, t: 0, e: 0 })}>
+                Alles wissen
+            </button>
         </div>
     );
 }

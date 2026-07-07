@@ -89,10 +89,12 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                 cursor: handMode ? 'grab' : undefined,
                 overflow: 'hidden',
             }}
-            onPointerDown={handMode ? (e) => startDrag(e, 'move') : (e) => { e.stopPropagation(); selectWidget(widget.id); bringToFront(widget.id); }}
-            onPointerMove={handMode ? onPointerMove : undefined}
-            onPointerUp={handMode ? endDrag : undefined}
-            onPointerCancel={handMode ? endDrag : undefined}
+            // Hand tool drags without selecting; headerless widgets (geld-items, kale
+            // kaarten) drag from anywhere since they have no title-bar handle.
+            onPointerDown={handMode || !showHeader ? (e) => startDrag(e, 'move') : (e) => { e.stopPropagation(); selectWidget(widget.id); bringToFront(widget.id); }}
+            onPointerMove={handMode || !showHeader ? onPointerMove : undefined}
+            onPointerUp={handMode || !showHeader ? endDrag : undefined}
+            onPointerCancel={handMode || !showHeader ? endDrag : undefined}
         >
             {/* ── Title bar (drag handle; fixed UI size, outside the zoom) ── */}
             {showHeader && (

@@ -1,5 +1,6 @@
-import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, ArrowsHorizontal, Table, GridNine, ChartPieSlice, type Icon } from '@phosphor-icons/react';
+import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, ArrowsHorizontal, Table, GridNine, ChartPieSlice, Cube, Coins, type Icon } from '@phosphor-icons/react';
 import { addBasicWidget } from './addWidgets';
+import { useBoardStore } from './useBoardStore';
 import type { WidgetKind } from './boardTypes';
 
 // Widget-tool catalog for the Toevoegen category panels + the favorites bar.
@@ -10,7 +11,8 @@ export interface BoardToolDef {
     label: string;
     icon: Icon;
     category: ToolCategory;
-    kind: WidgetKind | 'afbeelding-picker';   // picker routes through the file input
+    // picker routes through the file input; geld-palet toggles the money dock
+    kind: WidgetKind | 'afbeelding-picker' | 'geld-palet';
     props?: Record<string, unknown>;
     w?: number;
 }
@@ -21,6 +23,8 @@ export const TOOL_CATALOG: BoardToolDef[] = [
     { id: 'positietabel', label: 'Positietabel', icon: Table, category: 'wiskunde', kind: 'positietabel', w: 480 },
     { id: 'honderdveld', label: 'Honderdveld', icon: GridNine, category: 'wiskunde', kind: 'honderdveld', w: 470 },
     { id: 'breukviz', label: 'Breuken', icon: ChartPieSlice, category: 'wiskunde', kind: 'breukviz', w: 300 },
+    { id: 'mabmat', label: 'MAB-materiaal', icon: Cube, category: 'wiskunde', kind: 'mabmat', w: 560 },
+    { id: 'geldpalet', label: 'Geld (palet)', icon: Coins, category: 'wiskunde', kind: 'geld-palet' },
     // Klasmanagement
     { id: 'namen', label: 'Namenkiezer', icon: UsersThree, category: 'klasmanagement', kind: 'namen', w: 340 },
     { id: 'groepjes', label: 'Groepjesmaker', icon: UsersFour, category: 'klasmanagement', kind: 'groepjes', w: 460 },
@@ -42,6 +46,7 @@ export const TOOL_CATALOG: BoardToolDef[] = [
 // Returns false when the tool needs the caller to run the image picker instead.
 export function runTool(def: BoardToolDef): boolean {
     if (def.kind === 'afbeelding-picker') return false;
+    if (def.kind === 'geld-palet') { useBoardStore.getState().setGeldPaletOpen(true); return true; }
     addBasicWidget(def.kind, def.props ? { ...def.props } : {}, def.w ?? 340);
     return true;
 }

@@ -25,6 +25,8 @@ export const NATURAL_W: Record<WidgetKind, number> = {
     positietabel: 480,
     honderdveld: 470,
     breukviz: 300,
+    mabmat: 560,
+    'geld-item': 100,
 };
 
 export function naturalWidth(kind: WidgetKind): number {
@@ -39,13 +41,14 @@ export const TITLE_DEFAULTS: Record<WidgetKind, string> = {
     timer: 'Timer', stopwatch: 'Stopwatch', dobbelsteen: 'Dobbelstenen', adem: 'Ademhaling',
     groepjes: 'Groepjesmaker', checklist: 'Checklist', stappenplan: 'Stappenplan',
     getallenlijn: 'Getallenlijn', positietabel: 'Positietabel', honderdveld: 'Honderdveld', breukviz: 'Breuken',
+    mabmat: 'MAB-materiaal', 'geld-item': 'Geld',
 };
 
 // Kinds whose title bar shows the ⚙ (they have an inspector panel).
 export const KINDS_WITH_SETTINGS: WidgetKind[] = [
     'exercise', 'klok', 'weer', 'namen', 'datum', 'werksymbolen',
     'timer', 'dobbelsteen', 'adem', 'groepjes', 'checklist', 'stappenplan',
-    'getallenlijn', 'positietabel', 'honderdveld', 'breukviz',
+    'getallenlijn', 'positietabel', 'honderdveld', 'breukviz', 'mabmat',
 ];
 
 export function widgetTitle(widget: BoardWidget): string {

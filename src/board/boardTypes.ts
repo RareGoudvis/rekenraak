@@ -6,7 +6,8 @@ export type WidgetKind =
     | 'namen' | 'weer' | 'geluid' | 'werksymbolen'
     | 'timer' | 'stopwatch' | 'dobbelsteen' | 'adem'
     | 'groepjes' | 'checklist' | 'stappenplan'
-    | 'getallenlijn' | 'positietabel' | 'honderdveld' | 'breukviz';
+    | 'getallenlijn' | 'positietabel' | 'honderdveld' | 'breukviz'
+    | 'mabmat' | 'geld-item';
 
 export interface BoardWidget {
     id: string;
