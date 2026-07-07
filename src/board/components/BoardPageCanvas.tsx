@@ -50,7 +50,7 @@ export default function BoardPageCanvas() {
                         onRegenerate={w.kind === 'exercise' ? () => regenerate(w) : undefined}
                         onToggleAnswer={w.kind === 'exercise' ? () => updateWidget(w.id, { showAnswer: !w.showAnswer }) : undefined}
                     >
-                        <WidgetContent widget={w} selected={w.id === selectedWidgetId} dark={page.background.dark} />
+                        <WidgetContent widget={w} dark={page.background.dark} />
                     </WidgetFrame>
                 ))}
             </div>
@@ -59,12 +59,12 @@ export default function BoardPageCanvas() {
     );
 }
 
-function WidgetContent({ widget, selected, dark }: { widget: BoardWidget; selected: boolean; dark: boolean }) {
+function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
     switch (widget.kind) {
         case 'exercise': return <ExerciseWidget widget={widget} />;
         case 'tekst': return <TekstWidget widget={widget} dark={dark} />;
         case 'datum': return <DatumWidget dark={dark} />;
-        case 'klok': return <KlokWidget widget={widget} selected={selected} dark={dark} />;
+        case 'klok': return <KlokWidget widget={widget} dark={dark} />;
         case 'afbeelding': return <AfbeeldingWidget widget={widget} />;
         default: return null;
     }

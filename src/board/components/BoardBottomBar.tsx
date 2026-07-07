@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
@@ -78,6 +78,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     // visible-but-disabled so the final layout is judgeable now.
     const tools = [
         { key: 'select' as const, icon: Cursor, label: 'Selecteren', enabled: true },
+        { key: 'hand' as const, icon: HandGrabbing, label: 'Verplaatsen (hand)', enabled: true },
         { key: 'pen' as const, icon: PenNib, label: 'Pen', enabled: true },
         { key: 'marker' as const, icon: Highlighter, label: 'Markeerstift', enabled: true },
         { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
@@ -117,11 +118,6 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         </button>
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => imageRef.current?.click()}>
                             <Image size={16} /> Afbeelding…
-                        </button>
-                        <div style={S.popupDivider} />
-                        <button type="button" className="ui-hover" style={{ ...S.popupItem, color: 'var(--danger)' }}
-                            onClick={() => { if (window.confirm('Alles op deze pagina wissen?')) { clearActivePage(); } setMenu(null); }}>
-                            <Trash size={16} /> Pagina leegmaken
                         </button>
                     </div>
                 )}
@@ -196,6 +192,12 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         </div>
                     )}
                 </div>
+                {/* Mass delete: everything on the current page (moved out of the add menu). */}
+                <button type="button" className="ui-hover" title="Pagina leegmaken" aria-label="Pagina leegmaken"
+                    style={{ ...S.toolBtn, color: 'var(--danger)' }}
+                    onClick={() => { if (window.confirm('Alles op deze pagina wissen?')) clearActivePage(); }}>
+                    <Broom size={22} />
+                </button>
                 <div style={{ position: 'relative' }}>
                     <button type="button" className="ui-hover" title="Raster uitlijnen" aria-label="Raster uitlijnen"
                         style={{ ...S.toolBtn, ...(gridSnap ? S.toolActive : {}) }}

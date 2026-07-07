@@ -35,7 +35,8 @@ export interface Stroke {
     pts: number[];
 }
 
-export type BoardTool = 'select' | 'pen' | 'marker' | 'eraser' | 'line' | 'shape' | 'instrument';
+// 'select' = normal cursor (select + edit); 'hand' = drag/drop everything, select nothing.
+export type BoardTool = 'select' | 'hand' | 'pen' | 'marker' | 'eraser' | 'line' | 'shape' | 'instrument';
 
 // ToolEngine contract (implemented in P2): pointer stream in board coordinates →
 // a finished stroke. ctx will carry the active instrument geometry (P4) so

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus } from '@phosphor-icons/react';
-import ModalShell from '../../components/ui/ModalShell';
+import { Plus, X } from '@phosphor-icons/react';
 import ExercisePreview from '../../components/shared/ExercisePreview';
 import { buildCatalog, catalogDomains, type CatalogItem, type CatalogVariant } from '../../config/exerciseCatalog';
 import { useBoardStore } from '../useBoardStore';
@@ -46,13 +45,18 @@ export default function BoardAddModal({ onClose }: Props) {
     };
 
     return (
-        <ModalShell onClose={onClose} ariaLabel="Wiskunde toevoegen" maxWidth={1040}>
+        // Side panel anchored next to the Toevoegen menu (bottom-left), not a
+        // centered modal — the board stays visible while picking (Ruben decision).
+        <div style={S.panel} aria-label="Wiskunde toevoegen" onPointerDown={(e) => e.stopPropagation()}>
             <div style={S.head}>
                 <h2 style={S.title}>Wiskunde toevoegen</h2>
                 <input
                     type="text" placeholder="Zoeken…" value={search} onChange={(e) => setSearch(e.target.value)}
                     style={S.search}
                 />
+                <button type="button" className="ui-hover" style={S.closeBtn} aria-label="Sluiten" onClick={onClose}>
+                    <X size={18} />
+                </button>
             </div>
 
             {/* Domain filter chips */}
@@ -95,11 +99,21 @@ export default function BoardAddModal({ onClose }: Props) {
                 ))}
                 {visible.length === 0 && <div style={S.empty}>Geen oefeningen gevonden.</div>}
             </div>
-        </ModalShell>
+        </div>
     );
 }
 
 const S = {
+    panel: {
+        position: 'absolute', left: '12px', bottom: '74px', width: 'min(780px, calc(100vw - 24px))',
+        maxHeight: 'calc(100% - 90px)', display: 'flex', flexDirection: 'column',
+        background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '14px',
+        boxShadow: '0 12px 40px rgba(0,0,0,0.3)', zIndex: 60, padding: '12px',
+    } as React.CSSProperties,
+    closeBtn: {
+        width: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        border: 'none', borderRadius: '8px', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', flexShrink: 0,
+    } as React.CSSProperties,
     head: { display: 'flex', alignItems: 'center', gap: '16px', padding: '4px 4px 10px' } as React.CSSProperties,
     title: { margin: 0, fontSize: '18px', fontFamily: "'Azeret Mono', monospace", color: 'var(--text-main)', flex: 1 } as React.CSSProperties,
     search: {

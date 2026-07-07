@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Trash, ArrowsOutCardinal, ArrowCounterClockwise, Eye, EyeSlash, ArrowLineUp } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
+import { naturalWidth } from '../widgetSizing';
 import type { BoardWidget } from '../boardTypes';
 
 interface Props {
@@ -21,6 +22,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     const selectWidget = useBoardStore((s) => s.selectWidget);
     const gridSnap = useBoardStore((s) => s.gridSnap);
     const gridSize = useBoardStore((s) => s.gridSize);
+    const tool = useBoardStore((s) => s.tool);
 
     // Drag bookkeeping lives in a ref — no re-render per pointermove beyond the store write.
     const drag = useRef<{ mode: 'move' | 'resize'; startX: number; startY: number; origX: number; origY: number; origW: number; origScale: number } | null>(null);
@@ -29,7 +31,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
 
     const startDrag = (e: React.PointerEvent, mode: 'move' | 'resize') => {
         e.stopPropagation();
-        selectWidget(widget.id);
+        if (tool !== 'hand') selectWidget(widget.id);   // hand drags without selecting
         bringToFront(widget.id);
         drag.current = { mode, startX: e.clientX, startY: e.clientY, origX: widget.x, origY: widget.y, origW: widget.w, origScale: widget.scale ?? 1 };
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -43,11 +45,9 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
         if (d.mode === 'move') {
             updateWidget(widget.id, { x: Math.max(0, snap(d.origX + dx)), y: Math.max(0, snap(d.origY + dy)) });
         } else {
-            // Corner handle = uniform zoom: width and content scale grow together so the
-            // inner layout (w/scale) never reflows — the widget just gets bigger/smaller,
-            // like resizing an image. (Width-only resize made viewers rewrap awkwardly.)
-            const w = Math.max(160, Math.round(d.origW + dx));
-            updateWidget(widget.id, { w, scale: Math.round(d.origScale * (w / d.origW) * 100) / 100 });
+            // Corner handle = uniform zoom: the frame's zoom is w / naturalWidth, so
+            // changing w scales the whole widget like an image — content never reflows.
+            updateWidget(widget.id, { w: Math.max(120, Math.round(d.origW + dx)) });
         }
     };
 
@@ -55,6 +55,12 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
         drag.current = null;
         (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
     };
+
+    // Frame zoom: `zoom` (unlike transform:scale) participates in layout, so the
+    // frame height always matches the scaled content — no clipping, no dead space.
+    const frameZoom = widget.w / naturalWidth(widget.kind);
+    const textScale = widget.scale ?? 1;   // extra content zoom (exercise tekstgrootte)
+    const handMode = tool === 'hand';
 
     return (
         <div
@@ -64,16 +70,18 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                 borderRadius: '10px', boxSizing: 'border-box',
                 background: 'transparent',
                 touchAction: 'none',
+                cursor: handMode ? 'grab' : undefined,
             }}
-            onPointerDown={(e) => { e.stopPropagation(); selectWidget(widget.id); }}
+            // Hand tool: any press drags the widget directly, nothing gets selected.
+            onPointerDown={handMode ? (e) => startDrag(e, 'move') : (e) => { e.stopPropagation(); selectWidget(widget.id); }}
+            onPointerMove={handMode ? onPointerMove : undefined}
+            onPointerUp={handMode ? endDrag : undefined}
+            onPointerCancel={handMode ? endDrag : undefined}
         >
-            {/* Content zoom: frame width stays widget.w; the inner content scales and the
-                wrapper compensates so layout width matches the visual width. */}
-            <div style={{ overflow: 'hidden', borderRadius: '8px' }}>
-                <div style={{
-                    transform: `scale(${widget.scale ?? 1})`, transformOrigin: 'top left',
-                    width: `${100 / (widget.scale ?? 1)}%`,
-                }}>
+            <div style={{ zoom: frameZoom, width: naturalWidth(widget.kind), pointerEvents: handMode ? 'none' : undefined }}>
+                {/* Inner text zoom keeps the layout width constant: content reflows at
+                    naturalW/textScale and zooms back up, so bigger text = same frame. */}
+                <div style={{ zoom: textScale, width: naturalWidth(widget.kind) / textScale }}>
                     {children}
                 </div>
             </div>

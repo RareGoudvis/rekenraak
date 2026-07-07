@@ -3,6 +3,7 @@ import BoardBottomBar from './BoardBottomBar';
 import BoardPageCanvas from './BoardPageCanvas';
 import BoardAddModal from './BoardAddModal';
 import BoardInspector from './BoardInspector';
+import WidgetInspector from './WidgetInspector';
 import InkSettingsBar from './InkSettingsBar';
 import { useBoardStore } from '../useBoardStore';
 
@@ -19,8 +20,9 @@ export default function WhiteboardView() {
         <div style={S.overlay}>
             <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex' }}>
                 <BoardPageCanvas />
-                {/* Inspector flyout — only for a selected exercise widget (Ruben decision). */}
+                {/* Inspector flyouts — only while a widget with settings is selected. */}
                 {selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
+                {selectedWidget && ['klok'].includes(selectedWidget.kind) && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {/* Ink tool settings strip (colors + widths) while pen/marker is active. */}
                 {(tool === 'pen' || tool === 'marker') && <InkSettingsBar tool={tool} />}
             </div>
