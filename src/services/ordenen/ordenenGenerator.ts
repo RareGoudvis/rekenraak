@@ -29,8 +29,11 @@ function genValue(numberType: string, c: OrdConstraints): number | Fraction {
         return randInt(0, maxGetal * f) / f;
     }
     if (numberType === 'rational') {
-        const minD = Math.max(2, c.minDenominator ?? 2);
-        const maxD = Math.max(minD, c.maxDenominator ?? 10);
+        // Swap-tolerant: 'Noemer van 8 tot 3' becomes 3..8 rather than collapsing to 8 only.
+        const rawMin = Math.max(2, c.minDenominator ?? 2);
+        const rawMax = Math.max(2, c.maxDenominator ?? 10);
+        const minD = Math.min(rawMin, rawMax);
+        const maxD = Math.max(rawMin, rawMax);
         const d = randInt(minD, maxD);
         const n = c.unitFractionsOnly ? 1 : randInt(1, Math.max(1, d - 1));   // proper fraction part
         const f: Fraction = { n, d };

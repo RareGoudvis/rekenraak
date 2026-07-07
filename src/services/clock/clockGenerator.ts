@@ -6,7 +6,9 @@ export function generateClockExercises(block: MathBlock): ClockExercise[] {
     const { numberOfExercises } = block;
     const {
         is24hour = false,
-        timeTypes = ['uren'] as TimeCategory[],
+        // Match the registry/config default so a block built without merged defaults
+        // isn't silently restricted to whole hours only.
+        timeTypes = ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor'] as TimeCategory[],
         minuteDirection = 'beide' as MinuteDirection,
     } = block.constraints;
 
