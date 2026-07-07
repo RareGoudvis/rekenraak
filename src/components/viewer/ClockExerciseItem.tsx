@@ -32,16 +32,29 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
 
     const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: '18px' }} />;
     const sol = (text: string) => <span style={{ color: '#e11d48', fontWeight: 'normal', fontSize: '12px' }}>{text}</span>;
+    // Empty digital display for the pupil to fill in (matches the omzetten __:__ box).
+    const emptyDigitalBox = (
+        <div style={{ border: '2px solid #000', width: '65px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: '16px', letterSpacing: '2px', color: showSolutions ? '#e11d48' : '#aaa' }}>
+            {showSolutions ? ex.digitalText : '__:__'}
+        </div>
+    );
 
     let inner: React.ReactNode;
 
     if (exerciseMode === 'tekenen') {
-        let showH = showSolutions, showM = showSolutions;
-        if (!showSolutions) {
-            showH = handChoice === 'minuut';
-            showM = handChoice === 'uur';
+        if (clockType === 'digitaal') {
+            // Digitaal + tekenen = "tijd in woorden → digitale klok invullen": show the
+            // time in words as the prompt and an EMPTY digital box to complete (was showing
+            // the filled answer box + an analog clock — that's the omzetten exercise).
+            inner = <>{timeLabel}{emptyDigitalBox}</>;
+        } else {
+            let showH = showSolutions, showM = showSolutions;
+            if (!showSolutions) {
+                showH = handChoice === 'minuut';
+                showM = handChoice === 'uur';
+            }
+            inner = <>{timeLabel}{clock(showH, showM)}</>;
         }
-        inner = <>{clockType === 'digitaal' ? digitalBox : timeLabel}{clock(showH, showM)}</>;
     } else if (exerciseMode === 'lezen') {
         const display = clockType === 'analoog' ? clock(true, true) : digitalBox;
         inner = <>{display}{showSolutions ? sol(ex.timeText) : blankLine}</>;

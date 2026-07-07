@@ -30,8 +30,10 @@ export type HandChoice = 'uur' | 'minuut' | 'beide';
 
 export function formatTimeText(hours: number, minutes: number, is24hour: boolean): string {
     const displayHour = is24hour ? hours : hours; // 12h: caller passes 1-12 already
+    // Next-hour reference for 'half/kwart voor/… voor'. In 24h keep it in 24h space
+    // (23 → 24, never 0) so 23:30 reads "half 24", not the nonsensical "half 0".
     const nextHour = is24hour
-        ? (hours + 1) % 24
+        ? ((hours + 1) % 24 === 0 ? 24 : (hours + 1) % 24)
         : (hours === 12 ? 1 : hours + 1);
 
     if (minutes === 0) return `${displayHour} uur`;
