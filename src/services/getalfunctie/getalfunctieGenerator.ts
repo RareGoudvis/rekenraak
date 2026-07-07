@@ -59,12 +59,15 @@ export function generateGetalFunctieExercises(block: MathBlock): GetalFunctieExe
         attempts++;
         const functie = pool[randInt(0, pool.length - 1)];
         const tpl = pick(BANK[functie]);
-        if (seen.has(tpl.text)) continue;
-        seen.add(tpl.text);
         const number = tpl.make(maxGetal);
+        const sentence = tpl.text.replace('{n}', number);
+        // Dedup on the full sentence (not the template): a single functie has only a
+        // handful of templates, so keying on template text capped the count at that few.
+        if (seen.has(sentence)) continue;
+        seen.add(sentence);
         out.push({
             id: Math.random().toString(36).substring(2, 9),
-            sentence: tpl.text.replace('{n}', number),
+            sentence,
             number, functie, isManuallyEdited: false,
         });
     }

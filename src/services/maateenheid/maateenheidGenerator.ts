@@ -21,9 +21,15 @@ function shuffle<T>(arr: T[]): T[] {
 export function generateMaateenheidExercises(block: MathBlock): MaateenheidExercise[] {
     const c = block.constraints;
     const grootheden: string[] = c.grootheden ?? ['lengte', 'massa', 'inhoud'];
-    const answerMode: string = c.answerMode ?? 'omcirkelen';
+    let answerMode: string = c.answerMode ?? 'omcirkelen';
     // Omcirkelen needs ≥3 units for distractors — that excludes temperatuur (only °C).
-    const usable = grootheden.filter(g => MAAT_ITEMS[g] && (answerMode === 'schrijven' || UNIT_POOLS[g].length >= 3));
+    let usable = grootheden.filter(g => MAAT_ITEMS[g] && (answerMode === 'schrijven' || UNIT_POOLS[g].length >= 3));
+    // If the chosen grootheden can't be circled (e.g. only temperatuur), keep them and
+    // fall back to 'schrijven' rather than silently swapping to a lengte exercise.
+    if (!usable.length && answerMode === 'omcirkelen') {
+        const writable = grootheden.filter(g => MAAT_ITEMS[g]);
+        if (writable.length) { usable = writable; answerMode = 'schrijven'; }
+    }
     const pool = usable.length ? usable : ['lengte'];
     const count = block.numberOfExercises || 8;
 
