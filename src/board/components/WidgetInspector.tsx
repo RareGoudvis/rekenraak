@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { klokProps, type KlokProps } from '../widgetSizing';
+import { klokProps, type KlokProps, weerProps, type WeerProps, NAMES_KEY } from '../widgetSizing';
 import type { BoardWidget } from '../boardTypes';
 
 interface Props {
@@ -24,6 +25,8 @@ export default function WidgetInspector({ widget }: Props) {
             </div>
             <div style={S.scroll}>
                 {widget.kind === 'klok' && <KlokSettings widget={widget} />}
+                {widget.kind === 'weer' && <WeerSettings widget={widget} />}
+                {widget.kind === 'namen' && <NamenSettings />}
             </div>
         </div>
     );
@@ -65,6 +68,59 @@ function KlokSettings({ widget }: { widget: BoardWidget }) {
             <div style={S.sectionLabel}>Tijd</div>
             <div style={{ ...S.rowLabel, padding: '4px 0' }}>
                 Sleep de wijzers op de klok: buitenkant = minuten, binnenkant = uren.
+            </div>
+        </div>
+    );
+}
+
+function WeerSettings({ widget }: { widget: BoardWidget }) {
+    const updateWidget = useBoardStore((s) => s.updateWidget);
+    const w = weerProps(widget);
+    const set = (patch: Partial<WeerProps>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
+
+    const row = (label: string, checked: boolean, onChange: (v: boolean) => void) => (
+        <div style={S.row}>
+            <span style={S.rowLabel}>{label}</span>
+            <Switch checked={checked} onChange={onChange} aria-label={label} />
+        </div>
+    );
+    return (
+        <div>
+            <div style={S.sectionLabel}>Weergave</div>
+            {row('Weer (icoon + naam)', w.showWeather, (v) => set({ showWeather: v }))}
+            {row('Temperatuur nu', w.showTemp, (v) => set({ showTemp: v }))}
+            {row('Min / max vandaag', w.showMinMax, (v) => set({ showMinMax: v }))}
+            {row('Zonsopgang / -ondergang', w.showSun, (v) => set({ showSun: v }))}
+            {row('Kans op neerslag', w.showRainPct, (v) => set({ showRainPct: v }))}
+            {row('Hoeveelheid neerslag', w.showRainMm, (v) => set({ showRainMm: v }))}
+            <div style={{ ...S.rowLabel, padding: '8px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+                Locatie volgt de browser (of Brussel zonder toestemming). Bron: open-meteo.com.
+            </div>
+        </div>
+    );
+}
+
+function NamenSettings() {
+    // Class list is app-wide (localStorage), not per widget — a teacher has one class.
+    const [names, setNames] = useState(() => localStorage.getItem(NAMES_KEY) ?? '');
+    const save = (v: string) => { setNames(v); localStorage.setItem(NAMES_KEY, v); };
+    const count = names.split('\n').map(s => s.trim()).filter(Boolean).length;
+    return (
+        <div>
+            <div style={S.sectionLabel}>Namenlijst ({count})</div>
+            <textarea
+                value={names}
+                placeholder={'Eén naam per lijn:\nEmma\nNoah\nLina\n…'}
+                onChange={(e) => save(e.target.value)}
+                style={{
+                    width: '100%', minHeight: '260px', resize: 'vertical', boxSizing: 'border-box',
+                    background: 'var(--bg-input)', color: 'var(--text-main)',
+                    border: '1px solid var(--border-color)', borderRadius: '10px',
+                    padding: '10px', fontSize: '14px', fontFamily: "'Azeret Mono', monospace", outline: 'none',
+                }}
+            />
+            <div style={{ ...S.rowLabel, padding: '8px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+                Wordt lokaal bewaard op dit toestel en gedeeld door alle borden.
             </div>
         </div>
     );

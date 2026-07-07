@@ -10,6 +10,9 @@ export const NATURAL_W: Record<WidgetKind, number> = {
     datum: 340,
     klok: 300,
     afbeelding: 420,
+    namen: 340,
+    weer: 360,
+    geluid: 340,
 };
 
 export function naturalWidth(kind: WidgetKind): number {
@@ -40,4 +43,33 @@ export function klokProps(widget: BoardWidget): KlokProps {
         showHourHand: p.showHourHand !== false,
         showMinuteHand: p.showMinuteHand !== false,
     };
+}
+
+// ── Weer widget props (shared by WeerWidget + its settings panel) ────────────
+export interface WeerProps {
+    showWeather: boolean;      // icon + description
+    showTemp: boolean;         // current temperature
+    showMinMax: boolean;       // today's min/max
+    showSun: boolean;          // sunrise/sunset
+    showRainPct: boolean;      // precipitation probability
+    showRainMm: boolean;       // precipitation volume
+}
+
+export function weerProps(widget: BoardWidget): WeerProps {
+    const p = widget.props ?? {};
+    return {
+        showWeather: p.showWeather !== false,
+        showTemp: p.showTemp !== false,
+        showMinMax: p.showMinMax === true,
+        showSun: p.showSun === true,
+        showRainPct: p.showRainPct === true,
+        showRainMm: p.showRainMm === true,
+    };
+}
+
+// ── Namenkiezer class list (localStorage, app-wide) ─────────────────────────
+export const NAMES_KEY = 'rekenraak_board_names_v1';
+export function loadNames(): string[] {
+    return (localStorage.getItem(NAMES_KEY) ?? '')
+        .split('\n').map(s => s.trim()).filter(Boolean);
 }

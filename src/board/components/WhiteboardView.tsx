@@ -22,7 +22,7 @@ export default function WhiteboardView() {
                 <BoardPageCanvas />
                 {/* Inspector flyouts — only while a widget with settings is selected. */}
                 {selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
-                {selectedWidget && ['klok'].includes(selectedWidget.kind) && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
+                {selectedWidget && ['klok', 'weer', 'namen'].includes(selectedWidget.kind) && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {/* Ink tool settings strip (colors + widths) while pen/marker is active. */}
                 {(tool === 'pen' || tool === 'marker') && <InkSettingsBar tool={tool} />}
             </div>

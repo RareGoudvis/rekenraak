@@ -1,7 +1,7 @@
 import type { MathBlock } from '../services/math/types';
 
 // ── Widgets ──────────────────────────────────────────────────────────────────
-export type WidgetKind = 'exercise' | 'tekst' | 'datum' | 'klok' | 'afbeelding';
+export type WidgetKind = 'exercise' | 'tekst' | 'datum' | 'klok' | 'afbeelding' | 'namen' | 'weer' | 'geluid';
 
 export interface BoardWidget {
     id: string;

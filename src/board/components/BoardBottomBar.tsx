@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, SpeakerHigh, CloudSun } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
@@ -102,8 +102,12 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { setMenu(null); onOpenWiskunde(); }}>
                             <MathOperations size={16} /> Wiskunde…
                         </button>
-                        <button type="button" title="Binnenkort" disabled style={{ ...S.popupItem, ...S.toolDisabled }}>
-                            <UsersThree size={16} /> Klasmanagement (binnenkort)
+                        <div style={S.popupSection}>Klasmanagement</div>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('namen', {}, 340); setMenu(null); }}>
+                            <UsersThree size={16} /> Namenkiezer
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('geluid', {}, 340); setMenu(null); }}>
+                            <SpeakerHigh size={16} /> Geluidsmeter
                         </button>
                         <div style={S.popupSection}>Organisatie</div>
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('datum', {}, 340); setMenu(null); }}>
@@ -111,6 +115,9 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         </button>
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('klok', { hours: 9, minutes: 0 }, 300); setMenu(null); }}>
                             <Clock size={16} /> Klok
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('weer', {}, 360); setMenu(null); }}>
+                            <CloudSun size={16} /> Weer
                         </button>
                         <div style={S.popupDivider} />
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('tekst', { text: '' }, 360); setMenu(null); }}>
