@@ -38,7 +38,8 @@ export default function MabViewer({ block, showSolutions }: Props) {
     const cols: ColDef[] = [];
     if (maxNumber >= 1000) cols.push({ key: 'D', place: 'thousands' });
     if (maxNumber >= 100)  cols.push({ key: 'H', place: 'hundreds' });
-    if (maxNumber >= 20)   cols.push({ key: 'T', place: 'tens' });
+    // >= 10 (not 20): at maxNumber=10 the value 10 itself needs a tens column, else it renders as zero blocks
+    if (maxNumber >= 10)   cols.push({ key: 'T', place: 'tens' });
     cols.push({ key: 'E', place: 'units' });
 
     return (
