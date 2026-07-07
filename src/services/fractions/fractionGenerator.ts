@@ -7,7 +7,13 @@ function getGridLayout(denominator: number): { rows: number; cols: number } {
         10: [2, 5], 12: [3, 4],
     };
     const entry = layouts[denominator];
-    return entry ? { rows: entry[0], cols: entry[1] } : { rows: 1, cols: denominator };
+    if (entry) return { rows: entry[0], cols: entry[1] };
+    // Largest factor pair keeps unmapped composites 2D (14→2×7, 15→3×5, 16→4×4)
+    // instead of a page-wide 1×d strip; primes genuinely fall back to the strip.
+    for (let r = Math.floor(Math.sqrt(denominator)); r >= 2; r--) {
+        if (denominator % r === 0) return { rows: r, cols: denominator / r };
+    }
+    return { rows: 1, cols: denominator };
 }
 
 function shuffle<T>(arr: T[]): T[] {

@@ -48,12 +48,22 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
             fixedSidePx: (block.constraints.staticSide ?? 4) * CM,
             fixedDiameterPx: (block.constraints.staticDiam ?? 4) * CM,
         } : {};
+        // Cap the shape at the 2-up column width (~265px inside the block) so prime
+        // denominators that only render as a 1×d strip (7, 11, 13) shrink their cells
+        // instead of running off the page; grids ≤ 6 columns keep the classic 38px cell.
+        const gridCols = ex.gridCols ?? ex.denominator;
+        const cappedCell = Math.min(38, Math.floor(265 / Math.max(1, gridCols)));
+        // When width-capped, pin the height back to the classic 38px per row so narrow
+        // strip cells stay tall enough to color in.
+        const heightProp = cappedCell < 38 && !block.constraints.staticSize
+            ? { fixedHeightPx: 38 * (ex.gridRows ?? 1) } : {};
         const shape = (
             <FractionShapeSVG
                 numerator={ex.numerator} denominator={ex.denominator}
                 shape={ex.shape ?? 'rectangle'} coloredIndices={ex.coloredIndices ?? []}
-                gridRows={ex.gridRows ?? 1} gridCols={ex.gridCols ?? ex.denominator}
-                showColored={showColored} cellSize={38}
+                gridRows={ex.gridRows ?? 1} gridCols={gridCols}
+                showColored={showColored} cellSize={cappedCell}
+                {...heightProp}
                 {...staticProps}
             />
         );
