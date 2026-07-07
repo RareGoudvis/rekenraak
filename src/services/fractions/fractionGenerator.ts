@@ -62,16 +62,27 @@ function makeAmountExercise(subType: FractionSubType, block: MathBlock): Fractio
 }
 
 function makeLijnstukExercise(block: MathBlock): FractionExercise {
-    const { minDenominator = 2, maxDenominator = 6, maxLineLength = 15 } = block.constraints;
-    const denominator = randInt(minDenominator, maxDenominator);
+    const { minDenominator = 2, maxDenominator = 6, minLineLength = 1, maxLineLength = 15 } = block.constraints;
+    // Swap-safe length window; line = denominator × multiplier keeps each of the
+    // `denominator` segments a whole number of cm.
+    const loLen = Math.max(1, Math.min(minLineLength, maxLineLength));
+    const hiLen = Math.max(loLen, maxLineLength);
+    // Only pick denominators that fit at least once within the max length (mult=1 → length=d ≤ hiLen);
+    // otherwise a line of d cm would already blow the ceiling.
+    const denChoices: number[] = [];
+    for (let d = Math.max(2, minDenominator); d <= maxDenominator; d++) if (d <= hiLen) denChoices.push(d);
+    const denominator = denChoices.length ? denChoices[randInt(0, denChoices.length - 1)] : Math.max(2, minDenominator);
     const numerator = randInt(1, denominator - 1);
-    const maxMult = Math.floor(maxLineLength / denominator);
-    const multiplier = Math.max(1, randInt(1, Math.max(1, maxMult)));
+    const minMult = Math.max(1, Math.ceil(loLen / denominator));
+    const maxMult = Math.max(minMult, Math.floor(hiLen / denominator));
+    const multiplier = randInt(minMult, maxMult);
+    // Degenerate settings (denominator > hiLen) can still overshoot — clamp to the ceiling.
+    const lineLength = Math.min(hiLen, denominator * multiplier);
     return {
         id: Math.random().toString(36).substring(2, 9),
         subType: 'lijnstuk',
         numerator, denominator,
-        lineLength: denominator * multiplier,
+        lineLength,
         isManuallyEdited: false,
     };
 }
