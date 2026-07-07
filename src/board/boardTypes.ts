@@ -49,10 +49,11 @@ export interface ToolEngine {
 }
 
 // ── Background / pages ───────────────────────────────────────────────────────
-export type BackgroundPattern = 'blanco' | 'raster' | 'lijnen' | 'schrijflijnen' | 'cornell';
+export type BackgroundPattern = 'blanco' | 'raster' | 'lijnen' | 'schrijflijnen' | 'schrijflijnen4' | 'cornell';
 export interface BoardBackground {
     pattern: BackgroundPattern;
     dark: boolean;             // zwart bord (chalk look) vs wit bord
+    scale?: number;            // pattern size multiplier (0.75 / 1 / 1.5); absent = 1
 }
 
 export interface BoardPage {

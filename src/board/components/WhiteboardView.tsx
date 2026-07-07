@@ -20,7 +20,7 @@ export default function WhiteboardView() {
                 {/* Inspector flyout — only for a selected exercise widget (Ruben decision). */}
                 {selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
             </div>
-            <BoardBottomBar onAdd={() => setAddOpen(true)} />
+            <BoardBottomBar onOpenWiskunde={() => setAddOpen(true)} />
             {addOpen && <BoardAddModal onClose={() => setAddOpen(false)} />}
         </div>
     );

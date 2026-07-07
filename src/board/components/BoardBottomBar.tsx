@@ -1,19 +1,20 @@
 import { useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
-import { PATTERN_LABELS } from '../backgrounds';
+import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
+import { addBasicWidget } from '../addWidgets';
 import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
 import type { BackgroundPattern } from '../boardTypes';
 
 interface Props {
-    onAdd: () => void;
+    onOpenWiskunde: () => void;
 }
 
 // Bottom toolbar of the whiteboard (replaces the TopBar in bordmodus). Digibord-first:
 // every control is a ≥44px touch target, no hover-only affordances.
 // P1 ships the chrome with only 'select' live; ink/shape tools activate in P2/P3.
-export default function BoardBottomBar({ onAdd }: Props) {
+export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const setView = useWorksheetStore((s) => s.setView);
     const background = useBoardStore((s) => s.pages[s.activePageIdx].background);
     const setBackground = useBoardStore((s) => s.setBackground);
@@ -27,9 +28,20 @@ export default function BoardBottomBar({ onAdd }: Props) {
     const addPage = useBoardStore((s) => s.addPage);
     const duplicatePage = useBoardStore((s) => s.duplicatePage);
     const removePage = useBoardStore((s) => s.removePage);
-    const [menu, setMenu] = useState<'background' | 'grid' | 'page' | 'save' | null>(null);
+    const clearActivePage = useBoardStore((s) => s.clearActivePage);
+    const [menu, setMenu] = useState<'add' | 'background' | 'grid' | 'page' | 'save' | null>(null);
     const [presets, setPresets] = useState<BoardPreset[]>([]);
     const importRef = useRef<HTMLInputElement>(null);
+    const imageRef = useRef<HTMLInputElement>(null);
+
+    const handleImageWidget = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => { addBasicWidget('afbeelding', { src: String(reader.result) }, 420); setMenu(null); };
+        reader.readAsDataURL(file);
+    };
 
     const handleSavePreset = () => {
         const name = window.prompt('Naam voor dit bord:', 'Mijn bord');
@@ -70,10 +82,44 @@ export default function BoardBottomBar({ onAdd }: Props) {
 
     return (
         <div className="mac-vibrant" style={S.bar}>
-            {/* Add exercise / widget — the board's primary action. */}
-            <button type="button" className="ui-hover" style={S.addBtn} aria-label="Toevoegen aan bord" onClick={onAdd}>
-                <Plus size={18} /> Toevoegen
-            </button>
+            {/* Add menu — the board's primary action: categories + direct items. */}
+            <div style={{ position: 'relative' }}>
+                <input ref={imageRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageWidget} />
+                <button type="button" className="ui-hover" style={S.addBtn} aria-label="Toevoegen aan bord"
+                    onClick={() => setMenu(menu === 'add' ? null : 'add')}>
+                    <Plus size={18} /> Toevoegen
+                </button>
+                {menu === 'add' && (
+                    <div style={{ ...S.popup, minWidth: '230px' }}>
+                        <div style={S.popupSection}>Categorieën</div>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { setMenu(null); onOpenWiskunde(); }}>
+                            <MathOperations size={16} /> Wiskunde…
+                        </button>
+                        <button type="button" title="Binnenkort" disabled style={{ ...S.popupItem, ...S.toolDisabled }}>
+                            <UsersThree size={16} /> Klasmanagement (binnenkort)
+                        </button>
+                        <div style={S.popupSection}>Organisatie</div>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('datum', {}, 340); setMenu(null); }}>
+                            <CalendarBlank size={16} /> Datum
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('klok', { hours: 9, minutes: 0 }, 300); setMenu(null); }}>
+                            <Clock size={16} /> Klok
+                        </button>
+                        <div style={S.popupDivider} />
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { addBasicWidget('tekst', { text: '' }, 360); setMenu(null); }}>
+                            <TextT size={16} /> Tekst
+                        </button>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => imageRef.current?.click()}>
+                            <Image size={16} /> Afbeelding…
+                        </button>
+                        <div style={S.popupDivider} />
+                        <button type="button" className="ui-hover" style={{ ...S.popupItem, color: 'var(--danger)' }}
+                            onClick={() => { if (window.confirm('Alles op deze pagina wissen?')) { clearActivePage(); } setMenu(null); }}>
+                            <Trash size={16} /> Pagina leegmaken
+                        </button>
+                    </div>
+                )}
+            </div>
 
             <div style={S.sep} />
 
@@ -111,6 +157,14 @@ export default function BoardBottomBar({ onAdd }: Props) {
                                     style={{ ...S.popupItem, ...(background.pattern === p ? S.popupItemOn : {}) }}
                                     onClick={() => setBackground({ ...background, pattern: p })}>
                                     {PATTERN_LABELS[p]}
+                                </button>
+                            ))}
+                            <div style={S.popupSection}>Grootte</div>
+                            {BACKGROUND_SCALES.map(sc => (
+                                <button key={sc.value} type="button" className="ui-hover"
+                                    style={{ ...S.popupItem, ...((background.scale ?? 1) === sc.value ? S.popupItemOn : {}) }}
+                                    onClick={() => setBackground({ ...background, scale: sc.value })}>
+                                    {sc.label}
                                 </button>
                             ))}
                             <div style={S.popupDivider} />
@@ -285,5 +339,9 @@ const S = {
         fontSize: '13px', cursor: 'pointer',
     } as React.CSSProperties,
     popupItemOn: { background: 'var(--bg-active)', fontWeight: 600 } as React.CSSProperties,
+    popupSection: {
+        padding: '8px 12px 2px', fontSize: '10px', letterSpacing: '0.8px', textTransform: 'uppercase',
+        color: 'var(--text-muted)', fontFamily: "'Azeret Mono', monospace", userSelect: 'none',
+    } as React.CSSProperties,
     popupDivider: { height: '1px', background: 'var(--border-color)', margin: '4px 6px' } as React.CSSProperties,
 };

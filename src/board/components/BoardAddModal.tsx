@@ -1,18 +1,26 @@
-import { useMemo, useRef, useState } from 'react';
-import { Plus, TextT, CalendarBlank, Clock, Image } from '@phosphor-icons/react';
+import { useMemo, useState } from 'react';
+import { Plus } from '@phosphor-icons/react';
 import ModalShell from '../../components/ui/ModalShell';
 import ExercisePreview from '../../components/shared/ExercisePreview';
 import { buildCatalog, catalogDomains, type CatalogItem, type CatalogVariant } from '../../config/exerciseCatalog';
 import { useBoardStore } from '../useBoardStore';
 import { makeBoardBlock } from '../boardBlocks';
-import type { WidgetKind } from '../boardTypes';
+import { staggerPos } from '../addWidgets';
 
 interface Props {
     onClose: () => void;
 }
 
-// Single-add exercise picker for the board (mass-add card style, but one tap =
-// one widget on the board + modal closes; no multi-select/counts by design).
+// Board-friendly variant naming: the hoofdrekenen rational leaves are just called
+// "Optellen"/"Aftrekken"… in APP_STRUCTURE (they live under a Breuken subdomain);
+// on the flat board catalog that context is gone, so name them explicitly.
+function variantLabel(v: CatalogVariant): string {
+    if (v.constraints?.numberType === 'rational' && !/breuk/i.test(v.label)) return 'Met breuken';
+    return v.label;
+}
+
+// Single-add exercise picker for the board's Wiskunde category (mass-add card
+// style, but one tap = one widget on the board + modal closes; no multi-select).
 export default function BoardAddModal({ onClose }: Props) {
     const catalog = useMemo(() => buildCatalog(), []);
     const domains = useMemo(() => catalogDomains(catalog), [catalog]);
@@ -28,63 +36,23 @@ export default function BoardAddModal({ onClose }: Props) {
             (!needle || it.label.toLowerCase().includes(needle) || it.context.toLowerCase().includes(needle)));
     }, [catalog, domain, search]);
 
-    const stagger = () => {
-        // Stagger new widgets a little so consecutive adds don't stack exactly.
-        const n = useBoardStore.getState().pages[useBoardStore.getState().activePageIdx].widgets.length;
-        return { x: 60 + (n % 5) * 32, y: 40 + (n % 5) * 32 };
-    };
-
     const handleAdd = (item: CatalogItem, variant: CatalogVariant) => {
         const block = makeBoardBlock(item.typeId, variant.constraints);
         if (!block) return;
-        addWidget({ kind: 'exercise', ...stagger(), w: 460, block, showAnswer: false });
+        // 660px ≈ a full exercise row (625px viewer budget + card padding), so every
+        // type shows complete rows out of the box; the corner handle scales from there.
+        addWidget({ kind: 'exercise', ...staggerPos(), w: 660, block, showAnswer: false });
         onClose();
     };
-
-    const fileRef = useRef<HTMLInputElement>(null);
-    const addBasic = (kind: WidgetKind, props?: Record<string, unknown>, w = 320) => {
-        addWidget({ kind, ...stagger(), w, props });
-        onClose();
-    };
-    const handleImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => addBasic('afbeelding', { src: String(reader.result) }, 420);
-        reader.readAsDataURL(file);
-    };
-
-    const handleWidgetClick = (kind: WidgetKind) => {
-        if (kind === 'afbeelding') { fileRef.current?.click(); return; }   // add happens after file pick
-        if (kind === 'tekst') addBasic('tekst', { text: '' }, 360);
-        else if (kind === 'datum') addBasic('datum', {}, 340);
-        else if (kind === 'klok') addBasic('klok', { hours: 9, minutes: 0 }, 300);
-    };
-    const basicWidgets = [
-        { kind: 'tekst' as const, label: 'Tekst', icon: TextT },
-        { kind: 'datum' as const, label: 'Datum', icon: CalendarBlank },
-        { kind: 'klok' as const, label: 'Klok', icon: Clock },
-        { kind: 'afbeelding' as const, label: 'Afbeelding', icon: Image },
-    ];
 
     return (
-        <ModalShell onClose={onClose} ariaLabel="Oefening toevoegen" maxWidth={1040}>
+        <ModalShell onClose={onClose} ariaLabel="Wiskunde toevoegen" maxWidth={1040}>
             <div style={S.head}>
-                <h2 style={S.title}>Oefening toevoegen</h2>
+                <h2 style={S.title}>Wiskunde toevoegen</h2>
                 <input
                     type="text" placeholder="Zoeken…" value={search} onChange={(e) => setSearch(e.target.value)}
                     style={S.search}
                 />
-            </div>
-
-            {/* Basic widgets — one tap adds and closes. */}
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageFile} />
-            <div style={S.widgetRow}>
-                {basicWidgets.map(w => (
-                    <button key={w.kind} type="button" className="ui-hover" style={S.widgetBtn} onClick={() => handleWidgetClick(w.kind)}>
-                        <w.icon size={20} /> {w.label}
-                    </button>
-                ))}
             </div>
 
             {/* Domain filter chips */}
@@ -118,7 +86,7 @@ export default function BoardAddModal({ onClose }: Props) {
                             ) : (
                                 item.variants.map(v => (
                                     <button key={v.key} type="button" className="ui-hover" style={S.variantBtn} onClick={() => handleAdd(item, v)}>
-                                        <Plus size={12} /> {v.label}
+                                        <Plus size={12} /> {variantLabel(v)}
                                     </button>
                                 ))
                             )}
@@ -138,12 +106,6 @@ const S = {
         width: '220px', height: '38px', padding: '0 12px', borderRadius: '10px',
         border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
         fontSize: '13px', outline: 'none',
-    } as React.CSSProperties,
-    widgetRow: { display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '0 4px 12px' } as React.CSSProperties,
-    widgetBtn: {
-        display: 'inline-flex', alignItems: 'center', gap: '8px', height: '44px', padding: '0 16px',
-        borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)',
-        color: 'var(--text-main)', fontSize: '13px', cursor: 'pointer',
     } as React.CSSProperties,
     chips: { display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '0 4px 12px' } as React.CSSProperties,
     chip: {

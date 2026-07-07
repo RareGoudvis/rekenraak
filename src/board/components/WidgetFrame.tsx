@@ -23,7 +23,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     const gridSize = useBoardStore((s) => s.gridSize);
 
     // Drag bookkeeping lives in a ref — no re-render per pointermove beyond the store write.
-    const drag = useRef<{ mode: 'move' | 'resize'; startX: number; startY: number; origX: number; origY: number; origW: number } | null>(null);
+    const drag = useRef<{ mode: 'move' | 'resize'; startX: number; startY: number; origX: number; origY: number; origW: number; origScale: number } | null>(null);
 
     const snap = (v: number) => (gridSnap ? Math.round(v / gridSize) * gridSize : Math.round(v));
 
@@ -31,7 +31,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
         e.stopPropagation();
         selectWidget(widget.id);
         bringToFront(widget.id);
-        drag.current = { mode, startX: e.clientX, startY: e.clientY, origX: widget.x, origY: widget.y, origW: widget.w };
+        drag.current = { mode, startX: e.clientX, startY: e.clientY, origX: widget.x, origY: widget.y, origW: widget.w, origScale: widget.scale ?? 1 };
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     };
 
@@ -43,8 +43,11 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
         if (d.mode === 'move') {
             updateWidget(widget.id, { x: Math.max(0, snap(d.origX + dx)), y: Math.max(0, snap(d.origY + dy)) });
         } else {
-            // 160px floor keeps the frame's own action buttons reachable.
-            updateWidget(widget.id, { w: Math.max(160, snap(d.origW + dx)) });
+            // Corner handle = uniform zoom: width and content scale grow together so the
+            // inner layout (w/scale) never reflows — the widget just gets bigger/smaller,
+            // like resizing an image. (Width-only resize made viewers rewrap awkwardly.)
+            const w = Math.max(160, Math.round(d.origW + dx));
+            updateWidget(widget.id, { w, scale: Math.round(d.origScale * (w / d.origW) * 100) / 100 });
         }
     };
 

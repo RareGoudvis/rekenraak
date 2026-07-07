@@ -26,6 +26,7 @@ interface BoardState {
     duplicatePage: () => void;
     removePage: () => void;
     gotoPage: (idx: number) => void;
+    clearActivePage: () => void;
     setBackground: (bg: BoardBackground) => void;
 
     // tools / settings
@@ -115,6 +116,12 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         const n = get().pages.length;
         set({ activePageIdx: Math.max(0, Math.min(n - 1, idx)), selectedWidgetId: null });
     },
+
+    // Mass delete on the current page (background stays).
+    clearActivePage: () => set((state) => ({
+        ...withActivePage(state, (p) => ({ ...p, widgets: [], strokes: [] })),
+        selectedWidgetId: null,
+    })),
 
     setBackground: (bg) => set((state) => withActivePage(state, (p) => ({ ...p, background: bg }))),
 
