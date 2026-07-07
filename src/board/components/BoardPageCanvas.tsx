@@ -7,6 +7,7 @@ import KlokWidget from './widgets/KlokWidget';
 import AfbeeldingWidget from './widgets/AfbeeldingWidget';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
+import InkLayer from './InkLayer';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { BoardWidget } from '../boardTypes';
 
@@ -18,6 +19,8 @@ export default function BoardPageCanvas() {
     const selectedWidgetId = useBoardStore((s) => s.selectedWidgetId);
     const selectWidget = useBoardStore((s) => s.selectWidget);
     const updateWidget = useBoardStore((s) => s.updateWidget);
+    const tool = useBoardStore((s) => s.tool);
+    const inkActive = tool === 'pen' || tool === 'marker' || tool === 'eraser';
 
     // Quick 🔄 on the widget frame: reroll exercises without opening the inspector.
     // Keep the inspector's draft mirror in sync when it's open for this block.
@@ -39,15 +42,19 @@ export default function BoardPageCanvas() {
             // Tap on empty board = deselect (closes the inspector flyout).
             onPointerDown={() => selectWidget(null)}
         >
-            {page.widgets.map((w) => (
-                <WidgetFrame
-                    key={w.id} widget={w} selected={w.id === selectedWidgetId}
-                    onRegenerate={w.kind === 'exercise' ? () => regenerate(w) : undefined}
-                    onToggleAnswer={w.kind === 'exercise' ? () => updateWidget(w.id, { showAnswer: !w.showAnswer }) : undefined}
-                >
-                    <WidgetContent widget={w} selected={w.id === selectedWidgetId} dark={page.background.dark} />
-                </WidgetFrame>
-            ))}
+            {/* Widget layer goes inert while an ink tool is active — one routing rule. */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: inkActive ? 'none' : 'auto' }}>
+                {page.widgets.map((w) => (
+                    <WidgetFrame
+                        key={w.id} widget={w} selected={w.id === selectedWidgetId}
+                        onRegenerate={w.kind === 'exercise' ? () => regenerate(w) : undefined}
+                        onToggleAnswer={w.kind === 'exercise' ? () => updateWidget(w.id, { showAnswer: !w.showAnswer }) : undefined}
+                    >
+                        <WidgetContent widget={w} selected={w.id === selectedWidgetId} dark={page.background.dark} />
+                    </WidgetFrame>
+                ))}
+            </div>
+            <InkLayer active={inkActive} />
         </div>
     );
 }

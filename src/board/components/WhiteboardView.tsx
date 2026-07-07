@@ -3,6 +3,7 @@ import BoardBottomBar from './BoardBottomBar';
 import BoardPageCanvas from './BoardPageCanvas';
 import BoardAddModal from './BoardAddModal';
 import BoardInspector from './BoardInspector';
+import InkSettingsBar from './InkSettingsBar';
 import { useBoardStore } from '../useBoardStore';
 
 // Full-screen "Bordmodus" overlay — the digibord whiteboard app. Mounted by App.tsx
@@ -12,6 +13,7 @@ export default function WhiteboardView() {
     const [addOpen, setAddOpen] = useState(false);
     const selectedWidget = useBoardStore((s) =>
         s.pages[s.activePageIdx].widgets.find(w => w.id === s.selectedWidgetId));
+    const tool = useBoardStore((s) => s.tool);
 
     return (
         <div style={S.overlay}>
@@ -19,6 +21,8 @@ export default function WhiteboardView() {
                 <BoardPageCanvas />
                 {/* Inspector flyout — only for a selected exercise widget (Ruben decision). */}
                 {selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
+                {/* Ink tool settings strip (colors + widths) while pen/marker is active. */}
+                {(tool === 'pen' || tool === 'marker') && <InkSettingsBar tool={tool} />}
             </div>
             <BoardBottomBar onOpenWiskunde={() => setAddOpen(true)} />
             {addOpen && <BoardAddModal onClose={() => setAddOpen(false)} />}

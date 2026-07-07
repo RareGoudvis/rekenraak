@@ -28,8 +28,11 @@ export interface Stroke {
     tool: StrokeTool;
     color: string;
     width: number;
-    opacity?: number;          // marker ≈ 0.5
+    opacity?: number;          // marker ≈ 0.45
     path: string;              // SVG path data — instruments emit exact geometry (arcs etc.)
+    // Flattened sample points [x0,y0,x1,y1,…] — kept alongside the path for the
+    // per-stroke eraser hit-test (and later instrument snapping re-projection).
+    pts: number[];
 }
 
 export type BoardTool = 'select' | 'pen' | 'marker' | 'eraser' | 'line' | 'shape' | 'instrument';

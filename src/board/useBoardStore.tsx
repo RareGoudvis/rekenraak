@@ -1,7 +1,9 @@
 import { create } from 'zustand';
-import type { BoardPage, BoardWidget, BoardTool, BoardBackground } from './boardTypes';
+import type { BoardPage, BoardWidget, BoardTool, BoardBackground, Stroke, StrokeTool } from './boardTypes';
 import { emptyPage, rndId } from './boardTypes';
 import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
+
+export interface InkSettings { color: string; width: number; }
 
 // Whiteboard app store — deliberately separate from useWorksheetStore so the
 // worksheet editor and bordmodus can't corrupt each other's state. Everything
@@ -33,6 +35,15 @@ interface BoardState {
     setTool: (t: BoardTool) => void;
     setGridSnap: (on: boolean) => void;
     setGridSize: (px: number) => void;
+    inkSettings: Record<StrokeTool, InkSettings>;
+    setInkSetting: (tool: StrokeTool, patch: Partial<InkSettings>) => void;
+
+    // ink (always the active page)
+    addStroke: (s: Stroke) => void;
+    removeStrokes: (ids: string[]) => void;
+    undoStroke: () => void;
+    redoStroke: () => void;
+    _redoStrokes: Stroke[];    // in-memory only (cleared on page switch / erase)
 
     // persistence hooks (boardPersistence.ts)
     loadBoard: (pages: BoardPage[], activeIdx?: number) => void;
@@ -114,7 +125,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
     gotoPage: (idx) => {
         const n = get().pages.length;
-        set({ activePageIdx: Math.max(0, Math.min(n - 1, idx)), selectedWidgetId: null });
+        set({ activePageIdx: Math.max(0, Math.min(n - 1, idx)), selectedWidgetId: null, _redoStrokes: [] });
     },
 
     // Mass delete on the current page (background stays).
@@ -128,6 +139,42 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     setTool: (t) => set({ tool: t, selectedWidgetId: t === 'select' ? get().selectedWidgetId : null }),
     setGridSnap: (on) => set({ gridSnap: on }),
     setGridSize: (px) => set({ gridSize: px }),
+
+    inkSettings: {
+        pen: { color: '#111827', width: 4 },
+        marker: { color: '#fde047', width: 18 },
+    },
+    setInkSetting: (tool, patch) => set((state) => ({
+        inkSettings: { ...state.inkSettings, [tool]: { ...state.inkSettings[tool], ...patch } },
+    })),
+
+    _redoStrokes: [],
+    addStroke: (s) => set((state) => ({
+        ...withActivePage(state, (p) => ({ ...p, strokes: [...p.strokes, s] })),
+        _redoStrokes: [],
+    })),
+    // Eraser delete: redo history becomes ambiguous, so it clears.
+    removeStrokes: (ids) => set((state) => ({
+        ...withActivePage(state, (p) => ({ ...p, strokes: p.strokes.filter(st => !ids.includes(st.id)) })),
+        _redoStrokes: [],
+    })),
+    undoStroke: () => set((state) => {
+        const page = state.pages[state.activePageIdx];
+        if (!page.strokes.length) return state;
+        const last = page.strokes[page.strokes.length - 1];
+        return {
+            ...withActivePage(state, (p) => ({ ...p, strokes: p.strokes.slice(0, -1) })),
+            _redoStrokes: [...state._redoStrokes, last],
+        };
+    }),
+    redoStroke: () => set((state) => {
+        if (!state._redoStrokes.length) return state;
+        const s = state._redoStrokes[state._redoStrokes.length - 1];
+        return {
+            ...withActivePage(state, (p) => ({ ...p, strokes: [...p.strokes, s] })),
+            _redoStrokes: state._redoStrokes.slice(0, -1),
+        };
+    }),
 
     loadBoard: (pages, activeIdx = 0) => set({
         pages: pages.length ? pages : [emptyPage()],

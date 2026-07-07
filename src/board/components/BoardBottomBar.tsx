@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, UsersThree, CalendarBlank, Clock, TextT, Image, ArrowUUpLeft, ArrowUUpRight } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
@@ -29,6 +29,12 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const duplicatePage = useBoardStore((s) => s.duplicatePage);
     const removePage = useBoardStore((s) => s.removePage);
     const clearActivePage = useBoardStore((s) => s.clearActivePage);
+    const tool = useBoardStore((s) => s.tool);
+    const setTool = useBoardStore((s) => s.setTool);
+    const undoStroke = useBoardStore((s) => s.undoStroke);
+    const redoStroke = useBoardStore((s) => s.redoStroke);
+    const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
+    const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
     const [menu, setMenu] = useState<'add' | 'background' | 'grid' | 'page' | 'save' | null>(null);
     const [presets, setPresets] = useState<BoardPreset[]>([]);
     const importRef = useRef<HTMLInputElement>(null);
@@ -68,16 +74,16 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         setMenu(null);
     };
 
-    // P1: selection is the only tool; the rest are visible-but-disabled placeholders
-    // so the final layout is judgeable from day 1.
+    // Live tools: select + ink; line/shape/instrument arrive in P3/P4 and stay
+    // visible-but-disabled so the final layout is judgeable now.
     const tools = [
-        { key: 'select', icon: Cursor, label: 'Selecteren', enabled: true, active: true },
-        { key: 'pen', icon: PenNib, label: 'Pen (binnenkort)', enabled: false, active: false },
-        { key: 'marker', icon: Highlighter, label: 'Markeerstift (binnenkort)', enabled: false, active: false },
-        { key: 'eraser', icon: Eraser, label: 'Gom (binnenkort)', enabled: false, active: false },
-        { key: 'line', icon: ArrowUpRight, label: 'Lijn / pijl (binnenkort)', enabled: false, active: false },
-        { key: 'shape', icon: Shapes, label: 'Vormen (binnenkort)', enabled: false, active: false },
-        { key: 'instrument', icon: Ruler, label: 'Meetinstrumenten (binnenkort)', enabled: false, active: false },
+        { key: 'select' as const, icon: Cursor, label: 'Selecteren', enabled: true },
+        { key: 'pen' as const, icon: PenNib, label: 'Pen', enabled: true },
+        { key: 'marker' as const, icon: Highlighter, label: 'Markeerstift', enabled: true },
+        { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
+        { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (binnenkort)', enabled: false },
+        { key: 'shape' as const, icon: Shapes, label: 'Vormen (binnenkort)', enabled: false },
+        { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten (binnenkort)', enabled: false },
     ];
 
     return (
@@ -133,11 +139,26 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         title={t.label}
                         aria-label={t.label}
                         disabled={!t.enabled}
-                        style={{ ...S.toolBtn, ...(t.active ? S.toolActive : {}), ...(!t.enabled ? S.toolDisabled : {}) }}
+                        onClick={() => setTool(t.key)}
+                        style={{ ...S.toolBtn, ...(tool === t.key ? S.toolActive : {}), ...(!t.enabled ? S.toolDisabled : {}) }}
                     >
-                        <t.icon size={22} weight={t.active ? 'fill' : 'regular'} />
+                        <t.icon size={22} weight={tool === t.key ? 'fill' : 'regular'} />
                     </button>
                 ))}
+            </div>
+
+            <div style={S.sep} />
+
+            {/* Ink undo/redo */}
+            <div style={S.group}>
+                <button type="button" className="ui-hover" title="Ongedaan maken (inkt)" aria-label="Ongedaan maken"
+                    disabled={!canUndoInk} style={{ ...S.toolBtn, ...(!canUndoInk ? S.toolDisabled : {}) }} onClick={undoStroke}>
+                    <ArrowUUpLeft size={22} />
+                </button>
+                <button type="button" className="ui-hover" title="Opnieuw (inkt)" aria-label="Opnieuw"
+                    disabled={!canRedoInk} style={{ ...S.toolBtn, ...(!canRedoInk ? S.toolDisabled : {}) }} onClick={redoStroke}>
+                    <ArrowUUpRight size={22} />
+                </button>
             </div>
 
             <div style={S.sep} />
