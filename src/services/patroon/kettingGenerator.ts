@@ -27,12 +27,16 @@ export function generateKettingExercises(block: MathBlock): PatroonExercise[] {
         let values: number[] | null = null;
         let cycle: PatroonStep[] = [];
         for (let attempt = 0; attempt < 300 && !values; attempt++) {
-            cycle = Array.from({ length: chainLength }, (_, i) => {
+            // Build into a local — referencing `cycle[i-1]` inside Array.from read the
+            // PREVIOUS attempt's array (not-yet-assigned), so the no-repeat filter never fired.
+            const built: PatroonStep[] = [];
+            for (let i = 0; i < chainLength; i++) {
                 // Avoid the same op twice in a row — that's a patroon, not a ketting.
-                const pool = i > 0 && ops.length > 1 ? ops.filter(o => o !== cycle[i - 1]?.op) : ops;
+                const pool = i > 0 && ops.length > 1 ? ops.filter(o => o !== built[i - 1].op) : ops;
                 const op = pool[randInt(0, pool.length - 1)];
-                return buildStep(op, opSettings[op]?.max ?? 10);
-            });
+                built.push(buildStep(op, opSettings[op]?.max ?? 10));
+            }
+            cycle = built;
             const start = randInt(1, Math.min(20, maxGetal));
             const vals = [start];
             let ok = true;
