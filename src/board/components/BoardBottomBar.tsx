@@ -1,5 +1,9 @@
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { useBoardStore } from '../useBoardStore';
+import { PATTERN_LABELS } from '../backgrounds';
+import type { BackgroundPattern } from '../boardTypes';
 
 interface Props {
     onAdd: () => void;
@@ -10,6 +14,13 @@ interface Props {
 // P1 ships the chrome with only 'select' live; ink/shape tools activate in P2/P3.
 export default function BoardBottomBar({ onAdd }: Props) {
     const setView = useWorksheetStore((s) => s.setView);
+    const background = useBoardStore((s) => s.pages[s.activePageIdx].background);
+    const setBackground = useBoardStore((s) => s.setBackground);
+    const gridSnap = useBoardStore((s) => s.gridSnap);
+    const setGridSnap = useBoardStore((s) => s.setGridSnap);
+    const gridSize = useBoardStore((s) => s.gridSize);
+    const setGridSize = useBoardStore((s) => s.setGridSize);
+    const [menu, setMenu] = useState<'background' | 'grid' | null>(null);
 
     // P1: selection is the only tool; the rest are visible-but-disabled placeholders
     // so the final layout is judgeable from day 1.
@@ -53,12 +64,52 @@ export default function BoardBottomBar({ onAdd }: Props) {
 
             {/* Board setup */}
             <div style={S.group}>
-                <button type="button" title="Achtergrond (binnenkort)" aria-label="Achtergrond" disabled style={{ ...S.toolBtn, ...S.toolDisabled }}>
-                    <PaintRoller size={22} />
-                </button>
-                <button type="button" title="Raster uitlijnen (binnenkort)" aria-label="Raster uitlijnen" disabled style={{ ...S.toolBtn, ...S.toolDisabled }}>
-                    <GridFour size={22} />
-                </button>
+                <div style={{ position: 'relative' }}>
+                    <button type="button" className="ui-hover" title="Achtergrond" aria-label="Achtergrond"
+                        style={{ ...S.toolBtn, ...(menu === 'background' ? S.toolActive : {}) }}
+                        onClick={() => setMenu(menu === 'background' ? null : 'background')}>
+                        <PaintRoller size={22} />
+                    </button>
+                    {menu === 'background' && (
+                        <div style={S.popup}>
+                            {(Object.keys(PATTERN_LABELS) as BackgroundPattern[]).map(p => (
+                                <button key={p} type="button" className="ui-hover"
+                                    style={{ ...S.popupItem, ...(background.pattern === p ? S.popupItemOn : {}) }}
+                                    onClick={() => setBackground({ ...background, pattern: p })}>
+                                    {PATTERN_LABELS[p]}
+                                </button>
+                            ))}
+                            <div style={S.popupDivider} />
+                            <button type="button" className="ui-hover" style={S.popupItem}
+                                onClick={() => setBackground({ ...background, dark: !background.dark })}>
+                                {background.dark ? <Sun size={16} /> : <Moon size={16} />} {background.dark ? 'Wit bord' : 'Zwart bord'}
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <div style={{ position: 'relative' }}>
+                    <button type="button" className="ui-hover" title="Raster uitlijnen" aria-label="Raster uitlijnen"
+                        style={{ ...S.toolBtn, ...(gridSnap ? S.toolActive : {}) }}
+                        onClick={() => setMenu(menu === 'grid' ? null : 'grid')}>
+                        <GridFour size={22} />
+                    </button>
+                    {menu === 'grid' && (
+                        <div style={S.popup}>
+                            <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(gridSnap ? S.popupItemOn : {}) }}
+                                onClick={() => setGridSnap(!gridSnap)}>
+                                {gridSnap ? 'Uitlijnen: aan' : 'Uitlijnen: uit'}
+                            </button>
+                            <div style={S.popupDivider} />
+                            {[20, 40, 80].map(px => (
+                                <button key={px} type="button" className="ui-hover"
+                                    style={{ ...S.popupItem, ...(gridSize === px ? S.popupItemOn : {}) }}
+                                    onClick={() => { setGridSize(px); setGridSnap(true); }}>
+                                    Raster {px}px
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div style={{ flex: 1 }} />
@@ -125,4 +176,18 @@ const S = {
         color: 'var(--text-main)', cursor: 'pointer', fontWeight: 600,
         fontSize: '13px', fontFamily: "'Azeret Mono', monospace",
     } as React.CSSProperties,
+    popup: {
+        position: 'absolute', bottom: '52px', left: 0, minWidth: '170px',
+        display: 'flex', flexDirection: 'column', gap: '2px', padding: '6px',
+        background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '12px',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.25)', zIndex: 60,
+    } as React.CSSProperties,
+    popupItem: {
+        display: 'flex', alignItems: 'center', gap: '8px',
+        height: '40px', padding: '0 12px', borderRadius: '8px', textAlign: 'left',
+        border: 'none', background: 'transparent', color: 'var(--text-main)',
+        fontSize: '13px', cursor: 'pointer',
+    } as React.CSSProperties,
+    popupItemOn: { background: 'var(--bg-active)', fontWeight: 600 } as React.CSSProperties,
+    popupDivider: { height: '1px', background: 'var(--border-color)', margin: '4px 6px' } as React.CSSProperties,
 };

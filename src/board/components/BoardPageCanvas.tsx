@@ -1,7 +1,12 @@
 import { useBoardStore } from '../useBoardStore';
 import WidgetFrame from './WidgetFrame';
 import ExerciseWidget from './widgets/ExerciseWidget';
+import TekstWidget from './widgets/TekstWidget';
+import DatumWidget from './widgets/DatumWidget';
+import KlokWidget from './widgets/KlokWidget';
+import AfbeeldingWidget from './widgets/AfbeeldingWidget';
 import { regenerateBoardBlock } from '../boardBlocks';
+import { backgroundStyle } from '../backgrounds';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { BoardWidget } from '../boardTypes';
 
@@ -28,7 +33,7 @@ export default function BoardPageCanvas() {
         <div
             style={{
                 position: 'relative', flex: 1, overflow: 'hidden',
-                background: page.background.dark ? '#1c2430' : '#ffffff',
+                ...backgroundStyle(page.background),
                 touchAction: 'none',
             }}
             // Tap on empty board = deselect (closes the inspector flyout).
@@ -40,23 +45,20 @@ export default function BoardPageCanvas() {
                     onRegenerate={w.kind === 'exercise' ? () => regenerate(w) : undefined}
                     onToggleAnswer={w.kind === 'exercise' ? () => updateWidget(w.id, { showAnswer: !w.showAnswer }) : undefined}
                 >
-                    <WidgetContent widget={w} />
+                    <WidgetContent widget={w} selected={w.id === selectedWidgetId} dark={page.background.dark} />
                 </WidgetFrame>
             ))}
         </div>
     );
 }
 
-// Content per widget kind; non-exercise widgets land in the basic-widgets commit.
-function WidgetContent({ widget }: { widget: BoardWidget }) {
-    if (widget.kind === 'exercise') return <ExerciseWidget widget={widget} />;
-    return (
-        <div style={{
-            padding: '16px', background: 'var(--bg-panel)', borderRadius: '8px',
-            border: '1px solid var(--border-color)', color: 'var(--text-main)',
-            fontFamily: "'Azeret Mono', monospace", fontSize: '14px', minHeight: '48px',
-        }}>
-            [{widget.kind}]
-        </div>
-    );
+function WidgetContent({ widget, selected, dark }: { widget: BoardWidget; selected: boolean; dark: boolean }) {
+    switch (widget.kind) {
+        case 'exercise': return <ExerciseWidget widget={widget} />;
+        case 'tekst': return <TekstWidget widget={widget} dark={dark} />;
+        case 'datum': return <DatumWidget dark={dark} />;
+        case 'klok': return <KlokWidget widget={widget} selected={selected} dark={dark} />;
+        case 'afbeelding': return <AfbeeldingWidget widget={widget} />;
+        default: return null;
+    }
 }
