@@ -8,6 +8,7 @@ import { EXERCISE_UI } from './config/exerciseUI';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
+import WhiteboardView from './board/components/WhiteboardView';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
@@ -463,6 +464,8 @@ export default function App() {
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
     {view === 'mijn-bladen' && <MijnBladenView />}
     {view === 'bibliotheek' && <BibliotheekView />}
+    {/* Bordmodus — the whiteboard app; ALL its code lives under src/board/. */}
+    {view === 'whiteboard' && <WhiteboardView />}
     </>
   );
 }

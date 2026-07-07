@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, Gear as SettingsIcon, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Heart } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, Gear as SettingsIcon, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Heart, Chalkboard } from '@phosphor-icons/react';
 import { useWorksheetStore, type ThemeName } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
@@ -205,6 +205,9 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                 </div>
 
                 <IconButton icon={HelpIcon} label="Help / uitleg" onClick={() => onOpenHelp?.()} />
+
+                {/* Bordmodus — full-screen whiteboard app (src/board/). */}
+                <IconButton icon={Chalkboard} label="Bordmodus" onClick={() => setView('whiteboard')} />
 
                 <div style={S.vsep} />
 
