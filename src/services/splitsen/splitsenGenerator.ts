@@ -1,5 +1,5 @@
 import type { MathBlock, SplitsenExercise } from '../math/types';
-import { PLACE_VALUES, digitAtPlace } from '../math/mathEngine';
+import { digitAtPlace } from '../math/mathEngine';
 import { numberToDutchWords } from './dutchWords';
 
 const randInt = (min: number, max: number): number =>
@@ -50,15 +50,20 @@ function nonZeroPlaces(num: number, dp: number): Place[] {
 function numFromMask(maxGetal: number, mask: Record<string, boolean>, dp: number): number {
     const scale = Math.pow(10, dp);
     const scaledCap = Math.round(maxGetal * scale);
-    const hasMask = PLACE_VALUES.some(p => mask[p.key]);
-    if (!hasMask) return randInt(Math.min(scaledCap, dp > 0 ? 1 : 11), scaledCap) / scale;
+    // Only places valid at this dp/maxGetal — a stale decimal mask key (Decimalen reset
+    // to Geen) or an over-max integer key must not constrain generation.
+    const masked = placesFor(maxGetal, dp).filter(p => mask[p.key]);
+    if (!masked.length) {
+        // Prefer 2-digit totals for place-value work, but for a small cap (≤20) use lo=2
+        // so the range doesn't collapse to a single value (maxGetal 10 → always 10).
+        const lo = dp > 0 ? 1 : (scaledCap > 20 ? 11 : 2);
+        return randInt(Math.min(lo, scaledCap), scaledCap) / scale;
+    }
     let s = 0;
-    for (const p of PLACE_VALUES) {
-        if (mask[p.key]) {
-            const w = Math.round(p.weight * scale);
-            const maxd = Math.floor(scaledCap / Math.max(1, w));
-            if (maxd >= 1) s += randInt(1, Math.min(9, maxd)) * w;
-        }
+    for (const p of masked) {
+        const w = Math.round(p.weight * scale);
+        const maxd = Math.floor(scaledCap / Math.max(1, w));
+        if (maxd >= 1) s += randInt(1, Math.min(9, maxd)) * w;
     }
     return Math.max(1, Math.min(s, scaledCap)) / scale;
 }
@@ -123,21 +128,19 @@ function generateTotal(maxGetal: number, mask: Record<string, boolean>, fixedTot
     // given+answer no longer equals the printed total.
     if (fixedTotal && fixedTotal >= 2 && fixedTotal <= maxGetal) return Math.round(fixedTotal * scale) / scale;
 
-    // PLACE_VALUES already includes the decimal places (t/h/d) — don't re-append.
-    const places = PLACE_VALUES;
-    const hasMask = places.some(p => mask[p.key]);
-    if (!hasMask) {
+    // Only places valid at this dp/maxGetal, so a stale decimal mask key (Decimalen reset
+    // to Geen) can't collapse the total to the clamp minimum.
+    const masked = placesFor(maxGetal, dp).filter(p => mask[p.key]);
+    if (!masked.length) {
         const minScaled = dp > 0 ? 1 : 2;
         return randInt(minScaled, Math.round(maxGetal * scale)) / scale;
     }
 
     let totalScaled = 0;
-    for (const place of places) {
-        if (mask[place.key]) {
-            const wScaled = Math.round(place.weight * scale);
-            const maxForPlace = Math.floor((maxGetal * scale) / Math.max(1, wScaled));
-            if (maxForPlace >= 1) totalScaled += randInt(1, Math.min(9, maxForPlace)) * wScaled;
-        }
+    for (const place of masked) {
+        const wScaled = Math.round(place.weight * scale);
+        const maxForPlace = Math.floor((maxGetal * scale) / Math.max(1, wScaled));
+        if (maxForPlace >= 1) totalScaled += randInt(1, Math.min(9, maxForPlace)) * wScaled;
     }
     return Math.max(dp > 0 ? 1 : 2, Math.min(totalScaled, Math.round(maxGetal * scale))) / scale;
 }
@@ -145,18 +148,21 @@ function generateTotal(maxGetal: number, mask: Record<string, boolean>, fixedTot
 function generateGiven(total: number, mask: Record<string, boolean>, dp: number): number {
     const scale = Math.pow(10, dp);
     const totalScaled = Math.round(total * scale);
-    const places = PLACE_VALUES;   // already includes decimal places
-    const hasMask = places.some(p => mask[p.key]);
-    if (!hasMask) return randInt(0, totalScaled) / scale;
+    // dp-aware place list: ignore stale decimal keys beyond the current decimalPlaces.
+    const places = [...INT_PLACES, ...DEC_PLACES.slice(0, dp)];
+    const masked = places.filter(p => mask[p.key]);
+    if (!masked.length) return randInt(0, totalScaled) / scale;
 
     let givenScaled = 0;
-    for (const place of places) {
-        if (mask[place.key]) {
-            const wScaled = Math.round(place.weight * scale);
-            const maxForPlace = Math.floor(totalScaled / Math.max(1, wScaled));
-            if (maxForPlace >= 1) givenScaled += randInt(1, Math.min(9, maxForPlace)) * wScaled;
-        }
+    let contributed = false;
+    for (const place of masked) {
+        const wScaled = Math.round(place.weight * scale);
+        const maxForPlace = Math.floor(totalScaled / Math.max(1, wScaled));
+        if (maxForPlace >= 1) { givenScaled += randInt(1, Math.min(9, maxForPlace)) * wScaled; contributed = true; }
     }
+    // Mask can't be satisfied for this (small) total → free given so rows still vary,
+    // instead of every row collapsing to the identical trivial '0 | total' split.
+    if (!contributed) return randInt(0, totalScaled) / scale;
     return Math.max(0, Math.min(givenScaled, totalScaled)) / scale;
 }
 
