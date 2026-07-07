@@ -52,7 +52,13 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     }
 
     // ── Tabel: shared header + one tick-row per number ────────────────────────
-    const cols = `200px ${divisors.map(() => '64px').join(' ')}`;
+    // Size columns to the printable width: fixed number column, tick columns share the
+    // rest (capped so few-divisor tables don't look stretched, shrunk so 7-10 divisors
+    // never overflow 625px and clip in print).
+    const A4_CONTENT_PX = 625;
+    const numberColPx = 150;   // holds the "deelbaar door:" header label
+    const tickColPx = Math.min(100, Math.floor((A4_CONTENT_PX - numberColPx) / divisors.length));
+    const cols = `${numberColPx}px ${divisors.map(() => `${tickColPx}px`).join(' ')}`;
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '34px', display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: '15px', boxSizing: 'border-box',
