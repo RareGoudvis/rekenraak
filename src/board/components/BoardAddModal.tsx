@@ -13,8 +13,11 @@ interface Props {
 // Board-friendly variant naming: the hoofdrekenen rational leaves are just called
 // "Optellen"/"Aftrekken"… in APP_STRUCTURE (they live under a Breuken subdomain);
 // on the flat board catalog that context is gone, so name them explicitly.
-function variantLabel(v: CatalogVariant): string {
-    if (v.constraints?.numberType === 'rational' && !/breuk/i.test(v.label)) return 'Met breuken';
+function variantLabel(item: CatalogItem, v: CatalogVariant): string {
+    if (v.constraints?.numberType === 'rational' && !/breuk/i.test(v.label)) {
+        const op = item.label.split(/[\s(—]/)[0];   // "Optellen (standaardprocedure)" → "Optellen"
+        return `${op} met breuken`;
+    }
     return v.label;
 }
 
@@ -90,7 +93,7 @@ export default function BoardAddModal({ onClose }: Props) {
                             ) : (
                                 item.variants.map(v => (
                                     <button key={v.key} type="button" className="ui-hover" style={S.variantBtn} onClick={() => handleAdd(item, v)}>
-                                        <Plus size={12} /> {variantLabel(v)}
+                                        <Plus size={12} /> {variantLabel(item, v)}
                                     </button>
                                 ))
                             )}

@@ -42,9 +42,11 @@ export default function InkLayer({ active }: { active: boolean }) {
         const hitR = 14;
         const ids: string[] = [];
         for (const s of strokes) {
+            // Old autosaves (pre-pts) may carry strokes without sample points.
+            const pts = s.pts ?? [];
             const reach = (s.width / 2 + hitR) ** 2;
-            for (let i = 0; i < s.pts.length; i += 2) {
-                const dx = s.pts[i] - x, dy = s.pts[i + 1] - y;
+            for (let i = 0; i < pts.length; i += 2) {
+                const dx = pts[i] - x, dy = pts[i + 1] - y;
                 if (dx * dx + dy * dy <= reach) { ids.push(s.id); break; }
             }
         }
@@ -72,8 +74,16 @@ export default function InkLayer({ active }: { active: boolean }) {
     };
 
     const onPointerUp = () => {
-        if (drawing.current && draft && drawing.current.length >= 2) {
-            addStroke({ ...draft, id: rndId(), pts: [...drawing.current] });
+        // Commit from the ref, not the (possibly one-frame-stale) draft state, so a
+        // fast tap-release can never race React's render cycle.
+        const pts = drawing.current;
+        if (pts && pts.length >= 2 && (tool === 'pen' || tool === 'marker')) {
+            const cfg = inkSettings[tool];
+            addStroke({
+                id: rndId(), tool, color: cfg.color, width: cfg.width,
+                opacity: tool === 'marker' ? 0.45 : 1,
+                path: pathFrom(pts), pts: [...pts],
+            });
         }
         drawing.current = null;
         setDraft(null);

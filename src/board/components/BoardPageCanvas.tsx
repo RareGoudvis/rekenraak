@@ -11,6 +11,7 @@ import GeluidWidget from './widgets/GeluidWidget';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
 import InkLayer from './InkLayer';
+import BoardErrorBoundary from './BoardErrorBoundary';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { BoardWidget } from '../boardTypes';
 
@@ -53,11 +54,15 @@ export default function BoardPageCanvas() {
                         onRegenerate={w.kind === 'exercise' ? () => regenerate(w) : undefined}
                         onToggleAnswer={w.kind === 'exercise' ? () => updateWidget(w.id, { showAnswer: !w.showAnswer }) : undefined}
                     >
-                        <WidgetContent widget={w} dark={page.background.dark} />
+                        <BoardErrorBoundary label={`Widget (${w.kind})`}>
+                            <WidgetContent widget={w} dark={page.background.dark} />
+                        </BoardErrorBoundary>
                     </WidgetFrame>
                 ))}
             </div>
-            <InkLayer active={inkActive} />
+            <BoardErrorBoundary label="Inktlaag">
+                <InkLayer active={inkActive} />
+            </BoardErrorBoundary>
         </div>
     );
 }

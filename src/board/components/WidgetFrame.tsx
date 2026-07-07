@@ -58,7 +58,9 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
 
     // Frame zoom: `zoom` (unlike transform:scale) participates in layout, so the
     // frame height always matches the scaled content — no clipping, no dead space.
-    const frameZoom = widget.w / naturalWidth(widget.kind);
+    // Zoom to the INNER width (minus the 2×2px border) or the content covers the
+    // frame's right border.
+    const frameZoom = (widget.w - 4) / naturalWidth(widget.kind);
     const textScale = widget.scale ?? 1;   // extra content zoom (exercise tekstgrootte)
     const handMode = tool === 'hand';
 

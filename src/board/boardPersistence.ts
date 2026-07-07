@@ -35,6 +35,8 @@ export function parseBoardFile(json: string): BoardFile | null {
         if (data.version !== BOARD_FORMAT_VERSION) return null;
         if (!Array.isArray(data.pages) || data.pages.length === 0) return null;
         if (!data.pages.every(p => p && Array.isArray(p.widgets) && Array.isArray(p.strokes) && p.background)) return null;
+        // Normalize: strokes saved by early builds may lack sample points.
+        for (const p of data.pages) for (const s of p.strokes) if (!Array.isArray(s.pts)) s.pts = [];
         return data;
     } catch {
         return null;
