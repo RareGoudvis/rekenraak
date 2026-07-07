@@ -81,12 +81,18 @@ export function generateGetallenrijExercises(block: MathBlock): GetallenasExerci
             const span = stepN * (ticks - 1);
             const dp = stepDecimals(stepN);
 
+            // Clamp so a row longer than the range (step×ticks > maxGetal) anchors at lo
+            // instead of `pick` swapping bounds into negative starts on a natural row.
+            const loU = Math.ceil(lo / stepN);
+            const need = Math.ceil((lo + span) / stepN);
+            const hiU = Math.floor(hi / stepN);
+            const upper = Math.floor((hi - span) / stepN);
             // Try to land an anchor (leftmost value) whose place structure matches the mask.
             let attempts = 0;
             do {
                 const startU = arrowLeft
-                    ? pick(Math.ceil((lo + span) / stepN), Math.floor(hi / stepN))
-                    : pick(Math.ceil(lo / stepN), Math.floor((hi - span) / stepN));
+                    ? pick(need, Math.max(need, hiU))
+                    : pick(loU, Math.max(loU, upper));
                 start = startU * stepN;
                 attempts++;
             } while (useMask && !numberMatchesMask(start, numberMask, maxGetal, numberType as 'natural' | 'decimal', dp) && attempts < 80);

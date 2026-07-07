@@ -68,10 +68,15 @@ export function generateGetallenasExercises(block: MathBlock): GetallenasExercis
             const hiU = Math.floor(hi / stepN);
             let startU: number;
             if (arrowLeft) {
-                // descending L→R: leftmost is largest, needs leftmost − span ≥ lo.
-                startU = pick(Math.ceil((lo + span) / stepN), hiU);
+                // descending L→R: leftmost is largest, rightmost = start − span must be ≥ lo.
+                // Clamp so we never pick below `need` (else the range end drops under lo → negatives
+                // on a natural line when step×ticks overruns maxGetal).
+                const need = Math.ceil((lo + span) / stepN);
+                startU = pick(need, Math.max(need, hiU));
             } else {
-                startU = pick(loU, Math.floor((hi - span) / stepN));
+                // ascending: start ≥ lo; upper bound keeps the last tick ≤ hi when it fits, else anchors at lo.
+                const upper = Math.floor((hi - span) / stepN);
+                startU = pick(loU, Math.max(loU, upper));
             }
             start = startU * stepN;
             values = numericValues(start, stepN, ticks, arrowLeft);
