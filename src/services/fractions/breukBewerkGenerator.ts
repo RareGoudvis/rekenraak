@@ -1,5 +1,5 @@
 import type { MathBlock, BreukBewerkExercise, Fraction } from '../math/types';
-import { gcd, simplifyFraction, toMixedNumber } from '../math/mathEngine';
+import { gcd, simplifyFraction } from '../math/mathEngine';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -17,7 +17,9 @@ function makeGemengd(maxNum: number, maxDen: number, dirMode: string): BreukBewe
     while (n % d === 0 && guard++ < 40) n = randInt(lo, hi);
     if (n % d === 0) n += 1;   // last-resort nudge
     const improper: Fraction = { n, d };
-    const mixed: Fraction = toMixedNumber(n, d);   // already in lowest terms
+    // Keep the fractional part UNsimplified (14/8 ↔ 1 6/8): simplifying only one side
+    // made the printed solution mismatch the pupil's direct conversion (10/6 vs 5/3).
+    const mixed: Fraction = { whole: Math.floor(n / d), n: n % d, d };
 
     return direction === 'naar-gemengd'
         ? { id: rndId(), subType: 'gemengd', direction, inputs: [improper], answers: [mixed], isManuallyEdited: false }
