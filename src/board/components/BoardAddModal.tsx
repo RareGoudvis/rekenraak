@@ -15,7 +15,10 @@ interface Props {
 // on the flat board catalog that context is gone, so name them explicitly.
 function variantLabel(item: CatalogItem, v: CatalogVariant): string {
     if (v.constraints?.numberType === 'rational' && !/breuk/i.test(v.label)) {
-        const op = item.label.split(/[\s(—]/)[0];   // "Optellen (standaardprocedure)" → "Optellen"
+        // Prefer the operation word from the variant itself ("… · Optellen"); the
+        // item label can be the subdomain ("Hoofdrekenen") for multi-parent families.
+        const op = v.label.match(/Optellen|Aftrekken|Vermenigvuldigen|Delen/i)?.[0]
+            ?? item.label.split(/[\s(—]/)[0];
         return `${op} met breuken`;
     }
     return v.label;
