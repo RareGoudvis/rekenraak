@@ -521,21 +521,6 @@ export default function App() {
         )}
 
         <div ref={a4Ref} className="print-area-shell" style={{ zoom: sheetZoom }}>
-          {blocks.length === 0 && (
-            <div className="no-print" style={styles.heroEmpty}>
-              <h1 style={styles.heroTitle}>RekenRaak — gratis werkbladgenerator voor wiskunde in het lager onderwijs</h1>
-              <p style={styles.heroPitch}>
-                Stel in enkele minuten een eigen wiskundewerkblad samen voor het lager onderwijs —
-                kies oefeningen, regel de moeilijkheidsgraad en druk af of bewaar als pdf.
-              </p>
-              <ul style={styles.heroBullets}>
-                <li style={styles.heroBullet}><ListChecks size={20} color="var(--accent)" weight="bold" />Kies oefeningen</li>
-                <li style={styles.heroBullet}><SlidersHorizontal size={20} color="var(--accent)" weight="bold" />Stel de moeilijkheidsgraad in</li>
-                <li style={styles.heroBullet}><Printer size={20} color="var(--accent)" weight="bold" />Druk af of bewaar als pdf</li>
-              </ul>
-              <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen — deze tekst verdwijnt zodra je eerste blok op het blad staat.</p>
-            </div>
-          )}
 
           {packedPages.map((page, pi) => (
             <PageSheet
@@ -550,6 +535,21 @@ export default function App() {
                 : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}
               footer={renderFooterRegion(pi, packedPages.length)}
             >
+              {blocks.length === 0 && pi === 0 && (
+                <div className="no-print" style={{ ...styles.heroEmpty, gridColumn: 'span 6' }}>
+                  <h1 style={styles.heroTitle}>RekenRaak — gratis werkbladgenerator voor wiskunde in het lager onderwijs</h1>
+                  <p style={styles.heroPitch}>
+                    Stel in enkele minuten een eigen wiskundewerkblad samen voor het lager onderwijs —
+                    kies oefeningen, regel de moeilijkheidsgraad en druk af of bewaar als pdf.
+                  </p>
+                  <ul style={styles.heroBullets}>
+                    <li style={styles.heroBullet}><ListChecks size={20} color="var(--accent)" weight="bold" />Kies oefeningen</li>
+                    <li style={styles.heroBullet}><SlidersHorizontal size={20} color="var(--accent)" weight="bold" />Stel de moeilijkheidsgraad in</li>
+                    <li style={styles.heroBullet}><Printer size={20} color="var(--accent)" weight="bold" />Druk af of bewaar als pdf</li>
+                  </ul>
+                  <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen.</p>
+                </div>
+              )}
               {page.rows.flatMap((row) => row.items).map((item) => (
                 <div key={item.block.id} style={{ gridColumn: `span ${item.width}`, minWidth: 0 }}>
                   {renderBlock(item, blockOrder[item.block.id] ?? 0)}
