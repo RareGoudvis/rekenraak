@@ -116,18 +116,35 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : 94;
     const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
         + 8 + answerW + (anyRemainder ? 90 : 0);
+    // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
+    // workline, so what it really needs is writing room for a hand-written tussenstap.
+    // That room scales with the block's widest operand instead of the fixed 94px field.
+    const worklineMinPx = Math.max(80, Math.ceil(maxChars * CHAR_PX) + 30);
+    const steppedRowMin = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
+        + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx;
     // Keep the classic 2-up look as long as two rows fit with at least a 20px gap;
     // the gap then stretches up to the traditional 50px when there's room.
     const COL_GAP_MIN = 20;
-    const gridCols = isInlineShort && (rowEstimate * 2 + COL_GAP_MIN <= A4_CONTENT_PX) ? 2 : 1;
-    const colGap = gridCols === 2 ? Math.min(50, A4_CONTENT_PX - 2 * rowEstimate) : 50;
+    const twoUpShort = isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
+    // Stappen goes 2-up for small numbers. Measured break: 2-up up to maxGetal 10 000,
+    // 1-up from 100 000 (maxGetal caps the RESULT, so operands are one digit shorter, and
+    // formatMathNumber's thousands separator costs a char too). Met-rest rows ignore layout
+    // entirely and the compenseren tussenstap line is far wider than a workline — both stay 1-up.
+    const twoUpStepped = layout === 'stepped' && !anyRemainder && !compScaffoldOn
+        && steppedRowMin * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
+    const gridCols = (twoUpShort || twoUpStepped) ? 2 : 1;
+    const rowWidthUsed = twoUpShort ? rowEstimate : steppedRowMin;
+    const colGap = gridCols === 2 ? Math.min(50, A4_CONTENT_PX - 2 * rowWidthUsed) : 50;
+    // Centring a stepped row would collapse its flex:1 workline — only the
+    // intrinsically-sized inline-short rows get centred inside their column.
+    const colJustify = gridCols === 2 && isInlineShort ? 'center' : 'stretch';
     return (
         <FragmentableGrid
             cols={gridCols}
             gridTemplateColumns={gridCols === 2 ? '1fr 1fr' : '1fr'}
             columnGap={colGap}
             rowGap={block.verticalSpacing || 14}
-            justifyItems={gridCols === 2 ? 'center' : 'stretch'}
+            justifyItems={colJustify}
             items={block.exercises.map((ex) => {
                 if (!ex || !ex.operands) return null;
 

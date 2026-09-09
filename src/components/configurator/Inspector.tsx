@@ -700,7 +700,7 @@ export default function Inspector() {
                             </div>
                             {(activeBlock.layoutPreset ?? 'inline-short') === 'stepped' && (
                                 <div style={{ marginTop: '8px' }}>
-                                    <label style={S.label}>Antal stappenlijnen: {activeBlock.steppedLines ?? 3}</label>
+                                    <label style={S.label}>Aantal stappenlijnen: {activeBlock.steppedLines ?? 3}</label>
                                     <input
                                         type="range" min="1" max="10" step="1"
                                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
