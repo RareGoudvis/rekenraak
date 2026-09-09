@@ -1,6 +1,7 @@
 import type { MathBlock, MabExercise, MabStyle, MabScaffolding } from '../../services/math/types';
 import { MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,32 @@ const fmt = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' 
 
 interface ColDef { key: string; place: MabPlace; }
 
+// Every place-value column is the SAME width — a positietabel whose E column is narrower
+// than its H column stops reading as a table of equal places.
+//
+// The width comes from the widest single glyph the column must hold, not from the share of
+// the block it happens to get. The hundreds set it: a hundred plate (or a tens rod) is ten
+// cells wide, and ten of them stack vertically rather than side by side. This type tops out
+// at 1000, so a duizendtal column only ever holds ONE cube — its own width is enough.
+// SYNC: these are the glyph sizes in MabBlocksSVG.tsx — CELL 6, CELL_THOUSANDS 7, +4 offset.
+const THOUSAND_GLYPH_PX = 7 * 10 + 4;    // RealisticThousands: S + OFFSET
+const HUNDRED_GLYPH_PX = 6 * 10;         // 10 cells wide (also the tens rod)
+// 4px: four duizendtal columns plus the box's own borders have to clear a half-width
+// cell (338px). 8 put them 13px over, 5 left 1px over.
+const MAB_COL_PAD = 4;
+function mabColWidth(cols: Array<{ key: string }>): number {
+    const hasThousands = cols.some(c => c.key === 'D');
+    const glyph = Math.max(HUNDRED_GLYPH_PX, hasThousands ? THOUSAND_GLYPH_PX : 0);
+    return glyph + MAB_COL_PAD;
+}
+
 export default function MabViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
+    // The item carries its own 1.5px borders and the grid a 14px gap, so three tracks can
+    // land exactly on the boundary and tip over. Under-filling a row is harmless; clipping
+    // in print is not, so the fit keeps a small margin.
+    const mabPerRow = (cols: Array<{ key: string }>, want: number, gap: number) =>
+        fitCols(availableWidth - 12, cols.length * mabColWidth(cols) + 4, want, gap);
     // herkennen = read drawn blocks → write number; tekenen = reverse (draw blocks).
     const mode: 'herkennen' | 'tekenen' = block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen';
     const exercises: MabExercise[] = block.mabExercises || [];
@@ -44,7 +70,7 @@ export default function MabViewer({ block, showSolutions }: Props) {
 
     return (
         <FragmentableGrid
-            cols={perRow}
+            cols={mabPerRow(cols, perRow, gap)}
             columnGap={gap}
             rowGap={gap}
             items={exercises.map(ex => (
@@ -82,7 +108,16 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
         tens: ex.tens,
         units: ex.units,
     };
-    const gridCols = `repeat(${cols.length}, 1fr)`;
+    // The Dienes glyphs are fixed-size on purpose (a tens rod IS ten unit cubes wide), so
+    // plain 1fr columns squeeze them the moment the block is narrower than full width and
+    // the place-value reading breaks. Each column therefore gets an explicit minimum equal
+    // to its own glyph, and shares only the leftover slack.
+    //
+    // The columns are FIXED px, not minmax(...,1fr): the header row and the drawing row are
+    // separate grids, and any flexible track resolves differently in each, so the H/T/E
+    // labels drift out of line with the blocks underneath them. Fixed also means the
+    // exercise never resizes — a narrow block simply fits fewer per row (as the clocks do).
+    const gridCols = `repeat(${cols.length}, ${mabColWidth(cols)}px)`;
     const hasBorder = scaffolding === 'positietabel' || scaffolding === 'kader';
     const hasHeader = scaffolding === 'positietabel';
     const hasDividers = scaffolding === 'positietabel';
@@ -96,7 +131,8 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: "'Azeret Mono', monospace" }}>
             {/* BOX = optional outer border + optional H/T/E header row + drawing area */}
             <div style={{
-                width: '100%',
+                width: 'max-content',
+                maxWidth: '100%',
                 border: hasBorder ? '1.5px solid #000' : 'none',
                 boxSizing: 'border-box',
                 display: 'flex',

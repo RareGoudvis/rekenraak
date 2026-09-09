@@ -69,8 +69,8 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "klok-kloklezen": { rowUnits: 7.33, perRowFull: 2.7, minWidth: 2 },
     "lengte-meten": { rowUnits: 5.5, perRowFull: 1, minWidth: 6 },
     "maateenheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 2 },
-    "mab-herkennen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6, minWidthSingle: 3 },
-    "mab-tekenen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6, minWidthSingle: 3 },
+    "mab-herkennen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6 },
+    "mab-tekenen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6 },
     "omtrek": { rowUnits: 21.78, perRowFull: 1, minWidth: 6 },
     "oppervlakte": { rowUnits: 18.42, perRowFull: 1, minWidth: 6 },
     "ordenen": { rowUnits: 3.63, perRowFull: 2, minWidth: 3 },
@@ -130,9 +130,15 @@ export function minWidthUnits(block: MathBlock): WidthUnits {
     // full width for a ROW of items can go narrower when there is just one.
     const single = (block.numberOfExercises ?? 0) <= 1 && facts.minWidthSingle;
     const base = single ? facts.minWidthSingle! : facts.minWidth;
+    const c = (block.constraints ?? {}) as Record<string, unknown>;
+
+    // MAB is sized by its glyphs rather than by its share of the block: the hundreds plate
+    // sets the column width and this type tops out at 1000, so four columns still fit a
+    // half. It stays out of a third, where the place columns stop reading as places.
+    if (block.typeId.startsWith('mab-')) return 3;
+
     if (base === 6) return 6;
 
-    const c = (block.constraints ?? {}) as Record<string, unknown>;
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;
 
     // Wide numbers need wide columns whatever the type's baseline tier says.
