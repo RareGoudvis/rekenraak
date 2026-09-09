@@ -60,8 +60,9 @@ function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: b
         alignItems: 'center',
         justifyContent: 'center',
         gap: hasLabel ? 'var(--sp-2)' : 0,
-        height: '30px',
-        minWidth: hasLabel ? undefined : '30px',
+        // One control height across the toolbar and both panel headers (index.css).
+        height: 'var(--control-h)',
+        minWidth: hasLabel ? undefined : 'var(--control-h)',
         padding: hasLabel ? '0 12px' : 0,
         borderRadius: 'var(--radius-sm)',
         cursor: disabled ? 'not-allowed' : 'pointer',

@@ -38,8 +38,10 @@
    now, so each page is a plain element with its own header and footer — less fragile, and
    it can show a teacher which page they are looking at. */
 /* Panel header strips sit level with the top bar so the three columns read as three
-   columns. SYNC: --panel-head-h must match the TopBar's own height. */
-:root { --panel-head-h: 52px; }
+   columns. Every control in the three headers is --control-h tall and every header is
+   --bar-h tall, so the tab strips, the toolbar buttons and the panel edges all line up
+   on one baseline. SYNC: TopBar's S.bar reads --bar-h too. */
+:root { --control-h: 34px; --bar-h: 58px; --panel-head-h: var(--bar-h); }
 .panel-head {
   height: var(--panel-head-h); flex: none;
   display: flex; align-items: center; gap: var(--sp-2);
@@ -222,7 +224,9 @@ textarea:focus-visible,
 }
 .seg-btn {
   flex: 1;
-  padding: 5px 10px;            /* -1px absorbs the 2px track padding, keeps height stable */
+  /* Height comes from the track: --control-h minus the 2px gutter and 2px border. */
+  height: calc(var(--control-h) - 6px);
+  padding: 0 10px;
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 500;

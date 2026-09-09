@@ -8,6 +8,7 @@ import { baseApply } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 import PopupSelect from '../ui/PopupSelect';
+import Wordmark from '../ui/Wordmark';
 import OverzichtPanel from './OverzichtPanel';
 
 // Walk the domain tree keeping only entries whose label matches the search needle.
@@ -77,7 +78,7 @@ function countLeaves(sub: Domain['subdomains'][number]): number {
     return n;
 }
 
-export default function Sidebar() {
+export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
     const addBlockFromType = useWorksheetStore((state) => state.addBlockFromType);
     const curriculum = useWorksheetStore((state) => state.curriculum);
     const selectedGrade = useWorksheetStore((state) => state.selectedGrade);
@@ -346,6 +347,19 @@ export default function Sidebar() {
                 </div>,
                 document.body,
             )}
+
+            {/* The wordmark anchors the sidebar's foot instead of sitting in the toolbar's
+                centre track — that frees the middle of the bar for the sheet's own name. */}
+            <button
+                type="button"
+                className="ui-hover"
+                style={S.brandFoot}
+                onClick={() => onOpenAbout?.()}
+                aria-label="Over dit project"
+                title="Over dit project"
+            >
+                <Wordmark height={22} />
+            </button>
         </aside>
     );
 }
@@ -375,6 +389,12 @@ const S = {
     navArea: { flex: 1, overflowY: 'auto', padding: 'var(--sp-2) var(--sp-1)' } as React.CSSProperties,
     // Truncate long nav labels with an ellipsis instead of colliding with the chevron.
     navText: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 } as React.CSSProperties,
+
+    brandFoot: {
+        flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 'var(--sp-3)', border: 'none', borderTop: '1px solid var(--separator)',
+        background: 'transparent', cursor: 'pointer', lineHeight: 0,
+    } as React.CSSProperties,
 
     lockedPalette: { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 } as React.CSSProperties,
     lockedBanner: { margin: 'var(--sp-1) var(--sp-4) var(--sp-2)', padding: 'var(--sp-2) var(--sp-3)', fontSize: 'var(--text-xs)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Heart } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
@@ -7,13 +7,12 @@ import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
-import AboutModal from './AboutModal';
-import Wordmark from '../ui/Wordmark';
 import { Info } from '@phosphor-icons/react';
 
 interface Props {
     onPrint: (withSolutions: boolean) => void;
     onOpenHelp?: () => void;
+    onOpenAbout?: () => void;
 }
 
 // The sheet's name belongs in the bar, next to the logo — that is where a document's
@@ -52,7 +51,7 @@ function SheetTitle({ title, onChange }: { title: string; onChange: (t: string) 
     );
 }
 
-export default function TopBar({ onPrint, onOpenHelp }: Props) {
+export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
     const undo = useWorksheetStore((s) => s.undo);
     const redo = useWorksheetStore((s) => s.redo);
     const canUndo = useWorksheetStore((s) => s.canUndo());
@@ -74,7 +73,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
-    const [aboutOpen, setAboutOpen] = useState(false);
 
     const handleExport = () => {
         const st = useWorksheetStore.getState();
@@ -234,15 +232,12 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                 </button>
 
                                 <div style={S.menuDivider} />
-                                <div style={S.sectionLabel}>Over &amp; steun</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setAboutOpen(true); }}>
+                                <div style={S.sectionLabel}>Over dit project</div>
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenAbout?.(); }}>
                                     <Info size={15} /> Over dit project
                                 </button>
                                 <a className="ui-hover" style={{ ...S.menuItem, textDecoration: 'none' }} href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" onClick={() => setMenu(null)}>
                                     <ChatText size={15} /> Feedback geven
-                                </a>
-                                <a className="ui-hover" style={{ ...S.menuItem, textDecoration: 'none', color: '#e11d48' }} href="https://buymeacoffee.com/raregoudvis" target="_blank" rel="noopener noreferrer" onClick={() => setMenu(null)}>
-                                    <Heart size={15} weight="fill" /> Steun met een koffie
                                 </a>
                             </div>
                         </>
@@ -256,9 +251,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
               {/* Middle track: wordmark plus the save status directly to its right. That
                   leaves the space LEFT of the logo free for user hints later. */}
               <div style={S.centreTrack}>
-                <button type="button" className="ui-hover" style={S.logoCentered} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
-                    <Wordmark height={26} />
-                </button>
+                <span style={S.betaChip} title="RekenRaak is nog in ontwikkeling — bewaar je bladen ook als bestand.">beta</span>
                 <SheetTitle title={headerTitle} onChange={(t) => updateHeader({ titel: t })} />
                 <div
                     style={S.saveChip}
@@ -334,15 +327,16 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
             {baseOpen && <BaseSettingsModal onClose={() => setBaseOpen(false)} />}
             {curriculumOpen && <CurriculumBuilderModal onClose={() => setCurriculumOpen(false)} />}
-            {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
         </div>
     );
 }
 
 const S = {
     bar: {
-        display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 'var(--sp-2)',
-        padding: 'var(--sp-2) var(--sp-4)',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'stretch',
+        // SYNC: --bar-h is what .panel-head uses, so the three column headers share a baseline.
+        height: 'var(--bar-h)',
+        padding: '0 var(--sp-5)',
         /* Full-width header: background from .mac-vibrant (frosted), separated by a bottom hairline.
            position+zIndex so the dropdown menus paint ABOVE the panel body below (which is a
            later, opaque sibling — without this the menus open hidden behind it). */
@@ -356,11 +350,10 @@ const S = {
     // 1fr | auto | 1fr keeps the wordmark optically centred no matter how the two action
     // groups grow, which a plain flex row with space-between does not.
     zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)' } as React.CSSProperties,
-    groupLeft: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'start' } as React.CSSProperties,
-    groupRight: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'end' } as React.CSSProperties,
-    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', whiteSpace: 'nowrap' } as React.CSSProperties,
-    logoCentered: { background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0 } as React.CSSProperties,
-    group: { display: 'flex', gap: 'var(--sp-1)' } as React.CSSProperties,
+    groupLeft: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'start', paddingRight: 'var(--sp-5)' } as React.CSSProperties,
+    groupRight: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'end', paddingLeft: 'var(--sp-5)' } as React.CSSProperties,
+    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap' } as React.CSSProperties,
+    group: { display: 'flex', gap: 'var(--sp-1)', marginRight: 'var(--sp-2)' } as React.CSSProperties,
     spacer: { flex: 1, minWidth: 0 } as React.CSSProperties,
     vsep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--separator)', flexShrink: 0 } as React.CSSProperties,
     menuWrap: { position: 'relative', display: 'flex' } as React.CSSProperties,
@@ -385,13 +378,13 @@ const S = {
         background: 'transparent', color: 'var(--danger)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
     titleBtn: {
-        maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         background: 'transparent', border: '1px solid transparent', borderRadius: 'var(--radius-sm)',
-        padding: '3px 8px', marginLeft: 'var(--sp-2)', cursor: 'text',
+        padding: '3px 8px', cursor: 'text',
         fontSize: 'var(--text-md)', fontWeight: 600, fontFamily: 'inherit',
     } as React.CSSProperties,
     titleInput: {
-        width: '260px', marginLeft: 'var(--sp-2)', padding: '3px 8px',
+        width: '320px', padding: '3px 8px',
         background: 'var(--bg-surface-2)', border: '1px solid var(--accent)',
         borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', outline: 'none',
         fontSize: 'var(--text-md)', fontWeight: 600, fontFamily: 'inherit',
@@ -399,8 +392,13 @@ const S = {
     menuDivider: { height: '1px', background: 'var(--separator)', margin: '4px 6px' } as React.CSSProperties,
     sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
     shareFlash: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
+    betaChip: {
+        padding: '2px 8px', borderRadius: 'var(--radius-pill)',
+        border: '1px solid var(--separator)', color: 'var(--text-muted)',
+        fontSize: 'var(--text-xs)', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'default',
+    } as React.CSSProperties,
     saveChip: {
-        display: 'flex', alignItems: 'center', gap: '6px', marginRight: 'var(--sp-3)',
+        display: 'flex', alignItems: 'center', gap: '6px',
         fontSize: 'var(--text-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', cursor: 'default',
     } as React.CSSProperties,
     saveDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, transition: 'background var(--dur) var(--ease-out)' } as React.CSSProperties,
