@@ -372,7 +372,13 @@ export default function App() {
         : footerData?.showSchool ? 'school'
         : footerData?.showKlas ? 'klas'
         : footerData?.showLeerkracht ? 'leerkracht' : 'leeg');
+    const leftSlot: FooterSlot = footerData?.slotLeft ?? 'leeg';
     const right = rightSlot === 'vrije-tekst' ? (footerData?.rightText ?? '') : footerSlotText(rightSlot, pageIndex, pageCount);
+    const left = leftSlot === 'vrije-tekst' ? (footerData?.leftText ?? '') : footerSlotText(leftSlot, pageIndex, pageCount);
+    // The credit always prints; only its position is the teacher's choice. Whichever
+    // position holds it shows the credit instead of that position's own slot.
+    const brandSlot = footerData?.brandSlot ?? 'left';
+    const credit = <span className="footer-credit">Gemaakt met RekenRaak.be</span>;
     return (
             <div className="print-tfoot-inner" style={overlayRegionStyle({
               borderTopStyle: 'solid',
@@ -383,9 +389,9 @@ export default function App() {
                 ? { borderStyle: 'solid', borderWidth: '1.5px', borderColor: '#000', padding: '6px 10px', borderRadius: '6px' }
                 : {}),
             }, docSettings.footerCustom)}>
-              <span className="footer-credit">Gemaakt met RekenRaak.be</span>
-              <span>{footerSlotText(centerSlot, pageIndex, pageCount)}</span>
-              <span>{right}</span>
+              <span>{brandSlot === 'left' ? credit : left}</span>
+              <span>{brandSlot === 'center' ? credit : footerSlotText(centerSlot, pageIndex, pageCount)}</span>
+              <span>{brandSlot === 'right' ? credit : right}</span>
             </div>
     );
   };

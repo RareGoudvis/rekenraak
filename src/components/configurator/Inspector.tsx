@@ -90,10 +90,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 <div id="blad-koptekst" style={S.card}>
                     <h4 style={S.cardTitle}>Koptekst</h4>
                     <div style={S.col}>
-                        <label style={S.label}>Documenttitel</label>
-                        <input style={S.input} value={headerData.titel || ''} onChange={(e) => updateHeader({ titel: e.target.value })} placeholder="Bv. Herhalingstoets" />
-
-                        <label style={{ ...S.label, marginTop: '12px' }}>Koptekst stijl</label>
+                        <label style={S.label}>Koptekst stijl</label>
                         <div className="seg-group">
                             {(['geen', 'onderstreept', 'kader'] as const).map((s) => (
                                 <button key={s} onClick={() => updateDocSettings({ headerStyle: s })} className="seg-btn" aria-pressed={docSettings.headerStyle === s}>
@@ -125,12 +122,6 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <input type="range" min="0" max="60" step="2"
                             value={docSettings.headerContentGap ?? 12}
                             onChange={(e) => updateDocSettings({ headerContentGap: Number(e.target.value) })}
-                            style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
-
-                        <label style={{ ...S.label, marginTop: '12px' }}>Ruimte tussen oefenreeksen: {docSettings.blockSpacing ?? 12}px</label>
-                        <input type="range" min="4" max="48" step="2"
-                            value={docSettings.blockSpacing ?? 12}
-                            onChange={(e) => updateDocSettings({ blockSpacing: Number(e.target.value) })}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
 
                         <label style={{ ...S.label, marginTop: '12px' }}>Koptekst velden</label>
@@ -223,7 +214,13 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <div style={S.switchRow}><span style={S.switchText}>Scheidingslijn tussen oefeningen</span><Switch checked={docSettings.showDividers} onChange={(v) => updateDocSettings({ showDividers: v })} aria-label="Scheidingslijn tussen oefeningen" /></div>
                         <div style={S.switchRow}><span style={S.switchText}>Opdrachten nummeren</span><Switch checked={docSettings.numberBlocks} onChange={(v) => updateDocSettings({ numberBlocks: v })} aria-label="Opdrachten nummeren" /></div>
 
-                        <label style={{ ...S.label, marginTop: '10px' }}>Opdracht stijl</label>
+                        <label style={{ ...S.label, marginTop: '10px' }}>Ruimte tussen oefenreeksen: {docSettings.blockSpacing ?? 12}px</label>
+                        <input type="range" min="4" max="48" step="2"
+                            value={docSettings.blockSpacing ?? 12}
+                            onChange={(e) => updateDocSettings({ blockSpacing: Number(e.target.value) })}
+                            style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+
+                        <label style={{ ...S.label, marginTop: '12px' }}>Opdracht stijl</label>
                         <div className="seg-group">
                             {(['regular', 'underlined', 'boxed'] as const).map((s) => (
                                 <button key={s} onClick={() => updateDocSettings({ opdrachtTitelStyle: s })} className="seg-btn" aria-pressed={docSettings.opdrachtTitelStyle === s}>
@@ -281,11 +278,24 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         ))}
                     </div>
                     <div style={S.col}>
-                        {/* Left is the RekenRaak credit and is not configurable. */}
-                        <label style={S.footerGroupLabel}>Links</label>
-                        <p style={{ ...S.hintText, margin: '0 0 10px' }}>Gemaakt met RekenRaak.be</p>
+                        {/* The credit always prints — only its position is a choice. Whichever
+                            position holds it shows the credit instead of that position's slot. */}
+                        <label style={S.footerGroupLabel}>Plaats van "Gemaakt met RekenRaak.be"</label>
+                        <div className="seg-group" style={{ marginBottom: '12px' }}>
+                            {([['left', 'Links'], ['center', 'Midden'], ['right', 'Rechts']] as const).map(([v, l]) => (
+                                <button key={v} className="seg-btn" aria-pressed={(footerData.brandSlot ?? 'left') === v}
+                                    onClick={() => updateFooter({ brandSlot: v })}>{l}</button>
+                            ))}
+                        </div>
 
-                        {([['slotCenter', 'Midden'], ['slotRight', 'Rechts']] as const).map(([key, label]) => {
+                        {([['slotLeft', 'Links'], ['slotCenter', 'Midden'], ['slotRight', 'Rechts']] as const).map(([key, label]) => {
+                            const brandHere = (footerData.brandSlot ?? 'left') === (key === 'slotLeft' ? 'left' : key === 'slotCenter' ? 'center' : 'right');
+                            if (brandHere) return (
+                                <div key={key} style={{ marginBottom: '10px' }}>
+                                    <label style={S.footerGroupLabel}>{label}</label>
+                                    <p style={{ ...S.hintText, margin: 0 }}>Gemaakt met RekenRaak.be</p>
+                                </div>
+                            );
                             const cur = (footerData[key] ?? 'leeg') as FooterSlot;
                             return (
                                 <div key={key} style={{ marginBottom: '10px' }}>
@@ -307,8 +317,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                     {cur === 'vrije-tekst' && (
                                         <input
                                             style={{ ...S.input, marginTop: '6px' }}
-                                            value={(key === 'slotCenter' ? footerData.centerText : footerData.rightText) || ''}
-                                            onChange={(e) => updateFooter(key === 'slotCenter'
+                                            value={(key === 'slotLeft' ? footerData.leftText : key === 'slotCenter' ? footerData.centerText : footerData.rightText) || ''}
+                                            onChange={(e) => updateFooter(key === 'slotLeft'
+                                                ? { leftText: e.target.value }
+                                                : key === 'slotCenter'
                                                 ? { centerText: e.target.value }
                                                 : { rightText: e.target.value })}
                                             placeholder="Eigen tekst"

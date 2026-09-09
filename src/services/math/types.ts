@@ -450,10 +450,15 @@ export interface FooterData {
     centerText: string;
     showCenterText: boolean;
     // ── three-slot footer (v3). Absent on older worksheets, which are migrated on read. ──
+    slotLeft?: FooterSlot;
     slotCenter?: FooterSlot;
     slotRight?: FooterSlot;
+    leftText?: string;
     rightText?: string;
     pageFormat?: PageNumberFormat;
+    // Where the "Gemaakt met RekenRaak.be" credit sits. The credit always appears, but
+    // teachers put it where it suits their sheet. Absent → left, as it always was.
+    brandSlot?: 'left' | 'center' | 'right';
 }
 
 export type ScaffoldingLevel = 1 | 2 | 3;
