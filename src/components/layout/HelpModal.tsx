@@ -9,7 +9,7 @@ interface Props {
 type Tab = 'maken' | 'opslaan' | 'delen';
 
 // Step-by-step usage guide in three levels: build a worksheet, save/load worksheets,
-// share worksheets. Kept in sync with the current chrome (topbar ≡ Menu + ⚙ Instellingen,
+// share worksheets. Kept in sync with the current chrome (topbar "Meer" menu,
 // Oefeningen/Overzicht tabs, Bibliotheek presets). Reuses theme CSS variables.
 export default function HelpModal({ onClose, onStartTour }: Props) {
     const [tab, setTab] = useState<Tab>('maken');
@@ -53,8 +53,8 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                         <Section title="5. Overzicht en ordenen">
                             Het tabblad <strong>Overzicht</strong> (links) toont alle blokken op een rij. Versleep om te herordenen, dupliceer of verwijder een blok, en zie waar de pagina’s eindigen. Klik op een rij om naar dat blok op het blad te springen.
                         </Section>
-                        <Section title="6. Thema en voorbeelden">
-                            Onder <strong>⚙ Instellingen</strong> bovenaan kies je het thema (licht, donker, hoog contrast) en zet je <strong>Voorbeeld bij zweven</strong> aan of uit (een voorbeeldkaartje wanneer je over een oefening in de lijst zweeft).
+                        <Section title="6. Voorbeelden bij het zweven">
+                            Onder <strong>Meer</strong> bovenaan zet je <strong>Voorbeeld bij zweven</strong> aan of uit (een voorbeeldkaartje wanneer je over een oefening in de lijst zweeft).
                         </Section>
                         <Section title="7. Afdrukken of als PDF">
                             Klik op <strong>Afdrukken</strong> bovenaan (of Ctrl+P) en kies in je browser “Opslaan als PDF”. Met <strong>Oplossingen</strong> druk je de antwoorden mee af. Wat je op het scherm ziet, is precies wat afgedrukt wordt.
@@ -69,13 +69,13 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                             Je werk wordt voortdurend in je browser bewaard — bovenaan zie je de chip <strong>Automatisch bewaard</strong>. Sluit je per ongeluk het tabblad, dan staat alles er nog wanneer je terugkomt.
                         </Section>
                         <Section title="2. Mijn bladen">
-                            Via <strong>≡ Menu → Mijn bladen</strong> open je je eigen bibliotheek. Bewaar het huidige blad, of open, hernoem, dupliceer en verwijder een bewaard blad. Elk blad krijgt een miniatuur. Je kan tot 50 bladen bewaren.
+                            Via <strong>Meer → Mijn bladen</strong> open je je eigen bibliotheek. Bewaar het huidige blad, of open, hernoem, dupliceer en verwijder een bewaard blad. Elk blad krijgt een miniatuur. Je kan tot 50 bladen bewaren.
                         </Section>
                         <Section title="3. Kant-en-klare bladen">
-                            Via <strong>≡ Menu → Kant-en-klare bladen</strong> kies je een kant-en-klaar voorbeeldblad. Filter op leerjaar, rekenmethode of domein. <strong>Gebruik sjabloon</strong> laadt het blad in de editor — daarna pas je het vrij aan en bewaar je het bij Mijn bladen.
+                            Via <strong>Meer → Kant-en-klare bladen</strong> kies je een kant-en-klaar voorbeeldblad. Filter op leerjaar, rekenmethode of domein. <strong>Gebruik sjabloon</strong> laadt het blad in de editor — daarna pas je het vrij aan en bewaar je het bij Mijn bladen.
                         </Section>
                         <Section title="4. Bestand bewaren en openen">
-                            <strong>≡ Menu → Exporteren…</strong> bewaart het blad als <strong>.rekenraak</strong>-bestand op je computer (een back-up of om door te sturen). <strong>Importeren…</strong> opent zo’n bestand opnieuw (ook oudere .json-bestanden werken nog).
+                            <strong>Meer → Exporteren…</strong> bewaart het blad als <strong>.rekenraak</strong>-bestand op je computer (een back-up of om door te sturen). <strong>Importeren…</strong> opent zo’n bestand opnieuw (ook oudere .json-bestanden werken nog).
                         </Section>
                     </>
                 )}
@@ -84,16 +84,16 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                 {tab === 'delen' && (
                     <>
                         <Section title="1. Een link delen">
-                            Via <strong>≡ Menu → Delen</strong> heb je twee opties. <strong>Blad delen</strong> maakt een link met de volledige werkbundel (oefeningen én de gegenereerde getallen). <strong>Sjabloon delen</strong> deelt enkel de instellingen, zonder getallen — wie de link opent, genereert zelf verse oefeningen met dezelfde opbouw.
+                            Via <strong>Meer → Delen</strong> heb je twee opties. <strong>Blad delen</strong> maakt een link met de volledige werkbundel (oefeningen én de gegenereerde getallen). <strong>Sjabloon delen</strong> deelt enkel de instellingen, zonder getallen — wie de link opent, genereert zelf verse oefeningen met dezelfde opbouw.
                         </Section>
                         <Section title="2. Een bestand delen">
-                            Liever offline? <strong>≡ Menu → Exporteren…</strong> geeft je een .rekenraak-bestand dat je via mail of een gedeelde map doorstuurt. De ontvanger opent het met <strong>Importeren…</strong>.
+                            Liever offline? <strong>Meer → Exporteren…</strong> geeft je een .rekenraak-bestand dat je via mail of een gedeelde map doorstuurt. De ontvanger opent het met <strong>Importeren…</strong>.
                         </Section>
                         <Section title="3. Een curriculum delen (leerkrachten)">
-                            Via <strong>⚙ Instellingen → Curriculum samenstellen</strong> kies je welke oefentypes toegestaan zijn en zet je per type de moeilijkheid vast. Klik op <strong>Deel curriculum-link</strong>: wie die link opent, kan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek of klas te delen.
+                            Via <strong>Meer → Curriculum samenstellen</strong> kies je welke oefentypes toegestaan zijn en zet je per type de moeilijkheid vast. Klik op <strong>Deel curriculum-link</strong>: wie die link opent, kan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek of klas te delen.
                         </Section>
                         <Section title="Bugs of suggesties?">
-                            Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (⚙ Instellingen → Feedback geven).
+                            Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (Meer → Feedback geven).
                         </Section>
                     </>
                 )}

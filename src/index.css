@@ -188,6 +188,11 @@ textarea:focus-visible,
 .ui-menu .ui-hover { transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out); }
 .ui-menu .ui-hover:hover { background: var(--accent) !important; color: #fff !important; }
 .ui-menu .ui-hover:hover * { color: #fff !important; }
+/* Destructive menu rows read as red text at rest and only go solid on hover, so a
+   mis-aimed click never lands on something that looks like the primary action. */
+.ui-menu .ui-hover.is-danger:hover { background: var(--danger) !important; }
+.ui-menu .ui-hover.is-danger:disabled { opacity: .45; cursor: not-allowed; }
+.ui-menu .ui-hover.is-danger:disabled:hover { background: transparent !important; color: var(--danger) !important; }
 
 /* Sidebar exercise leaves — rounded hover fill + text lift (replaces the old
    inline onMouseEnter/Leave colour hacks). */

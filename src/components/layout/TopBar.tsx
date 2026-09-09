@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, Gear as SettingsIcon, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Heart } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Heart } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
@@ -16,6 +16,42 @@ interface Props {
     onOpenHelp?: () => void;
 }
 
+// The sheet's name belongs in the bar, next to the logo — that is where a document's
+// identity lives in every other app. It is the same header.titel the Blad panel edits.
+function SheetTitle({ title, onChange }: { title: string; onChange: (t: string) => void }) {
+    const [editing, setEditing] = useState(false);
+    const [draft, setDraft] = useState('');
+    const commit = () => { onChange(draft.trim()); setEditing(false); };
+    if (editing) {
+        return (
+            <input
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') commit();
+                    if (e.key === 'Escape') setEditing(false);
+                }}
+                placeholder="Naam van dit blad"
+                style={S.titleInput}
+                aria-label="Naam van dit blad"
+            />
+        );
+    }
+    return (
+        <button
+            type="button"
+            className="ui-hover"
+            style={{ ...S.titleBtn, color: title ? 'var(--text-main)' : 'var(--text-muted)' }}
+            onClick={() => { setDraft(title); setEditing(true); }}
+            title="Klik om dit blad een naam te geven"
+        >
+            {title || 'Naamloos blad'}
+        </button>
+    );
+}
+
 export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const undo = useWorksheetStore((s) => s.undo);
     const redo = useWorksheetStore((s) => s.redo);
@@ -30,6 +66,8 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const lastSavedAt = useWorksheetStore((s) => s.lastSavedAt);
     const setView = useWorksheetStore((s) => s.setView);
     const loadWorksheet = useWorksheetStore((s) => s.loadWorksheet);
+    const headerTitle = useWorksheetStore((s) => s.header.titel);
+    const updateHeader = useWorksheetStore((s) => s.updateHeader);
     const sidebarPreview = useWorksheetStore((s) => s.sidebarPreview);
     const setSidebarPreview = useWorksheetStore((s) => s.setSidebarPreview);
     const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
@@ -70,7 +108,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     };
 
     const [massAddOpen, setMassAddOpen] = useState(false);
-    const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu' | 'settings'>(null);
+    const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu'>(null);
     const [shareFlash, setShareFlash] = useState<'full' | 'template' | null>(null);
     const barRef = useRef<HTMLDivElement>(null);
 
@@ -120,17 +158,19 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                 <IconButton
                     icon={LayoutGrid}
                     label="Meerdere oefeningen tegelijk toevoegen"
-                    visibleLabel="Toevoegen"
+                    visibleLabel="Oefeningen toevoegen"
                     onClick={() => setMassAddOpen(true)}
                     variant="secondary"
                 />
 
-
-                {/* Menu (≡) — library navigation + file ops */}
+                {/* One "Meer" menu instead of a ≡ and a ⚙ side by side: two unlabelled
+                    icons that both opened a list of app-level things was a guess the
+                    teacher had to make. Everything app-level now lives behind one word. */}
                 <div style={S.menuWrap}>
                     <IconButton
                         icon={List}
-                        label="Menu"
+                        label="Meer: werkbladen, bestand, delen, instellingen"
+                        visibleLabel="Meer"
                         onClick={() => setMenu(menu === 'menu' ? null : 'menu')}
                         dataTour="menu"
                     />
@@ -162,19 +202,10 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                 <button className="ui-hover" style={S.menuItem} onClick={() => handleShare('template')}>
                                     <LayoutTemplate size={15} /> <span>Sjabloon delen<br /><span style={S.menuHint}>enkel instellingen</span></span>
                                 </button>
-                            </div>
-                        </>
-                    )}
-                </div>
 
-                {/* ⚙ Settings + ? Help sit next to the ≡ Menu — app-level controls grouped left. */}
-                <div style={S.menuWrap}>
-                    <IconButton icon={SettingsIcon} label="Instellingen" onClick={() => setMenu(menu === 'settings' ? null : 'settings')} dataTour="settings" />
-                    {menu === 'settings' && (
-                        <>
-                            <div className="ui-menu" style={{ ...S.menu, left: 0, right: 'auto', minWidth: '240px' }}>
                                 {!locked && (
                                     <>
+                                        <div style={S.menuDivider} />
                                         <div style={S.sectionLabel}>Werkblad</div>
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setBaseOpen(true); }}>
                                             <SlidersHorizontal size={15} /> Basisinstellingen
@@ -182,14 +213,25 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setCurriculumOpen(true); }}>
                                             <BookLock size={15} /> Curriculum samenstellen
                                         </button>
-                                        <div style={S.menuDivider} />
                                     </>
                                 )}
+
+                                <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Weergave</div>
                                 <div style={{ ...S.menuItem, justifyContent: 'space-between', cursor: 'default' }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}><Eye size={15} /> Voorbeeld bij zweven</span>
                                     <Switch checked={sidebarPreview} onChange={setSidebarPreview} aria-label="Voorbeeld bij zweven" />
                                 </div>
+
+                                <div style={S.menuDivider} />
+                                {/* Destructive actions live here, not next to Afdrukken. Tinted at
+                                    rest, solid red only on hover (.is-danger in index.css). */}
+                                <button className="ui-hover is-danger" style={S.menuItemDanger} onClick={() => { setMenu(null); handleNewSheet(); }}>
+                                    <FilePlus size={15} /> Nieuw blad beginnen
+                                </button>
+                                <button className="ui-hover is-danger" style={S.menuItemDanger} disabled={!hasBlocks} onClick={() => { setMenu(null); handleClearBlocks(); }}>
+                                    <Trash2 size={15} /> Alle oefeningen wissen
+                                </button>
 
                                 <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Over &amp; steun</div>
@@ -207,13 +249,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     )}
                 </div>
 
-                <IconButton icon={HelpIcon} label="Help / uitleg" onClick={() => onOpenHelp?.()} />
-
-                <IconButton
-                    icon={FilePlus}
-                    label="Nieuw blad (huidige werkbundel wissen)"
-                    onClick={handleNewSheet}
-                />
+                <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel="Uitleg" onClick={() => onOpenHelp?.()} />
 
               </div>
 
@@ -223,6 +259,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                 <button type="button" className="ui-hover" style={S.logoCentered} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
                     <Wordmark height={26} />
                 </button>
+                <SheetTitle title={headerTitle} onChange={(t) => updateHeader({ titel: t })} />
                 <div
                     style={S.saveChip}
                     title={lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
@@ -248,24 +285,15 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     variant="secondary"
                 />
 
-                {/* Alle blokken wissen — icon only, confirm-guarded */}
-                <div style={{ marginRight: 'var(--sp-3)' }}>
-                    <IconButton
-                        icon={Trash2}
-                        label="Alle blokken wissen"
-                        onClick={handleClearBlocks}
-                        disabled={!hasBlocks}
-                        variant="danger"
-                    />
-                </div>
-
                 {shareFlash && <span style={S.shareFlash}><Check size={14} /> Link gekopieerd</span>}
 
+                {/* Labelled: an eye alone doesn't say whether it shows or hides answers. */}
                 <IconButton
                     icon={showSolutions ? EyeOff : Eye}
                     label={showSolutions ? 'Oplossingen verbergen' : 'Oplossingen tonen'}
+                    visibleLabel="Oplossingen"
                     onClick={() => setShowSolutions(!showSolutions)}
-                    variant={showSolutions ? 'danger' : 'neutral'}
+                    variant={showSolutions ? 'active' : 'neutral'}
                 />
 
                 {/* Afdrukken — single button; choose worksheet vs worksheet+solutions */}
@@ -350,6 +378,24 @@ const S = {
         background: 'transparent', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
     } as React.CSSProperties,
     menuHint: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 400 } as React.CSSProperties,
+    // Destructive menu row: tinted at rest, solid red on hover via .is-danger (index.css).
+    menuItemDanger: {
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', width: '100%', textAlign: 'left',
+        padding: '5px 10px', borderRadius: 'var(--radius-xs)', cursor: 'pointer', border: 'none',
+        background: 'transparent', color: 'var(--danger)', fontSize: 'var(--text-sm)', fontFamily: 'inherit',
+    } as React.CSSProperties,
+    titleBtn: {
+        maxWidth: '260px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        background: 'transparent', border: '1px solid transparent', borderRadius: 'var(--radius-sm)',
+        padding: '3px 8px', marginLeft: 'var(--sp-2)', cursor: 'text',
+        fontSize: 'var(--text-md)', fontWeight: 600, fontFamily: 'inherit',
+    } as React.CSSProperties,
+    titleInput: {
+        width: '260px', marginLeft: 'var(--sp-2)', padding: '3px 8px',
+        background: 'var(--bg-surface-2)', border: '1px solid var(--accent)',
+        borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', outline: 'none',
+        fontSize: 'var(--text-md)', fontWeight: 600, fontFamily: 'inherit',
+    } as React.CSSProperties,
     menuDivider: { height: '1px', background: 'var(--separator)', margin: '4px 6px' } as React.CSSProperties,
     sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
     shareFlash: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
