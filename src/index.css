@@ -273,6 +273,54 @@ textarea:focus-visible,
   border: 1px solid var(--seg-thumb-border);
 }
 
+/* ── Top-bar collapse ────────────────────────────────────────────────────────
+   The bar is NOT full-width: it sits in the centre column between two fixed panels
+   (286px + 366px), so it only ever gets `100vw - 652px`. With every label showing it
+   wants ~1490px, which is why a 14" laptop at 1295px had its three zones overprinting
+   each other rather than merely looking tight.
+
+   So it sheds content in a fixed order, cheapest first, and each tier assumes the ones
+   above it have already fired. Afdrukken keeps its word at every width -- it is the one
+   primary action -- via .keep-label. Nothing here is a "nice to have on small screens":
+   without it the bar is unusable, not cramped. */
+
+/* Tier 1 — the two bits of reassurance. The save DOT survives; only its wording goes. */
+@media screen and (max-width: 1700px) {
+  .topbar .bar-beta, .topbar .bar-save-text { display: none; }
+}
+/* Tier 2 — secondary buttons drop to icon-only. Their `title` still names them, and the
+   padding has to come off with the label or the buttons stay label-width and still
+   collide. */
+@media screen and (max-width: 1500px) {
+  .topbar .ui-icon-btn:not(.keep-label) .ui-btn-label { display: none; }
+  .topbar .ui-icon-btn:not(.keep-label) { padding: 0; min-width: var(--control-h); gap: 0; }
+}
+/* Tier 3 — the sheet name. It is the last thing in the centre track to go, because it is
+   the only thing there that identifies the document. */
+@media screen and (max-width: 1240px) {
+  .topbar .bar-title { display: none; }
+}
+/* Tier 4 — undo/redo. Safe to lose last: Ctrl+Z and Ctrl+Y still work, and by here the
+   alternative is overlap. */
+@media screen and (max-width: 1120px) {
+  .topbar .bar-undo { display: none; }
+}
+
+/* Second-level tabs (Blad -> Koptekst/Opdrachten/Voettekst). Deliberately NOT a second
+   .seg-group: two identical pill rows stacked gave no clue which level you were
+   operating. Underline reads as subordinate to the segmented control above it. */
+.sub-tabs { display: flex; gap: var(--sp-4); border-bottom: 1px solid var(--separator); }
+.sub-tab {
+  padding: 6px 2px 8px;
+  font: inherit; font-size: var(--text-sm); font-weight: 500;
+  color: var(--text-muted); background: none; border: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  cursor: pointer; white-space: nowrap;
+  transition: color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+.sub-tab:hover { color: var(--text-main); }
+.sub-tab[aria-pressed="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
 /* macOS vibrancy: frosted-translucent material (toolbar frosts content scrolling under it;
    sidebar gets a subtle translucency). High surface-% so it stays readable if a browser
    lacks backdrop-filter. */

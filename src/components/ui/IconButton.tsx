@@ -12,6 +12,8 @@ interface Props {
     variant?: IconButtonVariant;
     size?: number;                // icon size in px
     dataTour?: string;            // forwarded as data-tour (spotlight onboarding anchor)
+    /** Extra classes. `keep-label` opts a button out of the top bar's label collapse. */
+    className?: string;
 }
 
 // Centralised button styling so TopBar / sidebar / block overlay all share
@@ -19,7 +21,7 @@ interface Props {
 // All colour tokens come from CSS variables so themes flow through.
 export default function IconButton({
     icon: Icon, label, visibleLabel, onClick, disabled = false,
-    variant = 'neutral', size = 18, dataTour,
+    variant = 'neutral', size = 18, dataTour, className = '',
 }: Props) {
     const style = computeStyle(variant, disabled, !!visibleLabel);
     // Phosphor weight is a prop (not CSS), so the hover thickening can't live in
@@ -28,7 +30,7 @@ export default function IconButton({
     return (
         <button
             type="button"
-            className="ui-icon-btn"
+            className={`ui-icon-btn ${className}`.trim()}
             onClick={onClick}
             disabled={disabled}
             title={label}
@@ -42,7 +44,9 @@ export default function IconButton({
             onBlur={() => setEmphasized(false)}
         >
             <Icon size={size} weight={iconWeight(variant, emphasized)} aria-hidden="true" />
-            {visibleLabel && <span style={labelTextStyle}>{visibleLabel}</span>}
+            {/* Class, not just style: the top bar hides these below ~1500px, where the
+                bar only gets window width minus the two fixed panels (652px). */}
+            {visibleLabel && <span className="ui-btn-label" style={labelTextStyle}>{visibleLabel}</span>}
         </button>
     );
 }

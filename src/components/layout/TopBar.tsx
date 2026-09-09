@@ -41,7 +41,7 @@ function SheetTitle({ title, onChange }: { title: string; onChange: (t: string) 
     return (
         <button
             type="button"
-            className="ui-hover"
+            className="ui-hover bar-title"
             style={{ ...S.titleBtn, color: title ? 'var(--text-main)' : 'var(--text-muted)' }}
             onClick={() => { setDraft(title); setEditing(true); }}
             title="Klik om dit blad een naam te geven"
@@ -140,7 +140,7 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
     };
 
     return (
-        <div ref={barRef} className="mac-vibrant" style={S.bar}>
+        <div ref={barRef} className="mac-vibrant topbar" style={S.bar}>
             <input ref={menuFileRef} type="file" accept=".rekenraak,application/json,.json" style={{ display: 'none' }} onChange={handleImportFile} />
             {/* Three zones, each the width of the column beneath it, so every control sits
                 physically above the thing it changes. The panel tab strips live here rather
@@ -251,20 +251,20 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
               {/* Middle track: wordmark plus the save status directly to its right. That
                   leaves the space LEFT of the logo free for user hints later. */}
               <div style={S.centreTrack}>
-                <span style={S.betaChip} title="RekenRaak is nog in ontwikkeling — bewaar je bladen ook als bestand.">beta</span>
+                <span className="bar-beta" style={S.betaChip} title="RekenRaak is nog in ontwikkeling — bewaar je bladen ook als bestand.">beta</span>
                 <SheetTitle title={headerTitle} onChange={(t) => updateHeader({ titel: t })} />
                 <div
                     style={S.saveChip}
                     title={lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
                 >
                     <span style={{ ...S.saveDot, background: saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
-                    <span>{saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>
+                    <span className="bar-save-text">{saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>
                 </div>
               </div>
 
               <div style={S.groupRight}>
 
-                <div style={S.group}>
+                <div className="bar-undo" style={S.group}>
                     <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={undo} disabled={!canUndo} />
                     <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={redo} disabled={!canRedo} />
                 </div>
@@ -295,6 +295,7 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
                         icon={Printer}
                         label="Afdrukken (Ctrl+P)"
                         visibleLabel="Afdrukken"
+                        className="keep-label"
                         onClick={() => setMenu(menu === 'print' ? null : 'print')}
                         variant="primary"
                         dataTour="print"
@@ -349,10 +350,15 @@ const S = {
     // SYNC: the outer column widths must match Sidebar's aside (286px) and Inspector's (338px).
     // 1fr | auto | 1fr keeps the wordmark optically centred no matter how the two action
     // groups grow, which a plain flex row with space-between does not.
-    zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)' } as React.CSSProperties,
+    // The centre track is minmax(0, auto), NOT auto: an `auto` track refuses to shrink
+    // below its content, so a long sheet name used to push the two action groups into
+    // each other instead of truncating itself. With a 0 floor the title's own maxWidth +
+    // ellipsis absorbs the squeeze. (No overflow:hidden on the groups — it would clip the
+    // dropdown menus, which are absolutely positioned inside them.)
+    zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)' } as React.CSSProperties,
     groupLeft: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'start', paddingRight: 'var(--sp-5)' } as React.CSSProperties,
     groupRight: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'end', paddingLeft: 'var(--sp-5)' } as React.CSSProperties,
-    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap' } as React.CSSProperties,
+    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap', minWidth: 0, justifyContent: 'center' } as React.CSSProperties,
     group: { display: 'flex', gap: 'var(--sp-1)', marginRight: 'var(--sp-2)' } as React.CSSProperties,
     spacer: { flex: 1, minWidth: 0 } as React.CSSProperties,
     vsep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--separator)', flexShrink: 0 } as React.CSSProperties,

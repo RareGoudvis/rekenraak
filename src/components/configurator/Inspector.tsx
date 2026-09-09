@@ -357,9 +357,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
     const docContent = (
             <>
-                <div className="seg-group" style={{ marginBottom: 'var(--sp-4)' }}>
+                {/* Inner level: underline tabs, not a second pill group. Two identical
+                    segmented controls stacked gave no clue which level you were operating. */}
+                <div className="sub-tabs" style={{ marginBottom: 'var(--sp-4)' }}>
                     {([['koptekst', 'Koptekst'], ['opdrachten', 'Opdrachten'], ['voettekst', 'Voettekst']] as const).map(([id, label]) => (
-                        <button key={id} className="seg-btn" aria-pressed={bladSection === id} onClick={() => setBladSection(id)}>{label}</button>
+                        <button key={id} className="sub-tab" aria-pressed={bladSection === id} onClick={() => setBladSection(id)}>{label}</button>
                     ))}
                 </div>
                 {bladPanels[bladSection]}

@@ -323,7 +323,13 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     updateExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, exercises: b.exercises.map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     updateCijferExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, cijferExercises: (b.cijferExercises || []).map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     patchExercise: (blockId, field, exerciseId, patch) => set((state) => { const nb = state.blocks.map(b => { if (b.id !== blockId) return b; const arr = b[field] as Array<{ id: string }> | undefined; if (!Array.isArray(arr)) return b; return { ...b, [field]: arr.map(ex => ex.id === exerciseId ? { ...ex, ...patch } : ex) }; }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
-    setActiveSelection: (id) => set({ activeBlockId: id }),
+    // Selecting a real block opens its content. Picking a block while the panel sat on
+    // Blad used to leave you on Blad, so every selection cost an extra click to get to
+    // what you actually came for. 'document'/null keep whatever tab was open, since the
+    // block tabs are disabled without a selection anyway.
+    setActiveSelection: (id) => set(id && id !== 'document'
+        ? { activeBlockId: id, inspectorTab: 'oefening' }
+        : { activeBlockId: id }),
     setDraftBlocks: (blocks) => set({ draftBlocks: blocks }),
     clearDraftBlocks: () => set({ draftBlocks: [] }),
     toggleBlockLock: (id) => set((state) => ({ blocks: state.blocks.map(b => b.id === id ? { ...b, locked: !b.locked } : b) })),

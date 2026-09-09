@@ -123,7 +123,10 @@ const S = {
     rowRail: (name?: string): React.CSSProperties => ({
         borderLeft: `3px solid ${name ? `var(--domain-${name}-line)` : 'var(--separator)'}`,
     }),
-    rowActive: { borderColor: 'var(--accent)', background: 'var(--accent-soft)' } as React.CSSProperties,
+    // Selection is an inset ring, NOT borderColor: the shorthand would repaint all four
+    // sides and swallow the domain rail on the left, so a selected row lost the one thing
+    // telling you which domain it belongs to. Ring = state, rail = identity, both visible.
+    rowActive: { background: 'var(--accent-soft)', boxShadow: 'inset 0 0 0 1.5px var(--accent)' } as React.CSSProperties,
     rowOver: { borderColor: 'var(--accent)', borderStyle: 'dashed' } as React.CSSProperties,
     handle: { color: 'var(--text-muted)', display: 'inline-flex', cursor: 'grab', flexShrink: 0 } as React.CSSProperties,
     badge: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', color: '#fff', fontSize: '11px', fontWeight: 700, flexShrink: 0 } as React.CSSProperties,
