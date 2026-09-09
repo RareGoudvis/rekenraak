@@ -23,7 +23,7 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
     const stacked = showArrows || showOperators;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Genereer oefeningen via het rechterpaneel)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Genereer oefeningen via het paneel links)</div>;
     }
 
     const opText = (ex: PatroonExercise, i: number) => {

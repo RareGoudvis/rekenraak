@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useWorksheetStore } from './store/useWorksheetStore';
-import Inspector from './components/configurator/Inspector';
 import Sidebar from './components/layout/sidebar';
 import TopBar from './components/layout/TopBar';
 import PanelShell from './components/layout/PanelShell';
@@ -203,8 +202,8 @@ export default function App() {
       </div>
 
       <div className="print-body-row" style={styles.appBody}>
-      {/* LEFT SIDEBAR — collapses to a hover flyout below 1536px (PanelShell) */}
-      <PanelShell side="left" label="Oefeningen"><Sidebar /></PanelShell>
+      {/* LEFT PANEL — palette, block settings and outline in one panel (PanelShell) */}
+      <PanelShell side="left" label="Werkblad"><Sidebar /></PanelShell>
 
       {/* CENTRAL WORK AREA */}
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
@@ -217,7 +216,7 @@ export default function App() {
         {releaseBannerVisible && (
           <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
             <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
-            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het aan in het rechterpaneel en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
+            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het aan onder Instellingen en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
             <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
           </div>
         )}
@@ -473,8 +472,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* RIGHT INSPECTOR — collapses to a hover flyout below 1536px (PanelShell) */}
-      <PanelShell side="right" label="Instellingen"><Inspector /></PanelShell>
+
       </div>
     </div>
     {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}

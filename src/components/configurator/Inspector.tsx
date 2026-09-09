@@ -22,12 +22,13 @@ const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string
     datum:  { min: 80,  max: 500, label: 'Datum' },
 };
 
-export default function Inspector() {
+export default function Inspector({ embedded = false }: { embedded?: boolean } = {}) {
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [blockAdvancedOpen, setBlockAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
 
+    const rootStyle = embedded ? S.embedded : S.sidebar;
     const activeBlockId = useWorksheetStore((state) => state.activeBlockId);
     const activeBlock = useWorksheetStore((state) => state.blocks.find(b => b.id === activeBlockId));
     const locked = useWorksheetStore((state) => !!state.curriculum?.locked);
@@ -53,7 +54,7 @@ export default function Inspector() {
     // No block selected or document → document settings
     if (!activeBlock) {
         return (
-            <aside data-tour="inspector" style={S.sidebar}>
+            <aside data-tour="inspector" style={rootStyle}>
 
                 {/* ── Werkbundel instellingen ── */}
                 <div style={S.card}>
@@ -239,7 +240,7 @@ export default function Inspector() {
         updateBlockSettings(activeBlock.id, { constraints: { ...c, [key]: value } });
 
     return (
-        <aside data-tour="inspector" style={S.sidebar}>
+        <aside data-tour="inspector" style={rootStyle}>
 
             {locked && (
                 <div style={S.lockBanner}>
@@ -1080,6 +1081,8 @@ export default function Inspector() {
 }
 
 const S = {
+    // Embedded in the left panel's Instellingen tab: no own width or edge, just fill the tab.
+    embedded: { flex: 1, minHeight: 0, overflowY: 'auto', boxSizing: 'border-box', padding: 'var(--sp-3) var(--sp-4) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     sidebar: { width: '380px', minWidth: '380px', backgroundColor: 'var(--bg-surface)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     lockBanner: { padding: 'var(--sp-3)', fontSize: 'var(--text-sm)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
     // Flat section (no boxed "pill") — header + content separated by a hairline; reclaims the

@@ -21,7 +21,7 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Genereer oefeningen via het rechterpaneel)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Genereer oefeningen via het paneel links)</div>;
     }
 
     const renderRep = (ex: VerbandExercise, rep: VerbandRep, solution: boolean) => {

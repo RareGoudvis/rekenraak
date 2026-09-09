@@ -589,7 +589,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
     const exercises = (block.cijferExercises || []) as CijferExercise[];
 
     if (exercises.length === 0) {
-        return <div style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Genereer oefeningen via het rechterpaneel)</div>;
+        return <div style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Genereer oefeningen via het paneel links)</div>;
     }
 
     const exPerRow = computeExPerRow(c);

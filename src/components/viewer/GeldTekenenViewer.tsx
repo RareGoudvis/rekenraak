@@ -54,7 +54,7 @@ export default function GeldTekenenViewer({ block, showSolutions }: Props) {
     const perRow = exercisesPerRow ?? 4;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Genereer oefeningen via het rechterpaneel)</div>;
+        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Genereer oefeningen via het paneel links)</div>;
     }
 
     return (

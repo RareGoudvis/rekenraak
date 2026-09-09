@@ -26,7 +26,7 @@ export default function GeldWisselViewer({ block }: Props) {
     const boxHeight: number = block.constraints.boxHeight ?? 100;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Genereer oefeningen via het rechterpaneel)</div>;
+        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Genereer oefeningen via het paneel links)</div>;
     }
 
     return (

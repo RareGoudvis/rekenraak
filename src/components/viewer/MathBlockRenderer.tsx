@@ -80,7 +80,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     };
 
     if (!block.exercises || block.exercises.length === 0) {
-        return <div className="no-print" style={styles.emptyStateText}>(Genereer oefeningen via het rechterpaneel)</div>;
+        return <div className="no-print" style={styles.emptyStateText}>(Genereer oefeningen via het paneel links)</div>;
     }
 
     // Puntoefeningen (a + . = c) are by definition single short lines — force inline-short
