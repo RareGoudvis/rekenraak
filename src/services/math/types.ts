@@ -368,6 +368,9 @@ export interface MathBlock {
     typeId: string;
     locked?: boolean;
     pageBreakBefore?: boolean;   // force this set to start on a new printed page
+    // Column width on the page grid: 6 = full, 3 = half, 2 = a third. Absent = full width,
+    // which keeps every v2 worksheet reading exactly as it did.
+    widthUnits?: 2 | 3 | 6;
     instructionText: string;
     layoutPreset: LayoutPreset;
     instructionMode: 'geen' | 'mag' | 'moet' | 'plus' | 'aangepast';

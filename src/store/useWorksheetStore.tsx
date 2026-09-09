@@ -222,6 +222,16 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             exercises: []
         };
 
+        // Generate straight away: an empty block tells the teacher nothing about the
+        // exercise they just picked, and every add was followed by a Genereer click anyway.
+        // A generator that throws must not take the whole add down with it.
+        if (def) {
+            try {
+                const data = def.generate(newBlock);
+                (newBlock as unknown as Record<string, unknown>)[def.exerciseField] = data;
+            } catch { /* leave the block empty; the viewer shows its own placeholder */ }
+        }
+
         const newBlocks = [...state.blocks, newBlock];
         return { blocks: newBlocks, activeBlockId: newBlock.id, ...pushHistory(state._history, state._historyIndex, newBlocks) };
     }),

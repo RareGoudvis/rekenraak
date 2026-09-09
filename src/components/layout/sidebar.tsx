@@ -103,6 +103,15 @@ export default function Sidebar() {
         },
     });
 
+    // Adding a block switches the panel to Instellingen, which unmounts the leaf — so its
+    // onMouseLeave never fires and a pending/open preview card would hang around on screen.
+    // Every add goes through here so the hover state is always torn down with it.
+    const addLeaf = (typeId: string, label: string, constraints?: Record<string, unknown>) => {
+        if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+        setPreview(null);
+        addBlockFromType(typeId, label, constraints);
+    };
+
     const [openSubdomain, setOpenSubdomain] = useState<string | null>(null);
     // Multiple type-accordions can be open at once — opening a subdomain expands them all.
     const [openTypes, setOpenTypes] = useState<Set<string>>(new Set());
@@ -169,7 +178,7 @@ export default function Sidebar() {
                                 key={`${t.typeId}-${i}`}
                                 className="sidebar-leaf"
                                 style={S.leafBtn}
-                                onClick={() => addBlockFromType(t.typeId, t.label, t.lockedConstraints)}
+                                onClick={() => addLeaf(t.typeId, t.label, t.lockedConstraints)}
                                 {...leafHover(t.typeId, t.lockedConstraints)}
                             >
                                 <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
@@ -260,7 +269,7 @@ export default function Sidebar() {
                                                                         key={type.id}
                                                                         className="sidebar-leaf"
                                                                         style={S.leafBtn}
-                                                                        onClick={() => addBlockFromType(type.typeId!, type.label, type.defaultConstraints)}
+                                                                        onClick={() => addLeaf(type.typeId!, type.label, type.defaultConstraints)}
                                                                         {...leafHover(type.typeId!, type.defaultConstraints)}
                                                                     >
                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
@@ -296,7 +305,7 @@ export default function Sidebar() {
                                                                                         key={leaf.id}
                                                                                         className="sidebar-leaf"
                                                                                         style={S.leafBtn}
-                                                                                        onClick={() => addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints)}
+                                                                                        onClick={() => addLeaf(leaf.typeId, leaf.label, leaf.defaultConstraints)}
                                                                                         {...leafHover(leaf.typeId, leaf.defaultConstraints)}
                                                                                     >
                                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
