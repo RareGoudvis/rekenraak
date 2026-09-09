@@ -298,6 +298,15 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onPrint(true); }}>
                                     <Key size={15} /> Werkblad + oplossingen
                                 </button>
+                                {/* The browser's own margin setting silently overrides @page, so the
+                                    only fix is telling the teacher. Chrome's "Standaard" adds ~10mm
+                                    on top of the sheet's own 17mm and the print stops matching the
+                                    preview; "Geen" leaves the sheet's margins alone. */}
+                                <div style={S.printHint}>
+                                    Zet <strong>Marges</strong> op <strong>Geen</strong> in het
+                                    printvenster — anders telt de browser er eigen marges bij en
+                                    wijkt het blad af van het voorbeeld.
+                                </div>
                             </div>
                         </>
                     )}
@@ -345,6 +354,7 @@ const S = {
         borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-2)', padding: 'var(--sp-1)',
         display: 'flex', flexDirection: 'column', gap: '1px',
     } as React.CSSProperties,
+    printHint: { padding: 'var(--sp-2) var(--sp-3)', margin: 'var(--sp-1) 0 0', borderTop: '1px solid var(--separator)', fontSize: 'var(--text-xs)', lineHeight: 1.45, color: 'var(--text-muted)', maxWidth: '260px' } as React.CSSProperties,
     menuItem: {
         display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', width: '100%', textAlign: 'left',
         padding: '5px 10px', borderRadius: 'var(--radius-xs)', cursor: 'pointer', border: 'none',
