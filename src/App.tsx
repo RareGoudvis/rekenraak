@@ -11,13 +11,13 @@ import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
-import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer } from '@phosphor-icons/react';
+import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { styles } from './styles/appStyles';
 import { overlayRegionStyle } from './services/regionStyle';
-import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY } from './services/persistence';
+import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, TRYOUT_SEEN_KEY } from './services/persistence';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from './store/useWorksheetStore';
-import { RELEASE_VERSION } from './config/version';
+import { RELEASE_VERSION, TRYOUT_TYPE_IDS } from './config/version';
 import type { MathBlock } from './services/math/types';
 
 // Click-to-edit the opdracht title directly on the A4 preview (mirrors the
@@ -88,6 +88,11 @@ export default function App() {
     setTourOpen(false);
   };
   const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
+  // "Nog in proef" notice for the July exercise types. Dismissal is per browser and sticky;
+  // the banner itself only renders while such a block is actually on the sheet.
+  const [tryoutDismissed, setTryoutDismissed] = useState(() => {
+    try { return localStorage.getItem(TRYOUT_SEEN_KEY) === '1'; } catch { return false; }
+  });
 
   // Boot-time hooks: share-link, autosave-restore offer, release-banner check.
   // Each runs exactly once. Order matters — a shared link wins over an autosave.
@@ -127,6 +132,11 @@ export default function App() {
     const t = headerData?.titel?.trim();
     document.title = t ? `${t} — Rekenraak` : 'Rekenraak';
   }, [headerData?.titel]);
+
+  const dismissTryoutBanner = () => {
+    try { localStorage.setItem(TRYOUT_SEEN_KEY, '1'); } catch { /* ignore */ }
+    setTryoutDismissed(true);
+  };
 
   const dismissReleaseBanner = () => {
     try { localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION); } catch { /* ignore */ }
@@ -209,6 +219,14 @@ export default function App() {
             <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
             <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het aan in het rechterpaneel en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
             <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
+          </div>
+        )}
+
+        {!tryoutDismissed && blocks.some(b => TRYOUT_TYPE_IDS.has(b.typeId)) && (
+          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
+            <Flask size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
+            <span>Enkele oefeningen op dit blad zijn nieuw en nog in proef. Kijk het afgedrukte blad even na voor je het uitdeelt.</span>
+            <button onClick={dismissTryoutBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
           </div>
         )}
 

@@ -237,27 +237,27 @@ function PuntLijnSVG({ ex, size }: { ex: VormleerExercise; size: number }) {
     if (ex.concept === 'punt') {
         parts.push(dot({ x: cx, y: cy }, 'p'), text({ x: cx, y: cy }, labels[0] ?? 'A', 't'));
     } else if (ex.concept === 'rechte') {
-        parts.push(line(A, B, 'l'), arrow(A, -ux, -uy, 'a1'), arrow(B, ux, uy, 'a2'), text({ x: cx, y: cy }, (labels[0] ?? 'a').toLowerCase(), 't'));
+        // A rechte carries no arrowheads (Flemish notation) — a plain line plus its
+        // lowercase name. The dots on the ends are what mark a lijnstuk instead.
+        parts.push(line(A, B, 'l'), text({ x: cx, y: cy }, (labels[0] ?? 'a').toLowerCase(), 't'));
     } else if (ex.concept === 'halfrechte') {
         parts.push(line(A, B, 'l'), dot(A, 'd'), arrow(B, ux, uy, 'a'), text(A, labels[0] ?? 'A', 't1'), text(B, labels[1] ?? 'B', 't2'));
     } else if (ex.concept === 'lijnstuk') {
         parts.push(line(A, B, 'l'), dot(A, 'd1'), dot(B, 'd2'), text(A, labels[0] ?? 'A', 't1'), text(B, labels[1] ?? 'B', 't2'));
     } else {
-        // Pairs: evenwijdig / snijdend / loodrecht — two full lines with arrowheads.
+        // Pairs: evenwijdig / snijdend / loodrecht — two rechten, so no arrowheads either.
         const off = 14;
         const nx = -uy * off, ny = ux * off;
         if (ex.concept === 'evenwijdig') {
             const A2 = { x: A.x + nx, y: A.y + ny }, B2 = { x: B.x + nx, y: B.y + ny };
             const A1 = { x: A.x - nx, y: A.y - ny }, B1 = { x: B.x - nx, y: B.y - ny };
-            parts.push(line(A1, B1, 'l1'), line(A2, B2, 'l2'),
-                arrow(A1, -ux, -uy, 'a1'), arrow(B1, ux, uy, 'a2'), arrow(A2, -ux, -uy, 'a3'), arrow(B2, ux, uy, 'a4'));
+            parts.push(line(A1, B1, 'l1'), line(A2, B2, 'l2'));
         } else {
             const cross = ex.concept === 'loodrecht' ? 90 : 55;
             const ang2 = ang + (cross * Math.PI) / 180;
             const vx = Math.cos(ang2), vy = Math.sin(ang2);
             const C = { x: cx - half * vx, y: cy - half * vy }, D = { x: cx + half * vx, y: cy + half * vy };
-            parts.push(line(A, B, 'l1'), line(C, D, 'l2'),
-                arrow(A, -ux, -uy, 'a1'), arrow(B, ux, uy, 'a2'), arrow(C, -vx, -vy, 'a3'), arrow(D, vx, vy, 'a4'));
+            parts.push(line(A, B, 'l1'), line(C, D, 'l2'));
             if (ex.concept === 'loodrecht') {
                 const s = 9;
                 parts.push(<polyline key="ra" points={`${cx + ux * s},${cy + uy * s} ${cx + ux * s + vx * s},${cy + uy * s + vy * s} ${cx + vx * s},${cy + vy * s}`} fill="none" stroke="#000" strokeWidth={1.2} />);

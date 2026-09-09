@@ -60,8 +60,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     }
                 }}
                 // Input tracks the adaptive column width (minus slack) so 9+-digit
-                // operands aren't clipped by the old fixed 70px input box.
-                style={{ ...styles.mathInput, width: `${Math.max(70, cellPx - 4)}px` }}
+                // operands aren't clipped by the old fixed 70px input box. The 70px floor
+                // drops in the compact 2-up stepped grid or it would overflow its cell.
+                style={{ ...styles.mathInput, width: `${Math.max(twoUpStepped ? 38 : 70, effCellPx - 4)}px` }}
             />
         );
     };
@@ -120,17 +121,25 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // workline, so what it really needs is writing room for a hand-written tussenstap.
     // That room scales with the block's widest operand instead of the fixed 94px field.
     const worklineMinPx = Math.max(80, Math.ceil(maxChars * CHAR_PX) + 30);
-    const steppedRowMin = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
+    // In the 2-up stepped grid the operand columns tighten — no 85px alignment floor and a
+    // narrower operator gap — so the freed width goes to the work line instead. The wide
+    // sizing stays everywhere else, where column alignment matters more than writing room.
+    const compactCellPx = Math.max(46, Math.ceil(maxChars * CHAR_PX) + 6);
+    const COMPACT_OP_GAP = 16;
+    const steppedRowMin = maxTerms * compactCellPx + (maxTerms - 1) * COMPACT_OP_GAP
         + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx;
     // Keep the classic 2-up look as long as two rows fit with at least a 20px gap;
     // the gap then stretches up to the traditional 50px when there's room.
     const COL_GAP_MIN = 20;
     const twoUpShort = isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
-    // Stappen goes 2-up for small numbers. Measured break: 2-up up to maxGetal 10 000,
-    // 1-up from 100 000 (maxGetal caps the RESULT, so operands are one digit shorter, and
-    // formatMathNumber's thousands separator costs a char too). Met-rest rows ignore layout
-    // entirely and the compenseren tussenstap line is far wider than a workline — both stay 1-up.
+    // 2-up Stappen is for numbers under 1 000 only: 3 mono chars, so no thousands separator.
+    // A pure width test would also let 4-digit operands through, but then the tussenstap line
+    // is too short to write on. Met-rest rows ignore layout entirely and the compenseren
+    // tussenstap line is far wider than a workline — both stay 1-up. Longer term chains stay
+    // eligible and fall out on width alone.
+    const STEPPED_2UP_MAX_CHARS = 3;
     const twoUpStepped = layout === 'stepped' && !anyRemainder && !compScaffoldOn
+        && maxChars <= STEPPED_2UP_MAX_CHARS
         && steppedRowMin * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
     const gridCols = (twoUpShort || twoUpStepped) ? 2 : 1;
     const rowWidthUsed = twoUpShort ? rowEstimate : steppedRowMin;
@@ -138,6 +147,8 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // Centring a stepped row would collapse its flex:1 workline — only the
     // intrinsically-sized inline-short rows get centred inside their column.
     const colJustify = gridCols === 2 && isInlineShort ? 'center' : 'stretch';
+    const effCellPx = twoUpStepped ? compactCellPx : cellPx;
+    const effOpGap = twoUpStepped ? COMPACT_OP_GAP : (maxTerms > 2 ? 20 : 26);
     return (
         <FragmentableGrid
             cols={gridCols}
@@ -180,7 +191,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 const multi = ex.operands.length > 2;
                 // 2-term keeps fixed columns (aligned worksheets) sized to the block's
                 // widest operand; longer chains use compact auto-width cells.
-                const cellW = multi ? undefined : `${cellPx}px`;
+                const cellW = multi ? undefined : `${effCellPx}px`;
 
                 // Compenseren-preset tussenstap: "= a + ___ − ___" fill-in under the sum
                 // (30 − 1 for 29). Only for plain 2-term numeric +/− with the scaffold on.
@@ -207,7 +218,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         <div style={{ display: 'flex', alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
                             {ex.operands.map((operand, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-                                    {i > 0 && <span style={{ width: multi ? '20px' : '26px', textAlign: 'center', flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
+                                    {i > 0 && <span style={{ width: `${effOpGap}px`, textAlign: 'center', flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
                                     <div style={{ width: cellW, display: 'flex', justifyContent: i === 0 ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
                                         {renderTerm(operand, isMissing(i), block.id, ex.id, i)}
                                     </div>

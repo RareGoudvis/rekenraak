@@ -12,6 +12,7 @@ export const WORKSHEET_FORMAT_VERSION = 2;
 export const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
 export const PRESETS_KEY = 'rekenraak_presets_v1';
 export const RELEASE_SEEN_KEY = 'rekenraak_release_seen_v1';
+export const TRYOUT_SEEN_KEY = 'rekenraak_tryout_seen_v1';
 export const MAX_PRESETS = 50;
 // Measured against the LZ-compressed, URL-safe payload (not raw JSON). 30 KB of
 // such text stays under mainstream browser URL limits incl. mobile, and — since
