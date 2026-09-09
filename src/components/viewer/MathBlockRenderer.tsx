@@ -20,7 +20,9 @@ const styles = {
     fractionBottom: { padding: '0 4px', minWidth: '24px', textAlign: 'center' } as React.CSSProperties,
     wholeNumberStyle: { fontSize: '18px', marginRight: '4px', color: '#000' } as React.CSSProperties,
     exerciseRow: { display: 'flex', alignItems: 'flex-end', fontSize: '17px', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
-    workLine: (layout: string | undefined): React.CSSProperties => ({ borderBottom: '1.5px solid #000', minWidth: '55px', width: layout === 'inline-long' ? '100%' : (layout === 'stepped' ? '100%' : '75px') }),
+    // widthPx applies only to the inline-short blank; inline-long and stepped keep their
+    // full-width work line, which is writing room rather than an answer-sized slot.
+    workLine: (layout: string | undefined, widthPx = 75): React.CSSProperties => ({ borderBottom: '1.5px solid #000', minWidth: '55px', width: layout === 'inline-long' ? '100%' : (layout === 'stepped' ? '100%' : `${widthPx}px`) }),
     emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
 };
 
@@ -97,6 +99,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // no longer fit the printable width (A4 content ≈ 625px).
     const CHAR_PX = 11.1; // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
     let maxChars = 0;
+    let maxAnswerChars = 0;
     let maxTerms = 2;
     let anyRemainder = false;
     for (const ex of block.exercises) {
@@ -109,13 +112,19 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         // With a missing operand the (red) solution renders inside the operand cell too.
         const hasMissing = ex.missingIndex !== undefined || ex.missingTerm === 'operand1' || ex.missingTerm === 'operand2';
         if (hasMissing && typeof ex.answer === 'number') maxChars = Math.max(maxChars, formatMathNumber(ex.answer).length);
+        if (typeof ex.answer === 'number') maxAnswerChars = Math.max(maxAnswerChars, formatMathNumber(ex.answer).length);
     }
+    // The answer blank used to be a flat 75px whatever the answer was, so a block of
+    // units and a block of thousands got the same line. It now follows the block's
+    // WIDEST answer — one width for the whole block, never per exercise: a blank sized
+    // to its own answer would tell the child how many digits to expect.
+    const answerLinePx = Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
     const cellPx = Math.max(85, Math.ceil(maxChars * CHAR_PX) + 6);
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
     // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
     const compScaffoldOn = block.constraints?.preset === 'compenseren'
         && (block.constraints?.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
-    const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : 94;
+    const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : answerLinePx + 19;
     const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
         + 8 + answerW + (anyRemainder ? 90 : 0);
     // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
@@ -264,7 +273,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                 Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: '32px' }}>
                                         <span style={{ marginRight: '10px' }}>=</span>
-                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(layout)}></div>}
+                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(layout, answerLinePx)}></div>}
                                     </div>
                                 ))
                             ) : (
