@@ -2,6 +2,7 @@ import type { MathBlock, GetallenasExercise, Fraction } from '../../services/mat
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -28,7 +29,7 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
     // Fit the axis to the printable width: shrink the classic 96px tick gap when many
     // ticks won't fit, and step the label font down until neighbouring labels can't
     // collide (mono advance ≈ 0.62em). Big maxGetal + 10 ticks used to run off-page.
-    const A4_CONTENT_PX = 625;
+    const A4_CONTENT_PX = useBlockWidth();
     const pad = 24;
     const gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
     const labelChars = Math.max(1, ...values.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));

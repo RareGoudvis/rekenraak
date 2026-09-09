@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
+import { useBlockWidth } from './BlockWidthContext';
 
 const GRID_COLOR = '#aaaaaa';
 const SOL_COLOR = '#e11d48';
@@ -8,7 +9,6 @@ const PLACE_ABBREVS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M'];
 const DEC_ABBREVS = ['t', 'h', 'd'];
 
 // A4 content width in px: 793px (210mm@96dpi) - 2×68px (18mm margins) - 2×16px (block padding)
-const A4_CONTENT_PX = 625;
 const ROW_GAP_PX = 12;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -127,9 +127,9 @@ function estimateExWidth(c: CijferConstraints): number {
     return (1 + maxInt + dp + extra) * CELL;
 }
 
-function computeExPerRow(c: CijferConstraints): number {
+function computeExPerRow(c: CijferConstraints, availableWidth: number): number {
     const w = estimateExWidth(c);
-    return Math.max(1, Math.min(4, Math.floor((A4_CONTENT_PX + ROW_GAP_PX) / (w + ROW_GAP_PX))));
+    return Math.max(1, Math.min(4, Math.floor((availableWidth + ROW_GAP_PX) / (w + ROW_GAP_PX))));
 }
 
 // ── Digit overlay ─────────────────────────────────────────────────────────────
@@ -585,6 +585,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
 interface Props { block: MathBlock; showSolutions: boolean; }
 
 export default function CijferViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const c = block.constraints as CijferConstraints;
     const exercises = (block.cijferExercises || []) as CijferExercise[];
 
@@ -592,7 +593,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
         return <div style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Genereer oefeningen via het paneel links)</div>;
     }
 
-    const exPerRow = computeExPerRow(c);
+    const exPerRow = computeExPerRow(c, availableWidth);
 
     const groups: CijferExercise[][] = [];
     exercises.forEach((ex, i) => {

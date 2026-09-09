@@ -1,5 +1,6 @@
 import type { MathBlock } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -10,6 +11,7 @@ const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 
 export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
+    const A4_CONTENT_PX = useBlockWidth();
     const exercises = block.deelbaarheidExercises || [];
     const layout = block.constraints.layout || 'tabel';
     const divisors: number[] = block.constraints.divisors || [2, 5, 10];
@@ -55,7 +57,6 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     // Size columns to the printable width: fixed number column, tick columns share the
     // rest (capped so few-divisor tables don't look stretched, shrunk so 7-10 divisors
     // never overflow 625px and clip in print).
-    const A4_CONTENT_PX = 625;
     const numberColPx = 150;   // holds the "deelbaar door:" header label
     const tickColPx = Math.min(100, Math.floor((A4_CONTENT_PX - numberColPx) / divisors.length));
     const cols = `${numberColPx}px ${divisors.map(() => `${tickColPx}px`).join(' ')}`;

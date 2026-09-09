@@ -1,6 +1,7 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,6 @@ interface Props {
 
 // SYNC: keep CM/label geometry aligned with MetenViewer (same to-scale convention).
 const CM = 37.8;
-const A4_CONTENT_PX = 625;
 const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
 const round1 = (v: number) => Math.round(v * 10) / 10;
@@ -24,6 +24,7 @@ function sideLabelPos(a: MeetPoint, b: MeetPoint, centroid: MeetPoint) {
 }
 
 export default function OppervlakteViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: MeetExercise[] = block.meetExercises || [];
     const subType: string = block.constraints.subType ?? 'berekenen';
     const scaffoldFormule: boolean = block.constraints.scaffoldFormule ?? true;
@@ -47,7 +48,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
     });
     const figH = Math.max(...geoms.map(g => g.h)) + 2 * pad;
     const maxW = Math.max(...geoms.map(g => g.w)) + 2 * pad;
-    const cols = maxW * 2 + gap + 10 <= A4_CONTENT_PX ? 2 : 1;
+    const cols = maxW * 2 + gap + 10 <= availableWidth ? 2 : 1;
 
     return (
         <FragmentableGrid

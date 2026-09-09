@@ -2,6 +2,7 @@ import type { MathBlock, AfrondenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import { targetsFor, roundTo, usableTargets } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -13,6 +14,7 @@ const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 export default function AfrondenViewer({ block, showSolutions }: Props) {
+    const A4_CONTENT_PX = useBlockWidth();
     const exercises: AfrondenExercise[] = block.afrondenExercises || [];
     const subType: string = block.constraints.subType ?? 'rooster';
     const numberType: string = block.constraints.numberType ?? 'natural';
@@ -58,7 +60,6 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     // ── ROOSTER: one rooster per exercise (numbers × round-to columns) ─────────
     // Drop to 1-up when two roosters + gap can't fit the printable width, else the
     // right rooster clips/overlaps in print (fixed-px inner grid can't shrink to a 1fr track).
-    const A4_CONTENT_PX = 625;
     const ROOSTER_GAP = 20;
     const numberColPx = numberType === 'decimal' ? 90 : 104;
     // 96px target columns at ≤ 2 targets keep the common T+H rooster 2-up (2×296+20 ≤ 625);

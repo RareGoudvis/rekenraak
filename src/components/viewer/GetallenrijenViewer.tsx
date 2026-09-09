@@ -2,6 +2,7 @@ import type { MathBlock, GetallenasExercise, Fraction } from '../../services/mat
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -29,6 +30,7 @@ function Cell({ value, blank, showSolutions, fontSize }: { value: number | Fract
 }
 
 export default function GetallenrijenViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: GetallenasExercise[] = block.getallenasExercises || [];
     const gap = block.verticalSpacing || 14;
     const showFrame = block.constraints.showFrame !== false;
@@ -48,7 +50,7 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
                 const maxChars = Math.max(1, ...vals.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
                 let fontSize = 18;
                 const rowW = (fs: number) => vals.length * Math.max(44, maxChars * fs * 0.62 + 4) + (vals.length - 1) * 14 + (showFrame ? 47 : 0);
-                while (fontSize > 12 && rowW(fontSize) > 625) fontSize -= 1;
+                while (fontSize > 12 && rowW(fontSize) > availableWidth) fontSize -= 1;
                 return (
                     <div key={ex.id} className="print-exercise" style={{
                         ...(showFrame ? { border: '1.5px solid #000', borderRadius: '22px', padding: '10px 22px' } : { padding: '6px 0' }),

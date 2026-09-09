@@ -4,6 +4,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -28,6 +29,7 @@ function FractionDisplay({ val, color }: { val: Fraction; color?: string }) {
 }
 
 export default function MathBlockRenderer({ block, showSolutions }: Props) {
+    const A4_CONTENT_PX = useBlockWidth();
     const blocks = useWorksheetStore((state) => state.blocks);
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
 
@@ -93,7 +95,6 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
     // longest formatted operand, and drop the 2-up grid to 1-up when two widened rows
     // no longer fit the printable width (A4 content ≈ 625px).
-    const A4_CONTENT_PX = 625;
     const CHAR_PX = 11.1; // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
     let maxChars = 0;
     let maxTerms = 2;

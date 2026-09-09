@@ -1,6 +1,7 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,6 @@ interface Props {
 
 const CM = 37.8;            // 1 cm at 96dpi — keeps the drawing genuinely to scale
 const OFFSET = 22;          // how far side labels sit outside the figure
-const A4_CONTENT_PX = 625;  // print-fit content width (see CijferViewer) — decides 1 vs 2 columns
 const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
 const round1 = (v: number) => Math.round(v * 10) / 10;
@@ -43,6 +43,7 @@ const anchor = (nx: number, ny: number): string => {
 };
 
 export default function MetenViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: MeetExercise[] = block.meetExercises || [];
     const gap = block.verticalSpacing || 14;
     const measureModel: string = block.constraints.measureModel ?? 'meten';
@@ -81,7 +82,7 @@ export default function MetenViewer({ block, showSolutions }: Props) {
     const maxW = Math.max(...geoms.map(g => g.w)) + 2 * pad;
     const columnGap = gap + 10;
     // Two columns only when two items (plus the gap) actually fit the printable width.
-    const cols = maxW * 2 + columnGap <= A4_CONTENT_PX ? 2 : 1;
+    const cols = maxW * 2 + columnGap <= availableWidth ? 2 : 1;
 
     return (
         <FragmentableGrid

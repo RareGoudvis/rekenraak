@@ -3,6 +3,7 @@ import type { MathBlock, PlaatswaardeExercise } from '../../services/math/types'
 import { getMaskPlaces, digitAtPlace } from '../../services/math/mathEngine';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -22,6 +23,7 @@ function placesOf(n: number, maxGetal: number, decimalPlaces: number) {
 }
 
 export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: PlaatswaardeExercise[] = block.plaatswaardeExercises || [];
     const subType: string = block.constraints.subType ?? 'waarde';
     const maxGetal: number = block.constraints.maxGetal ?? 1000;
@@ -63,7 +65,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
         // so small place-value tables don't waste the right half of the page.
         const placeCount = placesOf(maxGetal, maxGetal, decimalPlaces).length;
         const rowW = 90 + 16 + placeCount * 40;
-        const tabCols = rowW * 2 + 24 <= 625 ? 2 : 1;
+        const tabCols = rowW * 2 + 24 <= availableWidth ? 2 : 1;
         return (
             <FragmentableGrid
                 cols={tabCols}

@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 
 // Sub-pixel margin so a block measured as "just fits" can't clip a hair off the right
 // edge when Chrome rasterizes the PDF (offsetWidth/scrollWidth are integer-rounded).
@@ -19,7 +20,10 @@ const EPS = 0.005;
 //
 // SYNC/convention: a wide viewer must box its SVG in an in-flow element of the SVG's width
 // (CijferViewer / GetallenasViewer already do) — else scrollWidth can't see it to cap it.
-export function ScaledBlock({ scale, children }: { scale: number; children: ReactNode }) {
+// `availableWidthPx` is the printable width of the cell this block sits in. It defaults to
+// a full-width block, so today's single-column sheet is unchanged; the page model passes the
+// real per-cell width once blocks can be half or third width.
+export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, children }: { scale: number; availableWidthPx?: number; children: ReactNode }) {
     const ref = useRef<HTMLDivElement>(null);
     const [applied, setApplied] = useState(scale);
     // Last parent content width — distinguishes a genuine resize (regeneration / panel
@@ -69,7 +73,7 @@ export function ScaledBlock({ scale, children }: { scale: number; children: Reac
 
     return (
         <div ref={ref} style={{ zoom: applied, width: '100%', display: 'block', position: 'static', overflow: 'visible' }}>
-            {children}
+            <BlockWidthProvider value={availableWidthPx}>{children}</BlockWidthProvider>
         </div>
     );
 }
