@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Trash, DotsSixVertical, Lock, Copy, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog } from '../../config/exerciseCatalog';
+import { DOMAIN_BY_TYPE } from '../../config/appstructure';
 import MassAddModal from '../massadd/MassAddModal';
 
 // Left-panel "Overzicht" tab: an outline of every block on the sheet with reorder
@@ -71,6 +72,7 @@ export default function OverzichtPanel() {
                             onClick={() => jumpTo(block.id)}
                             style={{
                                 ...S.row,
+                                ...S.rowRail(DOMAIN_BY_TYPE[block.typeId]?.name),
                                 ...(block.id === activeBlockId ? S.rowActive : {}),
                                 ...(overIndex === index && dragIndex !== null && dragIndex !== index ? S.rowOver : {}),
                                 ...(dragIndex === index ? { opacity: 0.5 } : {}),
@@ -84,7 +86,8 @@ export default function OverzichtPanel() {
                                     {block.locked && <Lock size={11} style={{ marginLeft: 4, verticalAlign: 'middle', color: 'var(--accent-purple)' }} />}
                                 </span>
                                 <span style={S.metaLabel}>
-                                    {block.numberOfExercises || 0} opg.
+                                    {DOMAIN_BY_TYPE[block.typeId]?.label ?? 'Bladonderdeel'}
+                                    {' · '}{block.numberOfExercises || 0} opg.
                                     {showScores && (block.totalPoints || 0) > 0 ? ` · ${block.totalPoints} ptn` : ''}
                                 </span>
                             </span>
@@ -115,6 +118,11 @@ const S = {
     list: { display: 'flex', flexDirection: 'column', gap: '4px' } as React.CSSProperties,
     pageBreak: { fontSize: '10px', color: 'var(--accent-purple)', textAlign: 'center', letterSpacing: '0.05em', margin: '6px 0 2px', pointerEvents: 'none', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
     row: { display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid transparent', background: 'var(--bg-surface-2)' } as React.CSSProperties,
+    // Domain rail, same tint as the sidebar's — the outline reads back against the
+    // list it was built from. Layout blocks have no domain, so they get a plain edge.
+    rowRail: (name?: string): React.CSSProperties => ({
+        borderLeft: `3px solid ${name ? `var(--domain-${name}-line)` : 'var(--separator)'}`,
+    }),
     rowActive: { borderColor: 'var(--accent)', background: 'var(--accent-soft)' } as React.CSSProperties,
     rowOver: { borderColor: 'var(--accent)', borderStyle: 'dashed' } as React.CSSProperties,
     handle: { color: 'var(--text-muted)', display: 'inline-flex', cursor: 'grab', flexShrink: 0 } as React.CSSProperties,

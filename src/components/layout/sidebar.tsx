@@ -65,6 +65,18 @@ function filterByGrade(domains: Domain[], grade: Leerjaar | null): Domain[] {
     return result;
 }
 
+// Count the addable leaves under a subdomain, so a header can say how deep it is
+// without the teacher scrolling to find out. Placeholders don't count — they can't
+// be added.
+function countLeaves(sub: Domain['subdomains'][number]): number {
+    let n = 0;
+    for (const type of sub.types) {
+        if (type.children) n += type.children.filter(l => !l.placeholder).length;
+        else if (!type.placeholder) n += 1;
+    }
+    return n;
+}
+
 export default function Sidebar() {
     const addBlockFromType = useWorksheetStore((state) => state.addBlockFromType);
     const curriculum = useWorksheetStore((state) => state.curriculum);
@@ -211,16 +223,21 @@ export default function Sidebar() {
                 )}
                 {tree.map((domain) => {
                     const accent = `var(${domain.accentVar})`;
+                    // --accent-<domain> has a --domain-<domain>-line/-soft sibling per theme.css;
+                    // the domain half of the name is identical, so derive rather than re-map.
+                    const domainName = domain.accentVar.replace('--accent-', '');
+                    const line = `var(--domain-${domainName}-line)`;
+                    const soft = `var(--domain-${domainName}-soft)`;
 
                     return (
                         <div key={domain.id} style={S.domainWrap}>
                             {/* Domain section header: a full-width accent-tinted band with a
                                dot + the domain name in the domain's accent color. */}
-                            <div style={S.sectionHeader(accent)}>
+                            <div style={S.sectionHeader(soft)}>
                                 <span style={S.sectionDot(accent)} />
                                 <span>{domain.label}</span>
                             </div>
-                            <div style={S.domainContent}>
+                            <div style={S.domainContent(line)}>
                                     {domain.subdomains.map((subdomain) => {
                                         const subOpen = isSearching || openSubdomain === subdomain.id;
 
@@ -233,6 +250,7 @@ export default function Sidebar() {
                                                     onClick={() => toggleSubdomain(subdomain.id)}
                                                 >
                                                     <span style={S.navText}>{subdomain.label}</span>
+                                                    <span style={S.countBadge}>{countLeaves(subdomain)}</span>
                                                     <span style={S.chevron(subOpen)}>›</span>
                                                 </button>
 
@@ -364,17 +382,30 @@ const S = {
 
     domainWrap: { marginBottom: 'var(--sp-3)' } as React.CSSProperties,
 
-    // Domain section header — full-width accent-tinted band, label + dot in the domain accent.
-    sectionHeader: (accent: string): React.CSSProperties => ({
+    // Domain section header — tinted band, dot in the domain hue, label in normal text.
+    // The label deliberately does NOT take the hue: orange or green on a 10% tint of
+    // itself is unreadable, and the word is what carries the domain (UI-GUIDE rule 7).
+    sectionHeader: (soft: string): React.CSSProperties => ({
         display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
         padding: '6px 10px', margin: 'var(--sp-1) var(--sp-1) var(--sp-2)',
         borderRadius: 'var(--radius-sm)',
-        backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)`,
-        color: accent, fontSize: 'var(--text-sm)', fontWeight: 700, letterSpacing: '0.01em',
+        backgroundColor: soft,
+        color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontWeight: 700, letterSpacing: '0.01em',
     }),
     sectionDot: (accent: string): React.CSSProperties => ({ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: accent, flexShrink: 0 }),
 
-    domainContent: { paddingLeft: 'var(--sp-1)' } as React.CSSProperties,
+    // Left rail in the domain tint: everything indented past it belongs to the domain
+    // named directly above, so the grouping survives scrolling past the header.
+    domainContent: (line: string): React.CSSProperties => ({
+        paddingLeft: 'var(--sp-2)', marginLeft: 'var(--sp-3)', borderLeft: `3px solid ${line}`,
+    }),
+
+    // How many addable exercises sit under this header — depth without scrolling.
+    countBadge: {
+        flexShrink: 0, marginLeft: 'auto', padding: '0 6px', minWidth: '20px', textAlign: 'center',
+        borderRadius: 'var(--radius-pill)', backgroundColor: 'var(--bg-surface-2)',
+        color: 'var(--text-muted)', fontSize: 'var(--text-xs)', fontWeight: 600, lineHeight: '17px',
+    } as React.CSSProperties,
 
     subdomainBtn: (open: boolean, _accent: string, placeholder?: boolean): React.CSSProperties => ({
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-1)',

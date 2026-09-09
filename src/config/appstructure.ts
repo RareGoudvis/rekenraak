@@ -515,3 +515,34 @@ export const APP_STRUCTURE: Domain[] = [
         ],
     },
 ];
+
+// ── typeId → its domain ──────────────────────────────────────────────────────
+// The tree is the only place that knows which domain an exercise belongs to, and
+// several panels (sidebar Overzicht, the Inspector chip) need to show that. Built
+// once at module load so nobody re-walks the tree per render.
+export interface DomainTag {
+    id: string;
+    label: string;
+    accentVar: string;
+    /** The domain half of the token name, e.g. 'bewerkingen' — feeds --domain-<name>-line/-soft. */
+    name: string;
+}
+
+export const DOMAIN_BY_TYPE: Record<string, DomainTag> = (() => {
+    const map: Record<string, DomainTag> = {};
+    for (const domain of APP_STRUCTURE) {
+        const tag: DomainTag = {
+            id: domain.id,
+            label: domain.label,
+            accentVar: domain.accentVar,
+            name: domain.accentVar.replace('--accent-', ''),
+        };
+        for (const sub of domain.subdomains) {
+            for (const type of sub.types) {
+                if (type.typeId) map[type.typeId] = tag;
+                for (const leaf of type.children ?? []) map[leaf.typeId] = tag;
+            }
+        }
+    }
+    return map;
+})();
