@@ -25,7 +25,7 @@ const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string
 };
 
 export default function Inspector({ embedded = false }: { embedded?: boolean } = {}) {
-    const [tab, setTab] = useState<'blad' | 'weergave' | 'oefening'>('weergave');
+    const tab = useWorksheetStore((state) => state.inspectorTab);
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [blockAdvancedOpen, setBlockAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
@@ -1172,28 +1172,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     // Blad is always available; the two block tabs need a selection. Weergave holds how the
     // block LOOKS, Oefening holds what it generates — the split you cannot make while one
     // panel is a single scroll of everything.
-    const hasBlock = !!activeBlock;
+    const hasBlock = !!activeBlock;   // 'document' resolves to no block, as in TopBar
     const shown = !hasBlock ? 'blad' : tab;
-    const TABS = [
-        { id: 'blad' as const, label: 'Blad', on: true },
-        { id: 'weergave' as const, label: 'Weergave', on: hasBlock },
-        { id: 'oefening' as const, label: 'Oefening', on: hasBlock },
-    ];
 
     return (
         <aside data-tour="inspector" style={rootStyle}>
-            <div className="seg-group" style={{ marginBottom: 'var(--sp-2)' }}>
-                {TABS.map(t => (
-                    <button
-                        key={t.id}
-                        className="seg-btn"
-                        aria-pressed={shown === t.id}
-                        disabled={!t.on}
-                        title={t.on ? undefined : 'Kies eerst een blok op het blad'}
-                        onClick={() => setTab(t.id)}
-                    >{t.label}</button>
-                ))}
-            </div>
             {shown === 'blad' ? docContent : blockContent}
         </aside>
     );

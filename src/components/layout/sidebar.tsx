@@ -115,7 +115,7 @@ export default function Sidebar() {
     // Multiple type-accordions can be open at once — opening a subdomain expands them all.
     const [openTypes, setOpenTypes] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState('');
-    const [tab, setTab] = useState<'oefeningen' | 'overzicht'>('oefeningen');
+    const tab = useWorksheetStore((state) => state.sidebarTab);
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(
@@ -145,13 +145,6 @@ export default function Sidebar() {
 
     return (
         <aside className="mac-vibrant" style={S.aside}>
-            {/* Tab switch: exercise palette vs the block outline (Overzicht). The logo now
-                lives in the full-width topbar, so the sidebar starts straight at the tabs. */}
-            <div className="seg-group" style={{ ...S.tabSwitch, marginTop: 'var(--sp-3)' }}>
-                <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => setTab('oefeningen')}>Oefeningen</button>
-                <button className="seg-btn" aria-pressed={tab === 'overzicht'} onClick={() => setTab('overzicht')} data-tour="overzicht-tab">Overzicht</button>
-            </div>
-
             {tab === 'overzicht' ? <OverzichtPanel /> : (<>
 
             {locked && (

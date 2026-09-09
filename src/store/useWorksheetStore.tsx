@@ -119,6 +119,12 @@ interface WorksheetState {
     updateDocSettings: (updates: Partial<DocSettings>) => void;
     updateBaseSettings: (updates: Partial<BaseSettings>) => void;
     setSelectedGrade: (grade: Leerjaar | null) => void;
+    // Panel tabs live in the store because their strips render in the TopBar, above the
+    // column each belongs to, while the panels themselves render the content.
+    sidebarTab: 'oefeningen' | 'overzicht';
+    setSidebarTab: (t: 'oefeningen' | 'overzicht') => void;
+    inspectorTab: 'blad' | 'weergave' | 'oefening';
+    setInspectorTab: (t: 'blad' | 'weergave' | 'oefening') => void;
     setShowSolutions: (show: boolean) => void;
     setTheme: (theme: ThemeName) => void;
     setView: (view: WorksheetView) => void;
@@ -173,6 +179,8 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
     baseSettings: { ...DEFAULT_BASE },
     selectedGrade: null,
+    sidebarTab: 'oefeningen',
+    inspectorTab: 'weergave',
     curriculum: null,
     draftBlocks: [],
     showSolutions: false,
@@ -338,6 +346,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         selectedGrade: grade,
         baseSettings: grade == null ? state.baseSettings : { ...state.baseSettings, ...GRADE_PRESETS[grade] },
     })),
+    // Pure view state, like the other UI toggles: never pushed to history.
+    setSidebarTab: (t) => set({ sidebarTab: t }),
+    setInspectorTab: (t) => set({ inspectorTab: t }),
     setShowSolutions: (show) => set({ showSolutions: show }),
     setTheme: (theme) => {
         applyTheme(theme);

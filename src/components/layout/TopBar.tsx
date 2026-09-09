@@ -25,6 +25,13 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const setShowSolutions = useWorksheetStore((s) => s.setShowSolutions);
     const generateAllBlocks = useWorksheetStore((s) => s.generateAllBlocks);
     const clearBlocks = useWorksheetStore((s) => s.clearBlocks);
+    const sidebarTab = useWorksheetStore((s) => s.sidebarTab);
+    const setSidebarTab = useWorksheetStore((s) => s.setSidebarTab);
+    const inspectorTab = useWorksheetStore((s) => s.inspectorTab);
+    const setInspectorTab = useWorksheetStore((s) => s.setInspectorTab);
+    // The two block tabs need a selection; 'document' means the sheet, not a block.
+    const activeBlockId = useWorksheetStore((s) => s.activeBlockId);
+    const hasBlock = !!activeBlockId && activeBlockId !== 'document';
     const hasBlocks = useWorksheetStore((s) => s.blocks.length > 0);
     const saveState = useWorksheetStore((s) => s.saveState);
     const lastSavedAt = useWorksheetStore((s) => s.lastSavedAt);
@@ -112,11 +119,25 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     return (
         <div ref={barRef} className="mac-vibrant" style={S.bar}>
             <input ref={menuFileRef} type="file" accept=".rekenraak,application/json,.json" style={{ display: 'none' }} onChange={handleImportFile} />
-            <div style={S.row}>
-                {/* Logo — far left of the full-width header; opens "Over dit project". */}
-                <button type="button" className="ui-hover" style={S.logoBtn} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
-                    <Wordmark height={28} />
+            {/* Three zones, each the width of the column beneath it, so every control sits
+                physically above the thing it changes. The panel tab strips live here rather
+                than inside their panels: visually they belong to the bar, functionally to
+                the column below (state in the store). */}
+            <div style={S.zones}>
+              <div style={S.zoneLeft}>
+                <div className="seg-group" style={{ width: '100%' }}>
+                    <button className="seg-btn" aria-pressed={sidebarTab === 'oefeningen'} onClick={() => setSidebarTab('oefeningen')}>Oefeningen</button>
+                    <button className="seg-btn" aria-pressed={sidebarTab === 'overzicht'} onClick={() => setSidebarTab('overzicht')} data-tour="overzicht-tab">Overzicht</button>
+                </div>
+              </div>
+
+              <div style={S.zoneCenter}>
+                {/* Wordmark centred over the sheet — the sheet is the artifact, so the brand
+                    sits above it rather than competing for a corner. */}
+                <button type="button" className="ui-hover" style={S.logoCentered} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
+                    <Wordmark height={26} />
                 </button>
+                <div style={S.centerRow}>
 
                 {/* Menu (≡) — library navigation + file ops */}
                 <div style={S.menuWrap}>
@@ -290,7 +311,23 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                         </>
                     )}
                 </div>
+                </div>
+              </div>
 
+              <div style={S.zoneRight}>
+                <div className="seg-group" style={{ width: '100%' }}>
+                    {([['blad', 'Blad', true], ['weergave', 'Weergave', hasBlock], ['oefening', 'Oefening', hasBlock]] as const).map(([id, label, on]) => (
+                        <button
+                            key={id}
+                            className="seg-btn"
+                            aria-pressed={(hasBlock ? inspectorTab : 'blad') === id}
+                            disabled={!on}
+                            title={on ? undefined : 'Kies eerst een blok op het blad'}
+                            onClick={() => setInspectorTab(id)}
+                        >{label}</button>
+                    ))}
+                </div>
+              </div>
             </div>
 
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
@@ -314,6 +351,13 @@ const S = {
     } as React.CSSProperties,
     logoBtn: { background: 'transparent', border: 'none', padding: '2px 6px', marginRight: 'var(--sp-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 } as React.CSSProperties,
     row: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' } as React.CSSProperties,
+    // SYNC: the outer column widths must match Sidebar's aside (286px) and Inspector's (338px).
+    zones: { display: 'grid', gridTemplateColumns: '286px minmax(0, 1fr) 338px', alignItems: 'center', gap: 'var(--sp-3)' } as React.CSSProperties,
+    zoneLeft: { minWidth: 0, paddingRight: 'var(--sp-2)' } as React.CSSProperties,
+    zoneRight: { minWidth: 0, paddingLeft: 'var(--sp-2)' } as React.CSSProperties,
+    zoneCenter: { minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' } as React.CSSProperties,
+    logoCentered: { background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0 } as React.CSSProperties,
+    centerRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' } as React.CSSProperties,
     group: { display: 'flex', gap: 'var(--sp-1)' } as React.CSSProperties,
     spacer: { flex: 1, minWidth: 0 } as React.CSSProperties,
     vsep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--separator)', flexShrink: 0 } as React.CSSProperties,
