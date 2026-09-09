@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, Gear as SettingsIcon, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Heart } from '@phosphor-icons/react';
-import { useWorksheetStore, type ThemeName } from '../../store/useWorksheetStore';
+import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
 import Switch from '../ui/Switch';
@@ -30,8 +30,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const lastSavedAt = useWorksheetStore((s) => s.lastSavedAt);
     const setView = useWorksheetStore((s) => s.setView);
     const loadWorksheet = useWorksheetStore((s) => s.loadWorksheet);
-    const theme = useWorksheetStore((s) => s.theme);
-    const setTheme = useWorksheetStore((s) => s.setTheme);
     const sidebarPreview = useWorksheetStore((s) => s.sidebarPreview);
     const setSidebarPreview = useWorksheetStore((s) => s.setSidebarPreview);
     const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
@@ -39,10 +37,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
     const [aboutOpen, setAboutOpen] = useState(false);
-
-    const THEMES: Array<{ id: ThemeName; label: string }> = [
-        { id: 'light', label: 'Licht' }, { id: 'dark', label: 'Donker' }, { id: 'colorblind', label: 'Contrast' },
-    ];
 
     const handleExport = () => {
         const st = useWorksheetStore.getState();
@@ -192,11 +186,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                     </>
                                 )}
                                 <div style={S.sectionLabel}>Weergave</div>
-                                <div className="seg-group" style={{ margin: '0 6px 6px' }}>
-                                    {THEMES.map((t) => (
-                                        <button key={t.id} className="seg-btn" aria-pressed={theme === t.id} onClick={() => setTheme(t.id)}>{t.label}</button>
-                                    ))}
-                                </div>
                                 <div style={{ ...S.menuItem, justifyContent: 'space-between', cursor: 'default' }}>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}><Eye size={15} /> Voorbeeld bij zweven</span>
                                     <Switch checked={sidebarPreview} onChange={setSidebarPreview} aria-label="Voorbeeld bij zweven" />

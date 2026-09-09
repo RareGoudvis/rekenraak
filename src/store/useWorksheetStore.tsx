@@ -62,7 +62,6 @@ export interface DocSettings {
     bodyFontScale?: number;
 }
 
-export type ThemeName = 'dark' | 'light' | 'colorblind';
 // Which full-screen view is active. 'editor' = normal 3-panel editor; the others are
 // full-screen library overlays. UI-only — never persisted/serialised.
 export type WorksheetView = 'editor' | 'mijn-bladen' | 'bibliotheek';
@@ -83,7 +82,6 @@ interface WorksheetState {
     // rendered, not autosaved, no history.
     draftBlocks: MathBlock[];
     showSolutions: boolean;
-    theme: ThemeName;
     view: WorksheetView;             // active full-screen view (UI-only, not persisted)
     sidebarPreview: boolean;         // show a live example card when hovering a sidebar leaf (localStorage-backed)
     saveState: SaveState;            // autosave status for the top-bar tracker (UI-only)
@@ -129,7 +127,6 @@ interface WorksheetState {
     inspectorTab: 'blad' | 'weergave' | 'oefening';
     setInspectorTab: (t: 'blad' | 'weergave' | 'oefening') => void;
     setShowSolutions: (show: boolean) => void;
-    setTheme: (theme: ThemeName) => void;
     setView: (view: WorksheetView) => void;
     setSidebarPreview: (on: boolean) => void;
     setBlockPages: (pages: Record<string, number>) => void;
@@ -141,33 +138,14 @@ interface WorksheetState {
 
 const MAX_HISTORY = 50;
 
-// Read persisted theme once at module load. Default 'light' for first-time users
-// or when localStorage is unavailable (SSR / privacy modes).
-function loadInitialTheme(): ThemeName {
-    try {
-        const v = localStorage.getItem('theme');
-        if (v === 'light' || v === 'dark' || v === 'colorblind') return v;
-    } catch { /* ignore */ }
-    return 'light';
-}
-
-// Apply theme attribute to <html> so CSS variables switch immediately. Called
-// at store init and from setTheme.
-function applyTheme(theme: ThemeName): void {
-    if (typeof document !== 'undefined') document.documentElement.setAttribute('data-theme', theme);
-}
-
 function pushHistory(history: MathBlock[][], index: number, blocks: MathBlock[]): { _history: MathBlock[][], _historyIndex: number } {
     const sliced = history.slice(0, index + 1);
     const next = [...sliced, blocks].slice(-MAX_HISTORY);
     return { _history: next, _historyIndex: next.length - 1 };
 }
 
-const INITIAL_THEME = loadInitialTheme();
-applyTheme(INITIAL_THEME);
-
-// Sidebar hover-preview toggle persists across sessions (default on). Same localStorage
-// pattern as theme; absent/unavailable → true.
+// Sidebar hover-preview toggle persists across sessions (default on).
+// Absent/unavailable → true.
 const SIDEBAR_PREVIEW_KEY = 'rekenraak_sidebar_preview';
 function loadInitialSidebarPreview(): boolean {
     try { return localStorage.getItem(SIDEBAR_PREVIEW_KEY) !== '0'; } catch { return true; }
@@ -188,7 +166,6 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     curriculum: null,
     draftBlocks: [],
     showSolutions: false,
-    theme: INITIAL_THEME,
     view: 'editor',
     sidebarPreview: INITIAL_SIDEBAR_PREVIEW,
     saveState: 'idle',
@@ -383,11 +360,6 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     setSidebarTab: (t) => set({ sidebarTab: t }),
     setInspectorTab: (t) => set({ inspectorTab: t }),
     setShowSolutions: (show) => set({ showSolutions: show }),
-    setTheme: (theme) => {
-        applyTheme(theme);
-        try { localStorage.setItem('theme', theme); } catch { /* ignore */ }
-        set({ theme });
-    },
     setView: (view) => set({ view }),
     setBlockPages: (pages) => set({ blockPages: pages }),
     setSidebarPreview: (on) => {
@@ -407,7 +379,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
 }));
 
 // Auto-save: debounced 1.5 s after the worksheet payload (blocks/header/footer/docSettings)
-// changes. UI-only state (activeBlockId, showSolutions, theme, history) is excluded — those
+// changes. UI-only state (activeBlockId, showSolutions, history) is excluded — those
 // shouldn't trigger a write nor should they pollute the saved snapshot.
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 useWorksheetStore.subscribe((state, prev) => {

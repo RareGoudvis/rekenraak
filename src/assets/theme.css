@@ -24,11 +24,11 @@
 }
 
 /* ============================================================================
-   DESIGN SYSTEM — Apple-HIG-inspired scales (theme-independent).
+   DESIGN SYSTEM — see UI-GUIDE.md for the rules these tokens serve.
    Hierarchy comes from weight + size + tone, not UPPERCASE + letter-spacing.
-   Per-theme color/elevation tokens live in the theme blocks below; the legacy
-   names (--bg-dark/--bg-panel/--bg-input/--border-color/--accent-purple) are
-   kept as aliases so existing inline styles keep working during migration.
+   Scales first, then the single colour/elevation block; the legacy names
+   (--bg-dark/--bg-panel/--bg-input/--border-color/--accent-purple) are kept as
+   aliases so existing inline styles keep working during migration.
    ============================================================================ */
 :root {
     /* Spacing — strict 8pt grid (sp-N ≈ N*4px), so every gap snaps to a rhythm */
@@ -70,60 +70,10 @@
     --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
 
-/* ---- DARK (default) — Apple system-gray surface ramp + systemBlue accent ---- */
+/* ---- The one theme: warm off-white window, white content, hairline separators.
+   No data-theme switching — dark and the high-contrast palette were removed; contrast
+   now has to hold up here, since there is nowhere else for it to live. ---- */
 :root {
-    /* Surfaces ride Apple's dark systemGray ramp (6→4): a soft gray base (not
-       near-black), each surface lifted one neutral step + hairline + elevation. */
-    --bg-base: #1C1C1E;       /* systemGray6 dark — window base */
-    --bg-surface: #2C2C2E;    /* systemGray5 — raised card */
-    --bg-surface-2: #3A3A3C;  /* systemGray4 — inset input/track */
-    --bg-hover: rgba(255, 255, 255, 0.06);
-    --separator: rgba(255, 255, 255, 0.15);
-
-    --text-main: #F5F5F7;     /* Apple label (dark) */
-    --text-muted: #98989F;    /* secondaryLabel ≈ rgba(235,235,245,.6) */
-
-    /* systemBlue (dark variant) — Apple's signature/default app accent */
-    --accent: #0A84FF;
-    --accent-strong: #0060DF;
-    --accent-soft: rgba(10, 132, 255, 0.16);
-    --accent-on: #ffffff;
-    --danger: #FF453A;        /* systemRed dark */
-    --danger-soft: rgba(255, 69, 58, 0.14);
-
-    /* Domain tags = Apple system colors (dark variants) */
-    --accent-getallenkennis: #FF453A;  /* systemRed */
-    --accent-bewerkingen: #0A84FF;     /* systemBlue */
-    --accent-metendrekenen: #30D158;   /* systemGreen */
-    --accent-meetkunde: #BF5AF2;       /* systemPurple — keeps brand violet alive */
-    --accent-vraagstukken: #FF9F0A;    /* systemOrange */
-
-    /* Soft layered elevation — dark needs deeper alpha to read */
-    --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.45);
-    --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0, 0, 0, 0.30);
-    --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.55), 0 6px 14px rgba(0, 0, 0, 0.35);
-    --shadow-focus: 0 0 0 3px rgba(10, 132, 255, 0.45);
-
-    /* Segmented control (macOS): recessed track + raised thumb. Track sits one step
-       BELOW the thumb so the selected segment reads as lifted, label stays primary. */
-    --seg-track: #2C2C2E;
-    --seg-thumb: #48484A;            /* systemGray3-ish — lighter than the track */
-    --seg-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 0 0 .5px rgba(0, 0, 0, 0.30);
-    --seg-thumb-border: transparent;
-    /* Press overlay — stronger sibling of --bg-hover, stacks over any inline bg. */
-    --bg-active: rgba(255, 255, 255, 0.14);
-
-    /* Legacy aliases — map old names onto the new surfaces */
-    --bg-dark: var(--bg-base);
-    --bg-panel: var(--bg-surface);
-    --bg-input: var(--bg-surface-2);
-    --border-color: var(--separator);
-    --accent-purple: var(--accent);
-    --accent-purple-dark: var(--accent-strong);
-}
-
-/* ---- LIGHT — macOS window gray + white content, hairline separators ---- */
-[data-theme="light"] {
     --bg-base: #ECECEC;       /* macOS window bg */
     --bg-surface: #FFFFFF;    /* content card */
     --bg-surface-2: #F2F2F7;  /* systemGray6 light — inset */
@@ -159,58 +109,6 @@
     --seg-thumb-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 .5px rgba(0, 0, 0, 0.04);
     --seg-thumb-border: transparent;
     --bg-active: rgba(0, 0, 0, 0.10);
-
-    --bg-dark: var(--bg-base);
-    --bg-panel: var(--bg-surface);
-    --bg-input: var(--bg-surface-2);
-    --border-color: var(--separator);
-    --accent-purple: var(--accent);
-    --accent-purple-dark: var(--accent-strong);
-}
-
-/* ---- High-contrast / colorblind-safe. Domain accents from the IBM
-   colorblind-safe palette so deuteranopia/protanopia users tell
-   Getallenkennis/Bewerkingen/Meten/Meetkunde apart by hue+luminance.
-   Keep accent black, separators solid, shadows near-off so the soft-depth
-   treatment never erodes the high contrast this theme exists for. ---- */
-[data-theme="colorblind"] {
-    --bg-base: #ffffff;
-    --bg-surface: #ffffff;
-    --bg-surface-2: #ffffff;
-    --bg-hover: rgba(0, 0, 0, 0.08);
-    --separator: #000000;
-
-    --text-main: #000000;
-    --text-muted: #000000;
-
-    --accent: #000000;
-    --accent-strong: #000000;
-    --accent-soft: rgba(0, 0, 0, 0.10);
-    --accent-on: #ffffff;
-    --danger: #000000;
-    --danger-soft: rgba(0, 0, 0, 0.10);
-
-    --accent-getallenkennis: #DC267F;
-    --accent-bewerkingen: #648FFF;
-    --accent-metendrekenen: #FE6100;
-    --accent-meetkunde: #785EF0;
-    --accent-vraagstukken: #FFB000;
-
-    /* Bordered chrome already carries a solid #000 edge — any shadow ring on top would
-       double it. So shadows are off here; the only borderless surface (the A4 sheet)
-       gets its single edge from a thin 1px shadow-3 (not 2px, which read as too thick). */
-    --shadow-1: none;
-    --shadow-2: none;
-    --shadow-3: 0 0 0 1px #000000;
-    --shadow-focus: 0 0 0 3px rgba(0, 0, 0, 0.55);
-
-    /* Segmented control: no elevation in high-contrast — selection reads via a 2px black
-       ring (carried by the shadow token so inline radioBtn/bridgeBtn get it too). */
-    --seg-track: #ffffff;
-    --seg-thumb: #ffffff;
-    --seg-thumb-shadow: 0 0 0 2px #000000;
-    --seg-thumb-border: transparent;
-    --bg-active: rgba(0, 0, 0, 0.16);
 
     --bg-dark: var(--bg-base);
     --bg-panel: var(--bg-surface);

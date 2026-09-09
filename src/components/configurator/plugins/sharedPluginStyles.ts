@@ -3,9 +3,9 @@ import React from 'react';
 // Shared config-plugin controls. One edit here re-skins every *Config.tsx at once,
 // so all design-system values come from CSS tokens (see assets/theme.css).
 // Selection reads as a calm accent-soft "thumb" (tint + accent text + 1px accent
-// ring), not a heavy solid fill — closer to Apple's segmented/selected style. The
-// 1px var(--accent) ring is what keeps the active state legible in the colorblind
-// theme (where accent-soft is a faint gray).
+// ring), not a heavy solid fill. The 1px var(--accent) ring is load-bearing: the
+// soft fill alone is too faint to read as "selected", so the ring is what carries
+// the state. See UI-GUIDE.md — one selected look, everywhere.
 export const sharedPluginStyles = {
     container: {} as React.CSSProperties,
 
@@ -104,8 +104,8 @@ export const sharedPluginStyles = {
         fontSize: 'var(--text-sm)',
         borderRadius: 'var(--radius-sm)',
         cursor: 'pointer',
-        // Unselected uses a --separator border (not transparent) so the button stays
-        // visible in the colorblind theme, where every surface is white.
+        // Unselected uses a --separator border (not transparent) so the button still
+        // has an edge against the white surface it sits on.
         border: `1px solid ${active ? 'var(--seg-thumb-border)' : 'var(--separator)'}`,
         backgroundColor: active ? 'var(--seg-thumb)' : 'var(--bg-surface-2)',
         color: active ? 'var(--text-main)' : 'var(--text-muted)',
@@ -149,7 +149,7 @@ export const sharedPluginStyles = {
 
     // Place-value mask cell (D/H/T/E and friends). One canonical 28×28 toggle —
     // same tint+ring selected treatment as radioBtn/pill (the 1px accent ring is
-    // what keeps "on" legible in the colorblind theme).
+    // what keeps "on" legible at this size).
     maskBtn: (active: boolean): React.CSSProperties => ({
         width: '28px', height: '28px', fontSize: 'var(--text-xs)', fontWeight: 700, cursor: 'pointer',
         borderRadius: 'var(--radius-xs)',
