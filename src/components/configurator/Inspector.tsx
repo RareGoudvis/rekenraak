@@ -1231,26 +1231,22 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
         <aside data-tour="inspector" style={rootStyle}>
             {/* Say what is selected before showing controls — otherwise the panel is a
                 pile of settings with no stated subject (UI-GUIDE rule 1). */}
-            <div style={S.subjectChip}>
-                {activeBlock && subject ? (() => {
-                    const domain = DOMAIN_BY_TYPE[activeBlock.typeId];
-                    return (
-                        <>
-                            <span style={S.subjectDot(domain ? `var(${domain.accentVar})` : 'var(--separator)')} />
-                            <span style={S.subjectName}>
-                                {subject.number ? `${subject.number}. ` : ''}{subject.label}
-                            </span>
-                            <span style={S.subjectDomain}>{domain?.label ?? 'Bladonderdeel'}</span>
-                        </>
-                    );
-                })() : (
-                    <>
-                        <span style={S.subjectDot('var(--separator)')} />
-                        <span style={S.subjectName}>Heel het blad</span>
-                        <span style={S.subjectDomain}>Geen oefening gekozen</span>
-                    </>
-                )}
-            </div>
+            {(() => {
+                const domain = activeBlock ? DOMAIN_BY_TYPE[activeBlock.typeId] : undefined;
+                const rail = domain ? `var(--domain-${domain.name}-line)` : 'var(--separator)';
+                return (
+                    <div style={S.subjectChip(rail)}>
+                        <span style={S.subjectName}>
+                            {activeBlock && subject
+                                ? `${subject.number ? `${subject.number}. ` : ''}${subject.label}`
+                                : 'Heel het blad'}
+                        </span>
+                        <span style={S.subjectDomain}>
+                            {activeBlock ? (domain?.label ?? 'Bladonderdeel') : 'Geen oefening gekozen'}
+                        </span>
+                    </div>
+                );
+            })()}
             <div className="panel-head">
                 <div className="seg-group">
                     {([['oefening', 'Oefeningen', hasBlock], ['weergave', 'Opmaak', hasBlock], ['blad', 'Blad', true]] as const).map(([id, label, on]) => (
@@ -1276,16 +1272,14 @@ const S = {
     // Embedded in the left panel's Instellingen tab: no own width or edge, just fill the tab.
     embedded: { flex: 1, minHeight: 0, overflowY: 'auto', boxSizing: 'border-box', padding: 'var(--sp-3) var(--sp-4) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     sidebar: { width: '366px', minWidth: '366px', backgroundColor: 'var(--bg-surface)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflow: 'hidden', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
-    // "You are editing this" — dot in the domain hue, but the domain is always named
-    // in words beside it (UI-GUIDE rule 7).
-    subjectChip: {
+    // "You are editing this" — the same domain rail the sidebar and Overzicht use, so one
+    // marker means one thing everywhere. The domain is always named in words (rule 7).
+    subjectChip: (rail: string): React.CSSProperties => ({
         flex: 'none', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
         padding: '0 var(--sp-4)', height: 'var(--bar-h)',
+        borderLeft: `3px solid ${rail}`,
         borderBottom: '1px solid var(--separator)', background: 'var(--bg-surface)',
         minWidth: 0,
-    } as React.CSSProperties,
-    subjectDot: (color: string): React.CSSProperties => ({
-        width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color, flexShrink: 0,
     }),
     subjectName: {
         fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-main)',

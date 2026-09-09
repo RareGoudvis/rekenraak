@@ -234,8 +234,7 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
                         <div key={domain.id} style={S.domainWrap}>
                             {/* Domain section header: a full-width accent-tinted band with a
                                dot + the domain name in the domain's accent color. */}
-                            <div style={S.sectionHeader(soft)}>
-                                <span style={S.sectionDot(accent)} />
+                            <div style={S.sectionHeader(soft, line)}>
                                 <span>{domain.label}</span>
                             </div>
                             <div style={S.domainContent(line)}>
@@ -402,17 +401,19 @@ const S = {
 
     domainWrap: { marginBottom: 'var(--sp-3)' } as React.CSSProperties,
 
-    // Domain section header — tinted band, dot in the domain hue, label in normal text.
-    // The label deliberately does NOT take the hue: orange or green on a 10% tint of
-    // itself is unreadable, and the word is what carries the domain (UI-GUIDE rule 7).
-    sectionHeader: (soft: string): React.CSSProperties => ({
+    // Domain section header — tinted band on the same rail that runs down the domain's
+    // contents, so the band and the list read as one bracket. No dot: the rail already
+    // carries the hue and the word already carries the domain, and a third marker for
+    // the same fact is noise. The label stays normal text — orange or green on a 10%
+    // tint of itself is unreadable (UI-GUIDE rule 7).
+    sectionHeader: (soft: string, line: string): React.CSSProperties => ({
         display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
-        padding: '6px 10px', margin: 'var(--sp-1) var(--sp-1) var(--sp-2)',
-        borderRadius: 'var(--radius-sm)',
+        padding: '6px 10px', margin: 'var(--sp-1) var(--sp-1) var(--sp-2) var(--sp-3)',
+        borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+        borderLeft: `3px solid ${line}`,
         backgroundColor: soft,
         color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontWeight: 700, letterSpacing: '0.01em',
     }),
-    sectionDot: (accent: string): React.CSSProperties => ({ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: accent, flexShrink: 0 }),
 
     // Left rail in the domain tint: everything indented past it belongs to the domain
     // named directly above, so the grouping survives scrolling past the header.
