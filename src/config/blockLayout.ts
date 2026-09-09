@@ -86,9 +86,24 @@ export function layoutFacts(typeId: string): LayoutFacts {
 
 // Exercises per row shrink with the column: a viewer that fits 2 side by side at full
 // width fits 1 in a half block. Never below 1.
-export function perRow(typeId: string, width: WidthUnits): number {
-    const full = layoutFacts(typeId).perRowFull;
-    if (width >= 6) return full;
+//
+// Some viewers decide this from the block's own settings rather than a fixed number, so
+// the estimate has to follow the same rule the viewer uses — a cost function that
+// disagrees with the renderer is exactly what the height harness exists to catch.
+export function perRow(block: MathBlock, width: WidthUnits): number {
+    const facts = layoutFacts(block.typeId);
+    let full = facts.perRowFull;
+
+    // MathBlockRenderer lays hoofdrekenen out 2-up while the operands stay narrow and
+    // drops to 1-up for wide numbers, met-rest rows and long chains.
+    if (block.typeId.startsWith('hr-std-')) {
+        const c = (block.constraints ?? {}) as Record<string, unknown>;
+        const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 1000;
+        const terms = typeof c.termCount === 'number' ? c.termCount : 2;
+        full = (maxGetal >= 100000 || terms > 2 || block.layoutPreset === 'inline-long') ? 1 : 2;
+    }
+
+    if (width >= 6) return Math.max(1, full);
     if (width >= 3) return Math.max(1, Math.round(full / 2));
     return 1;
 }
@@ -118,7 +133,7 @@ export function minWidthUnits(block: MathBlock): WidthUnits {
 export function estimateHeightUnits(block: MathBlock, width: WidthUnits): number {
     const facts = layoutFacts(block.typeId);
     const count = Math.max(1, block.numberOfExercises || 1);
-    const rows = Math.ceil(count / perRow(block.typeId, width));
+    const rows = Math.ceil(count / perRow(block, width));
 
     // Stepped layout adds its answer lines under every exercise.
     const stepped = block.layoutPreset === 'stepped' ? Math.max(0, (block.steppedLines || 1) - 1) : 0;

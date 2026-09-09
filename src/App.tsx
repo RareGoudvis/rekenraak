@@ -1,6 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
+import PageSheet from './components/layout/PageSheet';
+import { packPages, pageIndexByBlock, type PackedBlock } from './services/layout/pagePacker';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
 import { EXERCISE_UI } from './config/exerciseUI';
@@ -76,7 +78,6 @@ export default function App() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const [pageBreaks, setPageBreaks] = useState<number[]>([]);
   const { handlePrint } = usePrint();
 
   const blocks = useWorksheetStore((state) => state.blocks);
@@ -164,27 +165,6 @@ export default function App() {
 
   const totalScore = blocks.reduce((sum, block) => sum + (block.totalPoints || 0), 0);
 
-  useEffect(() => {
-    if (!a4Ref.current) return;
-    const PAGE_H = 1044;
-    const totalH = a4Ref.current.scrollHeight;
-    const breaks: number[] = [];
-    let p = PAGE_H;
-    while (p < totalH) { breaks.push(p); p += PAGE_H; }
-    setPageBreaks(breaks);
-
-    // Per-block page index (for the Overzicht auto page-break markers). Measured in the
-    // same coordinate space as the dashed indicators (offset from the sheet top / PAGE_H).
-    const a4Top = a4Ref.current.getBoundingClientRect().top;
-    const pages: Record<string, number> = {};
-    for (const b of blocks) {
-      const el = document.getElementById(`block-${b.id}`);
-      if (!el) continue;
-      const rel = el.getBoundingClientRect().top - a4Top;
-      pages[b.id] = Math.max(0, Math.floor(rel / PAGE_H));
-    }
-    setBlockPages(pages);
-  }, [blocks, docSettings, showSolutions, setBlockPages]);
 
   // Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
   // optional repeating print header (.print-repeat-fields). Null if no field is enabled.
@@ -206,63 +186,28 @@ export default function App() {
     );
   };
 
-  return (
+  // Pagination is now BUDGETED by the packer, not measured from the DOM: the page count
+  // is known before anything renders, which is what makes the page markers trustworthy.
+  const packedPages = useMemo(
+    () => packPages(blocks, { blockSpacingPx: docSettings.blockSpacing ?? 12 }),
+    [blocks, docSettings.blockSpacing],
+  );
+  const blockOrder = useMemo(() => {
+    const m: Record<string, number> = {};
+    blocks.forEach((b, i) => { m[b.id] = i; });
+    return m;
+  }, [blocks]);
+
+  // Per-block page index for the Overzicht markers. It used to be MEASURED from the DOM
+  // against a fixed 1044px page height; now it is simply what the packer decided, so the
+  // markers agree with the pages on screen instead of approximating them.
+  useEffect(() => {
+    setBlockPages(pageIndexByBlock(packedPages));
+  }, [packedPages, setBlockPages]);
+
+  // ── Page chrome, rendered per page instead of once per sheet ──────────────
+  const renderHeaderRegion = () => (
     <>
-    <div className="mobile-block">
-      <video className="mobile-block-demo" src="/rekenraak-demo.mp4" autoPlay loop muted playsInline />
-      <span className="mobile-block-title">RekenRaak werkt op een groot scherm</span>
-      <span>Hiermee maak je werkbladen op A4-formaat — daarvoor staan het blad én alle instellingen naast elkaar. Open de tool op een computer, laptop of tablet om aan de slag te gaan.</span>
-      <span className="mobile-block-hint">Tip: draai je tablet in liggende stand (landscape).</span>
-    </div>
-    {tourOpen && <TourOverlay onClose={closeTour} />}
-    <div className="print-root" style={styles.appShell}>
-      {/* FULL-WIDTH TOP BAR — spans the window; the three panels sit directly underneath it. */}
-      <div className="no-print" onClick={(e) => e.stopPropagation()}>
-        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
-      </div>
-
-      <div className="print-body-row" style={styles.appBody}>
-      {/* LEFT — the exercise palette. Panels no longer collapse to a hover flyout below
-          1800px: teachers on 14" laptops got stuck in it even with the pin, so the sheet
-          absorbs a narrow window by zooming instead (see sheetZoom above). */}
-      <div className="no-print" style={{ display: 'flex', height: '100%', flex: '0 0 auto' }}>
-        <Sidebar />
-      </div>
-
-      {/* CENTRAL WORK AREA */}
-      <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
-
-        {/* Scroll container holds the banners + sheet (the topbar is now a sibling above).
-            Padding ≥ the sheet's shadow reach (--shadow-3 = 48px blur): overflowY:auto forces
-            overflow-x to compute as auto too, so without this the side/bottom shadow is clipped. */}
-        <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 48px 48px' }}>
-
-        {releaseBannerVisible && (
-          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
-            <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
-            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het rechts aan en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
-            <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
-          </div>
-        )}
-
-        {!tryoutDismissed && blocks.some(b => TRYOUT_TYPE_IDS.has(b.typeId)) && (
-          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
-            <Flask size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
-            <span>Enkele oefeningen op dit blad zijn nieuw en nog in proef. Kijk het afgedrukte blad even na voor je het uitdeelt.</span>
-            <button onClick={dismissTryoutBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
-          </div>
-        )}
-
-        <div ref={a4Ref} className="print-area-shell" style={{ ...styles.a4Sheet, zoom: sheetZoom }}>
-          {/* Real <table> markup: Chrome only repeats <thead>/<tfoot> across printed pages
-              for true table elements, not for div-based display:table-*-group. */}
-          <table className={`print-area${headerData?.repeatHeader ? ' repeat-header' : ''}`}>
-          <thead className="print-thead" aria-hidden="true"><tr><td>
-            {/* spacer = top margin every page; name strip repeats when repeatHeader is on */}
-            <div className="print-thead-spacer" />
-            <div className="print-repeat-fields">{renderFields()}</div>
-          </td></tr></thead>
-          <tbody className="print-body"><tr><td className="print-body-cell">
           {/* ── HEADER ── (enum base style + optional style-builder overlay; custom wins) */}
           <div style={overlayRegionStyle({
             display: 'flex', flexDirection: 'column', width: '100%', padding: '12px', boxSizing: 'border-box',
@@ -363,29 +308,28 @@ export default function App() {
             })()}
           </div>
 
-          {/* ── BLOCKS ── */}
-          <div style={{ width: '100%', marginTop: `${docSettings.headerContentGap ?? 12}px` }}>
-            {/* Cold-load hero: real visible h1 + intro for first-time visitors and SEO.
-                Shows only on an empty sheet; the moment a block is added it's gone.
-                no-print keeps it off paper. */}
-            {blocks.length === 0 && (
-              <div className="no-print" style={styles.heroEmpty}>
-                <h1 style={styles.heroTitle}>RekenRaak — gratis werkbladgenerator voor wiskunde in het lager onderwijs</h1>
-                <p style={styles.heroPitch}>
-                  Stel in enkele minuten een eigen wiskundewerkblad samen voor het lager onderwijs —
-                  kies oefeningen, regel de moeilijkheidsgraad en druk af of bewaar als pdf.
-                </p>
-                <ul style={styles.heroBullets}>
-                  <li style={styles.heroBullet}><ListChecks size={20} color="var(--accent)" weight="bold" />Kies oefeningen</li>
-                  <li style={styles.heroBullet}><SlidersHorizontal size={20} color="var(--accent)" weight="bold" />Stel de moeilijkheidsgraad in</li>
-                  <li style={styles.heroBullet}><Printer size={20} color="var(--accent)" weight="bold" />Druk af of bewaar als pdf</li>
-                </ul>
-                <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen — deze tekst verdwijnt zodra je eerste blok op het blad staat.</p>
-              </div>
-            )}
-            {blocks.map((block, index) => {
+    </>
+  );
+
+  const renderFooterRegion = () => (
+            <div className="print-tfoot-inner" style={overlayRegionStyle({}, docSettings.footerCustom)}>
+              <span>{[
+                footerData?.showSchool ? (footerData.school || 'School') : null,
+                footerData?.showKlas ? (footerData.klas || 'Klas') : null,
+                footerData?.showLeerkracht ? (footerData.leerkracht || 'Leerkracht') : null,
+              ].filter(Boolean).join(' | ')}</span>
+              <span>{footerData?.showCenterText ? footerData.centerText : ''}</span>
+            </div>
+  );
+
+  // One block in a page-grid cell. `index` counts across the whole worksheet so the
+  // opdracht numbering keeps running across pages.
+  const renderBlock = (item: PackedBlock, index: number) => {
+    const block = item.block;
+
               const isActive = block.id === activeSelectionId;
-              const isNotLastBlock = index < blocks.length - 1;
+              // dividers between blocks come from the page grid gap now
+      const isNotLastBlock = false;
 
               return (
                 <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers, docSettings.blockSpacing ?? 12)}>
@@ -468,29 +412,92 @@ export default function App() {
                   </ScaledBlock>
                 </div>
               );
-            })}
+  };
+
+
+  return (
+    <>
+    <div className="mobile-block">
+      <video className="mobile-block-demo" src="/rekenraak-demo.mp4" autoPlay loop muted playsInline />
+      <span className="mobile-block-title">RekenRaak werkt op een groot scherm</span>
+      <span>Hiermee maak je werkbladen op A4-formaat — daarvoor staan het blad én alle instellingen naast elkaar. Open de tool op een computer, laptop of tablet om aan de slag te gaan.</span>
+      <span className="mobile-block-hint">Tip: draai je tablet in liggende stand (landscape).</span>
+    </div>
+    {tourOpen && <TourOverlay onClose={closeTour} />}
+    <div className="print-root" style={styles.appShell}>
+      {/* FULL-WIDTH TOP BAR — spans the window; the three panels sit directly underneath it. */}
+      <div className="no-print" onClick={(e) => e.stopPropagation()}>
+        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
+      </div>
+
+      <div className="print-body-row" style={styles.appBody}>
+      {/* LEFT — the exercise palette. Panels no longer collapse to a hover flyout below
+          1800px: teachers on 14" laptops got stuck in it even with the pin, so the sheet
+          absorbs a narrow window by zooming instead (see sheetZoom above). */}
+      <div className="no-print" style={{ display: 'flex', height: '100%', flex: '0 0 auto' }}>
+        <Sidebar />
+      </div>
+
+      {/* CENTRAL WORK AREA */}
+      <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
+
+        {/* Scroll container holds the banners + sheet (the topbar is now a sibling above).
+            Padding ≥ the sheet's shadow reach (--shadow-3 = 48px blur): overflowY:auto forces
+            overflow-x to compute as auto too, so without this the side/bottom shadow is clipped. */}
+        <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 48px 48px' }}>
+
+        {releaseBannerVisible && (
+          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
+            <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
+            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het rechts aan en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
+            <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
           </div>
+        )}
 
-          </td></tr></tbody>
-          {/* Print-only running footer (real <tfoot>): repeats every page + reserves its
-              height, so content can never overlap it. */}
-          <tfoot className="print-tfoot"><tr><td>
-            <div className="print-tfoot-inner" style={overlayRegionStyle({}, docSettings.footerCustom)}>
-              <span>{[
-                footerData?.showSchool ? (footerData.school || 'School') : null,
-                footerData?.showKlas ? (footerData.klas || 'Klas') : null,
-                footerData?.showLeerkracht ? (footerData.leerkracht || 'Leerkracht') : null,
-              ].filter(Boolean).join(' | ')}</span>
-              <span>{footerData?.showCenterText ? footerData.centerText : ''}</span>
-            </div>
-          </td></tr></tfoot>
-          </table>
+        {!tryoutDismissed && blocks.some(b => TRYOUT_TYPE_IDS.has(b.typeId)) && (
+          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
+            <Flask size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
+            <span>Enkele oefeningen op dit blad zijn nieuw en nog in proef. Kijk het afgedrukte blad even na voor je het uitdeelt.</span>
+            <button onClick={dismissTryoutBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
+          </div>
+        )}
 
-          {/* ── PAGE BREAK INDICATORS ── (table siblings, anchored to the relative shell) */}
-          {pageBreaks.map((y) => (
-            <div key={y} className="no-print" style={{ position: 'absolute', top: `${y}px`, left: 0, right: 0, borderTop: '2px dashed rgba(220,38,38,0.55)', zIndex: 5, pointerEvents: 'none' }}>
-              <span style={{ position: 'absolute', right: '12px', top: '-16px', fontSize: '10px', color: 'rgba(220,38,38,0.6)', fontFamily: 'Azeret Mono, monospace', letterSpacing: '0.5px', userSelect: 'none' }}>— paginaeinde —</span>
+        <div ref={a4Ref} className="print-area-shell" style={{ zoom: sheetZoom }}>
+          {blocks.length === 0 && (
+            <div className="no-print" style={styles.heroEmpty}>
+              <h1 style={styles.heroTitle}>RekenRaak — gratis werkbladgenerator voor wiskunde in het lager onderwijs</h1>
+              <p style={styles.heroPitch}>
+                Stel in enkele minuten een eigen wiskundewerkblad samen voor het lager onderwijs —
+                kies oefeningen, regel de moeilijkheidsgraad en druk af of bewaar als pdf.
+              </p>
+              <ul style={styles.heroBullets}>
+                <li style={styles.heroBullet}><ListChecks size={20} color="var(--accent)" weight="bold" />Kies oefeningen</li>
+                <li style={styles.heroBullet}><SlidersHorizontal size={20} color="var(--accent)" weight="bold" />Stel de moeilijkheidsgraad in</li>
+                <li style={styles.heroBullet}><Printer size={20} color="var(--accent)" weight="bold" />Druk af of bewaar als pdf</li>
+              </ul>
+              <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen — deze tekst verdwijnt zodra je eerste blok op het blad staat.</p>
             </div>
+          )}
+
+          {packedPages.map((page, pi) => (
+            <PageSheet
+              key={pi}
+              index={pi}
+              total={packedPages.length}
+              contentGap={docSettings.headerContentGap ?? 12}
+              blockSpacing={docSettings.blockSpacing ?? 12}
+              onBackgroundClick={() => setActiveSelection('document')}
+              header={pi === 0
+                ? renderHeaderRegion()
+                : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}
+              footer={renderFooterRegion()}
+            >
+              {page.rows.flatMap((row) => row.items).map((item) => (
+                <div key={item.block.id} style={{ gridColumn: `span ${item.width}`, minWidth: 0 }}>
+                  {renderBlock(item, blockOrder[item.block.id] ?? 0)}
+                </div>
+              ))}
+            </PageSheet>
           ))}
         </div>
         </div>

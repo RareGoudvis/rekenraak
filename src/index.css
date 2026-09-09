@@ -33,6 +33,34 @@
 /* The print card is real <table> markup (Chrome only repeats <thead>/<tfoot> across
    printed pages for true tables). On screen, flatten the table to block flow so the
    preview is identical; the running header/footer bands are print-only. */
+/* ── Real pages. The sheet used to be ONE <table> whose thead/tfoot Chrome repeated
+   across printed pages, because the browser decided where breaks fell. The packer decides
+   now, so each page is a plain element with its own header and footer — less fragile, and
+   it can show a teacher which page they are looking at. */
+.page-sheet {
+  width: 794px;              /* A4 at 96dpi */
+  min-height: 1123px;
+  background: #fff;
+  color: #000;
+  box-shadow: var(--shadow-3);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sp-8);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+}
+.page-sheet-tag {
+  position: absolute; top: -20px; left: 2px;
+  font-size: 11px; color: var(--text-muted); user-select: none;
+}
+.page-sheet-head { padding: 34px 60px 0; flex: none; }
+.page-sheet-body {
+  flex: 1; min-height: 0; padding: 0 60px;
+  display: grid; grid-template-columns: repeat(6, 1fr); align-content: start;
+}
+.page-sheet-foot { flex: none; padding: 8px 60px 26px; }
+
 .print-area { display: block; width: 100%; border-collapse: collapse; }
 .print-area > thead.print-thead, .print-area > tfoot.print-tfoot { display: none; }
 .print-area > tbody.print-body,
@@ -409,12 +437,37 @@ textarea:focus-visible,
     color: #666;
   }
 
+  /* Each page element IS a printed page: it carries its own header and footer and ends
+     with a hard break. The old repeating-<thead> trick is gone with the table. */
+  .page-sheet {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    break-after: page;
+    break-inside: avoid;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  /* No trailing blank page after the last one. */
+  .page-sheet:last-of-type { break-after: auto; }
+  /* 16mm side margins live here now, not in @page — the dialog's margin setting silently
+     overrides @page, so the margins have to come from the content box. */
+  .page-sheet-head { padding: 16mm 16mm 0 !important; }
+  .page-sheet-body { padding: 0 16mm !important; }
+  .page-sheet-foot { padding: 4mm 16mm 8mm !important; }
+  .page-sheet-tag { display: none !important; }
+
   /* Sets may split across pages freely. */
   .print-block {
     position: static !important;
     transition: none !important;
   }
-  /* Force a set onto a fresh page (per-block toggle). */
+  /* Force a set onto a fresh page — the packer already put it there, this is the
+     belt-and-braces for a block whose estimate was optimistic. */
   .print-block.page-break-before { break-before: page; }
   /* Opdracht line stays glued to the first row of its set — never orphaned at a
      page bottom. break-after:avoid keeps the following content with it. */
