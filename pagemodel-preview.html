@@ -211,7 +211,28 @@ code { font-family: var(--font-paper); font-size: .85em; background: var(--bg-su
 }
 .seg button:disabled { opacity: .35; cursor: not-allowed; }
 
+/* Three layouts to compare. "tabs" = palette and settings share one panel; "split" =
+   both panels on the left, settings appearing only when a block is selected; "right" =
+   the original, palette left and settings on the far right. */
 .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 328px minmax(0, 1fr); }
+.rr[data-layout="split"] .body { grid-template-columns: 300px 360px minmax(0, 1fr); }
+.rr[data-layout="split"].no-sel .body { grid-template-columns: 300px minmax(0, 1fr); }
+.rr[data-layout="right"] .body { grid-template-columns: 300px minmax(0, 1fr) 360px; }
+
+/* In split and right the settings live in their own column, so the tab strip only
+   carries the palette and the outline. */
+.rr[data-layout="split"] .panel-a .tabs button[data-tab="ins"],
+.rr[data-layout="right"] .panel-a .tabs button[data-tab="ins"] { display: none; }
+.panel-b { display: none; background: var(--bg-surface); border-right: 1px solid var(--separator);
+  flex-direction: column; min-width: 0; overflow: hidden; }
+.rr[data-layout="split"]:not(.no-sel) .panel-b,
+.rr[data-layout="right"] .panel-b { display: flex; }
+.rr[data-layout="right"] .panel-b { order: 3; border-right: 0; border-left: 1px solid var(--separator); }
+.panel-b .tabhead {
+  padding: 12px 16px 10px; border-bottom: 1px solid var(--separator);
+  font-size: var(--text-sm); font-weight: 600; color: var(--accent);
+}
+.panel-b .insp { flex: 1; min-height: 0; overflow-y: auto; }
 @media (max-width: 900px) { .body { grid-template-columns: 1fr; } .rr { height: auto; } }
 
 /* left panel */
@@ -382,7 +403,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     </div>
   </div>
 
-  <div class="rr" id="rr">
+  <div class="rr" id="rr" data-layout="tabs">
     <div class="topbar">
       <div class="brand">reken<span>raak</span></div>
 
@@ -430,15 +451,20 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
       <button class="btn ghost" id="btn-sol">Oplossingen</button>
       <button class="btn ghost">Afdrukken ▾</button>
       <span class="spacer"></span>
-      <span class="save">Automatisch bewaard</span>
+      <span class="save">Indeling</span>
+      <div class="seg" id="layoutmode" role="group" aria-label="Indeling">
+        <button data-layout="tabs" aria-pressed="true">Tabs</button>
+        <button data-layout="split" aria-pressed="false">Twee kolommen</button>
+        <button data-layout="right" aria-pressed="false">Rechts</button>
+      </div>
     </div>
 
     <div class="body">
-      <div class="panel">
+      <div class="panel panel-a">
         <div class="tabs" role="tablist">
-          <button role="tab" id="t-oef" aria-selected="true" aria-controls="pn-oef">Oefeningen</button>
-          <button role="tab" id="t-ins" aria-selected="false" aria-controls="pn-ins">Instellingen</button>
-          <button role="tab" id="t-ovz" aria-selected="false" aria-controls="pn-ovz">Overzicht</button>
+          <button role="tab" data-tab="oef" id="t-oef" aria-selected="true" aria-controls="pn-oef">Oefeningen</button>
+          <button role="tab" data-tab="ins" id="t-ins" aria-selected="false" aria-controls="pn-ins">Instellingen</button>
+          <button role="tab" data-tab="ovz" id="t-ovz" aria-selected="false" aria-controls="pn-ovz">Overzicht</button>
         </div>
         <div class="tabbody" id="pn-oef" role="tabpanel" aria-labelledby="t-oef">
           <div class="searchwrap"><input type="search" id="q" placeholder="Zoek een oefening…" aria-label="Zoek een oefening"></div>
@@ -446,6 +472,11 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
         </div>
         <div class="tabbody insp" id="pn-ins" role="tabpanel" aria-labelledby="t-ins" hidden></div>
         <div class="tabbody insp" id="pn-ovz" role="tabpanel" aria-labelledby="t-ovz" hidden></div>
+      </div>
+
+      <div class="panel-b">
+        <div class="tabhead">Instellingen</div>
+        <div class="insp" id="pn-ins2"></div>
       </div>
 
       <div class="stage">
@@ -1035,14 +1066,19 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     btn.appendChild(el("span", "tier", "min " + WLBL[minW(probe)]));
     btn.addEventListener("click", function () {
       var b = addBlock(lf, path, 6);
-      selected = b.id; tab = "ins"; syncTabs(); render();
+      selected = b.id; if (layout === "tabs") { tab = "ins"; syncTabs(); } render();
     });
     return btn;
   }
 
   // ── Inspector + Overzicht ───────────────────────────────────────────────
+  var layout = "tabs";
+
   function renderInspector() {
-    var p = document.getElementById("pn-ins");
+    // One inspector, two possible homes: the tab body, or its own column.
+    var p = document.getElementById(layout === "tabs" ? "pn-ins" : "pn-ins2");
+    var other = document.getElementById(layout === "tabs" ? "pn-ins2" : "pn-ins");
+    if (other) other.innerHTML = "";
     p.innerHTML = "";
     var b = blocks.filter(function (x) { return x.id === selected; })[0];
     if (!b) {
@@ -1186,7 +1222,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
           var tr = document.createElement("tr");
           if (it.b.id === selected) tr.className = "on";
           var n = el("td", "nm", it.b.label);
-          n.addEventListener("click", function () { selected = it.b.id; tab = "ins"; syncTabs(); render(); });
+          n.addEventListener("click", function () { selected = it.b.id; if (layout === "tabs") { tab = "ins"; syncTabs(); } render(); });
           tr.appendChild(n);
           tr.appendChild(el("td", null, WLBL[it.w]));
           tr.appendChild(el("td", null, it.h.toFixed(1)));
@@ -1247,7 +1283,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
           if (it.spans) d.appendChild(el("span", "tag", "past niet op één pagina"));
           else if (it.promoted) d.appendChild(el("span", "tag info", "verbreed"));
           d.appendChild(blockControls(it.b));
-          function pick(e) { e.stopPropagation(); selected = it.b.id; tab = "ins"; syncTabs(); render(); }
+          function pick(e) { e.stopPropagation(); selected = it.b.id; if (layout === "tabs") { tab = "ins"; syncTabs(); } render(); }
           d.addEventListener("click", pick);
           d.addEventListener("keydown", function (e) {
             if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(e); }
@@ -1280,6 +1316,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     var total = pages.length * 1123 + (pages.length - 1) * 24;
     sheet.style.marginBottom = (-total * (1 - k)) + "px";
 
+    document.getElementById("rr").classList.toggle("no-sel", !selected);
     renderInspector();
     renderOverzicht(pages);
   }
@@ -1368,6 +1405,18 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   document.addEventListener("click", function () {
     document.querySelectorAll(".menu").forEach(function (m) { m.hidden = true; });
     document.querySelectorAll(".menuwrap .ico").forEach(function (b2) { b2.setAttribute("aria-expanded", "false"); });
+  });
+
+  var layoutBtns = document.querySelectorAll("#layoutmode button");
+  Array.prototype.forEach.call(layoutBtns, function (btn) {
+    btn.addEventListener("click", function () {
+      Array.prototype.forEach.call(layoutBtns, function (o) { o.setAttribute("aria-pressed", String(o === btn)); });
+      layout = btn.getAttribute("data-layout");
+      document.getElementById("rr").setAttribute("data-layout", layout);
+      // Settings have their own column outside "tabs", so never leave that tab selected.
+      if (layout !== "tabs" && tab === "ins") { tab = "oef"; syncTabs(); }
+      render();
+    });
   });
 
   var modeBtns = document.querySelectorAll("#thememode button");
