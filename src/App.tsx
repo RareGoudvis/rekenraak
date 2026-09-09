@@ -186,6 +186,17 @@ export default function App() {
     );
   };
 
+  // Printable width of a grid cell, in px. The page body is 794px minus 2x16mm of side
+  // padding, split over 6 column units, minus the gaps a spanning cell does NOT get.
+  // Without this the viewers keep assuming a full-width 625px and lay out grids that
+  // overflow their cell — the exact failure phase B exists to prevent.
+  const cellWidthPx = (units: number) => {
+    const CONTENT = 674;                       // 794 - 2 * 16mm at 96dpi
+    const gap = docSettings.blockSpacing ?? 12;
+    const unit = (CONTENT - 5 * gap) / 6;      // 6 units, 5 gaps between them
+    return Math.floor(unit * units + gap * (units - 1));
+  };
+
   // Pagination is now BUDGETED by the packer, not measured from the DOM: the page count
   // is known before anything renders, which is what makes the page markers trustworthy.
   const packedPages = useMemo(
@@ -376,7 +387,10 @@ export default function App() {
                       its coupled SVG/boxes), auto-fitting to width so a wide block can't clip in
                       print. Per-block override wins over the global default; block chrome
                       (controls/spacing/dividers/page-break) stays outside, unscaled. */}
-                  <ScaledBlock scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}>
+                  <ScaledBlock
+                    scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}
+                    availableWidthPx={cellWidthPx(item.width)}
+                  >
                   {!isFurniture && <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
