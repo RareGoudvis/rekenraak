@@ -121,6 +121,9 @@ interface WorksheetState {
     setSelectedGrade: (grade: Leerjaar | null) => void;
     // Panel tabs live in the store because their strips render in the TopBar, above the
     // column each belongs to, while the panels themselves render the content.
+    // Blocks whose settings changed since their last generation. Not persisted and not
+    // historied: it is a hint about the sheet, not part of it.
+    staleBlocks: Record<string, boolean>;
     sidebarTab: 'oefeningen' | 'overzicht';
     setSidebarTab: (t: 'oefeningen' | 'overzicht') => void;
     inspectorTab: 'blad' | 'weergave' | 'oefening';
@@ -179,6 +182,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
     baseSettings: { ...DEFAULT_BASE },
     selectedGrade: null,
+    staleBlocks: {},
     sidebarTab: 'oefeningen',
     inspectorTab: 'weergave',
     curriculum: null,
@@ -206,7 +210,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     canUndo: () => get()._historyIndex > 0,
     canRedo: () => get()._historyIndex < get()._history.length - 1,
 
-    setExercises: (id, field, data) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, [field]: data } : b); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
+    setExercises: (id, field, data) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, [field]: data } : b); const { [id]: _drop, ...stale } = state.staleBlocks; void _drop; return { blocks: nb, staleBlocks: stale, ...pushHistory(state._history, state._historyIndex, nb) }; }),
 
     addBlockFromType: (typeId, label, overrideConstraints) => set((state) => {
         // All per-type defaults live in the registry. The appstructure leaf's
@@ -301,8 +305,37 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             if (Object.keys(allowed).length === 0) return state;   // drop difficulty/wording/points edits
             next = allowed;
         }
-        const nb = state.blocks.map(b => b.id === id ? { ...b, ...next } : b);
-        return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) };
+        // The exercise COUNT is the one setting people drag back and forth, and the only
+        // one that does not invalidate the exercises already on the sheet: shrinking drops
+        // the tail, growing appends fresh ones. Everything the teacher already liked stays.
+        // The count slider also clamps the score, so it sends two keys. totalPoints is a
+        // clamp rather than a content setting, so it does not make the exercises stale.
+        const COUNT_SAFE = new Set(['numberOfExercises', 'totalPoints']);
+        const countOnly = 'numberOfExercises' in next
+            && Object.keys(next).every(k => COUNT_SAFE.has(k));
+        const nb = state.blocks.map(b => {
+            if (b.id !== id) return b;
+            const merged = { ...b, ...next } as MathBlock;
+            if (!countOnly) return merged;
+            const def = REGISTRY[b.typeId];
+            if (!def) return merged;
+            const field = def.exerciseField as keyof MathBlock;
+            const current = (b[field] as unknown as Array<unknown>) ?? [];
+            const want = merged.numberOfExercises || 0;
+            if (current.length === 0 || want === current.length) return merged;
+            if (want < current.length) {
+                return { ...merged, [field]: current.slice(0, want) } as MathBlock;
+            }
+            try {
+                const extra = def.generate(merged) as unknown as Array<unknown>;
+                const tail = extra.slice(0, want - current.length);
+                return { ...merged, [field]: [...current, ...tail] } as MathBlock;
+            } catch { return merged; }
+        });
+        // Any other setting means the exercises no longer match the settings — say so
+        // rather than leaving the teacher to notice.
+        const stale = countOnly ? state.staleBlocks : { ...state.staleBlocks, [id]: true };
+        return { blocks: nb, staleBlocks: stale, ...pushHistory(state._history, state._historyIndex, nb) };
     }),
     updateExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, exercises: b.exercises.map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     updateCijferExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, cijferExercises: (b.cijferExercises || []).map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),

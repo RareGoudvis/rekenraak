@@ -26,6 +26,7 @@ const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string
 
 export default function Inspector({ embedded = false }: { embedded?: boolean } = {}) {
     const tab = useWorksheetStore((state) => state.inspectorTab);
+    const staleBlocks = useWorksheetStore((state) => state.staleBlocks);
     const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [blockAdvancedOpen, setBlockAdvancedOpen] = useState(false);
@@ -281,6 +282,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     );
 
     const c = activeBlock?.constraints ?? {};
+    const isStale = !!activeBlock && !!staleBlocks[activeBlock.id];
     // subType-keyed Differentiatie blocks below are fraction-only; scope to 'breuken'
     // so e.g. romeinse-cijfers (subType 'herkennen') doesn't inherit fraction scaffolding.
     const subType: string = activeBlock?.typeId === 'breuken' ? (c.subType ?? '') : '';
@@ -456,10 +458,25 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
             {/* ── 2. Oefeningen — exercise-type settings + the Genereer CTA (shared
                    primary IconButton); same card chrome as every other section. ── */}
             <div style={S.card}>
-                <div style={S.engineHeader}>
+                {/* Sticky so it never scrolls out of reach, and it SAYS when the exercises
+                    no longer match the settings — the real problem was not reaching the
+                    button, it was not knowing the sheet had gone stale. */}
+                <div style={{ ...S.engineHeader, position: 'sticky', top: 0, zIndex: 3, background: 'var(--bg-surface)', paddingTop: 'var(--sp-1)' }}>
                     <h4 style={{ ...S.cardTitle, margin: 0 }}>Oefeningen</h4>
-                    <IconButton icon={Sparkles} label="Genereer oefeningen" visibleLabel="Genereer" variant="primary" onClick={handleGenerate} dataTour="generate-block" />
+                    <IconButton
+                        icon={Sparkles}
+                        label={isStale ? 'Instellingen gewijzigd — genereer opnieuw' : 'Genereer oefeningen'}
+                        visibleLabel={isStale ? 'Genereer •' : 'Genereer'}
+                        variant="primary"
+                        onClick={handleGenerate}
+                        dataTour="generate-block"
+                    />
                 </div>
+                {isStale && (
+                    <p style={{ ...S.hintText, color: 'var(--accent)', margin: '0 0 var(--sp-2)' }}>
+                        De instellingen zijn gewijzigd. Klik Genereer om de oefeningen bij te werken.
+                    </p>
+                )}
                 <div style={S.engineBody}>
                     {locked ? (
                         <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>
