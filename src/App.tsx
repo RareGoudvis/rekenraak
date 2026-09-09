@@ -98,15 +98,15 @@ export default function App() {
   const moveBlockDown = useWorksheetStore((state) => state.moveBlockDown);
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
-  const setBladFocus = useWorksheetStore((state) => state.setBladFocus);
+  const setBladSection = useWorksheetStore((state) => state.setBladSection);
 
   // Clicking the header or footer ON the sheet opens its settings: select the document,
-  // switch to Blad, and tell the Inspector which card to scroll to.
+  // switch to Blad, and open the sub-tab for the part that was clicked.
   const openBladCard = useCallback((card: 'koptekst' | 'voettekst') => {
     setActiveSelection('document');
     setInspectorTab('blad');
-    setBladFocus(card);
-  }, [setActiveSelection, setInspectorTab, setBladFocus]);
+    setBladSection(card);
+  }, [setActiveSelection, setInspectorTab, setBladSection]);
   const toggleBlockLock = useWorksheetStore((state) => state.toggleBlockLock);
   const duplicateBlock = useWorksheetStore((state) => state.duplicateBlock);
   const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);

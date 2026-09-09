@@ -93,13 +93,6 @@
 /* Belt and braces: even if a hover state somehow persisted into the print snapshot. */
 @media print { .sheet-zone { box-shadow: none !important; } }
 
-/* Landing flash on the Blad card the sheet sent you to, so the eye finds it after the
-   scroll. Screen-only by construction — it lives in the Inspector, which is .no-print. */
-.card-flash { animation: card-flash 1.2s var(--ease-out); border-radius: var(--radius-sm); }
-@keyframes card-flash {
-  0%, 60% { box-shadow: 0 0 0 2px var(--accent); background: var(--accent-soft); }
-  100% { box-shadow: 0 0 0 2px transparent; background: transparent; }
-}
 /* Three slots: the left one always carries the credit, the other two are the teacher's. */
 .page-sheet-foot .print-tfoot-inner {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
@@ -266,7 +259,11 @@ textarea:focus-visible,
   transition: background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
 }
 /* Unselected hover: faint text lift only — never competes with the thumb. */
-.seg-btn:not([aria-pressed="true"]):hover { color: var(--text-main); }
+.seg-btn:not([aria-pressed="true"]):not(:disabled):hover { color: var(--text-main); }
+/* A disabled segment has to LOOK unavailable: the Inspector's Oefeningen/Opmaak tabs
+   need a selected block, and a tab that reads as clickable but does nothing is worse
+   than one that reads as off. */
+.seg-btn:disabled { opacity: .4; cursor: not-allowed; }
 /* The raised thumb: lighter surface, PRIMARY-text label (macOS look, not accent), soft lift. */
 .seg-btn[aria-pressed="true"] {
   background: var(--seg-thumb);

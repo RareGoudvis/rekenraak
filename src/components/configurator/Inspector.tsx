@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { minWidthUnits } from '../../config/blockLayout';
 import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
@@ -30,8 +30,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const tab = useWorksheetStore((state) => state.inspectorTab);
     const staleBlocks = useWorksheetStore((state) => state.staleBlocks);
     const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
-    const bladFocus = useWorksheetStore((state) => state.bladFocus);
-    const setBladFocus = useWorksheetStore((state) => state.setBladFocus);
+    const bladSection = useWorksheetStore((state) => state.bladSection);
+    const setBladSection = useWorksheetStore((state) => state.setBladSection);
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
@@ -82,9 +82,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
     // Document ("Blad") settings. Always reachable from its own tab rather than only by
     // deselecting — a teacher who never deselects never discovered they existed.
-    const docContent = (
-            <>
-
+    // Blad is three physically separate parts of the page, so it is three sub-tabs
+    // named after them rather than one long scroll. The ids stay on the cards so a
+    // click on the sheet can still land on the right one.
+    const bladPanels = {
+        koptekst: (<>
                 {/* ── Koptekst — everything printed at the top of the page ── */}
                 <div id="blad-koptekst" style={S.card}>
                     <h4 style={S.cardTitle}>Koptekst</h4>
@@ -215,7 +217,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '2px 0 0 0' }}>Enkel bij afdrukken: de naamvelden komen bovenaan elke pagina.</p>
                     </div>
                 </div>
-
+        </>),
+        opdrachten: (<>
                 {/* ── Opdrachten — how every exercise block is presented ── */}
                 <div id="blad-opdrachten" style={S.card}>
                     <h4 style={S.cardTitle}>Opdrachten</h4>
@@ -234,7 +237,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         </div>
                     </div>
                 </div>
-
+        </>),
+        voettekst: (<>
                 {/* ── Voettekst — everything printed at the bottom of the page ── */}
                 <div id="blad-voettekst" style={S.card}>
                     <h4 style={S.cardTitle}>Voettekst</h4>
@@ -302,6 +306,17 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         })}
                     </div>
                 </div>
+        </>),
+    } as const;
+
+    const docContent = (
+            <>
+                <div className="seg-group" style={{ marginBottom: 'var(--sp-4)' }}>
+                    {([['koptekst', 'Koptekst'], ['opdrachten', 'Opdrachten'], ['voettekst', 'Voettekst']] as const).map(([id, label]) => (
+                        <button key={id} className="seg-btn" aria-pressed={bladSection === id} onClick={() => setBladSection(id)}>{label}</button>
+                    ))}
+                </div>
+                {bladPanels[bladSection]}
             </>
     );
 
@@ -1211,18 +1226,6 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const hasBlock = !!activeBlock;   // 'document' resolves to no block, as in TopBar
     const shown = !hasBlock ? 'blad' : tab;
 
-    // Clicking the header or footer on the sheet sets bladFocus; scroll that card into
-    // view, flash it so the eye lands on it, then clear the flag so it fires once.
-    useEffect(() => {
-        if (!bladFocus || shown !== 'blad') return;
-        const el = document.getElementById(`blad-${bladFocus}`);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            el.classList.add('card-flash');
-            window.setTimeout(() => el.classList.remove('card-flash'), 1200);
-        }
-        setBladFocus(null);
-    }, [bladFocus, shown, setBladFocus]);
 
     return (
         <aside data-tour="inspector" style={rootStyle}>
