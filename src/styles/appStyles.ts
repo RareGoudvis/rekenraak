@@ -12,7 +12,7 @@ export const styles = {
   // The sheet column owns the top bar, so both scroll/size independently of the panels.
   centreColumn: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%' } as React.CSSProperties,
   a4Sheet: { backgroundColor: '#ffffff', color: '#000000', width: '100%', maxWidth: '920px', minHeight: '1130px', height: 'auto', flex: '0 0 auto', marginTop: 'var(--sp-3)', padding: '34px 50px 45px', boxShadow: 'var(--shadow-3)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', position: 'relative', boxSizing: 'border-box' } as React.CSSProperties,
-  sheetHeaderLabel: { fontSize: '13px', fontWeight: 'bold' as const, marginRight: '6px', color: '#000', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
+  sheetHeaderLabel: { fontSize: '13px', fontWeight: 700 as const, marginRight: '6px', color: '#000', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
   sheetHeaderLine: { flex: 1, borderBottom: '1.5px solid #000', height: '16px' } as React.CSSProperties,
   scoreBox: { border: '2px solid #000', padding: '8px 14px', fontSize: '15px', fontWeight: 'bold', borderRadius: '4px', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
   // Selection is screen-only (cleared before print). Apple-style: soft accent-soft
@@ -43,7 +43,7 @@ export const styles = {
   iconBtn: { background: 'var(--bg-surface-2)', border: '1px solid var(--separator)', color: 'var(--text-main)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '14px', fontWeight: 'bold' } as React.CSSProperties,
   deleteBtn: { background: 'var(--danger)', border: 'none', color: 'var(--accent-on)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '12px', fontWeight: 'bold' } as React.CSSProperties,
   badge: (_type: 'mag' | 'moet' | 'plus' | 'aangepast'): React.CSSProperties => ({ backgroundColor: 'white', color: '#000', padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: 'bold', border: '1.5px solid #000' }),
-  instructionDisplay: { fontSize: '16px', fontWeight: 'bold', color: '#000', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
+  instructionDisplay: { fontSize: '16px', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
   pointsText: { fontSize: '14px', fontWeight: 'bold', fontFamily: 'Azeret Mono, monospace', marginRight: '24px', color: '#000' } as React.CSSProperties,
   emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
   // Cold-load hero shown only when blocks.length === 0. Lives ON the white A4 sheet, so

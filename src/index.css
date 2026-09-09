@@ -30,6 +30,32 @@
   font-display: swap;
 }
 
+/* Ubuntu — bundled locally, same as Azeret Mono, so the app stays offline-safe.
+   This is the WORDS face: instructions, header fields, the sheet title, the footer.
+   Mathematics never uses it — every operand, operator and answer line stays monospace,
+   because that is what makes the columns line up. See UI-GUIDE. */
+@font-face {
+  font-family: 'Ubuntu';
+  src: url('@fontsource/ubuntu/files/ubuntu-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  src: url('@fontsource/ubuntu/files/ubuntu-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Ubuntu';
+  src: url('@fontsource/ubuntu/files/ubuntu-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* The print card is real <table> markup (Chrome only repeats <thead>/<tfoot> across
    printed pages for true tables). On screen, flatten the table to block flow so the
    preview is identical; the running header/footer bands are print-only. */
@@ -97,7 +123,7 @@
 .page-sheet-foot .print-tfoot-inner {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
   padding-top: 6px;
-  font-family: 'Azeret Mono', monospace; font-size: 9pt; color: #666;
+  font-family: var(--font-sheet-text); font-size: 9pt; color: #666;
 }
 .page-sheet-foot .print-tfoot-inner > span { flex: 1 1 0; min-width: 0; }
 .page-sheet-foot .print-tfoot-inner > span:nth-child(2) { text-align: center; }
@@ -534,8 +560,10 @@ textarea:focus-visible,
     padding: 2mm 0 0 !important;
     box-sizing: border-box !important;
     width: 100% !important;
-    font-family: 'Azeret Mono', monospace !important;
-    /* No !important on font-size/color: lets the style-builder's inline footerCustom override them. */
+    /* SYNC: must match the screen rule for .print-tfoot-inner above — the preview IS the
+       print, so a font that differs between them would make the preview lie. */
+    font-family: var(--font-sheet-text) !important;
+    /* No !important on font-size/color: lets the inline footerCustom override them. */
     font-size: 9pt;
     color: #666;
   }

@@ -62,6 +62,12 @@
        Azeret Mono stay reserved for the printed worksheet, never UI chrome. */
     --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Roboto", system-ui, sans-serif;
 
+    /* The two worksheet faces. Words get Ubuntu; mathematics gets the monospace, because
+       digit columns only line up if every glyph has the same advance. Never mix them
+       within one line of arithmetic. */
+    --font-sheet-text: 'Ubuntu', system-ui, sans-serif;
+    --font-sheet-math: 'Azeret Mono', monospace;
+
     /* Motion — ease-out for entrances, gentle spring for selection thumbs */
     --dur-fast: 120ms;
     --dur: 180ms;

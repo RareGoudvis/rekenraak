@@ -263,7 +263,7 @@ export default function App() {
               };
               const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
-                  {hasTitle && <h1 style={{ margin: 0, fontSize: '22px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: align }}>{headerData!.titel}</h1>}
+                  {hasTitle && <h1 style={{ margin: 0, fontSize: '22px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: align }}>{headerData!.titel}</h1>}
                   {showScore && <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
                 </div>
               ) : null;
@@ -303,7 +303,10 @@ export default function App() {
               const splitIdx = showScore ? visible.length : Math.ceil(visible.length / 2);
               const leftFs = visible.slice(0, splitIdx);
               const rightFs = showScore ? [] : visible.slice(splitIdx);
-              const titleW = hasTitle ? (headerData!.titel.length * 15 + 24) : 0;   // ~15px/char Azeret 24px bold + slack
+              // Rough width of the title, used only to decide inline-flank vs stacked.
+              // Ubuntu bold 24px averages ~12px/char; 13 keeps a little slack, and erring
+              // high only ever falls back to the (always safe) stacked layout.
+              const titleW = hasTitle ? (headerData!.titel.length * 13 + 24) : 0;
               const rightW = showScore ? 160 : rowW(rightFs);
               // Inline-flank only if the whole thing comfortably fits one A4 line (~760px usable);
               // otherwise fall back to the stacked layout (fields row on top, title beneath).
@@ -314,7 +317,7 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', columnGap: `${gap}px`, alignItems: 'flex-end' }}>
                     {/* Left fields hug the title (right-aligned); columnGap is the small margin. */}
                     <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', minWidth: 0 }}>{renderFields('right', leftFs)}</div>
-                    <h1 style={{ margin: 0, fontSize: '24px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: 'center', whiteSpace: 'nowrap' }}>{headerData!.titel}</h1>
+                    <h1 style={{ margin: 0, fontSize: '24px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{headerData!.titel}</h1>
                     <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', minWidth: 0 }}>
                       {showScore ? <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div> : renderFields('left', rightFs)}
                     </div>
@@ -333,7 +336,7 @@ export default function App() {
                       {showScore && <div style={{ ...styles.scoreBox, flexShrink: 0 }}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
                     </div>
                   )}
-                  {hasTitle && <h1 style={{ margin: '8px 0 0', fontSize: '24px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'bold', textAlign: 'center' }}>{headerData!.titel}</h1>}
+                  {hasTitle && <h1 style={{ margin: '8px 0 0', fontSize: '24px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center' }}>{headerData!.titel}</h1>}
                 </>
               );
             })()}
