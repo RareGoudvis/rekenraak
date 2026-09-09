@@ -25,10 +25,15 @@ interface Props {
     blockSpacing: number;
     children: ReactNode;
     onBackgroundClick?: () => void;
+    /** Clicking the printed header / footer opens their settings — the sheet is the
+        interface, not only a preview. Screen-only: the affordance is .no-print. */
+    onHeaderClick?: () => void;
+    onFooterClick?: () => void;
 }
 
 export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, children, onBackgroundClick,
+    onHeaderClick, onFooterClick,
 }: Props) {
     const bodyRef = useRef<HTMLDivElement>(null);
     // Heights are budgeted, not measured, so an estimate can be wrong. When it is, the page
@@ -63,13 +68,28 @@ export default function PageSheet({
                 </div>
             )}
 
-            <div className="page-sheet-head" style={{ marginBottom: `${contentGap}px` }}>{header}</div>
+            <div
+                className={`page-sheet-head${onHeaderClick ? ' sheet-zone' : ''}`}
+                style={{ marginBottom: `${contentGap}px` }}
+                onClick={onHeaderClick ? (e) => { e.stopPropagation(); onHeaderClick(); } : undefined}
+                title={onHeaderClick ? 'Koptekst aanpassen' : undefined}
+            >
+                {header}
+                {onHeaderClick && <span className="no-print sheet-zone-hint">Koptekst aanpassen</span>}
+            </div>
 
             <div ref={bodyRef} className="page-sheet-body" style={{ gap: `${blockSpacing}px` }}>
                 {children}
             </div>
 
-            <div className="page-sheet-foot">{footer}</div>
+            <div
+                className={`page-sheet-foot${onFooterClick ? ' sheet-zone' : ''}`}
+                onClick={onFooterClick ? (e) => { e.stopPropagation(); onFooterClick(); } : undefined}
+                title={onFooterClick ? 'Voettekst aanpassen' : undefined}
+            >
+                {footer}
+                {onFooterClick && <span className="no-print sheet-zone-hint">Voettekst aanpassen</span>}
+            </div>
         </div>
     );
 }

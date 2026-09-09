@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
 import PageSheet from './components/layout/PageSheet';
@@ -97,6 +97,16 @@ export default function App() {
   const moveBlockUp = useWorksheetStore((state) => state.moveBlockUp);
   const moveBlockDown = useWorksheetStore((state) => state.moveBlockDown);
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
+  const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
+  const setBladFocus = useWorksheetStore((state) => state.setBladFocus);
+
+  // Clicking the header or footer ON the sheet opens its settings: select the document,
+  // switch to Blad, and tell the Inspector which card to scroll to.
+  const openBladCard = useCallback((card: 'koptekst' | 'voettekst') => {
+    setActiveSelection('document');
+    setInspectorTab('blad');
+    setBladFocus(card);
+  }, [setActiveSelection, setInspectorTab, setBladFocus]);
   const toggleBlockLock = useWorksheetStore((state) => state.toggleBlockLock);
   const duplicateBlock = useWorksheetStore((state) => state.duplicateBlock);
   const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
@@ -537,6 +547,8 @@ export default function App() {
               contentGap={docSettings.headerContentGap ?? 12}
               blockSpacing={docSettings.blockSpacing ?? 12}
               onBackgroundClick={() => setActiveSelection('document')}
+              onHeaderClick={() => openBladCard('koptekst')}
+              onFooterClick={() => openBladCard('voettekst')}
               header={pi === 0
                 ? renderHeaderRegion()
                 : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}

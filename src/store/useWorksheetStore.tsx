@@ -126,6 +126,11 @@ interface WorksheetState {
     setSidebarTab: (t: 'oefeningen' | 'overzicht') => void;
     inspectorTab: 'blad' | 'weergave' | 'oefening';
     setInspectorTab: (t: 'blad' | 'weergave' | 'oefening') => void;
+    // Which Blad card the panel should scroll to and flash. Set by clicking the header
+    // or footer on the sheet, cleared by the Inspector once it has scrolled. Transient
+    // UI state: no history, never persisted or shared.
+    bladFocus: 'koptekst' | 'voettekst' | null;
+    setBladFocus: (f: 'koptekst' | 'voettekst' | null) => void;
     setShowSolutions: (show: boolean) => void;
     setView: (view: WorksheetView) => void;
     setSidebarPreview: (on: boolean) => void;
@@ -162,7 +167,8 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     selectedGrade: null,
     staleBlocks: {},
     sidebarTab: 'oefeningen',
-    inspectorTab: 'weergave',
+    inspectorTab: 'oefening',
+    bladFocus: null,
     curriculum: null,
     draftBlocks: [],
     showSolutions: false,
@@ -359,6 +365,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     // Pure view state, like the other UI toggles: never pushed to history.
     setSidebarTab: (t) => set({ sidebarTab: t }),
     setInspectorTab: (t) => set({ inspectorTab: t }),
+    setBladFocus: (f) => set({ bladFocus: f }),
     setShowSolutions: (show) => set({ showSolutions: show }),
     setView: (view) => set({ view }),
     setBlockPages: (pages) => set({ blockPages: pages }),

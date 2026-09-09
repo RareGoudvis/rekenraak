@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { minWidthUnits } from '../../config/blockLayout';
 import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
@@ -30,6 +30,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const tab = useWorksheetStore((state) => state.inspectorTab);
     const staleBlocks = useWorksheetStore((state) => state.staleBlocks);
     const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
+    const bladFocus = useWorksheetStore((state) => state.bladFocus);
+    const setBladFocus = useWorksheetStore((state) => state.setBladFocus);
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
@@ -1208,6 +1210,19 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     // panel is a single scroll of everything.
     const hasBlock = !!activeBlock;   // 'document' resolves to no block, as in TopBar
     const shown = !hasBlock ? 'blad' : tab;
+
+    // Clicking the header or footer on the sheet sets bladFocus; scroll that card into
+    // view, flash it so the eye lands on it, then clear the flag so it fires once.
+    useEffect(() => {
+        if (!bladFocus || shown !== 'blad') return;
+        const el = document.getElementById(`blad-${bladFocus}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.classList.add('card-flash');
+            window.setTimeout(() => el.classList.remove('card-flash'), 1200);
+        }
+        setBladFocus(null);
+    }, [bladFocus, shown, setBladFocus]);
 
     return (
         <aside data-tour="inspector" style={rootStyle}>
