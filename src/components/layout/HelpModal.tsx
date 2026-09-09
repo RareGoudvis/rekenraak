@@ -16,9 +16,22 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
 
     return (
         <ModalShell onClose={onClose} ariaLabel="Hulp" variant="sheet" maxWidth={680}>
-            <div style={{ padding: '28px 32px', overflowY: 'auto', fontFamily: "'Azeret Mono', monospace", color: 'var(--text-main)' }}>
-                <div style={{ marginBottom: '16px' }}>
-                    <h2 style={{ color: 'var(--accent)', margin: 0, fontSize: '16px', fontWeight: 700 }}>Hulp</h2>
+            <div style={{ padding: '28px 32px', overflowY: 'auto', fontFamily: 'var(--font-sheet-text)', color: 'var(--text-main)' }}>
+                <div style={{ marginBottom: '20px' }}>
+                    <h2 style={{ color: 'var(--text-main)', margin: '0 0 4px', fontSize: '20px', fontWeight: 700 }}>Hulp</h2>
+                    <p style={{ margin: '0 0 14px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                        Liever meteen aan de slag? De rondleiding wijst de knoppen aan terwijl je ze gebruikt.
+                    </p>
+                    {onStartTour && (
+                        <button
+                            onClick={onStartTour}
+                            style={{
+                                padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
+                                border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--accent-on)',
+                            }}
+                        >▶ Start de rondleiding</button>
+                    )}
                 </div>
 
                 {/* Tabs = three levels */}
@@ -26,13 +39,6 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                     <TabBtn active={tab === 'maken'} onClick={() => setTab('maken')}>Eigen werkblad maken</TabBtn>
                     <TabBtn active={tab === 'opslaan'} onClick={() => setTab('opslaan')}>Werkbladen opslaan</TabBtn>
                     <TabBtn active={tab === 'delen'} onClick={() => setTab('delen')}>Werkbladen delen</TabBtn>
-                    {onStartTour && (
-                        <button
-                            onClick={onStartTour}
-                            style={{ marginLeft: 'auto', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', border: '1px solid var(--accent-purple)', background: 'transparent', color: 'var(--accent-purple)' }}
-                            title="Start de rondleiding opnieuw"
-                        >▶ Rondleiding</button>
-                    )}
                 </div>
 
                 {/* LEVEL 1 — build & adjust a worksheet end-to-end */}
