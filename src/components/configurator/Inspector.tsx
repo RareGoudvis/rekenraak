@@ -13,7 +13,7 @@ import { recomputeSplitsenExercise } from '../../services/splitsen/splitsenGener
 import { formatMathNumber } from '../../services/math/formatters';
 import { suggestionsFor } from '../../config/instructionPresets';
 import { BODY_FONT_PX } from '../../config/printPalette';
-import StyleBuilderModal from './StyleBuilderModal';
+import RegionStyleFields, { ResetAllStylesButton } from './RegionStyleFields';
 import Switch from '../ui/Switch';
 
 const HR_STD_TYPES = ['optellen', 'aftrekken', 'vermenigvuldigen', 'delen'];
@@ -33,7 +33,6 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const bladSection = useWorksheetStore((state) => state.bladSection);
     const setBladSection = useWorksheetStore((state) => state.setBladSection);
     const [advancedOpen, setAdvancedOpen] = useState(false);
-    const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
 
     const rootStyle = embedded ? S.embedded : S.sidebar;
@@ -93,14 +92,6 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     <div style={S.col}>
                         <label style={S.label}>Documenttitel</label>
                         <input style={S.input} value={headerData.titel || ''} onChange={(e) => updateHeader({ titel: e.target.value })} placeholder="Bv. Herhalingstoets" />
-
-                        <button
-                            onClick={() => setStyleBuilderOpen(true)}
-                            style={{ marginTop: '12px', width: '100%', padding: '9px 12px', fontSize: 'var(--text-sm)', fontWeight: 600, borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid var(--accent)', background: 'var(--accent-soft)', color: 'var(--accent)' }}
-                        >
-                            🎨 Stijl aanpassen…
-                        </button>
-                        {styleBuilderOpen && <StyleBuilderModal onClose={() => setStyleBuilderOpen(false)} />}
 
                         <label style={{ ...S.label, marginTop: '12px' }}>Koptekst stijl</label>
                         <div className="seg-group">
@@ -217,6 +208,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '2px 0 0 0' }}>Enkel bij afdrukken: de naamvelden komen bovenaan elke pagina.</p>
                     </div>
                 </div>
+
+                <div style={S.card}>
+                    <h4 style={S.cardTitle}>Vormgeving koptekst</h4>
+                    <RegionStyleFields region="header" />
+                </div>
         </>),
         opdrachten: (<>
                 {/* ── Opdrachten — how every exercise block is presented ── */}
@@ -236,6 +232,39 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             ))}
                         </div>
                     </div>
+                </div>
+
+                <div style={S.card}>
+                    <h4 style={S.cardTitle}>Vormgeving opdracht-titel</h4>
+                    <RegionStyleFields region="titel" />
+                </div>
+
+                <div style={S.card}>
+                    <h4 style={S.cardTitle}>Tekstgrootte oefeningen</h4>
+                    {/* Sheet-wide, not per region: scales every block's exercise body and its
+                        opdracht-titel together. Shown in px against the base; stored as a zoom
+                        factor. From 16px up, wide blocks start getting auto-shrunk to fit. */}
+                    {(() => {
+                        const px = Math.round((docSettings.bodyFontScale ?? 1) * BODY_FONT_PX.base);
+                        const bigText = px >= 16;
+                        return (
+                            <>
+                                <label style={{ ...S.label, color: bigText ? 'var(--danger)' : undefined }}>
+                                    {bigText ? '⚠ ' : ''}Tekstgrootte oefeningen: {px} px
+                                </label>
+                                <input
+                                    type="range" min={BODY_FONT_PX.min} max={BODY_FONT_PX.max} step={BODY_FONT_PX.step}
+                                    value={px}
+                                    onChange={(e) => updateDocSettings({ bodyFontScale: Number(e.target.value) / BODY_FONT_PX.base })}
+                                    style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
+                                />
+                                {bigText && (
+                                    <p style={S.hintText}>Grote tekst kan brede oefeningen automatisch verkleinen om op de pagina te passen.</p>
+                                )}
+                                <div style={{ marginTop: 'var(--sp-4)' }}><ResetAllStylesButton /></div>
+                            </>
+                        );
+                    })()}
                 </div>
         </>),
         voettekst: (<>
@@ -305,6 +334,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             );
                         })}
                     </div>
+                </div>
+
+                <div style={S.card}>
+                    <h4 style={S.cardTitle}>Vormgeving voettekst</h4>
+                    <RegionStyleFields region="footer" />
                 </div>
         </>),
     } as const;
