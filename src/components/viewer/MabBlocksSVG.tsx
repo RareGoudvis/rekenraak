@@ -40,9 +40,9 @@ export function MabPlaceColumn({ count, place, style, color = '#000' }: ColumnPr
         return <PatternedGrid count={count} maxRows={2} place="units" style={style} color={color} />;
     }
 
-    // Hundreds: 2-column × 5-row grid (column-first top-down) — up to 9 fit in the cell.
+    // Hundreds: 3-column × 3-row grid (column-first top-down) — up to 9 fit in the cell.
     if (place === 'hundreds') {
-        return <PatternedGrid count={count} maxRows={5} place="hundreds" style={style} color={color} />;
+        return <PatternedGrid count={count} maxRows={3} place="hundreds" style={style} color={color} />;
     }
 
     // Tens / thousands: one glyph per row stacked bottom-up so column width stays fixed.
@@ -157,9 +157,11 @@ function SymbolicThousands({ color }: { color: string }) {
 // ── Realistic Dienes glyphs (used by both mab-bw and mab-color) ──────────────
 
 const CELL = 6;            // unit cube / tens-rod cell
-// Hundreds: 5 squares stack vertically in the H column. Default boxHeight is
-// 60px minus 12px column padding = 48px available. 5 × 8 + 4 × 2 gap = 48 → fits.
-const HUNDREDS_SQ = 8;
+// Hundreds sit in a 3x3 grid, not 2x5: the column is as wide as a duizendtal cube, so the
+// height was the only thing holding them at 8px while horizontal room went unused. Three
+// rows inside the same ~48px budget gives 3 x 14 + 2 x 2 = 46, so the plate nearly doubles
+// and stops looking like the runt beside a 60px tens rod.
+const HUNDREDS_SQ = 14;
 const CELL_THOUSANDS = 7;  // thousands keeps the full 10×10 cube
 const STROKE = 0.5;
 
