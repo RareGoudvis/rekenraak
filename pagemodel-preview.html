@@ -1,0 +1,893 @@
+<title>RekenRaak Paginamodel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+:root {
+  --ground: #f3f1f6;
+  --panel: #ffffff;
+  --panel-2: #faf9fc;
+  --ink: #1b1720;
+  --ink-2: #57506a;
+  --ink-3: #8b83a0;
+  --line: #ddd8e6;
+  --line-2: #ebe7f1;
+  --accent: #6d3bd4;
+  --accent-ink: #ffffff;
+  --accent-soft: #ece4fb;
+  --warn: #b03a12;
+  --warn-soft: #fbe9e0;
+  --ok: #2f6b4f;
+  --ok-soft: #e2f0e8;
+  /* Paper is paper. It stays white in both themes, like the real print preview. */
+  --paper: #ffffff;
+  --paper-ink: #12100f;
+  --paper-line: #cfcad8;
+  --paper-shadow: rgba(27, 23, 32, .18);
+  --mono: "Azeret Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #131118;
+    --panel: #1c1924;
+    --panel-2: #232030;
+    --ink: #ece9f3;
+    --ink-2: #b0a8c2;
+    --ink-3: #7d7590;
+    --line: #322d3f;
+    --line-2: #272231;
+    --accent: #a684f5;
+    --accent-ink: #1b1424;
+    --accent-soft: #2c2340;
+    --warn: #f0a385;
+    --warn-soft: #3a231a;
+    --ok: #8fd0b0;
+    --ok-soft: #1c2f27;
+    --paper-shadow: rgba(0, 0, 0, .55);
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #131118;
+  --panel: #1c1924;
+  --panel-2: #232030;
+  --ink: #ece9f3;
+  --ink-2: #b0a8c2;
+  --ink-3: #7d7590;
+  --line: #322d3f;
+  --line-2: #272231;
+  --accent: #a684f5;
+  --accent-ink: #1b1424;
+  --accent-soft: #2c2340;
+  --warn: #f0a385;
+  --warn-soft: #3a231a;
+  --ok: #8fd0b0;
+  --ok-soft: #1c2f27;
+  --paper-shadow: rgba(0, 0, 0, .55);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: var(--serif); font-size: 16px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+a { color: var(--accent); }
+
+/* ─────────── brief ─────────── */
+.brief { max-width: 1180px; margin: 0 auto; padding: 40px 28px 8px; }
+.eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--accent);
+}
+.brief h1 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 600; letter-spacing: -.02em; margin: 10px 0 0; }
+.lede { font-size: 19px; color: var(--ink-2); max-width: 62ch; margin-top: 14px; }
+
+.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0; margin-top: 34px;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.phase { padding: 18px 20px 20px; border-left: 1px solid var(--line-2); }
+.phase:first-child { border-left: 0; }
+.phase-id { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: .1em; }
+.phase h3 { font-family: var(--mono); font-size: 13.5px; font-weight: 600; margin: 8px 0 6px; letter-spacing: -.01em; }
+.phase p { font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
+.phase .cost { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-top: 10px; display: block; }
+.phase.risk { background: var(--warn-soft); }
+.phase.risk .phase-id, .phase.risk h3 { color: var(--warn); }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; margin: 30px 0 8px; }
+.note h4 { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+.note p { font-size: 15px; color: var(--ink-2); }
+.note code, .brief code { font-family: var(--mono); font-size: .88em; color: var(--ink); background: var(--line-2);
+  padding: 1px 5px; border-radius: 3px; }
+
+/* ─────────── app shell ─────────── */
+.app-wrap { max-width: 1180px; margin: 26px auto 60px; padding: 0 28px; }
+.app-head { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
+.app-head h2 { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.app-head p { font-size: 14.5px; color: var(--ink-2); }
+
+.app {
+  display: grid; grid-template-columns: 316px minmax(0, 1fr);
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  background: var(--panel); min-height: 660px;
+}
+@media (max-width: 860px) { .app { grid-template-columns: 1fr; } }
+
+/* left panel */
+.panel { border-right: 1px solid var(--line); display: flex; flex-direction: column; background: var(--panel); min-width: 0; }
+@media (max-width: 860px) { .panel { border-right: 0; border-bottom: 1px solid var(--line); } }
+.tabs { display: flex; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.tab {
+  flex: 1; font-family: var(--mono); font-size: 11.5px; font-weight: 600; letter-spacing: .02em;
+  padding: 11px 6px; background: none; border: 0; border-bottom: 2px solid transparent;
+  color: var(--ink-3); cursor: pointer;
+}
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); background: var(--panel); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tabpanel { padding: 14px; overflow-y: auto; max-height: 620px; display: flex; flex-direction: column; gap: 14px; }
+
+.group-label { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); }
+.leaf {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  font-family: var(--mono); font-size: 12px; text-align: left;
+  padding: 7px 9px; margin-top: 3px; border: 1px solid transparent; border-radius: 5px;
+  background: var(--panel-2); color: var(--ink); cursor: pointer;
+}
+.leaf:hover { border-color: var(--accent); }
+.leaf:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tier { font-size: 10px; color: var(--ink-3); white-space: nowrap; }
+
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field > label, .field-label {
+  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .03em; color: var(--ink-2);
+}
+.seg { display: flex; gap: 4px; }
+.seg button {
+  flex: 1; font-family: var(--mono); font-size: 11.5px; font-weight: 600;
+  padding: 7px 4px; border: 1px solid var(--line); border-radius: 5px;
+  background: var(--panel-2); color: var(--ink); cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.seg button:disabled { opacity: .38; cursor: not-allowed; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hint { font-family: var(--mono); font-size: 10.5px; line-height: 1.45; color: var(--ink-3); }
+.hint.block { color: var(--warn); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+.rowline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mini-btn {
+  font-family: var(--mono); font-size: 11px; padding: 6px 10px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); color: var(--ink);
+}
+.mini-btn:hover { border-color: var(--accent); color: var(--accent); }
+.mini-btn.danger:hover { border-color: var(--warn); color: var(--warn); }
+.empty { font-size: 14px; color: var(--ink-3); font-family: var(--serif); }
+
+/* overzicht table */
+.ov { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11.5px; }
+.ov th { text-align: left; font-weight: 700; font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3); padding: 0 6px 6px 0; border-bottom: 1px solid var(--line); }
+.ov td { padding: 6px 6px 6px 0; border-bottom: 1px solid var(--line-2); vertical-align: top;
+  font-variant-numeric: tabular-nums; }
+.ov tr.sel td { background: var(--accent-soft); }
+.ov .nm { cursor: pointer; }
+
+/* right stage */
+.stage { background: var(--ground); min-width: 0; display: flex; flex-direction: column; }
+.stage-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel);
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
+}
+.stage-bar .grow { flex: 1; }
+.readout { font-variant-numeric: tabular-nums; }
+.readout b { color: var(--ink); font-weight: 700; }
+.zoomwrap { display: flex; align-items: center; gap: 8px; }
+.zoomwrap input { width: 108px; }
+.scroll { overflow: auto; padding: 22px; flex: 1; }
+.pages { display: flex; flex-direction: column; align-items: center; gap: 22px; transform-origin: top center; }
+
+/* A4 */
+.page {
+  width: 794px; height: 1123px; background: var(--paper); color: var(--paper-ink);
+  box-shadow: 0 3px 22px var(--paper-shadow); display: flex; flex-direction: column;
+  flex: none; position: relative;
+}
+.page-num {
+  position: absolute; top: -17px; right: 0; font-family: var(--mono); font-size: 10px;
+  letter-spacing: .08em; color: var(--ink-3);
+}
+.pg-head { padding: 34px 60px 0; flex: none; }
+.pg-title { font-family: var(--mono); font-size: 19px; font-weight: 700; text-align: center; }
+.pg-fields { display: flex; gap: 22px; font-family: var(--mono); font-size: 11px; margin-top: 14px; }
+.pg-fields span { display: flex; align-items: baseline; gap: 6px; }
+.pg-fields i { font-style: normal; border-bottom: 1px solid var(--paper-ink); display: inline-block; width: 108px; }
+.pg-fields i.s { width: 46px; }
+.pg-rule { border-bottom: 1px solid var(--paper-line); margin: 12px 0 0; }
+.pg-body {
+  flex: 1; min-height: 0; padding: 16px 60px; display: grid;
+  grid-template-columns: repeat(6, 1fr); gap: 14px; align-content: start;
+}
+.pg-foot {
+  flex: none; padding: 0 60px 26px; font-family: var(--mono); font-size: 10px; color: var(--ink-3);
+  display: flex; justify-content: space-between; border-top: 1px solid var(--paper-line);
+  margin: 0 60px; padding: 8px 0 0;
+}
+.pg-foot-wrap { flex: none; padding-bottom: 26px; }
+
+/* block on paper */
+.blk {
+  border: 1px solid transparent; border-radius: 4px; padding: 5px 6px 7px; cursor: pointer;
+  min-width: 0; position: relative;
+}
+.blk:hover { border-color: var(--accent); }
+.blk.sel { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.blk:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.blk-title { font-family: var(--mono); font-size: 11.5px; font-weight: 700; margin-bottom: 6px; }
+.blk-items { display: grid; gap: 5px 12px; }
+.item { font-family: var(--mono); font-size: 10.5px; display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+.item .ln { flex: 1; border-bottom: 1px solid var(--paper-ink); height: 9px; min-width: 18px; }
+.item .sq { flex: none; width: 100%; }
+.glyph { display: block; border: 1px solid var(--paper-ink); border-radius: 2px; }
+.badge {
+  position: absolute; top: -9px; right: -6px; font-family: var(--mono); font-size: 9px; font-weight: 700;
+  background: var(--warn); color: #fff; padding: 2px 6px; border-radius: 99px; letter-spacing: .03em;
+}
+
+/* footer note */
+.foot { max-width: 1180px; margin: 0 auto; padding: 0 28px 64px; }
+.foot p { font-size: 14.5px; color: var(--ink-3); max-width: 68ch; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="brief">
+  <div class="eyebrow">Voorbeeld · niet gebouwd</div>
+  <h1>Het paginamodel, om op te klikken</h1>
+  <p class="lede">
+    Vandaag is het blad één doorlopende tabel en paginaeindes zijn gestippelde lijnen om de 1044&nbsp;px.
+    Het plan vervangt dat door echte pagina's, blokken die een hele, een halve of een derde kolom breed zijn,
+    en een inspector links. Hieronder staat wat dat inhoudt, en daaronder kan je het uitproberen.
+  </p>
+
+  <div class="phases">
+    <div class="phase">
+      <span class="phase-id">FASE A</span>
+      <h3>Inspector links</h3>
+      <p>Eén paneel links met tabs Oefeningen, Instellingen en Overzicht. <code>PanelShell</code> kent al een <code>side</code>. Geen printrisico.</p>
+      <span class="cost">1 sessie</span>
+    </div>
+    <div class="phase">
+      <span class="phase-id">FASE B</span>
+      <h3>Breedte doorgeven</h3>
+      <p>Acht viewers hardcoderen <code>A4_CONTENT_PX = 625</code>. Die constante wordt een doorgegeven breedte. Op volle breedte verandert er niets zichtbaar.</p>
+      <span class="cost">1 sessie · onzichtbaar</span>
+    </div>
+    <div class="phase risk">
+      <span class="phase-id">FASE C</span>
+      <h3>De pagina's zelf</h3>
+      <p>Registry-kostenfuncties, een zuivere <code>pagePacker</code>, <code>PageSheet</code>, en de tabel-met-herhaalde-thead-truc eruit. Hier gaat printen op de schop.</p>
+      <span class="cost">3–4 sessies · hoogste risico</span>
+    </div>
+    <div class="phase">
+      <span class="phase-id">FASE D</span>
+      <h3>Breedtes en vangnet</h3>
+      <p>De keuze vol / ½ / ⅓, begrensd door <code>minWidthUnits</code>, plus een badge wanneer een blok niet blijkt te passen.</p>
+      <span class="cost">1–2 sessies</span>
+    </div>
+    <div class="phase">
+      <span class="phase-id">FASE E</span>
+      <h3>Migratie</h3>
+      <p>Blokken krijgen <code>widthUnits</code>, formaat naar v3 met de v2-lezer erbij, zodat oude links blijven openen.</p>
+      <span class="cost">1–2 sessies</span>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4>De kern: begroten, niet meten</h4>
+      <p>Een pagina is 6 kolomeenheden breed en ongeveer 40 rijeenheden hoog. Elk blok geeft zelf op wat het kost.
+      Een zuivere functie verdeelt de blokken over pagina's. Geen DOM-metingen, geen herberekenlussen, wel testbaar.</p>
+    </div>
+    <div class="note">
+      <h4>De verborgen blokkade</h4>
+      <p>Acht viewers beslissen hun eigen kolomaantal op basis van een vaste 625&nbsp;px. In een half blok is er echt maar
+      ±305&nbsp;px. Zonder fase B leggen die viewers vol vertrouwen een 2-koloms rooster aan dat buiten zijn vak valt.</p>
+    </div>
+    <div class="note">
+      <h4>Waarom het een functie moet zijn</h4>
+      <p><code>minWidthUnits</code> hangt van de instellingen af, niet van het type. Optellen tot 100 past in een derde;
+      tot een miljoen heeft de volle breedte nodig. Precies wat de V1-fix ons leerde.</p>
+    </div>
+  </div>
+</div>
+
+<div class="app-wrap">
+  <div class="app-head">
+    <h2>Werkend voorbeeld</h2>
+    <p>Klik een blok aan op het blad, of voeg er een toe. De pagina's worden live opnieuw ingedeeld.</p>
+  </div>
+
+  <div class="app">
+    <div class="panel">
+      <div class="tabs" role="tablist" aria-label="Paneel">
+        <button class="tab" role="tab" id="tab-oef" aria-selected="true" aria-controls="p-oef">Oefeningen</button>
+        <button class="tab" role="tab" id="tab-ins" aria-selected="false" aria-controls="p-ins">Instellingen</button>
+        <button class="tab" role="tab" id="tab-ovz" aria-selected="false" aria-controls="p-ovz">Overzicht</button>
+      </div>
+      <div class="tabpanel" id="p-oef" role="tabpanel" aria-labelledby="tab-oef"></div>
+      <div class="tabpanel" id="p-ins" role="tabpanel" aria-labelledby="tab-ins" hidden></div>
+      <div class="tabpanel" id="p-ovz" role="tabpanel" aria-labelledby="tab-ovz" hidden></div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-bar">
+        <span class="readout" id="readout"></span>
+        <span class="grow"></span>
+        <span class="zoomwrap">
+          <label for="zoom">zoom</label>
+          <input type="range" id="zoom" min="30" max="100" step="5" value="55">
+          <span id="zoomval" class="readout">55%</span>
+        </span>
+      </div>
+      <div class="scroll"><div class="pages" id="pages"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="foot">
+  <p>
+    Dit voorbeeld draait de echte pakregels: links naar rechts vullen, nieuwe rij wanneer de breedte op is,
+    nieuwe pagina wanneer het hoogtebudget op is, en een geforceerd paginaeinde blijft geforceerd.
+    De hoogtes zijn schattingen, net als in het plan — daarom bestaat de badge.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ── Page geometry. A4 at 96dpi is 794x1123px; 16mm side padding matches the real
+  // print-body-cell, so the content column is 674px = 6 column units.
+  var COL_UNITS = 6;
+  var ROW_UNIT_PX = 24;
+  var BODY_H_PX = 1123 - 118 /* header */ - 60 /* footer */ - 32 /* padding */;
+  var ROW_BUDGET = Math.floor(BODY_H_PX / ROW_UNIT_PX);   // ≈ 38 row units
+
+  // ── Catalogue. `minW` is a FUNCTION of the block's own settings, which is the whole
+  // point: the same type needs more width once its numbers get bigger.
+  // `perRow` is shared by the cost function AND the renderer below. If those two ever
+  // disagree the packer lies about how tall a block is, which is exactly the failure the
+  // plan's height-estimate harness is meant to catch.
+  var CATALOG = {
+    "hr-std-optellen": {
+      label: "Optellen", domain: "Bewerkingen", rowU: 0.9, scale: true,
+      minW: function (b) { return b.maxGetal >= 100000 ? 6 : b.maxGetal >= 1000 ? 3 : 2; },
+      perRow: colsFor, render: eqRender("+")
+    },
+    "cijferen-optellen": {
+      label: "Cijferen optellen", domain: "Bewerkingen", rowU: 1.7,
+      minW: function () { return 3; }, perRow: colsFor, render: colRender
+    },
+    "rekenvolgorde": {
+      label: "Rekenvolgorde", domain: "Bewerkingen", rowU: 0.9,
+      minW: function () { return 3; }, perRow: colsFor, render: eqRender("x")
+    },
+    "splitsen": {
+      label: "Splitsen", domain: "Getallenkennis", rowU: 2.0,
+      minW: function () { return 2; },
+      perRow: function (w) { return colsFor(w) * 2; }, render: splitRender
+    },
+    "romeinse-cijfers": {
+      label: "Romeinse cijfers", domain: "Getallenkennis", rowU: 0.9,
+      minW: function () { return 3; }, perRow: colsFor, render: romRender
+    },
+    "even-oneven": {
+      label: "Even en oneven", domain: "Getallenkennis", rowU: 1.3,
+      minW: function () { return 2; }, perRow: colsFor, render: dotsRender
+    },
+    "getallenas": {
+      label: "Getallenas", domain: "Getallenkennis", rowU: 1.7,
+      minW: function () { return 6; }, perRow: function () { return 1; }, render: axisRender
+    },
+    "klok-kloklezen": {
+      label: "Kloklezen", domain: "Meten", rowU: 2.9,
+      minW: function () { return 2; },
+      perRow: function (w) { return colsFor(w) === 1 ? 2 : colsFor(w) * 2; }, render: clockRender
+    },
+    "weegschaal": {
+      label: "Weegschaal", domain: "Meten", rowU: 3.6,
+      minW: function () { return 6; },
+      perRow: function (w) { return w >= 6 ? 3 : 1; }, render: scaleRender
+    },
+    "kalender": {
+      label: "Kalender", domain: "Meten", rowU: 4.6,
+      minW: function () { return 6; },
+      perRow: function (w) { return w >= 6 ? 2 : 1; }, render: calRender
+    }
+  };
+
+  var WIDTH_LABEL = { 6: "vol", 3: "½", 2: "⅓" };
+
+  // ── State. Opens on a realistic sheet, not an empty shell.
+  var uid = 0;
+  function mk(typeId, count, widthUnits, maxGetal) {
+    return { id: "b" + (++uid), typeId: typeId, count: count, widthUnits: widthUnits,
+             maxGetal: maxGetal || 100, brk: false };
+  }
+  var blocks = [
+    mk("hr-std-optellen", 12, 3, 1000),
+    mk("splitsen", 6, 2, 100),
+    mk("klok-kloklezen", 6, 2, 100),
+    mk("getallenas", 3, 6, 1000),
+    mk("cijferen-optellen", 6, 3, 1000),
+    mk("romeinse-cijfers", 8, 3, 100),
+    mk("kalender", 2, 6, 100),
+    mk("weegschaal", 3, 6, 100)
+  ];
+  var selected = blocks[0].id;
+  var activeTab = "oef";
+  var zoom = 55;
+
+  // ── The packer. Pure: blocks in, pages out. No measurement, no reflow.
+  function heightUnits(b, w) {
+    var t = CATALOG[b.typeId];
+    var width = w || Math.max(b.widthUnits, t.minW(b));
+    return 1.0 /* opdrachttitel */ + Math.ceil(b.count / t.perRow(width)) * t.rowU;
+  }
+
+  function packPages(list) {
+    var pages = [], page = null, row = null, rowsUsed = 0;
+    function newPage() { page = { rows: [] }; pages.push(page); rowsUsed = 0; row = null; }
+    function newRow() { row = { items: [], used: 0, h: 0 }; page.rows.push(row); }
+    newPage();
+
+    for (var i = 0; i < list.length; i++) {
+      var b = list[i];
+      var w = Math.max(b.widthUnits, CATALOG[b.typeId].minW(b));   // clamp: settings can outgrow the chosen width
+      var h = heightUnits(b, w);
+      var spans = h > ROW_BUDGET;                                   // taller than a whole page
+
+      if (b.brk && (page.rows.length || rowsUsed)) newPage();
+      if (!row || row.used + w > COL_UNITS) {
+        if (row) rowsUsed += row.h;
+        if (row && rowsUsed + h > ROW_BUDGET && !spans) { newPage(); }
+        newRow();
+      }
+      if (rowsUsed + Math.max(row.h, h) > ROW_BUDGET && !spans && row.items.length) {
+        rowsUsed += row.h; newPage(); newRow();
+      }
+      row.items.push({ b: b, w: w, h: h, spans: spans, promoted: w > b.widthUnits });
+      row.used += w;
+      row.h = Math.max(row.h, Math.min(h, ROW_BUDGET));
+      if (spans) { rowsUsed = ROW_BUDGET; newPage(); }              // next block starts fresh
+    }
+    return pages;
+  }
+
+  // ── Paper renderers. Deliberately schematic — this previews layout, not content.
+  function line() { var s = document.createElement("span"); s.className = "ln"; return s; }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+  function grid(cols) {
+    var g = el("div", "blk-items");
+    g.style.gridTemplateColumns = "repeat(" + cols + ", minmax(0, 1fr))";
+    return g;
+  }
+  function colsFor(w) { return w >= 6 ? 3 : w >= 3 ? 2 : 1; }
+  function pr(b, w) { return CATALOG[b.typeId].perRow(w); }
+
+  function eqRender(op) {
+    return function (b, w) {
+      var g = grid(pr(b, w)), n = b.maxGetal >= 1000 ? 3 : 2;
+      for (var i = 0; i < b.count; i++) {
+        var it = el("div", "item");
+        it.appendChild(el("span", null, rnd(n) + " " + (op === "+" ? "+" : "×") + " " + rnd(n) + " ="));
+        it.appendChild(line());
+        g.appendChild(it);
+      }
+      return g;
+    };
+  }
+  function colRender(b, w) {
+    var g = grid(pr(b, w));
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item"); it.style.display = "block";
+      var box = el("div", null, null);
+      box.style.cssText = "text-align:right;border-bottom:1px solid currentColor;padding-bottom:2px;font-size:10.5px";
+      box.textContent = rnd(3);
+      var box2 = el("div", null, "+ " + rnd(2));
+      box2.style.cssText = "text-align:right;font-size:10.5px";
+      it.appendChild(box); it.appendChild(box2);
+      var blank = el("div"); blank.style.cssText = "height:11px;border-bottom:1px solid currentColor;margin-top:2px";
+      it.appendChild(blank);
+      g.appendChild(it);
+    }
+    return g;
+  }
+  function splitRender(b, w) {
+    var g = grid(pr(b, w));
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item"); it.style.display = "block"; it.style.textAlign = "center";
+      it.appendChild(el("div", null, rnd(2)));
+      var arms = el("div", null, "╱  ╲"); arms.style.fontSize = "9px";
+      it.appendChild(arms);
+      var pair = el("div"); pair.style.cssText = "display:flex;gap:6px;justify-content:center";
+      var a = el("span", null, String(1 + (i % 8))); var bx = el("span", "ln");
+      bx.style.cssText = "width:16px;border-bottom:1px solid currentColor;height:9px";
+      pair.appendChild(a); pair.appendChild(bx); it.appendChild(pair);
+      g.appendChild(it);
+    }
+    return g;
+  }
+  function romRender(b, w) {
+    var R = ["XIV", "XXXI", "XLII", "LXVII", "XCIX", "CXX", "MCM", "DLV"];
+    var g = grid(pr(b, w));
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item");
+      it.appendChild(el("span", null, R[i % R.length] + " ="));
+      it.appendChild(line());
+      g.appendChild(it);
+    }
+    return g;
+  }
+  function dotsRender(b, w) {
+    var g = grid(pr(b, w));
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item"); it.style.display = "block";
+      var row = el("div"); row.style.cssText = "display:flex;gap:3px;flex-wrap:wrap";
+      for (var d = 0; d < 5 + (i % 4); d++) {
+        var dot = el("span"); dot.style.cssText = "width:7px;height:7px;border:1px solid currentColor;border-radius:50%";
+        row.appendChild(dot);
+      }
+      it.appendChild(row);
+      var q = el("div", null, "even / oneven"); q.style.fontSize = "9px"; q.style.marginTop = "2px";
+      it.appendChild(q);
+      g.appendChild(it);
+    }
+    return g;
+  }
+  function axisRender(b, w) {
+    var g = grid(pr(b, w));
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item"); it.style.display = "block";
+      var svg = svgEl(560, 34);
+      svg.appendChild(path("M6 22 H554", 1.2));
+      for (var t = 0; t <= 10; t++) {
+        var x = 6 + t * 54.8;
+        svg.appendChild(path("M" + x + " 15 V29", 1.2));
+        if (t % 2 === 0) svg.appendChild(txt(x, 11, String(t * (b.maxGetal / 10))));
+      }
+      it.appendChild(svg);
+      g.appendChild(it);
+    }
+    return g;
+  }
+  function clockRender(b, w) {
+    var g = grid(pr(b, w));
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item"); it.style.display = "block"; it.style.textAlign = "center";
+      var svg = svgEl(52, 52);
+      var c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", 26); c.setAttribute("cy", 26); c.setAttribute("r", 22);
+      c.setAttribute("fill", "none"); c.setAttribute("stroke", "currentColor"); c.setAttribute("stroke-width", 1.4);
+      svg.appendChild(c);
+      svg.appendChild(path("M26 26 V12", 1.6));
+      svg.appendChild(path("M26 26 L" + (26 + 15 * Math.cos(i)) + " " + (26 + 15 * Math.sin(i)), 1.6));
+      it.appendChild(svg);
+      var l = el("div"); l.style.cssText = "border-bottom:1px solid currentColor;height:10px;margin:3px 6px 0";
+      it.appendChild(l);
+      g.appendChild(it);
+    }
+    return g;
+  }
+  function scaleRender(b, w) {
+    var g = grid(pr(b, w));
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item"); it.style.display = "block"; it.style.textAlign = "center";
+      var svg = svgEl(120, 74);
+      var c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      c.setAttribute("cx", 60); c.setAttribute("cy", 40); c.setAttribute("r", 30);
+      c.setAttribute("fill", "none"); c.setAttribute("stroke", "currentColor"); c.setAttribute("stroke-width", 1.4);
+      svg.appendChild(c);
+      for (var k = 0; k < 12; k++) {
+        var a = (k / 12) * Math.PI * 2;
+        svg.appendChild(path("M" + (60 + 25 * Math.sin(a)) + " " + (40 - 25 * Math.cos(a)) +
+          " L" + (60 + 29 * Math.sin(a)) + " " + (40 - 29 * Math.cos(a)), 1));
+      }
+      svg.appendChild(path("M60 40 L" + (60 + 20 * Math.sin(i + 1)) + " " + (40 - 20 * Math.cos(i + 1)), 1.6));
+      it.appendChild(svg);
+      var l = el("div"); l.style.cssText = "border-bottom:1px solid currentColor;height:10px;margin:0 20px";
+      it.appendChild(l);
+      g.appendChild(it);
+    }
+    return g;
+  }
+  function calRender(b, w) {
+    var g = grid(pr(b, w));
+    var D = ["ma", "di", "wo", "do", "vr", "za", "zo"];
+    for (var i = 0; i < b.count; i++) {
+      var it = el("div", "item"); it.style.display = "block";
+      var t = el("div", null, ["september", "oktober", "november", "december"][i % 4]);
+      t.style.cssText = "font-weight:700;font-size:10px;margin-bottom:3px";
+      it.appendChild(t);
+      var tbl = el("div");
+      tbl.style.cssText = "display:grid;grid-template-columns:repeat(7,1fr);gap:1px;font-size:8px;text-align:center";
+      for (var d = 0; d < 7; d++) { var h = el("div", null, D[d]); h.style.fontWeight = "700"; tbl.appendChild(h); }
+      for (var n = 1; n <= 30; n++) {
+        var cell = el("div", null, String(n));
+        cell.style.cssText = "border:1px solid currentColor;padding:1px 0;line-height:1.1";
+        tbl.appendChild(cell);
+      }
+      it.appendChild(tbl);
+      g.appendChild(it);
+    }
+    return g;
+  }
+
+  function svgEl(w, h) {
+    var s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 " + w + " " + h);
+    s.setAttribute("width", "100%"); s.setAttribute("height", h);
+    s.style.color = "currentColor"; s.style.display = "block";
+    return s;
+  }
+  function path(d, sw) {
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", d); p.setAttribute("stroke", "currentColor");
+    p.setAttribute("stroke-width", sw); p.setAttribute("fill", "none");
+    return p;
+  }
+  function txt(x, y, s) {
+    var t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", x); t.setAttribute("y", y); t.setAttribute("text-anchor", "middle");
+    t.setAttribute("font-size", "8"); t.setAttribute("fill", "currentColor");
+    t.setAttribute("font-family", "Azeret Mono, monospace");
+    t.textContent = s;
+    return t;
+  }
+  var seed = 7;
+  function rnd(digits) {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    var max = Math.pow(10, digits), min = Math.pow(10, digits - 1);
+    return min + (seed % (max - min));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  var pagesEl = document.getElementById("pages");
+  var readoutEl = document.getElementById("readout");
+
+  function render() {
+    seed = 7;
+    var pages = packPages(blocks);
+    pagesEl.innerHTML = "";
+
+    pages.forEach(function (pg, pi) {
+      var page = el("div", "page");
+      page.appendChild(el("div", "page-num", "pagina " + (pi + 1) + " van " + pages.length));
+
+      var head = el("div", "pg-head");
+      if (pi === 0) {
+        head.appendChild(el("div", "pg-title", "Rekenblad — herhaling"));
+      }
+      var f = el("div", "pg-fields");
+      f.innerHTML = '<span>Naam: <i></i></span><span>Klas: <i class="s"></i></span>' +
+        (pi > 0 ? '<span style="margin-left:auto">vervolg</span>' : '');
+      head.appendChild(f);
+      head.appendChild(el("div", "pg-rule"));
+      page.appendChild(head);
+
+      var body = el("div", "pg-body");
+      pg.rows.forEach(function (row) {
+        row.items.forEach(function (it) {
+          var t = CATALOG[it.b.typeId];
+          var d = el("div", "blk" + (it.b.id === selected ? " sel" : ""));
+          d.style.gridColumn = "span " + it.w;
+          d.tabIndex = 0;
+          d.appendChild(el("div", "blk-title", t.label));
+          d.appendChild(t.render(it.b, it.w));
+          if (it.spans) d.appendChild(el("span", "badge", "past niet"));
+          else if (it.promoted) d.appendChild(el("span", "badge", "verbreed"));
+          d.addEventListener("click", function (e) { e.stopPropagation(); select(it.b.id); });
+          d.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(it.b.id); }
+          });
+          body.appendChild(d);
+        });
+      });
+      page.appendChild(body);
+
+      var fw = el("div", "pg-foot-wrap");
+      var ft = el("div", "pg-foot");
+      ft.appendChild(el("span", null, "Vrije Basisschool — 4de leerjaar"));
+      ft.appendChild(el("span", null, "rekenraak"));
+      fw.appendChild(ft);
+      page.appendChild(fw);
+
+      pagesEl.appendChild(page);
+    });
+
+    var rows = pages.reduce(function (a, p) { return a + p.rows.length; }, 0);
+    var fill = pages.map(function (pg, i) {
+      var u = pg.rows.reduce(function (a, r) { return a + r.h; }, 0);
+      return "p" + (i + 1) + " " + Math.round(Math.min(u, ROW_BUDGET)) + "/" + ROW_BUDGET;
+    }).join(" · ");
+    readoutEl.innerHTML = "<b>" + pages.length + "</b> pagina's · <b>" + rows + "</b> rijen · <b>" +
+      blocks.length + "</b> blokken · rijeenheden " + fill;
+
+    pagesEl.style.transform = "scale(" + (zoom / 100) + ")";
+    var w = 794 * (zoom / 100);
+    pagesEl.style.width = w + "px";
+    pagesEl.style.marginBottom = (-(1123 * pages.length + 22 * (pages.length - 1)) * (1 - zoom / 100)) + "px";
+    renderPanel();
+  }
+
+  function select(id) { selected = id; activeTab = "ins"; syncTabs(); render(); }
+
+  // ── Left panel ────────────────────────────────────────────────────────────
+  function renderPanel() {
+    var oef = document.getElementById("p-oef");
+    if (!oef.childElementCount) {
+      var byDomain = {};
+      Object.keys(CATALOG).forEach(function (k) {
+        (byDomain[CATALOG[k].domain] = byDomain[CATALOG[k].domain] || []).push(k);
+      });
+      Object.keys(byDomain).forEach(function (dom) {
+        var wrap = el("div");
+        wrap.appendChild(el("div", "group-label", dom));
+        byDomain[dom].forEach(function (k) {
+          var t = CATALOG[k];
+          var btn = el("button", "leaf");
+          btn.appendChild(el("span", null, t.label));
+          btn.appendChild(el("span", "tier", "min " + WIDTH_LABEL[t.minW({ maxGetal: 100 })]));
+          btn.addEventListener("click", function () {
+            var nb = mk(k, k === "kalender" ? 2 : k === "weegschaal" ? 3 : 6, t.minW({ maxGetal: 100 }), 100);
+            blocks.push(nb); selected = nb.id; activeTab = "ins"; syncTabs(); render();
+          });
+          wrap.appendChild(btn);
+        });
+        oef.appendChild(wrap);
+      });
+    }
+
+    var ins = document.getElementById("p-ins");
+    ins.innerHTML = "";
+    var b = blocks.filter(function (x) { return x.id === selected; })[0];
+    if (!b) {
+      ins.appendChild(el("p", "empty", "Geen blok gekozen. Klik een blok op het blad aan."));
+    } else {
+      var t = CATALOG[b.typeId];
+      var minW = t.minW(b);
+
+      var h1 = el("div", "field-label", t.label.toUpperCase());
+      ins.appendChild(h1);
+
+      // width
+      var fw = el("div", "field");
+      fw.appendChild(el("span", "field-label", "Breedte"));
+      var seg = el("div", "seg");
+      [6, 3, 2].forEach(function (w) {
+        var btn = el("button", null, WIDTH_LABEL[w]);
+        btn.setAttribute("aria-pressed", String(b.widthUnits === w));
+        if (w < minW) { btn.disabled = true; btn.title = "Te smal voor deze instellingen"; }
+        btn.addEventListener("click", function () { b.widthUnits = w; render(); });
+        seg.appendChild(btn);
+      });
+      fw.appendChild(seg);
+      if (minW > 2) {
+        fw.appendChild(el("span", "hint", "Bij deze instellingen is " + WIDTH_LABEL[minW] +
+          " de smalste breedte die dit type aankan."));
+      }
+      ins.appendChild(fw);
+
+      // count
+      var fc = el("div", "field");
+      fc.appendChild(el("span", "field-label", "Aantal oefeningen: " + b.count));
+      var r = document.createElement("input");
+      r.type = "range"; r.min = "1"; r.max = "20"; r.step = "1"; r.value = b.count;
+      r.addEventListener("input", function () { b.count = +r.value; render(); });
+      fc.appendChild(r);
+      fc.appendChild(el("span", "hint", "Kost ≈ " + heightUnits(b).toFixed(1) +
+        " van " + ROW_BUDGET + " rijeenheden."));
+      ins.appendChild(fc);
+
+      // maxGetal — only where it moves minWidthUnits, which is the interesting case
+      if (t.scale) {
+        var fm = el("div", "field");
+        fm.appendChild(el("span", "field-label", "Maximum getal"));
+        var seg2 = el("div", "seg");
+        [100, 1000, 100000].forEach(function (m) {
+          var btn = el("button", null, m.toLocaleString("nl-BE"));
+          btn.setAttribute("aria-pressed", String(b.maxGetal === m));
+          btn.addEventListener("click", function () {
+            b.maxGetal = m;
+            var nm = t.minW(b);
+            if (b.widthUnits < nm) b.widthUnits = nm;   // auto-promote, phase D behaviour
+            render();
+          });
+          seg2.appendChild(btn);
+        });
+        fm.appendChild(seg2);
+        fm.appendChild(el("span", "hint", b.maxGetal >= 100000
+          ? "Tot 100 000 past enkel op volle breedte — de breedte is automatisch verhoogd."
+          : "Verhoog dit naar 100 000 en kijk wat er met de breedtekeuze gebeurt."));
+        ins.appendChild(fm);
+      }
+
+      // page break + delete
+      var fb = el("div", "field");
+      var rowl = el("div", "rowline");
+      rowl.appendChild(el("span", "field-label", "Begin op een nieuwe pagina"));
+      var tg = el("button", "mini-btn", b.brk ? "aan" : "uit");
+      tg.setAttribute("aria-pressed", String(b.brk));
+      tg.addEventListener("click", function () { b.brk = !b.brk; render(); });
+      rowl.appendChild(tg);
+      fb.appendChild(rowl);
+      ins.appendChild(fb);
+
+      var del = el("button", "mini-btn danger", "Blok verwijderen");
+      del.addEventListener("click", function () {
+        blocks = blocks.filter(function (x) { return x.id !== b.id; });
+        selected = blocks.length ? blocks[0].id : null;
+        render();
+      });
+      ins.appendChild(del);
+    }
+
+    var ovz = document.getElementById("p-ovz");
+    ovz.innerHTML = "";
+    var pages = packPages(blocks);
+    var tbl = el("table", "ov");
+    tbl.innerHTML = "<thead><tr><th>Blok</th><th>Br.</th><th>Hoogte</th><th>Pag.</th></tr></thead>";
+    var tb = document.createElement("tbody");
+    pages.forEach(function (pg, pi) {
+      pg.rows.forEach(function (row) {
+        row.items.forEach(function (it) {
+          var tr = document.createElement("tr");
+          if (it.b.id === selected) tr.className = "sel";
+          var td1 = el("td", "nm", CATALOG[it.b.typeId].label);
+          td1.addEventListener("click", function () { select(it.b.id); });
+          tr.appendChild(td1);
+          tr.appendChild(el("td", null, WIDTH_LABEL[it.w]));
+          tr.appendChild(el("td", null, it.h.toFixed(1)));
+          tr.appendChild(el("td", null, String(pi + 1)));
+          tb.appendChild(tr);
+        });
+      });
+    });
+    tbl.appendChild(tb);
+    ovz.appendChild(tbl);
+    ovz.appendChild(el("p", "hint",
+      "Deze pagina-nummers komen rechtstreeks uit de packer, niet uit een meting van het scherm. " +
+      "Dat is precies waarom de Overzicht-markers nauwkeuriger worden."));
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  function syncTabs() {
+    ["oef", "ins", "ovz"].forEach(function (k) {
+      var on = k === activeTab;
+      document.getElementById("tab-" + k).setAttribute("aria-selected", String(on));
+      document.getElementById("p-" + k).hidden = !on;
+    });
+  }
+  ["oef", "ins", "ovz"].forEach(function (k) {
+    document.getElementById("tab-" + k).addEventListener("click", function () {
+      activeTab = k; syncTabs();
+    });
+  });
+
+  var zi = document.getElementById("zoom"), zv = document.getElementById("zoomval");
+  zi.addEventListener("input", function () { zoom = +zi.value; zv.textContent = zoom + "%"; render(); });
+
+  syncTabs();
+  render();
+})();
+</script>
