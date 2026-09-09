@@ -164,6 +164,43 @@ code { font-family: var(--font-paper); font-size: .85em; background: var(--bg-su
 .btn.ghost { background: none; color: var(--text-muted); border-color: var(--separator); }
 .btn:hover { filter: brightness(1.08); }
 .spacer { flex: 1; }
+.ico {
+  width: 30px; height: 30px; border-radius: var(--radius-sm); border: 1px solid transparent;
+  background: none; color: var(--text-muted); cursor: pointer; font-size: 15px; line-height: 1;
+}
+.ico:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-main); }
+.ico:disabled { opacity: .35; cursor: not-allowed; }
+.vsep { width: 1px; height: 20px; background: var(--separator); }
+.save { font-size: var(--text-xs); color: var(--text-muted); }
+.menuwrap { position: relative; }
+.menu {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; min-width: 210px;
+  background: var(--bg-surface); border: 1px solid var(--separator); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2); padding: var(--sp-1); display: flex; flex-direction: column;
+}
+.menu.wide { min-width: 268px; }
+.mi { text-align: left; background: none; border: 0; color: var(--text-main);
+  font-size: var(--text-sm); padding: 8px 10px; border-radius: var(--radius-xs); cursor: pointer; }
+.mi:hover { background: var(--bg-hover); }
+.msep { height: 1px; background: var(--separator); margin: var(--sp-1) 6px; }
+.mrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  padding: 6px 10px; font-size: var(--text-sm); }
+
+/* per-block controls, mirroring the icon row the app already shows on a block */
+.ctrls {
+  position: absolute; top: -12px; left: 4px; display: none; gap: 2px; z-index: 5;
+  background: var(--bg-surface); border: 1px solid var(--separator); border-radius: var(--radius-sm);
+  padding: 2px; box-shadow: var(--shadow-1); font-family: var(--font-ui);
+}
+.blk:hover .ctrls, .blk.on .ctrls { display: flex; }
+.ctrls button {
+  width: 22px; height: 22px; border: 0; border-radius: var(--radius-xs); background: none;
+  color: var(--text-muted); cursor: pointer; font-size: 12px; line-height: 1;
+}
+.ctrls button:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-main); }
+.ctrls button:disabled { opacity: .3; cursor: not-allowed; }
+.ctrls button.dgr:hover { color: var(--danger); }
+.ctrls button.act { color: var(--accent); }
 .seg { display: inline-flex; background: var(--seg-track); border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
 .seg button {
   border: 0; background: none; color: var(--text-muted); font-size: var(--text-xs); font-weight: 600;
@@ -348,16 +385,52 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   <div class="rr" id="rr">
     <div class="topbar">
       <div class="brand">reken<span>raak</span></div>
+
+      <div class="menuwrap">
+        <button class="ico" id="m-menu" aria-haspopup="true" aria-expanded="false" title="Menu">☰</button>
+        <div class="menu" id="d-menu" hidden>
+          <button class="mi">Mijn bladen</button>
+          <button class="mi">Bibliotheek</button>
+          <div class="msep"></div>
+          <button class="mi">Openen…</button>
+          <button class="mi">Bewaren als bestand</button>
+          <div class="msep"></div>
+          <button class="mi">Delen — volledig blad</button>
+          <button class="mi">Delen — als sjabloon</button>
+        </div>
+      </div>
+
+      <div class="menuwrap">
+        <button class="ico" id="m-set" aria-haspopup="true" aria-expanded="false" title="Instellingen">⚙</button>
+        <div class="menu wide" id="d-set" hidden>
+          <button class="mi">Basisinstellingen…</button>
+          <button class="mi">Curriculum samenstellen…</button>
+          <div class="msep"></div>
+          <div class="mrow">
+            <span>Thema</span>
+            <div class="seg" id="thememode" role="group" aria-label="Thema">
+              <button data-mode="light" aria-pressed="false">Licht</button>
+              <button data-mode="dark" aria-pressed="true">Donker</button>
+              <button data-mode="colorblind" aria-pressed="false">Contrast</button>
+            </div>
+          </div>
+          <div class="msep"></div>
+          <button class="mi">Over dit project</button>
+        </div>
+      </div>
+
+      <button class="ico" title="Help / uitleg">?</button>
+      <span class="vsep"></span>
+      <button class="ico" title="Ongedaan maken" disabled>↶</button>
+      <button class="ico" title="Opnieuw" disabled>↷</button>
+      <span class="vsep"></span>
+      <button class="btn ghost" id="btn-new">Nieuw blad</button>
       <button class="btn sec" id="btn-add">Toevoegen</button>
       <button class="btn" id="btn-gen">Genereer alles</button>
       <button class="btn ghost" id="btn-sol">Oplossingen</button>
-      <button class="btn ghost">Afdrukken</button>
+      <button class="btn ghost">Afdrukken ▾</button>
       <span class="spacer"></span>
-      <div class="seg" id="thememode" role="group" aria-label="Thema">
-        <button data-mode="light" aria-pressed="false">Licht</button>
-        <button data-mode="dark" aria-pressed="true">Donker</button>
-        <button data-mode="colorblind" aria-pressed="false">Contrast</button>
-      </div>
+      <span class="save">Automatisch bewaard</span>
     </div>
 
     <div class="body">
@@ -412,9 +485,11 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   // Deliberately 2 units under what the body can actually hold. Under-estimating is the
   // dangerous direction (content crosses the footer); over-estimating only wastes space.
   var ROW_BUDGET = Math.floor((1123 - 118 - 60 - 32) / ROW_UNIT_PX) - 2;   // 36 row units
-  // The 14px gap between grid rows is real height too. Leaving it out of the budget is
-  // how an estimate quietly overruns the footer, so it is charged per row after the first.
-  var ROW_GAP_UNITS = 14 / ROW_UNIT_PX;
+  // Whitespace is real height. Both spacing controls the app already has feed the packer:
+  // more air per exercise means fewer exercises on the page, and the page count must say so.
+  var DEFAULT_ITEM_GAP = 14;                       // block.verticalSpacing default
+  var doc = { blockSpacing: 12, showScores: false, dividers: false, numberBlocks: true };
+  function rowGapUnits() { return doc.blockSpacing / ROW_UNIT_PX; }
   var WLBL = { 6: "vol", 3: "½", 2: "⅓" };
 
   // ── Per-type layout facts. `w` is minWidthUnits, `r` is row height in units, `s` is the
@@ -495,7 +570,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 
   function addBlock(leaf, path, count) {
     var b = { id: "b" + (++uid), typeId: leaf.typeId, label: leaf.label, path: path,
-              count: count || 6, maxGetal: 1000, brk: false };
+              count: count || 6, maxGetal: 1000, brk: false, gap: DEFAULT_ITEM_GAP, locked: false };
     b.widthUnits = minW(b);
     blocks.push(b);
     return b;
@@ -504,7 +579,10 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   // ── The packer. Pure: blocks in, pages out. No DOM measurement, no reflow loop. ──
   function heightUnits(b, w) {
     var t = T(b.typeId), width = w || Math.max(b.widthUnits, minW(b));
-    return 1.0 /* opdrachttitel */ + Math.ceil(b.count / t.p(width)) * t.r;
+    var rows = Math.ceil(b.count / t.p(width));
+    // t.r is calibrated at the 14px default gap, so only the difference is charged on top.
+    var extra = Math.max(0, rows - 1) * ((b.gap - DEFAULT_ITEM_GAP) / ROW_UNIT_PX);
+    return 1.0 /* opdrachttitel */ + rows * t.r + extra;
   }
 
   function packPages(list) {
@@ -520,11 +598,11 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 
       if (b.brk && (page.rows.length > 1 || (row && row.items.length))) newPage();
       if (!row || row.w + w > COL_UNITS) {
-        if (row) used += row.h + ROW_GAP_UNITS;
+        if (row) used += row.h + rowGapUnits();
         newRow();
       }
       if (!spans && used + Math.max(row.h, h) > ROW_BUDGET && (row.items.length || page.rows.length > 1)) {
-        if (row.items.length) { used += row.h + ROW_GAP_UNITS; }
+        if (row.items.length) { used += row.h + rowGapUnits(); }
         newPage(); newRow();
       }
       row.items.push({ b: b, w: w, h: h, spans: spans, promoted: w > b.widthUnits });
@@ -968,7 +1046,35 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     p.innerHTML = "";
     var b = blocks.filter(function (x) { return x.id === selected; })[0];
     if (!b) {
-      p.appendChild(el("p", "empty", "Geen blok gekozen. Klik een blok aan op het blad, of voeg er een toe via Oefeningen."));
+      p.appendChild(el("h4", null, "Bladinstellingen"));
+      p.appendChild(el("div", "path", "Geldt voor het hele blad. Kies een blok voor blokinstellingen."));
+
+      var dc = el("div", "card");
+      dc.appendChild(el("span", "lbl", "Ruimte tussen oefenreeksen: " + doc.blockSpacing + "px"));
+      var dr = document.createElement("input");
+      dr.type = "range"; dr.min = "4"; dr.max = "48"; dr.step = "2"; dr.value = doc.blockSpacing;
+      dr.addEventListener("input", function () { doc.blockSpacing = +dr.value; render(); });
+      dc.appendChild(dr);
+      dc.appendChild(el("span", "hint",
+        "Ruimere blokken betekenen minder blokken per pagina. De packer rekent dit mee, dus het paginatotaal hierboven verandert mee."));
+      p.appendChild(dc);
+
+      var tc = el("div", "card");
+      [["Scores tonen", "showScores"], ["Scheidingslijnen", "dividers"], ["Opdrachten nummeren", "numberBlocks"]]
+        .forEach(function (pair) {
+          var row = el("div", "row");
+          row.appendChild(el("span", "lbl", pair[0]));
+          var tg = el("button", "btn ghost", doc[pair[1]] ? "Aan" : "Uit");
+          if (doc[pair[1]]) { tg.style.background = "var(--accent)"; tg.style.color = "var(--accent-on)"; tg.style.borderColor = "var(--accent)"; }
+          tg.addEventListener("click", function () { doc[pair[1]] = !doc[pair[1]]; render(); });
+          row.appendChild(tg);
+          tc.appendChild(row);
+        });
+      p.appendChild(tc);
+
+      p.appendChild(el("p", "hint",
+        "De knoppen bovenaan blijven waar ze zijn: het menu, de tandwiel-instellingen, help, ongedaan maken, " +
+        "Toevoegen, Genereer alles, Oplossingen en Afdrukken zijn bladbreed en verhuizen niet mee."));
       return;
     }
     var mw = minW(b), t = T(b.typeId);
@@ -1029,6 +1135,17 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
       p.appendChild(c3);
     }
 
+    var cg = el("div", "card");
+    cg.appendChild(el("span", "lbl", "Witruimte tussen oefeningen: " + b.gap + "px"));
+    var gr = document.createElement("input");
+    gr.type = "range"; gr.min = "8"; gr.max = "40"; gr.value = b.gap;
+    gr.addEventListener("input", function () { b.gap = +gr.value; render(); });
+    cg.appendChild(gr);
+    cg.appendChild(el("span", "hint",
+      "Meer lucht per oefening voor wie dat nodig heeft. Dit telt mee in de hoogte hierboven, " +
+      "dus ruimer zetten kan het blok naar de volgende pagina duwen."));
+    p.appendChild(cg);
+
     var c4 = el("div", "card");
     var row = el("div", "row");
     row.appendChild(el("span", "lbl", "Begin op een nieuwe pagina"));
@@ -1058,7 +1175,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     tb.innerHTML = "<thead><tr><th>Blok</th><th>Breedte</th><th>Hoogte</th></tr></thead>";
     var body = document.createElement("tbody");
     pages.forEach(function (pg, pi) {
-      var used = pg.rows.reduce(function (a, r) { return a + r.h; }, 0) + Math.max(0, pg.rows.length - 1) * ROW_GAP_UNITS;
+      var used = pg.rows.reduce(function (a, r) { return a + r.h; }, 0) + Math.max(0, pg.rows.length - 1) * rowGapUnits();
       var sep = document.createElement("tr"); sep.className = "pgsep";
       var td = document.createElement("td"); td.colSpan = 3;
       td.textContent = "Pagina " + (pi + 1) + " — " + Math.round(Math.min(used, ROW_BUDGET)) +
@@ -1114,6 +1231,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
       page.appendChild(h);
 
       var body = el("div", "pb");
+      body.style.gap = doc.blockSpacing + "px";
       pg.rows.forEach(function (row) {
         row.items.forEach(function (it) {
           var t = T(it.b.typeId);
@@ -1123,10 +1241,12 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
           d.appendChild(el("h6", null, it.b.label));
           var g = el("div", "items");
           g.style.gridTemplateColumns = "repeat(" + t.p(it.w) + ", minmax(0, 1fr))";
+          g.style.rowGap = it.b.gap + "px";
           (RENDER[t.s] || RENDER.eq)(it.b, it.w, g);
           d.appendChild(g);
           if (it.spans) d.appendChild(el("span", "tag", "past niet op één pagina"));
           else if (it.promoted) d.appendChild(el("span", "tag info", "verbreed"));
+          d.appendChild(blockControls(it.b));
           function pick(e) { e.stopPropagation(); selected = it.b.id; tab = "ins"; syncTabs(); render(); }
           d.addEventListener("click", pick);
           d.addEventListener("keydown", function (e) {
@@ -1147,7 +1267,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 
     var rows = pages.reduce(function (a, p) { return a + p.rows.length; }, 0);
     var fill = pages.map(function (pg, i) {
-      var u = pg.rows.reduce(function (a, r) { return a + r.h; }, 0) + Math.max(0, pg.rows.length - 1) * ROW_GAP_UNITS;
+      var u = pg.rows.reduce(function (a, r) { return a + r.h; }, 0) + Math.max(0, pg.rows.length - 1) * rowGapUnits();
       return "p" + (i + 1) + " " + Math.round(Math.min(u, ROW_BUDGET)) + "/" + ROW_BUDGET;
     }).join(" · ");
     document.getElementById("readout").innerHTML =
@@ -1162,6 +1282,47 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 
     renderInspector();
     renderOverzicht(pages);
+  }
+
+  function move(id, dir) {
+    var i = blocks.findIndex(function (x) { return x.id === id; });
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= blocks.length) return;
+    var t = blocks[i]; blocks[i] = blocks[j]; blocks[j] = t;
+    render();
+  }
+
+  // The same icon row the app already puts on a block. Reordering is up/down, not drag:
+  // the arrows move the block earlier or later in READING ORDER, which stays unambiguous
+  // once blocks sit side by side — a drag target in a 6-unit grid would not.
+  function blockControls(b) {
+    var i = blocks.findIndex(function (x) { return x.id === b.id; });
+    var bar = el("div", "ctrls");
+    function ctl(txt, title, fn, opts) {
+      var btn = el("button", (opts && opts.cls) || null, txt);
+      btn.title = title;
+      btn.setAttribute("aria-label", title);
+      if (opts && opts.disabled) btn.disabled = true;
+      btn.addEventListener("click", function (e) { e.stopPropagation(); fn(); });
+      return btn;
+    }
+    bar.appendChild(ctl("↑", "Blok omhoog", function () { move(b.id, -1); }, { disabled: i <= 0 }));
+    bar.appendChild(ctl("↓", "Blok omlaag", function () { move(b.id, 1); }, { disabled: i >= blocks.length - 1 }));
+    bar.appendChild(ctl(b.locked ? "🔒" : "🔓", b.locked ? "Ontgrendel" : "Vergrendel (Genereer alles slaat dit blok over)",
+      function () { b.locked = !b.locked; render(); }, { cls: b.locked ? "act" : null }));
+    bar.appendChild(ctl("⧉", "Blok dupliceren", function () {
+      var copy = Object.assign({}, b, { id: "b" + (++uid) });
+      blocks.splice(i + 1, 0, copy); selected = copy.id; render();
+    }));
+    bar.appendChild(ctl("↵", b.brk ? "Begin niet op een nieuwe pagina" : "Begin op een nieuwe pagina",
+      function () { b.brk = !b.brk; render(); }, { cls: b.brk ? "act" : null }));
+    bar.appendChild(ctl("🗑", "Blok verwijderen", function () {
+      blocks = blocks.filter(function (x) { return x.id !== b.id; });
+      if (selected === b.id) selected = blocks.length ? blocks[0].id : null;
+      render();
+    }, { cls: "dgr" }));
+    bar.addEventListener("click", function (e) { e.stopPropagation(); });
+    return bar;
   }
 
   // ── Wiring ──────────────────────────────────────────────────────────────
@@ -1183,6 +1344,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     zoom = +e.target.value; document.getElementById("zmv").textContent = zoom + "%"; render();
   });
   document.getElementById("btn-gen").addEventListener("click", function () { seed = 1 + Date.now() % 9999; render(); });
+  document.getElementById("btn-new").addEventListener("click", function () { blocks = []; selected = null; render(); });
   document.getElementById("btn-sol").addEventListener("click", function (e) {
     solutions = !solutions;
     e.target.style.background = solutions ? "var(--accent)" : "";
@@ -1190,6 +1352,23 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     render();
   });
   document.getElementById("btn-add").addEventListener("click", function () { tab = "oef"; syncTabs(); });
+
+  [["m-menu", "d-menu"], ["m-set", "d-set"]].forEach(function (pair) {
+    var btn = document.getElementById(pair[0]), menu = document.getElementById(pair[1]);
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var open = menu.hidden;
+      document.querySelectorAll(".menu").forEach(function (m) { m.hidden = true; });
+      document.querySelectorAll(".menuwrap .ico").forEach(function (b2) { b2.setAttribute("aria-expanded", "false"); });
+      menu.hidden = !open;
+      btn.setAttribute("aria-expanded", String(open));
+    });
+    menu.addEventListener("click", function (e) { if (e.target.classList.contains("mi")) menu.hidden = true; });
+  });
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".menu").forEach(function (m) { m.hidden = true; });
+    document.querySelectorAll(".menuwrap .ico").forEach(function (b2) { b2.setAttribute("aria-expanded", "false"); });
+  });
 
   var modeBtns = document.querySelectorAll("#thememode button");
   // Start on whatever theme the reader is already in, and only pin data-mode once they choose.
@@ -1222,7 +1401,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
     ];
     want.forEach(function (w) {
       var b = { id: "b" + (++uid), typeId: w[0], label: w[1], path: w[2],
-                count: w[3], maxGetal: w[5], brk: false };
+                count: w[3], maxGetal: w[5], brk: false, gap: DEFAULT_ITEM_GAP, locked: false };
       b.widthUnits = Math.max(w[4], minW(b));
       blocks.push(b);
     });
