@@ -74,37 +74,59 @@
    No data-theme switching — dark and the high-contrast palette were removed; contrast
    now has to hold up here, since there is nowhere else for it to live. ---- */
 :root {
-    --bg-base: #ECECEC;       /* macOS window bg */
-    --bg-surface: #FFFFFF;    /* content card */
-    --bg-surface-2: #F2F2F7;  /* systemGray6 light — inset */
+    /* Warm neutrals, not system gray: the canvas is the desk, the A4 is the paper on it.
+       Panels sit a touch warmer than pure white so they never read as a second sheet. */
+    --bg-base: #F2EFE9;       /* canvas behind the A4 */
+    --bg-surface: #FBFAF8;    /* panel / card */
+    --bg-surface-2: #EDEAE4;  /* inset: inputs, segmented track */
     --bg-hover: rgba(0, 0, 0, 0.05);
-    --separator: rgba(0, 0, 0, 0.12);
+    /* Separator and muted text carry what the removed high-contrast theme used to:
+       0.12 alpha hairlines and #6C6C70 were the two values that theme existed to fix. */
+    --separator: rgba(0, 0, 0, 0.20);
 
     --text-main: #1D1D1F;
-    --text-muted: #6C6C70;    /* secondaryLabel ≈ rgba(60,60,67,.6) */
+    --text-muted: #5A5A5F;    /* ≈7:1 on --bg-surface */
 
-    /* systemBlue (light variant) */
-    --accent: #007AFF;
-    --accent-strong: #0060DF;
-    --accent-soft: rgba(0, 122, 255, 0.12);
+    /* State accent. Deliberately NOT the Bewerkingen blue — a domain hue must never
+       double as "selected" (UI-GUIDE rule 6). Deep enough for 13px text: ≈6:1 on white. */
+    --accent: #0A5FD0;
+    --accent-strong: #0847A8;
+    --accent-soft: rgba(10, 95, 208, 0.12);
     --accent-on: #ffffff;
-    --danger: #FF3B30;        /* systemRed light */
-    --danger-soft: rgba(255, 59, 48, 0.10);
+    /* Distinct from --accent-getallenkennis, which is the same systemRed this used to be.
+       Destructive and a curriculum domain must never look alike. */
+    --danger: #C0362B;
+    --danger-soft: rgba(192, 54, 43, 0.10);
 
-    /* Domain tags = Apple system colors (light variants) */
-    --accent-getallenkennis: #FF3B30;  /* systemRed */
-    --accent-bewerkingen: #007AFF;     /* systemBlue */
-    --accent-metendrekenen: #34C759;   /* systemGreen */
-    --accent-meetkunde: #AF52DE;       /* systemPurple */
-    --accent-vraagstukken: #FF9500;    /* systemOrange */
+    /* Domain hues — carried over from the maths method teachers already use, so they
+       stay as they are. Identity only, never state, and never without their label. */
+    --accent-getallenkennis: #FF3B30;
+    --accent-bewerkingen: #007AFF;
+    --accent-metendrekenen: #34C759;
+    --accent-meetkunde: #AF52DE;
+    --accent-vraagstukken: #FF9500;
+
+    /* Derived per-domain tints. -line = rails/rules/outlines, -soft = fills/bands.
+       color-mix keeps them locked to the hue above, so retinting a domain is one edit. */
+    --domain-getallenkennis-line: color-mix(in srgb, var(--accent-getallenkennis) 45%, transparent);
+    --domain-bewerkingen-line: color-mix(in srgb, var(--accent-bewerkingen) 45%, transparent);
+    --domain-metendrekenen-line: color-mix(in srgb, var(--accent-metendrekenen) 45%, transparent);
+    --domain-meetkunde-line: color-mix(in srgb, var(--accent-meetkunde) 45%, transparent);
+    --domain-vraagstukken-line: color-mix(in srgb, var(--accent-vraagstukken) 45%, transparent);
+
+    --domain-getallenkennis-soft: color-mix(in srgb, var(--accent-getallenkennis) 10%, var(--bg-surface));
+    --domain-bewerkingen-soft: color-mix(in srgb, var(--accent-bewerkingen) 10%, var(--bg-surface));
+    --domain-metendrekenen-soft: color-mix(in srgb, var(--accent-metendrekenen) 10%, var(--bg-surface));
+    --domain-meetkunde-soft: color-mix(in srgb, var(--accent-meetkunde) 10%, var(--bg-surface));
+    --domain-vraagstukken-soft: color-mix(in srgb, var(--accent-vraagstukken) 10%, var(--bg-surface));
 
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
     --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
     --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.16), 0 6px 14px rgba(0, 0, 0, 0.08);
-    --shadow-focus: 0 0 0 3px rgba(0, 122, 255, 0.30);
+    --shadow-focus: 0 0 0 3px rgba(10, 95, 208, 0.35);
 
-    /* Segmented control: recessed track (darker than the #ECECEC window) + white thumb. */
-    --seg-track: #E3E3E8;
+    /* Segmented control: recessed track (darker than the canvas) + white thumb. */
+    --seg-track: #E5E1DA;
     --seg-thumb: #FFFFFF;
     --seg-thumb-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 .5px rgba(0, 0, 0, 0.04);
     --seg-thumb-border: transparent;
