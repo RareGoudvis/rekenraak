@@ -12,7 +12,7 @@ interface Props {
 }
 
 const styles = {
-    solutionText: { color: '#e11d48', padding: '0 4px', fontSize: '18px' } as React.CSSProperties,
+    solutionText: { color: '#e11d48', padding: '0 4px', fontSize: '18px', fontWeight: 700 } as React.CSSProperties,
     mathDottedLine: { borderBottom: '1.5px solid #000', width: '40px', margin: '0 6px', display: 'inline-block', height: '16px' } as React.CSSProperties,
     mathInput: { width: '70px', textAlign: 'center', fontSize: '17px', fontFamily: 'Azeret Mono, monospace', border: '1px solid transparent', background: 'transparent', outline: 'none', color: '#000', padding: 0 } as React.CSSProperties,
     fractionWrapper: { display: 'inline-flex', flexDirection: 'column', alignItems: 'center', margin: '0 4px', fontSize: '15px' } as React.CSSProperties,
@@ -219,7 +219,15 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     : <div style={styles.mathDottedLine}></div>;
 
                 return (
-                    <div key={ex.id} style={{ ...styles.exerciseRow, alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end' }}>
+                    <div key={ex.id} style={{
+                        ...styles.exerciseRow,
+                        alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end',
+                        // The step lines of one exercise sit 32px apart. Without extra room
+                        // underneath, the next exercise sits exactly as far away as the next
+                        // step line, so the grouping disappears and three steps of one sum
+                        // read as three separate sums.
+                        ...(layout === 'stepped' ? { paddingBottom: '16px' } : {}),
+                    }}>
                         {/* In stepped mode the row is flex-start so extra lines flow below; pin the
                             operand to the first 32px line height + flex-end so it sits ON line 1's
                             baseline instead of floating above it. */}

@@ -216,7 +216,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             steppedLines: 3,
             numberOfExercises: def ? def.defaultCount : 10,
             totalPoints: 5,
-            verticalSpacing: 14,
+            // Writing room between exercises. 14 was tight for a 7-year-old's handwriting;
+            // teachers can still dial it 8-40 per block under Opmaak.
+            verticalSpacing: 18,
             constraints: { ...defaultConstraints, ...baseSnapshot, ...overrideConstraints },
             exercises: []
         };
