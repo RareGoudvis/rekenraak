@@ -222,6 +222,14 @@ export default function App() {
   );
   // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
   // separator never renumbers the exercises after it.
+  // id -> position in blocks[]. Distinct from blockOrder below, which is the printed
+  // opdracht number and deliberately skips layout-* furniture.
+  const blockPos = useMemo(() => {
+    const m: Record<string, number> = {};
+    blocks.forEach((b, i) => { m[b.id] = i; });
+    return m;
+  }, [blocks]);
+
   const blockOrder = useMemo(() => {
     const m: Record<string, number> = {};
     let n = 0;
@@ -431,10 +439,10 @@ export default function App() {
                         variant={block.pageBreakBefore ? 'active' : 'neutral'}
                         size={16}
                       />
-                      {index > 0 && (
+                      {(blockPos[block.id] ?? 0) > 0 && (
                         <IconButton icon={ArrowUp} label="Blok omhoog" onClick={() => moveBlockUp(block.id)} size={16} />
                       )}
-                      {index < blocks.length - 1 && (
+                      {(blockPos[block.id] ?? 0) < blocks.length - 1 && (
                         <IconButton icon={ArrowDown} label="Blok omlaag" onClick={() => moveBlockDown(block.id)} size={16} />
                       )}
                       {/* Delete sits apart at the bottom, behind a divider, to avoid mis-clicks. */}

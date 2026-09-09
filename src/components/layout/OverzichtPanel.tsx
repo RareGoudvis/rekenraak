@@ -85,6 +85,9 @@ export default function OverzichtPanel() {
                                     {typeLabel(block.typeId, block.instructionText)}
                                     {block.locked && <Lock size={11} style={{ marginLeft: 4, verticalAlign: 'middle', color: 'var(--accent-purple)' }} />}
                                 </span>
+                                {block.instructionText && (
+                                    <span style={S.instrLabel}>{block.instructionText}</span>
+                                )}
                                 <span style={S.metaLabel}>
                                     {DOMAIN_BY_TYPE[block.typeId]?.label ?? 'Bladonderdeel'}
                                     {' · '}{block.numberOfExercises || 0} opg.
@@ -92,8 +95,8 @@ export default function OverzichtPanel() {
                                 </span>
                             </span>
                             <span style={S.rowActions} onClick={(e) => e.stopPropagation()}>
-                                <button style={S.iconBtn} title="Dupliceren" onClick={() => duplicateBlock(block.id)}><Copy size={14} /></button>
-                                <button style={{ ...S.iconBtn, color: 'var(--danger, #e11d48)' }} title="Verwijderen" onClick={() => removeBlock(block.id)}><Trash size={14} /></button>
+                                <button style={S.iconBtn} title="Dupliceren" aria-label="Blok dupliceren" onClick={() => duplicateBlock(block.id)}><Copy size={14} /></button>
+                                <button style={{ ...S.iconBtn, color: 'var(--danger)' }} title="Verwijderen" aria-label="Blok verwijderen" onClick={() => removeBlock(block.id)}><Trash size={14} /></button>
                             </span>
                         </div>
                     </div>
@@ -120,6 +123,12 @@ const S = {
     row: { display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid transparent', background: 'var(--bg-surface-2)' } as React.CSSProperties,
     // Domain rail, same tint as the sidebar's — the outline reads back against the
     // list it was built from. Layout blocks have no domain, so they get a plain edge.
+    // The instruction as it is printed on the sheet, so a row can be matched to the page
+    // by its heading as well as by its number.
+    instrLabel: {
+        fontSize: 'var(--text-xs)', color: 'var(--text-main)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    } as React.CSSProperties,
     rowRail: (name?: string): React.CSSProperties => ({
         borderLeft: `3px solid ${name ? `var(--domain-${name}-line)` : 'var(--separator)'}`,
     }),
