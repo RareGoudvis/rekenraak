@@ -2,6 +2,7 @@ import type { MathBlock, SchattendExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -13,6 +14,7 @@ const SOL = '#e11d48';
 const OP_GLYPH: Record<string, string> = { '+': '+', '-': '−', 'x': '×', ':': ':' };
 
 export default function SchattendViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: SchattendExercise[] = block.schattendExercises || [];
     const numberType: string = block.constraints.numberType ?? 'natural';
     const scaffolding: string = block.constraints.scaffolding ?? 'tussenstappen';
@@ -29,7 +31,7 @@ export default function SchattendViewer({ block, showSolutions }: Props) {
 
     return (
         <FragmentableGrid
-            cols={scaffolding === 'tussenstappen' ? 1 : 2}
+            cols={scaffolding === 'tussenstappen' ? 1 : fitCols(availableWidth, 250, 2)}
             columnGap={24}
             rowGap={gap}
             items={exercises.map(ex => {

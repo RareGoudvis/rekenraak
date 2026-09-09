@@ -4,7 +4,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { useBlockWidth } from './BlockWidthContext';
+import { FULL_BLOCK_WIDTH_PX, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -126,7 +126,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // narrower operator gap — so the freed width goes to the work line instead. The wide
     // sizing stays everywhere else, where column alignment matters more than writing room.
     const compactCellPx = Math.max(46, Math.ceil(maxChars * CHAR_PX) + 6);
-    const COMPACT_OP_GAP = 16;
+    // 26, not 16: both operand cells are right-aligned, so a full-width number butts
+    // straight against the operator unless the span carries its own padding either side.
+    const COMPACT_OP_GAP = 26;
     const steppedRowMin = maxTerms * compactCellPx + (maxTerms - 1) * COMPACT_OP_GAP
         + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx;
     // Keep the classic 2-up look as long as two rows fit with at least a 20px gap;
@@ -148,8 +150,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // Centring a stepped row would collapse its flex:1 workline — only the
     // intrinsically-sized inline-short rows get centred inside their column.
     const colJustify = gridCols === 2 && isInlineShort ? 'center' : 'stretch';
-    const effCellPx = twoUpStepped ? compactCellPx : cellPx;
-    const effOpGap = twoUpStepped ? COMPACT_OP_GAP : (maxTerms > 2 ? 20 : 26);
+    // In a narrow cell the classic 85px operand columns and 26px operator gaps eat the
+    // width the ANSWER line needs. A worksheet exists so pupils can write on it, so the
+    // operands tighten and the writing line keeps the space instead.
+    const isNarrow = A4_CONTENT_PX < FULL_BLOCK_WIDTH_PX - 20;
+    const compact = twoUpStepped || isNarrow;
+    const effCellPx = compact ? compactCellPx : cellPx;
+    const effOpGap = compact ? COMPACT_OP_GAP : (maxTerms > 2 ? 20 : 26);
     return (
         <FragmentableGrid
             cols={gridCols}
@@ -219,8 +226,15 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         <div style={{ display: 'flex', alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
                             {ex.operands.map((operand, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-                                    {i > 0 && <span style={{ width: `${effOpGap}px`, textAlign: 'center', flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
-                                    <div style={{ width: cellW, display: 'flex', justifyContent: i === 0 ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
+                                    {/* Symmetric padding: operand 1 is flush against this span's left
+                                        edge and operand 2 against its right, so equal padding is what
+                                        makes the air around the symbol equal. Centring alone does not,
+                                        since a full-width number leaves no slack of its own. */}
+                                    {i > 0 && <span style={{ width: `${effOpGap}px`, minWidth: `${effOpGap}px`, boxSizing: 'border-box', padding: '0 6px', textAlign: 'center', flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
+                                    {/* Both operand cells are right-aligned so the DIGITS line up down the
+                                        column: 73 sits under the 14 of 114, not against the operator.
+                                        Multi-term chains use auto-width cells, so alignment is moot there. */}
+                                    <div style={{ width: cellW, display: 'flex', justifyContent: multi ? 'flex-start' : 'flex-end', alignItems: 'center' }}>
                                         {renderTerm(operand, isMissing(i), block.id, ex.id, i)}
                                     </div>
                                 </div>

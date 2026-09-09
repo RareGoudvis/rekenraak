@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import type { RepKind } from '../../services/vergelijken/representations';
 import RepValue from './RepValue';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -13,6 +14,7 @@ const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
 
 export default function VergelijkenViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: VergelijkenExercise[] = block.vergelijkenExercises || [];
     const subType: string = block.constraints.subType ?? 'getallen';
     const gap = block.verticalSpacing || 14;
@@ -63,7 +65,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
         const hasWoorden = leftRep === 'woorden' || rightRep === 'woorden';
         return (
             <FragmentableGrid
-                cols={hasWoorden ? 1 : 2}
+                cols={hasWoorden ? 1 : fitCols(availableWidth, 230, 2)}
                 columnGap={24}
                 rowGap={gap + 4}
                 items={exercises.map(ex => {

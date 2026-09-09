@@ -1,6 +1,7 @@
 import type { MathBlock } from '../../services/math/types';
 import ClockExerciseItem from './ClockExerciseItem';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -10,6 +11,7 @@ interface Props {
 // Wrapper so the registry can mount a uniform {block, showSolutions} viewer.
 // 3-column grid, chunked into break-safe rows so it flows across page breaks.
 export default function ClockViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises = block.clockExercises || [];
     const gap = block.verticalSpacing || 14;
     if (exercises.length === 0) {
@@ -17,7 +19,7 @@ export default function ClockViewer({ block, showSolutions }: Props) {
     }
     return (
         <FragmentableGrid
-            cols={3}
+            cols={fitCols(availableWidth, 150, 3)}
             columnGap={gap}
             rowGap={gap}
             items={exercises.map((ex) => <ClockExerciseItem key={ex.id} ex={ex} block={block} showSolutions={showSolutions} />)}

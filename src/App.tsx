@@ -194,7 +194,7 @@ export default function App() {
   // Without this the viewers keep assuming a full-width 625px and lay out grids that
   // overflow their cell — the exact failure phase B exists to prevent.
   const cellWidthPx = (units: number) => {
-    const CONTENT = 674;                       // 794 - 2 * 16mm at 96dpi
+    const CONTENT = 688;                       // 794 - 2 * 53px page padding
     const gap = docSettings.blockSpacing ?? 12;
     const unit = (CONTENT - 5 * gap) / 6;      // 6 units, 5 gaps between them
     return Math.floor(unit * units + gap * (units - 1));

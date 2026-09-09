@@ -1,6 +1,7 @@
 import type { MathBlock, EvenOnevenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -11,6 +12,7 @@ const mono = "'Azeret Mono', monospace";
 const FILL = '#93c5fd';
 
 export default function EvenOnevenViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: EvenOnevenExercise[] = block.evenOnevenExercises || [];
     const subType: string = block.constraints.subType ?? 'rooster';
     const target: string = block.constraints.target ?? 'even';
@@ -27,7 +29,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
         const objSize = 22, gapPx = 4;
         return (
             <FragmentableGrid
-                cols={2}
+                cols={fitCols(availableWidth, 260, 2)}
                 columnGap={24}
                 rowGap={gap + 6}
                 items={exercises.map(ex => {

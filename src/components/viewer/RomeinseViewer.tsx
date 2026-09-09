@@ -1,6 +1,7 @@
 import type { MathBlock, RomeinseExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -11,6 +12,7 @@ const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
 
 export default function RomeinseViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: RomeinseExercise[] = block.romeinseExercises || [];
     const subType: string = block.constraints.subType ?? 'herkennen';
     const gap = block.verticalSpacing || 14;
@@ -33,7 +35,7 @@ export default function RomeinseViewer({ block, showSolutions }: Props) {
 
     return (
         <FragmentableGrid
-            cols={2}
+            cols={fitCols(availableWidth, 250, 2)}
             columnGap={28}
             rowGap={gap + 2}
             items={exercises.map(ex => {

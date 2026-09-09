@@ -30,6 +30,10 @@ interface LayoutFacts {
     rowUnits: number;
     perRowFull: number;
     minWidth: WidthUnits;
+    // Some types need the full width only because several items sit side by side. With a
+    // single exercise there is nothing to sit beside, so they can go narrower — MAB is the
+    // clear case: one place-value drawing fits a half, four do not.
+    minWidthSingle?: WidthUnits;
 }
 
 const LAYOUT: Record<string, LayoutFacts> = {
@@ -46,7 +50,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "deelbaarheid": { rowUnits: 2.67, perRowFull: 1, minWidth: 6 },
     "deelbaarheid-kleuren": { rowUnits: 13.04, perRowFull: 1, minWidth: 6 },
     "even-oneven": { rowUnits: 4.04, perRowFull: 2, minWidth: 6 },
-    "geld-herkennen": { rowUnits: 6.67, perRowFull: 4, minWidth: 6 },
+    "geld-herkennen": { rowUnits: 6.67, perRowFull: 4, minWidth: 2 },
     "geld-rekenen": { rowUnits: 1.42, perRowFull: 1, minWidth: 6 },
     "geld-tekenen": { rowUnits: 5.67, perRowFull: 4, minWidth: 6 },
     "geld-teruggeven": { rowUnits: 2.4, perRowFull: 2, minWidth: 6 },
@@ -54,7 +58,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "getalfunctie": { rowUnits: 1.33, perRowFull: 1, minWidth: 6 },
     "getallenas": { rowUnits: 4.67, perRowFull: 1, minWidth: 6 },
     "getallenrijen": { rowUnits: 3.25, perRowFull: 1, minWidth: 6 },
-    "getalpatronen": { rowUnits: 1.75, perRowFull: 1, minWidth: 6 },
+    "getalpatronen": { rowUnits: 1.75, perRowFull: 1, minWidth: 3 },
     "herleidingen": { rowUnits: 1.5, perRowFull: 2, minWidth: 6 },
     "hr-std-aftrekken": { rowUnits: 2, perRowFull: 1, minWidth: 3 },
     "hr-std-delen": { rowUnits: 2, perRowFull: 1, minWidth: 2 },
@@ -62,21 +66,21 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "hr-std-vermenigvuldigen": { rowUnits: 2, perRowFull: 1, minWidth: 2 },
     "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 6 },
     "kettingsommen": { rowUnits: 1.75, perRowFull: 1, minWidth: 3 },
-    "klok-kloklezen": { rowUnits: 7.33, perRowFull: 2.7, minWidth: 6 },
+    "klok-kloklezen": { rowUnits: 7.33, perRowFull: 2.7, minWidth: 2 },
     "lengte-meten": { rowUnits: 5.5, perRowFull: 1, minWidth: 6 },
     "maateenheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 2 },
-    "mab-herkennen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6 },
-    "mab-tekenen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6 },
+    "mab-herkennen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6, minWidthSingle: 3 },
+    "mab-tekenen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6, minWidthSingle: 3 },
     "omtrek": { rowUnits: 21.78, perRowFull: 1, minWidth: 6 },
     "oppervlakte": { rowUnits: 18.42, perRowFull: 1, minWidth: 6 },
     "ordenen": { rowUnits: 3.63, perRowFull: 2, minWidth: 3 },
-    "plaatswaarde": { rowUnits: 3.58, perRowFull: 2, minWidth: 6 },
+    "plaatswaarde": { rowUnits: 3.58, perRowFull: 2, minWidth: 3 },
     "procenten": { rowUnits: 1.38, perRowFull: 2, minWidth: 3 },
     "rekenvolgorde": { rowUnits: 1.38, perRowFull: 2, minWidth: 6 },
-    "romeinse-cijfers": { rowUnits: 1.58, perRowFull: 2, minWidth: 6 },
+    "romeinse-cijfers": { rowUnits: 1.58, perRowFull: 2, minWidth: 3 },
     "schattend": { rowUnits: 1.38, perRowFull: 1, minWidth: 6 },
     "splitsen": { rowUnits: 6.63, perRowFull: 4, minWidth: 3 },
-    "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 6 },
+    "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 2 },
     "tijdsduur": { rowUnits: 1.42, perRowFull: 1, minWidth: 6 },
     "verbanden": { rowUnits: 1.81, perRowFull: 2, minWidth: 6 },
     "vergelijken": { rowUnits: 2.17, perRowFull: 2, minWidth: 6 },
@@ -121,7 +125,11 @@ export function perRow(block: MathBlock, width: WidthUnits): number {
 // function, not a constant: hoofdrekenen fits a third at "tot 100" but needs the full
 // width at a million, which is exactly what the operand-width fix taught us.
 export function minWidthUnits(block: MathBlock): WidthUnits {
-    const base = layoutFacts(block.typeId).minWidth;
+    const facts = layoutFacts(block.typeId);
+    // A single exercise has no neighbours to fit beside it, so a type that only needs the
+    // full width for a ROW of items can go narrower when there is just one.
+    const single = (block.numberOfExercises ?? 0) <= 1 && facts.minWidthSingle;
+    const base = single ? facts.minWidthSingle! : facts.minWidth;
     if (base === 6) return 6;
 
     const c = (block.constraints ?? {}) as Record<string, unknown>;

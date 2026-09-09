@@ -3,7 +3,7 @@ import type { MathBlock, PlaatswaardeExercise } from '../../services/math/types'
 import { getMaskPlaces, digitAtPlace } from '../../services/math/mathEngine';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -94,7 +94,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     // ── WAARDE / PLAATS: underline a digit, write its value or its place name ──
     return (
         <FragmentableGrid
-            cols={2}
+            cols={fitCols(availableWidth, 260, 2)}
             columnGap={24}
             rowGap={gap}
             items={exercises.map(ex => {

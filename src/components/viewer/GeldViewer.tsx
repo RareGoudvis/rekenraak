@@ -1,6 +1,7 @@
 import type { MathBlock, GeldExercise, GeldDenomination } from '../../services/math/types';
 import { DENOMINATION_CATALOGUE, formatAmount, denominationLabel } from '../../services/geld/geldGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
 
 // ── SVG helpers (print-friendly: white fill, black outline, no colour) ────────
 
@@ -143,6 +144,7 @@ function HerkennenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
 export default function GeldViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: GeldExercise[] = block.geldExercises || [];
     const gap: number = block.verticalSpacing || 14;
     const allowedDenominations: number[] = block.constraints.allowedDenominations ?? [];
@@ -161,7 +163,7 @@ export default function GeldViewer({ block, showSolutions }: Props) {
                 <VoorbeeldenBar allowedDenominations={allowedDenominations} voorbeeldTypes={voorbeeldTypes} />
             )}
             <FragmentableGrid
-                cols={perRow}
+                cols={fitCols(availableWidth, 150, perRow)}
                 columnGap={gap}
                 rowGap={gap}
                 alignItems="stretch"

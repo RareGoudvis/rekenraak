@@ -66,14 +66,14 @@
   position: absolute; top: -20px; left: 2px;
   font-size: 11px; color: var(--text-muted); user-select: none;
 }
-.page-sheet-head { padding: 34px 60px 0; flex: none; }
+.page-sheet-head { padding: 34px 53px 0; flex: none; }
 .page-sheet-body {
-  flex: 1; min-height: 0; padding: 0 60px;
+  flex: 1; min-height: 0; padding: 0 53px;
   display: grid; grid-template-columns: repeat(6, 1fr); align-content: start;
   /* Clipped on screen exactly as it will be on paper, so what you see is what prints. */
   overflow: hidden;
 }
-.page-sheet-foot { flex: none; padding: 8px 60px 26px; }
+.page-sheet-foot { flex: none; padding: 8px 53px 26px; }
 /* Three slots: the left one always carries the credit, the other two are the teacher's. */
 .page-sheet-foot .print-tfoot-inner {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
@@ -87,7 +87,7 @@
 /* Budgeted heights can be wrong; when they are, the page says so instead of clipping. */
 .page-sheet.page-overflow { outline: 2px solid var(--danger); outline-offset: 0; }
 .page-sheet-warn {
-  position: absolute; left: 60px; right: 60px; bottom: 6px; z-index: 6;
+  position: absolute; left: 53px; right: 53px; bottom: 6px; z-index: 6;
   display: flex; align-items: center; gap: var(--sp-2);
   padding: 6px 10px; border-radius: var(--radius-sm);
   background: var(--danger); color: #fff;
@@ -495,9 +495,10 @@ textarea:focus-visible,
   .page-sheet:last-of-type { break-after: auto; }
   /* 16mm side margins live here now, not in @page — the dialog's margin setting silently
      overrides @page, so the margins have to come from the content box. */
-  .page-sheet-head { padding: 16mm 16mm 0 !important; }
-  .page-sheet-body { padding: 0 16mm !important; }
-  .page-sheet-foot { padding: 4mm 16mm 8mm !important; }
+  /* Only the SIDE margins moved to 14mm (15mm to the ink); the top stays 16mm. */
+  .page-sheet-head { padding: 16mm 14mm 0 !important; }
+  .page-sheet-body { padding: 0 14mm !important; }
+  .page-sheet-foot { padding: 4mm 14mm 8mm !important; }
   .page-sheet-tag, .page-sheet-warn { display: none !important; }
 
   /* Sets may split across pages freely. */

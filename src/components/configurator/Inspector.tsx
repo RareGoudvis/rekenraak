@@ -29,7 +29,6 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const staleBlocks = useWorksheetStore((state) => state.staleBlocks);
     const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
     const [advancedOpen, setAdvancedOpen] = useState(false);
-    const [blockAdvancedOpen, setBlockAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
     const [hoveredField, setHoveredField] = useState<HeaderField | null>(null);
 
@@ -388,18 +387,12 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 );
                             })()}
 
-                            {/* Fine-tuning (spacing + per-block text size) tucked behind a
-                                disclosure so the common controls stay short. */}
+                            {/* Spacing and per-block text size are shown outright: the Weergave
+                                tab exists for exactly these, so a disclosure inside it would
+                                hide them behind a second click for no reason. */}
                             {!locked && (
                                 <>
-                                    <button
-                                        onClick={() => setBlockAdvancedOpen(o => !o)}
-                                        style={{ ...S.label, marginTop: '14px', display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
-                                    >
-                                        Geavanceerd <span style={{ fontSize: '10px' }}>{blockAdvancedOpen ? '▾' : '▸'}</span>
-                                    </button>
-
-                                    {blockAdvancedOpen && (
+                                    {(
                                         <>
                                             {!activeBlock.typeId.startsWith('cijferen-') && (
                                                 <>
