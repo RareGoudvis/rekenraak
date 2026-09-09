@@ -16,3 +16,17 @@ export const formatMathNumber = (num: number | string | undefined): string => {
     }
     return formattedInteger;
 };
+/**
+ * Printed glyphs for the four operators. Display only — the stored operator stays
+ * ASCII ('+' | '-' | 'x' | ':'), so nothing that parses or compares an operator has
+ * to know about these.
+ *
+ * '-' becomes a real minus (U+2212), not a hyphen. Safe for column alignment: Azeret
+ * Mono is monospace and both glyphs carry the same 650-unit advance, and U+2212 is in
+ * the bundled latin subset, so it never falls back to another face.
+ *
+ * 'x' becomes '×' and ':' stays ':' — Flemish primary school writes multiplication as
+ * a cross (never a middle dot, which arrives later) and division as a colon.
+ */
+export const OP_GLYPH: Record<string, string> = { '+': '+', '-': '−', 'x': '×', ':': ':' };
+export const opGlyph = (op: string): string => OP_GLYPH[op] ?? op;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
 import { useBlockWidth } from './BlockWidthContext';
+import { opGlyph } from '../../services/math/formatters';
 
 const GRID_COLOR = '#aaaaaa';
 const SOL_COLOR = '#e11d48';
@@ -231,7 +232,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
 
             {/* Operator sign */}
             {scaffolding <= 2 && (
-                <DC col={0} row={lastOperandRow} char={ex.operator} CELL={CELL} />
+                <DC col={0} row={lastOperandRow} char={opGlyph(ex.operator)} CELL={CELL} />
             )}
 
             {/* Level 1: pre-filled operands */}

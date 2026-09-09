@@ -1,6 +1,7 @@
 import type { MathBlock, PatroonExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { OP_GLYPH as SYM } from '../../services/math/formatters';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,6 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
-const SYM: Record<string, string> = { '+': '+', '-': '−', x: '×', ':': ':' };
 
 export default function PatroonViewer({ block, showSolutions }: Props) {
     const exercises: PatroonExercise[] = block.patroonExercises || [];

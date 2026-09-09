@@ -2,6 +2,7 @@ import type { MathBlock, ControleExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import { negenrest } from '../../services/controleren/controlerenGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import { OP_GLYPH as GLYPH } from '../../services/math/formatters';
 
 interface Props {
     block: MathBlock;
@@ -10,7 +11,6 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
-const GLYPH: Record<string, string> = { '+': '+', '-': '−', 'x': '×' };
 const INVERSE: Record<string, string> = { '+': '−', '-': '+' };
 
 // Negenproef-kruis: rests of the factors top/bottom, product-of-rests' rest left,

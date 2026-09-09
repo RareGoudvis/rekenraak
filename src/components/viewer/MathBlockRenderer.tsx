@@ -1,6 +1,6 @@
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { isFraction } from '../../services/math/types';
-import { formatMathNumber } from '../../services/math/formatters';
+import { formatMathNumber, opGlyph as printedOp } from '../../services/math/formatters';
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
@@ -195,7 +195,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     ex.missingIndex !== undefined ? ex.missingIndex === i
                         : (ex.missingTerm === 'operand1' && i === 0) || (ex.missingTerm === 'operand2' && i === 1);
                 const anyMissing = ex.operands.some((_, i) => isMissing(i));
-                const opGlyph = (gap: number) => ex.operators?.[gap] ?? ex.operator ?? '+';
+                const opGlyph = (gap: number) => printedOp(ex.operators?.[gap] ?? ex.operator ?? '+');
                 const multi = ex.operands.length > 2;
                 // 2-term keeps fixed columns (aligned worksheets) sized to the block's
                 // widest operand; longer chains use compact auto-width cells.

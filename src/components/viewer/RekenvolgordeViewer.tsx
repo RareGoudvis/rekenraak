@@ -1,6 +1,7 @@
 import type { MathBlock, RekenvolgordeExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { OP_GLYPH } from '../../services/math/formatters';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,8 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
-const GLYPH: Record<string, string> = { '+': '+', '-': '−', 'x': '×', ':': ':', '(': '(', ')': ')' };
+// Same operator glyphs as everywhere else, plus the brackets this viewer alone prints.
+const GLYPH: Record<string, string> = { ...OP_GLYPH, '(': '(', ')': ')' };
 
 export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     const exercises: RekenvolgordeExercise[] = block.rekenvolgordeExercises || [];

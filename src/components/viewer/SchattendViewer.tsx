@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { OP_GLYPH } from '../../services/math/formatters';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,6 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SOL = '#e11d48';
-const OP_GLYPH: Record<string, string> = { '+': '+', '-': '−', 'x': '×', ':': ':' };
 
 export default function SchattendViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
