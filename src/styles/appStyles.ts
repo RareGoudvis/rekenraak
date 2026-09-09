@@ -19,14 +19,20 @@ export const styles = {
   // fill + a clean 1px accent ring, not a dashed outline. The #e5e5e5 inter-block
   // divider is left intact — it lives on the white sheet and prints.
   blockContainer: (isActive: boolean, isNotLastBlock: boolean, showDividers: boolean = true, blockSpacing: number = 12): React.CSSProperties => ({
-    padding: '16px', position: 'relative', cursor: 'pointer', borderRadius: 'var(--radius-md)', boxSizing: 'border-box', margin: '4px', marginBottom: `${blockSpacing}px`, transition: 'box-shadow var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out)',
+    // Vertical padding only, no horizontal inset: an opdracht kader has to line up with
+    // the koptekst and voettekst kaders, which sit on the page's 53px content edge. The
+    // old 16px padding + 4px margin + 1px border pushed it 21px in on each side.
+    // It also makes cellWidthPx() honest — it always returned the full cell width.
+    padding: '16px 0', position: 'relative', cursor: 'pointer', borderRadius: 'var(--radius-md)', boxSizing: 'border-box', margin: '4px 0', marginBottom: `${blockSpacing}px`, transition: 'box-shadow var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out)',
     // All four sides as longhand (not `border` shorthand) so toggling only the
     // bottom divider never trips React's shorthand/longhand mix warning.
     borderTop: '1px solid transparent',
-    borderLeft: '1px solid transparent',
-    borderRight: '1px solid transparent',
+    borderLeft: '0 solid transparent',
+    borderRight: '0 solid transparent',
     borderBottom: !isActive && isNotLastBlock && showDividers ? '1px solid #e5e5e5' : '1px solid transparent',
-    boxShadow: isActive ? '0 0 0 1.5px var(--accent)' : 'none',
+    // Inset, not outset: flush with the content edge, an outside ring would be clipped
+    // by .page-sheet-body's overflow:hidden.
+    boxShadow: isActive ? 'inset 0 0 0 1.5px var(--accent)' : 'none',
     backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
   }),
   // paddingLeft (not marginLeft) keeps the controls' hit area touching the block's right edge —
