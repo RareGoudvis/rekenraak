@@ -99,7 +99,7 @@ export default function StyleBuilderModal({ onClose }: { onClose: () => void }) 
                             </Field>
 
                             {/* Lijnen (Geen/Onderstreept/Kader) + uitlijning/positie staan in het
-                                Instellingen-tab (Koptekst-/Opdracht-stijl, Titel positie) — hier niet dubbel. */}
+                                rechterpaneel (Koptekst-/Opdracht-stijl, Titel positie) — hier niet dubbel. */}
 
                             {/* Footer side-padding is the print margin — only header/titel expose padding. */}
                             {region !== 'footer' && (

@@ -31,7 +31,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Genereer oefeningen via het paneel links)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     const blank = (w = 80) => <span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: '18px', display: 'inline-block', verticalAlign: 'bottom' }} />;

@@ -33,7 +33,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
     const isRooster = subType === 'rooster';
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Genereer oefeningen via het paneel links)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     const blank = (sol: string | null, width = 56) => sol !== null

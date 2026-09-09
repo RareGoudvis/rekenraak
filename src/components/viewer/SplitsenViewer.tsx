@@ -21,7 +21,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     if (exercises.length === 0) {
         return (
             <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>
-                (Genereer oefeningen via het paneel links)
+                (Nog geen oefeningen — klik Genereer)
             </div>
         );
     }

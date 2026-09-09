@@ -29,7 +29,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     const targets = cols.length ? cols : [all[0]];
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Genereer oefeningen via het paneel links)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     // ── SIMPEL: getal ≈ ____ (op <plaats>) — aligned column ───────────────────

@@ -9,7 +9,6 @@ import ExercisePreview from '../shared/ExercisePreview';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 import PopupSelect from '../ui/PopupSelect';
 import OverzichtPanel from './OverzichtPanel';
-import Inspector from '../configurator/Inspector';
 
 // Walk the domain tree keeping only entries whose label matches the search needle.
 // A parent survives when any of its descendants match. Returns the filtered tree.
@@ -116,17 +115,7 @@ export default function Sidebar() {
     // Multiple type-accordions can be open at once — opening a subdomain expands them all.
     const [openTypes, setOpenTypes] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState('');
-    const [tab, setTab] = useState<'oefeningen' | 'instellingen' | 'overzicht'>('oefeningen');
-
-    // Selecting a block lands you on its settings; deselecting hands the palette back.
-    // Adjusted during render (React's documented pattern) rather than in an effect, which
-    // would cascade an extra render on every selection.
-    const activeBlockId = useWorksheetStore((state) => state.activeBlockId);
-    const [seenBlockId, setSeenBlockId] = useState(activeBlockId);
-    if (activeBlockId !== seenBlockId) {
-        setSeenBlockId(activeBlockId);
-        setTab(activeBlockId ? 'instellingen' : 'oefeningen');
-    }
+    const [tab, setTab] = useState<'oefeningen' | 'overzicht'>('oefeningen');
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(
@@ -160,11 +149,10 @@ export default function Sidebar() {
                 lives in the full-width topbar, so the sidebar starts straight at the tabs. */}
             <div className="seg-group" style={{ ...S.tabSwitch, marginTop: 'var(--sp-3)' }}>
                 <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => setTab('oefeningen')}>Oefeningen</button>
-                <button className="seg-btn" aria-pressed={tab === 'instellingen'} onClick={() => setTab('instellingen')}>Instellingen</button>
                 <button className="seg-btn" aria-pressed={tab === 'overzicht'} onClick={() => setTab('overzicht')} data-tour="overzicht-tab">Overzicht</button>
             </div>
 
-            {tab === 'instellingen' ? <Inspector embedded /> : tab === 'overzicht' ? <OverzichtPanel /> : (<>
+            {tab === 'overzicht' ? <OverzichtPanel /> : (<>
 
             {locked && (
                 <div style={S.lockedPalette}>
@@ -349,7 +337,7 @@ export default function Sidebar() {
 
 
 const S = {
-    aside: { width: '360px', minWidth: '360px', borderRight: '1px solid var(--separator)', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
+    aside: { width: '286px', minWidth: '286px', borderRight: '1px solid var(--separator)', height: '100%', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
     headerCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-3) var(--sp-4)', color: 'var(--text-main)' } as React.CSSProperties,
     // Negative margin so the hover fill pads the wordmark without nudging it.
     logoBtn: { background: 'transparent', border: 'none', padding: '2px 4px', margin: '-2px -4px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex' } as React.CSSProperties,

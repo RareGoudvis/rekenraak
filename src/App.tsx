@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
+import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
-import PanelShell from './components/layout/PanelShell';
 import { EXERCISE_UI } from './config/exerciseUI';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
 import MijnBladenView from './components/library/MijnBladenView';
@@ -56,6 +56,26 @@ function EditableInstruction({ block, prefix }: { block: MathBlock; prefix: stri
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
+  // Sheet zoom-to-fit. The panels no longer collapse, so on a narrow laptop the sheet is
+  // what gives way: it scales down to whatever width is left instead of hiding a panel.
+  // Floored at 55% — below that the preview stops being readable and shrinking further
+  // would trade one unusable state for another.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [sheetZoom, setSheetZoom] = useState(1);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const SHEET_PX = 920;      // .print-area-shell maxWidth
+    const SIDE_PAD = 96;       // .print-scroll horizontal padding
+    const fit = () => {
+      const avail = el.clientWidth - SIDE_PAD;
+      setSheetZoom(Math.max(0.55, Math.min(1, avail / SHEET_PX)));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [pageBreaks, setPageBreaks] = useState<number[]>([]);
   const { handlePrint } = usePrint();
 
@@ -202,8 +222,12 @@ export default function App() {
       </div>
 
       <div className="print-body-row" style={styles.appBody}>
-      {/* LEFT PANEL — palette, block settings and outline in one panel (PanelShell) */}
-      <PanelShell side="left" label="Werkblad"><Sidebar /></PanelShell>
+      {/* LEFT — the exercise palette. Panels no longer collapse to a hover flyout below
+          1800px: teachers on 14" laptops got stuck in it even with the pin, so the sheet
+          absorbs a narrow window by zooming instead (see sheetZoom above). */}
+      <div className="no-print" style={{ display: 'flex', height: '100%', flex: '0 0 auto' }}>
+        <Sidebar />
+      </div>
 
       {/* CENTRAL WORK AREA */}
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
@@ -211,12 +235,12 @@ export default function App() {
         {/* Scroll container holds the banners + sheet (the topbar is now a sibling above).
             Padding ≥ the sheet's shadow reach (--shadow-3 = 48px blur): overflowY:auto forces
             overflow-x to compute as auto too, so without this the side/bottom shadow is clipped. */}
-        <div className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 48px 48px' }}>
+        <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 48px 48px' }}>
 
         {releaseBannerVisible && (
           <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
             <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
-            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het aan onder Instellingen en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
+            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het rechts aan en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
             <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
           </div>
         )}
@@ -229,7 +253,7 @@ export default function App() {
           </div>
         )}
 
-        <div ref={a4Ref} className="print-area-shell" style={styles.a4Sheet}>
+        <div ref={a4Ref} className="print-area-shell" style={{ ...styles.a4Sheet, zoom: sheetZoom }}>
           {/* Real <table> markup: Chrome only repeats <thead>/<tfoot> across printed pages
               for true table elements, not for div-based display:table-*-group. */}
           <table className={`print-area${headerData?.repeatHeader ? ' repeat-header' : ''}`}>
@@ -472,6 +496,11 @@ export default function App() {
         </div>
       </main>
 
+      {/* RIGHT — block settings. Always visible, like the palette: hiding either one is
+          what got teachers stuck. */}
+      <div className="no-print" style={{ display: 'flex', height: '100%', flex: '0 0 auto' }}>
+        <Inspector />
+      </div>
 
       </div>
     </div>
