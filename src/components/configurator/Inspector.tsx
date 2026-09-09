@@ -25,6 +25,7 @@ const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string
 };
 
 export default function Inspector({ embedded = false }: { embedded?: boolean } = {}) {
+    const [tab, setTab] = useState<'blad' | 'weergave' | 'oefening'>('weergave');
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [blockAdvancedOpen, setBlockAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
@@ -53,10 +54,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
         regenerateBlock(activeBlock, setExercises);
     };
 
-    // No block selected or document → document settings
-    if (!activeBlock) {
-        return (
-            <aside data-tour="inspector" style={rootStyle}>
+    // Document ("Blad") settings. Always reachable from its own tab rather than only by
+    // deselecting — a teacher who never deselects never discovered they existed.
+    const docContent = (
+            <>
 
                 {/* ── Werkbundel instellingen ── */}
                 <div style={S.card}>
@@ -275,26 +276,26 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         })}
                     </div>
                 </div>
-            </aside>
-        );
-    }
+            </>
+    );
 
-    const c = activeBlock.constraints;
+    const c = activeBlock?.constraints ?? {};
     // subType-keyed Differentiatie blocks below are fraction-only; scope to 'breuken'
     // so e.g. romeinse-cijfers (subType 'herkennen') doesn't inherit fraction scaffolding.
-    const subType: string = activeBlock.typeId === 'breuken' ? (c.subType ?? '') : '';
+    const subType: string = activeBlock?.typeId === 'breuken' ? (c.subType ?? '') : '';
     const updateConstraint = (key: string, value: unknown) =>
-        updateBlockSettings(activeBlock.id, { constraints: { ...c, [key]: value } });
+        activeBlock && updateBlockSettings(activeBlock.id, { constraints: { ...c, [key]: value } });
 
-    return (
-        <aside data-tour="inspector" style={rootStyle}>
-
+    const blockContent = !activeBlock ? null : (
+        <>
             {locked && (
                 <div style={S.lockBanner}>
                     🔒 Vergrendeld curriculum — je kan enkel het aantal aanpassen en opnieuw genereren.
                 </div>
             )}
 
+            {/* ── Weergave: how the block looks on the sheet ── */}
+            {tab === 'weergave' && (<>
             {/* ── 1. Opdrachtblok ── */}
             {(() => {
                 // Sheet furniture has no exercises, so instruction/score/aantal do not apply.
@@ -447,6 +448,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 );
             })()}
 
+            </>)}
+
+            {/* ── Oefening: what the block generates ── */}
+            {tab === 'oefening' && (<>
             {/* ── 2. Oefeningen — exercise-type settings + the Genereer CTA (shared
                    primary IconButton); same card chrome as every other section. ── */}
             <div style={S.card}>
@@ -1160,6 +1165,36 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     )}
                 </div>
             )}
+            </>)}
+        </>
+    );
+
+    // Blad is always available; the two block tabs need a selection. Weergave holds how the
+    // block LOOKS, Oefening holds what it generates — the split you cannot make while one
+    // panel is a single scroll of everything.
+    const hasBlock = !!activeBlock;
+    const shown = !hasBlock ? 'blad' : tab;
+    const TABS = [
+        { id: 'blad' as const, label: 'Blad', on: true },
+        { id: 'weergave' as const, label: 'Weergave', on: hasBlock },
+        { id: 'oefening' as const, label: 'Oefening', on: hasBlock },
+    ];
+
+    return (
+        <aside data-tour="inspector" style={rootStyle}>
+            <div className="seg-group" style={{ marginBottom: 'var(--sp-2)' }}>
+                {TABS.map(t => (
+                    <button
+                        key={t.id}
+                        className="seg-btn"
+                        aria-pressed={shown === t.id}
+                        disabled={!t.on}
+                        title={t.on ? undefined : 'Kies eerst een blok op het blad'}
+                        onClick={() => setTab(t.id)}
+                    >{t.label}</button>
+                ))}
+            </div>
+            {shown === 'blad' ? docContent : blockContent}
         </aside>
     );
 }
