@@ -45,6 +45,9 @@ export interface DocSettings {
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
     headerStyle: 'geen' | 'onderstreept' | 'kader';
+    // Mirrors headerStyle for the footer. Defaults to 'geen': a rule above the footer
+    // competes with the exercises for attention on a busy sheet.
+    footerStyle?: 'geen' | 'lijn' | 'kader';
     titlePosition: 'left' | 'center' | 'right';
     titleFieldsGap: number;
     headerContentGap: number;
@@ -167,7 +170,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     activeBlockId: null,
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
     footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: false, centerText: '', showCenterText: false },
-    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
+    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
     baseSettings: { ...DEFAULT_BASE },
     selectedGrade: null,
     curriculum: null,

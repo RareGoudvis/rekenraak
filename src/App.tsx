@@ -358,7 +358,15 @@ export default function App() {
         : footerData?.showLeerkracht ? 'leerkracht' : 'leeg');
     const right = rightSlot === 'vrije-tekst' ? (footerData?.rightText ?? '') : footerSlotText(rightSlot, pageIndex, pageCount);
     return (
-            <div className="print-tfoot-inner" style={overlayRegionStyle({}, docSettings.footerCustom)}>
+            <div className="print-tfoot-inner" style={overlayRegionStyle({
+              borderTopStyle: 'solid',
+              borderTopWidth: docSettings.footerStyle === 'kader' ? '1.5px' : '1px',
+              borderTopColor: docSettings.footerStyle === 'lijn' ? '#ccc'
+                : docSettings.footerStyle === 'kader' ? '#000' : 'transparent',
+              ...(docSettings.footerStyle === 'kader'
+                ? { borderStyle: 'solid', borderWidth: '1.5px', borderColor: '#000', padding: '6px 10px', borderRadius: '6px' }
+                : {}),
+            }, docSettings.footerCustom)}>
               <span className="footer-credit">Gemaakt met RekenRaak.be</span>
               <span>{footerSlotText(centerSlot, pageIndex, pageCount)}</span>
               <span>{right}</span>

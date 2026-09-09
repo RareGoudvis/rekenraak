@@ -212,6 +212,14 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 <div style={S.card}>
                     <h4 style={S.cardTitle}>Voettekst</h4>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px' }}>De voettekst staat onderaan elke pagina.</p>
+                    <label style={S.label}>Voettekst stijl</label>
+                    <div className="seg-group" style={{ marginBottom: '12px' }}>
+                        {(['geen', 'lijn', 'kader'] as const).map((v) => (
+                            <button key={v} onClick={() => updateDocSettings({ footerStyle: v })} className="seg-btn" aria-pressed={(docSettings.footerStyle ?? 'geen') === v}>
+                                {v === 'geen' ? 'Geen' : v === 'lijn' ? 'Lijn' : 'Kader'}
+                            </button>
+                        ))}
+                    </div>
                     <div style={S.col}>
                         {/* Left is the RekenRaak credit and is not configurable. */}
                         <label style={S.footerGroupLabel}>Links</label>
