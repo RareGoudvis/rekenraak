@@ -243,6 +243,19 @@ const geldRekenenDefaults = (): Record<string, unknown> => ({
     subType: 'korting', percents: [10, 25, 50], maxEuro: 100, wholeEuros: true, halfYear: false,
 });
 
+// Sheet furniture (section rule, writing lines, squared grid, memory box, blank page).
+// No generator: everything they draw comes from constraints. They still get a registry row
+// so the packer, the width grid and printing treat them like any other block.
+const layoutDefaults = (typeId: string): Record<string, unknown> => {
+    const kind = typeId.replace('layout-', '');
+    if (kind === 'schrijflijnen') return { kind, lineCount: 6, lineSpacing: 10, lineStyle: 'enkel' };
+    if (kind === 'raster') return { kind, cellMm: 10, rows: 8 };
+    if (kind === 'kader') return { kind, title: 'Onthoud', body: '', emphasis: 'kader' };
+    if (kind === 'lege-pagina') return { kind };
+    return { kind: 'sectie', title: '', rule: 'lijn' };
+};
+const noGenerate = () => [];
+
 const rekenvolgordeDefaults = (): Record<string, unknown> => ({
     operators: ['+', '-', 'x'], haakjesMode: 'MAG', opsCount: 2, maxGetal: 100, tableLimit: 10,
 });
@@ -358,6 +371,13 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'geld-rekenen': { exerciseField: 'geldRekenenExercises', generate: generateGeldRekenenExercises, defaultConstraints: geldRekenenDefaults, defaultCount: 5 },
 
     'rekenvolgorde':  { exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10 },
+
+    // ── Blad-onderdelen (no generated content; constraints only) ────────────
+    'layout-sectie':       { exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 },
+    'layout-schrijflijnen':{ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 },
+    'layout-raster':       { exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 },
+    'layout-kader':        { exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 },
+    'layout-lege-pagina':  { exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 },
     'kettingsommen':  { exerciseField: 'patroonExercises',       generate: generateKettingExercises,       defaultConstraints: kettingDefaults,       defaultCount: 6 },
     'getalfunctie':   { exerciseField: 'getalFunctieExercises',  generate: generateGetalFunctieExercises,  defaultConstraints: getalfunctieDefaults,  defaultCount: 6 },
     'tijdsduur':      { exerciseField: 'tijdsduurExercises',     generate: generateTijdsduurExercises,     defaultConstraints: tijdsduurDefaults,     defaultCount: 6 },

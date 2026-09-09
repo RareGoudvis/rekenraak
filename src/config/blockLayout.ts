@@ -29,6 +29,11 @@ interface LayoutFacts {
 }
 
 const LAYOUT: Record<string, LayoutFacts> = {
+    "layout-sectie": { rowUnits: 1, perRowFull: 1, minWidth: 6 },
+    "layout-lege-pagina": { rowUnits: 1, perRowFull: 1, minWidth: 6 },
+    "layout-schrijflijnen": { rowUnits: 1, perRowFull: 1, minWidth: 2 },
+    "layout-raster": { rowUnits: 1, perRowFull: 1, minWidth: 2 },
+    "layout-kader": { rowUnits: 1, perRowFull: 1, minWidth: 2 },
     "afronden": { rowUnits: 10.17, perRowFull: 2, minWidth: 3 },
     "breuken": { rowUnits: 7, perRowFull: 2, minWidth: 3 },
     "breuken-bewerken": { rowUnits: 2.43, perRowFull: 2, minWidth: 3 },
@@ -130,7 +135,40 @@ export function minWidthUnits(block: MathBlock): WidthUnits {
 }
 
 // Budgeted height of a block at a given width, in row units. Pure function of settings.
+// Sheet furniture is sized by its own settings rather than by an exercise count.
+function layoutBlockHeight(block: MathBlock): number | null {
+    if (!block.typeId.startsWith('layout-')) return null;
+    const c = (block.constraints ?? {}) as Record<string, unknown>;
+    const CM_PER_MM = 3.78;   // 1mm at 96dpi
+    switch (block.typeId) {
+        case 'layout-sectie':
+            return (c.title ? 1.4 : 0.5);
+        case 'layout-schrijflijnen': {
+            const n = Math.max(1, Number(c.lineCount ?? 6));
+            const mm = Number(c.lineSpacing ?? 10);
+            return (n * mm * CM_PER_MM) / ROW_UNIT_PX;
+        }
+        case 'layout-raster': {
+            const rows = Math.max(1, Number(c.rows ?? 8));
+            const mm = Number(c.cellMm ?? 10);
+            return (rows * mm * CM_PER_MM) / ROW_UNIT_PX;
+        }
+        case 'layout-kader': {
+            const lines = String(c.body ?? '').split(String.fromCharCode(10)).length;
+            return 1.6 + lines * 0.75;
+        }
+        case 'layout-lege-pagina':
+            // Deliberately a whole page: that is the entire point of the block.
+            return ROW_BUDGET;
+        default:
+            return null;
+    }
+}
+
 export function estimateHeightUnits(block: MathBlock, width: WidthUnits): number {
+    const furniture = layoutBlockHeight(block);
+    if (furniture !== null) return furniture;
+
     const facts = layoutFacts(block.typeId);
     const count = Math.max(1, block.numberOfExercises || 1);
     const rows = Math.ceil(count / perRow(block, width));

@@ -192,9 +192,12 @@ export default function App() {
     () => packPages(blocks, { blockSpacingPx: docSettings.blockSpacing ?? 12 }),
     [blocks, docSettings.blockSpacing],
   );
+  // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
+  // separator never renumbers the exercises after it.
   const blockOrder = useMemo(() => {
     const m: Record<string, number> = {};
-    blocks.forEach((b, i) => { m[b.id] = i; });
+    let n = 0;
+    blocks.forEach((b) => { if (!b.typeId.startsWith('layout-')) n += 1; m[b.id] = n; });
     return m;
   }, [blocks]);
 
@@ -326,6 +329,9 @@ export default function App() {
   // opdracht numbering keeps running across pages.
   const renderBlock = (item: PackedBlock, index: number) => {
     const block = item.block;
+    // Sheet furniture (a rule, writing lines, a grid) is not an opdracht: it gets no
+    // title row and takes no number, so the opdracht numbering skips over it.
+    const isFurniture = block.typeId.startsWith('layout-');
 
               const isActive = block.id === activeSelectionId;
               // dividers between blocks come from the page grid gap now
@@ -371,7 +377,7 @@ export default function App() {
                       print. Per-block override wins over the global default; block chrome
                       (controls/spacing/dividers/page-break) stays outside, unscaled. */}
                   <ScaledBlock scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}>
-                  <div className="print-opdracht" style={overlayRegionStyle({
+                  {!isFurniture && <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
                     ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
@@ -399,10 +405,10 @@ export default function App() {
                           <Lock size={14} />
                         </span>
                       )}
-                      <EditableInstruction block={block} prefix={docSettings.numberBlocks ? `${index + 1}. ` : ''} />
+                      <EditableInstruction block={block} prefix={docSettings.numberBlocks ? `${index}. ` : ''} />
                     </div>
                     {docSettings.showScores && (block.totalPoints || 0) > 0 && <div style={styles.pointsText}>__ / {block.totalPoints}</div>}
-                  </div>
+                  </div>}
 
                   {(() => {
                     // Registry decides which viewer renders this typeId.

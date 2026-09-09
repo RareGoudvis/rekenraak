@@ -58,8 +58,19 @@
 .page-sheet-body {
   flex: 1; min-height: 0; padding: 0 60px;
   display: grid; grid-template-columns: repeat(6, 1fr); align-content: start;
+  /* Clipped on screen exactly as it will be on paper, so what you see is what prints. */
+  overflow: hidden;
 }
 .page-sheet-foot { flex: none; padding: 8px 60px 26px; }
+/* Budgeted heights can be wrong; when they are, the page says so instead of clipping. */
+.page-sheet.page-overflow { outline: 2px solid var(--danger); outline-offset: 0; }
+.page-sheet-warn {
+  position: absolute; left: 60px; right: 60px; bottom: 6px; z-index: 6;
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 6px 10px; border-radius: var(--radius-sm);
+  background: var(--danger); color: #fff;
+  font-family: var(--font-ui); font-size: var(--text-xs); line-height: 1.3;
+}
 
 .print-area { display: block; width: 100%; border-collapse: collapse; }
 .print-area > thead.print-thead, .print-area > tfoot.print-tfoot { display: none; }
@@ -459,7 +470,7 @@ textarea:focus-visible,
   .page-sheet-head { padding: 16mm 16mm 0 !important; }
   .page-sheet-body { padding: 0 16mm !important; }
   .page-sheet-foot { padding: 4mm 16mm 8mm !important; }
-  .page-sheet-tag { display: none !important; }
+  .page-sheet-tag, .page-sheet-warn { display: none !important; }
 
   /* Sets may split across pages freely. */
   .print-block {

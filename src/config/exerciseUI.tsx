@@ -32,6 +32,8 @@ import VerbandenViewer from '../components/viewer/VerbandenViewer';
 import ProcentenViewer from '../components/viewer/ProcentenViewer';
 import MaateenheidViewer from '../components/viewer/MaateenheidViewer';
 import GeldRekenenViewer from '../components/viewer/GeldRekenenViewer';
+import LayoutBlockViewer from '../components/viewer/LayoutBlockViewer';
+import LayoutConfig from '../components/configurator/plugins/LayoutConfig';
 import RekenvolgordeViewer from '../components/viewer/RekenvolgordeViewer';
 import GetalFunctieViewer from '../components/viewer/GetalFunctieViewer';
 import TijdsduurViewer from '../components/viewer/TijdsduurViewer';
@@ -154,6 +156,11 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig },
 
     'rekenvolgorde':  { Viewer: RekenvolgordeViewer, Config: RekenvolgordeConfig },
+    'layout-sectie':        { Viewer: LayoutBlockViewer, Config: LayoutConfig },
+    'layout-schrijflijnen': { Viewer: LayoutBlockViewer, Config: LayoutConfig },
+    'layout-raster':        { Viewer: LayoutBlockViewer, Config: LayoutConfig },
+    'layout-kader':         { Viewer: LayoutBlockViewer, Config: LayoutConfig },
+    'layout-lege-pagina':   { Viewer: LayoutBlockViewer, Config: LayoutConfig },
     'kettingsommen':  { Viewer: PatroonViewer,       Config: KettingConfig },
     'getalfunctie':   { Viewer: GetalFunctieViewer,  Config: GetalFunctieConfig },
     'tijdsduur':      { Viewer: TijdsduurViewer,     Config: TijdsduurConfig },

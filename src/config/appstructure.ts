@@ -468,6 +468,39 @@ export const APP_STRUCTURE: Domain[] = [
         ],
     },
     {
+        // Sheet furniture, not maths: separators, writing lines, squared grids, a memory
+        // box, a blank page. Deliberately its own domain at the bottom of the sidebar so
+        // it never competes with the exercise types for attention.
+        id: 'bladonderdelen',
+        label: 'Bladonderdelen',
+        accentVar: '--accent-vraagstukken',
+        subdomains: [
+            {
+                id: 'bladonderdelen-indeling',
+                label: 'Indeling',
+                types: [
+                    { id: 'layout-sectie', label: 'Sectie / scheidingslijn', typeId: 'layout-sectie' },
+                    { id: 'layout-lege-pagina', label: 'Lege pagina', typeId: 'layout-lege-pagina' },
+                ],
+            },
+            {
+                id: 'bladonderdelen-schrijven',
+                label: 'Schrijven en tekenen',
+                types: [
+                    { id: 'layout-schrijflijnen', label: 'Schrijflijnen', typeId: 'layout-schrijflijnen' },
+                    { id: 'layout-raster', label: 'Ruitjesraster', typeId: 'layout-raster' },
+                ],
+            },
+            {
+                id: 'bladonderdelen-kaders',
+                label: 'Kaders',
+                types: [
+                    { id: 'layout-kader', label: 'Onthoudkader', typeId: 'layout-kader' },
+                ],
+            },
+        ],
+    },
+    {
         id: 'vraagstukken',
         label: 'Probleemoplossend denken',
         accentVar: '--accent-vraagstukken',

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { minWidthUnits } from '../../config/blockLayout';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
@@ -250,13 +251,16 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
             {/* ── 1. Opdrachtblok ── */}
             {(() => {
+                // Sheet furniture has no exercises, so instruction/score/aantal do not apply.
+                const isFurniture = activeBlock.typeId.startsWith('layout-');
                 const aantal = activeBlock.numberOfExercises || 10;
                 const scoreMax = Math.max(1, aantal * 2);   // Score caps at 2 points per exercise
                 const sliderStyle = (on: boolean): React.CSSProperties => ({ width: '100%', accentColor: 'var(--accent-purple)', cursor: on ? 'pointer' : 'not-allowed', opacity: on ? 1 : 0.5 });
                 return (
                     <div style={S.card}>
-                        <h4 style={S.cardTitle}>Opdrachtblok</h4>
+                        <h4 style={S.cardTitle}>{isFurniture ? 'Bladonderdeel' : 'Opdrachtblok'}</h4>
                         <div style={S.col}>
+                            {!isFurniture && <>
                             <label style={S.label}>Instructie</label>
                             <input
                                 style={S.input}
@@ -299,6 +303,40 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 }}
                                 style={sliderStyle(true)}
                             />
+                            </>}
+
+                            {/* Breedte op de pagina — the page grid is 6 units wide, so a block
+                                is a whole, a half or a third. Widths narrower than the block's
+                                own minimum are disabled rather than silently overridden. */}
+                            {(() => {
+                                const min = minWidthUnits(activeBlock);
+                                const cur = Math.max(activeBlock.widthUnits ?? 6, min);
+                                const OPTIONS: Array<{ w: 2 | 3 | 6; label: string }> = [
+                                    { w: 6, label: 'Vol' }, { w: 3, label: '½' }, { w: 2, label: '⅓' },
+                                ];
+                                return (
+                                    <>
+                                        <label style={{ ...S.label, marginTop: '14px' }}>Breedte op de pagina</label>
+                                        <div className="seg-group">
+                                            {OPTIONS.map(o => (
+                                                <button
+                                                    key={o.w}
+                                                    className="seg-btn"
+                                                    aria-pressed={cur === o.w}
+                                                    disabled={locked || o.w < min}
+                                                    title={o.w < min ? 'Te smal voor dit type bij deze instellingen' : undefined}
+                                                    onClick={() => updateBlockSettings(activeBlock.id, { widthUnits: o.w })}
+                                                >{o.label}</button>
+                                            ))}
+                                        </div>
+                                        <p style={S.hintText}>
+                                            {min === 6
+                                                ? 'Dit type heeft de volle breedte nodig.'
+                                                : `Smalst mogelijk bij deze instellingen: ${min === 3 ? '½' : '⅓'}.`}
+                                        </p>
+                                    </>
+                                );
+                            })()}
 
                             {/* Fine-tuning (spacing + per-block text size) tucked behind a
                                 disclosure so the common controls stay short. */}
@@ -1112,6 +1150,7 @@ const S = {
     engineBody: {} as React.CSSProperties,
 
     advancedWrap: { marginBottom: 'var(--sp-2)' } as React.CSSProperties,
+    hintText: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 'var(--sp-1) 0 0', lineHeight: 1.4 } as React.CSSProperties,
 };
 
 const miniMoveBtn = (disabled: boolean): React.CSSProperties => ({
