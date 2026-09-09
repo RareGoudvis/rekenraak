@@ -5,6 +5,7 @@ import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
 import { GRADE_PRESETS, type Leerjaar } from '../config/gradePresets';
+import { defaultInstructionFor } from '../config/instructionPresets';
 
 export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
 
@@ -209,7 +210,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         const newBlock: MathBlock = {
             id: Math.random().toString(36).substring(2, 9),
             typeId,
-            instructionText: `${label}:`,
+            instructionText: defaultInstructionFor(typeId, label),
             instructionMode: 'geen',
             layoutPreset: 'inline-short',
             steppedLines: 3,
