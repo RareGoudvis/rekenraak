@@ -92,6 +92,21 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
         reader.readAsText(file);
     };
 
+    // Undo is invisible when the block it changed is off-screen, which reads as "nothing
+    // happened". Scroll to it and flash it instead.
+    const revealBlock = (id: string | null) => {
+        if (!id) return;
+        requestAnimationFrame(() => {
+            const el = document.getElementById(`block-${id}`);
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('block-flash');
+            window.setTimeout(() => el.classList.remove('block-flash'), 1000);
+        });
+    };
+    const doUndo = () => revealBlock(undo());
+    const doRedo = () => revealBlock(redo());
+
     const handleClearBlocks = () => {
         if (window.confirm('Alle blokken wissen?')) clearBlocks();
     };
@@ -121,6 +136,23 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
         document.addEventListener('keydown', onKey);
         return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
     }, [menu]);
+
+    // The tooltips promised these shortcuts and nothing implemented them. Ignored while
+    // typing, so undo inside a title or instruction field still means undo the typing.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+            const t = e.target as HTMLElement | null;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            const key = e.key.toLowerCase();
+            const isRedo = key === 'y' || (key === 'z' && e.shiftKey);
+            if (key !== 'z' && key !== 'y') return;
+            e.preventDefault();
+            if (isRedo) { if (canRedo) doRedo(); } else if (canUndo) doUndo();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    });
 
     const handleShare = async (mode: 'full' | 'template') => {
         setMenu(null);
@@ -155,7 +187,7 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
                 {/* Toevoegen first: it is the sidebar's twin, so it sits hard against it. */}
                 <IconButton
                     icon={LayoutGrid}
-                    label="Meerdere oefeningen tegelijk toevoegen"
+                    label="Meerdere oefeningen tegelijk kiezen en toevoegen"
                     visibleLabel="Oefeningen toevoegen"
                     onClick={() => setMassAddOpen(true)}
                     variant="secondary"
@@ -265,8 +297,8 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
               <div style={S.groupRight}>
 
                 <div className="bar-undo" style={S.group}>
-                    <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={undo} disabled={!canUndo} />
-                    <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={redo} disabled={!canRedo} />
+                    <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={doUndo} disabled={!canUndo} />
+                    <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={doRedo} disabled={!canRedo} />
                 </div>
 
                 <IconButton

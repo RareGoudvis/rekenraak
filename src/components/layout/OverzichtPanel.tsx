@@ -106,7 +106,7 @@ export default function OverzichtPanel() {
 
             {/* Add a block without leaving the outline — reuses the mass-add modal. */}
             <button style={S.addBtn} onClick={() => setMassAddOpen(true)}>
-                <Plus size={15} weight="bold" /> Oefening toevoegen
+                <Plus size={15} weight="bold" /> Oefeningen toevoegen
             </button>
 
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}

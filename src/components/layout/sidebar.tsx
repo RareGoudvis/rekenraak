@@ -179,6 +179,7 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
                                 key={`${t.typeId}-${i}`}
                                 className="sidebar-leaf"
                                 style={S.leafBtn}
+                                title={`${t.label} toevoegen (één oefening)`}
                                 onClick={() => addLeaf(t.typeId, t.label, t.lockedConstraints)}
                                 {...leafHover(t.typeId, t.lockedConstraints)}
                             >
@@ -275,6 +276,7 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
                                                                         key={type.id}
                                                                         className="sidebar-leaf"
                                                                         style={S.leafBtn}
+                                                                        title={`${type.label} toevoegen (één oefening)`}
                                                                         onClick={() => addLeaf(type.typeId!, type.label, type.defaultConstraints)}
                                                                         {...leafHover(type.typeId!, type.defaultConstraints)}
                                                                     >
@@ -311,6 +313,7 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
                                                                                         key={leaf.id}
                                                                                         className="sidebar-leaf"
                                                                                         style={S.leafBtn}
+                                                                                        title={`${leaf.label} toevoegen (één oefening)`}
                                                                                         onClick={() => addLeaf(leaf.typeId, leaf.label, leaf.defaultConstraints)}
                                                                                         {...leafHover(leaf.typeId, leaf.defaultConstraints)}
                                                                                     >
