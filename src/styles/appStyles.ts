@@ -9,6 +9,8 @@ export const styles = {
   // height:auto (not max-content): the child is a real <table>, whose intrinsic max-content
   // height is unreliable — the sheet would stop at its basic size while content overflows
   // below the white card. `auto` sizes the sheet to the table's actual laid-out height.
+  // The sheet column owns the top bar, so both scroll/size independently of the panels.
+  centreColumn: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%' } as React.CSSProperties,
   a4Sheet: { backgroundColor: '#ffffff', color: '#000000', width: '100%', maxWidth: '920px', minHeight: '1130px', height: 'auto', flex: '0 0 auto', marginTop: 'var(--sp-3)', padding: '34px 50px 45px', boxShadow: 'var(--shadow-3)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', position: 'relative', boxSizing: 'border-box' } as React.CSSProperties,
   sheetHeaderLabel: { fontSize: '13px', fontWeight: 'bold' as const, marginRight: '6px', color: '#000', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
   sheetHeaderLine: { flex: 1, borderBottom: '1.5px solid #000', height: '16px' } as React.CSSProperties,

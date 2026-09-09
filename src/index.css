@@ -37,6 +37,18 @@
    across printed pages, because the browser decided where breaks fell. The packer decides
    now, so each page is a plain element with its own header and footer — less fragile, and
    it can show a teacher which page they are looking at. */
+/* Panel header strips sit level with the top bar so the three columns read as three
+   columns. SYNC: --panel-head-h must match the TopBar's own height. */
+:root { --panel-head-h: 52px; }
+.panel-head {
+  height: var(--panel-head-h); flex: none;
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 0 var(--sp-3);
+  border-bottom: 1px solid var(--separator);
+  background: var(--bg-surface);
+}
+.panel-head .seg-group { width: 100%; }
+
 .page-sheet {
   width: 794px;              /* A4 at 96dpi */
   min-height: 1123px;

@@ -68,7 +68,9 @@ export default function App() {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const SHEET_PX = 920;      // .print-area-shell maxWidth
+    // The page is a real A4 at 96dpi now; the old 920px card is gone, and measuring
+    // against it made the sheet shrink long before it needed to.
+    const SHEET_PX = 794;
     const SIDE_PAD = 96;       // .print-scroll horizontal padding
     const fit = () => {
       const avail = el.clientWidth - SIDE_PAD;
@@ -483,20 +485,21 @@ export default function App() {
     </div>
     {tourOpen && <TourOverlay onClose={closeTour} />}
     <div className="print-root" style={styles.appShell}>
-      {/* FULL-WIDTH TOP BAR — spans the window; the three panels sit directly underneath it. */}
-      <div className="no-print" onClick={(e) => e.stopPropagation()}>
-        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
-      </div>
-
       <div className="print-body-row" style={styles.appBody}>
-      {/* LEFT — the exercise palette. Panels no longer collapse to a hover flyout below
-          1800px: teachers on 14" laptops got stuck in it even with the pin, so the sheet
-          absorbs a narrow window by zooming instead (see sheetZoom above). */}
+      {/* LEFT — the exercise palette, running the FULL height of the window. Its own tab
+          strip sits at the top, level with the top bar, so the three columns read as three
+          columns rather than as one bar with things under it. Panels no longer collapse to
+          a hover flyout: teachers on 14" laptops got stuck in it even with the pin, so a
+          narrow window shrinks the sheet instead (see sheetZoom above). */}
       <div className="no-print" style={{ display: 'flex', height: '100%', flex: '0 0 auto' }}>
         <Sidebar />
       </div>
 
-      {/* CENTRAL WORK AREA */}
+      {/* CENTRE — the top bar belongs to the SHEET, so it spans only this column. */}
+      <div style={styles.centreColumn}>
+      <div className="no-print" onClick={(e) => e.stopPropagation()}>
+        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
+      </div>
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
         {/* Scroll container holds the banners + sheet (the topbar is now a sibling above).
@@ -560,9 +563,9 @@ export default function App() {
         </div>
         </div>
       </main>
+      </div>
 
-      {/* RIGHT — block settings. Always visible, like the palette: hiding either one is
-          what got teachers stuck. */}
+      {/* RIGHT — block settings, also full height with its own tab strip on top. */}
       <div className="no-print" style={{ display: 'flex', height: '100%', flex: '0 0 auto' }}>
         <Inspector />
       </div>

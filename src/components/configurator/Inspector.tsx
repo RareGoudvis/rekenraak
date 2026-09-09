@@ -26,6 +26,7 @@ const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string
 
 export default function Inspector({ embedded = false }: { embedded?: boolean } = {}) {
     const tab = useWorksheetStore((state) => state.inspectorTab);
+    const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [blockAdvancedOpen, setBlockAdvancedOpen] = useState(false);
     const [styleBuilderOpen, setStyleBuilderOpen] = useState(false);
@@ -1177,7 +1178,23 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
     return (
         <aside data-tour="inspector" style={rootStyle}>
-            {shown === 'blad' ? docContent : blockContent}
+            <div className="panel-head">
+                <div className="seg-group">
+                    {([['blad', 'Blad', true], ['weergave', 'Weergave', hasBlock], ['oefening', 'Oefening', hasBlock]] as const).map(([id, label, on]) => (
+                        <button
+                            key={id}
+                            className="seg-btn"
+                            aria-pressed={shown === id}
+                            disabled={!on}
+                            title={on ? undefined : 'Kies eerst een blok op het blad'}
+                            onClick={() => setInspectorTab(id)}
+                        >{label}</button>
+                    ))}
+                </div>
+            </div>
+            <div style={S.panelScroll}>
+                {shown === 'blad' ? docContent : blockContent}
+            </div>
         </aside>
     );
 }
@@ -1185,7 +1202,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 const S = {
     // Embedded in the left panel's Instellingen tab: no own width or edge, just fill the tab.
     embedded: { flex: 1, minHeight: 0, overflowY: 'auto', boxSizing: 'border-box', padding: 'var(--sp-3) var(--sp-4) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
-    sidebar: { width: '338px', minWidth: '338px', backgroundColor: 'var(--bg-surface)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflowY: 'auto', padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
+    sidebar: { width: '366px', minWidth: '366px', backgroundColor: 'var(--bg-surface)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflow: 'hidden', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
+    panelScroll: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     lockBanner: { padding: 'var(--sp-3)', fontSize: 'var(--text-sm)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
     // Flat section (no boxed "pill") — header + content separated by a hairline; reclaims the
     // horizontal space the card border/padding used to eat. Panel bg comes from the frosted aside.

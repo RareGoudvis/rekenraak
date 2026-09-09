@@ -25,13 +25,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const setShowSolutions = useWorksheetStore((s) => s.setShowSolutions);
     const generateAllBlocks = useWorksheetStore((s) => s.generateAllBlocks);
     const clearBlocks = useWorksheetStore((s) => s.clearBlocks);
-    const sidebarTab = useWorksheetStore((s) => s.sidebarTab);
-    const setSidebarTab = useWorksheetStore((s) => s.setSidebarTab);
-    const inspectorTab = useWorksheetStore((s) => s.inspectorTab);
-    const setInspectorTab = useWorksheetStore((s) => s.setInspectorTab);
-    // The two block tabs need a selection; 'document' means the sheet, not a block.
-    const activeBlockId = useWorksheetStore((s) => s.activeBlockId);
-    const hasBlock = !!activeBlockId && activeBlockId !== 'document';
     const hasBlocks = useWorksheetStore((s) => s.blocks.length > 0);
     const saveState = useWorksheetStore((s) => s.saveState);
     const lastSavedAt = useWorksheetStore((s) => s.lastSavedAt);
@@ -123,21 +116,21 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                 physically above the thing it changes. The panel tab strips live here rather
                 than inside their panels: visually they belong to the bar, functionally to
                 the column below (state in the store). */}
+            {/* One row: app chrome left, wordmark dead centre, sheet actions right. The
+                logo is a grid track of its own so it stays centred whatever the two
+                groups weigh. The panel tabs are NOT here — they live in the panel
+                headers, which run to the top of the window alongside this bar. */}
             <div style={S.zones}>
-              <div style={S.zoneLeft}>
-                <div className="seg-group" style={{ width: '100%' }}>
-                    <button className="seg-btn" aria-pressed={sidebarTab === 'oefeningen'} onClick={() => setSidebarTab('oefeningen')}>Oefeningen</button>
-                    <button className="seg-btn" aria-pressed={sidebarTab === 'overzicht'} onClick={() => setSidebarTab('overzicht')} data-tour="overzicht-tab">Overzicht</button>
-                </div>
-              </div>
+              <div style={S.groupLeft}>
+                {/* Toevoegen first: it is the sidebar's twin, so it sits hard against it. */}
+                <IconButton
+                    icon={LayoutGrid}
+                    label="Meerdere oefeningen tegelijk toevoegen"
+                    visibleLabel="Toevoegen"
+                    onClick={() => setMassAddOpen(true)}
+                    variant="secondary"
+                />
 
-              <div style={S.zoneCenter}>
-                {/* Wordmark centred over the sheet — the sheet is the artifact, so the brand
-                    sits above it rather than competing for a corner. */}
-                <button type="button" className="ui-hover" style={S.logoCentered} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
-                    <Wordmark height={26} />
-                </button>
-                <div style={S.centerRow}>
 
                 {/* Menu (≡) — library navigation + file ops */}
                 <div style={S.menuWrap}>
@@ -227,26 +220,35 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                 <IconButton icon={HelpIcon} label="Help / uitleg" onClick={() => onOpenHelp?.()} />
 
-                <div style={S.vsep} />
-
-                <div style={S.group}>
-                    <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={undo} disabled={!canUndo} />
-                    <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={redo} disabled={!canRedo} />
-                </div>
-
                 <IconButton
                     icon={FilePlus}
                     label="Nieuw blad (huidige werkbundel wissen)"
                     onClick={handleNewSheet}
                 />
 
-                <IconButton
-                    icon={LayoutGrid}
-                    label="Meerdere oefeningen tegelijk toevoegen"
-                    visibleLabel="Toevoegen"
-                    onClick={() => setMassAddOpen(true)}
-                    variant="secondary"
-                />
+              </div>
+
+              {/* Middle track: wordmark plus the save status directly to its right. That
+                  leaves the space LEFT of the logo free for user hints later. */}
+              <div style={S.centreTrack}>
+                <button type="button" className="ui-hover" style={S.logoCentered} onClick={() => setAboutOpen(true)} aria-label="Over dit project">
+                    <Wordmark height={26} />
+                </button>
+                <div
+                    style={S.saveChip}
+                    title={lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
+                >
+                    <span style={{ ...S.saveDot, background: saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
+                    <span>{saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>
+                </div>
+              </div>
+
+              <div style={S.groupRight}>
+
+                <div style={S.group}>
+                    <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={undo} disabled={!canUndo} />
+                    <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={redo} disabled={!canRedo} />
+                </div>
 
                 <IconButton
                     icon={Sparkles}
@@ -256,17 +258,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     disabled={!hasBlocks}
                     variant="secondary"
                 />
-
-                <div style={S.spacer} />
-
-                {/* Autosave tracker — green when saved, amber while saving; hover shows the time. */}
-                <div
-                    style={S.saveChip}
-                    title={lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
-                >
-                    <span style={{ ...S.saveDot, background: saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
-                    <span>{saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>
-                </div>
 
                 {/* Alle blokken wissen — icon only, confirm-guarded */}
                 <div style={{ marginRight: 'var(--sp-3)' }}>
@@ -311,22 +302,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                         </>
                     )}
                 </div>
-                </div>
-              </div>
-
-              <div style={S.zoneRight}>
-                <div className="seg-group" style={{ width: '100%' }}>
-                    {([['blad', 'Blad', true], ['weergave', 'Weergave', hasBlock], ['oefening', 'Oefening', hasBlock]] as const).map(([id, label, on]) => (
-                        <button
-                            key={id}
-                            className="seg-btn"
-                            aria-pressed={(hasBlock ? inspectorTab : 'blad') === id}
-                            disabled={!on}
-                            title={on ? undefined : 'Kies eerst een blok op het blad'}
-                            onClick={() => setInspectorTab(id)}
-                        >{label}</button>
-                    ))}
-                </div>
               </div>
             </div>
 
@@ -352,12 +327,13 @@ const S = {
     logoBtn: { background: 'transparent', border: 'none', padding: '2px 6px', marginRight: 'var(--sp-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 } as React.CSSProperties,
     row: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' } as React.CSSProperties,
     // SYNC: the outer column widths must match Sidebar's aside (286px) and Inspector's (338px).
-    zones: { display: 'grid', gridTemplateColumns: '286px minmax(0, 1fr) 338px', alignItems: 'center', gap: 'var(--sp-3)' } as React.CSSProperties,
-    zoneLeft: { minWidth: 0, paddingRight: 'var(--sp-2)' } as React.CSSProperties,
-    zoneRight: { minWidth: 0, paddingLeft: 'var(--sp-2)' } as React.CSSProperties,
-    zoneCenter: { minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' } as React.CSSProperties,
+    // 1fr | auto | 1fr keeps the wordmark optically centred no matter how the two action
+    // groups grow, which a plain flex row with space-between does not.
+    zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)' } as React.CSSProperties,
+    groupLeft: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'start' } as React.CSSProperties,
+    groupRight: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'end' } as React.CSSProperties,
+    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', whiteSpace: 'nowrap' } as React.CSSProperties,
     logoCentered: { background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0 } as React.CSSProperties,
-    centerRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' } as React.CSSProperties,
     group: { display: 'flex', gap: 'var(--sp-1)' } as React.CSSProperties,
     spacer: { flex: 1, minWidth: 0 } as React.CSSProperties,
     vsep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--separator)', flexShrink: 0 } as React.CSSProperties,

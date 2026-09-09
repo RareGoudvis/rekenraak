@@ -116,6 +116,7 @@ export default function Sidebar() {
     const [openTypes, setOpenTypes] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState('');
     const tab = useWorksheetStore((state) => state.sidebarTab);
+    const setSidebarTab = useWorksheetStore((state) => state.setSidebarTab);
 
     const isSearching = search.trim().length > 0;
     const tree = useMemo(
@@ -145,6 +146,12 @@ export default function Sidebar() {
 
     return (
         <aside className="mac-vibrant" style={S.aside}>
+            <div className="panel-head">
+                <div className="seg-group">
+                    <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => setSidebarTab('oefeningen')}>Oefeningen</button>
+                    <button className="seg-btn" aria-pressed={tab === 'overzicht'} onClick={() => setSidebarTab('overzicht')} data-tour="overzicht-tab">Overzicht</button>
+                </div>
+            </div>
             {tab === 'overzicht' ? <OverzichtPanel /> : (<>
 
             {locked && (
