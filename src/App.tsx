@@ -3,6 +3,7 @@ import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
 import PageSheet from './components/layout/PageSheet';
 import { packPages, pageIndexByBlock, type PackedBlock } from './services/layout/pagePacker';
+import type { FooterSlot } from './services/math/types';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
 import { EXERCISE_UI } from './config/exerciseUI';
@@ -325,16 +326,45 @@ export default function App() {
     </>
   );
 
-  const renderFooterRegion = () => (
+  // Footer is three slots. The left one always carries the credit and takes no setting;
+  // the other two are free. Page numbers are only possible at all because the packer knows
+  // the index and the total — the browser cannot count pages from HTML.
+  const footerSlotText = (slot: FooterSlot | undefined, pageIndex: number, pageCount: number): string => {
+    switch (slot) {
+      case 'vrije-tekst':  return footerData?.centerText ?? '';
+      case 'paginanummer': {
+        const fmt = footerData?.pageFormat ?? 'lang';
+        if (fmt === 'cijfer') return String(pageIndex + 1);
+        if (fmt === 'kort') return `${pageIndex + 1} / ${pageCount}`;
+        return `Pagina ${pageIndex + 1} van ${pageCount}`;
+      }
+      case 'school':     return footerData?.school || '';
+      case 'klas':       return footerData?.klas || '';
+      case 'leerkracht': return footerData?.leerkracht || '';
+      case 'datum':      return new Date().toLocaleDateString('nl-BE');
+      default:           return '';
+    }
+  };
+
+  const renderFooterRegion = (pageIndex: number, pageCount: number) => {
+    // Old worksheets have no slots; derive something sensible from the v2 fields so a
+    // saved sheet keeps looking like itself.
+    const centerSlot: FooterSlot = footerData?.slotCenter
+      ?? (footerData?.showCenterText ? 'vrije-tekst' : 'leeg');
+    const rightSlot: FooterSlot = footerData?.slotRight
+      ?? (footerData?.showPagina ? 'paginanummer'
+        : footerData?.showSchool ? 'school'
+        : footerData?.showKlas ? 'klas'
+        : footerData?.showLeerkracht ? 'leerkracht' : 'leeg');
+    const right = rightSlot === 'vrije-tekst' ? (footerData?.rightText ?? '') : footerSlotText(rightSlot, pageIndex, pageCount);
+    return (
             <div className="print-tfoot-inner" style={overlayRegionStyle({}, docSettings.footerCustom)}>
-              <span>{[
-                footerData?.showSchool ? (footerData.school || 'School') : null,
-                footerData?.showKlas ? (footerData.klas || 'Klas') : null,
-                footerData?.showLeerkracht ? (footerData.leerkracht || 'Leerkracht') : null,
-              ].filter(Boolean).join(' | ')}</span>
-              <span>{footerData?.showCenterText ? footerData.centerText : ''}</span>
+              <span className="footer-credit">Gemaakt met RekenRaak.be</span>
+              <span>{footerSlotText(centerSlot, pageIndex, pageCount)}</span>
+              <span>{right}</span>
             </div>
-  );
+    );
+  };
 
   // One block in a page-grid cell. `index` counts across the whole worksheet so the
   // opdracht numbering keeps running across pages.
@@ -510,7 +540,7 @@ export default function App() {
               header={pi === 0
                 ? renderHeaderRegion()
                 : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}
-              footer={renderFooterRegion()}
+              footer={renderFooterRegion(pi, packedPages.length)}
             >
               {page.rows.flatMap((row) => row.items).map((item) => (
                 <div key={item.block.id} style={{ gridColumn: `span ${item.width}`, minWidth: 0 }}>

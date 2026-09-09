@@ -62,6 +62,16 @@
   overflow: hidden;
 }
 .page-sheet-foot { flex: none; padding: 8px 60px 26px; }
+/* Three slots: the left one always carries the credit, the other two are the teacher's. */
+.page-sheet-foot .print-tfoot-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
+  border-top: 1px solid #ccc; padding-top: 6px;
+  font-family: 'Azeret Mono', monospace; font-size: 9pt; color: #666;
+}
+.page-sheet-foot .print-tfoot-inner > span { flex: 1 1 0; min-width: 0; }
+.page-sheet-foot .print-tfoot-inner > span:nth-child(2) { text-align: center; }
+.page-sheet-foot .print-tfoot-inner > span:nth-child(3) { text-align: right; }
+.footer-credit { white-space: nowrap; }
 /* Budgeted heights can be wrong; when they are, the page says so instead of clipping. */
 .page-sheet.page-overflow { outline: 2px solid var(--danger); outline-offset: 0; }
 .page-sheet-warn {

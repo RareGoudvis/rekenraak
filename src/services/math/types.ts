@@ -429,6 +429,16 @@ export interface ClockExercise {
     isManuallyEdited: boolean;
 }
 
+// What a footer slot can show. The LEFT slot is not in this union: it always carries the
+// RekenRaak credit, which is why it takes no setting.
+export type FooterSlot =
+    | 'leeg' | 'vrije-tekst' | 'paginanummer'
+    | 'school' | 'klas' | 'leerkracht' | 'datum';
+
+// Real page numbers only became possible with the page model: the browser cannot count
+// pages from HTML, but the packer knows the index and the total.
+export type PageNumberFormat = 'lang' | 'kort' | 'cijfer';
+
 export interface FooterData {
     school: string;
     klas: string;
@@ -439,6 +449,11 @@ export interface FooterData {
     showPagina: boolean;
     centerText: string;
     showCenterText: boolean;
+    // ── three-slot footer (v3). Absent on older worksheets, which are migrated on read. ──
+    slotCenter?: FooterSlot;
+    slotRight?: FooterSlot;
+    rightText?: string;
+    pageFormat?: PageNumberFormat;
 }
 
 export type ScaffoldingLevel = 1 | 2 | 3;

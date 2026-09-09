@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { minWidthUnits } from '../../config/blockLayout';
+import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
@@ -210,23 +211,60 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 {/* ── Voettekst ── */}
                 <div style={S.card}>
                     <h4 style={S.cardTitle}>Voettekst</h4>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px' }}>Voettekst wordt zichtbaar bij afdrukken.</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px' }}>De voettekst staat onderaan elke pagina.</p>
                     <div style={S.col}>
+                        {/* Left is the RekenRaak credit and is not configurable. */}
                         <label style={S.footerGroupLabel}>Links</label>
-                        <div style={{ paddingLeft: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={footerData.showSchool} onChange={(e) => updateFooter({ showSchool: e.target.checked })} style={S.checkbox} /> School</label>
-                            {footerData.showSchool && <input style={{ ...S.input, marginBottom: '4px' }} value={footerData.school || ''} onChange={(e) => updateFooter({ school: e.target.value })} placeholder="Bv. VBS De Vlinder" />}
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={footerData.showKlas} onChange={(e) => updateFooter({ showKlas: e.target.checked })} style={S.checkbox} /> Klas</label>
-                            {footerData.showKlas && <input style={{ ...S.input, marginBottom: '4px' }} value={footerData.klas || ''} onChange={(e) => updateFooter({ klas: e.target.value })} placeholder="Bv. L3a" />}
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={footerData.showLeerkracht} onChange={(e) => updateFooter({ showLeerkracht: e.target.checked })} style={S.checkbox} /> Leerkracht</label>
-                            {footerData.showLeerkracht && <input style={{ ...S.input, marginBottom: '4px' }} value={footerData.leerkracht || ''} onChange={(e) => updateFooter({ leerkracht: e.target.value })} placeholder="Bv. Meester Ruben" />}
-                        </div>
+                        <p style={{ ...S.hintText, margin: '0 0 10px' }}>Gemaakt met RekenRaak.be</p>
 
-                        <label style={{ ...S.footerGroupLabel, marginTop: '10px' }}>Rechts</label>
-                        <div style={{ paddingLeft: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <label style={S.checkboxLabel}><input type="checkbox" checked={footerData.showCenterText} onChange={(e) => updateFooter({ showCenterText: e.target.checked })} style={S.checkbox} /> Vrije tekst</label>
-                            {footerData.showCenterText && <input style={S.input} value={footerData.centerText || ''} onChange={(e) => updateFooter({ centerText: e.target.value })} placeholder="Voettekst rechts" />}
-                        </div>
+                        {([['slotCenter', 'Midden'], ['slotRight', 'Rechts']] as const).map(([key, label]) => {
+                            const cur = (footerData[key] ?? 'leeg') as FooterSlot;
+                            return (
+                                <div key={key} style={{ marginBottom: '10px' }}>
+                                    <label style={S.footerGroupLabel}>{label}</label>
+                                    <select
+                                        style={S.select}
+                                        value={cur}
+                                        onChange={(e) => updateFooter({ [key]: e.target.value as FooterSlot })}
+                                    >
+                                        <option value="leeg">Leeg</option>
+                                        <option value="vrije-tekst">Vrije tekst</option>
+                                        <option value="paginanummer">Paginanummer</option>
+                                        <option value="school">School</option>
+                                        <option value="klas">Klas</option>
+                                        <option value="leerkracht">Leerkracht</option>
+                                        <option value="datum">Datum van vandaag</option>
+                                    </select>
+
+                                    {cur === 'vrije-tekst' && (
+                                        <input
+                                            style={{ ...S.input, marginTop: '6px' }}
+                                            value={(key === 'slotCenter' ? footerData.centerText : footerData.rightText) || ''}
+                                            onChange={(e) => updateFooter(key === 'slotCenter'
+                                                ? { centerText: e.target.value }
+                                                : { rightText: e.target.value })}
+                                            placeholder="Eigen tekst"
+                                        />
+                                    )}
+                                    {cur === 'school' && (
+                                        <input style={{ ...S.input, marginTop: '6px' }} value={footerData.school || ''} onChange={(e) => updateFooter({ school: e.target.value })} placeholder="Bv. VBS De Vlinder" />
+                                    )}
+                                    {cur === 'klas' && (
+                                        <input style={{ ...S.input, marginTop: '6px' }} value={footerData.klas || ''} onChange={(e) => updateFooter({ klas: e.target.value })} placeholder="Bv. L3a" />
+                                    )}
+                                    {cur === 'leerkracht' && (
+                                        <input style={{ ...S.input, marginTop: '6px' }} value={footerData.leerkracht || ''} onChange={(e) => updateFooter({ leerkracht: e.target.value })} placeholder="Bv. Meester Ruben" />
+                                    )}
+                                    {cur === 'paginanummer' && (
+                                        <div className="seg-group" style={{ marginTop: '6px' }}>
+                                            {([['lang', 'Pagina 2 van 3'], ['kort', '2 / 3'], ['cijfer', '2']] as const).map(([v, l]) => (
+                                                <button key={v} className="seg-btn" aria-pressed={(footerData.pageFormat ?? 'lang') === v} onClick={() => updateFooter({ pageFormat: v })}>{l}</button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </aside>
