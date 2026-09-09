@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { minWidthUnits } from '../../config/blockLayout';
 import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
+import { DOMAIN_BY_TYPE } from '../../config/appstructure';
+import { buildCatalog } from '../../config/exerciseCatalog';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../services/geld/geldGenerator';
 import { regenerateBlock } from '../../services/generateDispatch';
 import { recomputeSplitsenExercise } from '../../services/splitsen/splitsenGenerator';
@@ -35,6 +37,27 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const rootStyle = embedded ? S.embedded : S.sidebar;
     const activeBlockId = useWorksheetStore((state) => state.activeBlockId);
     const activeBlock = useWorksheetStore((state) => state.blocks.find(b => b.id === activeBlockId));
+    // The chip's subject line: the printed opdracht number and a human label.
+    // SYNC: numbering must match App.tsx's blockOrder — layout-* furniture is not an
+    // opdracht, so it is skipped in the count and shows no number.
+    const blocks = useWorksheetStore((state) => state.blocks);
+    const labelByType = useMemo(() => {
+        const m: Record<string, string> = {};
+        for (const item of buildCatalog()) if (!m[item.typeId]) m[item.typeId] = item.label;
+        return m;
+    }, []);
+    const subject = useMemo(() => {
+        if (!activeBlock) return null;
+        let n = 0;
+        for (const b of blocks) {
+            if (!b.typeId.startsWith('layout-')) n += 1;
+            if (b.id === activeBlock.id) break;
+        }
+        const label = labelByType[activeBlock.typeId]
+            || (activeBlock.instructionText || '').replace(/:\s*$/, '').trim()
+            || activeBlock.typeId;
+        return { number: activeBlock.typeId.startsWith('layout-') ? null : n, label };
+    }, [activeBlock, blocks, labelByType]);
     const locked = useWorksheetStore((state) => !!state.curriculum?.locked);
 
     const headerData = useWorksheetStore((state) => state.header);
@@ -60,9 +83,9 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const docContent = (
             <>
 
-                {/* ── Werkbundel instellingen ── */}
-                <div style={S.card}>
-                    <h4 style={S.cardTitle}>Werkbundel</h4>
+                {/* ── Koptekst — everything printed at the top of the page ── */}
+                <div id="blad-koptekst" style={S.card}>
+                    <h4 style={S.cardTitle}>Koptekst</h4>
                     <div style={S.col}>
                         <label style={S.label}>Documenttitel</label>
                         <input style={S.input} value={headerData.titel || ''} onChange={(e) => updateHeader({ titel: e.target.value })} placeholder="Bv. Herhalingstoets" />
@@ -191,9 +214,9 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     </div>
                 </div>
 
-                {/* ── Opdrachtinstellingen ── */}
-                <div style={S.card}>
-                    <h4 style={S.cardTitle}>Opdrachtinstellingen</h4>
+                {/* ── Opdrachten — how every exercise block is presented ── */}
+                <div id="blad-opdrachten" style={S.card}>
+                    <h4 style={S.cardTitle}>Opdrachten</h4>
                     <div style={S.col}>
                         <div style={S.switchRow}><span style={S.switchText}>Scores tonen</span><Switch checked={docSettings.showScores} onChange={(v) => updateDocSettings({ showScores: v })} aria-label="Scores tonen" /></div>
                         <div style={S.switchRow}><span style={S.switchText}>Scheidingslijn tussen oefeningen</span><Switch checked={docSettings.showDividers} onChange={(v) => updateDocSettings({ showDividers: v })} aria-label="Scheidingslijn tussen oefeningen" /></div>
@@ -210,8 +233,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     </div>
                 </div>
 
-                {/* ── Voettekst ── */}
-                <div style={S.card}>
+                {/* ── Voettekst — everything printed at the bottom of the page ── */}
+                <div id="blad-voettekst" style={S.card}>
                     <h4 style={S.cardTitle}>Voettekst</h4>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px' }}>De voettekst staat onderaan elke pagina.</p>
                     <label style={S.label}>Voettekst stijl</label>
@@ -1188,9 +1211,31 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
     return (
         <aside data-tour="inspector" style={rootStyle}>
+            {/* Say what is selected before showing controls — otherwise the panel is a
+                pile of settings with no stated subject (UI-GUIDE rule 1). */}
+            <div style={S.subjectChip}>
+                {activeBlock && subject ? (() => {
+                    const domain = DOMAIN_BY_TYPE[activeBlock.typeId];
+                    return (
+                        <>
+                            <span style={S.subjectDot(domain ? `var(${domain.accentVar})` : 'var(--separator)')} />
+                            <span style={S.subjectName}>
+                                {subject.number ? `${subject.number}. ` : ''}{subject.label}
+                            </span>
+                            <span style={S.subjectDomain}>{domain?.label ?? 'Bladonderdeel'}</span>
+                        </>
+                    );
+                })() : (
+                    <>
+                        <span style={S.subjectDot('var(--separator)')} />
+                        <span style={S.subjectName}>Heel het blad</span>
+                        <span style={S.subjectDomain}>Geen oefening gekozen</span>
+                    </>
+                )}
+            </div>
             <div className="panel-head">
                 <div className="seg-group">
-                    {([['blad', 'Blad', true], ['weergave', 'Weergave', hasBlock], ['oefening', 'Oefening', hasBlock]] as const).map(([id, label, on]) => (
+                    {([['oefening', 'Oefeningen', hasBlock], ['weergave', 'Opmaak', hasBlock], ['blad', 'Blad', true]] as const).map(([id, label, on]) => (
                         <button
                             key={id}
                             className="seg-btn"
@@ -1213,6 +1258,26 @@ const S = {
     // Embedded in the left panel's Instellingen tab: no own width or edge, just fill the tab.
     embedded: { flex: 1, minHeight: 0, overflowY: 'auto', boxSizing: 'border-box', padding: 'var(--sp-3) var(--sp-4) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     sidebar: { width: '366px', minWidth: '366px', backgroundColor: 'var(--bg-surface)', borderLeft: '1px solid var(--separator)', height: '100%', boxSizing: 'border-box', overflow: 'hidden', display: 'flex', flexDirection: 'column' } as React.CSSProperties,
+    // "You are editing this" — dot in the domain hue, but the domain is always named
+    // in words beside it (UI-GUIDE rule 7).
+    subjectChip: {
+        flex: 'none', display: 'flex', alignItems: 'center', gap: 'var(--sp-2)',
+        padding: '0 var(--sp-4)', height: 'var(--bar-h)',
+        borderBottom: '1px solid var(--separator)', background: 'var(--bg-surface)',
+        minWidth: 0,
+    } as React.CSSProperties,
+    subjectDot: (color: string): React.CSSProperties => ({
+        width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color, flexShrink: 0,
+    }),
+    subjectName: {
+        fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-main)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+    } as React.CSSProperties,
+    subjectDomain: {
+        marginLeft: 'auto', flexShrink: 0,
+        fontSize: 'var(--text-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap',
+    } as React.CSSProperties,
+
     panelScroll: { flex: 1, minHeight: 0, overflowY: 'auto', padding: 'var(--sp-3) var(--sp-5) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } as React.CSSProperties,
     lockBanner: { padding: 'var(--sp-3)', fontSize: 'var(--text-sm)', lineHeight: 1.4, color: 'var(--text-main)', background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
     // Flat section (no boxed "pill") — header + content separated by a hairline; reclaims the
