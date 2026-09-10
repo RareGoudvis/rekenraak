@@ -33,15 +33,13 @@ export const styles = {
     // Selection sits just OUTSIDE the block so the opdracht kader is not hugged by the
     // fill, but the content stays on the page's content edge (padding would move it and
     // break the kader's alignment with the koptekst). Hence an outset shadow: a 1.5px
-    // 1px hairline on the edge, then 6px of pale tint beyond it. The tint does the work;
-    // the outline only has to mark where the block ends.
+    // Tint only, no outline. The soft fill plus its halo already separates the block from
+    // the white page; a ring on top of that just draws a hard blue box around the work.
     //
     // Order matters. The ring is listed FIRST so it paints on top; --accent-soft is only
     // 12% alpha, so a soft band listed first would let the solid ring read straight
     // through it and the whole thing reads as one thick blue border.
-    boxShadow: isActive
-      ? '0 0 0 1px var(--accent), 0 0 0 7px var(--accent-soft)'
-      : 'none',
+    boxShadow: isActive ? '0 0 0 7px var(--accent-soft)' : 'none',
     backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
   }),
   // paddingLeft (not marginLeft) keeps the controls' hit area touching the block's right edge —
