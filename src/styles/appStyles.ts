@@ -30,14 +30,24 @@ export const styles = {
     borderLeft: '0 solid transparent',
     borderRight: '0 solid transparent',
     borderBottom: !isActive && isNotLastBlock && showDividers ? '1px solid #e5e5e5' : '1px solid transparent',
-    // Inset, not outset: flush with the content edge, an outside ring would be clipped
-    // by .page-sheet-body's overflow:hidden.
-    boxShadow: isActive ? 'inset 0 0 0 1.5px var(--accent)' : 'none',
+    // Selection reads as a box AROUND the block, not a fill flush against it. The content
+    // itself must stay on the page's content edge so the opdracht kader lines up with the
+    // koptekst, so the halo is painted with an outset shadow instead of padding: 8px of the
+    // same soft fill, then the ring at its outer edge. Costs no layout, so the kader does
+    // not move and neighbouring blocks do not shift.
+    //
+    // Safe against .page-sheet-body's overflow:hidden — that clips at the PADDING box, and
+    // the body's own 53px side padding is well clear of an 8px halo.
+    boxShadow: isActive
+      ? '0 0 0 8px var(--accent-soft), 0 0 0 9.5px var(--accent)'
+      : 'none',
     backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
   }),
   // paddingLeft (not marginLeft) keeps the controls' hit area touching the block's right edge —
   // no dead gap that would drop the :hover state as the pointer travels to the buttons.
-  blockControls: { position: 'absolute', left: '100%', top: '0', paddingLeft: 'var(--sp-2)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', zIndex: 10 } as React.CSSProperties,
+  // paddingLeft clears the 9.5px selection halo (see blockContainer) without running past
+  // the sheet's 53px side margin: 16px gutter + a 34px button = 50px.
+  blockControls: { position: 'absolute', left: '100%', top: '0', paddingLeft: 'var(--sp-4)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', zIndex: 10 } as React.CSSProperties,
   // Hairline + breathing room that pushes the danger (delete) button clear of the move buttons.
   blockControlsDivider: { height: '1px', alignSelf: 'stretch', backgroundColor: 'var(--separator)', margin: 'var(--sp-2) 4px var(--sp-1)' } as React.CSSProperties,
   iconBtn: { background: 'var(--bg-surface-2)', border: '1px solid var(--separator)', color: 'var(--text-main)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '14px', fontWeight: 'bold' } as React.CSSProperties,
