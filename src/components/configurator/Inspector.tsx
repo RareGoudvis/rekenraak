@@ -212,6 +212,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     <div style={S.col}>
                         <div style={S.switchRow}><span style={S.switchText}>Scores tonen</span><Switch checked={docSettings.showScores} onChange={(v) => updateDocSettings({ showScores: v })} aria-label="Scores tonen" /></div>
                         <div style={S.switchRow}><span style={S.switchText}>Scheidingslijn tussen oefeningen</span><Switch checked={docSettings.showDividers} onChange={(v) => updateDocSettings({ showDividers: v })} aria-label="Scheidingslijn tussen oefeningen" /></div>
+                        {/* Only draws where two blocks share a row, so it does nothing on a
+                            one-column sheet — hence the hint rather than a disabled switch. */}
+                        <div style={S.switchRow}><span style={S.switchText}>Scheidingslijn tussen kolommen</span><Switch checked={!!docSettings.showColumnDividers} onChange={(v) => updateDocSettings({ showColumnDividers: v })} aria-label="Scheidingslijn tussen kolommen" /></div>
+                        <p style={S.hintText}>Verschijnt alleen waar twee blokken naast elkaar staan.</p>
                         <div style={S.switchRow}><span style={S.switchText}>Opdrachten nummeren</span><Switch checked={docSettings.numberBlocks} onChange={(v) => updateDocSettings({ numberBlocks: v })} aria-label="Opdrachten nummeren" /></div>
 
                         <label style={{ ...S.label, marginTop: '10px' }}>Ruimte tussen oefenreeksen: {docSettings.blockSpacing ?? 12}px</label>

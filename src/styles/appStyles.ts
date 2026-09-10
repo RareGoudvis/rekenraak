@@ -30,24 +30,25 @@ export const styles = {
     borderLeft: '0 solid transparent',
     borderRight: '0 solid transparent',
     borderBottom: !isActive && isNotLastBlock && showDividers ? '1px solid #e5e5e5' : '1px solid transparent',
-    // Selection reads as a box AROUND the block, not a fill flush against it. The content
-    // itself must stay on the page's content edge so the opdracht kader lines up with the
-    // koptekst, so the halo is painted with an outset shadow instead of padding: 8px of the
-    // same soft fill, then the ring at its outer edge. Costs no layout, so the kader does
-    // not move and neighbouring blocks do not shift.
+    // Selection sits just OUTSIDE the block so the opdracht kader is not hugged by the
+    // fill, but the content stays on the page's content edge (padding would move it and
+    // break the kader's alignment with the koptekst). Hence an outset shadow: a 1.5px
+    // 1px hairline on the edge, then 6px of pale tint beyond it. The tint does the work;
+    // the outline only has to mark where the block ends.
     //
-    // Safe against .page-sheet-body's overflow:hidden — that clips at the PADDING box, and
-    // the body's own 53px side padding is well clear of an 8px halo.
+    // Order matters. The ring is listed FIRST so it paints on top; --accent-soft is only
+    // 12% alpha, so a soft band listed first would let the solid ring read straight
+    // through it and the whole thing reads as one thick blue border.
     boxShadow: isActive
-      ? '0 0 0 8px var(--accent-soft), 0 0 0 9.5px var(--accent)'
+      ? '0 0 0 1px var(--accent), 0 0 0 7px var(--accent-soft)'
       : 'none',
     backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
   }),
   // paddingLeft (not marginLeft) keeps the controls' hit area touching the block's right edge —
   // no dead gap that would drop the :hover state as the pointer travels to the buttons.
-  // paddingLeft clears the 9.5px selection halo (see blockContainer) without running past
-  // the sheet's 53px side margin: 16px gutter + a 34px button = 50px.
-  blockControls: { position: 'absolute', left: '100%', top: '0', paddingLeft: 'var(--sp-4)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', zIndex: 10 } as React.CSSProperties,
+  // paddingLeft clears the 5px selection halo (see blockContainer) and still leaves the
+  // 34px button inside the sheet's 53px side margin.
+  blockControls: { position: 'absolute', left: '100%', top: '0', paddingLeft: 'var(--sp-3)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', zIndex: 10 } as React.CSSProperties,
   // Hairline + breathing room that pushes the danger (delete) button clear of the move buttons.
   blockControlsDivider: { height: '1px', alignSelf: 'stretch', backgroundColor: 'var(--separator)', margin: 'var(--sp-2) 4px var(--sp-1)' } as React.CSSProperties,
   iconBtn: { background: 'var(--bg-surface-2)', border: '1px solid var(--separator)', color: 'var(--text-main)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '14px', fontWeight: 'bold' } as React.CSSProperties,

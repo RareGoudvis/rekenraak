@@ -45,6 +45,10 @@ export interface DocSettings {
     showScores: boolean;
     opdrachtTitelStyle: 'regular' | 'boxed' | 'underlined';
     showDividers: boolean;
+    // Vertical rule in the gutter between blocks that share a row. showDividers is the
+    // horizontal twin (a rule under each block); this one only ever draws where two
+    // blocks actually sit side by side, so it is a no-op on a single-column sheet.
+    showColumnDividers?: boolean;
     headerStyle: 'geen' | 'onderstreept' | 'kader';
     // Mirrors headerStyle for the footer. Defaults to 'geen': a rule above the footer
     // competes with the exercises for attention on a busy sheet.
@@ -176,7 +180,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     activeBlockId: null,
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
     footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: false, centerText: '', showCenterText: false },
-    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
+    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, showColumnDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
     baseSettings: { ...DEFAULT_BASE },
     selectedGrade: null,
     staleBlocks: {},

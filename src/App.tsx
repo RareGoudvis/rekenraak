@@ -586,8 +586,22 @@ export default function App() {
                   <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen.</p>
                 </div>
               )}
-              {page.rows.flatMap((row) => row.items).map((item) => (
-                <div key={item.block.id} style={{ gridColumn: `span ${item.width}`, minWidth: 0 }}>
+              {/* Keep each item's position WITHIN its row: only a block that has a
+                  neighbour to its left gets the column rule, so the setting is a no-op
+                  on a single-column sheet instead of drawing a stray line down the page. */}
+              {page.rows.flatMap((row) => row.items.map((item, i) => ({ item, firstInRow: i === 0 })))
+                .map(({ item, firstInRow }) => (
+                <div
+                  key={item.block.id}
+                  className={!firstInRow && docSettings.showColumnDividers ? 'col-divider' : undefined}
+                  style={{
+                    gridColumn: `span ${item.width}`,
+                    minWidth: 0,
+                    position: 'relative',
+                    // The rule is centred in the gutter, which IS blockSpacing.
+                    ['--col-gap' as string]: `${docSettings.blockSpacing ?? 12}px`,
+                  }}
+                >
                   {renderBlock(item, blockOrder[item.block.id] ?? 0)}
                 </div>
               ))}
