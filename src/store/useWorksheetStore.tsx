@@ -350,6 +350,8 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             // Width is layout, not difficulty: a locked curriculum fixes what the child
             // practises, not how the sheet is arranged (and the picker stays enabled).
             if ('widthUnits' in updates) allowed.widthUnits = updates.widthUnits;
+            // Same reasoning for the opdracht title row: presentation, not difficulty.
+            if ('showInstruction' in updates) allowed.showInstruction = updates.showInstruction;
             if (Object.keys(allowed).length === 0) return state;   // drop difficulty/wording/points edits
             next = allowed;
         }

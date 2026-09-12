@@ -150,6 +150,15 @@ describe('share link', () => {
         expect(decoded!.mode).toBe('full');
     });
 
+    // showInstruction rides along on the block spread; no field whitelist to update, but a
+    // silently dropped `false` would put the hidden title back on the receiver's sheet.
+    test('a hidden opdracht title survives the round-trip', () => {
+        const s = state();
+        const hidden = { ...s, blocks: s.blocks.map((b, i) => (i === 1 ? { ...b, showInstruction: false } : b)) };
+        const decoded = fileFromShare(encodeShareLink(hidden));
+        expect(decoded!.blocks.map(b => b.showInstruction)).toEqual([undefined, false, undefined]);
+    });
+
     test('template mode strips the generated exercises but keeps the settings', () => {
         const s = state();
         const decoded = fileFromShare(encodeShareLink(s, { template: true }));

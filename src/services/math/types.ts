@@ -371,6 +371,10 @@ export interface MathBlock<C extends BlockConstraints = BlockConstraints> {
     // v2 files stored the old 6-unit scale; persistence migrates them on load.
     widthUnits?: 1 | 2 | 4;
     instructionText: string;
+    // false hides the block's opdracht title row on the sheet (like layout-* furniture).
+    // The block still counts in the opdracht numbering, so hiding one title never
+    // renumbers the exercises after it. Absent = shown.
+    showInstruction?: boolean;
     layoutPreset: LayoutPreset;
     instructionMode: 'geen' | 'mag' | 'moet' | 'plus' | 'aangepast';
     customInstructionText?: string;

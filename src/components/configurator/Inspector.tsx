@@ -529,6 +529,21 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                 );
                                             })()}
 
+                                            {/* The title row is presentation: hiding it leaves the block in the
+                                                opdracht numbering, so the numbers after it never shift.
+                                                layout-* furniture has no title row to begin with. */}
+                                            {!activeBlock.typeId.startsWith('layout-') && (<>
+                                            <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                                                <span style={S.switchText}>Opdrachttekst tonen</span>
+                                                <Switch
+                                                    checked={activeBlock.showInstruction !== false}
+                                                    onChange={(v) => updateBlockSettings(activeBlock.id, { showInstruction: v ? undefined : false })}
+                                                    aria-label="Opdrachttekst tonen"
+                                                />
+                                            </div>
+                                            <p style={S.hintText}>Uit: het blok krijgt geen titelregel; de nummering telt het blok wel mee.</p>
+                                            </>)}
+
                                             {/* Opt-in height back-off (ScaledBlock): only bites on a block that is
                                                 taller than a page, so it is shown always rather than tied to the
                                                 packer's `spans` flag, which the Inspector cannot see. */}

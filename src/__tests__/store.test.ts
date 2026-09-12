@@ -129,6 +129,12 @@ describe('updateBlockSettings under the curriculum lock', () => {
         expect(useWorksheetStore.getState().blocks[0].widthUnits).toBe(2);
     });
 
+    test('the opdracht-title toggle is presentation, so it goes through', () => {
+        const { id } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { showInstruction: false });
+        expect(useWorksheetStore.getState().blocks[0].showInstruction).toBe(false);
+    });
+
     test('difficulty is still frozen', () => {
         const { id, constraints } = useWorksheetStore.getState().blocks[0];
         useWorksheetStore.getState().updateBlockSettings(id, { constraints: { ...constraints, maxGetal: 1000000 } });

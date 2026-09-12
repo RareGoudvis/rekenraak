@@ -76,7 +76,7 @@ export default function SheetThumbnail({ file, height = 200, maxBlocks = 3 }: Pr
                         const Viewer = EXERCISE_UI[block.typeId]?.Viewer;
                         return (
                             <div key={block.id ?? i} style={blockWrap}>
-                                {block.instructionText ? (
+                                {block.instructionText && block.showInstruction !== false ? (
                                     <div style={opdracht}>{i + 1}. {block.instructionText}</div>
                                 ) : null}
                                 {Viewer ? (
