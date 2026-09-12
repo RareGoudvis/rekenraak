@@ -257,12 +257,11 @@ textarea:focus-visible,
 .ui-icon-btn:not(:disabled):hover { box-shadow: var(--shadow-1), inset 0 0 0 999px var(--bg-hover); }
 .ui-icon-btn:not(:disabled):active { box-shadow: var(--shadow-1), inset 0 0 0 999px var(--bg-active); }
 
-/* Per-block canvas controls: hidden until the block is hovered or selected (discoverable
-   without committing a selection). pointer-events off while hidden so invisible chips aren't
-   clickable; the block's paddingLeft gutter keeps :hover alive across the gap to the buttons. */
-.block-controls { opacity: 0; pointer-events: none; transition: opacity var(--dur) var(--ease-out); }
-.print-block:hover > .block-controls,
-.print-block.is-active > .block-controls { opacity: 1; pointer-events: auto; }
+/* Per-block canvas controls (BlockControlsRail): rendered through a body portal, fixed-
+   positioned off the block's own rect, and only mounted for the hovered-or-active block
+   (App tracks `hoveredBlockId`) — so visibility is a React condition now, not CSS, and a
+   block near the bottom of the page is never clipped by .page-sheet-body's overflow:
+   hidden the way an in-flow `.block-controls` was. */
 
 /* ── Sheet drag-and-drop (pointer events) ─────────────────────────────────────
    The handle is the immediate drag affordance; the block body drags too, but only past

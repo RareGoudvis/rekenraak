@@ -44,13 +44,15 @@ export const styles = {
     boxShadow: isActive ? '0 0 0 7px var(--accent-soft)' : 'none',
     backgroundColor: isActive ? 'var(--accent-soft)' : 'transparent',
   }),
-  // paddingLeft (not marginLeft) keeps the controls' hit area touching the block's right edge —
-  // no dead gap that would drop the :hover state as the pointer travels to the buttons.
-  // paddingLeft clears the 5px selection halo (see blockContainer) and still leaves the
-  // 34px button inside the sheet's 53px side margin.
-  blockControls: { position: 'absolute', left: '100%', top: '0', paddingLeft: 'var(--sp-3)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)', zIndex: 10 } as React.CSSProperties,
-  // Hairline + breathing room that pushes the danger (delete) button clear of the move buttons.
-  blockControlsDivider: { height: '1px', alignSelf: 'stretch', backgroundColor: 'var(--separator)', margin: 'var(--sp-2) 4px var(--sp-1)' } as React.CSSProperties,
+  // BlockControlsRail portals to <body> and positions itself with `position: fixed` off
+  // the block's own getBoundingClientRect (top/left set inline, per-instance) — that's
+  // what keeps the rail out of .page-sheet-body's overflow:hidden when the block sits at
+  // the bottom of the page. Only top/left vary per block; the box itself stays here.
+  blockControls: { position: 'fixed', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 50 } as React.CSSProperties,
+  // Hairline + breathing room between the rail's three groups (drag/lock/duplicate/split,
+  // page-break/up/down, delete) — kept tight so nine compact buttons don't read as tall
+  // as a second toolbar.
+  blockControlsDivider: { height: '1px', alignSelf: 'stretch', backgroundColor: 'var(--separator)', margin: '3px 2px' } as React.CSSProperties,
   iconBtn: { background: 'var(--bg-surface-2)', border: '1px solid var(--separator)', color: 'var(--text-main)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '14px', fontWeight: 'bold' } as React.CSSProperties,
   deleteBtn: { background: 'var(--danger)', border: 'none', color: 'var(--accent-on)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '12px', fontWeight: 'bold' } as React.CSSProperties,
   badge: (_type: 'mag' | 'moet' | 'plus' | 'aangepast'): React.CSSProperties => ({ backgroundColor: 'white', color: '#000', padding: '2px 6px', borderRadius: '3px', fontSize: '11px', fontWeight: 'bold', border: '1.5px solid #000' }),

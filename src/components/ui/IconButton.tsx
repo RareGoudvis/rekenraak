@@ -11,6 +11,10 @@ interface Props {
     disabled?: boolean;
     variant?: IconButtonVariant;
     size?: number;                // icon size in px
+    /** Overrides the button's own box (height + width when there's no label) below the
+        shared `--control-h`, for compact contexts like the block-controls rail — the
+        toolbar/panel buttons everywhere else stay on the one shared height. */
+    boxSize?: number;
     dataTour?: string;            // forwarded as data-tour (spotlight onboarding anchor)
     /** Extra classes. `keep-label` opts a button out of the top bar's label collapse. */
     className?: string;
@@ -21,9 +25,9 @@ interface Props {
 // All colour tokens come from CSS variables so themes flow through.
 export default function IconButton({
     icon: Icon, label, visibleLabel, onClick, disabled = false,
-    variant = 'neutral', size = 18, dataTour, className = '',
+    variant = 'neutral', size = 18, boxSize, dataTour, className = '',
 }: Props) {
-    const style = computeStyle(variant, disabled, !!visibleLabel);
+    const style = computeStyle(variant, disabled, !!visibleLabel, boxSize);
     // Phosphor weight is a prop (not CSS), so the hover thickening can't live in
     // index.css like the brightness/scale — track hover/focus here to drive it.
     const [emphasized, setEmphasized] = useState(false);
@@ -58,15 +62,17 @@ function iconWeight(variant: IconButtonVariant, emphasized: boolean): IconWeight
     return emphasized ? 'bold' : 'regular';
 }
 
-function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: boolean): React.CSSProperties {
+function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: boolean, boxSize?: number): React.CSSProperties {
+    const controlSize = boxSize ? `${boxSize}px` : 'var(--control-h)';
     const base: React.CSSProperties = {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: hasLabel ? 'var(--sp-2)' : 0,
-        // One control height across the toolbar and both panel headers (index.css).
-        height: 'var(--control-h)',
-        minWidth: hasLabel ? undefined : 'var(--control-h)',
+        // One control height across the toolbar and both panel headers (index.css) —
+        // unless a caller (the compact block-controls rail) asks for its own box size.
+        height: controlSize,
+        minWidth: hasLabel ? undefined : controlSize,
         padding: hasLabel ? '0 12px' : 0,
         borderRadius: 'var(--radius-sm)',
         cursor: disabled ? 'not-allowed' : 'pointer',
