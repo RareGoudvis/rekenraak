@@ -38,13 +38,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Tooling
 
-- **Indivisible blocks leave big blank tails** — measure-then-pack (789b3a8) removed the
-  estimate error, but a block that does not fit the remaining page still moves whole to the next
-  page (layout-check run 2026-09-12: page 3 = one ½ block + 466px blank because the next block
-  was 628px). Enhancement: let multi-row viewers (FragmentableGrid users) split across pages —
-  packer emits `{ block, rowFrom, rowTo }` per page, viewers accept an item window; per-row
-  heights are measurable from `.print-row` children. Big change (≈40 viewers); design first.
-
 ## Docs
 
 - Historical links in `UpdateState.md` to `StyleBuilderModal.tsx` ×2, `BaseSettingsPanel.tsx`,

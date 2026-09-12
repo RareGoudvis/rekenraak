@@ -37,11 +37,20 @@ interface Props {
     onBodyMeasure?: (pageIndex: number, px: number) => void;
     /** Report one cell's rendered height; the packer prefers it over its own estimate. */
     onCellMeasure?: (blockId: string, width: number, px: number) => void;
+    /** Grid row the tail hint sits on — one past the last row the packer filled. */
+    tailRow?: number;
+    /** Offer to split the block that starts the NEXT page, when this page ends in a big
+        blank tail. Absent when there is no next page or its first block cannot be cut. */
+    onSplitNext?: (tailPx: number, anchor: DOMRect) => void;
 }
+
+// Three row units of blank (blockLayout's 24px unit). Below that the tail is ordinary
+// grid slack and a hint would be noise on every page.
+const TAIL_HINT_PX = 72;
 
 export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, columnGap, children, onBackgroundClick,
-    onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure,
+    onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure, tailRow, onSplitNext,
 }: Props) {
     const bodyRef = useRef<HTMLDivElement>(null);
     // The same pass that feeds real heights back to the packer also catches what it could
@@ -49,6 +58,9 @@ export default function PageSheet({
     // SAY so rather than clip in silence: print hides the overflow, and a teacher would
     // only find out on paper.
     const [overflowPx, setOverflowPx] = useState(0);
+    // Blank space under the last block. Measured, never estimated — it is the whole
+    // reason the teacher is being offered a split.
+    const [tailPx, setTailPx] = useState(0);
 
     useLayoutEffect(() => {
         const el = bodyRef.current;
@@ -60,12 +72,22 @@ export default function PageSheet({
             onBodyMeasure?.(index, el.clientHeight);
             // Measured on the GRID CELL — outside ScaledBlock's CSS zoom, so offsetHeight is
             // the height the grid actually gives the row. Children without a data-block-id
-            // (the empty-sheet hero) are not blocks and report nothing.
+            // (the empty-sheet hero, the tail hint) are not blocks: they report nothing and
+            // stay out of the tail measurement, so the hint cannot chase its own threshold.
+            // The tail itself comes from rects divided back by the sheet zoom, so it is in
+            // layout px whatever the sheet is scaled to.
+            const bodyRect = el.getBoundingClientRect();
+            const zoom = (bodyRect.width / (PAGE_W_PX - 2 * 53)) || 1;
+            let lastBottom = bodyRect.top;
             for (const child of Array.from(el.children) as HTMLElement[]) {
                 const blockId = child.dataset.blockId;
                 const width = Number(child.dataset.width);
-                if (blockId && width > 0) onCellMeasure?.(blockId, width, child.offsetHeight);
+                if (!blockId || !(width > 0)) continue;
+                onCellMeasure?.(blockId, width, child.offsetHeight);
+                lastBottom = Math.max(lastBottom, child.getBoundingClientRect().bottom);
             }
+            const tail = (bodyRect.bottom - lastBottom) / zoom;
+            setTailPx(prev => (Math.abs(prev - tail) > 2 ? Math.round(tail) : prev));
         };
         check();
         const ro = new ResizeObserver(check);
@@ -99,6 +121,19 @@ export default function PageSheet({
 
             <div ref={bodyRef} className="page-sheet-body" style={{ rowGap: `${blockSpacing}px`, columnGap: `${columnGap}px` }}>
                 {children}
+                {/* Never automatic: the page says what it sees and the teacher decides.
+                    Explicitly placed one row past the last cell — auto-placement would
+                    backfill a gap in an earlier row. */}
+                {onSplitNext && tailPx > TAIL_HINT_PX && (
+                    <div
+                        className="no-print page-tail-hint"
+                        style={{ gridRow: tailRow, gridColumn: '1 / -1' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <span>Het volgende blok past hier niet meer —</span>
+                        <button type="button" onClick={(e) => onSplitNext(tailPx, e.currentTarget.getBoundingClientRect())}>splitsen</button>
+                    </div>
+                )}
             </div>
 
             <div

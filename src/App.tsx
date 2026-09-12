@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
-import PageSheet from './components/layout/PageSheet';
+import PageSheet, { PAGE_W_PX } from './components/layout/PageSheet';
 import { packPages, pageIndexByBlock, type PackedBlock } from './services/layout/pagePacker';
 import type { FooterSlot } from './services/math/types';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
 import { EXERCISE_UI } from './config/exerciseUI';
+import { REGISTRY } from './config/exerciseRegistry';
+import PopupSelect from './components/ui/PopupSelect';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
 import { cellWidthPx } from './components/viewer/BlockWidthContext';
 import MijnBladenView from './components/library/MijnBladenView';
@@ -15,7 +17,7 @@ import HelpModal from './components/layout/HelpModal';
 import AboutModal from './components/layout/AboutModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
-import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask, DotsSixVertical } from '@phosphor-icons/react';
+import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask, DotsSixVertical, Scissors } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
 import { useSheetDnd } from './hooks/useSheetDnd';
@@ -60,6 +62,83 @@ function EditableInstruction({ block, prefix }: { block: MathBlock; prefix: stri
       {prefix}{block.instructionText || ''}
     </span>
   );
+}
+
+// ── "Blok splitsen" ───────────────────────────────────────────────────────────
+// A block that does not fit the rest of a page moves whole to the next one and leaves a
+// blank tail. The packer cannot break a block by itself, so the teacher does it: cut
+// after exercise N and the first N stay where there is still room.
+
+/** How many exercises this block holds, via the registry's own array field. */
+function splittableCount(block: MathBlock): number {
+    if (block.typeId.startsWith('layout-')) return 0;      // furniture holds no exercises
+    const field = REGISTRY[block.typeId]?.exerciseField;
+    if (!field) return 0;
+    const items = block[field] as unknown[] | undefined;
+    return Array.isArray(items) ? items.length : 0;
+}
+
+// Largest N whose leading rows still fit `availablePx`, measured off the rendered cell.
+// `.print-row` (FragmentableGrid) is the only place a block really breaks, so the count
+// walks whole rows and adds up the exercises in them. Returns null when the DOM says
+// nothing useful — one row, no measurement, or everything fits anyway.
+//
+// All heights come from getBoundingClientRect and are divided back by the sheet zoom:
+// offsetHeight inside ScaledBlock's CSS `zoom` is unzoomed local px and would not
+// compare with the page box around it.
+function fittingSplitIndex(cell: HTMLElement, availablePx: number, count: number, zoom: number): number | null {
+    const rows = Array.from(cell.querySelectorAll<HTMLElement>('.print-row'));
+    if (rows.length < 2 || !(availablePx > 0)) return null;
+    const h = (el: HTMLElement) => el.getBoundingClientRect().height / zoom;
+    const rowsTotal = rows.reduce((sum, r) => sum + h(r), 0);
+    // Whatever is not an exercise row — the opdracht title, block padding — has to fit too.
+    let used = h(cell) - rowsTotal;
+    let n = 0;
+    for (const row of rows) {
+        used += h(row);
+        if (used > availablePx) break;
+        n += row.children.length || 1;
+    }
+    return n >= 1 && n < count ? n : null;
+}
+
+interface SplitTarget { blockId: string; count: number; suggested: number; x: number; y: number; }
+
+const POPOVER_W = 240;   // SYNC: .split-popover width in index.css
+
+// Tiny popover: pick where to cut, confirm. Positioned next to whatever opened it (the
+// scissors control, or the page-tail hint), clamped into the viewport.
+function SplitPopover({ target, onSplit, onClose }: { target: SplitTarget; onSplit: (n: number) => void; onClose: () => void }) {
+    const [n, setN] = useState(target.suggested);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('mousedown', onDoc);
+        document.addEventListener('keydown', onKey);
+        return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+    }, [onClose]);
+
+    const options = Array.from({ length: target.count - 1 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
+    return (
+        <div
+            ref={ref}
+            className="no-print split-popover"
+            style={{
+                left: Math.max(8, Math.min(target.x, window.innerWidth - POPOVER_W - 8)),
+                top: Math.max(8, Math.min(target.y, window.innerHeight - 150)),
+            }}
+            onClick={(e) => e.stopPropagation()}
+        >
+            <div className="split-popover-title">Splitsen na oefening</div>
+            <PopupSelect value={n} options={options} onChange={setN} ariaLabel="Splitsen na oefening" />
+            <div className="split-popover-actions">
+                <button type="button" className="split-popover-cancel" onClick={onClose}>Annuleren</button>
+                <button type="button" className="split-popover-confirm" onClick={() => { onSplit(n); onClose(); }}>Splitsen</button>
+            </div>
+        </div>
+    );
 }
 
 export default function App() {
@@ -223,6 +302,35 @@ export default function App() {
   // Drag a block from its handle onto another block: top half inserts before it, bottom
   // half swaps the two.
   const dnd = useSheetDnd();
+  const splitBlock = useWorksheetStore((s) => s.splitBlock);
+  const [splitTarget, setSplitTarget] = useState<SplitTarget | null>(null);
+
+  // Open the split popover for a block. `availableOverridePx` is the space the block has
+  // to fit into; the page-tail hint passes the tail of the PREVIOUS page, because the
+  // block it offers to split already sits at the top of the next one.
+  const openSplit = useCallback((blockId: string, anchorRect: DOMRect, availableOverridePx?: number) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    const count = splittableCount(block);
+    if (count < 2) return;
+    const cell = document.querySelector<HTMLElement>(`[data-block-id="${blockId}"]`);
+    const sheet = cell?.closest('.page-sheet');
+    const body = cell?.closest('.page-sheet-body');
+    const zoom = sheet ? (sheet.getBoundingClientRect().width / PAGE_W_PX) || 1 : 1;
+    let available = availableOverridePx;
+    if (available === undefined && cell && body) {
+      available = (body.getBoundingClientRect().bottom - cell.getBoundingClientRect().top) / zoom;
+    }
+    const fitted = cell && available !== undefined ? fittingSplitIndex(cell, available, count, zoom) : null;
+    setSplitTarget({
+      blockId, count,
+      // No usable measurement (or the block fits as it is): half is the neutral answer.
+      suggested: fitted ?? Math.max(1, Math.floor(count / 2)),
+      // Left of whatever opened it: the scissors sits in the block-control rail on the
+      // block's right edge, and a popover on top of that rail hides the buttons.
+      x: anchorRect.left - POPOVER_W - 8, y: anchorRect.bottom + 6,
+    });
+  }, [blocks]);
   const packedPages = useMemo(
     () => packPages(blocks, {
       blockSpacingPx: docSettings.blockSpacing ?? 12,
@@ -457,6 +565,15 @@ export default function App() {
                         size={16}
                       />
                       <IconButton icon={Copy} label="Blok dupliceren" onClick={() => duplicateBlock(block.id)} size={16} />
+                      {splittableCount(block) >= 2 && (
+                        <IconButton
+                          icon={Scissors}
+                          label="Blok splitsen"
+                          onClick={(e) => openSplit(block.id, e.currentTarget.getBoundingClientRect())}
+                          variant={splitTarget?.blockId === block.id ? 'active' : 'neutral'}
+                          size={16}
+                        />
+                      )}
                       <IconButton
                         icon={CornerDownRight}
                         label={block.pageBreakBefore ? 'Begin niet op nieuwe pagina' : 'Begin op nieuwe pagina (bij afdrukken)'}
@@ -603,6 +720,14 @@ export default function App() {
               onFooterClick={() => openBladCard('voettekst')}
               onBodyMeasure={measured.onBodyMeasure}
               onCellMeasure={measured.onCellMeasure}
+              tailRow={page.rows.length + 1}
+              onSplitNext={(() => {
+                // Only offer the split when there IS a next page whose first block can be
+                // cut — otherwise the blank tail is simply the end of the worksheet.
+                const next = packedPages[pi + 1]?.rows[0]?.items[0]?.block;
+                if (!next || splittableCount(next) < 2) return undefined;
+                return (tailPx: number, anchorRect: DOMRect) => openSplit(next.id, anchorRect, tailPx);
+              })()}
               header={pi === 0
                 ? renderHeaderRegion()
                 : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}
@@ -670,6 +795,13 @@ export default function App() {
 
       </div>
     </div>
+    {splitTarget && (
+      <SplitPopover
+        target={splitTarget}
+        onSplit={(n) => splitBlock(splitTarget.blockId, n)}
+        onClose={() => setSplitTarget(null)}
+      />
+    )}
     {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
     {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
