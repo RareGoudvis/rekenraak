@@ -10,6 +10,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- **Native drag hangs the tab with the "Claude in Chrome" extension enabled** (owner 2026-09-12,
+  verified: works in incognito / with extensions off). The extension hooks native HTML5 drag
+  events. Not fixable app-side while we use native DnD. Option: rewrite `useSheetDnd` on
+  pointer events with our own ghost + edge auto-scroll (immune to extensions, works in
+  Firefox, nicer ghost). Symptom mitigations landed: small drag ghost (2c55714), stuck
+  zones cleared on any window end-of-drag signal (04588a4).
 - **No sheet font-size scale** (owner question 2026-09-12): viewers use 12 different px sizes
   (14px ×66, 13 ×27, 12 ×22, 16 ×19, 18 ×13, 15 ×13, 17 ×10 …); hoofdrekenen digits 17px,
   labels 14px, grids 12–13px. Nothing is 14pt. Proposal: tokens `--sheet-size-text`,
