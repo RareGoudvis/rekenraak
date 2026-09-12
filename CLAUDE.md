@@ -74,11 +74,12 @@ Dispatch / Inspector / App / `addBlockFromType` are **registry lookups, not if-e
 branches** — never add a `typeId === …` branch. Full contract:
 [ARCHITECTURE §5](.claude/docs/ARCHITECTURE.md); the per-typeId table is §7.
 
-1. Add the exercise interface + its array field to `MathBlock` in [types.ts](src/services/math/types.ts)
+1. Add the exercise interface + its array field to `MathBlock` in [types.ts](src/services/math/types.ts),
+   and an `XConstraints` type in [constraintTypes.ts](src/services/math/constraintTypes.ts)
 2. Generator at `src/services/[type]/[type]Generator.ts` → `[Type]Exercise[]`
 3. Viewer at `src/components/viewer/[Type]Viewer.tsx`, uniform `{ block, showSolutions }`
 4. Config plugin at `src/components/configurator/plugins/[Type]Config.tsx`, `{ block }`
-5. **One row** in `REGISTRY` + **one row** in `EXERCISE_UI` (same `typeId` key)
+5. **One row** in `REGISTRY` via `row<XConstraints>({...})` + **one row** in `EXERCISE_UI` (same `typeId` key)
 6. One leaf in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.ts)) with `typeId`
    + optional `defaultConstraints` (merged on top of registry defaults)
 7. A `rowUnits` / `minWidth` entry in [blockLayout.ts](src/config/blockLayout.ts) so the
@@ -115,7 +116,7 @@ Comment the **WHY**, not the WHAT. Well-named identifiers already describe what 
    - Example: `// 'bruggetje' = carry/borrow across a place-value boundary (Dutch primary school term)`
    - Example: `// 'splitsen' = decomposing a number into two parts, e.g. 7 → 3+4`
 
-3. **Constraint meanings** — document what constraint values mean, since `constraints` is typed as `any`.
+3. **Constraint meanings** — document what constraint values mean on the `XConstraints` field (the index signature still admits unknown keys).
    - Example: `// bridges.E = 'REQUIRED' means the units column must produce a carry/borrow`
 
 4. **Magic numbers** — always explain the origin.

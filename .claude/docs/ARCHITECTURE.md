@@ -117,9 +117,16 @@ field (used by ordenen click-to-edit and the splitsen "type a number" textboxes)
 choke point enforces the lock without touching the ~16 config plugins. Draft-block
 edits bypass the gate (authoring runs unlocked).
 
-**`MathBlock.constraints` is typed `any`** — a loose per-type bag. Each generator
-and config plugin reads the keys it expects. Defaults are set in `addBlockFromType`
-(big per-type ternary, line ~146).
+**`MathBlock.constraints` is `BlockConstraints`** (since 2026-09-12; was `any`) —
+`Record<string, any> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType? }`.
+The per-family shapes (43 `XConstraints` types + `ConstraintsByType`) live in
+[constraintTypes.ts](../../src/services/math/constraintTypes.ts) and are re-exported from
+`types.ts`. Generators, viewers and plugins narrow once at their entry line
+(`const c = block.constraints as XConstraints`); plugins use the
+[useConstraints](../../src/components/configurator/useConstraints.ts) `[c, patch]` hook.
+`MathBlock<C extends BlockConstraints = BlockConstraints>` is generic; the registry stores
+rows heterogeneously so `generate` keeps the plain `MathBlock` signature. Defaults come from
+the registry's typed factories (`row<C>()`), which is what catches factory drift.
 
 **Measured layout is NOT store state.** Rendered cell heights and the page-body budget
 live in [useMeasuredHeights](../../src/hooks/useMeasuredHeights.ts), React state inside
@@ -246,7 +253,7 @@ Every `generate<X>Exercises` follows the same shape — document/learn it once:
 
 ```ts
 export function generateXExercises(block: MathBlock): XExercise[] {
-  const c = block.constraints;                 // loose any-bag, read expected keys
+  const c = block.constraints as XConstraints; // narrow once; shape in constraintTypes.ts
   const n = block.numberOfExercises;
   const used = new Set<string | number>();     // dedup within the block
   const results: XExercise[] = [];
@@ -627,6 +634,7 @@ src/
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts,validators.ts}   # validators.ts is EMPTY
+│   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
 │   ├── clock/{clockTypes.ts,clockGenerator.ts}
 │   ├── fractions/{fractionGenerator.ts,breukBewerkGenerator.ts}   # breukBewerk = gemengd/gelijknamig/vereenvoudigen
 │   ├── splitsen/{splitsenGenerator.ts,dutchWords.ts}   # basic/splitsboom/verliefde-harten/positie-*
@@ -680,6 +688,7 @@ src/
     │   ├── RegionStyleFields.tsx  # per-region look-and-feel (size/bold/colour/fill/padding) + ResetAllStylesButton
     │   ├── BridgeControl.tsx   # carry-arrow ('bruggetje') diagram: per-place geen/mag/moet via tappable gap arrows
     │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff + divider/sectionBox/select + hint/label text tiers
+    │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components
