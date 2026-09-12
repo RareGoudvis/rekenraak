@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { MathBlock, Equation, CijferExercise, FooterData, LayoutPreset } from '../services/math/types';
-import { regenerateBlock } from '../services/generateDispatch';
+import { regenerateBlock, GENERATION_FAILED } from '../services/generateDispatch';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
@@ -265,9 +265,15 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         // A generator that throws must not take the whole add down with it.
         if (def) {
             try {
-                const data = def.generate(newBlock);
-                (newBlock as unknown as Record<string, unknown>)[def.exerciseField] = data;
-            } catch { /* leave the block empty; the viewer shows its own placeholder */ }
+                const generated = def.generateNoted ? def.generateNoted(newBlock) : { items: def.generate(newBlock), note: null };
+                (newBlock as unknown as Record<string, unknown>)[def.exerciseField] = generated.items;
+                newBlock.generationNote = generated.note;
+            } catch (err) {
+                // An empty block used to be the only sign that a generator had thrown, and
+                // nobody could tell it from "the settings allow nothing". Say so instead.
+                console.warn(`[rekenraak] generator for ${typeId} threw`, err);
+                newBlock.generationNote = `${GENERATION_FAILED} ${err instanceof Error ? err.message : String(err)}`;
+            }
         }
 
         const newBlocks = [...state.blocks, newBlock];

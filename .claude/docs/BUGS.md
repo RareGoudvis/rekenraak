@@ -8,10 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
-- **`addBlockFromType` swallows generator exceptions** — `src/store/useWorksheetStore.tsx`
-  try/catch → silently empty block. Should surface a toast/inline "kon geen oefeningen maken"
-  (2026-09-12, surfaced by the MAB crash).
-
 ## Layout / sheet
 
 - **More types should fit ¼ width** (owner ask 2026-09-12). Today only klok, geld-herkennen,

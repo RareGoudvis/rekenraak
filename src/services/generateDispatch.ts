@@ -4,6 +4,10 @@ import { REGISTRY } from '../config/exerciseRegistry';
 // Generic exercise setter shape (the store's setExercises action).
 export type SetExercises = (id: string, field: keyof MathBlock, data: unknown[]) => void;
 
+// Prefix of the note written when a generator throws — the Inspector keys its
+// warning colour off it, so both sides must agree on the wording.
+export const GENERATION_FAILED = 'Kon geen oefeningen maken:';
+
 // Optional sink for the teacher-facing note about the last generate (the store's
 // setGenerationNote action). Callers that don't care may omit it.
 export type SetGenerationNote = (id: string, note: string | null) => void;
@@ -15,12 +19,14 @@ export type SetGenerationNote = (id: string, note: string | null) => void;
 export function regenerateBlock(block: MathBlock, setExercises: SetExercises, setGenerationNote?: SetGenerationNote): void {
     const def = REGISTRY[block.typeId];
     if (!def) return;
-    if (def.generateNoted) {
-        const { items, note } = def.generateNoted(block);
+    try {
+        const { items, note } = def.generateNoted ? def.generateNoted(block) : { items: def.generate(block), note: null };
         setExercises(block.id, def.exerciseField, items);
         setGenerationNote?.(block.id, note);
-        return;
+    } catch (err) {
+        // A throwing generator used to leave the previous exercises in place with no hint
+        // that Genereer had failed at all.
+        console.warn(`[rekenraak] generator for ${block.typeId} threw`, err);
+        setGenerationNote?.(block.id, `${GENERATION_FAILED} ${err instanceof Error ? err.message : String(err)}`);
     }
-    setExercises(block.id, def.exerciseField, def.generate(block));
-    setGenerationNote?.(block.id, null);
 }

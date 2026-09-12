@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useWorksheetStore } from '../store/useWorksheetStore';
+import { REGISTRY } from '../config/exerciseRegistry';
+import { regenerateBlock } from '../services/generateDispatch';
 
 // The store touches localStorage (autosave, sidebar-preview) on import, hence jsdom.
 //
@@ -64,5 +66,52 @@ describe('reorderBlocks with the drop compensation', () => {
         const [a, b, c] = ids();
         insertBefore(2, 0);
         expect(ids()).toEqual([c, a, b]);
+    });
+});
+
+// A generator that throws used to leave a silently empty block (surfaced by the MAB crash).
+describe('a generator that throws', () => {
+    const THROWING = 'test-throwing-type';
+
+    beforeEach(() => {
+        REGISTRY[THROWING] = {
+            exerciseField: 'exercises',
+            generate: () => { throw new Error('boom'); },
+            defaultConstraints: () => ({}),
+            defaultCount: 4,
+        };
+        useWorksheetStore.getState().clearBlocks();
+    });
+    afterEach(() => { delete REGISTRY[THROWING]; });
+
+    test('addBlockFromType still adds the block, and says why it is empty', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        useWorksheetStore.getState().addBlockFromType(THROWING, 'Stuk');
+        const block = useWorksheetStore.getState().blocks[0];
+        expect(block.exercises).toEqual([]);
+        expect(block.generationNote).toBe('Kon geen oefeningen maken: boom');
+        expect(warn).toHaveBeenCalled();
+        warn.mockRestore();
+    });
+
+    test('regenerateBlock reports the failure through the note action', () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        useWorksheetStore.getState().addBlockFromType(THROWING, 'Stuk');
+        const { id } = useWorksheetStore.getState().blocks[0];
+        const setExercises = vi.fn();
+        regenerateBlock(useWorksheetStore.getState().blocks[0], setExercises, useWorksheetStore.getState().setGenerationNote);
+        expect(setExercises).not.toHaveBeenCalled();
+        expect(useWorksheetStore.getState().blocks.find(b => b.id === id)!.generationNote).toBe('Kon geen oefeningen maken: boom');
+        warn.mockRestore();
+    });
+
+    test('the note is not an undo step of its own', () => {
+        useWorksheetStore.getState().addBlockFromType('hr-std-optellen', 'Optellen');
+        const { id } = useWorksheetStore.getState().blocks[0];
+        const before = useWorksheetStore.getState().blocks.length;
+        useWorksheetStore.getState().setGenerationNote(id, 'Slechts 3 oefeningen mogelijk bij deze instellingen.');
+        useWorksheetStore.getState().undo();
+        // Undo walks past the note straight to "before the block was added".
+        expect(useWorksheetStore.getState().blocks.length).toBe(before - 1);
     });
 });

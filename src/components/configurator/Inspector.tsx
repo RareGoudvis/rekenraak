@@ -7,7 +7,7 @@ import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type Head
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { DOMAIN_BY_TYPE } from '../../config/appstructure';
 import { buildCatalog } from '../../config/exerciseCatalog';
-import { regenerateBlock } from '../../services/generateDispatch';
+import { regenerateBlock, GENERATION_FAILED } from '../../services/generateDispatch';
 import { suggestionsFor } from '../../config/instructionPresets';
 import { BODY_FONT_PX } from '../../config/printPalette';
 import RegionStyleFields, { ResetAllStylesButton } from './RegionStyleFields';
@@ -564,9 +564,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     </p>
                 )}
                 {/* What the last generate had to do with these settings: which constraints
-                    it relaxed to reach the requested count, or how many were possible. */}
+                    it relaxed, how many were possible, or that the generator failed outright
+                    (that last one is a fault, so it reads as one). */}
                 {activeBlock.generationNote && (
-                    <p style={{ ...S.hintText, color: 'var(--text-muted)', margin: '0 0 var(--sp-2)' }}>
+                    <p style={{ ...S.hintText, color: activeBlock.generationNote.startsWith(GENERATION_FAILED) ? 'var(--danger)' : 'var(--text-muted)', margin: '0 0 var(--sp-2)' }}>
                         {activeBlock.generationNote}
                     </p>
                 )}
