@@ -6,6 +6,7 @@ import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { FULL_BLOCK_WIDTH_PX, useBlockWidth } from './BlockWidthContext';
 import type { MulDivConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -13,7 +14,7 @@ interface Props {
 }
 
 const styles = {
-    solutionText: { color: '#e11d48', padding: '0 4px', fontSize: '18px', fontWeight: 700 } as React.CSSProperties,
+    solutionText: { ...solutionText, padding: '0 4px', fontSize: '18px' } as React.CSSProperties,
     // The fill-in blank shrinks with the cell: 40px inside 6px margins at full width, a
     // narrower line in a quarter-width block where those 52px are a third of the row.
     mathDottedLine: (w = 40, m = 6): React.CSSProperties => ({ borderBottom: '1.5px solid #000', width: `${w}px`, margin: `0 ${m}px`, display: 'inline-block', height: '16px' }),
@@ -98,7 +99,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
     const renderAnswer = (val: number | Fraction | undefined) => {
         if (val === undefined) return null;
-        if (isFraction(val)) return <FractionDisplay val={val} color="#e11d48" />;
+        if (isFraction(val)) return <FractionDisplay val={val} color={SOL} />;
         return <span style={styles.solutionText}>{formatMathNumber(val)}</span>;
     };
 
@@ -228,10 +229,10 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 if (ex.remainder !== undefined) {
                     const helpBlank = <div style={{ borderBottom: '1.5px dotted #000', width: '40px', height: '18px', display: 'inline-block', margin: '0 2px' }} />;
                     const qPart = showSolutions
-                        ? <span style={{ color: '#e11d48', fontWeight: 'normal' }}>{formatMathNumber(ex.answer as number)}</span>
+                        ? <span style={solutionText}>{formatMathNumber(ex.answer as number)}</span>
                         : <div style={{ borderBottom: '1.5px solid #000', width: '40px', height: '18px', display: 'inline-block' }} />;
                     const rPart = showSolutions
-                        ? <span style={{ color: '#e11d48', fontWeight: 'normal' }}>{String(ex.remainder)}</span>
+                        ? <span style={solutionText}>{String(ex.remainder)}</span>
                         : <div style={{ borderBottom: '1.5px solid #000', width: '30px', height: '18px', display: 'inline-block' }} />;
                     return (
                         <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '17px', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
@@ -270,7 +271,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     compParts = { tienvoud, delta: tienvoud - b };
                 }
                 const compBlank = (v: number) => showSolutions
-                    ? <span style={{ color: '#e11d48', padding: '0 4px' }}>{formatMathNumber(v)}</span>
+                    ? <span style={{ ...solutionText, padding: '0 4px' }}>{formatMathNumber(v)}</span>
                     : <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
 
                 return (
