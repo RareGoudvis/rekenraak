@@ -3,6 +3,7 @@ import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
 import PageSheet, { PAGE_W_PX } from './components/layout/PageSheet';
 import { packPages, pageIndexByBlock, type PackedBlock } from './services/layout/pagePacker';
+import { minWidthUnits } from './config/blockLayout';
 import type { FooterSlot } from './services/math/types';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
@@ -17,6 +18,7 @@ import HelpModal from './components/layout/HelpModal';
 import AboutModal from './components/layout/AboutModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
+import BlockControlsRail from './components/layout/BlockControlsRail';
 import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask, DotsSixVertical, Scissors } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
@@ -336,6 +338,12 @@ export default function App() {
       blockSpacingPx: docSettings.blockSpacing ?? 12,
       heightPxOf: measured.heightPxOf,
       pageBudgetPx: measured.pageBudgetPx,
+      // The width clamp is measured too: a block only needs a wider column when its
+      // CONTENT does, not because its type once did at default settings.
+      minWidthOf: (b) => {
+        const w = measured.intrinsicOf(b.id);
+        return minWidthUnits(b, w && { intrinsicPx: w.px, atWidth: w.atWidth });
+      },
       ignoreMinWidth: debugIgnoreMinWidth,
     }),
     [blocks, docSettings.blockSpacing, measured, debugIgnoreMinWidth],
