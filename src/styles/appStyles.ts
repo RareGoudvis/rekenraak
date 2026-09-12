@@ -18,12 +18,14 @@ export const styles = {
   // Selection is screen-only (cleared before print). Apple-style: soft accent-soft
   // fill + a clean 1px accent ring, not a dashed outline. The #e5e5e5 inter-block
   // divider is left intact — it lives on the white sheet and prints.
-  blockContainer: (isActive: boolean, isNotLastBlock: boolean, showDividers: boolean = true, blockSpacing: number = 12): React.CSSProperties => ({
+  // blockSpacing is the GRID's gap, not the block's: adding it here too doubled every
+  // gutter and the packer only ever budgeted one of them.
+  blockContainer: (isActive: boolean, isNotLastBlock: boolean, showDividers: boolean = true): React.CSSProperties => ({
     // Vertical padding only, no horizontal inset: an opdracht kader has to line up with
     // the koptekst and voettekst kaders, which sit on the page's 53px content edge. The
     // old 16px padding + 4px margin + 1px border pushed it 21px in on each side.
     // It also makes cellWidthPx() honest — it always returned the full cell width.
-    padding: '16px 0', position: 'relative', cursor: 'pointer', borderRadius: 'var(--radius-md)', boxSizing: 'border-box', margin: '4px 0', marginBottom: `${blockSpacing}px`, transition: 'box-shadow var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out)',
+    padding: '16px 0', position: 'relative', cursor: 'pointer', borderRadius: 'var(--radius-md)', boxSizing: 'border-box', margin: '4px 0', transition: 'box-shadow var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out)',
     // All four sides as longhand (not `border` shorthand) so toggling only the
     // bottom divider never trips React's shorthand/longhand mix warning.
     borderTop: '1px solid transparent',

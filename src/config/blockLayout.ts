@@ -11,7 +11,10 @@ export type WidthUnits = 1 | 2 | 4;
 // A4 at 96dpi is 1123px tall. Header, footer and the body cell's own padding come off
 // the top; ROW_UNIT_PX is the granularity the cost functions are calibrated in.
 export const ROW_UNIT_PX = 24;
-const BODY_HEIGHT_PX = 1123 - 118 /* header */ - 60 /* footer */ - 32 /* body padding */;
+// The chrome heights are their print padding at 96dpi plus their content: the header is
+// 16mm (60.5px) above ~72px of title and name fields plus the 12px content gap, the footer
+// 4mm + 8mm (45px) around a ~26px credit line. SYNC: index.css .page-sheet-head/-foot.
+const BODY_HEIGHT_PX = 1123 - 145 /* header */ - 71 /* footer */ - 32 /* body padding */;
 // Two units under what the body can actually hold. Under-estimating is the dangerous
 // direction — content crossing the footer — while over-estimating only wastes space.
 export const ROW_BUDGET = Math.floor(BODY_HEIGHT_PX / ROW_UNIT_PX) - 2;

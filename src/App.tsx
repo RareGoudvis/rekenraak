@@ -420,7 +420,7 @@ export default function App() {
       const isNotLastBlock = false;
 
               return (
-                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers, docSettings.blockSpacing ?? 12)}>
+                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
                   {/* Controls render for every block but stay hidden until the block is hovered or
                       active (CSS in index.css) — discoverable without selecting, no App re-render. */}
                   <div className="no-print block-controls" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
@@ -586,16 +586,29 @@ export default function App() {
                   <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen.</p>
                 </div>
               )}
-              {/* Keep each item's position WITHIN its row: only a block that has a
+              {/* Place every cell EXPLICITLY on the row the packer chose. Auto-placement
+                  lets the browser backfill a gap in an earlier row, which silently moves a
+                  block away from the row the pagination was costed against. Rows stay
+                  `auto` height so content (and ScaledBlock's zoom) still sizes them.
+                  Keep each item's position WITHIN its row: only a block that has a
                   neighbour to its left gets the column rule, so the setting is a no-op
                   on a single-column sheet instead of drawing a stray line down the page. */}
-              {page.rows.flatMap((row) => row.items.map((item, i) => ({ item, firstInRow: i === 0 })))
-                .map(({ item, firstInRow }) => (
+              {page.rows.flatMap((row, ri) => {
+                let start = 0;
+                return row.items.map((item, i) => {
+                  const placed = { item, rowIndex: ri, start, firstInRow: i === 0 };
+                  start += item.width;
+                  return placed;
+                });
+              }).map(({ item, rowIndex, start, firstInRow }) => (
                 <div
                   key={item.block.id}
+                  data-block-id={item.block.id}
+                  data-width={item.width}
                   className={!firstInRow && docSettings.showColumnDividers ? 'col-divider' : undefined}
                   style={{
-                    gridColumn: `span ${item.width}`,
+                    gridRow: rowIndex + 1,
+                    gridColumn: `${start + 1} / span ${item.width}`,
                     minWidth: 0,
                     position: 'relative',
                     // The rule is centred in the gutter, which IS blockSpacing.

@@ -79,7 +79,9 @@
 
 .page-sheet {
   width: 794px;              /* A4 at 96dpi */
-  min-height: 1123px;
+  /* A fixed height, not a minimum: a page that can grow is a page whose body height
+     cannot be trusted as a budget, and the last row then crosses the printed footer. */
+  height: 1123px;
   background: #fff;
   color: #000;
   box-shadow: var(--shadow-3);
@@ -94,14 +96,17 @@
   position: absolute; top: -20px; left: 2px;
   font-size: 11px; color: var(--text-muted); user-select: none;
 }
-.page-sheet-head { padding: 34px 53px 0; flex: none; }
+/* SYNC: the screen paddings are the PRINT paddings at 96dpi (16mm / 4mm / 8mm / 14mm),
+   so the screen body is exactly as tall as the printed one. When they differed, content
+   that fitted on screen ran under the footer on paper. */
+.page-sheet-head { padding: 60.5px 53px 0; flex: none; }
 .page-sheet-body {
   flex: 1; min-height: 0; padding: 0 53px;
   display: grid; grid-template-columns: repeat(4, 1fr); align-content: start;
   /* Clipped on screen exactly as it will be on paper, so what you see is what prints. */
   overflow: hidden;
 }
-.page-sheet-foot { flex: none; padding: 8px 53px 26px; }
+.page-sheet-foot { flex: none; padding: 15px 53px 30px; }
 
 /* The printed header and footer are editable in place: hovering shows an outline and a
    label, clicking opens their settings. Purely screen chrome — the outline rides an
