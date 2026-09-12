@@ -37,7 +37,7 @@ interface Props {
     onBodyMeasure?: (pageIndex: number, px: number) => void;
     /** Report one cell's rendered height; the packer prefers it over its own estimate. */
     onCellMeasure?: (blockId: string, width: number, px: number) => void;
-    /** Grid row the tail hint sits on — one past the last row the packer filled. */
+    /** Kept for the App contract; the hint is out of flow now, so it no longer needs a row. */
     tailRow?: number;
     /** Offer to split the block that starts the NEXT page, when this page ends in a big
         blank tail. Absent when there is no next page or its first block cannot be cut. */
@@ -50,7 +50,7 @@ const TAIL_HINT_PX = 72;
 
 export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, columnGap, children, onBackgroundClick,
-    onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure, tailRow, onSplitNext,
+    onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure, onSplitNext,
 }: Props) {
     const bodyRef = useRef<HTMLDivElement>(null);
     // The same pass that feeds real heights back to the packer also catches what it could
@@ -131,12 +131,11 @@ export default function PageSheet({
             <div ref={bodyRef} className="page-sheet-body" style={{ rowGap: `${blockSpacing}px`, columnGap: `${columnGap}px` }}>
                 {children}
                 {/* Never automatic: the page says what it sees and the teacher decides.
-                    Explicitly placed one row past the last cell — auto-placement would
-                    backfill a gap in an earlier row. */}
+                    Absolutely positioned (see .page-tail-hint) so it adds nothing to the
+                    body's scrollHeight — in the grid it tripped the overflow banner. */}
                 {onSplitNext && tailPx > TAIL_HINT_PX && (
                     <div
                         className="no-print page-tail-hint"
-                        style={{ gridRow: tailRow, gridColumn: '1 / -1' }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <span>Het volgende blok past hier niet meer —</span>

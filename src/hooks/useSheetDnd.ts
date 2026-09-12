@@ -44,6 +44,22 @@ export interface SheetDnd {
     };
 }
 
+// One reusable off-screen chip; created lazily so SSR/tests without a DOM never touch it.
+let ghost: HTMLDivElement | null = null;
+function dragGhost(): HTMLDivElement {
+    if (ghost && ghost.isConnected) return ghost;
+    ghost = document.createElement('div');
+    ghost.textContent = 'Blok verplaatsen';
+    ghost.setAttribute('aria-hidden', 'true');
+    Object.assign(ghost.style, {
+        position: 'fixed', top: '-1000px', left: '-1000px', padding: '4px 10px',
+        borderRadius: '999px', background: 'var(--accent)', color: 'var(--accent-on)',
+        font: '600 12px var(--font-ui)', pointerEvents: 'none', whiteSpace: 'nowrap',
+    });
+    document.body.appendChild(ghost);
+    return ghost;
+}
+
 export function useSheetDnd(): SheetDnd {
     const blocks = useWorksheetStore((s) => s.blocks);
     const reorderBlocks = useWorksheetStore((s) => s.reorderBlocks);
@@ -87,9 +103,10 @@ export function useSheetDnd(): SheetDnd {
         // Firefox refuses to start a drag without payload on the dataTransfer.
         e.dataTransfer.setData('text/plain', blockId);
         e.dataTransfer.effectAllowed = 'move';
-        // Drag the BLOCK, not the little handle chip, so the ghost shows what moves.
-        const el = document.getElementById(`block-${blockId}`);
-        if (el) e.dataTransfer.setDragImage(el, 24, 24);
+        // A small label as the ghost, never the block itself: Chrome rasterises the drag
+        // image synchronously at dragstart, and a whole A4 block inside a zoomed sheet
+        // (sheetZoom < 1 on a laptop) froze the tab the moment the drag cursor appeared.
+        e.dataTransfer.setDragImage(dragGhost(), 12, 12);
         fromRef.current = blockId;
         setFromId(blockId);
     }, []);

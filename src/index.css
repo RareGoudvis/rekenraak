@@ -102,7 +102,7 @@
    until 2026-09-12: a whole extra line of white above the name fields, on every page. */
 .page-sheet-head { padding: 45px 53px 0; flex: none; }
 .page-sheet-body {
-  flex: 1; min-height: 0; padding: 0 53px;
+  flex: 1; min-height: 0; padding: 0 53px; position: relative;
   display: grid; grid-template-columns: repeat(4, 1fr); align-content: start;
   /* Clipped on screen exactly as it will be on paper, so what you see is what prints. */
   overflow: hidden;
@@ -152,7 +152,10 @@
    cutting the next block. Screen-only, and never automatic — splitting renumbers a
    teacher's opdracht, so it stays their decision. */
 .page-tail-hint {
-  align-self: end;
+  /* Out of the grid flow on purpose: as a grid row it added its own height to the body's
+     scrollHeight, which the overflow banner reads — a page with room got "loopt 141px
+     over" the moment the hint appeared. */
+  position: absolute; left: 53px; right: 53px; bottom: 6px; z-index: 5;
   display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
   padding: 6px 10px; border-radius: var(--radius-sm);
   background: var(--accent-soft); color: var(--accent);
