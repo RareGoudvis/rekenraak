@@ -135,7 +135,7 @@ choke point enforces the lock without touching the ~16 config plugins. Draft-blo
 edits bypass the gate (authoring runs unlocked).
 
 **`MathBlock.constraints` is `BlockConstraints`** (since 2026-09-12; was `any`) —
-`Record<string, unknown> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType? }` —
+`Record<string, unknown> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType?, fitToPage? }` —
 an unnamed key read is a compile error; `scaffolding` is declared per family (7 literal types),
 never cross-cutting.
 The per-family shapes (43 `XConstraints` types + `ConstraintsByType`) live in
@@ -480,7 +480,12 @@ never touches the DOM itself; App injects measurements as callbacks (`heightPxOf
 
 Fill a row left to right; new row when the width runs out; new page when the page budget
 does; `pageBreakBefore` forces a page; a block taller than page 0 (the shortest — it carries
-the header) is marked `spans`, owns its page and flows across via FragmentableGrid.
+the header) is marked `spans` and owns its page. It does **not** flow on paper: `.page-sheet`
+is `height: 297mm; overflow: hidden` in print, so screen and PDF clip it the same way; the
+banner says so and points at the split control (§9 "Splitting") or the block's
+`constraints.fitToPage` ("Verklein om op één pagina te passen"), which lets
+[ScaledBlock](../../src/components/viewer/ScaledBlock.tsx) back its zoom off down to 0.7
+(`FIT_FLOOR`, pure helper in `scaledBlockFit.ts`) until the cell fits `PAGE_BODY_PX`.
 `PackedBlock.promoted` marks a block the clamp had to widen; the Inspector says so under the
 width picker. `ignoreMinWidth` disables the clamp for the width-matrix harness.
 
@@ -566,7 +571,11 @@ both `onCellMeasure` and the tail measurement it depends on.
   active block, optionally flips `showSolutions`, injects a dynamic `<style>` that blanks the
   browser's `@page` header/footer margin boxes, then `window.print()` after **two** animation
   frames — deselecting changes a block's height, so the dialog must not open before the
-  remeasure-and-repack has landed. Restores prior state on `afterprint`.
+  remeasure-and-repack has landed. Restores prior state on `afterprint`. A mount-once
+  effect intercepts Ctrl/Cmd+P and routes it through `handlePrint`, and `beforeprint` /
+  `afterprint` listeners are the net for menu or extension prints: they can only clean the DOM
+  (deselect via `flushSync` — React batching would land after Chrome's snapshot), an
+  `appInitiated` ref keeps the two paths from fighting.
 - **`@page { margin: 0 }`** — on purpose. The dialog's "Margins: None/Minimum" silently
   overrides `@page` margins, so we don't rely on them: every visible margin comes from the
   page's own padding instead. Robust to any dialog setting.
@@ -756,7 +765,9 @@ src/
         ├── BlockWidthContext.tsx       # printable width of the block's CELL — viewers MUST read this, never a constant
         ├── VerticalFraction.tsx        # shared stacked-fraction component
         ├── LayoutBlockViewer.tsx       # sheet furniture: sectie / schrijflijnen / raster / kader / lege pagina
-        ├── ScaledBlock.tsx             # per-block body-zoom wrapper (bodyFontScale); auto-fits to width so a wide block can't clip
+        ├── ScaledBlock.tsx             # per-block body-zoom wrapper (bodyFontScale); auto-fits to width, and to page height when constraints.fitToPage
+        ├── scaledBlockFit.ts           # pure nextZoom()/FIT_FLOOR helper for ScaledBlock (tested)
+        ├── solutionStyle.ts            # SOL / solutionText / solutionStroke — the one solution-red token (--ink-solution), bold
         └── FragmentableGrid.tsx        # block-stack-of-rows layout so items flow across print page breaks
 ```
 
