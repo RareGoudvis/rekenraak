@@ -26,7 +26,10 @@ const blank = (w = 28): React.CSSProperties => ({
     display: 'inline-block', verticalAlign: 'bottom',
 });
 
-const FS = '13px';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
+const FS = 'calc(var(--sheet-size-math) * 0.75)';
+const FS_TEXT = 'calc(var(--sheet-size-text) * 0.65)';
+const FS_LABEL = 'calc(var(--sheet-size-text) * 0.55)';
 const FONT = "'Azeret Mono', monospace";
 
 // ── Answer line renderers ─────────────────────────────────────────────────────
@@ -106,33 +109,33 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
             <path d="M 205,75 C 250,28 345,28 376,75"
                 fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
 
-            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize="14" fontFamily={FONT} fill={col}>{fmtCents(ex.priceCents)}</text>}
-            {showRight && <text x="415" y="80" textAnchor="middle" fontSize="14" fontFamily={FONT} fill={col}>{fmtCents(ex.payWithCents)}</text>}
+            {showLeft  && <text x="50"  y="80" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill={col}>{fmtCents(ex.priceCents)}</text>}
+            {showRight && <text x="415" y="80" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill={col}>{fmtCents(ex.payWithCents)}</text>}
 
             {/* Middle node: solution shows amount; otherwise € + blank line for student */}
             {showMiddle && (sol
-                ? <text x="173" y="80" textAnchor="middle" fontSize="14" fontFamily={FONT} fill={col}>{fmtCents(ex.waypointCents)}</text>
+                ? <text x="173" y="80" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill={col}>{fmtCents(ex.waypointCents)}</text>
                 : <g>
-                    <text x="150" y="80" fontSize="14" fontFamily={FONT} fill="#000" textAnchor="start">€</text>
+                    <text x="150" y="80" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill="#000" textAnchor="start">€</text>
                     <line x1="164" y1="81" x2="198" y2="81" stroke="#000" strokeWidth="1" />
                   </g>
             )}
 
             {/* Arc 1 label below small arc */}
             {showLabel1 && (sol
-                ? <text x="114" y="112" textAnchor="middle" fontSize="12" fontFamily={FONT} fill={col}>{label1Sol}</text>
+                ? <text x="114" y="112" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col}>{label1Sol}</text>
                 : <g>
-                    <text x="86"  y="112" fontSize="12" fontFamily={FONT} fill={col} textAnchor="start">+</text>
+                    <text x="86"  y="112" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col} textAnchor="start">+</text>
                     <line x1="98" y1="113" x2="132" y2="113" stroke={col} strokeWidth="1" />
-                    <text x="136" y="112" fontSize="12" fontFamily={FONT} fill={col} textAnchor="start">cent</text>
+                    <text x="136" y="112" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col} textAnchor="start">cent</text>
                   </g>
             )}
 
             {/* Arc 2 label above large arc */}
             {showLabel2 && (sol
-                ? <text x="290" y="20" textAnchor="middle" fontSize="12" fontFamily={FONT} fill={col}>{label2Sol}</text>
+                ? <text x="290" y="20" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col}>{label2Sol}</text>
                 : <g>
-                    <text x="258" y="20" fontSize="12" fontFamily={FONT} fill={col} textAnchor="start">+ €</text>
+                    <text x="258" y="20" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col} textAnchor="start">+ €</text>
                     <line x1="282" y1="21" x2="321" y2="21" stroke={col} strokeWidth="1" />
                   </g>
             )}
@@ -148,7 +151,7 @@ function ScaffoldingArea({ ex, scaffolding, showSolutions, boxHeight }: {
         // 'lege ruimte' — empty calc space; label so pupils know what the space is for
         return (
             <div style={{ width: '100%', height: `${boxHeight}px`, border: '1px solid transparent', boxSizing: 'border-box', borderRadius: '3px', padding: '4px' }}>
-                <span style={{ fontSize: '11px', fontStyle: 'italic', color: '#666' }}>Berekening:</span>
+                <span style={{ fontSize: FS_LABEL, fontStyle: 'italic', color: '#666' }}>Berekening:</span>
             </div>
         );
     }
@@ -168,7 +171,7 @@ function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExerci
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px 4px', boxSizing: 'border-box' }}>
             {/* Question */}
-            <div style={{ fontSize: FS, fontFamily: 'inherit', lineHeight: 1.5 }}>
+            <div style={{ fontSize: FS_TEXT, fontFamily: 'inherit', lineHeight: 1.5 }}>
                 <div>Je moet {fmtCents(ex.priceCents)} betalen.</div>
                 {betalenMetTekening ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -187,7 +190,7 @@ function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExerci
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '2px' }}>
                 {antwoordType === 'tekenen-schrijven' && (
                     <div style={{ width: '100%', height: `${boxHeight}px`, border: '1px solid #000', boxSizing: 'border-box', borderRadius: '3px', padding: '4px' }}>
-                        <span style={{ fontSize: '11px', fontStyle: 'italic', color: '#666' }}>Teken dit bedrag.</span>
+                        <span style={{ fontSize: FS_LABEL, fontStyle: 'italic', color: '#666' }}>Teken dit bedrag.</span>
                     </div>
                 )}
                 <AnswerLine ex={ex} antwoordFormat={antwoordFormat} showSolutions={showSolutions} />

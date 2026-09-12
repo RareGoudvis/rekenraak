@@ -11,6 +11,8 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 
+// Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
+
 // Dial geometry mirrors AnalogClockSVG's polar math: ticks around the rim,
 // labels at the majors, a red needle from the centre.
 function Dial({ grams, bereik, step, showNeedle, needleColor, size }: {
@@ -38,7 +40,7 @@ function Dial({ grams, bereik, step, showNeedle, needleColor, size }: {
             const label = bereik >= 2000 ? `${value / 1000}`.replace('.', ',') : String(value);
             ticks.push(
                 <text key={`t${i}`} x={cx + rl * Math.cos(ang)} y={cy + rl * Math.sin(ang)}
-                    textAnchor="middle" dominantBaseline="central" fontSize="11" fontFamily={mono}>{label}</text>
+                    textAnchor="middle" dominantBaseline="central" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.64)' }} fontFamily={mono}>{label}</text>
             );
         }
     }
@@ -49,7 +51,7 @@ function Dial({ grams, bereik, step, showNeedle, needleColor, size }: {
             <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="#000" strokeWidth={2} />
             {ticks}
             {/* Unit in the dial face; kg dials label in kg to keep numbers readable. */}
-            <text x={cx} y={cy + rOuter * 0.45} textAnchor="middle" fontSize="11" fontFamily={mono} fill="#555">
+            <text x={cx} y={cy + rOuter * 0.45} textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.64)' }} fontFamily={mono} fill="#555">
                 {bereik >= 2000 ? 'kg' : 'g'}
             </text>
             {showNeedle && (
@@ -91,7 +93,7 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                         ? <Dial grams={ex.grams} bereik={bereik} step={step} showNeedle needleColor="#000" size={size} />
                         // tekenen: weight printed, solution needle in red.
                         : <Dial grams={ex.grams} bereik={bereik} step={step} showNeedle={showSolutions} needleColor={SOL} size={size} />}
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: mono, fontSize: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
                         {mode === 'aflezen'
                             ? showSolutions
                                 ? <span style={{ ...solutionText }}>{formatGewicht(ex.grams, notatie)}</span>

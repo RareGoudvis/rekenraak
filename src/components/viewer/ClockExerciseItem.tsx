@@ -10,6 +10,8 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
+
 export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     const c = block.constraints as ClockConstraints;
     const clockType = (c.clockType || 'analoog') as ClockType;
@@ -22,22 +24,25 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     );
 
     const digitalBox = (
-        <div style={{ border: '2px solid #000', padding: '5px 10px', fontFamily: 'Azeret Mono, monospace', fontSize: '18px', fontWeight: 'normal', letterSpacing: '3px' }}>
+        <div style={{ border: '2px solid #000', padding: '5px 10px', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 1.04)', fontWeight: 'normal', letterSpacing: '3px' }}>
             {ex.digitalText}
         </div>
     );
 
     const timeLabel = (
-        <span style={{ fontSize: '13px', fontWeight: 'normal', fontFamily: 'Azeret Mono, monospace', textAlign: 'center' }}>
+        <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', fontWeight: 'normal', fontFamily: 'Azeret Mono, monospace', textAlign: 'center' }}>
             {ex.timeText}
         </span>
     );
 
     const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: '18px' }} />;
-    const sol = (text: string) => <span style={{ ...solutionText, fontSize: '12px' }}>{text}</span>;
+    // isMath: digitalText ("03:15") reads as math, timeText ("kwart over 3") reads as words
+    const sol = (text: string, isMath = false) => (
+        <span style={{ ...solutionText, fontSize: isMath ? 'calc(var(--sheet-size-math) * 0.7)' : 'calc(var(--sheet-size-text) * 0.6)' }}>{text}</span>
+    );
     // Empty digital display for the pupil to fill in (matches the omzetten __:__ box).
     const emptyDigitalBox = (
-        <div style={{ border: '2px solid #000', width: '65px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: '16px', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
+        <div style={{ border: '2px solid #000', width: '65px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.92)', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
             {showSolutions ? ex.digitalText : '__:__'}
         </div>
     );
@@ -67,8 +72,8 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
                 <>
                     {clock(true, true)}
                     {showSolutions
-                        ? sol(ex.digitalText)
-                        : <div style={{ border: '1.5px solid #000', width: '65px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: '12px', color: '#aaa' }}>__:__</div>
+                        ? sol(ex.digitalText, true)
+                        : <div style={{ border: '1.5px solid #000', width: '65px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.7)', color: '#aaa' }}>__:__</div>
                     }
                 </>
             );

@@ -5,6 +5,8 @@ import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
+
 // ── SVG helpers (print-friendly: white fill, black outline, no colour) ────────
 
 function billText(valueCents: number): string { return `${valueCents / 100}`; }
@@ -76,7 +78,7 @@ export function VoorbeeldenBar({ allowedDenominations, voorbeeldTypes }: { allow
                     {d.type === 'bill' && <Bill valueCents={d.valueCents} width={42} height={24} />}
                     {d.type === 'euro-coin' && <EuroCoin valueCents={d.valueCents} size={26} />}
                     {d.type === 'cent-coin' && <CentCoin valueCents={d.valueCents} size={22} />}
-                    <span style={{ fontSize: '9px', fontFamily: "'Azeret Mono', monospace", color: '#555' }}>
+                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.52)', fontFamily: "'Azeret Mono', monospace", color: '#555' }}>
                         {denominationLabel(d.valueCents)}
                     </span>
                 </div>
@@ -94,11 +96,11 @@ function HerkennenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: 
     const geldLayout: string = c.geldLayout ?? 'samen';
 
     const answerArea = showSolutions ? (
-        <div style={{ ...solutionText, fontSize: '16px', fontFamily: "'Azeret Mono', monospace", marginTop: '6px' }}>
+        <div style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontFamily: "'Azeret Mono', monospace", marginTop: '6px' }}>
             {formatAmount(ex.amountCents, format)}
         </div>
     ) : scaffolding === 'invullen' ? (
-        <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: '14px', marginTop: '6px' }}>
+        <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.81)', marginTop: '6px' }}>
             {format === 'decimaal' ? '€ ___ , ___' : '€ _______'}
         </div>
     ) : (

@@ -14,17 +14,19 @@ const SALMON = '#f4cbb8';
 // Week starts on maandag (Belgian calendars); JS getDay() is zondag-based.
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
+
 function MonthGrid({ year, month }: { year: number; month: number }) {
     const total = daysInMonth(year, month);
     const firstCol = WEEK_ORDER.indexOf(new Date(year, month, 1).getDay());
     const cells: (number | null)[] = [...Array(firstCol).fill(null), ...Array.from({ length: total }, (_, i) => i + 1)];
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '28px', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontFamily: mono, fontSize: '12px', boxSizing: 'border-box',
+        justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.7)', boxSizing: 'border-box',
     };
     return (
         <div style={{ width: 'fit-content' }}>
-            <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', width: `${7 * 40}px`, fontSize: '13px' }}>
+            <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', width: `${7 * 40}px`, fontSize: 'calc(var(--sheet-size-math) * 0.75)' }}>
                 {MONTH_NAMES[month]} {year}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 40px)' }}>
@@ -44,7 +46,7 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
     }
 
     const answer = (text: string, width = 150) => showSolutions
-        ? <span style={{ ...solutionText, fontFamily: mono, fontSize: '14px' }}>{text}</span>
+        ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>
         : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
 
     return (
@@ -59,7 +61,7 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
                             <MonthGrid year={ex.year} month={ex.month} />
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {(ex.questions ?? []).map((q, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '14px' }}>
+                                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
                                         <span>{q.text}</span>
                                         {answer(q.answer, 120)}
                                     </div>
@@ -74,7 +76,7 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
                     const rel = (ex.offsetDays ?? 0) >= 0 ? `Over ${ex.offsetDays} dagen` : `${Math.abs(ex.offsetDays ?? 0)} dagen geleden`;
                     const sol = `${DAY_NAMES[target.getDay()]} ${formatDate(target.getFullYear(), target.getMonth(), target.getDate())}`;
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '14px', flexWrap: 'wrap' }}>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: 'calc(var(--sheet-size-text) * 0.7)', flexWrap: 'wrap' }}>
                             <span>Vandaag is het {DAY_NAMES[base.getDay()]} {formatDate(ex.year, ex.month, ex.baseDate ?? 1)}. {rel} {(ex.offsetDays ?? 0) >= 0 ? 'is' : 'was'} het</span>
                             {answer(sol, 200)}
                         </div>
@@ -86,7 +88,7 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
                 const words = formatDate(ex.year, ex.month, ex.day ?? 1);
                 const digits = `${dd}/${mm}/${ex.year}`;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '14px', fontFamily: mono }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: mono }}>
                         <span>{ex.direction === 'naar-woorden' ? digits : words} =</span>
                         {answer(ex.direction === 'naar-woorden' ? words : digits, 150)}
                     </div>

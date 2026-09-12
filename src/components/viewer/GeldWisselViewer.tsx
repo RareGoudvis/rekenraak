@@ -3,13 +3,15 @@ import { Bill } from './GeldViewer';
 import FragmentableGrid from './FragmentableGrid';
 import type { GeldWisselConstraints } from '../../services/math/constraintTypes';
 
+// Size below is a factor of the sheet token (--sheet-size-math), not a fixed px
+
 function WisselCell({ ex, boxHeight }: { ex: GeldWisselExercise; boxHeight: number }) {
     return (
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', boxSizing: 'border-box' }}>
             <div style={{ flexShrink: 0 }}>
                 <Bill valueCents={ex.billValueCents} />
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', fontFamily: "'Azeret Mono', monospace", flexShrink: 0 }}>
+            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1.38)', fontWeight: 'bold', fontFamily: "'Azeret Mono', monospace", flexShrink: 0 }}>
                 =
             </div>
             <div style={{ flex: 1, height: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px' }} />

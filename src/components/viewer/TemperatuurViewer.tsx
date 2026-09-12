@@ -13,6 +13,8 @@ const mono = "'Azeret Mono', monospace";
 const MAX_T = 25;          // top labelled tick
 const HEAD = 12;           // glass headroom above MAX_T (no ticks)
 
+// Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
+
 // Glass thermometer: rounded tube with a subtle glass gradient, bulb, major (5°) +
 // minor (1°) ticks. `fillTo` = temp the mercury rises to (null = empty tube). `uid`
 // keeps gradient ids unique when several render on one sheet.
@@ -66,7 +68,7 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
                 return (
                     <g key={t}>
                         <line x1={cx + tubeW / 2} y1={y(t)} x2={cx + tubeW / 2 + len} y2={y(t)} stroke="#5b6b73" strokeWidth={major ? 1.2 : 0.8} />
-                        {major && <text x={cx + tubeW / 2 + len + 3} y={y(t) + 3.5} fontSize="9.5" fill="#333">{t}</text>}
+                        {major && <text x={cx + tubeW / 2 + len + 3} y={y(t) + 3.5} style={{ fontSize: 'calc(var(--sheet-size-math) * 0.55)' }} fill="#333">{t}</text>}
                     </g>
                 );
             })}
@@ -121,7 +123,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                     const c2 = ex.celsius2 ?? 0;
                     const diff = Math.abs(ex.celsius - c2);
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: mono, fontSize: '15px' }}>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                             <div style={{ display: 'flex', gap: '18px' }}>
                                 <VerschilThermo minT={minT} temp={ex.celsius} mode={ex.mode1 ?? 'gekleurd'} showSolutions={showSolutions} uid={`${ex.id}-1`} />
                                 <VerschilThermo minT={minT} temp={c2} mode={ex.mode2 ?? 'getal'} showSolutions={showSolutions} uid={`${ex.id}-2`} />
@@ -137,7 +139,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                 const isKleuren = ex.variant === 'kleuren';
                 const fillTo = isKleuren ? (showSolutions ? ex.celsius : null) : ex.celsius;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontFamily: mono, fontSize: '15px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                         {isKleuren && <div>Kleur tot {ex.celsius} °C</div>}
                         <Thermometer minT={minT} fillTo={fillTo} uid={ex.id} />
                         {!isKleuren && (

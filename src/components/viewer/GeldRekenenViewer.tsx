@@ -12,9 +12,11 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
+
 const cell: React.CSSProperties = {
     border: '1px solid #000', minHeight: '34px', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', fontFamily: mono, fontSize: '13px', boxSizing: 'border-box', padding: '2px 8px',
+    justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.75)', boxSizing: 'border-box', padding: '2px 8px',
 };
 
 export default function GeldRekenenViewer({ block, showSolutions }: Props) {
@@ -82,7 +84,7 @@ export default function GeldRekenenViewer({ block, showSolutions }: Props) {
             rowGap={0}
             items={[
                 <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: widths, width: 'fit-content' }}>
-                    {headers.map(h => <div key={h} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '12px' }}>{h}</div>)}
+                    {headers.map(h => <div key={h} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)' }}>{h}</div>)}
                 </div>,
                 ...exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: widths, width: 'fit-content', marginBottom: `${Math.max(0, gap - 14)}px` }}>

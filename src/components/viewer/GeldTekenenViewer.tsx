@@ -5,6 +5,8 @@ import FragmentableGrid from './FragmentableGrid';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
+// Sizes below are factors of the sheet tokens (--sheet-size-math), not fixed px
+
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
 function TekenenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: MathBlock; showSolutions: boolean }) {
@@ -18,10 +20,10 @@ function TekenenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: Ma
     const drawingBox = scaffolding === 'verdeeld' ? (
         <div style={{ width: '100%', height: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ flex: 1, borderBottom: '1.5px solid #000', display: 'flex', alignItems: 'center', paddingLeft: '4px' }}>
-                <span style={{ fontSize: '10px', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>€</span>
+                <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>€</span>
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '4px' }}>
-                <span style={{ fontSize: '10px', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>cent</span>
+                <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>cent</span>
             </div>
         </div>
     ) : (
@@ -30,12 +32,12 @@ function TekenenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: Ma
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '8px', boxSizing: 'border-box' }}>
-            <div style={{ fontSize: '17px', fontFamily: "'Azeret Mono', monospace", textAlign: 'center', color: '#000' }}>
+            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: "'Azeret Mono', monospace", textAlign: 'center', color: '#000' }}>
                 {amountText}
             </div>
             {drawingBox}
             {showSolutions && (
-                <div style={{ ...solutionText, fontSize: '11px', fontFamily: "'Azeret Mono', monospace", textAlign: 'center' }}>
+                <div style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: "'Azeret Mono', monospace", textAlign: 'center' }}>
                     {amountText}
                 </div>
             )}

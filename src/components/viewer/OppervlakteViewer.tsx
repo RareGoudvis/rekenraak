@@ -13,6 +13,7 @@ interface Props {
 // SYNC: keep CM/label geometry aligned with MetenViewer (same to-scale convention).
 const CM = 37.8;
 const mono = "'Azeret Mono', monospace";
+// Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));
 
@@ -80,7 +81,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
                     labelIdx.forEach(i => {
                         const pos = sideLabelPos(cs[i], cs[(i + 1) % cs.length], centroid);
                         labels.push(
-                            <div key={i} style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', fontFamily: mono, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                            <div key={i} style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.7)', whiteSpace: 'nowrap' }}>
                                 {fmt(sides[i])} cm
                             </div>
                         );
@@ -93,7 +94,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
                     : [sides[0], sides[1]];
 
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: mono, fontSize: '14px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
                         <div style={{ position: 'relative', width: `${W}px`, height: `${figH}px` }}>
                             <svg width={W} height={figH} style={{ display: 'block', overflow: 'visible' }}>
                                 {isRooster && (

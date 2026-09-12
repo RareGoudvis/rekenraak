@@ -12,6 +12,7 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 
+// Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const numLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: '16px', display: 'inline-block' }} />;
 const unitLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '34px', height: '16px', display: 'inline-block' }} />;
 
@@ -26,7 +27,7 @@ function EditableNumber({ value, onCommit }: { value: number; onCommit: (v: numb
                 onChange={e => setText(e.target.value)}
                 onBlur={() => { const n = Number(text.replace(',', '.')); if (!isNaN(n)) onCommit(n); setEditing(false); }}
                 onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
-                style={{ width: '70px', fontFamily: mono, fontSize: '16px', border: '1px solid var(--accent)', borderRadius: '4px', padding: '0 4px' }} />
+                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', border: '1px solid var(--accent)', borderRadius: '4px', padding: '0 4px' }} />
         );
     }
     return <span onClick={e => { e.stopPropagation(); setText(String(value)); setEditing(true); }} style={{ cursor: 'text' }} title="Klik om aan te passen">{formatMathNumber(value)}</span>;
@@ -40,7 +41,7 @@ function EditableUnit({ value, measure, onCommit }: { value: string; measure: st
                 onClick={e => e.stopPropagation()}
                 onChange={e => { onCommit(e.target.value); setEditing(false); }}
                 onBlur={() => setEditing(false)}
-                style={{ fontFamily: mono, fontSize: '15px', border: '1px solid var(--accent)', borderRadius: '4px' }}>
+                style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)', border: '1px solid var(--accent)', borderRadius: '4px' }}>
                 {ladderFor(measure).map(u => <option key={u.key} value={u.key}>{u.key}</option>)}
             </select>
         );
@@ -120,7 +121,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
             items={exercises.map(ex => {
                 const lf = leftIsFrom(ex);
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                         <span style={{ display: 'inline-block', width: `${leftW}px`, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{lf ? renderFrom(ex) : renderTo(ex)}</span>
                         <span style={{ flexShrink: 0 }}>=</span>
                         {/* Wrap the long side onto a second row instead of overflowing the page. */}
@@ -141,7 +142,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         const cw: number = c.tableCellW ?? 60;
         const ch: number = c.tableCellH ?? 30;
         const showHeaders = scaffolding === 'tabel-headers';
-        const unitCell: React.CSSProperties = { border: '1px solid #000', width: `${cw}px`, height: `${ch}px`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: '13px' };
+        const unitCell: React.CSSProperties = { border: '1px solid #000', width: `${cw}px`, height: `${ch}px`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.75)' };
 
         // Oppervlakte steps ×100 → each ²-unit holds 2 digits, so 2 (half-width) cells per column.
         const cellsPerUnit = measure === 'oppervlakte' ? 2 : 1;
@@ -158,8 +159,8 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         const cols = [...byFactor.entries()]
             .sort((x, y) => y[0] - x[0])
             .map(([, keys]) => keys.sort((a, b) => Number(ARE.has(b)) - Number(ARE.has(a))));
-        const headCell: React.CSSProperties = { border: '1px solid #000', width: `${colW}px`, minHeight: `${ch}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: '13px', fontWeight: 'bold', lineHeight: 1.1, backgroundColor: SALMON, padding: '2px 0' };
-        const sideCell: React.CSSProperties = { height: `${ch}px`, display: 'flex', alignItems: 'center', fontFamily: mono, fontSize: '14px', whiteSpace: 'nowrap' };
+        const headCell: React.CSSProperties = { border: '1px solid #000', width: `${colW}px`, minHeight: `${ch}px`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontWeight: 'bold', lineHeight: 1.1, backgroundColor: SALMON, padding: '2px 0' };
+        const sideCell: React.CSSProperties = { height: `${ch}px`, display: 'flex', alignItems: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', whiteSpace: 'nowrap' };
 
         const promptStr = (ex: HerleidingExercise) => ex.fromParts.map(p => `${formatMathNumber(p.value)} ${p.key}`).join('  ');
         // Fixed prompt-column width (≈8.4px/char at 14px Azeret Mono) so every row's unit

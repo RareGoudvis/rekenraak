@@ -10,6 +10,7 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const CM = 37.8;            // 1 cm at 96dpi — keeps the drawing genuinely to scale
 const OFFSET = 22;          // how far side labels sit outside the figure
 const mono = "'Azeret Mono', monospace";
@@ -113,13 +114,13 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                         if (labeled) content = <span>{fmt(sides[i])} cm</span>;
                         else if (sideScaffold) content = scaffoldBlank(showSolutions ? sides[i] : null);
                         if (content) labels.push(
-                            <div key={i} style={{ position: 'absolute', left: pos.x, top: pos.y, transform: anchor(pos.nx, pos.ny), fontFamily: mono, fontSize: '12px', whiteSpace: 'nowrap' }}>{content}</div>
+                            <div key={i} style={{ position: 'absolute', left: pos.x, top: pos.y, transform: anchor(pos.nx, pos.ny), fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.7)', whiteSpace: 'nowrap' }}>{content}</div>
                         );
                     }
                 } else if (g.isCircle && (labeled || sideScaffold)) {
                     const d = (ex.radius ?? 0) * 2;
                     labels.push(
-                        <div key="d" style={{ position: 'absolute', left: centroid.x, top: centroid.y + 16, transform: 'translate(-50%,-50%)', fontFamily: mono, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                        <div key="d" style={{ position: 'absolute', left: centroid.x, top: centroid.y + 16, transform: 'translate(-50%,-50%)', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.7)', whiteSpace: 'nowrap' }}>
                             {labeled ? <span>d = {fmt(d)} cm</span> : <span style={{ display: 'inline-flex', gap: '3px' }}>d = {scaffoldBlank(showSolutions ? d : null)}</span>}
                         </div>
                     );
@@ -134,7 +135,7 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                         return <span style={{ padding: '2px 10px', borderRadius: '50%', border: ring ? `2px solid ${SOL}` : '2px solid transparent', color: ring ? SOL : 'inherit' }}>{word}</span>;
                     };
                     answer = (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontFamily: mono, fontSize: '15px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                             <span>Lengte = {fmt(ex.claim ?? 0)} cm</span>
                             <span style={{ display: 'inline-flex', gap: '10px' }}>{circle('juist')}{circle('fout')}</span>
                         </div>
@@ -143,7 +144,7 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                     answer = ansBlank(showSolutions ? ex.perimeter : null, 90);
                 } else {
                     answer = (
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', flexWrap: 'wrap', fontFamily: mono, fontSize: '14px', justifyContent: right ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', flexWrap: 'wrap', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', justifyContent: right ? 'flex-end' : 'flex-start' }}>
                             {sides.map((s, i) => (
                                 <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '4px' }}>
                                     {i > 0 && <span>+</span>}
@@ -157,7 +158,7 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                 }
 
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: right ? 'flex-end' : 'flex-start', justifySelf: right ? 'end' : 'start', fontFamily: mono, fontSize: '15px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: right ? 'flex-end' : 'flex-start', justifySelf: right ? 'end' : 'start', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                         <div style={{ position: 'relative', width: `${W}px`, height: `${figH}px` }}>
                             <svg width={W} height={figH} style={{ display: 'block', overflow: 'visible' }}>
                                 {g.isCircle ? (

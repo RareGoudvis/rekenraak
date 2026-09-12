@@ -12,9 +12,10 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
 const cell: React.CSSProperties = {
     border: '1px solid #000', minHeight: '34px', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', fontFamily: mono, fontSize: '14px', boxSizing: 'border-box', padding: '2px 10px',
+    justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box', padding: '2px 10px',
 };
 
 export default function TijdsduurViewer({ block, showSolutions }: Props) {
@@ -49,7 +50,7 @@ export default function TijdsduurViewer({ block, showSolutions }: Props) {
             rowGap={0}
             items={[
                 <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
-                    {['begin', 'einde', 'duur'].map(h => <div key={h} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '12px' }}>{h}</div>)}
+                    {['begin', 'einde', 'duur'].map(h => <div key={h} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)' }}>{h}</div>)}
                 </div>,
                 ...exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content', marginBottom: `${Math.max(0, gap - 14)}px` }}>

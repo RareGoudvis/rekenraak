@@ -9,6 +9,7 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
 
 export default function MaateenheidViewer({ block, showSolutions }: Props) {
     const exercises: MaateenheidExercise[] = block.maateenheidExercises || [];
@@ -33,7 +34,7 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                     ? ex.sentence.replace(`${String(ex.value).replace('.', ',')} ___`, '___').replace(/\d+(,\d+)? ___/, '___')
                     : ex.sentence;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '15px', flexWrap: 'wrap' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: 'calc(var(--sheet-size-text) * 0.75)', flexWrap: 'wrap' }}>
                         <span>{sentence.split('___')[0]}
                             {ex.choices
                                 ? <span style={{ borderBottom: '1px dotted #999', minWidth: '30px', display: 'inline-block' }} />
@@ -43,7 +44,7 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                             {sentence.split('___')[1]}
                         </span>
                         {ex.choices && (
-                            <span style={{ display: 'inline-flex', gap: '10px', fontFamily: "'Azeret Mono', monospace", fontSize: '14px' }}>
+                            <span style={{ display: 'inline-flex', gap: '10px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
                                 {ex.choices.map(u => (
                                     // Solutions circle the right chip in red (print-safe ring).
                                     <span key={u} style={{
