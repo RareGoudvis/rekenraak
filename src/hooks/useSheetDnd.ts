@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 
 // Drag a block straight on the sheet, instead of only through the Overzicht outline.
 //
-// Native HTML5 drag-and-drop, no dependency. The drag starts on a HANDLE rather than on
-// the block: the block itself carries the inline instruction editor and viewers with
-// their own click-to-edit fields, and a draggable ancestor swallows those interactions.
+// Native HTML5 drag-and-drop, no dependency. The visible affordance is a HANDLE, but the
+// whole block drags: grabbing a block by its exercises is what teachers try first.
+// `draggable` cannot simply stay on the block — a permanently draggable ancestor swallows
+// the inline instruction editor and the viewers' click-to-edit fields — so it is switched
+// on at mousedown, only when the press did not land on something interactive, and off
+// again at mouseup / dragend / window blur.
 //
 // A drop does one of two things, chosen by which half of the target was hit:
 //   top    → 'before': the dragged block is inserted in front of the target
@@ -24,6 +27,13 @@ export interface SheetDnd {
     isNoop: (overId: string, zone: DropZone) => boolean;
     handleProps: (blockId: string) => {
         draggable: true;
+        onDragStart: (e: DragEvent<HTMLElement>) => void;
+        onDragEnd: () => void;
+    };
+    /** Spread on `.print-block`: makes the block itself draggable from anywhere that is
+        not an input, a button or another control. */
+    blockProps: (blockId: string) => {
+        onMouseDown: (e: MouseEvent<HTMLElement>) => void;
         onDragStart: (e: DragEvent<HTMLElement>) => void;
         onDragEnd: () => void;
     };
@@ -73,20 +83,48 @@ export function useSheetDnd(): SheetDnd {
         return z === 'before' && to === from + 1;
     }, [fromId, indexOf]);
 
+    const startDrag = useCallback((blockId: string) => (e: DragEvent<HTMLElement>) => {
+        // Firefox refuses to start a drag without payload on the dataTransfer.
+        e.dataTransfer.setData('text/plain', blockId);
+        e.dataTransfer.effectAllowed = 'move';
+        // Drag the BLOCK, not the little handle chip, so the ghost shows what moves.
+        const el = document.getElementById(`block-${blockId}`);
+        if (el) e.dataTransfer.setDragImage(el, 24, 24);
+        fromRef.current = blockId;
+        setFromId(blockId);
+    }, []);
+
     const handleProps = useCallback((blockId: string) => ({
         draggable: true as const,
-        onDragStart: (e: DragEvent<HTMLElement>) => {
-            // Firefox refuses to start a drag without payload on the dataTransfer.
-            e.dataTransfer.setData('text/plain', blockId);
-            e.dataTransfer.effectAllowed = 'move';
-            // Drag the BLOCK, not the little handle chip, so the ghost shows what moves.
-            const el = document.getElementById(`block-${blockId}`);
-            if (el) e.dataTransfer.setDragImage(el, 24, 24);
-            fromRef.current = blockId;
-            setFromId(blockId);
-        },
+        onDragStart: startDrag(blockId),
         onDragEnd: clear,
-    }), [clear]);
+    }), [clear, startDrag]);
+
+    // Anything that owns the press keeps it: text fields, the block controls, the
+    // viewers' own click-to-edit spans are all reached through these roles.
+    const INTERACTIVE = 'input, textarea, button, [contenteditable], a, select, [role="button"]';
+
+    const blockProps = useCallback((blockId: string) => ({
+        onMouseDown: (e: MouseEvent<HTMLElement>) => {
+            if (e.button !== 0) return;
+            if ((e.target as HTMLElement).closest(INTERACTIVE)) return;
+            const el = e.currentTarget;
+            el.draggable = true;
+            // Off again however the press ends — including a drag that finishes outside
+            // the window, which fires neither mouseup nor a useful dragend.
+            const release = () => {
+                el.draggable = false;
+                window.removeEventListener('mouseup', release);
+                window.removeEventListener('dragend', release);
+                window.removeEventListener('blur', release);
+            };
+            window.addEventListener('mouseup', release);
+            window.addEventListener('dragend', release);
+            window.addEventListener('blur', release);
+        },
+        onDragStart: startDrag(blockId),
+        onDragEnd: clear,
+    }), [clear, startDrag]);
 
     const cellProps = useCallback((blockId: string) => ({
         onDragOver: (e: DragEvent<HTMLElement>) => {
@@ -134,5 +172,5 @@ export function useSheetDnd(): SheetDnd {
         },
     }), [blocks, clear, reorderBlocks, swapBlocks, setActiveSelection]);
 
-    return { fromId, overId, zone, isNoop, handleProps, cellProps };
+    return { fromId, overId, zone, isNoop, handleProps, blockProps, cellProps };
 }

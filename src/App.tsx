@@ -540,7 +540,7 @@ export default function App() {
       const isNotLastBlock = false;
 
               return (
-                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${dnd.fromId === block.id ? ' is-dragging' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
+                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${dnd.fromId === block.id ? ' is-dragging' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} {...dnd.blockProps(block.id)} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
                   {/* Controls render for every block but stay hidden until the block is hovered or
                       active (CSS in index.css) — discoverable without selecting, no App re-render. */}
                   <div className="no-print block-controls" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
