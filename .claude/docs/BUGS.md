@@ -58,9 +58,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   was 628px). Enhancement: let multi-row viewers (FragmentableGrid users) split across pages —
   packer emits `{ block, rowFrom, rowTo }` per page, viewers accept an item window; per-row
   heights are measurable from `.print-row` children. Big change (≈40 viewers); design first.
-- **Ordenen at ½ width wraps its comma list mid-list** — `OrdenenViewer`: "560,16 , 56,7 / , 12,22"
-  reads as separate numbers. Needs `white-space: nowrap` per number + wrap only between numbers,
-  or a stacked layout below a width threshold (2026-09-12).
 
 ## Docs
 

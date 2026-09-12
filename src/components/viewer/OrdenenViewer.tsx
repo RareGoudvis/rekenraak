@@ -83,6 +83,11 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
     const maxLen = Math.max(...exercises.map((e) => e.display.length));
     // …but never wider than the cell allows: a ¼ block stacks them.
     const ordCols = maxLen <= 4 ? fitCols(availableWidth, 150, 2, 28) : 1;
+    // Under ~200px a comma list cannot wrap without lying: "560,16 , 56,7" then
+    // ", 12,22" reads as three numbers of which one starts with a comma. Below the
+    // threshold the numbers stack instead, one per line, and drop the separator.
+    const STACK_BELOW_PX = 200;
+    const stacked = availableWidth < STACK_BELOW_PX;
 
     return (
         <FragmentableGrid
@@ -92,18 +97,28 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
             items={exercises.map((ex) => (
                 <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: mono, fontSize: '17px' }}>
                     {/* shuffled prompt numbers (click to edit) */}
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', flexWrap: 'wrap', fontWeight: 'normal' }}>
+                    <div style={{
+                        display: 'flex', flexDirection: stacked ? 'column' : 'row',
+                        alignItems: stacked ? 'flex-start' : 'flex-end',
+                        gap: '6px', flexWrap: stacked ? 'nowrap' : 'wrap', fontWeight: 'normal',
+                    }}>
                         {ex.display.map((v, i) => (
-                            <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '4px' }}>
-                                {i > 0 && <span>,</span>}
+                            // One number per span, never broken, and the comma TRAILS the number
+                            // it belongs to: a leading comma that lands on a wrapped line reads as
+                            // part of the number after it.
+                            <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
                                 <EditableValue value={v} onCommit={(nv) => editAt(ex.id, ex.display, ex.operator, i, nv)} />
+                                {!stacked && i < ex.display.length - 1 && <span>,</span>}
                             </span>
                         ))}
                     </div>
                     {/* ordered blanks */}
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
+                    <div style={{
+                        display: 'flex', flexDirection: stacked ? 'column' : 'row',
+                        alignItems: 'flex-end', gap: '10px', flexWrap: stacked ? 'nowrap' : 'wrap',
+                    }}>
                         {ex.values.map((v, i) => (
-                            <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '10px' }}>
+                            <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '10px', whiteSpace: 'nowrap' }}>
                                 {i > 0 && <span style={{ fontWeight: 'normal' }}>{ex.operator}</span>}
                                 {showSolutions
                                     ? renderVal(v, '#e11d48')
