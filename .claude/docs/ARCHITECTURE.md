@@ -311,10 +311,10 @@ only.
 
 | typeId | MathBlock field | Generator (export) | Viewer | Config plugin | Key constraint keys |
 |---|---|---|---|---|---|
-| `hr-std-optellen` | `exercises` | `generateAdditionExercises` (mathEngine) | `MathBlockRenderer` | `AdditionConfig` | numberType, maxGetal, bridges, operand1/2Mask, equationType |
-| `hr-std-aftrekken` | `exercises` | `generateSubtractionExercises` | `MathBlockRenderer` | `SubtractionConfig` | same as optellen |
-| `hr-std-vermenigvuldigen` | `exercises` | `generateMultiplicationExercises` | `MathBlockRenderer` | `MultiplicationConfig` | multiplicationMode, selectedTables, tableLimit, fractionMultMode |
-| `hr-std-delen` | `exercises` | `generateDivisionExercises` | `MathBlockRenderer` | `DivisionConfig` | divisionLevel, metRestLevel, selectedTables, tableLimit |
+| `hr-std-optellen` | `exercises` | `generateAdditionExercises` (mathEngine) | `MathBlockRenderer` | `AdditionConfig` | `AddSubConstraints` via `addSubDefaults`: numberType, maxGetal, bridges, operand1/2Mask, equationType |
+| `hr-std-aftrekken` | `exercises` | `generateSubtractionExercises` | `MathBlockRenderer` | `SubtractionConfig` | same as optellen (`addSubDefaults`) |
+| `hr-std-vermenigvuldigen` | `exercises` | `generateMultiplicationExercises` | `MathBlockRenderer` | `MultiplicationConfig` | `MulDivConstraints` via `mulDivDefaults`: multiplicationMode, selectedTables, tableLimit, fractionMultMode |
+| `hr-std-delen` | `exercises` | `generateDivisionExercises` | `MathBlockRenderer` | `DivisionConfig` | `mulDivDefaults`: divisionLevel, metRestLevel, selectedTables, tableLimit |
 | `cijferen-optellen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | operator, numberType, maxRange, numberOfTerms, bridges, operand0-3Mask |
 | `cijferen-aftrekken-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-vermenigvuldigen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
@@ -711,10 +711,11 @@ That was replaced by the registry (§5) to scale toward the planned ~200 types:
 - **One generic `setExercises(id, field, data)`** store action instead of one
   setter per type. `MathBlock` still carries one optional array field per family
   (that's the data shape); the registry's `exerciseField` says which to write.
-- **Per-family constraint interfaces** in [types.ts](../../src/services/math/types.ts)
-  (`AddSubConstraints`, `MabConstraints`, …) document the default key sets.
-  `MathBlock.constraints` stays `any` at the container level (blocks are
-  heterogeneous); plugins/generators read the keys they expect.
+- **Per-family constraint types** in [constraintTypes.ts](../../src/services/math/constraintTypes.ts)
+  (`AddSubConstraints`, `MabConstraints`, … 43 in total). Since 2026-09-12
+  `MathBlock.constraints` is `BlockConstraints` (index signature + `CrossCutting`), not
+  `any`; every generator/viewer/plugin narrows to its family type once at the entry line
+  and the registry's `row<C>()` type-checks each default factory against it (§3, §6).
 
 What's still per-type by necessity: the generator, viewer, and config component
 themselves (genuinely different code), plus their two registry rows. Viewers take
