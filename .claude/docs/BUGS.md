@@ -34,12 +34,25 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - **Cell width 688 vs `FULL_BLOCK_WIDTH_PX` 681** — `App.tsx cellWidthPx` uses 688 (794 − 2×53),
   `BlockWidthContext.tsx` default is 681 (15 mm). Viewers get slightly different widths depending
   on whether they're inside a provider. Unify (2026-09-12).
+- **The browser's own Ctrl+P bypasses `usePrint`** — `src/hooks/usePrint.ts` deselects the
+  active block and waits two animation frames for the remeasure-and-repack before opening the
+  dialog; a native Ctrl+P does neither, so a sheet printed that way can still carry the
+  selection halo and the pre-repack pagination. Fix direction: a `beforeprint` listener that
+  does the same deselect (the repack cannot be awaited from there) (2026-09-12).
 - **Operator hugs a three-digit second operand in the 2-op-1 layout** — `MathBlockRenderer`
   `COMPACT_OP_GAP`: "+315" vs "+ 51". Compact operand cell is right-aligned and the gap is too
   small (2026-09-10).
 - **37 viewers set solution red inline** — only the four bewerkingen viewers use bold + the shared
   colour; the rest hardcode `color: red`-style inline. Wants one `--ink-solution` token + shared
   style (2026-09-10).
+
+## Tooling
+
+- **`npm test` cannot run from Git Bash** — vitest 5.0.0 fails to initialise its worker
+  ("failed to find the runner" / "Cannot read properties of undefined (reading 'config')") for
+  every suite when launched from the Git Bash shell on this machine; the identical command from
+  PowerShell passes. Survives `npm ci`, so it is shell-related, not an install problem. Run the
+  gate from PowerShell until it is diagnosed (2026-09-12).
 
 ## Docs
 

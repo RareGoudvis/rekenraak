@@ -475,6 +475,14 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                 ? 'Dit type heeft de volle breedte nodig.'
                                                 : `Smalst mogelijk bij deze instellingen: ${min === 2 ? '½' : '¼'}.`}
                                         </p>
+                                        {/* Same condition the packer calls `promoted`: the chosen
+                                            width was kept but overridden, so say so rather than
+                                            let the sheet silently disagree with the buttons. */}
+                                        {(activeBlock.widthUnits ?? 4) < min && (
+                                            <p style={S.hintText}>
+                                                Verbreed naar {min === 4 ? 'vol' : '½'}: te smal voor deze instellingen.
+                                            </p>
+                                        )}
                                     </>
                                 );
                             })()}

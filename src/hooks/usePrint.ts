@@ -25,7 +25,10 @@ export function usePrint() {
             document.getElementById('print-dynamic')?.remove();
         }, { once: true });
 
-        setTimeout(() => window.print(), 0);
+        // Deselecting a block changes its height, which remeasures and repacks. Two frames
+        // is one to lay the new state out and one to let the repack land, so the dialog
+        // sees the same pagination the screen shows.
+        requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
     };
 
     return { handlePrint };

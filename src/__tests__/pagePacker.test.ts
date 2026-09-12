@@ -135,6 +135,43 @@ describe('packPages', () => {
         expect(pageIndexByBlock(packPages([a, b]))).toEqual({ a: 0, b: 1 });
     });
 
+    test('a measured height wins over the estimate', () => {
+        const a = narrow(COL_UNITS as WidthUnits, 2, { id: 'a' });
+        const b = narrow(COL_UNITS as WidthUnits, 2, { id: 'b' });
+        // Both blocks measure as most of a page, so they cannot share one however small
+        // their estimate says they are.
+        const tall = packPages([a, b], { heightPxOf: () => (ROW_BUDGET * 24) * 0.7 });
+        expect(flat(tall)).toEqual([[['a']], [['b']]]);
+
+        // The same blocks on their estimate fit together.
+        expect(packPages([a, b])).toHaveLength(1);
+    });
+
+    test('a measured page budget replaces ROW_BUDGET', () => {
+        const blocks = Array.from({ length: 4 }, (_, i) => narrow(COL_UNITS as WidthUnits, 2, { id: `b${i}` }));
+        // A body of two row units holds one block per page whatever the default budget is.
+        const pages = packPages(blocks, { pageBudgetPx: () => 2 * 24, heightPxOf: () => 2 * 24 });
+        expect(pages).toHaveLength(4);
+    });
+
+    test('a blank page keeps its estimate even when a measurement exists', () => {
+        const blank = makeBlock('layout-lege-pagina', { block: { widthUnits: COL_UNITS as WidthUnits }, id: 'blank' });
+        const after = narrow(COL_UNITS as WidthUnits, 2, { id: 'after' });
+        // A measured blank page would only report back the height the last pagination gave
+        // it, so it must stay a whole page by definition.
+        expect(flat(packPages([blank, after], { heightPxOf: () => 24 }))).toEqual([[['blank']], [['after']]]);
+    });
+
+    test('ignoreMinWidth places a block at the width it was given', () => {
+        const wide = makeBlock('hr-std-optellen', {
+            constraints: { numberType: 'natural', maxGetal: 1000000 },
+            block: { widthUnits: 1 },
+            id: 'wide',
+        });
+        expect(packPages([wide])[0].rows[0].items[0].width).toBe(COL_UNITS);
+        expect(packPages([wide], { ignoreMinWidth: true })[0].rows[0].items[0].width).toBe(1);
+    });
+
     test('every packed row fits the column grid', () => {
         const blocks = Array.from({ length: 9 }, (_, i) => narrow(i % 3 === 0 ? (COL_UNITS as WidthUnits) : HALF, 3, { id: `b${i}` }));
         for (const page of packPages(blocks)) {

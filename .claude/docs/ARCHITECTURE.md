@@ -114,6 +114,12 @@ edits bypass the gate (authoring runs unlocked).
 and config plugin reads the keys it expects. Defaults are set in `addBlockFromType`
 (big per-type ternary, line ~146).
 
+**Measured layout is NOT store state.** Rendered cell heights and the page-body budget
+live in [useMeasuredHeights](../../src/hooks/useMeasuredHeights.ts), React state inside
+App: they describe how the sheet rendered, not what the sheet is, so they must never be
+undoable, autosaved or shared. `loadWorksheet` normalises `widthUnits` from the old 6-unit
+grid for callers that never passed a versioned payload (§10).
+
 **Autosave:** a store subscription debounces 1.5 s after
 `blocks`/`header`/`footer`/`docSettings`/`baseSettings` change and writes to
 localStorage (payload also carries `curriculum`, so a locked sheet stays locked
@@ -403,13 +409,19 @@ only approximated it. Now a pure packer decides the breaks up front, each page r
 own header and footer, and each ends with `break-after: page`. **Screen page count ===
 PDF page count.**
 
-### Budget, don't measure
+### Budget first, then measure
 
 [blockLayout.ts](../../src/config/blockLayout.ts) — the page grid and the per-type cost data.
 
-- A page is `COL_UNITS` wide by `ROW_BUDGET` tall. `ROW_BUDGET` is deliberately **2 units
-  under** what the body holds: under-estimating puts content across the footer,
-  over-estimating only wastes space.
+- A page is `COL_UNITS` (**4**: vol / ½ / ¼) wide by `ROW_BUDGET` tall. The grid was 6 units
+  (vol / ½ / ⅓) until 2026-09-12; a third of an A4 was too narrow to read and 31 of 59 types
+  were pinned to full width anyway. Tiers mapped **6→4, 3→2, 2→2** — never narrower.
+- `ROW_BUDGET` and `estimateHeightUnits` are the **first-paint fallback**: once the sheet has
+  rendered, [useMeasuredHeights](../../src/hooks/useMeasuredHeights.ts) feeds the packer the
+  real cell heights and the real page-body budget, and those win. Estimating alone ended
+  pages early (blank tails) or overran them; measuring alone cannot run before first paint.
+- `ROW_BUDGET` is deliberately **2 units under** what the body holds: under-estimating puts
+  content across the footer, over-estimating only wastes space.
 - `rowUnits` per type is **measured**, not guessed: all 119 sidebar leaves rendered at two
   exercise counts, per-row height derived from the difference.
 - `minWidth` per type is **measured with every clamp disabled** — measuring with tiers
@@ -424,11 +436,24 @@ PDF page count.**
 
 ### The packer
 
-[pagePacker.ts](../../src/services/layout/pagePacker.ts) — pure: blocks in, pages out, no DOM.
+[pagePacker.ts](../../src/services/layout/pagePacker.ts) — pure: blocks in, pages out. It
+never touches the DOM itself; App injects measurements as callbacks (`heightPxOf`,
+`pageBudgetPx`), so it stays unit-testable.
 
-Fill a row left to right; new row when the width runs out; new page when the row budget
-does; `pageBreakBefore` forces a page; a block taller than a page is marked `spans`, owns
-its page and flows across via FragmentableGrid. Unit-checkable because nothing is measured.
+Fill a row left to right; new row when the width runs out; new page when the page budget
+does; `pageBreakBefore` forces a page; a block taller than page 0 (the shortest — it carries
+the header) is marked `spans`, owns its page and flows across via FragmentableGrid.
+`PackedBlock.promoted` marks a block the clamp had to widen; the Inspector says so under the
+width picker. `ignoreMinWidth` disables the clamp for the width-matrix harness.
+
+**Measure → pack convergence**: a cell's height depends only on (block, width, spacing,
+docSettings) and never on where it was placed, and widths are settings-derived rather than
+measurement-derived — so one remeasure reaches a fixed point. Writes under 2px are dropped;
+a dev-only counter warns at more than 5 repacks in a second.
+
+Each page cell is placed **explicitly** (`gridRow` / `gridColumn` from the packer). With
+auto-placement the browser backfills a gap in an earlier row and quietly moves a block off
+the row its pagination was costed against.
 
 ### Rendering one page
 
@@ -441,7 +466,12 @@ spanning its `widthUnits`.
   span. **SYNC:** any viewer that picks a column count must read `useBlockWidth()`, never a
   constant — the nine that hardcoded `A4_CONTENT_PX = 625` were the blocker for columns.
 - The page body clips, and a page that overflows its budget outlines itself and says by how
-  much. Print hides overflow, so a silent clip would otherwise only surface on paper.
+  much. Print hides overflow, so a silent clip would otherwise only surface on paper. The
+  same pass reports `onBodyMeasure` / `onCellMeasure` back to `useMeasuredHeights`, so after
+  the repack the banner only fires for a single block taller than one page.
+- **SYNC:** the screen paddings in `index.css` are the print paddings at 96dpi (16mm head,
+  4mm+8mm foot, 14mm sides) and `.page-sheet` has a fixed `height`, not a `min-height`. When
+  they differed, content that fitted on screen ran under the footer on paper.
 - Real **page numbers** are possible for the first time (the browser cannot count pages from
   HTML/CSS; the packer knows index and total).
 
@@ -449,8 +479,9 @@ spanning its `widthUnits`.
 
 - **[usePrint.ts](../../src/hooks/usePrint.ts)** — `handlePrint(withSolutions)`: deselects the
   active block, optionally flips `showSolutions`, injects a dynamic `<style>` that blanks the
-  browser's `@page` header/footer margin boxes, then `window.print()`. Restores prior state
-  on `afterprint`.
+  browser's `@page` header/footer margin boxes, then `window.print()` after **two** animation
+  frames — deselecting changes a block's height, so the dialog must not open before the
+  remeasure-and-repack has landed. Restores prior state on `afterprint`.
 - **`@page { margin: 0 }`** — on purpose. The dialog's "Margins: None/Minimum" silently
   overrides `@page` margins, so we don't rely on them: every visible margin comes from the
   page's own padding instead. Robust to any dialog setting.
@@ -493,10 +524,17 @@ multi-item viewers go through `FragmentableGrid`.
 
 All localStorage; nothing leaves the browser except share links the user copies.
 
-- **Format gate:** `WORKSHEET_FORMAT_VERSION = 2`. `parseWorksheetFile` validates
+- **Format gate:** `WORKSHEET_FORMAT_VERSION = 3`. `parseWorksheetFile` validates
   version + required fields (blocks/header/footer/docSettings) + the optional
   `curriculum` shape, and rejects future/invalid files. v2 added optional
   `baseSettings` + `curriculum` (absent → defaults, so v1 files still load).
+- **v2 → v3 migration:** the page grid went 6 units → 4, and the same NUMBER means a
+  different width on each scale, so `migrateWorksheetFile(file)` is **version-gated, never
+  value-based**: below v3 it maps `widthUnits` 6→4, 3→2, 2→2 (never narrower — overflow is
+  the dangerous direction) and stamps version 3. Pure and idempotent; called from
+  `parseWorksheetFile` (file + share), `loadAutosave` and `loadPresets`. `loadWorksheet` in
+  the store keeps a defensive normaliser for library callers that hand over a payload which
+  never passed through a versioned parse.
 - **Full vs template mode** (`WorksheetFileMode`): `full` = complete snapshot with
   exercises; `template` = settings only (exercise arrays stripped by
   `stripBlock`), so the recipient configures-then-Genereer to populate.
@@ -557,7 +595,8 @@ src/
 ├── store/
 │   └── useWorksheetStore.tsx    # single Zustand store: state, actions, history, autosave subscription
 ├── hooks/
-│   └── usePrint.ts              # window.print() trigger + dynamic @page injection
+│   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (waits 2 rAF for the repack)
+│   └── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/

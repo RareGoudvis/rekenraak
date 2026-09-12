@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { WarningCircle } from '@phosphor-icons/react';
 
-// One printed page: its own header, a 6-column grid body, its own footer.
+// One printed page: its own header, a 4-column grid body, its own footer.
 //
 // This replaces the single-<table> sheet whose <thead>/<tfoot> Chrome repeated across
 // printed pages. That trick was the only way to get a running header when the browser
@@ -29,16 +29,21 @@ interface Props {
         interface, not only a preview. Screen-only: the affordance is .no-print. */
     onHeaderClick?: () => void;
     onFooterClick?: () => void;
+    /** Report the body's usable height back to the packer, which budgets pages against it. */
+    onBodyMeasure?: (pageIndex: number, px: number) => void;
+    /** Report one cell's rendered height; the packer prefers it over its own estimate. */
+    onCellMeasure?: (blockId: string, width: number, px: number) => void;
 }
 
 export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, children, onBackgroundClick,
-    onHeaderClick, onFooterClick,
+    onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure,
 }: Props) {
     const bodyRef = useRef<HTMLDivElement>(null);
-    // Heights are budgeted, not measured, so an estimate can be wrong. When it is, the page
-    // must SAY so rather than clip in silence — print hides the overflow, and a teacher
-    // would only find out on paper.
+    // The same pass that feeds real heights back to the packer also catches what it could
+    // not prevent — a single block taller than one page. When that happens the page must
+    // SAY so rather than clip in silence: print hides the overflow, and a teacher would
+    // only find out on paper.
     const [overflowPx, setOverflowPx] = useState(0);
 
     useLayoutEffect(() => {
@@ -47,6 +52,16 @@ export default function PageSheet({
         const check = () => {
             const over = el.scrollHeight - el.clientHeight;
             setOverflowPx(over > 2 ? Math.round(over) : 0);
+            // clientHeight is the body's usable box, not its content: it is the page budget.
+            onBodyMeasure?.(index, el.clientHeight);
+            // Measured on the GRID CELL — outside ScaledBlock's CSS zoom, so offsetHeight is
+            // the height the grid actually gives the row. Children without a data-block-id
+            // (the empty-sheet hero) are not blocks and report nothing.
+            for (const child of Array.from(el.children) as HTMLElement[]) {
+                const blockId = child.dataset.blockId;
+                const width = Number(child.dataset.width);
+                if (blockId && width > 0) onCellMeasure?.(blockId, width, child.offsetHeight);
+            }
         };
         check();
         const ro = new ResizeObserver(check);

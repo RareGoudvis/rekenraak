@@ -16,6 +16,7 @@ import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
 import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
+import { useMeasuredHeights } from './hooks/useMeasuredHeights';
 import { styles } from './styles/appStyles';
 import { overlayRegionStyle } from './services/regionStyle';
 import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, TRYOUT_SEEN_KEY } from './services/persistence';
@@ -214,11 +215,18 @@ export default function App() {
     return Math.floor(unit * units + gap * (units - 1));
   };
 
-  // Pagination is now BUDGETED by the packer, not measured from the DOM: the page count
-  // is known before anything renders, which is what makes the page markers trustworthy.
+  // Pagination is decided by the packer, which pages a first time on its settings-derived
+  // budget and then repacks on the heights the sheet actually rendered. Estimating alone
+  // ended pages early (blank tails) or overran them; measuring alone could not run before
+  // the first paint.
+  const measured = useMeasuredHeights(blocks);
   const packedPages = useMemo(
-    () => packPages(blocks, { blockSpacingPx: docSettings.blockSpacing ?? 12 }),
-    [blocks, docSettings.blockSpacing],
+    () => packPages(blocks, {
+      blockSpacingPx: docSettings.blockSpacing ?? 12,
+      heightPxOf: measured.heightPxOf,
+      pageBudgetPx: measured.pageBudgetPx,
+    }),
+    [blocks, docSettings.blockSpacing, measured],
   );
   // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
   // separator never renumbers the exercises after it.
@@ -566,6 +574,8 @@ export default function App() {
               onBackgroundClick={() => setActiveSelection('document')}
               onHeaderClick={() => openBladCard('koptekst')}
               onFooterClick={() => openBladCard('voettekst')}
+              onBodyMeasure={measured.onBodyMeasure}
+              onCellMeasure={measured.onCellMeasure}
               header={pi === 0
                 ? renderHeaderRegion()
                 : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}

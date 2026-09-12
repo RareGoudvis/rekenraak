@@ -3,8 +3,14 @@ import {
     COL_UNITS, ROW_BUDGET, estimateHeightUnits, minWidthUnits, type WidthUnits,
 } from '../../config/blockLayout';
 
-// Deterministic pagination. Blocks in, pages out — no DOM measurement and no reflow loop,
-// so the page count is knowable before anything renders and is unit-testable on its own.
+// Deterministic pagination. Blocks in, pages out — the packer itself never touches the
+// DOM, so it stays pure and unit-testable; App injects measured heights through callbacks.
+//
+// Heights are the MEASURED cell height when App has one and the settings-derived estimate
+// otherwise. That combination converges: a cell's height depends on (block, width,
+// spacing, docSettings) and never on which row or page it landed in, and the width is
+// settings-derived rather than measurement-derived, so a repack cannot change what was
+// measured. One remeasure reaches the fixed point.
 //
 // The rules, in the order they apply to each block:
 //   1. `pageBreakBefore` forces a fresh page.
@@ -46,6 +52,12 @@ export interface PackOptions {
     rowBudget?: number;
     /** Gap between blocks, in px, from docSettings.blockSpacing. */
     blockSpacingPx?: number;
+    /** Measured px height of a block's rendered cell, when one exists (see useMeasuredHeights). */
+    heightPxOf?: (block: MathBlock, width: WidthUnits) => number | undefined;
+    /** Measured px height of a page's body box, when one exists. */
+    pageBudgetPx?: (pageIndex: number) => number | undefined;
+    /** Width-matrix harness only: place blocks at the width asked for, clamp or not. */
+    ignoreMinWidth?: boolean;
 }
 
 const ROW_UNIT_PX = 24;
@@ -56,6 +68,12 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
     // The gap between rows is real height; leaving it out is how an estimate quietly
     // overruns the footer.
     const rowGap = (opts.blockSpacingPx ?? 12) / ROW_UNIT_PX;
+    // Page 0 is shorter than the rest (it carries the header), so each page is costed
+    // against its own measured body rather than one global budget.
+    const budgetFor = (pageIndex: number) => {
+        const px = opts.pageBudgetPx?.(pageIndex);
+        return px !== undefined && px > 0 ? px / ROW_UNIT_PX : rowBudget;
+    };
 
     const pages: PackedPage[] = [];
     let rows: PackedRow[] = [];          // rows of the page being filled
@@ -68,15 +86,22 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
     };
 
     for (const block of blocks) {
-        const width = Math.max(block.widthUnits ?? COL_UNITS, minWidthUnits(block)) as WidthUnits;
-        const promoted = (block.widthUnits ?? COL_UNITS) < width;
-        const height = estimateHeightUnits(block, width);
-        const spans = height > rowBudget;
-        const capped = Math.min(height, rowBudget);
+        const asked = (block.widthUnits ?? COL_UNITS) as WidthUnits;
+        const width = opts.ignoreMinWidth ? asked : Math.max(asked, minWidthUnits(block)) as WidthUnits;
+        const promoted = asked < width;
+        // A blank page is a whole page BY DEFINITION, so measuring it would only report
+        // back whatever the last pagination gave it.
+        const measuredPx = block.typeId === 'layout-lege-pagina' ? undefined : opts.heightPxOf?.(block, width);
+        const height = measuredPx !== undefined && measuredPx > 0 ? measuredPx / ROW_UNIT_PX : estimateHeightUnits(block, width);
+        // Judged against the FIRST page: it is the shortest, and a block that cannot fit
+        // there must flow rather than be placed in a row anywhere.
+        const spans = height > budgetFor(0);
 
         // 1. forced break — never leaving a blank page in front of it
         if (block.pageBreakBefore && rows.length > 0) flushPage();
 
+        const budget = budgetFor(pages.length);
+        const capped = Math.min(height, budget);
         const open = rows.length > 0 ? rows[rows.length - 1] : null;
         const joins = open !== null && open.width + width <= colUnits;
 
@@ -89,7 +114,7 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
         // A block taller than a page cannot share a row: it would add its own capped height
         // on top of whatever was already there and push the page over its budget.
         if (spans && rows.length > 0) flushPage();
-        else if (!spans && prospective > rowBudget && rows.length > 0) flushPage();
+        else if (!spans && prospective > budget && rows.length > 0) flushPage();
 
         // 3. join the row that is still open, or start a new one
         const last = rows.length > 0 ? rows[rows.length - 1] : null;

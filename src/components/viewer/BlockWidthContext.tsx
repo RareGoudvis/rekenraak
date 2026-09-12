@@ -7,8 +7,8 @@ export const FULL_BLOCK_WIDTH_PX = 681;
 
 // Viewers decide their own column count from the width they have (2-up vs 1-up grids).
 // They used to hardcode 625, which is only true at full width: in a half-width block the
-// real budget is ~305px and in a third ~200px, so a hardcoded viewer would confidently lay
-// out a grid that overflows its cell. This context hands them the truth instead.
+// real budget is ~334px and in a quarter ~161px, so a hardcoded viewer would confidently
+// lay out a grid that overflows its cell. This context hands them the truth instead.
 //
 // SYNC: every viewer that decides a column count must read this rather than a constant.
 const BlockWidthContext = createContext<number>(FULL_BLOCK_WIDTH_PX);
