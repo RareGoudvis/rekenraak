@@ -70,6 +70,22 @@ function probeIntrinsicWidth(cell: HTMLElement): number | undefined {
     return local > 0 ? local * scale : undefined;
 }
 
+// The height of the BLOCK, not of the grid cell around it. Grid items stretch to the
+// height of the tallest item in their row, so a cell's own offsetHeight is its row's
+// height — feeding that back to the packer made a short block claim the height of the tall
+// one beside it, which is placement-dependent and therefore not a fact about the block:
+// the packer moved it, it measured smaller, the packer moved it back, and the repack
+// circuit breaker froze whichever value it happened to hold (splitsen read 553px as 914px
+// in the 2026-09-13 height audit). `.print-block` carries the printed chrome (16px padding
+// + 1px border top and bottom) INSIDE its box and 4px margins outside it, and all of that
+// prints, so the block's own cost is its offsetHeight plus those margins.
+function ownHeight(cell: HTMLElement): number {
+    const inner = cell.firstElementChild as HTMLElement | null;
+    if (!inner) return cell.offsetHeight;
+    const cs = getComputedStyle(inner);
+    return inner.offsetHeight + (parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+}
+
 export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, columnGap, children, onBackgroundClick,
     onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure, onSplitNext,
@@ -110,8 +126,11 @@ export default function PageSheet({
                 const blockId = child.dataset.blockId;
                 const width = Number(child.dataset.width);
                 if (!blockId || !(width > 0)) continue;
-                onCellMeasure?.(blockId, width, child.offsetHeight, probeIntrinsicWidth(child));
-                tallestCell = Math.max(tallestCell, child.offsetHeight);
+                const own = ownHeight(child);
+                onCellMeasure?.(blockId, width, own, probeIntrinsicWidth(child));
+                tallestCell = Math.max(tallestCell, own);
+                // The TAIL, unlike the height, is about the row: a stretched cell ends
+                // where its row ends, which is exactly the ink boundary the hint is about.
                 lastBottom = Math.max(lastBottom, child.getBoundingClientRect().bottom);
             }
             setOversizeBlock(tallestCell > el.clientHeight + 2);

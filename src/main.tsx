@@ -5,6 +5,7 @@ import App from './App.tsx';
 import { useWorksheetStore } from './store/useWorksheetStore';
 import { REGISTRY } from './config/exerciseRegistry';
 import { flattenLeaves } from './config/appstructure';
+import { measuredSnapshot } from './hooks/useMeasuredHeights';
 import './index.css'; // Laadt de CSS-fundering en het thema
 
 // App-wide Phosphor defaults so raw-rendered icons (sidebar theme toggle, modal X,
@@ -50,6 +51,10 @@ if (import.meta.env.DEV) {
     setIgnoreMinWidth: (on: boolean) => useWorksheetStore.getState().setIgnoreMinWidth(on),
     clearBlocks: () => useWorksheetStore.getState().clearBlocks(),
     getState: () => useWorksheetStore.getState(),
+    // The height/width maps the packer actually reads — scripts/height-audit.mjs diffs
+    // them against the rendered rects, which is the only way to see the packer and the
+    // paper disagree.
+    measured: () => measuredSnapshot(),
     // DEV only, never shipped: replaces Math.random in place. seed(undefined) restores
     // the native RNG.
     seed: (n?: number) => { Math.random = n === undefined ? nativeRandom : mulberry32(n); },

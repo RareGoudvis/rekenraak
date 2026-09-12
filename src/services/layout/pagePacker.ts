@@ -6,8 +6,11 @@ import {
 // Deterministic pagination. Blocks in, pages out — the packer itself never touches the
 // DOM, so it stays pure and unit-testable; App injects measured heights through callbacks.
 //
-// Heights are the MEASURED cell height when App has one and the settings-derived estimate
-// otherwise. That combination converges: a cell's height depends on (block, width,
+// Heights are the MEASURED height of the BLOCK when App has one and the settings-derived
+// estimate otherwise. Of the BLOCK, not of its grid cell: a grid item stretches to its
+// row's height, so a cell's own box is placement-dependent and would feed the tall block's
+// height back as the short one's (see PageSheet's ownHeight).
+// That combination converges: a cell's height depends on (block, width,
 // spacing, docSettings) and never on which row or page it landed in, and the width clamp
 // only ever WIDENS a block, which re-measures under a new key instead of overwriting the
 // measurement it came from. One remeasure reaches the fixed point.
@@ -69,6 +72,12 @@ export interface PackOptions {
 }
 
 const ROW_UNIT_PX = 24;
+// Pagination must not turn on float noise. Heights arrive in px and are costed in row
+// units, and 788/24 + 12/24 + 200/24 is not exactly 1000/24 in binary — an exactly-full
+// page then spilled its last block onto a page of its own and left a page-high blank tail
+// behind it. Half a printed pixel of tolerance is far below anything a teacher can see and
+// far above the rounding.
+const FIT_EPSILON = 0.5 / ROW_UNIT_PX;
 
 export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPage[] {
     const colUnits = opts.colUnits ?? COL_UNITS;
@@ -104,7 +113,7 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
         const height = measuredPx !== undefined && measuredPx > 0 ? measuredPx / ROW_UNIT_PX : estimateHeightUnits(block, width);
         // Judged against the FIRST page: it is the shortest, and a block that cannot fit
         // there must flow rather than be placed in a row anywhere.
-        const spans = height > budgetFor(0);
+        const spans = height > budgetFor(0) + FIT_EPSILON;
 
         // 1. forced break — never leaving a blank page in front of it
         if (block.pageBreakBefore && rows.length > 0) flushPage();
@@ -123,7 +132,7 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
         // A block taller than a page cannot share a row: it would add its own capped height
         // on top of whatever was already there and push the page over its budget.
         if (spans && rows.length > 0) flushPage();
-        else if (!spans && prospective > budget && rows.length > 0) flushPage();
+        else if (!spans && prospective > budget + FIT_EPSILON && rows.length > 0) flushPage();
 
         // 3. join the row that is still open, or start a new one
         const last = rows.length > 0 ? rows[rows.length - 1] : null;

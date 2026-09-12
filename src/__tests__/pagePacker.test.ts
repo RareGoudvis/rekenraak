@@ -217,6 +217,55 @@ describe('packPages with a measured minWidthOf', () => {
     });
 });
 
+describe('a page that is exactly full', () => {
+    // The bug this pins: the packer must decide "does the next block fit?" with the same
+    // numbers the paper uses. Four blocks whose MEASURED heights plus the row gaps come to
+    // exactly the body budget belong on ONE page — one px of double-counted chrome, or a
+    // row gap charged where there is none, and the last one is pushed to a second page
+    // with a page-high blank tail behind it (the 2026-09-12 tail-hint report).
+    const BODY_PX = 1000;
+    const GAP_PX = 12;
+
+    test('measured heights that sum exactly to the budget fill one page', () => {
+        // 4 rows, 3 gaps: 4h + 3*12 = 1000 -> h = 241
+        const H = (BODY_PX - 3 * GAP_PX) / 4;
+        const blocks = ['a', 'b', 'c', 'd'].map(id => narrow(COL_UNITS as WidthUnits, 2, { id }));
+        const pages = packPages(blocks, {
+            blockSpacingPx: GAP_PX,
+            pageBudgetPx: () => BODY_PX,
+            heightPxOf: () => H,
+        });
+        expect(flat(pages)).toEqual([[['a'], ['b'], ['c'], ['d']]]);
+        expect(pages[0].used).toBeCloseTo(BODY_PX / 24, 6);
+    });
+
+    test('one px more than the budget moves the last block on', () => {
+        const H = (BODY_PX - 3 * GAP_PX) / 4 + 0.25;   // 4 x 0.25 = 1px over
+        const blocks = ['a', 'b', 'c', 'd'].map(id => narrow(COL_UNITS as WidthUnits, 2, { id }));
+        const pages = packPages(blocks, {
+            blockSpacingPx: GAP_PX,
+            pageBudgetPx: () => BODY_PX,
+            heightPxOf: () => H,
+        });
+        expect(flat(pages)).toEqual([[['a'], ['b'], ['c']], [['d']]]);
+    });
+
+    test('two blocks sharing a row cost the taller one, not their sum', () => {
+        // The grid stretches the short cell to the row height, but the ROW still costs
+        // what the tall block costs — measuring the stretched cell would charge the tall
+        // height twice and end the page a block early.
+        const a = narrow(HALF, 2, { id: 'a' });
+        const b = narrow(HALF, 2, { id: 'b' });
+        const c = narrow(COL_UNITS as WidthUnits, 2, { id: 'c' });
+        const pages = packPages([a, b, c], {
+            blockSpacingPx: GAP_PX,
+            pageBudgetPx: () => BODY_PX,
+            heightPxOf: (block) => (block.id === 'b' ? 788 : 200),   // row 788 + gap 12 + 200 = 1000
+        });
+        expect(flat(pages)).toEqual([[['a', 'b'], ['c']]]);
+    });
+});
+
 describe('cellWidthPx', () => {
     test('a full-width cell is the whole printable width, whatever the gap', () => {
         for (const gap of [0, 12, 28]) expect(cellWidthPx(COL_UNITS, gap)).toBe(FULL_BLOCK_WIDTH_PX);

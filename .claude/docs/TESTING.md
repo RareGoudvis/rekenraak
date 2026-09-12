@@ -107,6 +107,36 @@ the veto list in the `LAYOUT` header comment).
 It needs the DEV-only `window.__rekenraak` hook from `src/main.tsx`, so it cannot run
 against a production build.
 
+## The height audit (`scripts/height-audit.mjs`)
+
+The vertical twin of the width matrix, and the answer to "the tail hint says the next block
+does not fit, but it visibly does". It places ten mixed blocks at mixed widths, lets the
+measure→pack→remeasure chain settle, waits out any breaker cooldown, forces one more
+measure pass, and then prints per cell:
+
+| column | what it is |
+|---|---|
+| `measured` | the px the PACKER used (`window.__rekenraak.measured()`, the live map) |
+| `own` | the BLOCK's own height: `.print-block` offsetHeight + its margins |
+| `row` | the grid CELL's rect — a stretched cell reports its ROW's height, not its own |
+| `print` | `.print-opdracht` top to the last `.print-row` bottom |
+| `chrome` | `own − print`: the block padding/border/margin that also prints |
+| `Δ pack` | `measured − own`: the packer disagreeing with the paper. Must be 0. |
+
+plus, per page, the measured body box against the same box derived from the print CSS mm
+values, and any `[layout]` repack-loop warning (a warning is itself a finding: it means the
+hook froze whatever height it was holding).
+
+```bash
+npm run dev
+node scripts/height-audit.mjs --url http://localhost:5174/ --seed 1234
+```
+
+Verdicts to read: **(a)** must be `0/10`, **(a2)** lists the stretched cells (expected —
+that is the grid, not a bug, as long as `Δ pack` stays 0), **(b)** the packer's row gap must
+equal the CSS `rowGap`, **(c)** the screen body must equal the print body on every page,
+**(d)** no unmeasured cells, **(e)** no repack-loop warnings.
+
 ## Font baseline / compare (`scripts/font-baseline.mjs`, `scripts/font-compare.mjs`)
 
 Guards the 7d font-token sweep (`--sheet-size-math`/`--sheet-size-text`, theme.css):

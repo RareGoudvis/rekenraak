@@ -10,11 +10,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- **Vertical measurement off: tail hint says "past niet" for a block that visibly fits**
-  (owner 2026-09-12, checked in Paint on a screenshot). Audit the height chain: cell
-  offsetHeight includes screen-only block padding/margin (~40px), packer row gap vs CSS
-  rowGap, pageBudgetPx vs print body, estimate used for a block never rendered at that width.
-  Plan Part 7f.
 - **No sheet font-size scale** (owner question 2026-09-12): viewers use 12 different px sizes
   (14px ×66, 13 ×27, 12 ×22, 16 ×19, 18 ×13, 15 ×13, 17 ×10 …); hoofdrekenen digits 17px,
   labels 14px, grids 12–13px. Nothing is 14pt. Proposal: tokens `--sheet-size-text`,

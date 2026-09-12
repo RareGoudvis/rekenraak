@@ -69,6 +69,20 @@ export function intrinsicOf(blockId: string): IntrinsicWidth | undefined {
     return best;
 }
 
+// DEV-only window into the two maps the packer reads, for scripts/height-audit.mjs: the
+// audit has to compare the number the packer USED against the rect the paper will use, and
+// re-deriving it from the DOM would only prove the DOM agrees with itself. Registered by
+// the live hook instance (the maps are refs) and torn down with it.
+export interface MeasuredSnapshot {
+    cells: Record<string, number>;
+    intrinsic: Record<string, number>;
+    body: { first?: number; rest?: number };
+}
+let devSnapshot: (() => MeasuredSnapshot) | null = null;
+export function measuredSnapshot(): MeasuredSnapshot | null {
+    return devSnapshot ? devSnapshot() : null;
+}
+
 export interface MeasuredHeights {
     /** Measured px height of this block's cell at this width, or undefined if unmeasured. */
     heightPxOf: (block: MathBlock, width: number) => number | undefined;
@@ -100,7 +114,17 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     const COOLDOWN_MS = 1500;
     const bumps = useRef<number[]>([]);
     const cooldownUntil = useRef(0);
-    const bump = useCallback((what: string) => {
+    // A measure PASS reports every cell on the page one after another, and counting each
+    // of those as a repack made the breaker a block-count limit: a plain 10-block sheet
+    // tripped it on first paint and the blocks measured after the trip kept their
+    // estimates for good (2026-09-13 height audit). The pass is synchronous, so a
+    // microtask coalesces it into ONE bump — which is what the breaker is meant to count.
+    const pendingWhat = useRef<string | null>(null);
+    const flushQueued = useRef(false);
+    const flush = useCallback(() => {
+        flushQueued.current = false;
+        const what = pendingWhat.current ?? 'measurement';
+        pendingWhat.current = null;
         const now = performance.now();
         bumps.current = [...bumps.current.filter(t => now - t < 1000), now];
         if (bumps.current.length > BREAKER_BUMPS) {
@@ -114,6 +138,13 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
             console.warn(`[layout] ${bumps.current.length} repacks in 1s — ${what} is feeding back into itself`);
         }
     }, []);
+    const bump = useCallback((what: string) => {
+        // Keep the FIRST change of the pass: it is the one that explains the repack.
+        pendingWhat.current ??= what;
+        if (flushQueued.current) return;
+        flushQueued.current = true;
+        queueMicrotask(flush);
+    }, [flush]);
     const paused = () => performance.now() < cooldownUntil.current;
 
     // Drop measurements for blocks that left the sheet, so the map cannot grow unbounded
@@ -161,6 +192,16 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         body.current = { ...body.current, [slot]: px };
         bump(`body ${slot} ${prev ?? '–'}→${Math.round(px)}px`);
     }, [bump]);
+
+    useEffect(() => {
+        if (!import.meta.env.DEV) return;
+        devSnapshot = () => ({
+            cells: Object.fromEntries(cells.current),
+            intrinsic: Object.fromEntries(intrinsic),
+            body: { ...body.current },
+        });
+        return () => { devSnapshot = null; };
+    }, []);
 
     const heightPxOf = useCallback((block: MathBlock, width: number) => cells.current.get(`${block.id}:${width}`), []);
 
