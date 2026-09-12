@@ -465,9 +465,26 @@ PDF page count.**
   real cell heights and the real page-body budget, and those win. Estimating alone ended
   pages early (blank tails) or overran them; measuring alone cannot run before first paint.
 - `ROW_BUDGET` is deliberately **2 units under** what the body holds: under-estimating puts
-  content across the footer, over-estimating only wastes space.
-- `rowUnits` per type is **measured**, not guessed: all 119 sidebar leaves rendered at two
-  exercise counts, per-row height derived from the difference.
+  content across the footer, over-estimating only wastes space. The body is
+  `1123 − 96 (8mm head + 54px header + 12px content gap) − 71 (footer)` = **956px** →
+  `ROW_BUDGET = floor(956/24) − 2 = 37`, `PAGE_BODY_PX = 916`. `.page-sheet-body` has no
+  vertical padding, so nothing else is subtracted.
+- `rowUnits` per type is **measured**, not guessed: every sidebar leaf rendered at two
+  exercise counts; rows are **counted** off the rendered grid (one `.print-row` per
+  FragmentableGrid row) and `rowUnits = (h_default − h_single)/(rows − 1)/24` follows. (The
+  older height-ratio derivation was ambiguous near a block's fixed chrome and had three
+  `cols={1}` viewers down as 2-up.)
+- **The measurement contract:** a block's packed height is the height of the **block**,
+  never of its grid cell. A grid item stretches to the tallest item in its row, so a cell's
+  `offsetHeight` is its *row's* height — placement-dependent, which is exactly what the
+  convergence argument forbids (a short block beside a tall one was charged the tall one's
+  height and "did not fit"). `PageSheet.ownHeight()` measures `.print-block` + its margins;
+  the 16px padding / 1px border / 4px margin inside all print, so measure = paper.
+- The repack **breaker counts passes, not cells** — bumps from one measure pass are
+  coalesced with a microtask. Counting cells made it a block-count limit: a ten-block sheet
+  tripped it on first paint and every block measured after the trip kept its estimate.
+  The packer's fit test carries `FIT_EPSILON` (half a printed pixel), so an exactly-full page
+  is not decided by binary rounding.
 - `minWidth` per type is **measured with every clamp disabled** — measuring with tiers
   active is circular, since the tier decides the width that gets measured. The shipped tier
   is `max(measured, editorial)`: measurement rules out the impossible, judgement rules out
@@ -518,7 +535,8 @@ spanning its `widthUnits`.
   much. Print hides overflow, so a silent clip would otherwise only surface on paper. The
   same pass reports `onBodyMeasure` / `onCellMeasure` back to `useMeasuredHeights`, so after
   the repack the banner only fires for a single block taller than one page.
-- **SYNC:** the screen paddings in `index.css` are the print paddings at 96dpi (16mm head,
+- **SYNC:** the screen paddings in `index.css` are the print paddings at 96dpi (**8mm** head
+  since 2026-09-13 — 16 → 12 → 8, after trimming the header region's hidden-field slack —
   4mm+8mm foot, 14mm sides) and `.page-sheet` has a fixed `height`, not a `min-height`. When
   they differed, content that fitted on screen ran under the footer on paper.
 - Real **page numbers** are possible for the first time (the browser cannot count pages from
@@ -529,8 +547,8 @@ spanning its `widthUnits`.
 `minWidth` / `rowUnits` / `perRowFull` in [blockLayout.ts](../../src/config/blockLayout.ts)
 are not guesses: [scripts/width-matrix.mjs](../../scripts/width-matrix.mjs) drives the
 running dev server through `window.__rekenraak` (a DEV-only hook in
-[main.tsx](../../src/main.tsx): `typeIds`, `addBlockFromType`, `updateBlockSettings`,
-`clearBlocks`, `setIgnoreMinWidth`, `getState`) and renders **every registry type at widths
+[main.tsx](../../src/main.tsx): `typeIds`, `leaves`, `seed`, `measured`, `addBlockFromType`,
+`updateBlockSettings`, `clearBlocks`, `setIgnoreMinWidth`, `getState`) and renders **every registry type at widths
 4 / 2 / 1, at its default count and at a single exercise** — 354 cells. For each it reads
 the content's overflow ratio (`scrollWidth / clientWidth` of the ScaledBlock inner div),
 the applied zoom and the cell's `offsetHeight`, writes `scripts/width-matrix.result.json`
@@ -540,8 +558,18 @@ reason each, lives in the `LAYOUT` header comment). The harness needs the store'
 `debugIgnoreMinWidth` flag — measuring a tier with the tier clamp on would only measure the
 clamp — which it sets through `setIgnoreMinWidth` and the packer reads as
 `PackOptions.ignoreMinWidth`. Cell heights are `sheetZoom`-invariant to ~1px (verified by
-re-running at a 1000px viewport); the types that differ more regenerate random content
-between runs.
+re-running at a 1000px viewport). The matrix is **seeded** (`--seed`, default 1234, recorded
+in the result JSON) so runs are comparable, labels its probe block "Oefening" rather than the
+typeId (a long unbreakable title once read as ¼-overflow), and records `rowCount`.
+
+### Measuring the height chain
+
+[scripts/height-audit.mjs](../../scripts/height-audit.mjs) is the vertical twin: ten mixed
+blocks, seed 1234, and per cell the height the packer used (`window.__rekenraak.measured()`),
+the block's own height, its grid cell's rect and the printable content's rect, plus the page
+budget against the print body. It settles the measure→pack chain, waits out any breaker
+cooldown and forces one more measure pass — the stretched-cell bug hid behind the frozen
+state without it. TESTING.md lists the verdict codes (a/a2/b/c/d/e).
 
 ### Reordering on the sheet
 
