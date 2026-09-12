@@ -40,13 +40,17 @@ export const PAGE_BODY_PX = BODY_HEIGHT_PX - 40;
 // see .claude/docs/TESTING.md.
 //
 // `perRowFull` is how many exercises the viewer fits per row at full width, and
-// `rowUnits` the height of ONE such row in ROW_UNIT_PX. Both are derived from the same
-// two measurements: rows = round((h_default - chrome) / (h_single - chrome)), and
-// rowUnits = (h_default - h_single) / (rows - 1) / 24. Deriving the row count instead of
-// trusting the old `perRowFull` is what caught the types that actually render 2-3 up
-// (getalfunctie, tijdsduur, herleidingen, geld-rekenen). Since measure-then-pack (§9)
-// these two are only the FIRST-PAINT fallback — the rendered height wins within a frame —
-// so two decimals is as precise as this needs to be.
+// `rowUnits` the height of ONE such row in ROW_UNIT_PX. The row count is COUNTED off the
+// rendered grid (one `.print-row` per FragmentableGrid row) since 2026-09-13, and
+// rowUnits = (h_default - h_single) / (rows - 1) / 24 follows from it. It used to be
+// derived from the ratio of those two heights, which two different (rows, rowUnits) pairs
+// fit equally well whenever the single-exercise height is close to the block's fixed
+// chrome — that is what had deelbaarheid, getalfunctie and tijdsduur down as 2-up when
+// their viewers pass `cols={1}`. Viewers that render no `.print-row` at all (cijferen,
+// temperatuur, verbanden, geld-teruggeven, kalender, layout-*) keep their old numbers.
+// The matrix is seeded (`--seed 1234`) so two runs can be diffed. Since measure-then-pack
+// (§9) these two are only the FIRST-PAINT fallback — the rendered height wins within a
+// frame — so two decimals is as precise as this needs to be.
 //
 // `minWidth` is the narrowest column this type may be placed in — but only until the
 // sheet has rendered once. Since 7a (2026-09-12) the live answer comes from the BLOCK, not
@@ -70,6 +74,10 @@ export const PAGE_BODY_PX = BODY_HEIGHT_PX - 40;
 //   - deelbaarheid-kleuren, quarter: a four-digit number wraps INSIDE its cell ("1 000").
 //   - geld-teruggeven, quarter: the jump diagram shrinks to unreadable micro-type.
 //   - layout-sectie and layout-lege-pagina: full width by definition, not by measurement.
+// The 2026-09-13 seeded rerun measured geld-tekenen at a half and geld-teruggeven,
+// deelbaarheid-kleuren and getallenas at a quarter, so their table entries say so; all
+// four are on the veto list below, which is the half of the tier that judgement owns and
+// which still holds them where the screenshot pass put them.
 // The 2026-09-12 quarter pass moved hr-std-*, getalpatronen, kettingsommen, plaatswaarde
 // and deelbaarheid from a half to a quarter after their viewers grew a tight tier below
 // 200px (see MathBlockRenderer / PatroonViewer / PlaatswaardeViewer / DeelbaarheidViewer).
@@ -96,7 +104,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "layout-kader": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
     "afronden": { rowUnits: 10.33, perRowFull: 2, minWidth: 2 },
     "breuken": { rowUnits: 6.23, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
-    "breuken-bewerken": { rowUnits: 1.95, perRowFull: 1.6, minWidth: 2 },
+    "breuken-bewerken": { rowUnits: 2.58, perRowFull: 2, minWidth: 2 },
     "breuken-rangschikken": { rowUnits: 5.04, perRowFull: 2, minWidth: 1 },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
     // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
@@ -109,19 +117,19 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
     "cijferen-delen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
     "controleren": { rowUnits: 4.67, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
-    "deelbaarheid": { rowUnits: 3.54, perRowFull: 2, minWidth: 1 },
-    "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 2 },
+    "deelbaarheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 1 },
+    "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 1 },
     "even-oneven": { rowUnits: 2.17, perRowFull: 1, minWidth: 4 },
-    "geld-herkennen": { rowUnits: 8.33, perRowFull: 3, minWidth: 1 },
-    "geld-rekenen": { rowUnits: 3.17, perRowFull: 1.7, minWidth: 4 },
-    "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 4 },
-    "geld-teruggeven": { rowUnits: 8.4, perRowFull: 1, minWidth: 2 },
+    "geld-herkennen": { rowUnits: 10.08, perRowFull: 3, minWidth: 1 },
+    "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
+    "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 2 },
+    "geld-teruggeven": { rowUnits: 8.4, perRowFull: 1, minWidth: 1 },
     "geld-wissel": { rowUnits: 5.58, perRowFull: 2, minWidth: 2 },
-    "getalfunctie": { rowUnits: 3.33, perRowFull: 2, minWidth: 4 },
-    "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 2 },
+    "getalfunctie": { rowUnits: 1.33, perRowFull: 1, minWidth: 4 },
+    "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 1 },
     "getallenrijen": { rowUnits: 2.88, perRowFull: 1, minWidth: 4 },
     "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 1 },
-    "herleidingen": { rowUnits: 3.04, perRowFull: 2.7, minWidth: 4, minWidthSingle: 2 },
+    "herleidingen": { rowUnits: 2.03, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-optellen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
@@ -131,19 +139,19 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
     "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.58, perRowFull: 1, minWidth: 1 },
-    "mab-herkennen": { rowUnits: 6.62, perRowFull: 2, minWidth: 2 },
-    "mab-tekenen": { rowUnits: 6.62, perRowFull: 2, minWidth: 2 },
-    "omtrek": { rowUnits: 21.1, perRowFull: 1, minWidth: 4 },
-    "oppervlakte": { rowUnits: 18.58, perRowFull: 1, minWidth: 4 },
+    "mab-herkennen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
+    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
+    "omtrek": { rowUnits: 21.42, perRowFull: 1, minWidth: 4 },
+    "oppervlakte": { rowUnits: 18.07, perRowFull: 1, minWidth: 4 },
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 1 },
-    "plaatswaarde": { rowUnits: 1.62, perRowFull: 2, minWidth: 1 },
+    "plaatswaarde": { rowUnits: 1.63, perRowFull: 2, minWidth: 1 },
     "procenten": { rowUnits: 1.54, perRowFull: 2, minWidth: 1 },
     "rekenvolgorde": { rowUnits: 1.54, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "romeinse-cijfers": { rowUnits: 1.75, perRowFull: 2, minWidth: 2 },
     "schattend": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
     "splitsen": { rowUnits: 6.79, perRowFull: 2.5, minWidth: 1 },
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 1 },
-    "tijdsduur": { rowUnits: 3.96, perRowFull: 2, minWidth: 4 },
+    "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
     "verbanden": { rowUnits: 3.69, perRowFull: 2, minWidth: 4 },
     "vergelijken": { rowUnits: 2.17, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "vormleer-figuren": { rowUnits: 6.5, perRowFull: 3, minWidth: 4, minWidthSingle: 2 },

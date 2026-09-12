@@ -95,9 +95,18 @@ npm run dev                                     # in another terminal; it drives
 node scripts/width-matrix.mjs                   # 1600px viewport (sheetZoom = 1)
 node scripts/width-matrix.mjs --width 1000      # sheetZoom < 1, to re-prove height invariance
 node scripts/width-matrix.mjs --shots C:/tmp/wm --url http://localhost:5174/
+node scripts/width-matrix.mjs --seed 1234                # default; seeds before every add
 ```
 
+`--seed n` calls `window.__rekenraak.seed(n)` before each block is added, so a generator
+that rolls wide numbers on one run and narrow ones on the next cannot move its own tier
+between runs — two matrices only diff at all because of this. It defaults to 1234; the
+committed result JSONs record the seed they were taken at.
+
 Every registry type × width {4, 2, 1} × count {default, 1} = 354 cells, about 4 minutes.
+Each row also carries `rowCount` (the number of `.print-row` elements, i.e. the rendered
+grid rows), which is where `perRowFull` and `rowUnits` come from — counted, not inferred
+from the height ratio.
 Output: `scripts/width-matrix.result.json` (committed — the tiers are derived from it),
 a `.csv` of the same rows (gitignored) and one PNG per cell in `~/Downloads/width-matrix/`.
 Read the numbers with the rule **overflow ≤ 1.005 and zoom ≥ 0.85**, then look at the

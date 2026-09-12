@@ -38,6 +38,10 @@ const VIEWPORT_W = Number(arg('width', 1600));
 const SHOTS = arg('shots', join(homedir(), 'Downloads', 'width-matrix'));
 const SUFFIX = (VIEWPORT_W === 1600 ? '' : `.w${VIEWPORT_W}`) + (arg('only', '') ? '.only' : '');
 const WIDTHS = [4, 2, 1];
+// Seeding the RNG before every add makes the whole matrix reproducible: without it a type
+// whose generator rolls wide numbers on one run and narrow ones on the next moves its own
+// tier between runs, and two matrices cannot be diffed at all.
+const SEED = Number(arg('seed', 1234));
 // --only a,b,c runs a subset; its results go to a separate file so the full run stays intact.
 const ONLY = arg('only', '').split(',').filter(Boolean);
 
@@ -64,9 +68,10 @@ const rows = [];
 for (const typeId of typeIds) {
     for (const width of WIDTHS) {
         for (const mode of ['default', 'single']) {
-            const measured = await page.evaluate(async ({ typeId, width, mode }) => {
+            const measured = await page.evaluate(async ({ typeId, width, mode, seed }) => {
                 const r = window.__rekenraak;
                 r.clearBlocks();
+                r.seed(seed);
                 // A REALISTIC label: the block's default instruction falls back to
                 // `${label}:`, and passing the typeId made 'hr-std-vermenigvuldigen:' a
                 // 176px unbreakable token in a 163px quarter — the harness was measuring
@@ -100,8 +105,14 @@ for (const typeId of typeIds) {
                     clientWidth: inner.clientWidth,
                     zoom: Number(cs.zoom) || 1,
                     cellHeight: cell.offsetHeight,
+                    // Counted, not derived. rowUnits used to come from the RATIO of the
+                    // default and single-exercise heights, which is razor-sharp when the
+                    // single height is close to the block's fixed chrome — it put
+                    // getalpatronen at 7 rows for 6 exercises. FragmentableGrid emits one
+                    // .print-row per rendered row, so the row count is simply there.
+                    rowCount: cell.querySelectorAll('.print-row').length,
                 };
-            }, { typeId, width, mode });
+            }, { typeId, width, mode, seed: SEED });
 
             if (!measured) { console.log(`! ${typeId} produced no block`); continue; }
             const name = `${typeId}-w${width}-n${mode === 'single' ? 1 : measured.defaultCount}`;
@@ -116,6 +127,7 @@ for (const typeId of typeIds) {
                 scrollWidth: measured.scrollWidth ?? null,
                 clientWidth: measured.clientWidth ?? null,
                 cellHeight: measured.cellHeight ?? null,
+                rowCount: measured.rowCount ?? null,
             });
             process.stdout.write(`${typeId} w${width} ${mode}: overflow ${rows.at(-1).overflow} zoom ${rows.at(-1).zoom} h ${rows.at(-1).cellHeight}\n`);
         }
@@ -136,15 +148,21 @@ for (const typeId of typeIds) {
     const n = at(4, 'default')?.count ?? 1;
     // rowUnits from the slope between the two counts, in 24px units. First-paint fallback
     // only (measure-then-pack overrides it), so 2 decimals is plenty.
-    const rowUnits = n > 1 ? Number(((hDefault - hSingle) / (n - 1) / 24).toFixed(2)) : null;
-    summary[typeId] = { minWidth, minWidthSingle: minSingle < minWidth ? minSingle : undefined, rowUnits, count: n, hDefault, hSingle };
+    // Rows are COUNTED off the rendered grid (.print-row per FragmentableGrid row) and
+    // only fall back to the height ratio for the viewers that render no rows at all.
+    const counted = at(4, 'default')?.rowCount ?? 0;
+    const rowsFull = counted > 0 ? Math.min(n, counted) : null;
+    const perRowFull = rowsFull ? Number((n / rowsFull).toFixed(2)) : null;
+    const rowUnits = rowsFull && rowsFull > 1 ? Number(((hDefault - hSingle) / (rowsFull - 1) / 24).toFixed(2))
+        : (n > 1 ? Number(((hDefault - hSingle) / (n - 1) / 24).toFixed(2)) : null);
+    summary[typeId] = { minWidth, minWidthSingle: minSingle < minWidth ? minSingle : undefined, rows: rowsFull, perRowFull, rowUnits, count: n, hDefault, hSingle };
 }
 
-writeFileSync(join(HERE, `width-matrix.result${SUFFIX}.json`), JSON.stringify({ viewport: VIEWPORT_W, rule: 'overflow <= 1.005 && zoom >= 0.85', summary, rows }, null, 2));
+writeFileSync(join(HERE, `width-matrix.result${SUFFIX}.json`), JSON.stringify({ viewport: VIEWPORT_W, seed: SEED, rule: 'overflow <= 1.005 && zoom >= 0.85', summary, rows }, null, 2));
 writeFileSync(
     join(HERE, `width-matrix.result${SUFFIX}.csv`),
-    ['typeId,width,mode,count,overflow,zoom,scrollWidth,clientWidth,cellHeight']
-        .concat(rows.map(r => [r.typeId, r.width, r.mode, r.count, r.overflow, r.zoom, r.scrollWidth, r.clientWidth, r.cellHeight].join(',')))
+    ['typeId,width,mode,count,overflow,zoom,scrollWidth,clientWidth,cellHeight,rowCount']
+        .concat(rows.map(r => [r.typeId, r.width, r.mode, r.count, r.overflow, r.zoom, r.scrollWidth, r.clientWidth, r.cellHeight, r.rowCount].join(',')))
         .join('\n'),
 );
 console.log(`\n${rows.length} cells measured; screenshots in ${SHOTS}`);

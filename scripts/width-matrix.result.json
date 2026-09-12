@@ -1,324 +1,415 @@
 {
   "viewport": 1600,
+  "seed": 1234,
   "rule": "overflow <= 1.005 && zoom >= 0.85",
   "summary": {
     "hr-std-optellen": {
       "minWidth": 1,
-      "rowUnits": 0.93,
+      "rows": 5,
+      "perRowFull": 2,
+      "rowUnits": 2.08,
       "count": 10,
-      "hDefault": 308,
-      "hSingle": 108
+      "hDefault": 314,
+      "hSingle": 114
     },
     "hr-std-aftrekken": {
       "minWidth": 1,
-      "rowUnits": 0.93,
+      "rows": 5,
+      "perRowFull": 2,
+      "rowUnits": 2.08,
       "count": 10,
-      "hDefault": 308,
-      "hSingle": 108
+      "hDefault": 314,
+      "hSingle": 114
     },
     "hr-std-vermenigvuldigen": {
       "minWidth": 1,
-      "rowUnits": 0.93,
+      "rows": 5,
+      "perRowFull": 2,
+      "rowUnits": 2.08,
       "count": 10,
-      "hDefault": 308,
-      "hSingle": 108
+      "hDefault": 314,
+      "hSingle": 114
     },
     "hr-std-delen": {
       "minWidth": 1,
-      "rowUnits": 0.93,
+      "rows": 5,
+      "perRowFull": 2,
+      "rowUnits": 2.08,
       "count": 10,
-      "hDefault": 308,
-      "hSingle": 108
+      "hDefault": 314,
+      "hSingle": 114
     },
     "cijferen-optellen-nat": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "cijferen-optellen-dec": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "cijferen-aftrekken-nat": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "cijferen-aftrekken-dec": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "cijferen-vermenigvuldigen-nat": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "cijferen-vermenigvuldigen-dec": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "cijferen-delen-nat": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "cijferen-delen-dec": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 0,
       "count": 2,
-      "hDefault": 234,
-      "hSingle": 234
+      "hDefault": 240,
+      "hSingle": 240
     },
     "klok-kloklezen": {
       "minWidth": 1,
-      "rowUnits": 2.36,
+      "rows": 4,
+      "perRowFull": 2.5,
+      "rowUnits": 7.08,
       "count": 10,
-      "hDefault": 738,
-      "hSingle": 228
+      "hDefault": 744,
+      "hSingle": 234
     },
     "breuken": {
-      "minWidth": 2,
-      "rowUnits": 2.49,
+      "minWidth": 4,
+      "minWidthSingle": 2,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 6.23,
       "count": 6,
-      "hDefault": 507,
-      "hSingle": 208
+      "hDefault": 513,
+      "hSingle": 214
     },
     "splitsen": {
       "minWidth": 1,
-      "rowUnits": 1.7,
+      "rows": 2,
+      "perRowFull": 2.5,
+      "rowUnits": 6.79,
       "count": 5,
-      "hDefault": 384,
-      "hSingle": 221
+      "hDefault": 390,
+      "hSingle": 227
     },
     "geld-herkennen": {
       "minWidth": 1,
-      "rowUnits": 1.65,
+      "rows": 2,
+      "perRowFull": 3,
+      "rowUnits": 10.08,
       "count": 6,
-      "hDefault": 504,
-      "hSingle": 306
+      "hDefault": 430,
+      "hSingle": 188
     },
     "geld-tekenen": {
       "minWidth": 2,
       "minWidthSingle": 1,
-      "rowUnits": 1.17,
+      "rows": 2,
+      "perRowFull": 3,
+      "rowUnits": 5.83,
       "count": 6,
-      "hDefault": 338,
-      "hSingle": 198
+      "hDefault": 344,
+      "hSingle": 204
     },
     "geld-wissel": {
       "minWidth": 2,
       "minWidthSingle": 1,
-      "rowUnits": 1.86,
+      "rows": 2,
+      "perRowFull": 2,
+      "rowUnits": 5.58,
       "count": 4,
-      "hDefault": 326,
-      "hSingle": 192
+      "hDefault": 332,
+      "hSingle": 198
     },
     "geld-teruggeven": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 8.4,
       "count": 4,
-      "hDefault": 865,
-      "hSingle": 260
+      "hDefault": 871,
+      "hSingle": 266
     },
     "mab-herkennen": {
       "minWidth": 2,
-      "rowUnits": 2.65,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 6.63,
       "count": 6,
-      "hDefault": 535,
-      "hSingle": 217
+      "hDefault": 541,
+      "hSingle": 223
     },
     "mab-tekenen": {
       "minWidth": 2,
-      "rowUnits": 2.65,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 6.63,
       "count": 6,
-      "hDefault": 535,
-      "hSingle": 217
+      "hDefault": 541,
+      "hSingle": 223
     },
     "ordenen": {
       "minWidth": 1,
-      "rowUnits": 1.23,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 3.08,
       "count": 6,
-      "hDefault": 274,
-      "hSingle": 126
+      "hDefault": 280,
+      "hSingle": 132
     },
     "breuken-bewerken": {
       "minWidth": 2,
       "minWidthSingle": 1,
-      "rowUnits": 1.11,
+      "rows": 4,
+      "perRowFull": 2,
+      "rowUnits": 2.58,
       "count": 8,
-      "hDefault": 299,
-      "hSingle": 112
+      "hDefault": 304,
+      "hSingle": 118
     },
     "breuken-rangschikken": {
       "minWidth": 1,
-      "rowUnits": 2.02,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 5.04,
       "count": 6,
-      "hDefault": 415,
-      "hSingle": 173
+      "hDefault": 421,
+      "hSingle": 179
     },
     "deelbaarheid": {
       "minWidth": 1,
+      "rows": 6,
+      "perRowFull": 1,
       "rowUnits": 1.42,
       "count": 6,
-      "hDefault": 314,
-      "hSingle": 144
+      "hDefault": 320,
+      "hSingle": 150
     },
     "getalpatronen": {
       "minWidth": 1,
+      "rows": 6,
+      "perRowFull": 1,
       "rowUnits": 1.92,
       "count": 6,
-      "hDefault": 328,
-      "hSingle": 98
+      "hDefault": 334,
+      "hSingle": 104
     },
     "deelbaarheid-kleuren": {
       "minWidth": 1,
+      "rows": 3,
+      "perRowFull": 1,
       "rowUnits": 3.33,
       "count": 3,
-      "hDefault": 292,
-      "hSingle": 132
+      "hDefault": 298,
+      "hSingle": 138
     },
     "getallenas": {
       "minWidth": 1,
+      "rows": 5,
+      "perRowFull": 1,
       "rowUnits": 4.08,
       "count": 5,
-      "hDefault": 538,
-      "hSingle": 146
+      "hDefault": 544,
+      "hSingle": 152
     },
     "getallenrijen": {
       "minWidth": 4,
+      "rows": 5,
+      "perRowFull": 1,
       "rowUnits": 2.88,
       "count": 5,
-      "hDefault": 395,
-      "hSingle": 119
+      "hDefault": 401,
+      "hSingle": 125
     },
     "lengte-meten": {
       "minWidth": 4,
-      "minWidthSingle": 2,
+      "rows": 6,
+      "perRowFull": 1,
       "rowUnits": 5.67,
       "count": 6,
-      "hDefault": 866,
-      "hSingle": 186
+      "hDefault": 872,
+      "hSingle": 192
     },
     "omtrek": {
       "minWidth": 4,
-      "rowUnits": 23.03,
+      "rows": 6,
+      "perRowFull": 1,
+      "rowUnits": 21.42,
       "count": 6,
-      "hDefault": 3134,
-      "hSingle": 371
+      "hDefault": 3140,
+      "hSingle": 570
     },
     "temperatuur": {
       "minWidth": 1,
+      "rows": 1,
+      "perRowFull": 4,
       "rowUnits": 0,
       "count": 4,
-      "hDefault": 253,
-      "hSingle": 253
+      "hDefault": 259,
+      "hSingle": 259
     },
     "plaatswaarde": {
       "minWidth": 1,
-      "rowUnits": 0.65,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 1.63,
       "count": 6,
-      "hDefault": 175,
-      "hSingle": 97
+      "hDefault": 181,
+      "hSingle": 103
     },
     "even-oneven": {
       "minWidth": 4,
+      "rows": 3,
+      "perRowFull": 1,
       "rowUnits": 2.17,
       "count": 3,
-      "hDefault": 214,
-      "hSingle": 110
+      "hDefault": 220,
+      "hSingle": 116
     },
     "vergelijken": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 0.87,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 2.17,
       "count": 6,
-      "hDefault": 214,
-      "hSingle": 110
+      "hDefault": 220,
+      "hSingle": 116
     },
     "afronden": {
       "minWidth": 2,
-      "rowUnits": 4.13,
+      "rows": 3,
+      "perRowFull": 2,
+      "rowUnits": 10.33,
       "count": 6,
-      "hDefault": 796,
-      "hSingle": 300
+      "hDefault": 802,
+      "hSingle": 306
     },
     "romeinse-cijfers": {
       "minWidth": 2,
-      "rowUnits": 0.75,
+      "rows": 4,
+      "perRowFull": 2,
+      "rowUnits": 1.75,
       "count": 8,
-      "hDefault": 224,
-      "hSingle": 98
+      "hDefault": 230,
+      "hSingle": 104
     },
     "herleidingen": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 1.18,
+      "rows": 4,
+      "perRowFull": 2,
+      "rowUnits": 2.03,
       "count": 8,
-      "hDefault": 294,
-      "hSingle": 96
+      "hDefault": 248,
+      "hSingle": 102
     },
     "schattend": {
       "minWidth": 4,
+      "rows": 8,
+      "perRowFull": 1,
       "rowUnits": 1.58,
       "count": 8,
-      "hDefault": 362,
-      "hSingle": 96
+      "hDefault": 368,
+      "hSingle": 102
     },
     "verbanden": {
       "minWidth": 4,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": 1.58,
       "count": 8,
-      "hDefault": 418,
-      "hSingle": 152
+      "hDefault": 424,
+      "hSingle": 158
     },
     "procenten": {
       "minWidth": 1,
-      "rowUnits": 0.66,
+      "rows": 4,
+      "perRowFull": 2,
+      "rowUnits": 1.54,
       "count": 8,
-      "hDefault": 206,
-      "hSingle": 95
+      "hDefault": 212,
+      "hSingle": 101
     },
     "maateenheid": {
       "minWidth": 1,
+      "rows": 8,
+      "perRowFull": 1,
       "rowUnits": 1.58,
       "count": 8,
-      "hDefault": 362,
-      "hSingle": 96
+      "hDefault": 368,
+      "hSingle": 102
     },
     "geld-rekenen": {
       "minWidth": 4,
+      "rows": 5,
+      "perRowFull": 1,
       "rowUnits": 1.58,
       "count": 5,
-      "hDefault": 300,
-      "hSingle": 148
+      "hDefault": 306,
+      "hSingle": 154
     },
     "rekenvolgorde": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 0.69,
+      "rows": 5,
+      "perRowFull": 2,
+      "rowUnits": 1.54,
       "count": 10,
-      "hDefault": 243,
-      "hSingle": 95
+      "hDefault": 249,
+      "hSingle": 101
     },
     "layout-sectie": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": null,
       "count": 0,
       "hDefault": 48,
@@ -326,6 +417,8 @@
     },
     "layout-schrijflijnen": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": null,
       "count": 0,
       "hDefault": 269,
@@ -333,6 +426,8 @@
     },
     "layout-raster": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": null,
       "count": 0,
       "hDefault": 344,
@@ -340,6 +435,8 @@
     },
     "layout-kader": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": null,
       "count": 0,
       "hDefault": 81,
@@ -347,6 +444,8 @@
     },
     "layout-lege-pagina": {
       "minWidth": 1,
+      "rows": null,
+      "perRowFull": null,
       "rowUnits": null,
       "count": 0,
       "hDefault": 42,
@@ -354,79 +453,98 @@
     },
     "kettingsommen": {
       "minWidth": 1,
+      "rows": 6,
+      "perRowFull": 1,
       "rowUnits": 2.29,
       "count": 6,
-      "hDefault": 382,
-      "hSingle": 107
+      "hDefault": 388,
+      "hSingle": 113
     },
     "getalfunctie": {
       "minWidth": 4,
+      "rows": 6,
+      "perRowFull": 1,
       "rowUnits": 1.33,
       "count": 6,
-      "hDefault": 300,
-      "hSingle": 140
+      "hDefault": 306,
+      "hSingle": 146
     },
     "tijdsduur": {
       "minWidth": 4,
+      "rows": 6,
+      "perRowFull": 1,
       "rowUnits": 1.58,
       "count": 6,
-      "hDefault": 338,
-      "hSingle": 148
+      "hDefault": 344,
+      "hSingle": 154
     },
     "kalender": {
       "minWidth": 2,
+      "rows": 1,
+      "perRowFull": 1,
       "rowUnits": null,
       "count": 1,
-      "hDefault": 409,
-      "hSingle": 409
+      "hDefault": 415,
+      "hSingle": 415
     },
     "controleren": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 1.56,
+      "rows": 2,
+      "perRowFull": 2,
+      "rowUnits": 4.67,
       "count": 4,
-      "hDefault": 274,
-      "hSingle": 162
+      "hDefault": 280,
+      "hSingle": 168
     },
     "oppervlakte": {
       "minWidth": 4,
-      "minWidthSingle": 1,
-      "rowUnits": 20.69,
+      "rows": 4,
+      "perRowFull": 1,
+      "rowUnits": 18.07,
       "count": 4,
-      "hDefault": 1784,
-      "hSingle": 294
+      "hDefault": 1790,
+      "hSingle": 489
     },
     "weegschaal": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 3.13,
+      "rows": 2,
+      "perRowFull": 2,
+      "rowUnits": 9.38,
       "count": 4,
-      "hDefault": 498,
-      "hSingle": 273
+      "hDefault": 504,
+      "hSingle": 279
     },
     "vormleer-punt-lijn": {
       "minWidth": 4,
       "minWidthSingle": 1,
-      "rowUnits": 1.3,
+      "rows": 2,
+      "perRowFull": 3,
+      "rowUnits": 6.5,
       "count": 6,
-      "hDefault": 385,
-      "hSingle": 229
+      "hDefault": 391,
+      "hSingle": 235
     },
     "vormleer-hoeken": {
       "minWidth": 4,
       "minWidthSingle": 1,
-      "rowUnits": 1.3,
+      "rows": 2,
+      "perRowFull": 3,
+      "rowUnits": 6.5,
       "count": 6,
-      "hDefault": 385,
-      "hSingle": 229
+      "hDefault": 391,
+      "hSingle": 235
     },
     "vormleer-figuren": {
       "minWidth": 4,
       "minWidthSingle": 1,
-      "rowUnits": 1.3,
+      "rows": 2,
+      "perRowFull": 3,
+      "rowUnits": 6.5,
       "count": 6,
-      "hDefault": 385,
-      "hSingle": 229
+      "hDefault": 391,
+      "hSingle": 235
     }
   },
   "rows": [
@@ -439,7 +557,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 308
+      "cellHeight": 314,
+      "rowCount": 5
     },
     {
       "typeId": "hr-std-optellen",
@@ -450,7 +569,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-optellen",
@@ -461,7 +581,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 558
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-optellen",
@@ -472,7 +593,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-optellen",
@@ -483,7 +605,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 558
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-optellen",
@@ -494,7 +617,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-aftrekken",
@@ -505,7 +629,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 308
+      "cellHeight": 314,
+      "rowCount": 5
     },
     {
       "typeId": "hr-std-aftrekken",
@@ -516,7 +641,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-aftrekken",
@@ -527,7 +653,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 558
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-aftrekken",
@@ -538,7 +665,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-aftrekken",
@@ -549,7 +677,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 558
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-aftrekken",
@@ -560,7 +689,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
@@ -571,7 +701,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 308
+      "cellHeight": 314,
+      "rowCount": 5
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
@@ -582,7 +713,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
@@ -593,7 +725,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 558
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
@@ -604,7 +737,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
@@ -615,7 +749,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 576
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-vermenigvuldigen",
@@ -626,7 +761,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 126
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-delen",
@@ -637,7 +773,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 308
+      "cellHeight": 314,
+      "rowCount": 5
     },
     {
       "typeId": "hr-std-delen",
@@ -648,7 +785,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-delen",
@@ -659,7 +797,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 558
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-delen",
@@ -670,7 +809,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "hr-std-delen",
@@ -681,7 +821,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 558
+      "cellHeight": 564,
+      "rowCount": 10
     },
     {
       "typeId": "hr-std-delen",
@@ -692,7 +833,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 108
+      "cellHeight": 114,
+      "rowCount": 1
     },
     {
       "typeId": "cijferen-optellen-nat",
@@ -703,7 +845,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-nat",
@@ -714,7 +857,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-nat",
@@ -725,7 +869,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-nat",
@@ -736,7 +881,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-nat",
@@ -747,7 +893,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-nat",
@@ -758,7 +905,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-dec",
@@ -769,7 +917,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-dec",
@@ -780,7 +929,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-dec",
@@ -791,7 +941,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-dec",
@@ -802,7 +953,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-dec",
@@ -813,7 +965,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-optellen-dec",
@@ -824,7 +977,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
@@ -835,7 +989,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
@@ -846,7 +1001,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
@@ -857,7 +1013,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
@@ -868,7 +1025,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
@@ -879,7 +1037,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-nat",
@@ -890,7 +1049,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
@@ -901,7 +1061,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
@@ -912,7 +1073,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
@@ -923,7 +1085,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
@@ -934,7 +1097,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
@@ -945,7 +1109,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-aftrekken-dec",
@@ -956,7 +1121,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
@@ -967,7 +1133,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
@@ -978,7 +1145,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
@@ -989,7 +1157,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
@@ -1000,7 +1169,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
@@ -1011,7 +1181,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
@@ -1022,7 +1193,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
@@ -1033,7 +1205,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
@@ -1044,7 +1217,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
@@ -1055,7 +1229,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
@@ -1066,7 +1241,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
@@ -1077,7 +1253,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
@@ -1088,7 +1265,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
@@ -1099,7 +1277,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
@@ -1110,7 +1289,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
@@ -1121,7 +1301,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
@@ -1132,7 +1313,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
@@ -1143,7 +1325,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
@@ -1154,7 +1337,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
@@ -1165,7 +1349,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
@@ -1176,7 +1361,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
@@ -1187,7 +1373,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
@@ -1198,7 +1385,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
@@ -1209,7 +1397,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 404
+      "cellHeight": 410,
+      "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-dec",
@@ -1220,7 +1409,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 240,
+      "rowCount": 0
     },
     {
       "typeId": "klok-kloklezen",
@@ -1231,7 +1421,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 738
+      "cellHeight": 744,
+      "rowCount": 4
     },
     {
       "typeId": "klok-kloklezen",
@@ -1242,7 +1433,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 228
+      "cellHeight": 234,
+      "rowCount": 1
     },
     {
       "typeId": "klok-kloklezen",
@@ -1253,7 +1445,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 908
+      "cellHeight": 914,
+      "rowCount": 5
     },
     {
       "typeId": "klok-kloklezen",
@@ -1264,7 +1457,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 228
+      "cellHeight": 234,
+      "rowCount": 1
     },
     {
       "typeId": "klok-kloklezen",
@@ -1275,7 +1469,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1758
+      "cellHeight": 1788,
+      "rowCount": 10
     },
     {
       "typeId": "klok-kloklezen",
@@ -1286,7 +1481,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 228
+      "cellHeight": 258,
+      "rowCount": 1
     },
     {
       "typeId": "breuken",
@@ -1297,7 +1493,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 507
+      "cellHeight": 513,
+      "rowCount": 3
     },
     {
       "typeId": "breuken",
@@ -1308,18 +1505,20 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 208
+      "cellHeight": 214,
+      "rowCount": 1
     },
     {
       "typeId": "breuken",
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1,
+      "overflow": 1.1598,
       "zoom": 1,
-      "scrollWidth": 338,
+      "scrollWidth": 392,
       "clientWidth": 338,
-      "cellHeight": 507
+      "cellHeight": 513,
+      "rowCount": 3
     },
     {
       "typeId": "breuken",
@@ -1330,7 +1529,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 208
+      "cellHeight": 214,
+      "rowCount": 1
     },
     {
       "typeId": "breuken",
@@ -1341,7 +1541,8 @@
       "zoom": 1,
       "scrollWidth": 392,
       "clientWidth": 163,
-      "cellHeight": 507
+      "cellHeight": 537,
+      "rowCount": 3
     },
     {
       "typeId": "breuken",
@@ -1352,7 +1553,8 @@
       "zoom": 1,
       "scrollWidth": 168,
       "clientWidth": 163,
-      "cellHeight": 208
+      "cellHeight": 238,
+      "rowCount": 1
     },
     {
       "typeId": "splitsen",
@@ -1363,7 +1565,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 384
+      "cellHeight": 390,
+      "rowCount": 2
     },
     {
       "typeId": "splitsen",
@@ -1374,7 +1577,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 221
+      "cellHeight": 227,
+      "rowCount": 1
     },
     {
       "typeId": "splitsen",
@@ -1385,7 +1589,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 547
+      "cellHeight": 553,
+      "rowCount": 3
     },
     {
       "typeId": "splitsen",
@@ -1396,7 +1601,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 221
+      "cellHeight": 227,
+      "rowCount": 1
     },
     {
       "typeId": "splitsen",
@@ -1407,7 +1613,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 873
+      "cellHeight": 879,
+      "rowCount": 5
     },
     {
       "typeId": "splitsen",
@@ -1418,7 +1625,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 221
+      "cellHeight": 227,
+      "rowCount": 1
     },
     {
       "typeId": "geld-herkennen",
@@ -1429,7 +1637,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 504
+      "cellHeight": 430,
+      "rowCount": 2
     },
     {
       "typeId": "geld-herkennen",
@@ -1440,7 +1649,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 306
+      "cellHeight": 188,
+      "rowCount": 1
     },
     {
       "typeId": "geld-herkennen",
@@ -1451,7 +1661,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 596
+      "cellHeight": 634,
+      "rowCount": 3
     },
     {
       "typeId": "geld-herkennen",
@@ -1462,7 +1673,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 230
+      "cellHeight": 188,
+      "rowCount": 1
     },
     {
       "typeId": "geld-herkennen",
@@ -1473,7 +1685,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1356
+      "cellHeight": 1014,
+      "rowCount": 6
     },
     {
       "typeId": "geld-herkennen",
@@ -1484,7 +1697,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 338
+      "cellHeight": 188,
+      "rowCount": 1
     },
     {
       "typeId": "geld-tekenen",
@@ -1495,7 +1709,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 338
+      "cellHeight": 344,
+      "rowCount": 2
     },
     {
       "typeId": "geld-tekenen",
@@ -1506,7 +1721,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 198
+      "cellHeight": 204,
+      "rowCount": 1
     },
     {
       "typeId": "geld-tekenen",
@@ -1517,7 +1733,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 338
+      "cellHeight": 344,
+      "rowCount": 2
     },
     {
       "typeId": "geld-tekenen",
@@ -1528,18 +1745,20 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 198
+      "cellHeight": 204,
+      "rowCount": 1
     },
     {
       "typeId": "geld-tekenen",
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.7423,
+      "overflow": 1.8282,
       "zoom": 1,
-      "scrollWidth": 284,
+      "scrollWidth": 298,
       "clientWidth": 163,
-      "cellHeight": 338
+      "cellHeight": 368,
+      "rowCount": 2
     },
     {
       "typeId": "geld-tekenen",
@@ -1550,7 +1769,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 198
+      "cellHeight": 228,
+      "rowCount": 1
     },
     {
       "typeId": "geld-wissel",
@@ -1561,7 +1781,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 326
+      "cellHeight": 332,
+      "rowCount": 2
     },
     {
       "typeId": "geld-wissel",
@@ -1572,7 +1793,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 192
+      "cellHeight": 198,
+      "rowCount": 1
     },
     {
       "typeId": "geld-wissel",
@@ -1583,7 +1805,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 326
+      "cellHeight": 332,
+      "rowCount": 2
     },
     {
       "typeId": "geld-wissel",
@@ -1594,7 +1817,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 192
+      "cellHeight": 198,
+      "rowCount": 1
     },
     {
       "typeId": "geld-wissel",
@@ -1605,7 +1829,8 @@
       "zoom": 1,
       "scrollWidth": 249,
       "clientWidth": 163,
-      "cellHeight": 326
+      "cellHeight": 356,
+      "rowCount": 2
     },
     {
       "typeId": "geld-wissel",
@@ -1616,7 +1841,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 192
+      "cellHeight": 222,
+      "rowCount": 1
     },
     {
       "typeId": "geld-teruggeven",
@@ -1627,7 +1853,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 865
+      "cellHeight": 871,
+      "rowCount": 0
     },
     {
       "typeId": "geld-teruggeven",
@@ -1638,7 +1865,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 260
+      "cellHeight": 266,
+      "rowCount": 0
     },
     {
       "typeId": "geld-teruggeven",
@@ -1649,7 +1877,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 792
+      "cellHeight": 798,
+      "rowCount": 0
     },
     {
       "typeId": "geld-teruggeven",
@@ -1660,7 +1889,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 242
+      "cellHeight": 248,
+      "rowCount": 0
     },
     {
       "typeId": "geld-teruggeven",
@@ -1671,7 +1901,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 629
+      "cellHeight": 641,
+      "rowCount": 0
     },
     {
       "typeId": "geld-teruggeven",
@@ -1682,7 +1913,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 214
+      "cellHeight": 226,
+      "rowCount": 0
     },
     {
       "typeId": "mab-herkennen",
@@ -1693,7 +1925,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 535
+      "cellHeight": 541,
+      "rowCount": 3
     },
     {
       "typeId": "mab-herkennen",
@@ -1704,7 +1937,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 217
+      "cellHeight": 223,
+      "rowCount": 1
     },
     {
       "typeId": "mab-herkennen",
@@ -1715,7 +1949,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 1012
+      "cellHeight": 1018,
+      "rowCount": 6
     },
     {
       "typeId": "mab-herkennen",
@@ -1726,7 +1961,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 217
+      "cellHeight": 223,
+      "rowCount": 1
     },
     {
       "typeId": "mab-herkennen",
@@ -1737,7 +1973,8 @@
       "zoom": 1,
       "scrollWidth": 314,
       "clientWidth": 163,
-      "cellHeight": 1012
+      "cellHeight": 1018,
+      "rowCount": 6
     },
     {
       "typeId": "mab-herkennen",
@@ -1748,7 +1985,8 @@
       "zoom": 1,
       "scrollWidth": 314,
       "clientWidth": 163,
-      "cellHeight": 217
+      "cellHeight": 223,
+      "rowCount": 1
     },
     {
       "typeId": "mab-tekenen",
@@ -1759,7 +1997,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 535
+      "cellHeight": 541,
+      "rowCount": 3
     },
     {
       "typeId": "mab-tekenen",
@@ -1770,7 +2009,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 217
+      "cellHeight": 223,
+      "rowCount": 1
     },
     {
       "typeId": "mab-tekenen",
@@ -1781,7 +2021,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 1012
+      "cellHeight": 1018,
+      "rowCount": 6
     },
     {
       "typeId": "mab-tekenen",
@@ -1792,7 +2033,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 217
+      "cellHeight": 223,
+      "rowCount": 1
     },
     {
       "typeId": "mab-tekenen",
@@ -1803,7 +2045,8 @@
       "zoom": 1,
       "scrollWidth": 314,
       "clientWidth": 163,
-      "cellHeight": 1012
+      "cellHeight": 1042,
+      "rowCount": 6
     },
     {
       "typeId": "mab-tekenen",
@@ -1814,7 +2057,8 @@
       "zoom": 1,
       "scrollWidth": 314,
       "clientWidth": 163,
-      "cellHeight": 217
+      "cellHeight": 247,
+      "rowCount": 1
     },
     {
       "typeId": "ordenen",
@@ -1825,7 +2069,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 274
+      "cellHeight": 280,
+      "rowCount": 3
     },
     {
       "typeId": "ordenen",
@@ -1836,7 +2081,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 126
+      "cellHeight": 132,
+      "rowCount": 1
     },
     {
       "typeId": "ordenen",
@@ -1847,7 +2093,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 448
+      "cellHeight": 454,
+      "rowCount": 3
     },
     {
       "typeId": "ordenen",
@@ -1858,7 +2105,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 184
+      "cellHeight": 190,
+      "rowCount": 1
     },
     {
       "typeId": "ordenen",
@@ -1869,7 +2117,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1156
+      "cellHeight": 1186,
+      "rowCount": 6
     },
     {
       "typeId": "ordenen",
@@ -1880,7 +2129,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 236
+      "cellHeight": 266,
+      "rowCount": 1
     },
     {
       "typeId": "breuken-bewerken",
@@ -1891,7 +2141,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 299
+      "cellHeight": 304,
+      "rowCount": 4
     },
     {
       "typeId": "breuken-bewerken",
@@ -1902,7 +2153,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 112
+      "cellHeight": 118,
+      "rowCount": 1
     },
     {
       "typeId": "breuken-bewerken",
@@ -1913,7 +2165,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 299
+      "cellHeight": 304,
+      "rowCount": 4
     },
     {
       "typeId": "breuken-bewerken",
@@ -1924,18 +2177,20 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 112
+      "cellHeight": 118,
+      "rowCount": 1
     },
     {
       "typeId": "breuken-bewerken",
       "width": 1,
       "mode": "default",
       "count": 8,
-      "overflow": 1.9509,
+      "overflow": 1.9693,
       "zoom": 1,
-      "scrollWidth": 318,
+      "scrollWidth": 321,
       "clientWidth": 163,
-      "cellHeight": 299
+      "cellHeight": 304,
+      "rowCount": 4
     },
     {
       "typeId": "breuken-bewerken",
@@ -1946,7 +2201,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 112
+      "cellHeight": 118,
+      "rowCount": 1
     },
     {
       "typeId": "breuken-rangschikken",
@@ -1957,7 +2213,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 415
+      "cellHeight": 421,
+      "rowCount": 3
     },
     {
       "typeId": "breuken-rangschikken",
@@ -1968,7 +2225,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 173
+      "cellHeight": 179,
+      "rowCount": 1
     },
     {
       "typeId": "breuken-rangschikken",
@@ -1979,7 +2237,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 589
+      "cellHeight": 595,
+      "rowCount": 3
     },
     {
       "typeId": "breuken-rangschikken",
@@ -1990,7 +2249,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 231
+      "cellHeight": 237,
+      "rowCount": 1
     },
     {
       "typeId": "breuken-rangschikken",
@@ -2001,7 +2261,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1900
+      "cellHeight": 1934,
+      "rowCount": 6
     },
     {
       "typeId": "breuken-rangschikken",
@@ -2012,7 +2273,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 360
+      "cellHeight": 391,
+      "rowCount": 1
     },
     {
       "typeId": "deelbaarheid",
@@ -2023,7 +2285,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 314
+      "cellHeight": 320,
+      "rowCount": 7
     },
     {
       "typeId": "deelbaarheid",
@@ -2034,7 +2297,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 144
+      "cellHeight": 150,
+      "rowCount": 2
     },
     {
       "typeId": "deelbaarheid",
@@ -2045,7 +2309,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 314
+      "cellHeight": 320,
+      "rowCount": 7
     },
     {
       "typeId": "deelbaarheid",
@@ -2056,7 +2321,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 144
+      "cellHeight": 150,
+      "rowCount": 2
     },
     {
       "typeId": "deelbaarheid",
@@ -2067,7 +2333,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 660
+      "cellHeight": 666,
+      "rowCount": 6
     },
     {
       "typeId": "deelbaarheid",
@@ -2078,7 +2345,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 155
+      "cellHeight": 161,
+      "rowCount": 1
     },
     {
       "typeId": "getalpatronen",
@@ -2089,7 +2357,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 328
+      "cellHeight": 334,
+      "rowCount": 6
     },
     {
       "typeId": "getalpatronen",
@@ -2100,7 +2369,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 98
+      "cellHeight": 104,
+      "rowCount": 1
     },
     {
       "typeId": "getalpatronen",
@@ -2111,7 +2381,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 328
+      "cellHeight": 334,
+      "rowCount": 6
     },
     {
       "typeId": "getalpatronen",
@@ -2122,7 +2393,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 98
+      "cellHeight": 104,
+      "rowCount": 1
     },
     {
       "typeId": "getalpatronen",
@@ -2133,7 +2405,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1686
+      "cellHeight": 1717,
+      "rowCount": 6
     },
     {
       "typeId": "getalpatronen",
@@ -2144,7 +2417,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 323
+      "cellHeight": 356,
+      "rowCount": 1
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2155,7 +2429,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 292
+      "cellHeight": 298,
+      "rowCount": 3
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2166,7 +2441,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 132
+      "cellHeight": 138,
+      "rowCount": 1
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2177,7 +2453,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 394
+      "cellHeight": 400,
+      "rowCount": 3
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2188,7 +2465,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 166
+      "cellHeight": 172,
+      "rowCount": 1
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2199,7 +2477,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 680
+      "cellHeight": 708,
+      "rowCount": 3
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2210,7 +2489,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 268
+      "cellHeight": 296,
+      "rowCount": 1
     },
     {
       "typeId": "getallenas",
@@ -2221,7 +2501,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 538
+      "cellHeight": 544,
+      "rowCount": 5
     },
     {
       "typeId": "getallenas",
@@ -2232,7 +2513,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 146
+      "cellHeight": 152,
+      "rowCount": 1
     },
     {
       "typeId": "getallenas",
@@ -2243,7 +2525,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 538
+      "cellHeight": 544,
+      "rowCount": 5
     },
     {
       "typeId": "getallenas",
@@ -2254,7 +2537,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 146
+      "cellHeight": 152,
+      "rowCount": 1
     },
     {
       "typeId": "getallenas",
@@ -2265,7 +2549,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 538
+      "cellHeight": 544,
+      "rowCount": 5
     },
     {
       "typeId": "getallenas",
@@ -2276,7 +2561,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 146
+      "cellHeight": 152,
+      "rowCount": 1
     },
     {
       "typeId": "getallenrijen",
@@ -2287,7 +2573,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 395
+      "cellHeight": 401,
+      "rowCount": 5
     },
     {
       "typeId": "getallenrijen",
@@ -2298,7 +2585,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 119
+      "cellHeight": 125,
+      "rowCount": 1
     },
     {
       "typeId": "getallenrijen",
@@ -2309,7 +2597,8 @@
       "zoom": 1,
       "scrollWidth": 380,
       "clientWidth": 338,
-      "cellHeight": 360
+      "cellHeight": 366,
+      "rowCount": 5
     },
     {
       "typeId": "getallenrijen",
@@ -2320,7 +2609,8 @@
       "zoom": 1,
       "scrollWidth": 380,
       "clientWidth": 338,
-      "cellHeight": 112
+      "cellHeight": 118,
+      "rowCount": 1
     },
     {
       "typeId": "getallenrijen",
@@ -2331,7 +2621,8 @@
       "zoom": 1,
       "scrollWidth": 380,
       "clientWidth": 163,
-      "cellHeight": 360
+      "cellHeight": 366,
+      "rowCount": 5
     },
     {
       "typeId": "getallenrijen",
@@ -2342,7 +2633,8 @@
       "zoom": 1,
       "scrollWidth": 380,
       "clientWidth": 163,
-      "cellHeight": 112
+      "cellHeight": 118,
+      "rowCount": 1
     },
     {
       "typeId": "lengte-meten",
@@ -2353,7 +2645,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 866
+      "cellHeight": 872,
+      "rowCount": 6
     },
     {
       "typeId": "lengte-meten",
@@ -2364,51 +2657,56 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 186
+      "cellHeight": 192,
+      "rowCount": 1
     },
     {
       "typeId": "lengte-meten",
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.2544,
+      "overflow": 1.3669,
       "zoom": 1,
-      "scrollWidth": 424,
+      "scrollWidth": 462,
       "clientWidth": 338,
-      "cellHeight": 866
+      "cellHeight": 872,
+      "rowCount": 6
     },
     {
       "typeId": "lengte-meten",
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1,
+      "overflow": 1.3669,
       "zoom": 1,
-      "scrollWidth": 338,
+      "scrollWidth": 462,
       "clientWidth": 338,
-      "cellHeight": 186
+      "cellHeight": 192,
+      "rowCount": 1
     },
     {
       "typeId": "lengte-meten",
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.6012,
+      "overflow": 2.8344,
       "zoom": 1,
-      "scrollWidth": 424,
+      "scrollWidth": 462,
       "clientWidth": 163,
-      "cellHeight": 866
+      "cellHeight": 872,
+      "rowCount": 6
     },
     {
       "typeId": "lengte-meten",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.908,
+      "overflow": 2.8344,
       "zoom": 1,
-      "scrollWidth": 311,
+      "scrollWidth": 462,
       "clientWidth": 163,
-      "cellHeight": 186
+      "cellHeight": 192,
+      "rowCount": 1
     },
     {
       "typeId": "omtrek",
@@ -2419,7 +2717,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 3134
+      "cellHeight": 3140,
+      "rowCount": 6
     },
     {
       "typeId": "omtrek",
@@ -2430,7 +2729,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 371
+      "cellHeight": 570,
+      "rowCount": 1
     },
     {
       "typeId": "omtrek",
@@ -2441,18 +2741,20 @@
       "zoom": 1,
       "scrollWidth": 462,
       "clientWidth": 338,
-      "cellHeight": 2907
+      "cellHeight": 3140,
+      "rowCount": 6
     },
     {
       "typeId": "omtrek",
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1.142,
+      "overflow": 1.3669,
       "zoom": 1,
-      "scrollWidth": 386,
+      "scrollWidth": 462,
       "clientWidth": 338,
-      "cellHeight": 488
+      "cellHeight": 570,
+      "rowCount": 1
     },
     {
       "typeId": "omtrek",
@@ -2463,18 +2765,20 @@
       "zoom": 1,
       "scrollWidth": 462,
       "clientWidth": 163,
-      "cellHeight": 3152
+      "cellHeight": 3164,
+      "rowCount": 6
     },
     {
       "typeId": "omtrek",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 2.6012,
+      "overflow": 2.8344,
       "zoom": 1,
-      "scrollWidth": 424,
+      "scrollWidth": 462,
       "clientWidth": 163,
-      "cellHeight": 491
+      "cellHeight": 594,
+      "rowCount": 1
     },
     {
       "typeId": "temperatuur",
@@ -2485,7 +2789,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 253
+      "cellHeight": 259,
+      "rowCount": 1
     },
     {
       "typeId": "temperatuur",
@@ -2496,7 +2801,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 253
+      "cellHeight": 259,
+      "rowCount": 1
     },
     {
       "typeId": "temperatuur",
@@ -2507,7 +2813,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 448
+      "cellHeight": 454,
+      "rowCount": 2
     },
     {
       "typeId": "temperatuur",
@@ -2518,7 +2825,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 253
+      "cellHeight": 259,
+      "rowCount": 1
     },
     {
       "typeId": "temperatuur",
@@ -2529,7 +2837,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 838
+      "cellHeight": 844,
+      "rowCount": 4
     },
     {
       "typeId": "temperatuur",
@@ -2540,7 +2849,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 253
+      "cellHeight": 259,
+      "rowCount": 1
     },
     {
       "typeId": "plaatswaarde",
@@ -2551,7 +2861,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 175
+      "cellHeight": 181,
+      "rowCount": 3
     },
     {
       "typeId": "plaatswaarde",
@@ -2562,7 +2873,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 97
+      "cellHeight": 103,
+      "rowCount": 1
     },
     {
       "typeId": "plaatswaarde",
@@ -2573,7 +2885,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 292
+      "cellHeight": 298,
+      "rowCount": 6
     },
     {
       "typeId": "plaatswaarde",
@@ -2584,7 +2897,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 97
+      "cellHeight": 103,
+      "rowCount": 1
     },
     {
       "typeId": "plaatswaarde",
@@ -2595,7 +2909,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 292
+      "cellHeight": 298,
+      "rowCount": 6
     },
     {
       "typeId": "plaatswaarde",
@@ -2606,7 +2921,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 97
+      "cellHeight": 103,
+      "rowCount": 1
     },
     {
       "typeId": "even-oneven",
@@ -2617,7 +2933,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 214
+      "cellHeight": 220,
+      "rowCount": 3
     },
     {
       "typeId": "even-oneven",
@@ -2628,7 +2945,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 110
+      "cellHeight": 116,
+      "rowCount": 1
     },
     {
       "typeId": "even-oneven",
@@ -2639,7 +2957,8 @@
       "zoom": 1,
       "scrollWidth": 460,
       "clientWidth": 338,
-      "cellHeight": 214
+      "cellHeight": 220,
+      "rowCount": 3
     },
     {
       "typeId": "even-oneven",
@@ -2650,7 +2969,8 @@
       "zoom": 1,
       "scrollWidth": 460,
       "clientWidth": 338,
-      "cellHeight": 110
+      "cellHeight": 116,
+      "rowCount": 1
     },
     {
       "typeId": "even-oneven",
@@ -2661,7 +2981,8 @@
       "zoom": 1,
       "scrollWidth": 460,
       "clientWidth": 163,
-      "cellHeight": 214
+      "cellHeight": 220,
+      "rowCount": 3
     },
     {
       "typeId": "even-oneven",
@@ -2672,7 +2993,8 @@
       "zoom": 1,
       "scrollWidth": 460,
       "clientWidth": 163,
-      "cellHeight": 110
+      "cellHeight": 116,
+      "rowCount": 1
     },
     {
       "typeId": "vergelijken",
@@ -2683,7 +3005,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 214
+      "cellHeight": 220,
+      "rowCount": 3
     },
     {
       "typeId": "vergelijken",
@@ -2694,7 +3017,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 110
+      "cellHeight": 116,
+      "rowCount": 1
     },
     {
       "typeId": "vergelijken",
@@ -2705,7 +3029,8 @@
       "zoom": 1,
       "scrollWidth": 421,
       "clientWidth": 338,
-      "cellHeight": 214
+      "cellHeight": 220,
+      "rowCount": 3
     },
     {
       "typeId": "vergelijken",
@@ -2716,7 +3041,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 110
+      "cellHeight": 116,
+      "rowCount": 1
     },
     {
       "typeId": "vergelijken",
@@ -2727,18 +3053,20 @@
       "zoom": 1,
       "scrollWidth": 421,
       "clientWidth": 163,
-      "cellHeight": 214
+      "cellHeight": 244,
+      "rowCount": 3
     },
     {
       "typeId": "vergelijken",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.2147,
+      "overflow": 1.2209,
       "zoom": 1,
-      "scrollWidth": 198,
+      "scrollWidth": 199,
       "clientWidth": 163,
-      "cellHeight": 110
+      "cellHeight": 140,
+      "rowCount": 1
     },
     {
       "typeId": "afronden",
@@ -2749,7 +3077,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 796
+      "cellHeight": 802,
+      "rowCount": 3
     },
     {
       "typeId": "afronden",
@@ -2760,7 +3089,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 300
+      "cellHeight": 306,
+      "rowCount": 1
     },
     {
       "typeId": "afronden",
@@ -2771,7 +3101,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 1540
+      "cellHeight": 1546,
+      "rowCount": 6
     },
     {
       "typeId": "afronden",
@@ -2782,7 +3113,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 300
+      "cellHeight": 306,
+      "rowCount": 1
     },
     {
       "typeId": "afronden",
@@ -2793,7 +3125,8 @@
       "zoom": 1,
       "scrollWidth": 296,
       "clientWidth": 163,
-      "cellHeight": 1540
+      "cellHeight": 1546,
+      "rowCount": 6
     },
     {
       "typeId": "afronden",
@@ -2804,7 +3137,8 @@
       "zoom": 1,
       "scrollWidth": 296,
       "clientWidth": 163,
-      "cellHeight": 300
+      "cellHeight": 306,
+      "rowCount": 1
     },
     {
       "typeId": "romeinse-cijfers",
@@ -2815,7 +3149,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 224
+      "cellHeight": 230,
+      "rowCount": 4
     },
     {
       "typeId": "romeinse-cijfers",
@@ -2826,7 +3161,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 98
+      "cellHeight": 104,
+      "rowCount": 1
     },
     {
       "typeId": "romeinse-cijfers",
@@ -2837,7 +3173,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 392
+      "cellHeight": 398,
+      "rowCount": 8
     },
     {
       "typeId": "romeinse-cijfers",
@@ -2848,29 +3185,32 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 98
+      "cellHeight": 104,
+      "rowCount": 1
     },
     {
       "typeId": "romeinse-cijfers",
       "width": 1,
       "mode": "default",
       "count": 8,
+      "overflow": 1.681,
+      "zoom": 1,
+      "scrollWidth": 274,
+      "clientWidth": 163,
+      "cellHeight": 422,
+      "rowCount": 8
+    },
+    {
+      "typeId": "romeinse-cijfers",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
       "overflow": 1.6074,
       "zoom": 1,
       "scrollWidth": 262,
       "clientWidth": 163,
-      "cellHeight": 410
-    },
-    {
-      "typeId": "romeinse-cijfers",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1.4785,
-      "zoom": 1,
-      "scrollWidth": 241,
-      "clientWidth": 163,
-      "cellHeight": 116
+      "cellHeight": 128,
+      "rowCount": 1
     },
     {
       "typeId": "herleidingen",
@@ -2881,7 +3221,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 294
+      "cellHeight": 248,
+      "rowCount": 4
     },
     {
       "typeId": "herleidingen",
@@ -2892,7 +3233,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 96
+      "cellHeight": 102,
+      "rowCount": 1
     },
     {
       "typeId": "herleidingen",
@@ -2903,7 +3245,8 @@
       "zoom": 1,
       "scrollWidth": 552,
       "clientWidth": 338,
-      "cellHeight": 268
+      "cellHeight": 248,
+      "rowCount": 4
     },
     {
       "typeId": "herleidingen",
@@ -2914,7 +3257,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 96
+      "cellHeight": 102,
+      "rowCount": 1
     },
     {
       "typeId": "herleidingen",
@@ -2925,18 +3269,20 @@
       "zoom": 1,
       "scrollWidth": 552,
       "clientWidth": 163,
-      "cellHeight": 268
+      "cellHeight": 248,
+      "rowCount": 4
     },
     {
       "typeId": "herleidingen",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.4479,
+      "overflow": 1.6074,
       "zoom": 1,
-      "scrollWidth": 236,
+      "scrollWidth": 262,
       "clientWidth": 163,
-      "cellHeight": 96
+      "cellHeight": 102,
+      "rowCount": 1
     },
     {
       "typeId": "schattend",
@@ -2947,7 +3293,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 362
+      "cellHeight": 368,
+      "rowCount": 8
     },
     {
       "typeId": "schattend",
@@ -2958,7 +3305,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 96
+      "cellHeight": 102,
+      "rowCount": 1
     },
     {
       "typeId": "schattend",
@@ -2969,7 +3317,8 @@
       "zoom": 1,
       "scrollWidth": 434,
       "clientWidth": 338,
-      "cellHeight": 362
+      "cellHeight": 368,
+      "rowCount": 8
     },
     {
       "typeId": "schattend",
@@ -2980,7 +3329,8 @@
       "zoom": 1,
       "scrollWidth": 434,
       "clientWidth": 338,
-      "cellHeight": 96
+      "cellHeight": 102,
+      "rowCount": 1
     },
     {
       "typeId": "schattend",
@@ -2991,7 +3341,8 @@
       "zoom": 1,
       "scrollWidth": 434,
       "clientWidth": 163,
-      "cellHeight": 380
+      "cellHeight": 392,
+      "rowCount": 8
     },
     {
       "typeId": "schattend",
@@ -3002,7 +3353,8 @@
       "zoom": 1,
       "scrollWidth": 434,
       "clientWidth": 163,
-      "cellHeight": 114
+      "cellHeight": 126,
+      "rowCount": 1
     },
     {
       "typeId": "verbanden",
@@ -3013,7 +3365,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 418
+      "cellHeight": 424,
+      "rowCount": 0
     },
     {
       "typeId": "verbanden",
@@ -3024,7 +3377,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 152
+      "cellHeight": 158,
+      "rowCount": 0
     },
     {
       "typeId": "verbanden",
@@ -3035,7 +3389,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 338,
-      "cellHeight": 418
+      "cellHeight": 424,
+      "rowCount": 0
     },
     {
       "typeId": "verbanden",
@@ -3046,7 +3401,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 338,
-      "cellHeight": 152
+      "cellHeight": 158,
+      "rowCount": 0
     },
     {
       "typeId": "verbanden",
@@ -3057,7 +3413,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 163,
-      "cellHeight": 418
+      "cellHeight": 424,
+      "rowCount": 0
     },
     {
       "typeId": "verbanden",
@@ -3068,7 +3425,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 163,
-      "cellHeight": 152
+      "cellHeight": 158,
+      "rowCount": 0
     },
     {
       "typeId": "procenten",
@@ -3079,7 +3437,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 206
+      "cellHeight": 212,
+      "rowCount": 4
     },
     {
       "typeId": "procenten",
@@ -3090,7 +3449,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 95
+      "cellHeight": 101,
+      "rowCount": 1
     },
     {
       "typeId": "procenten",
@@ -3101,7 +3461,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 358
+      "cellHeight": 364,
+      "rowCount": 4
     },
     {
       "typeId": "procenten",
@@ -3112,7 +3473,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 133
+      "cellHeight": 139,
+      "rowCount": 1
     },
     {
       "typeId": "procenten",
@@ -3123,7 +3485,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 506
+      "cellHeight": 512,
+      "rowCount": 8
     },
     {
       "typeId": "procenten",
@@ -3134,7 +3497,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 114
+      "cellHeight": 120,
+      "rowCount": 1
     },
     {
       "typeId": "maateenheid",
@@ -3145,7 +3509,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 362
+      "cellHeight": 368,
+      "rowCount": 8
     },
     {
       "typeId": "maateenheid",
@@ -3156,7 +3521,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 96
+      "cellHeight": 102,
+      "rowCount": 1
     },
     {
       "typeId": "maateenheid",
@@ -3167,7 +3533,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 618
+      "cellHeight": 592,
+      "rowCount": 8
     },
     {
       "typeId": "maateenheid",
@@ -3178,7 +3545,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 128
+      "cellHeight": 134,
+      "rowCount": 1
     },
     {
       "typeId": "maateenheid",
@@ -3189,7 +3557,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 816
+      "cellHeight": 828,
+      "rowCount": 8
     },
     {
       "typeId": "maateenheid",
@@ -3200,7 +3569,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 166
+      "cellHeight": 178,
+      "rowCount": 1
     },
     {
       "typeId": "geld-rekenen",
@@ -3211,7 +3581,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 300
+      "cellHeight": 306,
+      "rowCount": 6
     },
     {
       "typeId": "geld-rekenen",
@@ -3222,7 +3593,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 148
+      "cellHeight": 154,
+      "rowCount": 2
     },
     {
       "typeId": "geld-rekenen",
@@ -3233,7 +3605,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 338,
-      "cellHeight": 300
+      "cellHeight": 306,
+      "rowCount": 6
     },
     {
       "typeId": "geld-rekenen",
@@ -3244,7 +3617,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 338,
-      "cellHeight": 148
+      "cellHeight": 154,
+      "rowCount": 2
     },
     {
       "typeId": "geld-rekenen",
@@ -3255,7 +3629,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 163,
-      "cellHeight": 300
+      "cellHeight": 306,
+      "rowCount": 6
     },
     {
       "typeId": "geld-rekenen",
@@ -3266,7 +3641,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 163,
-      "cellHeight": 148
+      "cellHeight": 154,
+      "rowCount": 2
     },
     {
       "typeId": "rekenvolgorde",
@@ -3277,7 +3653,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 243
+      "cellHeight": 249,
+      "rowCount": 5
     },
     {
       "typeId": "rekenvolgorde",
@@ -3288,18 +3665,20 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 95
+      "cellHeight": 101,
+      "rowCount": 1
     },
     {
       "typeId": "rekenvolgorde",
       "width": 2,
       "mode": "default",
       "count": 10,
-      "overflow": 1.3639,
+      "overflow": 1.2988,
       "zoom": 1,
-      "scrollWidth": 461,
+      "scrollWidth": 439,
       "clientWidth": 338,
-      "cellHeight": 243
+      "cellHeight": 249,
+      "rowCount": 5
     },
     {
       "typeId": "rekenvolgorde",
@@ -3310,7 +3689,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 95
+      "cellHeight": 101,
+      "rowCount": 1
     },
     {
       "typeId": "rekenvolgorde",
@@ -3321,7 +3701,8 @@
       "zoom": 1,
       "scrollWidth": 439,
       "clientWidth": 163,
-      "cellHeight": 243
+      "cellHeight": 249,
+      "rowCount": 5
     },
     {
       "typeId": "rekenvolgorde",
@@ -3332,7 +3713,8 @@
       "zoom": 1,
       "scrollWidth": 186,
       "clientWidth": 163,
-      "cellHeight": 95
+      "cellHeight": 101,
+      "rowCount": 1
     },
     {
       "typeId": "layout-sectie",
@@ -3343,7 +3725,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 48
+      "cellHeight": 48,
+      "rowCount": 0
     },
     {
       "typeId": "layout-sectie",
@@ -3354,7 +3737,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 48
+      "cellHeight": 48,
+      "rowCount": 0
     },
     {
       "typeId": "layout-sectie",
@@ -3365,7 +3749,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 48
+      "cellHeight": 48,
+      "rowCount": 0
     },
     {
       "typeId": "layout-sectie",
@@ -3376,7 +3761,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 48
+      "cellHeight": 48,
+      "rowCount": 0
     },
     {
       "typeId": "layout-sectie",
@@ -3387,7 +3773,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 48
+      "cellHeight": 48,
+      "rowCount": 0
     },
     {
       "typeId": "layout-sectie",
@@ -3398,7 +3785,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 48
+      "cellHeight": 48,
+      "rowCount": 0
     },
     {
       "typeId": "layout-schrijflijnen",
@@ -3409,7 +3797,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 269
+      "cellHeight": 269,
+      "rowCount": 0
     },
     {
       "typeId": "layout-schrijflijnen",
@@ -3420,7 +3809,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 269
+      "cellHeight": 269,
+      "rowCount": 0
     },
     {
       "typeId": "layout-schrijflijnen",
@@ -3431,7 +3821,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 269
+      "cellHeight": 269,
+      "rowCount": 0
     },
     {
       "typeId": "layout-schrijflijnen",
@@ -3442,7 +3833,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 269
+      "cellHeight": 269,
+      "rowCount": 0
     },
     {
       "typeId": "layout-schrijflijnen",
@@ -3453,7 +3845,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 269
+      "cellHeight": 269,
+      "rowCount": 0
     },
     {
       "typeId": "layout-schrijflijnen",
@@ -3464,7 +3857,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 269
+      "cellHeight": 269,
+      "rowCount": 0
     },
     {
       "typeId": "layout-raster",
@@ -3475,7 +3869,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 344
+      "cellHeight": 344,
+      "rowCount": 0
     },
     {
       "typeId": "layout-raster",
@@ -3486,7 +3881,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 344
+      "cellHeight": 344,
+      "rowCount": 0
     },
     {
       "typeId": "layout-raster",
@@ -3497,7 +3893,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 344
+      "cellHeight": 344,
+      "rowCount": 0
     },
     {
       "typeId": "layout-raster",
@@ -3508,7 +3905,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 344
+      "cellHeight": 344,
+      "rowCount": 0
     },
     {
       "typeId": "layout-raster",
@@ -3519,7 +3917,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 344
+      "cellHeight": 344,
+      "rowCount": 0
     },
     {
       "typeId": "layout-raster",
@@ -3530,7 +3929,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 344
+      "cellHeight": 344,
+      "rowCount": 0
     },
     {
       "typeId": "layout-kader",
@@ -3541,7 +3941,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 81
+      "cellHeight": 81,
+      "rowCount": 0
     },
     {
       "typeId": "layout-kader",
@@ -3552,7 +3953,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 81
+      "cellHeight": 81,
+      "rowCount": 0
     },
     {
       "typeId": "layout-kader",
@@ -3563,7 +3965,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 81
+      "cellHeight": 81,
+      "rowCount": 0
     },
     {
       "typeId": "layout-kader",
@@ -3574,7 +3977,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 81
+      "cellHeight": 81,
+      "rowCount": 0
     },
     {
       "typeId": "layout-kader",
@@ -3585,7 +3989,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 81
+      "cellHeight": 81,
+      "rowCount": 0
     },
     {
       "typeId": "layout-kader",
@@ -3596,7 +4001,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 81
+      "cellHeight": 81,
+      "rowCount": 0
     },
     {
       "typeId": "layout-lege-pagina",
@@ -3607,7 +4013,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 42
+      "cellHeight": 42,
+      "rowCount": 0
     },
     {
       "typeId": "layout-lege-pagina",
@@ -3618,7 +4025,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 42
+      "cellHeight": 42,
+      "rowCount": 0
     },
     {
       "typeId": "layout-lege-pagina",
@@ -3629,7 +4037,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 42
+      "cellHeight": 42,
+      "rowCount": 0
     },
     {
       "typeId": "layout-lege-pagina",
@@ -3640,7 +4049,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 42
+      "cellHeight": 42,
+      "rowCount": 0
     },
     {
       "typeId": "layout-lege-pagina",
@@ -3651,7 +4061,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 42
+      "cellHeight": 42,
+      "rowCount": 0
     },
     {
       "typeId": "layout-lege-pagina",
@@ -3662,7 +4073,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 42
+      "cellHeight": 42,
+      "rowCount": 0
     },
     {
       "typeId": "kettingsommen",
@@ -3673,7 +4085,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 382
+      "cellHeight": 388,
+      "rowCount": 6
     },
     {
       "typeId": "kettingsommen",
@@ -3684,7 +4097,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 107
+      "cellHeight": 113,
+      "rowCount": 1
     },
     {
       "typeId": "kettingsommen",
@@ -3695,7 +4109,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 382
+      "cellHeight": 388,
+      "rowCount": 6
     },
     {
       "typeId": "kettingsommen",
@@ -3706,7 +4121,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 107
+      "cellHeight": 113,
+      "rowCount": 1
     },
     {
       "typeId": "kettingsommen",
@@ -3717,7 +4133,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1408
+      "cellHeight": 1414,
+      "rowCount": 6
     },
     {
       "typeId": "kettingsommen",
@@ -3728,7 +4145,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 278
+      "cellHeight": 284,
+      "rowCount": 1
     },
     {
       "typeId": "getalfunctie",
@@ -3739,7 +4157,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 300
+      "cellHeight": 306,
+      "rowCount": 7
     },
     {
       "typeId": "getalfunctie",
@@ -3750,7 +4169,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 140
+      "cellHeight": 146,
+      "rowCount": 2
     },
     {
       "typeId": "getalfunctie",
@@ -3761,7 +4181,8 @@
       "zoom": 1,
       "scrollWidth": 574,
       "clientWidth": 338,
-      "cellHeight": 300
+      "cellHeight": 316,
+      "rowCount": 7
     },
     {
       "typeId": "getalfunctie",
@@ -3772,7 +4193,8 @@
       "zoom": 1,
       "scrollWidth": 574,
       "clientWidth": 338,
-      "cellHeight": 140
+      "cellHeight": 146,
+      "rowCount": 2
     },
     {
       "typeId": "getalfunctie",
@@ -3783,7 +4205,8 @@
       "zoom": 1,
       "scrollWidth": 574,
       "clientWidth": 163,
-      "cellHeight": 330
+      "cellHeight": 316,
+      "rowCount": 7
     },
     {
       "typeId": "getalfunctie",
@@ -3794,7 +4217,8 @@
       "zoom": 1,
       "scrollWidth": 574,
       "clientWidth": 163,
-      "cellHeight": 140
+      "cellHeight": 146,
+      "rowCount": 2
     },
     {
       "typeId": "tijdsduur",
@@ -3805,7 +4229,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 338
+      "cellHeight": 344,
+      "rowCount": 7
     },
     {
       "typeId": "tijdsduur",
@@ -3816,7 +4241,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 148
+      "cellHeight": 154,
+      "rowCount": 2
     },
     {
       "typeId": "tijdsduur",
@@ -3827,7 +4253,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 338,
-      "cellHeight": 338
+      "cellHeight": 344,
+      "rowCount": 7
     },
     {
       "typeId": "tijdsduur",
@@ -3838,7 +4265,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 338,
-      "cellHeight": 148
+      "cellHeight": 154,
+      "rowCount": 2
     },
     {
       "typeId": "tijdsduur",
@@ -3849,7 +4277,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 163,
-      "cellHeight": 338
+      "cellHeight": 344,
+      "rowCount": 7
     },
     {
       "typeId": "tijdsduur",
@@ -3860,7 +4289,8 @@
       "zoom": 1,
       "scrollWidth": 600,
       "clientWidth": 163,
-      "cellHeight": 148
+      "cellHeight": 154,
+      "rowCount": 2
     },
     {
       "typeId": "kalender",
@@ -3871,7 +4301,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 409
+      "cellHeight": 415,
+      "rowCount": 1
     },
     {
       "typeId": "kalender",
@@ -3882,7 +4313,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 409
+      "cellHeight": 415,
+      "rowCount": 1
     },
     {
       "typeId": "kalender",
@@ -3893,7 +4325,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 494
+      "cellHeight": 434,
+      "rowCount": 1
     },
     {
       "typeId": "kalender",
@@ -3904,7 +4337,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 428
+      "cellHeight": 434,
+      "rowCount": 1
     },
     {
       "typeId": "kalender",
@@ -3915,7 +4349,8 @@
       "zoom": 1,
       "scrollWidth": 280,
       "clientWidth": 163,
-      "cellHeight": 504
+      "cellHeight": 510,
+      "rowCount": 1
     },
     {
       "typeId": "kalender",
@@ -3926,7 +4361,8 @@
       "zoom": 1,
       "scrollWidth": 280,
       "clientWidth": 163,
-      "cellHeight": 504
+      "cellHeight": 510,
+      "rowCount": 1
     },
     {
       "typeId": "controleren",
@@ -3937,7 +4373,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 274
+      "cellHeight": 280,
+      "rowCount": 2
     },
     {
       "typeId": "controleren",
@@ -3948,7 +4385,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 162
+      "cellHeight": 168,
+      "rowCount": 1
     },
     {
       "typeId": "controleren",
@@ -3959,7 +4397,8 @@
       "zoom": 1,
       "scrollWidth": 488,
       "clientWidth": 338,
-      "cellHeight": 274
+      "cellHeight": 280,
+      "rowCount": 2
     },
     {
       "typeId": "controleren",
@@ -3970,7 +4409,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 162
+      "cellHeight": 168,
+      "rowCount": 1
     },
     {
       "typeId": "controleren",
@@ -3981,7 +4421,8 @@
       "zoom": 1,
       "scrollWidth": 488,
       "clientWidth": 163,
-      "cellHeight": 274
+      "cellHeight": 280,
+      "rowCount": 2
     },
     {
       "typeId": "controleren",
@@ -3992,7 +4433,8 @@
       "zoom": 1,
       "scrollWidth": 230,
       "clientWidth": 163,
-      "cellHeight": 162
+      "cellHeight": 168,
+      "rowCount": 1
     },
     {
       "typeId": "oppervlakte",
@@ -4003,7 +4445,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 1784
+      "cellHeight": 1790,
+      "rowCount": 4
     },
     {
       "typeId": "oppervlakte",
@@ -4014,29 +4457,32 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 294
+      "cellHeight": 489,
+      "rowCount": 1
     },
     {
       "typeId": "oppervlakte",
       "width": 2,
       "mode": "default",
       "count": 4,
-      "overflow": 1.0207,
+      "overflow": 1.1302,
       "zoom": 1,
-      "scrollWidth": 345,
+      "scrollWidth": 382,
       "clientWidth": 338,
-      "cellHeight": 1481
+      "cellHeight": 1790,
+      "rowCount": 4
     },
     {
       "typeId": "oppervlakte",
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1.0207,
+      "overflow": 1.1302,
       "zoom": 1,
-      "scrollWidth": 345,
+      "scrollWidth": 382,
       "clientWidth": 338,
-      "cellHeight": 446
+      "cellHeight": 489,
+      "rowCount": 1
     },
     {
       "typeId": "oppervlakte",
@@ -4047,18 +4493,20 @@
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 163,
-      "cellHeight": 1827
+      "cellHeight": 1864,
+      "rowCount": 4
     },
     {
       "typeId": "oppervlakte",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1,
+      "overflow": 2.3436,
       "zoom": 1,
-      "scrollWidth": 163,
+      "scrollWidth": 382,
       "clientWidth": 163,
-      "cellHeight": 300
+      "cellHeight": 513,
+      "rowCount": 1
     },
     {
       "typeId": "weegschaal",
@@ -4069,7 +4517,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 498
+      "cellHeight": 504,
+      "rowCount": 2
     },
     {
       "typeId": "weegschaal",
@@ -4080,7 +4529,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 273
+      "cellHeight": 279,
+      "rowCount": 1
     },
     {
       "typeId": "weegschaal",
@@ -4091,7 +4541,8 @@
       "zoom": 1,
       "scrollWidth": 364,
       "clientWidth": 338,
-      "cellHeight": 498
+      "cellHeight": 504,
+      "rowCount": 2
     },
     {
       "typeId": "weegschaal",
@@ -4102,7 +4553,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 273
+      "cellHeight": 279,
+      "rowCount": 1
     },
     {
       "typeId": "weegschaal",
@@ -4113,7 +4565,8 @@
       "zoom": 1,
       "scrollWidth": 364,
       "clientWidth": 163,
-      "cellHeight": 498
+      "cellHeight": 504,
+      "rowCount": 2
     },
     {
       "typeId": "weegschaal",
@@ -4124,7 +4577,8 @@
       "zoom": 1,
       "scrollWidth": 170,
       "clientWidth": 163,
-      "cellHeight": 273
+      "cellHeight": 279,
+      "rowCount": 1
     },
     {
       "typeId": "vormleer-punt-lijn",
@@ -4135,7 +4589,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 385
+      "cellHeight": 391,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-punt-lijn",
@@ -4146,7 +4601,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 229
+      "cellHeight": 235,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-punt-lijn",
@@ -4157,7 +4613,8 @@
       "zoom": 1,
       "scrollWidth": 366,
       "clientWidth": 338,
-      "cellHeight": 385
+      "cellHeight": 391,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-punt-lijn",
@@ -4168,7 +4625,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 229
+      "cellHeight": 235,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-punt-lijn",
@@ -4179,7 +4637,8 @@
       "zoom": 1,
       "scrollWidth": 366,
       "clientWidth": 163,
-      "cellHeight": 402
+      "cellHeight": 408,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-punt-lijn",
@@ -4190,7 +4649,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 246
+      "cellHeight": 252,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-hoeken",
@@ -4201,7 +4661,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 385
+      "cellHeight": 391,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-hoeken",
@@ -4212,7 +4673,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 229
+      "cellHeight": 235,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-hoeken",
@@ -4223,7 +4685,8 @@
       "zoom": 1,
       "scrollWidth": 366,
       "clientWidth": 338,
-      "cellHeight": 385
+      "cellHeight": 391,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-hoeken",
@@ -4234,7 +4697,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 229
+      "cellHeight": 235,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-hoeken",
@@ -4245,7 +4709,8 @@
       "zoom": 1,
       "scrollWidth": 366,
       "clientWidth": 163,
-      "cellHeight": 402
+      "cellHeight": 408,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-hoeken",
@@ -4256,7 +4721,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 246
+      "cellHeight": 252,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
@@ -4267,7 +4733,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 385
+      "cellHeight": 391,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
@@ -4278,7 +4745,8 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 229
+      "cellHeight": 235,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
@@ -4289,7 +4757,8 @@
       "zoom": 1,
       "scrollWidth": 366,
       "clientWidth": 338,
-      "cellHeight": 402
+      "cellHeight": 408,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
@@ -4300,7 +4769,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 246
+      "cellHeight": 252,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
@@ -4311,7 +4781,8 @@
       "zoom": 1,
       "scrollWidth": 366,
       "clientWidth": 163,
-      "cellHeight": 419
+      "cellHeight": 425,
+      "rowCount": 2
     },
     {
       "typeId": "vormleer-figuren",
@@ -4322,7 +4793,8 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 263
+      "cellHeight": 269,
+      "rowCount": 2
     }
   ]
 }
