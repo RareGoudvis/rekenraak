@@ -22,11 +22,11 @@ Each one is testable. §4 turns them into a checklist.
    teacher would not say out loud. Name a tab or a section after the *object* it edits,
    not the scope it belongs to.
 2. **Show the result, not the term.** An exercise name is never alone — a live example
-   ([ExercisePreview](src/components/shared/ExercisePreview.tsx)) is what actually tells a
+   ([ExercisePreview](../../src/components/shared/ExercisePreview.tsx)) is what actually tells a
    teacher what "kettingsommen" is. Examples are default behaviour, not a preference.
 3. **Everything visible, ranked by grouping.** Nothing hides behind a disclosure. Because
    nothing hides, *sectioning* carries the whole hierarchy: titled cards, roughly six
-   controls per card, most-used card first, an [InfoTip](src/components/ui/InfoTip.tsx) on
+   controls per card, most-used card first, an [InfoTip](../../src/components/ui/InfoTip.tsx) on
    anything a teacher could misread.
 4. **One primary action per region.** `Afdrukken` is the only filled accent button in the
    app — it is the end of the workflow and it earns the loudest control. Everything else
@@ -51,7 +51,7 @@ hover, and never placed beside the primary action.
 
 ## 1. Design tokens (CSS variables)
 
-Defined in [src/assets/theme.css](src/assets/theme.css). **There is one theme.** Tokens sit
+Defined in [src/assets/theme.css](../../src/assets/theme.css). **There is one theme.** Tokens sit
 on bare `:root` — no `data-theme`, no dark mode, no contrast mode. Always reference as
 `var(--token)`, never the raw hex.
 
@@ -92,7 +92,7 @@ Defined once. **Snap every size to these** instead of inventing pixel values.
 
 The five domain hues come from the maths method teachers already use, so they stay. Each
 domain carries its token name on `Domain.accentVar` in
-[appstructure.ts](src/config/appstructure.ts) — read it from there, never hardcode a mapping.
+[appstructure.ts](../../src/config/appstructure.ts) — read it from there, never hardcode a mapping.
 
 | Token | Use for |
 |---|---|
@@ -116,7 +116,7 @@ heavy border. Hierarchy is weight + size + tone.
 
 ## 2. Canonical component styles (reuse these — don't invent local copies)
 
-### Config-plugin helpers — [sharedPluginStyles.ts](src/components/configurator/plugins/sharedPluginStyles.ts)
+### Config-plugin helpers — [sharedPluginStyles.ts](../../src/components/configurator/plugins/sharedPluginStyles.ts)
 `import { sharedPluginStyles as styles }`.
 - `styles.section` — wraps one control group.
 - `styles.label` — field label (`--text-sm`, weight 500, muted, sentence-case).
@@ -126,11 +126,11 @@ heavy border. Hierarchy is weight + size + tone.
 - `styles.onOffRow` / `styles.onOffLabel` / `styles.onOffBtn(on)` — labelled on/off; ON earns
   a solid `--accent` fill (binary = strong signal).
 
-### Switch — [Switch.tsx](src/components/ui/Switch.tsx)
+### Switch — [Switch.tsx](../../src/components/ui/Switch.tsx)
 `<Switch checked onChange aria-label />` for standalone booleans (label left, switch right).
 Prefer over a bare checkbox for document and section toggles.
 
-### Inspector chrome — the `S` object in [Inspector.tsx](src/components/configurator/Inspector.tsx)
+### Inspector chrome — the `S` object in [Inspector.tsx](../../src/components/configurator/Inspector.tsx)
 `S.card` (hairline-separated section), `S.cardTitle` (sentence-case `--text-md` 600, **not**
 uppercase), `S.label`, `S.radioBtn(active)`, `S.input`, `S.select`, `S.checkbox`,
 `S.switchRow`/`S.switchText`.
@@ -143,7 +143,7 @@ name**. Inside `Blad`, sections run in page order: `Koptekst` → `Opdrachten` �
 ### Hover / focus / motion
 - Hover for inline-styled clickables → `className="ui-hover"`.
 - The shared icon button carries `.ui-icon-btn`.
-- Keyboard focus rings are global in [index.css](src/index.css) via `:focus-visible` +
+- Keyboard focus rings are global in [index.css](../../src/index.css) via `:focus-visible` +
   `--shadow-focus`. Don't hand-roll outlines. `prefers-reduced-motion` is honored globally.
 
 ### Place-value mask canon ("Specifieke getalopbouw" TD D H T E …)
@@ -152,7 +152,7 @@ were swept out of this codebase; re-introducing one is a regression.) Wrap in
 `styles.section` + a `styles.groupLabel`; factor-label `width:56px`, mask row `gap:6`.
 Reference: `addition/NaturalSettings.tsx`, `SplitsenConfig.tsx`. Mask data and helpers
 (`PLACE_VALUES`, `getMaskPlaces`, `generateMaskedInt`, `numberMatchesMask`) live in
-[mathEngine.ts](src/services/math/mathEngine.ts).
+[mathEngine.ts](../../src/services/math/mathEngine.ts).
 
 ### THE selected-state rule (one look, everywhere)
 Every toggle — segmented `radioBtn`, `maskBtn`, `bridgeBtn`, `pill`, the Inspector segments,
@@ -164,7 +164,7 @@ selection legible when the soft fill is faint, so keep it. The lone exception is
 control may carry a local style **only if** it expresses this same rule with tokens and
 adapts a shared helper (`{ ...styles.radioBtn(active), … }`).
 
-### macOS control idioms (CSS classes in [index.css](src/index.css))
+### macOS control idioms (CSS classes in [index.css](../../src/index.css))
 - **Unified segmented control** (`.seg-group` + `.seg-btn[aria-pressed]`): one bezel, thin
   internal dividers, selected segment tinted in place. Use for **small fixed single-select**
   groups. Wrapping or multi-select groups stay as separated buttons
@@ -174,7 +174,7 @@ adapts a shared helper (`{ ...styles.radioBtn(active), … }`).
 - **Domain section header** (sidebar): full-width band in `--domain-<domain>-soft`, with the
   label and dot in `--accent-<domain>`. The label is mandatory (rule 7).
 
-### IconButton — [IconButton.tsx](src/components/ui/IconButton.tsx)
+### IconButton — [IconButton.tsx](../../src/components/ui/IconButton.tsx)
 34px tall, `--radius-sm`, whisper-light bezel. `visibleLabel` renders the word beside the
 icon — under rule 5 that is the **default**, and omitting it needs a reason. `dataTour`
 forwards a `data-tour` anchor. Variants: `primary` (`--accent` bg — reserved for
@@ -184,18 +184,18 @@ a **Phosphor** component.
 
 ### Icon library — Phosphor + weight-on-interaction
 Icons are **Phosphor** (`@phosphor-icons/react`). App-wide defaults (size 18, weight
-`regular`) come from an `IconContext.Provider` in [main.tsx](src/main.tsx). Emphasis = a
+`regular`) come from an `IconContext.Provider` in [main.tsx](../../src/main.tsx). Emphasis = a
 heavier glyph: IconButton drives `weight` from interaction state
 (`iconWeight(variant, emphasized)`) — `active`/`primary` sit `bold` at rest, `neutral`/
 `danger` thicken on hover/focus. Phosphor `weight` is a **prop, not CSS**, so weight-on-hover
 needs React hover state. Phosphor has no `strokeWidth`; use `weight`.
 
 ### Other reusable building blocks
-- nl-BE number formatting → `formatMathNumber` ([formatters.ts](src/services/math/formatters.ts)).
+- nl-BE number formatting → `formatMathNumber` ([formatters.ts](../../src/services/math/formatters.ts)).
 - maxGetal preset row → `MAX_PRESETS` + button map from `SplitsenConfig`.
-- Rooster/grid viewer → `display:grid` + 64px cells + salmon header ([DeelbaarheidViewer.tsx](src/components/viewer/DeelbaarheidViewer.tsx)); place-value table in [SplitsenViewer.tsx](src/components/viewer/SplitsenViewer.tsx).
-- Circle/object grid → `objEl` + `groupRows` in [FractionExerciseItem.tsx](src/components/viewer/FractionExerciseItem.tsx).
-- Page-safe multi-item flow → [FragmentableGrid](src/components/viewer/FragmentableGrid.tsx).
+- Rooster/grid viewer → `display:grid` + 64px cells + salmon header ([DeelbaarheidViewer.tsx](../../src/components/viewer/DeelbaarheidViewer.tsx)); place-value table in [SplitsenViewer.tsx](../../src/components/viewer/SplitsenViewer.tsx).
+- Circle/object grid → `objEl` + `groupRows` in [FractionExerciseItem.tsx](../../src/components/viewer/FractionExerciseItem.tsx).
+- Page-safe multi-item flow → [FragmentableGrid](../../src/components/viewer/FragmentableGrid.tsx).
 
 ---
 
