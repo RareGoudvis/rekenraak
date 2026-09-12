@@ -115,3 +115,23 @@ describe('a generator that throws', () => {
         expect(useWorksheetStore.getState().blocks.length).toBe(before - 1);
     });
 });
+
+describe('updateBlockSettings under the curriculum lock', () => {
+    beforeEach(() => {
+        seed(1);
+        useWorksheetStore.setState({ curriculum: { locked: true, allowedTypes: [{ typeId: 'hr-std-optellen', label: 'Optellen' }] } });
+    });
+    afterEach(() => useWorksheetStore.setState({ curriculum: null }));
+
+    test('width is layout, not difficulty, so it goes through', () => {
+        const { id } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { widthUnits: 2 });
+        expect(useWorksheetStore.getState().blocks[0].widthUnits).toBe(2);
+    });
+
+    test('difficulty is still frozen', () => {
+        const { id, constraints } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { constraints: { ...constraints, maxGetal: 1000000 } });
+        expect(useWorksheetStore.getState().blocks[0].constraints.maxGetal).toBe(constraints.maxGetal);
+    });
+});

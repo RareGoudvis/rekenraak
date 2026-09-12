@@ -19,10 +19,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   render mode in `MathBlockRenderer` (narrow answer line ≈ 50px, no fixed operand cell,
   1-up) for cells < 200px would bring hr-std, ketting and plaatswaarde to ¼. Re-run
   `scripts/width-matrix.mjs` after.
-- **`widthUnits` edits silently dropped under curriculum lock** — `useWorksheetStore.tsx`
-  `updateBlockSettings` keeps only `numberOfExercises` + `pageBreakBefore` when locked, but the
-  Inspector width picker is not disabled. Decide: allow width under lock (it's layout, not
-  difficulty) or disable the picker (2026-09-12).
 - **`ScaledBlock` never shrinks below zoom 1** — `src/components/viewer/ScaledBlock.tsx`: a
   block that still overflows at zoom 1 just overflows. Height-fit pass never built (2026-09-12).
 - **Cell width 688 vs `FULL_BLOCK_WIDTH_PX` 681** — `App.tsx cellWidthPx` uses 688 (794 − 2×53),

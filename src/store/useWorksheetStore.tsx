@@ -344,6 +344,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             const allowed: Partial<MathBlock> = {};
             if ('numberOfExercises' in updates) allowed.numberOfExercises = updates.numberOfExercises;
             if ('pageBreakBefore' in updates) allowed.pageBreakBefore = updates.pageBreakBefore;
+            // Width is layout, not difficulty: a locked curriculum fixes what the child
+            // practises, not how the sheet is arranged (and the picker stays enabled).
+            if ('widthUnits' in updates) allowed.widthUnits = updates.widthUnits;
             if (Object.keys(allowed).length === 0) return state;   // drop difficulty/wording/points edits
             next = allowed;
         }
