@@ -75,7 +75,10 @@ export function generateGeldExercises(block: MathBlock): GeldExercise[] {
     const minCents = allowedSorted[0] ?? 5;
 
     const exercises: GeldExercise[] = [];
-    const rng = seededRng(Date.now() & 0xffff);
+    // Seeded from Math.random, NOT Date.now(): the DEV harnesses replace Math.random with
+    // a seeded PRNG (window.__rekenraak.seed) and a wall-clock seed made these generators
+    // the only ones that could not be diffed across two runs.
+    const rng = seededRng(Math.floor(Math.random() * 0x10000));
 
     for (let i = 0; i < n; i++) {
         // Pick random amount, rounded to nearest allowed min denomination
@@ -131,7 +134,10 @@ export function generateGeldTeruggevenExercises(block: MathBlock): GeldTeruggeve
         centenDeel = 'vijf',
     } = block.constraints as GeldTeruggevenConstraints;
     const n = block.numberOfExercises || 4;
-    const rng = seededRng(Date.now() & 0xffff);
+    // Seeded from Math.random, NOT Date.now(): the DEV harnesses replace Math.random with
+    // a seeded PRNG (window.__rekenraak.seed) and a wall-clock seed made these generators
+    // the only ones that could not be diffed across two runs.
+    const rng = seededRng(Math.floor(Math.random() * 0x10000));
     const exercises: GeldTeruggevenExercise[] = [];
     const used = new Set<string>();
     const cenPool = CENTEN_POOLS[centenDeel as string] ?? CENTEN_POOLS.vijf;
