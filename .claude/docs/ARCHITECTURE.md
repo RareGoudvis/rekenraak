@@ -880,6 +880,11 @@ A4 `<table>` has since been replaced in turn by the real-pages model (§9).
 
 ## 13. Teacher-workflow layer (base settings · mass-add · curriculum)
 
+> Scoped constraint writes (gemengd's per-variant tabs, `ConstraintScope`) need nothing here:
+> they still go through `updateBlockSettings(block.id, …)`, which already routes `draft-*` ids
+> to `draftBlocks`, so the curriculum builder edits its draft and never the sheet (verified
+> 2026-09-13).
+
 Three features built on top of the registry. None add `typeId` branches — they all
 drive the existing registry/config machinery.
 
