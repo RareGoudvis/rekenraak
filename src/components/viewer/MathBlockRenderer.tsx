@@ -316,7 +316,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
                         <div style={{ ...((tight || layout !== 'inline-short') && { flex: 1, minWidth: 0 }), display: 'flex', flexDirection: 'column', marginLeft: `${ANSWER_GAP}px`, gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
                             {compParts && (
-                                <div style={{ display: 'flex', alignItems: 'center', height: '32px', whiteSpace: 'nowrap' }}>
+                                // flex-end like the answer lines: the operand row pins its digits to the
+                                // bottom of a 32px line, so a centred tussenstap floated half a line above it.
+                                <div style={{ display: 'flex', alignItems: 'flex-end', height: '32px', whiteSpace: 'nowrap' }}>
                                     <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
                                     <span>{formatMathNumber(ex.operands[0] as number)}</span>
                                     <span style={{ margin: '0 6px' }}>{ex.operator === '-' ? '−' : '+'}</span>
