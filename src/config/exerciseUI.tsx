@@ -94,7 +94,7 @@ import { CijferStyleConfig, CijferAdvancedConfig } from '../components/configura
 import { FractionStyleConfig, FractionAdvancedConfig, fractionAdvancedApplies } from '../components/configurator/plugins/FractionConfig';
 import { SplitsenAdvancedConfig } from '../components/configurator/plugins/SplitsenConfig';
 import { GeldStyleConfig, GeldAdvancedConfig } from '../components/configurator/plugins/GeldConfig';
-import { GeldTeruggevenStyleConfig, GeldTeruggevenAdvancedConfig } from '../components/configurator/plugins/GeldTeruggevenConfig';
+import { GeldTeruggevenStyleConfig } from '../components/configurator/plugins/GeldTeruggevenConfig';
 import { MabStyleConfig, MabAdvancedConfig } from '../components/configurator/plugins/MabConfig';
 import { GetallenrijenStyleConfig } from '../components/configurator/plugins/GetallenrijenConfig';
 import { PatroonStyleConfig } from '../components/configurator/plugins/PatroonConfig';
@@ -145,7 +145,9 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'geld-herkennen':  { Viewer: GeldViewer,           Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
     'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
     'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig, AdvancedConfig: GeldAdvancedConfig },
-    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig, AdvancedConfig: GeldTeruggevenAdvancedConfig },
+    // No AdvancedConfig: geld-teruggeven has no Geavanceerd settings, and the accordion
+    // only appears for rows that register one.
+    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig },
 
     'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
     'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },

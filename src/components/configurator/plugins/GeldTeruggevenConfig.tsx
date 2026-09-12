@@ -164,11 +164,3 @@ export function GeldTeruggevenStyleConfig({ block }: { block: MathBlock }) {
     );
 }
 
-/**
- * geld-teruggeven has no Geavanceerd settings of its own, but it has always been inside the
- * accordion's typeId list — so the accordion opens onto an empty card. Registering this
- * empty body keeps that (odd) behaviour identical after the move; see .claude/docs/BUGS.md.
- */
-export function GeldTeruggevenAdvancedConfig() {
-    return null;
-}

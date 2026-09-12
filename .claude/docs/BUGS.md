@@ -43,12 +43,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - **37 viewers set solution red inline** — only the four bewerkingen viewers use bold + the shared
   colour; the rest hardcode `color: red`-style inline. Wants one `--ink-solution` token + shared
   style (2026-09-10).
-- **`geld-teruggeven` opens an empty Geavanceerd accordion** — the accordion's typeId list was
-  `startsWith('geld-')` while its body excluded `geld-teruggeven`, so the disclosure is there and
-  has nothing under it. Preserved verbatim by the 2b move (registered as an AdvancedConfig that
-  renders nothing); drop the registration to fix, or give it the box-height control the other
-  geld types have (2026-09-12).
-
 ## Constraints
 
 - **Plugins that destructure never moved to `useConstraints`** — about 25 of the ~45 config
