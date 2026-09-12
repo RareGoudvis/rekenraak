@@ -1,6 +1,7 @@
 import type { MathBlock, PatroonExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth } from './BlockWidthContext';
 import { OP_GLYPH as SYM } from '../../services/math/formatters';
 import type { PatroonConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
@@ -13,6 +14,11 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 
 export default function PatroonViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
+    // A chain of five numbers laid out left to right needs ~300px; a quarter-width cell is
+    // 163px. Below 200px the chain turns a quarter turn and runs DOWN the cell instead —
+    // the arrows still say "and then", and nothing has to shrink to fit.
+    const stackVertically = availableWidth < 200;
     const exercises: PatroonExercise[] = block.patroonExercises || [];
     const gap = block.verticalSpacing || 14;
     const c = block.constraints as PatroonConstraints;
@@ -58,19 +64,30 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
                                 ? (showSolutions ? <span style={{ ...solutionText }}>{opText(ex, i)}</span>
                                     : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '26px', height: '13px' }} />)
                                 : null;
-                        cells.push(
-                            <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', fontSize: '12px' }}>
-                                {stacked && <span style={{ height: '15px', display: 'flex', alignItems: 'flex-end' }}>{top}</span>}
-                                <span style={{ fontSize: '16px', lineHeight: 1 }}>{showArrows ? '→' : '–'}</span>
-                            </div>
-                        );
+                        cells.push(stackVertically
+                            // Stacked: the scaffold sits BESIDE the arrow rather than above it,
+                            // so a chain of six steps stays six short lines instead of twelve.
+                            ? (
+                                <div key={`c${i}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '20px', fontSize: '12px' }}>
+                                    <span style={{ fontSize: '16px', lineHeight: 1 }}>{showArrows ? '↓' : '│'}</span>
+                                    {stacked && <span style={{ display: 'flex', alignItems: 'center' }}>{top}</span>}
+                                </div>
+                            )
+                            : (
+                                <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', fontSize: '12px' }}>
+                                    {stacked && <span style={{ height: '15px', display: 'flex', alignItems: 'flex-end' }}>{top}</span>}
+                                    <span style={{ fontSize: '16px', lineHeight: 1 }}>{showArrows ? '→' : '–'}</span>
+                                </div>
+                            ));
                     }
                 });
                 return (
-                    <div key={ex.id} className="print-exercise" style={{
-                        display: 'grid', gridTemplateColumns: `repeat(${ex.values.length * 2 - 1}, 1fr)`,
-                        alignItems: 'end', columnGap: '2px', fontFamily: mono, fontSize: '18px',
-                    }}>
+                    <div key={ex.id} className="print-exercise" style={stackVertically
+                        ? { display: 'flex', flexDirection: 'column', alignItems: 'center', rowGap: '2px', fontFamily: mono, fontSize: '18px' }
+                        : {
+                            display: 'grid', gridTemplateColumns: `repeat(${ex.values.length * 2 - 1}, 1fr)`,
+                            alignItems: 'end', columnGap: '2px', fontFamily: mono, fontSize: '18px',
+                        }}>
                         {cells}
                     </div>
                 );
