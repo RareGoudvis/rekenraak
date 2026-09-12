@@ -76,7 +76,7 @@ lives in memory.
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector context. `setActiveSelection` with a real block id ALSO sets `inspectorTab: 'oefening'` (content first); `'document'`/`null` leave the tab alone, since the block tabs are disabled without a selection |
 | `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths** |
 | `footer` | `FooterData` | three configurable slots (`slotLeft`/`slotCenter`/`slotRight` + their texts) and `brandSlot` — where the "Gemaakt met RekenRaak.be" credit sits; the credit always prints, only its position is a choice |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`) |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte) |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point: seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
@@ -528,6 +528,8 @@ spanning its `widthUnits`.
 
 `minWidth` / `rowUnits` / `perRowFull` in [blockLayout.ts](../../src/config/blockLayout.ts)
 are not guesses: [scripts/width-matrix.mjs](../../scripts/width-matrix.mjs) drives the
+are not guesses: [scripts/font-baseline.mjs   # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
+are not guesses: [scripts/font-compare.mjs    # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
 running dev server through `window.__rekenraak` (a DEV-only hook in
 [main.tsx](../../src/main.tsx): `typeIds`, `addBlockFromType`, `updateBlockSettings`,
 `clearBlocks`, `setIgnoreMinWidth`, `getState`) and renders **every registry type at widths
