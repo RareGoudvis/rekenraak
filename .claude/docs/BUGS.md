@@ -10,6 +10,10 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- **Page tag "Pagina N van M" clips at scroll top** (owner 2026-09-13 screenshot: only a
+  descender visible). `.print-scroll` has 8px top padding, the tag sits at `top: -20px`. Part 7f.
+- **Top margin still reads too tall** after 16→12 mm: the title sits ~30 mm from the paper edge
+  because of the header region's internal spacing. Audit + trim, then 12 → 8 mm. Part 7f.
 - **Vertical measurement off: tail hint says "past niet" for a block that visibly fits**
   (owner 2026-09-12, checked in Paint on a screenshot). Audit the height chain: cell
   offsetHeight includes screen-only block padding/margin (~40px), packer row gap vs CSS
