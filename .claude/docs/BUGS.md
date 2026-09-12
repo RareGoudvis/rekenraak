@@ -35,11 +35,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   dialog; a native Ctrl+P does neither, so a sheet printed that way can still carry the
   selection halo and the pre-repack pagination. Fix direction: a `beforeprint` listener that
   does the same deselect (the repack cannot be awaited from there) (2026-09-12).
-- **Operator spacing uneven in the 2-op-1 layout** (owner 2026-09-12: far more space before
-  the `+` than after it — must be roughly even). Same root as the next line.
-- **Operator hugs a three-digit second operand in the 2-op-1 layout** — `MathBlockRenderer`
-  `COMPACT_OP_GAP`: "+315" vs "+ 51". Compact operand cell is right-aligned and the gap is too
-  small (2026-09-10).
 - **37 viewers set solution red inline** — only the four bewerkingen viewers use bold + the shared
   colour; the rest hardcode `color: red`-style inline. Wants one `--ink-solution` token + shared
   style (2026-09-10).

@@ -36,7 +36,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const blocks = useWorksheetStore((state) => state.blocks);
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
 
-    const renderTerm = (val: number | Fraction | undefined, isMissing: boolean, blockId: string, exId: string, opIdx: number) => {
+    const renderTerm = (val: number | Fraction | undefined, isMissing: boolean, blockId: string, exId: string, opIdx: number, widthPx?: number) => {
         if (val === undefined) return null;
 
         if (isMissing) {
@@ -64,10 +64,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         }
                     }
                 }}
-                // Input tracks the adaptive column width (minus slack) so 9+-digit
-                // operands aren't clipped by the old fixed 70px input box. The 70px floor
-                // drops in the compact 2-up stepped grid or it would overflow its cell.
-                style={{ ...styles.mathInput, width: `${Math.max(twoUpStepped ? 38 : 70, effCellPx - 4)}px` }}
+                // The input is exactly as wide as the number it holds (or as wide as the
+                // block's column box, for the first operand). A fixed 70px box with centred
+                // text is what pushed a short second operand away from its operator and a
+                // long one flush against it: the width, not the spacing, was the bug.
+                style={{ ...styles.mathInput, textAlign: 'right', width: widthPx === undefined ? undefined : `${widthPx}px` }}
             />
         );
     };
@@ -104,15 +105,19 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     let maxAnswerChars = 0;
     let maxTerms = 2;
     let anyRemainder = false;
+    let anyMissingTerm = false;
+    let anyFractionTerm = false;
     for (const ex of block.exercises) {
         if (!ex?.operands) continue;
         maxTerms = Math.max(maxTerms, ex.operands.length);
         if (ex.remainder !== undefined) anyRemainder = true;
         for (const o of ex.operands) {
             if (typeof o === 'number') maxChars = Math.max(maxChars, formatMathNumber(o).length);
+            else if (isFraction(o)) anyFractionTerm = true;
         }
         // With a missing operand the (red) solution renders inside the operand cell too.
         const hasMissing = ex.missingIndex !== undefined || ex.missingTerm === 'operand1' || ex.missingTerm === 'operand2';
+        if (hasMissing) anyMissingTerm = true;
         if (hasMissing && typeof ex.answer === 'number') maxChars = Math.max(maxChars, formatMathNumber(ex.answer).length);
         if (typeof ex.answer === 'number') maxAnswerChars = Math.max(maxAnswerChars, formatMathNumber(ex.answer).length);
     }
@@ -166,8 +171,22 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // operands tighten and the writing line keeps the space instead.
     const isNarrow = A4_CONTENT_PX < FULL_BLOCK_WIDTH_PX - 20;
     const compact = twoUpStepped || isNarrow;
-    const effCellPx = compact ? compactCellPx : cellPx;
-    const effOpGap = compact ? COMPACT_OP_GAP : (maxTerms > 2 ? 20 : 26);
+    // An operator belongs to the operand AFTER it. `[operator][OP_TERM_GAP][operand]` is
+    // therefore laid out as ONE right-aligned unit: the air after the sign is a constant
+    // (so "+ 51" and "+315" read identically), the air before it is a constant too, and the
+    // operand's last digit still lands on the block's column edge because the unit -- not
+    // the operand -- carries the fixed width. Before this the operand sat in a fixed
+    // right-aligned cell, so all of its slack fell between the sign and the digits.
+    const OP_GLYPH_PX = 13;   // one Azeret Mono glyph at 17px, rounded up
+    const OP_TERM_GAP = 8;    // sign -> its operand
+    const TERM_UNIT_GAP = 12; // operand -> the sign of the next one
+    const termPx = (chars: number) => Math.ceil(chars * CHAR_PX) + 4;
+    // The fill-in blank (mathDottedLine) is 40px wide inside 6px margins; a column box
+    // narrower than that would let a blank overrun its neighbour. Fractions size
+    // themselves, so a block containing one keeps intrinsic widths throughout.
+    const MISSING_BLANK_PX = 52;
+    const termBoxPx = anyFractionTerm ? undefined
+        : Math.max(anyMissingTerm ? MISSING_BLANK_PX : (compact ? 24 : 40), termPx(maxChars));
     return (
         <FragmentableGrid
             cols={gridCols}
@@ -207,10 +226,6 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         : (ex.missingTerm === 'operand1' && i === 0) || (ex.missingTerm === 'operand2' && i === 1);
                 const anyMissing = ex.operands.some((_, i) => isMissing(i));
                 const opGlyph = (gap: number) => printedOp(ex.operators?.[gap] ?? ex.operator ?? '+');
-                const multi = ex.operands.length > 2;
-                // 2-term keeps fixed columns (aligned worksheets) sized to the block's
-                // widest operand; longer chains use compact auto-width cells.
-                const cellW = multi ? undefined : `${effCellPx}px`;
 
                 // Compenseren-preset tussenstap: "= a + ___ − ___" fill-in under the sum
                 // (30 − 1 for 29). Only for plain 2-term numeric +/− with the scaffold on.
@@ -243,21 +258,25 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             operand to the first 32px line height + flex-end so it sits ON line 1's
                             baseline instead of floating above it. */}
                         <div style={{ display: 'flex', alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
-                            {ex.operands.map((operand, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-                                    {/* Symmetric padding: operand 1 is flush against this span's left
-                                        edge and operand 2 against its right, so equal padding is what
-                                        makes the air around the symbol equal. Centring alone does not,
-                                        since a full-width number leaves no slack of its own. */}
-                                    {i > 0 && <span style={{ width: `${effOpGap}px`, minWidth: `${effOpGap}px`, boxSizing: 'border-box', padding: '0 6px', textAlign: 'center', flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
-                                    {/* Both operand cells are right-aligned so the DIGITS line up down the
-                                        column: 73 sits under the 14 of 114, not against the operator.
-                                        Multi-term chains use auto-width cells, so alignment is moot there. */}
-                                    <div style={{ width: cellW, display: 'flex', justifyContent: multi ? 'flex-start' : 'flex-end', alignItems: 'center' }}>
-                                        {renderTerm(operand, isMissing(i), block.id, ex.id, i)}
+                            {ex.operands.map((operand, i) => {
+                                const chars = typeof operand === 'number' ? formatMathNumber(operand).length : 0;
+                                // Unit = the sign plus its operand. The first operand has no sign, so it
+                                // is a plain column box. Every unit is right-aligned, which is what keeps
+                                // 73 under the 14 of 114 instead of against the operator.
+                                const unitPx = termBoxPx === undefined ? undefined
+                                    : (i === 0 ? termBoxPx : OP_GLYPH_PX + OP_TERM_GAP + termBoxPx);
+                                return (
+                                    <div key={i} style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0,
+                                        ...(unitPx !== undefined && { width: `${unitPx}px` }),
+                                        ...(i > 0 && { marginLeft: `${TERM_UNIT_GAP}px` }),
+                                    }}>
+                                        {i > 0 && <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
+                                        {renderTerm(operand, isMissing(i), block.id, ex.id, i,
+                                            termBoxPx === undefined ? undefined : (i === 0 ? termBoxPx : termPx(chars)))}
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         <div style={{ ...(layout !== 'inline-short' && { flex: 1 }), display: 'flex', flexDirection: 'column', marginLeft: '8px', gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
