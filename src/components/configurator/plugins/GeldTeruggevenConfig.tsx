@@ -1,4 +1,6 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
+import { F } from './shared/fieldStyles';
 import { sharedPluginStyles as S } from './sharedPluginStyles';
 import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
@@ -133,4 +135,40 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
             </div>
         </div>
     );
+}
+
+// ── Differentiatie: how much of the change-making answer is pre-drawn.
+// Mounted by Inspector through EXERCISE_UI['geld-teruggeven'].StyleConfig.
+export function GeldTeruggevenStyleConfig({ block }: { block: MathBlock }) {
+    const [c, patch] = useConstraints<GeldTeruggevenConstraints>(block);
+    const scaffolding: string = c.scaffolding ?? 'ingevuld';
+    return (
+        <>
+            <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+            <div style={F.optionCol}>
+                {([
+                    { value: 'ingevuld',            label: 'Ingevuld' },
+                    { value: 'basis',               label: 'Basis' },
+                    { value: 'structuur',           label: 'Structuur' },
+                    { value: 'rechthoek',           label: 'Lege ruimte' },
+                    { value: 'leeg',                label: 'Geen' },
+                ] as const).map(opt => (
+                    <button key={opt.value}
+                        onClick={() => patch({ scaffolding: opt.value })}
+                        style={{ ...F.radioBtn(scaffolding === opt.value), justifyContent: 'flex-start', textAlign: 'left' }}>
+                        {opt.label}
+                    </button>
+                ))}
+            </div>
+        </>
+    );
+}
+
+/**
+ * geld-teruggeven has no Geavanceerd settings of its own, but it has always been inside the
+ * accordion's typeId list — so the accordion opens onto an empty card. Registering this
+ * empty body keeps that (odd) behaviour identical after the move; see .claude/docs/BUGS.md.
+ */
+export function GeldTeruggevenAdvancedConfig() {
+    return null;
 }

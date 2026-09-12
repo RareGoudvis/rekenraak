@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
+import { F } from './shared/fieldStyles';
+import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -184,6 +187,18 @@ export default function GetallenrijenConfig({ block }: Props) {
                     onChange={(e) => set('ticks', Number(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
             </div>
+        </div>
+    );
+}
+
+// ── Differentiatie: the frame drawn around the sequence.
+// Mounted by Inspector through EXERCISE_UI['getallenrijen'].StyleConfig.
+export function GetallenrijenStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<GetallenrijConstraints>(block);
+    return (
+        <div style={{ ...F.switchRow, marginTop: '12px' }}>
+            <span style={F.switchText}>Kader tonen</span>
+            <Switch checked={c.showFrame !== false} onChange={(v) => patch({ showFrame: v })} aria-label="Kader tonen" />
         </div>
     );
 }

@@ -1,4 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
+import { F } from './shared/fieldStyles';
+import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -110,3 +113,33 @@ const inputStyle: React.CSSProperties = {
     border: '1px solid var(--border-color)', borderRadius: '6px',
     color: 'var(--text-main)', outline: 'none', fontSize: '13px', boxSizing: 'border-box',
 };
+
+// ── Differentiatie: the writing lines under a measuring / perimeter exercise.
+// Mounted by Inspector through EXERCISE_UI['lengte-meten' | 'omtrek'].StyleConfig.
+export function MetenStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<MetenConstraints>(block);
+    const isOmtrek = block.typeId === 'omtrek';
+    // The lengte juist/fout variant has no writing line, so answer options don't apply.
+    const showAnswerOpts = isOmtrek || (c.measureModel ?? 'meten') === 'meten';
+    if (!showAnswerOpts) return null;
+    return (
+        <>
+            {isOmtrek && (
+                <div style={{ ...F.switchRow, marginTop: '12px' }}>
+                    <span style={F.switchText}>___ cm bij elke zijde</span>
+                    <Switch checked={!!c.perSideScaffold} onChange={(v) => patch({ perSideScaffold: v })} aria-label="___ cm bij elke zijde" />
+                </div>
+            )}
+            <label style={{ ...F.label, marginTop: '12px' }}>Antwoord</label>
+            <div className="seg-group">
+                <button className="seg-btn" aria-pressed={(c.answerMode ?? 'single') === 'single'} onClick={() => patch({ answerMode: 'single' })}>Eén lijn</button>
+                <button className="seg-btn" aria-pressed={(c.answerMode ?? 'single') === 'sum'} onClick={() => patch({ answerMode: 'sum' })}>Som van zijden</button>
+            </div>
+            <label style={{ ...F.label, marginTop: '12px' }}>Antwoordeenheid</label>
+            <div className="seg-group">
+                <button className="seg-btn" aria-pressed={(c.answerUnit ?? 'cm') === 'cm'} onClick={() => patch({ answerUnit: 'cm' })}>Met cm</button>
+                <button className="seg-btn" aria-pressed={(c.answerUnit ?? 'cm') === 'plain'} onClick={() => patch({ answerUnit: 'plain' })}>Enkel lijn</button>
+            </div>
+        </>
+    );
+}

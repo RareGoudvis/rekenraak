@@ -87,6 +87,21 @@ import OppervlakteConfig from '../components/configurator/plugins/OppervlakteCon
 import WeegschaalConfig from '../components/configurator/plugins/WeegschaalConfig';
 import VormleerConfig from '../components/configurator/plugins/VormleerConfig';
 
+// Per-family Opmaak sections (Differentiatie rows + the Geavanceerd accordion body).
+// They live next to the family's own settings so one file owns the whole option list.
+import { AddSubStyleConfig, MulDivStyleConfig } from '../components/configurator/plugins/shared/HrStdStyleConfig';
+import { CijferStyleConfig, CijferAdvancedConfig } from '../components/configurator/plugins/CijferConfig';
+import { FractionStyleConfig, FractionAdvancedConfig, fractionAdvancedApplies } from '../components/configurator/plugins/FractionConfig';
+import { SplitsenAdvancedConfig } from '../components/configurator/plugins/SplitsenConfig';
+import { GeldStyleConfig, GeldAdvancedConfig } from '../components/configurator/plugins/GeldConfig';
+import { GeldTeruggevenStyleConfig, GeldTeruggevenAdvancedConfig } from '../components/configurator/plugins/GeldTeruggevenConfig';
+import { MabStyleConfig, MabAdvancedConfig } from '../components/configurator/plugins/MabConfig';
+import { GetallenrijenStyleConfig } from '../components/configurator/plugins/GetallenrijenConfig';
+import { PatroonStyleConfig } from '../components/configurator/plugins/PatroonConfig';
+import { MetenStyleConfig } from '../components/configurator/plugins/MetenConfig';
+import { HerleidingenStyleConfig, HerleidingenAdvancedConfig } from '../components/configurator/plugins/HerleidingenConfig';
+import { ControlerenStyleConfig } from '../components/configurator/plugins/ControlerenConfig';
+
 // ── React side of the registry ──────────────────────────────────────────────
 // Keyed by the SAME typeIds as REGISTRY in exerciseRegistry.ts. Split out so the
 // pure-data registry (imported by the store) carries no React/component imports.
@@ -98,54 +113,60 @@ export type ConfigComponent = FC<{ block: MathBlock }>;
 export interface ExerciseUIDef {
     Viewer: ViewerComponent;
     Config: ConfigComponent;
+    /** Differentiatie rows that belong to this family (Inspector mounts them; no typeId branch). */
+    StyleConfig?: ConfigComponent;
+    /** Body of the Geavanceerd accordion for this family. Its presence is what shows the accordion. */
+    AdvancedConfig?: ConfigComponent;
+    /** Optional extra test: the accordion is only worth opening when this returns true. */
+    advancedApplies?: (block: MathBlock) => boolean;
 }
 
 export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     // Mental math — shared viewer, operation-specific config.
-    'hr-std-optellen':         { Viewer: MathBlockRenderer, Config: AdditionConfig },
-    'hr-std-aftrekken':        { Viewer: MathBlockRenderer, Config: SubtractionConfig },
-    'hr-std-vermenigvuldigen': { Viewer: MathBlockRenderer, Config: MultiplicationConfig },
-    'hr-std-delen':            { Viewer: MathBlockRenderer, Config: DivisionConfig },
+    'hr-std-optellen':         { Viewer: MathBlockRenderer, Config: AdditionConfig, StyleConfig: AddSubStyleConfig },
+    'hr-std-aftrekken':        { Viewer: MathBlockRenderer, Config: SubtractionConfig, StyleConfig: AddSubStyleConfig },
+    'hr-std-vermenigvuldigen': { Viewer: MathBlockRenderer, Config: MultiplicationConfig, StyleConfig: MulDivStyleConfig },
+    'hr-std-delen':            { Viewer: MathBlockRenderer, Config: DivisionConfig, StyleConfig: MulDivStyleConfig },
 
     // Cijferen — shared viewer + config across all 8 leaves.
-    'cijferen-optellen-nat':         { Viewer: CijferViewer, Config: CijferConfig },
-    'cijferen-optellen-dec':         { Viewer: CijferViewer, Config: CijferConfig },
-    'cijferen-aftrekken-nat':        { Viewer: CijferViewer, Config: CijferConfig },
-    'cijferen-aftrekken-dec':        { Viewer: CijferViewer, Config: CijferConfig },
-    'cijferen-vermenigvuldigen-nat': { Viewer: CijferViewer, Config: CijferConfig },
-    'cijferen-vermenigvuldigen-dec': { Viewer: CijferViewer, Config: CijferConfig },
-    'cijferen-delen-nat':            { Viewer: CijferViewer, Config: CijferConfig },
-    'cijferen-delen-dec':            { Viewer: CijferViewer, Config: CijferConfig },
+    'cijferen-optellen-nat':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-optellen-dec':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-aftrekken-nat':        { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-aftrekken-dec':        { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-vermenigvuldigen-nat': { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-vermenigvuldigen-dec': { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-delen-nat':            { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
+    'cijferen-delen-dec':            { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
 
     'klok-kloklezen': { Viewer: ClockViewer,    Config: ClockConfig },
-    'breuken':        { Viewer: FractionViewer, Config: FractionConfig },
-    'splitsen':       { Viewer: SplitsenViewer, Config: SplitsenConfig },
+    'breuken':        { Viewer: FractionViewer, Config: FractionConfig, StyleConfig: FractionStyleConfig, AdvancedConfig: FractionAdvancedConfig, advancedApplies: fractionAdvancedApplies },
+    'splitsen':       { Viewer: SplitsenViewer, Config: SplitsenConfig, AdvancedConfig: SplitsenAdvancedConfig },
 
-    'geld-herkennen':  { Viewer: GeldViewer,           Config: GeldConfig },
-    'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig },
-    'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig },
-    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig },
+    'geld-herkennen':  { Viewer: GeldViewer,           Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
+    'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
+    'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig, AdvancedConfig: GeldAdvancedConfig },
+    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig, AdvancedConfig: GeldTeruggevenAdvancedConfig },
 
-    'mab-herkennen': { Viewer: MabViewer, Config: MabConfig },
-    'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig },
+    'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
+    'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
 
     'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig },
     'breuken-bewerken':     { Viewer: BreukBewerkViewer, Config: BreukBewerkConfig },
     'breuken-rangschikken': { Viewer: OrdenenViewer,     Config: BreukenRangschikkenConfig },
     'deelbaarheid': { Viewer: DeelbaarheidViewer, Config: DeelbaarheidConfig },
-    'getalpatronen': { Viewer: PatroonViewer, Config: PatroonConfig },
+    'getalpatronen': { Viewer: PatroonViewer, Config: PatroonConfig, StyleConfig: PatroonStyleConfig },
     'deelbaarheid-kleuren': { Viewer: DeelbaarheidKleurViewer, Config: DeelbaarheidKleurConfig },
     'getallenas':   { Viewer: GetallenasViewer,   Config: GetallenasConfig },
-    'getallenrijen':{ Viewer: GetallenrijenViewer, Config: GetallenrijenConfig },
-    'lengte-meten': { Viewer: MetenViewer, Config: MetenConfig },
-    'omtrek':       { Viewer: MetenViewer, Config: MetenConfig },
+    'getallenrijen':{ Viewer: GetallenrijenViewer, Config: GetallenrijenConfig, StyleConfig: GetallenrijenStyleConfig },
+    'lengte-meten': { Viewer: MetenViewer, Config: MetenConfig, StyleConfig: MetenStyleConfig },
+    'omtrek':       { Viewer: MetenViewer, Config: MetenConfig, StyleConfig: MetenStyleConfig },
     'temperatuur':  { Viewer: TemperatuurViewer,  Config: TemperatuurConfig },
     'plaatswaarde': { Viewer: PlaatswaardeViewer, Config: PlaatswaardeConfig },
     'even-oneven':  { Viewer: EvenOnevenViewer,   Config: EvenOnevenConfig },
     'vergelijken':  { Viewer: VergelijkenViewer,  Config: VergelijkenConfig },
     'afronden':     { Viewer: AfrondenViewer,     Config: AfrondenConfig },
     'romeinse-cijfers': { Viewer: RomeinseViewer, Config: RomeinseConfig },
-    'herleidingen': { Viewer: HerleidingenViewer, Config: HerleidingenConfig },
+    'herleidingen': { Viewer: HerleidingenViewer, Config: HerleidingenConfig, StyleConfig: HerleidingenStyleConfig, AdvancedConfig: HerleidingenAdvancedConfig },
 
     'schattend': { Viewer: SchattendViewer, Config: SchattendConfig },
 
@@ -153,7 +174,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'procenten': { Viewer: ProcentenViewer, Config: ProcentenConfig },
 
     'maateenheid':  { Viewer: MaateenheidViewer, Config: MaateenheidConfig },
-    'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig },
+    'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig, AdvancedConfig: GeldAdvancedConfig },
 
     'rekenvolgorde':  { Viewer: RekenvolgordeViewer, Config: RekenvolgordeConfig },
     'layout-sectie':        { Viewer: LayoutBlockViewer, Config: LayoutConfig },
@@ -165,7 +186,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'getalfunctie':   { Viewer: GetalFunctieViewer,  Config: GetalFunctieConfig },
     'tijdsduur':      { Viewer: TijdsduurViewer,     Config: TijdsduurConfig },
     'kalender':       { Viewer: KalenderViewer,      Config: KalenderConfig },
-    'controleren':    { Viewer: ControlerenViewer,   Config: ControlerenConfig },
+    'controleren':    { Viewer: ControlerenViewer,   Config: ControlerenConfig, StyleConfig: ControlerenStyleConfig },
 
     // Meetkunde + SVG-heavy meten types — vormleer shares one viewer/config trio.
     'oppervlakte': { Viewer: OppervlakteViewer, Config: OppervlakteConfig },

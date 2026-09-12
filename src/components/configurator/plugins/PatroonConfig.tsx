@@ -1,4 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
+import { F } from './shared/fieldStyles';
+import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -142,3 +145,37 @@ const inputStyle: React.CSSProperties = {
     border: '1px solid var(--border-color)', borderRadius: '6px',
     color: 'var(--text-main)', outline: 'none', fontSize: '13px', boxSizing: 'border-box',
 };
+
+// ── Differentiatie: the arrow/operator scaffolds drawn between two terms.
+// Mounted by Inspector through EXERCISE_UI['getalpatronen'].StyleConfig.
+export function PatroonStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<PatroonConstraints>(block);
+    // One operator sits BETWEEN two terms, so a row of n ticks has n-1 of them.
+    const maxOps = Math.max(0, (c.ticks ?? 6) - 1);
+    const operatorsShown = Math.min(c.operatorsShown ?? 0, maxOps);
+    return (
+        <>
+            <div style={{ ...F.switchRow, marginTop: '12px' }}>
+                <span style={F.switchText}>Pijl + schrijflijn</span>
+                <Switch checked={!!c.showArrows} onChange={(v) => patch({ showArrows: v })} aria-label="Pijl + schrijflijn" />
+            </div>
+            <div style={F.switchRow}>
+                <span style={F.switchText}>Operatoren invullen</span>
+                <Switch checked={!!c.showOperators} onChange={(v) => patch({ showOperators: v })} aria-label="Operatoren invullen" />
+            </div>
+            {c.showOperators && (
+                <>
+                    <label style={{ ...F.label, marginTop: '8px' }}>Aantal ingevuld: {operatorsShown}</label>
+                    <input type="range" min={0} max={maxOps} step={1} value={operatorsShown}
+                        onChange={(e) => patch({ operatorsShown: Number(e.target.value) })}
+                        style={F.range} />
+                    <label style={{ ...F.label, marginTop: '8px' }}>Operatorweergave</label>
+                    <div className="seg-group">
+                        <button className="seg-btn" aria-pressed={(c.operatorStyle ?? 'symbol') === 'symbol'} onClick={() => patch({ operatorStyle: 'symbol' })}>Enkel teken</button>
+                        <button className="seg-btn" aria-pressed={(c.operatorStyle ?? 'symbol') === 'full'} onClick={() => patch({ operatorStyle: 'full' })}>Volledig</button>
+                    </div>
+                </>
+            )}
+        </>
+    );
+}

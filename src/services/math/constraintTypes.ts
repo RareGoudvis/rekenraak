@@ -63,7 +63,8 @@ export type AddSubConstraints = {
     preset?: 'vrij' | 'compenseren' | 'tienvoud';
     presetDistance?: number;
     presetFactors?: number[];
-    compenserenScaffold?: boolean;
+    /** compenseren: print the intermediate step ('tussenstap') or only the answer. */
+    compenserenScaffold?: 'tussenstap' | 'geen';
     // Rational (fraction) sub-settings.
     fractionDifficulty?: string;
     mixedNumber1?: boolean;
@@ -110,6 +111,8 @@ export type CijferConstraints = {
     extraCols: number;
     extraRows: number;
     showQR?: boolean;
+    /** Print a second line for the check sum (the inverse operation). */
+    omgekeerdeControle?: boolean;
 };
 
 // ── Klok ─────────────────────────────────────────────────────────────────────

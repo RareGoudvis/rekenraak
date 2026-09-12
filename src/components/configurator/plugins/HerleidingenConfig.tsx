@@ -1,4 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
+import Switch from '../../ui/Switch';
+import { F } from './shared/fieldStyles';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import { ladderFor } from '../../../services/herleidingen/herleidingenGenerator';
@@ -109,5 +112,55 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 <button onClick={() => set('writeUnits', !c.writeUnits)} style={styles.onOffBtn(!!c.writeUnits)}>{c.writeUnits ? 'Aan' : 'Uit'}</button>
             </div>
         </div>
+    );
+}
+
+// ── Differentiatie: Hulptabel — the conversion-table scaffold printed with the exercise.
+// Mounted by Inspector through EXERCISE_UI[typeId].StyleConfig.
+export function HerleidingenStyleConfig({ block }: { block: MathBlock }) {
+    const [c, patch] = useConstraints<HerleidingenConstraints>(block);
+    const scaffolding = c.scaffolding ?? 'geen';
+    return (
+        <>
+            <label style={{ ...F.label, marginTop: '12px' }}>Hulptabel</label>
+            <div className="seg-group">
+                {([['geen', 'Geen'], ['tabel-headers', 'Met hoofding'], ['tabel-blanco', 'Blanco']] as const).map(([v, lbl]) => (
+                    <button key={v} className="seg-btn" aria-pressed={scaffolding === v} onClick={() => patch({ scaffolding: v })}>{lbl}</button>
+                ))}
+            </div>
+            {scaffolding !== 'geen' && (
+                <>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '10px' }}>
+                        <span style={F.checkboxLabel}>Oefening links tonen</span>
+                        <Switch checked={!!c.tablePrompt} onChange={(v) => patch({ tablePrompt: v })} aria-label="Oefening links tonen" />
+                    </div>
+                    <label style={{ ...F.label, marginTop: '10px' }}>Antwoord rechts</label>
+                    <div className="seg-group">
+                        {([['blank', 'Blanco'], ['filled', 'Ingevuld'], ['hidden', 'Verborgen']] as const).map(([v, lbl]) => (
+                            <button key={v} className="seg-btn" aria-pressed={(c.tableAnswer ?? 'blank') === v} onClick={() => patch({ tableAnswer: v })}>{lbl}</button>
+                        ))}
+                    </div>
+                    <label style={{ ...F.label, marginTop: '10px' }}>Celbreedte: {c.tableCellW ?? 60}px</label>
+                    <input type="range" min={40} max={120} step={5} value={c.tableCellW ?? 60} onChange={(e) => patch({ tableCellW: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                    <label style={{ ...F.label, marginTop: '10px' }}>Celhoogte: {c.tableCellH ?? 30}px</label>
+                    <input type="range" min={24} max={60} step={2} value={c.tableCellH ?? 30} onChange={(e) => patch({ tableCellH: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                </>
+            )}
+        </>
+    );
+}
+
+// ── Geavanceerd: how the two sides of the conversion line up.
+export function HerleidingenAdvancedConfig({ block }: { block: MathBlock }) {
+    const [c, patch] = useConstraints<HerleidingenConstraints>(block);
+    return (
+        <>
+            <label style={F.label}>Uitlijning</label>
+            <div className="seg-group">
+                {([['uitlijnen', 'Uitgelijnd'], ['compact', 'Kort getal links']] as const).map(([v, lbl]) => (
+                    <button key={v} className="seg-btn" aria-pressed={(c.herleidingLayout ?? 'uitlijnen') === v} onClick={() => patch({ herleidingLayout: v })}>{lbl}</button>
+                ))}
+            </div>
+        </>
     );
 }

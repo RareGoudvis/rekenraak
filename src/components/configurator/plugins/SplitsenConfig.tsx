@@ -1,4 +1,7 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { F } from './shared/fieldStyles';
+import { formatMathNumber } from '../../../services/math/formatters';
+import { recomputeSplitsenExercise } from '../../../services/splitsen/splitsenGenerator';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -271,3 +274,30 @@ const clearBtnStyle: React.CSSProperties = {
     padding: '6px 10px', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)',
     borderRadius: '4px', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px',
 };
+
+// ── Geavanceerd: type the split numbers by hand instead of generating them.
+// Mounted by Inspector through EXERCISE_UI['splitsen'].AdvancedConfig.
+export function SplitsenAdvancedConfig({ block }: Props) {
+    const patchExercise = useWorksheetStore((s) => s.patchExercise);
+    const exercises = block.splitsenExercises || [];
+    return (
+        <>
+            <label style={F.label}>Getallen (typ zelf een getal)</label>
+            {exercises.map((ex, i) => (
+                <input
+                    key={ex.id}
+                    style={{ ...F.input, marginBottom: '4px' }}
+                    defaultValue={formatMathNumber(ex.total)}
+                    onBlur={(e) => {
+                        const v = Number(e.target.value.replace(',', '.').trim());
+                        if (Number.isFinite(v)) patchExercise(block.id, 'splitsenExercises', ex.id, recomputeSplitsenExercise(block, ex, v));
+                    }}
+                    placeholder={`Getal ${i + 1}`}
+                />
+            ))}
+            {exercises.length === 0 && (
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>Genereer eerst oefeningen.</p>
+            )}
+        </>
+    );
+}

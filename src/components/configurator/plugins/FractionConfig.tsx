@@ -1,4 +1,6 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
+import { F } from './shared/fieldStyles';
 import type { MathBlock, FractionSubType } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -259,3 +261,210 @@ const sliderStyle: React.CSSProperties = {
     accentColor: 'var(--accent-purple)',
     cursor: 'pointer',
 };
+
+// ── Differentiatie: the per-subType scaffolding of the fraction views.
+// Mounted by Inspector through EXERCISE_UI['breuken'].StyleConfig.
+export function FractionStyleConfig({ block }: { block: MathBlock }) {
+    const [c, patch] = useConstraints<FractionConstraints>(block);
+    const subType: string = c.subType ?? '';
+    return (
+        <>
+            {/* ── Niveau (hoeveelheid-abstract only) — with example range per level ── */}
+            {subType === 'hoeveelheid-abstract' && (
+                <>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Niveau</label>
+                    <div style={F.optionCol}>
+                        {([
+                            { n: 1, hint: 'Kleine getallen (× 1 – 10), bv. ⅗ van 30' },
+                            { n: 2, hint: 'Tientallen (× 10 – 100), bv. ⅗ van 300' },
+                            { n: 3, hint: 'Tot het ingestelde maximum' },
+                        ] as const).map(({ n, hint }) => {
+                            const isActive = (c.level ?? 1) === n;
+                            return (
+                                <button key={n} onClick={() => patch({ level: n })}
+                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    <span style={{ fontWeight: 'bold' }}>N{n}</span>
+                                    <span style={{ fontSize: '10px', opacity: 0.8 }}>{hint}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {(c.level ?? 1) === 3 && (
+                        <div style={{ marginTop: '8px' }}>
+                            <label style={F.label}>Max. getal (N3)</label>
+                            <input
+                                type="number" min="100" step="100"
+                                style={F.input}
+                                value={c.maxAbstractN3 ?? 1000}
+                                onChange={(e) => patch({ maxAbstractN3: Number(e.target.value) })}
+                            />
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* ── Scaffolding (herkennen) ── */}
+            {subType === 'herkennen' && (
+                <>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <div style={F.optionCol}>
+                        {([
+                            { val: 'fraction-questions', label: 'Breukvragen' },
+                            { val: 'phrase',             label: 'Zin invullen' },
+                            { val: 'blank-fraction',     label: 'Blanco breuk' },
+                            { val: 'blank-line',         label: 'Blanco lijn' },
+                        ] as const).map(({ val, label }) => (
+                            <button key={val} onClick={() => patch({ answerFormat: val })}
+                                style={{ ...F.radioBtn((c.answerFormat ?? 'fraction-questions') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+
+            {/* ── Scaffolding (hoeveelheid concreet) ── */}
+            {subType === 'hoeveelheid' && (
+                <>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <div style={F.optionCol}>
+                        {([
+                            { val: 'met-hulp',        label: 'Met hulplijnen' },
+                            { val: 'met-breukvragen', label: 'Met breukvragen' },
+                            { val: 'zonder-hulp',     label: 'Zonder hulp' },
+                        ] as const).map(({ val, label }) => (
+                            <button key={val} onClick={() => patch({ answerFormat: val })}
+                                style={{ ...F.radioBtn((c.answerFormat ?? 'met-hulp') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Groepering — makkelijker groeperen helpt starters de delen zien */}
+                    <label style={{ ...F.label, marginTop: '12px' }}>Groepering</label>
+                    <div style={F.optionCol}>
+                        {([
+                            { val: 'standaard',    label: 'Standaard',          hint: 'Rijen van 10' },
+                            { val: 'gebalanceerd', label: 'Gelijke rijen',      hint: 'Evenveel per rij (18 → 2×9)' },
+                            { val: 'per-deel',     label: 'Per breukdeel',      hint: 'Elke rij = één gelijk deel' },
+                        ] as const).map(({ val, label, hint }) => {
+                            const isActive = (c.groupingMode ?? 'standaard') === val;
+                            return (
+                                <button key={val} onClick={() => patch({ groupingMode: val })}
+                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    <span style={{ fontWeight: isActive ? 'bold' : 'normal' }}>{label}</span>
+                                    <span style={{ fontSize: '10px', opacity: 0.8 }}>{hint}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </>
+            )}
+
+            {/* ── Scaffolding (hoeveelheid-rechthoek) ── */}
+            {subType === 'hoeveelheid-rechthoek' && (
+                <>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <div className="seg-group">
+                        <button onClick={() => patch({ answerFormat: 'met-berekening' })} className="seg-btn" aria-pressed={(c.answerFormat ?? 'met-berekening') === 'met-berekening'}>Met lijnen</button>
+                        <button onClick={() => patch({ answerFormat: 'zonder-berekening' })} className="seg-btn" aria-pressed={(c.answerFormat ?? 'met-berekening') === 'zonder-berekening'}>Zonder lijnen</button>
+                    </div>
+                </>
+            )}
+
+            {/* ── Scaffolding (lijnstuk / hoeveelheid-abstract) — with example line layout ── */}
+            {(subType === 'lijnstuk' || subType === 'hoeveelheid-abstract') && (
+                <>
+                    <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+                    <div style={F.optionCol}>
+                        {([
+                            // lijnstuk works in cm (line lengths); hoeveelheid-abstract is unitless.
+                            { val: 'berekeningslijnen', label: 'Berekeningslijnen', hint: subType === 'lijnstuk' ? '___ cm : ___ = ___ cm  en  ___ × ___ cm = ___ cm' : '___ : ___ = ___  en  ___ × ___ = ___' },
+                            { val: 'structuurlijnen',   label: 'Structuurlijnen',   hint: '___ : ___ = ___   /   ___ × ___ = ___' },
+                            { val: 'blanco',            label: 'Blanco',            hint: '2 lege lijnen' },
+                        ] as const).map(({ val, label, hint }) => {
+                            const isActive = (c.answerMode ?? 'berekeningslijnen') === val;
+                            return (
+                                <button key={val} onClick={() => patch({ answerMode: val })}
+                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    <span style={{ fontWeight: isActive ? 'bold' : 'normal' }}>{label}</span>
+                                    <span style={{ fontSize: '10px', opacity: 0.8, fontFamily: 'Azeret Mono, monospace' }}>{hint}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </>
+            )}
+        </>
+    );
+}
+
+// The Geavanceerd accordion only has fraction content for a fixed-size single shape or for
+// the schematisch draw box; without this test it would open onto an empty card.
+// It lives here, beside the settings it reads, at the cost of this file losing fast refresh.
+// eslint-disable-next-line react-refresh/only-export-components
+export function fractionAdvancedApplies(block: MathBlock) {
+    const c = block.constraints as FractionConstraints;
+    const subType = c.subType ?? '';
+    return ((subType === 'kleuren' || subType === 'herkennen') && (Array.isArray(c.shapes) ? c.shapes.length === 1 : true) && !!c.staticSize)
+        || subType === 'hoeveelheid-rechthoek';
+}
+
+// ── Geavanceerd: printed size of the shape / of the draw box, in cm.
+export function FractionAdvancedConfig({ block }: { block: MathBlock }) {
+    const [c, patch] = useConstraints<FractionConstraints>(block);
+    const subType: string = c.subType ?? '';
+    return (
+        <>
+            {/* ── Breuken: vaste vormgrootte (kleuren/herkennen) ── */}
+            {(subType === 'kleuren' || subType === 'herkennen') && c.staticSize && (() => {
+                const shape: string = Array.isArray(c.shapes) && c.shapes.length ? c.shapes[0] : (c.shape ?? 'rectangle');
+                if (shape === 'circle') {
+                    return (
+                        <>
+                            <label style={F.label}>Diameter cirkel: {c.staticDiam ?? 4} cm</label>
+                            <input type="range" min={1} max={10} step={0.5} value={c.staticDiam ?? 4}
+                                onChange={e => patch({ staticDiam: Number(e.target.value) })}
+                                style={F.range} />
+                        </>
+                    );
+                }
+                if (shape === 'square') {
+                    return (
+                        <>
+                            <label style={F.label}>Zijde vierkant: {c.staticSide ?? 4} cm</label>
+                            <input type="range" min={1} max={10} step={0.5} value={c.staticSide ?? 4}
+                                onChange={e => patch({ staticSide: Number(e.target.value) })}
+                                style={F.range} />
+                        </>
+                    );
+                }
+                return (
+                    <>
+                        <label style={F.label}>Breedte rechthoek: {c.staticW ?? 4} cm</label>
+                        <input type="range" min={1} max={12} step={0.5} value={c.staticW ?? 4}
+                            onChange={e => patch({ staticW: Number(e.target.value) })}
+                            style={F.range} />
+                        <label style={{ ...F.label, marginTop: '10px' }}>Hoogte rechthoek: {c.staticH ?? 3} cm</label>
+                        <input type="range" min={1} max={10} step={0.5} value={c.staticH ?? 3}
+                            onChange={e => patch({ staticH: Number(e.target.value) })}
+                            style={F.range} />
+                    </>
+                );
+            })()}
+            {/* ── Breuken: tekenvak (schematisch / hoeveelheid-rechthoek) ── */}
+            {subType === 'hoeveelheid-rechthoek' && (
+                <>
+                    <label style={F.label}>Breedte tekenvak: {c.drawBoxW ? `${c.drawBoxW} cm` : 'volledig'}</label>
+                    <input type="range" min={0} max={16} step={0.5} value={c.drawBoxW ?? 0}
+                        onChange={e => patch({ drawBoxW: Number(e.target.value) })}
+                        style={F.range} />
+                    <label style={{ ...F.label, marginTop: '10px' }}>Hoogte tekenvak: {c.drawBoxH ?? 3} cm</label>
+                    <input type="range" min={1} max={12} step={0.5} value={c.drawBoxH ?? 3}
+                        onChange={e => patch({ drawBoxH: Number(e.target.value) })}
+                        style={F.range} />
+                </>
+            )}
+        </>
+    );
+}

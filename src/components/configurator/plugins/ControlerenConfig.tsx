@@ -1,4 +1,5 @@
 import { useConstraints } from '../useConstraints';
+import { F } from './shared/fieldStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
@@ -60,5 +61,29 @@ export default function ControlerenConfig({ block }: Props) {
                 </div>
             )}
         </div>
+    );
+}
+
+// ── Differentiatie: how much of the check line is already printed (omgekeerde only).
+// Mounted by Inspector through EXERCISE_UI['controleren'].StyleConfig.
+export function ControlerenStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<ControlerenConstraints>(block);
+    if (c.subType !== 'omgekeerde') return null;
+    return (
+        <>
+            <label style={{ ...F.label, marginTop: '12px' }}>Controlelijn</label>
+            <div className="seg-group">
+                {([
+                    { key: 'niets', label: 'Leeg' },
+                    { key: 'teken', label: 'Bewerkingsteken' },
+                    { key: 'alles', label: 'Ook getallen' },
+                ] as const).map(({ key, label }) => (
+                    <button key={key} className="seg-btn" aria-pressed={(c.prefill ?? 'niets') === key}
+                        onClick={() => patch({ prefill: key })}>
+                        {label}
+                    </button>
+                ))}
+            </div>
+        </>
     );
 }

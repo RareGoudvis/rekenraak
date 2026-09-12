@@ -1,4 +1,6 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
+import { F } from './shared/fieldStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -105,5 +107,56 @@ export default function MabConfig({ block }: Props) {
             </div>
 
         </div>
+    );
+}
+
+// ── Differentiatie: what the answer is written in (positietabel / kader / niets).
+// Mounted by Inspector through EXERCISE_UI[typeId].StyleConfig.
+export function MabStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<MabConstraints>(block);
+    // Back-compat: blocks saved before the rename used `showBox: boolean`.
+    const scaff: string = c.scaffolding ?? (c.showBox === false ? 'geen' : 'positietabel');
+    const isHerkennen = block.typeId === 'mab-herkennen';
+    return (
+        <>
+            <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
+            <div className="seg-group">
+                <button onClick={() => patch({ scaffolding: 'positietabel' })} className="seg-btn" aria-pressed={scaff === 'positietabel'}>Positietabel</button>
+                <button onClick={() => patch({ scaffolding: 'kader' })}        className="seg-btn" aria-pressed={scaff === 'kader'}>Kader</button>
+                {isHerkennen && (
+                    <button onClick={() => patch({ scaffolding: 'geen' })} className="seg-btn" aria-pressed={scaff === 'geen'}>Geen</button>
+                )}
+            </div>
+        </>
+    );
+}
+
+// ── Geavanceerd: the printed geometry of one MAB exercise.
+export function MabAdvancedConfig({ block }: Props) {
+    const [c, patch] = useConstraints<MabConstraints>(block);
+    const perRow       = c.exercisesPerRow ?? 3;
+    const boxHeight    = c.boxHeight       ?? 70;
+    const answerHeight = c.answerHeight    ?? 36;
+    return (
+        <>
+            <label style={F.label}>Oefeningen per rij ({perRow})</label>
+            <input
+                type="range" min={1} max={4} value={perRow}
+                onChange={e => patch({ exercisesPerRow: Number(e.target.value) })}
+                style={F.range}
+            />
+            <label style={{ ...F.label, marginTop: '10px' }}>Tekenvak hoogte ({boxHeight}px)</label>
+            <input
+                type="range" min={40} max={200} step={5} value={boxHeight}
+                onChange={e => patch({ boxHeight: Number(e.target.value) })}
+                style={F.range}
+            />
+            <label style={{ ...F.label, marginTop: '10px' }}>Antwoordlijn hoogte ({answerHeight}px)</label>
+            <input
+                type="range" min={20} max={80} step={2} value={answerHeight}
+                onChange={e => patch({ answerHeight: Number(e.target.value) })}
+                style={F.range}
+            />
+        </>
     );
 }
