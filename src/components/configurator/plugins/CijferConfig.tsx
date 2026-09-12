@@ -29,7 +29,7 @@ export default function CijferConfig({ block }: Props) {
     };
 
     const setMask = (maskKey: string, placeKey: string, value: boolean) => {
-        const cur = (block.constraints[maskKey] || {}) as Record<string, boolean>;
+        const cur = (c[maskKey as keyof CijferConstraints] || {}) as Record<string, boolean>;
         set(maskKey as keyof CijferConstraints, { ...cur, [placeKey]: value });
     };
 
@@ -104,7 +104,7 @@ export default function CijferConfig({ block }: Props) {
                     <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     {Array.from({ length: n }, (_, i) => {
                         const maskKey = maskKeys[i];
-                        const mask = (block.constraints[maskKey] || {}) as Record<string, boolean>;
+                        const mask = (c[maskKey as keyof CijferConstraints] || {}) as Record<string, boolean>;
                         return (
                             <div key={i} style={{ marginBottom: '8px' }}>
                                 <label style={{ ...styles.label, fontSize: 'var(--text-xs)', marginBottom: '4px' }}>Getal {i + 1}:</label>

@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { TemperatuurConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -16,7 +17,7 @@ export default function TemperatuurConfig({ block }: Props) {
         perRow = 4,
         mode1 = 'gekleurd',
         mode2 = 'getal',
-    } = block.constraints;
+    } = block.constraints as TemperatuurConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

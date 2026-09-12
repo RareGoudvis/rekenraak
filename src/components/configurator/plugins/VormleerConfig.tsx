@@ -1,8 +1,9 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { VormleerConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -35,8 +36,7 @@ const FIGUREN: Record<string, { key: string; label: string }[]> = {
 };
 
 export default function VormleerConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<VormleerConstraints>(block);
     const kind: string = c.kind ?? 'punt-lijn';
     const mode: string = c.mode ?? 'herkennen';
     const classify: string = c.classify ?? 'vierhoeken';
@@ -51,8 +51,7 @@ export default function VormleerConfig({ block }: Props) {
     const raster: boolean = c.raster ?? true;
     const perRow: number = c.exercisesPerRow ?? 3;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof VormleerConstraints, value: unknown) => patch({ [key]: value } as Partial<VormleerConstraints>);
     const toggleConcept = (k: string) => {
         const next = concepts.includes(k) ? concepts.filter(x => x !== k) : [...concepts, k];
         if (next.length) set('concepts', next);   // keep ≥1

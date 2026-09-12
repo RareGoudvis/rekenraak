@@ -1,4 +1,5 @@
 import type { MathBlock, WeegschaalExercise } from '../math/types';
+import type { WeegschaalConstraints } from '../math/constraintTypes';
 
 // Weegschaal — grams snap to the dial's schaalverdeling so the needle always sits
 // exactly on a tick. Valid step options depend on the bereik (dial range).
@@ -14,7 +15,7 @@ function randInt(min: number, max: number) {
 }
 
 export function generateWeegschaalExercises(block: MathBlock): WeegschaalExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as WeegschaalConstraints;
     const bereikGram: number = c.bereikGram ?? 1000;
     const allowed = BEREIK_STEPS[bereikGram] ?? [50];
     const stepGram: number = allowed.includes(c.stepGram) ? c.stepGram : allowed[0];

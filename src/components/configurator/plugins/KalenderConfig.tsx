@@ -1,9 +1,10 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { MONTH_NAMES } from '../../../services/kalender/kalenderGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { KalenderConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -14,15 +15,13 @@ const QUESTION_TYPES = [
 ];
 
 export default function KalenderConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<KalenderConstraints>(block);
     const subType: string = c.subType ?? 'maandrooster';
     const questionTypes: string[] = c.questionTypes ?? ['dag-van-datum', 'datum-van-dag', 'tellen'];
     const questionCount: number = c.questionCount ?? 5;
     const month: string | number = c.month ?? 'random';
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof KalenderConstraints, value: unknown) => patch({ [key]: value } as Partial<KalenderConstraints>);
     const toggleQ = (k: string) => {
         const next = questionTypes.includes(k) ? questionTypes.filter(x => x !== k) : [...questionTypes, k];
         if (next.length) set('questionTypes', next);   // keep ≥1

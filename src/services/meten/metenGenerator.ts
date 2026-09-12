@@ -1,4 +1,5 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../math/types';
+import type { MetenConstraints } from '../math/constraintTypes';
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -20,7 +21,7 @@ const dist = (a: MeetPoint, b: MeetPoint) => Math.hypot(b.x - a.x, b.y - a.y);
 
 // ── lengte meten ──────────────────────────────────────────────────────────────
 export function generateLengteMetenExercises(block: MathBlock): MeetExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as MetenConstraints;
     const precision: string = c.precision ?? 'cm';
     const measureModel: string = c.measureModel ?? 'meten';
     const minL: number = c.minLength ?? 3;
@@ -126,7 +127,7 @@ function buildShape(shape: string, min: number, max: number, precision: string):
 // rooster: rectilinear figure on the 1 cm grid → count squares (exact by construction).
 // berekenen: to-scale figure with labelled sides → l × b (or ½ · b · h).
 export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as MetenConstraints;
     const subType: string = c.subType ?? 'berekenen';
     const minL: number = c.minLength ?? 2;
     const maxL: number = c.maxLength ?? 8;
@@ -175,7 +176,7 @@ export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
 }
 
 export function generateOmtrekExercises(block: MathBlock): MeetExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as MetenConstraints;
     const precision: string = c.precision ?? 'cm';
     const minL: number = c.minLength ?? 3;
     const maxL: number = c.maxLength ?? 10;

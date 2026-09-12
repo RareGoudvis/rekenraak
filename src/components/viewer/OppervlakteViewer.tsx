@@ -2,6 +2,7 @@ import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/typ
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
+import type { OppervlakteConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -26,9 +27,10 @@ function sideLabelPos(a: MeetPoint, b: MeetPoint, centroid: MeetPoint) {
 export default function OppervlakteViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: MeetExercise[] = block.meetExercises || [];
-    const subType: string = block.constraints.subType ?? 'berekenen';
-    const scaffoldFormule: boolean = block.constraints.scaffoldFormule ?? true;
-    const askOmtrek: boolean = block.constraints.askOmtrek ?? false;
+    const c = block.constraints as OppervlakteConstraints;
+    const subType: string = c.subType ?? 'berekenen';
+    const scaffoldFormule: boolean = c.scaffoldFormule ?? true;
+    const askOmtrek: boolean = c.askOmtrek ?? false;
     const gap = block.verticalSpacing || 14;
     const isRooster = subType === 'rooster';
 

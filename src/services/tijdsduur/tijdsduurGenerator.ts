@@ -1,4 +1,5 @@
 import type { MathBlock, TijdsduurExercise } from '../math/types';
+import type { TijdsduurConstraints } from '../math/constraintTypes';
 
 // Tijdsduur berekenen — begin | einde | duur rows with one blank each.
 // Times in minutes since 00:00; endMin > 1440 means "over middernacht".
@@ -16,7 +17,7 @@ function pick<T>(arr: T[]): T {
 }
 
 export function generateTijdsduurExercises(block: MathBlock): TijdsduurExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as TijdsduurConstraints;
     const granularity: string[] = c.granularity ?? ['kwartier'];
     const blanks: ('duur' | 'einde' | 'begin')[] = c.blanks ?? ['duur'];
     const maxDuurMin: number = c.maxDuurMin ?? 240;

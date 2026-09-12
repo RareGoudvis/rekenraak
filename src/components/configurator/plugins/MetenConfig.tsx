@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { MetenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -31,7 +32,7 @@ export default function MetenConfig({ block }: Props) {
         maxLength = 10,
         maxCorners = 0,
         shapes = ['driehoek', 'rechthoek', 'vierkant'],
-    } = block.constraints;
+    } = block.constraints as MetenConstraints;
 
     const isOmtrek = block.typeId === 'omtrek';
     const set = (key: string, value: unknown) =>

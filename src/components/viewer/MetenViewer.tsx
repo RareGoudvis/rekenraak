@@ -2,6 +2,7 @@ import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/typ
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
+import type { MetenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -46,10 +47,11 @@ export default function MetenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: MeetExercise[] = block.meetExercises || [];
     const gap = block.verticalSpacing || 14;
-    const measureModel: string = block.constraints.measureModel ?? 'meten';
-    const perSideScaffold: boolean = block.constraints.perSideScaffold ?? false;
-    const answerMode: string = block.constraints.answerMode ?? 'single';
-    const answerUnit: string = block.constraints.answerUnit ?? 'cm';
+    const c = block.constraints as MetenConstraints;
+    const measureModel: string = c.measureModel ?? 'meten';
+    const perSideScaffold: boolean = c.perSideScaffold ?? false;
+    const answerMode: string = c.answerMode ?? 'single';
+    const answerUnit: string = c.answerUnit ?? 'cm';
     const labeled = measureModel === 'gegeven';
     const isJuistFout = block.typeId === 'lengte-meten' && labeled;
     // Per-side scaffold only applies to omtrek shapes (a single line's "per side" = the answer).

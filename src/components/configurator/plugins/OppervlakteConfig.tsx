@@ -1,7 +1,8 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { OppervlakteConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -17,8 +18,7 @@ const BEREKEN_SHAPES = [
 ];
 
 export default function OppervlakteConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<OppervlakteConstraints>(block);
     const subType: string = c.subType ?? 'berekenen';
     const isRooster = subType === 'rooster';
     const shapes: string[] = c.shapes ?? ['rechthoek', 'vierkant'];
@@ -27,8 +27,7 @@ export default function OppervlakteConfig({ block }: Props) {
     const askOmtrek: boolean = c.askOmtrek ?? false;
     const scaffoldFormule: boolean = c.scaffoldFormule ?? true;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof OppervlakteConstraints, value: unknown) => patch({ [key]: value } as Partial<OppervlakteConstraints>);
     const toggleShape = (k: string) => {
         const next = shapes.includes(k) ? shapes.filter(x => x !== k) : [...shapes, k];
         if (next.length) set('shapes', next);   // keep ≥1

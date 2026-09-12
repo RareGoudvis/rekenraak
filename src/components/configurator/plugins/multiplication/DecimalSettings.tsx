@@ -4,13 +4,15 @@ import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import PopupSelect from '../../../ui/PopupSelect';
 import SettingLabel from '../SettingLabel';
+import type { MulDivConstraints } from '../../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; isDivision?: boolean; }
 
 export default function DecimalSettings({ block, isDivision = false }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     // Standaardwaarden instellen (voor de zekerheid)
-    const { maxGetal = 100, decimalPlaces = 2, operand1Mask = {}, operand2Mask = {} } = block.constraints;
+    const { maxGetal = 100, decimalPlaces = 2, operand1Mask = {}, operand2Mask = {} } = block.constraints as MulDivConstraints;
+    const c = block.constraints as MulDivConstraints;
 
     // Stuur decimalPlaces mee, zodat de maskers dynamisch inkrimpen!
     const availablePlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces);
@@ -21,7 +23,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
 
     const handleMaskToggle = (operand: 1 | 2, place: string) => {
         const key = operand === 1 ? 'operand1Mask' : 'operand2Mask';
-        const currentMask = block.constraints[key] || {};
+        const currentMask = c[key] ?? {};
         updateConstraint(key, { ...currentMask, [place]: !currentMask[place] });
     };
 

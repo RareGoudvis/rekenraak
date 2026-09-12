@@ -4,12 +4,13 @@ import { BEREIK_STEPS } from '../../../services/weegschaal/weegschaalGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { WeegschaalConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
 export default function WeegschaalConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const c = block.constraints as WeegschaalConstraints;
     const mode: string = c.mode ?? 'aflezen';
     const bereikGram: number = c.bereikGram ?? 1000;
     const allowed = BEREIK_STEPS[bereikGram] ?? [50];

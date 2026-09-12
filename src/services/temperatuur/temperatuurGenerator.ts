@@ -1,4 +1,5 @@
 import type { MathBlock, TemperatuurExercise, TemperatuurMode } from '../math/types';
+import type { TemperatuurConstraints } from '../math/constraintTypes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -11,7 +12,7 @@ export function generateTemperatuurExercises(block: MathBlock): TemperatuurExerc
         includeNegatives = false,
         mode1 = 'gekleurd',
         mode2 = 'getal',
-    } = block.constraints;
+    } = block.constraints as TemperatuurConstraints;
 
     const minT = includeNegatives ? -15 : 0;
     const n = block.numberOfExercises;

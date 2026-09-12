@@ -1,4 +1,5 @@
 import type { MathBlock, KalenderExercise } from '../math/types';
+import type { KalenderConstraints } from '../math/constraintTypes';
 
 // Kalender / datum — month-grid reading, date arithmetic, and notation conversion.
 // Pure Date math; nl-BE lowercase day/month names (leerplan convention).
@@ -69,7 +70,7 @@ function buildQuestions(year: number, month: number, questionTypes: string[], am
 }
 
 export function generateKalenderExercises(block: MathBlock): KalenderExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as KalenderConstraints;
     const subType: 'maandrooster' | 'datum-rekenen' | 'notatie' = c.subType ?? 'maandrooster';
     const questionTypes: string[] = c.questionTypes ?? ['dag-van-datum', 'datum-van-dag', 'tellen'];
     const questionCount: number = c.questionCount ?? 5;

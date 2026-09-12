@@ -1,6 +1,7 @@
 import type { MathBlock, TemperatuurExercise, TemperatuurMode } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import type { TemperatuurConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -98,9 +99,10 @@ function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number
 export default function TemperatuurViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises = block.temperatuurExercises || [];
-    const includeNegatives = !!block.constraints.includeNegatives;
+    const c = block.constraints as TemperatuurConstraints;
+    const includeNegatives = !!c.includeNegatives;
     const minT = includeNegatives ? -15 : 0;
-    const perRow: number = Math.min(4, block.constraints.perRow ?? 4);
+    const perRow: number = Math.min(4, c.perRow ?? 4);
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

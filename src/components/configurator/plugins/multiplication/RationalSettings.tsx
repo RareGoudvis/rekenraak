@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import SettingLabel from '../SettingLabel';
+import type { MulDivConstraints } from '../../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; isDivision?: boolean; }
 
@@ -20,7 +21,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
         operand1Mask = {},
         simplifyMaxDenominatorChecked = false,
         simplifyMaxDenominator = 10
-    } = block.constraints;
+    } = block.constraints as MulDivConstraints;
 
     const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

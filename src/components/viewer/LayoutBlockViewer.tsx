@@ -1,4 +1,5 @@
 import type { MathBlock } from '../../services/math/types';
+import type { LayoutConstraints } from '../../services/math/constraintTypes';
 import { useBlockWidth } from './BlockWidthContext';
 
 interface Props {
@@ -19,7 +20,7 @@ const CM = 37.8;   // 1cm at 96dpi — same constant the meten viewers use
 
 export default function LayoutBlockViewer({ block }: Props) {
     const width = useBlockWidth();
-    const c = (block.constraints ?? {}) as Record<string, unknown>;
+    const c = (block.constraints ?? {}) as LayoutConstraints;
     const kind = (c.kind as LayoutKind) ?? 'sectie';
 
     if (kind === 'sectie') {

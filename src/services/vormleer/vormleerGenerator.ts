@@ -1,4 +1,5 @@
 import type { MathBlock, VormleerExercise, MeetPoint } from '../math/types';
+import type { VormleerConstraints } from '../math/constraintTypes';
 
 // Vormleer — punt/lijn/rechte, hoeken and vlakke figuren. One generator, three
 // typeIds (subType via constraints.kind); the viewer branches on `kind`.
@@ -76,7 +77,7 @@ function driehoekPoints(concept: string): { pts: MeetPoint[]; sides: number[] } 
 }
 
 export function generateVormleerExercises(block: MathBlock): VormleerExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as VormleerConstraints;
     const kind: 'punt-lijn' | 'hoek' | 'figuur' = c.kind ?? 'punt-lijn';
     const concepts: string[] = Array.isArray(c.concepts) && c.concepts.length ? c.concepts : ['punt', 'rechte', 'lijnstuk'];
     const randomRotation: boolean = c.randomRotation ?? (kind === 'hoek');

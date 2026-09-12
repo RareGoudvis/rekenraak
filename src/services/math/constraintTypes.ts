@@ -483,7 +483,7 @@ export type WeegschaalConstraints = {
 
 export type TijdsduurConstraints = {
     granularity: string[];
-    blanks: string[];
+    blanks: ('duur' | 'einde' | 'begin')[];
     maxDuurMin: number;
     overMidnight: boolean;
 };

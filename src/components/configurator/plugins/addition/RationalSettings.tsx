@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
+import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -11,7 +12,7 @@ export default function RationalSettings({ block }: Props) {
         maxNumerator1 = 10, maxDenominator1 = 10,
         maxNumerator2 = 10, maxDenominator2 = 10,
         linkFractions = true
-    } = block.constraints;
+    } = block.constraints as AddSubConstraints;
 
     // Helper om constraints te updaten
     const updateConstraint = (updates: Record<string, unknown>) => {

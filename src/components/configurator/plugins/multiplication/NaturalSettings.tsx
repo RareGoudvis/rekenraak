@@ -4,6 +4,7 @@ import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import PopupSelect from '../../../ui/PopupSelect';
 import SettingLabel from '../SettingLabel';
+import type { MulDivConstraints } from '../../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; isDivision?: boolean; }
 
@@ -32,7 +33,8 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         metRestLevel = 1,
         divisionLevel = 0,
         divisionLevels,
-    } = block.constraints;
+    } = block.constraints as MulDivConstraints;
+    const c = block.constraints as MulDivConstraints;
 
     // Multi-select niveaus: array wins; back-compat seed from the old single `divisionLevel`.
     const selectedLevels: number[] = Array.isArray(divisionLevels)
@@ -53,7 +55,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
 
     const handleMaskToggle = (operand: 1 | 2, place: string) => {
         const key = operand === 1 ? 'operand1Mask' : 'operand2Mask';
-        const currentMask = block.constraints[key] || {};
+        const currentMask = c[key] ?? {};
         updateConstraint(key, { ...currentMask, [place]: !currentMask[place] });
     };
 

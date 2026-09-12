@@ -1,6 +1,7 @@
 import type { MathBlock, VormleerExercise, MeetPoint } from '../../services/math/types';
 import { CONCEPT_NAMES } from '../../services/vormleer/vormleerGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import type { VormleerConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -269,7 +270,7 @@ function PuntLijnSVG({ ex, size }: { ex: VormleerExercise; size: number }) {
 
 export default function VormleerViewer({ block, showSolutions }: Props) {
     const exercises: VormleerExercise[] = block.vormleerExercises || [];
-    const c = block.constraints;
+    const c = block.constraints as VormleerConstraints;
     const kind: string = c.kind ?? 'punt-lijn';
     const mode: string = c.mode ?? 'herkennen';
     const answerMode: string = c.answerMode ?? 'woordbank';

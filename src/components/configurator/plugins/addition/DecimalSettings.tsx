@@ -5,12 +5,14 @@ import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import SettingLabel from '../SettingLabel';
 import PopupSelect from '../../../ui/PopupSelect';
 import BridgeControl from '../../BridgeControl';
+import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
 export default function DecimalSettings({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 100, decimalPlaces = 2, bridges = {} } = block.constraints;
+    const { maxGetal = 100, decimalPlaces = 2, bridges = {} } = block.constraints as AddSubConstraints;
+    const c = block.constraints as AddSubConstraints;
 
     // Mask and bridge places that match the chosen number of decimal places
     const maskPlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces);
@@ -18,7 +20,7 @@ export default function DecimalSettings({ block }: Props) {
     const maxPresets = [10, 100, 1000];
 
     const toggleMask = (operand: 'operand1Mask' | 'operand2Mask', posKey: string) => {
-        const currentMask = block.constraints[operand] || {};
+        const currentMask = c[operand] ?? {};
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [operand]: { ...currentMask, [posKey]: !currentMask[posKey] } } });
     };
 
@@ -52,7 +54,7 @@ export default function DecimalSettings({ block }: Props) {
                         <span style={{ fontSize: 'var(--text-xs)', width: '50px' }}>Getal {idx + 1}:</span>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {maskPlaces.map(p => (
-                                <button key={p.key} onClick={() => toggleMask(op, p.key)} style={styles.maskBtn(block.constraints[op]?.[p.key])}>{p.key}</button>
+                                <button key={p.key} onClick={() => toggleMask(op, p.key)} style={styles.maskBtn(c[op]?.[p.key])}>{p.key}</button>
                             ))}
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 import type { MathBlock, WeegschaalExercise } from '../../services/math/types';
 import { formatGewicht } from '../../services/weegschaal/weegschaalGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import type { WeegschaalConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -62,12 +63,13 @@ function Dial({ grams, bereik, step, showNeedle, needleColor, size }: {
 
 export default function WeegschaalViewer({ block, showSolutions }: Props) {
     const exercises: WeegschaalExercise[] = block.weegschaalExercises || [];
-    const mode: string = block.constraints.mode ?? 'aflezen';
-    const bereik: number = block.constraints.bereikGram ?? 1000;
-    const step: number = block.constraints.stepGram ?? 50;
-    const notatie: string = block.constraints.notatie ?? 'g';
-    const perRow: number = block.constraints.exercisesPerRow ?? 2;
-    const boxHeight: number = block.constraints.boxHeight ?? 170;
+    const c = block.constraints as WeegschaalConstraints;
+    const mode: string = c.mode ?? 'aflezen';
+    const bereik: number = c.bereikGram ?? 1000;
+    const step: number = c.stepGram ?? 50;
+    const notatie: string = c.notatie ?? 'g';
+    const perRow: number = c.exercisesPerRow ?? 2;
+    const boxHeight: number = c.boxHeight ?? 170;
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

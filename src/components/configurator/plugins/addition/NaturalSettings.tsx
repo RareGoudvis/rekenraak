@@ -5,14 +5,16 @@ import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import SettingLabel from '../SettingLabel';
 import PopupSelect from '../../../ui/PopupSelect';
 import BridgeControl from '../../BridgeControl';
+import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
 export default function NaturalSettings({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 1000, bridges = {} } = block.constraints;
-    const termCount: number = Math.min(4, Math.max(2, block.constraints.termCount ?? 2));
-    const operandMax: (number | null)[] = block.constraints.operandMax ?? [];
+    const { maxGetal = 1000, bridges = {} } = block.constraints as AddSubConstraints;
+    const c = block.constraints as AddSubConstraints;
+    const termCount: number = Math.min(4, Math.max(2, c.termCount ?? 2));
+    const operandMax: (number | null)[] = c.operandMax ?? [];
 
     // Haal de juiste arrays op (Zijn al gesorteerd Groot -> Klein!)
     const maskPlaces = getMaskPlaces(maxGetal, 'natural');
@@ -21,14 +23,14 @@ export default function NaturalSettings({ block }: Props) {
 
     // Term i mask: legacy operand1/2Mask for 0/1, operandMasks[] beyond (SYNC: maskFor in mathEngine).
     const maskAt = (i: number): Record<string, boolean> =>
-        block.constraints.operandMasks?.[i] ?? (i === 0 ? block.constraints.operand1Mask : i === 1 ? block.constraints.operand2Mask : undefined) ?? {};
+        c.operandMasks?.[i] ?? (i === 0 ? c.operand1Mask : i === 1 ? c.operand2Mask : undefined) ?? {};
     const toggleMaskAt = (i: number, posKey: string) => {
         const next = { ...maskAt(i), [posKey]: !maskAt(i)[posKey] };
         if (i <= 1) {
             const key = i === 0 ? 'operand1Mask' : 'operand2Mask';
             updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: next } });
         } else {
-            const masks = [...(block.constraints.operandMasks ?? [])];
+            const masks = [...(c.operandMasks ?? [])];
             masks[i] = next;
             updateBlockSettings(block.id, { constraints: { ...block.constraints, operandMasks: masks } });
         }

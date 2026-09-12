@@ -1,8 +1,9 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { TijdsduurConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -19,16 +20,14 @@ const BLANKS = [
 ];
 
 export default function TijdsduurConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<TijdsduurConstraints>(block);
     const granularity: string[] = c.granularity ?? ['kwartier'];
     const blanks: string[] = c.blanks ?? ['duur'];
     const maxDuurMin = c.maxDuurMin ?? 240;
     const overMidnight: boolean = c.overMidnight ?? false;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
-    const toggleIn = (key: string, list: string[], v: string) => {
+    const set = (key: keyof TijdsduurConstraints, value: unknown) => patch({ [key]: value } as Partial<TijdsduurConstraints>);
+    const toggleIn = (key: keyof TijdsduurConstraints, list: string[], v: string) => {
         const next = list.includes(v) ? list.filter(x => x !== v) : [...list, v];
         if (next.length) set(key, next);   // keep ≥1
     };
