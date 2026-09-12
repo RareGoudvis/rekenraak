@@ -34,8 +34,10 @@ const MAX_REVERSALS_PER_SECOND = 3;
 
 // The true width `el`'s children need, immune to a parent grid/flex track shrinking one
 // child below its content (see the file header comment for why that defeats a plain
-// el.scrollWidth read).
-function measureContentWidth(el: HTMLElement): number {
+// el.scrollWidth read). Exported for its own unit test — the multi-agent race this hook
+// went through while being built (see the measureRef comment below) makes this the one
+// piece worth pinning down in isolation from React's render/effect timing.
+export function measureContentWidth(el: HTMLElement): number {
     const kids = Array.from(el.children) as HTMLElement[];
     if (kids.length === 0) return el.scrollWidth;
     const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
