@@ -26,8 +26,9 @@ export type BridgeMap = Record<string, ConstraintType>;
 export type CrossCutting = {
     /** Per-block override of docSettings.bodyFontScale (exercise-body zoom). */
     bodyFontScale?: number;
-    // `scaffolding` is deliberately NOT here: it is a line count for cijferen and a named
-    // level everywhere else, so a shared declaration would only narrow it wrongly.
+    // `scaffolding` is deliberately NOT here. Every family that has one means something
+    // different by it — a structure level for cijferen, a named answer box for geld, a
+    // conversion table for herleidingen — so each declares its own literal type below.
     /** Selects the view within a family (set by the sidebar leaf). */
     subType?: string;
 };
@@ -139,7 +140,10 @@ export type FractionConstraints = {
     staticDiam?: number;               // circle diameter (cm) when staticSize
     minDenominator: number;
     maxDenominator: number;
-    answerFormat: string;
+    // Per subType: herkennen picks a question shape, hoeveelheid(-rechthoek) a help level.
+    answerFormat: 'fraction-questions' | 'phrase' | 'blank-fraction' | 'blank-line'
+        | 'met-hulp' | 'met-breukvragen' | 'zonder-hulp'
+        | 'met-berekening' | 'zonder-berekening';
     objectShape: 'circle' | 'square';
     maxTotal: number;
     groupingMode?: 'standaard' | 'gebalanceerd' | 'per-deel';  // concreet object row layout
@@ -148,7 +152,8 @@ export type FractionConstraints = {
     minLineLength: number;
     maxLineLength: number;
     level: number;
-    answerMode: string;
+    /** lijnstuk / hoeveelheid-abstract: which calculation lines are printed. */
+    answerMode: 'berekeningslijnen' | 'structuurlijnen' | 'blanco';
     maxWidth?: number;
     maxHeight?: number;
     maxAbstractN3: number;
@@ -198,8 +203,10 @@ export type SplitsenConstraints = {
 
 export type GeldConstraints = {
     maxGetal: number;
-    format: string;
-    scaffolding: string;
+    /** How an amount is written: "€ 12" vs "€ 12,50". */
+    format: 'euros' | 'decimaal';
+    /** herkennen: how the answer is written · tekenen: how the draw box is divided. */
+    scaffolding: 'invullen' | 'zelf-schrijven' | 'eenvoudig' | 'verdeeld';
     geldLayout: 'samen' | 'gescheiden';
     showVoorbeelden: boolean;
     voorbeeldTypes: number[];
@@ -219,7 +226,8 @@ export type GeldTeruggevenConstraints = {
     maxPriceEuros: number;
     payWithOptions: number[];
     centenDeel: string;
-    scaffolding: string;
+    /** How much of the counting-on diagram is pre-drawn ('leeg' = nothing, 'ingevuld' = all). */
+    scaffolding: 'ingevuld' | 'basis' | 'structuur' | 'rechthoek' | 'leeg';
     antwoordType: string;
     antwoordFormat: string;
     betalenMetTekening: boolean;
@@ -398,7 +406,8 @@ export type SchattendConstraints = {
     maxGetal: number;
     decimalPlaces: number;
     roundTargets: string[];
-    scaffolding: string;
+    /** Print the rounding step, or only the estimate. */
+    scaffolding: 'tussenstappen' | 'enkel-schatting';
 };
 
 export type ControlerenConstraints = {
@@ -407,8 +416,8 @@ export type ControlerenConstraints = {
     maxGetal: number;
     foutAandeel: 'geen' | 'helft' | 'alles';
     showKruis: boolean;
-    // omgekeerde: how much of the check is printed — 'niets' | 'teken' | 'alles'.
-    prefill?: string;
+    /** omgekeerde: how much of the check line is printed. */
+    prefill?: 'niets' | 'teken' | 'alles';
 };
 
 export type VerbandenConstraints = {
@@ -435,7 +444,8 @@ export type MetenConstraints = {
     maxCorners: number;
     perSideScaffold: boolean;
     answerMode: 'single' | 'sum';
-    answerUnit: string;
+    /** 'cm' prints the unit after the writing line, 'plain' prints the line alone. */
+    answerUnit: 'cm' | 'plain';
     shapes: string[];
     subType?: string;
 };
@@ -458,10 +468,11 @@ export type HerleidingenConstraints = {
     compoundMode: string;
     areMode: 'enkel' | 'samengesteld';
     writeUnits: boolean;
-    scaffolding: string;
-    herleidingLayout: string;
+    /** The conversion-table scaffold printed with the exercise. */
+    scaffolding: 'geen' | 'tabel-headers' | 'tabel-blanco';
+    herleidingLayout: 'uitlijnen' | 'compact';
     tablePrompt: boolean;
-    tableAnswer: string;
+    tableAnswer: 'blank' | 'filled' | 'hidden';
     tableCellW: number;
     tableCellH: number;
     maxGetal?: number;
