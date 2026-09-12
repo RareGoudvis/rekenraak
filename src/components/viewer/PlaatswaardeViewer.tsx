@@ -25,6 +25,10 @@ function placesOf(n: number, maxGetal: number, decimalPlaces: number) {
 
 export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // Below 200px (a quarter-width cell is 163px) the fixed 120px number column, the 16px
+    // gaps and the 40px table cells together are wider than the cell. Everything that was
+    // sized for alignment across a wide row tightens to what the digits actually need.
+    const tight = availableWidth < 200;
     const exercises: PlaatswaardeExercise[] = block.plaatswaardeExercises || [];
     const c = block.constraints as PlaatswaardeConstraints;
     const subType: string = c.subType ?? 'waarde';
@@ -60,14 +64,14 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     // ── TABEL: number + place-value columns to fill ───────────────────────────
     if (subType === 'tabel') {
         const cell: React.CSSProperties = {
-            border: '1px solid #000', width: '40px', height: '34px', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: '16px', boxSizing: 'border-box',
+            border: '1px solid #000', width: tight ? '24px' : '40px', height: tight ? '28px' : '34px', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: tight ? '13px' : '16px', boxSizing: 'border-box',
         };
         // Two-up when a row is narrow enough (default maxGetal 1000 = 4 places ≈ 266px),
         // so small place-value tables don't waste the right half of the page.
         const placeCount = placesOf(maxGetal, maxGetal, decimalPlaces).length;
         const rowW = 90 + 16 + placeCount * 40;
-        const tabCols = rowW * 2 + 24 <= availableWidth ? 2 : 1;
+        const tabCols = !tight && rowW * 2 + 24 <= availableWidth ? 2 : 1;
         return (
             <FragmentableGrid
                 cols={tabCols}
@@ -76,8 +80,8 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                 items={exercises.map(ex => {
                     const places = placesOf(ex.number, maxGetal, decimalPlaces);
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            <span style={{ fontFamily: mono, fontSize: '18px', minWidth: '90px' }}>{formatMathNumber(ex.number)}</span>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '6px' : '16px' }}>
+                            <span style={{ fontFamily: mono, fontSize: tight ? '15px' : '18px', minWidth: tight ? undefined : '90px', whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)}</span>
                             <div>
                                 <div style={{ display: 'flex' }}>
                                     {places.map(p => <div key={p.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '13px' }}>{p.key}</div>)}
@@ -104,11 +108,12 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                 const value = Number((place.digit * place.weight).toFixed(4));
                 const answer = subType === 'plaats' ? place.label.toLowerCase() : formatMathNumber(value);
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
-                        {/* Fixed-width right-aligned so the arrow + answer line align across rows. */}
-                        <span style={{ display: 'inline-block', minWidth: '120px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: tight ? '4px' : '8px', fontFamily: mono, fontSize: '16px', ...(tight && { flexWrap: 'wrap' }) }}>
+                        {/* Fixed-width right-aligned so the arrow + answer line align across rows.
+                            Tight cells drop the reserved column — the digits are what has to fit. */}
+                        <span style={{ display: 'inline-block', minWidth: tight ? undefined : '120px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
                         <span style={{ alignSelf: 'center' }}>→</span>
-                        {showSolutions ? sol(answer) : blank(subType === 'plaats' ? 110 : 70)}
+                        {showSolutions ? sol(answer) : blank(tight ? (subType === 'plaats' ? 70 : 45) : (subType === 'plaats' ? 110 : 70))}
                     </div>
                 );
             })}

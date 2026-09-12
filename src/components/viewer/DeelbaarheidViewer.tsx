@@ -56,6 +56,38 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
         );
     }
 
+    // ── Tabel, tight: one card per number with the divisors as chips ──────────
+    // A shared header row plus a 150px number column needs ~400px; a quarter-width cell is
+    // 163px. Below 200px the table becomes one small card per number and the "deelbaar
+    // door" question moves into each chip, so the chips can wrap two to a line.
+    if (A4_CONTENT_PX < 200) {
+        const chip: React.CSSProperties = {
+            display: 'flex', alignItems: 'stretch', border: '1px solid #000',
+            fontFamily: mono, fontSize: '13px', height: '26px', boxSizing: 'border-box',
+        };
+        return (
+            <FragmentableGrid
+                cols={1}
+                rowGap={gap + 4}
+                items={exercises.map((ex) => (
+                    <div key={ex.id} className="print-exercise" style={{ fontFamily: mono, fontSize: '16px' }}>
+                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{ex.number}</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {divisors.map(d => (
+                                <div key={d} style={chip}>
+                                    <span style={{ backgroundColor: SALMON, fontWeight: 'bold', padding: '0 4px', display: 'flex', alignItems: 'center' }}>{d}?</span>
+                                    <span style={{ width: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', ...solutionText }}>
+                                        {showSolutions ? ((ex.number ?? 0) % d === 0 ? '✓' : '✗') : ''}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            />
+        );
+    }
+
     // ── Tabel: shared header + one tick-row per number ────────────────────────
     // Size columns to the printable width: fixed number column, tick columns share the
     // rest (capped so few-divisor tables don't look stretched, shrunk so 7-10 divisors
