@@ -1,15 +1,17 @@
 import type { MathBlock, PatroonExercise, PatroonStep } from '../math/types';
 import { getMaskPlaces } from '../math/mathEngine';
-import type { PatroonConstraints } from '../math/constraintTypes';
+import type { PatroonConstraints, OpSetting } from '../math/constraintTypes';
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 
-type OpSetting = { max: number; mask: Record<string, boolean> };
+// opSettings as stored leaves both keys optional (kettingsommen write max only), so the
+// generator resolves them once at the entry line and works with filled-in values below.
+type ResolvedOpSetting = { max: number; mask: Record<string, boolean> };
 
 // Operand for one step. ×/÷ stay small whole factors; +/− build from the mask over the
 // block's full place range (D/H/T/E + t/h/d for decimals), else random within the op max.
-function buildOperand(op: string, s: OpSetting, numberType: string, maxGetal: number, dp: number): number {
+function buildOperand(op: string, s: ResolvedOpSetting, numberType: string, maxGetal: number, dp: number): number {
     const max = Math.max(1, s.max ?? 10);
     if (op === 'x' || op === ':') return randInt(2, Math.max(2, Math.min(max, 12)));
     const scale = Math.pow(10, dp);
@@ -43,14 +45,12 @@ export function generatePatroonExercises(block: MathBlock): PatroonExercise[] {
     const ticks: number = c.ticks ?? 6;
     const steps: number = Math.min(4, Math.max(1, c.steps ?? 1));
     const ops: string[] = Array.isArray(c.ops) && c.ops.length ? c.ops : ['+'];
-    // PatroonConfig always writes max AND mask; the shared type keeps both optional
-    // because kettingsommen store a max only.
-    const opSettings = (c.opSettings ?? {}) as Record<string, OpSetting>;
+    const opSettings: Record<string, OpSetting> = c.opSettings ?? {};
     const maxDecimals: number = numberType === 'decimal' ? Math.min(3, Math.max(1, c.maxDecimals ?? 1)) : 0;
     const scale = scaleFor(numberType, maxDecimals);
     const n = block.numberOfExercises;
 
-    const getSetting = (op: string): OpSetting => opSettings[op] ?? { max: 10, mask: {} };
+    const getSetting = (op: string): ResolvedOpSetting => ({ max: opSettings[op]?.max ?? 10, mask: opSettings[op]?.mask ?? {} });
 
     const runFrom = (start: number, cycle: PatroonStep[]): number[] | null => {
         const vals = [start];

@@ -3,7 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
-import type { KettingConstraints } from '../../../services/math/constraintTypes';
+import type { KettingConstraints, OpSetting } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -14,7 +14,7 @@ const OPS = [
 export default function KettingConfig({ block }: Props) {
     const [c, patch] = useConstraints<KettingConstraints>(block);
     const ops: string[] = c.ops ?? ['+', '-'];
-    const opSettings: Record<string, { max?: number }> = c.opSettings ?? {};
+    const opSettings: Record<string, OpSetting> = c.opSettings ?? {};
     const chainLength: number = c.chainLength ?? 4;
     const maxGetal = c.maxGetal ?? 100;
     const blankMiddle: boolean = c.blankMiddle ?? false;

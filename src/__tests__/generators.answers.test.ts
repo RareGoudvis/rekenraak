@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import type { RekenvolgordeExercise, Equation, Fraction, CijferExercise, SplitsenExercise, BreukBewerkExercise, OrdenenExercise, DeelbaarheidExercise, ProcentExercise, VerbandExercise, TijdsduurExercise, KalenderExercise, ControleExercise, HerleidingExercise } from '../services/math/types';
+import type { PatroonExercise, RekenvolgordeExercise, Equation, Fraction, CijferExercise, SplitsenExercise, BreukBewerkExercise, OrdenenExercise, DeelbaarheidExercise, ProcentExercise, VerbandExercise, TijdsduurExercise, KalenderExercise, ControleExercise, HerleidingExercise } from '../services/math/types';
 import { ladderFor } from '../services/herleidingen/herleidingenGenerator';
 import { daysInMonth } from '../services/kalender/kalenderGenerator';
 import { negenrest } from '../services/controleren/controlerenGenerator';
@@ -298,6 +298,23 @@ describe('procenten', () => {
 });
 
 // ── verbanden breuk · decimaal · procent ─────────────────────────────────────
+// opSettings is shared by getalpatronen (max + mask) and kettingsommen (max only), so both
+// stored shapes have to survive either generator's entry line.
+describe('opSettings', () => {
+    test('getalpatronen reads a kettingsommen-shaped entry (max only)', () => {
+        const block = makeBlock('getalpatronen', { constraints: { ops: ['+'], opSettings: { '+': { max: 5 } } } });
+        const items = generateFor(block) as PatroonExercise[];
+        expect(items.length).toBe(block.numberOfExercises);
+        for (const ex of items) for (const step of ex.cycle) expect(step.operand).toBeLessThanOrEqual(5);
+    });
+
+    test('kettingsommen reads a getalpatronen-shaped entry (max + mask)', () => {
+        const block = makeBlock('kettingsommen', { constraints: { ops: ['+', '-'], opSettings: { '+': { max: 5, mask: { E: true } }, '-': { max: 5, mask: { E: true } } } } });
+        const items = generateFor(block) as PatroonExercise[];
+        expect(items.length).toBe(block.numberOfExercises);
+    });
+});
+
 describe('verbanden', () => {
     test('the three representations agree exactly', () => {
         const block = makeBlock('verbanden', { constraints: { denominators: [2, 4, 5, 8, 10, 20, 25, 100] } });

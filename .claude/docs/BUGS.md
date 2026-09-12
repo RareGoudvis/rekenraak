@@ -44,11 +44,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   plugins read `const { a = 1, b } = block.constraints as XConstraints` and keep a hand-rolled
   `set`. They are typed, but the hook (`src/components/configurator/useConstraints.ts`) is only
   used by the ~15 that kept a `c`. Harmless duplication; convert opportunistically (2026-09-12).
-- **`opSettings` entries are shaped differently per family** — `getalpatronen` writes
-  `{ max, mask }`, `kettingsommen` writes `{ max }` only, so the shared type marks both optional
-  and `patroonGenerator` casts back to its strict local `OpSetting`. Decide one shape
-  (2026-09-12).
-
 ## Tooling
 
 - **`npm test` cannot run from Git Bash** — vitest 5.0.0 fails to initialise its worker

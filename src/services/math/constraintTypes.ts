@@ -363,6 +363,11 @@ export type GetallenrijConstraints = GetallenasConstraints & {
     showFrame: boolean;
 };
 
+// One operator's operand settings inside `opSettings`. Both families that use it share
+// the shape: getalpatronen writes max + mask, kettingsommen only max, so both keys are
+// optional and the generators fill their own defaults at the entry line.
+export type OpSetting = { max?: number; mask?: PlaceMask };
+
 export type PatroonConstraints = {
     numberType: NumberType;
     maxGetal: number;
@@ -370,7 +375,7 @@ export type PatroonConstraints = {
     steps: number;
     // One entry per operator in `ops`: the operand range (and mask) that step may use.
     ops: string[];
-    opSettings: Record<string, { max?: number; mask?: PlaceMask }>;
+    opSettings: Record<string, OpSetting>;
     maxDecimals: number;
     showArrows: boolean;
     showOperators: boolean;
@@ -384,7 +389,7 @@ export type KettingConstraints = {
     maxGetal: number;
     chainLength: number;
     ops: string[];
-    opSettings: Record<string, { max?: number; mask?: PlaceMask }>;
+    opSettings: Record<string, OpSetting>;
     blankMiddle: boolean;
     showArrows: boolean;
     showOperators: boolean;
