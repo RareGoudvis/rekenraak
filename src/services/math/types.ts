@@ -26,6 +26,9 @@ export interface Equation {
     missingTerm?: 'result' | 'operand1' | 'operand2';
     // Puntoefening blank at operand N (multi-term); overrides missingTerm's 2-term addressing.
     missingIndex?: number;
+    // 'gemengd' blocks: which variant (operator + optional preset) produced this exercise,
+    // so the per-exercise switch can mark the current one; other generators leave it unset.
+    variant?: string;
     remainder?: number;
 }
 

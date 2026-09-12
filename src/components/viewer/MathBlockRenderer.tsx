@@ -62,6 +62,9 @@ function FractionDisplay({ val, color }: { val: Fraction; color?: string }) {
 // tell them apart — it prefers the plain (no-preset) variant, which is what most exercises
 // in a mix actually are.
 function guessVariant(ex: Equation, options: { id: MixedVariantId; op: string }[]): MixedVariantId | null {
+    // The generator tags each exercise with its variant; the operator-only guess below is
+    // the fallback for exercises saved before that tag existed.
+    if (ex.variant && options.some(o => o.id === ex.variant)) return ex.variant as MixedVariantId;
     const forOp = options.filter(o => o.op === ex.operator);
     if (forOp.length === 0) return null;
     return (forOp.find(o => !o.id.includes(':')) ?? forOp[0]).id;

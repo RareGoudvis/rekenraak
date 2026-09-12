@@ -86,7 +86,7 @@ function generateOne(block: MathBlock, variantId: MixedVariantId, avoid: Set<str
         relaxed = result.relaxed;
         const equation = result.items[0] as Equation | undefined;
         if (!equation) break;
-        if (!avoid.has(mixedKey(equation))) return { equation, relaxed };
+        if (!avoid.has(mixedKey(equation))) return { equation: { ...equation, variant: variantId }, relaxed };
     }
     return { equation: null, relaxed };
 }
