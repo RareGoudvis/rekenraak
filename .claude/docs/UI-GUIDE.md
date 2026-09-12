@@ -201,12 +201,13 @@ needs React hover state. Phosphor has no `strokeWidth`; use `weight`.
 
 ## 3. Sanctioned "worksheet-ink" colors (intentionally hardcoded)
 
-These render on the printed A4 and are not chrome, so they are **not** tokens. Reuse these
-exact values — don't pick new ones:
+These render on the printed A4 and are not chrome, so they are **not** tokens — with one
+exception: solution red is `--ink-solution`, because every viewer needs it and it must stay
+one hue. Reuse these exact values — don't pick new ones:
 
 | Color | Hex | Use |
 |---|---|---|
-| Solution red | `#e11d48` | anything that turns red under "Toon oplossingen" |
+| Solution red | **token** `--ink-solution` (`#e11d48`) | anything that turns red under "Toon oplossingen" — the one exception to the "no token" rule below: use [`solutionStyle.ts`](../../src/components/viewer/solutionStyle.ts) (`solutionText` = red **+ bold**, or bare `SOL` for borders/SVG), never the hex |
 | Fraction fill | `#93c5fd` | colored part of fraction shapes / tinted grid cells |
 | Rooster/splitsen salmon | `#f4cbb8` | table header / place-value box background |
 | MAB units | `#fbbf24` | Dienes blocks (eenheden) |

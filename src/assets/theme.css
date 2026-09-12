@@ -104,6 +104,11 @@
     --danger: #C0362B;
     --danger-soft: rgba(192, 54, 43, 0.10);
 
+    /* Worksheet ink, not chrome: everything that turns red under "Toon oplossingen".
+       Print-safe on inkjet + laser; solutions are also bold (see viewer/solutionStyle.ts)
+       so a black-and-white printer still tells answer from exercise. */
+    --ink-solution: #e11d48;
+
     /* Domain hues — carried over from the maths method teachers already use, so they
        stay as they are. Identity only, never state, and never without their label. */
     --accent-getallenkennis: #FF3B30;
