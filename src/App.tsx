@@ -687,7 +687,18 @@ export default function App() {
           </div>
         )}
 
-        <div ref={a4Ref} className="print-area-shell" style={{ zoom: sheetZoom }}>
+        <div
+          ref={a4Ref}
+          className="print-area-shell"
+          style={{
+            zoom: sheetZoom,
+            // Cascades to every PageSheet + viewer below it (same DOM on screen and in
+            // print, so the print page inherits for free). Only set when the teacher has
+            // touched the slider — omitted keys fall back to the CSS token default.
+            ...(docSettings.fontSizeMath != null ? { ['--sheet-size-math' as string]: `${docSettings.fontSizeMath}pt` } : {}),
+            ...(docSettings.fontSizeText != null ? { ['--sheet-size-text' as string]: `${docSettings.fontSizeText}pt` } : {}),
+          }}
+        >
 
           {packedPages.map((page, pi) => (
             <PageSheet

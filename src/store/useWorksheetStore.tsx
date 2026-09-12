@@ -65,6 +65,12 @@ export interface DocSettings {
     // Global content zoom for block bodies (exercise + opdracht-titel); 1 = 100%.
     // A per-block override lives in block.constraints.bodyFontScale. Optional → back-compat.
     bodyFontScale?: number;
+    // Sheet-wide font-size tokens (pt), fed onto .print-area-shell as --sheet-size-math /
+    // --sheet-size-text (theme.css). Optional → back-compat; undefined falls back to the
+    // token's own CSS default (13pt / 15pt). No per-block override — bodyFontScale already
+    // does that job as a multiplier on top of these.
+    fontSizeMath?: number;   // pt, 11-16, default 13
+    fontSizeText?: number;   // pt, 12-18, default 15
 }
 
 // Which full-screen view is active. 'editor' = normal 3-panel editor; the others are
@@ -192,7 +198,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     activeBlockId: null,
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
     footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: false, centerText: '', showCenterText: false },
-    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, showColumnDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1 },
+    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, showColumnDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1, fontSizeMath: 13, fontSizeText: 15 },
     baseSettings: { ...DEFAULT_BASE },
     selectedGrade: null,
     staleBlocks: {},

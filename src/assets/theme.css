@@ -68,6 +68,17 @@
     --font-sheet-text: 'Ubuntu', system-ui, sans-serif;
     --font-sheet-math: 'Azeret Mono', monospace;
 
+    /* Worksheet ink sizes (pt, not px — teachers think in pt from Word/Docs habits).
+       Every viewer that sets a literal px size is meant to become a factor of one of
+       these two (px/17 rounded to 2 decimals, since 17px was the old hoofdrekenen
+       digit size) so a deliberate size DIFFERENCE between two viewers survives when
+       the base moves — a 12px label next to a 14px one stays 6% smaller at any base,
+       instead of every viewer freezing at today's px. --sheet-size-small covers the
+       ~12px grid/label tier as one derived step so it doesn't need its own doc setting. */
+    --sheet-size-math: 13pt;
+    --sheet-size-text: 15pt;
+    --sheet-size-small: calc(var(--sheet-size-math) * 0.82);
+
     /* Motion — ease-out for entrances, gentle spring for selection thumbs */
     --dur-fast: 120ms;
     --dur: 180ms;

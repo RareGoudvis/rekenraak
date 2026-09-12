@@ -240,6 +240,29 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 </div>
 
                 <div style={S.card}>
+                    <h4 style={S.cardTitle}>Lettergrootte</h4>
+                    {/* Sheet-wide base sizes (pt), fed onto .print-area-shell as CSS tokens
+                        --sheet-size-math / --sheet-size-text (theme.css). Distinct from the
+                        zoom slider below: these are the BASE every viewer px scales from,
+                        bodyFontScale is a multiplier on top of the result. */}
+                    <div style={S.col}>
+                        <label style={S.label}>Cijfers: {docSettings.fontSizeMath ?? 13}pt</label>
+                        <input type="range" min={11} max={16} step={1}
+                            value={docSettings.fontSizeMath ?? 13}
+                            onChange={(e) => updateDocSettings({ fontSizeMath: Number(e.target.value) })}
+                            style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                        <p style={S.hintText}>Alle getallen en rekenwerk.</p>
+
+                        <label style={{ ...S.label, marginTop: '10px' }}>Opdrachttekst: {docSettings.fontSizeText ?? 15}pt</label>
+                        <input type="range" min={12} max={18} step={1}
+                            value={docSettings.fontSizeText ?? 15}
+                            onChange={(e) => updateDocSettings({ fontSizeText: Number(e.target.value) })}
+                            style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                        <p style={S.hintText}>Opdrachten en woorden.</p>
+                    </div>
+                </div>
+
+                <div style={S.card}>
                     <h4 style={S.cardTitle}>Tekstgrootte oefeningen</h4>
                     {/* Sheet-wide, not per region: scales every block's exercise body and its
                         opdracht-titel together. Shown in px against the base; stored as a zoom

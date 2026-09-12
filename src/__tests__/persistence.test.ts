@@ -66,6 +66,25 @@ describe('worksheet file', () => {
         expect(parsed.selectedGrade).toBe(3);
     });
 
+    test('fontSizeMath / fontSizeText survive the round-trip', () => {
+        const s = state();
+        const docSettings = { ...s.docSettings, fontSizeMath: 14, fontSizeText: 16 } as DocSettings;
+        const json = JSON.stringify({
+            version: WORKSHEET_FORMAT_VERSION,
+            exportedAt: new Date().toISOString(),
+            mode: 'full',
+            blocks: s.blocks,
+            header: s.header,
+            footer: s.footer,
+            docSettings,
+            baseSettings: s.baseSettings,
+            selectedGrade: s.selectedGrade,
+        });
+        const parsed = parseWorksheetFile(json);
+        expect(parsed.docSettings.fontSizeMath).toBe(14);
+        expect(parsed.docSettings.fontSizeText).toBe(16);
+    });
+
     test('a file from a newer version is refused, in Dutch', () => {
         const json = JSON.stringify({ version: WORKSHEET_FORMAT_VERSION + 1, blocks: [], header: {}, footer: {}, docSettings: {} });
         expect(() => parseWorksheetFile(json)).toThrow(/nieuwere versie/);
