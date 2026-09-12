@@ -202,8 +202,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // the operand -- carries the fixed width. Before this the operand sat in a fixed
     // right-aligned cell, so all of its slack fell between the sign and the digits.
     const OP_GLYPH_PX = tight ? 12 : 13;  // one Azeret Mono glyph at 17px (11.06), rounded up
-    const OP_TERM_GAP = tight ? 6 : 8;   // sign -> its operand
-    const TERM_UNIT_GAP = tight ? 6 : 12; // operand -> the sign of the next one
+    // The same air on both sides of a sign: the owner reads "72   + 1" as jitter.
+    const OP_TERM_GAP = tight ? 6 : 10;   // sign -> its operand
+    const TERM_UNIT_GAP = OP_TERM_GAP;    // operand -> the sign of the next one
     // Air around the "=" and between the sum and its answer column. Halved when tight:
     // 4 gaps x 4px is what buys `532 + 342 = ____` its place inside a 163px quarter.
     const EQ_GAP = tight ? 6 : 10;
@@ -292,14 +293,16 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
                             {ex.operands.map((operand, i) => {
                                 const chars = typeof operand === 'number' ? formatMathNumber(operand).length : 0;
-                                // Unit = the sign plus its operand. The first operand has no sign, so it
-                                // is a plain column box. Every unit is right-aligned, which is what keeps
-                                // 73 under the 14 of 114 instead of against the operator.
+                                // Unit = the sign plus its operand, in a box as wide as the block's widest
+                                // operand plus the sign. The first operand is right-aligned in its box (last
+                                // digits line up); every later unit is LEFT-aligned, so the sign sits in a
+                                // fixed column and "=" stays put whatever the operand's width — a
+                                // right-aligned unit let the "+" drift with 1- vs 2-digit operands.
                                 const unitPx = termBoxPx === undefined ? undefined
                                     : (i === 0 ? termBoxPx : OP_GLYPH_PX + OP_TERM_GAP + termBoxPx);
                                 return (
                                     <div key={i} style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0,
+                                        display: 'flex', alignItems: 'center', justifyContent: i === 0 ? 'flex-end' : 'flex-start', flexShrink: 0,
                                         ...(unitPx !== undefined && { width: `${unitPx}px` }),
                                         ...(i > 0 && { marginLeft: `${TERM_UNIT_GAP}px` }),
                                     }}>
