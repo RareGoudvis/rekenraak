@@ -385,7 +385,13 @@ export default function App() {
     <>
           {/* ── HEADER ── (enum base style + optional style-builder overlay; custom wins) */}
           <div style={overlayRegionStyle({
-            display: 'flex', flexDirection: 'column', width: '100%', padding: '12px', boxSizing: 'border-box',
+            // Vertical padding belongs to the BOX, not to the header: with headerStyle
+            // 'geen' (the default) there is no border and no rule, so 12px above and below
+            // was 24px of paper reserved for a frame nobody asked for. It comes back for
+            // 'onderstreept' / 'kader', which do need air inside their line.
+            display: 'flex', flexDirection: 'column', width: '100%',
+            padding: docSettings.headerStyle === 'geen' ? '0 12px' : '12px',
+            boxSizing: 'border-box',
             // 'onderstreept' = one line under the whole header (separates it from the body);
             // 'kader' = full box. All-longhand borders avoid the shorthand/longhand React warning.
             borderRadius: docSettings.headerStyle === 'onderstreept' ? 0 : '6px',
@@ -480,7 +486,10 @@ export default function App() {
                       {showScore && <div style={{ ...styles.scoreBox, flexShrink: 0 }}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
                     </div>
                   )}
-                  {hasTitle && <h1 style={{ margin: '8px 0 0', fontSize: '24px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center' }}>{headerData!.titel}</h1>}
+                  {/* The 8px only separates the title from the fields/score row above it;
+                      with every field off there is nothing to separate it from and the gap
+                      is paper margin pretending to be layout. */}
+                  {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? '8px 0 0' : 0, fontSize: '24px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center' }}>{headerData!.titel}</h1>}
                 </>
               );
             })()}

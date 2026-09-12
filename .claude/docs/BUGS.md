@@ -15,8 +15,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   rowUnits (Part 7f).
 ## Layout / sheet
 
-- **Top margin still reads too tall** after 16→12 mm: the title sits ~30 mm from the paper edge
-  because of the header region's internal spacing. Audit + trim, then 12 → 8 mm. Part 7f.
 - **Vertical measurement off: tail hint says "past niet" for a block that visibly fits**
   (owner 2026-09-12, checked in Paint on a screenshot). Audit the height chain: cell
   offsetHeight includes screen-only block padding/margin (~40px), packer row gap vs CSS
