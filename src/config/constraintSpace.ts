@@ -65,6 +65,30 @@ const hrMulDiv: OptionSpace = {
     presetFactors: [[10], [10, 100, 1000]],
 };
 
+// GemengdConfig — one block that mixes variants (operator + optional preset). The leaves
+// offer natural/decimal only, and the preset lives in the variant id rather than in a
+// `preset` key, so this space is hrShared minus rational/geheel plus the mix controls.
+const hrMixed: OptionSpace = {
+    ...hrShared,
+    numberType: ['natural', 'decimal'],
+    variants: [
+        ['+'],
+        ['+', '-'],
+        ['x', ':'],
+        ['+', '+:compenseren'],
+        ['x', 'x:tienvoud'],
+        ['+', '-', 'x', ':'],
+        ['+', '+:compenseren', '-', '-:compenseren', 'x', 'x:tienvoud', ':', ':tienvoud'],
+    ],
+    mix: ['random', 'cycle'],
+    // Sparse tab overrides: only what a teacher changed inside one variant's tab.
+    perVariant: [
+        {},
+        { x: { selectedTables: [7] } },
+        { '+': { maxGetal: 20 }, ':': { tableLimit: 5 } },
+    ],
+};
+
 // CijferConfig — column arithmetic. `operator` + `numberType` come from the sidebar leaf.
 const cijferSpace: OptionSpace = {
     operator: OPS,
@@ -448,6 +472,7 @@ export const CONSTRAINT_SPACE: Record<string, OptionSpace> = {
     'hr-std-aftrekken': hrAddSub,
     'hr-std-vermenigvuldigen': hrMulDiv,
     'hr-std-delen': hrMulDiv,
+    'hr-std-gemengd': hrMixed,
 
     'cijferen-optellen-nat': cijferSpace,
     'cijferen-optellen-dec': cijferSpace,

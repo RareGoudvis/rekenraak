@@ -132,6 +132,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "herleidingen": { rowUnits: 2.03, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
+    "hr-std-gemengd": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-optellen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-vermenigvuldigen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 2 },

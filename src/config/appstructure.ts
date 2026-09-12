@@ -251,6 +251,16 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'hr-std-delen-dec', label: 'Decimale getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'decimal' } },
                         ],
                     },
+                    // Last of the family on purpose: one block that mixes the four operations
+                    // (and their presets) is a rehearsal of what comes before it.
+                    {
+                        id: 'hr-std-gemengd',
+                        label: 'Gemengd',
+                        children: [
+                            { id: 'hr-std-gemengd-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-gemengd', defaultConstraints: { numberType: 'natural' } },
+                            { id: 'hr-std-gemengd-dec', label: 'Decimale getallen', typeId: 'hr-std-gemengd', defaultConstraints: { numberType: 'decimal' } },
+                        ],
+                    },
                 ],
             },
             {

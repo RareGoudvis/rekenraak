@@ -42,6 +42,7 @@ const TYPE_SUGGESTIONS: Array<{ match: string; texts: string[] }> = [
     { match: 'aftrekken', texts: ['Reken uit.'] },
     { match: 'vermenigvuldigen', texts: ['Reken uit.'] },
     { match: 'delen', texts: ['Reken uit.'] },
+    { match: 'hr-std-gemengd', texts: ['Reken uit.'] },
     { match: 'cijferen', texts: ['Reken uit.'] },
     { match: 'rekenvolgorde', texts: ['Reken uit.'] },
     { match: 'kettingsommen', texts: ['Reken uit.'] },
