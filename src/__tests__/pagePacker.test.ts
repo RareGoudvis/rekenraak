@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { packPages, pageIndexByBlock } from '../services/layout/pagePacker';
-import { COL_UNITS, ROW_BUDGET, type WidthUnits } from '../config/blockLayout';
+import { COL_UNITS, ROW_BUDGET, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 import { cellWidthPx, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 

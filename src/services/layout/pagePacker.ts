@@ -1,7 +1,7 @@
 import type { MathBlock } from '../math/types';
 import {
     COL_UNITS, ROW_BUDGET, estimateHeightUnits, minWidthUnits, type WidthUnits,
-} from '../../config/blockLayout';
+} from './blockLayout';
 
 // Deterministic pagination. Blocks in, pages out — the packer itself never touches the
 // DOM, so it stays pure and unit-testable; App injects measured heights through callbacks.

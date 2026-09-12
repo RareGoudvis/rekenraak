@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { minWidthUnits, tierWidthPx, type WidthUnits } from '../config/blockLayout';
+import { minWidthUnits, tierWidthPx, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 
 // The width clamp has two regimes: with a measured content width it answers the smallest

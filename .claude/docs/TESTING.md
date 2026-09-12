@@ -87,7 +87,7 @@ browser. Those stay manual (Ctrl+P, margins None, 100%) — see the review check
 Not a vitest suite — it drives a real browser, because the question it answers ("can this
 type render at half or quarter width?") only has a DOM answer. It is how the `minWidth`,
 `rowUnits` and `perRowFull` numbers in
-[blockLayout.ts](../../src/config/blockLayout.ts) were obtained; re-run it after a viewer
+[blockLayout.ts](../../src/services/layout/blockLayout.ts) were obtained; re-run it after a viewer
 change that moves a block's width or height.
 
 ```bash

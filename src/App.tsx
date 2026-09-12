@@ -3,7 +3,7 @@ import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
 import PageSheet, { PAGE_W_PX } from './components/layout/PageSheet';
 import { packPages, pageIndexByBlock, type PackedBlock } from './services/layout/pagePacker';
-import { minWidthUnits } from './config/blockLayout';
+import { minWidthUnits } from './services/layout/blockLayout';
 import type { FooterSlot } from './services/math/types';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';

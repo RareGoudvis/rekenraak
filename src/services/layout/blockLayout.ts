@@ -1,5 +1,5 @@
-import type { MathBlock } from '../services/math/types';
-import { cellWidthPx } from '../components/viewer/BlockWidthContext';
+import type { MathBlock } from '../math/types';
+import { cellWidthPx } from '../../components/viewer/BlockWidthContext';
 
 // ── Page grid ────────────────────────────────────────────────────────────────
 // A page's content area is COL_UNITS wide (4, so a block can be a whole, a half or a

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
+import type { SaveState } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
 import Switch from '../ui/Switch';
@@ -8,11 +9,32 @@ import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import { Info } from '@phosphor-icons/react';
+import { useShedStages } from '../../hooks/useShedStages';
 
 interface Props {
     onPrint: (withSolutions: boolean) => void;
     onOpenHelp?: () => void;
     onOpenAbout?: () => void;
+}
+
+// 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
+// (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the two
+// least-used buttons (Toevoegen, Uitleg) fold into the Meer menu. Each stage strictly
+// sheds width relative to the last, which is what lets useShedStages' hysteresis work.
+const STAGE_COUNT = 4;
+
+// Shared between the centre-track (stage 0-1) and the under-bar line (stage 2-3) so the
+// save-status colour/tooltip logic isn't duplicated.
+function SaveIndicator({ saveState, lastSavedAt, showText }: { saveState: SaveState; lastSavedAt: number | null; showText: boolean }) {
+    return (
+        <div
+            style={S.saveChip}
+            title={lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
+        >
+            <span style={{ ...S.saveDot, background: saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
+            {showText && <span>{saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>}
+        </div>
+    );
 }
 
 // The sheet's name belongs in the bar, next to the logo — that is where a document's
@@ -124,6 +146,14 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
     const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu'>(null);
     const [shareFlash, setShareFlash] = useState<'full' | 'template' | null>(null);
     const barRef = useRef<HTMLDivElement>(null);
+    // The row that actually holds the shedable content — separate from barRef because the
+    // bar itself grows a second (fixed 28px) line at stage 2+, which must NOT count toward
+    // the overflow measurement.
+    const contentRef = useRef<HTMLDivElement>(null);
+    const stage = useShedStages(barRef, contentRef, STAGE_COUNT);
+    const iconOnly = stage >= 1;
+    const nameInRow = stage < 2;
+    const foldedIntoMenu = stage >= 3;
 
     // Close any open dropdown on outside click / Escape. A fixed backdrop can't be used here:
     // the `.mac-vibrant` bar has backdrop-filter, which traps position:fixed to the bar instead
@@ -172,7 +202,7 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
     };
 
     return (
-        <div ref={barRef} className="mac-vibrant topbar" style={S.bar}>
+        <div ref={barRef} className="mac-vibrant topbar" style={S.bar} data-stage={stage}>
             <input ref={menuFileRef} type="file" accept=".rekenraak,application/json,.json" style={{ display: 'none' }} onChange={handleImportFile} />
             {/* Three zones, each the width of the column beneath it, so every control sits
                 physically above the thing it changes. The panel tab strips live here rather
@@ -182,31 +212,47 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
                 logo is a grid track of its own so it stays centred whatever the two
                 groups weigh. The panel tabs are NOT here — they live in the panel
                 headers, which run to the top of the window alongside this bar. */}
-            <div style={S.zones}>
+            <div ref={contentRef} style={S.zones}>
               <div style={S.groupLeft}>
-                {/* Toevoegen first: it is the sidebar's twin, so it sits hard against it. */}
-                <IconButton
-                    icon={LayoutGrid}
-                    label="Meerdere oefeningen tegelijk kiezen en toevoegen"
-                    visibleLabel="Oefeningen toevoegen"
-                    onClick={() => setMassAddOpen(true)}
-                    variant="secondary"
-                />
+                {/* Toevoegen first: it is the sidebar's twin, so it sits hard against it.
+                    Folds into the Meer menu at stage 3 — see the menu body below. */}
+                {!foldedIntoMenu && (
+                    <IconButton
+                        icon={LayoutGrid}
+                        label="Meerdere oefeningen tegelijk kiezen en toevoegen"
+                        visibleLabel={iconOnly ? undefined : 'Oefeningen toevoegen'}
+                        onClick={() => setMassAddOpen(true)}
+                        variant="secondary"
+                    />
+                )}
 
                 {/* One "Meer" menu instead of a ≡ and a ⚙ side by side: two unlabelled
                     icons that both opened a list of app-level things was a guess the
-                    teacher had to make. Everything app-level now lives behind one word. */}
+                    teacher had to make. Everything app-level now lives behind one word.
+                    Never folds itself — it's the fold target for stage 3. */}
                 <div style={S.menuWrap}>
                     <IconButton
                         icon={List}
                         label="Meer: werkbladen, bestand, delen, instellingen"
-                        visibleLabel="Meer"
+                        visibleLabel={iconOnly ? undefined : 'Meer'}
                         onClick={() => setMenu(menu === 'menu' ? null : 'menu')}
                         dataTour="menu"
                     />
                     {menu === 'menu' && (
                         <>
                             <div className="ui-menu" style={{ ...S.menu, left: 0, right: 'auto', minWidth: '230px' }}>
+                                {foldedIntoMenu && (
+                                    <>
+                                        <div style={S.sectionLabel}>Snel</div>
+                                        <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setMassAddOpen(true); }}>
+                                            <LayoutGrid size={15} /> Oefeningen toevoegen
+                                        </button>
+                                        <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
+                                            <HelpIcon size={15} /> Uitleg
+                                        </button>
+                                        <div style={S.menuDivider} />
+                                    </>
+                                )}
                                 <div style={S.sectionLabel}>Werkbladen</div>
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('mijn-bladen'); }}>
                                     <FolderOpen size={15} /> Mijn bladen
@@ -276,27 +322,34 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
                     )}
                 </div>
 
-                <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel="Uitleg" onClick={() => onOpenHelp?.()} />
+                {!foldedIntoMenu && (
+                    <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel={iconOnly ? undefined : 'Uitleg'} onClick={() => onOpenHelp?.()} />
+                )}
 
               </div>
 
-              {/* Middle track: wordmark plus the save status directly to its right. That
-                  leaves the space LEFT of the logo free for user hints later. */}
+              {/* Middle track: sheet name + autosave status. The beta chip is the cheapest
+                  thing to shed (stage 1); the name+dot are the last things in the row to
+                  go (stage 2) because they're the only thing here that identifies the
+                  document — at that point they reappear as a thin line under the bar
+                  (see .topbar-line2 below) instead of disappearing outright. */}
               <div style={S.centreTrack}>
-                <span className="bar-beta" style={S.betaChip} title="RekenRaak is nog in ontwikkeling — bewaar je bladen ook als bestand.">beta</span>
-                <SheetTitle title={headerTitle} onChange={(t) => updateHeader({ titel: t })} />
-                <div
-                    style={S.saveChip}
-                    title={lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
-                >
-                    <span style={{ ...S.saveDot, background: saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
-                    <span className="bar-save-text">{saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>
-                </div>
+                {!iconOnly && (
+                    <span style={S.betaChip} title="RekenRaak is nog in ontwikkeling — bewaar je bladen ook als bestand.">beta</span>
+                )}
+                {nameInRow && (
+                    <>
+                        <SheetTitle title={headerTitle} onChange={(t) => updateHeader({ titel: t })} />
+                        <SaveIndicator saveState={saveState} lastSavedAt={lastSavedAt} showText={!iconOnly} />
+                    </>
+                )}
               </div>
 
               <div style={S.groupRight}>
 
-                <div className="bar-undo" style={S.group}>
+                {/* Undo/redo were already icon-only before this — nothing to shed here at
+                    any stage, so no data-stage gate is needed on this group. */}
+                <div style={S.group}>
                     <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={doUndo} disabled={!canUndo} />
                     <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={doRedo} disabled={!canRedo} />
                 </div>
@@ -304,7 +357,7 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
                 <IconButton
                     icon={Sparkles}
                     label="Alle niet-vergrendelde blokken opnieuw genereren"
-                    visibleLabel="Genereer alles"
+                    visibleLabel={iconOnly ? undefined : 'Genereer alles'}
                     onClick={() => hasBlocks && generateAllBlocks()}
                     disabled={!hasBlocks}
                     variant="secondary"
@@ -316,18 +369,19 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
                 <IconButton
                     icon={showSolutions ? EyeOff : Eye}
                     label={showSolutions ? 'Oplossingen verbergen' : 'Oplossingen tonen'}
-                    visibleLabel="Oplossingen"
+                    visibleLabel={iconOnly ? undefined : 'Oplossingen'}
                     onClick={() => setShowSolutions(!showSolutions)}
                     variant={showSolutions ? 'active' : 'neutral'}
                 />
 
-                {/* Afdrukken — single button; choose worksheet vs worksheet+solutions */}
+                {/* Afdrukken — single button; choose worksheet vs worksheet+solutions.
+                    Keeps its accent fill (variant="primary") at every stage — it's the one
+                    primary action — but its label sheds like everything else at stage 1. */}
                 <div style={S.menuWrap}>
                     <IconButton
                         icon={Printer}
                         label="Afdrukken (Ctrl+P)"
-                        visibleLabel="Afdrukken"
-                        className="keep-label"
+                        visibleLabel={iconOnly ? undefined : 'Afdrukken'}
                         onClick={() => setMenu(menu === 'print' ? null : 'print')}
                         variant="primary"
                         dataTour="print"
@@ -357,6 +411,16 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
               </div>
             </div>
 
+            {/* Stage 2+: the name and autosave dot left the row above (it stopped fitting)
+                and reappear here as a thin line instead of vanishing outright — it is
+                still the document's identity. `.topbar-line2` styling lives in index.css. */}
+            {!nameInRow && (
+                <div className="topbar-line2 no-print">
+                    <SheetTitle title={headerTitle} onChange={(t) => updateHeader({ titel: t })} />
+                    <SaveIndicator saveState={saveState} lastSavedAt={lastSavedAt} showText={false} />
+                </div>
+            )}
+
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
             {baseOpen && <BaseSettingsModal onClose={() => setBaseOpen(false)} />}
             {curriculumOpen && <CurriculumBuilderModal onClose={() => setCurriculumOpen(false)} />}
@@ -367,8 +431,11 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
 const S = {
     bar: {
         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'stretch',
-        // SYNC: --bar-h is what .panel-head uses, so the three column headers share a baseline.
-        height: 'var(--bar-h)',
+        // SYNC: --bar-h is what .panel-head uses, so the three column headers share a
+        // baseline. minHeight, not height: stage 2+ adds a second (fixed 28px) line below
+        // the button row, which the fixed three-column headers elsewhere don't grow with —
+        // an accepted trade-off at the narrow widths where that stage fires.
+        minHeight: 'var(--bar-h)',
         padding: '0 var(--sp-5)',
         /* Full-width header: background from .mac-vibrant (frosted), separated by a bottom hairline.
            position+zIndex so the dropdown menus paint ABOVE the panel body below (which is a
@@ -387,14 +454,16 @@ const S = {
     // each other instead of truncating itself. With a 0 floor the title's own maxWidth +
     // ellipsis absorbs the squeeze. (No overflow:hidden on the groups — it would clip the
     // dropdown menus, which are absolutely positioned inside them.)
-    zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)' } as React.CSSProperties,
+    // flexShrink: 0 keeps the button row at its natural (--bar-h-driven) height even
+    // when the second line (stage 2+) shares the now-auto-height bar with it.
+    zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)', minHeight: 'var(--bar-h)', flexShrink: 0 } as React.CSSProperties,
     groupLeft: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'start', paddingRight: 'var(--sp-5)' } as React.CSSProperties,
     groupRight: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'end', paddingLeft: 'var(--sp-5)' } as React.CSSProperties,
     centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap', minWidth: 0, justifyContent: 'center' } as React.CSSProperties,
-    group: { display: 'flex', gap: 'var(--sp-1)', marginRight: 'var(--sp-2)' } as React.CSSProperties,
+    group: { display: 'flex', gap: 'var(--sp-1)', marginRight: 'var(--sp-2)', flexShrink: 0 } as React.CSSProperties,
     spacer: { flex: 1, minWidth: 0 } as React.CSSProperties,
     vsep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--separator)', flexShrink: 0 } as React.CSSProperties,
-    menuWrap: { position: 'relative', display: 'flex' } as React.CSSProperties,
+    menuWrap: { position: 'relative', display: 'flex', flexShrink: 0 } as React.CSSProperties,
     backdrop: { position: 'fixed', inset: 0, zIndex: 30 } as React.CSSProperties,
     menu: {
         position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 31,
@@ -418,11 +487,11 @@ const S = {
     titleBtn: {
         maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         background: 'transparent', border: '1px solid transparent', borderRadius: 'var(--radius-sm)',
-        padding: '3px 8px', cursor: 'text',
+        padding: '3px 8px', cursor: 'text', flexShrink: 0,
         fontSize: 'var(--text-md)', fontWeight: 600, fontFamily: 'inherit',
     } as React.CSSProperties,
     titleInput: {
-        width: '320px', padding: '3px 8px',
+        width: '320px', padding: '3px 8px', flexShrink: 0,
         background: 'var(--bg-surface-2)', border: '1px solid var(--accent)',
         borderRadius: 'var(--radius-sm)', color: 'var(--text-main)', outline: 'none',
         fontSize: 'var(--text-md)', fontWeight: 600, fontFamily: 'inherit',
@@ -431,12 +500,12 @@ const S = {
     sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
     shareFlash: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
     betaChip: {
-        padding: '2px 8px', borderRadius: 'var(--radius-pill)',
+        padding: '2px 8px', borderRadius: 'var(--radius-pill)', flexShrink: 0,
         border: '1px solid var(--separator)', color: 'var(--text-muted)',
         fontSize: 'var(--text-xs)', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'default',
     } as React.CSSProperties,
     saveChip: {
-        display: 'flex', alignItems: 'center', gap: '6px',
+        display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0,
         fontSize: 'var(--text-xs)', color: 'var(--text-muted)', whiteSpace: 'nowrap', cursor: 'default',
     } as React.CSSProperties,
     saveDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, transition: 'background var(--dur) var(--ease-out)' } as React.CSSProperties,

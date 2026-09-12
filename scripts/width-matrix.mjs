@@ -1,6 +1,6 @@
 // Width matrix: how narrow can every exercise type actually go?
 //
-// The LAYOUT tiers in src/config/blockLayout.ts were measured once, on the old 6-unit
+// The LAYOUT tiers in src/services/layout/blockLayout.ts were measured once, on the old 6-unit
 // grid, and never revisited — 31 of ~59 types were pinned to full width. Viewers read
 // their cell width from BlockWidthContext and SHRINK rather than overflow, so "does it
 // fit" cannot be answered by looking: it needs the two numbers this harness reads back.

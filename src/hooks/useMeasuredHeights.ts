@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { MathBlock } from '../services/math/types';
-import type { WidthUnits } from '../config/blockLayout';
+import type { WidthUnits } from '../services/layout/blockLayout';
 
 // Real cell heights, fed back into the packer. The budget alone could not be right: it is
 // derived from settings while the CSS grid lays out actual content, so an over-estimate

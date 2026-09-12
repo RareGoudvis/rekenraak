@@ -16,7 +16,7 @@ interface Props {
         toolbar/panel buttons everywhere else stay on the one shared height. */
     boxSize?: number;
     dataTour?: string;            // forwarded as data-tour (spotlight onboarding anchor)
-    /** Extra classes. `keep-label` opts a button out of the top bar's label collapse. */
+    /** Extra classes. */
     className?: string;
 }
 
@@ -48,8 +48,9 @@ export default function IconButton({
             onBlur={() => setEmphasized(false)}
         >
             <Icon size={size} weight={iconWeight(variant, emphasized)} aria-hidden="true" />
-            {/* Class, not just style: the top bar hides these below ~1500px, where the
-                bar only gets window width minus the two fixed panels (652px). */}
+            {/* The top bar (useShedStages) omits `visibleLabel` entirely once it needs the
+                room back, rather than hiding this span via CSS — so there's nothing to
+                collapse here; a caller either wants the label or doesn't. */}
             {visibleLabel && <span className="ui-btn-label" style={labelTextStyle}>{visibleLabel}</span>}
         </button>
     );
@@ -68,6 +69,10 @@ function computeStyle(variant: IconButtonVariant, disabled: boolean, hasLabel: b
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
+        // Never let the flex row silently compress this button below its label's natural
+        // width — that used to squeeze the label instead of the row genuinely overflowing,
+        // which is invisible to a scrollWidth-based overflow check (useShedStages).
+        flexShrink: 0,
         gap: hasLabel ? 'var(--sp-2)' : 0,
         // One control height across the toolbar and both panel headers (index.css) —
         // unless a caller (the compact block-controls rail) asks for its own box size.

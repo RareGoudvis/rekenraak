@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { minWidthUnits, tierWidthPx } from '../../config/blockLayout';
+import { minWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
 import { useIntrinsicWidth } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';

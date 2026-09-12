@@ -439,37 +439,11 @@ textarea:focus-visible,
 }
 
 /* ── Top-bar collapse ────────────────────────────────────────────────────────
-   The bar is NOT full-width: it sits in the centre column between two fixed panels
-   (286px + 366px), so it only ever gets `100vw - 652px`. With every label showing it
-   wants ~1490px, which is why a 14" laptop at 1295px had its three zones overprinting
-   each other rather than merely looking tight.
-
-   So it sheds content in a fixed order, cheapest first, and each tier assumes the ones
-   above it have already fired. Afdrukken keeps its word at every width -- it is the one
-   primary action -- via .keep-label. Nothing here is a "nice to have on small screens":
-   without it the bar is unusable, not cramped. */
-
-/* Tier 1 — the two bits of reassurance. The save DOT survives; only its wording goes. */
-@media screen and (max-width: 1700px) {
-  .topbar .bar-beta, .topbar .bar-save-text { display: none; }
-}
-/* Tier 2 — secondary buttons drop to icon-only. Their `title` still names them, and the
-   padding has to come off with the label or the buttons stay label-width and still
-   collide. */
-@media screen and (max-width: 1500px) {
-  .topbar .ui-icon-btn:not(.keep-label) .ui-btn-label { display: none; }
-  .topbar .ui-icon-btn:not(.keep-label) { padding: 0; min-width: var(--control-h); gap: 0; }
-}
-/* Tier 3 — the sheet name. It is the last thing in the centre track to go, because it is
-   the only thing there that identifies the document. */
-@media screen and (max-width: 1240px) {
-  .topbar .bar-title { display: none; }
-}
-/* Tier 4 — undo/redo. Safe to lose last: Ctrl+Z and Ctrl+Y still work, and by here the
-   alternative is overlap. */
-@media screen and (max-width: 1120px) {
-  .topbar .bar-undo { display: none; }
-}
+   Superseded 2026-09-12 (Part 7h): fixed viewport-width breakpoints shed labels long
+   before the bar actually needed the room (a 1483px window already read icon-only for
+   most buttons). Replaced by src/hooks/useShedStages.ts, driven off the bar's own
+   rendered width vs. its content's rendered width — see TopBar.tsx (`data-stage` on
+   `.topbar`) and the `.topbar-line2` rule at the end of this section. */
 
 /* Second-level tabs (Blad -> Koptekst/Opdrachten/Voettekst). Deliberately NOT a second
    .seg-group: two identical pill rows stacked gave no clue which level you were
@@ -580,6 +554,22 @@ textarea:focus-visible,
     font-size: 14px;
     color: #aaa;
   }
+}
+
+/* ── Top-bar stage 2+ line (Part 7h) ─────────────────────────────────────────
+   The sheet name + autosave dot, evicted from the button row once useShedStages
+   decides they no longer fit (data-stage >= 2 on .topbar). Fixed 28px so it never
+   itself becomes a second thing the bar has to measure for overflow — TopBar.tsx
+   keeps it out of the ResizeObserver's contentRef on purpose. */
+.topbar-line2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  height: 28px;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  border-top: 1px solid var(--separator);
 }
 
 /* === PRINT === */

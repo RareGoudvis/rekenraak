@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { PAGE_BODY_PX } from '../../config/blockLayout';
+import { PAGE_BODY_PX } from '../../services/layout/blockLayout';
 import { FIT_FLOOR, nextZoom } from './scaledBlockFit';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 

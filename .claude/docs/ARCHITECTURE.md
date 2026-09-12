@@ -455,7 +455,7 @@ PDF page count.**
 
 ### Budget first, then measure
 
-[blockLayout.ts](../../src/config/blockLayout.ts) — the page grid and the per-type cost data.
+[blockLayout.ts](../../src/services/layout/blockLayout.ts) — the page grid and the per-type cost data.
 
 - A page is `COL_UNITS` (**4**: vol / ½ / ¼) wide by `ROW_BUDGET` tall. The grid was 6 units
   (vol / ½ / ⅓) until 2026-09-12; a third of an A4 was too narrow to read and 31 of 59 types
@@ -544,7 +544,7 @@ spanning its `widthUnits`.
 
 ### Measuring the width tiers
 
-`minWidth` / `rowUnits` / `perRowFull` in [blockLayout.ts](../../src/config/blockLayout.ts)
+`minWidth` / `rowUnits` / `perRowFull` in [blockLayout.ts](../../src/services/layout/blockLayout.ts)
 are not guesses: [scripts/width-matrix.mjs](../../scripts/width-matrix.mjs) drives the
 running dev server through `window.__rekenraak` (a DEV-only hook in
 [main.tsx](../../src/main.tsx): `typeIds`, `leaves`, `seed`, `measured`, `addBlockFromType`,
@@ -747,7 +747,6 @@ src/
 │   ├── appstructure.ts          # APP_STRUCTURE tree (Domain→Subdomain→ExerciseType)
 │   ├── exerciseRegistry.ts      # REGISTRY: typeId → {exerciseField, generate, defaultConstraints, defaultCount} (pure data)
 │   ├── exerciseUI.tsx           # EXERCISE_UI: typeId → {Viewer, Config} (React)
-│   ├── blockLayout.ts           # page grid (COL_UNITS × ROW_BUDGET) + MEASURED per-type rowUnits/minWidth + cost fns (§9)
 │   ├── baseSettings.ts          # BaseSettings + baseApply (global snapshot-on-add, §13)
 │   ├── exerciseCatalog.ts       # flat addable catalog for mass-add / curriculum (§13)
 │   ├── instructionPresets.ts    # quick-pick opdracht-titel texts + defaultInstructionFor()
@@ -772,6 +771,7 @@ src/
 │   ├── persistence.ts           # autosave / presets / share-link / file import-export (§10)
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
+│   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts,validators.ts}   # validators.ts is EMPTY
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
