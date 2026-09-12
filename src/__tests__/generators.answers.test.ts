@@ -188,6 +188,18 @@ describe('splitsen', () => {
         }
     });
 
+    test.each(['basic', 'splitsboom', 'verliefde-harten'])('%s never gives away 0 or the whole total', (layout) => {
+        for (let run = 0; run < RUNS; run++) {
+            const block = makeBlock('splitsen', { constraints: { layout, maxGetal: layout === 'verliefde-harten' ? 10 : 1000 } });
+            for (const ex of generateFor(block) as SplitsenExercise[]) {
+                for (const pair of ex.pairs) {
+                    expect(pair.given, `${ex.total} -> ${pair.given}`).toBeGreaterThan(0);
+                    expect(pair.given, `${ex.total} -> ${pair.given}`).toBeLessThan(ex.total);
+                }
+            }
+        }
+    });
+
     test('positie-* place breakdowns reconstruct the total', () => {
         for (const layout of ['positie-tabel', 'positie-benen', 'positie-math']) {
             const block = makeBlock('splitsen', { constraints: { layout, maxGetal: 1000 } });

@@ -168,6 +168,29 @@ function generateGiven(total: number, mask: Record<string, boolean>, dp: number)
     return Math.max(0, Math.min(givenScaled, totalScaled)) / scale;
 }
 
+// A given that is 0 or the whole total makes the split trivial (393 = 393 + __) and is
+// never what a teacher wants, so retry past those — but only when the total actually
+// leaves room for a non-trivial part (totalScaled >= 2).
+function pickGiven(total: number, mask: Record<string, boolean>, dp: number, usedGivens: Set<number>): number {
+    const scale = Math.pow(10, dp);
+    const totalScaled = Math.round(total * scale);
+    const trivialOk = totalScaled < 2;
+    let given = generateGiven(total, mask, dp);
+    let attempts = 0;
+    // Two reasons to retry: a duplicate row inside the same box, or a trivial 0 / total split.
+    while (attempts < 100 && (usedGivens.has(Math.round(given * scale))
+        || (!trivialOk && (Math.round(given * scale) <= 0 || Math.round(given * scale) >= totalScaled)))) {
+        given = generateGiven(total, mask, dp);
+        attempts++;
+    }
+    // The mask may make a non-trivial given unreachable (e.g. only 'E' on a round total):
+    // fall back to a free value in [1, total-1] rather than printing the trivial split.
+    if (!trivialOk && (Math.round(given * scale) <= 0 || Math.round(given * scale) >= totalScaled)) {
+        given = randInt(1, totalScaled - 1) / scale;
+    }
+    return given;
+}
+
 // Recompute one exercise's derived fields when a teacher types a new top number
 // (manual edit in the inspector). Keeps layout-specific extras (blankSide, etc.).
 export function recomputeSplitsenExercise(block: MathBlock, ex: SplitsenExercise, newTotal: number): Partial<SplitsenExercise> {
@@ -195,9 +218,7 @@ export function recomputeSplitsenExercise(block: MathBlock, ex: SplitsenExercise
     const usedGivens = new Set<number>();
     const pairs: Array<{ given: number; answer: number }> = [];
     for (let j = 0; j < pairsPerItem; j++) {
-        let given: number; let attempts = 0;
-        do { given = generateGiven(total, c.operand2Mask || {}, dp); attempts++; }
-        while (usedGivens.has(Math.round(given * scale)) && attempts < 100);
+        const given = pickGiven(total, c.operand2Mask || {}, dp, usedGivens);
         usedGivens.add(Math.round(given * scale));
         pairs.push({ given, answer: (totalScaled - Math.round(given * scale)) / scale });
     }
@@ -271,12 +292,7 @@ export function generateSplitsenExercises(block: MathBlock): SplitsenExercise[] 
         const pairs: Array<{ given: number; answer: number }> = [];
 
         for (let j = 0; j < pairsPerItem; j++) {
-            let given: number;
-            let attempts = 0;
-            do {
-                given = generateGiven(total, operand2Mask, dp);
-                attempts++;
-            } while (usedGivens.has(Math.round(given * scale)) && attempts < 100);
+            const given = pickGiven(total, operand2Mask, dp, usedGivens);
 
             usedGivens.add(Math.round(given * scale));
             const answerScaled = totalScaled - Math.round(given * scale);
