@@ -544,9 +544,9 @@ export default function App() {
                   {/* Controls render for every block but stay hidden until the block is hovered or
                       active (CSS in index.css) — discoverable without selecting, no App re-render. */}
                   <div className="no-print block-controls" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
-                      {/* Drag handle first: it is the control people reach for, and a
-                          plain div (not IconButton) so the native drag starts on the
-                          element that carries `draggable` instead of on a <button>. */}
+                      {/* Drag handle first: it is the control people reach for. A plain
+                          div (not IconButton) so a press on it never reads as a button
+                          click; the drag itself is pointer-event based (useSheetDnd). */}
                       <div
                         className="ui-icon-btn sheet-drag-handle"
                         role="button"
@@ -769,7 +769,6 @@ export default function App() {
                   data-block-id={item.block.id}
                   data-width={item.width}
                   className={!firstInRow && docSettings.showColumnDividers ? 'col-divider' : undefined}
-                  {...dnd.cellProps(item.block.id)}
                   style={{
                     gridRow: rowIndex + 1,
                     gridColumn: `${start + 1} / span ${item.width}`,
