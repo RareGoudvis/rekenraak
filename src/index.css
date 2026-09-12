@@ -283,8 +283,11 @@ textarea:focus-visible,
   content: '';
   position: absolute;
   left: calc(var(--col-gap, 12px) / -2);
-  top: 0;
-  bottom: 0;
+  /* Start ON the opdracht title, not above it: the cell's block wrapper pads 16px and
+     margins 4px before the title row, and a rule that began at the cell edge read as a
+     line through the whole page rather than between two blocks. */
+  top: 20px;
+  bottom: 16px;
   width: 1px;
   background: #d4d4d4;
   pointer-events: none;

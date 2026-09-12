@@ -23,6 +23,10 @@ interface Props {
     contentGap: number;
     /** Gap between blocks, from docSettings.blockSpacing. */
     blockSpacing: number;
+    /** Horizontal gap. Wider than blockSpacing when the column rule is on, so the rule
+        has air on both sides; the ROW gap stays blockSpacing, which is what the packer
+        budgets against. */
+    columnGap: number;
     children: ReactNode;
     onBackgroundClick?: () => void;
     /** Clicking the printed header / footer opens their settings — the sheet is the
@@ -36,7 +40,7 @@ interface Props {
 }
 
 export default function PageSheet({
-    index, total, header, footer, contentGap, blockSpacing, children, onBackgroundClick,
+    index, total, header, footer, contentGap, blockSpacing, columnGap, children, onBackgroundClick,
     onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure,
 }: Props) {
     const bodyRef = useRef<HTMLDivElement>(null);
@@ -93,7 +97,7 @@ export default function PageSheet({
                 {onHeaderClick && <span className="no-print sheet-zone-hint">Koptekst aanpassen</span>}
             </div>
 
-            <div ref={bodyRef} className="page-sheet-body" style={{ gap: `${blockSpacing}px` }}>
+            <div ref={bodyRef} className="page-sheet-body" style={{ rowGap: `${blockSpacing}px`, columnGap: `${columnGap}px` }}>
                 {children}
             </div>
 

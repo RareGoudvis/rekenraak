@@ -212,11 +212,14 @@ export default function App() {
   // padding, split over COL_UNITS column units, minus the gaps a spanning cell does NOT
   // get. Without this the viewers keep assuming a full-width 625px and lay out grids that
   // overflow their cell — the exact failure phase B exists to prevent.
+  // A column rule needs air on both sides or the right-hand block's digits sit flush
+  // against it. The COLUMN gap widens by 16px when the rule is on; the ROW gap keeps
+  // blockSpacing, so the packer's vertical budget is untouched.
+  const colGapPx = (docSettings.blockSpacing ?? 12) + (docSettings.showColumnDividers ? 16 : 0);
   const cellWidthPx = (units: number) => {
-    const CONTENT = 688;                       // 794 - 2 * 53px page padding
-    const gap = docSettings.blockSpacing ?? 12;
-    const unit = (CONTENT - 3 * gap) / 4;      // 4 units, 3 gaps between them
-    return Math.floor(unit * units + gap * (units - 1));
+    const CONTENT = 688;                              // 794 - 2 * 53px page padding
+    const unit = (CONTENT - 3 * colGapPx) / 4;        // 4 units, 3 gaps between them
+    return Math.floor(unit * units + colGapPx * (units - 1));
   };
 
   // Pagination is decided by the packer, which pages a first time on its settings-derived
@@ -601,6 +604,7 @@ export default function App() {
               total={packedPages.length}
               contentGap={docSettings.headerContentGap ?? 12}
               blockSpacing={docSettings.blockSpacing ?? 12}
+              columnGap={colGapPx}
               onBackgroundClick={() => setActiveSelection('document')}
               onHeaderClick={() => openBladCard('koptekst')}
               onFooterClick={() => openBladCard('voettekst')}
@@ -652,8 +656,8 @@ export default function App() {
                     gridColumn: `${start + 1} / span ${item.width}`,
                     minWidth: 0,
                     position: 'relative',
-                    // The rule is centred in the gutter, which IS blockSpacing.
-                    ['--col-gap' as string]: `${docSettings.blockSpacing ?? 12}px`,
+                    // The rule is centred in the gutter, which is the COLUMN gap.
+                    ['--col-gap' as string]: `${colGapPx}px`,
                   }}
                 >
                   {renderBlock(item, blockOrder[item.block.id] ?? 0)}

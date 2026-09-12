@@ -17,12 +17,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- **Column divider draws badly** (owner screenshot 2026-09-12): the rule starts above the
-  opdracht titles and the right-hand block's digits sit flush against it — no breathing room
-  on the right. `index.css .col-divider::before` is `top:0; bottom:0` in the gutter; it should
-  start at the title row and the gutter needs to look centred (check `cellWidthPx` vs the real
-  grid gap, and whether the left cell's content is inset by the 4px block margin while the
-  right one isn't).
 - **More types should fit ¼ width** (owner ask 2026-09-12). Today only klok, geld-herkennen,
   temperatuur, maateenheid (+ cijferen since this note, + 3 furniture) go to ¼; ordenen,
   splitsen, procenten, breuken-rangschikken only with a single exercise. Width-matrix
