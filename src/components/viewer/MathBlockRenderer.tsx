@@ -14,7 +14,9 @@ interface Props {
 
 const styles = {
     solutionText: { color: '#e11d48', padding: '0 4px', fontSize: '18px', fontWeight: 700 } as React.CSSProperties,
-    mathDottedLine: { borderBottom: '1.5px solid #000', width: '40px', margin: '0 6px', display: 'inline-block', height: '16px' } as React.CSSProperties,
+    // The fill-in blank shrinks with the cell: 40px inside 6px margins at full width, a
+    // narrower line in a quarter-width block where those 52px are a third of the row.
+    mathDottedLine: (w = 40, m = 6): React.CSSProperties => ({ borderBottom: '1.5px solid #000', width: `${w}px`, margin: `0 ${m}px`, display: 'inline-block', height: '16px' }),
     mathInput: { width: '70px', textAlign: 'center', fontSize: '17px', fontFamily: 'Azeret Mono, monospace', border: '1px solid transparent', background: 'transparent', outline: 'none', color: '#000', padding: 0 } as React.CSSProperties,
     fractionWrapper: { display: 'inline-flex', flexDirection: 'column', alignItems: 'center', margin: '0 4px', fontSize: '15px' } as React.CSSProperties,
     fractionTop: { borderBottom: '1.5px solid #000', padding: '0 4px', minWidth: '24px', textAlign: 'center' } as React.CSSProperties,
@@ -23,7 +25,14 @@ const styles = {
     exerciseRow: { display: 'flex', alignItems: 'flex-end', fontSize: '17px', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
     // widthPx applies only to the inline-short blank; inline-long and stepped keep their
     // full-width work line, which is writing room rather than an answer-sized slot.
-    workLine: (layout: string | undefined, widthPx = 75): React.CSSProperties => ({ borderBottom: '1.5px solid #000', minWidth: '55px', width: layout === 'inline-long' ? '100%' : (layout === 'stepped' ? '100%' : `${widthPx}px`) }),
+    // In a tight cell the line is FLEXIBLE instead of fixed: it takes whatever the sum
+    // leaves it, down to a 40px floor. A fixed answer-sized blank there would push the row
+    // past the cell edge, and a line that runs off the paper is worse than a short one.
+    workLine: (layout: string | undefined, widthPx = 75, tight = false): React.CSSProperties => ({
+        borderBottom: '1.5px solid #000',
+        minWidth: `${Math.min(tight ? 40 : 55, widthPx)}px`,
+        width: (tight || layout === 'inline-long' || layout === 'stepped') ? '100%' : `${widthPx}px`,
+    }),
     emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
 };
 
@@ -33,6 +42,14 @@ function FractionDisplay({ val, color }: { val: Fraction; color?: string }) {
 
 export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
+    // Third sizing tier. A quarter-width cell is 163px (688 − 3×12 gap, ÷4), and the
+    // "narrow" tier below still spends ~60px on column boxes and operator gaps that the
+    // writing line needs. Below 200px everything that is air rather than ink gives way:
+    // no column floors, 6px gaps, a blank sized to the answer, one exercise per row.
+    const TIGHT_MAX_PX = 200;
+    const tight = A4_CONTENT_PX < TIGHT_MAX_PX;
+    const BLANK_W = tight ? 30 : 40;
+    const BLANK_M = tight ? 3 : 6;
     const blocks = useWorksheetStore((state) => state.blocks);
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
 
@@ -44,7 +61,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 if (isFraction(val)) return <span style={styles.solutionText}><FractionDisplay val={val} /></span>;
                 return <span style={styles.solutionText}>{formatMathNumber(val)}</span>;
             }
-            return <div style={styles.mathDottedLine}></div>;
+            return <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
         }
 
         if (isFraction(val)) return <FractionDisplay val={val} />;
@@ -125,7 +142,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // units and a block of thousands got the same line. It now follows the block's
     // WIDEST answer — one width for the whole block, never per exercise: a blank sized
     // to its own answer would tell the child how many digits to expect.
-    const answerLinePx = Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
+    // In a tight cell the same blank is sized to the answer alone: 50px is still three
+    // handwritten digits, and every px above that comes straight out of the operands.
+    const answerLinePx = tight
+        ? Math.max(50, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
+        : Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
     const cellPx = Math.max(85, Math.ceil(maxChars * CHAR_PX) + 6);
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
     // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
@@ -150,14 +171,14 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // Keep the classic 2-up look as long as two rows fit with at least a 20px gap;
     // the gap then stretches up to the traditional 50px when there's room.
     const COL_GAP_MIN = 20;
-    const twoUpShort = isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
+    const twoUpShort = !tight && isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
     // 2-up Stappen is for numbers under 1 000 only: 3 mono chars, so no thousands separator.
     // A pure width test would also let 4-digit operands through, but then the tussenstap line
     // is too short to write on. Met-rest rows ignore layout entirely and the compenseren
     // tussenstap line is far wider than a workline — both stay 1-up. Longer term chains stay
     // eligible and fall out on width alone.
     const STEPPED_2UP_MAX_CHARS = 3;
-    const twoUpStepped = layout === 'stepped' && !anyRemainder && !compScaffoldOn
+    const twoUpStepped = !tight && layout === 'stepped' && !anyRemainder && !compScaffoldOn
         && maxChars <= STEPPED_2UP_MAX_CHARS
         && steppedRowMin * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
     const gridCols = (twoUpShort || twoUpStepped) ? 2 : 1;
@@ -177,16 +198,22 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // operand's last digit still lands on the block's column edge because the unit -- not
     // the operand -- carries the fixed width. Before this the operand sat in a fixed
     // right-aligned cell, so all of its slack fell between the sign and the digits.
-    const OP_GLYPH_PX = 13;   // one Azeret Mono glyph at 17px, rounded up
-    const OP_TERM_GAP = 8;    // sign -> its operand
-    const TERM_UNIT_GAP = 12; // operand -> the sign of the next one
+    const OP_GLYPH_PX = tight ? 12 : 13;  // one Azeret Mono glyph at 17px (11.06), rounded up
+    const OP_TERM_GAP = tight ? 6 : 8;   // sign -> its operand
+    const TERM_UNIT_GAP = tight ? 6 : 12; // operand -> the sign of the next one
+    // Air around the "=" and between the sum and its answer column. Halved when tight:
+    // 4 gaps x 4px is what buys `532 + 342 = ____` its place inside a 163px quarter.
+    const EQ_GAP = tight ? 6 : 10;
+    const ANSWER_GAP = tight ? 4 : 8;
     const termPx = (chars: number) => Math.ceil(chars * CHAR_PX) + 4;
     // The fill-in blank (mathDottedLine) is 40px wide inside 6px margins; a column box
     // narrower than that would let a blank overrun its neighbour. Fractions size
     // themselves, so a block containing one keeps intrinsic widths throughout.
-    const MISSING_BLANK_PX = 52;
+    const MISSING_BLANK_PX = BLANK_W + 2 * BLANK_M;
+    // Tight drops the alignment floor entirely: the box is exactly as wide as the block's
+    // longest operand, so columns still line up but nothing is reserved for air.
     const termBoxPx = anyFractionTerm ? undefined
-        : Math.max(anyMissingTerm ? MISSING_BLANK_PX : (compact ? 24 : 40), termPx(maxChars));
+        : Math.max(anyMissingTerm ? MISSING_BLANK_PX : (tight ? 0 : compact ? 24 : 40), termPx(maxChars));
     return (
         <FragmentableGrid
             cols={gridCols}
@@ -208,13 +235,15 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         : <div style={{ borderBottom: '1.5px solid #000', width: '30px', height: '18px', display: 'inline-block' }} />;
                     return (
                         <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '17px', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
-                            <span>(</span>{helpBlank}<span>)</span>
-                            <span style={{ margin: '0 4px' }}>{formatMathNumber(ex.operands[0] as number)}</span>
+                            {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
+                                cell it is the first thing to go, so the division itself still fits. */}
+                            {!tight && <><span>(</span>{helpBlank}<span>)</span></>}
+                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>{formatMathNumber(ex.operands[0] as number)}</span>
                             <span>:</span>
-                            <span style={{ margin: '0 4px' }}>{formatMathNumber(ex.operands[1] as number)}</span>
-                            <span style={{ margin: '0 4px' }}>=</span>
+                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>{formatMathNumber(ex.operands[1] as number)}</span>
+                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>=</span>
                             {qPart}
-                            <span style={{ margin: '0 4px', fontStyle: 'italic' }}>r</span>
+                            <span style={{ margin: `0 ${tight ? 2 : 4}px`, fontStyle: 'italic' }}>r</span>
                             {rPart}
                         </div>
                     );
@@ -242,7 +271,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 }
                 const compBlank = (v: number) => showSolutions
                     ? <span style={{ color: '#e11d48', padding: '0 4px' }}>{formatMathNumber(v)}</span>
-                    : <div style={styles.mathDottedLine}></div>;
+                    : <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
 
                 return (
                     <div key={ex.id} style={{
@@ -257,7 +286,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         {/* In stepped mode the row is flex-start so extra lines flow below; pin the
                             operand to the first 32px line height + flex-end so it sits ON line 1's
                             baseline instead of floating above it. */}
-                        <div style={{ display: 'flex', alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
+                        <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
                             {ex.operands.map((operand, i) => {
                                 const chars = typeof operand === 'number' ? formatMathNumber(operand).length : 0;
                                 // Unit = the sign plus its operand. The first operand has no sign, so it
@@ -279,10 +308,10 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             })}
                         </div>
 
-                        <div style={{ ...(layout !== 'inline-short' && { flex: 1 }), display: 'flex', flexDirection: 'column', marginLeft: '8px', gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
+                        <div style={{ ...((tight || layout !== 'inline-short') && { flex: 1, minWidth: 0 }), display: 'flex', flexDirection: 'column', marginLeft: `${ANSWER_GAP}px`, gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
                             {compParts && (
                                 <div style={{ display: 'flex', alignItems: 'center', height: '32px', whiteSpace: 'nowrap' }}>
-                                    <span style={{ marginRight: '10px' }}>=</span>
+                                    <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
                                     <span>{formatMathNumber(ex.operands[0] as number)}</span>
                                     <span style={{ margin: '0 6px' }}>{ex.operator === '-' ? '−' : '+'}</span>
                                     {compBlank(compParts.tienvoud)}
@@ -293,13 +322,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             {!anyMissing ? (
                                 Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: '32px' }}>
-                                        <span style={{ marginRight: '10px' }}>=</span>
-                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(layout, answerLinePx)}></div>}
+                                        <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
+                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(layout, answerLinePx, tight)}></div>}
                                     </div>
                                 ))
                             ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '24px' }}>
-                                    <span style={{ marginRight: '10px' }}>=</span>
+                                    <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
                                     {renderGiven(ex.answer)}
                                 </div>
                             )}
