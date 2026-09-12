@@ -123,6 +123,9 @@ interface WorksheetState {
     clearDraftBlocks: () => void;
     toggleBlockLock: (id: string) => void;
     duplicateBlock: (id: string) => void;
+    // Cut one block in two after the atIndex-th exercise. Layout, not difficulty: it
+    // survives the curriculum lock, exactly like reorder/swap.
+    splitBlock: (id: string, atIndex: number) => void;
     generateAllBlocks: () => void;
     loadWorksheet: (file: { blocks: MathBlock[]; header: HeaderData; footer: FooterData; docSettings: DocSettings; baseSettings?: BaseSettings; curriculum?: CurriculumLock; selectedGrade?: Leerjaar | null }) => void;
     updateHeader: (updates: Partial<HeaderData>) => void;
@@ -460,6 +463,40 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         clone.locked = false;
         const newBlocks = [...state.blocks.slice(0, index + 1), clone, ...state.blocks.slice(index + 1)];
         return { blocks: newBlocks, activeBlockId: clone.id, ...pushHistory(state._history, state._historyIndex, newBlocks) };
+    }),
+
+    // "Blok splitsen": the teacher decides where a block breaks, because the packer never
+    // will — a block that does not fit the rest of a page moves whole to the next one and
+    // leaves a blank tail. Splitting after exercise N puts the first N on the page that
+    // still has room and the rest in a second block right behind it.
+    //
+    // Manual on purpose (owner decision 2026-09-12): an automatic split would renumber
+    // and re-title a teacher's opdracht behind their back.
+    splitBlock: (id, atIndex) => set((state) => {
+        const index = state.blocks.findIndex(b => b.id === id);
+        if (index === -1) return state;
+        const src = state.blocks[index];
+        // Sheet furniture (a rule, writing lines, a grid) holds no exercises to cut.
+        if (src.typeId.startsWith('layout-')) return state;
+        // The registry names the array this type generates into — never hardcode 'exercises'.
+        const field = REGISTRY[src.typeId]?.exerciseField;
+        if (!field) return state;
+        const items = (src[field] as unknown[] | undefined) ?? [];
+        // Nothing to split below two, and the cut must leave both halves non-empty.
+        if (items.length < 2) return state;
+        if (!Number.isInteger(atIndex) || atIndex < 1 || atIndex > items.length - 1) return state;
+
+        const head: MathBlock = { ...src, [field]: items.slice(0, atIndex), numberOfExercises: atIndex };
+        const tail: MathBlock = JSON.parse(JSON.stringify({ ...src, [field]: items.slice(atIndex) }));
+        const used = new Set(state.blocks.map(b => b.id));
+        do { tail.id = Math.random().toString(36).substring(2, 9); } while (used.has(tail.id));
+        tail.numberOfExercises = items.length - atIndex;
+        // The page break belonged to where the ORIGINAL block started; the tail must be
+        // free to flow onto the next page, which is the whole point of splitting.
+        tail.pageBreakBefore = false;
+
+        const newBlocks = [...state.blocks.slice(0, index), head, tail, ...state.blocks.slice(index + 1)];
+        return { blocks: newBlocks, ...pushHistory(state._history, state._historyIndex, newBlocks) };
     }),
 }));
 

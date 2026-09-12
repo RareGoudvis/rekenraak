@@ -135,3 +135,104 @@ describe('updateBlockSettings under the curriculum lock', () => {
         expect(useWorksheetStore.getState().blocks[0].constraints.maxGetal).toBe(constraints.maxGetal);
     });
 });
+
+// "Blok splitsen" is layout: the teacher cuts a block that does not fit the rest of a page.
+describe('splitBlock', () => {
+    const first = () => useWorksheetStore.getState().blocks[0];
+    beforeEach(() => seed(1));
+
+    test('moves the exercises after the cut into a second block', () => {
+        const src = first();
+        const count = src.exercises.length;
+        expect(count).toBeGreaterThan(2);
+        useWorksheetStore.getState().splitBlock(src.id, 2);
+        const [head, tail] = useWorksheetStore.getState().blocks;
+        expect(head.exercises.map(e => e.id)).toEqual(src.exercises.slice(0, 2).map(e => e.id));
+        expect(tail.exercises.map(e => e.id)).toEqual(src.exercises.slice(2).map(e => e.id));
+    });
+
+    test('both halves carry the right numberOfExercises', () => {
+        const src = first();
+        const count = src.exercises.length;
+        useWorksheetStore.getState().splitBlock(src.id, 2);
+        const [head, tail] = useWorksheetStore.getState().blocks;
+        expect(head.numberOfExercises).toBe(2);
+        expect(tail.numberOfExercises).toBe(count - 2);
+        expect(head.exercises.length + tail.exercises.length).toBe(count);
+    });
+
+    test('the new block gets its own id and keeps the settings and the instruction', () => {
+        const src = first();
+        useWorksheetStore.getState().splitBlock(src.id, 1);
+        const [head, tail] = useWorksheetStore.getState().blocks;
+        expect(head.id).toBe(src.id);
+        expect(tail.id).not.toBe(src.id);
+        expect(tail.typeId).toBe(src.typeId);
+        expect(tail.instructionText).toBe(src.instructionText);
+        expect(tail.constraints).toEqual(src.constraints);
+        expect(tail.widthUnits).toBe(src.widthUnits);
+    });
+
+    test('the tail never inherits the page break — it has to be free to flow', () => {
+        const src = first();
+        useWorksheetStore.getState().updateBlockSettings(src.id, { pageBreakBefore: true });
+        useWorksheetStore.getState().splitBlock(src.id, 2);
+        const [head, tail] = useWorksheetStore.getState().blocks;
+        expect(head.pageBreakBefore).toBe(true);
+        expect(tail.pageBreakBefore).toBe(false);
+    });
+
+    test('refuses an index outside 1..count-1', () => {
+        const src = first();
+        const count = src.exercises.length;
+        for (const bad of [0, -1, count, count + 5, 1.5]) {
+            useWorksheetStore.getState().splitBlock(src.id, bad);
+            expect(useWorksheetStore.getState().blocks).toHaveLength(1);
+        }
+    });
+
+    test('refuses a block with fewer than two exercises', () => {
+        const src = first();
+        useWorksheetStore.getState().setExercises(src.id, 'exercises', src.exercises.slice(0, 1));
+        useWorksheetStore.getState().splitBlock(src.id, 1);
+        expect(useWorksheetStore.getState().blocks).toHaveLength(1);
+    });
+
+    test('refuses sheet furniture, which holds no exercises', () => {
+        useWorksheetStore.getState().clearBlocks();
+        useWorksheetStore.getState().addBlockFromType('layout-schrijflijnen', 'Schrijflijnen');
+        const { id } = first();
+        useWorksheetStore.getState().splitBlock(id, 1);
+        expect(useWorksheetStore.getState().blocks).toHaveLength(1);
+    });
+
+    test('pushes history, so undo puts the block back together', () => {
+        const src = first();
+        useWorksheetStore.getState().splitBlock(src.id, 2);
+        expect(useWorksheetStore.getState().blocks).toHaveLength(2);
+        useWorksheetStore.getState().undo();
+        const back = useWorksheetStore.getState().blocks;
+        expect(back).toHaveLength(1);
+        expect(back[0].exercises).toHaveLength(src.exercises.length);
+    });
+
+    test('survives the curriculum lock — splitting is layout, not difficulty', () => {
+        const src = first();
+        useWorksheetStore.setState({ curriculum: { locked: true, allowedTypes: [{ typeId: 'hr-std-optellen', label: 'Optellen' }] } });
+        useWorksheetStore.getState().splitBlock(src.id, 2);
+        expect(useWorksheetStore.getState().blocks).toHaveLength(2);
+        useWorksheetStore.setState({ curriculum: null });
+    });
+
+    test('splits a type whose exercises live in another registry field', () => {
+        useWorksheetStore.getState().clearBlocks();
+        useWorksheetStore.getState().addBlockFromType('klok-kloklezen', 'Klok');
+        const src = first();
+        const count = (src.clockExercises ?? []).length;
+        expect(count).toBeGreaterThan(1);
+        useWorksheetStore.getState().splitBlock(src.id, 1);
+        const [head, tail] = useWorksheetStore.getState().blocks;
+        expect(head.clockExercises).toHaveLength(1);
+        expect(tail.clockExercises).toHaveLength(count - 1);
+    });
+});
