@@ -95,6 +95,8 @@ export default function App() {
   const activeSelectionId = useWorksheetStore((state) => state.activeBlockId);
   const view = useWorksheetStore((state) => state.view);
   const setBlockPages = useWorksheetStore((state) => state.setBlockPages);
+  // Harness escape hatch: measure a type at a width its tier forbids (scripts/width-matrix.mjs).
+  const debugIgnoreMinWidth = useWorksheetStore((state) => state.debugIgnoreMinWidth);
 
   const removeBlock = useWorksheetStore((state) => state.removeBlock);
   const moveBlockUp = useWorksheetStore((state) => state.moveBlockUp);
@@ -230,8 +232,9 @@ export default function App() {
       blockSpacingPx: docSettings.blockSpacing ?? 12,
       heightPxOf: measured.heightPxOf,
       pageBudgetPx: measured.pageBudgetPx,
+      ignoreMinWidth: debugIgnoreMinWidth,
     }),
-    [blocks, docSettings.blockSpacing, measured],
+    [blocks, docSettings.blockSpacing, measured, debugIgnoreMinWidth],
   );
   // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
   // separator never renumbers the exercises after it.

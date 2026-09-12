@@ -489,6 +489,25 @@ spanning its `widthUnits`.
 - Real **page numbers** are possible for the first time (the browser cannot count pages from
   HTML/CSS; the packer knows index and total).
 
+### Measuring the width tiers
+
+`minWidth` / `rowUnits` / `perRowFull` in [blockLayout.ts](../../src/config/blockLayout.ts)
+are not guesses: [scripts/width-matrix.mjs](../../scripts/width-matrix.mjs) drives the
+running dev server through `window.__rekenraak` (a DEV-only hook in
+[main.tsx](../../src/main.tsx): `typeIds`, `addBlockFromType`, `updateBlockSettings`,
+`clearBlocks`, `setIgnoreMinWidth`, `getState`) and renders **every registry type at widths
+4 / 2 / 1, at its default count and at a single exercise** — 354 cells. For each it reads
+the content's overflow ratio (`scrollWidth / clientWidth` of the ScaledBlock inner div),
+the applied zoom and the cell's `offsetHeight`, writes `scripts/width-matrix.result.json`
+and screenshots every cell. A width is allowed when **overflow ≤ 1.005 and zoom ≥ 0.85**;
+the screenshots then veto what passes numerically but is illegible (the veto list, with a
+reason each, lives in the `LAYOUT` header comment). The harness needs the store's UI-only
+`debugIgnoreMinWidth` flag — measuring a tier with the tier clamp on would only measure the
+clamp — which it sets through `setIgnoreMinWidth` and the packer reads as
+`PackOptions.ignoreMinWidth`. Cell heights are `sheetZoom`-invariant to ~1px (verified by
+re-running at a 1000px viewport); the types that differ more regenerate random content
+between runs.
+
 ### Reordering on the sheet
 
 [useSheetDnd.ts](../../src/hooks/useSheetDnd.ts) — native HTML5 drag-and-drop, no
@@ -626,6 +645,7 @@ src/
 │   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (waits 2 rAF for the repack)
 │   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
 │   └── useSheetDnd.ts           # sheet drag-and-drop state: handle dragstart, top/bottom drop zones (§9)
+│  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/

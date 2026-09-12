@@ -92,6 +92,10 @@ interface WorksheetState {
     saveState: SaveState;            // autosave status for the top-bar tracker (UI-only)
     lastSavedAt: number | null;      // epoch ms of last successful autosave (UI-only)
     blockPages: Record<string, number>;  // measured page index per block (for Overzicht page-break markers; UI-only)
+    // Width-matrix harness only (window.__rekenraak.setIgnoreMinWidth): place blocks at the
+    // width they ask for instead of clamping to minWidthUnits. Measuring the tiers with the
+    // clamp on would only measure the clamp. UI-only: no history, never autosaved.
+    debugIgnoreMinWidth: boolean;
     _history: MathBlock[][];
     _historyIndex: number;
     addBlockFromType: (typeId: string, label: string, overrideConstraints?: Record<string, unknown>) => void;
@@ -141,6 +145,7 @@ interface WorksheetState {
     setView: (view: WorksheetView) => void;
     setSidebarPreview: (on: boolean) => void;
     setBlockPages: (pages: Record<string, number>) => void;
+    setIgnoreMinWidth: (on: boolean) => void;
     /** Both return the id of the block the step changed, so the caller can scroll to it. */
     undo: () => string | null;
     redo: () => string | null;
@@ -196,6 +201,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     saveState: 'idle',
     lastSavedAt: null,
     blockPages: {},
+    debugIgnoreMinWidth: false,
     _history: [[]],
     _historyIndex: 0,
 
@@ -424,6 +430,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     setShowSolutions: (show) => set({ showSolutions: show }),
     setView: (view) => set({ view }),
     setBlockPages: (pages) => set({ blockPages: pages }),
+    setIgnoreMinWidth: (on) => set({ debugIgnoreMinWidth: on }),
     setSidebarPreview: (on) => {
         try { localStorage.setItem(SIDEBAR_PREVIEW_KEY, on ? '1' : '0'); } catch { /* ignore */ }
         set({ sidebarPreview: on });

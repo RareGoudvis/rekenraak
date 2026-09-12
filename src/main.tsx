@@ -28,6 +28,7 @@ if (import.meta.env.DEV) {
       useWorksheetStore.getState().addBlockFromType(typeId, label ?? typeId),
     updateBlockSettings: (id: string, updates: Record<string, unknown>) =>
       useWorksheetStore.getState().updateBlockSettings(id, updates),
+    setIgnoreMinWidth: (on: boolean) => useWorksheetStore.getState().setIgnoreMinWidth(on),
     clearBlocks: () => useWorksheetStore.getState().clearBlocks(),
     getState: () => useWorksheetStore.getState(),
   };

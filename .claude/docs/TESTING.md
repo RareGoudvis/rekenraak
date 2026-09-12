@@ -81,3 +81,36 @@ changes in the store, change it here too.**
 
 Print output, the page-break CSS, layout measurement and anything that needs a real
 browser. Those stay manual (Ctrl+P, margins None, 100%) — see the review checklist.
+
+## The width matrix (`scripts/width-matrix.mjs`)
+
+Not a vitest suite — it drives a real browser, because the question it answers ("can this
+type render at half or quarter width?") only has a DOM answer. It is how the `minWidth`,
+`rowUnits` and `perRowFull` numbers in
+[blockLayout.ts](../../src/config/blockLayout.ts) were obtained; re-run it after a viewer
+change that moves a block's width or height.
+
+```bash
+npm run dev                                     # in another terminal; it drives the dev server
+node scripts/width-matrix.mjs                   # 1600px viewport (sheetZoom = 1)
+node scripts/width-matrix.mjs --width 1000      # sheetZoom < 1, to re-prove height invariance
+node scripts/width-matrix.mjs --shots C:/tmp/wm --url http://localhost:5174/
+```
+
+Every registry type × width {4, 2, 1} × count {default, 1} = 354 cells, about 4 minutes.
+Output: `scripts/width-matrix.result.json` (committed — the tiers are derived from it),
+a `.csv` of the same rows (gitignored) and one PNG per cell in `~/Downloads/width-matrix/`.
+Read the numbers with the rule **overflow ≤ 1.005 and zoom ≥ 0.85**, then look at the
+screenshots before widening a tier: several types pass numerically and are unreadable (see
+the veto list in the `LAYOUT` header comment).
+
+It needs the DEV-only `window.__rekenraak` hook from `src/main.tsx`, so it cannot run
+against a production build.
+
+## Driving drag-and-drop from Playwright
+
+Native HTML5 drag-and-drop does **not** reliably start from `page.mouse.down()` + `move()`
+in headless Chromium — the run hangs. Dispatch the events instead: one shared
+`new DataTransfer()`, `dragstart` on `.sheet-drag-handle`, then `dragover` and `drop` on the
+target `[data-block-id]` cell with a `clientY` inside the half you mean. Assert the result
+with `window.__rekenraak.getState().blocks.map(b => b.id)`.
