@@ -18,8 +18,11 @@ import {
 //      the teacher picked, and silently overflowing the cell is the one thing we must not do.
 //   3. It goes in the current row if the width still fits, otherwise a new row starts.
 //   4. If the row would push the page past its budget, the page ends first.
-//   5. A block taller than a whole page is marked `spans` and keeps the old behaviour of
-//      flowing across pages through FragmentableGrid; the next block starts fresh.
+//   5. A block taller than a whole page is marked `spans`: it gets a page to itself and
+//      the next block starts fresh. `spans` does NOT mean it flows — `.page-sheet` is a
+//      fixed 297mm box with overflow:hidden in print too, so the tail is cut off on paper
+//      exactly as it is on screen (verified with a print-media PDF, 2026-09-12). The page
+//      says so in its banner; the cure is splitting the block or `constraints.fitToPage`.
 
 export interface PackedBlock {
     block: MathBlock;
@@ -27,7 +30,7 @@ export interface PackedBlock {
     width: WidthUnits;
     /** Budgeted height in row units. */
     height: number;
-    /** Taller than one page: it flows across pages instead of being placed in a row. */
+    /** Taller than one page: it gets a page of its own (and is clipped at the bottom). */
     spans: boolean;
     /** The chosen width was too narrow for the settings and had to be widened. */
     promoted: boolean;

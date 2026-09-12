@@ -61,6 +61,10 @@ export default function PageSheet({
     // Blank space under the last block. Measured, never estimated — it is the whole
     // reason the teacher is being offered a split.
     const [tailPx, setTailPx] = useState(0);
+    // True when ONE cell is taller than the whole body. That is a different problem from
+    // a page that is a little over budget — moving the block elsewhere cannot fix it —
+    // so the banner says something different about it.
+    const [oversizeBlock, setOversizeBlock] = useState(false);
 
     useLayoutEffect(() => {
         const el = bodyRef.current;
@@ -79,13 +83,16 @@ export default function PageSheet({
             const bodyRect = el.getBoundingClientRect();
             const zoom = (bodyRect.width / (PAGE_W_PX - 2 * 53)) || 1;
             let lastBottom = bodyRect.top;
+            let tallestCell = 0;
             for (const child of Array.from(el.children) as HTMLElement[]) {
                 const blockId = child.dataset.blockId;
                 const width = Number(child.dataset.width);
                 if (!blockId || !(width > 0)) continue;
                 onCellMeasure?.(blockId, width, child.offsetHeight);
+                tallestCell = Math.max(tallestCell, child.offsetHeight);
                 lastBottom = Math.max(lastBottom, child.getBoundingClientRect().bottom);
             }
+            setOversizeBlock(tallestCell > el.clientHeight + 2);
             const tail = (bodyRect.bottom - lastBottom) / zoom;
             setTailPx(prev => (Math.abs(prev - tail) > 2 ? Math.round(tail) : prev));
         };
@@ -105,7 +112,9 @@ export default function PageSheet({
             {overflowPx > 0 && (
                 <div className="no-print page-sheet-warn" onClick={(e) => e.stopPropagation()}>
                     <WarningCircle size={15} weight="bold" aria-hidden="true" />
-                    <span>Deze pagina loopt {overflowPx}px over. Verklein een blok, zet het smaller, of verplaats het.</span>
+                    <span>{oversizeBlock
+                        ? 'Dit blok is groter dan één pagina. Ook op papier wordt het afgesneden — splits het blok (✂) of zet "Verklein om op één pagina te passen" aan.'
+                        : `Deze pagina loopt ${overflowPx}px over. Verklein een blok, zet het smaller, of verplaats het.`}</span>
                 </div>
             )}
 
