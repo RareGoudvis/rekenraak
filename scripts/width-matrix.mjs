@@ -36,8 +36,10 @@ const arg = (name, fallback) => {
 const URL = arg('url', 'http://localhost:5173/');
 const VIEWPORT_W = Number(arg('width', 1600));
 const SHOTS = arg('shots', join(homedir(), 'Downloads', 'width-matrix'));
-const SUFFIX = VIEWPORT_W === 1600 ? '' : `.w${VIEWPORT_W}`;
+const SUFFIX = (VIEWPORT_W === 1600 ? '' : `.w${VIEWPORT_W}`) + (arg('only', '') ? '.only' : '');
 const WIDTHS = [4, 2, 1];
+// --only a,b,c runs a subset; its results go to a separate file so the full run stays intact.
+const ONLY = arg('only', '').split(',').filter(Boolean);
 
 mkdirSync(SHOTS, { recursive: true });
 
@@ -56,7 +58,7 @@ await page.waitForFunction(() => !!window.__rekenraak);
 // Measuring the tiers with the tier clamp on would only measure the clamp.
 await page.evaluate(() => window.__rekenraak.setIgnoreMinWidth(true));
 
-const typeIds = await page.evaluate(() => window.__rekenraak.typeIds);
+const typeIds = (await page.evaluate(() => window.__rekenraak.typeIds)).filter(t => ONLY.length === 0 || ONLY.includes(t));
 const rows = [];
 
 for (const typeId of typeIds) {

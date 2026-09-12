@@ -23,6 +23,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   try/catch → silently empty block. Should surface a toast/inline "kon geen oefeningen maken"
   (2026-09-12, surfaced by the MAB crash).
 
+## Generators (cont.)
+
+- **splitsen can give a part equal to the total** (width-matrix shot 2026-09-12: 393 → 393 + __,
+  answer 0). `splitsenGenerator` should exclude 0 / total as a given unless a "met nul" option
+  is on.
+
 ## Layout / sheet
 
 - **Column divider draws badly** (owner screenshot 2026-09-12): the rule starts above the

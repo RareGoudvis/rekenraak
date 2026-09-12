@@ -29,3 +29,4 @@ dist-ssr
 # Width-matrix output: the JSON summary is committed, the per-run CSV and the
 # screenshots (~/Downloads/width-matrix) are not.
 scripts/*.csv
+scripts/width-matrix.result.only*

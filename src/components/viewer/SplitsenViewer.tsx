@@ -1,5 +1,6 @@
 import type { MathBlock, SplitsenExercise } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth, fitCols } from './BlockWidthContext';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 
@@ -18,6 +19,8 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     const layout: string = c.layout || 'basic';
     const exercises: SplitsenExercise[] = block.splitsenExercises || [];
     const gap = block.verticalSpacing || 14;
+    // Column counts follow the cell width (¼ stacks 1-up), never a fixed 2/4/5-up grid.
+    const availableWidth = useBlockWidth();
     const rowHeight: number = c.rowHeight || 28;
 
     if (exercises.length === 0) {
@@ -29,7 +32,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     }
 
     if (layout === 'basic') {
-        const cols = Math.min(exercises.length, 4);
+        const cols = fitCols(availableWidth, 130, Math.min(exercises.length, 4), gap);
         return (
             <FragmentableGrid
                 cols={cols}
@@ -43,7 +46,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     }
 
     if (layout === 'splitsboom') {
-        const cols = Math.min(exercises.length, 4);
+        const cols = fitCols(availableWidth, 130, Math.min(exercises.length, 4), gap + 10);
         return (
             <FragmentableGrid
                 cols={cols}
@@ -62,7 +65,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         );
         return (
             <FragmentableGrid
-                cols={2}
+                cols={fitCols(availableWidth, 150, 2, gap)}
                 columnGap={gap}
                 rowGap={gap}
                 items={allItems.map(item => (
@@ -87,7 +90,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         // 5-up: 5 × 120px hearts ≈ the full printable width (~625px), no dead right margin.
         return (
             <FragmentableGrid
-                cols={Math.min(allItems.length, 5)}
+                cols={fitCols(availableWidth, 120, Math.min(allItems.length, 5), gap)}
                 columnGap={gap}
                 rowGap={gap}
                 justifyItems="center"
@@ -107,7 +110,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
 
     if (layout === 'positie-benen') {
         return (
-            <FragmentableGrid cols={2} columnGap={gap} rowGap={gap + 10}
+            <FragmentableGrid cols={fitCols(availableWidth, 150, 2, gap)} columnGap={gap} rowGap={gap + 10}
                 items={exercises.map(ex => <PositieBenenItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
         );
     }

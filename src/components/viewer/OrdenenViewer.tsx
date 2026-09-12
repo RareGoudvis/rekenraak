@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { MathBlock, Fraction } from '../../services/math/types';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
+import { useBlockWidth, fitCols } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
 
 interface Props {
@@ -65,6 +66,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
     const exercises = block.ordenenExercises || [];
     const patchExercise = useWorksheetStore((s) => s.patchExercise);
     const gap = block.verticalSpacing || 14;
+    const availableWidth = useBlockWidth();
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -79,7 +81,8 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
     // Short series (default 3 numbers) only fill ~40% of the width one-up; place them
     // two-up so the right half isn't dead. Longer series stay full width (they wrap).
     const maxLen = Math.max(...exercises.map((e) => e.display.length));
-    const ordCols = maxLen <= 4 ? 2 : 1;
+    // …but never wider than the cell allows: a ¼ block stacks them.
+    const ordCols = maxLen <= 4 ? fitCols(availableWidth, 150, 2, 28) : 1;
 
     return (
         <FragmentableGrid
