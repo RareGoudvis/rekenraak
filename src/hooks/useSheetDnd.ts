@@ -13,12 +13,14 @@ import { useWorksheetStore } from '../store/useWorksheetStore';
 // DRAG_THRESHOLD_PX of movement, so a plain click still selects the block and the
 // viewers' click-to-edit fields keep working; the handle starts dragging immediately.
 //
-// A drop does one of two things, chosen by which half of the target was hit:
-//   top    → 'before': the dragged block is inserted in front of the target
-//   bottom → 'swap'  : the two blocks trade places
-// Halves rather than sides, and both labelled on screen (SheetDropZones): a full-width
-// block has no meaningful left/right, and geometry alone never explains what a drop does.
-export type DropZone = 'before' | 'swap';
+// A drop does one of three things, chosen by which third of the target was hit:
+//   top third    → 'before': the dragged block is inserted in front of the target
+//   middle third → 'swap'  : the two blocks trade places
+//   bottom third → 'after' : the dragged block is inserted right after the target
+// Thirds rather than sides, and all three labelled on screen (SheetDropZones): a
+// full-width block has no meaningful left/right, and geometry alone never explains
+// what a drop does.
+export type DropZone = 'before' | 'swap' | 'after';
 
 export interface SheetDnd {
     /** Block currently being dragged, or null. */
@@ -101,8 +103,11 @@ export function useSheetDnd(): SheetDnd {
         const from = indexOf(fromId);
         const to = indexOf(targetId);
         if (from < 0 || to < 0) return true;
-        // Inserting before the block that already follows me leaves the order untouched.
-        return z === 'before' && to === from + 1;
+        // Inserting before the block that already follows me, or after the block that
+        // already precedes me, leaves the order untouched.
+        if (z === 'before') return to === from + 1;
+        if (z === 'after') return to === from - 1;
+        return false;
     }, [fromId, indexOf]);
 
     const onPointerDown = useCallback((blockId: string, fromHandle: boolean) => (e: ReactPointerEvent<HTMLElement>) => {
@@ -132,9 +137,11 @@ export function useSheetDnd(): SheetDnd {
             let next: DropZone | null = null;
             if (cell && id) {
                 // Pointer and rect are both in visual (sheet-zoomed) space, so the zoom
-                // cancels out and no correction is needed.
+                // cancels out and no correction is needed. Thirds: top → before, middle →
+                // swap, bottom → after.
                 const rect = cell.getBoundingClientRect();
-                next = state.y < rect.top + rect.height / 2 ? 'before' : 'swap';
+                const frac = (state.y - rect.top) / rect.height;
+                next = frac < 1 / 3 ? 'before' : frac > 2 / 3 ? 'after' : 'swap';
             }
             if (id !== state.overId) { state.overId = id; setOverId(id); }
             if (next !== state.zone) { state.zone = next; setZone(next); }
@@ -248,11 +255,16 @@ function applyDrop(draggedId: string, targetId: string, z: DropZone) {
     if (from < 0 || to < 0) return;
     if (z === 'swap') {
         s.swapBlocks(draggedId, targetId);
-    } else {
+    } else if (z === 'before') {
         if (to === from + 1) return;                     // no-op: already in front of it
         // reorderBlocks splices the block OUT first, so every later index shifts down by
         // one — without this a downward drag lands after the target.
         s.reorderBlocks(from, to > from ? to - 1 : to);
+    } else {
+        if (to === from - 1) return;                      // no-op: already right after it
+        // Mirror of 'before': inserting after the target means landing ON the target's
+        // (post-splice) index when dragging up, or one past it when dragging down.
+        s.reorderBlocks(from, from < to ? to : to + 1);
     }
     // The block can land on another page; select it and bring it into view so the teacher
     // does not lose track of what they just moved.

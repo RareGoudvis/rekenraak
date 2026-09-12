@@ -298,16 +298,20 @@ textarea:focus-visible,
 /* The block being dragged fades so the drop targets read as the live layer. */
 .print-block.is-dragging { opacity: 0.5; }
 
-/* Two labelled halves over a drop target. pointer-events:none is load-bearing — the
-   overlay must not intercept elementFromPoint(), which is how the hook decides which
-   cell (and which half of it) the pointer is over. */
+/* Three labelled thirds over a drop target: before / swap / after. pointer-events:none
+   is load-bearing — the overlay must not intercept elementFromPoint(), which is how the
+   hook decides which cell (and which third of it) the pointer is over.
+   container-type:size scopes a container query to this overlay's own (block-matched)
+   height, so a very short block can hide the label TEXT below ~66px (3 × 22px) rather
+   than clip it — the icon alone still reads. */
 .sheet-dropzones {
   position: absolute; inset: 0; z-index: 9;
   display: flex; flex-direction: column;
-  pointer-events: none; border-radius: var(--radius-md); overflow: hidden;
+  pointer-events: none; border-radius: var(--radius-md); overflow: visible;
+  container-type: size; container-name: sheet-dropzones;
 }
 .sheet-dropzone {
-  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
   border: 1px dashed var(--separator);
   transition: background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
 }
@@ -318,9 +322,12 @@ textarea:focus-visible,
   padding: 2px 8px; border-radius: var(--radius-pill);
   background: var(--bg-panel); color: var(--text-muted);
   font-family: var(--font-ui); font-size: 11px; font-weight: 600;
-  opacity: 0.75;
+  opacity: 0.75; white-space: nowrap;
 }
 .sheet-dropzone.is-on .sheet-dropzone-label { background: var(--accent); color: var(--accent-on); opacity: 1; }
+@container sheet-dropzones (max-height: 66px) {
+  .sheet-dropzone-label-text { display: none; }
+}
 
 /* Landing flash after undo/redo scrolls to the block a history step changed. Screen
    only: .no-print would not help here since the class lands on a printed block, so the

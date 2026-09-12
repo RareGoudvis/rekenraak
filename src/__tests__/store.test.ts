@@ -7,8 +7,8 @@ import { regenerateBlock } from '../services/generateDispatch';
 // The store touches localStorage (autosave, sidebar-preview) on import, hence jsdom.
 //
 // Order is the one thing sheet drag-and-drop changes, so this suite pins exactly what a
-// drop does: the top half INSERTS before the target, the bottom half SWAPS the two, and
-// both are one undoable step.
+// drop does: the top third INSERTS before the target, the middle third SWAPS the two,
+// the bottom third INSERTS after the target, and all three are one undoable step.
 const ids = () => useWorksheetStore.getState().blocks.map(b => b.id);
 
 function seed(n: number) {
@@ -52,9 +52,13 @@ describe('swapBlocks', () => {
 describe('reorderBlocks with the drop compensation', () => {
     beforeEach(() => seed(3));
 
-    // What the sheet's "Hier invoegen" zone computes: to > from ? to - 1 : to.
+    // What the sheet's "Hierboven invoegen" zone computes: to > from ? to - 1 : to.
     const insertBefore = (from: number, to: number) =>
         useWorksheetStore.getState().reorderBlocks(from, to > from ? to - 1 : to);
+
+    // What the sheet's "Hieronder invoegen" zone computes: from < to ? to : to + 1.
+    const insertAfter = (from: number, to: number) =>
+        useWorksheetStore.getState().reorderBlocks(from, from < to ? to : to + 1);
 
     test('dragging the first block before the third leaves it in the middle', () => {
         const [a, b, c] = ids();
@@ -66,6 +70,34 @@ describe('reorderBlocks with the drop compensation', () => {
         const [a, b, c] = ids();
         insertBefore(2, 0);
         expect(ids()).toEqual([c, a, b]);
+    });
+
+    test('dragging the first block after the third leaves it at the end', () => {
+        const [a, b, c] = ids();
+        insertAfter(0, 2);
+        expect(ids()).toEqual([b, c, a]);
+    });
+
+    test('dragging the last block after the first puts it second', () => {
+        const [a, b, c] = ids();
+        insertAfter(2, 0);
+        expect(ids()).toEqual([a, c, b]);
+    });
+
+    // The no-op guard lives in useSheetDnd (it skips the store call entirely), but the
+    // compensation formula itself is also idempotent if that guard were ever missing:
+    // "after" onto the block right before you, or "before" onto the block right after
+    // you, both compute reorderBlocks(from, from), which the store already no-ops on.
+    test('dragging the middle block after the block right before it is a no-op', () => {
+        const before = ids();
+        insertAfter(1, 0);
+        expect(ids()).toEqual(before);
+    });
+
+    test('dragging the second block before the block right after it is a no-op', () => {
+        const before = ids();
+        insertBefore(1, 2);
+        expect(ids()).toEqual(before);
     });
 });
 

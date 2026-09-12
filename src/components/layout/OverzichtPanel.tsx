@@ -4,6 +4,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog } from '../../config/exerciseCatalog';
 import { DOMAIN_BY_TYPE } from '../../config/appstructure';
 import MassAddModal from '../massadd/MassAddModal';
+import type { DropZone } from '../../hooks/useSheetDnd';
 
 // Left-panel "Overzicht" tab: an outline of every block on the sheet with reorder
 // (drag + up/down), delete, page-break separators, and click-to-jump. Mirrors the
@@ -15,16 +16,18 @@ export default function OverzichtPanel() {
     const duplicateBlock = useWorksheetStore((s) => s.duplicateBlock);
     // up/down removed — reorder is drag-and-drop (DotsSixVertical handle).
     const reorderBlocks = useWorksheetStore((s) => s.reorderBlocks);
+    const swapBlocks = useWorksheetStore((s) => s.swapBlocks);
     const setActiveSelection = useWorksheetStore((s) => s.setActiveSelection);
     const blockPages = useWorksheetStore((s) => s.blockPages);
     const showScores = useWorksheetStore((s) => s.docSettings.showScores);
 
     const [dragIndex, setDragIndex] = useState<number | null>(null);
     const [overIndex, setOverIndex] = useState<number | null>(null);
+    const [overZone, setOverZone] = useState<DropZone | null>(null);
     const [massAddOpen, setMassAddOpen] = useState(false);
     // Ref as well as state: the pointer handlers run outside React's render, so they need
     // the live index the highlight is only a render behind on.
-    const dragRef = useRef<{ from: number; over: number | null; moved: boolean } | null>(null);
+    const dragRef = useRef<{ from: number; over: number | null; zone: DropZone | null; moved: boolean } | null>(null);
 
     // typeId → human label ("Optellen", "Splitsen", …) from the addable catalog.
     const labelByType = useMemo(() => {
@@ -41,20 +44,32 @@ export default function OverzichtPanel() {
         document.getElementById(`block-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
-    // Drop = insert BEFORE the row under the pointer. reorderBlocks splices the block out
-    // first, so every index after it shifts down by one — without the compensation a
-    // downward drag landed one place too far (after the target instead of before it).
-    const onDrop = (fromIndex: number, toIndex: number) => {
-        const dragIndex = fromIndex;
-        if (dragIndex !== toIndex) {
-            // The last row is the exception: "before the last block" would make the end of
-            // the bundle unreachable, so a downward drop onto it lands AFTER it.
-            const last = toIndex === blocks.length - 1 && toIndex > dragIndex;
-            const to = last ? toIndex : toIndex > dragIndex ? toIndex - 1 : toIndex;
-            if (to !== dragIndex) reorderBlocks(dragIndex, to);
+    // Three zones per row, same as the sheet drag (useSheetDnd): top third inserts
+    // before the target, the middle third swaps the two, the bottom third inserts
+    // after. This also replaces the old "drop on the last row appends" special case —
+    // that behaviour now falls straight out of the after-zone of the last row.
+    const onDrop = (fromIndex: number, toIndex: number, zone: DropZone) => {
+        if (fromIndex !== toIndex) {
+            if (zone === 'swap') {
+                swapBlocks(blocks[fromIndex].id, blocks[toIndex].id);
+            } else if (zone === 'before') {
+                if (toIndex !== fromIndex + 1) {
+                    // reorderBlocks splices the block out first, so every later index
+                    // shifts down by one — without this a downward drag lands after
+                    // the target instead of before it.
+                    reorderBlocks(fromIndex, toIndex > fromIndex ? toIndex - 1 : toIndex);
+                }
+            } else {
+                if (toIndex !== fromIndex - 1) {
+                    // Mirror of 'before': land on the target's post-splice index when
+                    // dragging up, or one past it when dragging down.
+                    reorderBlocks(fromIndex, fromIndex < toIndex ? toIndex : toIndex + 1);
+                }
+            }
         }
         setDragIndex(null);
         setOverIndex(null);
+        setOverZone(null);
     };
 
     // Pointer events, not native HTML5 drag-and-drop: an extension that hooks `dragstart`
@@ -66,7 +81,7 @@ export default function OverzichtPanel() {
         if (e.button !== 0 || dragRef.current) return;
         if ((e.target as HTMLElement).closest('button, input, a')) return;
         const startX = e.clientX, startY = e.clientY;
-        const state = { from: index, over: null as number | null, moved: false };
+        const state = { from: index, over: null as number | null, zone: null as DropZone | null, moved: false };
         dragRef.current = state;
 
         const onMove = (ev: PointerEvent) => {
@@ -79,7 +94,14 @@ export default function OverzichtPanel() {
             const hit = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
             const row = hit?.closest('[data-ov-index]') as HTMLElement | null;
             const over = row ? Number(row.dataset.ovIndex) : null;
+            let zone: DropZone | null = null;
+            if (row) {
+                const rect = row.getBoundingClientRect();
+                const frac = (ev.clientY - rect.top) / rect.height;
+                zone = frac < 1 / 3 ? 'before' : frac > 2 / 3 ? 'after' : 'swap';
+            }
             if (over !== state.over) { state.over = over; setOverIndex(over); }
+            if (zone !== state.zone) { state.zone = zone; setOverZone(zone); }
         };
         const stop = () => {
             window.removeEventListener('pointermove', onMove);
@@ -89,10 +111,10 @@ export default function OverzichtPanel() {
             dragRef.current = null;
         };
         const onUp = () => {
-            const { moved, over } = state;
+            const { moved, over, zone } = state;
             stop();
-            if (moved && over !== null) onDrop(index, over);
-            else { setDragIndex(null); setOverIndex(null); }
+            if (moved && over !== null && zone !== null) onDrop(index, over, zone);
+            else { setDragIndex(null); setOverIndex(null); setOverZone(null); }
             if (moved) {
                 // The pointerup that ended a drag must not also jump to the row it landed on.
                 const suppress = (ev: Event) => ev.stopPropagation();
@@ -100,12 +122,21 @@ export default function OverzichtPanel() {
                 setTimeout(() => window.removeEventListener('click', suppress, true), 0);
             }
         };
-        const onCancel = () => { stop(); setDragIndex(null); setOverIndex(null); };
+        const onCancel = () => { stop(); setDragIndex(null); setOverIndex(null); setOverZone(null); };
         const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape') onCancel(); };
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
         window.addEventListener('pointercancel', onCancel);
         window.addEventListener('keydown', onKey);
+    };
+
+    // Dropping in a zone that would leave the order unchanged: before on self or on the
+    // row right after it, after on self or on the row right before it, swap on self.
+    const isRowNoop = (from: number, to: number, zone: DropZone) => {
+        if (from === to) return true;
+        if (zone === 'before') return to === from + 1;
+        if (zone === 'after') return to === from - 1;
+        return false;
     };
 
     return (
@@ -123,6 +154,11 @@ export default function OverzichtPanel() {
                     const page = blockPages[block.id] ?? 0;
                     const prevPage = index > 0 ? (blockPages[blocks[index - 1].id] ?? 0) : 0;
                     const showBreak = block.pageBreakBefore || (index > 0 && page > prevPage);
+                    // Only light the zone up when it would actually move something —
+                    // a no-op drop (e.g. "before" onto the row right after the dragged
+                    // one) stays unhighlighted, same as the sheet's SheetDropZones.
+                    const isDropTarget = overIndex === index && dragIndex !== null && dragIndex !== index
+                        && overZone !== null && !isRowNoop(dragIndex, index, overZone);
                     return (
                     <div key={block.id}>
                         {showBreak && <div style={S.pageBreak}>— pagina {page + 1} —</div>}
@@ -135,7 +171,7 @@ export default function OverzichtPanel() {
                                 ...S.row,
                                 ...S.rowRail(DOMAIN_BY_TYPE[block.typeId]?.name),
                                 ...(block.id === activeBlockId ? S.rowActive : {}),
-                                ...(overIndex === index && dragIndex !== null && dragIndex !== index ? S.rowOver : {}),
+                                ...(isDropTarget ? S.rowOverZone(overZone!) : {}),
                                 ...(dragIndex === index ? { opacity: 0.5 } : {}),
                             }}
                         >
@@ -200,7 +236,15 @@ const S = {
     // sides and swallow the domain rail on the left, so a selected row lost the one thing
     // telling you which domain it belongs to. Ring = state, rail = identity, both visible.
     rowActive: { background: 'var(--accent-soft)', boxShadow: 'inset 0 0 0 1.5px var(--accent)' } as React.CSSProperties,
-    rowOver: { borderColor: 'var(--accent)', borderStyle: 'dashed' } as React.CSSProperties,
+    // Three zones, same meaning as the sheet's SheetDropZones: a top border = insert
+    // before, a filled row = swap, a bottom border = insert after. A row is too short
+    // for three labelled bands, so the edge that lit up stands in for the label.
+    rowOverZone: (zone: DropZone): React.CSSProperties => ({
+        borderColor: 'var(--accent)', borderStyle: 'dashed',
+        ...(zone === 'before' ? { boxShadow: 'inset 0 2px 0 var(--accent)' } : {}),
+        ...(zone === 'after' ? { boxShadow: 'inset 0 -2px 0 var(--accent)' } : {}),
+        ...(zone === 'swap' ? { background: 'var(--accent-soft)' } : {}),
+    }),
     // touch-action: none on the handle only — the list itself must stay scrollable with
     // a finger, so a touch drag starts from the grip.
     handle: { color: 'var(--text-muted)', display: 'inline-flex', cursor: 'grab', flexShrink: 0, touchAction: 'none' } as React.CSSProperties,

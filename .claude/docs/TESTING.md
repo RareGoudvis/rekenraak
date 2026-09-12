@@ -157,11 +157,21 @@ await page.mouse.up();
 
 The grab point can be the `.sheet-drag-handle` (drags immediately) or anywhere on the
 block that is not an input/button (drags past 6px of movement — under that it is a plain
-click that selects the block). The target is a `[data-block-id]` cell: `clientY` above its
-vertical middle inserts the dragged block before it, below swaps the two. `Escape` during
-the drag cancels. Assert the result with
-`window.__rekenraak.getState().blocks.map(b => b.id)` and check no zones are left behind
-with `page.locator('.sheet-dropzones').count()`.
+click that selects the block). The target is a `[data-block-id]` cell, split into
+**thirds** by `clientY`: the top third inserts the dragged block before it, the middle
+third swaps the two, the bottom third inserts it right after. `Escape` during the drag
+cancels. Assert the result with `window.__rekenraak.getState().blocks.map(b => b.id)`
+and check no zones are left behind with `page.locator('.sheet-dropzones').count()`; a
+no-op zone (e.g. "before" on the block right after the one you're dragging) never gets
+`.sheet-dropzone.is-on` — check `page.locator('.sheet-dropzone.is-on').count()` is 0.
+
+A block near the bottom of a tall sheet can sit outside the viewport, and `.print-scroll`
+(the sheet's own scroll container) is NOT reset by re-seeding blocks between scenarios —
+it keeps whatever `scrollTop` the last drop's `scrollIntoView` left it at. Read target
+boxes with `boundingBox()` fresh right before the final `mouse.move` (after the drag has
+already started, not before), and reset `document.querySelector('.print-scroll')
+?.scrollTo(0, 0)` between independent scenarios sharing one page — otherwise a `toBox`
+computed against a stale scroll position points off-screen and the drop silently no-ops.
 
 There is no native drag-and-drop left in the app (`dist/assets/*.js` contains no
 `setDragImage`/`dataTransfer` of ours) — an extension that hooks `dragstart` used to hang
