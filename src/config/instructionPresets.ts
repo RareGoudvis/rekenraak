@@ -38,11 +38,13 @@ const TYPE_SUGGESTIONS: Array<{ match: string; texts: string[] }> = [
     { match: 'meten', texts: ['Meet.'] },
 
     // Arithmetic: the four operations, column arithmetic and the chain/order families.
+    // The hoofdrekenen typeIds are prefixed `hr-std-`; matching on the bare operation name
+    // never hit, so every hoofdrekenen block started as "<leaf label>:" instead of a task.
+    { match: 'hr-std-', texts: ['Reken uit.'] },
     { match: 'optellen', texts: ['Reken uit.'] },
     { match: 'aftrekken', texts: ['Reken uit.'] },
     { match: 'vermenigvuldigen', texts: ['Reken uit.'] },
     { match: 'delen', texts: ['Reken uit.'] },
-    { match: 'hr-std-gemengd', texts: ['Reken uit.'] },
     { match: 'cijferen', texts: ['Reken uit.'] },
     { match: 'rekenvolgorde', texts: ['Reken uit.'] },
     { match: 'kettingsommen', texts: ['Reken uit.'] },

@@ -30,11 +30,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Constraints
 
-- `defaultInstructionFor` matches `TYPE_SUGGESTIONS` by prefix, but the hoofdrekenen
-  entries read `optellen` / `aftrekken` / `vermenigvuldigen` / `delen` while the typeIds
-  are `hr-std-optellen` …, so no hr-std block ever gets "Reken uit." — it falls back to
-  "<leafLabel>:" ("Natuurlijke getallen:"). `hr-std-gemengd` has an explicit entry; the
-  other four still need one (2026-09-13).
 
 ## Tooling
 
