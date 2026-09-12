@@ -4,6 +4,7 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import type { SplitsenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -24,29 +25,30 @@ export default function SplitsenConfig({ block }: Props) {
         rowsPerBox = 4,
         rowHeight = 28,
         mathDirection = 'decompose',
-    } = block.constraints;
+    } = block.constraints as SplitsenConstraints;
+    const c = block.constraints as SplitsenConstraints;
 
     const isPositie = typeof layout === 'string' && layout.startsWith('positie');
     const isBoom = layout === 'splitsboom';
     // Decimals: Rooster (basic) + Splitsboom + all place-value layouts (not verliefde harten).
     const decimalsAllowed = layout === 'basic' || isBoom || (typeof layout === 'string' && layout.startsWith('positie'));
-    const decimalPlaces = decimalsAllowed ? Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0)) : 0;
+    const decimalPlaces = decimalsAllowed ? Math.min(3, Math.max(0, c.decimalPlaces ?? 0)) : 0;
     const maskPlaces = decimalPlaces > 0 ? getMaskPlaces(maxGetal, 'decimal', decimalPlaces) : getMaskPlaces(maxGetal, 'natural');
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
 
     // Splitsbenen: which (blankSide, notation) combos are included (≥1). Generator mixes them.
-    const benenVariants: string[] = Array.isArray(block.constraints.benenVariants) && block.constraints.benenVariants.length
-        ? block.constraints.benenVariants : ['legs-letters'];
+    const benenVariants: string[] = Array.isArray(c.benenVariants) && c.benenVariants.length
+        ? c.benenVariants : ['legs-letters'];
     const toggleBenen = (key: string) => {
         const has = benenVariants.includes(key);
         const next = has ? benenVariants.filter(v => v !== key) : [...benenVariants, key];
         set('benenVariants', next.length ? next : benenVariants);   // keep ≥1
     };
     // Plaatswaarden: included notations (letters/expanded).
-    const mathForms: string[] = Array.isArray(block.constraints.mathForms) && block.constraints.mathForms.length
-        ? block.constraints.mathForms : ['letters'];
+    const mathForms: string[] = Array.isArray(c.mathForms) && c.mathForms.length
+        ? c.mathForms : ['letters'];
     const toggleMathForm = (key: string) => {
         const has = mathForms.includes(key);
         const next = has ? mathForms.filter(v => v !== key) : [...mathForms, key];
@@ -54,8 +56,8 @@ export default function SplitsenConfig({ block }: Props) {
     };
 
     // Splitsboom: which slot(s) may be blank (≥1). Generator picks one at random per item.
-    const blankPositions: string[] = Array.isArray(block.constraints.blankPositions) && block.constraints.blankPositions.length
-        ? block.constraints.blankPositions : ['right'];
+    const blankPositions: string[] = Array.isArray(c.blankPositions) && c.blankPositions.length
+        ? c.blankPositions : ['right'];
     const toggleBlank = (key: string) => {
         const has = blankPositions.includes(key);
         const next = has ? blankPositions.filter(v => v !== key) : [...blankPositions, key];

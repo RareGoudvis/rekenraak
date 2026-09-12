@@ -2,6 +2,7 @@ import type { MathBlock, MabExercise, MabStyle, MabScaffolding } from '../../ser
 import { MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import type { MabConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -49,7 +50,7 @@ export default function MabViewer({ block, showSolutions }: Props) {
         );
     }
 
-    const c = block.constraints;
+    const c = block.constraints as MabConstraints;
     // Back-compat: blocks saved before the rename used 'realistic'.
     const style: MabStyle = (c.mabStyle === 'realistic' ? 'mab-bw' : c.mabStyle) || 'symbolic';
     const maxNumber: number = c.maxNumber || 100;

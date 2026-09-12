@@ -1,4 +1,5 @@
 import type { MathBlock, GeldExercise, GeldDenomination, GeldDenominationType, GeldWisselExercise, GeldTeruggevenExercise } from '../math/types';
+import type { GeldConstraints, GeldWisselConstraints, GeldTeruggevenConstraints } from '../math/constraintTypes';
 
 // All denominations in cents, largest first
 const DENOMINATION_CATALOGUE: { valueCents: number; type: GeldDenominationType }[] = [
@@ -62,7 +63,7 @@ export function generateGeldExercises(block: MathBlock): GeldExercise[] {
         maxGetal = 10,
         format = 'euros',
         allowedDenominations = DENOMINATION_CATALOGUE.map(d => d.valueCents),
-    } = block.constraints;
+    } = block.constraints as GeldConstraints;
 
     const n = block.numberOfExercises || 6;
     const maxCents = maxGetal * 100;
@@ -103,7 +104,7 @@ export function generateGeldExercises(block: MathBlock): GeldExercise[] {
 }
 
 export function generateGeldWisselExercises(block: MathBlock): GeldWisselExercise[] {
-    const exerciseBills: number[] = block.constraints.exerciseBills ?? [500];
+    const exerciseBills: number[] = (block.constraints as GeldWisselConstraints).exerciseBills ?? [500];
     const n = block.numberOfExercises || 4;
     return Array.from({ length: n }, (_, i) => ({
         id: `geld-wissel-${Date.now()}-${i}`,
@@ -128,7 +129,7 @@ export function generateGeldTeruggevenExercises(block: MathBlock): GeldTeruggeve
         maxPriceEuros = 49,
         payWithOptions = [1000, 2000, 5000],
         centenDeel = 'vijf',
-    } = block.constraints;
+    } = block.constraints as GeldTeruggevenConstraints;
     const n = block.numberOfExercises || 4;
     const rng = seededRng(Date.now() & 0xffff);
     const exercises: GeldTeruggevenExercise[] = [];

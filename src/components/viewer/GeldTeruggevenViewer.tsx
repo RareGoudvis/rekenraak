@@ -1,5 +1,6 @@
 import type { MathBlock, GeldTeruggevenExercise } from '../../services/math/types';
 import { Bill } from './GeldViewer';
+import type { GeldTeruggevenConstraints } from '../../services/math/constraintTypes';
 
 // ── Amount formatting ─────────────────────────────────────────────────────────
 
@@ -157,11 +158,12 @@ function ScaffoldingArea({ ex, scaffolding, showSolutions, boxHeight }: {
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
 function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExercise; block: MathBlock; showSolutions: boolean }) {
-    const scaffolding: string        = block.constraints.scaffolding      ?? 'ingevuld';
-    const antwoordType: string       = block.constraints.antwoordType     ?? 'schrijven';
-    const antwoordFormat: string     = block.constraints.antwoordFormat   ?? 'euro-cent';
-    const betalenMetTekening: boolean = block.constraints.betalenMetTekening ?? false;
-    const boxHeight: number          = block.constraints.boxHeight        ?? 120;
+    const c = block.constraints as GeldTeruggevenConstraints;
+    const scaffolding: string        = c.scaffolding      ?? 'ingevuld';
+    const antwoordType: string       = c.antwoordType     ?? 'schrijven';
+    const antwoordFormat: string     = c.antwoordFormat   ?? 'euro-cent';
+    const betalenMetTekening: boolean = c.betalenMetTekening ?? false;
+    const boxHeight: number          = c.boxHeight        ?? 120;
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px 4px', boxSizing: 'border-box' }}>

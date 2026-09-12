@@ -1,6 +1,7 @@
 import type { MathBlock, SplitsenExercise } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import { formatMathNumber } from '../../services/math/formatters';
+import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 
 // Thousands-spaces + comma decimals (nl-BE).
 const fmt = (n: number): string => formatMathNumber(n);
@@ -13,10 +14,11 @@ interface Props {
 }
 
 export default function SplitsenViewer({ block, showSolutions }: Props) {
-    const layout: string = block.constraints.layout || 'basic';
+    const c = block.constraints as SplitsenConstraints;
+    const layout: string = c.layout || 'basic';
     const exercises: SplitsenExercise[] = block.splitsenExercises || [];
     const gap = block.verticalSpacing || 14;
-    const rowHeight: number = block.constraints.rowHeight || 28;
+    const rowHeight: number = c.rowHeight || 28;
 
     if (exercises.length === 0) {
         return (

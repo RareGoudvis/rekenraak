@@ -1,6 +1,7 @@
 import type { MathBlock } from '../../services/math/types';
 import FractionExerciseItem from './FractionExerciseItem';
 import FragmentableGrid from './FragmentableGrid';
+import type { FractionConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -10,8 +11,9 @@ interface Props {
 // Wrapper so the registry can mount a uniform {block, showSolutions} viewer.
 // Holds the 1-col-vs-2-col grid choice + empty-state that used to live in App.tsx.
 export default function FractionViewer({ block, showSolutions }: Props) {
-    const subType = block.constraints.subType || 'kleuren';
-    const answerFmt = block.constraints.answerFormat as string | undefined;
+    const c = block.constraints as FractionConstraints;
+    const subType = c.subType || 'kleuren';
+    const answerFmt = c.answerFormat as string | undefined;
     // These subtypes (and hoeveelheid with breuk-questions) need full width per item.
     const is1Col = subType === 'lijnstuk' || subType === 'veelhoek' || (subType === 'hoeveelheid' && answerFmt === 'met-breukvragen');
     const exList = block.fractionExercises || [];

@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock, ConstraintType } from '../../../services/math/types';
 import type { CijferConstraints } from '../../../services/math/types';
 import { getMaskPlaces, getBridgePlaces } from '../../../services/math/mathEngine';
@@ -14,8 +14,7 @@ interface Props {
 const MAX_RANGES = [20, 100, 1_000, 10_000, 100_000, 1_000_000, 1_000_000_000];
 
 export default function CijferConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((s) => s.updateBlockSettings);
-    const c = block.constraints as CijferConstraints;
+    const [c, patch] = useConstraints<CijferConstraints>(block);
     const isDecimal = c.numberType === 'decimal';
     const isDivision = c.operator === ':';
     const isAddition = c.operator === '+';
@@ -23,9 +22,7 @@ export default function CijferConfig({ block }: Props) {
     const hasBridges = isAddition || isSubtraction;
     const n = isAddition ? Math.min(Math.max(2, c.numberOfTerms || 2), 4) : 2;
 
-    const set = (key: keyof CijferConstraints, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
-
+    const set = (key: keyof CijferConstraints, value: unknown) => patch({ [key]: value } as Partial<CijferConstraints>);
     const setBridge = (placeKey: string, value: ConstraintType) => {
         const cur = c.bridges || {};
         set('bridges', { ...cur, [placeKey]: value });

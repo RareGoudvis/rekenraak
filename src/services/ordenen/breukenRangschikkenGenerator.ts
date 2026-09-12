@@ -1,4 +1,5 @@
 import type { MathBlock, OrdenenExercise, Fraction } from '../math/types';
+import type { BreukenRangschikkenConstraints } from '../math/constraintTypes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -53,7 +54,7 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
 }
 
 export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as BreukenRangschikkenConstraints;
     const mode: string = c.fractionMode ?? 'stambreuken';
     const count: number = Math.min(5, Math.max(2, c.count ?? 4));
     const operatorMode: string = c.operatorMode ?? 'oplopend';

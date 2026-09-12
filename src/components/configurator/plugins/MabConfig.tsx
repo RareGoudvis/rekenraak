@@ -4,6 +4,7 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
 import StylePicker from '../StylePicker';
+import type { MabConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -31,7 +32,7 @@ export default function MabConfig({ block }: Props) {
         mabStyle: rawMabStyle = 'symbolic',
         maxNumber = 100,
         operand1Mask = {},
-    } = block.constraints;
+    } = block.constraints as MabConstraints;
     // Back-compat: blocks saved before the rename used 'realistic'.
     const mabStyle = rawMabStyle === 'realistic' ? 'mab-bw' : rawMabStyle;
 

@@ -1,6 +1,7 @@
 import type { MathBlock, GeldWisselExercise } from '../../services/math/types';
 import { Bill } from './GeldViewer';
 import FragmentableGrid from './FragmentableGrid';
+import type { GeldWisselConstraints } from '../../services/math/constraintTypes';
 
 function WisselCell({ ex, boxHeight }: { ex: GeldWisselExercise; boxHeight: number }) {
     return (
@@ -22,8 +23,9 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 export default function GeldWisselViewer({ block }: Props) {
     const exercises: GeldWisselExercise[] = block.geldWisselExercises || [];
     const gap: number = block.verticalSpacing || 14;
-    const exercisesPerRow: number = block.constraints.exercisesPerRow ?? 2;
-    const boxHeight: number = block.constraints.boxHeight ?? 100;
+    const c = block.constraints as GeldWisselConstraints;
+    const exercisesPerRow: number = c.exercisesPerRow ?? 2;
+    const boxHeight: number = c.boxHeight ?? 100;
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;

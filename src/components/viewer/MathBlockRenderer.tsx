@@ -5,6 +5,7 @@ import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { FULL_BLOCK_WIDTH_PX, useBlockWidth } from './BlockWidthContext';
+import type { MulDivConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -89,7 +90,8 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
     // Puntoefeningen (a + . = c) are by definition single short lines — force inline-short
     // regardless of the stored preset (the Kort/Lang/Stappen control is hidden for them).
-    const isPunt = block.constraints?.equationType === 'puntoefening';
+    const c = block.constraints as MulDivConstraints;
+    const isPunt = c.equationType === 'puntoefening';
     const layout = isPunt ? 'inline-short' : block.layoutPreset;
     const isInlineShort = layout === 'inline-short';
 
@@ -122,8 +124,8 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const cellPx = Math.max(85, Math.ceil(maxChars * CHAR_PX) + 6);
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
     // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
-    const compScaffoldOn = block.constraints?.preset === 'compenseren'
-        && (block.constraints?.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
+    const compScaffoldOn = c.preset === 'compenseren'
+        && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
     const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : answerLinePx + 19;
     const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
         + 8 + answerW + (anyRemainder ? 90 : 0);
@@ -212,8 +214,8 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
                 // Compenseren-preset tussenstap: "= a + ___ − ___" fill-in under the sum
                 // (30 − 1 for 29). Only for plain 2-term numeric +/− with the scaffold on.
-                const compScaffold = block.constraints?.preset === 'compenseren'
-                    && (block.constraints?.compenserenScaffold ?? 'tussenstap') === 'tussenstap'
+                const compScaffold = c.preset === 'compenseren'
+                    && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap'
                     && !anyMissing && ex.operands.length === 2
                     && typeof ex.operands[0] === 'number' && typeof ex.operands[1] === 'number';
                 let compParts: { tienvoud: number; delta: number } | null = null;

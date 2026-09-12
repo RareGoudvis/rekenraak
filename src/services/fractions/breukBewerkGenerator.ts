@@ -1,5 +1,6 @@
 import type { MathBlock, BreukBewerkExercise, Fraction } from '../math/types';
 import { gcd, simplifyFraction } from '../math/mathEngine';
+import type { BreukBewerkConstraints } from '../math/constraintTypes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -100,7 +101,7 @@ function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean,
 }
 
 export function generateBreukBewerkExercises(block: MathBlock): BreukBewerkExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as BreukBewerkConstraints;
     const subType: string = c.subType ?? 'gemengd';
     const minD: number = c.minDenominator ?? 2;
     const maxD: number = c.maxDenominator ?? 10;

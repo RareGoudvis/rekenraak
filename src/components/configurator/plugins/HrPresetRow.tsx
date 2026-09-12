@@ -1,8 +1,9 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import type { MulDivConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -13,8 +14,7 @@ interface Props {
 // Top rows of every hoofdrekenen config: Oefenvorm preset + aantal termen/factoren.
 // Presets are generator flavours, not separate exercise types (constraints.preset).
 export default function HrPresetRow({ block, variant }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<MulDivConstraints>(block);
     const preset: string = c.preset ?? 'vrij';
     const termCount: number = Math.min(4, Math.max(2, c.termCount ?? 2));
     const presetDistance: number = c.presetDistance ?? 1;
@@ -22,8 +22,7 @@ export default function HrPresetRow({ block, variant }: Props) {
     const isRest = c.multiplicationMode === 'met_rest';
     const isPreset = preset === 'compenseren' || preset === 'tienvoud';
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof MulDivConstraints, value: unknown) => patch({ [key]: value } as Partial<MulDivConstraints>);
     const toggleFactor = (f: number) => {
         const next = presetFactors.includes(f) ? presetFactors.filter((x: number) => x !== f) : [...presetFactors, f];
         if (next.length) set('presetFactors', next);   // keep ≥1

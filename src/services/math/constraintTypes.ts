@@ -1,3 +1,4 @@
+import type { TimeCategory, ClockType, ExerciseMode, MinuteDirection, HandChoice } from '../clock/clockTypes';
 import type { ConstraintType, FractionSubType, FractionShape, MabStyle, MabScaffolding, ScaffoldingLevel, CijferOperator } from './types';
 
 // ── Per-family constraint shapes ─────────────────────────────────────────────
@@ -74,6 +75,9 @@ export type MulDivConstraints = AddSubConstraints & {
     divisionLevels?: number[];
     metRestLevel?: number;
     excludeOne?: boolean;
+    // Rational ×/: — cap the denominator the answer may keep after simplifying.
+    simplifyMaxDenominatorChecked?: boolean;
+    simplifyMaxDenominator?: number;
 };
 
 // ── Cijferen (column arithmetic) ─────────────────────────────────────────────
@@ -101,12 +105,12 @@ export type CijferConstraints = {
 // ── Klok ─────────────────────────────────────────────────────────────────────
 
 export type ClockConstraints = {
-    clockType: 'analoog' | 'digitaal';
-    exerciseMode: string;
+    clockType: ClockType;
+    exerciseMode: ExerciseMode;
     is24hour: boolean;
-    timeTypes: string[];
-    minuteDirection: string;
-    handChoice: string;
+    timeTypes: TimeCategory[];
+    minuteDirection: MinuteDirection;
+    handChoice: HandChoice;
 };
 
 // ── Breuken ──────────────────────────────────────────────────────────────────
@@ -221,7 +225,8 @@ export type GeldRekenenConstraints = {
 // ── MAB (Dienes place-value blocks) ──────────────────────────────────────────
 
 export type MabConstraints = {
-    mabStyle: MabStyle;
+    // 'realistic' is the pre-rename value; worksheets saved with it still load.
+    mabStyle: MabStyle | 'realistic';
     maxNumber: number;
     operand1Mask: PlaceMask;
     scaffolding: MabScaffolding;

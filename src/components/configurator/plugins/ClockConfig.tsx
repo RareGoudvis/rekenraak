@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import type { ClockType, ExerciseMode, MinuteDirection, HandChoice, TimeCategory } from '../../../services/clock/clockTypes';
+import type { ClockConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -25,7 +26,7 @@ export default function ClockConfig({ block }: Props) {
         timeTypes = ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor'] as TimeCategory[],
         minuteDirection = 'beide' as MinuteDirection,
         handChoice = 'beide' as HandChoice,
-    } = block.constraints;
+    } = block.constraints as ClockConstraints;
 
     const updateConstraint = (key: string, value: unknown) => {
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

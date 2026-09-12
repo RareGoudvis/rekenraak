@@ -6,6 +6,7 @@ import RationalSettings from './addition/RationalSettings';
 import { sharedPluginStyles as styles } from './sharedPluginStyles'; // 🔥 Zelfde import!
 import SettingLabel from './SettingLabel';
 import HrPresetRow from './HrPresetRow';
+import type { AddSubConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -19,7 +20,7 @@ const SubConfigMap = {
 
 export default function SubtractionConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { numberType = 'natural', equationType = 'normal' } = block.constraints;
+    const { numberType = 'natural', equationType = 'normal' } = block.constraints as AddSubConstraints;
 
     const ActiveSubConfig = SubConfigMap[numberType as keyof typeof SubConfigMap] || NaturalSettings;
 

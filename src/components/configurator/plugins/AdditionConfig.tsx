@@ -6,6 +6,7 @@ import RationalSettings from './addition/RationalSettings';
 import { sharedPluginStyles as styles } from './sharedPluginStyles'; // 🔥 Importeer de centrale stijlen
 import SettingLabel from './SettingLabel';
 import HrPresetRow from './HrPresetRow';
+import type { AddSubConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -13,7 +14,7 @@ interface Props {
 
 export default function AdditionConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { numberType = 'natural', equationType = 'normal' } = block.constraints;
+    const { numberType = 'natural', equationType = 'normal' } = block.constraints as AddSubConstraints;
 
     const SubConfigMap = {
         natural: NaturalSettings,

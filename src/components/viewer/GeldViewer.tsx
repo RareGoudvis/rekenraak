@@ -2,6 +2,7 @@ import type { MathBlock, GeldExercise, GeldDenomination } from '../../services/m
 import { DENOMINATION_CATALOGUE, formatAmount, denominationLabel } from '../../services/geld/geldGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import type { GeldConstraints } from '../../services/math/constraintTypes';
 
 // ── SVG helpers (print-friendly: white fill, black outline, no colour) ────────
 
@@ -86,9 +87,10 @@ export function VoorbeeldenBar({ allowedDenominations, voorbeeldTypes }: { allow
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
 function HerkennenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: MathBlock; showSolutions: boolean }) {
-    const format: string = block.constraints.format ?? 'euros';
-    const scaffolding: string = block.constraints.scaffolding ?? 'invullen';
-    const geldLayout: string = block.constraints.geldLayout ?? 'samen';
+    const c = block.constraints as GeldConstraints;
+    const format: string = c.format ?? 'euros';
+    const scaffolding: string = c.scaffolding ?? 'invullen';
+    const geldLayout: string = c.geldLayout ?? 'samen';
 
     const answerArea = showSolutions ? (
         <div style={{ color: '#e11d48', fontSize: '16px', fontFamily: "'Azeret Mono', monospace", marginTop: '6px' }}>
@@ -147,10 +149,11 @@ export default function GeldViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: GeldExercise[] = block.geldExercises || [];
     const gap: number = block.verticalSpacing || 14;
-    const allowedDenominations: number[] = block.constraints.allowedDenominations ?? [];
-    const voorbeeldTypes: number[] = block.constraints.voorbeeldTypes ?? [];
-    const showVoorbeelden: boolean = block.constraints.showVoorbeelden ?? false;
-    const exercisesPerRow: number | null = block.constraints.exercisesPerRow ?? null;
+    const c = block.constraints as GeldConstraints;
+    const allowedDenominations: number[] = c.allowedDenominations ?? [];
+    const voorbeeldTypes: number[] = c.voorbeeldTypes ?? [];
+    const showVoorbeelden: boolean = c.showVoorbeelden ?? false;
+    const exercisesPerRow: number | null = c.exercisesPerRow ?? null;
     const perRow = exercisesPerRow ?? 4;
 
     if (exercises.length === 0) {

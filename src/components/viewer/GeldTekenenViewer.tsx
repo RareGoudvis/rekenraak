@@ -2,13 +2,15 @@ import type { MathBlock, GeldExercise } from '../../services/math/types';
 import { formatAmount } from '../../services/geld/geldGenerator';
 import { VoorbeeldenBar } from './GeldViewer';
 import FragmentableGrid from './FragmentableGrid';
+import type { GeldConstraints } from '../../services/math/constraintTypes';
 
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
 function TekenenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: MathBlock; showSolutions: boolean }) {
-    const format: string = block.constraints.format ?? 'euros';
-    const scaffolding: string = block.constraints.scaffolding ?? 'eenvoudig';
-    const boxHeight: number = block.constraints.boxHeight ?? 80;
+    const c = block.constraints as GeldConstraints;
+    const format: string = c.format ?? 'euros';
+    const scaffolding: string = c.scaffolding ?? 'eenvoudig';
+    const boxHeight: number = c.boxHeight ?? 80;
 
     const amountText = formatAmount(ex.amountCents, format);
 
@@ -47,10 +49,11 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 export default function GeldTekenenViewer({ block, showSolutions }: Props) {
     const exercises: GeldExercise[] = block.geldExercises || [];
     const gap: number = block.verticalSpacing || 14;
-    const allowedDenominations: number[] = block.constraints.allowedDenominations ?? [];
-    const voorbeeldTypes: number[] = block.constraints.voorbeeldTypes ?? [];
-    const showVoorbeelden: boolean = block.constraints.showVoorbeelden ?? false;
-    const exercisesPerRow: number | null = block.constraints.exercisesPerRow ?? null;
+    const c = block.constraints as GeldConstraints;
+    const allowedDenominations: number[] = c.allowedDenominations ?? [];
+    const voorbeeldTypes: number[] = c.voorbeeldTypes ?? [];
+    const showVoorbeelden: boolean = c.showVoorbeelden ?? false;
+    const exercisesPerRow: number | null = c.exercisesPerRow ?? null;
     const perRow = exercisesPerRow ?? 4;
 
     if (exercises.length === 0) {

@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock, FractionSubType } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { FractionConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -26,8 +27,8 @@ function defaultsFor(subType: FractionSubType): Record<string, unknown> {
 export default function FractionConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
 
-    const subType: FractionSubType = block.constraints.subType || 'kleuren';
-    const c = block.constraints;
+    const c = block.constraints as FractionConstraints;
+    const subType: FractionSubType = c.subType || 'kleuren';
 
     const updateConstraint = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });

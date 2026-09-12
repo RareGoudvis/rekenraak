@@ -1,6 +1,7 @@
 import type { ClockExercise, MathBlock } from '../../services/math/types';
 import type { ClockType, ExerciseMode, HandChoice } from '../../services/clock/clockTypes';
 import AnalogClockSVG from './AnalogClockSVG';
+import type { ClockConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     ex: ClockExercise;
@@ -9,10 +10,11 @@ interface Props {
 }
 
 export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
-    const clockType = (block.constraints.clockType || 'analoog') as ClockType;
-    const exerciseMode = (block.constraints.exerciseMode || 'lezen') as ExerciseMode;
-    const is24hour = block.constraints.is24hour || false;
-    const handChoice = (block.constraints.handChoice || 'beide') as HandChoice;
+    const c = block.constraints as ClockConstraints;
+    const clockType = (c.clockType || 'analoog') as ClockType;
+    const exerciseMode = (c.exerciseMode || 'lezen') as ExerciseMode;
+    const is24hour = c.is24hour || false;
+    const handChoice = (c.handChoice || 'beide') as HandChoice;
 
     const clock = (showH: boolean, showM: boolean) => (
         <AnalogClockSVG hours={ex.hours} minutes={ex.minutes} showHourHand={showH} showMinuteHand={showM} is24hour={is24hour} size={110} />

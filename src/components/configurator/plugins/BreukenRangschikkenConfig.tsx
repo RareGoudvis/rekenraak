@@ -2,6 +2,7 @@ import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { BreukenRangschikkenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -22,7 +23,7 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
         operatorMode = 'oplopend',
         minDenominator = 2,
         maxDenominator = 10,
-    } = block.constraints;
+    } = block.constraints as BreukenRangschikkenConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

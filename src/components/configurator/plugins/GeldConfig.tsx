@@ -1,18 +1,16 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { GeldConstraints } from '../../../services/math/constraintTypes';
 
 export default function GeldConfig({ block }: { block: MathBlock }) {
-    const updateBlockSettings = useWorksheetStore(s => s.updateBlockSettings);
+    const [c, patch] = useConstraints<GeldConstraints>(block);
     const isHerkennen = block.typeId === 'geld-herkennen';
 
-    const c = block.constraints;
-    const set = (key: string, val: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: val } });
-
+    const set = (key: keyof GeldConstraints, val: unknown) => patch({ [key]: val } as Partial<GeldConstraints>);
     const maxGetal: number = c.maxGetal ?? 10;
     const geldLayout: string = c.geldLayout ?? 'samen';
     const allowedDenominations: number[] = c.allowedDenominations ?? DENOMINATION_CATALOGUE.map(d => d.valueCents);

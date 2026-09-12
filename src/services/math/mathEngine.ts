@@ -1,4 +1,5 @@
 import type { MathBlock, Equation, Fraction } from './types';
+import type { AddSubConstraints, MulDivConstraints, BridgeMap } from './constraintTypes';
 
 // ============================================================================
 // 1. CONSTANTEN & GLOBALE INSTELLINGEN
@@ -68,20 +69,17 @@ const generateMaskedInt = (mask: Record<string, boolean>): number | null => {
 // ============================================================================
 
 // termCount: 2-4 operands; presets (compenseren / tienvoud) pin it to 2.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const termCountOf = (c: any): number => {
+const termCountOf = (c: MulDivConstraints): number => {
     if (c.preset === 'compenseren' || c.preset === 'tienvoud') return 2;
     return Math.min(4, Math.max(2, c.termCount ?? 2));
 };
 
 // Mask for operand i: new operandMasks[] wins; legacy operand1Mask/operand2Mask cover i 0/1.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const maskFor = (c: any, i: number): Record<string, boolean> =>
+const maskFor = (c: MulDivConstraints, i: number): Record<string, boolean> =>
     c.operandMasks?.[i] ?? (i === 0 ? c.operand1Mask : i === 1 ? c.operand2Mask : undefined) ?? {};
 
 // Optional per-operand ceiling (geavanceerde opties), in display units; null = free.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const maxOpFor = (c: any, i: number): number | null => {
+const maxOpFor = (c: MulDivConstraints, i: number): number | null => {
     const v = c.operandMax?.[i];
     return typeof v === 'number' && v > 0 ? v : null;
 };
@@ -118,8 +116,7 @@ function subtractionBorrowPlaces(ints: number[]): Set<string> {
     return out;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function bridgesSatisfied(bridges: any, hits: Set<string>): boolean {
+function bridgesSatisfied(bridges: BridgeMap | undefined, hits: Set<string>): boolean {
     for (const place of PLACE_VALUES) {
         const constraint = bridges?.[place.key] ?? 'FREE';
         if (constraint === 'FREE') continue;
@@ -130,8 +127,7 @@ function bridgesSatisfied(bridges: any, hits: Set<string>): boolean {
 }
 
 // Compenseren preset: an operand just under a round number (29 = 30 − 1), scaled units.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function compenserenOperand(c: any, maxGetal: number): number {
+function compenserenOperand(c: MulDivConstraints, maxGetal: number): number {
     const unit = maxGetal > 100 ? 100 : 10;
     const distance = Math.max(1, Math.min(2, c.presetDistance ?? 1));
     const tens = randInt(2, Math.max(2, Math.floor(maxGetal / unit) - 1)) * unit;
@@ -197,7 +193,8 @@ export const numberMatchesMask = (
 // 2-4 fraction chains for + and −. 'same' difficulty shares one denominator; anything
 // else accumulates the common denominator pairwise (answers stay exact integers).
 const generateFractionChain = (block: MathBlock, op: '+' | '-'): Equation[] => {
-    const { numberOfExercises, constraints } = block;
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
     const {
         fractionDifficulty = 'same',
         maxNumerator1 = 10, maxDenominator1 = 10, maxNumerator2 = 10, maxDenominator2 = 10,
@@ -243,7 +240,8 @@ const generateFractionChain = (block: MathBlock, op: '+' | '-'): Equation[] => {
 // 3-4 fraction ×/: chains — all-fraction terms (the natural/decimal mixed modes stay
 // 2-term). Division works via reciprocals; answers simplified like the 2-term path.
 const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[] => {
-    const { numberOfExercises, constraints } = block;
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
     const { maxNumerator1 = 10, maxDenominator1 = 10, maxNumerator2 = 10, maxDenominator2 = 10 } = constraints;
     const N = termCountOf(constraints);
     const exercises: Equation[] = [];
@@ -278,8 +276,9 @@ const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[
 };
 
 const generateFractionAddition = (block: MathBlock): Equation[] => {
-    if (termCountOf(block.constraints) > 2) return generateFractionChain(block, '+');
-    const { numberOfExercises, constraints } = block;
+    if (termCountOf(block.constraints as MulDivConstraints) > 2) return generateFractionChain(block, '+');
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
     const {
         fractionDifficulty = 'same', mixedNumber1 = false, mixedNumber2 = false,
         maxNumerator1 = 10, maxDenominator1 = 10, maxNumerator2 = 10, maxDenominator2 = 10
@@ -336,9 +335,10 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
 };
 
 export const generateAdditionExercises = (block: MathBlock): Equation[] => {
-    if (block.constraints.numberType === 'rational') return generateFractionAddition(block);
+    if ((block.constraints as AddSubConstraints).numberType === 'rational') return generateFractionAddition(block);
 
-    const { numberOfExercises, constraints } = block;
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
     const { maxGetal = 1000, bridges, numberType, decimalPlaces = 2 } = constraints;
     const displayScale = numberType === 'decimal' ? Math.pow(10, decimalPlaces) : 1;
     const intMaxGetal = Math.round(maxGetal * INTERNAL_SCALE);
@@ -403,8 +403,9 @@ export const generateAdditionExercises = (block: MathBlock): Equation[] => {
 // ============================================================================
 
 const generateFractionSubtraction = (block: MathBlock): Equation[] => {
-    if (termCountOf(block.constraints) > 2) return generateFractionChain(block, '-');
-    const { numberOfExercises, constraints } = block;
+    if (termCountOf(block.constraints as MulDivConstraints) > 2) return generateFractionChain(block, '-');
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
     const {
         fractionDifficulty = 'same', mixedNumber1 = false, mixedNumber2 = false,
         maxNumerator1 = 10, maxDenominator1 = 10, maxNumerator2 = 10, maxDenominator2 = 10
@@ -469,9 +470,10 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
 };
 
 export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
-    if (block.constraints.numberType === 'rational') return generateFractionSubtraction(block);
+    if ((block.constraints as AddSubConstraints).numberType === 'rational') return generateFractionSubtraction(block);
 
-    const { numberOfExercises, constraints } = block;
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
     const { maxGetal = 1000, bridges, numberType, decimalPlaces = 2 } = constraints;
     const displayScale = numberType === 'decimal' ? Math.pow(10, decimalPlaces) : 1;
     const intMaxGetal = Math.round(maxGetal * INTERNAL_SCALE);
@@ -542,7 +544,8 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
 
 
 export const generateMultiplicationExercises = (block: MathBlock): Equation[] => {
-    const { numberOfExercises, constraints } = block;
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
 
     // A. RATIONALE GETALLEN (Breuken, eventueel in combinatie met natuurlijke/decimale getallen)
     if (constraints.numberType === 'rational') {
@@ -775,7 +778,8 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 // ============================================================================
 
 export const generateDivisionExercises = (block: MathBlock): Equation[] => {
-    const { numberOfExercises, constraints } = block;
+    const { numberOfExercises } = block;
+    const constraints = block.constraints as MulDivConstraints;
 
     // A. RATIONALE GETALLEN (Breuken)
     if (constraints.numberType === 'rational') {

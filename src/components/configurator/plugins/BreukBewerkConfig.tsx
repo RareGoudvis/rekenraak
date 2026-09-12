@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import FractionMaxField from './FractionMaxField';
+import type { BreukBewerkConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -19,7 +20,7 @@ export default function BreukBewerkConfig({ block }: Props) {
         tablesOnly = true,
         allowIrreducible = false,
         targetDen = '',
-    } = block.constraints;
+    } = block.constraints as BreukBewerkConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

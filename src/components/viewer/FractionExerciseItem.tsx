@@ -1,6 +1,7 @@
 import type { FractionExercise, MathBlock } from '../../services/math/types';
 import FractionShapeSVG from './FractionShapeSVG';
 import VerticalFraction from './VerticalFraction';
+import type { FractionConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     ex: FractionExercise;
@@ -29,7 +30,8 @@ function groupRows(total: number, denominator: number, mode: string): number[] {
 
 export default function FractionExerciseItem({ ex, block, showSolutions }: Props) {
     const subType = ex.subType;
-    const answerFormat: string = block.constraints.answerFormat || 'fraction-questions';
+    const c = block.constraints as FractionConstraints;
+    const answerFormat: string = c.answerFormat || 'fraction-questions';
     const sol = (text: string) => <span style={{ color: '#e11d48', fontWeight: 'normal', fontSize: '14px' }}>{text}</span>;
     const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />;
 
@@ -42,11 +44,11 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const showColored = subType === 'herkennen';
         // Static size: keep the shape a fixed cm size across denominators. 1cm ≈ 37.8px @96dpi.
         const CM = 37.8;
-        const staticProps = block.constraints.staticSize ? {
-            fixedWidthPx: (block.constraints.staticW ?? 4) * CM,
-            fixedHeightPx: (block.constraints.staticH ?? 3) * CM,
-            fixedSidePx: (block.constraints.staticSide ?? 4) * CM,
-            fixedDiameterPx: (block.constraints.staticDiam ?? 4) * CM,
+        const staticProps = c.staticSize ? {
+            fixedWidthPx: (c.staticW ?? 4) * CM,
+            fixedHeightPx: (c.staticH ?? 3) * CM,
+            fixedSidePx: (c.staticSide ?? 4) * CM,
+            fixedDiameterPx: (c.staticDiam ?? 4) * CM,
         } : {};
         // Cap the shape at the 2-up column width (~265px inside the block) so prime
         // denominators that only render as a 1×d strip (7, 11, 13) shrink their cells
@@ -55,7 +57,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const cappedCell = Math.min(38, Math.floor(265 / Math.max(1, gridCols)));
         // When width-capped, pin the height back to the classic 38px per row so narrow
         // strip cells stay tall enough to color in.
-        const heightProp = cappedCell < 38 && !block.constraints.staticSize
+        const heightProp = cappedCell < 38 && !c.staticSize
             ? { fixedHeightPx: 38 * (ex.gridRows ?? 1) } : {};
         const shape = (
             <FractionShapeSVG
@@ -142,7 +144,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const total = ex.total ?? 0;
         const coloredCount = Math.round(total * ex.numerator / ex.denominator);
         const objSize = 22, objGap = 4;
-        const groupingMode: string = block.constraints.groupingMode ?? 'standaard';
+        const groupingMode: string = c.groupingMode ?? 'standaard';
         // Row sizes (objects per row) drive how objects group — easier grouping helps starters.
         const rowSizes = groupRows(total, ex.denominator, groupingMode);
 
@@ -278,8 +280,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                 {/* Draw box sized to handwriting needs. 1cm ≈ 37.8px; default ≈ 3cm (≈113px). */}
                 <div style={{
                     border: '2px solid #000',
-                    width: block.constraints.drawBoxW ? `${block.constraints.drawBoxW * 37.8}px` : '100%',
-                    minHeight: `${(block.constraints.drawBoxH ?? 3) * 37.8}px`,
+                    width: c.drawBoxW ? `${c.drawBoxW * 37.8}px` : '100%',
+                    minHeight: `${(c.drawBoxH ?? 3) * 37.8}px`,
                     backgroundColor: 'white',
                 }} />
                 {answerFormat === 'met-berekening' && rectCalcLines}
@@ -292,7 +294,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const total = ex.total ?? 0;
         const groupSize = parseFloat((total / ex.denominator).toFixed(4));
         const coloredCount = parseFloat((groupSize * ex.numerator).toFixed(4));
-        const answerMode: string = block.constraints.answerMode ?? 'berekeningslijnen';
+        const answerMode: string = c.answerMode ?? 'berekeningslijnen';
         const sv = (v: number) => showSolutions ? sol(String(v)) : blank(28);
 
         const questionLine = (
@@ -347,7 +349,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
     // ── LIJNSTUK ─────────────────────────────────────────────────────────────
     if (subType === 'lijnstuk') {
         const cm = ex.lineLength ?? 10;
-        const answerMode: string = block.constraints.answerMode ?? 'berekeningslijnen';
+        const answerMode: string = c.answerMode ?? 'berekeningslijnen';
         const partLength = parseFloat((cm / ex.denominator).toFixed(2));
         const arcLength  = parseFloat((partLength * ex.numerator).toFixed(2));
 
@@ -423,7 +425,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const w = ex.rectangleWidth ?? 3;
         const h = ex.rectangleHeight ?? 3;
         // Grid off → hide internal cell lines, keep outline + colored region, cells of 1cm (≈37.8px).
-        const showGrid = block.constraints.showGrid !== false;
+        const showGrid = c.showGrid !== false;
         const cellSize = showGrid ? 32 : 37.8;
         const totalCells = w * h;
         const cellsPerPart = totalCells / ex.denominator;

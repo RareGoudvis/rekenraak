@@ -3,12 +3,13 @@ import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
 import SettingLabel from './SettingLabel';
+import type { GeldWisselConstraints } from '../../../services/math/constraintTypes';
 
 const EXERCISE_LABELS = ['links', 'rechts', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 export default function GeldWisselConfig({ block }: { block: MathBlock }) {
     const updateBlockSettings = useWorksheetStore(s => s.updateBlockSettings);
-    const c = block.constraints;
+    const c = block.constraints as GeldWisselConstraints;
     const n = block.numberOfExercises || 4;
 
     const exerciseBills: number[] = c.exerciseBills ?? [500];

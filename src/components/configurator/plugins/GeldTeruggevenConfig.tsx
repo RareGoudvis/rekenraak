@@ -4,6 +4,7 @@ import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
 import SettingLabel from './SettingLabel';
+import type { GeldTeruggevenConstraints } from '../../../services/math/constraintTypes';
 
 const BILL_DENOMS = DENOMINATION_CATALOGUE.filter(d => d.type === 'bill');
 
@@ -22,7 +23,7 @@ const CENTEN_OPTIES = [
 
 export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
     const updateBlockSettings = useWorksheetStore(s => s.updateBlockSettings);
-    const c = block.constraints;
+    const c = block.constraints as GeldTeruggevenConstraints;
     const set = (key: string, val: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...c, [key]: val } });
 

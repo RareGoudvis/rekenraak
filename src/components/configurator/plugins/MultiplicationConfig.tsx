@@ -6,12 +6,13 @@ import RationalSettings from './multiplication/RationalSettings';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import HrPresetRow from './HrPresetRow';
+import type { MulDivConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
 export default function MultiplicationConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { numberType = 'natural', equationType = 'normal', excludeOne = false, preset = 'vrij' } = block.constraints;
+    const { numberType = 'natural', equationType = 'normal', excludeOne = false, preset = 'vrij' } = block.constraints as MulDivConstraints;
     const isTienvoud = preset === 'tienvoud';
 
     const updateConstraint = (key: string, value: unknown) => {

@@ -1,4 +1,5 @@
 import type { FractionExercise, FractionSubType, FractionShape, MathBlock } from '../math/types';
+import type { FractionConstraints } from '../math/constraintTypes';
 
 function getGridLayout(denominator: number): { rows: number; cols: number } {
     const layouts: Record<number, [number, number]> = {
@@ -30,7 +31,7 @@ function randInt(min: number, max: number) {
 }
 
 function makeShapeExercise(subType: FractionSubType, block: MathBlock): FractionExercise {
-    const { shape = 'rectangle', shapes, minDenominator = 2, maxDenominator = 8 } = block.constraints;
+    const { shape = 'rectangle', shapes, minDenominator = 2, maxDenominator = 8 } = block.constraints as FractionConstraints;
     // Teacher may enable several shapes; pick one per exercise (back-compat: fall back to single `shape`).
     const shapeOptions: FractionShape[] = Array.isArray(shapes) && shapes.length ? shapes : [shape as FractionShape];
     const chosenShape = shapeOptions[randInt(0, shapeOptions.length - 1)];
@@ -55,7 +56,7 @@ function makeShapeExercise(subType: FractionSubType, block: MathBlock): Fraction
 }
 
 function makeAmountExercise(subType: FractionSubType, block: MathBlock): FractionExercise {
-    const { objectShape = 'circle', maxTotal = 20, minDenominator = 2, maxDenominator = 5 } = block.constraints;
+    const { objectShape = 'circle', maxTotal = 20, minDenominator = 2, maxDenominator = 5 } = block.constraints as FractionConstraints;
     // Total = denominator × multiplier must stay ≤ maxTotal, so the denominator can't
     // exceed maxTotal and the multiplier is bounded (was forced ≥2 → total up to 2×den
     // overshot maxTotal when maxTotal < 2×denominator).
@@ -76,7 +77,7 @@ function makeAmountExercise(subType: FractionSubType, block: MathBlock): Fractio
 }
 
 function makeLijnstukExercise(block: MathBlock): FractionExercise {
-    const { minDenominator = 2, maxDenominator = 6, minLineLength = 1, maxLineLength = 15 } = block.constraints;
+    const { minDenominator = 2, maxDenominator = 6, minLineLength = 1, maxLineLength = 15 } = block.constraints as FractionConstraints;
     // Swap-safe length window; line = denominator × multiplier keeps each of the
     // `denominator` segments a whole number of cm.
     const loLen = Math.max(1, Math.min(minLineLength, maxLineLength));
@@ -112,7 +113,7 @@ function veelhoekRects(d: number, mW: number, mH: number): [number, number][] {
 }
 
 function makeVeelhoekExercise(block: MathBlock): FractionExercise {
-    const { minDenominator = 2, maxDenominator = 9, maxWidth = 6, maxHeight = 6 } = block.constraints;
+    const { minDenominator = 2, maxDenominator = 9, maxWidth = 6, maxHeight = 6 } = block.constraints as FractionConstraints;
     const mW = maxWidth;
     const mH = maxHeight;
 
@@ -142,7 +143,7 @@ function makeVeelhoekExercise(block: MathBlock): FractionExercise {
 }
 
 function makeAbstractExercise(block: MathBlock): FractionExercise {
-    const { minDenominator = 2, maxDenominator = 9, level = 1, maxAbstractN3 = 1000 } = block.constraints;
+    const { minDenominator = 2, maxDenominator = 9, level = 1, maxAbstractN3 = 1000 } = block.constraints as FractionConstraints;
     const denominator = randInt(minDenominator, maxDenominator);
     const numerator = randInt(1, denominator - 1);
     let total: number;
@@ -164,7 +165,7 @@ function makeAbstractExercise(block: MathBlock): FractionExercise {
 }
 
 export function generateFractionExercises(block: MathBlock): FractionExercise[] {
-    const subType = (block.constraints.subType || 'kleuren') as FractionSubType;
+    const subType = ((block.constraints as FractionConstraints).subType || 'kleuren') as FractionSubType;
     const count = block.numberOfExercises || 6;
 
     return Array.from({ length: count }, (): FractionExercise => {

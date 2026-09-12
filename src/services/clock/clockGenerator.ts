@@ -1,6 +1,7 @@
 import type { MathBlock } from '../math/types';
 import type { ClockExercise, TimeCategory, MinuteDirection } from './clockTypes';
 import { formatTimeText, formatDigitalTime } from './clockTypes';
+import type { ClockConstraints } from '../math/constraintTypes';
 
 export function generateClockExercises(block: MathBlock): ClockExercise[] {
     const { numberOfExercises } = block;
@@ -10,7 +11,7 @@ export function generateClockExercises(block: MathBlock): ClockExercise[] {
         // isn't silently restricted to whole hours only.
         timeTypes = ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor'] as TimeCategory[],
         minuteDirection = 'beide' as MinuteDirection,
-    } = block.constraints;
+    } = block.constraints as ClockConstraints;
 
     // Build the set of valid minutes from selected time categories
     const validMinutes = new Set<number>();

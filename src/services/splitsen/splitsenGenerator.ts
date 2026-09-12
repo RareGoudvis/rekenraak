@@ -1,6 +1,7 @@
 import type { MathBlock, SplitsenExercise } from '../math/types';
 import { digitAtPlace } from '../math/mathEngine';
 import { numberToDutchWords } from './dutchWords';
+import type { SplitsenConstraints } from '../math/constraintTypes';
 
 const randInt = (min: number, max: number): number =>
     Math.floor(Math.random() * (max - min + 1)) + min;
@@ -74,13 +75,14 @@ function generatePlaceValueExercises(block: MathBlock): SplitsenExercise[] {
         maxGetal = 1000,
         mathDirection = 'decompose',
         operand1Mask = {},
-    } = block.constraints;
-    const dp = Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0));
+    } = block.constraints as SplitsenConstraints;
+    const dp = Math.min(3, Math.max(0, (block.constraints as SplitsenConstraints).decimalPlaces ?? 0));
     const scale = Math.pow(10, dp);
     const benenCombos = parseBenenCombos(block.constraints);
-    const mathFormList: string[] = Array.isArray(block.constraints.mathForms) && block.constraints.mathForms.length
-        ? block.constraints.mathForms
-        : [block.constraints.mathForm === 'expanded' ? 'expanded' : 'letters'];
+    const cSplit = block.constraints as SplitsenConstraints;
+    const mathFormList: string[] = Array.isArray(cSplit.mathForms) && cSplit.mathForms.length
+        ? cSplit.mathForms
+        : [cSplit.mathForm === 'expanded' ? 'expanded' : 'letters'];
     const n = block.numberOfExercises;
     const results: SplitsenExercise[] = [];
     const used = new Set<number>();
@@ -101,7 +103,7 @@ function generatePlaceValueExercises(block: MathBlock): SplitsenExercise[] {
             results.push({ ...base, placeBreakdown: nonZeroPlaces(num, dp), blankSide: combo.blankSide, notation: combo.notation });
         } else {
             const form = mathFormList[randInt(0, mathFormList.length - 1)] === 'expanded' ? 'expanded' : 'letters';
-            const dir = mathDirection === 'beide' ? (Math.random() < 0.5 ? 'decompose' : 'compose') : mathDirection;
+            const dir: 'decompose' | 'compose' = mathDirection === 'beide' ? (Math.random() < 0.5 ? 'decompose' : 'compose') : mathDirection === 'compose' ? 'compose' : 'decompose';
             results.push({ ...base, placeBreakdown: nonZeroPlaces(num, dp), mathForm: form, mathDirection: dir });
         }
     }
@@ -169,7 +171,7 @@ function generateGiven(total: number, mask: Record<string, boolean>, dp: number)
 // Recompute one exercise's derived fields when a teacher types a new top number
 // (manual edit in the inspector). Keeps layout-specific extras (blankSide, etc.).
 export function recomputeSplitsenExercise(block: MathBlock, ex: SplitsenExercise, newTotal: number): Partial<SplitsenExercise> {
-    const c = block.constraints;
+    const c = block.constraints as SplitsenConstraints;
     const layout: string = c.layout || 'basic';
     // SYNC with SplitsenConfig.decimalsAllowed (basic | splitsboom | positie*): splitsboom
     // was omitted here, so editing a decimal splitsboom forced dp=0 and the legs no longer
@@ -211,8 +213,8 @@ function parseBlankPositions(c: Record<string, unknown>): Array<'top' | 'left' |
 }
 
 function generateSplitsboomExercises(block: MathBlock): SplitsenExercise[] {
-    const { maxGetal = 100, operand1Mask = {}, operand2Mask = {}, fixedTotal = null } = block.constraints;
-    const dp = Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0));
+    const { maxGetal = 100, operand1Mask = {}, operand2Mask = {}, fixedTotal = null } = block.constraints as SplitsenConstraints;
+    const dp = Math.min(3, Math.max(0, (block.constraints as SplitsenConstraints).decimalPlaces ?? 0));
     const scale = Math.pow(10, dp);
     const positions = parseBlankPositions(block.constraints);
     const n = block.numberOfExercises;
@@ -245,7 +247,7 @@ export function generateSplitsenExercises(block: MathBlock): SplitsenExercise[] 
         fixedTotal = null,
         layout = 'basic',
         rowsPerBox = 4,
-    } = block.constraints;
+    } = block.constraints as SplitsenConstraints;
 
     if (layout === 'positie-tabel' || layout === 'positie-benen' || layout === 'positie-math') {
         return generatePlaceValueExercises(block);
@@ -255,7 +257,7 @@ export function generateSplitsenExercises(block: MathBlock): SplitsenExercise[] 
     }
 
     // Decimals only for Rooster (basic); verliefde-harten + mathematic stay integer.
-    const dp = layout === 'basic' ? Math.min(3, Math.max(0, block.constraints.decimalPlaces ?? 0)) : 0;
+    const dp = layout === 'basic' ? Math.min(3, Math.max(0, (block.constraints as SplitsenConstraints).decimalPlaces ?? 0)) : 0;
     const scale = Math.pow(10, dp);
     const n = block.numberOfExercises;
     const pairsPerItem = layout === 'basic' ? (rowsPerBox || 4) : 1;
