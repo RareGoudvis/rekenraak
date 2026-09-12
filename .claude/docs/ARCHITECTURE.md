@@ -569,6 +569,13 @@ moved block. The Overzicht outline ([OverzichtPanel](../../src/components/layout
 uses the same pointer approach with a 5px threshold and `[data-ov-index]` rows. Playwright
 drives all of it with plain `mouse.move/down/up` (see TESTING.md).
 
+**Block controls rail.** The per-block buttons (`BlockControlsRail`) are portalled to `<body>`
+like InfoTip and the split popover, `position: fixed` from the block's rect (re-placed on
+scroll of `.print-scroll`, window resize and a ResizeObserver on the block). Inside
+`.print-block` they were clipped by the page body's `overflow: hidden` near the page bottom;
+outside it they also play no part in measurement or packing. Compact: 26px buttons, 14px
+icons, groups [handle, lock, duplicate, split] · [page-break, up, down] · [delete].
+
 **Splitting instead of reordering.** A block that does not fit the rest of a page still moves
 whole, so `PageSheet` measures the blank tail it leaves and, past three row units (72px),
 offers "Het volgende blok past hier niet meer — splitsen" on an explicit grid row under the
@@ -752,6 +759,7 @@ src/
     ├── layout/
     │   ├── SheetDropZones.tsx  # labelled "Hier invoegen" / "Wisselen" halves over a drag target (screen only)
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
+    │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = App's hoveredBlockId ?? activeBlockId, not CSS :hover
     │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, wordmark foot
     │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
