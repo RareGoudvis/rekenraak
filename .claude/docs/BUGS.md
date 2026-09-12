@@ -80,12 +80,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Constraints
 
-- **`BlockConstraints` still has an `any` index signature** — `src/services/math/constraintTypes.ts`.
-  Tightening it to `Record<string, unknown>` is what would make an unnamed key a compile error,
-  but `Inspector.tsx` reads ~33 keys off `const c = activeBlock?.constraints ?? {}` (lines 638-641,
-  673, 918, 944, 963-967, 1044-1045, 1148-1165, 1225-1269) with no family in scope. Fix direction:
-  give the Inspector per-section casts (it already knows the typeId in each branch), then flip the
-  index to `unknown` (2026-09-12).
 - **Plugins that destructure never moved to `useConstraints`** — about 25 of the ~45 config
   plugins read `const { a = 1, b } = block.constraints as XConstraints` and keep a hand-rolled
   `set`. They are typed, but the hook (`src/components/configurator/useConstraints.ts`) is only

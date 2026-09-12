@@ -34,14 +34,14 @@ export type CrossCutting = {
 };
 
 /**
- * What `MathBlock.constraints` is when the block's family is not known statically.
- * The index signature is `any` rather than `unknown` because three writers have to serve
- * every family at once (Inspector's updateConstraint, baseApply, the store's merge) and
- * read keys they cannot name. It is the fallback, never the description: code that knows
- * its family casts to the exact type above, and that cast is where typos are caught.
+ * What `MathBlock.constraints` is when the block's family is not known statically: a bag
+ * whose keys are strings and whose values are not assumed. `unknown` rather than `any`, so
+ * reading a key without saying what it is stays a compile error — code that knows its family
+ * casts to the exact type above, and that cast is where typos are caught. The writers that
+ * must serve every family at once (baseApply, the store's merge, the template seeds) only
+ * spread and assign, which needs no value type.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BlockConstraints = Record<string, any> & CrossCutting;
+export type BlockConstraints = Record<string, unknown> & CrossCutting;
 
 // ── Hoofdrekenen (mental math) ───────────────────────────────────────────────
 
