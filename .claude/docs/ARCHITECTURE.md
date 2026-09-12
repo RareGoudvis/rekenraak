@@ -105,6 +105,13 @@ the curriculum lock: order is presentation, not difficulty. Callers that mean "i
 the target" must compensate for the splice: `to > from ? to - 1 : to` (both the sheet drag
 and the Overzicht outline do).
 
+**Generation feedback:** `MathBlock.generationNote?: string | null` is UI-only (never
+serialized — `persistence.ts` strips it; never in history). `setGenerationNote(id, note)` is
+written by `regenerateBlock` ([generateDispatch.ts](../../src/services/generateDispatch.ts))
+and `addBlockFromType`: a thrown generator becomes "Kon geen oefeningen maken: …" (danger
+colour), a relaxed hoofdrekenen run becomes "Instellingen versoepeld …" and a genuine
+shortfall "Slechts N oefeningen mogelijk …". Shown under Genereer in the Inspector.
+
 Exercises are written by one **generic** action: `setExercises(id, field, data)`
 where `field` is the registry-declared `exerciseField` (e.g. `'mabExercises'`).
 There is no longer a setter per type. A second generic action
@@ -113,7 +120,8 @@ field (used by ordenen click-to-edit and the splitsen "type a number" textboxes)
 
 **Curriculum lock gate:** `updateBlockSettings` / `updateBlockLayout` /
 `updateBlockInstruction` check `curriculum?.locked` and, when locked, allow only
-`numberOfExercises` + `pageBreakBefore` (difficulty/wording frozen). This single
+`numberOfExercises` + `pageBreakBefore` + `widthUnits` (difficulty/wording frozen; layout is
+not difficulty). This single
 choke point enforces the lock without touching the ~16 config plugins. Draft-block
 edits bypass the gate (authoring runs unlocked).
 
@@ -272,6 +280,11 @@ export function generateXExercises(block: MathBlock): XExercise[] {
   return results;                              // may be short if budget exhausted
 }
 ```
+
+Hoofdrekenen (`hr-std-*`) wraps this loop in `generateWithRelaxation` ([relax.ts](../../src/services/math/relax.ts)):
+strict settings first; if short, a throwaway clone drops one rung at a time (preset →
+operand2Mask → operand1Mask → bridges → termCount) and the block gets a `generationNote`
+(§3). Stored constraints are never mutated.
 
 `MAX_ATTEMPTS` varies by generator (20000 for math/geld-teruggeven, 5000 for MAB,
 500 per-item for cijferen). Some simple generators (geld, fractions, clock) skip
@@ -656,6 +669,7 @@ src/
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts,validators.ts}   # validators.ts is EMPTY
+│   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
 │   ├── clock/{clockTypes.ts,clockGenerator.ts}
 │   ├── fractions/{fractionGenerator.ts,breukBewerkGenerator.ts}   # breukBewerk = gemengd/gelijknamig/vereenvoudigen
@@ -800,7 +814,7 @@ Opening such a link sets `store.curriculum` (via `loadWorksheet`). In locked mod
 sidebar ([sidebar.tsx](../../src/components/layout/sidebar.tsx)) shows only the whitelist
 (hides the tree + Geavanceerd), the Inspector shows a banner and hides difficulty/
 differentiation (count + Genereer stay), and the store gate (§3) freezes everything but
-count + page-break. The lock is enforced in the store, so it holds regardless of UI.
+count + page-break + width. The lock is enforced in the store, so it holds regardless of UI.
 
 ### Shared bits
 
