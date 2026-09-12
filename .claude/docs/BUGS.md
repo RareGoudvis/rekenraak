@@ -40,10 +40,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   render mode in `MathBlockRenderer` (narrow answer line ≈ 50px, no fixed operand cell,
   1-up) for cells < 200px would bring hr-std, ketting and plaatswaarde to ¼. Re-run
   `scripts/width-matrix.mjs` after.
-- **Top margin of the page is too tall** (owner, 2026-09-12). Head padding is 16 mm on screen
-  (`index.css` `.page-sheet-head { padding: 60.5px 53px 0 }`) and in print (`16mm 14mm 0`);
-  they were synced in 464176f so change BOTH, then recompute `BODY_HEIGHT_PX` in
-  `blockLayout.ts` (the derivation comment lists the numbers). Try 12 mm (45px).
 - **`widthUnits` edits silently dropped under curriculum lock** — `useWorksheetStore.tsx`
   `updateBlockSettings` keeps only `numberOfExercises` + `pageBreakBefore` when locked, but the
   Inspector width picker is not disabled. Decide: allow width under lock (it's layout, not
