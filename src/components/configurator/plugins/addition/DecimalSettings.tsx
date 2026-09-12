@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../../store/useWorksheetStore';
+import { useConstraints } from '../../useConstraints';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
@@ -10,9 +10,8 @@ import type { AddSubConstraints } from '../../../../services/math/constraintType
 interface Props { block: MathBlock; }
 
 export default function DecimalSettings({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 100, decimalPlaces = 2, bridges = {} } = block.constraints as AddSubConstraints;
-    const c = block.constraints as AddSubConstraints;
+    const [c, patch] = useConstraints<AddSubConstraints>(block);
+    const { maxGetal = 100, decimalPlaces = 2, bridges = {} } = c;
 
     // Mask and bridge places that match the chosen number of decimal places
     const maskPlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces);
@@ -21,7 +20,7 @@ export default function DecimalSettings({ block }: Props) {
 
     const toggleMask = (operand: 'operand1Mask' | 'operand2Mask', posKey: string) => {
         const currentMask = c[operand] ?? {};
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [operand]: { ...currentMask, [posKey]: !currentMask[posKey] } } });
+        patch({ [operand]: { ...currentMask, [posKey]: !currentMask[posKey] } } as Partial<AddSubConstraints>);
     };
 
     return (
@@ -31,7 +30,7 @@ export default function DecimalSettings({ block }: Props) {
                 <PopupSelect
                     value={decimalPlaces}
                     options={[1, 2, 3].map(num => ({ value: num, label: String(num) }))}
-                    onChange={(num) => updateBlockSettings(block.id, { constraints: { ...block.constraints, decimalPlaces: num } })}
+                    onChange={(num) => patch({ decimalPlaces: num })}
                     ariaLabel="Aantal cijfers na de komma"
                 />
             </div>
@@ -42,7 +41,7 @@ export default function DecimalSettings({ block }: Props) {
                     clampToLowest
                     value={maxGetal}
                     options={maxPresets.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
-                    onChange={(val) => updateBlockSettings(block.id, { constraints: { ...block.constraints, maxGetal: val } })}
+                    onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />
             </div>
@@ -68,7 +67,7 @@ export default function DecimalSettings({ block }: Props) {
                 <BridgeControl
                     places={bridgePlaces}
                     bridges={bridges}
-                    onChange={(key, val) => updateBlockSettings(block.id, { constraints: { ...block.constraints, bridges: { ...bridges, [key]: val } } })}
+                    onChange={(key, val) => patch({ bridges: { ...bridges, [key]: val } })}
                 />
             </div>
         </div>

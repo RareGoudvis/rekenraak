@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -10,11 +10,11 @@ interface Props { block: MathBlock; }
 const MAX_PRESETS = [20, 100, 1000, 10000];
 
 export default function EvenOnevenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { subType = 'rooster', maxGetal = 100, target = 'even', perRow = 10 } = block.constraints as EvenOnevenConstraints;
+    const [c, patch] = useConstraints<EvenOnevenConstraints>(block);
+    const { subType = 'rooster', maxGetal = 100, target = 'even', perRow = 10 } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<EvenOnevenConstraints>);
 
     return (
         <div style={styles.container}>

@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function BreukBewerkConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const [c, patch] = useConstraints<BreukBewerkConstraints>(block);
     const {
         subType = 'gemengd',
         direction = 'naar-gemengd',
@@ -20,12 +20,12 @@ export default function BreukBewerkConfig({ block }: Props) {
         tablesOnly = true,
         allowIrreducible = false,
         targetDen = '',
-    } = block.constraints as BreukBewerkConstraints;
+    } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<BreukBewerkConstraints>);
     const setMany = (updates: Record<string, unknown>) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, ...updates } });
+        patch({ ...updates });
 
     return (
         <div style={styles.container}>

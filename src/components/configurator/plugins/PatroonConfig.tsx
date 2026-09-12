@@ -1,4 +1,3 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { useConstraints } from '../useConstraints';
 import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
@@ -19,7 +18,7 @@ const OPS: Array<{ key: string; label: string }> = [
 ];
 
 export default function PatroonConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const [c, patch] = useConstraints<PatroonConstraints>(block);
     const {
         numberType = 'natural',
         maxGetal = 100,
@@ -29,12 +28,12 @@ export default function PatroonConfig({ block }: Props) {
         ops = ['+'],
         opSettings = {},
         maxDecimals = 1,
-    } = block.constraints as PatroonConstraints;
+    } = c;
     const isDecimal = numberType === 'decimal';
     const dp = isDecimal ? Math.min(3, Math.max(1, maxDecimals)) : 0;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<PatroonConstraints>);
     const lowerBound = minGetal ?? -maxGetal;
 
     const toggleOp = (op: string) => {
@@ -43,11 +42,11 @@ export default function PatroonConfig({ block }: Props) {
         if (!nextOps.length) return;   // keep ≥1
         const nextSettings = { ...opSettings };
         if (!has && !nextSettings[op]) nextSettings[op] = { max: 10, mask: {} };
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, ops: nextOps, opSettings: nextSettings } });
+        patch({ ops: nextOps, opSettings: nextSettings });
     };
-    const setOp = (op: string, patch: Record<string, unknown>) => {
+    const setOp = (op: string, changes: Record<string, unknown>) => {
         const cur = opSettings[op] ?? { max: 10, mask: {} };
-        set('opSettings', { ...opSettings, [op]: { ...cur, ...patch } });
+        set('opSettings', { ...opSettings, [op]: { ...cur, ...changes } });
     };
     const toggleOpMask = (op: string, k: string) => {
         const cur = opSettings[op] ?? { max: 10, mask: {} };

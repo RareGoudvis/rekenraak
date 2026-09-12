@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
@@ -8,8 +8,7 @@ import type { GeldWisselConstraints } from '../../../services/math/constraintTyp
 const EXERCISE_LABELS = ['links', 'rechts', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 export default function GeldWisselConfig({ block }: { block: MathBlock }) {
-    const updateBlockSettings = useWorksheetStore(s => s.updateBlockSettings);
-    const c = block.constraints as GeldWisselConstraints;
+    const [c, patch] = useConstraints<GeldWisselConstraints>(block);
     const n = block.numberOfExercises || 4;
 
     const exerciseBills: number[] = c.exerciseBills ?? [500];
@@ -19,7 +18,7 @@ export default function GeldWisselConfig({ block }: { block: MathBlock }) {
         // fill gaps if array is shorter than i
         while (next.length <= i) next.push(next[next.length - 1] ?? 500);
         next[i] = valueCents;
-        updateBlockSettings(block.id, { constraints: { ...c, exerciseBills: next } });
+        patch({ exerciseBills: next });
     };
 
     return (

@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -11,11 +11,11 @@ interface Props { block: MathBlock; }
 const MAX_PRESETS = [100, 1000, 10000, 100000, 1000000];
 
 export default function PlaatswaardeConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 1000, numberMask = {}, decimalPlaces = 0 } = block.constraints as PlaatswaardeConstraints;
+    const [c, patch] = useConstraints<PlaatswaardeConstraints>(block);
+    const { maxGetal = 1000, numberMask = {}, decimalPlaces = 0 } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<PlaatswaardeConstraints>);
 
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
     const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);

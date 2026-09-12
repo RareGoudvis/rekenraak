@@ -1,4 +1,3 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { useConstraints } from '../useConstraints';
 import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
@@ -27,7 +26,7 @@ const SHAPE_GROUPS: Array<{ title: string; items: Array<{ key: string; label: st
 ];
 
 export default function MetenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const [c, patch] = useConstraints<MetenConstraints>(block);
     const {
         measureModel = 'meten',
         precision = 'cm',
@@ -35,11 +34,11 @@ export default function MetenConfig({ block }: Props) {
         maxLength = 10,
         maxCorners = 0,
         shapes = ['driehoek', 'rechthoek', 'vierkant'],
-    } = block.constraints as MetenConstraints;
+    } = c;
 
     const isOmtrek = block.typeId === 'omtrek';
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<MetenConstraints>);
     const toggleShape = (k: string) => {
         const has = shapes.includes(k);
         const next = has ? shapes.filter((s: string) => s !== k) : [...shapes, k];

@@ -1,5 +1,5 @@
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 
@@ -7,11 +7,10 @@ import SettingLabel from './SettingLabel';
 // memory box, blank page). One plugin covers all of them, switching on constraints.kind,
 // because they share the "no generator, all constraints" shape.
 export default function LayoutConfig({ block }: { block: MathBlock }) {
-    const updateBlockSettings = useWorksheetStore((s) => s.updateBlockSettings);
-    const c = (block.constraints ?? {}) as Record<string, unknown>;
+    const [c, patch] = useConstraints<Record<string, unknown>>(block);
     const kind = (c.kind as string) ?? 'sectie';
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+        patch({ [key]: value });
 
     const textField = (key: string, label: string, info: string, placeholder = '') => (
         <div style={styles.section}>

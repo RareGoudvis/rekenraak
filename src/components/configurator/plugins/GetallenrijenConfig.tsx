@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { useConstraints } from '../useConstraints';
 import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
@@ -28,8 +27,7 @@ const stepDecimals = (s: number): number => {
 };
 
 export default function GetallenrijenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-
+    const [c, patch] = useConstraints<GetallenrijConstraints>(block);
     const {
         maxGetal = 100,
         step = 5,
@@ -43,10 +41,10 @@ export default function GetallenrijenConfig({ block }: Props) {
         gelijknamig = false,
         numberMask = {},
         maxTeller = 25,
-    } = block.constraints as GetallenrijConstraints;
+    } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<GetallenrijConstraints>);
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
 
     const isRational = numberType === 'rational';

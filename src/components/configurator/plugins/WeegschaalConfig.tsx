@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { BEREIK_STEPS } from '../../../services/weegschaal/weegschaalGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -9,8 +9,7 @@ import type { WeegschaalConstraints } from '../../../services/math/constraintTyp
 interface Props { block: MathBlock; }
 
 export default function WeegschaalConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints as WeegschaalConstraints;
+    const [c, patch] = useConstraints<WeegschaalConstraints>(block);
     const mode: string = c.mode ?? 'aflezen';
     const bereikGram: number = c.bereikGram ?? 1000;
     const allowed = BEREIK_STEPS[bereikGram] ?? [50];
@@ -20,10 +19,10 @@ export default function WeegschaalConfig({ block }: Props) {
     const boxHeight: number = c.boxHeight ?? 170;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+        patch({ [key]: value } as Partial<WeegschaalConstraints>);
     // Changing the bereik snaps the step to that dial's coarsest schaalverdeling.
     const setBereik = (v: number) =>
-        updateBlockSettings(block.id, { constraints: { ...c, bereikGram: v, stepGram: (BEREIK_STEPS[v] ?? [50])[0] } });
+        patch({ bereikGram: v, stepGram: (BEREIK_STEPS[v] ?? [50])[0] });
 
     return (
         <div style={styles.container}>

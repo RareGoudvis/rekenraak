@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -20,8 +20,7 @@ const OPERATORS = [
 const numInput: React.CSSProperties = { width: '70px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px' };
 
 export default function OrdenenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-
+    const [c, patch] = useConstraints<OrdenenConstraints>(block);
     const {
         count = 3,
         operatorMode = 'oplopend',
@@ -34,10 +33,10 @@ export default function OrdenenConfig({ block }: Props) {
         maxDenominator = 10,
         unitFractionsOnly = false,
         allowMixed = false,
-    } = block.constraints as OrdenenConstraints;
+    } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<OrdenenConstraints>);
 
     const maskPlaces = getMaskPlaces(maxGetal, numberType === 'decimal' ? 'decimal' : 'natural', numberType === 'decimal' ? decimalPlaces : 0);
     const toggleMask = (k: string) => set('numberMask', { ...(numberMask || {}), [k]: !numberMask?.[k] });

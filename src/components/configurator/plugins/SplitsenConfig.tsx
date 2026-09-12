@@ -1,3 +1,4 @@
+import { useConstraints } from '../useConstraints';
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { F } from './shared/fieldStyles';
 import { formatMathNumber } from '../../../services/math/formatters';
@@ -17,8 +18,8 @@ const MAX_PRESETS = [10, 20, 100, 1000, 10000, 100000, 1000000];
 const HEART_PRESETS = [10, 20, 100];
 
 export default function SplitsenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
 
+    const [c, patch] = useConstraints<SplitsenConstraints>(block);
     const {
         maxGetal = 10,
         operand1Mask = {},
@@ -28,8 +29,7 @@ export default function SplitsenConfig({ block }: Props) {
         rowsPerBox = 4,
         rowHeight = 28,
         mathDirection = 'decompose',
-    } = block.constraints as SplitsenConstraints;
-    const c = block.constraints as SplitsenConstraints;
+    } = c;
 
     const isPositie = typeof layout === 'string' && layout.startsWith('positie');
     const isBoom = layout === 'splitsboom';
@@ -39,7 +39,7 @@ export default function SplitsenConfig({ block }: Props) {
     const maskPlaces = decimalPlaces > 0 ? getMaskPlaces(maxGetal, 'decimal', decimalPlaces) : getMaskPlaces(maxGetal, 'natural');
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<SplitsenConstraints>);
 
     // Splitsbenen: which (blankSide, notation) combos are included (≥1). Generator mixes them.
     const benenVariants: string[] = Array.isArray(c.benenVariants) && c.benenVariants.length

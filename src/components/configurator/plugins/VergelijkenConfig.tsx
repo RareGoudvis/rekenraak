@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { REP_OPTIONS } from '../../../services/vergelijken/representations';
@@ -14,12 +14,12 @@ const MAX_PRESETS = [100, 1000, 10000, 100000, 1000000];
 const REP_MAX_PRESETS = [10, 100, 1000];   // representaties: tienden/honderdsten range
 
 export default function VergelijkenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const [c, patch] = useConstraints<VergelijkenConstraints>(block);
     const { subType = 'getallen', maxGetal = 1000, numberMask = {}, chooseTarget = 'grootste', setSize = 4, decimalPlaces = 0, leftRep = 'breuk', rightRep = 'kommagetal', leftMask = {}, rightMask = {},
-        leftFracN = 4, leftFracD = 8, rightFracN = 4, rightFracD = 8 } = block.constraints as VergelijkenConstraints;
+        leftFracN = 4, leftFracD = 8, rightFracN = 4, rightFracD = 8 } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<VergelijkenConstraints>);
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
     const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
     const isRep = subType === 'representaties';

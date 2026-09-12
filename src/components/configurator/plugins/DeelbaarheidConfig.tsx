@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
@@ -13,8 +13,7 @@ const DIVISOR_OPTIONS = [2, 3, 4, 5, 6, 9, 10, 25, 50, 100];
 const MAX_PRESETS = [100, 1000, 10000, 100000];
 
 export default function DeelbaarheidConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-
+    const [c, patch] = useConstraints<DeelbaarheidConstraints>(block);
     const {
         layout = 'tabel',
         divisors = [2, 5, 10],
@@ -22,10 +21,10 @@ export default function DeelbaarheidConfig({ block }: Props) {
         base = 9,
         terms = 6,
         givenCount = 2,
-    } = block.constraints as DeelbaarheidConstraints;
+    } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<DeelbaarheidConstraints>);
 
     const toggleDivisor = (d: number) => {
         const next = divisors.includes(d) ? divisors.filter((x: number) => x !== d) : [...divisors, d].sort((a, b) => a - b);

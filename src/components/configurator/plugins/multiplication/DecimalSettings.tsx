@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../../store/useWorksheetStore';
+import { useConstraints } from '../../useConstraints';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
@@ -9,16 +9,15 @@ import type { MulDivConstraints } from '../../../../services/math/constraintType
 interface Props { block: MathBlock; isDivision?: boolean; }
 
 export default function DecimalSettings({ block, isDivision = false }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     // Standaardwaarden instellen (voor de zekerheid)
-    const { maxGetal = 100, decimalPlaces = 2, operand1Mask = {}, operand2Mask = {} } = block.constraints as MulDivConstraints;
-    const c = block.constraints as MulDivConstraints;
+    const [c, patch] = useConstraints<MulDivConstraints>(block);
+    const { maxGetal = 100, decimalPlaces = 2, operand1Mask = {}, operand2Mask = {} } = c;
 
     // Stuur decimalPlaces mee, zodat de maskers dynamisch inkrimpen!
     const availablePlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces);
 
     const updateConstraint = (key: string, value: unknown) => {
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<MulDivConstraints>);
     };
 
     const handleMaskToggle = (operand: 1 | 2, place: string) => {

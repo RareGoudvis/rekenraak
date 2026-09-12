@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { NIVEAU_MAX, NIVEAU_HINT } from '../../../services/romeinse/romeinseGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
@@ -8,11 +8,11 @@ import type { RomeinseConstraints } from '../../../services/math/constraintTypes
 interface Props { block: MathBlock; }
 
 export default function RomeinseConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { niveau = 2 } = block.constraints as RomeinseConstraints;
+    const [c, patch] = useConstraints<RomeinseConstraints>(block);
+    const { niveau = 2 } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<RomeinseConstraints>);
 
     return (
         <div style={styles.container}>

@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../../store/useWorksheetStore';
+import { useConstraints } from '../../useConstraints';
 import { getMaskPlaces, getBridgePlaces } from '../../../../services/math/mathEngine';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
@@ -10,9 +10,8 @@ import type { AddSubConstraints } from '../../../../services/math/constraintType
 interface Props { block: MathBlock; }
 
 export default function NaturalSettings({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 1000, bridges = {} } = block.constraints as AddSubConstraints;
-    const c = block.constraints as AddSubConstraints;
+    const [c, patch] = useConstraints<AddSubConstraints>(block);
+    const { maxGetal = 1000, bridges = {} } = c;
     const termCount: number = Math.min(4, Math.max(2, c.termCount ?? 2));
     const operandMax: (number | null)[] = c.operandMax ?? [];
 
@@ -28,18 +27,18 @@ export default function NaturalSettings({ block }: Props) {
         const next = { ...maskAt(i), [posKey]: !maskAt(i)[posKey] };
         if (i <= 1) {
             const key = i === 0 ? 'operand1Mask' : 'operand2Mask';
-            updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: next } });
+            patch({ [key]: next } as Partial<AddSubConstraints>);
         } else {
             const masks = [...(c.operandMasks ?? [])];
             masks[i] = next;
-            updateBlockSettings(block.id, { constraints: { ...block.constraints, operandMasks: masks } });
+            patch({ operandMasks: masks });
         }
     };
     const setOperandMax = (i: number, raw: string) => {
         const v = raw === '' ? null : Math.max(1, Number(raw.replace(/\D/g, '')) || 1);
         const next = [...operandMax];
         next[i] = v;
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, operandMax: next } });
+        patch({ operandMax: next });
     };
 
     return (
@@ -50,7 +49,7 @@ export default function NaturalSettings({ block }: Props) {
                     clampToLowest
                     value={maxGetal}
                     options={maxPresets.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
-                    onChange={(val) => updateBlockSettings(block.id, { constraints: { ...block.constraints, maxGetal: val } })}
+                    onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />
             </div>
@@ -90,7 +89,7 @@ export default function NaturalSettings({ block }: Props) {
                 <BridgeControl
                     places={bridgePlaces}
                     bridges={bridges}
-                    onChange={(key, val) => updateBlockSettings(block.id, { constraints: { ...block.constraints, bridges: { ...bridges, [key]: val } } })}
+                    onChange={(key, val) => patch({ bridges: { ...bridges, [key]: val } })}
                 />
             </div>
         </div>

@@ -1,4 +1,3 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { useConstraints } from '../useConstraints';
 import { F } from './shared/fieldStyles';
 import { sharedPluginStyles as S } from './sharedPluginStyles';
@@ -24,10 +23,9 @@ const CENTEN_OPTIES = [
 ];
 
 export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
-    const updateBlockSettings = useWorksheetStore(s => s.updateBlockSettings);
-    const c = block.constraints as GeldTeruggevenConstraints;
+    const [c, patch] = useConstraints<GeldTeruggevenConstraints>(block);
     const set = (key: string, val: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: val } });
+        patch({ [key]: val } as Partial<GeldTeruggevenConstraints>);
 
     const maxPriceEuros: number    = c.maxPriceEuros ?? 49;
     const payWithOptions: number[] = c.payWithOptions ?? [1000, 2000, 5000];
@@ -40,14 +38,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
     const activePreset = PRICE_PRESETS.find(p => p.max === maxPriceEuros);
 
     const applyPreset = (preset: typeof PRICE_PRESETS[0]) => {
-        updateBlockSettings(block.id, {
-            constraints: {
-                ...c,
-                minPriceEuros: 1,
-                maxPriceEuros: preset.max,
-                payWithOptions: preset.payDefault,
-            },
-        });
+        patch({ minPriceEuros: 1, maxPriceEuros: preset.max, payWithOptions: preset.payDefault });
     };
 
     const togglePayWith = (valueCents: number) => {

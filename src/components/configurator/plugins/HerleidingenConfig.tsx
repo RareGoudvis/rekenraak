@@ -1,4 +1,3 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { useConstraints } from '../useConstraints';
 import Switch from '../../ui/Switch';
 import { F } from './shared/fieldStyles';
@@ -22,8 +21,7 @@ const OPP_FORMATS = [
 const SAM_STOPS = [10, 100, 1000, 10000, 100000, 1000000];
 
 export default function HerleidingenConfig({ block }: { block: MathBlock }) {
-    const update = useWorksheetStore(s => s.updateBlockSettings);
-    const c = block.constraints as HerleidingenConstraints;
+    const [c, patch] = useConstraints<HerleidingenConstraints>(block);
     const measure: string = c.measure ?? 'lengte';
     const ladder = ladderFor(measure);
     const units: string[] = c.units ?? ladder.map(u => u.key);
@@ -39,7 +37,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const hasEnkel = formats.some(f => f === 'enkel-getal' || f === 'enkel-eenheid') || (hasAre && areMode === 'enkel');
     const hasSam = formats.some(f => f === 'samengesteld-enkel' || f === 'enkel-samengesteld') || (hasAre && areMode === 'samengesteld');
 
-    const set = (k: string, v: unknown) => update(block.id, { constraints: { ...c, [k]: v } });
+    const set = (k: string, v: unknown) => patch({ [k]: v } as Partial<HerleidingenConstraints>);
     const toggleUnit = (k: string) => { const next = units.includes(k) ? units.filter(x => x !== k) : [...units, k]; if (next.length) set('units', next); };
     const toggleFormat = (k: string) => { const next = formats.includes(k) ? formats.filter(x => x !== k) : [...formats, k]; if (next.length) set('formats', next); };
 

@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import NaturalSettings from './addition/NaturalSettings';
 import DecimalSettings from './addition/DecimalSettings';
@@ -19,15 +19,13 @@ const SubConfigMap = {
 };
 
 export default function SubtractionConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { numberType = 'natural', equationType = 'normal' } = block.constraints as AddSubConstraints;
+    const [c, patch] = useConstraints<AddSubConstraints>(block);
+    const { numberType = 'natural', equationType = 'normal' } = c;
 
     const ActiveSubConfig = SubConfigMap[numberType as keyof typeof SubConfigMap] || NaturalSettings;
 
     const updateConstraint = (key: string, value: unknown) => {
-        updateBlockSettings(block.id, {
-            constraints: { ...block.constraints, [key]: value }
-        });
+        patch({ [key]: value } as Partial<AddSubConstraints>);
     };
 
     return (

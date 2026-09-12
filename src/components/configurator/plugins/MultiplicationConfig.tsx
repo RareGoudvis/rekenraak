@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import NaturalSettings from './multiplication/NaturalSettings';
 import DecimalSettings from './multiplication/DecimalSettings';
@@ -11,12 +11,12 @@ import type { MulDivConstraints } from '../../../services/math/constraintTypes';
 interface Props { block: MathBlock; }
 
 export default function MultiplicationConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { numberType = 'natural', equationType = 'normal', excludeOne = false, preset = 'vrij' } = block.constraints as MulDivConstraints;
+    const [c, patch] = useConstraints<MulDivConstraints>(block);
+    const { numberType = 'natural', equationType = 'normal', excludeOne = false, preset = 'vrij' } = c;
     const isTienvoud = preset === 'tienvoud';
 
     const updateConstraint = (key: string, value: unknown) => {
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<MulDivConstraints>);
     };
 
     return (

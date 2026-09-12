@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -9,18 +9,17 @@ interface Props {
 }
 
 export default function TemperatuurConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-
+    const [c, patch] = useConstraints<TemperatuurConstraints>(block);
     const {
         variant = 'kleuren',
         includeNegatives = false,
         perRow = 4,
         mode1 = 'gekleurd',
         mode2 = 'getal',
-    } = block.constraints as TemperatuurConstraints;
+    } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<TemperatuurConstraints>);
 
     const MODES = [
         { val: 'gekleurd', label: 'Gekleurd' },

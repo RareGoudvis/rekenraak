@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../../store/useWorksheetStore';
+import { useConstraints } from '../../useConstraints';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
@@ -6,17 +6,17 @@ import type { AddSubConstraints } from '../../../../services/math/constraintType
 interface Props { block: MathBlock; }
 
 export default function RationalSettings({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const [c, patch] = useConstraints<AddSubConstraints>(block);
     const {
         mixedNumber1 = false, mixedNumber2 = false,
         maxNumerator1 = 10, maxDenominator1 = 10,
         maxNumerator2 = 10, maxDenominator2 = 10,
         linkFractions = true
-    } = block.constraints as AddSubConstraints;
+    } = c;
 
     // Helper om constraints te updaten
     const updateConstraint = (updates: Record<string, unknown>) => {
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, ...updates } });
+        patch({ ...updates });
     };
 
     // Handler voor de teller/noemer velden. Kijkt of de 'link' aan staat.

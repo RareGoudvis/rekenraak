@@ -1,5 +1,5 @@
+import { useConstraints } from '../useConstraints';
 import { useState } from 'react';
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
@@ -16,8 +16,7 @@ const DECIMAL_STEPS = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.5, 1];
 const FRACTION_STEPS = [2, 3, 4, 5, 8, 10];   // denominator d → step 1/d
 
 export default function GetallenasConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-
+    const [c, patch] = useConstraints<GetallenasConstraints>(block);
     const {
         maxGetal = 100,
         step = 5,
@@ -29,10 +28,10 @@ export default function GetallenasConfig({ block }: Props) {
         minGetal,
         allowMixed = true,
         gelijknamig = false,
-    } = block.constraints as GetallenasConstraints;
+    } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<GetallenasConstraints>);
 
     const isRational = numberType === 'rational';
     const isDecimal = numberType === 'decimal';

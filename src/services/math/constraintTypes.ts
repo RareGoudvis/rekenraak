@@ -59,7 +59,8 @@ export type AddSubConstraints = {
     // 2-4 terms: per-term mask/max live in parallel arrays indexed by term.
     termCount?: number;
     operandMasks?: PlaceMask[];
-    operandMax?: number[];
+    // null = no ceiling for that term (the engine's maxOpFor reads it that way).
+    operandMax?: (number | null)[];
     // Presets: 'compenseren' (+/− over a round number) · 'tienvoud' (×/: by 10/100/1000).
     preset?: 'vrij' | 'compenseren' | 'tienvoud';
     presetDistance?: number;

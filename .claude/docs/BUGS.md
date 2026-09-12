@@ -37,10 +37,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   style (2026-09-10).
 ## Constraints
 
-- **Plugins that destructure never moved to `useConstraints`** — about 25 of the ~45 config
-  plugins read `const { a = 1, b } = block.constraints as XConstraints` and keep a hand-rolled
-  `set`. They are typed, but the hook (`src/components/configurator/useConstraints.ts`) is only
-  used by the ~15 that kept a `c`. Harmless duplication; convert opportunistically (2026-09-12).
 ## Tooling
 
 - **Indivisible blocks leave big blank tails** — measure-then-pack (789b3a8) removed the

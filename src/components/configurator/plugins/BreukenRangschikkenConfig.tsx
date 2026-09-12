@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -16,17 +16,17 @@ const MODES: Array<{ key: string; label: string }> = [
 ];
 
 export default function BreukenRangschikkenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const [c, patch] = useConstraints<BreukenRangschikkenConstraints>(block);
     const {
         fractionMode = 'stambreuken',
         count = 4,
         operatorMode = 'oplopend',
         minDenominator = 2,
         maxDenominator = 10,
-    } = block.constraints as BreukenRangschikkenConstraints;
+    } = c;
 
     const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<BreukenRangschikkenConstraints>);
 
     const showDenoms = fractionMode !== 'speciale';
 

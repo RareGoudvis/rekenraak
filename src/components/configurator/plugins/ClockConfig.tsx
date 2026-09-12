@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -17,8 +17,7 @@ const TIME_TYPE_LABELS: Record<TimeCategory, string> = {
 };
 
 export default function ClockConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-
+    const [c, patch] = useConstraints<ClockConstraints>(block);
     const {
         clockType = 'analoog' as ClockType,
         exerciseMode = 'lezen' as ExerciseMode,
@@ -26,10 +25,10 @@ export default function ClockConfig({ block }: Props) {
         timeTypes = ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor'] as TimeCategory[],
         minuteDirection = 'beide' as MinuteDirection,
         handChoice = 'beide' as HandChoice,
-    } = block.constraints as ClockConstraints;
+    } = c;
 
     const updateConstraint = (key: string, value: unknown) => {
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<ClockConstraints>);
     };
 
     const toggleTimeType = (type: TimeCategory) => {

@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../../store/useWorksheetStore';
+import { useConstraints } from '../../useConstraints';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
@@ -22,7 +22,7 @@ const LEVEL_DESCRIPTIONS: Record<number, string> = {
 const DIVISION_LEVELS = [1, 2, 3, 4, 5, 6];
 
 export default function NaturalSettings({ block, isDivision = false }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const [c, patch] = useConstraints<MulDivConstraints>(block);
     const {
         multiplicationMode = 'tafels',
         selectedTables = [2, 3, 4, 5, 10],
@@ -33,8 +33,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         metRestLevel = 1,
         divisionLevel = 0,
         divisionLevels,
-    } = block.constraints as MulDivConstraints;
-    const c = block.constraints as MulDivConstraints;
+    } = c;
 
     // Multi-select niveaus: array wins; back-compat seed from the old single `divisionLevel`.
     const selectedLevels: number[] = Array.isArray(divisionLevels)
@@ -42,7 +41,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         : (divisionLevel >= 1 ? [divisionLevel] : []);
 
     const updateConstraint = (key: string, value: unknown) => {
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<MulDivConstraints>);
     };
 
     const toggleTable = (table: number) => {
@@ -65,14 +64,10 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         const next = selectedLevels.includes(level)
             ? selectedLevels.filter(l => l !== level)
             : [...selectedLevels, level].sort((a, b) => a - b);
-        updateBlockSettings(block.id, {
-            constraints: { ...block.constraints, divisionLevels: next, divisionLevel: 0, operand1Mask: {}, operand2Mask: {} }
-        });
+        patch({ divisionLevels: next, divisionLevel: 0, operand1Mask: {}, operand2Mask: {} });
     };
     const clearLevels = () => {
-        updateBlockSettings(block.id, {
-            constraints: { ...block.constraints, divisionLevels: [], divisionLevel: 0 }
-        });
+        patch({ divisionLevels: [], divisionLevel: 0 });
     };
 
     return (

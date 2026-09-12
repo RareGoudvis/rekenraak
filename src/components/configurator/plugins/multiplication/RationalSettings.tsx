@@ -1,4 +1,4 @@
-import { useWorksheetStore } from '../../../../store/useWorksheetStore';
+import { useConstraints } from '../../useConstraints';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
@@ -8,9 +8,9 @@ import type { MulDivConstraints } from '../../../../services/math/constraintType
 interface Props { block: MathBlock; isDivision?: boolean; }
 
 export default function RationalSettings({ block, isDivision = false }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
 
     // Fallback waarden voor als het blok net nieuw is aangemaakt
+    const [c, patch] = useConstraints<MulDivConstraints>(block);
     const {
         fractionMultMode = 'fraction_fraction',
         fractionOrderMode = 'AB',
@@ -21,10 +21,10 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
         operand1Mask = {},
         simplifyMaxDenominatorChecked = false,
         simplifyMaxDenominator = 10
-    } = block.constraints as MulDivConstraints;
+    } = c;
 
     const updateConstraint = (key: string, value: unknown) => {
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });
+        patch({ [key]: value } as Partial<MulDivConstraints>);
     };
 
     const handleFractionChange = (field: 'N' | 'D', index: 1 | 2, value: number) => {
