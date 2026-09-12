@@ -60,7 +60,10 @@ export const styles = {
   deleteBtn: { background: 'var(--danger)', border: 'none', color: 'var(--accent-on)', borderRadius: 'var(--radius-xs)', cursor: 'pointer', padding: '4px 10px', fontSize: '12px', fontWeight: 'bold' } as React.CSSProperties,
   badge: (_type: 'mag' | 'moet' | 'plus' | 'aangepast'): React.CSSProperties => ({ backgroundColor: 'white', color: '#000', padding: '2px 6px', borderRadius: '3px', fontSize: 'calc(var(--sheet-size-text) * 0.55)', fontWeight: 'bold', border: '1.5px solid #000' }),
   // The owner wants the opdracht title bigger: it now sits at the base text token (1x), not a fraction of it.
-  instructionDisplay: { fontSize: 'var(--sheet-size-text)', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
+  // fontSize is INHERITED from the .print-opdracht container (App.tsx), which is where the
+  // Blad tab's "Tekengrootte" slider writes — a size of its own here silently beat the
+  // slider. The container's default is the same var(--sheet-size-text) it used to set.
+  instructionDisplay: { fontSize: 'inherit', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
   pointsText: { fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontWeight: 'bold', fontFamily: 'Azeret Mono, monospace', marginRight: '24px', color: '#000' } as React.CSSProperties,
   emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
   // Cold-load hero shown only when blocks.length === 0. Lives ON the white A4 sheet, so

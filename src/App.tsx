@@ -396,6 +396,13 @@ export default function App() {
             display: 'flex', flexDirection: 'column', width: '100%',
             padding: docSettings.headerStyle === 'geen' ? '0 12px' : '12px',
             boxSizing: 'border-box',
+            // The title's size lives HERE, on the region container, because that is what
+            // the Blad tab's "Tekengrootte" slider writes to (overlayRegionStyle sets
+            // fontSize on this box). An <h1> with its own fontSize simply won out and the
+            // slider did nothing. The name fields, the score box and the badge keep their
+            // own sizes — only the title inherits. A flanking title is a size smaller than
+            // a centred one, which is the one thing the old per-h1 sizes were saying.
+            fontSize: (docSettings.titlePosition === 'left' || docSettings.titlePosition === 'right') ? '22px' : '24px',
             // 'onderstreept' = one line under the whole header (separates it from the body);
             // 'kader' = full box. All-longhand borders avoid the shorthand/longhand React warning.
             borderRadius: docSettings.headerStyle === 'onderstreept' ? 0 : '6px',
@@ -417,7 +424,7 @@ export default function App() {
               };
               const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
-                  {hasTitle && <h1 style={{ margin: 0, fontSize: '22px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: align }}>{headerData!.titel}</h1>}
+                  {hasTitle && <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: align }}>{headerData!.titel}</h1>}
                   {showScore && <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
                 </div>
               ) : null;
@@ -471,7 +478,7 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', columnGap: `${gap}px`, alignItems: 'flex-end' }}>
                     {/* Left fields hug the title (right-aligned); columnGap is the small margin. */}
                     <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', minWidth: 0 }}>{renderFields('right', leftFs)}</div>
-                    <h1 style={{ margin: 0, fontSize: '24px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{headerData!.titel}</h1>
+                    <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{headerData!.titel}</h1>
                     <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', minWidth: 0 }}>
                       {showScore ? <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div> : renderFields('left', rightFs)}
                     </div>
@@ -493,7 +500,7 @@ export default function App() {
                   {/* The 8px only separates the title from the fields/score row above it;
                       with every field off there is nothing to separate it from and the gap
                       is paper margin pretending to be layout. */}
-                  {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? '8px 0 0' : 0, fontSize: '24px', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center' }}>{headerData!.titel}</h1>}
+                  {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? '8px 0 0' : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center' }}>{headerData!.titel}</h1>}
                 </>
               );
             })()}
@@ -610,6 +617,9 @@ export default function App() {
                       numbers and only this block's own prefix goes with the row. */}
                   {!isFurniture && block.showInstruction !== false && <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
+                    // SYNC with appStyles.instructionDisplay, which inherits it: the size
+                    // has to sit on the container the "Tekengrootte" slider writes to.
+                    fontSize: 'var(--sheet-size-text)',
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
                     ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
                   }, docSettings.titelCustom)}>
