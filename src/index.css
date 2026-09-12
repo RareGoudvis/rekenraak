@@ -264,10 +264,11 @@ textarea:focus-visible,
 .print-block:hover > .block-controls,
 .print-block.is-active > .block-controls { opacity: 1; pointer-events: auto; }
 
-/* ── Sheet drag-and-drop ──────────────────────────────────────────────────────
-   The handle is the only draggable part of a block: the block itself holds the inline
-   instruction editor and click-to-edit viewers. It borrows .ui-icon-btn's bezel and only
-   adds the sizing a <button> would have brought. */
+/* ── Sheet drag-and-drop (pointer events) ─────────────────────────────────────
+   The handle is the immediate drag affordance; the block body drags too, but only past
+   the movement threshold in useSheetDnd, so clicks and inline editing survive. The
+   handle borrows .ui-icon-btn's bezel and only adds the sizing a <button> would have
+   brought. touch-action: none lets a finger drag the handle instead of scrolling. */
 .sheet-drag-handle {
   display: inline-flex; align-items: center; justify-content: center;
   height: var(--control-h); min-width: var(--control-h);
@@ -275,13 +276,32 @@ textarea:focus-visible,
   background: var(--bg-surface-2); color: var(--text-main);
   cursor: grab; user-select: none;
 }
+.sheet-drag-handle { touch-action: none; }
 .sheet-drag-handle:active { cursor: grabbing; }
+
+/* Our own drag ghost, positioned from the pointer by useSheetDnd. pointer-events:none is
+   load-bearing: the hook finds its drop target with document.elementFromPoint(), which
+   would otherwise only ever hit the ghost. */
+.sheet-drag-ghost {
+  position: fixed; top: 0; left: 0; z-index: 9999;
+  display: inline-flex; align-items: center; gap: 6px; max-width: 320px;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  background: var(--bg-panel); box-shadow: var(--shadow-2);
+  font-family: var(--font-ui); font-size: 12px; color: var(--text-main);
+  pointer-events: none; white-space: nowrap; overflow: hidden;
+}
+.sheet-drag-ghost-chip {
+  padding: 1px 7px; border-radius: var(--radius-pill);
+  background: var(--accent); color: var(--accent-on); font-weight: 600;
+}
+.sheet-drag-ghost-title { overflow: hidden; text-overflow: ellipsis; }
 
 /* The block being dragged fades so the drop targets read as the live layer. */
 .print-block.is-dragging { opacity: 0.5; }
 
 /* Two labelled halves over a drop target. pointer-events:none is load-bearing — the
-   overlay must not swallow the dragover events the cell underneath is listening for. */
+   overlay must not intercept elementFromPoint(), which is how the hook decides which
+   cell (and which half of it) the pointer is over. */
 .sheet-dropzones {
   position: absolute; inset: 0; z-index: 9;
   display: flex; flex-direction: column;

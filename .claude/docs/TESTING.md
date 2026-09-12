@@ -109,8 +109,24 @@ against a production build.
 
 ## Driving drag-and-drop from Playwright
 
-Native HTML5 drag-and-drop does **not** reliably start from `page.mouse.down()` + `move()`
-in headless Chromium — the run hangs. Dispatch the events instead: one shared
-`new DataTransfer()`, `dragstart` on `.sheet-drag-handle`, then `dragover` and `drop` on the
-target `[data-block-id]` cell with a `clientY` inside the half you mean. Assert the result
-with `window.__rekenraak.getState().blocks.map(b => b.id)`.
+Both drag surfaces (sheet blocks and the Overzicht outline) run on **pointer events**, so
+a real mouse drives them — headless included:
+
+```js
+await page.mouse.move(x0, y0); await page.mouse.down();
+await page.mouse.move(x0 + 20, y0 + 20, { steps: 5 });   // past the 6px threshold
+await page.mouse.move(tx, ty, { steps: 10 });            // ty inside the half you mean
+await page.mouse.up();
+```
+
+The grab point can be the `.sheet-drag-handle` (drags immediately) or anywhere on the
+block that is not an input/button (drags past 6px of movement — under that it is a plain
+click that selects the block). The target is a `[data-block-id]` cell: `clientY` above its
+vertical middle inserts the dragged block before it, below swaps the two. `Escape` during
+the drag cancels. Assert the result with
+`window.__rekenraak.getState().blocks.map(b => b.id)` and check no zones are left behind
+with `page.locator('.sheet-dropzones').count()`.
+
+There is no native drag-and-drop left in the app (`dist/assets/*.js` contains no
+`setDragImage`/`dataTransfer` of ours) — an extension that hooks `dragstart` used to hang
+the tab for a whole drag.

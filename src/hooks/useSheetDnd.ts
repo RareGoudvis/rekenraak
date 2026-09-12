@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent, type MouseEvent } from 'react';
+import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 
 // Drag a block straight on the sheet, instead of only through the Overzicht outline.
 //
-// Native HTML5 drag-and-drop, no dependency. The visible affordance is a HANDLE, but the
-// whole block drags: grabbing a block by its exercises is what teachers try first.
-// `draggable` cannot simply stay on the block — a permanently draggable ancestor swallows
-// the inline instruction editor and the viewers' click-to-edit fields — so it is switched
-// on at mousedown, only when the press did not land on something interactive, and off
-// again at mouseup / dragend / window blur.
+// POINTER EVENTS, never native HTML5 drag-and-drop: an extension that hooks `dragstart`
+// (the "Claude in Chrome" extension does) froze the tab for the whole drag, and block
+// dragging is core behaviour for teachers. Pointer events are also the only way to get
+// touch, a ghost we control, and edge auto-scroll.
+//
+// The visible affordance is a HANDLE, but the whole block drags: grabbing a block by its
+// exercises is what teachers try first. A press on the block only becomes a drag after
+// DRAG_THRESHOLD_PX of movement, so a plain click still selects the block and the
+// viewers' click-to-edit fields keep working; the handle starts dragging immediately.
 //
 // A drop does one of two things, chosen by which half of the target was hit:
 //   top    → 'before': the dragged block is inserted in front of the target
@@ -25,80 +28,71 @@ export interface SheetDnd {
     zone: DropZone | null;
     /** True when dropping here would change nothing — the zone stays unhighlighted. */
     isNoop: (overId: string, zone: DropZone) => boolean;
-    handleProps: (blockId: string) => {
-        draggable: true;
-        onDragStart: (e: DragEvent<HTMLElement>) => void;
-        onDragEnd: () => void;
-    };
-    /** Spread on `.print-block`: makes the block itself draggable from anywhere that is
-        not an input, a button or another control. */
-    blockProps: (blockId: string) => {
-        onMouseDown: (e: MouseEvent<HTMLElement>) => void;
-        onDragStart: (e: DragEvent<HTMLElement>) => void;
-        onDragEnd: () => void;
-    };
-    cellProps: (blockId: string) => {
-        onDragOver: (e: DragEvent<HTMLElement>) => void;
-        onDragLeave: (e: DragEvent<HTMLElement>) => void;
-        onDrop: (e: DragEvent<HTMLElement>) => void;
-    };
+    /** Spread on the drag handle: starts a drag on the first pointer move. */
+    handleProps: (blockId: string) => { onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void };
+    /** Spread on `.print-block`: drags from anywhere that is not an input, a button or
+        another control — but only past the movement threshold, so clicks survive. */
+    blockProps: (blockId: string) => { onPointerDown: (e: ReactPointerEvent<HTMLElement>) => void };
 }
 
-// One reusable off-screen chip; created lazily so SSR/tests without a DOM never touch it.
-let ghost: HTMLDivElement | null = null;
-function dragGhost(): HTMLDivElement {
-    if (ghost && ghost.isConnected) return ghost;
-    ghost = document.createElement('div');
-    ghost.textContent = 'Blok verplaatsen';
-    ghost.setAttribute('aria-hidden', 'true');
-    Object.assign(ghost.style, {
-        position: 'fixed', top: '-1000px', left: '-1000px', padding: '4px 10px',
-        borderRadius: '999px', background: 'var(--accent)', color: 'var(--accent-on)',
-        font: '600 12px var(--font-ui)', pointerEvents: 'none', whiteSpace: 'nowrap',
-    });
-    document.body.appendChild(ghost);
-    return ghost;
+// Below this much movement a press is a click, not a drag. 6px is the usual slop for a
+// pointer that is meant to stand still (a trackpad tap drifts 1-3px).
+const DRAG_THRESHOLD_PX = 6;
+// Auto-scroll band at the top/bottom of `.print-scroll`, and px per frame inside it.
+const EDGE_PX = 40;
+const EDGE_SPEED_PX = 14;
+
+// Anything that owns the press keeps it: text fields, the block controls, the viewers'
+// own click-to-edit spans are all reached through these roles.
+const INTERACTIVE = 'input, textarea, button, [contenteditable], a, select, [role="button"]';
+
+// The thing that follows the pointer. Our own element rather than a browser drag image:
+// it can carry the block's title, it never rasterises an A4-sized node (which is what
+// froze the tab), and it exists in every browser.
+function makeGhost(title: string): HTMLDivElement {
+    const el = document.createElement('div');
+    el.className = 'sheet-drag-ghost no-print';
+    el.setAttribute('aria-hidden', 'true');
+    const chip = document.createElement('span');
+    chip.className = 'sheet-drag-ghost-chip';
+    chip.textContent = 'Blok verplaatsen';
+    el.appendChild(chip);
+    if (title) {
+        const label = document.createElement('span');
+        label.className = 'sheet-drag-ghost-title';
+        label.textContent = title;
+        el.appendChild(label);
+    }
+    document.body.appendChild(el);
+    return el;
+}
+
+interface DragState {
+    id: string;
+    pointerId: number;
+    el: HTMLElement;
+    startX: number; startY: number;
+    x: number; y: number;
+    /** 0 for the handle (drag at once), DRAG_THRESHOLD_PX for the block body. */
+    threshold: number;
+    active: boolean;
+    moved: boolean;
+    ghost: HTMLDivElement | null;
+    scroller: HTMLElement | null;
+    raf: number;
+    overId: string | null;
+    zone: DropZone | null;
+    prevTouchAction: string;
 }
 
 export function useSheetDnd(): SheetDnd {
     const blocks = useWorksheetStore((s) => s.blocks);
-    const reorderBlocks = useWorksheetStore((s) => s.reorderBlocks);
-    const swapBlocks = useWorksheetStore((s) => s.swapBlocks);
-    const setActiveSelection = useWorksheetStore((s) => s.setActiveSelection);
 
     const [fromId, setFromId] = useState<string | null>(null);
     const [overId, setOverId] = useState<string | null>(null);
     const [zone, setZone] = useState<DropZone | null>(null);
-    // The state drives the highlight; the ref is what the handlers read. dragstart and the
-    // first dragover can land in the same task (they do under synthetic events), and the
-    // handler would then still close over a null fromId and ignore the drop target.
-    const fromRef = useRef<string | null>(null);
 
-    const clear = useCallback(() => {
-        fromRef.current = null;
-        setFromId(null); setOverId(null); setZone(null);
-    }, []);
-
-    // Escape cancels. Chrome does fire dragend for it, but a drag that ends outside the
-    // window (or a synthetic one from a test) can leave the highlight behind.
-    useEffect(() => {
-        if (!fromId) return;
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') clear(); };
-        // A drag the browser aborts (a hang, a drop on another app, an extension) never
-        // reaches the block's own dragend, and the zones stayed on screen. Any end-of-drag
-        // signal on the window clears the state; a drop on a cell has already been handled.
-        const onEnd = () => clear();
-        window.addEventListener('keydown', onKey);
-        window.addEventListener('dragend', onEnd);
-        window.addEventListener('drop', onEnd);
-        window.addEventListener('mouseup', onEnd);
-        return () => {
-            window.removeEventListener('keydown', onKey);
-            window.removeEventListener('dragend', onEnd);
-            window.removeEventListener('drop', onEnd);
-            window.removeEventListener('mouseup', onEnd);
-        };
-    }, [fromId, clear]);
+    const drag = useRef<DragState | null>(null);
 
     const indexOf = useCallback((id: string) => blocks.findIndex(b => b.id === id), [blocks]);
 
@@ -111,95 +105,159 @@ export function useSheetDnd(): SheetDnd {
         return z === 'before' && to === from + 1;
     }, [fromId, indexOf]);
 
-    const startDrag = useCallback((blockId: string) => (e: DragEvent<HTMLElement>) => {
-        // Firefox refuses to start a drag without payload on the dataTransfer.
-        e.dataTransfer.setData('text/plain', blockId);
-        e.dataTransfer.effectAllowed = 'move';
-        // A small label as the ghost, never the block itself: Chrome rasterises the drag
-        // image synchronously at dragstart, and a whole A4 block inside a zoomed sheet
-        // (sheetZoom < 1 on a laptop) froze the tab the moment the drag cursor appeared.
-        e.dataTransfer.setDragImage(dragGhost(), 12, 12);
-        fromRef.current = blockId;
-        setFromId(blockId);
+    const onPointerDown = useCallback((blockId: string, fromHandle: boolean) => (e: ReactPointerEvent<HTMLElement>) => {
+        if (e.button !== 0) return;                      // left button / primary touch only
+        if (drag.current) return;
+        if (!fromHandle && (e.target as HTMLElement).closest(INTERACTIVE)) return;
+        const el = (fromHandle
+            ? (e.currentTarget.closest('.print-block') as HTMLElement | null)
+            : e.currentTarget) ?? e.currentTarget;
+
+        const state: DragState = {
+            id: blockId, pointerId: e.pointerId, el,
+            startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY,
+            threshold: fromHandle ? 0 : DRAG_THRESHOLD_PX,
+            active: false, moved: false, ghost: null,
+            scroller: el.closest('.print-scroll') as HTMLElement | null,
+            raf: 0, overId: null, zone: null,
+            prevTouchAction: el.style.touchAction,
+        };
+        drag.current = state;
+
+        // Where the pointer is, which cell is under it, and which half of it.
+        const updateTarget = () => {
+            const hit = document.elementFromPoint(state.x, state.y) as HTMLElement | null;
+            const cell = hit?.closest('[data-block-id]') as HTMLElement | null;
+            const id = cell?.dataset.blockId ?? null;
+            let next: DropZone | null = null;
+            if (cell && id) {
+                // Pointer and rect are both in visual (sheet-zoomed) space, so the zoom
+                // cancels out and no correction is needed.
+                const rect = cell.getBoundingClientRect();
+                next = state.y < rect.top + rect.height / 2 ? 'before' : 'swap';
+            }
+            if (id !== state.overId) { state.overId = id; setOverId(id); }
+            if (next !== state.zone) { state.zone = next; setZone(next); }
+        };
+
+        // rAF loop: scrolls the sheet when the pointer sits near an edge, and re-reads the
+        // target afterwards so the highlight keeps up while the page moves under a still
+        // pointer. Only runs while a drag is active.
+        const tick = () => {
+            if (!drag.current || !state.active) return;
+            const sc = state.scroller;
+            if (sc) {
+                const r = sc.getBoundingClientRect();
+                let dy = 0;
+                if (state.y < r.top + EDGE_PX) dy = -EDGE_SPEED_PX;
+                else if (state.y > r.bottom - EDGE_PX) dy = EDGE_SPEED_PX;
+                if (dy !== 0) {
+                    const before = sc.scrollTop;
+                    sc.scrollTop = before + dy;
+                    if (sc.scrollTop !== before) updateTarget();
+                }
+            }
+            state.raf = requestAnimationFrame(tick);
+        };
+
+        const begin = () => {
+            state.active = true;
+            setFromId(state.id);
+            // A drag that starts mid-selection would otherwise paint a stray highlight.
+            window.getSelection()?.removeAllRanges();
+            try { el.setPointerCapture(state.pointerId); } catch { /* pointer already gone */ }
+            el.style.touchAction = 'none';               // for the drag only: taps keep scrolling
+            const title = (el.querySelector('.print-opdracht') as HTMLElement | null)?.innerText?.trim() ?? '';
+            state.ghost = makeGhost(title.slice(0, 48));
+            moveGhost();
+            if (typeof requestAnimationFrame === 'function') state.raf = requestAnimationFrame(tick);
+            updateTarget();
+        };
+
+        const moveGhost = () => {
+            if (state.ghost) state.ghost.style.transform = `translate(${state.x + 14}px, ${state.y + 14}px)`;
+        };
+
+        const finish = (drop: boolean) => {
+            if (drag.current !== state) return;
+            drag.current = null;
+            if (state.raf) cancelAnimationFrame(state.raf);
+            state.ghost?.remove();
+            state.el.style.touchAction = state.prevTouchAction;
+            try { state.el.releasePointerCapture(state.pointerId); } catch { /* already released */ }
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onCancel);
+            window.removeEventListener('keydown', onKey);
+            const wasActive = state.active;
+            const targetId = state.overId;
+            const z = state.zone;
+            setFromId(null); setOverId(null); setZone(null);
+            if (wasActive) {
+                // The pointerup that ended a drag must not also count as a click on
+                // whatever block it landed on (that would change the selection).
+                const suppress = (ev: Event) => ev.stopPropagation();
+                window.addEventListener('click', suppress, true);
+                setTimeout(() => window.removeEventListener('click', suppress, true), 0);
+            }
+            if (drop && wasActive && targetId && z) applyDrop(state.id, targetId, z);
+        };
+
+        const onMove = (ev: PointerEvent) => {
+            if (ev.pointerId !== state.pointerId) return;
+            state.x = ev.clientX; state.y = ev.clientY;
+            if (!state.active) {
+                if (Math.abs(ev.clientX - state.startX) < state.threshold
+                    && Math.abs(ev.clientY - state.startY) < state.threshold) return;
+                begin();
+            }
+            ev.preventDefault();
+            moveGhost();
+            updateTarget();
+        };
+        const onUp = (ev: PointerEvent) => { if (ev.pointerId === state.pointerId) finish(true); };
+        const onCancel = (ev: PointerEvent) => { if (ev.pointerId === state.pointerId) finish(false); };
+        const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape') finish(false); };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onCancel);
+        window.addEventListener('keydown', onKey);
+        // The handle drags at once, so there is nothing to wait for.
+        if (state.threshold === 0) begin();
     }, []);
 
     const handleProps = useCallback((blockId: string) => ({
-        draggable: true as const,
-        onDragStart: startDrag(blockId),
-        onDragEnd: clear,
-    }), [clear, startDrag]);
-
-    // Anything that owns the press keeps it: text fields, the block controls, the
-    // viewers' own click-to-edit spans are all reached through these roles.
-    const INTERACTIVE = 'input, textarea, button, [contenteditable], a, select, [role="button"]';
+        onPointerDown: onPointerDown(blockId, true),
+    }), [onPointerDown]);
 
     const blockProps = useCallback((blockId: string) => ({
-        onMouseDown: (e: MouseEvent<HTMLElement>) => {
-            if (e.button !== 0) return;
-            if ((e.target as HTMLElement).closest(INTERACTIVE)) return;
-            const el = e.currentTarget;
-            el.draggable = true;
-            // Off again however the press ends — including a drag that finishes outside
-            // the window, which fires neither mouseup nor a useful dragend.
-            const release = () => {
-                el.draggable = false;
-                window.removeEventListener('mouseup', release);
-                window.removeEventListener('dragend', release);
-                window.removeEventListener('blur', release);
-            };
-            window.addEventListener('mouseup', release);
-            window.addEventListener('dragend', release);
-            window.addEventListener('blur', release);
-        },
-        onDragStart: startDrag(blockId),
-        onDragEnd: clear,
-    }), [clear, startDrag]);
+        onPointerDown: onPointerDown(blockId, false),
+    }), [onPointerDown]);
 
-    const cellProps = useCallback((blockId: string) => ({
-        onDragOver: (e: DragEvent<HTMLElement>) => {
-            if (!fromRef.current) return;
-            e.preventDefault();                       // without this the drop never fires
-            e.dataTransfer.dropEffect = 'move';
-            // Both the pointer and the rect are in the same (sheet-zoomed) space, so the
-            // zoom cancels out and no correction is needed.
-            const rect = e.currentTarget.getBoundingClientRect();
-            const next: DropZone = e.clientY < rect.top + rect.height / 2 ? 'before' : 'swap';
-            setOverId(blockId);
-            setZone(next);
-        },
-        onDragLeave: (e: DragEvent<HTMLElement>) => {
-            // Moving over a child fires dragleave on the cell; only a real exit counts.
-            if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-            setOverId(prev => (prev === blockId ? null : prev));
-        },
-        onDrop: (e: DragEvent<HTMLElement>) => {
-            e.preventDefault();
-            const dragged = fromRef.current ?? e.dataTransfer.getData('text/plain');
-            // Read the half off the drop event itself rather than off the hover state: the
-            // state is a render behind, and the geometry is right here.
-            const rect = e.currentTarget.getBoundingClientRect();
-            const z: DropZone = e.clientY < rect.top + rect.height / 2 ? 'before' : 'swap';
-            clear();
-            if (!dragged || dragged === blockId) return;
-            const from = blocks.findIndex(b => b.id === dragged);
-            const to = blocks.findIndex(b => b.id === blockId);
-            if (from < 0 || to < 0) return;
-            if (z === 'swap') {
-                swapBlocks(dragged, blockId);
-            } else {
-                // reorderBlocks splices the block OUT first, so every later index shifts
-                // down by one — without this a downward drag lands after the target.
-                if (to === from + 1) return;          // no-op: already in front of it
-                reorderBlocks(from, to > from ? to - 1 : to);
-            }
-            // The block can land on another page; select it and bring it into view so the
-            // teacher does not lose track of what they just moved.
-            setActiveSelection(dragged);
-            requestAnimationFrame(() => {
-                document.getElementById(`block-${dragged}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            });
-        },
-    }), [blocks, clear, reorderBlocks, swapBlocks, setActiveSelection]);
+    return { fromId, overId, zone, isNoop, handleProps, blockProps };
+}
 
-    return { fromId, overId, zone, isNoop, handleProps, blockProps, cellProps };
+// Read the order straight from the store rather than from a closure: a drag outlives
+// several renders, and the block list may have changed under it.
+function applyDrop(draggedId: string, targetId: string, z: DropZone) {
+    const s = useWorksheetStore.getState();
+    if (draggedId === targetId) return;
+    const from = s.blocks.findIndex(b => b.id === draggedId);
+    const to = s.blocks.findIndex(b => b.id === targetId);
+    if (from < 0 || to < 0) return;
+    if (z === 'swap') {
+        s.swapBlocks(draggedId, targetId);
+    } else {
+        if (to === from + 1) return;                     // no-op: already in front of it
+        // reorderBlocks splices the block OUT first, so every later index shifts down by
+        // one — without this a downward drag lands after the target.
+        s.reorderBlocks(from, to > from ? to - 1 : to);
+    }
+    // The block can land on another page; select it and bring it into view so the teacher
+    // does not lose track of what they just moved.
+    s.setActiveSelection(draggedId);
+    requestAnimationFrame(() => {
+        document.getElementById(`block-${draggedId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
 }

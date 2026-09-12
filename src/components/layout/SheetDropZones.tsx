@@ -5,8 +5,9 @@ import type { DropZone } from '../../hooks/useSheetDnd';
 // block in front of this one, the bottom half swaps the two. Both halves are LABELLED —
 // a drop that only says what it does through geometry is a drop teachers have to try.
 //
-// Screen-only chrome: `.no-print`, and `pointer-events: none` so the overlay never eats
-// the dragover events the cell underneath needs to keep receiving.
+// Screen-only chrome: `.no-print`, and `pointer-events: none` so the overlay is invisible
+// to `document.elementFromPoint()` — which is how useSheetDnd picks the cell under the
+// pointer, and it would otherwise only ever find this overlay.
 export default function SheetDropZones({ zone, noop }: { zone: DropZone | null; noop: boolean }) {
     const on = (z: DropZone) => (zone === z && !noop ? ' is-on' : '');
     return (

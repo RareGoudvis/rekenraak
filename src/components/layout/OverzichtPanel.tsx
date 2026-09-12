@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Trash, DotsSixVertical, Lock, Copy, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog } from '../../config/exerciseCatalog';
@@ -22,6 +22,9 @@ export default function OverzichtPanel() {
     const [dragIndex, setDragIndex] = useState<number | null>(null);
     const [overIndex, setOverIndex] = useState<number | null>(null);
     const [massAddOpen, setMassAddOpen] = useState(false);
+    // Ref as well as state: the pointer handlers run outside React's render, so they need
+    // the live index the highlight is only a render behind on.
+    const dragRef = useRef<{ from: number; over: number | null; moved: boolean } | null>(null);
 
     // typeId → human label ("Optellen", "Splitsen", …) from the addable catalog.
     const labelByType = useMemo(() => {
@@ -41,8 +44,9 @@ export default function OverzichtPanel() {
     // Drop = insert BEFORE the row under the pointer. reorderBlocks splices the block out
     // first, so every index after it shifts down by one — without the compensation a
     // downward drag landed one place too far (after the target instead of before it).
-    const onDrop = (toIndex: number) => {
-        if (dragIndex !== null && dragIndex !== toIndex) {
+    const onDrop = (fromIndex: number, toIndex: number) => {
+        const dragIndex = fromIndex;
+        if (dragIndex !== toIndex) {
             // The last row is the exception: "before the last block" would make the end of
             // the bundle unreachable, so a downward drop onto it lands AFTER it.
             const last = toIndex === blocks.length - 1 && toIndex > dragIndex;
@@ -51,6 +55,57 @@ export default function OverzichtPanel() {
         }
         setDragIndex(null);
         setOverIndex(null);
+    };
+
+    // Pointer events, not native HTML5 drag-and-drop: an extension that hooks `dragstart`
+    // (the "Claude in Chrome" one does) freezes the tab for the whole drag, and the sheet
+    // drag was rewritten for exactly that reason — a second native surface in the same app
+    // would just be the same bug in a smaller window. A row is click-to-jump, so a press
+    // only becomes a drag past OUTLINE_THRESHOLD_PX of movement.
+    const onRowPointerDown = (index: number) => (e: React.PointerEvent<HTMLElement>) => {
+        if (e.button !== 0 || dragRef.current) return;
+        if ((e.target as HTMLElement).closest('button, input, a')) return;
+        const startX = e.clientX, startY = e.clientY;
+        const state = { from: index, over: null as number | null, moved: false };
+        dragRef.current = state;
+
+        const onMove = (ev: PointerEvent) => {
+            if (!state.moved) {
+                if (Math.abs(ev.clientX - startX) < OUTLINE_THRESHOLD_PX
+                    && Math.abs(ev.clientY - startY) < OUTLINE_THRESHOLD_PX) return;
+                state.moved = true;
+                setDragIndex(index);
+            }
+            const hit = document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null;
+            const row = hit?.closest('[data-ov-index]') as HTMLElement | null;
+            const over = row ? Number(row.dataset.ovIndex) : null;
+            if (over !== state.over) { state.over = over; setOverIndex(over); }
+        };
+        const stop = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onCancel);
+            window.removeEventListener('keydown', onKey);
+            dragRef.current = null;
+        };
+        const onUp = () => {
+            const { moved, over } = state;
+            stop();
+            if (moved && over !== null) onDrop(index, over);
+            else { setDragIndex(null); setOverIndex(null); }
+            if (moved) {
+                // The pointerup that ended a drag must not also jump to the row it landed on.
+                const suppress = (ev: Event) => ev.stopPropagation();
+                window.addEventListener('click', suppress, true);
+                setTimeout(() => window.removeEventListener('click', suppress, true), 0);
+            }
+        };
+        const onCancel = () => { stop(); setDragIndex(null); setOverIndex(null); };
+        const onKey = (ev: KeyboardEvent) => { if (ev.key === 'Escape') onCancel(); };
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onCancel);
+        window.addEventListener('keydown', onKey);
     };
 
     return (
@@ -73,11 +128,8 @@ export default function OverzichtPanel() {
                         {showBreak && <div style={S.pageBreak}>— pagina {page + 1} —</div>}
 
                         <div
-                            draggable
-                            onDragStart={(e) => { setDragIndex(index); e.dataTransfer.effectAllowed = 'move'; }}
-                            onDragOver={(e) => { e.preventDefault(); setOverIndex(index); }}
-                            onDrop={() => onDrop(index)}
-                            onDragEnd={() => { setDragIndex(null); setOverIndex(null); }}
+                            data-ov-index={index}
+                            onPointerDown={onRowPointerDown(index)}
                             onClick={() => jumpTo(block.id)}
                             style={{
                                 ...S.row,
@@ -123,6 +175,9 @@ export default function OverzichtPanel() {
     );
 }
 
+// Below this much movement a press on a row is a click (jump to the block), not a drag.
+const OUTLINE_THRESHOLD_PX = 5;
+
 const S = {
     wrap: { display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflowY: 'auto', padding: 'var(--sp-2) var(--sp-3)' } as React.CSSProperties,
     header: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '4px 6px 8px' } as React.CSSProperties,
@@ -146,7 +201,9 @@ const S = {
     // telling you which domain it belongs to. Ring = state, rail = identity, both visible.
     rowActive: { background: 'var(--accent-soft)', boxShadow: 'inset 0 0 0 1.5px var(--accent)' } as React.CSSProperties,
     rowOver: { borderColor: 'var(--accent)', borderStyle: 'dashed' } as React.CSSProperties,
-    handle: { color: 'var(--text-muted)', display: 'inline-flex', cursor: 'grab', flexShrink: 0 } as React.CSSProperties,
+    // touch-action: none on the handle only — the list itself must stay scrollable with
+    // a finger, so a touch drag starts from the grip.
+    handle: { color: 'var(--text-muted)', display: 'inline-flex', cursor: 'grab', flexShrink: 0, touchAction: 'none' } as React.CSSProperties,
     badge: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: 'var(--accent)', color: '#fff', fontSize: '11px', fontWeight: 700, flexShrink: 0 } as React.CSSProperties,
     labelCol: { display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 } as React.CSSProperties,
     typeLabel: { fontSize: '13px', color: 'var(--text-main)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as React.CSSProperties,
