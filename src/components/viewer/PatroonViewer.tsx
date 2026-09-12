@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as SYM } from '../../services/math/formatters';
 import type { PatroonConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -10,7 +11,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 
 export default function PatroonViewer({ block, showSolutions }: Props) {
     const exercises: PatroonExercise[] = block.patroonExercises || [];
@@ -45,7 +45,7 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
                     cells.push(
                         <div key={`n${i}`} style={{ textAlign: 'center' }}>
                             {ex.blankMask[i]
-                                ? (showSolutions ? <span style={{ color: SOL }}>{formatMathNumber(v)}</span>
+                                ? (showSolutions ? <span style={{ ...solutionText }}>{formatMathNumber(v)}</span>
                                     : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '46px', height: '18px' }} />)
                                 : formatMathNumber(v)}
                         </div>
@@ -55,7 +55,7 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
                         const top = filled
                             ? <span>{opText(ex, i)}</span>
                             : showArrows
-                                ? (showSolutions ? <span style={{ color: SOL }}>{opText(ex, i)}</span>
+                                ? (showSolutions ? <span style={{ ...solutionText }}>{opText(ex, i)}</span>
                                     : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '26px', height: '13px' }} />)
                                 : null;
                         cells.push(

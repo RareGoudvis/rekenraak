@@ -2,6 +2,7 @@ import type { MathBlock } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
 import type { DeelbaarheidConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -42,7 +43,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
                                         {i < given
                                             ? <span>{v}</span>
                                             : (showSolutions
-                                                ? <span style={{ color: '#e11d48' }}>{v}</span>
+                                                ? <span style={solutionText}>{v}</span>
                                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: '40px', height: '18px', display: 'inline-block' }} />)}
                                     </span>
                                 ))}
@@ -81,7 +82,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
                 <div key={ex.id} className="print-row print-exercise" style={{ display: 'grid', gridTemplateColumns: cols }}>
                     <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{ex.number}</div>
                     {divisors.map(d => (
-                        <div key={d} style={{ ...cell, color: '#e11d48' }}>
+                        <div key={d} style={{ ...cell, ...solutionText }}>
                             {showSolutions ? ((ex.number ?? 0) % d === 0 ? '✓' : '✗') : ''}
                         </div>
                     ))}

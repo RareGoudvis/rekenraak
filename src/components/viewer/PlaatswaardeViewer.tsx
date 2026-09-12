@@ -5,6 +5,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { PlaatswaardeConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -12,7 +13,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 // Digits of `n` from its highest non-zero place down to the smallest place (E, or 10^-dp).
@@ -37,7 +37,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     }
 
     const blank = (w = 80) => <span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: '18px', display: 'inline-block', verticalAlign: 'bottom' }} />;
-    const sol = (t: string) => <span style={{ color: SOL }}>{t}</span>;
+    const sol = (t: string) => <span style={{ ...solutionText }}>{t}</span>;
 
     // Render the number with the targeted digit underlined (comma before the first decimal place).
     const numberWithUnderline = (ex: PlaatswaardeExercise) => {
@@ -83,7 +83,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                                     {places.map(p => <div key={p.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '13px' }}>{p.key}</div>)}
                                 </div>
                                 <div style={{ display: 'flex' }}>
-                                    {places.map(p => <div key={p.key} style={{ ...cell, color: SOL }}>{showSolutions ? p.digit : ''}</div>)}
+                                    {places.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}>{showSolutions ? p.digit : ''}</div>)}
                                 </div>
                             </div>
                         </div>
