@@ -557,16 +557,21 @@ instruction editor and click-to-edit fields keep working. Then: `setPointerCaptu
 block, `touch-action: none` for the drag's duration (always on the handle, so touch works),
 an own `.sheet-drag-ghost` (chip + cloned title) that follows the pointer, and the target
 found with `document.elementFromPoint(...).closest('[data-block-id]')` — the drop cell needs
-**no listeners**, only its `data-block-id`. Which half was hit decides what happens — top =
-insert the dragged block before this one, bottom = swap the two. Halves rather than sides,
-because a full-width block has no meaningful left/right, and both are labelled on screen
-([SheetDropZones](../../src/components/layout/SheetDropZones.tsx), `.no-print`,
-`pointer-events: none`). The sheet auto-scrolls while the pointer sits within 40px of
+**no listeners**, only its `data-block-id`. Which **third** was hit decides what happens —
+top = insert the dragged block before this one ("Hierboven invoegen"), middle = swap the two
+("Wisselen"), bottom = insert it right after ("Hieronder invoegen"). Thirds rather than
+sides, because a full-width block has no meaningful left/right, and all three are labelled
+on screen ([SheetDropZones](../../src/components/layout/SheetDropZones.tsx), `.no-print`,
+`pointer-events: none`; a container query hides the label text but keeps the icon when the
+block is shorter than ~66px). The sheet auto-scrolls while the pointer sits within 40px of
 `.print-scroll`'s top or bottom edge; Escape and `pointercancel` cancel; `pointerup` drops
-through `reorderBlocks(from, to > from ? to - 1 : to)` / `swapBlocks`, reading the store via
+through `reorderBlocks(from, to > from ? to - 1 : to)` (before), `reorderBlocks(from,
+from < to ? to : to + 1)` (after) or `swapBlocks`, reading the store via
 `getState()` at drop time so a long drag cannot go stale, then selects and scrolls to the
 moved block. The Overzicht outline ([OverzichtPanel](../../src/components/layout/OverzichtPanel.tsx))
-uses the same pointer approach with a 5px threshold and `[data-ov-index]` rows. Playwright
+uses the same pointer approach and the same three zones (thirds of the row) with a 5px
+threshold and `[data-ov-index]` rows; the old "drop on the last row appends" special case
+falls out of the after-zone formula. Playwright
 drives all of it with plain `mouse.move/down/up` (see TESTING.md).
 
 **The width clamp is measured too.** PageSheet probes each cell's `min-content` width
