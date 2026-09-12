@@ -98,6 +98,13 @@ updateExercise, `patchExercise`). `setSidebarTab` / `setInspectorTab` (pure view
 `updateDocSettings` / `setShowSolutions` / `setBladSection` / `toggleBlockLock` /
 `updateBaseSettings` / `setDraftBlocks` do **NOT** push history.
 
+**Order actions:** `moveBlockUp` / `moveBlockDown` (neighbour shuffle), `reorderBlocks(from,
+to)` (splice out, insert at `to`) and `swapBlocks(idA, idB)` (two blocks trade places, used
+by the sheet's "Wisselen" drop zone — see §9). All three push history and all three survive
+the curriculum lock: order is presentation, not difficulty. Callers that mean "insert BEFORE
+the target" must compensate for the splice: `to > from ? to - 1 : to` (both the sheet drag
+and the Overzicht outline do).
+
 Exercises are written by one **generic** action: `setExercises(id, field, data)`
 where `field` is the registry-declared `exerciseField` (e.g. `'mabExercises'`).
 There is no longer a setter per type. A second generic action
@@ -475,6 +482,20 @@ spanning its `widthUnits`.
 - Real **page numbers** are possible for the first time (the browser cannot count pages from
   HTML/CSS; the packer knows index and total).
 
+### Reordering on the sheet
+
+[useSheetDnd.ts](../../src/hooks/useSheetDnd.ts) — native HTML5 drag-and-drop, no
+dependency. The drag starts on a **handle** (the `DotsSixVertical` chip, first in
+`.block-controls`): making the whole block draggable would swallow the inline instruction
+editor and the viewers' own click-to-edit fields. The drop target is the grid **cell**, and
+which half was hit decides what happens — top = insert the dragged block before this one,
+bottom = swap the two. Halves rather than sides, because a full-width block has no
+meaningful left/right, and both are labelled on screen
+([SheetDropZones](../../src/components/layout/SheetDropZones.tsx), `.no-print` and
+`pointer-events: none` so the overlay never eats the `dragover` the cell needs). The
+dragged block's id lives in a ref as well as in state: `dragstart` and the first `dragover`
+can land in the same task, and a handler reading only state would still see `null`.
+
 ### Print mechanics
 
 - **[usePrint.ts](../../src/hooks/usePrint.ts)** — `handlePrint(withSolutions)`: deselects the
@@ -596,7 +617,8 @@ src/
 │   └── useWorksheetStore.tsx    # single Zustand store: state, actions, history, autosave subscription
 ├── hooks/
 │   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (waits 2 rAF for the repack)
-│   └── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
+│   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
+│   └── useSheetDnd.ts           # sheet drag-and-drop state: handle dragstart, top/bottom drop zones (§9)
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
@@ -638,6 +660,7 @@ src/
 │   └── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES
 └── components/
     ├── layout/
+    │   ├── SheetDropZones.tsx  # labelled "Hier invoegen" / "Wisselen" halves over a drag target (screen only)
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
     │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, wordmark foot
     │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken

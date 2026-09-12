@@ -100,6 +100,7 @@ interface WorksheetState {
     moveBlockUp: (id: string) => void;
     moveBlockDown: (id: string) => void;
     reorderBlocks: (fromIndex: number, toIndex: number) => void;
+    swapBlocks: (idA: string, idB: string) => void;
     updateBlockInstruction: (id: string, text: string) => void;
     updateBlockLayout: (id: string, layout: LayoutPreset, steppedLines?: number) => void;
     updateBlockSettings: (id: string, updates: Partial<MathBlock>) => void;
@@ -292,6 +293,19 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         const newBlocks = [...state.blocks];
         const [moved] = newBlocks.splice(fromIndex, 1);
         newBlocks.splice(toIndex, 0, moved);
+        return { blocks: newBlocks, ...pushHistory(state._history, state._historyIndex, newBlocks) };
+    }),
+
+    // Sheet drag-and-drop drops a block on the BOTTOM half of another: the two trade
+    // places instead of one shuffling past the other. Like reorderBlocks it survives the
+    // curriculum lock — order is presentation, not difficulty.
+    swapBlocks: (idA, idB) => set((state) => {
+        if (idA === idB) return state;
+        const a = state.blocks.findIndex(b => b.id === idA);
+        const b = state.blocks.findIndex(bl => bl.id === idB);
+        if (a === -1 || b === -1) return state;
+        const newBlocks = [...state.blocks];
+        [newBlocks[a], newBlocks[b]] = [newBlocks[b], newBlocks[a]];
         return { blocks: newBlocks, ...pushHistory(state._history, state._historyIndex, newBlocks) };
     }),
 

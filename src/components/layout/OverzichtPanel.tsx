@@ -38,8 +38,17 @@ export default function OverzichtPanel() {
         document.getElementById(`block-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     };
 
+    // Drop = insert BEFORE the row under the pointer. reorderBlocks splices the block out
+    // first, so every index after it shifts down by one — without the compensation a
+    // downward drag landed one place too far (after the target instead of before it).
     const onDrop = (toIndex: number) => {
-        if (dragIndex !== null && dragIndex !== toIndex) reorderBlocks(dragIndex, toIndex);
+        if (dragIndex !== null && dragIndex !== toIndex) {
+            // The last row is the exception: "before the last block" would make the end of
+            // the bundle unreachable, so a downward drop onto it lands AFTER it.
+            const last = toIndex === blocks.length - 1 && toIndex > dragIndex;
+            const to = last ? toIndex : toIndex > dragIndex ? toIndex - 1 : toIndex;
+            if (to !== dragIndex) reorderBlocks(dragIndex, to);
+        }
         setDragIndex(null);
         setOverIndex(null);
     };

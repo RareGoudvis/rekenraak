@@ -14,9 +14,11 @@ import HelpModal from './components/layout/HelpModal';
 import AboutModal from './components/layout/AboutModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import IconButton from './components/ui/IconButton';
-import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phosphor-icons/react';
+import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask, DotsSixVertical } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
+import { useSheetDnd } from './hooks/useSheetDnd';
+import SheetDropZones from './components/layout/SheetDropZones';
 import { styles } from './styles/appStyles';
 import { overlayRegionStyle } from './services/regionStyle';
 import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, TRYOUT_SEEN_KEY } from './services/persistence';
@@ -220,6 +222,9 @@ export default function App() {
   // ended pages early (blank tails) or overran them; measuring alone could not run before
   // the first paint.
   const measured = useMeasuredHeights(blocks);
+  // Drag a block from its handle onto another block: top half inserts before it, bottom
+  // half swaps the two.
+  const dnd = useSheetDnd();
   const packedPages = useMemo(
     () => packPages(blocks, {
       blockSpacingPx: docSettings.blockSpacing ?? 12,
@@ -428,10 +433,23 @@ export default function App() {
       const isNotLastBlock = false;
 
               return (
-                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
+                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${dnd.fromId === block.id ? ' is-dragging' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
                   {/* Controls render for every block but stay hidden until the block is hovered or
                       active (CSS in index.css) — discoverable without selecting, no App re-render. */}
                   <div className="no-print block-controls" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
+                      {/* Drag handle first: it is the control people reach for, and a
+                          plain div (not IconButton) so the native drag starts on the
+                          element that carries `draggable` instead of on a <button>. */}
+                      <div
+                        className="ui-icon-btn sheet-drag-handle"
+                        role="button"
+                        tabIndex={-1}
+                        aria-label="Versleep dit blok"
+                        title="Versleep naar een ander blok — bovenaan invoegen, onderaan wisselen"
+                        {...dnd.handleProps(block.id)}
+                      >
+                        <DotsSixVertical size={16} weight="bold" aria-hidden="true" />
+                      </div>
                       <IconButton
                         icon={block.locked ? Lock : Unlock}
                         label={block.locked ? 'Ontgrendel (massa-regeneratie zal dit blok wel vernieuwen)' : 'Vergrendel (massa-regeneratie laat dit blok ongemoeid)'}
@@ -457,6 +475,15 @@ export default function App() {
                       <div style={styles.blockControlsDivider} />
                       <IconButton icon={Trash2} label="Blok verwijderen" onClick={() => removeBlock(block.id)} variant="danger" size={16} />
                     </div>
+
+                  {/* Only while something is being dragged, and never on the block that
+                      is being dragged itself. */}
+                  {dnd.fromId !== null && dnd.fromId !== block.id && (
+                    <SheetDropZones
+                      zone={dnd.overId === block.id ? dnd.zone : null}
+                      noop={dnd.zone !== null && dnd.isNoop(block.id, dnd.zone)}
+                    />
+                  )}
 
                   {block.pageBreakBefore && (
                     <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'Azeret Mono, monospace', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>
@@ -616,6 +643,7 @@ export default function App() {
                   data-block-id={item.block.id}
                   data-width={item.width}
                   className={!firstInRow && docSettings.showColumnDividers ? 'col-divider' : undefined}
+                  {...dnd.cellProps(item.block.id)}
                   style={{
                     gridRow: rowIndex + 1,
                     gridColumn: `${start + 1} / span ${item.width}`,

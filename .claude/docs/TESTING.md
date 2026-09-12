@@ -21,6 +21,7 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `generators.answers.test.ts` | The answer follows from the question: mathEngine ops (incl. fractions, decimals, multi-term chains, division remainder), bruggetjes, cijferen, splitsen sums, breuken-bewerken equivalence, ordenen ordering, deelbaarheid, procenten, verbanden, tijdsduur, kalender, negenproef, herleidingen unit factors. |
 | `pagePacker.test.ts` | Placement rules: join a row, start a row, exact fit, page flush, `pageBreakBefore`, spanning blocks, min-width promotion, `pageIndexByBlock`. Written against `COL_UNITS` / `ROW_BUDGET`, never literal 6/36, so it survives the grid change. |
 | `persistence.test.ts` | File round-trip, version gate (a newer file throws in Dutch), malformed input, share-link encode/decode, template stripping, curriculum lock, size backstop. |
+| `store.test.ts` | Block order: `swapBlocks` (trade places, no-ops, history, curriculum lock) and the insert-before compensation both drag surfaces apply to `reorderBlocks`. jsdom — the store touches `localStorage` on import. |
 | `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. |
 
 ## The generator matrix

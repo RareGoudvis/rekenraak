@@ -226,6 +226,45 @@ textarea:focus-visible,
 .print-block:hover > .block-controls,
 .print-block.is-active > .block-controls { opacity: 1; pointer-events: auto; }
 
+/* ── Sheet drag-and-drop ──────────────────────────────────────────────────────
+   The handle is the only draggable part of a block: the block itself holds the inline
+   instruction editor and click-to-edit viewers. It borrows .ui-icon-btn's bezel and only
+   adds the sizing a <button> would have brought. */
+.sheet-drag-handle {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: var(--control-h); min-width: var(--control-h);
+  border: 1px solid var(--separator); border-radius: var(--radius-sm);
+  background: var(--bg-surface-2); color: var(--text-main);
+  cursor: grab; user-select: none;
+}
+.sheet-drag-handle:active { cursor: grabbing; }
+
+/* The block being dragged fades so the drop targets read as the live layer. */
+.print-block.is-dragging { opacity: 0.5; }
+
+/* Two labelled halves over a drop target. pointer-events:none is load-bearing — the
+   overlay must not swallow the dragover events the cell underneath is listening for. */
+.sheet-dropzones {
+  position: absolute; inset: 0; z-index: 9;
+  display: flex; flex-direction: column;
+  pointer-events: none; border-radius: var(--radius-md); overflow: hidden;
+}
+.sheet-dropzone {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--separator);
+  transition: background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+}
+.sheet-dropzone + .sheet-dropzone { border-top: none; }
+.sheet-dropzone.is-on { background: var(--accent-soft); border-color: var(--accent); border-style: solid; }
+.sheet-dropzone-label {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  background: var(--bg-panel); color: var(--text-muted);
+  font-family: var(--font-ui); font-size: 11px; font-weight: 600;
+  opacity: 0.75;
+}
+.sheet-dropzone.is-on .sheet-dropzone-label { background: var(--accent); color: var(--accent-on); opacity: 1; }
+
 /* Landing flash after undo/redo scrolls to the block a history step changed. Screen
    only: .no-print would not help here since the class lands on a printed block, so the
    animation is neutralised under @media print at the end of this file. */
@@ -634,6 +673,8 @@ textarea:focus-visible,
     position: static !important;
     transition: none !important;
   }
+  /* A drag that was still in flight when print fired must not print a faded block. */
+  .print-block.is-dragging { opacity: 1 !important; }
   /* Force a set onto a fresh page — the packer already put it there, this is the
      belt-and-braces for a block whose estimate was optimistic. */
   .print-block.page-break-before { break-before: page; }
