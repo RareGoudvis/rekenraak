@@ -668,8 +668,11 @@ export default function App() {
 
         {/* Scroll container holds the banners + sheet (the topbar is now a sibling above).
             Padding ≥ the sheet's shadow reach (--shadow-3 = 48px blur): overflowY:auto forces
-            overflow-x to compute as auto too, so without this the side/bottom shadow is clipped. */}
-        <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '8px 48px 48px' }}>
+            overflow-x to compute as auto too, so without this the side/bottom shadow is clipped.
+            The TOP is 28px rather than 8px because .page-sheet-tag hangs 20px above the first
+            page (plus its ~13px line box) and was clipped to a row of descenders at scroll top.
+            The tag is absolutely positioned, so this changes nothing the packer measures. */}
+        <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 48px 48px' }}>
 
         {releaseBannerVisible && (
           <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
