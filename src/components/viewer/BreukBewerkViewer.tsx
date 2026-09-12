@@ -8,6 +8,8 @@ interface Props {
     showSolutions: boolean;
 }
 
+// The row's own fontSize is a factor of --sheet-size-math; VerticalFraction's numeric
+// fontSize prop is unchanged — it converts itself to the same token internally.
 const mono = "'Azeret Mono', monospace";
 
 // Writing line the pupil writes the answer on (works for both a fraction and a mixed number).
@@ -38,7 +40,7 @@ export default function BreukBewerkViewer({ block, showSolutions }: Props) {
                     ? 'auto 22px auto 22px auto 22px auto'   // frac · en · frac · → · line · en · line
                     : 'auto 22px auto';                       // frac · = · line
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'inline-grid', gridTemplateColumns: cols, alignItems: 'center', justifyItems: 'center', columnGap: '8px', fontFamily: mono, fontSize: '18px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'inline-grid', gridTemplateColumns: cols, alignItems: 'center', justifyItems: 'center', columnGap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
                         <VerticalFraction value={ex.inputs[0]} fontSize={16} mono />
                         {isGelijk && <><span>en</span><VerticalFraction value={ex.inputs[1]} fontSize={16} mono /></>}
                         <span>{sep}</span>

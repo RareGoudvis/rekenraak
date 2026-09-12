@@ -5,6 +5,9 @@ import { useBlockWidth } from './BlockWidthContext';
 import { opGlyph } from '../../services/math/formatters';
 import { SOL, solutionText } from './solutionStyle';
 
+// Printed sheet text (equation header, estimation/controle/QR rows) is a factor of
+// --sheet-size-math; the digit-grid overlay scales off the per-block gridCellSize instead
+// (its own system, not the sheet-wide token), and manual-edit affordances stay screen px.
 const GRID_COLOR = '#aaaaaa';
 const PLACE_ABBREVS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M'];
 const DEC_ABBREVS = ['t', 'h', 'd'];
@@ -520,13 +523,13 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                 <div
                     onClick={() => { setEditValues(ex.operands.map(o => String(o))); setEditing(true); }}
                     title="Klik om te bewerken"
-                    style={{ border: '0.5px solid #aaa', padding: '4px 8px', textAlign: 'center', fontSize: 11, fontFamily: 'Azeret Mono, monospace', backgroundColor: '#fff', cursor: 'pointer', userSelect: 'none' }}
+                    style={{ border: '0.5px solid #aaa', padding: '4px 8px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'Azeret Mono, monospace', backgroundColor: '#fff', cursor: 'pointer', userSelect: 'none' }}
                 >
                     {headerText}
                 </div>
             )}
             {c.withEstimation && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: '11px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span>≈</span>
                     {showSolutions
                         ? <span style={{ ...solutionText, marginLeft: '4px' }}>{computeEstimation(ex)}</span>
@@ -542,7 +545,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
             }
             {/* Controle via de omgekeerde bewerking (add/sub only): write-line under the sum. */}
             {!isDivision && !isMultiplication && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: '11px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span style={{ flexShrink: 0 }}>controle:</span>
                     {showSolutions
                         ? <span style={{ ...solutionText, marginLeft: '4px' }}>
@@ -557,7 +560,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                 </div>
             )}
             {isDivision && (c.showQR !== false) && (
-                <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (
                         <>
                             <span>q  {fmtDisplay(ex.answer, dp)}</span>

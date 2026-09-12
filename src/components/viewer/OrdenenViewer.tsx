@@ -11,6 +11,8 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
+// stays fixed px; VerticalFraction's numeric fontSize prop converts itself internally).
 const mono = "'Azeret Mono', monospace";
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 const valOf = (v: number | Fraction): number => isFrac(v) ? (v.whole ?? 0) + v.n / v.d : v;
@@ -52,7 +54,7 @@ function EditableValue({ value, onCommit }: { value: number | Fraction; onCommit
                 onChange={(e) => setText(e.target.value)}
                 onBlur={() => { const p = parseValue(text); if (p !== null) onCommit(p); setEditing(false); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
-                style={{ width: '70px', fontFamily: mono, fontSize: '17px', fontWeight: 'normal', border: '1px solid var(--accent-purple, #ac29e9)', borderRadius: '4px', padding: '1px 4px' }}
+                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)', fontWeight: 'normal', border: '1px solid var(--accent-purple, #ac29e9)', borderRadius: '4px', padding: '1px 4px' }}
             />
         );
     }
@@ -96,7 +98,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
             columnGap={28}
             rowGap={gap + 6}
             items={exercises.map((ex) => (
-                <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: mono, fontSize: '17px' }}>
+                <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
                     {/* shuffled prompt numbers (click to edit) */}
                     <div style={{
                         display: 'flex', flexDirection: stacked ? 'column' : 'row',

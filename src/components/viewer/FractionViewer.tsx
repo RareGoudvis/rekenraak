@@ -20,6 +20,7 @@ export default function FractionViewer({ block, showSolutions }: Props) {
     const gap = block.verticalSpacing || 14;
 
     if (exList.length === 0) {
+        // Screen-only chrome — not a printed sheet font, so it stays a fixed px size.
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 

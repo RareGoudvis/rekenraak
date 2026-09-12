@@ -5,6 +5,8 @@ import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
+// Every printed digit/mono size below is a factor of --sheet-size-math (the empty-state
+// placeholder is screen-only chrome and stays a fixed px).
 // Thousands-spaces + comma decimals (nl-BE).
 const fmt = (n: number): string => formatMathNumber(n);
 // A place's value as a clean string (e.g. tienden digit 3 → "0,3"), rounded against float drift.
@@ -146,7 +148,7 @@ function PositieBenenItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
     const xs = places.map((_, i) => ((i + 0.5) / places.length) * W);
 
     return (
-        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontFamily: "'Azeret Mono', monospace", fontSize: '18px' }}>
+        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
             {/* top number */}
             <div style={{ height: '26px', display: 'flex', alignItems: 'center' }}>
                 {topBlank
@@ -182,12 +184,12 @@ function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
     const cols = ex.placeBreakdown || [];
     const cell: React.CSSProperties = {
         border: '1px solid #000', width: '42px', height: '36px', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: '16px', boxSizing: 'border-box',
+        alignItems: 'center', justifyContent: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.92)', boxSizing: 'border-box',
     };
     return (
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', width: '100%' }}>
             {/* Word fills the left; tables pin to the far right so all line up with room to spare. */}
-            <div style={{ flex: 1, minWidth: 0, fontFamily: "'Azeret Mono', monospace", fontSize: '16px' }}>{ex.words}</div>
+            <div style={{ flex: 1, minWidth: 0, fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{ex.words}</div>
             <div style={{ flexShrink: 0 }}>
                 <div style={{ display: 'flex' }}>
                     {cols.map(p => <div key={p.key} style={{ ...cell, backgroundColor: '#f4cbb8', fontWeight: 'bold' }}>{p.key}</div>)}
@@ -217,7 +219,7 @@ function PositieMathRow({ ex, showSolutions }: { ex: SplitsenExercise; showSolut
     const result = () => showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60);
 
     return (
-        <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', fontFamily: "'Azeret Mono', monospace", fontSize: '18px' }}>
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
             {compose ? (
                 <>
                     {places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)}
@@ -238,7 +240,7 @@ function PositieMathRow({ ex, showSolutions }: { ex: SplitsenExercise; showSolut
 function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; showSolutions: boolean; rowHeight: number }) {
     const cellBase: React.CSSProperties = {
         border: '1px solid #000',
-        fontSize: '14px',
+        fontSize: 'calc(var(--sheet-size-math) * 0.81)',
         fontFamily: "'Azeret Mono', monospace",
         textAlign: 'center',
         height: `${rowHeight}px`,
@@ -251,7 +253,7 @@ function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; show
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', border: '1px solid #000', width: '100%' }}>
             {/* Total — spans full width */}
-            <div style={{ ...cellBase, fontWeight: 'normal', fontSize: '15px', borderBottom: '1px solid #000', width: '100%' }}>
+            <div style={{ ...cellBase, fontWeight: 'normal', fontSize: 'calc(var(--sheet-size-math) * 0.87)', borderBottom: '1px solid #000', width: '100%' }}>
                 {fmt(ex.total)}
             </div>
             {/* Pair rows */}
@@ -278,7 +280,7 @@ function SplitsboomItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolut
         <div style={{
             border: '1.5px solid #000', borderRadius: '4px', minWidth: '46px', height: '38px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'Azeret Mono', monospace", fontSize: '18px', boxSizing: 'border-box', padding: '0 6px',
+            fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)', boxSizing: 'border-box', padding: '0 6px',
         }}>
             {isBlank ? (showSolutions ? <span style={solutionText}>{fmt(value)}</span> : '') : fmt(value)}
         </div>
@@ -305,7 +307,7 @@ function MathematicRow({ total, given, answer, showSolutions }: {
     total: number; given: number; answer: number; showSolutions: boolean;
 }) {
     return (
-        <div className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', fontSize: '17px', fontFamily: "'Azeret Mono', monospace" }}>
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: "'Azeret Mono', monospace" }}>
             <div style={{ width: '64px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <span style={{ fontWeight: 'normal' }}>{fmt(total)}</span>
             </div>
@@ -337,7 +339,7 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px' }}>
-            <span style={{ fontSize: '14px', fontFamily: "'Azeret Mono', monospace", fontWeight: 'normal', marginBottom: '-16px', zIndex: 1, position: 'relative' }}>{fmt(total)}</span>
+            <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: "'Azeret Mono', monospace", fontWeight: 'normal', marginBottom: '-16px', zIndex: 1, position: 'relative' }}>{fmt(total)}</span>
             {/* position:relative wrapper so number divs stack on top of SVG */}
             <div style={{ position: 'relative', width: W, height: H }}>
                 <svg viewBox="0 0 100 95" width={W} height={H} style={{ display: 'block' }}>
@@ -362,7 +364,7 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
                     display: 'flex', justifyContent: 'center',
                     pointerEvents: 'none',
                 }}>
-                    <span style={{ fontSize: '16px', fontWeight: 'normal', fontFamily: "'Azeret Mono', monospace" }}>{fmt(given)}</span>
+                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontWeight: 'normal', fontFamily: "'Azeret Mono', monospace" }}>{fmt(given)}</span>
                 </div>
                 {/* Right half number */}
                 {showSolutions && (
@@ -373,7 +375,7 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
                         display: 'flex', justifyContent: 'center',
                         pointerEvents: 'none',
                     }}>
-                        <span style={{ fontSize: '16px', fontFamily: "'Azeret Mono', monospace", ...solutionText }}>{fmt(answer)}</span>
+                        <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontFamily: "'Azeret Mono', monospace", ...solutionText }}>{fmt(answer)}</span>
                     </div>
                 )}
             </div>

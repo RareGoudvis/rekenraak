@@ -12,6 +12,8 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
+// stays fixed px).
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 
@@ -47,7 +49,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const numberWithUnderline = (ex: PlaatswaardeExercise) => {
         const places = placesOf(ex.number, maxGetal, decimalPlaces);
         return (
-            <span style={{ fontFamily: mono, fontSize: '18px', letterSpacing: '1px' }}>
+            <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)', letterSpacing: '1px' }}>
                 {places.map((p, i) => {
                     const comma = p.weight < 1 && (i === 0 || places[i - 1].weight >= 1);
                     return (
@@ -65,7 +67,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     if (subType === 'tabel') {
         const cell: React.CSSProperties = {
             border: '1px solid #000', width: tight ? '24px' : '40px', height: tight ? '28px' : '34px', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: tight ? '13px' : '16px', boxSizing: 'border-box',
+            alignItems: 'center', justifyContent: 'center', fontFamily: mono, fontSize: tight ? 'calc(var(--sheet-size-math) * 0.75)' : 'calc(var(--sheet-size-math) * 0.92)', boxSizing: 'border-box',
         };
         // Two-up when a row is narrow enough (default maxGetal 1000 = 4 places ≈ 266px),
         // so small place-value tables don't waste the right half of the page.
@@ -81,10 +83,10 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                     const places = placesOf(ex.number, maxGetal, decimalPlaces);
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '6px' : '16px' }}>
-                            <span style={{ fontFamily: mono, fontSize: tight ? '15px' : '18px', minWidth: tight ? undefined : '90px', whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)}</span>
+                            <span style={{ fontFamily: mono, fontSize: tight ? 'calc(var(--sheet-size-math) * 0.87)' : 'calc(var(--sheet-size-math) * 1.04)', minWidth: tight ? undefined : '90px', whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)}</span>
                             <div>
                                 <div style={{ display: 'flex' }}>
-                                    {places.map(p => <div key={p.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '13px' }}>{p.key}</div>)}
+                                    {places.map(p => <div key={p.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-math) * 0.75)' }}>{p.key}</div>)}
                                 </div>
                                 <div style={{ display: 'flex' }}>
                                     {places.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}>{showSolutions ? p.digit : ''}</div>)}
@@ -108,7 +110,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                 const value = Number((place.digit * place.weight).toFixed(4));
                 const answer = subType === 'plaats' ? place.label.toLowerCase() : formatMathNumber(value);
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: tight ? '4px' : '8px', fontFamily: mono, fontSize: '16px', ...(tight && { flexWrap: 'wrap' }) }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: tight ? '4px' : '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', ...(tight && { flexWrap: 'wrap' }) }}>
                         {/* Fixed-width right-aligned so the arrow + answer line align across rows.
                             Tight cells drop the reserved column — the digits are what has to fit. */}
                         <span style={{ display: 'inline-block', minWidth: tight ? undefined : '120px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>

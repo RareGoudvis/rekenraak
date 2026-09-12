@@ -12,6 +12,8 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
+// stays fixed px).
 const mono = "'Azeret Mono', monospace";
 
 export default function VergelijkenViewer({ block, showSolutions }: Props) {
@@ -35,7 +37,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                     const nums = ex.numbers || [];
                     const answer = (ex.target ?? 'grootste') === 'kleinste' ? Math.min(...nums) : Math.max(...nums);
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between', width: '100%', fontFamily: mono, fontSize: '17px' }}>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between', width: '100%', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
                             {nums.map((n, i) => {
                                 const isAns = showSolutions && n === answer;
                                 return (
@@ -73,7 +75,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                 items={exercises.map(ex => {
                     const a = ex.a ?? 0, b = ex.b ?? 0;
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: mono, fontSize: '18px' }}>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
                             <span style={{ minWidth: '80px', display: 'inline-flex', justifyContent: 'flex-end', alignItems: 'center' }}><RepValue value={a} rep={leftRep} frac={ex.aFrac} /></span>
                             <span style={{
                                 width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
@@ -99,7 +101,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
             items={exercises.map(ex => {
                 const a = ex.a ?? 0, b = ex.b ?? 0;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: mono, fontSize: '18px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
                         <span style={{ minWidth: '70px', textAlign: 'right' }}>{formatMathNumber(a)}</span>
                         <span style={{
                             width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',

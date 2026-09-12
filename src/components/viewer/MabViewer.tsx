@@ -10,6 +10,8 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
+// stays fixed px).
 const fmt = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 interface ColDef { key: string; place: MabPlace; }
@@ -152,7 +154,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
                         {cols.map((col, i) => (
                             <div key={col.key} style={{
                                 textAlign: 'center',
-                                fontSize: '14px',
+                                fontSize: 'calc(var(--sheet-size-math) * 0.81)',
                                 fontWeight: 'bold',
                                 padding: '4px 0',
                                 borderRight: i < cols.length - 1 ? '1.5px solid #000' : 'none',
@@ -199,7 +201,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
                 boxSizing: 'border-box',
             }}>
                 {showNumberOnLine
-                    ? <span style={{ ...(showSolutions && mode === 'herkennen' ? solutionText : { color: '#000' }), fontSize: '16px' }}>{fmt(ex.value)}</span>
+                    ? <span style={{ ...(showSolutions && mode === 'herkennen' ? solutionText : { color: '#000' }), fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{fmt(ex.value)}</span>
                     : <div style={{ width: '70%', borderBottom: '1.5px solid #000' }} />
                 }
             </div>

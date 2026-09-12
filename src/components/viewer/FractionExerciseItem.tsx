@@ -14,6 +14,8 @@ interface Props {
 // - standaard:   rows of 10 (the original fixed layout)
 // - gebalanceerd: equal rows, perRow ≤ 10, fewest rows first (18 → 2×9, 24 → 3×8)
 // - per-deel:    `denominator` equal rows, so each row is one whole share
+// All mono/digit text below is a factor of --sheet-size-math (VerticalFraction's own
+// numeric fontSize prop is unchanged — it converts itself to the same token internally).
 function groupRows(total: number, denominator: number, mode: string): number[] {
     if (total <= 0) return [];
     if (mode === 'per-deel' && denominator > 0 && total % denominator === 0) {
@@ -33,7 +35,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
     const subType = ex.subType;
     const c = block.constraints as FractionConstraints;
     const answerFormat: string = c.answerFormat || 'fraction-questions';
-    const sol = (text: string) => <span style={{ ...solutionText, fontSize: '14px' }}>{text}</span>;
+    const sol = (text: string) => <span style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>;
     const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />;
 
     const vertFrac = (n: number, d: number, color?: string) => (
@@ -74,7 +76,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         if (subType === 'kleuren') {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'normal' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', fontWeight: 'normal' }}>
                         <span>Kleur</span>
                         {vertFrac(ex.numerator, ex.denominator)}
                         <span>in:</span>
@@ -100,7 +102,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                     <div style={{ minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {shape}
                     </div>
-                    <div style={{ fontSize: '12px', fontFamily: 'Azeret Mono, monospace', width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', fontFamily: 'Azeret Mono, monospace', width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {qLine('In hoeveel gelijke delen is de figuur verdeeld?', showSolutions ? sol(String(ex.denominator)) : blank(28))}
                         {qLine('Hoeveel gelijke delen zijn ingekleurd?', showSolutions ? sol(String(ex.numerator)) : blank(28))}
                     </div>
@@ -108,12 +110,12 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
             );
         } else if (answerFormat === 'phrase') {
             answerArea = (
-                <div style={{ fontSize: '12px', fontFamily: 'Azeret Mono, monospace', lineHeight: '2', marginTop: '6px' }}>
+                <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', fontFamily: 'Azeret Mono, monospace', lineHeight: '2', marginTop: '6px' }}>
                     <div>
                         Er zijn {showSolutions ? sol(String(ex.numerator)) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '24px' }}>&nbsp;</span>} van de{' '}
                         {ex.denominator} gelijke delen gekleurd. Dat is{' '}
                         {showSolutions ? vertFrac(ex.numerator, ex.denominator, SOL)
-                            : <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: '13px', verticalAlign: 'middle' }}>
+                            : <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.75)', verticalAlign: 'middle' }}>
                                 <div style={{ borderBottom: '1.5px solid #000', minWidth: '24px', height: '16px' }} />
                                 <div style={{ minWidth: '24px', height: '16px' }} />
                               </div>
@@ -123,7 +125,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
             );
         } else if (answerFormat === 'blank-fraction') {
             answerArea = (
-                <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px', fontSize: '20px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'normal' }}>
+                <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px', fontSize: 'calc(var(--sheet-size-math) * 1.15)', fontFamily: 'Azeret Mono, monospace', fontWeight: 'normal' }}>
                     <div style={{ borderBottom: '2px solid #000', minWidth: '32px', textAlign: 'center', paddingBottom: '2px', color: showSolutions ? SOL : 'transparent' }}>{ex.numerator}</div>
                     <div style={{ minWidth: '32px', textAlign: 'center', paddingTop: '2px', color: showSolutions ? SOL : 'transparent' }}>{ex.denominator}</div>
                 </div>
@@ -171,26 +173,26 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
 
         // Unified task line across all concreet scaffolds (no "van deze hoeveelheid").
         const taskLine = (
-            <div style={{ fontSize: '12px', fontFamily: 'Azeret Mono, monospace', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', fontFamily: 'Azeret Mono, monospace', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span>Verdeel en kleur</span>{vertFrac(ex.numerator, ex.denominator)}
             </div>
         );
 
         const fracLabel = (
-            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: '14px', fontFamily: 'Azeret Mono, monospace', lineHeight: 1.2 }}>
+            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'Azeret Mono, monospace', lineHeight: 1.2 }}>
                 <span style={{ borderBottom: '1.5px solid #000', minWidth: '18px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px' }}>{ex.numerator}</span>
                 <span style={{ minWidth: '18px', textAlign: 'center', paddingLeft: '4px', paddingRight: '4px' }}>{ex.denominator}</span>
             </div>
         );
 
         const questionLine = (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontFamily: 'Azeret Mono, monospace' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'Azeret Mono, monospace' }}>
                 {fracLabel}<span>van {total} =</span>{showSolutions ? sol(String(coloredCount)) : blank()}
             </div>
         );
 
         const calcLines = (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                     {blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}
                 </div>
@@ -221,8 +223,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         if (answerFormat === 'met-breukvragen') {
             const qRow = (question: string, answer: React.ReactNode) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-                    <div style={{ fontWeight: 'normal', fontSize: '11px', fontFamily: 'Azeret Mono, monospace', width: '195px', flexShrink: 0 }}>{question}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace' }}>{answer}</div>
+                    <div style={{ fontWeight: 'normal', fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'Azeret Mono, monospace', width: '195px', flexShrink: 0 }}>{question}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>{answer}</div>
                 </div>
             );
             return (
@@ -237,7 +239,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                         {qRow('Hoe groot is één deel?', <>{blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}</>)}
                         {qRow('Hoeveel gelijke delen neem ik?', blank())}
                         {qRow('Hoeveel is dat samen?', <>{blank(24)}<span>×</span>{blank(28)}<span>=</span>{blank(28)}</>)}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
                             {showSolutions ? vertFrac(ex.numerator, ex.denominator, SOL) : vertFrac(ex.numerator, ex.denominator)}
                             <span> van </span>{blank(28)}<span> is </span>{blank(28)}
                         </div>
@@ -264,7 +266,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
     if (subType === 'hoeveelheid-rechthoek') {
         const total = ex.total ?? 0;
         const rectCalcLines = (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                     {blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}
                 </div>
@@ -275,7 +277,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         );
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontFamily: 'Azeret Mono, monospace' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'Azeret Mono, monospace' }}>
                     {vertFrac(ex.numerator, ex.denominator)}<span> van {total} =</span>{blank()}
                 </div>
                 {/* Draw box sized to handwriting needs. 1cm ≈ 37.8px; default ≈ 3cm (≈113px). */}
@@ -299,7 +301,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const sv = (v: number) => showSolutions ? sol(String(v)) : blank(28);
 
         const questionLine = (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontFamily: 'Azeret Mono, monospace', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'Azeret Mono, monospace', flexWrap: 'wrap' }}>
                 {vertFrac(ex.numerator, ex.denominator)}<span> van {total} is</span>{showSolutions ? sol(String(coloredCount)) : blank(36)}
             </div>
         );
@@ -309,10 +311,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {questionLine}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
                             {blank(56)}<span>:</span>{blank(56)}<span>=</span>{blank(72)}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
                             {blank(56)}<span>×</span>{blank(56)}<span>=</span>{blank(72)}
                         </div>
                     </div>
@@ -333,7 +335,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         }
 
         const calcRow = (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', flexWrap: 'wrap' }}>
                 {sv(total)}<span>:</span>{sv(ex.denominator)}<span>=</span>{sv(groupSize)}
                 <span style={{ margin: '0 6px' }}>en</span>
                 {sv(ex.numerator)}<span>×</span>{sv(groupSize)}<span>=</span>{showSolutions ? sol(String(coloredCount)) : blank(28)}
@@ -365,7 +367,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         );
 
         const instructions = (
-            <div style={{ fontSize: '12px', fontFamily: 'Azeret Mono, monospace', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', fontFamily: 'Azeret Mono, monospace', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span>Verdeel het lijnstuk in gelijke delen.</span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Teken een boogje boven{' '}
@@ -381,10 +383,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                     {instructions}
                     {lineEl}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
                             {blank(56)}<span>:</span>{blank(56)}<span>=</span>{blank(72)}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
                             {blank(56)}<span>×</span>{blank(56)}<span>=</span>{blank(72)}
                         </div>
                     </div>
@@ -409,7 +411,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
                 {instructions}
                 {lineEl}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                         {showSolutions ? sol(String(cm)) : blank(28)}<span>cm</span><span>:</span>{showSolutions ? sol(String(ex.denominator)) : blank(24)}<span>=</span>{showSolutions ? sol(String(partLength)) : blank(28)}<span>cm</span>
                     </div>
@@ -433,7 +435,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
 
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-                <div style={{ fontSize: '13px', fontFamily: 'Azeret Mono, monospace', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Verdeel en kleur <span style={{ display: 'inline-flex' }}>{vertFrac(ex.numerator, ex.denominator)}</span> van deze figuur.
                 </div>
                 <div style={{ outline: '3px solid #000', width: 'fit-content' }}>

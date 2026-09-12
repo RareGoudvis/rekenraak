@@ -13,17 +13,19 @@ interface Props {
     showSolutions: boolean;
 }
 
+// Sheet font sizes below are factors of --sheet-size-math (digits/mono) so the Blad-tab
+// sliders rescale every rendered number; screen-only chrome (emptyStateText) is exempt.
 const styles = {
-    solutionText: { ...solutionText, padding: '0 4px', fontSize: '18px' } as React.CSSProperties,
+    solutionText: { ...solutionText, padding: '0 4px', fontSize: 'calc(var(--sheet-size-math) * 1.04)' } as React.CSSProperties,
     // The fill-in blank shrinks with the cell: 40px inside 6px margins at full width, a
     // narrower line in a quarter-width block where those 52px are a third of the row.
     mathDottedLine: (w = 40, m = 6): React.CSSProperties => ({ borderBottom: '1.5px solid #000', width: `${w}px`, margin: `0 ${m}px`, display: 'inline-block', height: '16px' }),
-    mathInput: { width: '70px', textAlign: 'center', fontSize: '17px', fontFamily: 'Azeret Mono, monospace', border: '1px solid transparent', background: 'transparent', outline: 'none', color: '#000', padding: 0 } as React.CSSProperties,
-    fractionWrapper: { display: 'inline-flex', flexDirection: 'column', alignItems: 'center', margin: '0 4px', fontSize: '15px' } as React.CSSProperties,
+    mathInput: { width: '70px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', border: '1px solid transparent', background: 'transparent', outline: 'none', color: '#000', padding: 0 } as React.CSSProperties,
+    fractionWrapper: { display: 'inline-flex', flexDirection: 'column', alignItems: 'center', margin: '0 4px', fontSize: 'calc(var(--sheet-size-math) * 0.87)' } as React.CSSProperties,
     fractionTop: { borderBottom: '1.5px solid #000', padding: '0 4px', minWidth: '24px', textAlign: 'center' } as React.CSSProperties,
     fractionBottom: { padding: '0 4px', minWidth: '24px', textAlign: 'center' } as React.CSSProperties,
-    wholeNumberStyle: { fontSize: '18px', marginRight: '4px', color: '#000' } as React.CSSProperties,
-    exerciseRow: { display: 'flex', alignItems: 'flex-end', fontSize: '17px', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
+    wholeNumberStyle: { fontSize: 'calc(var(--sheet-size-math) * 1.04)', marginRight: '4px', color: '#000' } as React.CSSProperties,
+    exerciseRow: { display: 'flex', alignItems: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
     // widthPx applies only to the inline-short blank; inline-long and stepped keep their
     // full-width work line, which is writing room rather than an answer-sized slot.
     // In a tight cell the line is FLEXIBLE instead of fixed: it takes whatever the sum
@@ -94,7 +96,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const renderGiven = (val: number | Fraction | undefined) => {
         if (val === undefined) return null;
         if (isFraction(val)) return <FractionDisplay val={val} />;
-        return <span style={{ fontFamily: 'Azeret Mono, monospace', fontSize: '17px', color: '#000' }}>{formatMathNumber(val as number)}</span>;
+        return <span style={{ fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 1)', color: '#000' }}>{formatMathNumber(val as number)}</span>;
     };
 
     const renderAnswer = (val: number | Fraction | undefined) => {
@@ -235,7 +237,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         ? <span style={solutionText}>{String(ex.remainder)}</span>
                         : <div style={{ borderBottom: '1.5px solid #000', width: '30px', height: '18px', display: 'inline-block' }} />;
                     return (
-                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '17px', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
+                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
                             {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
                                 cell it is the first thing to go, so the division itself still fits. */}
                             {!tight && <><span>(</span>{helpBlank}<span>)</span></>}
