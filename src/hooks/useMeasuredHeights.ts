@@ -34,17 +34,30 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     const body = useRef<{ first?: number; rest?: number }>({});
     const [version, setVersion] = useState(0);
 
-    // A dev-only guard against a measure→pack→measure loop: a converging sheet settles in
-    // two or three passes, so a burst means some height is measurement-dependent.
+    // Guard against a measure→pack→measure loop. A converging sheet settles in two or
+    // three passes; a burst means some height is measurement-dependent, and left alone it
+    // re-renders forever — the tab froze on a teacher's sheet before this existed. Past
+    // BREAKER_BUMPS in a second the hook stops accepting measurements for COOLDOWN_MS: the
+    // layout keeps whatever it last had (possibly a few px off) instead of hanging.
+    const BREAKER_BUMPS = 12;
+    const COOLDOWN_MS = 1500;
     const bumps = useRef<number[]>([]);
-    const bump = useCallback(() => {
+    const cooldownUntil = useRef(0);
+    const bump = useCallback((what: string) => {
+        const now = performance.now();
+        bumps.current = [...bumps.current.filter(t => now - t < 1000), now];
+        if (bumps.current.length > BREAKER_BUMPS) {
+            cooldownUntil.current = now + COOLDOWN_MS;
+            bumps.current = [];
+            console.warn(`[layout] repack loop broken (${what}); measurements paused ${COOLDOWN_MS}ms`);
+            return;
+        }
         setVersion(v => v + 1);
-        if (import.meta.env.DEV) {
-            const now = performance.now();
-            bumps.current = [...bumps.current.filter(t => now - t < 1000), now];
-            if (bumps.current.length > 5) console.warn(`[layout] ${bumps.current.length} repacks in 1s — a measured height is feeding back into itself`);
+        if (import.meta.env.DEV && bumps.current.length > 5) {
+            console.warn(`[layout] ${bumps.current.length} repacks in 1s — ${what} is feeding back into itself`);
         }
     }, []);
+    const paused = () => performance.now() < cooldownUntil.current;
 
     // Drop measurements for blocks that left the sheet, so the map cannot grow unbounded
     // across a long editing session. No version bump: pruning cannot change the height of
@@ -57,21 +70,21 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     }, [blocks]);
 
     const onCellMeasure = useCallback((blockId: string, width: number, px: number) => {
-        if (!(px > 0)) return;   // a hidden or not-yet-laid-out cell says nothing
+        if (!(px > 0) || paused()) return;   // a hidden or not-yet-laid-out cell says nothing
         const key = `${blockId}:${width}`;
         const prev = cells.current.get(key);
         if (prev !== undefined && Math.abs(prev - px) <= EPSILON_PX) return;
         cells.current.set(key, px);
-        bump();
+        bump(`cell ${key} ${prev ?? '–'}→${Math.round(px)}px`);
     }, [bump]);
 
     const onBodyMeasure = useCallback((pageIndex: number, px: number) => {
-        if (!(px > 0)) return;
+        if (!(px > 0) || paused()) return;
         const slot = pageIndex === 0 ? 'first' : 'rest';
         const prev = body.current[slot];
         if (prev !== undefined && Math.abs(prev - px) <= EPSILON_PX) return;
         body.current = { ...body.current, [slot]: px };
-        bump();
+        bump(`body ${slot} ${prev ?? '–'}→${Math.round(px)}px`);
     }, [bump]);
 
     const heightPxOf = useCallback((block: MathBlock, width: number) => cells.current.get(`${block.id}:${width}`), []);
