@@ -574,6 +574,7 @@ state without it. TESTING.md lists the verdict codes (a/a2/b/c/d/e).
 ### Reordering on the sheet
 
 [useSheetDnd.ts](../../src/hooks/useSheetDnd.ts) — **pointer events only; no native
+[useShedStages.ts         # top-bar label shedding off real measured overflow (4 stages, hysteresis), not viewport width (§2)
 HTML5 drag-and-drop anywhere in the app.** A browser extension that hooks `dragstart` (the
 "Claude in Chrome" extension did) froze the tab for the whole drag, and teachers' browsers
 are not ours to audit. The visible affordance is a **handle** (`.sheet-drag-handle`, the
@@ -812,7 +813,7 @@ src/
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
     │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = App's hoveredBlockId ?? activeBlockId, not CSS :hover
     │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, wordmark foot
-    │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken
+    │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈1900px of viewport because the bar spans only the centre column.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
     │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay
