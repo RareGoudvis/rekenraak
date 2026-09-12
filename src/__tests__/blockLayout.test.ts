@@ -1,0 +1,83 @@
+import { describe, test, expect } from 'vitest';
+import { minWidthUnits, tierWidthPx, type WidthUnits } from '../config/blockLayout';
+import { makeBlock } from './helpers/makeBlock';
+
+// The width clamp has two regimes: with a measured content width it answers the smallest
+// tier that holds it (never below an editorial veto), and without one it falls back to the
+// per-type table measured at default settings. Both are pinned here — the fallback because
+// it still runs on the first frame, the measured path because it is what lets a small
+// block go half or quarter width at all.
+
+const measure = (px: number, atWidth: WidthUnits = 4) => ({ intrinsicPx: px, atWidth });
+
+describe('minWidthUnits — fallback (no measurement)', () => {
+    test('rekenvolgorde still claims the full width, as it did before measuring', () => {
+        expect(minWidthUnits(makeBlock('rekenvolgorde', { block: { numberOfExercises: 3 } }))).toBe(4);
+    });
+
+    test('hoofdrekenen at a million needs the full width', () => {
+        const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'natural', maxGetal: 1000000 } });
+        expect(minWidthUnits(block)).toBe(4);
+    });
+
+    test('hoofdrekenen at 100 fits a quarter', () => {
+        const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'natural', maxGetal: 100 } });
+        expect(minWidthUnits(block)).toBe(1);
+    });
+});
+
+describe('minWidthUnits — measured', () => {
+    // Measured at a width where the viewer is already 1-up, so the reflow rule stays out of
+    // the way and the tier is purely the arithmetic.
+    const oneUp = () => makeBlock('rekenvolgorde', { block: { numberOfExercises: 1, widthUnits: 1 } });
+
+    test('narrow content fits a quarter', () => {
+        expect(tierWidthPx(1)).toBeGreaterThan(140);
+        expect(minWidthUnits(oneUp(), measure(130, 1))).toBe(1);
+    });
+
+    test('content wider than a quarter cell is promoted to a half', () => {
+        expect(tierWidthPx(1)).toBeLessThan(300);
+        expect(tierWidthPx(2)).toBeGreaterThan(300);
+        expect(minWidthUnits(oneUp(), measure(300, 1))).toBe(2);
+    });
+
+    test('content wider than a half cell is promoted to the full width', () => {
+        expect(minWidthUnits(oneUp(), measure(600, 1))).toBe(4);
+    });
+
+    test('a measurement never beats an editorial veto', () => {
+        // A number line measures narrow at a quarter and still may not go there: its axis
+        // labels collide long before anything overflows.
+        const as = makeBlock('getallenas', { block: { numberOfExercises: 1 } });
+        expect(minWidthUnits(as, measure(80, 1))).toBe(2);
+        // The to-scale rulers and the two layout blocks keep the whole width.
+        expect(minWidthUnits(makeBlock('omtrek'), measure(80, 1))).toBe(4);
+        expect(minWidthUnits(makeBlock('layout-lege-pagina'), measure(10, 1))).toBe(4);
+    });
+
+    test('a reflowing block measured at full width is allowed one tier narrower', () => {
+        // 2-up at full width: 500px of content fits nowhere narrower on paper, but the
+        // viewer goes 1-up in a half cell, so denying the half would be a guess.
+        const block = makeBlock('rekenvolgorde', { block: { numberOfExercises: 4, widthUnits: 4 } });
+        expect(minWidthUnits(block, measure(500, 4))).toBe(2);
+        // Measured AT the half the viewer is already 1-up, so that measurement is the
+        // whole truth and the quarter opens on its own arithmetic.
+        expect(minWidthUnits(block, measure(140, 2))).toBe(1);
+    });
+
+    test('a 1-up type is never opened up by the reflow rule', () => {
+        // getallenrijen renders one sequence per row at every width, so a wide measurement
+        // means exactly what it says.
+        const block = makeBlock('getallenrijen', { block: { numberOfExercises: 4, widthUnits: 4 } });
+        expect(minWidthUnits(block, measure(600, 4))).toBe(4);
+    });
+
+    test('the measured path ignores the settings gates the fallback applies', () => {
+        // Decimal hoofdrekenen is barred from a quarter by the fallback table; a real
+        // measurement of 120px says otherwise, and the measurement wins.
+        const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'decimal', maxGetal: 100 }, block: { widthUnits: 1, numberOfExercises: 1 } });
+        expect(minWidthUnits(block)).toBe(2);
+        expect(minWidthUnits(block, measure(120, 1))).toBe(1);
+    });
+});

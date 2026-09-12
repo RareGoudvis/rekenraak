@@ -44,12 +44,19 @@ export const PAGE_BODY_PX = BODY_HEIGHT_PX - 40;
 // these two are only the FIRST-PAINT fallback — the rendered height wins within a frame —
 // so two decimals is as precise as this needs to be.
 //
-// `minWidth` is the narrowest column this type may be placed in.
-//   RULE: a width is allowed when overflow <= 1.005 AND the applied zoom >= 0.85.
+// `minWidth` is the narrowest column this type may be placed in — but only until the
+// sheet has rendered once. Since 7a (2026-09-12) the live answer comes from the BLOCK, not
+// from its type: PageSheet probes each cell's min-content width and minWidthUnits() picks
+// the smallest tier that holds it. This table is what runs before that measurement exists
+// (first paint, unit tests), and it is why a three-item rekenvolgorde block used to be told
+// it needed the whole page: the tiers were measured once, at default settings, per type.
+//   RULE (how these numbers were set): a width is allowed when overflow <= 1.005 AND the
+//   applied zoom >= 0.85.
 // Measurement alone is not enough — viewers read an injected width, so they SHRINK
 // rather than overflow, and a number line at a quarter fits while being unreadable. The
 // tier is max(measured, editorial): measurement rules out the impossible, judgement rules
-// out the illegible. Every EDITORIAL VETO, from the 2026-09-12 screenshot pass:
+// out the illegible. The EDITORIAL half is `VETO_MIN` below, which applies in BOTH regimes.
+// From the 2026-09-12 screenshot pass:
 //   - geld-tekenen, half: numerically fine, but the draw-the-amount boxes shrink to ~17mm.
 //     A child cannot draw coins and notes in that.
 //   - oppervlakte (and lengte-meten, omtrek): the figures are drawn TO SCALE (1cm ≈ 37.8px),
@@ -207,9 +214,14 @@ const WIDTH_SLACK_PX = 8;
 
 const TIERS: WidthUnits[] = [1, 2, 4];
 
+/** Printable width of a cell at this tier, as the width clamp judges it. */
+export function tierWidthPx(units: WidthUnits): number {
+    return cellWidthPx(units, COL_GAP_PX);
+}
+
 /** Smallest tier whose printable cell holds `px` of content. */
 function tierFor(px: number): WidthUnits {
-    return TIERS.find(w => cellWidthPx(w, COL_GAP_PX) >= px + WIDTH_SLACK_PX) ?? 4;
+    return TIERS.find(w => tierWidthPx(w) >= px + WIDTH_SLACK_PX) ?? 4;
 }
 
 /** One tier narrower than `w` — 4 → 2 → 1, and 1 stays 1. */
@@ -246,7 +258,7 @@ export function minWidthUnits(block: MathBlock, measured?: { intrinsicPx?: numbe
     if (px !== undefined && px > 0) {
         let tier = tierFor(px);
         const at = measured?.atWidth ?? (COL_UNITS as WidthUnits);
-        if (tier > 1 && perRow(block, at) > 1 && px <= cellWidthPx(at, COL_GAP_PX)) {
+        if (tier > 1 && perRow(block, at) > 1 && px <= tierWidthPx(at)) {
             tier = Math.min(tier, narrower(at)) as WidthUnits;
         }
         return Math.max(tier, floor) as WidthUnits;

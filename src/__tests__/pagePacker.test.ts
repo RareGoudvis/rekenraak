@@ -184,6 +184,39 @@ describe('packPages', () => {
 // The sheet and the viewers must agree on how wide a cell is: while App computed 688 and
 // BlockWidthContext defaulted to 681, a viewer laid out a different grid depending on
 // whether it was inside a provider.
+describe('packPages with a measured minWidthOf', () => {
+    // App injects the width clamp as a closure over the MEASURED content width. The packer
+    // must use it instead of the per-type table — that is the whole point of 7a — and the
+    // clamp must stay one-directional so measure→pack→measure cannot oscillate.
+    test('a measured closure can place a type the table would have widened', () => {
+        // rekenvolgorde's table entry is full width; three short expressions are not.
+        const a = makeBlock('rekenvolgorde', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
+        const b = makeBlock('rekenvolgorde', { id: 'b', block: { widthUnits: 1, numberOfExercises: 3 } });
+        expect(packPages([a, b])[0].rows[0].items.map(i => i.width)).toEqual([COL_UNITS]);
+        const pages = packPages([a, b], { minWidthOf: () => 1 });
+        expect(flat(pages)).toEqual([[['a', 'b']]]);
+        expect(pages[0].rows[0].items.every(i => i.width === 1 && !i.promoted)).toBe(true);
+    });
+
+    test('the clamp only ever widens, and says so via `promoted`', () => {
+        const a = makeBlock('rekenvolgorde', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
+        // Feeding the chosen width back in changes nothing: max(asked, min) is idempotent,
+        // so a repack on a fresh measurement cannot ping-pong between two widths.
+        const once = packPages([a], { minWidthOf: () => HALF })[0].rows[0].items[0];
+        expect(once.width).toBe(HALF);
+        expect(once.promoted).toBe(true);
+        const twice = packPages([{ ...a, widthUnits: once.width }], { minWidthOf: () => HALF })[0].rows[0].items[0];
+        expect(twice.width).toBe(HALF);
+        expect(twice.promoted).toBe(false);
+    });
+
+    test('ignoreMinWidth still beats the closure, for the width-matrix harness', () => {
+        const a = makeBlock('rekenvolgorde', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
+        const item = packPages([a], { minWidthOf: () => COL_UNITS as WidthUnits, ignoreMinWidth: true })[0].rows[0].items[0];
+        expect(item.width).toBe(1);
+    });
+});
+
 describe('cellWidthPx', () => {
     test('a full-width cell is the whole printable width, whatever the gap', () => {
         for (const gap of [0, 12, 28]) expect(cellWidthPx(COL_UNITS, gap)).toBe(FULL_BLOCK_WIDTH_PX);

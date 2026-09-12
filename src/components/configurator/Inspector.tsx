@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { minWidthUnits } from '../../config/blockLayout';
+import { minWidthUnits, tierWidthPx } from '../../config/blockLayout';
+import { intrinsicOf } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
@@ -443,11 +444,19 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 is a whole, a half or a quarter. Widths narrower than the block's
                                 own minimum are disabled rather than silently overridden. */}
                             {(() => {
-                                const min = minWidthUnits(activeBlock);
+                                // Same measurement the packer clamps against (see App's
+                                // minWidthOf): the picker must never grey out a width the
+                                // sheet would in fact accept, and when it does grey one out
+                                // it can say in px why.
+                                const iw = intrinsicOf(activeBlock.id);
+                                const min = minWidthUnits(activeBlock, iw && { intrinsicPx: iw.px, atWidth: iw.atWidth });
                                 const cur = Math.max(activeBlock.widthUnits ?? 4, min);
                                 const OPTIONS: Array<{ w: 1 | 2 | 4; label: string }> = [
                                     { w: 4, label: 'Vol' }, { w: 2, label: '½' }, { w: 1, label: '¼' },
                                 ];
+                                const tooNarrow = (w: 1 | 2 | 4) => (iw
+                                    ? `Te smal: de inhoud is ${Math.round(iw.px)}px breed, deze kolom biedt ${tierWidthPx(w)}px.`
+                                    : 'Te smal voor dit type bij deze instellingen');
                                 return (
                                     <>
                                         <label style={{ ...S.label, marginTop: '14px' }}>Breedte op de pagina</label>
@@ -458,15 +467,17 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                     className="seg-btn"
                                                     aria-pressed={cur === o.w}
                                                     disabled={locked || o.w < min}
-                                                    title={o.w < min ? 'Te smal voor dit type bij deze instellingen' : undefined}
+                                                    title={o.w < min ? tooNarrow(o.w) : undefined}
                                                     onClick={() => updateBlockSettings(activeBlock.id, { widthUnits: o.w })}
                                                 >{o.label}</button>
                                             ))}
                                         </div>
                                         <p style={S.hintText}>
-                                            {min === 4
-                                                ? 'Dit type heeft de volle breedte nodig.'
-                                                : `Smalst mogelijk bij deze instellingen: ${min === 2 ? '½' : '¼'}.`}
+                                            {iw
+                                                ? `De inhoud is ${Math.round(iw.px)}px breed. Smalst mogelijk: ${min === 4 ? 'vol' : min === 2 ? '½' : '¼'}.`
+                                                : min === 4
+                                                    ? 'Dit type heeft de volle breedte nodig.'
+                                                    : `Smalst mogelijk bij deze instellingen: ${min === 2 ? '½' : '¼'}.`}
                                         </p>
                                         {/* Same condition the packer calls `promoted`: the chosen
                                             width was kept but overridden, so say so rather than
