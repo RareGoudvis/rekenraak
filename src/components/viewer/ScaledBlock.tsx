@@ -71,8 +71,13 @@ export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fit
         return () => ro.disconnect();
     }, [scale]);
 
+    // `data-scaled-inner` marks the element PageSheet probes for the block's intrinsic
+    // content width (its `min-content` width), which is what decides the narrowest column
+    // this block may sit in. `data-scale` is the REQUESTED zoom, not the applied one: the
+    // width tier has to hold at the size the teacher asked for, even while the fit loop is
+    // still backing off. SYNC: PageSheet.tsx measure pass, blockLayout.minWidthUnits.
     return (
-        <div ref={ref} style={{ zoom: applied, width: '100%', display: 'block', position: 'static', overflow: 'visible' }}>
+        <div ref={ref} data-scaled-inner="" data-scale={scale} style={{ zoom: applied, width: '100%', display: 'block', position: 'static', overflow: 'visible' }}>
             <BlockWidthProvider value={availableWidthPx}>{children}</BlockWidthProvider>
         </div>
     );

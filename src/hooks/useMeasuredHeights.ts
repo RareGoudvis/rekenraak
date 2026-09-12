@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MathBlock } from '../services/math/types';
+import type { WidthUnits } from '../config/blockLayout';
 
 // Real cell heights, fed back into the packer. The budget alone could not be right: it is
 // derived from settings while the CSS grid lays out actual content, so an over-estimate
@@ -9,17 +10,52 @@ import type { MathBlock } from '../services/math/types';
 // what the sheet IS, so it must not be undoable, autosaved or shared.
 //
 // Convergence: a cell's height depends only on (block, width, spacing, docSettings) and
-// never on where the packer put it, so one remeasure reaches a fixed point. Widths are
-// settings-derived, never measurement-derived, so a repack cannot change what was
-// measured. Writes under 2px are dropped, which stops sub-pixel rounding from oscillating.
+// never on where the packer put it, so one remeasure reaches a fixed point. Since the
+// width clamp became measured too, widths ARE measurement-derived — but only one way: a
+// clamp can widen a block, which writes a NEW `${blockId}:${width}` entry instead of
+// overwriting the one that caused it, and the entry that caused it stays in the map. So a
+// repack can add measurements, never contradict them, and the clamp settles in one extra
+// pass. Writes under 2px are dropped, which stops sub-pixel rounding from oscillating.
 const EPSILON_PX = 2;
+
+// ── Intrinsic content widths ─────────────────────────────────────────────────
+// How narrow a block's content can get, probed by PageSheet (see probeIntrinsicWidth).
+// It lives at MODULE scope rather than in the hook's ref because the Inspector's width
+// picker has to read the same number to say why a tier is off ("de inhoud is 412px
+// breed"), and there is exactly one sheet in the app — threading it through App would buy
+// nothing and App's markup belongs to other work.
+//
+// Keyed `${blockId}:${width}` like the heights: a viewer that lays out 2-up really is
+// wider in a wide cell, so the same block has more than one honest answer. `intrinsicOf`
+// returns the SMALLEST one seen and the width it was seen at — the smallest is the one
+// that reflects what this block can do when it stops sharing rows.
+const intrinsic = new Map<string, number>();
+
+export interface IntrinsicWidth {
+    /** Narrowest content width seen for this block, in layout px at its requested scale. */
+    px: number;
+    /** The cell width that measurement was taken in. */
+    atWidth: WidthUnits;
+}
+
+export function intrinsicOf(blockId: string): IntrinsicWidth | undefined {
+    let best: IntrinsicWidth | undefined;
+    for (const [key, px] of intrinsic) {
+        const cut = key.lastIndexOf(':');
+        if (key.slice(0, cut) !== blockId) continue;
+        if (!best || px < best.px) best = { px, atWidth: Number(key.slice(cut + 1)) as WidthUnits };
+    }
+    return best;
+}
 
 export interface MeasuredHeights {
     /** Measured px height of this block's cell at this width, or undefined if unmeasured. */
     heightPxOf: (block: MathBlock, width: number) => number | undefined;
     /** Measured px height of a page's body box, or undefined before first paint. */
     pageBudgetPx: (pageIndex: number) => number | undefined;
-    onCellMeasure: (blockId: string, width: number, px: number) => void;
+    onCellMeasure: (blockId: string, width: number, px: number, intrinsicWidthPx?: number) => void;
+    /** Narrowest measured content width for this block, for the packer and the Inspector. */
+    intrinsicOf: (blockId: string) => IntrinsicWidth | undefined;
     onBodyMeasure: (pageIndex: number, px: number) => void;
     /** Bumped whenever a measurement actually changed — the packer's only dependency. */
     version: number;
@@ -64,18 +100,35 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     // a block that is still there.
     useEffect(() => {
         const alive = new Set(blocks.map(b => b.id));
-        for (const key of cells.current.keys()) {
-            if (!alive.has(key.slice(0, key.lastIndexOf(':')))) cells.current.delete(key);
+        for (const map of [cells.current, intrinsic]) {
+            for (const key of map.keys()) {
+                if (!alive.has(key.slice(0, key.lastIndexOf(':')))) map.delete(key);
+            }
         }
     }, [blocks]);
 
-    const onCellMeasure = useCallback((blockId: string, width: number, px: number) => {
-        if (!(px > 0) || paused()) return;   // a hidden or not-yet-laid-out cell says nothing
+    const onCellMeasure = useCallback((blockId: string, width: number, px: number, intrinsicWidthPx?: number) => {
+        if (paused()) return;
         const key = `${blockId}:${width}`;
-        const prev = cells.current.get(key);
-        if (prev !== undefined && Math.abs(prev - px) <= EPSILON_PX) return;
-        cells.current.set(key, px);
-        bump(`cell ${key} ${prev ?? '–'}→${Math.round(px)}px`);
+        let changed = '';
+        if (px > 0) {   // a hidden or not-yet-laid-out cell says nothing
+            const prev = cells.current.get(key);
+            if (prev === undefined || Math.abs(prev - px) > EPSILON_PX) {
+                cells.current.set(key, px);
+                changed = `cell ${key} ${prev ?? '–'}→${Math.round(px)}px`;
+            }
+        }
+        // A width bump goes through the same circuit breaker: the width clamp feeds the
+        // packer, so a viewer whose min-content depended on its placement could loop here
+        // exactly as a height could.
+        if (intrinsicWidthPx !== undefined && intrinsicWidthPx > 0) {
+            const prev = intrinsic.get(key);
+            if (prev === undefined || Math.abs(prev - intrinsicWidthPx) > EPSILON_PX) {
+                intrinsic.set(key, intrinsicWidthPx);
+                changed = changed || `width ${key} ${prev ?? '–'}→${Math.round(intrinsicWidthPx)}px`;
+            }
+        }
+        if (changed) bump(changed);
     }, [bump]);
 
     const onBodyMeasure = useCallback((pageIndex: number, px: number) => {
@@ -96,7 +149,7 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     // One object whose identity changes only when a measurement did: consumers can depend
     // on it wholesale instead of threading the version counter through their dep arrays.
     return useMemo(
-        () => ({ heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, version }),
+        () => ({ heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, intrinsicOf, version }),
         [heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, version],
     );
 }

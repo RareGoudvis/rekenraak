@@ -35,8 +35,9 @@ interface Props {
     onFooterClick?: () => void;
     /** Report the body's usable height back to the packer, which budgets pages against it. */
     onBodyMeasure?: (pageIndex: number, px: number) => void;
-    /** Report one cell's rendered height; the packer prefers it over its own estimate. */
-    onCellMeasure?: (blockId: string, width: number, px: number) => void;
+    /** Report one cell's rendered height and the block's intrinsic content width; the
+        packer prefers both over its own per-type estimates. */
+    onCellMeasure?: (blockId: string, width: number, px: number, intrinsicWidthPx?: number) => void;
     /** Kept for the App contract; the hint is out of flow now, so it no longer needs a row. */
     tailRow?: number;
     /** Offer to split the block that starts the NEXT page, when this page ends in a big
@@ -47,6 +48,27 @@ interface Props {
 // Three row units of blank (blockLayout's 24px unit). Below that the tail is ordinary
 // grid slack and a hint would be noise on every page.
 const TAIL_HINT_PX = 72;
+
+// The narrowest this block's content can get before it overflows, in layout px. There is
+// no API for that, so it is probed: `min-content` on the ScaledBlock inner, read back, and
+// the inline width restored — all inside one layout effect, so the browser never paints
+// the probe. The cost is one forced reflow per cell per measure pass; the alternative
+// (scrollWidth of a width:100% box) only ever reports the cell width back at us, which is
+// why the width tiers had to be a hand-measured per-type table until now.
+//
+// scrollWidth inside a CSS `zoom` is in UNZOOMED local px, so it is multiplied by the
+// REQUESTED scale (data-scale) rather than the applied one: the tier must hold at the size
+// the teacher asked for, not at whatever the fit loop has backed off to this frame.
+function probeIntrinsicWidth(cell: HTMLElement): number | undefined {
+    const inner = cell.querySelector<HTMLElement>('[data-scaled-inner]');
+    if (!inner) return undefined;
+    const prev = inner.style.width;
+    inner.style.width = 'min-content';
+    const local = inner.scrollWidth;
+    inner.style.width = prev;
+    const scale = Number(inner.dataset.scale) || 1;
+    return local > 0 ? local * scale : undefined;
+}
 
 export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, columnGap, children, onBackgroundClick,
@@ -88,7 +110,7 @@ export default function PageSheet({
                 const blockId = child.dataset.blockId;
                 const width = Number(child.dataset.width);
                 if (!blockId || !(width > 0)) continue;
-                onCellMeasure?.(blockId, width, child.offsetHeight);
+                onCellMeasure?.(blockId, width, child.offsetHeight, probeIntrinsicWidth(child));
                 tallestCell = Math.max(tallestCell, child.offsetHeight);
                 lastBottom = Math.max(lastBottom, child.getBoundingClientRect().bottom);
             }
