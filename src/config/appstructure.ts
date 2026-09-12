@@ -546,3 +546,51 @@ export const DOMAIN_BY_TYPE: Record<string, DomainTag> = (() => {
     }
     return map;
 })();
+
+// ── flattened leaves — every addable sidebar entry as one row ───────────────
+// Used by the DEV-only window.__rekenraak.leaves hook (main.tsx) so a Playwright
+// harness (scripts/font-baseline.mjs) can walk the same set a teacher can reach by
+// clicking, without importing this TS module into a plain Node script. Skips
+// hidden domains, placeholder subdomains/types/leaves — those aren't reachable
+// from the sidebar, so measuring them would test nothing a teacher can click.
+export interface AppLeaf {
+    id: string;
+    path: string;               // "Domein › Subdomein › Type[ › Leaf]" — for reports, not lookups
+    typeId: string;
+    label: string;
+    defaultConstraints?: Record<string, unknown>;
+}
+
+export function flattenLeaves(): AppLeaf[] {
+    const out: AppLeaf[] = [];
+    for (const domain of APP_STRUCTURE) {
+        if (domain.hidden) continue;
+        for (const sub of domain.subdomains) {
+            if (sub.placeholder) continue;
+            for (const type of sub.types) {
+                if (type.placeholder) continue;
+                if (type.typeId) {
+                    out.push({
+                        id: type.id,
+                        path: `${domain.label} › ${sub.label} › ${type.label}`,
+                        typeId: type.typeId,
+                        label: type.label,
+                        defaultConstraints: type.defaultConstraints,
+                    });
+                } else {
+                    for (const leaf of type.children ?? []) {
+                        if (leaf.placeholder) continue;
+                        out.push({
+                            id: leaf.id,
+                            path: `${domain.label} › ${sub.label} › ${type.label} › ${leaf.label}`,
+                            typeId: leaf.typeId,
+                            label: leaf.label,
+                            defaultConstraints: leaf.defaultConstraints,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    return out;
+}

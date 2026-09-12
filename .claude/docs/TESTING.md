@@ -107,6 +107,42 @@ the veto list in the `LAYOUT` header comment).
 It needs the DEV-only `window.__rekenraak` hook from `src/main.tsx`, so it cannot run
 against a production build.
 
+## Font baseline / compare (`scripts/font-baseline.mjs`, `scripts/font-compare.mjs`)
+
+Guards the 7d font-token sweep (`--sheet-size-math`/`--sheet-size-text`, theme.css):
+screenshot + measure every sidebar leaf before the sweep, run it again after, and diff.
+Like the width matrix, it drives a real browser and needs the DEV-only
+`window.__rekenraak` hook (`leaves`, `seed`) — cannot run against a production build.
+
+```bash
+npm run dev                                                          # in another terminal
+node scripts/font-baseline.mjs --out C:/Users/ruben/Downloads/font-check/before
+# … apply the font sweep …
+node scripts/font-baseline.mjs --out C:/Users/ruben/Downloads/font-check/after --seed 1234
+node scripts/font-compare.mjs --before C:/Users/ruben/Downloads/font-check/before \
+                               --after  C:/Users/ruben/Downloads/font-check/after \
+                               --out    C:/Users/ruben/Downloads/font-check/compare
+```
+
+`font-baseline.mjs` walks `window.__rekenraak.leaves` (every `APP_STRUCTURE` leaf,
+placeholders excluded — `flattenLeaves()` in appstructure.ts) × width `{4, 2}` (`--widths`)
+× solutions `{off, on}`. For each cell it seeds `Math.random` via `window.__rekenraak.seed(n)`
+(mulberry32, DEV-only — `--seed`, default 1234; **use the same seed for `before` and
+`after`** or the generators will legitimately produce different numbers), adds the block
+exactly the way a sidebar click does (`addBlockFromType(typeId, label,
+leaf.defaultConstraints)`), sets `widthUnits`, and records the cell's `offsetHeight`, its
+intrinsic (min-content) width — the same probe PageSheet runs internally — its `innerText`,
+and a screenshot, into `<out>/index.json` + `<out>/<leafId>-w<width>-s<0|1>.png`. A leaf
+that throws is recorded with its error and the run continues.
+
+`font-compare.mjs` matches rows by leaf+width+solutions and flags one when: the text
+differs (only geometry may change), `|Δheight| > 8px`, the intrinsic width crosses a
+measured-tier boundary (151/338/688px — the same tiers `blockLayout.ts`/`pagePacker.ts`
+promote at), or a pixel diff (`pixelmatch` + `pngjs`, top 28px masked so the title row's
+expected +4px never trips it) exceeds 0.5%. Writes `report.json` (every row),
+`report.md` (pixel-diff descending), and `contact-sheet.html` (before/after side by side,
+flagged rows only — a clean sweep should produce an almost-empty sheet).
+
 ## Driving drag-and-drop from Playwright
 
 Both drag surfaces (sheet blocks and the Overzicht outline) run on **pointer events**, so
