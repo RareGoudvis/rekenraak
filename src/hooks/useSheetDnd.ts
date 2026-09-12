@@ -84,8 +84,20 @@ export function useSheetDnd(): SheetDnd {
     useEffect(() => {
         if (!fromId) return;
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') clear(); };
+        // A drag the browser aborts (a hang, a drop on another app, an extension) never
+        // reaches the block's own dragend, and the zones stayed on screen. Any end-of-drag
+        // signal on the window clears the state; a drop on a cell has already been handled.
+        const onEnd = () => clear();
         window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
+        window.addEventListener('dragend', onEnd);
+        window.addEventListener('drop', onEnd);
+        window.addEventListener('mouseup', onEnd);
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            window.removeEventListener('dragend', onEnd);
+            window.removeEventListener('drop', onEnd);
+            window.removeEventListener('mouseup', onEnd);
+        };
     }, [fromId, clear]);
 
     const indexOf = useCallback((id: string) => blocks.findIndex(b => b.id === id), [blocks]);
