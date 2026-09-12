@@ -8,6 +8,16 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
+- **geld generators ignore the seeded RNG** — `src/services/geld/geldGenerator.ts:78,134` seed a
+  local PRNG from `Date.now()` instead of `Math.random()`, so `window.__rekenraak.seed()` has no
+  effect and geld-herkennen/-tekenen/-teruggeven can't be diffed by the font/width harnesses
+  (10 false "text mismatch" rows on 2026-09-13). Route the local PRNG through `Math.random`
+  for its seed, or expose a seed hook.
+- **hr-std-vermenigvuldigen at ¼ overflows 8% after the font sweep** (width matrix
+  2026-09-13: overflow 1.0798 at 163px). The measured clamp (7a) will refuse ¼ for such a
+  block once rendered, but the `tight` tier should fit: check the × operator unit / answer
+  line at 17.33px. Then rerun the matrix seeded and recommit result.json + recalibrate
+  rowUnits (Part 7f).
 ## Layout / sheet
 
 - **Page tag "Pagina N van M" clips at scroll top** (owner 2026-09-13 screenshot: only a
