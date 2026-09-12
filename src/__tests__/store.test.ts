@@ -274,3 +274,75 @@ describe('splitBlock', () => {
         expect(tail.clockExercises).toHaveLength(count - 1);
     });
 });
+
+// Part 9: 'gemengd' (mixed-operator) blocks let a teacher switch ONE exercise's variant
+// (operator + optional preset) without touching the rest of the block. This is what the
+// sheet's clickable operator glyph (MathBlockRenderer's OperatorSwitch) calls.
+describe('regenerateExercise (gemengd per-exercise operator switch)', () => {
+    function seedGemengd() {
+        useWorksheetStore.getState().clearBlocks();
+        useWorksheetStore.getState().addBlockFromType('hr-std-gemengd', 'Gemengd');
+        return useWorksheetStore.getState().blocks[0];
+    }
+
+    test('replaces exactly one exercise, keeps its id, and leaves the rest untouched', () => {
+        const src = seedGemengd();
+        expect(src.exercises.length).toBeGreaterThan(1);
+        const target = src.exercises[0];
+        const others = src.exercises.slice(1);
+        // Pick a variant whose operator differs from the target's current one, so a
+        // successful regenerate is unambiguous.
+        const nextVariant = target.operator === '+' ? '-' : '+';
+
+        useWorksheetStore.getState().regenerateExercise(src.id, target.id, nextVariant);
+
+        const after = useWorksheetStore.getState().blocks[0];
+        expect(after.exercises).toHaveLength(src.exercises.length);
+        expect(after.exercises[0].id).toBe(target.id); // same id: selection/undo highlight stays put
+        expect(after.exercises[0].operator).toBe(nextVariant);
+        expect(after.exercises[0].isManuallyEdited).toBe(false);
+        // Every other exercise is byte-for-byte the same object content as before.
+        expect(after.exercises.slice(1)).toEqual(others);
+    });
+
+    test('pushes history, so undo restores the exercise it replaced', () => {
+        const src = seedGemengd();
+        const target = src.exercises[0];
+        const nextVariant = target.operator === 'x' ? ':' : 'x';
+
+        useWorksheetStore.getState().regenerateExercise(src.id, target.id, nextVariant);
+        expect(useWorksheetStore.getState().blocks[0].exercises[0].operator).toBe(nextVariant);
+
+        useWorksheetStore.getState().undo();
+        expect(useWorksheetStore.getState().blocks[0].exercises[0]).toEqual(target);
+    });
+
+    test('is allowed under a locked curriculum, like "Genereer" already is', () => {
+        const src = seedGemengd();
+        const target = src.exercises[0];
+        const nextVariant = target.operator === '+' ? '-' : '+';
+        useWorksheetStore.setState({ curriculum: { locked: true, allowedTypes: [{ typeId: 'hr-std-gemengd', label: 'Gemengd' }] } });
+
+        useWorksheetStore.getState().regenerateExercise(src.id, target.id, nextVariant);
+
+        expect(useWorksheetStore.getState().blocks[0].exercises[0].operator).toBe(nextVariant);
+        useWorksheetStore.setState({ curriculum: null });
+    });
+
+    test('a variant the generator cannot satisfy leaves exercises untouched and sets a note', () => {
+        const src = seedGemengd();
+        const target = src.exercises[0];
+        // multiplication 'tafels' mode with an empty table list is unsatisfiable at any
+        // relaxation step (mathEngine returns [] outright — selectedTables never relaxes).
+        useWorksheetStore.getState().updateBlockSettings(src.id, {
+            constraints: { ...src.constraints, perVariant: { x: { selectedTables: [], multiplicationMode: 'tafels' } } },
+        });
+        const before = useWorksheetStore.getState().blocks[0].exercises;
+
+        useWorksheetStore.getState().regenerateExercise(src.id, target.id, 'x');
+
+        const after = useWorksheetStore.getState().blocks[0];
+        expect(after.exercises).toEqual(before);
+        expect(after.generationNote).toBe('Geen oefening mogelijk voor deze bewerking bij deze instellingen.');
+    });
+});

@@ -572,6 +572,22 @@ textarea:focus-visible,
   border-top: 1px solid var(--separator);
 }
 
+/* Gemengde bewerkingen: the operator glyph in a mixed-operator exercise is a clickable
+   trigger for its variant switcher (MathBlockRenderer's OperatorSwitch). Kept subtle so
+   it still reads as plain operator text at a glance; no padding/border so it never widens
+   the glyph and shifts the operand-column alignment it sits inside. */
+.op-switch {
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  transition: border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+.op-switch:hover,
+.op-switch:focus-visible {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+
 /* === PRINT === */
 @page {
   size: A4;

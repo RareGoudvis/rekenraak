@@ -1,12 +1,16 @@
+import { useEffect, useRef, useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { isFraction } from '../../services/math/types';
+import type { Equation } from '../../services/math/types';
 import { formatMathNumber, opGlyph as printedOp } from '../../services/math/formatters';
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { FULL_BLOCK_WIDTH_PX, useBlockWidth } from './BlockWidthContext';
-import type { MulDivConstraints } from '../../services/math/constraintTypes';
+import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../services/math/constraintTypes';
+import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
 
 interface Props {
     block: MathBlock;
@@ -37,10 +41,84 @@ const styles = {
         width: (tight || layout === 'inline-long' || layout === 'stepped') ? '100%' : `${widthPx}px`,
     }),
     emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
+    // The popup anchors to the glyph itself (an inline span, not a full-width trigger like
+    // PopupSelect's), so it can't reuse sharedPluginStyles.selectMenu's left:0/right:0 —
+    // that would stretch the menu to the glyph's own (tiny) width instead of its content.
+    opSwitchMenu: {
+        position: 'absolute', top: 'calc(100% + 2px)', left: '50%', transform: 'translateX(-50%)',
+        zIndex: 50, minWidth: '190px', whiteSpace: 'nowrap',
+        background: 'var(--bg-surface)', border: '1px solid var(--separator)',
+        borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-2)', padding: '4px',
+    } as React.CSSProperties,
 };
 
 function FractionDisplay({ val, color }: { val: Fraction; color?: string }) {
     return <VerticalFraction value={val} color={color} fontSize={15} />;
+}
+
+// Best-effort guess at which variant produced an existing exercise, so the popup can mark
+// it active. `Equation` carries no variant id (only `operator`), so when a block offers
+// several variants sharing the same operator (e.g. '+' and '+:compenseren') this can't
+// tell them apart — it prefers the plain (no-preset) variant, which is what most exercises
+// in a mix actually are.
+function guessVariant(ex: Equation, options: { id: MixedVariantId; op: string }[]): MixedVariantId | null {
+    const forOp = options.filter(o => o.op === ex.operator);
+    if (forOp.length === 0) return null;
+    return (forOp.find(o => !o.id.includes(':')) ?? forOp[0]).id;
+}
+
+// Clickable operator glyph for a 'gemengd' (mixed-operator) block: opens a tiny popup
+// listing the block's chosen variants, and regenerates just this one exercise on pick.
+// `.no-print` only wraps the popup itself — the glyph span always renders (plain text
+// in print; the `.op-switch` class only adds interactive styling on screen).
+function OperatorSwitch({ blockId, exerciseId, glyph, current, options }: {
+    blockId: string; exerciseId: string; glyph: string; current: MixedVariantId | null;
+    options: { id: MixedVariantId; label: string }[];
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLSpanElement>(null);
+    const regenerateExercise = useWorksheetStore((s) => s.regenerateExercise);
+
+    useEffect(() => {
+        if (!open) return;
+        const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+        document.addEventListener('mousedown', onDoc);
+        document.addEventListener('keydown', onKey);
+        return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+    }, [open]);
+
+    return (
+        <span ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+            <span
+                className="op-switch"
+                role="button"
+                tabIndex={0}
+                title="Bewerking wijzigen"
+                onClick={() => setOpen((v) => !v)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen((v) => !v); }
+                }}
+            >
+                {glyph}
+            </span>
+            {open && (
+                <div className="no-print" role="listbox" style={styles.opSwitchMenu}>
+                    {options.map((o) => (
+                        <div
+                            key={o.id}
+                            role="option"
+                            aria-selected={o.id === current}
+                            onClick={() => { regenerateExercise(blockId, exerciseId, o.id); setOpen(false); }}
+                            style={S.selectItem(o.id === current)}
+                        >
+                            {o.label}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </span>
+    );
 }
 
 export default function MathBlockRenderer({ block, showSolutions }: Props) {
@@ -115,6 +193,14 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const isPunt = c.equationType === 'puntoefening';
     const layout = isPunt ? 'inline-short' : block.layoutPreset;
     const isInlineShort = layout === 'inline-short';
+
+    // 'Gemengd' (mixed-operator) block: NOT a typeId check — any family whose constraints
+    // carry a `variants` array gets the per-exercise operator switch (only hr-std-gemengd
+    // does today, but a future family that reuses this shape gets it for free).
+    const mixedC = block.constraints as MixedConstraints;
+    const mixedOptions = Array.isArray(mixedC.variants)
+        ? MIXED_VARIANTS.filter(v => mixedC.variants.includes(v.id))
+        : null;
 
     // Adaptive sizing: the classic fixed 85px operand column fits 8 mono chars, so
     // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
@@ -306,7 +392,19 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                         ...(unitPx !== undefined && { width: `${unitPx}px` }),
                                         ...(i > 0 && { marginLeft: `${TERM_UNIT_GAP}px` }),
                                     }}>
-                                        {i > 0 && <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>{opGlyph(i - 1)}</span>}
+                                        {i > 0 && (
+                                            <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>
+                                                {mixedOptions ? (
+                                                    <OperatorSwitch
+                                                        blockId={block.id}
+                                                        exerciseId={ex.id}
+                                                        glyph={opGlyph(i - 1)}
+                                                        current={guessVariant(ex, mixedOptions)}
+                                                        options={mixedOptions}
+                                                    />
+                                                ) : opGlyph(i - 1)}
+                                            </span>
+                                        )}
                                         {renderTerm(operand, isMissing(i), block.id, ex.id, i,
                                             termBoxPx === undefined ? undefined : (i === 0 ? termBoxPx : termPx(chars)))}
                                     </div>

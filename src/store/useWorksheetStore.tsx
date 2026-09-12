@@ -6,6 +6,8 @@ import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
 import { GRADE_PRESETS, type Leerjaar } from '../config/gradePresets';
 import { defaultInstructionFor } from '../config/instructionPresets';
+import { generateMixedOne, mixedKey } from '../services/math/mixedGenerator';
+import type { MixedVariantId } from '../services/math/constraintTypes';
 
 export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
 
@@ -124,6 +126,10 @@ interface WorksheetState {
     updateCijferExercise: (blockId: string, exerciseId: string, updates: Partial<CijferExercise>) => void;
     // Generic single-exercise patch for any array field (ordenen/getallenas/…), keyed by exercise id.
     patchExercise: (blockId: string, field: keyof MathBlock, exerciseId: string, patch: Record<string, unknown>) => void;
+    // 'Gemengd' (mixed operators) per-exercise switch: regenerate ONE equation for a
+    // different variant, keeping every other exercise in the block untouched. The id is
+    // kept stable so the selection/undo highlight doesn't jump to a "new" row.
+    regenerateExercise: (blockId: string, exerciseId: string, variant: MixedVariantId) => void;
     setActiveSelection: (id: string | 'document' | null) => void;
     setDraftBlocks: (blocks: MathBlock[]) => void;
     clearDraftBlocks: () => void;
@@ -396,6 +402,33 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     updateExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, exercises: b.exercises.map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     updateCijferExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, cijferExercises: (b.cijferExercises || []).map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
     patchExercise: (blockId, field, exerciseId, patch) => set((state) => { const nb = state.blocks.map(b => { if (b.id !== blockId) return b; const arr = b[field] as Array<{ id: string }> | undefined; if (!Array.isArray(arr)) return b; return { ...b, [field]: arr.map(ex => ex.id === exerciseId ? { ...ex, ...patch } : ex) }; }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),
+    // Regenerates exactly one exercise for a chosen variant (operator + optional preset),
+    // e.g. switching one sum in a 'gemengd' block from + to ×. `avoid` is built from every
+    // OTHER exercise's key (mixedKey: operands + operator) so the new one can't duplicate
+    // a sibling. Allowed under curriculum lock — same reasoning as "Genereer": it replaces
+    // content within settings the teacher already fixed, it doesn't change them.
+    regenerateExercise: (blockId, exerciseId, variant) => set((state) => {
+        const nb = state.blocks.map(b => {
+            if (b.id !== blockId) return b;
+            const idx = b.exercises.findIndex(ex => ex.id === exerciseId);
+            if (idx === -1) return b;
+            const avoid = new Set(
+                b.exercises.filter((_, i) => i !== idx).map(mixedKey)
+            );
+            const generated = generateMixedOne(b, variant, avoid);
+            if (!generated) {
+                // Generator found nothing for this variant under the block's current
+                // settings — leave the exercise as-is and surface why, rather than
+                // silently keeping the old (now-mismatched) operator on screen.
+                return { ...b, generationNote: 'Geen oefening mogelijk voor deze bewerking bij deze instellingen.' };
+            }
+            const exercises = b.exercises.map((ex, i) =>
+                i === idx ? { ...generated, id: ex.id, isManuallyEdited: false } : ex
+            );
+            return { ...b, exercises, generationNote: null };
+        });
+        return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) };
+    }),
     // Selecting a real block opens its content. Picking a block while the panel sat on
     // Blad used to leave you on Blad, so every selection cost an extra click to get to
     // what you actually came for. 'document'/null keep whatever tab was open, since the
