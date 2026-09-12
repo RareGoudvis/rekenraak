@@ -1,30 +1,39 @@
 # CLAUDE.md
 
-Guidance for Claude Code (claude.ai/code) working in this repository.
-This file is the **short rules file**. Everything deep lives in `.claude/docs/`.
+Guidance for Claude Code (claude.ai/code) working in this repository. This file is the
+**short rules file**; everything deep lives in `.claude/docs/`. The product is **RekenRaak**
+(the folder is still called `enderklas-v2`).
 
 ## Docs
 
 | Doc | What's in it |
 |---|---|
-| [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) | The deep map: data flow (§2), state table (§3), data model (§4), registry contract (§5), generator contract (§6), per-typeId registry table (§7), viewers (§8), print + page model (§9), persistence/sharing (§10), file map (§11), teacher-workflow layer (§13) |
-| [.claude/docs/UI-GUIDE.md](.claude/docs/UI-GUIDE.md) | The eight design rules, the tokens (`theme.css`), canonical component styles |
+| [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) | The deep map: data flow (§2), state table (§3), data model (§4), registry contract (§5), generator contract (§6), per-typeId registry table (§7), viewers (§8), print + page model incl. measurement contract (§9), persistence/sharing (§10), file map (§11), teacher-workflow layer (§13) |
+| [.claude/docs/UI-GUIDE.md](.claude/docs/UI-GUIDE.md) | The eight design rules, the tokens (`theme.css`), canonical component styles, the one solution-red |
+| [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | vitest suites (generator matrix, answers, packer, persistence, store, viewer smoke) + the Playwright harnesses (width matrix, height audit, font baseline/compare, drag recipe) |
+| [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Bugs found but not yet fixed — **append here instead of fixing silently**; delete the line in the commit that fixes it |
 | [.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) | Session log, newest first |
 | [.claude/docs/REVIEW-CHECKLIST.md](.claude/docs/REVIEW-CHECKLIST.md) | Per-leaf owner review checklist |
-| [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | How to run the vitest suites (generator matrix, answers, packer, viewer smoke) |
-| [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Bugs found but not yet fixed — **append here instead of fixing silently**; clear the line when fixed |
+| [.claude/docs/klascement.md](.claude/docs/klascement.md) | Teacher-facing intro (Dutch): what it does, what's in it, why, free-forever ethos |
+| [src/components/viewer/README.md](src/components/viewer/README.md) | The five rules every viewer must follow |
 
 ---
 
 ## Commands
 
 ```bash
-npm run dev       # start dev server (Vite)
-npm run build     # tsc -b && vite build
-npm run lint      # eslint
-npm test          # vitest (being added)
-npm run preview   # preview production build
+npm run dev            # Vite dev server (5173)
+npm run check          # tsc -b && eslint && vite build && vitest run — the gate before every commit
+npm test               # vitest run (npm run test:watch for watch mode)
+npm run build          # tsc -b && vite build
+npm run lint
+npm run matrix         # Playwright width matrix → scripts/width-matrix.result*.json (needs a dev server; --url --seed)
+npm run height:audit   # Playwright vertical measurement audit (needs a dev server)
+npm run font:baseline  # screenshot every sidebar leaf (--out dir --seed); font:compare diffs two runs
 ```
+
+The dev build exposes `window.__rekenraak` (typeIds, leaves, seed, measured, addBlockFromType,
+updateBlockSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses.
 
 ---
 
@@ -37,29 +46,41 @@ TypeScript + Vite + one Zustand store — no backend, no account, no tracking.
 
 ---
 
+## Working rules (humans and agents)
+
+- **Gate before every commit:** `npm run check`. Commit per logical step, Conventional
+  Commits, English. Never `git add -A`; stage explicit paths. Do not push unless asked.
+- **Found a bug outside your task?** One line in [BUGS.md](.claude/docs/BUGS.md), never a
+  silent fix. Fixing one? Delete its line in the same commit.
+- **Docs are the supervisor's:** agents do not edit ARCHITECTURE / CLAUDE / UpdateState;
+  they report doc deltas. Exceptions: BUGS.md lines, TESTING.md for a harness you wrote.
+- **Shared files:** if a file you need is dirty from someone else's in-progress work, wait
+  for their commit (re-check every 60 s) instead of editing a dirty file; commit your own
+  hunk in that file as soon as it's green.
+- **Scratch stays out of the repo:** temp scripts and screenshots go to the session
+  scratchpad or `~/Downloads/<task>-check/`. Kill any dev server you started.
+- **Visual work is verified visually:** Playwright against a dev server, real
+  `mouse.move/down/up` for drag, screenshots reviewed before the commit. Recipes in TESTING.md.
+- **No `typeId ===` branches** outside the registry tables; **no hardcoded sheet widths
+  or font sizes** in viewers (read `useBlockWidth()`, use the `--sheet-size-*` tokens).
+- Comments explain **why**, one line, in English (rules below).
+
 ## Session tracking
 
 At the end of every conversation where changes were made, prepend a new entry to
-[.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) using this format:
+[.claude/docs/UpdateState.md](.claude/docs/UpdateState.md):
 
 **YYYY-MM-DD** — [1-2 sentence summary of what changed and why]
 
-Most recent entry goes at the top, below the `---` divider. Do this before the final response.
+Most recent entry goes at the top, below the `---` divider.
 
 ## Doc-sync rule
 
 After any **structural** change, update **[.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md)
-+ this file** in the *same* change, before the final response. Triggers:
-
-- a new exercise type / generator / viewer / config plugin, or a new row in
-  `exerciseRegistry.ts` / `exerciseUI.tsx`;
-- a new store **slice or action**, or a changed history / lock / autosave rule
-  ([useWorksheetStore.tsx](src/store/useWorksheetStore.tsx));
-- changed **persistence/share** format or version ([persistence.ts](src/services/persistence.ts));
-- a new file or directory under `src/` (add it to the ARCHITECTURE §11 file map);
-- changed print / packer / registry wiring.
-
-ARCHITECTURE.md is the deep map; CLAUDE.md is the short rules. A `Stop` hook
++ this file** in the *same* change. Triggers: a new exercise type / generator / viewer / config
+plugin or registry row; a new store slice or action, or a changed history / lock / autosave
+rule; a changed persistence/share format or version; a new file or directory under `src/`
+(→ §11 file map); changed print / packer / measurement / registry wiring. A `Stop` hook
 ([.claude/hooks/doc-sync-check.ps1](.claude/hooks/doc-sync-check.ps1)) warns once if
 structural source files changed without these docs.
 
@@ -69,74 +90,65 @@ structural source files changed without these docs.
 
 Types are declared in a **central registry** keyed by exact `typeId`:
 [exerciseRegistry.ts](src/config/exerciseRegistry.ts) (pure data — generator, exercise
-field, defaults) + [exerciseUI.tsx](src/config/exerciseUI.tsx) (Viewer + Config).
-Dispatch / Inspector / App / `addBlockFromType` are **registry lookups, not if-else
-branches** — never add a `typeId === …` branch. Full contract:
-[ARCHITECTURE §5](.claude/docs/ARCHITECTURE.md); the per-typeId table is §7.
+field, typed defaults) + [exerciseUI.tsx](src/config/exerciseUI.tsx) (Viewer, Config,
+optional StyleConfig / AdvancedConfig). Dispatch / Inspector / App / `addBlockFromType` are
+**registry lookups, not if-else branches**. Full contract: [ARCHITECTURE §5](.claude/docs/ARCHITECTURE.md);
+the per-typeId table is §7.
 
-1. Add the exercise interface + its array field to `MathBlock` in [types.ts](src/services/math/types.ts),
-   and an `XConstraints` type in [constraintTypes.ts](src/services/math/constraintTypes.ts)
+1. Exercise interface + array field on `MathBlock` in [types.ts](src/services/math/types.ts);
+   an `XConstraints` type in [constraintTypes.ts](src/services/math/constraintTypes.ts)
 2. Generator at `src/services/[type]/[type]Generator.ts` → `[Type]Exercise[]`
-3. Viewer at `src/components/viewer/[Type]Viewer.tsx`, uniform `{ block, showSolutions }`
-4. Config plugin at `src/components/configurator/plugins/[Type]Config.tsx`, `{ block }`
-5. **One row** in `REGISTRY` via `row<XConstraints>({...})` + **one row** in `EXERCISE_UI` (same `typeId` key;
-   optional `StyleConfig` / `AdvancedConfig` for Opmaak-tab sections — never add them to Inspector)
+3. Viewer at `src/components/viewer/[Type]Viewer.tsx`, `{ block, showSolutions }`, following
+   [viewer/README.md](src/components/viewer/README.md)
+4. Config plugin at `src/components/configurator/plugins/[Type]Config.tsx`, `{ block }`,
+   reading/writing through `useConstraints<XConstraints>`
+5. One `row<XConstraints>({...})` in `REGISTRY` + one row in `EXERCISE_UI` (same key)
 6. One leaf in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.ts)) with `typeId`
-   + optional `defaultConstraints` (merged on top of registry defaults)
-7. A `rowUnits` / `minWidth` entry in [blockLayout.ts](src/config/blockLayout.ts) so the
-   packer can budget it
+   + optional `defaultConstraints`; its options in [constraintSpace.ts](src/config/constraintSpace.ts)
+   so the generator matrix tests them
+7. A `rowUnits` / `minWidth` entry in [blockLayout.ts](src/services/layout/blockLayout.ts)
+   (first-paint fallback; the real clamp and heights are measured) — run `npm run matrix`
 
-Pointers in place of the old inline tables: **state slices** → ARCHITECTURE §3 ·
-**exercise types / generators / viewers** → §7 · **key type definitions (`MathBlock`,
-`Equation`, `Fraction`, …)** → §4 and [types.ts](src/services/math/types.ts) ·
-**directory tree** → §11 · **whiteboard mode (`src/board/`, branch `whiteboard` only)** → §14.
+Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
+**`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **whiteboard mode
+(`src/board/`, branch `whiteboard` only)** → §14.
 
 ---
 
 ## Print / PDF export
 
-There is **no react-pdf** — export is the browser print dialog (Save as PDF), and the
-on-screen preview *is* what prints. Pages are real: [pagePacker](src/services/layout/pagePacker.ts)
-decides the breaks, [PageSheet](src/components/layout/PageSheet.tsx) renders one page with
-its own header/footer and `break-after: page`, so the screen page count equals the PDF page
-count. **SYNC rule:** any viewer change must still print — multi-item viewers go through
-[FragmentableGrid](src/components/viewer/FragmentableGrid.tsx), and viewers read the cell
-width from `useBlockWidth()`, never a constant. Detail: [ARCHITECTURE §9](.claude/docs/ARCHITECTURE.md).
+There is **no react-pdf** — export is the browser print dialog, and the on-screen page *is*
+what prints. [pagePacker](src/services/layout/pagePacker.ts) decides the breaks from
+**measured** block heights and content widths ([useMeasuredHeights](src/hooks/useMeasuredHeights.ts),
+with the estimate table as first-paint fallback); [PageSheet](src/components/layout/PageSheet.tsx)
+renders one page with its own header/footer and `break-after: page`. Screen geometry equals
+print geometry (8 mm head, 14 mm sides) — keep them in sync. Detail and the measurement
+contract: [ARCHITECTURE §9](.claude/docs/ARCHITECTURE.md).
 
 ---
 
 ## Code commenting guidelines
 
-Comment the **WHY**, not the WHAT. Well-named identifiers already describe what the code does. These rules apply everywhere in this codebase:
+Comment the **WHY**, not the WHAT. Well-named identifiers already describe what the code does.
 
-1. **Non-obvious logic** — if a junior dev might ask "why does this work?", add a one-line comment above it.
-   - Bad: `const scaled = val * 1_000_000;`
-   - Good: `// Avoid JS float rounding — all math uses scaled integers, divide back at display time`
+1. **Non-obvious logic** — one line above it. Bad: `const scaled = val * 1_000_000;`
+   Good: `// Avoid JS float rounding — all math uses scaled integers, divide back at display time`
+2. **Business rules** — Dutch education domain logic explained in English.
+   `// 'bruggetje' = carry/borrow across a place-value boundary (Dutch primary school term)`
+3. **Constraint meanings** — on the `XConstraints` field (the index signature still admits unknown keys).
+   `// bridges.E = 'REQUIRED' means the units column must produce a carry/borrow`
+4. **Magic numbers** — always the origin. `// 1123px = A4 height at 96dpi`
+5. **Parallel logic** — mark twins. `// SYNC: keep MabViewer.tsx and MabBlocksSVG.tsx block sizing aligned`
+6. **No comment needed for** standard hooks usage, obvious setters, self-explanatory JSX, clear library calls.
 
-2. **Business rules** — Dutch education domain logic must be explained in English.
-   - Example: `// 'bruggetje' = carry/borrow across a place-value boundary (Dutch primary school term)`
-   - Example: `// 'splitsen' = decomposing a number into two parts, e.g. 7 → 3+4`
-
-3. **Constraint meanings** — document what constraint values mean on the `XConstraints` field (the index signature still admits unknown keys).
-   - Example: `// bridges.E = 'REQUIRED' means the units column must produce a carry/borrow`
-
-4. **Magic numbers** — always explain the origin.
-   - Example: `// 1044px = A4 height at 96dpi screen resolution`
-   - Example: `// MAX_ATTEMPTS = 20000 prevents infinite loop when constraints are over-restrictive`
-
-5. **Parallel logic** — mark code that must stay in sync with its twin elsewhere.
-   - Example: `// SYNC: keep MabViewer.tsx and MabBlocksSVG.tsx block sizing aligned`
-   - Applies to any logic duplicated across files (e.g. a viewer and its SVG helper).
-
-6. **No comment needed for:** standard React hooks usage, obvious state setters, self-explanatory JSX structure, imported library calls where the function name is clear.
-
-Functions get at most one short sentence — only when the function name + parameter names don't tell the full story. No multi-line docblocks.
+Functions get at most one short sentence, only when name + parameters don't tell the story.
+No multi-line docblocks.
 
 ---
 
 ## Style
 
 Use the tokens in [theme.css](src/assets/theme.css) — **never hardcode bg/text/border/accent
-hex** — and reuse the shared style helpers in
-[sharedPluginStyles.ts](src/components/configurator/sharedPluginStyles.ts). See
-[UI-GUIDE.md](.claude/docs/UI-GUIDE.md).
+hex or sheet font sizes** — and reuse the shared style helpers in
+[sharedPluginStyles.ts](src/components/configurator/sharedPluginStyles.ts) and
+[solutionStyle.ts](src/components/viewer/solutionStyle.ts). See [UI-GUIDE.md](.claude/docs/UI-GUIDE.md).
