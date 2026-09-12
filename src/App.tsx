@@ -614,7 +614,10 @@ export default function App() {
                     availableWidthPx={cellWidth(item.width)}
                     fitToPage={block.constraints?.fitToPage === true}
                   >
-                  {!isFurniture && <div className="print-opdracht" style={overlayRegionStyle({
+                  {/* showInstruction === false hides the title row the way furniture has none;
+                      blockOrder still counted the block, so the rest of the sheet keeps its
+                      numbers and only this block's own prefix goes with the row. */}
+                  {!isFurniture && block.showInstruction !== false && <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
                     ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
