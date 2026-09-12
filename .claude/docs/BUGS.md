@@ -46,12 +46,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   used by the ~15 that kept a `c`. Harmless duplication; convert opportunistically (2026-09-12).
 ## Tooling
 
-- **`npm test` cannot run from Git Bash** — vitest 5.0.0 fails to initialise its worker
-  ("failed to find the runner" / "Cannot read properties of undefined (reading 'config')") for
-  every suite when launched from the Git Bash shell on this machine; the identical command from
-  PowerShell passes. Survives `npm ci`, so it is shell-related, not an install problem. Run the
-  gate from PowerShell until it is diagnosed (2026-09-12).
-
 - **Indivisible blocks leave big blank tails** — measure-then-pack (789b3a8) removed the
   estimate error, but a block that does not fit the remaining page still moves whole to the next
   page (layout-check run 2026-09-12: page 3 = one ½ block + 466px blank because the next block

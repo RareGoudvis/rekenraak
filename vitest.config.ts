@@ -11,6 +11,11 @@ export default defineConfig({
     plugins: [react()],
     test: {
         environment: 'node',
+        // Child processes, not worker threads: vitest's thread pool was the one that
+        // failed to resolve its runner when `npm test` was launched from Git Bash on
+        // Windows ("failed to find the runner"). Forks costs nothing measurable here
+        // (same ~6.5s for the whole suite) and runs identically in both shells.
+        pool: 'forks',
         css: false,
         include: ['src/__tests__/**/*.test.{ts,tsx}'],
         setupFiles: ['src/__tests__/setup.ts'],
