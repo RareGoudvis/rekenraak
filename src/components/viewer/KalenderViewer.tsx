@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { MathBlock, KalenderExercise } from '../../services/math/types';
 import { DAY_ABBR, DAY_NAMES, MONTH_NAMES, daysInMonth, formatDate } from '../../services/kalender/kalenderGenerator';
 import FragmentableGrid from './FragmentableGrid';
@@ -49,6 +50,12 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
         ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>
         : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
 
+    const notatiePromptChars = Math.max(0, ...exercises
+        .filter(ex => ex.subType !== 'maandrooster' && ex.subType !== 'datum-rekenen')
+        .map(ex => (ex.direction === 'naar-woorden'
+            ? `${String(ex.day).padStart(2, '0')}/${String(ex.month + 1).padStart(2, '0')}/${ex.year}`
+            : formatDate(ex.year, ex.month, ex.day ?? 1)).length + 3));  // + ' ='
+
     return (
         <FragmentableGrid
             cols={1}
@@ -59,12 +66,14 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <MonthGrid year={ex.year} month={ex.month} />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* One grid for all questions: the text column is as wide as the longest
+                                question, so every answer line starts at the same x. */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: '16px', rowGap: '8px', alignItems: 'baseline', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
                                 {(ex.questions ?? []).map((q, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
+                                    <Fragment key={i}>
                                         <span>{q.text}</span>
-                                        {answer(q.answer, 120)}
-                                    </div>
+                                        <span style={{ justifySelf: 'start' }}>{answer(q.answer, 120)}</span>
+                                    </Fragment>
                                 ))}
                             </div>
                         </div>
@@ -88,9 +97,11 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
                 const words = formatDate(ex.year, ex.month, ex.day ?? 1);
                 const digits = `${dd}/${mm}/${ex.year}`;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: mono }}>
-                        <span>{ex.direction === 'naar-woorden' ? digits : words} =</span>
-                        {answer(ex.direction === 'naar-woorden' ? words : digits, 150)}
+                    // Mono text: `ch` is exactly one glyph, so a column sized to the block's longest
+                    // prompt lines the answer lines up across exercises without measuring.
+                    <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: `${notatiePromptChars}ch 1fr`, columnGap: '10px', alignItems: 'baseline', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: mono }}>
+                        <span style={{ whiteSpace: 'nowrap' }}>{ex.direction === 'naar-woorden' ? digits : words} =</span>
+                        <span style={{ justifySelf: 'start' }}>{answer(ex.direction === 'naar-woorden' ? words : digits, 150)}</span>
                     </div>
                 );
             })}
