@@ -79,7 +79,8 @@ branches** — never add a `typeId === …` branch. Full contract:
 2. Generator at `src/services/[type]/[type]Generator.ts` → `[Type]Exercise[]`
 3. Viewer at `src/components/viewer/[Type]Viewer.tsx`, uniform `{ block, showSolutions }`
 4. Config plugin at `src/components/configurator/plugins/[Type]Config.tsx`, `{ block }`
-5. **One row** in `REGISTRY` via `row<XConstraints>({...})` + **one row** in `EXERCISE_UI` (same `typeId` key)
+5. **One row** in `REGISTRY` via `row<XConstraints>({...})` + **one row** in `EXERCISE_UI` (same `typeId` key;
+   optional `StyleConfig` / `AdvancedConfig` for Opmaak-tab sections — never add them to Inspector)
 6. One leaf in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.ts)) with `typeId`
    + optional `defaultConstraints` (merged on top of registry defaults)
 7. A `rowUnits` / `minWidth` entry in [blockLayout.ts](src/config/blockLayout.ts) so the

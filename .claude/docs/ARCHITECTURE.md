@@ -118,7 +118,9 @@ choke point enforces the lock without touching the ~16 config plugins. Draft-blo
 edits bypass the gate (authoring runs unlocked).
 
 **`MathBlock.constraints` is `BlockConstraints`** (since 2026-09-12; was `any`) —
-`Record<string, any> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType? }`.
+`Record<string, unknown> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType? }` —
+an unnamed key read is a compile error; `scaffolding` is declared per family (7 literal types),
+never cross-cutting.
 The per-family shapes (43 `XConstraints` types + `ConstraintsByType`) live in
 [constraintTypes.ts](../../src/services/math/constraintTypes.ts) and are re-exported from
 `types.ts`. Generators, viewers and plugins narrow once at their entry line
@@ -215,7 +217,7 @@ The four consumers are now **table lookups, not branches**:
 | Consumer | File | Reads |
 |---|---|---|
 | Generate | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generate` + `.exerciseField` |
-| Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` |
+| Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches |
 | Viewer routing | [App.tsx](../../src/App.tsx) | `EXERCISE_UI[typeId].Viewer` |
 | Block defaults | [useWorksheetStore.tsx](../../src/store/useWorksheetStore.tsx) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `.defaultCount` |
 
@@ -709,6 +711,8 @@ src/
     │   ├── BridgeControl.tsx   # carry-arrow ('bruggetje') diagram: per-place geen/mag/moet via tappable gap arrows
     │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff + divider/sectionBox/select + hint/label text tiers
     │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins
+    │   ├── plugins/shared/fieldStyles.ts      # F: Inspector field chrome shared by Inspector + StyleConfigs
+    │   ├── plugins/shared/HrStdStyleConfig.tsx # AddSub/MulDiv StyleConfig (niveau, compenseren-tussenstap, kort/lang/stappen)
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components
