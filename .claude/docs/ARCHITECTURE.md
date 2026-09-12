@@ -105,6 +105,15 @@ the curriculum lock: order is presentation, not difficulty. Callers that mean "i
 the target" must compensate for the splice: `to > from ? to - 1 : to` (both the sheet drag
 and the Overzicht outline do).
 
+**Splitting a block:** `splitBlock(id, atIndex)` cuts one block in two after the `atIndex`-th
+exercise — the first block keeps its id and the first N items, a new block behind it takes
+the rest. The array is `REGISTRY[typeId].exerciseField`, never a hardcoded `exercises`; both
+halves get their own `numberOfExercises`, and the tail drops `pageBreakBefore`. Refused for
+fewer than two exercises, an `atIndex` outside `1..count-1`, and `layout-*` furniture. Pushes
+history and survives the curriculum lock (layout, not difficulty). It exists because the
+packer moves an over-long block whole to the next page and leaves a blank tail; the teacher
+decides where it breaks — never automatic, a split renumbers their opdracht. UI in §9.
+
 **Generation feedback:** `MathBlock.generationNote?: string | null` is UI-only (never
 serialized — `persistence.ts` strips it; never in history). `setGenerationNote(id, note)` is
 written by `regenerateBlock` ([generateDispatch.ts](../../src/services/generateDispatch.ts))
@@ -526,9 +535,13 @@ between runs.
 ### Reordering on the sheet
 
 [useSheetDnd.ts](../../src/hooks/useSheetDnd.ts) — native HTML5 drag-and-drop, no
-dependency. The drag starts on a **handle** (the `DotsSixVertical` chip, first in
-`.block-controls`): making the whole block draggable would swallow the inline instruction
-editor and the viewers' own click-to-edit fields. The drop target is the grid **cell**, and
+dependency. The visible affordance is a **handle** (the `DotsSixVertical` chip, first in
+`.block-controls`), but the whole block drags — teachers grab a block by its exercises.
+`draggable` cannot simply stay on the block: a draggable ancestor swallows the inline
+instruction editor and the viewers' own click-to-edit fields. So `blockProps` switches it on
+at `mousedown`, only when the press did not land on `input, textarea, button,
+[contenteditable], a, select, [role="button"]`, and off again at `mouseup` / `dragend` /
+window `blur`. The drop target is the grid **cell**, and
 which half was hit decides what happens — top = insert the dragged block before this one,
 bottom = swap the two. Halves rather than sides, because a full-width block has no
 meaningful left/right, and both are labelled on screen
@@ -536,6 +549,16 @@ meaningful left/right, and both are labelled on screen
 `pointer-events: none` so the overlay never eats the `dragover` the cell needs). The
 dragged block's id lives in a ref as well as in state: `dragstart` and the first `dragover`
 can land in the same task, and a handler reading only state would still see `null`.
+
+**Splitting instead of reordering.** A block that does not fit the rest of a page still moves
+whole, so `PageSheet` measures the blank tail it leaves and, past three row units (72px),
+offers "Het volgende blok past hier niet meer — splitsen" on an explicit grid row under the
+last cell. That, and the `Scissors` control on any block with two or more exercises, open one
+popover ("Splitsen na oefening N") which calls `splitBlock` (§3). N defaults to the largest cut
+whose leading `.print-row` heights still fit the available space, measured off the rendered
+cell with `getBoundingClientRect` divided by the sheet zoom — the packer is not involved and
+nothing is split automatically. The hint carries no `data-block-id`, so it is invisible to
+both `onCellMeasure` and the tail measurement it depends on.
 
 ### Print mechanics
 
@@ -659,7 +682,7 @@ src/
 ├── hooks/
 │   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (waits 2 rAF for the repack)
 │   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
-│   └── useSheetDnd.ts           # sheet drag-and-drop state: handle dragstart, top/bottom drop zones (§9)
+│   └── useSheetDnd.ts           # sheet drag-and-drop state: handle + whole-block drag (draggable toggled at mousedown), top/bottom drop zones (§9)
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
