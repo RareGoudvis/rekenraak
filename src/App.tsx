@@ -17,9 +17,8 @@ import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
 import AboutModal from './components/layout/AboutModal';
 import TourOverlay from './components/onboarding/TourOverlay';
-import IconButton from './components/ui/IconButton';
 import BlockControlsRail from './components/layout/BlockControlsRail';
-import { ArrowUp, ArrowDown, Lock, LockOpen as Unlock, Copy, Trash as Trash2, ArrowElbowDownRight as CornerDownRight, Hand, ListChecks, SlidersHorizontal, Printer, Flask, DotsSixVertical, Scissors } from '@phosphor-icons/react';
+import { Lock, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
 import { useSheetDnd } from './hooks/useSheetDnd';
@@ -306,6 +305,10 @@ export default function App() {
   const dnd = useSheetDnd();
   const splitBlock = useWorksheetStore((s) => s.splitBlock);
   const [splitTarget, setSplitTarget] = useState<SplitTarget | null>(null);
+  // Drives BlockControlsRail: which block's controls are showing. Hover wins over
+  // selection (matches the old CSS :hover-over-:is-active rule) so moving off a selected
+  // block onto another one shows THAT block's controls, not two rails at once.
+  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
 
   // Open the split popover for a block. `availableOverridePx` is the space the block has
   // to fit into; the page-tail hint passes the tail of the PREVIOUS page, because the
@@ -357,6 +360,11 @@ export default function App() {
     blocks.forEach((b, i) => { m[b.id] = i; });
     return m;
   }, [blocks]);
+
+  // The single rail mounted below the page stack (outside the packer's clipped body) —
+  // hover beats selection, and 'document' (nothing selected) shows no rail at all.
+  const visibleBlockId = hoveredBlockId ?? (activeSelectionId && activeSelectionId !== 'document' ? activeSelectionId : null);
+  const visibleBlock = visibleBlockId ? blocks.find((b) => b.id === visibleBlockId) : undefined;
 
   const blockOrder = useMemo(() => {
     const m: Record<string, number> = {};
@@ -548,58 +556,20 @@ export default function App() {
       const isNotLastBlock = false;
 
               return (
-                <div key={block.id} id={`block-${block.id}`} className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${dnd.fromId === block.id ? ' is-dragging' : ''}`} onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }} {...dnd.blockProps(block.id)} style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}>
-                  {/* Controls render for every block but stay hidden until the block is hovered or
-                      active (CSS in index.css) — discoverable without selecting, no App re-render. */}
-                  <div className="no-print block-controls" style={styles.blockControls} onClick={(e) => e.stopPropagation()}>
-                      {/* Drag handle first: it is the control people reach for. A plain
-                          div (not IconButton) so a press on it never reads as a button
-                          click; the drag itself is pointer-event based (useSheetDnd). */}
-                      <div
-                        className="ui-icon-btn sheet-drag-handle"
-                        role="button"
-                        tabIndex={-1}
-                        aria-label="Versleep dit blok"
-                        title="Versleep naar een ander blok — bovenaan invoegen, onderaan wisselen"
-                        {...dnd.handleProps(block.id)}
-                      >
-                        <DotsSixVertical size={16} weight="bold" aria-hidden="true" />
-                      </div>
-                      <IconButton
-                        icon={block.locked ? Lock : Unlock}
-                        label={block.locked ? 'Ontgrendel (massa-regeneratie zal dit blok wel vernieuwen)' : 'Vergrendel (massa-regeneratie laat dit blok ongemoeid)'}
-                        onClick={() => toggleBlockLock(block.id)}
-                        variant={block.locked ? 'active' : 'neutral'}
-                        size={16}
-                      />
-                      <IconButton icon={Copy} label="Blok dupliceren" onClick={() => duplicateBlock(block.id)} size={16} />
-                      {splittableCount(block) >= 2 && (
-                        <IconButton
-                          icon={Scissors}
-                          label="Blok splitsen"
-                          onClick={(e) => openSplit(block.id, e.currentTarget.getBoundingClientRect())}
-                          variant={splitTarget?.blockId === block.id ? 'active' : 'neutral'}
-                          size={16}
-                        />
-                      )}
-                      <IconButton
-                        icon={CornerDownRight}
-                        label={block.pageBreakBefore ? 'Begin niet op nieuwe pagina' : 'Begin op nieuwe pagina (bij afdrukken)'}
-                        onClick={() => updateBlockSettings(block.id, { pageBreakBefore: !block.pageBreakBefore })}
-                        variant={block.pageBreakBefore ? 'active' : 'neutral'}
-                        size={16}
-                      />
-                      {(blockPos[block.id] ?? 0) > 0 && (
-                        <IconButton icon={ArrowUp} label="Blok omhoog" onClick={() => moveBlockUp(block.id)} size={16} />
-                      )}
-                      {(blockPos[block.id] ?? 0) < blocks.length - 1 && (
-                        <IconButton icon={ArrowDown} label="Blok omlaag" onClick={() => moveBlockDown(block.id)} size={16} />
-                      )}
-                      {/* Delete sits apart at the bottom, behind a divider, to avoid mis-clicks. */}
-                      <div style={styles.blockControlsDivider} />
-                      <IconButton icon={Trash2} label="Blok verwijderen" onClick={() => removeBlock(block.id)} variant="danger" size={16} />
-                    </div>
-
+                <div
+                  key={block.id}
+                  id={`block-${block.id}`}
+                  className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${dnd.fromId === block.id ? ' is-dragging' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }}
+                  // Controls used to live inside this div and reveal on CSS :hover; they're
+                  // portalled out now (BlockControlsRail, rendered once below for whichever
+                  // block is hovered or active) so a block at the bottom of the page can't
+                  // have its buttons clipped by .page-sheet-body's overflow:hidden.
+                  onPointerEnter={() => setHoveredBlockId(block.id)}
+                  onPointerLeave={() => setHoveredBlockId((id) => (id === block.id ? null : id))}
+                  {...dnd.blockProps(block.id)}
+                  style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}
+                >
                   {/* Only while something is being dragged, and never on the block that
                       is being dragged itself. */}
                   {dnd.fromId !== null && dnd.fromId !== block.id && (
@@ -811,6 +781,28 @@ export default function App() {
         target={splitTarget}
         onSplit={(n) => splitBlock(splitTarget.blockId, n)}
         onClose={() => setSplitTarget(null)}
+      />
+    )}
+    {visibleBlock && (
+      <BlockControlsRail
+        key={visibleBlock.id}
+        anchorId={`block-${visibleBlock.id}`}
+        locked={!!visibleBlock.locked}
+        canSplit={splittableCount(visibleBlock) >= 2}
+        splitActive={splitTarget?.blockId === visibleBlock.id}
+        pageBreakBefore={!!visibleBlock.pageBreakBefore}
+        canMoveUp={(blockPos[visibleBlock.id] ?? 0) > 0}
+        canMoveDown={(blockPos[visibleBlock.id] ?? 0) < blocks.length - 1}
+        handleProps={dnd.handleProps(visibleBlock.id)}
+        onToggleLock={() => toggleBlockLock(visibleBlock.id)}
+        onDuplicate={() => duplicateBlock(visibleBlock.id)}
+        onSplit={(e) => openSplit(visibleBlock.id, e.currentTarget.getBoundingClientRect())}
+        onTogglePageBreak={() => updateBlockSettings(visibleBlock.id, { pageBreakBefore: !visibleBlock.pageBreakBefore })}
+        onMoveUp={() => moveBlockUp(visibleBlock.id)}
+        onMoveDown={() => moveBlockDown(visibleBlock.id)}
+        onDelete={() => removeBlock(visibleBlock.id)}
+        onPointerEnter={() => setHoveredBlockId(visibleBlock.id)}
+        onPointerLeave={() => setHoveredBlockId((id) => (id === visibleBlock.id ? null : id))}
       />
     )}
     {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
