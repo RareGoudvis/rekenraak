@@ -129,8 +129,8 @@ field (used by ordenen click-to-edit and the splitsen "type a number" textboxes)
 
 **Curriculum lock gate:** `updateBlockSettings` / `updateBlockLayout` /
 `updateBlockInstruction` check `curriculum?.locked` and, when locked, allow only
-`numberOfExercises` + `pageBreakBefore` + `widthUnits` (difficulty/wording frozen; layout is
-not difficulty). This single
+`numberOfExercises` + `pageBreakBefore` + `widthUnits` + `showInstruction` (difficulty/wording
+frozen; layout and presentation are not difficulty). This single
 choke point enforces the lock without touching the ~16 config plugins. Draft-block
 edits bypass the gate (authoring runs unlocked).
 
@@ -146,6 +146,12 @@ The per-family shapes (43 `XConstraints` types + `ConstraintsByType`) live in
 `MathBlock<C extends BlockConstraints = BlockConstraints>` is generic; the registry stores
 rows heterogeneously so `generate` keeps the plain `MathBlock` signature. Defaults come from
 the registry's typed factories (`row<C>()`), which is what catches factory drift.
+
+**`MathBlock.showInstruction?: boolean`** — `false` hides the block's opdracht title row on the
+sheet (same code path as `layout-*` furniture). The block is still counted by `blockOrder`,
+so hiding a title never renumbers the rest of the sheet. Optional field, serialised through
+the normal block spread — no format bump. Toggle: Inspector → Opmaak → "Opdrachttekst tonen";
+honoured by `SheetThumbnail` too.
 
 **Measured layout is NOT store state.** Rendered cell heights and the page-body budget
 live in [useMeasuredHeights](../../src/hooks/useMeasuredHeights.ts), React state inside
