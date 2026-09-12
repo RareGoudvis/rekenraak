@@ -545,21 +545,29 @@ between runs.
 
 ### Reordering on the sheet
 
-[useSheetDnd.ts](../../src/hooks/useSheetDnd.ts) — native HTML5 drag-and-drop, no
-dependency. The visible affordance is a **handle** (the `DotsSixVertical` chip, first in
-`.block-controls`), but the whole block drags — teachers grab a block by its exercises.
-`draggable` cannot simply stay on the block: a draggable ancestor swallows the inline
-instruction editor and the viewers' own click-to-edit fields. So `blockProps` switches it on
-at `mousedown`, only when the press did not land on `input, textarea, button,
-[contenteditable], a, select, [role="button"]`, and off again at `mouseup` / `dragend` /
-window `blur`. The drop target is the grid **cell**, and
-which half was hit decides what happens — top = insert the dragged block before this one,
-bottom = swap the two. Halves rather than sides, because a full-width block has no
-meaningful left/right, and both are labelled on screen
-([SheetDropZones](../../src/components/layout/SheetDropZones.tsx), `.no-print` and
-`pointer-events: none` so the overlay never eats the `dragover` the cell needs). The
-dragged block's id lives in a ref as well as in state: `dragstart` and the first `dragover`
-can land in the same task, and a handler reading only state would still see `null`.
+[useSheetDnd.ts](../../src/hooks/useSheetDnd.ts) — **pointer events only; no native
+HTML5 drag-and-drop anywhere in the app.** A browser extension that hooks `dragstart` (the
+"Claude in Chrome" extension did) froze the tab for the whole drag, and teachers' browsers
+are not ours to audit. The visible affordance is a **handle** (`.sheet-drag-handle`, the
+`DotsSixVertical` chip, first in `.block-controls`), but the whole block drags — teachers
+grab a block by its exercises. `blockProps` starts on `pointerdown` (left button, not on
+`input, textarea, button, [contenteditable], a, select, [role="button"]`) plus **6px of
+movement** (0 from the handle), so a press that does not travel stays a click and the inline
+instruction editor and click-to-edit fields keep working. Then: `setPointerCapture` on the
+block, `touch-action: none` for the drag's duration (always on the handle, so touch works),
+an own `.sheet-drag-ghost` (chip + cloned title) that follows the pointer, and the target
+found with `document.elementFromPoint(...).closest('[data-block-id]')` — the drop cell needs
+**no listeners**, only its `data-block-id`. Which half was hit decides what happens — top =
+insert the dragged block before this one, bottom = swap the two. Halves rather than sides,
+because a full-width block has no meaningful left/right, and both are labelled on screen
+([SheetDropZones](../../src/components/layout/SheetDropZones.tsx), `.no-print`,
+`pointer-events: none`). The sheet auto-scrolls while the pointer sits within 40px of
+`.print-scroll`'s top or bottom edge; Escape and `pointercancel` cancel; `pointerup` drops
+through `reorderBlocks(from, to > from ? to - 1 : to)` / `swapBlocks`, reading the store via
+`getState()` at drop time so a long drag cannot go stale, then selects and scrolls to the
+moved block. The Overzicht outline ([OverzichtPanel](../../src/components/layout/OverzichtPanel.tsx))
+uses the same pointer approach with a 5px threshold and `[data-ov-index]` rows. Playwright
+drives all of it with plain `mouse.move/down/up` (see TESTING.md).
 
 **Splitting instead of reordering.** A block that does not fit the rest of a page still moves
 whole, so `PageSheet` measures the blank tail it leaves and, past three row units (72px),
