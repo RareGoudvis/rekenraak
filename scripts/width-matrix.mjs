@@ -67,7 +67,11 @@ for (const typeId of typeIds) {
             const measured = await page.evaluate(async ({ typeId, width, mode }) => {
                 const r = window.__rekenraak;
                 r.clearBlocks();
-                r.addBlockFromType(typeId, typeId);
+                // A REALISTIC label: the block's default instruction falls back to
+                // `${label}:`, and passing the typeId made 'hr-std-vermenigvuldigen:' a
+                // 176px unbreakable token in a 163px quarter — the harness was measuring
+                // its own probe string and reporting it as the viewer overflowing.
+                r.addBlockFromType(typeId, 'Oefening');
                 const block = r.getState().blocks[0];
                 if (!block) return null;
                 const defaultCount = block.numberOfExercises;

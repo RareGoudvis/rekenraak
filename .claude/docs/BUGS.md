@@ -8,11 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
-- **hr-std-vermenigvuldigen at ¼ overflows 8% after the font sweep** (width matrix
-  2026-09-13: overflow 1.0798 at 163px). The measured clamp (7a) will refuse ¼ for such a
-  block once rendered, but the `tight` tier should fit: check the × operator unit / answer
-  line at 17.33px. Then rerun the matrix seeded and recommit result.json + recalibrate
-  rowUnits (Part 7f).
 ## Layout / sheet
 
 - **Vertical measurement off: tail hint says "past niet" for a block that visibly fits**

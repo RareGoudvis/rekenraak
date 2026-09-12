@@ -58,7 +58,11 @@ function EditableInstruction({ block, prefix }: { block: MathBlock; prefix: stri
     <span
       onClick={locked ? undefined : (e) => { e.stopPropagation(); setText(block.instructionText || ''); setEditing(true); }}
       title={locked ? undefined : 'Klik om aan te passen'}
-      style={{ ...styles.instructionDisplay, cursor: locked ? 'default' : 'text' }}
+      // A Dutch opdracht title is one long compound word often enough
+      // ("Vermenigvuldigingsoefeningen:"), and a single token has no break opportunity —
+      // in a quarter-width cell it ran straight out of the block. `anywhere` also lets the
+      // flex row below it shrink, which is what min-content width is probed against.
+      style={{ ...styles.instructionDisplay, cursor: locked ? 'default' : 'text', overflowWrap: 'anywhere', minWidth: 0 }}
     >
       {prefix}{block.instructionText || ''}
     </span>
@@ -609,7 +613,10 @@ export default function App() {
                     ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
                     ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
                   }, docSettings.titelCustom)}>
-                    <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '12px' }}>
+                    {/* minWidth:0 so the title can actually take the wrap above: a flex
+                        item's default min-width is its content, which is exactly the
+                        overflow it was supposed to prevent. */}
+                    <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '12px' }}>
                       {(() => {
                         // The prefix marks differentiatie (MAG/MOET/★ or custom text).
                         const mode = block.instructionMode;
