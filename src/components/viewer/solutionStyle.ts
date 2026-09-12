@@ -7,5 +7,3 @@ export const SOL = 'var(--ink-solution)';
 export const solutionText: CSSProperties = { color: SOL, fontWeight: 700 };
 
 // SVG viewers colour paths instead of text.
-export const solutionStroke: CSSProperties = { stroke: SOL };
-export const solutionFill: CSSProperties = { fill: SOL };

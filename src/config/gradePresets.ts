@@ -59,7 +59,7 @@ function typeGrade(typeId: string): Leerjaar {
 // Earliest leerjaar a leaf is introduced = the strictest of: an explicit tag, its
 // number type, its label, and its exercise type. e.g. "cijferen decimale getallen"
 // = max(cijferen L3, decimal L4) = L4.
-export function leafMinLeerjaar(leaf: GradeLeaf): Leerjaar {
+function leafMinLeerjaar(leaf: GradeLeaf): Leerjaar {
     const nt = (leaf.defaultConstraints?.numberType as string | undefined) ?? '';
     return Math.max(
         leaf.minLeerjaar ?? 1,

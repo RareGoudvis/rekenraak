@@ -1,7 +1,7 @@
 // Quick-pick opdracht-titel (instruction) texts so teachers click instead of retype.
 // Generic verbs cover most blocks; suggestionsFor() floats a few type-specific lines first.
 
-export const STANDARD_INSTRUCTIONS: string[] = [
+const STANDARD_INSTRUCTIONS: string[] = [
     'Los op.',
     'Reken uit.',
     'Vul in.',

@@ -163,7 +163,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
 // Types added without a measurement fall back to a middling row and half width.
 const FALLBACK: LayoutFacts = { rowUnits: 2.4, perRowFull: 2, minWidth: 2 };
 
-export function layoutFacts(typeId: string): LayoutFacts {
+function layoutFacts(typeId: string): LayoutFacts {
     return LAYOUT[typeId] ?? FALLBACK;
 }
 

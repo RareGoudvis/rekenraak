@@ -11,8 +11,8 @@ import type { Leerjaar } from '../config/gradePresets';
 // different widths — hence a version-gated migration, never a value-based one.
 export const WORKSHEET_FORMAT_VERSION = 3;
 
-export const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
-export const PRESETS_KEY = 'rekenraak_presets_v1';
+const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
+const PRESETS_KEY = 'rekenraak_presets_v1';
 export const RELEASE_SEEN_KEY = 'rekenraak_release_seen_v1';
 export const TRYOUT_SEEN_KEY = 'rekenraak_tryout_seen_v1';
 export const MAX_PRESETS = 50;
@@ -157,7 +157,7 @@ function buildPayload(state: SerialisableState, mode: WorksheetFileMode = 'full'
 
 // Files use the .rekenraak extension (still JSON inside) so they're recognisable +
 // associatable; import still accepts .json for back-compat.
-export const WORKSHEET_FILE_EXT = '.rekenraak';
+const WORKSHEET_FILE_EXT = '.rekenraak';
 
 function downloadJson(filename: string, json: string): void {
     const blob = new Blob([json], { type: 'application/json' });

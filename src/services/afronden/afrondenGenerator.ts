@@ -5,7 +5,7 @@ import type { AfrondenConstraints } from '../math/constraintTypes';
 export interface RoundTarget { key: string; label: string; weight: number; }
 
 // Natural rounding targets (units excluded — rounding to E is a no-op).
-export const NATURAL_TARGETS: RoundTarget[] = [
+const NATURAL_TARGETS: RoundTarget[] = [
     { key: 'T',  label: 'tiental',        weight: 10 },
     { key: 'H',  label: 'honderdtal',     weight: 100 },
     { key: 'D',  label: 'duizendtal',     weight: 1000 },
@@ -13,7 +13,7 @@ export const NATURAL_TARGETS: RoundTarget[] = [
 ];
 
 // Decimal rounding targets.
-export const DECIMAL_TARGETS: RoundTarget[] = [
+const DECIMAL_TARGETS: RoundTarget[] = [
     { key: 'E', label: 'eenheid',     weight: 1 },
     { key: 't', label: 'tiende',      weight: 0.1 },
     { key: 'h', label: 'honderdste',  weight: 0.01 },

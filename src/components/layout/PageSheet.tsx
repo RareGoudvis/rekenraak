@@ -12,7 +12,6 @@ import { WarningCircle } from '@phosphor-icons/react';
 // SYNC: the geometry here must match blockLayout.ts, which budgets heights against it —
 // A4 at 96dpi, 16mm side padding on the body.
 export const PAGE_W_PX = 794;
-export const PAGE_H_PX = 1123;
 
 interface Props {
     index: number;

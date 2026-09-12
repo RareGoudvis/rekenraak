@@ -29,7 +29,7 @@ export function Bill({ valueCents, width = 56, height = 32 }: BillProps) {
     );
 }
 
-export function EuroCoin({ valueCents, size = 36 }: CoinProps) {
+function EuroCoin({ valueCents, size = 36 }: CoinProps) {
     return (
         <svg width={size} height={size} viewBox="0 0 44 44">
             <circle cx="22" cy="22" r="20" fill="white" stroke="#000" strokeWidth="2" />
@@ -42,7 +42,7 @@ export function EuroCoin({ valueCents, size = 36 }: CoinProps) {
     );
 }
 
-export function CentCoin({ valueCents, size = 30 }: CoinProps) {
+function CentCoin({ valueCents, size = 30 }: CoinProps) {
     return (
         <svg width={size} height={size} viewBox="0 0 36 36">
             <circle cx="18" cy="18" r="16" fill="white" stroke="#000" strokeWidth="1.5" />
