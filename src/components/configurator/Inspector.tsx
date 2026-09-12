@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { minWidthUnits, tierWidthPx } from '../../config/blockLayout';
-import { intrinsicOf } from '../../hooks/useMeasuredHeights';
+import { useIntrinsicWidth } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
@@ -34,6 +34,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const rootStyle = embedded ? S.embedded : S.sidebar;
     const activeBlockId = useWorksheetStore((state) => state.activeBlockId);
     const activeBlock = useWorksheetStore((state) => state.blocks.find(b => b.id === activeBlockId));
+    // How narrow this block's content actually is, as measured on the sheet. Subscribed
+    // rather than read once: the measurement lands a frame after the render that caused it,
+    // and a stale picker could grey out a width the sheet would now accept.
+    const intrinsicWidth = useIntrinsicWidth(activeBlockId ?? '');
     // The chip's subject line: the printed opdracht number and a human label.
     // SYNC: numbering must match App.tsx's blockOrder — layout-* furniture is not an
     // opdracht, so it is skipped in the count and shows no number.
@@ -448,7 +452,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 // minWidthOf): the picker must never grey out a width the
                                 // sheet would in fact accept, and when it does grey one out
                                 // it can say in px why.
-                                const iw = intrinsicOf(activeBlock.id);
+                                const iw = intrinsicWidth;
                                 const min = minWidthUnits(activeBlock, iw && { intrinsicPx: iw.px, atWidth: iw.atWidth });
                                 const cur = Math.max(activeBlock.widthUnits ?? 4, min);
                                 const OPTIONS: Array<{ w: 1 | 2 | 4; label: string }> = [

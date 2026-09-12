@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { MathBlock } from '../services/math/types';
 import type { WidthUnits } from '../config/blockLayout';
 
@@ -36,6 +36,27 @@ export interface IntrinsicWidth {
     px: number;
     /** The cell width that measurement was taken in. */
     atWidth: WidthUnits;
+}
+
+// The map is written from a layout effect and read by the Inspector, which does not
+// re-render on App's state — without this the width picker would show the measurement of
+// the PREVIOUS interaction and could grey out a tier the sheet has since accepted.
+const listeners = new Set<() => void>();
+let intrinsicVersion = 0;
+function notifyIntrinsic() {
+    intrinsicVersion += 1;
+    for (const l of listeners) l();
+}
+
+const subscribeIntrinsic = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb); }; };
+
+/** The narrowest measured content width for a block, re-rendering when it changes. */
+export function useIntrinsicWidth(blockId: string): IntrinsicWidth | undefined {
+    // `version` is the dependency that matters — it changes exactly when the map does —
+    // even though the lint rule cannot see it inside intrinsicOf().
+    const version = useSyncExternalStore(subscribeIntrinsic, () => intrinsicVersion, () => intrinsicVersion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- version IS the map's identity
+    return useMemo(() => intrinsicOf(blockId), [blockId, version]);
 }
 
 export function intrinsicOf(blockId: string): IntrinsicWidth | undefined {
@@ -125,6 +146,7 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
             const prev = intrinsic.get(key);
             if (prev === undefined || Math.abs(prev - intrinsicWidthPx) > EPSILON_PX) {
                 intrinsic.set(key, intrinsicWidthPx);
+                notifyIntrinsic();
                 changed = changed || `width ${key} ${prev ?? '–'}→${Math.round(intrinsicWidthPx)}px`;
             }
         }
