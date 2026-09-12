@@ -1,9 +1,10 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { targetsFor } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { SchattendConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -14,8 +15,7 @@ const OPS: { key: string; label: string }[] = [
 ];
 
 export default function SchattendConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<SchattendConstraints>(block);
     const operators: string[] = c.operators ?? ['+', '-'];
     const numberType: string = c.numberType ?? 'natural';
     const isDecimal = numberType === 'decimal';
@@ -23,9 +23,8 @@ export default function SchattendConfig({ block }: Props) {
     const roundTargets: string[] = c.roundTargets ?? (isDecimal ? ['E'] : ['H']);
     const scaffolding: string = c.scaffolding ?? 'tussenstappen';
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
-    const toggleIn = (key: string, list: unknown[], v: unknown) => {
+    const set = (key: keyof SchattendConstraints, value: unknown) => patch({ [key]: value } as Partial<SchattendConstraints>);
+    const toggleIn = (key: keyof SchattendConstraints, list: unknown[], v: unknown) => {
         const next = list.includes(v) ? list.filter(x => x !== v) : [...list, v];
         if (next.length) set(key, next);   // keep ≥1
     };

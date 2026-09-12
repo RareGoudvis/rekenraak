@@ -1,6 +1,7 @@
 import type { MathBlock, GeldRekenenExercise } from '../../services/math/types';
 import { formatEuro } from '../../services/geld/geldRekenenGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import type { GeldRekenenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -18,7 +19,8 @@ const cell: React.CSSProperties = {
 
 export default function GeldRekenenViewer({ block, showSolutions }: Props) {
     const exercises: GeldRekenenExercise[] = block.geldRekenenExercises || [];
-    const subType: string = block.constraints.subType ?? 'korting';
+    const c = block.constraints as GeldRekenenConstraints;
+    const subType: string = c.subType ?? 'korting';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

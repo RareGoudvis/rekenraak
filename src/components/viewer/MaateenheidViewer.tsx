@@ -1,6 +1,7 @@
 import type { MathBlock, MaateenheidExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import type { MaateenheidConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,8 @@ const SOL = '#e11d48';
 
 export default function MaateenheidViewer({ block, showSolutions }: Props) {
     const exercises: MaateenheidExercise[] = block.maateenheidExercises || [];
-    const subType: string = block.constraints.subType ?? 'eenheid';
+    const c = block.constraints as MaateenheidConstraints;
+    const subType: string = c.subType ?? 'eenheid';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

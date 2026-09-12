@@ -1,7 +1,8 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { MaateenheidConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -14,14 +15,12 @@ const GROOTHEDEN = [
 ];
 
 export default function MaateenheidConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<MaateenheidConstraints>(block);
     const grootheden: string[] = c.grootheden ?? ['lengte', 'massa', 'inhoud'];
     const answerMode: string = c.answerMode ?? 'omcirkelen';
     const subType: string = c.subType ?? 'eenheid';
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof MaateenheidConstraints, value: unknown) => patch({ [key]: value } as Partial<MaateenheidConstraints>);
     const toggleGrootheid = (k: string) => {
         const next = grootheden.includes(k) ? grootheden.filter(x => x !== k) : [...grootheden, k];
         if (next.length) set('grootheden', next);   // keep ≥1

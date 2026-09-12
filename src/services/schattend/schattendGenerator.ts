@@ -1,5 +1,6 @@
 import type { MathBlock, SchattendExercise } from '../math/types';
 import { targetsFor, roundTo } from '../afronden/afrondenGenerator';
+import type { SchattendConstraints } from '../math/constraintTypes';
 
 // Schattend rekenen — round both operands to a place, then compute mentally:
 // "412 + 387 ≈ ___ + ___ ≈ ___". Reuses the afronden target/rounding helpers.
@@ -22,7 +23,7 @@ function buildOperand(numberType: string, maxGetal: number, decimalPlaces: numbe
 }
 
 export function generateSchattendExercises(block: MathBlock): SchattendExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as SchattendConstraints;
     const operators: ('+' | '-' | 'x' | ':')[] = c.operators ?? ['+', '-'];
     const numberType: string = c.numberType ?? 'natural';
     const maxGetal: number = c.maxGetal ?? (numberType === 'decimal' ? 100 : 1000);

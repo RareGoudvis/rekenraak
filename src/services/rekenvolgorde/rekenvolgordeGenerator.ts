@@ -1,4 +1,5 @@
 import type { MathBlock, RekenvolgordeExercise } from '../math/types';
+import type { RekenvolgordeConstraints } from '../math/constraintTypes';
 
 // Rekenvolgorde en haakjes — small token expressions where order of operations
 // matters. Brackets are only planted when they actually change the outcome.
@@ -65,7 +66,7 @@ function friendlyNums(ops: string[], maxGetal: number, tableLimit: number): numb
 }
 
 export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as RekenvolgordeConstraints;
     const operators: string[] = c.operators ?? ['+', '-', 'x'];
     // GEEN = never brackets · MAG = ~half the items · MOET = every item.
     const haakjesMode: string = c.haakjesMode ?? 'MAG';

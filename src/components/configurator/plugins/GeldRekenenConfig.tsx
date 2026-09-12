@@ -1,8 +1,9 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { GeldRekenenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -12,16 +13,14 @@ const KORTING_PERCENTS = [5, 10, 20, 25, 50, 75];
 const INTREST_PERCENTS = [1, 2, 3, 4, 5, 10];
 
 export default function GeldRekenenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<GeldRekenenConstraints>(block);
     const subType: string = c.subType ?? 'korting';
     const percents: number[] = c.percents ?? [10, 25, 50];
     const maxEuro = c.maxEuro ?? 100;
     const wholeEuros: boolean = c.wholeEuros ?? true;
     const halfYear: boolean = c.halfYear ?? false;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof GeldRekenenConstraints, value: unknown) => patch({ [key]: value } as Partial<GeldRekenenConstraints>);
     const togglePercent = (p: number) => {
         const next = percents.includes(p) ? percents.filter(x => x !== p) : [...percents, p];
         if (next.length) set('percents', next);   // keep ≥1

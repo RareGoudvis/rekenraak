@@ -1,4 +1,5 @@
 import type { MathBlock, GeldRekenenExercise } from '../math/types';
+import type { GeldRekenenConstraints } from '../math/constraintTypes';
 
 // Geld rekenen — korting / winst-verlies / intrest as rooster rows (deliberately
 // tabular, not vraagstukken). All money in cents; amounts constructed so every
@@ -15,7 +16,7 @@ function pick<T>(arr: T[]): T {
 const id = () => Math.random().toString(36).substring(2, 9);
 
 export function generateGeldRekenenExercises(block: MathBlock): GeldRekenenExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as GeldRekenenConstraints;
     const subType: 'korting' | 'winst' | 'intrest' = c.subType ?? 'korting';
     const percents: number[] = c.percents ?? [10, 25, 50];
     const maxEuro: number = c.maxEuro ?? 100;

@@ -1,7 +1,8 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { VerbandenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -13,14 +14,12 @@ const REPS = [
 ];
 
 export default function VerbandenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<VerbandenConstraints>(block);
     const reps: string[] = c.reps ?? ['breuk', 'decimaal', 'procent'];
     const denominators: number[] = c.denominators ?? [2, 4, 5, 10, 100];
     const given: string = c.given ?? 'random';
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof VerbandenConstraints, value: unknown) => patch({ [key]: value } as Partial<VerbandenConstraints>);
     const toggleRep = (k: string) => {
         const next = reps.includes(k) ? reps.filter(x => x !== k) : [...reps, k];
         if (next.length >= 2) set('reps', next);   // need ≥2 to have something to fill in

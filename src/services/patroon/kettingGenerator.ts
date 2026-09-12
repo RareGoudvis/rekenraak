@@ -1,4 +1,5 @@
 import type { MathBlock, PatroonExercise, PatroonStep } from '../math/types';
+import type { KettingConstraints } from '../math/constraintTypes';
 
 // Kettingsommen — a chain of DISTINCT operations (5 →+3→ 8 →×2→ 16 → …), printed by
 // the existing PatroonViewer with all operators shown. cycle length = ticks − 1 so
@@ -14,11 +15,11 @@ function buildStep(op: string, opMax: number): PatroonStep {
 }
 
 export function generateKettingExercises(block: MathBlock): PatroonExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as KettingConstraints;
     const maxGetal: number = c.maxGetal ?? 100;
     const chainLength: number = Math.min(5, Math.max(3, c.chainLength ?? 4));
     const ops: string[] = Array.isArray(c.ops) && c.ops.length ? c.ops : ['+', '-'];
-    const opSettings: Record<string, { max: number }> = c.opSettings ?? {};
+    const opSettings: Record<string, { max?: number }> = c.opSettings ?? {};
     const blankMiddle: boolean = c.blankMiddle ?? false;
     const ticks = chainLength + 1;
     const n = block.numberOfExercises || 6;

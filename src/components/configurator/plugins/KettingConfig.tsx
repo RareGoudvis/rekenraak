@@ -1,8 +1,9 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { KettingConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -11,16 +12,14 @@ const OPS = [
 ];
 
 export default function KettingConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<KettingConstraints>(block);
     const ops: string[] = c.ops ?? ['+', '-'];
-    const opSettings: Record<string, { max: number }> = c.opSettings ?? {};
+    const opSettings: Record<string, { max?: number }> = c.opSettings ?? {};
     const chainLength: number = c.chainLength ?? 4;
     const maxGetal = c.maxGetal ?? 100;
     const blankMiddle: boolean = c.blankMiddle ?? false;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof KettingConstraints, value: unknown) => patch({ [key]: value } as Partial<KettingConstraints>);
     const toggleOp = (op: string) => {
         const next = ops.includes(op) ? ops.filter(x => x !== op) : [...ops, op];
         if (next.length) set('ops', next);   // keep ≥1

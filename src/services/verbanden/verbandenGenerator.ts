@@ -1,4 +1,5 @@
 import type { MathBlock, VerbandExercise, VerbandRep, Fraction } from '../math/types';
+import type { VerbandenConstraints } from '../math/constraintTypes';
 
 // Verbanden breuk · decimaal · procent — benchmark equivalences (1/2 = 0,5 = 50 %).
 // Only terminating denominators are offered so decimal/percent stay exact.
@@ -24,7 +25,7 @@ export function fractionToDecimal(f: Fraction): number {
 }
 
 export function generateVerbandExercises(block: MathBlock): VerbandExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as VerbandenConstraints;
     const subType: string = c.subType ?? 'tabel';
     const reps: VerbandRep[] = c.reps ?? ['breuk', 'decimaal', 'procent'];
     const denominators: number[] = (c.denominators ?? [2, 4, 5, 10, 100]).filter((d: number) => BENCHMARK_DENOMINATORS.includes(d));

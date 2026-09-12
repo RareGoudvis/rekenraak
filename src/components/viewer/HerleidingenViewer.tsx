@@ -4,6 +4,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import { ladderFor, recomputeHerleiding } from '../../services/herleidingen/herleidingenGenerator';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
+import type { HerleidingenConstraints } from '../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
@@ -50,12 +51,13 @@ function EditableUnit({ value, measure, onCommit }: { value: string; measure: st
 export default function HerleidingenViewer({ block, showSolutions }: Props) {
     const patchExercise = useWorksheetStore(s => s.patchExercise);
     const exercises: HerleidingExercise[] = block.herleidingExercises || [];
-    const measure: string = block.constraints.measure ?? 'lengte';
-    const scaffolding: string = block.constraints.scaffolding ?? 'geen';
-    const writeUnits: boolean = !!block.constraints.writeUnits;
+    const c = block.constraints as HerleidingenConstraints;
+    const measure: string = c.measure ?? 'lengte';
+    const scaffolding: string = c.scaffolding ?? 'geen';
+    const writeUnits: boolean = !!c.writeUnits;
     // 'uitlijnen' = given always left, right-aligned to a shared '=' column;
     // 'compact' = the single-part side goes left so the long compound always sits right.
-    const layout: string = block.constraints.herleidingLayout ?? 'uitlijnen';
+    const layout: string = c.herleidingLayout ?? 'uitlijnen';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
@@ -133,7 +135,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     // optional left prompt column and an optional right "= ___" answer column.
     let table = null;
     if (scaffolding === 'tabel-headers' || scaffolding === 'tabel-blanco') {
-        const c = block.constraints;
+        const c = block.constraints as HerleidingenConstraints;
         const tablePrompt: boolean = !!c.tablePrompt;
         const tableAnswer: string = c.tableAnswer ?? 'blank';
         const cw: number = c.tableCellW ?? 60;

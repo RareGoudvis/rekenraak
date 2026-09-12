@@ -1,8 +1,9 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { RekenvolgordeConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -11,15 +12,13 @@ const OPS = [
 ];
 
 export default function RekenvolgordeConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<RekenvolgordeConstraints>(block);
     const operators: string[] = c.operators ?? ['+', '-', 'x'];
     const haakjesMode: string = c.haakjesMode ?? 'MAG';
     const opsCount: number = c.opsCount ?? 2;
     const maxGetal = c.maxGetal ?? 100;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof RekenvolgordeConstraints, value: unknown) => patch({ [key]: value } as Partial<RekenvolgordeConstraints>);
     const toggleOp = (op: string) => {
         const next = operators.includes(op) ? operators.filter(x => x !== op) : [...operators, op];
         // Need ≥1 op AND at least one ×/: to make volgorde meaningful.

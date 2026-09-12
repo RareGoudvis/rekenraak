@@ -1,5 +1,6 @@
 import type { GetalFunctie } from './types';
 import type { RepKind } from '../vergelijken/representations';
+import type { VerbandRep } from './types';
 import type { TimeCategory, ClockType, ExerciseMode, MinuteDirection, HandChoice } from '../clock/clockTypes';
 import type { ConstraintType, FractionSubType, FractionShape, MabStyle, MabScaffolding, ScaffoldingLevel, CijferOperator } from './types';
 
@@ -383,7 +384,7 @@ export type RekenvolgordeConstraints = {
 };
 
 export type SchattendConstraints = {
-    operators: string[];
+    operators: ('+' | '-' | 'x' | ':')[];
     numberType: NumberType;
     maxGetal: number;
     decimalPlaces: number;
@@ -393,16 +394,17 @@ export type SchattendConstraints = {
 
 export type ControlerenConstraints = {
     subType: 'negenproef' | 'omgekeerde';
-    operators: string[];
+    operators: ('+' | '-' | 'x')[];
     maxGetal: number;
     foutAandeel: 'geen' | 'helft' | 'alles';
     showKruis: boolean;
-    prefill?: boolean;
+    // omgekeerde: how much of the check is printed — 'niets' | 'teken' | 'alles'.
+    prefill?: string;
 };
 
 export type VerbandenConstraints = {
     subType: 'tabel' | 'paren';
-    reps: string[];
+    reps: VerbandRep[];
     denominators: number[];
     given: string;
 };

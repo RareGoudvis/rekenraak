@@ -4,6 +4,7 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import type { PatroonConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -25,7 +26,7 @@ export default function PatroonConfig({ block }: Props) {
         ops = ['+'],
         opSettings = {},
         maxDecimals = 1,
-    } = block.constraints;
+    } = block.constraints as PatroonConstraints;
     const isDecimal = numberType === 'decimal';
     const dp = isDecimal ? Math.min(3, Math.max(1, maxDecimals)) : 0;
 

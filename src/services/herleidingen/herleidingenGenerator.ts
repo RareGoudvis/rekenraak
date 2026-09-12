@@ -1,4 +1,5 @@
 import type { MathBlock, HerleidingExercise, HerleidingPart } from '../math/types';
+import type { HerleidingenConstraints } from '../math/constraintTypes';
 
 // Metric ladders. factor = value relative to the SMALLEST unit, so every factor is a power of
 // 10 and all conversions stay exact integers. Oppervlakte steps ×100 and includes the are-units
@@ -29,7 +30,7 @@ const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const round6 = (x: number) => Number(x.toFixed(6)); // avoid float dust on non-exact teacher edits
 
 export function generateHerleidingExercises(block: MathBlock): HerleidingExercise[] {
-    const c = block.constraints || {};
+    const c = block.constraints as HerleidingenConstraints;
     const measure: string = c.measure ?? 'lengte';
     const maxEnkel: number = Math.max(1, c.maxEnkel ?? c.maxGetal ?? 100);
     const maxSam: number = Math.max(1, c.maxSamengesteld ?? c.maxGetal ?? 1000);

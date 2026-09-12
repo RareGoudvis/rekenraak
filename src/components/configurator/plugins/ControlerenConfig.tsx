@@ -1,22 +1,21 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { ControlerenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
 export default function ControlerenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<ControlerenConstraints>(block);
     const subType: string = c.subType ?? 'negenproef';
     const operators: string[] = c.operators ?? ['+', '-'];
     const maxGetal = c.maxGetal ?? 1000;
     const foutAandeel: string = c.foutAandeel ?? 'helft';
     const showKruis: boolean = c.showKruis ?? true;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof ControlerenConstraints, value: unknown) => patch({ [key]: value } as Partial<ControlerenConstraints>);
     const toggleOp = (op: string) => {
         const next = operators.includes(op) ? operators.filter(x => x !== op) : [...operators, op];
         if (next.length) set('operators', next);   // keep ≥1

@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import { negenrest } from '../../services/controleren/controlerenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as GLYPH } from '../../services/math/formatters';
+import type { ControlerenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -38,8 +39,9 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
 
 export default function ControlerenViewer({ block, showSolutions }: Props) {
     const exercises: ControleExercise[] = block.controleExercises || [];
-    const subType: string = block.constraints.subType ?? 'negenproef';
-    const showKruis: boolean = block.constraints.showKruis ?? true;
+    const c = block.constraints as ControlerenConstraints;
+    const subType: string = c.subType ?? 'negenproef';
+    const showKruis: boolean = c.showKruis ?? true;
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
@@ -83,7 +85,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
 
     // ── OMGEKEERDE BEWERKING: exercise on top, full write-line for the check below ──
     // prefill: 'niets' = empty line · 'teken' = inverse operator hinted · 'alles' = numbers filled.
-    const prefill: string = block.constraints.prefill ?? 'niets';
+    const prefill: string = c.prefill ?? 'niets';
     return (
         <FragmentableGrid
             cols={1}

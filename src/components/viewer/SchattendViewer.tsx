@@ -4,6 +4,7 @@ import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import { OP_GLYPH } from '../../services/math/formatters';
+import type { SchattendConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -16,8 +17,9 @@ const SOL = '#e11d48';
 export default function SchattendViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: SchattendExercise[] = block.schattendExercises || [];
-    const numberType: string = block.constraints.numberType ?? 'natural';
-    const scaffolding: string = block.constraints.scaffolding ?? 'tussenstappen';
+    const c = block.constraints as SchattendConstraints;
+    const numberType: string = c.numberType ?? 'natural';
+    const scaffolding: string = c.scaffolding ?? 'tussenstappen';
     const gap = block.verticalSpacing || 14;
     const all = targetsFor(numberType);
 

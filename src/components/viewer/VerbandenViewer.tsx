@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import { fractionToDecimal, fractionToPercent } from '../../services/verbanden/verbandenGenerator';
 import VerticalFraction from './VerticalFraction';
 import FragmentableGrid from './FragmentableGrid';
+import type { VerbandenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -16,8 +17,9 @@ const REP_LABEL: Record<VerbandRep, string> = { breuk: 'breuk', decimaal: 'komma
 
 export default function VerbandenViewer({ block, showSolutions }: Props) {
     const exercises: VerbandExercise[] = block.verbandExercises || [];
-    const subType: string = block.constraints.subType ?? 'tabel';
-    const reps: VerbandRep[] = block.constraints.reps ?? ['breuk', 'decimaal', 'procent'];
+    const c = block.constraints as VerbandenConstraints;
+    const subType: string = c.subType ?? 'tabel';
+    const reps: VerbandRep[] = c.reps ?? ['breuk', 'decimaal', 'procent'];
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

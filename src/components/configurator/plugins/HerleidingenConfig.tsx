@@ -3,6 +3,7 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import { ladderFor } from '../../../services/herleidingen/herleidingenGenerator';
 import type { MathBlock } from '../../../services/math/types';
+import type { HerleidingenConstraints } from '../../../services/math/constraintTypes';
 
 const FORMATS = [
     { key: 'enkel-getal', label: 'Getal invullen' },          // 1 kg = ___ g
@@ -19,7 +20,7 @@ const SAM_STOPS = [10, 100, 1000, 10000, 100000, 1000000];
 
 export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const update = useWorksheetStore(s => s.updateBlockSettings);
-    const c = block.constraints;
+    const c = block.constraints as HerleidingenConstraints;
     const measure: string = c.measure ?? 'lengte';
     const ladder = ladderFor(measure);
     const units: string[] = c.units ?? ladder.map(u => u.key);

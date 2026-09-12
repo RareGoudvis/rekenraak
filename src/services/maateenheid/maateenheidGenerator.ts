@@ -1,5 +1,6 @@
 import type { MathBlock, MaateenheidExercise } from '../math/types';
 import { MAAT_ITEMS, UNIT_POOLS } from './maateenheidData';
+import type { MaateenheidConstraints } from '../math/constraintTypes';
 
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -19,7 +20,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function generateMaateenheidExercises(block: MathBlock): MaateenheidExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as MaateenheidConstraints;
     const grootheden: string[] = c.grootheden ?? ['lengte', 'massa', 'inhoud'];
     let answerMode: string = c.answerMode ?? 'omcirkelen';
     // Omcirkelen needs ≥3 units for distractors — that excludes temperatuur (only °C).

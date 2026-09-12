@@ -1,6 +1,7 @@
 import type { MathBlock, ProcentExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import type { ProcentenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -12,8 +13,9 @@ const SOL = '#e11d48';
 
 export default function ProcentenViewer({ block, showSolutions }: Props) {
     const exercises: ProcentExercise[] = block.procentExercises || [];
-    const subType: string = block.constraints.subType ?? 'nemen';
-    const scaffold: boolean = block.constraints.scaffold ?? false;
+    const c = block.constraints as ProcentenConstraints;
+    const subType: string = c.subType ?? 'nemen';
+    const scaffold: boolean = c.scaffold ?? false;
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

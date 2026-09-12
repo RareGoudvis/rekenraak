@@ -2,6 +2,7 @@ import type { MathBlock, PatroonExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as SYM } from '../../services/math/formatters';
+import type { PatroonConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -14,10 +15,11 @@ const SOL = '#e11d48';
 export default function PatroonViewer({ block, showSolutions }: Props) {
     const exercises: PatroonExercise[] = block.patroonExercises || [];
     const gap = block.verticalSpacing || 14;
-    const showArrows: boolean = block.constraints.showArrows ?? false;
-    const showOperators: boolean = block.constraints.showOperators ?? false;
-    const operatorsShown: number = block.constraints.operatorsShown ?? 0;
-    const operatorStyle: string = block.constraints.operatorStyle ?? 'symbol';
+    const c = block.constraints as PatroonConstraints;
+    const showArrows: boolean = c.showArrows ?? false;
+    const showOperators: boolean = c.showOperators ?? false;
+    const operatorsShown: number = c.operatorsShown ?? 0;
+    const operatorStyle: string = c.operatorStyle ?? 'symbol';
     // Any scaffold row above the line → reserve a top slot on every connector so the row
     // stays uniform and the numbers/line stay aligned.
     const stacked = showArrows || showOperators;

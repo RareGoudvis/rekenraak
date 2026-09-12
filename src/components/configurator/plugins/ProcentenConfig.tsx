@@ -1,23 +1,22 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { ProcentenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
 const PERCENTS = [1, 5, 10, 20, 25, 50, 75, 100];
 
 export default function ProcentenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<ProcentenConstraints>(block);
     const subType: string = c.subType ?? 'nemen';
     const percents: number[] = c.percents ?? [10, 25, 50];
     const maxGetal = c.maxGetal ?? 1000;
     const scaffold: boolean = c.scaffold ?? false;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof ProcentenConstraints, value: unknown) => patch({ [key]: value } as Partial<ProcentenConstraints>);
     const togglePercent = (p: number) => {
         const next = percents.includes(p) ? percents.filter(x => x !== p) : [...percents, p];
         if (next.length) set('percents', next);   // keep ≥1

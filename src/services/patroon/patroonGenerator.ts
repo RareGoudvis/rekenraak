@@ -1,5 +1,6 @@
 import type { MathBlock, PatroonExercise, PatroonStep } from '../math/types';
 import { getMaskPlaces } from '../math/mathEngine';
+import type { PatroonConstraints } from '../math/constraintTypes';
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -35,14 +36,16 @@ function applyStep(prev: number, step: PatroonStep): number {
 }
 
 export function generatePatroonExercises(block: MathBlock): PatroonExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as PatroonConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const maxGetal: number = c.maxGetal ?? 100;
     const minGetal: number = numberType === 'geheel' ? (c.minGetal ?? -maxGetal) : (numberType === 'decimal' ? 0 : 1);
     const ticks: number = c.ticks ?? 6;
     const steps: number = Math.min(4, Math.max(1, c.steps ?? 1));
     const ops: string[] = Array.isArray(c.ops) && c.ops.length ? c.ops : ['+'];
-    const opSettings: Record<string, OpSetting> = c.opSettings ?? {};
+    // PatroonConfig always writes max AND mask; the shared type keeps both optional
+    // because kettingsommen store a max only.
+    const opSettings = (c.opSettings ?? {}) as Record<string, OpSetting>;
     const maxDecimals: number = numberType === 'decimal' ? Math.min(3, Math.max(1, c.maxDecimals ?? 1)) : 0;
     const scale = scaleFor(numberType, maxDecimals);
     const n = block.numberOfExercises;

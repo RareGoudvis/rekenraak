@@ -1,4 +1,5 @@
 import type { MathBlock, ProcentExercise } from '../math/types';
+import type { ProcentenConstraints } from '../math/constraintTypes';
 
 // Procenten — "25 % van 80 = ___" (nemen) or "15 van de 60 = ___ %" (welk-percent).
 // Bases are constructed answer-first so every result is a natural number.
@@ -12,7 +13,7 @@ function pick<T>(arr: T[]): T {
 }
 
 export function generateProcentExercises(block: MathBlock): ProcentExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as ProcentenConstraints;
     const subType: string = c.subType ?? 'nemen';
     const percents: number[] = c.percents ?? [10, 25, 50];
     const maxGetal: number = c.maxGetal ?? 1000;

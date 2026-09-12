@@ -1,4 +1,5 @@
 import type { MathBlock, ControleExercise } from '../math/types';
+import type { ControlerenConstraints } from '../math/constraintTypes';
 
 // Controleren — negenproef (digit-root cross for a worked ×) or omgekeerde bewerking.
 // Planted wrong answers must stay CATCHABLE: for negenproef the error may never be
@@ -18,7 +19,7 @@ export function negenrest(n: number): number {
 }
 
 export function generateControleExercises(block: MathBlock): ControleExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as ControlerenConstraints;
     const subType: string = c.subType ?? 'negenproef';
     const operators: ('+' | '-' | 'x')[] = subType === 'negenproef' ? ['x'] : (c.operators ?? ['+', '-']);
     const maxGetal: number = c.maxGetal ?? 1000;
