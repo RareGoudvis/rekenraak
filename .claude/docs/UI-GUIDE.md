@@ -68,7 +68,8 @@ Defined once. **Snap every size to these** instead of inventing pixel values.
 | Spacing (8pt grid) | `--sp-1`=4 · `--sp-2`=8 · `--sp-3`=12 · `--sp-4`=16 · `--sp-5`=20 · `--sp-6`=24 · `--sp-8`=32 · `--sp-10`=40 | padding/gap/margin |
 | Radius | `--radius-xs`=6 · `--radius-sm`=8 · `--radius-md`=12 · `--radius-lg`=16 · `--radius-xl`=20 · `--radius-pill`=999px | xs inputs, sm buttons, md cards, lg panels, pill toggles |
 | Type | `--text-xs`=11 · `--text-sm`=13 · `--text-base`=14 · `--text-md`=15 · `--text-lg`=17 · `--text-xl`=20 · `--text-2xl`=24 | hierarchy via **weight+size**, never UPPERCASE |
-| Font | `--font-ui` | UI chrome only; the worksheet keeps Azeret/Roboto Mono |
+| Font | `--font-ui` (system stack; Roboto is no longer shipped) · `--font-sheet-text` (Ubuntu, words on paper) · `--font-sheet-math` (Azeret Mono, digits) | UI chrome vs worksheet ink |
+| Sheet size | `--sheet-size-math`=13pt · `--sheet-size-text`=15pt · `--sheet-size-small`=0.82×math | Set per sheet (Blad › Opdrachten › Lettergrootte → `docSettings.fontSizeMath/Text`). **Every viewer size is `calc(var(--sheet-size-*) * f)`**, never a px literal — the factor keeps deliberate size differences when the base moves. See `src/components/viewer/README.md` |
 | Motion | `--dur-fast`=120ms · `--dur`=180ms · `--dur-slow`=260ms · `--ease-out` · `--ease-spring` | ease-out for fades, spring for toggle knobs |
 
 ### 1b. Surfaces, state, elevation
