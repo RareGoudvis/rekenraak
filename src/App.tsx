@@ -204,13 +204,13 @@ export default function App() {
   };
 
   // Printable width of a grid cell, in px. The page body is 794px minus 2x16mm of side
-  // padding, split over 6 column units, minus the gaps a spanning cell does NOT get.
-  // Without this the viewers keep assuming a full-width 625px and lay out grids that
+  // padding, split over COL_UNITS column units, minus the gaps a spanning cell does NOT
+  // get. Without this the viewers keep assuming a full-width 625px and lay out grids that
   // overflow their cell — the exact failure phase B exists to prevent.
   const cellWidthPx = (units: number) => {
     const CONTENT = 688;                       // 794 - 2 * 53px page padding
     const gap = docSettings.blockSpacing ?? 12;
-    const unit = (CONTENT - 5 * gap) / 6;      // 6 units, 5 gaps between them
+    const unit = (CONTENT - 3 * gap) / 4;      // 4 units, 3 gaps between them
     return Math.floor(unit * units + gap * (units - 1));
   };
 
@@ -572,7 +572,7 @@ export default function App() {
               footer={renderFooterRegion(pi, packedPages.length)}
             >
               {blocks.length === 0 && pi === 0 && (
-                <div className="no-print" style={{ ...styles.heroEmpty, gridColumn: 'span 6' }}>
+                <div className="no-print" style={{ ...styles.heroEmpty, gridColumn: 'span 4' }}>
                   <h1 style={styles.heroTitle}>RekenRaak — gratis werkbladgenerator voor wiskunde in het lager onderwijs</h1>
                   <p style={styles.heroPitch}>
                     Stel in enkele minuten een eigen wiskundewerkblad samen voor het lager onderwijs —

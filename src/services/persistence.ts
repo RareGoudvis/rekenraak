@@ -7,7 +7,9 @@ import type { Leerjaar } from '../config/gradePresets';
 // Bump this when the JSON schema gains/loses required fields so older files
 // fail loudly instead of half-loading. Keep the parser strict on read.
 // v2 added optional baseSettings + curriculum (both back-compat: absent → defaults).
-export const WORKSHEET_FORMAT_VERSION = 2;
+// v3 moved the page grid from 6 to 4 column units, which re-uses the same numbers for
+// different widths — hence a version-gated migration, never a value-based one.
+export const WORKSHEET_FORMAT_VERSION = 3;
 
 export const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
 export const PRESETS_KEY = 'rekenraak_presets_v1';
@@ -76,6 +78,25 @@ export interface Preset {
     savedAt: string;
     blockCount: number;
     payload: WorksheetFile;
+}
+
+// ── Format migration ─────────────────────────────────────────────────────────
+
+// v2 grid was 6 units (6 vol / 3 half / 2 third), v3 is 4 (4 / 2 / 1). The old ⅓ tier is
+// gone, so a third becomes a half: widening is safe, narrowing would overflow the cell.
+const V2_TO_V3_WIDTH: Record<number, 1 | 2 | 4> = { 6: 4, 3: 2, 2: 2 };
+
+/** Bring an older worksheet file up to the current format. Pure; safe to call twice. */
+export function migrateWorksheetFile(file: WorksheetFile): WorksheetFile {
+    if (file.version >= 3) return file;
+    const blocks = (file.blocks ?? []).map(b => {
+        const w = b.widthUnits as number | undefined;
+        if (w === undefined) return b;
+        const mapped = V2_TO_V3_WIDTH[w];
+        // An unknown value cannot be trusted on the new scale — full width always fits.
+        return { ...b, widthUnits: mapped ?? 4 };
+    });
+    return { ...file, version: 3, blocks };
 }
 
 // Filesystem-safe slug from the worksheet title; falls back to 'naamloos'.
@@ -176,7 +197,7 @@ export function parseWorksheetFile(json: string): WorksheetFile {
             throw new Error('curriculum-veld is ongeldig.');
         }
     }
-    return obj as unknown as WorksheetFile;
+    return migrateWorksheetFile(obj as unknown as WorksheetFile);
 }
 
 // ── Auto-save (1 implicit slot, crash recovery) ───────────────────────────────
@@ -195,7 +216,7 @@ export function loadAutosave(): AutosaveRecord | null {
         const parsed = JSON.parse(raw) as AutosaveRecord;
         // Sanity check — bail if the embedded payload is unreadable.
         if (!parsed?.payload || !Array.isArray(parsed.payload.blocks)) return null;
-        return parsed;
+        return { ...parsed, payload: migrateWorksheetFile(parsed.payload) };
     } catch { return null; }
 }
 
@@ -211,7 +232,9 @@ export function loadPresets(): Preset[] {
         if (!raw) return [];
         const arr = JSON.parse(raw);
         if (!Array.isArray(arr)) return [];
-        return arr.filter(p => p && typeof p.id === 'string' && p.payload?.blocks);
+        return arr
+            .filter(p => p && typeof p.id === 'string' && p.payload?.blocks)
+            .map(p => ({ ...p, payload: migrateWorksheetFile(p.payload) }));
     } catch { return []; }
 }
 

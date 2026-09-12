@@ -97,7 +97,7 @@
 .page-sheet-head { padding: 34px 53px 0; flex: none; }
 .page-sheet-body {
   flex: 1; min-height: 0; padding: 0 53px;
-  display: grid; grid-template-columns: repeat(6, 1fr); align-content: start;
+  display: grid; grid-template-columns: repeat(4, 1fr); align-content: start;
   /* Clipped on screen exactly as it will be on paper, so what you see is what prints. */
   overflow: hidden;
 }

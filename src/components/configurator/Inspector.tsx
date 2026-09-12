@@ -446,14 +446,14 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             />
                             </>}
 
-                            {/* Breedte op de pagina — the page grid is 6 units wide, so a block
-                                is a whole, a half or a third. Widths narrower than the block's
+                            {/* Breedte op de pagina — the page grid is 4 units wide, so a block
+                                is a whole, a half or a quarter. Widths narrower than the block's
                                 own minimum are disabled rather than silently overridden. */}
                             {(() => {
                                 const min = minWidthUnits(activeBlock);
-                                const cur = Math.max(activeBlock.widthUnits ?? 6, min);
-                                const OPTIONS: Array<{ w: 2 | 3 | 6; label: string }> = [
-                                    { w: 6, label: 'Vol' }, { w: 3, label: '½' }, { w: 2, label: '⅓' },
+                                const cur = Math.max(activeBlock.widthUnits ?? 4, min);
+                                const OPTIONS: Array<{ w: 1 | 2 | 4; label: string }> = [
+                                    { w: 4, label: 'Vol' }, { w: 2, label: '½' }, { w: 1, label: '¼' },
                                 ];
                                 return (
                                     <>
@@ -471,9 +471,9 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                             ))}
                                         </div>
                                         <p style={S.hintText}>
-                                            {min === 6
+                                            {min === 4
                                                 ? 'Dit type heeft de volle breedte nodig.'
-                                                : `Smalst mogelijk bij deze instellingen: ${min === 3 ? '½' : '⅓'}.`}
+                                                : `Smalst mogelijk bij deze instellingen: ${min === 2 ? '½' : '¼'}.`}
                                         </p>
                                     </>
                                 );

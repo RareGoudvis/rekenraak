@@ -2,6 +2,7 @@ import { describe, test, expect, beforeAll } from 'vitest';
 import {
     WORKSHEET_FORMAT_VERSION,
     parseWorksheetFile,
+    migrateWorksheetFile,
     encodeShareLink,
     decodeShareHash,
     type SerialisableState,
@@ -11,9 +12,6 @@ import type { FooterData } from '../services/math/types';
 import type { DocSettings } from '../store/useWorksheetStore';
 import { DEFAULT_BASE } from '../config/baseSettings';
 import { makeBlock, generateFor } from './helpers/makeBlock';
-
-// TODO: a v2 → v3 migration test (widthUnits 6→4 / 3→2 / 2→2, version-gated) belongs
-// here once the 4-column grid lands — see the layout plan, part 5a.
 
 // encodeShareLink builds an absolute URL from `location`; node has none. A stub keeps the
 // test on the pure encode/decode path instead of pulling in a whole jsdom environment.
@@ -74,10 +72,12 @@ describe('worksheet file', () => {
         expect(() => parseWorksheetFile(json)).toThrow(new RegExp(`v${WORKSHEET_FORMAT_VERSION + 1}`));
     });
 
-    test('an older version still loads (back-compat is the point of the field)', () => {
+    test('an older version still loads, migrated up (back-compat is the point of the field)', () => {
         const s = state();
         const json = JSON.stringify({ version: 1, blocks: s.blocks, header: s.header, footer: s.footer, docSettings: s.docSettings });
-        expect(parseWorksheetFile(json).version).toBe(1);
+        const parsed = parseWorksheetFile(json);
+        expect(parsed.version).toBe(WORKSHEET_FORMAT_VERSION);
+        expect(parsed.blocks).toHaveLength(s.blocks.length);
     });
 
     test.each([
@@ -90,6 +90,44 @@ describe('worksheet file', () => {
         [JSON.stringify({ version: 2, blocks: [], header: {}, footer: {}, docSettings: {}, curriculum: { locked: 'yes' } }), 'curriculum-veld'],
     ])('rejects malformed input (%#)', (json, message) => {
         expect(() => parseWorksheetFile(json)).toThrow(new RegExp(message));
+    });
+});
+
+describe('v2 → v3 width migration', () => {
+    // The same NUMBER means a different width on each grid (v2: 2 = ⅓, v3: 2 = ½), so the
+    // migration must key off the version and never off the value.
+    function v2File(widths: Array<number | undefined>) {
+        return {
+            version: 2,
+            exportedAt: new Date().toISOString(),
+            blocks: widths.map((w, i) => makeBlock('hr-std-optellen', { id: `w${i}`, block: w === undefined ? {} : { widthUnits: w as 1 | 2 | 4 } })),
+            header: state().header,
+            footer: state().footer,
+            docSettings: state().docSettings,
+        };
+    }
+
+    test('6 → vol, 3 → ½, 2 → ½, absent stays absent', () => {
+        const migrated = migrateWorksheetFile(v2File([6, 3, 2, undefined]));
+        expect(migrated.version).toBe(3);
+        expect(migrated.blocks.map(b => b.widthUnits)).toEqual([4, 2, 2, undefined]);
+    });
+
+    test('parseWorksheetFile migrates a v2 file on the way in', () => {
+        const parsed = parseWorksheetFile(JSON.stringify(v2File([6, 3, 2])));
+        expect(parsed.version).toBe(3);
+        expect(parsed.blocks.map(b => b.widthUnits)).toEqual([4, 2, 2]);
+    });
+
+    test('a v3 file is left alone (and migrating twice is a no-op)', () => {
+        const v3 = { ...v2File([4, 2, 1]), version: 3 };
+        const once = migrateWorksheetFile(v3);
+        expect(once).toBe(v3);
+        expect(migrateWorksheetFile(once).blocks.map(b => b.widthUnits)).toEqual([4, 2, 1]);
+    });
+
+    test('a width the old grid never had widens instead of overflowing', () => {
+        expect(migrateWorksheetFile(v2File([5])).blocks[0].widthUnits).toBe(4);
     });
 });
 

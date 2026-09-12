@@ -1,12 +1,12 @@
 import type { MathBlock } from '../services/math/types';
 
 // ── Page grid ────────────────────────────────────────────────────────────────
-// A page's content area is COL_UNITS wide (the LCM of ½ and ⅓, so a block can be a
-// whole, a half or a third) by ROW_BUDGET tall. Heights are BUDGETED from settings,
-// never measured from the DOM — that is what makes pagination deterministic and
-// testable instead of a reflow loop.
-export const COL_UNITS = 6;
-export type WidthUnits = 2 | 3 | 6;
+// A page's content area is COL_UNITS wide (4, so a block can be a whole, a half or a
+// quarter) by ROW_BUDGET tall. Heights are BUDGETED from settings, never measured from
+// the DOM — that is what makes pagination deterministic and testable instead of a
+// reflow loop.
+export const COL_UNITS = 4;
+export type WidthUnits = 1 | 2 | 4;
 
 // A4 at 96dpi is 1123px tall. Header, footer and the body cell's own padding come off
 // the top; ROW_UNIT_PX is the granularity the cost functions are calibrated in.
@@ -21,7 +21,9 @@ export const ROW_BUDGET = Math.floor(BODY_HEIGHT_PX / ROW_UNIT_PX) - 2;
 // counts and the per-row height derived from the difference (see ARCHITECTURE §15).
 // `perRowFull` is how many exercises the viewer fits per row at full width.
 // `minWidth` is the narrowest column width the type can render at. MEASURED: every type
-// rendered at 6, 3 and 2 units with its printable content compared against the cell.
+// rendered at full / half / quarter with its printable content compared against the cell.
+// The tiers were measured on the old 6-unit grid and mapped 6→4, 3→2, 2→2 — never
+// narrower, because overflow is the dangerous direction.
 // Measurement alone is not enough — viewers read an injected width, so they SHRINK
 // rather than overflow, and a number line at a third fits while being unreadable. The
 // tier is max(measured, editorial): measurement rules out the impossible, judgement
@@ -37,61 +39,61 @@ interface LayoutFacts {
 }
 
 const LAYOUT: Record<string, LayoutFacts> = {
-    "layout-sectie": { rowUnits: 1, perRowFull: 1, minWidth: 6 },
-    "layout-lege-pagina": { rowUnits: 1, perRowFull: 1, minWidth: 6 },
+    "layout-sectie": { rowUnits: 1, perRowFull: 1, minWidth: 4 },
+    "layout-lege-pagina": { rowUnits: 1, perRowFull: 1, minWidth: 4 },
     "layout-schrijflijnen": { rowUnits: 1, perRowFull: 1, minWidth: 2 },
     "layout-raster": { rowUnits: 1, perRowFull: 1, minWidth: 2 },
     "layout-kader": { rowUnits: 1, perRowFull: 1, minWidth: 2 },
-    "afronden": { rowUnits: 10.17, perRowFull: 2, minWidth: 3 },
-    "breuken": { rowUnits: 7, perRowFull: 2, minWidth: 6 },
-    "breuken-bewerken": { rowUnits: 2.43, perRowFull: 2, minWidth: 6 },
-    "breuken-rangschikken": { rowUnits: 3.63, perRowFull: 2, minWidth: 3 },
-    "controleren": { rowUnits: 4.5, perRowFull: 2, minWidth: 6 },
-    "deelbaarheid": { rowUnits: 2.67, perRowFull: 1, minWidth: 6 },
-    "deelbaarheid-kleuren": { rowUnits: 13.04, perRowFull: 1, minWidth: 6 },
-    "even-oneven": { rowUnits: 4.04, perRowFull: 2, minWidth: 6 },
+    "afronden": { rowUnits: 10.17, perRowFull: 2, minWidth: 2 },
+    "breuken": { rowUnits: 7, perRowFull: 2, minWidth: 4 },
+    "breuken-bewerken": { rowUnits: 2.43, perRowFull: 2, minWidth: 4 },
+    "breuken-rangschikken": { rowUnits: 3.63, perRowFull: 2, minWidth: 2 },
+    "controleren": { rowUnits: 4.5, perRowFull: 2, minWidth: 4 },
+    "deelbaarheid": { rowUnits: 2.67, perRowFull: 1, minWidth: 4 },
+    "deelbaarheid-kleuren": { rowUnits: 13.04, perRowFull: 1, minWidth: 4 },
+    "even-oneven": { rowUnits: 4.04, perRowFull: 2, minWidth: 4 },
     "geld-herkennen": { rowUnits: 6.67, perRowFull: 4, minWidth: 2 },
-    "geld-rekenen": { rowUnits: 1.42, perRowFull: 1, minWidth: 6 },
-    "geld-tekenen": { rowUnits: 5.67, perRowFull: 4, minWidth: 6 },
-    "geld-teruggeven": { rowUnits: 2.4, perRowFull: 2, minWidth: 6 },
-    "geld-wissel": { rowUnits: 5.42, perRowFull: 2, minWidth: 6 },
-    "getalfunctie": { rowUnits: 1.33, perRowFull: 1, minWidth: 6 },
-    "getallenas": { rowUnits: 4.67, perRowFull: 1, minWidth: 6 },
-    "getallenrijen": { rowUnits: 3.25, perRowFull: 1, minWidth: 6 },
-    "getalpatronen": { rowUnits: 1.75, perRowFull: 1, minWidth: 3 },
-    "herleidingen": { rowUnits: 1.5, perRowFull: 2, minWidth: 6 },
-    "hr-std-aftrekken": { rowUnits: 2, perRowFull: 1, minWidth: 3 },
+    "geld-rekenen": { rowUnits: 1.42, perRowFull: 1, minWidth: 4 },
+    "geld-tekenen": { rowUnits: 5.67, perRowFull: 4, minWidth: 4 },
+    "geld-teruggeven": { rowUnits: 2.4, perRowFull: 2, minWidth: 4 },
+    "geld-wissel": { rowUnits: 5.42, perRowFull: 2, minWidth: 4 },
+    "getalfunctie": { rowUnits: 1.33, perRowFull: 1, minWidth: 4 },
+    "getallenas": { rowUnits: 4.67, perRowFull: 1, minWidth: 4 },
+    "getallenrijen": { rowUnits: 3.25, perRowFull: 1, minWidth: 4 },
+    "getalpatronen": { rowUnits: 1.75, perRowFull: 1, minWidth: 2 },
+    "herleidingen": { rowUnits: 1.5, perRowFull: 2, minWidth: 4 },
+    "hr-std-aftrekken": { rowUnits: 2, perRowFull: 1, minWidth: 2 },
     "hr-std-delen": { rowUnits: 2, perRowFull: 1, minWidth: 2 },
-    "hr-std-optellen": { rowUnits: 2, perRowFull: 1, minWidth: 3 },
+    "hr-std-optellen": { rowUnits: 2, perRowFull: 1, minWidth: 2 },
     "hr-std-vermenigvuldigen": { rowUnits: 2, perRowFull: 1, minWidth: 2 },
-    "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 6 },
-    "kettingsommen": { rowUnits: 1.75, perRowFull: 1, minWidth: 3 },
+    "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 4 },
+    "kettingsommen": { rowUnits: 1.75, perRowFull: 1, minWidth: 2 },
     "klok-kloklezen": { rowUnits: 7.33, perRowFull: 2.7, minWidth: 2 },
-    "lengte-meten": { rowUnits: 5.5, perRowFull: 1, minWidth: 6 },
+    "lengte-meten": { rowUnits: 5.5, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 2 },
-    "mab-herkennen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6 },
-    "mab-tekenen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 6 },
-    "omtrek": { rowUnits: 21.78, perRowFull: 1, minWidth: 6 },
-    "oppervlakte": { rowUnits: 18.42, perRowFull: 1, minWidth: 6 },
-    "ordenen": { rowUnits: 3.63, perRowFull: 2, minWidth: 3 },
-    "plaatswaarde": { rowUnits: 3.58, perRowFull: 2, minWidth: 3 },
-    "procenten": { rowUnits: 1.38, perRowFull: 2, minWidth: 3 },
-    "rekenvolgorde": { rowUnits: 1.38, perRowFull: 2, minWidth: 6 },
-    "romeinse-cijfers": { rowUnits: 1.58, perRowFull: 2, minWidth: 3 },
-    "schattend": { rowUnits: 1.38, perRowFull: 1, minWidth: 6 },
-    "splitsen": { rowUnits: 6.63, perRowFull: 4, minWidth: 3 },
+    "mab-herkennen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 4 },
+    "mab-tekenen": { rowUnits: 6.46, perRowFull: 2.7, minWidth: 4 },
+    "omtrek": { rowUnits: 21.78, perRowFull: 1, minWidth: 4 },
+    "oppervlakte": { rowUnits: 18.42, perRowFull: 1, minWidth: 4 },
+    "ordenen": { rowUnits: 3.63, perRowFull: 2, minWidth: 2 },
+    "plaatswaarde": { rowUnits: 3.58, perRowFull: 2, minWidth: 2 },
+    "procenten": { rowUnits: 1.38, perRowFull: 2, minWidth: 2 },
+    "rekenvolgorde": { rowUnits: 1.38, perRowFull: 2, minWidth: 4 },
+    "romeinse-cijfers": { rowUnits: 1.58, perRowFull: 2, minWidth: 2 },
+    "schattend": { rowUnits: 1.38, perRowFull: 1, minWidth: 4 },
+    "splitsen": { rowUnits: 6.63, perRowFull: 4, minWidth: 2 },
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 2 },
-    "tijdsduur": { rowUnits: 1.42, perRowFull: 1, minWidth: 6 },
-    "verbanden": { rowUnits: 1.81, perRowFull: 2, minWidth: 6 },
-    "vergelijken": { rowUnits: 2.17, perRowFull: 2, minWidth: 6 },
-    "vormleer-figuren": { rowUnits: 2.4, perRowFull: 2, minWidth: 6 },
-    "vormleer-hoeken": { rowUnits: 8.06, perRowFull: 2, minWidth: 6 },
-    "vormleer-punt-lijn": { rowUnits: 8.06, perRowFull: 2, minWidth: 6 },
-    "weegschaal": { rowUnits: 9.21, perRowFull: 2, minWidth: 6 },
+    "tijdsduur": { rowUnits: 1.42, perRowFull: 1, minWidth: 4 },
+    "verbanden": { rowUnits: 1.81, perRowFull: 2, minWidth: 4 },
+    "vergelijken": { rowUnits: 2.17, perRowFull: 2, minWidth: 4 },
+    "vormleer-figuren": { rowUnits: 2.4, perRowFull: 2, minWidth: 4 },
+    "vormleer-hoeken": { rowUnits: 8.06, perRowFull: 2, minWidth: 4 },
+    "vormleer-punt-lijn": { rowUnits: 8.06, perRowFull: 2, minWidth: 4 },
+    "weegschaal": { rowUnits: 9.21, perRowFull: 2, minWidth: 4 },
 };
 
 // Types added without a measurement fall back to a middling row and half width.
-const FALLBACK: LayoutFacts = { rowUnits: 2.4, perRowFull: 2, minWidth: 3 };
+const FALLBACK: LayoutFacts = { rowUnits: 2.4, perRowFull: 2, minWidth: 2 };
 
 export function layoutFacts(typeId: string): LayoutFacts {
     return LAYOUT[typeId] ?? FALLBACK;
@@ -116,13 +118,13 @@ export function perRow(block: MathBlock, width: WidthUnits): number {
         full = (maxGetal >= 100000 || terms > 2 || block.layoutPreset === 'inline-long') ? 1 : 2;
     }
 
-    if (width >= 6) return Math.max(1, full);
-    if (width >= 3) return Math.max(1, Math.round(full / 2));
+    if (width >= COL_UNITS) return Math.max(1, full);
+    if (width >= COL_UNITS / 2) return Math.max(1, Math.round(full / 2));
     return 1;
 }
 
 // The narrowest width this block can render at WITH ITS CURRENT SETTINGS. It has to be a
-// function, not a constant: hoofdrekenen fits a third at "tot 100" but needs the full
+// function, not a constant: hoofdrekenen fits a quarter at "tot 100" but needs the full
 // width at a million, which is exactly what the operand-width fix taught us.
 export function minWidthUnits(block: MathBlock): WidthUnits {
     const facts = layoutFacts(block.typeId);
@@ -134,20 +136,20 @@ export function minWidthUnits(block: MathBlock): WidthUnits {
 
     // MAB is sized by its glyphs rather than by its share of the block: the hundreds plate
     // sets the column width and this type tops out at 1000, so four columns still fit a
-    // half. It stays out of a third, where the place columns stop reading as places.
-    if (block.typeId.startsWith('mab-')) return 3;
+    // half. It stays out of a quarter, where the place columns stop reading as places.
+    if (block.typeId.startsWith('mab-')) return 2;
 
-    if (base === 6) return 6;
+    if (base === 4) return 4;
 
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;
 
     // Wide numbers need wide columns whatever the type's baseline tier says.
-    if (maxGetal >= 100000) return 6;
-    if (maxGetal >= 10000 && base < 6) return Math.max(base, 3) as WidthUnits;
+    if (maxGetal >= 100000) return 4;
+    if (maxGetal >= 10000 && base < 4) return Math.max(base, 2) as WidthUnits;
 
     // Multi-term chains and the stepped layout both eat horizontal room.
     const termCount = typeof c.termCount === 'number' ? c.termCount : 2;
-    if (termCount > 2 || block.layoutPreset === 'inline-long') return Math.max(base, 3) as WidthUnits;
+    if (termCount > 2 || block.layoutPreset === 'inline-long') return Math.max(base, 2) as WidthUnits;
 
     return base;
 }

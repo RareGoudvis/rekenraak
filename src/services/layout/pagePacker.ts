@@ -68,8 +68,8 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
     };
 
     for (const block of blocks) {
-        const width = Math.max(block.widthUnits ?? 6, minWidthUnits(block)) as WidthUnits;
-        const promoted = (block.widthUnits ?? 6) < width;
+        const width = Math.max(block.widthUnits ?? COL_UNITS, minWidthUnits(block)) as WidthUnits;
+        const promoted = (block.widthUnits ?? COL_UNITS) < width;
         const height = estimateHeightUnits(block, width);
         const spans = height > rowBudget;
         const capped = Math.min(height, rowBudget);

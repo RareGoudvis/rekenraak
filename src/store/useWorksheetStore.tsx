@@ -359,20 +359,29 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     setDraftBlocks: (blocks) => set({ draftBlocks: blocks }),
     clearDraftBlocks: () => set({ draftBlocks: [] }),
     toggleBlockLock: (id) => set((state) => ({ blocks: state.blocks.map(b => b.id === id ? { ...b, locked: !b.locked } : b) })),
-    loadWorksheet: (file) => set(() => ({
-        blocks: file.blocks,
-        header: file.header,
-        footer: file.footer,
-        docSettings: file.docSettings,
-        baseSettings: file.baseSettings ? { ...DEFAULT_BASE, ...file.baseSettings } : { ...DEFAULT_BASE },
-        curriculum: file.curriculum ?? null,
-        // Set the grade value directly — base is already restored above, so we must
-        // NOT re-run setSelectedGrade's preset seeding here.
-        selectedGrade: file.selectedGrade ?? null,
-        activeBlockId: null,
-        _history: [file.blocks],
-        _historyIndex: 0,
-    })),
+    loadWorksheet: (file) => set(() => {
+        // Some callers (library cards, templates) hand over a payload that never passed the
+        // versioned migration, so widths from the old 6-unit grid can still arrive here.
+        const blocks = file.blocks.map(b => {
+            const w = b.widthUnits as number | undefined;
+            if (w === undefined || w === 1 || w === 2 || w === 4) return b;
+            return { ...b, widthUnits: (w === 3 ? 2 : 4) as 1 | 2 | 4 };
+        });
+        return {
+            blocks,
+            header: file.header,
+            footer: file.footer,
+            docSettings: file.docSettings,
+            baseSettings: file.baseSettings ? { ...DEFAULT_BASE, ...file.baseSettings } : { ...DEFAULT_BASE },
+            curriculum: file.curriculum ?? null,
+            // Set the grade value directly — base is already restored above, so we must
+            // NOT re-run setSelectedGrade's preset seeding here.
+            selectedGrade: file.selectedGrade ?? null,
+            activeBlockId: null,
+            _history: [blocks],
+            _historyIndex: 0,
+        };
+    }),
     generateAllBlocks: () => {
         // Loop over the current snapshot. Each setExercises call inside
         // regenerateBlock schedules a set() that pushes history individually, so

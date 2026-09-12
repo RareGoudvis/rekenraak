@@ -5,7 +5,7 @@ import { makeBlock } from './helpers/makeBlock';
 
 // The packer is pure — blocks in, pages out, no DOM. These tests pin the placement rules
 // rather than the numbers: they are written against COL_UNITS / ROW_BUDGET so they keep
-// meaning when the grid changes width (6 → 4 columns is planned).
+// meaning when the grid changes width.
 
 const HALF = (COL_UNITS / 2) as WidthUnits;
 
