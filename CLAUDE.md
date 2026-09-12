@@ -12,6 +12,7 @@ This file is the **short rules file**. Everything deep lives in `.claude/docs/`.
 | [.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) | Session log, newest first |
 | [.claude/docs/REVIEW-CHECKLIST.md](.claude/docs/REVIEW-CHECKLIST.md) | Per-leaf owner review checklist |
 | [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | How to run the vitest suites (generator matrix, answers, packer, viewer smoke) |
+| [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Bugs found but not yet fixed — **append here instead of fixing silently**; clear the line when fixed |
 
 ---
 
