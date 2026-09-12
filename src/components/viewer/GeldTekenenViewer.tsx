@@ -3,6 +3,7 @@ import { formatAmount } from '../../services/geld/geldGenerator';
 import { VoorbeeldenBar } from './GeldViewer';
 import FragmentableGrid from './FragmentableGrid';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ function TekenenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: Ma
             </div>
             {drawingBox}
             {showSolutions && (
-                <div style={{ fontSize: '11px', color: '#e11d48', fontFamily: "'Azeret Mono', monospace", textAlign: 'center' }}>
+                <div style={{ ...solutionText, fontSize: '11px', fontFamily: "'Azeret Mono', monospace", textAlign: 'center' }}>
                     {amountText}
                 </div>
             )}

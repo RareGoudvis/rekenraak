@@ -3,9 +3,9 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
 import { useBlockWidth } from './BlockWidthContext';
 import { opGlyph } from '../../services/math/formatters';
+import { SOL, solutionText } from './solutionStyle';
 
 const GRID_COLOR = '#aaaaaa';
-const SOL_COLOR = '#e11d48';
 const PLACE_ABBREVS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M'];
 const DEC_ABBREVS = ['t', 'h', 'd'];
 
@@ -250,7 +250,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
             {/* Level 1 + solutions: answer */}
             {scaffolding <= 1 && showSolutions &&
                 getDigitCols(ex.answer, dp, maxInt)
-                    .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL_COLOR} />)
+                    .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL} />)
             }
             {scaffolding <= 1 && showSolutions && dp > 0 && (
                 <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
@@ -260,7 +260,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
             {scaffolding <= 1 && showSolutions && ex.operator === '+' &&
                 computeAddCarries(ex.operands, dp, maxInt)
                     .filter(c => c.col >= 0 && c.col < maxInt + decCols)
-                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL_COLOR} small />)
+                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
             }
         </div>
     );
@@ -357,14 +357,14 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
             {scaffolding <= 1 && showSolutions && partialProducts.map((pp, ppIdx) => {
                 const row = ppStartRow + (n - 1 - ppIdx);
                 return ppDigitCols(pp, maxInt).map((d, i) => (
-                    <DC key={`pp${ppIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} color={SOL_COLOR} />
+                    <DC key={`pp${ppIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} color={SOL} />
                 ));
             })}
 
             {/* Level 1 + solutions: answer */}
             {scaffolding <= 1 && showSolutions &&
                 getDigitCols(ex.answer, dp, maxInt)
-                    .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL_COLOR} />)
+                    .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL} />)
             }
             {scaffolding <= 1 && showSolutions && dp > 0 && (
                 <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
@@ -442,7 +442,7 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
             {/* Quotient digits (right section, row 1 — below horizontal line) */}
             {scaffolding <= 1 && showSolutions && (
                 getDigitCols(quotient, dp, quotientIntCols)
-                    .map((d, i) => <DC key={`qt${i}`} col={leftCols + d.col} row={1} char={d.char} CELL={CELL} color={SOL_COLOR} />)
+                    .map((d, i) => <DC key={`qt${i}`} col={leftCols + d.col} row={1} char={d.char} CELL={CELL} color={SOL} />)
             )}
             {scaffolding <= 1 && showSolutions && dp > 0 && (
                 <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} />
@@ -529,7 +529,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: '11px' }}>
                     <span>≈</span>
                     {showSolutions
-                        ? <span style={{ color: '#e11d48', marginLeft: '4px' }}>{computeEstimation(ex)}</span>
+                        ? <span style={{ ...solutionText, marginLeft: '4px' }}>{computeEstimation(ex)}</span>
                         : <div style={{ flex: 1, borderBottom: '1px solid #aaa', height: '13px', marginLeft: '2px' }} />
                     }
                 </div>
@@ -545,7 +545,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: '11px' }}>
                     <span style={{ flexShrink: 0 }}>controle:</span>
                     {showSolutions
-                        ? <span style={{ color: '#e11d48', marginLeft: '4px' }}>
+                        ? <span style={{ ...solutionText, marginLeft: '4px' }}>
                             {/* Inverse check over ALL terms: a+b+c=S → S−b−c=a; a−b−c=R → R+b+c=a */}
                             {(() => {
                                 const invOp = ex.operator === '+' ? '−' : '+';

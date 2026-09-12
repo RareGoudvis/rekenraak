@@ -4,6 +4,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
+import { SOL } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -121,7 +122,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                             <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '10px', whiteSpace: 'nowrap' }}>
                                 {i > 0 && <span style={{ fontWeight: 'normal' }}>{ex.operator}</span>}
                                 {showSolutions
-                                    ? renderVal(v, '#e11d48')
+                                    ? renderVal(v, SOL)
                                     : <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '18px', display: 'inline-block' }} />}
                             </span>
                         ))}

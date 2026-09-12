@@ -2,6 +2,7 @@ import type { ClockExercise, MathBlock } from '../../services/math/types';
 import type { ClockType, ExerciseMode, HandChoice } from '../../services/clock/clockTypes';
 import AnalogClockSVG from './AnalogClockSVG';
 import type { ClockConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     ex: ClockExercise;
@@ -33,10 +34,10 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     );
 
     const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: '18px' }} />;
-    const sol = (text: string) => <span style={{ color: '#e11d48', fontWeight: 'normal', fontSize: '12px' }}>{text}</span>;
+    const sol = (text: string) => <span style={{ ...solutionText, fontSize: '12px' }}>{text}</span>;
     // Empty digital display for the pupil to fill in (matches the omzetten __:__ box).
     const emptyDigitalBox = (
-        <div style={{ border: '2px solid #000', width: '65px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: '16px', letterSpacing: '2px', color: showSolutions ? '#e11d48' : '#aaa' }}>
+        <div style={{ border: '2px solid #000', width: '65px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: '16px', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
             {showSolutions ? ex.digitalText : '__:__'}
         </div>
     );

@@ -3,6 +3,7 @@ import { DENOMINATION_CATALOGUE, formatAmount, denominationLabel } from '../../s
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 // ── SVG helpers (print-friendly: white fill, black outline, no colour) ────────
 
@@ -93,7 +94,7 @@ function HerkennenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: 
     const geldLayout: string = c.geldLayout ?? 'samen';
 
     const answerArea = showSolutions ? (
-        <div style={{ color: '#e11d48', fontSize: '16px', fontFamily: "'Azeret Mono', monospace", marginTop: '6px' }}>
+        <div style={{ ...solutionText, fontSize: '16px', fontFamily: "'Azeret Mono', monospace", marginTop: '6px' }}>
             {formatAmount(ex.amountCents, format)}
         </div>
     ) : scaffolding === 'invullen' ? (

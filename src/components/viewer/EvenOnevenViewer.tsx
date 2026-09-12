@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { EvenOnevenConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -60,7 +61,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
                             <div style={{ fontFamily: mono, fontSize: '14px', display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
                                 <span>{n} is</span>
                                 {showSolutions
-                                    ? <span style={{ color: '#e11d48' }}>{n % 2 === 0 ? 'even' : 'oneven'}</span>
+                                    ? <span style={solutionText}>{n % 2 === 0 ? 'even' : 'oneven'}</span>
                                     : <span style={{ borderBottom: '1.5px solid #000', minWidth: '70px', height: '16px', display: 'inline-block' }} />}
                             </div>
                         </div>
@@ -101,7 +102,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
 
 function Circle({ size, ghost, solved, highlight }: { size: number; ghost: boolean; solved: boolean; highlight: boolean }) {
     if (ghost) return <span style={{ width: size, height: size, display: 'inline-block' }} />;
-    const fill = highlight ? '#e11d48' : (solved ? FILL : 'white');
+    const fill = highlight ? SOL : (solved ? FILL : 'white');
     return (
         <svg width={size} height={size}>
             <circle cx={size / 2} cy={size / 2} r={size / 2 - 1.5} fill={fill} stroke="#000" strokeWidth={1.5} />

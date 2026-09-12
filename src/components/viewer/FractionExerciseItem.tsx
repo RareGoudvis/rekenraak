@@ -2,6 +2,7 @@ import type { FractionExercise, MathBlock } from '../../services/math/types';
 import FractionShapeSVG from './FractionShapeSVG';
 import VerticalFraction from './VerticalFraction';
 import type { FractionConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     ex: FractionExercise;
@@ -32,7 +33,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
     const subType = ex.subType;
     const c = block.constraints as FractionConstraints;
     const answerFormat: string = c.answerFormat || 'fraction-questions';
-    const sol = (text: string) => <span style={{ color: '#e11d48', fontWeight: 'normal', fontSize: '14px' }}>{text}</span>;
+    const sol = (text: string) => <span style={{ ...solutionText, fontSize: '14px' }}>{text}</span>;
     const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />;
 
     const vertFrac = (n: number, d: number, color?: string) => (
@@ -111,7 +112,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                     <div>
                         Er zijn {showSolutions ? sol(String(ex.numerator)) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '24px' }}>&nbsp;</span>} van de{' '}
                         {ex.denominator} gelijke delen gekleurd. Dat is{' '}
-                        {showSolutions ? vertFrac(ex.numerator, ex.denominator, '#e11d48')
+                        {showSolutions ? vertFrac(ex.numerator, ex.denominator, SOL)
                             : <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: '13px', verticalAlign: 'middle' }}>
                                 <div style={{ borderBottom: '1.5px solid #000', minWidth: '24px', height: '16px' }} />
                                 <div style={{ minWidth: '24px', height: '16px' }} />
@@ -123,8 +124,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         } else if (answerFormat === 'blank-fraction') {
             answerArea = (
                 <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', marginTop: '8px', fontSize: '20px', fontFamily: 'Azeret Mono, monospace', fontWeight: 'normal' }}>
-                    <div style={{ borderBottom: '2px solid #000', minWidth: '32px', textAlign: 'center', paddingBottom: '2px', color: showSolutions ? '#e11d48' : 'transparent' }}>{ex.numerator}</div>
-                    <div style={{ minWidth: '32px', textAlign: 'center', paddingTop: '2px', color: showSolutions ? '#e11d48' : 'transparent' }}>{ex.denominator}</div>
+                    <div style={{ borderBottom: '2px solid #000', minWidth: '32px', textAlign: 'center', paddingBottom: '2px', color: showSolutions ? SOL : 'transparent' }}>{ex.numerator}</div>
+                    <div style={{ minWidth: '32px', textAlign: 'center', paddingTop: '2px', color: showSolutions ? SOL : 'transparent' }}>{ex.denominator}</div>
                 </div>
             );
         } else {
@@ -237,7 +238,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
                         {qRow('Hoeveel gelijke delen neem ik?', blank())}
                         {qRow('Hoeveel is dat samen?', <>{blank(24)}<span>×</span>{blank(28)}<span>=</span>{blank(28)}</>)}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
-                            {showSolutions ? vertFrac(ex.numerator, ex.denominator, '#e11d48') : vertFrac(ex.numerator, ex.denominator)}
+                            {showSolutions ? vertFrac(ex.numerator, ex.denominator, SOL) : vertFrac(ex.numerator, ex.denominator)}
                             <span> van </span>{blank(28)}<span> is </span>{blank(28)}
                         </div>
                     </div>

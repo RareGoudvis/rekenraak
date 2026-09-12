@@ -3,6 +3,7 @@ import { MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { MabConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -180,7 +181,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
                                 count={showGlyphs ? digits[col.place] : 0}
                                 place={col.place}
                                 style={style}
-                                color={mode === 'tekenen' && showSolutions ? '#e11d48' : '#000'}
+                                color={mode === 'tekenen' && showSolutions ? SOL : '#000'}
                             />
                         </div>
                     ))}
@@ -198,7 +199,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
                 boxSizing: 'border-box',
             }}>
                 {showNumberOnLine
-                    ? <span style={{ color: showSolutions && mode === 'herkennen' ? '#e11d48' : '#000', fontSize: '16px' }}>{fmt(ex.value)}</span>
+                    ? <span style={{ ...(showSolutions && mode === 'herkennen' ? solutionText : { color: '#000' }), fontSize: '16px' }}>{fmt(ex.value)}</span>
                     : <div style={{ width: '70%', borderBottom: '1.5px solid #000' }} />
                 }
             </div>

@@ -3,6 +3,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols } from './BlockWidthContext';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 // Thousands-spaces + comma decimals (nl-BE).
 const fmt = (n: number): string => formatMathNumber(n);
@@ -134,7 +135,6 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
 
 // ── Place-value: blank vs solution helpers ────────────────────────────────────
 
-const SOL: React.CSSProperties = { color: '#e11d48', fontWeight: 'normal' };
 const blankLine = (w = 44) => <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${w}px`, height: '18px' }} />;
 
 // ── Place-value: splitsbenen (legs) ───────────────────────────────────────────
@@ -150,7 +150,7 @@ function PositieBenenItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
             {/* top number */}
             <div style={{ height: '26px', display: 'flex', alignItems: 'center' }}>
                 {topBlank
-                    ? (showSolutions ? <span style={SOL}>{fmt(ex.total)}</span> : blankLine(60))
+                    ? (showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60))
                     : <span style={{ fontWeight: 'normal' }}>{fmt(ex.total)}</span>}
             </div>
             {/* legs */}
@@ -166,7 +166,7 @@ function PositieBenenItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
                         <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
                             {topBlank
                                 ? <span style={{ fontWeight: 'normal' }}>{shown}</span>
-                                : (showSolutions ? <span style={SOL}>{shown}</span> : blankLine(asValue ? 40 : 24))}
+                                : (showSolutions ? <span style={solutionText}>{shown}</span> : blankLine(asValue ? 40 : 24))}
                             {!asValue && <span style={{ fontWeight: 'normal' }}>{p.key}</span>}
                         </div>
                     );
@@ -193,7 +193,7 @@ function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
                     {cols.map(p => <div key={p.key} style={{ ...cell, backgroundColor: '#f4cbb8', fontWeight: 'bold' }}>{p.key}</div>)}
                 </div>
                 <div style={{ display: 'flex' }}>
-                    {cols.map(p => <div key={p.key} style={{ ...cell, color: '#e11d48', fontWeight: 'normal' }}>{showSolutions ? p.digit : ''}</div>)}
+                    {cols.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}>{showSolutions ? p.digit : ''}</div>)}
                 </div>
             </div>
         </div>
@@ -211,10 +211,10 @@ function PositieMathRow({ ex, showSolutions }: { ex: SplitsenExercise; showSolut
         <span>{letters ? `${p.digit}${p.key}` : placeValueStr(p.digit, p.weight)}</span>;
     const termBlank = (p: { key: string }) =>
         showSolutions
-            ? <span style={SOL}>{letters ? `${(places.find(x => x.key === p.key)?.digit)}${p.key}` : placeValueStr(places.find(x => x.key === p.key)?.digit ?? 0, places.find(x => x.key === p.key)?.weight ?? 1)}</span>
+            ? <span style={solutionText}>{letters ? `${(places.find(x => x.key === p.key)?.digit)}${p.key}` : placeValueStr(places.find(x => x.key === p.key)?.digit ?? 0, places.find(x => x.key === p.key)?.weight ?? 1)}</span>
             : <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '1px' }}>{blankLine(letters ? 24 : 40)}{letters && <span>{p.key}</span>}</span>;
 
-    const result = () => showSolutions ? <span style={SOL}>{fmt(ex.total)}</span> : blankLine(60);
+    const result = () => showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60);
 
     return (
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', fontFamily: "'Azeret Mono', monospace", fontSize: '18px' }}>
@@ -258,7 +258,7 @@ function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; show
             {ex.pairs.map((pair, i) => (
                 <div key={i} style={{ display: 'flex', borderTop: i > 0 ? '1px solid #000' : undefined, width: '100%' }}>
                     <div style={{ ...cellBase, flex: 1, borderRight: '1px solid #000' }}>{fmt(pair.given)}</div>
-                    <div style={{ ...cellBase, flex: 1, color: showSolutions ? '#e11d48' : 'transparent', fontWeight: 'normal' }}>
+                    <div style={{ ...cellBase, flex: 1, ...(showSolutions ? solutionText : { color: 'transparent' }) }}>
                         {fmt(pair.answer)}
                     </div>
                 </div>
@@ -280,7 +280,7 @@ function SplitsboomItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolut
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Azeret Mono', monospace", fontSize: '18px', boxSizing: 'border-box', padding: '0 6px',
         }}>
-            {isBlank ? (showSolutions ? <span style={SOL}>{fmt(value)}</span> : '') : fmt(value)}
+            {isBlank ? (showSolutions ? <span style={solutionText}>{fmt(value)}</span> : '') : fmt(value)}
         </div>
     );
 
@@ -316,7 +316,7 @@ function MathematicRow({ total, given, answer, showSolutions }: {
             <span style={{ width: '26px', textAlign: 'center', flexShrink: 0 }}>+</span>
             <div style={{ width: '64px', display: 'flex', alignItems: 'flex-end' }}>
                 {showSolutions
-                    ? <span style={{ color: '#e11d48', fontWeight: 'normal' }}>{fmt(answer)}</span>
+                    ? <span style={solutionText}>{fmt(answer)}</span>
                     : <div style={{ borderBottom: '1.5px solid #000', width: '52px', height: '18px' }} />
                 }
             </div>
@@ -373,7 +373,7 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
                         display: 'flex', justifyContent: 'center',
                         pointerEvents: 'none',
                     }}>
-                        <span style={{ fontSize: '16px', fontWeight: 'normal', fontFamily: "'Azeret Mono', monospace", color: '#e11d48' }}>{fmt(answer)}</span>
+                        <span style={{ fontSize: '16px', fontFamily: "'Azeret Mono', monospace", ...solutionText }}>{fmt(answer)}</span>
                     </div>
                 )}
             </div>

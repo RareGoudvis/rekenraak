@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { useBlockWidth } from './BlockWidthContext';
+import { SOL } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -59,7 +60,7 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
                 return (
                     <div key={i} style={{ position: 'absolute', left: tickX(i), top: axisY + 12, transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                         {blank
-                            ? (showSolutions ? label(v, fontSize, '#e11d48') : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: '16px' }} />)
+                            ? (showSolutions ? label(v, fontSize, SOL) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: '16px' }} />)
                             : label(v, fontSize)}
                     </div>
                 );
