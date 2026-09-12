@@ -60,6 +60,16 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   PowerShell passes. Survives `npm ci`, so it is shell-related, not an install problem. Run the
   gate from PowerShell until it is diagnosed (2026-09-12).
 
+- **Indivisible blocks leave big blank tails** — measure-then-pack (789b3a8) removed the
+  estimate error, but a block that does not fit the remaining page still moves whole to the next
+  page (layout-check run 2026-09-12: page 3 = one ½ block + 466px blank because the next block
+  was 628px). Enhancement: let multi-row viewers (FragmentableGrid users) split across pages —
+  packer emits `{ block, rowFrom, rowTo }` per page, viewers accept an item window; per-row
+  heights are measurable from `.print-row` children. Big change (≈40 viewers); design first.
+- **Ordenen at ½ width wraps its comma list mid-list** — `OrdenenViewer`: "560,16 , 56,7 / , 12,22"
+  reads as separate numbers. Needs `white-space: nowrap` per number + wrap only between numbers,
+  or a stacked layout below a width threshold (2026-09-12).
+
 ## Docs
 
 - Historical links in `UpdateState.md` to `StyleBuilderModal.tsx` ×2, `BaseSettingsPanel.tsx`,
