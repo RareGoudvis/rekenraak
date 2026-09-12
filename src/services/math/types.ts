@@ -1,3 +1,5 @@
+import type { BlockConstraints } from './constraintTypes';
+
 export type ConstraintType = 'FREE' | 'REQUIRED' | 'FORBIDDEN';
 
 export const isFraction = (val: unknown): val is Fraction =>
@@ -357,7 +359,7 @@ export interface VormleerExercise {
     isManuallyEdited: boolean;
 }
 
-export interface MathBlock {
+export interface MathBlock<C extends BlockConstraints = BlockConstraints> {
     id: string;
     typeId: string;
     locked?: boolean;
@@ -372,10 +374,11 @@ export interface MathBlock {
     steppedLines: number;
     numberOfExercises: number;
     totalPoints: number;
-    // Intentionally `any`: a loose per-type bag read differently by each generator
-    // (see ARCHITECTURE.md §6). Typing it would cascade casts across every plugin.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constraints: any;
+    // A loose per-type bag: every family reads it through its own type from
+    // constraintTypes.ts (see ARCHITECTURE.md §6). `C` lets a caller that knows the
+    // family say so; the default keeps unknown-family code honest — reads are `unknown`
+    // until something casts, which is what stops a typo from passing silently.
+    constraints: C;
     exercises: Equation[];
     clockExercises?: ClockExercise[];
     fractionExercises?: FractionExercise[];

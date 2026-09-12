@@ -52,6 +52,23 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   colour; the rest hardcode `color: red`-style inline. Wants one `--ink-solution` token + shared
   style (2026-09-10).
 
+## Constraints
+
+- **`BlockConstraints` still has an `any` index signature** — `src/services/math/constraintTypes.ts`.
+  Tightening it to `Record<string, unknown>` is what would make an unnamed key a compile error,
+  but `Inspector.tsx` reads ~33 keys off `const c = activeBlock?.constraints ?? {}` (lines 638-641,
+  673, 918, 944, 963-967, 1044-1045, 1148-1165, 1225-1269) with no family in scope. Fix direction:
+  give the Inspector per-section casts (it already knows the typeId in each branch), then flip the
+  index to `unknown` (2026-09-12).
+- **Plugins that destructure never moved to `useConstraints`** — about 25 of the ~45 config
+  plugins read `const { a = 1, b } = block.constraints as XConstraints` and keep a hand-rolled
+  `set`. They are typed, but the hook (`src/components/configurator/useConstraints.ts`) is only
+  used by the ~15 that kept a `c`. Harmless duplication; convert opportunistically (2026-09-12).
+- **`opSettings` entries are shaped differently per family** — `getalpatronen` writes
+  `{ max, mask }`, `kettingsommen` writes `{ max }` only, so the shared type marks both optional
+  and `patroonGenerator` casts back to its strict local `OpSetting`. Decide one shape
+  (2026-09-12).
+
 ## Tooling
 
 - **`npm test` cannot run from Git Bash** — vitest 5.0.0 fails to initialise its worker

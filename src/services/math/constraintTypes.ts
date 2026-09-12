@@ -26,14 +26,21 @@ export type BridgeMap = Record<string, ConstraintType>;
 export type CrossCutting = {
     /** Per-block override of docSettings.bodyFontScale (exercise-body zoom). */
     bodyFontScale?: number;
-    /** Amount of printed help; a number of lines for cijferen, a named level elsewhere. */
-    scaffolding?: string | number;
+    // `scaffolding` is deliberately NOT here: it is a line count for cijferen and a named
+    // level everywhere else, so a shared declaration would only narrow it wrongly.
     /** Selects the view within a family (set by the sidebar leaf). */
     subType?: string;
 };
 
-/** What `MathBlock.constraints` is when the block's family is not known statically. */
-export type BlockConstraints = Record<string, unknown> & CrossCutting;
+/**
+ * What `MathBlock.constraints` is when the block's family is not known statically.
+ * The index signature is `any` rather than `unknown` because three writers have to serve
+ * every family at once (Inspector's updateConstraint, baseApply, the store's merge) and
+ * read keys they cannot name. It is the fallback, never the description: code that knows
+ * its family casts to the exact type above, and that cast is where typos are caught.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type BlockConstraints = Record<string, any> & CrossCutting;
 
 // ── Hoofdrekenen (mental math) ───────────────────────────────────────────────
 
@@ -139,7 +146,6 @@ export type FractionConstraints = {
     maxLineLength: number;
     level: number;
     answerMode: string;
-    maxDimension?: number;
     maxWidth?: number;
     maxHeight?: number;
     maxAbstractN3: number;
@@ -513,6 +519,7 @@ export type VormleerConstraints = {
     raster: boolean;
     boxHeight: number;
     exercisesPerRow: number;
+    // Pre-split value: one flag for both mark kinds; still read as the fallback.
     showMarks?: boolean;
 };
 
