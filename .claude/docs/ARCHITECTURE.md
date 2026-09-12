@@ -569,6 +569,22 @@ moved block. The Overzicht outline ([OverzichtPanel](../../src/components/layout
 uses the same pointer approach with a 5px threshold and `[data-ov-index]` rows. Playwright
 drives all of it with plain `mouse.move/down/up` (see TESTING.md).
 
+**The width clamp is measured too.** PageSheet probes each cell's `min-content` width
+(ScaledBlock's inner carries `data-scaled-inner` / `data-scale`; the inner is `width: 100%`,
+so a plain `scrollWidth` only echoes the cell — the probe swaps the inline width to
+`min-content`, reads, restores, all inside the layout effect so nothing paints) and reports it
+through `onCellMeasure(blockId, width, heightPx, intrinsicWidthPx)`; `useMeasuredHeights`
+keeps it per `blockId:width` and `intrinsicOf()` returns the narrowest seen. `packPages` takes
+the clamp as an injected `minWidthOf` closure so it stays pure; App fills it with
+`minWidthUnits(block, measured)`. Reflow rule: a block that fits where it is and lays out
+more than 1-up may go **one** tier narrower than it was measured at; the next tier only opens
+after a real measurement there, and a clamp-back writes a new key, so it cannot oscillate.
+Editorial vetoes (`VETO_MIN` in blockLayout.ts) override a measurement — a number line fits a
+quarter and is unreadable there. Without a measurement (first paint, tests) the per-type
+table runs as `fallbackMinWidth`. The Inspector width picker subscribes to the intrinsic map
+(`useIntrinsicWidth`) and states the reason in px: "Te smal: de inhoud is 397px breed, deze
+kolom biedt 151px."
+
 **Block controls rail.** The per-block buttons (`BlockControlsRail`) are portalled to `<body>`
 like InfoTip and the split popover, `position: fixed` from the block's rect (re-placed on
 scroll of `.print-scroll`, window resize and a ResizeObserver on the block). Inside
