@@ -709,7 +709,7 @@ All localStorage; nothing leaves the browser except share links the user copies.
   current sheet is empty.
 - **Presets** — named library `rekenraak_presets_v1`, `MAX_PRESETS = 20`. CRUD via
   `loadPresets` / `savePreset` / `deletePreset` / `renamePreset`. Managed in
-  [PresetModal.tsx](../../src/components/layout/PresetModal.tsx).
+  `PresetModal.tsx` (removed; replaced by [library/](../../src/components/library/)).
 - **Share link** — `encodeShareLink` → JSON → **lz-string**
   `compressToEncodedURIComponent` → `#share=…` in the URL hash (never sent to a
   server). `MAX_SHARE_BYTES = 30000` (worksheet JSON compresses ~8×, so this covers
