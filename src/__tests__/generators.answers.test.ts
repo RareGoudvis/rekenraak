@@ -3,7 +3,7 @@ import type { RekenvolgordeExercise, Equation, Fraction, CijferExercise, Splitse
 import { ladderFor } from '../services/herleidingen/herleidingenGenerator';
 import { daysInMonth } from '../services/kalender/kalenderGenerator';
 import { negenrest } from '../services/controleren/controlerenGenerator';
-import { fractionToDecimal, fractionToPercent } from '../services/verbanden/verbandenGenerator';
+import { fractionToDecimal, fractionToPercent, generateVerbandExercisesNoted } from '../services/verbanden/verbandenGenerator';
 import { makeBlock, generateFor } from './helpers/makeBlock';
 
 // Correctness, not smoke: does the answer the sheet prints actually follow from the
@@ -308,6 +308,23 @@ describe('verbanden', () => {
             // Proper benchmark fractions only — 5/4 has no place in this exercise.
             expect(ex.fraction.n).toBeLessThan(ex.fraction.d);
         }
+    });
+
+    // Denominators [2] hold a single proper fraction, so the pool has to widen to fill a sheet.
+    test('a pool too small for the count widens along the benchmark denominators', () => {
+        const block = makeBlock('verbanden', { constraints: { subType: 'paren', reps: ['breuk', 'procent'], denominators: [2], given: 'procent' } });
+        const { items, note } = generateVerbandExercisesNoted(block);
+        expect(items.length).toBe(block.numberOfExercises);
+        expect(note).toMatch(/^Noemers uitgebreid naar 2, /);
+        expect(new Set(items.map(ex => ex.fraction.d)).size).toBeGreaterThan(1);
+    });
+
+    test('a pool that already suffices is left alone', () => {
+        const block = makeBlock('verbanden', { constraints: { denominators: [2, 4, 5, 10, 100] } });
+        const { items, note } = generateVerbandExercisesNoted(block);
+        expect(items.length).toBe(block.numberOfExercises);
+        expect(note).toBeNull();
+        for (const ex of items) expect([2, 4, 5, 10, 100]).toContain(ex.fraction.d);
     });
 
     test('paren asks for a representation other than the one it prints', () => {

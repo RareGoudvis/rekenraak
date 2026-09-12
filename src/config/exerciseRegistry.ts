@@ -37,7 +37,7 @@ import { generateAfrondenExercises } from '../services/afronden/afrondenGenerato
 import { generateRomeinseExercises } from '../services/romeinse/romeinseGenerator';
 import { generateHerleidingExercises } from '../services/herleidingen/herleidingenGenerator';
 import { generateSchattendExercises } from '../services/schattend/schattendGenerator';
-import { generateVerbandExercises } from '../services/verbanden/verbandenGenerator';
+import { generateVerbandExercises, generateVerbandExercisesNoted } from '../services/verbanden/verbandenGenerator';
 import { generateProcentExercises } from '../services/procenten/procentenGenerator';
 import { generateMaateenheidExercises } from '../services/maateenheid/maateenheidGenerator';
 import { generateGeldRekenenExercises } from '../services/geld/geldRekenenGenerator';
@@ -404,7 +404,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'schattend': row<SchattendConstraints>({ exerciseField: 'schattendExercises', generate: generateSchattendExercises, defaultConstraints: schattendDefaults, defaultCount: 8 }),
 
     // Procenten + verbanden breuk·decimaal·procent.
-    'verbanden': row<VerbandenConstraints>({ exerciseField: 'verbandExercises', generate: generateVerbandExercises, defaultConstraints: verbandenDefaults, defaultCount: 8 }),
+    'verbanden': row<VerbandenConstraints>({ exerciseField: 'verbandExercises', generate: generateVerbandExercises, generateNoted: generateVerbandExercisesNoted, defaultConstraints: verbandenDefaults, defaultCount: 8 }),
     'procenten': row<ProcentenConstraints>({ exerciseField: 'procentExercises', generate: generateProcentExercises, defaultConstraints: procentenDefaults, defaultCount: 8 }),
 
     'maateenheid':  row<MaateenheidConstraints>({ exerciseField: 'maateenheidExercises', generate: generateMaateenheidExercises, defaultConstraints: maateenheidDefaults, defaultCount: 8 }),

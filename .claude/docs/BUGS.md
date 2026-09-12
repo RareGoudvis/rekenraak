@@ -8,9 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
-- **verbanden `paren` with denominators [2] + reps [breuk, procent] gives 1/8** — only ½ exists.
-  Generator should either widen denominators automatically or the plugin should require ≥ 3
-  denominators for count > 2 (2026-09-12).
 - **`addBlockFromType` swallows generator exceptions** — `src/store/useWorksheetStore.tsx`
   try/catch → silently empty block. Should surface a toast/inline "kon geen oefeningen maken"
   (2026-09-12, surfaced by the MAB crash).
