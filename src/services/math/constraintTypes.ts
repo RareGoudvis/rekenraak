@@ -99,6 +99,52 @@ export type MulDivConstraints = AddSubConstraints & {
     simplifyMaxDenominator?: number;
 };
 
+// 'Gemengd' = one block that mixes + - x : in a single list. The block keeps ONE shared
+// settings bag (the +/- shape above); a per-variant tab stores only what it overrides, so
+// raising maxGetal once raises it for every variant.
+//
+// A VARIANT is an operator plus an optional hoofdrekenen preset, so "optellen" and
+// "optellen met compenseren" can sit in the same block — the preset is a generator
+// flavour of the operator, not a different operator.
+export type MixedOp = '+' | '-' | 'x' | ':';
+
+export type MixedVariantId = '+' | '+:compenseren' | '-' | '-:compenseren' | 'x' | 'x:tienvoud' | ':' | ':tienvoud';
+
+export interface MixedVariant {
+    id: MixedVariantId;
+    op: MixedOp;
+    preset?: 'compenseren' | 'tienvoud';
+    /** Dutch label, used verbatim in the config's variant chips and tab strip. */
+    label: string;
+}
+
+// SYNC: the id set here IS `MixedVariantId`; the config chips and constraintSpace read it.
+export const MIXED_VARIANTS: MixedVariant[] = [
+    { id: '+', op: '+', label: 'Optellen' },
+    { id: '+:compenseren', op: '+', preset: 'compenseren', label: 'Optellen (compenseren)' },
+    { id: '-', op: '-', label: 'Aftrekken' },
+    { id: '-:compenseren', op: '-', preset: 'compenseren', label: 'Aftrekken (compenseren)' },
+    { id: 'x', op: 'x', label: 'Vermenigvuldigen' },
+    { id: 'x:tienvoud', op: 'x', preset: 'tienvoud', label: 'Vermenigvuldigen (tienvoud)' },
+    { id: ':', op: ':', label: 'Delen' },
+    { id: ':tienvoud', op: ':', preset: 'tienvoud', label: 'Delen (tienvoud)' },
+];
+
+export const mixedVariant = (id: MixedVariantId): MixedVariant =>
+    MIXED_VARIANTS.find(v => v.id === id) ?? MIXED_VARIANTS[0];
+
+export type MixedConstraints = AddSubConstraints & {
+    /** Which variants are in the mix (at least one). Order matters for `mix: 'cycle'`. */
+    variants: MixedVariantId[];
+    /** How each exercise picks its variant: uniformly at random, or the chosen ones in turn. */
+    mix: 'random' | 'cycle';
+    /**
+     * Sparse per-variant overrides, merged on top of the shared settings by
+     * `effectiveBlockFor` — a tab that was never touched has no entry at all.
+     */
+    perVariant?: Partial<Record<MixedVariantId, Partial<AddSubConstraints & MulDivConstraints>>>;
+};
+
 // ── Cijferen (column arithmetic) ─────────────────────────────────────────────
 
 export type CijferConstraints = {
@@ -572,6 +618,7 @@ export type ConstraintsByType = {
     'hr-std-aftrekken': AddSubConstraints;
     'hr-std-vermenigvuldigen': MulDivConstraints;
     'hr-std-delen': MulDivConstraints;
+    'hr-std-gemengd': MixedConstraints;
     'cijferen-optellen-nat': CijferConstraints;
     'cijferen-optellen-dec': CijferConstraints;
     'cijferen-aftrekken-nat': CijferConstraints;

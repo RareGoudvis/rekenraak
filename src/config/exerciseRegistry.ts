@@ -3,7 +3,7 @@ import type {
     BlockConstraints, AddSubConstraints, MulDivConstraints, CijferConstraints, ClockConstraints,
     FractionConstraints, BreukBewerkConstraints, BreukenRangschikkenConstraints, SplitsenConstraints,
     GeldConstraints, GeldWisselConstraints, GeldTeruggevenConstraints, GeldRekenenConstraints,
-    MabConstraints, OrdenenConstraints, PlaatswaardeConstraints, EvenOnevenConstraints,
+    MixedConstraints, MabConstraints, OrdenenConstraints, PlaatswaardeConstraints, EvenOnevenConstraints,
     VergelijkenConstraints, AfrondenConstraints, RomeinseConstraints, GetalFunctieConstraints,
     DeelbaarheidConstraints, DeelbaarheidKleurConstraints, GetallenasConstraints, GetallenrijConstraints,
     PatroonConstraints, KettingConstraints, RekenvolgordeConstraints, SchattendConstraints,
@@ -14,6 +14,7 @@ import type {
 } from '../services/math/constraintTypes';
 import { generateAdditionExercises, generateSubtractionExercises, generateMultiplicationExercises, generateDivisionExercises } from '../services/math/mathEngine';
 import { generateWithRelaxation, relaxationNote } from '../services/math/relax';
+import { generateMixedExercises, generateMixedExercisesNoted } from '../services/math/mixedGenerator';
 import { generateClockExercises } from '../services/clock/clockGenerator';
 import { generateFractionExercises } from '../services/fractions/fractionGenerator';
 import { generateBreukBewerkExercises } from '../services/fractions/breukBewerkGenerator';
@@ -116,6 +117,14 @@ const addSubDefaults = (): AddSubConstraints => ({
 
 // Split from the +/- factory: tafels/selectedTables/tableLimit are read only by the
 // multiplication and division generators, and a + block that carries them is drift.
+// Gemengd starts as the four plain operators in random order; every other setting is
+// the shared +/- bag, so the per-variant tabs start empty.
+const mixedDefaults = (): MixedConstraints => ({
+    ...addSubDefaults(),
+    variants: ['+', '-', 'x', ':'],
+    mix: 'random',
+});
+
 const mulDivDefaults = (): MulDivConstraints => ({
     ...addSubDefaults(),
     multiplicationMode: 'tafels',
@@ -359,6 +368,8 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10 }),
     'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10 }),
     'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises),       defaultConstraints: mulDivDefaults, defaultCount: 10 }),
+    // Mixed already relaxes per variant inside its own generator, so it brings its own note.
+    'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10 }),
 
     // Cijferen (column arithmetic) — natural + decimal per operation.
     'cijferen-optellen-nat':         cijferRow(),
