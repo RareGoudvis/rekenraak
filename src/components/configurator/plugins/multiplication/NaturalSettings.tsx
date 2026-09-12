@@ -1,4 +1,5 @@
 import { useConstraints } from '../../useConstraints';
+import { useHiddenControls } from '../../ConstraintScope';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
@@ -23,6 +24,8 @@ const DIVISION_LEVELS = [1, 2, 3, 4, 5, 6];
 
 export default function NaturalSettings({ block, isDivision = false }: Props) {
     const [c, patch] = useConstraints<MulDivConstraints>(block);
+    // Shared keys (maxGetal) are rendered by the gemengd panel instead; empty outside it.
+    const hidden = useHiddenControls();
     const {
         multiplicationMode = 'tafels',
         selectedTables = [2, 3, 4, 5, 10],
@@ -152,7 +155,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                 const availablePlaces = getMaskPlaces(maxGetal, 'natural');
                 return (
                     <div>
-                        <div style={styles.section}>
+                        {!hidden.has('maxGetal') && <div style={styles.section}>
                             <SettingLabel text={isDivision ? 'Maximum deeltal:' : 'Maximum uitkomst:'} info={isDivision ? 'Het grootste deeltal (het getal dat gedeeld wordt).' : 'Het grootste antwoord dat mag voorkomen.'} />
                             <PopupSelect
                                 clampToLowest
@@ -161,7 +164,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                                 onChange={(val) => updateConstraint('maxGetal', val)}
                                 ariaLabel={isDivision ? 'Maximum deeltal' : 'Maximum uitkomst'}
                             />
-                        </div>
+                        </div>}
 
                         {/* Niveau-presets voor deling */}
                         {isDivision && (

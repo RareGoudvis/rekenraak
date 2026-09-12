@@ -1,4 +1,5 @@
 import { useConstraints } from '../../useConstraints';
+import { useHiddenControls } from '../../ConstraintScope';
 import { getMaskPlaces, getBridgePlaces } from '../../../../services/math/mathEngine';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
@@ -11,6 +12,8 @@ interface Props { block: MathBlock; }
 
 export default function NaturalSettings({ block }: Props) {
     const [c, patch] = useConstraints<AddSubConstraints>(block);
+    // Shared keys (maxGetal) are rendered by the gemengd panel instead; empty outside it.
+    const hidden = useHiddenControls();
     const { maxGetal = 1000, bridges = {} } = c;
     const termCount: number = Math.min(4, Math.max(2, c.termCount ?? 2));
     const operandMax: (number | null)[] = c.operandMax ?? [];
@@ -43,7 +46,7 @@ export default function NaturalSettings({ block }: Props) {
 
     return (
         <div>
-            <div style={styles.section}>
+            {!hidden.has('maxGetal') && <div style={styles.section}>
                 <SettingLabel text="Maximum uitkomst:" info="Het grootste antwoord dat in de oefeningen mag voorkomen." />
                 <PopupSelect
                     clampToLowest
@@ -52,7 +55,7 @@ export default function NaturalSettings({ block }: Props) {
                     onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities (D/H/T/E) een cijfer mogen bevatten. Leeg = vrij." />

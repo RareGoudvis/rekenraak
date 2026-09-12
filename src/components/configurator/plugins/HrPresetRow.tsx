@@ -1,4 +1,5 @@
 import { useConstraints } from '../useConstraints';
+import { useConstraintScope, useHiddenControls } from '../ConstraintScope';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
@@ -15,6 +16,9 @@ interface Props {
 // Presets are generator flavours, not separate exercise types (constraints.preset).
 export default function HrPresetRow({ block, variant }: Props) {
     const [c, patch] = useConstraints<MulDivConstraints>(block);
+    // Inside a gemengd variant tab the oefenvorm IS the variant, so its picker is gone.
+    const fixedPreset = useConstraintScope()?.fixedPreset;
+    const hidden = useHiddenControls();
     const preset: string = c.preset ?? 'vrij';
     const termCount: number = Math.min(4, Math.max(2, c.termCount ?? 2));
     const presetDistance: number = c.presetDistance ?? 1;
@@ -32,7 +36,7 @@ export default function HrPresetRow({ block, variant }: Props) {
 
     return (
         <>
-            <div style={styles.section}>
+            {!fixedPreset && <div style={styles.section}>
                 <SettingLabel text="Oefenvorm:" info={variant === 'addsub'
                     ? 'Vrij = gewone sommen. Compenseren = het tweede getal ligt net onder een tienvoud (47 + 29).'
                     : 'Vrij = gewone sommen. Met 10, 100, 1000 = kommaverschuiving met een tienvoud.'} />
@@ -42,7 +46,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                         ? <button onClick={() => set('preset', 'compenseren')} style={styles.radioBtn(preset === 'compenseren')}>Compenseren</button>
                         : <button onClick={() => set('preset', 'tienvoud')} style={styles.radioBtn(preset === 'tienvoud')}>Met 10, 100, 1000</button>}
                 </div>
-            </div>
+            </div>}
 
             {preset === 'compenseren' && variant === 'addsub' && (
                 <div style={styles.section}>
@@ -64,7 +68,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                             ))}
                         </div>
                     </div>
-                    <div style={styles.section}>
+                    {!hidden.has('maxGetal') && <div style={styles.section}>
                         {/* The sub-config is hidden for this preset, so max getal lives here. */}
                         <SettingLabel text="Maximum getal:" info="Het grootste uitgangsgetal (bij : het quotiënt)." />
                         <PopupSelect
@@ -74,7 +78,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                             onChange={(v) => set('maxGetal', v)}
                             ariaLabel="Maximum getal"
                         />
-                    </div>
+                    </div>}
                 </>
             )}
 

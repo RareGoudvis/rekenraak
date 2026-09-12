@@ -1,4 +1,5 @@
 import { useConstraints } from '../../useConstraints';
+import { useHiddenControls } from '../../ConstraintScope';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
@@ -11,6 +12,8 @@ interface Props { block: MathBlock; }
 
 export default function DecimalSettings({ block }: Props) {
     const [c, patch] = useConstraints<AddSubConstraints>(block);
+    // Shared keys (maxGetal) are rendered by the gemengd panel instead; empty outside it.
+    const hidden = useHiddenControls();
     const { maxGetal = 100, decimalPlaces = 2, bridges = {} } = c;
 
     // Mask and bridge places that match the chosen number of decimal places
@@ -35,7 +38,7 @@ export default function DecimalSettings({ block }: Props) {
                 />
             </div>
 
-            <div style={styles.section}>
+            {!hidden.has('maxGetal') && <div style={styles.section}>
                 <SettingLabel text="Maximum uitkomst:" info="Het grootste antwoord dat in de oefeningen mag voorkomen." />
                 <PopupSelect
                     clampToLowest
@@ -44,7 +47,7 @@ export default function DecimalSettings({ block }: Props) {
                     onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Specifieke getalopbouw" info="Kies welke posities (H/T/E/t/h) een cijfer mogen bevatten. Leeg = vrij." />

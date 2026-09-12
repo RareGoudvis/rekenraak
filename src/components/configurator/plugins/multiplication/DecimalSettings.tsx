@@ -1,4 +1,5 @@
 import { useConstraints } from '../../useConstraints';
+import { useHiddenControls } from '../../ConstraintScope';
 import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
@@ -11,6 +12,8 @@ interface Props { block: MathBlock; isDivision?: boolean; }
 export default function DecimalSettings({ block, isDivision = false }: Props) {
     // Standaardwaarden instellen (voor de zekerheid)
     const [c, patch] = useConstraints<MulDivConstraints>(block);
+    // Shared keys (maxGetal) are rendered by the gemengd panel instead; empty outside it.
+    const hidden = useHiddenControls();
     const { maxGetal = 100, decimalPlaces = 2, operand1Mask = {}, operand2Mask = {} } = c;
 
     // Stuur decimalPlaces mee, zodat de maskers dynamisch inkrimpen!
@@ -40,7 +43,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
             </div>
 
             {/* MAXIMUM UITKOMST */}
-            <div style={styles.section}>
+            {!hidden.has('maxGetal') && <div style={styles.section}>
                 <SettingLabel text="Maximum uitkomst:" info="Het grootste antwoord dat mag voorkomen." />
                 <PopupSelect
                     clampToLowest
@@ -49,7 +52,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
                     onChange={(val) => updateConstraint('maxGetal', val)}
                     ariaLabel="Maximum uitkomst"
                 />
-            </div>
+            </div>}
 
             {/* SPECIFIEKE GETALOPBOUW */}
             <div style={styles.section}>
