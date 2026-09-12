@@ -240,7 +240,7 @@ The four consumers are now **table lookups, not branches**:
 | Consumer | File | Reads |
 |---|---|---|
 | Generate | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generate` + `.exerciseField` |
-| Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches |
+| Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches. A Config may mount OTHER families' plugins for a sub-bag through `ConstraintScope` (gemengd's per-variant tabs) — the plugin code stays unaware |
 | Viewer routing | [App.tsx](../../src/App.tsx) | `EXERCISE_UI[typeId].Viewer` |
 | Block defaults | [useWorksheetStore.tsx](../../src/store/useWorksheetStore.tsx) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `.defaultCount` |
 
@@ -831,7 +831,8 @@ src/
     │   ├── RegionStyleFields.tsx  # per-region look-and-feel (size/bold/colour/fill/padding) + ResetAllStylesButton
     │   ├── BridgeControl.tsx   # carry-arrow ('bruggetje') diagram: per-place geen/mag/moet via tappable gap arrows
     │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff + divider/sectionBox/select + hint/label text tiers
-    │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins
+    │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins; honours ConstraintScope
+    │   ├── ConstraintScope.ts     # context: when set to ['perVariant', id] the hook reads {...root, ...root.perVariant[id]} and writes ONLY into perVariant[id] (sparse); fixedPreset/hidden let a tab pin its preset and hide shared controls
     │   ├── plugins/shared/fieldStyles.ts      # F: Inspector field chrome shared by Inspector + StyleConfigs
     │   ├── plugins/shared/HrStdStyleConfig.tsx # AddSub/MulDiv StyleConfig (niveau, compenseren-tussenstap, kort/lang/stappen)
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
