@@ -528,8 +528,6 @@ spanning its `widthUnits`.
 
 `minWidth` / `rowUnits` / `perRowFull` in [blockLayout.ts](../../src/config/blockLayout.ts)
 are not guesses: [scripts/width-matrix.mjs](../../scripts/width-matrix.mjs) drives the
-are not guesses: [scripts/font-baseline.mjs   # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
-are not guesses: [scripts/font-compare.mjs    # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
 running dev server through `window.__rekenraak` (a DEV-only hook in
 [main.tsx](../../src/main.tsx): `typeIds`, `addBlockFromType`, `updateBlockSettings`,
 `clearBlocks`, `setIgnoreMinWidth`, `getState`) and renders **every registry type at widths
@@ -732,6 +730,8 @@ src/
 │   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
 │   └── useSheetDnd.ts           # sheet drag-and-drop state: handle + whole-block drag (draggable toggled at mousedown), top/bottom drop zones (§9)
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
+│  (repo root) scripts/font-baseline.mjs # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
+│  (repo root) scripts/font-compare.mjs  # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
