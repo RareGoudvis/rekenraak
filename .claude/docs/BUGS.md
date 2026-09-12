@@ -25,6 +25,21 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- **Column divider draws badly** (owner screenshot 2026-09-12): the rule starts above the
+  opdracht titles and the right-hand block's digits sit flush against it — no breathing room
+  on the right. `index.css .col-divider::before` is `top:0; bottom:0` in the gutter; it should
+  start at the title row and the gutter needs to look centred (check `cellWidthPx` vs the real
+  grid gap, and whether the left cell's content is inset by the 4px block margin while the
+  right one isn't).
+- **More types should fit ¼ width** (owner ask 2026-09-12). Today only klok, geld-herkennen,
+  temperatuur, maateenheid (+ cijferen since this note, + 3 furniture) go to ¼; ordenen,
+  splitsen, procenten, breuken-rangschikken only with a single exercise. Width-matrix
+  overflow at 163px says the near-misses are hr-std-* 1.36, kettingsommen 1.34, plaatswaarde
+  1.33, ordenen / breuken-rangschikken 1.21, deelbaarheid 1.07. hr-std is the big one: the
+  screenshot at ½ shows huge slack (fixed operand cells + 94px answer line). A `compact`
+  render mode in `MathBlockRenderer` (narrow answer line ≈ 50px, no fixed operand cell,
+  1-up) for cells < 200px would bring hr-std, ketting and plaatswaarde to ¼. Re-run
+  `scripts/width-matrix.mjs` after.
 - **Top margin of the page is too tall** (owner, 2026-09-12). Head padding is 16 mm on screen
   (`index.css` `.page-sheet-head { padding: 60.5px 53px 0 }`) and in print (`16mm 14mm 0`);
   they were synced in 464176f so change BOTH, then recompute `BODY_HEIGHT_PX` in
@@ -49,6 +64,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   dialog; a native Ctrl+P does neither, so a sheet printed that way can still carry the
   selection halo and the pre-repack pagination. Fix direction: a `beforeprint` listener that
   does the same deselect (the repack cannot be awaited from there) (2026-09-12).
+- **Operator spacing uneven in the 2-op-1 layout** (owner 2026-09-12: far more space before
+  the `+` than after it — must be roughly even). Same root as the next line.
 - **Operator hugs a three-digit second operand in the 2-op-1 layout** — `MathBlockRenderer`
   `COMPACT_OP_GAP`: "+315" vs "+ 51". Compact operand cell is right-aligned and the gap is too
   small (2026-09-10).

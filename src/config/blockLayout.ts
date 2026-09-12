@@ -71,6 +71,16 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "breuken": { rowUnits: 6.23, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "breuken-bewerken": { rowUnits: 1.95, perRowFull: 1.6, minWidth: 2 },
     "breuken-rangschikken": { rowUnits: 5.04, perRowFull: 2, minWidth: 2, minWidthSingle: 1 },
+    // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
+    // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
+    "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    "cijferen-optellen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    "cijferen-aftrekken-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    "cijferen-aftrekken-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    "cijferen-vermenigvuldigen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    "cijferen-vermenigvuldigen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    "cijferen-delen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
     "controleren": { rowUnits: 4.67, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "deelbaarheid": { rowUnits: 3.54, perRowFull: 2, minWidth: 2 },
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 2 },
