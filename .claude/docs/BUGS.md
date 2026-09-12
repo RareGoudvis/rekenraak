@@ -34,6 +34,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - **Cell width 688 vs `FULL_BLOCK_WIDTH_PX` 681** — `App.tsx cellWidthPx` uses 688 (794 − 2×53),
   `BlockWidthContext.tsx` default is 681 (15 mm). Viewers get slightly different widths depending
   on whether they're inside a provider. Unify (2026-09-12).
+- **A `spans` block flows on paper but clips on screen** — `pagePacker` marks a block taller
+  than one page `spans` and FragmentableGrid splits it across printed pages, but on screen
+  `.page-sheet-body` is `overflow: hidden`, so the same block is simply cut off and the page
+  shows the red overflow banner. Reproduce: a half-width "Getallen herkennen" at the default
+  count (measured 1012px against a 944px body). The preview therefore does not show what
+  prints for exactly the case the banner is about (2026-09-12).
 - **The browser's own Ctrl+P bypasses `usePrint`** — `src/hooks/usePrint.ts` deselects the
   active block and waits two animation frames for the remeasure-and-repack before opening the
   dialog; a native Ctrl+P does neither, so a sheet printed that way can still carry the
