@@ -132,6 +132,14 @@ describe('v2 → v3 width migration', () => {
 });
 
 describe('share link', () => {
+    // generationNote is UI-only feedback about the last generate; it must not survive a save.
+    test('the generate note never leaves the session', () => {
+        const s = state();
+        const noted = { ...s, blocks: s.blocks.map(b => ({ ...b, generationNote: 'Instellingen versoepeld om genoeg oefeningen te maken: brug.' })) };
+        const decoded = fileFromShare(encodeShareLink(noted));
+        for (const block of decoded!.blocks) expect(block.generationNote).toBeUndefined();
+    });
+
     test('encode → decode round-trip', () => {
         const s = state();
         const decoded = fileFromShare(encodeShareLink(s));

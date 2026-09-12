@@ -111,6 +111,9 @@ interface WorksheetState {
     // Generic exercise setter: writes a generated array to the given MathBlock
     // field (e.g. 'exercises', 'mabExercises'). Replaces the old per-type setters.
     setExercises: (id: string, field: keyof MathBlock, data: unknown[]) => void;
+    // Teacher-facing feedback about the last generate (relaxed settings, shortfall,
+    // failure). UI-only: no history push, stripped on save.
+    setGenerationNote: (id: string, note: string | null) => void;
     updateExercise: (blockId: string, exerciseId: string, updates: Partial<Equation>) => void;
     updateCijferExercise: (blockId: string, exerciseId: string, updates: Partial<CijferExercise>) => void;
     // Generic single-exercise patch for any array field (ordenen/getallenas/…), keyed by exercise id.
@@ -225,6 +228,10 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     canRedo: () => get()._historyIndex < get()._history.length - 1,
 
     setExercises: (id, field, data) => set((state) => { const nb = state.blocks.map(b => b.id === id ? { ...b, [field]: data } : b); const { [id]: _drop, ...stale } = state.staleBlocks; void _drop; return { blocks: nb, staleBlocks: stale, ...pushHistory(state._history, state._historyIndex, nb) }; }),
+
+    setGenerationNote: (id, note) => set((state) => ({
+        blocks: state.blocks.map(b => (b.id === id ? { ...b, generationNote: note } : b)),
+    })),
 
     addBlockFromType: (typeId, label, overrideConstraints) => set((state) => {
         // All per-type defaults live in the registry. The appstructure leaf's
@@ -409,7 +416,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         const state = get();
         for (const block of state.blocks) {
             if (block.locked) continue;
-            regenerateBlock(block, state.setExercises);
+            regenerateBlock(block, state.setExercises, state.setGenerationNote);
         }
     },
     updateHeader: (updates) => set((state) => ({ header: { ...state.header, ...updates } })),

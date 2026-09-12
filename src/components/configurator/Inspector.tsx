@@ -66,10 +66,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     const updateBlockInstruction = useWorksheetStore((state) => state.updateBlockInstruction);
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const setExercises = useWorksheetStore((state) => state.setExercises);
+    const setGenerationNote = useWorksheetStore((state) => state.setGenerationNote);
 
     const handleGenerate = () => {
         if (!activeBlock) return;
-        regenerateBlock(activeBlock, setExercises);
+        regenerateBlock(activeBlock, setExercises, setGenerationNote);
     };
 
     // Document ("Blad") settings. Always reachable from its own tab rather than only by
@@ -560,6 +561,13 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 {isStale && (
                     <p style={{ ...S.hintText, color: 'var(--accent)', margin: '0 0 var(--sp-2)' }}>
                         De instellingen zijn gewijzigd. Klik Genereer om de oefeningen bij te werken.
+                    </p>
+                )}
+                {/* What the last generate had to do with these settings: which constraints
+                    it relaxed to reach the requested count, or how many were possible. */}
+                {activeBlock.generationNote && (
+                    <p style={{ ...S.hintText, color: 'var(--text-muted)', margin: '0 0 var(--sp-2)' }}>
+                        {activeBlock.generationNote}
                     </p>
                 )}
                 <div style={S.engineBody}>

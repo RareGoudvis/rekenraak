@@ -129,8 +129,16 @@ function stripBlock(b: MathBlock): MathBlock {
     };
 }
 
+// `generationNote` is feedback about the last generate shown in the Inspector; it means
+// nothing once the sheet is reopened, so it never travels in a file, share link or autosave.
+const withoutGenerationNote = (b: MathBlock): MathBlock => {
+    const { generationNote: _note, ...rest } = b;
+    void _note;
+    return rest as MathBlock;
+};
+
 function buildPayload(state: SerialisableState, mode: WorksheetFileMode = 'full', curriculum?: CurriculumLock): WorksheetFile {
-    const blocks = mode === 'template' ? state.blocks.map(stripBlock) : state.blocks;
+    const blocks = (mode === 'template' ? state.blocks.map(stripBlock) : state.blocks).map(withoutGenerationNote);
     return {
         version: WORKSHEET_FORMAT_VERSION,
         exportedAt: new Date().toISOString(),

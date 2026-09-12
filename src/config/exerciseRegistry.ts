@@ -13,6 +13,7 @@ import type {
     LayoutConstraints,
 } from '../services/math/constraintTypes';
 import { generateAdditionExercises, generateSubtractionExercises, generateMultiplicationExercises, generateDivisionExercises } from '../services/math/mathEngine';
+import { generateWithRelaxation, relaxationNote } from '../services/math/relax';
 import { generateClockExercises } from '../services/clock/clockGenerator';
 import { generateFractionExercises } from '../services/fractions/fractionGenerator';
 import { generateBreukBewerkExercises } from '../services/fractions/breukBewerkGenerator';
@@ -75,6 +76,10 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
     // The array field on MathBlock that holds this type's exercises.
     exerciseField: ExerciseField;
     generate: (block: MathBlock) => unknown[];
+    // Richer entry point for families that can report back on the generate (hoofdrekenen
+    // relaxes over-restrictive settings). Dispatch prefers it and shows `note` in the
+    // Inspector; `generate` stays the plain array form every other caller uses.
+    generateNoted?: (block: MathBlock) => { items: unknown[]; note: string | null };
     // Factory (not a literal) so each new block gets fresh mutable mask objects.
     // Receives typeId because a few defaults differ by leaf (e.g. geld scaffolding).
     defaultConstraints: (typeId: string) => C;
@@ -85,6 +90,17 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
 // fails here rather than silently reaching a generator. The cast erases C again: rows are
 // stored heterogeneously, and every consumer looks a type up by its string typeId.
 const row = <C extends BlockConstraints>(def: ExerciseTypeDef<C>): ExerciseTypeDef => def as ExerciseTypeDef;
+
+// Hoofdrekenen settings can contradict each other (a digit mask + a forbidden brug + 4
+// termen + a preset), which used to yield an empty block. The wrapper keeps the stored
+// settings untouched, retries on a relaxed clone and reports what it had to drop.
+const relaxing = (gen: (b: MathBlock) => unknown[]) => ({
+    generate: (b: MathBlock) => generateWithRelaxation(b, gen).items,
+    generateNoted: (b: MathBlock) => {
+        const result = generateWithRelaxation(b, gen);
+        return { items: result.items, note: relaxationNote(result) };
+    },
+});
 
 // ── default-constraint factories (mirror the old addBlockFromType ternary) ───
 
@@ -339,10 +355,10 @@ const cijferRow = (): ExerciseTypeDef => row<CijferConstraints>({
 
 export const REGISTRY: Record<string, ExerciseTypeDef> = {
     // Mental math (hoofdrekenen standaardprocedure) — one typeId per operation.
-    'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', generate: generateAdditionExercises,       defaultConstraints: addSubDefaults, defaultCount: 10 }),
-    'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', generate: generateSubtractionExercises,    defaultConstraints: addSubDefaults, defaultCount: 10 }),
-    'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', generate: generateMultiplicationExercises, defaultConstraints: mulDivDefaults, defaultCount: 10 }),
-    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', generate: generateDivisionExercises,       defaultConstraints: mulDivDefaults, defaultCount: 10 }),
+    'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10 }),
+    'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10 }),
+    'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10 }),
+    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises),       defaultConstraints: mulDivDefaults, defaultCount: 10 }),
 
     // Cijferen (column arithmetic) — natural + decimal per operation.
     'cijferen-optellen-nat':         cijferRow(),

@@ -8,14 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
-- **hr-std-* over-restrictive combos return 0 exercises** — `src/services/math/mathEngine.ts`.
-  Pairwise matrix (`npm test`, `[matrix]` table) shows e.g. optellen `maxGetal 100000 + bridges
-  {E,T: FORBIDDEN} + operand2Mask {E} + termCount 4 + preset compenseren` → 0/10; aftrekken
-  `maxGetal 20 + masks {E} + termCount 3 + compenseren + presetDistance 2` → 0/10;
-  vermenigvuldigen `decimal + maxGetal 20 + masks {T,E} + termCount 4 + selectedTables [7]`;
-  delen `geheel + maxGetal 10 + bridges {E: FORBIDDEN} + met_rest + selectedTables [7]`.
-  The UI can produce these. Fix direction: either the config plugin greys out contradictory
-  options, or the generator relaxes the weakest constraint and tells the teacher (found 2026-09-12).
 - **verbanden `paren` with denominators [2] + reps [breuk, procent] gives 1/8** — only ½ exists.
   Generator should either widen denominators automatically or the plugin should require ≥ 3
   denominators for count > 2 (2026-09-12).

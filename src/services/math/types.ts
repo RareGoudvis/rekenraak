@@ -363,6 +363,9 @@ export interface MathBlock<C extends BlockConstraints = BlockConstraints> {
     id: string;
     typeId: string;
     locked?: boolean;
+    // UI-only feedback from the last generate (relaxed settings / shortfall / failure).
+    // Never persisted: persistence.ts strips it, and setting it pushes no history.
+    generationNote?: string | null;
     pageBreakBefore?: boolean;   // force this set to start on a new printed page
     // Column width on the page grid: 4 = full, 2 = half, 1 = a quarter. Absent = full width.
     // v2 files stored the old 6-unit scale; persistence migrates them on load.
