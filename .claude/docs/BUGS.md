@@ -10,6 +10,11 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- **No sheet font-size scale** (owner question 2026-09-12): viewers use 12 different px sizes
+  (14px ×66, 13 ×27, 12 ×22, 16 ×19, 18 ×13, 15 ×13, 17 ×10 …); hoofdrekenen digits 17px,
+  labels 14px, grids 12–13px. Nothing is 14pt. Proposal: tokens `--sheet-size-text`,
+  `--sheet-size-math`, `--sheet-size-small` in theme.css + a B4c-style sweep; owner picks
+  the values. Changes every measured tier/rowUnit → rerun width matrix after.
 - **What still cannot go ¼ width** (was "more types should fit ¼", done 2026-09-12). The
   tight tier (< 200px) brought hr-std-*, getalpatronen, kettingsommen, plaatswaarde and
   deelbaarheid to a quarter; 32 of 59 types now measure overflow ≤ 1.005 at 163px. The 27
@@ -29,11 +34,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   shows the red overflow banner. Reproduce: a half-width "Getallen herkennen" at the default
   count (measured 1012px against a 944px body). The preview therefore does not show what
   prints for exactly the case the banner is about (2026-09-12).
-- **The browser's own Ctrl+P bypasses `usePrint`** — `src/hooks/usePrint.ts` deselects the
-  active block and waits two animation frames for the remeasure-and-repack before opening the
-  dialog; a native Ctrl+P does neither, so a sheet printed that way can still carry the
-  selection halo and the pre-repack pagination. Fix direction: a `beforeprint` listener that
-  does the same deselect (the repack cannot be awaited from there) (2026-09-12).
 ## Constraints
 
 ## Tooling
