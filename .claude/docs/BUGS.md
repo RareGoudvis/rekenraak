@@ -10,15 +10,17 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- **More types should fit ¼ width** (owner ask 2026-09-12). Today only klok, geld-herkennen,
-  temperatuur, maateenheid (+ cijferen since this note, + 3 furniture) go to ¼; ordenen,
-  splitsen, procenten, breuken-rangschikken only with a single exercise. Width-matrix
-  overflow at 163px says the near-misses are hr-std-* 1.36, kettingsommen 1.34, plaatswaarde
-  1.33, ordenen / breuken-rangschikken 1.21, deelbaarheid 1.07. hr-std is the big one: the
-  screenshot at ½ shows huge slack (fixed operand cells + 94px answer line). A `compact`
-  render mode in `MathBlockRenderer` (narrow answer line ≈ 50px, no fixed operand cell,
-  1-up) for cells < 200px would bring hr-std, ketting and plaatswaarde to ¼. Re-run
-  `scripts/width-matrix.mjs` after.
+- **What still cannot go ¼ width** (was "more types should fit ¼", done 2026-09-12). The
+  tight tier (< 200px) brought hr-std-*, getalpatronen, kettingsommen, plaatswaarde and
+  deelbaarheid to a quarter; 32 of 59 types now measure overflow ≤ 1.005 at 163px. The 27
+  that do not are drawing-shaped rather than spacing-shaped and would need a different
+  rendering, not a tighter one: to-scale figures (lengte-meten 2.60, omtrek 2.83,
+  oppervlakte 2.34, vormleer 2.25), grids and dials (kalender 1.72, weegschaal 2.23, mab
+  1.93, even-oneven 2.82), and sentence rows whose text simply is wider than the cell
+  (tijdsduur / verbanden / geld-rekenen 3.68, getalfunctie 3.52, herleidingen 3.39).
+  Settings-shaped exceptions live in `minWidthUnits()`: decimal hoofdrekenen 1.39, the
+  compenseren tussenstap 1.67, plaatswaarde 'tabel' 1.14. Numbers from
+  `scripts/width-matrix.result.json` (2026-09-12).
 - **`ScaledBlock` never shrinks below zoom 1** — `src/components/viewer/ScaledBlock.tsx`: a
   block that still overflows at zoom 1 just overflows. Height-fit pass never built (2026-09-12).
 - **A `spans` block flows on paper but clips on screen** — `pagePacker` marks a block taller

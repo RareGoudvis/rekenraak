@@ -3,28 +3,28 @@
   "rule": "overflow <= 1.005 && zoom >= 0.85",
   "summary": {
     "hr-std-optellen": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 0.93,
       "count": 10,
       "hDefault": 310,
       "hSingle": 110
     },
     "hr-std-aftrekken": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 0.93,
       "count": 10,
       "hDefault": 310,
       "hSingle": 110
     },
     "hr-std-vermenigvuldigen": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 0.93,
       "count": 10,
       "hDefault": 310,
       "hSingle": 110
     },
     "hr-std-delen": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 0.93,
       "count": 10,
       "hDefault": 310,
@@ -94,7 +94,7 @@
       "hSingle": 230
     },
     "breuken": {
-      "minWidth": 2,
+      "minWidth": 4,
       "minWidthSingle": 1,
       "rowUnits": 2.51,
       "count": 6,
@@ -102,8 +102,7 @@
       "hSingle": 210
     },
     "splitsen": {
-      "minWidth": 2,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rowUnits": 1.74,
       "count": 5,
       "hDefault": 394,
@@ -111,10 +110,10 @@
     },
     "geld-herkennen": {
       "minWidth": 1,
-      "rowUnits": 2.32,
+      "rowUnits": 2.67,
       "count": 6,
-      "hDefault": 500,
-      "hSingle": 222
+      "hDefault": 584,
+      "hSingle": 264
     },
     "geld-tekenen": {
       "minWidth": 2,
@@ -154,8 +153,7 @@
       "hSingle": 222
     },
     "ordenen": {
-      "minWidth": 2,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rowUnits": 1.23,
       "count": 6,
       "hDefault": 276,
@@ -170,22 +168,21 @@
       "hSingle": 115
     },
     "breuken-rangschikken": {
-      "minWidth": 2,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rowUnits": 2.04,
       "count": 6,
       "hDefault": 421,
       "hSingle": 176
     },
     "deelbaarheid": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 1.42,
       "count": 6,
       "hDefault": 316,
       "hSingle": 146
     },
     "getalpatronen": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 1.9,
       "count": 6,
       "hDefault": 327,
@@ -214,7 +211,6 @@
     },
     "lengte-meten": {
       "minWidth": 4,
-      "minWidthSingle": 2,
       "rowUnits": 5.67,
       "count": 6,
       "hDefault": 869,
@@ -223,10 +219,10 @@
     "omtrek": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 22.62,
+      "rowUnits": 21.74,
       "count": 6,
-      "hDefault": 3091,
-      "hSingle": 377
+      "hDefault": 2910,
+      "hSingle": 301
     },
     "temperatuur": {
       "minWidth": 1,
@@ -236,7 +232,7 @@
       "hSingle": 256
     },
     "plaatswaarde": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 0.63,
       "count": 6,
       "hDefault": 174,
@@ -274,10 +270,10 @@
     "herleidingen": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 1.01,
+      "rowUnits": 1.02,
       "count": 8,
-      "hDefault": 293,
-      "hSingle": 123
+      "hDefault": 268,
+      "hSingle": 97
     },
     "schattend": {
       "minWidth": 4,
@@ -294,8 +290,7 @@
       "hSingle": 154
     },
     "procenten": {
-      "minWidth": 2,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rowUnits": 0.65,
       "count": 8,
       "hDefault": 206,
@@ -359,7 +354,7 @@
       "hSingle": 44
     },
     "kettingsommen": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rowUnits": 2.29,
       "count": 6,
       "hDefault": 384,
@@ -383,8 +378,8 @@
       "minWidth": 2,
       "rowUnits": null,
       "count": 1,
-      "hDefault": 437,
-      "hSingle": 437
+      "hDefault": 409,
+      "hSingle": 409
     },
     "controleren": {
       "minWidth": 4,
@@ -397,10 +392,10 @@
     "oppervlakte": {
       "minWidth": 4,
       "minWidthSingle": 2,
-      "rowUnits": 20.18,
+      "rowUnits": 19.14,
       "count": 4,
       "hDefault": 1788,
-      "hSingle": 335
+      "hSingle": 410
     },
     "weegschaal": {
       "minWidth": 4,
@@ -485,9 +480,9 @@
       "width": 1,
       "mode": "default",
       "count": 10,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 559
     },
@@ -496,9 +491,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 110
     },
@@ -551,9 +546,9 @@
       "width": 1,
       "mode": "default",
       "count": 10,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 559
     },
@@ -562,9 +557,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 110
     },
@@ -617,9 +612,9 @@
       "width": 1,
       "mode": "default",
       "count": 10,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 578
     },
@@ -628,9 +623,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 128
     },
@@ -683,9 +678,9 @@
       "width": 1,
       "mode": "default",
       "count": 10,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 559
     },
@@ -694,9 +689,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.362,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 222,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 110
     },
@@ -1321,9 +1316,9 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1,
+      "overflow": 1.2012,
       "zoom": 1,
-      "scrollWidth": 338,
+      "scrollWidth": 406,
       "clientWidth": 338,
       "cellHeight": 511
     },
@@ -1343,9 +1338,9 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.5951,
+      "overflow": 1.9387,
       "zoom": 1,
-      "scrollWidth": 423,
+      "scrollWidth": 316,
       "clientWidth": 163,
       "cellHeight": 511
     },
@@ -1391,7 +1386,7 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 394
+      "cellHeight": 561
     },
     {
       "typeId": "splitsen",
@@ -1409,11 +1404,11 @@
       "width": 1,
       "mode": "default",
       "count": 5,
-      "overflow": 1.8282,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 298,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 394
+      "cellHeight": 895
     },
     {
       "typeId": "splitsen",
@@ -1435,7 +1430,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 500
+      "cellHeight": 584
     },
     {
       "typeId": "geld-herkennen",
@@ -1446,7 +1441,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 222
+      "cellHeight": 264
     },
     {
       "typeId": "geld-herkennen",
@@ -1457,7 +1452,7 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 803
+      "cellHeight": 822
     },
     {
       "typeId": "geld-herkennen",
@@ -1468,31 +1463,31 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
+      "cellHeight": 270
+    },
+    {
+      "typeId": "geld-herkennen",
+      "width": 1,
+      "mode": "default",
+      "count": 6,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 1329
+    },
+    {
+      "typeId": "geld-herkennen",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
       "cellHeight": 302
     },
     {
-      "typeId": "geld-herkennen",
-      "width": 1,
-      "mode": "default",
-      "count": 6,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 1325
-    },
-    {
-      "typeId": "geld-herkennen",
-      "width": 1,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
-      "cellHeight": 228
-    },
-    {
       "typeId": "geld-tekenen",
       "width": 4,
       "mode": "default",
@@ -1541,9 +1536,9 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.7423,
+      "overflow": 1.8098,
       "zoom": 1,
-      "scrollWidth": 284,
+      "scrollWidth": 295,
       "clientWidth": 163,
       "cellHeight": 340
     },
@@ -1871,11 +1866,11 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.2147,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 198,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 594
+      "cellHeight": 1157
     },
     {
       "typeId": "ordenen",
@@ -1886,7 +1881,7 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 234
+      "cellHeight": 238
     },
     {
       "typeId": "breuken-bewerken",
@@ -1937,9 +1932,9 @@
       "width": 1,
       "mode": "default",
       "count": 8,
-      "overflow": 1.9693,
+      "overflow": 1.9509,
       "zoom": 1,
-      "scrollWidth": 321,
+      "scrollWidth": 318,
       "clientWidth": 163,
       "cellHeight": 304
     },
@@ -1985,7 +1980,7 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 680
+      "cellHeight": 595
     },
     {
       "typeId": "breuken-rangschikken",
@@ -2003,11 +1998,11 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.2147,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 198,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 764
+      "cellHeight": 1935
     },
     {
       "typeId": "breuken-rangschikken",
@@ -2018,7 +2013,7 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 277
+      "cellHeight": 367
     },
     {
       "typeId": "deelbaarheid",
@@ -2069,22 +2064,22 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.0736,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 175,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 316
+      "cellHeight": 656
     },
     {
       "typeId": "deelbaarheid",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.0736,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 175,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 146
+      "cellHeight": 156
     },
     {
       "typeId": "getalpatronen",
@@ -2135,22 +2130,22 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.9325,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 315,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 327
+      "cellHeight": 1661
     },
     {
       "typeId": "getalpatronen",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.8037,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 294,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 99
+      "cellHeight": 323
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2205,7 +2200,7 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 668
+      "cellHeight": 701
     },
     {
       "typeId": "deelbaarheid-kleuren",
@@ -2377,9 +2372,9 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.3669,
+      "overflow": 1.2544,
       "zoom": 1,
-      "scrollWidth": 462,
+      "scrollWidth": 424,
       "clientWidth": 338,
       "cellHeight": 869
     },
@@ -2388,9 +2383,9 @@
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1,
+      "overflow": 1.2544,
       "zoom": 1,
-      "scrollWidth": 338,
+      "scrollWidth": 424,
       "clientWidth": 338,
       "cellHeight": 188
     },
@@ -2410,9 +2405,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 2.8344,
+      "overflow": 2.3681,
       "zoom": 1,
-      "scrollWidth": 462,
+      "scrollWidth": 386,
       "clientWidth": 163,
       "cellHeight": 188
     },
@@ -2425,7 +2420,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 3091
+      "cellHeight": 2910
     },
     {
       "typeId": "omtrek",
@@ -2436,7 +2431,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 377
+      "cellHeight": 301
     },
     {
       "typeId": "omtrek",
@@ -2458,16 +2453,16 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 377
+      "cellHeight": 279
     },
     {
       "typeId": "omtrek",
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.8344,
+      "overflow": 2.3681,
       "zoom": 1,
-      "scrollWidth": 462,
+      "scrollWidth": 386,
       "clientWidth": 163,
       "cellHeight": 3155
     },
@@ -2476,11 +2471,11 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.6748,
+      "overflow": 2.6012,
       "zoom": 1,
-      "scrollWidth": 273,
+      "scrollWidth": 424,
       "clientWidth": 163,
-      "cellHeight": 471
+      "cellHeight": 584
     },
     {
       "typeId": "temperatuur",
@@ -2597,9 +2592,9 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.3252,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 216,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 288
     },
@@ -2608,9 +2603,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.3252,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 216,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 98
     },
@@ -2887,7 +2882,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 293
+      "cellHeight": 268
     },
     {
       "typeId": "herleidingen",
@@ -2898,7 +2893,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 123
+      "cellHeight": 97
     },
     {
       "typeId": "herleidingen",
@@ -2909,7 +2904,7 @@
       "zoom": 1,
       "scrollWidth": 552,
       "clientWidth": 338,
-      "cellHeight": 242
+      "cellHeight": 286
     },
     {
       "typeId": "herleidingen",
@@ -2931,7 +2926,7 @@
       "zoom": 1,
       "scrollWidth": 552,
       "clientWidth": 163,
-      "cellHeight": 268
+      "cellHeight": 293
     },
     {
       "typeId": "herleidingen",
@@ -3125,11 +3120,11 @@
       "width": 1,
       "mode": "default",
       "count": 8,
-      "overflow": 1.4847,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 242,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 515
+      "cellHeight": 498
     },
     {
       "typeId": "procenten",
@@ -3140,7 +3135,7 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 169
+      "cellHeight": 115
     },
     {
       "typeId": "maateenheid",
@@ -3173,7 +3168,7 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 655
+      "cellHeight": 623
     },
     {
       "typeId": "maateenheid",
@@ -3195,7 +3190,7 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 854
+      "cellHeight": 874
     },
     {
       "typeId": "maateenheid",
@@ -3301,9 +3296,9 @@
       "width": 2,
       "mode": "default",
       "count": 10,
-      "overflow": 1.2988,
+      "overflow": 1.3639,
       "zoom": 1,
-      "scrollWidth": 439,
+      "scrollWidth": 461,
       "clientWidth": 338,
       "cellHeight": 243
     },
@@ -3719,22 +3714,22 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.4356,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 234,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 384
+      "cellHeight": 1383
     },
     {
       "typeId": "kettingsommen",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.1963,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 195,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 109
+      "cellHeight": 275
     },
     {
       "typeId": "getalfunctie",
@@ -3789,7 +3784,7 @@
       "zoom": 1,
       "scrollWidth": 574,
       "clientWidth": 163,
-      "cellHeight": 316
+      "cellHeight": 344
     },
     {
       "typeId": "getalfunctie",
@@ -3800,7 +3795,7 @@
       "zoom": 1,
       "scrollWidth": 574,
       "clientWidth": 163,
-      "cellHeight": 142
+      "cellHeight": 156
     },
     {
       "typeId": "tijdsduur",
@@ -3877,7 +3872,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 437
+      "cellHeight": 409
     },
     {
       "typeId": "kalender",
@@ -3888,7 +3883,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 437
+      "cellHeight": 409
     },
     {
       "typeId": "kalender",
@@ -4020,7 +4015,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 335
+      "cellHeight": 410
     },
     {
       "typeId": "oppervlakte",
@@ -4042,7 +4037,7 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 372
+      "cellHeight": 297
     },
     {
       "typeId": "oppervlakte",
@@ -4053,18 +4048,18 @@
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 163,
-      "cellHeight": 1526
+      "cellHeight": 1806
     },
     {
       "typeId": "oppervlakte",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.184,
+      "overflow": 1.8834,
       "zoom": 1,
-      "scrollWidth": 193,
+      "scrollWidth": 307,
       "clientWidth": 163,
-      "cellHeight": 530
+      "cellHeight": 428
     },
     {
       "typeId": "weegschaal",

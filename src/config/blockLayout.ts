@@ -51,6 +51,13 @@ export const ROW_BUDGET = Math.floor(BODY_HEIGHT_PX / ROW_UNIT_PX) - 2;
 //   - deelbaarheid-kleuren, quarter: a four-digit number wraps INSIDE its cell ("1 000").
 //   - geld-teruggeven, quarter: the jump diagram shrinks to unreadable micro-type.
 //   - layout-sectie and layout-lege-pagina: full width by definition, not by measurement.
+// The 2026-09-12 quarter pass moved hr-std-*, getalpatronen, kettingsommen, plaatswaarde
+// and deelbaarheid from a half to a quarter after their viewers grew a tight tier below
+// 200px (see MathBlockRenderer / PatroonViewer / PlaatswaardeViewer / DeelbaarheidViewer).
+// All five measure overflow 1.000 at a quarter at both 1600px and 1000px viewports. What
+// stays out of a quarter there is settings-shaped rather than type-shaped, so it lives in
+// minWidthUnits() below: decimal hoofdrekenen (1.39), the compenseren tussenstap line
+// (1.67) and the plaatswaarde 'tabel' subtype (1.14, six place columns in 163px).
 // Refined per block by minWidthUnits() below.
 interface LayoutFacts {
     rowUnits: number;
@@ -83,7 +90,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
     "cijferen-delen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
     "controleren": { rowUnits: 4.67, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
-    "deelbaarheid": { rowUnits: 3.54, perRowFull: 2, minWidth: 2 },
+    "deelbaarheid": { rowUnits: 3.54, perRowFull: 2, minWidth: 1 },
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 2 },
     "even-oneven": { rowUnits: 2.17, perRowFull: 1, minWidth: 4 },
     "geld-herkennen": { rowUnits: 8.33, perRowFull: 3, minWidth: 1 },
@@ -94,14 +101,14 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "getalfunctie": { rowUnits: 3.33, perRowFull: 2, minWidth: 4 },
     "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 2 },
     "getallenrijen": { rowUnits: 2.88, perRowFull: 1, minWidth: 4 },
-    "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 2 },
+    "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 1 },
     "herleidingen": { rowUnits: 3.04, perRowFull: 2.7, minWidth: 4, minWidthSingle: 2 },
-    "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 2 },
-    "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 2 },
-    "hr-std-optellen": { rowUnits: 2.08, perRowFull: 2, minWidth: 2 },
-    "hr-std-vermenigvuldigen": { rowUnits: 2.08, perRowFull: 2, minWidth: 2 },
+    "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
+    "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
+    "hr-std-optellen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
+    "hr-std-vermenigvuldigen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 2 },
-    "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 2 },
+    "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 1 },
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
     "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.58, perRowFull: 1, minWidth: 1 },
@@ -110,7 +117,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "omtrek": { rowUnits: 21.1, perRowFull: 1, minWidth: 4 },
     "oppervlakte": { rowUnits: 18.58, perRowFull: 1, minWidth: 4 },
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 1 },
-    "plaatswaarde": { rowUnits: 1.62, perRowFull: 2, minWidth: 2 },
+    "plaatswaarde": { rowUnits: 1.62, perRowFull: 2, minWidth: 1 },
     "procenten": { rowUnits: 1.54, perRowFull: 2, minWidth: 1 },
     "rekenvolgorde": { rowUnits: 1.54, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "romeinse-cijfers": { rowUnits: 1.75, perRowFull: 2, minWidth: 2 },
@@ -174,6 +181,18 @@ export function minWidthUnits(block: MathBlock): WidthUnits {
     if (block.typeId.startsWith('mab-')) return 2;
 
     if (base === 4) return 4;
+
+    // A place-value TABLE needs one bordered cell per place plus the number itself; six
+    // columns do not fit 163px however small the cells get. The other two subtypes do.
+    if (block.typeId === 'plaatswaarde' && c.subType === 'tabel') return Math.max(base, 2) as WidthUnits;
+
+    // Hoofdrekenen fits a quarter as plain whole numbers or fractions only: decimals add
+    // two to three characters to every operand, and the compenseren tussenstap
+    // ("= a + ___ - ___") is wider than the whole cell on its own.
+    if (block.typeId.startsWith('hr-std-')) {
+        if (c.numberType === 'decimal') return Math.max(base, 2) as WidthUnits;
+        if (c.preset === 'compenseren' && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap') return Math.max(base, 2) as WidthUnits;
+    }
 
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;
 
