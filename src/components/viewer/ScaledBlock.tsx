@@ -1,11 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { PAGE_BODY_PX } from '../../config/blockLayout';
+import { FIT_FLOOR, nextZoom } from './scaledBlockFit';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
-
-// Sub-pixel margin so a block measured as "just fits" can't clip a hair off the right
-// edge when Chrome rasterizes the PDF (offsetWidth/scrollWidth are integer-rounded).
-const SAFETY = 0.97;
-// Ratio dead-band — stops micro-thrash around the fixed point.
-const EPS = 0.005;
 
 // Scales a block's body via CSS `zoom`, but AUTO-FITS to the available width so an
 // enlarged wide block (Cijfer grid, getallenas number line) can never overflow and clip
@@ -23,7 +19,7 @@ const EPS = 0.005;
 // `availableWidthPx` is the printable width of the cell this block sits in. It defaults to
 // a full-width block, so today's single-column sheet is unchanged; the page model passes the
 // real per-cell width once blocks can be half or third width.
-export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, children }: { scale: number; availableWidthPx?: number; children: ReactNode }) {
+export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fitToPage = false, pageBudgetPx = PAGE_BODY_PX, children }: { scale: number; availableWidthPx?: number; fitToPage?: boolean; pageBudgetPx?: number; children: ReactNode }) {
     const ref = useRef<HTMLDivElement>(null);
     const [applied, setApplied] = useState(scale);
     // Last parent content width — distinguishes a genuine resize (regeneration / panel
@@ -34,19 +30,23 @@ export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, chi
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset before the measure pass
     useLayoutEffect(() => { setApplied(scale); }, [scale]);
 
-    // (b) After each paint, back off if the content overflows. `r = scrollWidth/clientWidth`
-    // is dimensionless, so the applied-zoom factor cancels and the ratio is reliable despite
-    // Chrome's `zoom` skewing absolute measurements. Only ever DECREASES applied (floored at
-    // 1, so an already-overflowing-at-1 block is never shrunk further) → converges, no oscillation.
+    // (b) After each paint, back off if the content overflows. Two ratios, both
+    // dimensionless so the applied-zoom factor cancels and they stay reliable despite
+    // Chrome's `zoom` skewing absolute measurements:
+    //  - width: scrollWidth/clientWidth, floored at 1 — a block that still overflows at
+    //    zoom 1 is too wide for its column, which is the packer's tier to fix, not ours;
+    //  - height (only with `fitToPage`): offsetHeight inside a CSS `zoom` is UNZOOMED
+    //    local px, so the rendered height is offsetHeight × applied.
+    // Both only ever DECREASE applied → converges, no oscillation.
     useLayoutEffect(() => {
         const el = ref.current;
         if (!el) return;
-        const r = el.scrollWidth / el.clientWidth;
-        if (r > 1 + EPS) {
-            const next = Math.max(1, Math.min(scale, (applied / r) * SAFETY));
-            if (Math.abs(next - applied) > 1e-4) setApplied(next);
+        let next = nextZoom(applied, el.scrollWidth / el.clientWidth, 1);
+        if (fitToPage && pageBudgetPx > 0) {
+            next = Math.min(next, nextZoom(applied, (el.offsetHeight * applied) / pageBudgetPx, FIT_FLOOR));
         }
-    }, [applied, scale]);
+        if (next < applied - 1e-4) setApplied(Math.min(next, scale));
+    }, [applied, scale, fitToPage, pageBudgetPx]);
 
     // (c) Re-fit on genuine layout changes (content regeneration grows/shrinks scrollWidth;
     // panel/window resize changes available width). Gate on parent content width so our own

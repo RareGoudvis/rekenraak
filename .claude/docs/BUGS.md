@@ -26,8 +26,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   Settings-shaped exceptions live in `minWidthUnits()`: decimal hoofdrekenen 1.39, the
   compenseren tussenstap 1.67, plaatswaarde 'tabel' 1.14. Numbers from
   `scripts/width-matrix.result.json` (2026-09-12).
-- **`ScaledBlock` never shrinks below zoom 1** — `src/components/viewer/ScaledBlock.tsx`: a
-  block that still overflows at zoom 1 just overflows. Height-fit pass never built (2026-09-12).
 - **A `spans` block flows on paper but clips on screen** — `pagePacker` marks a block taller
   than one page `spans` and FragmentableGrid splits it across printed pages, but on screen
   `.page-sheet-body` is `overflow: hidden`, so the same block is simply cut off and the page

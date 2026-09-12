@@ -528,6 +528,19 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                     </>
                                                 );
                                             })()}
+
+                                            {/* Opt-in height back-off (ScaledBlock): only bites on a block that is
+                                                taller than a page, so it is shown always rather than tied to the
+                                                packer's `spans` flag, which the Inspector cannot see. */}
+                                            <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                                                <span style={S.switchText}>Verklein om op één pagina te passen</span>
+                                                <Switch
+                                                    checked={activeBlock.constraints?.fitToPage === true}
+                                                    onChange={(v) => updateBlockSettings(activeBlock.id, { constraints: { ...activeBlock.constraints, fitToPage: v || undefined } })}
+                                                    aria-label="Verklein om op één pagina te passen"
+                                                />
+                                            </div>
+                                            <p style={S.hintText}>Alleen voor blokken die groter zijn dan één pagina.</p>
                                         </>
                                     )}
                                 </>

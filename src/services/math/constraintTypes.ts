@@ -31,6 +31,12 @@ export type CrossCutting = {
     // conversion table for herleidingen — so each declares its own literal type below.
     /** Selects the view within a family (set by the sidebar leaf). */
     subType?: string;
+    /**
+     * Opt-in: let ScaledBlock shrink this block's zoom below 1 (down to 0.7) until it
+     * fits one page's height. Off by default — a too-tall block then keeps today's
+     * behaviour (it spans, and the page shows the red overflow banner).
+     */
+    fitToPage?: boolean;
 };
 
 /**

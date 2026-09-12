@@ -20,6 +20,13 @@ const BODY_HEIGHT_PX = 1123 - 129 /* header */ - 71 /* footer */ - 32 /* body pa
 // direction — content crossing the footer — while over-estimating only wastes space.
 export const ROW_BUDGET = Math.floor(BODY_HEIGHT_PX / ROW_UNIT_PX) - 2;
 
+// What ONE block may be tall before it no longer fits a page: the body minus the block
+// chrome that sits OUTSIDE the scaled area (16px padding + 4px margin, top and bottom).
+// Approximate on purpose — it is the target of ScaledBlock's opt-in height back-off
+// (`constraints.fitToPage`), not a pagination decision, so a few px either way only
+// changes how hard that block shrinks. SYNC: App.tsx blockContainer padding/margin.
+export const PAGE_BODY_PX = BODY_HEIGHT_PX - 40;
+
 // ── Per-type layout facts ────────────────────────────────────────────────────
 // All three numbers come from `scripts/width-matrix.mjs`, which renders every registry
 // type at widths 4 / 2 / 1 and at its default count and at a single exercise, and reads

@@ -612,6 +612,7 @@ export default function App() {
                   <ScaledBlock
                     scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}
                     availableWidthPx={cellWidth(item.width)}
+                    fitToPage={block.constraints?.fitToPage === true}
                   >
                   {!isFurniture && <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
