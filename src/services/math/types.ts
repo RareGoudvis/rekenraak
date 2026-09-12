@@ -3,12 +3,6 @@ export type ConstraintType = 'FREE' | 'REQUIRED' | 'FORBIDDEN';
 export const isFraction = (val: unknown): val is Fraction =>
     typeof val === 'object' && val !== null && 'n' in val && 'd' in val;
 
-export interface BridgeConstraints {
-    units: ConstraintType;
-    tens: ConstraintType;
-    hundreds: ConstraintType;
-}
-
 export type LayoutPreset = 'inline-short' | 'inline-long' | 'stepped';
 
 export interface Fraction {
@@ -464,25 +458,6 @@ export interface FooterData {
 export type ScaffoldingLevel = 1 | 2 | 3;
 export type CijferOperator = '+' | '-' | 'x' | ':';
 
-export interface CijferConstraints {
-    operator: CijferOperator;
-    numberType: 'natural' | 'decimal';
-    maxRange: number;
-    decimalPlaces: 1 | 2 | 3;
-    withEstimation: boolean;
-    scaffolding: ScaffoldingLevel;
-    withRemainder: boolean;
-    numberOfTerms: number;
-    gridCellSize: number;
-    operand0Mask: Record<string, boolean>;
-    operand1Mask: Record<string, boolean>;
-    operand2Mask: Record<string, boolean>;
-    operand3Mask: Record<string, boolean>;
-    bridges: Record<string, 'FREE' | 'REQUIRED' | 'FORBIDDEN'>;
-    extraCols: number;
-    extraRows: number;
-    showQR?: boolean;
-}
 
 export type GeldDenominationType = 'bill' | 'euro-coin' | 'cent-coin';
 
@@ -540,126 +515,11 @@ export interface MabExercise {
 }
 
 // ── Per-family constraint shapes ─────────────────────────────────────────────
-// MathBlock.constraints stays `any` (blocks are heterogeneous); these interfaces
-// type the registry's default-constraint factories and let config plugins cast.
-// They describe the DEFAULT key set per family — generators may read extra
-// optional keys, so all are loose supersets, not exhaustive contracts.
-
-type PlaceMask = Record<string, boolean>;
-type NumberType = 'natural' | 'decimal' | 'rational';
-
-// Mental-math: optellen / aftrekken (mathEngine addition/subtraction).
-export interface AddSubConstraints {
-    numberType: NumberType;
-    decimalPlaces: number;
-    maxGetal: number;
-    bridges: Record<string, ConstraintType>;
-    operand1Mask: PlaceMask;
-    operand2Mask: PlaceMask;
-    equationType?: 'normal' | 'puntoefening';
-    // Rational (fraction) sub-settings.
-    fractionDifficulty?: string;
-    mixedNumber1?: boolean;
-    mixedNumber2?: boolean;
-    maxNumerator1?: number;
-    maxDenominator1?: number;
-    maxNumerator2?: number;
-    maxDenominator2?: number;
-    linkFractions?: boolean;
-}
-
-// Mental-math: vermenigvuldigen / delen (mathEngine multiplication/division).
-export interface MulDivConstraints extends AddSubConstraints {
-    multiplicationMode?: 'tafels' | 'vrij';
-    selectedTables?: number[];
-    tableLimit?: number;
-    fractionMultMode?: string;
-    fractionOrderMode?: string;
-    divisionLevel?: number;
-    metRestLevel?: number;
-}
-
-export interface ClockConstraints {
-    clockType: 'analoog' | 'digitaal';
-    exerciseMode: string;
-    is24hour: boolean;
-    timeTypes: string[];
-    minuteDirection: string;
-    handChoice: string;
-}
-
-export interface FractionConstraints {
-    subType: FractionSubType;
-    shape: FractionShape;
-    shapes?: FractionShape[];          // kleuren/herkennen: included shapes (≥1, mixed per exercise)
-    staticSize?: boolean;              // keep shape size constant across denominators (only when 1 shape)
-    staticW?: number;                  // rectangle width (cm) when staticSize
-    staticH?: number;                  // rectangle height (cm) when staticSize
-    staticSide?: number;               // square side (cm) when staticSize
-    staticDiam?: number;               // circle diameter (cm) when staticSize
-    minDenominator: number;
-    maxDenominator: number;
-    answerFormat: string;
-    objectShape: 'circle' | 'square';
-    maxTotal: number;
-    groupingMode?: 'standaard' | 'gebalanceerd' | 'per-deel';  // concreet object row layout
-    drawBoxW?: number;                 // schematisch draw box width (cm); 0/undefined = full width
-    drawBoxH?: number;                 // schematisch draw box height (cm)
-    minLineLength: number;
-    maxLineLength: number;
-    level: number;
-    answerMode: string;
-    maxDimension: number;
-    maxAbstractN3: number;
-    showGrid?: boolean;                // veelhoek: draw the 1cm background grid (default true)
-}
-
-export interface SplitsenConstraints {
-    maxGetal: number;
-    operand1Mask: PlaceMask;
-    operand2Mask: PlaceMask;
-    fixedTotal: number | null;
-    layout: string;
-    rowsPerBox: number;
-    rowHeight: number;
-}
-
-export interface GeldConstraints {
-    maxGetal: number;
-    format: string;
-    scaffolding: string;
-    geldLayout: 'samen' | 'gescheiden';
-    showVoorbeelden: boolean;
-    voorbeeldTypes: number[];
-    exercisesPerRow: number | null;
-    allowedDenominations: number[];
-    boxHeight: number;
-}
-
-export interface GeldWisselConstraints {
-    exerciseBills: number[];
-    exercisesPerRow: number;
-    boxHeight: number;
-}
-
-export interface GeldTeruggevenConstraints {
-    minPriceEuros: number;
-    maxPriceEuros: number;
-    payWithOptions: number[];
-    centenDeel: string;
-    scaffolding: string;
-    antwoordType: string;
-    antwoordFormat: string;
-    betalenMetTekening: boolean;
-    boxHeight: number;
-}
-
-export interface MabConstraints {
-    mabStyle: MabStyle;
-    maxNumber: number;
-    operand1Mask: PlaceMask;
-    scaffolding: MabScaffolding;
-    exercisesPerRow: number;
-    boxHeight: number;
-    answerHeight: number;
-}
+// They live in constraintTypes.ts (one type per family, checked against the registry's
+// default factories); re-exported here because every viewer/plugin imports from types.ts.
+export type {
+    BlockConstraints, CrossCutting, PlaceMask, BridgeMap,
+    AddSubConstraints, MulDivConstraints, CijferConstraints, ClockConstraints,
+    FractionConstraints, SplitsenConstraints,
+    GeldConstraints, GeldWisselConstraints, GeldTeruggevenConstraints, MabConstraints,
+} from './constraintTypes';
