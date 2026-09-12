@@ -1,4 +1,5 @@
 import type { MathBlock, EvenOnevenExercise } from '../math/types';
+import type { EvenOnevenConstraints } from '../math/constraintTypes';
 
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -16,9 +17,10 @@ function distinctNumbers(n: number, maxGetal: number): number[] {
 }
 
 export function generateEvenOnevenExercises(block: MathBlock): EvenOnevenExercise[] {
-    const subType: string = block.constraints.subType ?? 'rooster';
-    const maxGetal: number = block.constraints.maxGetal ?? 100;
-    const perRow: number = block.constraints.perRow ?? 10;
+    const c = block.constraints as EvenOnevenConstraints;
+    const subType: string = c.subType ?? 'rooster';
+    const maxGetal: number = c.maxGetal ?? 100;
+    const perRow: number = c.perRow ?? 10;
     const count = block.numberOfExercises || (subType === 'rooster' ? 3 : 6);
 
     if (subType === 'cirkels') {

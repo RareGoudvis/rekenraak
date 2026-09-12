@@ -1,4 +1,5 @@
 import type { MathBlock, RomeinseExercise } from '../math/types';
+import type { RomeinseConstraints } from '../math/constraintTypes';
 
 // Difficulty levels (shared by herkennen + schrijven). Higher niveau = bigger range
 // and therefore more Roman symbols in play (I V X → L → C D M).
@@ -26,7 +27,8 @@ function randInt(min: number, max: number) {
 }
 
 export function generateRomeinseExercises(block: MathBlock): RomeinseExercise[] {
-    const niveau: number = block.constraints.niveau ?? 2;
+    const c = block.constraints as RomeinseConstraints;
+    const niveau: number = c.niveau ?? 2;
     const maxGetal = NIVEAU_MAX[niveau] ?? 39;
     const count = block.numberOfExercises || 8;
 

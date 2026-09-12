@@ -1,4 +1,5 @@
 import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
+import type { GetallenasConstraints } from '../math/constraintTypes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -30,7 +31,7 @@ function numericValues(start: number, step: number, ticks: number, arrowLeft: bo
 const pick = (a: number, b: number): number => randInt(Math.min(a, b), Math.max(a, b));
 
 export function generateGetallenasExercises(block: MathBlock): GetallenasExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as GetallenasConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const maxGetal: number = c.maxGetal ?? 100;
     const step: number = c.step ?? 5;

@@ -1,7 +1,8 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import type { GetalFunctieConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -13,13 +14,11 @@ const FUNCTIES = [
 ];
 
 export default function GetalFunctieConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<GetalFunctieConstraints>(block);
     const functies: string[] = c.functies ?? ['hoeveelheid', 'rang', 'maat', 'code'];
     const answerMode: string = c.answerMode ?? 'aankruisen';
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof GetalFunctieConstraints, value: unknown) => patch({ [key]: value } as Partial<GetalFunctieConstraints>);
     const toggleFunctie = (k: string) => {
         const next = functies.includes(k) ? functies.filter(x => x !== k) : [...functies, k];
         // ≥2 nodig: één kolom aankruisen is geen oefening.

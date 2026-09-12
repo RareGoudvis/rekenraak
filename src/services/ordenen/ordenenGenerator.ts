@@ -1,5 +1,6 @@
 import type { MathBlock, OrdenenExercise, Fraction } from '../math/types';
 import { numberMatchesMask } from '../math/mathEngine';
+import type { OrdenenConstraints } from '../math/constraintTypes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -44,7 +45,7 @@ function genValue(numberType: string, c: OrdConstraints): number | Fraction {
 }
 
 export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as OrdenenConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const count: number = c.count ?? 3;
     const operatorMode: string = c.operatorMode ?? 'oplopend';

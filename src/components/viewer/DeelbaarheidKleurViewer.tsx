@@ -1,6 +1,7 @@
 import type { MathBlock, DeelbaarheidKleurExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
+import type { DeelbaarheidKleurConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -13,9 +14,10 @@ const SOL = '#e11d48';
 
 export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props) {
     const exercises: DeelbaarheidKleurExercise[] = block.deelbaarheidKleurExercises || [];
-    const viewMode: string = block.constraints.viewMode ?? 'strip';
-    const showRest: boolean = (block.constraints.showRest ?? false) && viewMode !== 'raster';
-    const perRow: number = block.constraints.perRow ?? 10;
+    const c = block.constraints as DeelbaarheidKleurConstraints;
+    const viewMode: string = c.viewMode ?? 'strip';
+    const showRest: boolean = (c.showRest ?? false) && viewMode !== 'raster';
+    const perRow: number = c.perRow ?? 10;
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

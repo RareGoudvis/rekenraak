@@ -1,4 +1,5 @@
 import type { MathBlock, DeelbaarheidKleurExercise } from '../math/types';
+import type { DeelbaarheidKleurConstraints } from '../math/constraintTypes';
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -16,7 +17,7 @@ function stripNumbers(perRow: number, maxGetal: number, divisor: number, minMult
 }
 
 export function generateDeelbaarheidKleurExercises(block: MathBlock): DeelbaarheidKleurExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as DeelbaarheidKleurConstraints;
     const viewMode: string = c.viewMode ?? 'strip';
     const divisors: number[] = Array.isArray(c.divisors) && c.divisors.length ? c.divisors : [2, 5, 10];
     const maxGetal: number = c.maxGetal ?? 100;

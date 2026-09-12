@@ -1,6 +1,7 @@
 import type { MathBlock } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
+import type { DeelbaarheidConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -13,8 +14,9 @@ const SALMON = '#f4cbb8';
 export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
     const exercises = block.deelbaarheidExercises || [];
-    const layout = block.constraints.layout || 'tabel';
-    const divisors: number[] = block.constraints.divisors || [2, 5, 10];
+    const c = block.constraints as DeelbaarheidConstraints;
+    const layout = c.layout || 'tabel';
+    const divisors: number[] = c.divisors || [2, 5, 10];
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

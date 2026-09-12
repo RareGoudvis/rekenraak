@@ -1,4 +1,5 @@
 import type { MathBlock, DeelbaarheidExercise } from '../math/types';
+import type { DeelbaarheidConstraints } from '../math/constraintTypes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -10,7 +11,7 @@ export function generateDeelbaarheidExercises(block: MathBlock): DeelbaarheidExe
         base = 9,
         terms = 6,                 // veelvouden: how many numbers in the row (incl 0)
         givenCount = 2,            // veelvouden: how many filled before the blanks
-    } = block.constraints;
+    } = block.constraints as DeelbaarheidConstraints;
 
     const n = block.numberOfExercises;
     const results: DeelbaarheidExercise[] = [];

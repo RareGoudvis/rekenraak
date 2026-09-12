@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { useBlockWidth } from './BlockWidthContext';
+import type { GetallenrijConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -33,7 +34,8 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: GetallenasExercise[] = block.getallenasExercises || [];
     const gap = block.verticalSpacing || 14;
-    const showFrame = block.constraints.showFrame !== false;
+    const c = block.constraints as GetallenrijConstraints;
+    const showFrame = c.showFrame !== false;
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;

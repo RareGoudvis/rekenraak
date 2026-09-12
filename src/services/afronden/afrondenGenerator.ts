@@ -1,5 +1,6 @@
 import type { MathBlock, AfrondenExercise } from '../math/types';
 import { getMaskPlaces } from '../math/mathEngine';
+import type { AfrondenConstraints } from '../math/constraintTypes';
 
 export interface RoundTarget { key: string; label: string; weight: number; }
 
@@ -65,13 +66,14 @@ function buildDecimal(maxGetal: number, decimalPlaces: number): number {
 }
 
 export function generateAfrondenExercises(block: MathBlock): AfrondenExercise[] {
-    const subType: string = block.constraints.subType ?? 'rooster';
-    const numberType: string = block.constraints.numberType ?? 'natural';
-    const maxGetal: number = block.constraints.maxGetal ?? (numberType === 'decimal' ? 100 : 1000);
-    const decimalPlaces: number = block.constraints.decimalPlaces ?? 2;
-    const numberMask: Record<string, boolean> = block.constraints.numberMask ?? {};
-    const roosterSize: number = block.constraints.roosterSize ?? 6;
-    const targets: string[] = block.constraints.roundTargets ?? (numberType === 'decimal' ? ['E', 't'] : ['T', 'H']);
+    const c = block.constraints as AfrondenConstraints;
+    const subType: string = c.subType ?? 'rooster';
+    const numberType: string = c.numberType ?? 'natural';
+    const maxGetal: number = c.maxGetal ?? (numberType === 'decimal' ? 100 : 1000);
+    const decimalPlaces: number = c.decimalPlaces ?? 2;
+    const numberMask: Record<string, boolean> = c.numberMask ?? {};
+    const roosterSize: number = c.roosterSize ?? 6;
+    const targets: string[] = c.roundTargets ?? (numberType === 'decimal' ? ['E', 't'] : ['T', 'H']);
     const all = targetsFor(numberType);
     // Only targets that actually change the number (excludes decimal no-ops like rounding
     // a 1-decimal number "to tiende"). Falls back to the coarsest target if none qualify.

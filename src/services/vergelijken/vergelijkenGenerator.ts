@@ -1,5 +1,6 @@
 import type { MathBlock, VergelijkenExercise, Fraction } from '../math/types';
 import { getMaskPlaces } from '../math/mathEngine';
+import type { VergelijkenConstraints } from '../math/constraintTypes';
 
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -26,12 +27,13 @@ function buildNumber(maxGetal: number, numberMask: Record<string, boolean>, deci
 }
 
 export function generateVergelijkenExercises(block: MathBlock): VergelijkenExercise[] {
-    const subType: string = block.constraints.subType ?? 'getallen';
-    const maxGetal: number = block.constraints.maxGetal ?? 1000;
-    const numberMask: Record<string, boolean> = block.constraints.numberMask ?? {};
-    const decimalPlaces: number = block.constraints.decimalPlaces ?? 0;
-    const setSize: number = block.constraints.setSize ?? 4;
-    const target: string = block.constraints.chooseTarget ?? 'grootste';
+    const c = block.constraints as VergelijkenConstraints;
+    const subType: string = c.subType ?? 'getallen';
+    const maxGetal: number = c.maxGetal ?? 1000;
+    const numberMask: Record<string, boolean> = c.numberMask ?? {};
+    const decimalPlaces: number = c.decimalPlaces ?? 0;
+    const setSize: number = c.setSize ?? 4;
+    const target: string = c.chooseTarget ?? 'grootste';
     const count = block.numberOfExercises || 6;
     const out: VergelijkenExercise[] = [];
     const seen = new Set<string>();
@@ -42,10 +44,10 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
     // Non-breuk sides honour a place-value mask; a breuk side is a real fraction
     // (teller/noemer getalopbouw). Values are independent — compared numerically.
     const maxDp = Math.min(2, Math.max(1, decimalPlaces || 1));
-    const leftRep: string = block.constraints.leftRep ?? 'breuk';
-    const rightRep: string = block.constraints.rightRep ?? 'kommagetal';
-    const leftMask: Record<string, boolean> = block.constraints.leftMask ?? {};
-    const rightMask: Record<string, boolean> = block.constraints.rightMask ?? {};
+    const leftRep: string = c.leftRep ?? 'breuk';
+    const rightRep: string = c.rightRep ?? 'kommagetal';
+    const leftMask: Record<string, boolean> = c.leftMask ?? {};
+    const rightMask: Record<string, boolean> = c.rightMask ?? {};
     const buildRepMasked = (mask: Record<string, boolean>): number => {
         const dp = randInt(1, maxDp);
         const active = getMaskPlaces(maxGetal, 'decimal', dp).filter(p => mask[p.key]);
@@ -72,8 +74,8 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
                 if (rep === 'breuk') { const f = buildFrac(fN, fD); return { value: f.n / f.d, frac: f }; }
                 return { value: buildRepMasked(mask) };
             };
-            const left = buildSide(leftRep, leftMask, block.constraints.leftFracN ?? 4, block.constraints.leftFracD ?? 8);
-            const right = buildSide(rightRep, rightMask, block.constraints.rightFracN ?? 4, block.constraints.rightFracD ?? 8);
+            const left = buildSide(leftRep, leftMask, c.leftFracN ?? 4, c.leftFracD ?? 8);
+            const right = buildSide(rightRep, rightMask, c.rightFracN ?? 4, c.rightFracD ?? 8);
             const key = `${left.value}|${left.frac?.n}/${left.frac?.d}|${right.value}|${right.frac?.n}/${right.frac?.d}`;
             if (seen.has(key)) continue;
             seen.add(key);

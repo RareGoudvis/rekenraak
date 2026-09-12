@@ -4,6 +4,7 @@ import { getMaskPlaces, digitAtPlace } from '../../services/math/mathEngine';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import type { PlaatswaardeConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -25,9 +26,10 @@ function placesOf(n: number, maxGetal: number, decimalPlaces: number) {
 export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: PlaatswaardeExercise[] = block.plaatswaardeExercises || [];
-    const subType: string = block.constraints.subType ?? 'waarde';
-    const maxGetal: number = block.constraints.maxGetal ?? 1000;
-    const decimalPlaces: number = block.constraints.decimalPlaces ?? 0;
+    const c = block.constraints as PlaatswaardeConstraints;
+    const subType: string = c.subType ?? 'waarde';
+    const maxGetal: number = c.maxGetal ?? 1000;
+    const decimalPlaces: number = c.decimalPlaces ?? 0;
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

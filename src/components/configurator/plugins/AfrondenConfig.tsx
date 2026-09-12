@@ -1,10 +1,11 @@
-import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { targetsFor } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { AfrondenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -12,8 +13,7 @@ const NAT_PRESETS = [100, 1000, 10000, 100000, 1000000];
 const DEC_PRESETS = [10, 100, 1000];
 
 export default function AfrondenConfig({ block }: Props) {
-    const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const c = block.constraints;
+    const [c, patch] = useConstraints<AfrondenConstraints>(block);
     const numberType: string = c.numberType ?? 'natural';
     const isDecimal = numberType === 'decimal';
     const subType: string = c.subType ?? 'rooster';
@@ -23,8 +23,7 @@ export default function AfrondenConfig({ block }: Props) {
     const roosterSize = c.roosterSize ?? 6;
     const decimalPlaces = c.decimalPlaces ?? 2;
 
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...c, [key]: value } });
+    const set = (key: keyof AfrondenConstraints, value: unknown) => patch({ [key]: value } as Partial<AfrondenConstraints>);
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
     const toggleTarget = (k: string) => {
         const next = roundTargets.includes(k) ? roundTargets.filter((x: string) => x !== k) : [...roundTargets, k];

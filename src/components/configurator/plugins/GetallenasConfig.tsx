@@ -4,6 +4,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { GetallenasConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -28,7 +29,7 @@ export default function GetallenasConfig({ block }: Props) {
         minGetal,
         allowMixed = true,
         gelijknamig = false,
-    } = block.constraints;
+    } = block.constraints as GetallenasConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

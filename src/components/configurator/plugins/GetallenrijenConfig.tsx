@@ -6,6 +6,7 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import FractionMaxField from './FractionMaxField';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { GetallenrijConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -39,7 +40,7 @@ export default function GetallenrijenConfig({ block }: Props) {
         gelijknamig = false,
         numberMask = {},
         maxTeller = 25,
-    } = block.constraints;
+    } = block.constraints as GetallenrijConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

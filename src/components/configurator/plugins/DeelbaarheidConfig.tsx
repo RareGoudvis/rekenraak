@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { DeelbaarheidConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -21,7 +22,7 @@ export default function DeelbaarheidConfig({ block }: Props) {
         base = 9,
         terms = 6,
         givenCount = 2,
-    } = block.constraints;
+    } = block.constraints as DeelbaarheidConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

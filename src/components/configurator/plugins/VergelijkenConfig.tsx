@@ -6,6 +6,7 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import FractionMaxField from './FractionMaxField';
 import PopupSelect from '../../ui/PopupSelect';
+import type { VergelijkenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -15,7 +16,7 @@ const REP_MAX_PRESETS = [10, 100, 1000];   // representaties: tienden/honderdste
 export default function VergelijkenConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const { subType = 'getallen', maxGetal = 1000, numberMask = {}, chooseTarget = 'grootste', setSize = 4, decimalPlaces = 0, leftRep = 'breuk', rightRep = 'kommagetal', leftMask = {}, rightMask = {},
-        leftFracN = 4, leftFracD = 8, rightFracN = 4, rightFracD = 8 } = block.constraints;
+        leftFracN = 4, leftFracD = 8, rightFracN = 4, rightFracD = 8 } = block.constraints as VergelijkenConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

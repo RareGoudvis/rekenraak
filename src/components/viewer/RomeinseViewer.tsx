@@ -2,6 +2,7 @@ import type { MathBlock, RomeinseExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import type { RomeinseConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -14,7 +15,8 @@ const SOL = '#e11d48';
 export default function RomeinseViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: RomeinseExercise[] = block.romeinseExercises || [];
-    const subType: string = block.constraints.subType ?? 'herkennen';
+    const c = block.constraints as RomeinseConstraints;
+    const subType: string = c.subType ?? 'herkennen';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

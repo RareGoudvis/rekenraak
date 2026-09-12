@@ -4,6 +4,7 @@ import type { RepKind } from '../../services/vergelijken/representations';
 import RepValue from './RepValue';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import type { VergelijkenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -16,7 +17,8 @@ const SOL = '#e11d48';
 export default function VergelijkenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: VergelijkenExercise[] = block.vergelijkenExercises || [];
-    const subType: string = block.constraints.subType ?? 'getallen';
+    const c = block.constraints as VergelijkenConstraints;
+    const subType: string = c.subType ?? 'getallen';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
@@ -58,8 +60,8 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
 
     // ── REPRESENTATIES: each side in a chosen representation, fill <, > or = ────
     if (subType === 'representaties') {
-        const leftRep: RepKind = block.constraints.leftRep ?? 'breuk';
-        const rightRep: RepKind = block.constraints.rightRep ?? 'kommagetal';
+        const leftRep: RepKind = c.leftRep ?? 'breuk';
+        const rightRep: RepKind = c.rightRep ?? 'kommagetal';
         // 'woorden' spells a value out ("9 honderdtallen 8 tientallen …") and wraps to
         // several lines in a 2-up track — keep those comparisons full width (1-up).
         const hasWoorden = leftRep === 'woorden' || rightRep === 'woorden';

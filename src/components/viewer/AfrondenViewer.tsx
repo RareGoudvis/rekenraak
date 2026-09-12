@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import { targetsFor, roundTo, usableTargets } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
+import type { AfrondenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -16,11 +17,12 @@ const SALMON = '#f4cbb8';
 export default function AfrondenViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
     const exercises: AfrondenExercise[] = block.afrondenExercises || [];
-    const subType: string = block.constraints.subType ?? 'rooster';
-    const numberType: string = block.constraints.numberType ?? 'natural';
-    const maxGetal: number = block.constraints.maxGetal ?? (numberType === 'decimal' ? 100 : 1000);
-    const decimalPlaces: number = block.constraints.decimalPlaces ?? 2;
-    const targetKeys: string[] = block.constraints.roundTargets ?? (numberType === 'decimal' ? ['E', 't'] : ['T', 'H']);
+    const c = block.constraints as AfrondenConstraints;
+    const subType: string = c.subType ?? 'rooster';
+    const numberType: string = c.numberType ?? 'natural';
+    const maxGetal: number = c.maxGetal ?? (numberType === 'decimal' ? 100 : 1000);
+    const decimalPlaces: number = c.decimalPlaces ?? 2;
+    const targetKeys: string[] = c.roundTargets ?? (numberType === 'decimal' ? ['E', 't'] : ['T', 'H']);
     const gap = block.verticalSpacing || 14;
 
     const all = targetsFor(numberType);

@@ -4,6 +4,7 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { PlaatswaardeConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -11,7 +12,7 @@ const MAX_PRESETS = [100, 1000, 10000, 100000, 1000000];
 
 export default function PlaatswaardeConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { maxGetal = 1000, numberMask = {}, decimalPlaces = 0 } = block.constraints;
+    const { maxGetal = 1000, numberMask = {}, decimalPlaces = 0 } = block.constraints as PlaatswaardeConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

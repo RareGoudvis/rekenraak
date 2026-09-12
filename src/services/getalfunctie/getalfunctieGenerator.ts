@@ -1,4 +1,5 @@
 import type { MathBlock, GetalFunctieExercise, GetalFunctie } from '../math/types';
+import type { GetalFunctieConstraints } from '../math/constraintTypes';
 
 // Functie van getallen — hoeveelheidsgetal (telresultaat), rangordegetal (positie),
 // maatgetal (meting), codegetal (identificatie; rekenen ermee is zinloos).
@@ -46,7 +47,7 @@ const BANK: Record<GetalFunctie, Template[]> = {
 };
 
 export function generateGetalFunctieExercises(block: MathBlock): GetalFunctieExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as GetalFunctieConstraints;
     const functies: GetalFunctie[] = c.functies ?? ['hoeveelheid', 'rang', 'maat', 'code'];
     const maxGetal: number = c.maxGetal ?? 1000;
     const pool = functies.length ? functies : (['hoeveelheid'] as GetalFunctie[]);

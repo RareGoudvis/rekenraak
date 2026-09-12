@@ -4,6 +4,7 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { OrdenenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -33,7 +34,7 @@ export default function OrdenenConfig({ block }: Props) {
         maxDenominator = 10,
         unitFractionsOnly = false,
         allowMixed = false,
-    } = block.constraints;
+    } = block.constraints as OrdenenConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

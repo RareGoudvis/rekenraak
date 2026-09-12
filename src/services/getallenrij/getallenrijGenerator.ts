@@ -1,5 +1,6 @@
 import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
 import { numberMatchesMask } from '../math/mathEngine';
+import type { GetallenrijConstraints } from '../math/constraintTypes';
 
 // Getallenrijen = number sequences (start ± k·step) shown in a pill, some cells blank.
 // Same value model as getallenas (GetallenasExercise) minus the drawn axis line; adds
@@ -42,7 +43,7 @@ const stepDecimals = (s: number): number => {
 };
 
 export function generateGetallenrijExercises(block: MathBlock): GetallenasExercise[] {
-    const c = block.constraints;
+    const c = block.constraints as GetallenrijConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const maxGetal: number = c.maxGetal ?? 100;
     const step: number = c.step ?? 5;

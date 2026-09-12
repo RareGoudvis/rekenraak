@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import SettingLabel from './SettingLabel';
+import type { DeelbaarheidKleurConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -21,7 +22,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
         rasterCount = 100,
         rasterCols = 10,
         showRest = false,
-    } = block.constraints;
+    } = block.constraints as DeelbaarheidKleurConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

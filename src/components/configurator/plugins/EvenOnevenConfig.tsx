@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import type { EvenOnevenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
@@ -10,7 +11,7 @@ const MAX_PRESETS = [20, 100, 1000, 10000];
 
 export default function EvenOnevenConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-    const { subType = 'rooster', maxGetal = 100, target = 'even', perRow = 10 } = block.constraints;
+    const { subType = 'rooster', maxGetal = 100, target = 'even', perRow = 10 } = block.constraints as EvenOnevenConstraints;
 
     const set = (key: string, value: unknown) =>
         updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value } });

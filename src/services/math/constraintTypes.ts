@@ -1,3 +1,5 @@
+import type { GetalFunctie } from './types';
+import type { RepKind } from '../vergelijken/representations';
 import type { TimeCategory, ClockType, ExerciseMode, MinuteDirection, HandChoice } from '../clock/clockTypes';
 import type { ConstraintType, FractionSubType, FractionShape, MabStyle, MabScaffolding, ScaffoldingLevel, CijferOperator } from './types';
 
@@ -273,8 +275,8 @@ export type VergelijkenConstraints = {
     chooseTarget: 'grootste' | 'kleinste';
     setSize: number;
     decimalPlaces: number;
-    leftRep: string;
-    rightRep: string;
+    leftRep: RepKind;
+    rightRep: RepKind;
     leftMask: PlaceMask;
     rightMask: PlaceMask;
     leftFracN: number;
@@ -299,7 +301,7 @@ export type RomeinseConstraints = {
 };
 
 export type GetalFunctieConstraints = {
-    functies: string[];
+    functies: GetalFunctie[];
     answerMode: 'aankruisen' | 'schrijven';
     maxGetal: number;
 };

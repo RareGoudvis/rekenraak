@@ -1,5 +1,6 @@
 import type { MathBlock, GetalFunctieExercise, GetalFunctie } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
+import type { GetalFunctieConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -19,8 +20,9 @@ const FUNCTIE_FULL: Record<GetalFunctie, string> = {
 
 export default function GetalFunctieViewer({ block, showSolutions }: Props) {
     const exercises: GetalFunctieExercise[] = block.getalFunctieExercises || [];
-    const functies: GetalFunctie[] = block.constraints.functies ?? ['hoeveelheid', 'rang', 'maat', 'code'];
-    const answerMode: string = block.constraints.answerMode ?? 'aankruisen';
+    const c = block.constraints as GetalFunctieConstraints;
+    const functies: GetalFunctie[] = c.functies ?? ['hoeveelheid', 'rang', 'maat', 'code'];
+    const answerMode: string = c.answerMode ?? 'aankruisen';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

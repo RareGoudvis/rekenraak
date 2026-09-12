@@ -1,5 +1,6 @@
 import type { MathBlock, PlaatswaardeExercise } from '../math/types';
 import { getMaskPlaces, digitAtPlace } from '../math/mathEngine';
+import type { PlaatswaardeConstraints } from '../math/constraintTypes';
 
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -26,10 +27,11 @@ function buildNumber(maxGetal: number, numberMask: Record<string, boolean>, deci
 }
 
 export function generatePlaatswaardeExercises(block: MathBlock): PlaatswaardeExercise[] {
-    const subType: string = block.constraints.subType ?? 'waarde';
-    const maxGetal: number = block.constraints.maxGetal ?? 1000;
-    const numberMask: Record<string, boolean> = block.constraints.numberMask ?? {};
-    const decimalPlaces: number = block.constraints.decimalPlaces ?? 0;
+    const c = block.constraints as PlaatswaardeConstraints;
+    const subType: string = c.subType ?? 'waarde';
+    const maxGetal: number = c.maxGetal ?? 1000;
+    const numberMask: Record<string, boolean> = c.numberMask ?? {};
+    const decimalPlaces: number = c.decimalPlaces ?? 0;
     const count = block.numberOfExercises || 6;
     const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
 

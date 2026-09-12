@@ -2,6 +2,7 @@ import type { MathBlock, EvenOnevenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import type { EvenOnevenConstraints } from '../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
@@ -14,9 +15,10 @@ const FILL = '#93c5fd';
 export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const exercises: EvenOnevenExercise[] = block.evenOnevenExercises || [];
-    const subType: string = block.constraints.subType ?? 'rooster';
-    const target: string = block.constraints.target ?? 'even';
-    const perRow: number = block.constraints.perRow ?? 10;   // 'Getallen per rij' — fixed grid width
+    const c = block.constraints as EvenOnevenConstraints;
+    const subType: string = c.subType ?? 'rooster';
+    const target: string = c.target ?? 'even';
+    const perRow: number = c.perRow ?? 10;   // 'Getallen per rij' — fixed grid width
     const gap = block.verticalSpacing || 14;
     const isTarget = (n: number) => (target === 'even' ? n % 2 === 0 : n % 2 !== 0);
 
