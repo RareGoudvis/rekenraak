@@ -8,6 +8,7 @@ import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
 import { EXERCISE_UI } from './config/exerciseUI';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
+import { cellWidthPx } from './components/viewer/BlockWidthContext';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
@@ -208,19 +209,11 @@ export default function App() {
     );
   };
 
-  // Printable width of a grid cell, in px. The page body is 794px minus 2x16mm of side
-  // padding, split over COL_UNITS column units, minus the gaps a spanning cell does NOT
-  // get. Without this the viewers keep assuming a full-width 625px and lay out grids that
-  // overflow their cell — the exact failure phase B exists to prevent.
   // A column rule needs air on both sides or the right-hand block's digits sit flush
   // against it. The COLUMN gap widens by 16px when the rule is on; the ROW gap keeps
   // blockSpacing, so the packer's vertical budget is untouched.
   const colGapPx = (docSettings.blockSpacing ?? 12) + (docSettings.showColumnDividers ? 16 : 0);
-  const cellWidthPx = (units: number) => {
-    const CONTENT = 688;                              // 794 - 2 * 53px page padding
-    const unit = (CONTENT - 3 * colGapPx) / 4;        // 4 units, 3 gaps between them
-    return Math.floor(unit * units + colGapPx * (units - 1));
-  };
+  const cellWidth = (units: number) => cellWidthPx(units, colGapPx);
 
   // Pagination is decided by the packer, which pages a first time on its settings-derived
   // budget and then repacks on the heights the sheet actually rendered. Estimating alone
@@ -501,7 +494,7 @@ export default function App() {
                       (controls/spacing/dividers/page-break) stays outside, unscaled. */}
                   <ScaledBlock
                     scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}
-                    availableWidthPx={cellWidthPx(item.width)}
+                    availableWidthPx={cellWidth(item.width)}
                   >
                   {!isFurniture && <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',

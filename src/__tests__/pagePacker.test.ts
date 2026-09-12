@@ -2,6 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { packPages, pageIndexByBlock } from '../services/layout/pagePacker';
 import { COL_UNITS, ROW_BUDGET, type WidthUnits } from '../config/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
+import { cellWidthPx, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 
 // The packer is pure — blocks in, pages out, no DOM. These tests pin the placement rules
 // rather than the numbers: they are written against COL_UNITS / ROW_BUDGET so they keep
@@ -177,5 +178,25 @@ describe('packPages', () => {
         for (const page of packPages(blocks)) {
             for (const row of page.rows) expect(row.width).toBeLessThanOrEqual(COL_UNITS);
         }
+    });
+});
+
+// The sheet and the viewers must agree on how wide a cell is: while App computed 688 and
+// BlockWidthContext defaulted to 681, a viewer laid out a different grid depending on
+// whether it was inside a provider.
+describe('cellWidthPx', () => {
+    test('a full-width cell is the whole printable width, whatever the gap', () => {
+        for (const gap of [0, 12, 28]) expect(cellWidthPx(COL_UNITS, gap)).toBe(FULL_BLOCK_WIDTH_PX);
+    });
+
+    test('the units of a row plus its gaps add back up to the full width', () => {
+        for (const gap of [12, 28]) {
+            expect(cellWidthPx(2, gap) * 2 + gap).toBeCloseTo(FULL_BLOCK_WIDTH_PX, -1);
+            expect(cellWidthPx(1, gap) * 4 + gap * 3).toBeCloseTo(FULL_BLOCK_WIDTH_PX, -1);
+        }
+    });
+
+    test('a wider gap makes every cell narrower', () => {
+        expect(cellWidthPx(2, 28)).toBeLessThan(cellWidthPx(2, 12));
     });
 });

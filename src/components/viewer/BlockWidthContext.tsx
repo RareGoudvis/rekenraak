@@ -1,9 +1,11 @@
 import { createContext, useContext } from 'react';
 
 // Printable content width of a FULL-WIDTH block, in CSS px.
-// A4 at 96dpi is 794px minus 2x15mm of side margin, so a full-width block gets 681px.
-// (It was 625 while the margins were 16mm and the constant was deliberately conservative.)
-export const FULL_BLOCK_WIDTH_PX = 681;
+// A4 at 96dpi is 794px minus the page's 2x53px side padding, so a full-width block gets
+// 688px. SYNC: index.css .page-sheet-body padding (53px on screen, 14mm in print).
+// It read 681 (15mm) here while App computed 688, so a viewer saw a different width
+// depending on whether it was inside a provider; 688 is the one the grid actually gives.
+export const FULL_BLOCK_WIDTH_PX = 688;
 
 // Viewers decide their own column count from the width they have (2-up vs 1-up grids).
 // They used to hardcode 625, which is only true at full width: in a half-width block the
@@ -18,6 +20,14 @@ export function useBlockWidth(): number {
 }
 
 export const BlockWidthProvider = BlockWidthContext.Provider;
+
+// Printable width of a grid cell that spans `units` of the 4-unit page grid, given the
+// grid's column gap. A spanning cell also swallows the gaps it covers, which is why this
+// is not simply units x unit. One definition, used by the sheet and by the tests.
+export function cellWidthPx(units: number, gapPx: number): number {
+    const unit = (FULL_BLOCK_WIDTH_PX - 3 * gapPx) / 4;   // 4 units, 3 gaps between them
+    return Math.floor(unit * units + gapPx * (units - 1));
+}
 
 // How many items of `itemMinPx` fit across `availableWidth`, capped at what the viewer
 // would use at full width. Viewers that hardcoded a column count overflowed the moment
