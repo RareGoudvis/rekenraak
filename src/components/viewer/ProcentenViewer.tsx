@@ -11,6 +11,7 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function ProcentenViewer({ block, showSolutions }: Props) {
     const exercises: ProcentExercise[] = block.procentExercises || [];
@@ -35,7 +36,7 @@ export default function ProcentenViewer({ block, showSolutions }: Props) {
             rowGap={gap}
             items={exercises.map(ex => (
                 <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                         {subType === 'welk-percent'
                             ? <>
                                 <span>{formatMathNumber(ex.answer)} van de {formatMathNumber(ex.base)} =</span>
@@ -50,7 +51,7 @@ export default function ProcentenViewer({ block, showSolutions }: Props) {
                     {scaffold && subType === 'nemen' && (ex.percent % 10 === 0 ? ex.base % 10 === 0 : ex.base % 100 === 0) && (
                         // Tussenstap via 10 % / 1 % — the leerplan mental-math route.
                         // Only shown when the intermediate value is a whole number.
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '13px', color: '#555', paddingLeft: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.75)', color: '#555', paddingLeft: '16px' }}>
                             <span>{ex.percent % 10 === 0 ? '10' : '1'} % van {formatMathNumber(ex.base)} =</span>
                             {blank(formatMathNumber(ex.percent % 10 === 0 ? ex.base / 10 : ex.base / 100), 56)}
                         </div>

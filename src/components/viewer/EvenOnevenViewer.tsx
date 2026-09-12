@@ -12,6 +12,7 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const FILL = '#93c5fd';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
@@ -58,7 +59,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
                                     return <Circle key={c} size={objSize} ghost={false} solved={showSolutions} highlight={showSolutions && leftover} />;
                                 })}
                             </div>
-                            <div style={{ fontFamily: mono, fontSize: '14px', display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
+                            <div style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)', display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
                                 <span>{n} is</span>
                                 {showSolutions
                                     ? <span style={solutionText}>{n % 2 === 0 ? 'even' : 'oneven'}</span>
@@ -86,7 +87,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
                     {(ex.numbers || []).map((num, i) => (
                         <div key={i} style={{
                             width: cellW, height: cellH, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: '14px',
+                            border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)',
                             // collapse with left neighbour (same row) and the row above
                             marginLeft: i % perRow === 0 ? 0 : -1, marginTop: i >= perRow ? -1 : 0,
                             backgroundColor: showSolutions && isTarget(num) ? FILL : 'white',

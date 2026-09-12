@@ -13,6 +13,8 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
+// headerFs stays a raw px shrink-to-fit value (JS layout math against a fixed-px column width, not a static style).
 
 export default function AfrondenViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
@@ -44,14 +46,14 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                 items={exercises.map(ex => {
                     const t = all.find(x => x.key === ex.targetKey) ?? all[0];
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                             <span style={{ minWidth: '60px', textAlign: 'right' }}>{formatMathNumber(ex.number ?? 0)}</span>
                             <span>≈</span>
                             {showSolutions
                                 ? <span style={{ ...solutionText, minWidth: '58px' }}>{formatMathNumber(roundTo(ex.number ?? 0, t.weight))}</span>
                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: '58px', height: '15px', display: 'inline-block' }} />}
                             {/* nowrap + trimmed min-widths so the long 'tienduizendtal' hint doesn't wrap the 2-up row */}
-                            <span style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap' }}>(op {t.label})</span>
+                            <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', color: '#555', whiteSpace: 'nowrap' }}>(op {t.label})</span>
                         </div>
                     );
                 })}
@@ -75,7 +77,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     const headerFs = Math.max(9, Math.min(11, Math.floor(targetColPx / (maxLabelLen * 0.62))));
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '32px', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontFamily: mono, fontSize: '14px', boxSizing: 'border-box',
+        justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box',
     };
     return (
         <FragmentableGrid

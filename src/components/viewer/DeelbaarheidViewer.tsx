@@ -11,6 +11,7 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
@@ -34,9 +35,9 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
                     const seq = ex.sequence || [];
                     const given = ex.givenCount ?? 2;
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ fontFamily: mono, fontSize: '16px' }}>
-                            <div style={{ marginBottom: '8px' }}>Vul de rij veelvouden van <strong>{ex.base}</strong> aan:</div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'wrap' }}>
+                        <div key={ex.id} className="print-exercise" style={{ fontFamily: mono }}>
+                            <div style={{ marginBottom: '8px', fontSize: 'calc(var(--sheet-size-text) * 0.8)' }}>Vul de rij veelvouden van <strong>{ex.base}</strong> aan:</div>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'wrap', fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                                 {seq.map((v, i) => (
                                     <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '6px' }}>
                                         {i > 0 && <span>–</span>}
@@ -63,14 +64,14 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     if (A4_CONTENT_PX < 200) {
         const chip: React.CSSProperties = {
             display: 'flex', alignItems: 'stretch', border: '1px solid #000',
-            fontFamily: mono, fontSize: '13px', height: '26px', boxSizing: 'border-box',
+            fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.75)', height: '26px', boxSizing: 'border-box',
         };
         return (
             <FragmentableGrid
                 cols={1}
                 rowGap={gap + 4}
                 items={exercises.map((ex) => (
-                    <div key={ex.id} className="print-exercise" style={{ fontFamily: mono, fontSize: '16px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{ex.number}</div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {divisors.map(d => (
@@ -97,7 +98,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const cols = `${numberColPx}px ${divisors.map(() => `${tickColPx}px`).join(' ')}`;
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '34px', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontFamily: mono, fontSize: '15px', boxSizing: 'border-box',
+        justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)', boxSizing: 'border-box',
     };
 
     return (

@@ -11,6 +11,8 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
+// promptW/answerMin stay raw px (shrink-to-fit geometry measured against a fixed 18px char width, not a static style).
 
 export default function RomeinseViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
@@ -44,7 +46,7 @@ export default function RomeinseViewer({ block, showSolutions }: Props) {
                 const prompt = herkennen ? ex.roman : formatMathNumber(ex.value);
                 const answer = herkennen ? formatMathNumber(ex.value) : ex.roman;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', fontFamily: mono, fontSize: '18px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
                         {/* Fixed width + right-align pins the prompt's right edge so the arrow
                            and answer line align in a column regardless of numeral length. */}
                         <span style={{ width: `${promptW}px`, textAlign: 'right', whiteSpace: 'nowrap', letterSpacing: '1px', flexShrink: 0 }}>{prompt}</span>

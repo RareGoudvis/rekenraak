@@ -13,6 +13,7 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function SchattendViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
@@ -47,9 +48,9 @@ export default function SchattendViewer({ block, showSolutions }: Props) {
                     : ex.operator === 'x' ? Number((ra * rb).toFixed(6))
                     : Number((ra / rb).toFixed(6));
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px', flexWrap: 'nowrap' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', flexWrap: 'nowrap' }}>
                         {/* Compact target prefix + fixed-width expression column keep ≈ and blanks aligned. */}
-                        <span style={{ fontSize: '12px', color: '#555', minWidth: '30px' }}>({t.key})</span>
+                        <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', color: '#555', minWidth: '30px' }}>({t.key})</span>
                         <span style={{ minWidth: '128px', textAlign: 'right' }}>{formatMathNumber(ex.a)} {OP_GLYPH[ex.operator]} {formatMathNumber(ex.b)}</span>
                         <span>≈</span>
                         {scaffolding === 'tussenstappen' && (

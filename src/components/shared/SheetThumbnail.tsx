@@ -93,9 +93,11 @@ export default function SheetThumbnail({ file, height = 200, maxBlocks = 3 }: Pr
     );
 }
 
+// Base size mirrors the sheet's header/opdracht text (--sheet-size-text) so the library
+// card reads like a miniature of the real page, independent of the transform-scale ratio.
 const wrap: React.CSSProperties = {
     overflow: 'hidden', pointerEvents: 'none',
-    fontSize: '13px', color: '#000', background: '#fff',
+    fontSize: 'calc(var(--sheet-size-text) * 0.65)', color: '#000', background: '#fff',
     fontFamily: 'Azeret Mono, monospace',
 };
 // Inner renders at the nominal page width, left-aligned (NEVER fit-content — collapses
@@ -104,7 +106,7 @@ const inner: React.CSSProperties = {
     transformOrigin: 'top left', width: `${CONTENT_W}px`, padding: '14px 18px', boxSizing: 'border-box',
 };
 const headerRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '8px' };
-const titleRow: React.CSSProperties = { fontWeight: 'bold', fontSize: '16px', marginBottom: '8px' };
+const titleRow: React.CSSProperties = { fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.8)', marginBottom: '8px' };
 const blockWrap: React.CSSProperties = { marginBottom: '12px' };
 const opdracht: React.CSSProperties = { fontWeight: 'bold', marginBottom: '6px' };
 const fallback: React.CSSProperties = {

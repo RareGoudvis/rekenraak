@@ -448,9 +448,9 @@ export default function App() {
               const leftFs = visible.slice(0, splitIdx);
               const rightFs = showScore ? [] : visible.slice(splitIdx);
               // Rough width of the title, used only to decide inline-flank vs stacked.
-              // Ubuntu bold 24px averages ~12px/char; 13 keeps a little slack, and erring
-              // high only ever falls back to the (always safe) stacked layout.
-              const titleW = hasTitle ? (headerData!.titel.length * 13 + 24) : 0;
+              // Ubuntu bold averages ~0.62em/char (sheet-size-text base 20px → ~12.4px/char);
+              // erring high only ever falls back to the (always safe) stacked layout.
+              const titleW = hasTitle ? (headerData!.titel.length * 12.4 + 24) : 0;
               const rightW = showScore ? 160 : rowW(rightFs);
               // Inline-flank only if the whole thing comfortably fits one A4 line (~760px usable);
               // otherwise fall back to the stacked layout (fields row on top, title beneath).
@@ -612,7 +612,7 @@ export default function App() {
                         const boxed = docSettings.opdrachtTitelStyle === 'boxed';
                         if (boxed) return (
                           <>
-                            <span style={{ fontWeight: 'bold', fontSize: '12px', whiteSpace: 'nowrap' }}>{label}</span>
+                            <span style={{ fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)', whiteSpace: 'nowrap' }}>{label}</span>
                             <span style={{ width: '1.5px', alignSelf: 'stretch', background: '#000' }} />
                           </>
                         );

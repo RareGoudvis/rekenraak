@@ -13,6 +13,7 @@ interface Props {
 const CM = 37.8;
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 // Eigenschappen columns. Triangles are classified GEOMETRICALLY (sides/angles from the
 // drawn figure) so a gelijkbenige driehoek also ticks its hoek-column when both axes
@@ -229,7 +230,7 @@ function PuntLijnSVG({ ex, size }: { ex: VormleerExercise; size: number }) {
     };
     const dot = (p: MeetPoint, key: string) => <circle key={key} cx={p.x} cy={p.y} r={2.5} fill="#000" />;
     const text = (p: MeetPoint, s: string, key: string, dy = -8) =>
-        <text key={key} x={p.x} y={p.y + dy} textAnchor="middle" fontSize="12" fontFamily={mono} fontStyle="italic">{s}</text>;
+        <text key={key} x={p.x} y={p.y + dy} textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={mono} fontStyle="italic">{s}</text>;
 
     const parts: React.ReactNode[] = [];
     const line = (a: MeetPoint, b: MeetPoint, key: string, dash = false) =>
@@ -298,7 +299,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
             : <PuntLijnSVG ex={ex} size={size} />;
 
     const woordbank = answerMode === 'woordbank' && (mode === 'herkennen' || mode === 'benoemen') && (
-        <div key="bank" className="print-exercise" style={{ fontSize: '13px', marginBottom: '6px' }}>
+        <div key="bank" className="print-exercise" style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: '6px' }}>
             <strong>Kies uit: </strong>{concepts.map(k => CONCEPT_NAMES[k] ?? k).join(' · ')}
         </div>
     );
@@ -313,7 +314,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                 rowGap={gap + 6}
                 alignItems="flex-start"
                 items={exercises.map(ex => (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '13px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: 'calc(var(--sheet-size-text) * 0.65)' }}>
                         <span>Teken: <strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong></span>
                         <div style={{ position: 'relative', width: '100%', maxWidth: '280px', height: `${boxPx}px`, border: '1px solid #000' }}>
                             {raster && (
@@ -340,7 +341,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
         const grid = `120px ${cols.map(() => '130px').join(' ')}`;
         const cell: React.CSSProperties = {
             border: '1px solid #000', minHeight: '40px', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: '12px', boxSizing: 'border-box', padding: '4px 6px', textAlign: 'center',
+            justifyContent: 'center', fontSize: 'calc(var(--sheet-size-text) * 0.6)', boxSizing: 'border-box', padding: '4px 6px', textAlign: 'center',
         };
         return (
             <FragmentableGrid
@@ -356,7 +357,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                         <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
                             <div style={{ ...cell, minHeight: '86px' }}>{mini(ex, 76)}</div>
                             {cols.map(col => (
-                                <div key={col.label} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold', fontSize: '15px' }}>
+                                <div key={col.label} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                                     {showSolutions && col.test(ex) ? '✕' : ''}
                                 </div>
                             ))}
@@ -380,7 +381,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                             {mini(ex, 110)}
                             {showSolutions
-                                ? <span style={{ ...solutionText, fontFamily: mono, fontSize: '12px', textAlign: 'center' }}>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</span>
+                                ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.6)', textAlign: 'center' }}>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</span>
                                 : <span style={{ borderBottom: '1.5px solid #000', width: '90%', height: '16px' }} />}
                         </div>
                     ))}

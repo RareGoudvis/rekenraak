@@ -12,6 +12,8 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 // Same operator glyphs as everywhere else, plus the brackets this viewer alone prints.
 const GLYPH: Record<string, string> = { ...OP_GLYPH, '(': '(', ')': ')' };
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
+// CHAR_PX stays a raw px shrink-to-fit constant (measured Azeret Mono advance, not a static style).
 
 export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     const exercises: RekenvolgordeExercise[] = block.rekenvolgordeExercises || [];
@@ -48,7 +50,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
             columnGap={COL_GAP}
             rowGap={gap}
             items={exercises.map((ex, i) => (
-                <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: '16px' }}>
+                <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                     <span style={{ width: `${exprW}px`, textAlign: 'right', whiteSpace: 'pre', flexShrink: 0 }}>{exprs[i]}</span>
                     <span>=</span>
                     {showSolutions

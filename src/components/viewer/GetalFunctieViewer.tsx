@@ -10,6 +10,7 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 const FUNCTIE_LABEL: Record<GetalFunctie, string> = {
     hoeveelheid: 'hoeveelheid', rang: 'rangorde', maat: 'maat', code: 'code',
@@ -37,10 +38,10 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
                 columnGap={24}
                 rowGap={gap}
                 items={exercises.map(ex => (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '15px', flexWrap: 'wrap' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: 'calc(var(--sheet-size-text) * 0.75)', flexWrap: 'wrap' }}>
                         <span>{ex.sentence}</span>
                         {showSolutions
-                            ? <span style={{ ...solutionText, fontFamily: mono, fontSize: '14px' }}>{FUNCTIE_FULL[ex.functie]}</span>
+                            ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>{FUNCTIE_FULL[ex.functie]}</span>
                             : <span style={{ borderBottom: '1.5px solid #000', minWidth: '140px', height: '15px', display: 'inline-block' }} />}
                     </div>
                 ))}
@@ -53,7 +54,7 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
     const grid = `minmax(230px, 1fr) ${cols.map(() => '86px').join(' ')}`;
     const cell: React.CSSProperties = {
         border: '1px solid #000', minHeight: '32px', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontSize: '13px', boxSizing: 'border-box', padding: '3px 8px',
+        justifyContent: 'center', fontSize: 'calc(var(--sheet-size-text) * 0.65)', boxSizing: 'border-box', padding: '3px 8px',
     };
     return (
         <FragmentableGrid
@@ -63,7 +64,7 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
             items={[
                 <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid }}>
                     <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', justifyContent: 'flex-start' }}>zin</div>
-                    {cols.map(f => <div key={f} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '11px' }}>{FUNCTIE_LABEL[f]}</div>)}
+                    {cols.map(f => <div key={f} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.55)' }}>{FUNCTIE_LABEL[f]}</div>)}
                 </div>,
                 ...exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid }}>

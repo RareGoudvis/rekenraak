@@ -11,6 +11,7 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const FILL = '#93c5fd';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props) {
     const exercises: DeelbaarheidKleurExercise[] = block.deelbaarheidKleurExercises || [];
@@ -25,7 +26,7 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
     }
 
     const restLine = (n: number, divisor: number) => (
-        <span style={{ fontSize: '11px', display: 'inline-flex', alignItems: 'flex-end', gap: '2px', marginTop: '2px' }}>
+        <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.64)', display: 'inline-flex', alignItems: 'flex-end', gap: '2px', marginTop: '2px' }}>
             r={showSolutions ? <span style={{ ...solutionText }}>{n % divisor}</span> : <span style={{ borderBottom: '1px solid #000', display: 'inline-block', width: '20px', height: '12px' }} />}
         </span>
     );
@@ -42,12 +43,12 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                     const cols = ex.cols ?? 10;
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <span style={{ fontFamily: mono, fontSize: '14px' }}>Kleur de veelvouden van {ex.divisor}:</span>
+                            <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
                             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 42px)`, width: 'fit-content' }}>
                                 {ex.numbers.map((num, i) => (
                                     <div key={i} style={{
                                         width: 42, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: '12px',
+                                        border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.7)',
                                         marginLeft: i % cols === 0 ? 0 : -1, marginTop: i >= cols ? -1 : 0,
                                         backgroundColor: showSolutions && isMul(num) ? FILL : 'white',
                                     }}>{formatMathNumber(num)}</div>
@@ -61,8 +62,8 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                 if (viewMode === 'markeren') {
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <span style={{ fontFamily: mono, fontSize: '14px' }}>Omcirkel de veelvouden van {ex.divisor}:</span>
-                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`, rowGap: '10px', columnGap: '6px', fontFamily: mono, fontSize: '17px' }}>
+                            <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Omcirkel de veelvouden van {ex.divisor}:</span>
+                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`, rowGap: '10px', columnGap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
                                 {ex.numbers.map((num, i) => {
                                     const ring = showSolutions && isMul(num);
                                     return (
@@ -81,13 +82,13 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                 const cellW = 46, cellH = 34;
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <span style={{ fontFamily: mono, fontSize: '14px' }}>Kleur de veelvouden van {ex.divisor}:</span>
+                        <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: showRest ? '4px' : '0', alignItems: 'flex-start' }}>
                             {ex.numbers.map((num, i) => (
                                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: showRest || i === 0 ? 0 : -1 }}>
                                     <div style={{
                                         width: cellW, height: cellH, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: '14px',
+                                        border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)',
                                         backgroundColor: showSolutions && isMul(num) ? FILL : 'white',
                                     }}>{formatMathNumber(num)}</div>
                                     {showRest && restLine(num, ex.divisor)}

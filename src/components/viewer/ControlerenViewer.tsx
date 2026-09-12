@@ -13,6 +13,7 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const INVERSE: Record<string, string> = { '+': '−', '-': '+' };
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 // Negenproef-kruis: rests of the factors top/bottom, product-of-rests' rest left,
 // rest of the shown answer right. Proef klopt when left equals right.
@@ -23,7 +24,7 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
     const rProduct = negenrest(rA * rB);
     const rShown = negenrest(ex.shownAnswer);
     const num = (x: number, y: number, val: number) => showSolutions
-        ? <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="15" fontFamily={mono} fill={SOL}>{val}</text>
+        ? <text x={x} y={y} textAnchor="middle" dominantBaseline="central" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.87)' }} fontFamily={mono} fill={SOL}>{val}</text>
         : null;
     return (
         <svg width={size} height={size} style={{ flexShrink: 0 }}>
@@ -52,7 +53,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
         const correct = ex.shownAnswer === ex.correctAnswer;
         const mark = (label: string, hit: boolean) => (
             <span style={{
-                padding: '1px 10px', borderRadius: '10px', fontFamily: mono, fontSize: '13px',
+                padding: '1px 10px', borderRadius: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.65)',
                 border: showSolutions && hit ? `2px solid ${SOL}` : '1px solid #999',
                 color: showSolutions && hit ? SOL : undefined,
             }}>{label}</span>
@@ -71,7 +72,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                 items={exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <span style={{ fontFamily: mono, fontSize: '16px' }}>
+                            <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                                 {formatMathNumber(ex.a)} × {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}
                             </span>
                             {juistFout(ex)}
@@ -97,13 +98,13 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                 const checkVal = ex.operator === '+' ? ex.shownAnswer - ex.b : ex.shownAnswer + ex.b;
                 const solution = `${formatMathNumber(ex.shownAnswer)} ${inv} ${formatMathNumber(ex.b)} = ${formatMathNumber(checkVal)}`;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: mono, fontSize: '15px' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px' }}>
                             <span>{formatMathNumber(ex.a)} {GLYPH[ex.operator]} {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}</span>
                             {juistFout(ex)}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', paddingLeft: '16px' }}>
-                            <span style={{ fontSize: '12px', color: '#555' }}>controle:</span>
+                            <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', color: '#555' }}>controle:</span>
                             {showSolutions
                                 ? <span style={{ ...solutionText }}>{solution}</span>
                                 : prefill === 'alles'

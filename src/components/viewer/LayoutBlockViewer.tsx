@@ -17,6 +17,7 @@ interface Props {
 export type LayoutKind = 'sectie' | 'schrijflijnen' | 'raster' | 'kader' | 'lege-pagina';
 
 const CM = 37.8;   // 1cm at 96dpi — same constant the meten viewers use
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function LayoutBlockViewer({ block }: Props) {
     const width = useBlockWidth();
@@ -32,7 +33,7 @@ export default function LayoutBlockViewer({ block }: Props) {
                 {rule === 'stippel' && <div style={{ borderTop: '2px dashed #000', width: '100%' }} />}
                 {title && (
                     <div style={{
-                        fontFamily: "'Azeret Mono', monospace", fontSize: '14px', fontWeight: 700,
+                        fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-text) * 0.7)', fontWeight: 700,
                         color: '#000', marginTop: rule === 'geen' ? 0 : '6px',
                     }}>{title}</div>
                 )}
@@ -91,8 +92,8 @@ export default function LayoutBlockViewer({ block }: Props) {
                 background: emphasis === 'grijs' ? '#f2f2f2' : 'transparent',
                 fontFamily: "'Azeret Mono', monospace", color: '#000',
             }}>
-                {title && <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: body ? '6px' : 0 }}>{title}</div>}
-                {body && <div style={{ fontSize: '12px', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{body}</div>}
+                {title && <div style={{ fontWeight: 700, fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: body ? '6px' : 0 }}>{title}</div>}
+                {body && <div style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{body}</div>}
             </div>
         );
     }

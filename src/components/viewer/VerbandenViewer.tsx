@@ -13,6 +13,7 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 const REP_LABEL: Record<VerbandRep, string> = { breuk: 'breuk', decimaal: 'kommagetal', procent: 'procent' };
 
 export default function VerbandenViewer({ block, showSolutions }: Props) {
@@ -43,13 +44,13 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
                 items={exercises.map(ex => {
                     const target = ex.target ?? reps.find(r => r !== ex.given) ?? 'decimaal';
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: mono, fontSize: '15px' }}>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                             <span style={{ minWidth: '64px', display: 'inline-flex', justifyContent: 'flex-end' }}>{renderRep(ex, ex.given, false)}</span>
                             <span>=</span>
                             {showSolutions
                                 ? renderRep(ex, target, true)
                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />}
-                            {!showSolutions && <span style={{ fontSize: '11px', color: '#555' }}>({REP_LABEL[target]})</span>}
+                            {!showSolutions && <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.55)', color: '#555' }}>({REP_LABEL[target]})</span>}
                         </div>
                     );
                 })}
@@ -60,7 +61,7 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
     // ── TABEL: rooster breuk | kommagetal | procent, one cell given per row ────
     const cell: React.CSSProperties = {
         border: '1px solid #000', minHeight: '38px', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontFamily: mono, fontSize: '14px', boxSizing: 'border-box', padding: '2px 6px',
+        justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box', padding: '2px 6px',
     };
     // Widen columns so the table fills the page instead of hugging the left third
     // (values are short, so wider cells just give more writing room).
@@ -69,7 +70,7 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
     return (
         <div className="print-exercise" style={{ width: 'fit-content' }}>
             <div style={{ display: 'grid', gridTemplateColumns: grid }}>
-                {reps.map(rep => <div key={rep} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: '12px' }}>{REP_LABEL[rep]}</div>)}
+                {reps.map(rep => <div key={rep} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)' }}>{REP_LABEL[rep]}</div>)}
             </div>
             {exercises.map(ex => (
                 <div key={ex.id} style={{ display: 'grid', gridTemplateColumns: grid }}>

@@ -12,6 +12,7 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
+// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function PatroonViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
@@ -68,25 +69,25 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
                             // Stacked: the scaffold sits BESIDE the arrow rather than above it,
                             // so a chain of six steps stays six short lines instead of twelve.
                             ? (
-                                <div key={`c${i}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '20px', fontSize: '12px' }}>
-                                    <span style={{ fontSize: '16px', lineHeight: 1 }}>{showArrows ? '↓' : '│'}</span>
+                                <div key={`c${i}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '20px', fontSize: 'calc(var(--sheet-size-math) * 0.7)' }}>
+                                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', lineHeight: 1 }}>{showArrows ? '↓' : '│'}</span>
                                     {stacked && <span style={{ display: 'flex', alignItems: 'center' }}>{top}</span>}
                                 </div>
                             )
                             : (
-                                <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', fontSize: '12px' }}>
+                                <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 0.7)' }}>
                                     {stacked && <span style={{ height: '15px', display: 'flex', alignItems: 'flex-end' }}>{top}</span>}
-                                    <span style={{ fontSize: '16px', lineHeight: 1 }}>{showArrows ? '→' : '–'}</span>
+                                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', lineHeight: 1 }}>{showArrows ? '→' : '–'}</span>
                                 </div>
                             ));
                     }
                 });
                 return (
                     <div key={ex.id} className="print-exercise" style={stackVertically
-                        ? { display: 'flex', flexDirection: 'column', alignItems: 'center', rowGap: '2px', fontFamily: mono, fontSize: '18px' }
+                        ? { display: 'flex', flexDirection: 'column', alignItems: 'center', rowGap: '2px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }
                         : {
                             display: 'grid', gridTemplateColumns: `repeat(${ex.values.length * 2 - 1}, 1fr)`,
-                            alignItems: 'end', columnGap: '2px', fontFamily: mono, fontSize: '18px',
+                            alignItems: 'end', columnGap: '2px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)',
                         }}>
                         {cells}
                     </div>
