@@ -1,4 +1,5 @@
 import type { MathBlock } from '../services/math/types';
+import { cellWidthPx } from '../components/viewer/BlockWidthContext';
 
 // ── Page grid ────────────────────────────────────────────────────────────────
 // A page's content area is COL_UNITS wide (4, so a block can be a whole, a half or a
@@ -171,10 +172,92 @@ export function perRow(block: MathBlock, width: WidthUnits): number {
     return 1;
 }
 
-// The narrowest width this block can render at WITH ITS CURRENT SETTINGS. It has to be a
-// function, not a constant: hoofdrekenen fits a quarter at "tot 100" but needs the full
-// width at a million, which is exactly what the operand-width fix taught us.
-export function minWidthUnits(block: MathBlock): WidthUnits {
+// ── Width vetoes ─────────────────────────────────────────────────────────────
+// The narrowest column a type may sit in REGARDLESS of what fits. Measurement rules out
+// the impossible; this table rules out the illegible. Every entry is from the 2026-09-12
+// screenshot pass and is quoted in the LAYOUT header above: number lines whose labels
+// collide, to-scale rulers, draw-the-amount boxes, jump diagrams, and the two layout
+// blocks that are full width by definition rather than by content.
+const VETO_MIN: Record<string, WidthUnits> = {
+    "layout-sectie": 4,
+    "layout-lege-pagina": 4,
+    "lengte-meten": 4,
+    "omtrek": 4,
+    "oppervlakte": 4,
+    "geld-tekenen": 4,
+    "getallenas": 2,
+    "kalender": 2,
+    "deelbaarheid-kleuren": 2,
+    "geld-teruggeven": 2,
+    // MAB is sized by its glyphs rather than by its share of the block: at a quarter the
+    // place columns stop reading as places.
+    "mab-herkennen": 2,
+    "mab-tekenen": 2,
+};
+
+function editorialFloor(block: MathBlock): WidthUnits {
+    return VETO_MIN[block.typeId] ?? 1;
+}
+
+// Judge tiers against the WIDEST column gap the sheet can have (blockSpacing 12 + the 16px
+// the column rule adds): a tier that fits with the rule on fits without it.
+const COL_GAP_PX = 12 + 16;
+// A block that exactly fills its cell is one rounding error from overflowing.
+const WIDTH_SLACK_PX = 8;
+
+const TIERS: WidthUnits[] = [1, 2, 4];
+
+/** Smallest tier whose printable cell holds `px` of content. */
+function tierFor(px: number): WidthUnits {
+    return TIERS.find(w => cellWidthPx(w, COL_GAP_PX) >= px + WIDTH_SLACK_PX) ?? 4;
+}
+
+/** One tier narrower than `w` — 4 → 2 → 1, and 1 stays 1. */
+function narrower(w: WidthUnits): WidthUnits {
+    return w === 4 ? 2 : 1;
+}
+
+// The narrowest width this block can render at WITH ITS CURRENT SETTINGS.
+//
+// With a MEASUREMENT (PageSheet probes each block's min-content width, see
+// useMeasuredHeights) this is simply: the smallest tier the content fits in, never below
+// the type's editorial veto. That replaces a per-type table measured once at default
+// settings, which is what told a three-item rekenvolgorde block it needed the whole page.
+//
+// REFLOW RULE. The measurement is taken at the width the block currently sits in, and a
+// viewer that lays out 2-up there lays out 1-up in a narrower cell — so a measurement at
+// width 4 says nothing about what the same block needs at width 2. When the block reflows
+// (perRow > 1 at the measured width) and its content fits where it is, the tier is allowed
+// ONE step narrower than the width it was measured at. The teacher picks that width, the
+// block is measured again THERE, and either it opens the next step or the packer clamps it
+// back with the `promoted` hint. One step at a time is what keeps this honest: each step
+// is backed by a real measurement instead of a guess two tiers out.
+//
+// This cannot oscillate. Measuring at a narrower width writes a NEW `blockId:width` entry;
+// the entry that allowed the step stays, and `intrinsicOf` takes the SMALLEST — so the
+// allowance can only grow, the clamp is monotone in it, and a clamp-up re-measures at a
+// key that was not the input to the decision. See useMeasuredHeights' convergence note.
+//
+// WITHOUT a measurement (first paint, tests, the Inspector before the sheet rendered) the
+// old settings-derived gates below run unchanged: they are the fallback, not the truth.
+export function minWidthUnits(block: MathBlock, measured?: { intrinsicPx?: number; atWidth?: WidthUnits }): WidthUnits {
+    const floor = editorialFloor(block);
+    const px = measured?.intrinsicPx;
+    if (px !== undefined && px > 0) {
+        let tier = tierFor(px);
+        const at = measured?.atWidth ?? (COL_UNITS as WidthUnits);
+        if (tier > 1 && perRow(block, at) > 1 && px <= cellWidthPx(at, COL_GAP_PX)) {
+            tier = Math.min(tier, narrower(at)) as WidthUnits;
+        }
+        return Math.max(tier, floor) as WidthUnits;
+    }
+    return Math.max(fallbackMinWidth(block), floor) as WidthUnits;
+}
+
+// Pre-measurement tiers: the hand-measured per-type table plus the settings that were
+// known to outgrow it. Kept only for the frames (and the unit tests) where nothing has
+// been rendered yet — a measurement supersedes all of it.
+function fallbackMinWidth(block: MathBlock): WidthUnits {
     const facts = layoutFacts(block.typeId);
     // A single exercise has no neighbours to fit beside it, so a type that only needs the
     // full width for a ROW of items can go narrower when there is just one.
@@ -182,9 +265,7 @@ export function minWidthUnits(block: MathBlock): WidthUnits {
     const base = single ? facts.minWidthSingle! : facts.minWidth;
     const c = (block.constraints ?? {}) as Record<string, unknown>;
 
-    // MAB is sized by its glyphs rather than by its share of the block: the hundreds plate
-    // sets the column width and this type tops out at 1000, so four columns still fit a
-    // half. It stays out of a quarter, where the place columns stop reading as places.
+    // MAB tops out at 1000, so its four place columns still fit a half.
     if (block.typeId.startsWith('mab-')) return 2;
 
     if (base === 4) return 4;
