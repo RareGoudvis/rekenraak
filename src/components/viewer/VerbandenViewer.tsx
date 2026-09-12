@@ -4,6 +4,7 @@ import { fractionToDecimal, fractionToPercent } from '../../services/verbanden/v
 import VerticalFraction from './VerticalFraction';
 import FragmentableGrid from './FragmentableGrid';
 import type { VerbandenConstraints } from '../../services/math/constraintTypes';
+import { SOL } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 const REP_LABEL: Record<VerbandRep, string> = { breuk: 'breuk', decimaal: 'kommagetal', procent: 'procent' };
 

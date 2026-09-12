@@ -2,6 +2,7 @@ import type { MathBlock, VormleerExercise, MeetPoint } from '../../services/math
 import { CONCEPT_NAMES } from '../../services/vormleer/vormleerGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import type { VormleerConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,6 @@ interface Props {
 // SYNC: same to-scale convention as MetenViewer (1 cm ≈ 37.8 px), scaled down for minis.
 const CM = 37.8;
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 // Eigenschappen columns. Triangles are classified GEOMETRICALLY (sides/angles from the
@@ -323,7 +323,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                                 </svg>
                             )}
                             {showSolutions && (
-                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: SOL }}>
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', ...solutionText }}>
                                     <div style={{ filter: 'none' }}>{mini({ ...ex, id: `${ex.id}-sol` }, Math.min(boxPx, 110))}</div>
                                 </div>
                             )}
@@ -356,7 +356,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                         <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
                             <div style={{ ...cell, minHeight: '86px' }}>{mini(ex, 76)}</div>
                             {cols.map(col => (
-                                <div key={col.label} style={{ ...cell, color: SOL, fontFamily: mono, fontWeight: 'bold', fontSize: '15px' }}>
+                                <div key={col.label} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold', fontSize: '15px' }}>
                                     {showSolutions && col.test(ex) ? '✕' : ''}
                                 </div>
                             ))}
@@ -380,7 +380,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                             {mini(ex, 110)}
                             {showSolutions
-                                ? <span style={{ color: SOL, fontFamily: mono, fontSize: '12px', textAlign: 'center' }}>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</span>
+                                ? <span style={{ ...solutionText, fontFamily: mono, fontSize: '12px', textAlign: 'center' }}>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</span>
                                 : <span style={{ borderBottom: '1.5px solid #000', width: '90%', height: '16px' }} />}
                         </div>
                     ))}

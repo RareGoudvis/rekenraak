@@ -2,6 +2,7 @@ import type { MathBlock, TijdsduurExercise } from '../../services/math/types';
 import { formatDigitalTime } from '../../services/clock/clockTypes';
 import { formatDuur } from '../../services/tijdsduur/tijdsduurGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 const cell: React.CSSProperties = {
@@ -36,7 +36,7 @@ export default function TijdsduurViewer({ block, showSolutions }: Props) {
             const nextDay = col === 'einde' && ex.endMin >= 1440 ? ' (volgende dag)' : '';
             return <span>{value}{nextDay}</span>;
         }
-        return showSolutions ? <span style={{ color: SOL }}>{value}</span> : '';
+        return showSolutions ? <span style={{ ...solutionText }}>{value}</span> : '';
     };
 
     // Fill the page (was 400px = 64%); the wider einde column also fits "(volgende dag)"

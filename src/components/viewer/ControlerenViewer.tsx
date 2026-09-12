@@ -4,6 +4,7 @@ import { negenrest } from '../../services/controleren/controlerenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as GLYPH } from '../../services/math/formatters';
 import type { ControlerenConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const INVERSE: Record<string, string> = { '+': '−', '-': '+' };
 
 // Negenproef-kruis: rests of the factors top/bottom, product-of-rests' rest left,
@@ -105,7 +105,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', paddingLeft: '16px' }}>
                             <span style={{ fontSize: '12px', color: '#555' }}>controle:</span>
                             {showSolutions
-                                ? <span style={{ color: SOL }}>{solution}</span>
+                                ? <span style={{ ...solutionText }}>{solution}</span>
                                 : prefill === 'alles'
                                     ? <>
                                         <span>{formatMathNumber(ex.shownAnswer)} {inv} {formatMathNumber(ex.b)} =</span>

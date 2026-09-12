@@ -1,6 +1,7 @@
 import type { MathBlock, KalenderExercise } from '../../services/math/types';
 import { DAY_ABBR, DAY_NAMES, MONTH_NAMES, daysInMonth, formatDate } from '../../services/kalender/kalenderGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -8,7 +9,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 // Week starts on maandag (Belgian calendars); JS getDay() is zondag-based.
@@ -44,7 +44,7 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
     }
 
     const answer = (text: string, width = 150) => showSolutions
-        ? <span style={{ color: SOL, fontFamily: mono, fontSize: '14px' }}>{text}</span>
+        ? <span style={{ ...solutionText, fontFamily: mono, fontSize: '14px' }}>{text}</span>
         : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
 
     return (

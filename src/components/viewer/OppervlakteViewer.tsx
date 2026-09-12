@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
 import type { OppervlakteConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -12,7 +13,6 @@ interface Props {
 // SYNC: keep CM/label geometry aligned with MetenViewer (same to-scale convention).
 const CM = 37.8;
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));
 
@@ -39,7 +39,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
     }
 
     const blank = (sol: string | null, width = 56) => sol !== null
-        ? <span style={{ color: SOL }}>{sol}</span>
+        ? <span style={{ ...solutionText }}>{sol}</span>
         : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: '16px' }} />;
 
     const pad = 40;

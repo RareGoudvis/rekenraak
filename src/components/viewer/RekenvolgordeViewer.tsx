@@ -2,6 +2,7 @@ import type { MathBlock, RekenvolgordeExercise } from '../../services/math/types
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH } from '../../services/math/formatters';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 // Same operator glyphs as everywhere else, plus the brackets this viewer alone prints.
 const GLYPH: Record<string, string> = { ...OP_GLYPH, '(': '(', ')': ')' };
 
@@ -52,7 +52,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
                     <span style={{ width: `${exprW}px`, textAlign: 'right', whiteSpace: 'pre', flexShrink: 0 }}>{exprs[i]}</span>
                     <span>=</span>
                     {showSolutions
-                        ? <span style={{ color: SOL, minWidth: `${LINE_PX}px`, textAlign: 'center' }}>{formatMathNumber(ex.answer)}</span>
+                        ? <span style={{ ...solutionText, minWidth: `${LINE_PX}px`, textAlign: 'center' }}>{formatMathNumber(ex.answer)}</span>
                         : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${LINE_PX}px`, height: '15px', display: 'inline-block' }} />}
                 </div>
             ))}

@@ -2,6 +2,7 @@ import type { MathBlock, DeelbaarheidKleurExercise } from '../../services/math/t
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import type { DeelbaarheidKleurConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -10,7 +11,6 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const FILL = '#93c5fd';
-const SOL = '#e11d48';
 
 export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props) {
     const exercises: DeelbaarheidKleurExercise[] = block.deelbaarheidKleurExercises || [];
@@ -26,7 +26,7 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
 
     const restLine = (n: number, divisor: number) => (
         <span style={{ fontSize: '11px', display: 'inline-flex', alignItems: 'flex-end', gap: '2px', marginTop: '2px' }}>
-            r={showSolutions ? <span style={{ color: SOL }}>{n % divisor}</span> : <span style={{ borderBottom: '1px solid #000', display: 'inline-block', width: '20px', height: '12px' }} />}
+            r={showSolutions ? <span style={{ ...solutionText }}>{n % divisor}</span> : <span style={{ borderBottom: '1px solid #000', display: 'inline-block', width: '20px', height: '12px' }} />}
         </span>
     );
 

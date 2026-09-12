@@ -1,6 +1,7 @@
 import type { MathBlock, GetalFunctieExercise, GetalFunctie } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import type { GetalFunctieConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -8,7 +9,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 const FUNCTIE_LABEL: Record<GetalFunctie, string> = {
@@ -40,7 +40,7 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: '15px', flexWrap: 'wrap' }}>
                         <span>{ex.sentence}</span>
                         {showSolutions
-                            ? <span style={{ color: SOL, fontFamily: mono, fontSize: '14px' }}>{FUNCTIE_FULL[ex.functie]}</span>
+                            ? <span style={{ ...solutionText, fontFamily: mono, fontSize: '14px' }}>{FUNCTIE_FULL[ex.functie]}</span>
                             : <span style={{ borderBottom: '1.5px solid #000', minWidth: '140px', height: '15px', display: 'inline-block' }} />}
                     </div>
                 ))}
@@ -69,7 +69,7 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
                     <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid }}>
                         <div style={{ ...cell, justifyContent: 'flex-start', textAlign: 'left' }}>{ex.sentence}</div>
                         {cols.map(f => (
-                            <div key={f} style={{ ...cell, color: SOL, fontFamily: mono, fontWeight: 'bold' }}>
+                            <div key={f} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold' }}>
                                 {showSolutions && f === ex.functie ? '✕' : ''}
                             </div>
                         ))}

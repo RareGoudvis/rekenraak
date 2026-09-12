@@ -5,6 +5,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import { OP_GLYPH } from '../../services/math/formatters';
 import type { SchattendConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -12,7 +13,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 
 export default function SchattendViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
@@ -28,7 +28,7 @@ export default function SchattendViewer({ block, showSolutions }: Props) {
     }
 
     const blank = (val: number, width: number) => showSolutions
-        ? <span style={{ color: SOL, minWidth: `${width}px`, textAlign: 'center' }}>{formatMathNumber(val)}</span>
+        ? <span style={{ ...solutionText, minWidth: `${width}px`, textAlign: 'center' }}>{formatMathNumber(val)}</span>
         : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
 
     return (

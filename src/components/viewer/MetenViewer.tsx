@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
 import type { MetenConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -12,7 +13,6 @@ interface Props {
 const CM = 37.8;            // 1 cm at 96dpi — keeps the drawing genuinely to scale
 const OFFSET = 22;          // how far side labels sit outside the figure
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));
 
@@ -63,14 +63,14 @@ export default function MetenViewer({ block, showSolutions }: Props) {
 
     const ansBlank = (sol: number | null, width = 80) => (
         <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '3px' }}>
-            {sol !== null ? <span style={{ color: SOL }}>{fmt(sol)}</span>
+            {sol !== null ? <span style={{ ...solutionText }}>{fmt(sol)}</span>
                 : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: '18px' }} />}
             {answerUnit === 'cm' && <span>cm</span>}
         </span>
     );
     const scaffoldBlank = (sol: number | null) => (
         <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '3px' }}>
-            {sol !== null ? <span style={{ color: SOL }}>{fmt(sol)}</span>
+            {sol !== null ? <span style={{ ...solutionText }}>{fmt(sol)}</span>
                 : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '38px', height: '15px' }} />}
             <span>cm</span>
         </span>

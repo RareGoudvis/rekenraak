@@ -2,13 +2,13 @@ import type { MathBlock, MaateenheidExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import type { MaateenheidConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
     showSolutions: boolean;
 }
 
-const SOL = '#e11d48';
 
 export default function MaateenheidViewer({ block, showSolutions }: Props) {
     const exercises: MaateenheidExercise[] = block.maateenheidExercises || [];
@@ -38,7 +38,7 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                             {ex.choices
                                 ? <span style={{ borderBottom: '1px dotted #999', minWidth: '30px', display: 'inline-block' }} />
                                 : showSolutions
-                                    ? <span style={{ color: SOL, fontWeight: 600 }}>{chipText(ex.unit)}</span>
+                                    ? <span style={{ ...solutionText, fontWeight: 600 }}>{chipText(ex.unit)}</span>
                                     : <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: '15px', display: 'inline-block' }} />}
                             {sentence.split('___')[1]}
                         </span>

@@ -1,6 +1,7 @@
 import type { MathBlock, GeldTeruggevenExercise } from '../../services/math/types';
 import { Bill } from './GeldViewer';
 import type { GeldTeruggevenConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 // ── Amount formatting ─────────────────────────────────────────────────────────
 
@@ -27,12 +28,11 @@ const blank = (w = 28): React.CSSProperties => ({
 
 const FS = '13px';
 const FONT = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 
 // ── Answer line renderers ─────────────────────────────────────────────────────
 
 function EuroCentLine({ changeCents, showSolutions }: { changeCents: number; showSolutions: boolean }) {
-    if (showSolutions) return <span style={{ color: SOL, fontWeight: 'normal' }}>{fmtChange(changeCents)}</span>;
+    if (showSolutions) return <span style={{ ...solutionText }}>{fmtChange(changeCents)}</span>;
     return (
         <>
             <span style={blank(28)} /><span> euro en </span>
@@ -42,7 +42,7 @@ function EuroCentLine({ changeCents, showSolutions }: { changeCents: number; sho
 }
 
 function DecimaalLine({ changeCents, showSolutions }: { changeCents: number; showSolutions: boolean }) {
-    if (showSolutions) return <span style={{ color: SOL, fontWeight: 'normal' }}>{fmtCents(changeCents)}</span>;
+    if (showSolutions) return <span style={{ ...solutionText }}>{fmtCents(changeCents)}</span>;
     return (
         <>
             <span>€ </span>

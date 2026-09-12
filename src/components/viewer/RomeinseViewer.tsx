@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { RomeinseConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -10,7 +11,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 
 export default function RomeinseViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
@@ -51,7 +51,7 @@ export default function RomeinseViewer({ block, showSolutions }: Props) {
                         <span style={{ alignSelf: 'center' }}>→</span>
                         {/* long line so pupils can add the pieces of the numeral */}
                         {showSolutions
-                            ? <span style={{ color: SOL, letterSpacing: '1px', minWidth: `${answerMin}px`, whiteSpace: 'nowrap' }}>{answer}</span>
+                            ? <span style={{ ...solutionText, letterSpacing: '1px', minWidth: `${answerMin}px`, whiteSpace: 'nowrap' }}>{answer}</span>
                             : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${answerMin}px`, height: '18px', display: 'inline-block' }} />}
                     </div>
                 );

@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols } from './BlockWidthContext';
 import type { ProcentenConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -10,7 +11,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 
 export default function ProcentenViewer({ block, showSolutions }: Props) {
     const exercises: ProcentExercise[] = block.procentExercises || [];
@@ -25,7 +25,7 @@ export default function ProcentenViewer({ block, showSolutions }: Props) {
     }
 
     const blank = (val: number | string, width: number) => showSolutions
-        ? <span style={{ color: SOL, minWidth: `${width}px`, textAlign: 'center', display: 'inline-block' }}>{val}</span>
+        ? <span style={{ ...solutionText, minWidth: `${width}px`, textAlign: 'center', display: 'inline-block' }}>{val}</span>
         : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
 
     return (

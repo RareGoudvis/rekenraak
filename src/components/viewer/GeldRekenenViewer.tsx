@@ -2,6 +2,7 @@ import type { MathBlock, GeldRekenenExercise } from '../../services/math/types';
 import { formatEuro } from '../../services/geld/geldRekenenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import type { GeldRekenenConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 const cell: React.CSSProperties = {
@@ -37,7 +37,7 @@ export default function GeldRekenenViewer({ block, showSolutions }: Props) {
     const widths = subType === 'winst' ? '190px 190px 220px' : '160px 120px 160px 160px';
 
     const answer = (text: string) => (
-        <div style={{ ...cell, color: SOL }}>{showSolutions ? text : ''}</div>
+        <div style={{ ...cell, ...solutionText }}>{showSolutions ? text : ''}</div>
     );
 
     const row = (ex: GeldRekenenExercise) => {

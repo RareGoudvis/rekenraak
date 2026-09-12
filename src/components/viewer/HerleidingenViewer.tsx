@@ -5,11 +5,11 @@ import { ladderFor, recomputeHerleiding } from '../../services/herleidingen/herl
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import type { HerleidingenConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 const numLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: '16px', display: 'inline-block' }} />;
@@ -87,10 +87,10 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         return (
             <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px' }}>
                 {numBlank
-                    ? (showSolutions ? <span style={{ color: SOL }}>{formatMathNumber(p.value)}</span> : numLine())
+                    ? (showSolutions ? <span style={{ ...solutionText }}>{formatMathNumber(p.value)}</span> : numLine())
                     : <EditableNumber value={p.value} onCommit={v => editTo(ex, i, { value: v })} />}
                 {unitBlank
-                    ? (showSolutions ? <span style={{ color: SOL }}>{p.key}</span> : unitLine())
+                    ? (showSolutions ? <span style={{ ...solutionText }}>{p.key}</span> : unitLine())
                     : <EditableUnit value={p.key} measure={measure} onCommit={k => editTo(ex, i, { key: k })} />}
             </span>
         );

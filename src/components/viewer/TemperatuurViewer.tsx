@@ -2,6 +2,7 @@ import type { MathBlock, TemperatuurExercise, TemperatuurMode } from '../../serv
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { TemperatuurConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,6 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 const MAX_T = 25;          // top labelled tick
 const HEAD = 12;           // glass headroom above MAX_T (no ticks)
-const SOL = '#e11d48';
 
 // Glass thermometer: rounded tube with a subtle glass gradient, bulb, major (5°) +
 // minor (1°) ticks. `fillTo` = temp the mercury rises to (null = empty tube). `uid`
@@ -89,7 +89,7 @@ function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number
             <Thermometer minT={minT} fillTo={fillTo} uid={uid} />
             {mode === 'gekleurd'
                 ? <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px' }}>
-                    {showSolutions ? <span style={{ color: SOL }}>{temp}</span> : answerLine(36)}<span>°C</span>
+                    {showSolutions ? <span style={{ ...solutionText }}>{temp}</span> : answerLine(36)}<span>°C</span>
                 </div>
                 : <div style={{ height: '18px' }} />}
         </div>
@@ -128,7 +128,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                                 <span>verschil =</span>
-                                {showSolutions ? <span style={{ color: SOL }}>{diff}</span> : answerLine(44)}
+                                {showSolutions ? <span style={{ ...solutionText }}>{diff}</span> : answerLine(44)}
                                 <span>°C</span>
                             </div>
                         </div>
@@ -143,7 +143,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                         {!isKleuren && (
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                                 {showSolutions
-                                    ? <span style={{ color: SOL }}>{ex.celsius}</span>
+                                    ? <span style={{ ...solutionText }}>{ex.celsius}</span>
                                     : answerLine(40)}
                                 <span>°C</span>
                             </div>

@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { useBlockWidth } from './BlockWidthContext';
 import type { GetallenrijConstraints } from '../../services/math/constraintTypes';
+import { SOL } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 
 function Cell({ value, blank, showSolutions, fontSize }: { value: number | Fraction; blank: boolean; showSolutions: boolean; fontSize: number }) {

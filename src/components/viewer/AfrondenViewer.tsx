@@ -4,6 +4,7 @@ import { targetsFor, roundTo, usableTargets } from '../../services/afronden/afro
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth } from './BlockWidthContext';
 import type { AfrondenConstraints } from '../../services/math/constraintTypes';
+import { solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -11,7 +12,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 const SALMON = '#f4cbb8';
 
 export default function AfrondenViewer({ block, showSolutions }: Props) {
@@ -48,7 +48,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                             <span style={{ minWidth: '60px', textAlign: 'right' }}>{formatMathNumber(ex.number ?? 0)}</span>
                             <span>≈</span>
                             {showSolutions
-                                ? <span style={{ color: SOL, minWidth: '58px' }}>{formatMathNumber(roundTo(ex.number ?? 0, t.weight))}</span>
+                                ? <span style={{ ...solutionText, minWidth: '58px' }}>{formatMathNumber(roundTo(ex.number ?? 0, t.weight))}</span>
                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: '58px', height: '15px', display: 'inline-block' }} />}
                             {/* nowrap + trimmed min-widths so the long 'tienduizendtal' hint doesn't wrap the 2-up row */}
                             <span style={{ fontSize: '12px', color: '#555', whiteSpace: 'nowrap' }}>(op {t.label})</span>
@@ -94,7 +94,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                         <div key={i} style={{ display: 'grid', gridTemplateColumns: grid }}>
                             <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{formatMathNumber(num)}</div>
                             {targets.map(t => (
-                                <div key={t.key} style={{ ...cell, color: SOL }}>
+                                <div key={t.key} style={{ ...cell, ...solutionText }}>
                                     {showSolutions ? formatMathNumber(roundTo(num, t.weight)) : ''}
                                 </div>
                             ))}

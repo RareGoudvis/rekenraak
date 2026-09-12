@@ -2,6 +2,7 @@ import type { MathBlock, WeegschaalExercise } from '../../services/math/types';
 import { formatGewicht } from '../../services/weegschaal/weegschaalGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import type { WeegschaalConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -9,7 +10,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 
 // Dial geometry mirrors AnalogClockSVG's polar math: ticks around the rim,
 // labels at the majors, a red needle from the centre.
@@ -94,7 +94,7 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: mono, fontSize: '14px' }}>
                         {mode === 'aflezen'
                             ? showSolutions
-                                ? <span style={{ color: SOL }}>{formatGewicht(ex.grams, notatie)}</span>
+                                ? <span style={{ ...solutionText }}>{formatGewicht(ex.grams, notatie)}</span>
                                 : <>
                                     <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '70px', height: '16px' }} />
                                     <span>{notatie === 'g' ? 'g' : notatie === 'kg-komma' ? 'kg' : ''}</span>

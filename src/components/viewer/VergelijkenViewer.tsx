@@ -5,6 +5,7 @@ import RepValue from './RepValue';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { VergelijkenConstraints } from '../../services/math/constraintTypes';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -12,7 +13,6 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const SOL = '#e11d48';
 
 export default function VergelijkenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
@@ -78,7 +78,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                             <span style={{
                                 width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
                                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                color: SOL, fontWeight: 'bold', flexShrink: 0,
+                                ...solutionText, flexShrink: 0,
                             }}>
                                 {showSolutions ? op(a, b) : ''}
                             </span>
@@ -104,7 +104,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                         <span style={{
                             width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            color: SOL, fontWeight: 'bold',
+                            ...solutionText,
                         }}>
                             {showSolutions ? op(a, b) : ''}
                         </span>
