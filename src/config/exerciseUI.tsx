@@ -45,6 +45,7 @@ import VormleerViewer from '../components/viewer/VormleerViewer';
 
 // Config plugins (one per family). All take {block}.
 import AdditionConfig from '../components/configurator/plugins/AdditionConfig';
+import GemengdConfig from '../components/configurator/plugins/GemengdConfig';
 import SubtractionConfig from '../components/configurator/plugins/SubtractionConfig';
 import MultiplicationConfig from '../components/configurator/plugins/MultiplicationConfig';
 import DivisionConfig from '../components/configurator/plugins/DivisionConfig';
@@ -127,6 +128,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'hr-std-aftrekken':        { Viewer: MathBlockRenderer, Config: SubtractionConfig, StyleConfig: AddSubStyleConfig },
     'hr-std-vermenigvuldigen': { Viewer: MathBlockRenderer, Config: MultiplicationConfig, StyleConfig: MulDivStyleConfig },
     'hr-std-delen':            { Viewer: MathBlockRenderer, Config: DivisionConfig, StyleConfig: MulDivStyleConfig },
+    'hr-std-gemengd':          { Viewer: MathBlockRenderer, Config: GemengdConfig, StyleConfig: AddSubStyleConfig },
 
     // Cijferen — shared viewer + config across all 8 leaves.
     'cijferen-optellen-nat':         { Viewer: CijferViewer, Config: CijferConfig, StyleConfig: CijferStyleConfig, AdvancedConfig: CijferAdvancedConfig },
