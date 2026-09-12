@@ -55,7 +55,9 @@ export function baseApply(
 
     if ('maxGetal' in registryDefaults) out.maxGetal = base.baseMaxGetal;
     if ('maxRange' in registryDefaults) out.maxRange = base.baseMaxGetal;
-    if ('maxNumber' in registryDefaults) out.maxNumber = base.baseMaxGetal;
+    // maxNumber is MAB-only, and MAB draws place-value blocks up to 1000 — never hand it
+    // the five/ten-digit base seeds the other types accept.
+    if ('maxNumber' in registryDefaults) out.maxNumber = Math.min(base.baseMaxGetal, 9999);
 
     if ('numberType' in registryDefaults) out.numberType = base.baseNumberType;
 

@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import type { Equation, Fraction, CijferExercise, SplitsenExercise, BreukBewerkExercise, OrdenenExercise, DeelbaarheidExercise, ProcentExercise, VerbandExercise, TijdsduurExercise, KalenderExercise, ControleExercise, HerleidingExercise } from '../services/math/types';
+import type { RekenvolgordeExercise, Equation, Fraction, CijferExercise, SplitsenExercise, BreukBewerkExercise, OrdenenExercise, DeelbaarheidExercise, ProcentExercise, VerbandExercise, TijdsduurExercise, KalenderExercise, ControleExercise, HerleidingExercise } from '../services/math/types';
 import { ladderFor } from '../services/herleidingen/herleidingenGenerator';
 import { daysInMonth } from '../services/kalender/kalenderGenerator';
 import { negenrest } from '../services/controleren/controlerenGenerator';
@@ -393,6 +393,49 @@ describe('herleidingen', () => {
                 const total = (parts: typeof ex.fromParts) => parts.reduce((a, p) => a + p.value * factor(p.key), 0);
                 expect(total(ex.fromParts), `${JSON.stringify(ex.fromParts)} = ${JSON.stringify(ex.toParts)}`).toBe(total(ex.toParts));
             }
+        }
+    });
+});
+
+describe('rekenvolgorde', () => {
+    // Independent evaluator: brackets first, then ×/: left-to-right, then +/−.
+    function evaluate(tokens: (number | string)[]): number {
+        const t = [...tokens];
+        while (t.includes('(')) {
+            const open = t.lastIndexOf('(');
+            const close = open + t.slice(open).indexOf(')');
+            t.splice(open, close - open + 1, evaluate(t.slice(open + 1, close)));
+        }
+        for (let i = 1; i < t.length - 1; i++) {
+            if (t[i] === 'x' || t[i] === ':') {
+                const a = t[i - 1] as number, b = t[i + 1] as number;
+                t.splice(i - 1, 3, t[i] === 'x' ? a * b : a / b);
+                i -= 1;
+            }
+        }
+        let acc = t[0] as number;
+        for (let i = 1; i < t.length - 1; i += 2) acc = t[i] === '+' ? acc + (t[i + 1] as number) : acc - (t[i + 1] as number);
+        return acc;
+    }
+
+    test.each([2, 3, 4])('%i operators: the printed answer matches the expression', (opsCount) => {
+        const block = makeBlock('rekenvolgorde', { constraints: { opsCount, haakjesMode: 'MAG' } });
+        const data = generateFor(block) as RekenvolgordeExercise[];
+        expect(data.length).toBe(block.numberOfExercises);
+        for (const ex of data) expect(evaluate(ex.tokens), ex.tokens.join(' ')).toBe(ex.answer);
+    });
+
+    // Only + and − selected with two operators: the guard used to reject every candidate
+    // (it demanded a ×/:), so the block came back empty. Now the bracket carries the lesson.
+    test('plus/minus only with two operators still fills the block, with meaningful brackets', () => {
+        const block = makeBlock('rekenvolgorde', { constraints: { operators: ['+', '-'], opsCount: 2, haakjesMode: 'MOET' } });
+        const data = generateFor(block) as RekenvolgordeExercise[];
+        expect(data.length).toBe(block.numberOfExercises);
+        for (const ex of data) {
+            expect(ex.tokens).toContain('(');
+            expect(evaluate(ex.tokens), ex.tokens.join(' ')).toBe(ex.answer);
+            // A bracket that does not change the outcome is decoration, not an exercise.
+            expect(evaluate(ex.tokens.filter(t => t !== '(' && t !== ')'))).not.toBe(ex.answer);
         }
     });
 });

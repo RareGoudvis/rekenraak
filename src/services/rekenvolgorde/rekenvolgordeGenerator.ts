@@ -81,8 +81,12 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         attempts++;
         const ops = Array.from({ length: opsCount }, () => pick(operators));
         // Long +/− chains are allowed without ×/: (volgorde = reordering practice);
-        // 2-op expressions still need a ×/: or there is nothing to learn.
-        if (opsCount === 2 && !ops.some(o => o === 'x' || o === ':')) continue;
+        // 2-op expressions still need a ×/: or there is nothing to learn — but only when the
+        // teacher selected ×/: at all, otherwise this rejects every candidate and the block
+        // comes back empty. With +/− alone the lesson is the bracket, so force one.
+        const hasMulDiv = operators.some(o => o === 'x' || o === ':');
+        if (hasMulDiv && opsCount === 2 && !ops.some(o => o === 'x' || o === ':')) continue;
+        const needBrackets = !hasMulDiv && opsCount === 2 && haakjesMode !== 'GEEN';
 
         let nums: number[] | null = opsCount >= 3 ? friendlyNums(ops, maxGetal, tableLimit) : null;
         if (!nums) {
@@ -102,15 +106,28 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         let tokens: Tok[] = flat;
         let answer = plain;
 
-        const wantBrackets = haakjesMode === 'MOET' || (haakjesMode === 'MAG' && Math.random() < 0.5);
+        const wantBrackets = needBrackets || haakjesMode === 'MOET' || (haakjesMode === 'MAG' && Math.random() < 0.5);
         if (wantBrackets) {
-            // Bracket the FIRST pair (a op b) — meaningful only if it changes the result.
-            const sub = evalFlat(flat.slice(0, 3));
-            if (sub === null) continue;
-            const bracketed = evalFlat([sub, ...flat.slice(3)]);
-            if (bracketed === null || bracketed === plain || bracketed > maxGetal * (opsCount >= 3 ? 10 : 1) || bracketed < 0 || !Number.isInteger(bracketed)) continue;
-            tokens = ['(', ...flat.slice(0, 3), ')', ...flat.slice(3)];
-            answer = bracketed;
+            // Bracket the FIRST pair (a op b), or the LAST one when the first changes nothing:
+            // in a − b + c only a − (b + c) shifts the result, which is the whole point of the
+            // bracket. A placement that leaves the answer untouched teaches nothing → retry.
+            const cap = maxGetal * (opsCount >= 3 ? 10 : 1);
+            const placements: Array<{ tokens: Tok[]; answer: number }> = [];
+            const head = evalFlat(flat.slice(0, 3));
+            if (head !== null) {
+                const a = evalFlat([head, ...flat.slice(3)]);
+                if (a !== null) placements.push({ tokens: ['(', ...flat.slice(0, 3), ')', ...flat.slice(3)], answer: a });
+            }
+            const tailSub = evalFlat(flat.slice(-3));
+            if (tailSub !== null && flat.length > 3) {
+                const a = evalFlat([...flat.slice(0, -3), tailSub]);
+                if (a !== null) placements.push({ tokens: [...flat.slice(0, -3), '(', ...flat.slice(-3), ')'], answer: a });
+            }
+            const usable = placements.filter(p => p.answer !== plain && p.answer >= 0 && p.answer <= cap && Number.isInteger(p.answer));
+            if (usable.length === 0) continue;
+            const chosen = pick(usable);
+            tokens = chosen.tokens;
+            answer = chosen.answer;
         }
 
         const key = tokens.join(' ');

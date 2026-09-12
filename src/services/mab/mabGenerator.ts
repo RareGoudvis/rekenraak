@@ -23,38 +23,47 @@ function maskMatches(n: number, mask: Record<string, boolean>, maxNumber: number
     return true;
 }
 
-function shuffle(arr: number[]): number[] {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
+const MAX_ATTEMPTS = 20000;
+
+function randInt(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 export function generateMabExercises(block: MathBlock): MabExercise[] {
     const {
-        maxNumber = 100,
         operand1Mask = {},
     } = block.constraints;
 
+    // MAB is a place-value drawing (units/tens/hundreds/thousands) and tops out at 1000 by
+    // design, but the global base seed can push maxNumber to 1e10 — clamp before it is ever
+    // used as a range (it used to size an Array.from pool → RangeError at leerjaar 6).
+    const maxNumber = Math.max(1, Math.min(block.constraints.maxNumber ?? 100, 9999));
+
     const n = block.numberOfExercises;
-
-    // Enumerate the valid pool up front (maxNumber ≤ 1000, cheap) rather than sampling and
-    // giving up at MAX_ATTEMPTS with a short/empty block. A near-empty mask (e.g. H at
-    // maxNumber 100 → only {100}) or an impossible one (D+H at 1000 → none) previously
-    // returned fewer or zero exercises silently.
-    let pool = shuffle(Array.from({ length: maxNumber }, (_, i) => i + 1)
-        .filter(v => maskMatches(v, operand1Mask, maxNumber)));
-    // Impossible mask → relax it so the block isn't empty (better than a blank worksheet).
-    if (pool.length === 0) pool = shuffle(Array.from({ length: maxNumber }, (_, i) => i + 1));
-
     const results: MabExercise[] = [];
-    // Prefer distinct values; only repeat (cycling the shuffled pool) when the pool is
-    // smaller than the requested count, so the teacher still gets `n` exercises.
-    for (let i = 0; i < n; i++) {
-        const v = pool[i % pool.length];
+    const used = new Set<number>();
+
+    const push = (v: number) => {
         results.push({ id: Math.random().toString(36).substring(2, 9), value: v, ...decompose(v), isManuallyEdited: false });
+    };
+
+    let attempts = 0;
+    while (results.length < n && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        const v = randInt(1, maxNumber);
+        if (!maskMatches(v, operand1Mask, maxNumber)) continue;
+        if (used.has(v)) continue;
+        used.add(v);
+        push(v);
+    }
+
+    // A near-empty mask (H at maxNumber 100 → only {100}) or an impossible one (D+H at 1000
+    // → none) exhausts the attempts; repeat matching values, or drop the mask entirely, so
+    // the teacher gets `n` exercises instead of a blank block.
+    while (results.length < n) {
+        let v = randInt(1, maxNumber);
+        for (let i = 0; i < 500 && !maskMatches(v, operand1Mask, maxNumber); i++) v = randInt(1, maxNumber);
+        push(v);
     }
 
     return results;
