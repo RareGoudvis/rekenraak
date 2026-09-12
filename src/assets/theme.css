@@ -1,28 +1,3 @@
-/* Import local Roboto fonts */
-@font-face {
-    font-family: 'Roboto';
-    src: url('/fonts/Roboto-Regular.ttf') format('truetype');
-    font-weight: 400;
-}
-
-@font-face {
-    font-family: 'Roboto';
-    src: url('/fonts/Roboto-Bold.ttf') format('truetype');
-    font-weight: 700;
-}
-
-@font-face {
-    font-family: 'Roboto Mono';
-    src: url('/fonts/RobotoMono-Regular.ttf') format('truetype');
-    font-weight: 400;
-}
-
-@font-face {
-    font-family: 'Roboto Mono';
-    src: url('/fonts/RobotoMono-Bold.ttf') format('truetype');
-    font-weight: 700;
-}
-
 /* ============================================================================
    DESIGN SYSTEM — see UI-GUIDE.md for the rules these tokens serve.
    Hierarchy comes from weight + size + tone, not UPPERCASE + letter-spacing.
@@ -58,7 +33,8 @@
     --text-xl: 20px;
     --text-2xl: 24px;
 
-    /* UI font — SF on Apple devices, graceful fallback elsewhere. Roboto Mono /
+    /* UI font — SF on Apple devices, Segoe on Windows, Roboto on Android (system, not shipped:
+       the bundled .ttf files were broken HTML and were removed 2026-09-13). Roboto Mono /
        Azeret Mono stay reserved for the printed worksheet, never UI chrome. */
     --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Roboto", system-ui, sans-serif;
 

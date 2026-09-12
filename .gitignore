@@ -30,3 +30,6 @@ dist-ssr
 # screenshots (~/Downloads/width-matrix) are not.
 scripts/*.csv
 scripts/width-matrix.result.only*
+
+# Local-only notes (review tables etc.)
+*.local.md
