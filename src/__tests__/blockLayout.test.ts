@@ -137,4 +137,26 @@ describe('minWidthUnits — settings-shaped editorial floors (C1 step 0)', () =>
         expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(1);
         expect(minWidthUnits(makeBlock('mab-herkennen'), measure(10, 1))).toBe(2);
     });
+
+    // C3: ordenen/breuken-rangschikken never wrap a row onto a second line, so a row too
+    // wide for its column has no fallback but a wider one — the floor is 2 or 4, never 1.
+    test('ordenen: a short natural-number row floors at a half', () => {
+        const block = makeBlock('ordenen', { constraints: { numberType: 'natural', maxGetal: 100, count: 3 } });
+        expect(minWidthUnits(block, measure(10, 1))).toBe(2);
+    });
+
+    test('ordenen: a long row of big/many numbers needs the full width', () => {
+        const block = makeBlock('ordenen', { constraints: { numberType: 'natural', maxGetal: 100000, count: 8 } });
+        expect(minWidthUnits(block, measure(10, 1))).toBe(4);
+    });
+
+    test('breuken-rangschikken: small denominators floor at a half', () => {
+        const block = makeBlock('breuken-rangschikken', { constraints: { maxDenominator: 10, count: 4 } });
+        expect(minWidthUnits(block, measure(10, 1))).toBe(2);
+    });
+
+    test('breuken-rangschikken: wide denominators and a long row need the full width', () => {
+        const block = makeBlock('breuken-rangschikken', { constraints: { maxDenominator: 1000, count: 5 } });
+        expect(minWidthUnits(block, measure(10, 1))).toBe(4);
+    });
 });

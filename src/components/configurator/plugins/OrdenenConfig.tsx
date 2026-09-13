@@ -143,3 +143,19 @@ export default function OrdenenConfig({ block }: Props) {
         </div>
     );
 }
+
+// ── Differentiatie: underline blank vs. bordered box for the answer.
+// Mounted by Inspector through EXERCISE_UI['ordenen'].StyleConfig.
+export function OrdenenStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<OrdenenConstraints>(block);
+    const answerStyle = c.answerStyle ?? 'lijn';
+    return (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text="Antwoordstijl:" info="Hoe het antwoordvak getoond wordt: een lijn om op te schrijven, of een vak eromheen." />
+            <div className="seg-group">
+                <button className="seg-btn" aria-pressed={answerStyle === 'lijn'} onClick={() => patch({ answerStyle: 'lijn' })}>Lijn</button>
+                <button className="seg-btn" aria-pressed={answerStyle === 'vak'} onClick={() => patch({ answerStyle: 'vak' })}>Vak</button>
+            </div>
+        </div>
+    );
+}

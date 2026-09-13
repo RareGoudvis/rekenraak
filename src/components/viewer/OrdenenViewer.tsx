@@ -5,6 +5,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
 import { SOL } from './solutionStyle';
+import { ordenenRowPx } from '../../services/layout/blockLayout';
 
 interface Props {
     block: MathBlock;
@@ -65,11 +66,25 @@ function EditableValue({ value, onCommit }: { value: number | Fraction; onCommit
     );
 }
 
+// Widest printed value in the WHOLE block, in characters — the answer blank/box is one
+// consistent size across every exercise rather than a per-value guess (owner rule: never
+// a hardcoded 64px, always the widest value's width). Fractions are a stacked num/denom
+// pair, so their "width" is the wider of the two (plus the whole number, if mixed).
+function charsOf(v: number | Fraction): number {
+    if (isFrac(v)) {
+        const parts = [String(v.n), String(v.d)];
+        return Math.max(...parts.map((s) => s.length)) + (v.whole ? String(v.whole).length + 1 : 0);
+    }
+    return v.toLocaleString('nl-BE').length;
+}
+
 export default function OrdenenViewer({ block, showSolutions }: Props) {
     const exercises = block.ordenenExercises || [];
     const patchExercise = useWorksheetStore((s) => s.patchExercise);
     const gap = block.verticalSpacing || 14;
     const availableWidth = useBlockWidth();
+    const c = (block.constraints ?? {}) as Record<string, unknown>;
+    const answerStyle = (c.answerStyle as 'lijn' | 'vak' | undefined) ?? 'lijn';
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -81,56 +96,61 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
         patchExercise(block.id, 'ordenenExercises', exId, { display: nextDisplay, values: nextValues, isManuallyEdited: true });
     };
 
-    // Short series (default 3 numbers) only fill ~40% of the width one-up; place them
-    // two-up so the right half isn't dead. Longer series stay full width (they wrap).
-    const maxLen = Math.max(...exercises.map((e) => e.display.length));
-    // …but never wider than the cell allows: a ¼ block stacks them.
-    const ordCols = maxLen <= 4 ? fitCols(availableWidth, 150, 2, 28) : 1;
-    // Under ~200px a comma list cannot wrap without lying: "560,16 , 56,7" then
-    // ", 12,22" reads as three numbers of which one starts with a comma. Below the
-    // threshold the numbers stack instead, one per line, and drop the separator.
-    const STACK_BELOW_PX = 200;
-    const stacked = availableWidth < STACK_BELOW_PX;
+    // Mirrors blockLayout's `ordenenFloor` (same function, same constants: the 330px half-
+    // cell threshold there is exactly `fitCols`'s own arithmetic here) so the width the
+    // packer promoted this block to is always wide enough for whatever this resolves to —
+    // owner rule: a row never wraps, so there is no narrower fallback to drop into.
+    const count = Math.max(...exercises.map((e) => e.display.length));
+    const rowPx = ordenenRowPx(block.typeId, c, count);
+    const ordCols = fitCols(availableWidth, rowPx, 2, 28);
+
+    // Answer blank/box is one fixed width for the whole block: the widest value actually
+    // generated, never a magic 64px that clips a 5-digit answer or strands a 1-digit one.
+    const maxChars = Math.max(2, ...exercises.flatMap((e) => e.values.map(charsOf)));
+    const blankWidthCh = `${maxChars}ch`;
 
     return (
         <FragmentableGrid
             cols={ordCols}
             columnGap={28}
             rowGap={gap + 6}
-            items={exercises.map((ex) => (
-                <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
-                    {/* shuffled prompt numbers (click to edit) */}
-                    <div style={{
-                        display: 'flex', flexDirection: stacked ? 'column' : 'row',
-                        alignItems: stacked ? 'flex-start' : 'flex-end',
-                        gap: '6px', flexWrap: stacked ? 'nowrap' : 'wrap', fontWeight: 'normal',
+            items={exercises.map((ex) => {
+                const n = ex.display.length;
+                // 2n-1 columns (number, separator, number, …), ONE grid shared by the prompt
+                // and answer rows of this exercise, so a blank always sits directly under its
+                // number — separators are a narrow fixed track, numbers auto-size to content.
+                const gridTemplateColumns = Array(n).fill('max-content').join(' 22px ');
+                return (
+                    <div key={ex.id} className="print-exercise" style={{
+                        display: 'grid', gridTemplateColumns, columnGap: 0, rowGap: '10px',
+                        fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)',
                     }}>
+                        {/* shuffled prompt numbers (click to edit) */}
                         {ex.display.map((v, i) => (
-                            // One number per span, never broken, and the comma TRAILS the number
-                            // it belongs to: a leading comma that lands on a wrapped line reads as
-                            // part of the number after it.
-                            <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
+                            <div key={`p${i}`} style={{ gridRow: 1, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', fontWeight: 'normal', whiteSpace: 'nowrap' }}>
                                 <EditableValue value={v} onCommit={(nv) => editAt(ex.id, ex.display, ex.operator, i, nv)} />
-                                {!stacked && i < ex.display.length - 1 && <span>,</span>}
-                            </span>
+                                {i < n - 1 && <span>,</span>}
+                            </div>
                         ))}
-                    </div>
-                    {/* ordered blanks */}
-                    <div style={{
-                        display: 'flex', flexDirection: stacked ? 'column' : 'row',
-                        alignItems: 'flex-end', gap: '10px', flexWrap: stacked ? 'nowrap' : 'wrap',
-                    }}>
+                        {/* ordered blanks/boxes, aligned to the same columns */}
                         {ex.values.map((v, i) => (
-                            <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '10px', whiteSpace: 'nowrap' }}>
-                                {i > 0 && <span style={{ fontWeight: 'normal' }}>{ex.operator}</span>}
+                            <div key={`a${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
                                 {showSolutions
                                     ? renderVal(v, SOL)
-                                    : <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '18px', display: 'inline-block' }} />}
-                            </span>
+                                    : answerStyle === 'vak'
+                                        ? <span style={{ border: '1.5px solid #000', borderRadius: '4px', width: blankWidthCh, height: '26px', display: 'inline-block' }} />
+                                        : <span style={{ borderBottom: '1.5px solid #000', width: blankWidthCh, height: '18px', display: 'inline-block' }} />}
+                            </div>
+                        ))}
+                        {/* operator glyph between consecutive answers, in the separator column */}
+                        {ex.values.slice(1).map((_, i) => (
+                            <div key={`o${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', fontWeight: 'normal' }}>
+                                {ex.operator}
+                            </div>
                         ))}
                     </div>
-                </div>
-            ))}
+                );
+            })}
         />
     );
 }

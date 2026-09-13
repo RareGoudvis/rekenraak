@@ -57,9 +57,9 @@ import GeldConfig from '../components/configurator/plugins/GeldConfig';
 import GeldWisselConfig from '../components/configurator/plugins/GeldWisselConfig';
 import GeldTeruggevenConfig from '../components/configurator/plugins/GeldTeruggevenConfig';
 import MabConfig from '../components/configurator/plugins/MabConfig';
-import OrdenenConfig from '../components/configurator/plugins/OrdenenConfig';
+import OrdenenConfig, { OrdenenStyleConfig } from '../components/configurator/plugins/OrdenenConfig';
 import BreukBewerkConfig from '../components/configurator/plugins/BreukBewerkConfig';
-import BreukenRangschikkenConfig from '../components/configurator/plugins/BreukenRangschikkenConfig';
+import BreukenRangschikkenConfig, { BreukenRangschikkenStyleConfig } from '../components/configurator/plugins/BreukenRangschikkenConfig';
 import DeelbaarheidConfig from '../components/configurator/plugins/DeelbaarheidConfig';
 import GetallenasConfig from '../components/configurator/plugins/GetallenasConfig';
 import GetallenrijenConfig from '../components/configurator/plugins/GetallenrijenConfig';
@@ -155,9 +155,9 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
     'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
 
-    'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig },
+    'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig, StyleConfig: OrdenenStyleConfig },
     'breuken-bewerken':     { Viewer: BreukBewerkViewer, Config: BreukBewerkConfig },
-    'breuken-rangschikken': { Viewer: OrdenenViewer,     Config: BreukenRangschikkenConfig },
+    'breuken-rangschikken': { Viewer: OrdenenViewer,     Config: BreukenRangschikkenConfig, StyleConfig: BreukenRangschikkenStyleConfig },
     'deelbaarheid': { Viewer: DeelbaarheidViewer, Config: DeelbaarheidConfig },
     'getalpatronen': { Viewer: PatroonViewer, Config: PatroonConfig, StyleConfig: PatroonStyleConfig },
     'deelbaarheid-kleuren': { Viewer: DeelbaarheidKleurViewer, Config: DeelbaarheidKleurConfig },

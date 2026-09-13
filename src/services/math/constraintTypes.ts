@@ -237,6 +237,8 @@ export type BreukenRangschikkenConstraints = {
     operatorMode: string;
     minDenominator: number;
     maxDenominator: number;
+    // 'lijn' = underline blank (default), 'vak' = bordered box — Differentiatie choice.
+    answerStyle?: 'lijn' | 'vak';
 };
 
 // ── Splitsen (decomposing a number into parts, 7 → 3 + 4) ────────────────────
@@ -333,6 +335,8 @@ export type OrdenenConstraints = {
     numberMask?: PlaceMask;
     minDenominator?: number;
     maxDenominator?: number;
+    // 'lijn' = underline blank (default), 'vak' = bordered box — Differentiatie choice.
+    answerStyle?: 'lijn' | 'vak';
 };
 
 export type PlaatswaardeConstraints = {

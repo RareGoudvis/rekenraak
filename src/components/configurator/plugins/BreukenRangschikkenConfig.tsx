@@ -76,6 +76,22 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
     );
 }
 
+// ── Differentiatie: underline blank vs. bordered box for the answer.
+// Mounted by Inspector through EXERCISE_UI['breuken-rangschikken'].StyleConfig.
+export function BreukenRangschikkenStyleConfig({ block }: Props) {
+    const [c, patch] = useConstraints<BreukenRangschikkenConstraints>(block);
+    const answerStyle = c.answerStyle ?? 'lijn';
+    return (
+        <div style={{ ...styles.section, marginTop: '12px' }}>
+            <SettingLabel text="Antwoordstijl:" info="Hoe het antwoordvak getoond wordt: een lijn om op te schrijven, of een vak eromheen." />
+            <div className="seg-group">
+                <button className="seg-btn" aria-pressed={answerStyle === 'lijn'} onClick={() => patch({ answerStyle: 'lijn' })}>Lijn</button>
+                <button className="seg-btn" aria-pressed={answerStyle === 'vak'} onClick={() => patch({ answerStyle: 'vak' })}>Vak</button>
+            </div>
+        </div>
+    );
+}
+
 const inputStyle: React.CSSProperties = {
     width: '64px', padding: '8px 10px', backgroundColor: 'var(--bg-input)',
     border: '1px solid var(--border-color)', borderRadius: '6px',

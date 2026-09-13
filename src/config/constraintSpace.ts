@@ -190,6 +190,7 @@ const ordenenSpace: OptionSpace = {
     decimalPlaces: [1, 2, 3],
     unitFractionsOnly: [false, true],
     allowMixed: [false, true],
+    answerStyle: ['lijn', 'vak'],
 };
 
 const breukBewerkSpace: OptionSpace = {
@@ -208,6 +209,7 @@ const breukenRangschikkenSpace: OptionSpace = {
     operatorMode: ['oplopend', 'aflopend', 'beide'],
     minDenominator: [2, 3],
     maxDenominator: [6, 10, 20],
+    answerStyle: ['lijn', 'vak'],
 };
 
 const patroonSpace: OptionSpace = {

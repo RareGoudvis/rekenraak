@@ -191,6 +191,7 @@ const ordenenDefaults = (): OrdenenConstraints => ({
     numberType: 'natural', count: 3, operatorMode: 'oplopend', maxGetal: 100,
     // declared so the global base (decimalen / stambreuken / gemengd) can target them
     decimalPlaces: 1, unitFractionsOnly: false, allowMixed: false,
+    answerStyle: 'lijn',
 });
 
 const breukBewerkDefaults = (): BreukBewerkConstraints => ({
@@ -200,7 +201,7 @@ const breukBewerkDefaults = (): BreukBewerkConstraints => ({
 
 const breukenRangschikkenDefaults = (): BreukenRangschikkenConstraints => ({
     fractionMode: 'stambreuken', count: 4, operatorMode: 'oplopend',
-    minDenominator: 2, maxDenominator: 10,
+    minDenominator: 2, maxDenominator: 10, answerStyle: 'lijn',
 });
 
 const patroonDefaults = (): PatroonConstraints => ({

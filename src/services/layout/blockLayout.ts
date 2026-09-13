@@ -113,7 +113,10 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "afronden": { rowUnits: 10.33, perRowFull: 2, minWidth: 2 },
     "breuken": { rowUnits: 6.23, perRowFull: 2, minWidth: 1 },
     "breuken-bewerken": { rowUnits: 2.58, perRowFull: 2, minWidth: 2 },
-    "breuken-rangschikken": { rowUnits: 5.04, perRowFull: 2, minWidth: 1 },
+    // C3 (2026-09-13 seeded rerun, grid alignment): rowUnits 5.04 → 3.79, minWidth 1 → 2 —
+    // a quarter now measures overflow 1.20 (SETTINGS_FLOOR floors it to 2 or 4 anyway,
+    // since the viewer never wraps a row onto a second line).
+    "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2 },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
     // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
     "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
@@ -161,7 +164,9 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 1 },
     "omtrek": { rowUnits: 21.42, perRowFull: 1, minWidth: 4 },
     "oppervlakte": { rowUnits: 18.07, perRowFull: 1, minWidth: 4 },
-    "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 1 },
+    // C3 (2026-09-13 seeded rerun): rowUnits unchanged; minWidth 1 → 2 — a quarter now
+    // measures overflow 1.03 (SETTINGS_FLOOR floors it to 2 or 4 anyway, see below).
+    "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 2 },
     "plaatswaarde": { rowUnits: 1.63, perRowFull: 2, minWidth: 1 },
     "procenten": { rowUnits: 1.54, perRowFull: 2, minWidth: 1 },
     // ½ since the 2026-09-13 rerun: the viewer's kort/lang/stappen answer lines put the
@@ -240,6 +245,53 @@ const VETO_MIN: Record<string, WidthUnits> = {
 // UpdateState.md for the screenshots that set each number).
 type FloorRule = (block: MathBlock) => WidthUnits;
 
+// ── Ordenen / breuken-rangschikken row-width estimate ───────────────────────
+// Both the floor rule below and OrdenenViewer's own 2-up decision (`ordCols`) must agree
+// on how wide ONE exercise's number/blank row prints, so this is the single function both
+// read — SYNC: OrdenenViewer.tsx imports it rather than re-deriving the estimate by hand.
+// 0.62em/char at the sheet's default math size (13pt = 17.33px) is the same mono-advance
+// estimate GetallenrijenViewer/GetallenasViewer use; `+8` is per-number breathing room
+// (the underline's own padding), `SEP_PX` is the comma/operator glyph plus its flex gap.
+const ORDENEN_CHAR_EM = 0.62;
+const ORDENEN_DEFAULT_MATH_PX = 17.33;
+const ORDENEN_SEP_PX = 20;
+
+/** Widest printed value's character count, estimated from SETTINGS rather than exercises
+ *  (this runs before any exercise exists — first paint / the Inspector). */
+export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): number {
+    if (typeId === 'breuken-rangschikken') {
+        // Rendered as a stacked fraction — the wider of numerator/denominator is the denominator.
+        const maxDenominator = typeof c.maxDenominator === 'number' ? c.maxDenominator : 10;
+        return String(maxDenominator).length;
+    }
+    if (c.numberType === 'rational') {
+        const maxDenominator = typeof c.maxDenominator === 'number' ? c.maxDenominator : 10;
+        return String(maxDenominator).length + (c.allowMixed ? 2 : 0); // + whole number and its gap
+    }
+    const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 100;
+    const decimalPlaces = c.numberType === 'decimal' ? (typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 1) : 0;
+    // 'geheel' allows negatives unless the teacher raised the lower bound to 0.
+    const negative = c.numberType === 'geheel' && (typeof c.minGetal !== 'number' || c.minGetal < 0);
+    return String(Math.floor(maxGetal)).length + (decimalPlaces > 0 ? decimalPlaces + 1 : 0) + (negative ? 1 : 0);
+}
+
+/** Estimated px width of ONE exercise's row of `count` numbers/blanks, at the sheet default. */
+export function ordenenRowPx(typeId: string, c: Record<string, unknown>, count: number): number {
+    const maxChars = ordenenMaxChars(typeId, c);
+    return count * (maxChars * ORDENEN_CHAR_EM * ORDENEN_DEFAULT_MATH_PX + 8) + Math.max(0, count - 1) * ORDENEN_SEP_PX;
+}
+
+// A row that does not fit a half cell (330px, minus one column-gap reserved for a possible
+// neighbour) needs the full page; it never drops to a quarter (owner rule: ordenen/
+// rangschikken/breuken-rangschikken never wrap, so a row too wide for its column has no
+// fallback but a wider column).
+const ordenenFloor: FloorRule = (block) => {
+    const c = (block.constraints ?? {}) as Record<string, unknown>;
+    const count = typeof c.count === 'number' ? c.count : 3;
+    const rowPx = ordenenRowPx(block.typeId, c, count);
+    return rowPx <= 330 - 28 ? 2 : 4;
+};
+
 const SETTINGS_FLOOR: Record<string, FloorRule> = {
     // Axis / sequence / function-table labels collide well before anything overflows —
     // full width regardless of settings.
@@ -273,6 +325,8 @@ const SETTINGS_FLOOR: Record<string, FloorRule> = {
     // draws ONE place-value figure, which has no such pairing and can go to a quarter.
     'mab-herkennen': () => 2,
     'mab-tekenen': () => 1,
+    ordenen: ordenenFloor,
+    'breuken-rangschikken': ordenenFloor,
 };
 
 function editorialFloor(block: MathBlock): WidthUnits {
