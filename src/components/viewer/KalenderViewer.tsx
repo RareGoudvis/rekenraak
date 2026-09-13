@@ -76,8 +76,12 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
                             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,max-content) minmax(90px, 1fr)', columnGap: '16px', rowGap: '8px', alignItems: 'baseline', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
                                 {(ex.questions ?? []).map((q, i) => (
                                     <Fragment key={i}>
-                                        <span>{q.text}</span>
-                                        <span style={{ justifySelf: 'start' }}>{answer(q.answer, 120)}</span>
+                                        <span style={{ minWidth: 0 }}>{q.text}</span>
+                                        {/* The answer line's own min-width must match the column's floor (90px),
+                                            not the wider 120px used elsewhere — a bigger inline min-width on the
+                                            grid ITEM overrides the track's minmax and reopened the ½-width
+                                            overflow even after the text column above could shrink. */}
+                                        <span style={{ justifySelf: 'start' }}>{answer(q.answer, 90)}</span>
                                     </Fragment>
                                 ))}
                             </div>

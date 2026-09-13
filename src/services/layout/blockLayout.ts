@@ -144,7 +144,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "hr-std-optellen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-vermenigvuldigen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     // Measured 4 since 2026-09-13: the question row overflows a half (BUGS.md) — 2 once fixed.
-    "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 4 },
+    "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 2 },
     "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 1 },
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
     "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },

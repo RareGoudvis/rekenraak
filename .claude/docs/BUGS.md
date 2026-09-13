@@ -8,12 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- **Kalender › Maandrooster at ½ width overflows** (2026-09-13, matrix): `w2 overflow 1.18`
-  since 48f4e27 (answer lines on one column, 2026-09-12 23:27 — after the previous matrix
-  run); the measured clamp now refuses ½ and the LAYOUT fallback says 4. Likely the question
-  text + `minWidth` answer line in one non-wrapping row. Fix, re-run `npm run matrix`, and
-  set the fallback back to 2 (`VETO_MIN` already holds it at 2).
-
 - **¼-width screenshot pass for the sentence types** (left over from 7a, 2026-09-12): the
   measured clamp uses `min-content`, which under-reports text that wraps word by word, so
   getalfunctie, tijdsduur, verbanden, geld-rekenen and herleidingen may now *offer* a quarter
