@@ -101,7 +101,9 @@ export interface DocSettings {
 // full-screen library overlays. UI-only — never persisted/serialised.
 export type WorksheetView = 'editor' | 'mijn-bladen' | 'bibliotheek';
 // Autosave status surfaced in the top bar. UI-only.
-export type SaveState = 'idle' | 'saving' | 'saved';
+// 'error' = the last write was refused (quota full / storage unavailable): the sheet is
+// only in memory, so the top bar must stop claiming it is safe.
+export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
 interface WorksheetState {
     blocks: MathBlock[];
@@ -608,7 +610,8 @@ useWorksheetStore.subscribe((state, prev) => {
     if (state.saveState !== 'saving') useWorksheetStore.setState({ saveState: 'saving' });
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = setTimeout(() => {
-        saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings, baseSettings: state.baseSettings, selectedGrade: state.selectedGrade }, state.curriculum);
-        useWorksheetStore.setState({ saveState: 'saved', lastSavedAt: Date.now() });
+        const ok = saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings, baseSettings: state.baseSettings, selectedGrade: state.selectedGrade }, state.curriculum);
+        // lastSavedAt stays put on failure — it dates the last snapshot that really is on disk.
+        useWorksheetStore.setState(ok ? { saveState: 'saved', lastSavedAt: Date.now() } : { saveState: 'error' });
     }, 1500);
 });

@@ -22,16 +22,21 @@ interface Props {
 // sheds width relative to the last, which is what lets useShedStages' hysteresis work.
 const STAGE_COUNT = 4;
 
+// Autosave refused the write (browser storage full): the only way out is an explicit
+// file export, so the tooltip says that instead of a generic failure.
+const SAVE_FAILED_TEXT = 'Kon niet bewaren (opslag vol?) — bewaar als bestand.';
+
 // Shared between the centre-track (stage 0-1) and the under-bar line (stage 2-3) so the
 // save-status colour/tooltip logic isn't duplicated.
 function SaveIndicator({ saveState, lastSavedAt, showText }: { saveState: SaveState; lastSavedAt: number | null; showText: boolean }) {
     return (
         <div
             style={S.saveChip}
-            title={lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
+            title={saveState === 'error' ? SAVE_FAILED_TEXT
+                : lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
         >
-            <span style={{ ...S.saveDot, background: saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
-            {showText && <span>{saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>}
+            <span style={{ ...S.saveDot, background: saveState === 'error' ? 'var(--danger)' : saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
+            {showText && <span>{saveState === 'error' ? 'Niet bewaard' : saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>}
         </div>
     );
 }

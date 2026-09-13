@@ -355,3 +355,28 @@ describe('regenerateExercise (gemengd per-exercise operator switch)', () => {
         expect(after.generationNote).toBe('Geen oefening mogelijk voor deze bewerking bij deze instellingen.');
     });
 });
+
+// The top bar used to go green 1.5 s after every change, including the changes localStorage
+// refused (quota full) — the teacher was told the sheet was safe when nothing was written.
+describe('autosave status', () => {
+    beforeEach(() => { vi.useFakeTimers(); seed(1); });
+    afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
+
+    test('a written autosave reports saved and stamps the time', () => {
+        vi.advanceTimersByTime(1600);
+        expect(useWorksheetStore.getState().saveState).toBe('saved');
+        expect(useWorksheetStore.getState().lastSavedAt).not.toBeNull();
+    });
+
+    test('a refused write reports error and leaves lastSavedAt on the last real save', () => {
+        vi.advanceTimersByTime(1600);
+        const savedAt = useWorksheetStore.getState().lastSavedAt;
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError'); });
+
+        useWorksheetStore.getState().addBlockFromType('hr-std-optellen', 'Optellen');
+        vi.advanceTimersByTime(1600);
+
+        expect(useWorksheetStore.getState().saveState).toBe('error');
+        expect(useWorksheetStore.getState().lastSavedAt).toBe(savedAt);
+    });
+});

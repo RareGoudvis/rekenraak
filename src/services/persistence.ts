@@ -214,11 +214,14 @@ export function parseWorksheetFile(json: string): WorksheetFile {
 
 // ── Auto-save (1 implicit slot, crash recovery) ───────────────────────────────
 
-export function saveAutosave(state: SerialisableState, curriculum?: CurriculumLock | null): void {
+/** Returns false when the write failed (quota full, storage unavailable) so the top bar
+    can say so instead of showing a green "bewaard" dot over a sheet that was never saved. */
+export function saveAutosave(state: SerialisableState, curriculum?: CurriculumLock | null): boolean {
     try {
         const record: AutosaveRecord = { savedAt: new Date().toISOString(), payload: buildPayload(state, 'full', curriculum ?? undefined) };
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(record));
-    } catch { /* quota / unavailable — ignore */ }
+        return true;
+    } catch { return false; }
 }
 
 export function loadAutosave(): AutosaveRecord | null {
