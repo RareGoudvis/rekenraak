@@ -27,6 +27,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   at every font size; it needs the mini to fit its box (scale the polygon to `size`) rather
   than a bigger cell.
 
+- **A block wider than the full column clips in silence** (2026-09-13): a page that
+  overflows VERTICALLY outlines itself and says by how much; horizontal overflow says
+  nothing. At bodyFontScale 1.8 a vergelijken block needs 740px of a 688px full-width cell
+  (overflow 1.10) and simply loses its right edge on paper. The teacher's way out exists
+  ("Verklein om in de kolom te passen"), but nothing on the sheet points at it.
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
