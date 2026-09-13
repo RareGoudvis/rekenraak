@@ -45,9 +45,17 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const blank = (w = 80) => <span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: '18px', display: 'inline-block', verticalAlign: 'bottom' }} />;
     const sol = (t: string) => <span style={{ ...solutionText }}>{t}</span>;
 
+    // Places of an EXERCISE come from its own number, not from the block's current settings:
+    // an exercise generated at 3 decimals must still render after the teacher drops to 0,
+    // or its placeKey is missing and the sheet crashes (until Genereer replaces it).
+    const placesFor = (ex: PlaatswaardeExercise) => {
+        const ownDecimals = (String(ex.number).split('.')[1] ?? '').length;
+        return placesOf(ex.number, Math.max(maxGetal, ex.number), Math.max(decimalPlaces, ownDecimals));
+    };
+
     // Render the number with the targeted digit underlined (comma before the first decimal place).
     const numberWithUnderline = (ex: PlaatswaardeExercise) => {
-        const places = placesOf(ex.number, maxGetal, decimalPlaces);
+        const places = placesFor(ex);
         return (
             <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)', letterSpacing: '1px' }}>
                 {places.map((p, i) => {
@@ -106,9 +114,10 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
             columnGap={24}
             rowGap={gap}
             items={exercises.map(ex => {
-                const place = placesOf(ex.number, maxGetal, decimalPlaces).find(p => p.key === ex.placeKey)!;
-                const value = Number((place.digit * place.weight).toFixed(4));
-                const answer = subType === 'plaats' ? place.label.toLowerCase() : formatMathNumber(value);
+                const place = placesFor(ex).find(p => p.key === ex.placeKey);
+                // A stale exercise keeps its number and an empty line rather than taking the sheet down.
+                const value = place ? Number((place.digit * place.weight).toFixed(4)) : 0;
+                const answer = !place ? '' : subType === 'plaats' ? place.label.toLowerCase() : formatMathNumber(value);
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: tight ? '4px' : '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', ...(tight && { flexWrap: 'wrap' }) }}>
                         {/* Fixed-width right-aligned so the arrow + answer line align across rows.
