@@ -509,6 +509,22 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                 Verbreed naar {min === 4 ? 'vol' : '½'}: te smal voor deze instellingen.
                                             </p>
                                         )}
+
+                                        {/* The other way out of "it does not fit": shrink the block
+                                            instead of widening it. Opt-in per block and right under the
+                                            width picker, because a block that quietly renders smaller
+                                            than the identical one beside it is a font-size mismatch on
+                                            paper — it has to be a choice the teacher made. Stays
+                                            available under a curriculum lock, like the width picker. */}
+                                        <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                                            <span style={S.switchText}>Verklein om in de kolom te passen</span>
+                                            <Switch
+                                                checked={activeBlock.constraints?.fitToWidth === true}
+                                                onChange={(v) => updateBlockSettings(activeBlock.id, { constraints: { ...activeBlock.constraints, fitToWidth: v || undefined } })}
+                                                aria-label="Verklein om in de kolom te passen"
+                                            />
+                                        </div>
+                                        <p style={S.hintText}>Uit: een blok dat niet past wordt verbreed. Aan: het blok wordt tot 85 % verkleind.</p>
                                     </>
                                 );
                             })()}

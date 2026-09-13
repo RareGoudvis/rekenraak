@@ -587,6 +587,7 @@ export default function App() {
                     scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}
                     availableWidthPx={cellWidth(item.width)}
                     fitToPage={block.constraints?.fitToPage === true}
+                    fitToWidth={block.constraints?.fitToWidth === true}
                   >
                   {/* showInstruction === false hides the title row the way furniture has none;
                       blockOrder still counts the block unless skipNumbering says otherwise, so
