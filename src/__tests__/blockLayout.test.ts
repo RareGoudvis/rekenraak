@@ -26,6 +26,22 @@ describe('minWidthUnits — fallback (no measurement)', () => {
         const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'natural', maxGetal: 100 } });
         expect(minWidthUnits(block)).toBe(1);
     });
+
+    // maxGetal is shared by the whole +-x: settings bag but only 'andere'/'vrij' reads it,
+    // so a tafels block was being sent to the full width by a slider it never uses.
+    test('tafels fit a quarter whatever maxGetal says, because the table bounds them', () => {
+        const block = makeBlock('hr-std-vermenigvuldigen', {
+            constraints: { numberType: 'natural', maxGetal: 1000000, multiplicationMode: 'tafels', selectedTables: [2, 5, 10], tableLimit: 10 },
+        });
+        expect(minWidthUnits(block)).toBe(1);
+    });
+
+    test('delen met rest needs a half — the rest blank does not fit beside the quotient', () => {
+        const block = makeBlock('hr-std-delen', {
+            constraints: { numberType: 'natural', maxGetal: 100, multiplicationMode: 'met_rest', selectedTables: [3, 4], metRestLevel: 1 },
+        });
+        expect(minWidthUnits(block)).toBe(2);
+    });
 });
 
 describe('minWidthUnits — measured', () => {

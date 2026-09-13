@@ -236,8 +236,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // to its own answer would tell the child how many digits to expect.
     // In a tight cell the same blank is sized to the answer alone: 50px is still three
     // handwritten digits, and every px above that comes straight out of the operands.
+    // A tafels block answers in at most three digits, and a 40px line is still three
+    // handwritten ones — the 10px that buys is what puts "7 x 8 = ___" inside a 163px
+    // quarter. Read off the block's own answers, not off multiplicationMode: the rule is
+    // about how much the child writes, not about which mode produced it.
+    const tightAnswerFloor = maxAnswerChars <= 3 ? 40 : 50;
     const answerLinePx = tight
-        ? Math.max(50, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
+        ? Math.max(tightAnswerFloor, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
         : Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
     const cellPx = Math.max(85, Math.ceil(maxChars * CHAR_PX) + 6);
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).

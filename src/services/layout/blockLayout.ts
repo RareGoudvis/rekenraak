@@ -328,9 +328,20 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
 
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;
 
+    // Tafels and deeltafels are bounded by the TABLE, not by maxGetal: "7 x 8 = ___" fits a
+    // quarter however high the block's maxGetal slider happens to sit from another mode
+    // (the slider is shared across the +-x: settings bag and only 'andere'/'vrij' reads it).
+    const tables = Array.isArray(c.selectedTables) ? (c.selectedTables as number[]) : [];
+    const tableLimit = typeof c.tableLimit === 'number' ? c.tableLimit : 10;
+    const tafelsOnly = block.typeId.startsWith('hr-std-')
+        && c.multiplicationMode === 'tafels' && c.numberType !== 'decimal'
+        && tables.length > 0 && Math.max(...tables) * tableLimit <= 100;
+
     // Wide numbers need wide columns whatever the type's baseline tier says.
-    if (maxGetal >= 100000) return 4;
-    if (maxGetal >= 10000 && base < 4) return Math.max(base, 2) as WidthUnits;
+    if (!tafelsOnly) {
+        if (maxGetal >= 100000) return 4;
+        if (maxGetal >= 10000 && base < 4) return Math.max(base, 2) as WidthUnits;
+    }
 
     // Multi-term chains and the stepped layout both eat horizontal room.
     const termCount = typeof c.termCount === 'number' ? c.termCount : 2;
