@@ -126,13 +126,13 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // actually given instead of guessing a column count off maxRange, and three of them fit
     // a full row (three is also the cap — four leaves no writing room). Only a decimal
     // staartdeling is still wide enough that two is all that fits.
-    "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-optellen-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-aftrekken-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-aftrekken-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-vermenigvuldigen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-optellen-dec": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-aftrekken-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-aftrekken-dec": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-vermenigvuldigen-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
     "cijferen-vermenigvuldigen-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
     "cijferen-delen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
     "controleren": { rowUnits: 5, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "deelbaarheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 1 },
@@ -153,7 +153,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // C1 step 1: the vertical fallback below 200px is gone from PatroonViewer, so the
     // fallback table floor moves up to match SETTINGS_FLOOR's ½.
     "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 2 },
-    "herleidingen": { rowUnits: 2.14, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "herleidingen": { rowUnits: 2.14, perRowFull: 2, minWidth: 4 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-gemengd": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
@@ -241,6 +241,11 @@ const VETO_MIN: Record<string, WidthUnits> = {
     "geld-tekenen": 4,
     "kalender": 2,
     "geld-teruggeven": 2,
+    // Owner rule (round 3): the hulptabel overflowed at a half and these blocks rarely
+    // pair with others, so herleidingen stays simple — full width only.
+    "herleidingen": 4,
+    // A maateenheid sentence never fits a quarter; the chips wrap under it at a half.
+    "maateenheid": 2,
     // deelbaarheid-kleuren used to be pinned here because its cells were fixed px and a
     // 4-digit number wrapped inside them; the strip/raster cells are `em`-sized now (C1
     // step 6), so the width clamp judges it on measurement like everything else.

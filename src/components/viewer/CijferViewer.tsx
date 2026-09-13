@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
-import { useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
 import { SOL, solutionText } from './solutionStyle';
@@ -179,12 +179,25 @@ function exWidthPx(ex: CijferExercise, c: CijferConstraints, CELL: number, sheet
 
 // Exercises per row, from the exercises themselves, and never so many that the row runs off
 // its column: the boxes sit in a nowrap flex row, so a miscount overflows horizontally
-// rather than wrapping. Capped at 3 — four columned sums across a full-width block leaves
-// no writing room between them, which is the whole point of squared paper.
-const MAX_EX_PER_ROW = 3;
+// rather than wrapping. Capped at 4 — a fifth columned sum across a full-width block would
+// leave no writing room between boxes, which is the whole point of squared paper.
+const MAX_EX_PER_ROW = 4;
+
+// A per-exercise box is narrow enough that raw division would still cram 3 across a
+// half-width column — readable arithmetically, but too tight for the writing room squared
+// paper exists for. So the row count is capped per WIDTH TIER (full/half/quarter), not just
+// by whatever the pixels allow: full → 4, half → 2, quarter → 1, still never more than fits.
+function tierCapFor(availableWidth: number): number {
+    const ratio = availableWidth / FULL_BLOCK_WIDTH_PX;
+    if (ratio >= 0.85) return 4;
+    if (ratio >= 0.40) return 2;
+    return 1;
+}
+
 function computeExPerRow(exercises: CijferExercise[], c: CijferConstraints, CELL: number, sheetPx: number, availableWidth: number): number {
     const w = Math.max(...exercises.map(ex => exWidthPx(ex, c, CELL, sheetPx)));
-    return Math.max(1, Math.min(MAX_EX_PER_ROW, Math.floor((availableWidth + ROW_GAP_PX) / (w + ROW_GAP_PX))));
+    const fits = Math.floor((availableWidth + ROW_GAP_PX) / (w + ROW_GAP_PX));
+    return Math.max(1, Math.min(MAX_EX_PER_ROW, tierCapFor(availableWidth), fits));
 }
 
 // ── Digit overlay ─────────────────────────────────────────────────────────────

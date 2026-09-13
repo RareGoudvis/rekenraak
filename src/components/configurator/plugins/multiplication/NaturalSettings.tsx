@@ -74,7 +74,9 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
     };
 
     return (
-        <div>
+        // Wrapper margin (not the inner sectionBox) keeps a gap before whatever
+        // settings section the parent config plugin renders next.
+        <div style={styles.section}>
             {/* SUB-MODUS SELECTIE */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button

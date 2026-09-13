@@ -81,7 +81,6 @@ export default function MetenViewer({ block, showSolutions }: Props) {
     // Wider padding when scaffold blanks sit beside the figure, so they don't bleed out.
     const pad = sideScaffold ? 64 : 42;
     const bottomExtra = sideScaffold ? 18 : 0;
-    const figH = Math.max(...geoms.map(g => g.h)) + 2 * pad + bottomExtra;
     const maxW = Math.max(...geoms.map(g => g.w)) + 2 * pad;
     const columnGap = gap + 10;
     // Two columns only when two items (plus the gap) actually fit the printable width.
@@ -95,7 +94,10 @@ export default function MetenViewer({ block, showSolutions }: Props) {
             items={exercises.map((ex, idx) => {
                 const g = geoms[idx];
                 const right = cols === 2 && idx % 2 === 1;   // mirror the second column
-                const yOff = pad + ((figH - bottomExtra) - 2 * pad - g.h) / 2;
+                // Own height per figure (SYNC: OppervlakteViewer): a block-wide maximum left
+                // a blank the size of the tallest shape under every smaller one.
+                const figH = g.h + 2 * pad + bottomExtra;
+                const yOff = pad;
                 const W = g.w + 2 * pad;
                 const sides = ex.sides ?? [];
 

@@ -49,7 +49,6 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
         const w = Math.max(...pts.map(p => p.x)), h = Math.max(...pts.map(p => p.y));
         return { pts, w, h };
     });
-    const figH = Math.max(...geoms.map(g => g.h)) + 2 * pad;
     const maxW = Math.max(...geoms.map(g => g.w)) + 2 * pad;
     const cols = maxW * 2 + gap + 10 <= availableWidth ? 2 : 1;
 
@@ -62,6 +61,9 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
             items={exercises.map((ex, idx) => {
                 const g = geoms[idx];
                 const W = g.w + 2 * pad;
+                // Each figure gets its own height: a shared block-wide maximum left a page-
+                // sized blank under every small shape whenever one tall shape was rolled.
+                const figH = g.h + 2 * pad;
                 const cs = g.pts.map(p => ({ x: pad + p.x, y: pad + p.y }));
                 const centroid = { x: cs.reduce((a, p) => a + p.x, 0) / cs.length, y: cs.reduce((a, p) => a + p.y, 0) / cs.length };
                 const sides = ex.sides ?? [];
