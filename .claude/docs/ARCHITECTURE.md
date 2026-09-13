@@ -925,8 +925,8 @@ src/
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
 │  (repo root) scripts/font-baseline.mjs # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
 │  (repo root) scripts/font-compare.mjs  # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
-│  (repo root) scripts/catalogue.mjs     # walks every leaf → public/oefeningen.html + public/oefeningen/*.png (npm run catalogue; re-run after a leaf changes)
-│  (repo root) public/about.html, faq.html, oefeningen.html  # static SEO pages, own token copy (oefeningen.html is generated, never hand-edited)
+│  (repo root) scripts/catalogue.mjs     # walks every leaf → splices the exercise cards + sidebar rows into public/faq.html between marker comments, pngs in public/oefeningen/ (npm run catalogue; re-run after a leaf changes)
+│  (repo root) public/about.html, faq.html, site.css  # static SEO pages on a replica of the app chrome (site.css: top bar = page nav, sidebar = anchors / exercise filter, no inspector); faq.html carries the generated catalogue
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
@@ -981,7 +981,6 @@ src/
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
     │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay
-    │   └── AboutModal.tsx      # "Over dit project" — manifesto + tech + AGPL
     ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx)
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
