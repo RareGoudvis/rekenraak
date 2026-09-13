@@ -150,7 +150,9 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.58, perRowFull: 1, minWidth: 1 },
     "mab-herkennen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
-    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
+    // A single drawn place-value figure has no glyph table to read, so it can go to ¼ —
+    // unlike mab-herkennen, whose numeral/glyph pairing needs the ½ floor (SETTINGS_FLOOR).
+    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 1 },
     "omtrek": { rowUnits: 21.42, perRowFull: 1, minWidth: 4 },
     "oppervlakte": { rowUnits: 18.07, perRowFull: 1, minWidth: 4 },
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 1 },
@@ -216,17 +218,60 @@ const VETO_MIN: Record<string, WidthUnits> = {
     "omtrek": 4,
     "oppervlakte": 4,
     "geld-tekenen": 4,
-    "getallenas": 2,
     "kalender": 2,
-    "deelbaarheid-kleuren": 2,
     "geld-teruggeven": 2,
-    // MAB is sized by its glyphs rather than by its share of the block: at a quarter the
-    // place columns stop reading as places.
-    "mab-herkennen": 2,
-    "mab-tekenen": 2,
+    // deelbaarheid-kleuren used to be pinned here because its cells were fixed px and a
+    // 4-digit number wrapped inside them; the strip/raster cells are `em`-sized now (C1
+    // step 6), so the width clamp judges it on measurement like everything else.
+};
+
+// A typeId-only veto cannot see WHAT the teacher configured — a getallenrijen block reads
+// its own settings, and "the axis labels collide" is true regardless of them, while
+// "six place columns" only happens with the 'tabel' subtype. These rules read
+// `block.constraints` (narrowed per family) instead of being one more flat table entry,
+// so they stay a registry lookup rather than growing into an if-else chain in
+// `editorialFloor`. Every floor here is from the 2026-09-13 owner pass (see BUGS.md /
+// UpdateState.md for the screenshots that set each number).
+type FloorRule = (block: MathBlock) => WidthUnits;
+
+const SETTINGS_FLOOR: Record<string, FloorRule> = {
+    // Axis / sequence / function-table labels collide well before anything overflows —
+    // full width regardless of settings.
+    getallenas: () => 4,
+    getallenrijen: () => 4,
+    getalfunctie: () => 4,
+    getalpatronen: () => 2,
+    kettingsommen: () => 2,
+    'even-oneven': () => 2,
+    deelbaarheid: (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').DeelbaarheidConstraints>;
+        if (c.layout === 'tabel') return (c.divisors?.length ?? 0) <= 3 ? 2 : 4;
+        // 'veelvouden' (the default) never needs more than a half: C1 step 4 caps the
+        // printed sequence length to whatever the column actually holds.
+        return 2;
+    },
+    splitsen: (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').SplitsenConstraints>;
+        const maxGetal = c.maxGetal ?? 0;
+        if (c.layout === 'positie-tabel') return maxGetal <= 100 ? 2 : 4;
+        if (c.layout === 'positie-benen') return maxGetal <= 100 ? 1 : 2;
+        if (c.layout === 'positie-math') return 2;
+        return 1;
+    },
+    breuken: (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').FractionConstraints>;
+        return c.subType === 'hoeveelheid' ? 2 : 1;
+    },
+    // MAB is sized by its glyphs rather than by its share of the block: mab-herkennen
+    // pairs a numeral with a glyph table, which stops reading at a quarter; mab-tekenen
+    // draws ONE place-value figure, which has no such pairing and can go to a quarter.
+    'mab-herkennen': () => 2,
+    'mab-tekenen': () => 1,
 };
 
 function editorialFloor(block: MathBlock): WidthUnits {
+    const rule = SETTINGS_FLOOR[block.typeId];
+    if (rule) return rule(block);
     return VETO_MIN[block.typeId] ?? 1;
 }
 
@@ -305,9 +350,6 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
     const single = (block.numberOfExercises ?? 0) <= 1 && facts.minWidthSingle;
     const base = single ? facts.minWidthSingle! : facts.minWidth;
     const c = (block.constraints ?? {}) as Record<string, unknown>;
-
-    // MAB tops out at 1000, so its four place columns still fit a half.
-    if (block.typeId.startsWith('mab-')) return 2;
 
     if (base === 4) return 4;
 
