@@ -1,6 +1,7 @@
 import type { MathBlock } from '../../services/math/types';
 import type { LayoutConstraints } from '../../services/math/constraintTypes';
 import { useBlockWidth } from './BlockWidthContext';
+import { renderKaderBody } from '../../services/layout/kaderMarkup';
 
 interface Props {
     block: MathBlock;
@@ -97,7 +98,7 @@ export default function LayoutBlockViewer({ block }: Props) {
                 fontFamily: "'Azeret Mono', monospace", color: '#000',
             }}>
                 {title && <div style={{ fontWeight: 700, fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: body ? '6px' : 0 }}>{title}</div>}
-                {body && <div style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{body}</div>}
+                {body && <div style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{renderKaderBody(body)}</div>}
             </div>
         );
     }
