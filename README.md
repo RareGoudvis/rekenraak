@@ -2,7 +2,7 @@
 
 Werkbladengenerator voor het Vlaamse basisonderwijs (de map heet nog `enderklas-v2`). Leerkrachten stellen wiskundige oefeningenblokken samen, configureren de moeilijkheidsgraad per blok, bekijken het resultaat live op virtuele A4-pagina's, en drukken af of slaan op als PDF.
 
-Live (beta): [rekenraak.be](https://www.rekenraak.be) · over het project: [rekenraak.be/about.html](https://www.rekenraak.be/about.html)
+Live (beta): [rekenraak.be](https://www.rekenraak.be) · [over het project](https://www.rekenraak.be/about.html) · [vragen](https://www.rekenraak.be/faq.html) · [alle oefeningen met voorbeeld](https://www.rekenraak.be/oefeningen.html)
 
 ## Wat kan je ermee?
 
@@ -15,24 +15,25 @@ Live (beta): [rekenraak.be](https://www.rekenraak.be) · over het project: [reke
 - **Werkbundels opslaan en openen** als JSON-bestand of als deelbare link (volledig of enkel sjabloon) — bewaar je layout en deel met collega's.
 - **Differentiatie** — instructieprefixen (MAG / MOET / ★ / aangepast), scaffoldingniveaus per oefeningtype, schaalbare scoring.
 - **Elk blad start met een echte opdracht** — ieder zijbalk-item draagt zijn eigen opdrachttekst voor de leerling ("Omcirkel het grootste getal.", "Splits in H, T en E." — soms afhankelijk van de instellingen), dus een snel werkblad vraagt geen getyp.
-- **Breedte per blok** — vol, ½ of ¼ pagina; de app meet zelf wat past en weigert eerlijk wat onleesbaar zou worden (een blok verkleint nooit stilletjes).
+- **Breedte per blok** — vol, ½ of ¼ pagina; de app meet zelf wat past en weigert eerlijk wat onleesbaar zou worden (een blok verkleint nooit stilletjes). Met "Blokken aansluiten" schuift een ½-blok onder een korter buurblok.
+- **Geen dubbele oefeningen** — standaard aan: elke oefening komt hoogstens één keer voor in een blok; een te kleine reeks vult aan met herhalingen en zegt dat.
 - **Lettergrootte en schrijfruimte** — twee schuiven voor cijfers en opdrachttekst (alle tekeningen schalen mee) en één schuif voor de schrijfruimte onder elk antwoord.
 - **Bladonderdelen** — secties, schrijflijnen, ruitjesraster, kader en lege pagina's om het blad af te werken.
 - **Afdrukken met echte pagina's** — de app beslist zelf waar een pagina eindigt, dus wat je op het scherm ziet is exact wat er uit de printer komt: elke pagina draagt haar eigen kop- en voettekst (school / klas / leerkracht + vrije tekst), oefeningen worden nooit middenin afgekapt, en je kan de naamvelden optioneel op elke pagina herhalen. Oplossingen desgewenst in het rood meegedrukt.
 
 ## Oefeningtypes
 
-Momenteel **122 oefeningen in de zijbalk** (varianten van ~55 registry-types in `src/config/exerciseRegistry.ts`), verdeeld over vier wiskundedomeinen, plus vijf bladonderdelen:
+Momenteel **128 oefeningen in de zijbalk** (varianten van ~55 registry-types in `src/config/exerciseRegistry.ts`), verdeeld over vier wiskundedomeinen, plus vijf bladonderdelen:
 
 | Domein | Waar het over gaat |
 |---|---|
 | **Getallenkennis** | Getalbegrip (splitsen, MAB, plaatswaarde, ordenen, getallenassen en -rijen, functie van getallen, even/oneven, vergelijken, afronden, romeinse cijfers, getalpatronen, procenten), breuken (kleuren, herkennen, breuk van een hoeveelheid, lijnstuk, veelhoek, bewerken, rangschikken), deelbaarheid (tabel, veelvouden kleuren), verbanden breuk · decimaal · procent |
 | **Bewerkingen** | Hoofdrekenen (optellen / aftrekken / vermenigvuldigen / delen, natuurlijk · decimaal · rationaal, 2–4 termen, met bruggetjes en oefenvormen zoals compenseren), cijferen (kolomrekenen met ruitjesgrid), rekenvolgorde en haakjes, kettingsommen, schattend rekenen, procenten, controleren (negenproef, omgekeerde bewerking) |
-| **Meetkunde** | Vormleer: punt en lijn, hoeken, figuren (herkennen, benoemen, classificeren) |
-| **Meten en metend rekenen** | Kloklezen en tijdsduur, kalender, geld (herkennen, tekenen, wisselen, teruggeven, korting/winst/intrest), lengte meten, omtrek, oppervlakte, herleidingen tussen maateenheden, passende maateenheid kiezen, temperatuur, weegschaal |
+| **Meetkunde** | Vormleer: punt en lijn (benoemen, relaties zoals loodrecht / evenwijdig / snijdt in drie niveaus), hoeken (herkennen, tekenen, meten in graden), figuren (herkennen, benoemen, classificeren) |
+| **Meten en metend rekenen** | Kloklezen en tijdsduur, kalender, geld (herkennen, tekenen, wisselen, teruggeven, korting/winst/intrest), lengte meten, omtrek, oppervlakte, herleidingen tussen maateenheden, passende maateenheid kiezen, temperatuur, weegschaal (aflezen, kleuren) |
 | **Bladonderdelen** | Sectietitel, schrijflijnen, ruitjesraster, kader, lege pagina |
 
-De volledige lijst per `typeId` (generator → oefeningenveld → viewer → configuratieplugin) staat in [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) §7.
+De volledige lijst per `typeId` (generator → oefeningenveld → viewer → configuratieplugin) staat in [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) §7; met een voorbeeldafbeelding per blad op [oefeningen.html](https://www.rekenraak.be/oefeningen.html) (gegenereerd door `npm run catalogue`).
 
 ## Tech
 
@@ -49,6 +50,7 @@ npm test          # vitest (~1200 tests: generatormatrix, antwoorden, packer, vi
 npm run check     # tsc + eslint + build + vitest — de poort vóór elke commit
 npm run preview   # productiebuild bekijken
 npm run matrix    # Playwright: elk type op vol/½/¼ meten (breedtetabel in blockLayout.ts)
+npm run catalogue # Playwright: elk zijbalk-blad → oefeningen.html + public/oefeningen/*.png (de gate faalt als de pagina achterloopt op de zijbalk)
 ```
 
 ---
@@ -104,6 +106,7 @@ Each viewer takes a uniform `{ block, showSolutions }` and renders A4-styled HTM
 There is **no react-pdf** — export is the browser print dialog (Save as PDF), and the on-screen A4 preview *is* what prints. Tuned for Chrome/Edge:
 
 - **The app paginates, not the browser.** [pagePacker.ts](src/services/layout/pagePacker.ts) is a pure function (blocks in, pages out, no DOM): it fills a row left to right, starts a new row when the width runs out and a new page when the height budget does. Heights and content widths are *measured* off the rendered sheet (first paint uses the table in [blockLayout.ts](src/services/layout/blockLayout.ts), produced by `npm run matrix`); a block that does not fit its column is widened to the next tier, never shrunk, and editorial floors (`VETO_MIN`, `SETTINGS_FLOOR`) keep illegible widths off the menu.
+- **The public pages are built by Vite, not by React.** `about.html`, `faq.html` and `oefeningen.html` sit in the repo root as extra `rollupOptions.input` pages; `src/site.ts` pulls in the app's own `index.css`, so they wear the real sidebar/top-bar classes and stay plain, indexable HTML. `scripts/catalogue.mjs` regenerates the exercise catalogue from the sidebar leaves; `catalogue.test.ts` fails `npm run check` when the page and `APP_STRUCTURE` disagree.
 - **Each page is its own element.** [PageSheet.tsx](src/components/layout/PageSheet.tsx) renders one page — own header, column grid body, own footer — and ends with `break-after: page`. So the page count on screen equals the page count in the PDF, and real page numbers are possible.
 - **`@page { margin: 0 }`** on purpose: the print dialog's "Margins: None/Minimum" silently overrides `@page` margins, so every visible margin comes from the page's own padding instead. Robust to any dialog setting.
 - **[FragmentableGrid](src/components/viewer/FragmentableGrid.tsx)** — a single CSS `grid`/`flex` container does **not** fragment across pages in Chrome (a too-tall block jumps whole). This component lays items out as a block stack of per-row grids, each row `break-inside:avoid`, so exercises flow across page breaks while never splitting mid-exercise.

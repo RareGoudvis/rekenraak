@@ -925,8 +925,8 @@ src/
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
 │  (repo root) scripts/font-baseline.mjs # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
 │  (repo root) scripts/font-compare.mjs  # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
-│  (repo root) scripts/catalogue.mjs     # walks every leaf → splices the exercise cards + sidebar rows into public/faq.html between marker comments, pngs in public/oefeningen/ (npm run catalogue; re-run after a leaf changes)
-│  (repo root) public/about.html, faq.html, site.css  # static SEO pages on a replica of the app chrome (site.css: top bar = page nav, sidebar = anchors / exercise filter, no inspector); faq.html carries the generated catalogue
+│  (repo root) scripts/catalogue.mjs     # walks every leaf → splices the exercise cards (data-leaf), the domain › leaf sidebar and an ItemList into oefeningen.html between marker comments; white pngs in public/oefeningen/ (npm run catalogue; catalogue.test.ts fails the gate when the page and APP_STRUCTURE differ)
+│  (repo root) about.html, faq.html, oefeningen.html + src/site.ts, src/site.css  # static SEO pages built by Vite (vite.config.ts rollupOptions.input) so they reuse the app's real CSS/classes (mac-vibrant, panel-head, seg-group, sidebar-row, Wordmark markup): sidebar = page tabs + anchors / questions / exercise filter, top bar = "Open RekenRaak", no inspector; sitemap/robots stay in public/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/

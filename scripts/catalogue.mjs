@@ -1,6 +1,7 @@
 // Exercise catalogue: renders every sidebar leaf, screenshots it, and splices the result
-// into public/faq.html between marker comments — the FAQ questions in faq.html stay
-// hand-editable, only the catalogue section/sidebar-nav/ItemList JSON-LD are generated.
+// into public/oefeningen.html between marker comments — the page shell (chrome, intro
+// copy) stays hand-editable, only the catalogue section/sidebar-nav/ItemList JSON-LD
+// are generated.
 //
 // Walks window.__rekenraak.leaves — the same flattened set the sidebar renders and
 // scripts/font-baseline.mjs measures (see flattenLeaves() in src/config/appstructure.ts).
@@ -15,9 +16,9 @@
 //   node scripts/catalogue.mjs --url http://localhost:5173/ --seed 1234
 //
 // Writes public/oefeningen/<leafId>.png (one per leaf) and rewrites the three marker
-// blocks inside public/faq.html: <!-- catalogue-jsonld:start/end --> (ItemList JSON-LD,
-// in <head>), <!-- catalogue-nav:start/end --> (sidebar "Oefeningen" group) and
-// <!-- catalogue:start/end --> (the card section in <main>).
+// blocks inside public/oefeningen.html: <!-- catalogue-jsonld:start/end --> (ItemList
+// JSON-LD, in <head>), <!-- catalogue-nav:start/end --> (sidebar domain/subdomain/leaf
+// nav) and <!-- catalogue:start/end --> (the card section in <main>).
 
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, rmSync } from 'node:fs';
@@ -35,7 +36,10 @@ const SEED = Number(arg('seed', 1234));
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = join(ROOT, 'public');
 const IMG_DIR = join(PUBLIC_DIR, 'oefeningen');
-const FAQ_HTML = join(PUBLIC_DIR, 'faq.html');
+// The page shell lives at the repo root now (a Vite-built page, not a public/ static
+// file — see vite.config.ts build.rollupOptions.input) so it can pull in the app's real
+// CSS via src/site.ts; only the generated markers below are rewritten by this script.
+const OEFENINGEN_HTML = join(ROOT, 'oefeningen.html');
 const SITE = 'https://www.rekenraak.be';
 
 // Domain label -> the domain half of its --accent-<name> token (src/config/appstructure.ts
@@ -111,6 +115,10 @@ for (const leaf of leaves) {
             const block = r.getState().blocks[0];
             if (!block) return { error: 'no block produced' };
             r.updateBlockSettings(block.id, { widthUnits: 4 });
+            // addBlockFromType auto-selects the new block, which paints it with the app's
+            // blue selection background — deselect before the screenshot so the catalogue
+            // pngs show the plain white sheet a teacher actually sees.
+            r.getState().setActiveSelection(null);
             await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
 
             const cell = document.querySelector(`[data-block-id="${block.id}"]`);
@@ -200,11 +208,13 @@ const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').rep
 
 // Sidebar "Oefeningen" group: domain headers (colour rail like the app's sidebar) with
 // subdomain labels and one leaf row per card. Clicking a row filters the catalogue below
-// (see the inline script in faq.html) — the href still lets no-JS / crawlers jump there.
+// (see src/site.ts) — the href still lets no-JS / crawlers jump there. data-leaf carries
+// the APP_STRUCTURE leaf id so a vitest guard can diff this file against the registry and
+// catch a shipped exercise type whose catalogue entry was never regenerated.
 let navHtml = '';
 // Main-column catalogue section: same domain/subdomain/card structure as the old
-// standalone oefeningen.html, now living inside faq.html.
-let sectionHtml = '';
+// standalone oefeningen.html.
+let sectionHtml = `    <!-- catalogue: seed ${SEED}, ${new Date().toISOString().slice(0, 10)}, ${ok.length} leaves -->\n`;
 for (const [domainLabel, subs] of domains) {
     const domId = slug(domainLabel);
     const accent = DOMAIN_ACCENT[domainLabel] ?? 'bewerkingen';
@@ -220,8 +230,8 @@ for (const [domainLabel, subs] of domains) {
             sectionHtml += `      <h3>${esc(subLabel)}</h3>\n`;
         }
         for (const row of leafRows) {
-            navHtml += `          <a class="site-row" href="#${esc(row.id)}" data-card="${esc(row.id)}">${esc(row.label)}</a>\n`;
-            sectionHtml += `      <article class="ex-card" id="${esc(row.id)}">
+            navHtml += `          <a class="sidebar-row site-row" href="#${esc(row.id)}" data-card="${esc(row.id)}" data-leaf="${esc(row.id)}">${esc(row.label)}</a>\n`;
+            sectionHtml += `      <article class="ex-card" id="${esc(row.id)}" data-leaf="${esc(row.id)}" data-type="${esc(row.typeId)}">
         <h4>${esc(row.label)}</h4>
         <p class="ex-instruction">&ldquo;${esc(row.instruction)}&rdquo;</p>
         <p class="ex-desc">${esc(describeSettings(row.defaultConstraints))}</p>
@@ -241,7 +251,7 @@ const itemListJson = JSON.stringify({
         '@type': 'ListItem',
         position: i + 1,
         name: row.label,
-        url: `${SITE}/faq.html#${row.id}`,
+        url: `${SITE}/oefeningen.html#${row.id}`,
     })),
 }, null, 2);
 
@@ -253,9 +263,9 @@ function replaceBetween(html, startMark, endMark, content) {
     return html.slice(0, s + startMark.length) + '\n' + content.replace(/\n$/, '') + '\n' + html.slice(e);
 }
 
-let faqHtml = readFileSync(FAQ_HTML, 'utf8');
-faqHtml = replaceBetween(faqHtml, '<!-- catalogue-jsonld:start -->\n  <script type="application/ld+json">\n', '\n  </script>\n  <!-- catalogue-jsonld:end -->', itemListJson);
-faqHtml = replaceBetween(faqHtml, '<!-- catalogue-nav:start -->', '<!-- catalogue-nav:end -->', navHtml);
-faqHtml = replaceBetween(faqHtml, '<!-- catalogue:start -->', '<!-- catalogue:end -->', sectionHtml);
-writeFileSync(FAQ_HTML, faqHtml);
-console.log(`\nWrote ${ok.length} cards into ${FAQ_HTML}`);
+let pageHtml = readFileSync(OEFENINGEN_HTML, 'utf8');
+pageHtml = replaceBetween(pageHtml, '<!-- catalogue-jsonld:start -->\n  <script type="application/ld+json">\n', '\n  </script>\n  <!-- catalogue-jsonld:end -->', itemListJson);
+pageHtml = replaceBetween(pageHtml, '<!-- catalogue-nav:start -->', '<!-- catalogue-nav:end -->', navHtml);
+pageHtml = replaceBetween(pageHtml, '<!-- catalogue:start -->', '<!-- catalogue:end -->', sectionHtml);
+writeFileSync(OEFENINGEN_HTML, pageHtml);
+console.log(`\nWrote ${ok.length} cards into ${OEFENINGEN_HTML}`);

@@ -22,12 +22,23 @@ if (-not $files) { exit 0 }
 # High-signal structural files: a change here usually needs a doc update.
 $triggerPattern = 'src/store/useWorksheetStore\.tsx$|src/config/(exerciseRegistry|exerciseUI|appstructure|baseSettings|exerciseCatalog)\.|src/services/persistence\.ts$'
 $trigger = $files | Where-Object { $_ -match $triggerPattern }
-if (-not $trigger) { exit 0 }
+$msgs = @()
 
 # The docs are tracked, so a real doc update shows up in the same diff. Git paths use
 # forward slashes, hence the .claude/docs/ prefix rather than a Windows separator.
-if ($files | Where-Object { $_ -match '^(\.claude/docs/ARCHITECTURE|CLAUDE)\.md$' }) { exit 0 }
+if ($trigger -and -not ($files | Where-Object { $_ -match '^(\.claude/docs/ARCHITECTURE|CLAUDE)\.md$' })) {
+    $list = ($trigger | ForEach-Object { "  - $_" }) -join "`n"
+    $msgs += "Doc-sync check: structural files changed without updating .claude/docs/ARCHITECTURE.md / CLAUDE.md:`n$list`nUpdate the docs (state table / registry table / file map / §13) per the doc-sync rule in CLAUDE.md, or confirm no doc change is needed."
+}
 
-$list = ($trigger | ForEach-Object { "  - $_" }) -join "`n"
-[Console]::Error.WriteLine("Doc-sync check: structural files changed without updating .claude/docs/ARCHITECTURE.md / CLAUDE.md:`n$list`nUpdate the docs (state table / registry table / file map / §13) per the doc-sync rule in CLAUDE.md, or confirm no doc change is needed, then stop.")
+# The public exercise catalogue (oefeningen.html + public/oefeningen/*.png) is generated
+# from the sidebar leaves; a leaf change without a regenerated catalogue ships a stale page.
+# catalogue.test.ts fails `npm run check` on a mismatch — this is the earlier nudge.
+$leafChange = $files | Where-Object { $_ -match 'src/config/appstructure\.ts$' }
+if ($leafChange -and -not ($files | Where-Object { $_ -match '^oefeningen\.html$' })) {
+    $msgs += "Catalogue check: src/config/appstructure.ts changed but oefeningen.html did not. Run 'npm run catalogue' against a dev server and commit oefeningen.html + public/oefeningen/*.png (see TESTING.md), or confirm no leaf was added/renamed."
+}
+
+if (-not $msgs) { exit 0 }
+[Console]::Error.WriteLine(($msgs -join "`n`n") + "`nThen stop.")
 exit 2

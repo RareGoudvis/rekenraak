@@ -13,7 +13,7 @@ Guidance for Claude Code (claude.ai/code) working in this repository. This file 
 | [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | vitest suites (generator matrix, answers, packer, persistence, store, viewer smoke) + the Playwright harnesses (width matrix, height audit, font baseline/compare, drag recipe) |
 | [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Bugs found but not yet fixed — **append here instead of fixing silently**; delete the line in the commit that fixes it |
 | [.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) | Session log, newest first |
-| [.claude/docs/REVIEW-CHECKLIST.md](.claude/docs/REVIEW-CHECKLIST.md) | Pointer only — the owner review lives in the local, gitignored `REVIEW.local.md` |
+| `.claude/docs/REVIEW.local.md` | The owner review list (local, gitignored via `*.local.md`): what Ruben still checks on screen/print, deliberate non-fixes, open items. Agents read it, only the owner deletes rows |
 | [.claude/docs/klascement.md](.claude/docs/klascement.md) | Teacher-facing intro (Dutch): what it does, what's in it, why, free-forever ethos |
 | [src/components/viewer/README.md](src/components/viewer/README.md) | The six rules every viewer must follow |
 
@@ -108,6 +108,9 @@ the per-typeId table is §7.
    so the generator matrix tests them
 7. A `rowUnits` / `minWidth` entry in [blockLayout.ts](src/services/layout/blockLayout.ts)
    (first-paint fallback; the real clamp and heights are measured) — run `npm run matrix`
+8. Regenerate the public catalogue: `npm run catalogue` against a dev server, commit
+   `oefeningen.html` + `public/oefeningen/<leafId>.png`. `catalogue.test.ts` fails the gate
+   when the page's leaves differ from `APP_STRUCTURE`; the Stop hook nudges earlier.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
 **`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **whiteboard mode
