@@ -19,6 +19,7 @@ p { margin: 0 0 16px; }
 /* ── Top bar: mac-vibrant + topbar classes are real (TopBar.tsx); this page only needs
    the box model TopBar otherwise gets from its inline S.bar. ── */
 .site-topbar {
+  grid-column: 2;               /* the app's top bar spans the centre column only; the sidebar starts at the top */
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center;
   min-height: var(--bar-h);
@@ -35,7 +36,8 @@ p { margin: 0 0 16px; }
 .site-btn-primary:hover { background: var(--accent-strong); }
 
 /* ── Shell: top bar full width, then sidebar + main, no third (inspector) column ── */
-.site-shell { display: grid; grid-template-columns: 286px minmax(0, 1fr); align-items: start; }
+.site-shell { display: grid; grid-template-columns: 286px minmax(0, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+.site-main { grid-column: 2; }
 
 /* SYNC: 286px = src/components/layout/sidebar.tsx S.aside width. Fixed height (not
    max-height) is deliberate: .site-shell is a grid, and a grid item without an explicit
@@ -43,10 +45,11 @@ p { margin: 0 0 16px; }
    its nav list and the wordmark foot would trail right after it instead of pinning to
    the viewport bottom, the way the app's own (flex-parented, height:100%) sidebar does. */
 .site-aside {
-  width: 286px; height: calc(100vh - var(--bar-h));
+  grid-row: 1 / span 2;
+  width: 286px; height: 100vh;
   display: flex; flex-direction: column;
   border-right: 1px solid var(--separator);
-  position: sticky; top: var(--bar-h); align-self: start;
+  position: sticky; top: 0; align-self: start;
 }
 .site-aside .panel-head { flex: none; }
 .site-nav-scroll { flex: 1 1 auto; overflow-y: auto; padding: var(--sp-2) var(--sp-1) var(--sp-4); }
