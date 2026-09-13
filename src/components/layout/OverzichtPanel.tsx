@@ -220,7 +220,11 @@ const S = {
     empty: { fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 6px' } as React.CSSProperties,
     list: { display: 'flex', flexDirection: 'column', gap: '4px' } as React.CSSProperties,
     pageBreak: { fontSize: '10px', color: 'var(--accent-purple)', textAlign: 'center', letterSpacing: '0.05em', margin: '6px 0 2px', pointerEvents: 'none', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
-    row: { display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid transparent', background: 'var(--bg-surface-2)' } as React.CSSProperties,
+    // userSelect: none unconditionally, not only while dragIndex is set: the browser starts
+    // selecting on the first pointer move, which is the same move that crosses the drag
+    // threshold, so a state-gated rule always arrives one render too late and the labels of
+    // every row the drag passes stay smeared blue. A row is click-to-jump, never text to copy.
+    row: { display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid transparent', background: 'var(--bg-surface-2)', userSelect: 'none' } as React.CSSProperties,
     // Domain rail, same tint as the sidebar's — the outline reads back against the
     // list it was built from. Every typeId in DOMAIN_BY_TYPE has one (sheet furniture
     // maps to 'vraagstukken'); only an unknown typeId falls back to a plain edge.

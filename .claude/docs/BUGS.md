@@ -15,10 +15,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   look at ¼ and, if illegible, a `VETO_MIN` entry. The drawing-shaped types already sit on
   the veto list.
 
-- **Overzicht drag selects text** (2026-09-13): the outline rows have no `user-select: none`,
-  so dragging a row paints the labels of every row it passes in the browser's selection blue,
-  and the selection survives the drop. Screen only; nothing prints.
-
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
