@@ -102,9 +102,11 @@ export default function VormleerConfig({ block }: Props) {
                 </div>
             )}
 
-            {kind === 'punt-lijn' && mode === 'herkennen' && (
+            {kind === 'punt-lijn' && (mode === 'herkennen' || mode === 'tekenen') && (
                 <div style={styles.section}>
-                    <SettingLabel text="Moeilijkheid:" info="1: benoemen. 2: één relatiezin met een leemte. 3: twee relatiezinnen." />
+                    <SettingLabel text="Moeilijkheid:" info={mode === 'tekenen'
+                        ? '1: los element. 2: één relatie tekenen. 3: twee relaties tekenen.'
+                        : '1: benoemen. 2: één relatiezin met een leemte. 3: twee relatiezinnen.'} />
                     <div style={styles.buttonGroup}>
                         <button onClick={() => set('niveau', 1)} style={styles.radioBtn(niveau === 1)}>1 · benoemen</button>
                         <button onClick={() => set('niveau', 2)} style={styles.radioBtn(niveau === 2)}>2 · één relatie</button>

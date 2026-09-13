@@ -447,7 +447,7 @@ const weegschaalSpace: OptionSpace = {
 
 const vormleerSpace: OptionSpace = {
     kind: ['punt-lijn', 'hoek', 'figuur'],
-    mode: ['herkennen', 'benoemen', 'eigenschappen', 'meten'],
+    mode: ['herkennen', 'benoemen', 'eigenschappen', 'meten', 'tekenen'],
     answerMode: ['woordbank', 'schrijven'],
     classify: ['vierhoeken', 'driehoeken'],
     concepts: [
@@ -462,7 +462,7 @@ const vormleerSpace: OptionSpace = {
     showBoog: [true, false],
     rightAngleStyle: ['vierkantje', 'haakje'],
     raster: [true, false],
-    // punt-lijn herkennen difficulty tier.
+    // punt-lijn herkennen/tekenen difficulty tier.
     niveau: [1, 2, 3],
     showHulplijn: [true, false],
 };

@@ -20,6 +20,7 @@ export const CONCEPT_NAMES: Record<string, string> = {
     punt: 'punt', rechte: 'rechte', halfrechte: 'halfrechte', lijnstuk: 'lijnstuk',
     evenwijdig: 'evenwijdige rechten', snijdend: 'snijdende rechten', loodrecht: 'loodrechte stand',
     scherp: 'scherpe hoek', recht: 'rechte hoek', stomp: 'stompe hoek', gestrekt: 'gestrekte hoek',
+    'ligt-op': 'punt op een lijnstuk',
     vierkant: 'vierkant', rechthoek: 'rechthoek', ruit: 'ruit', parallellogram: 'parallellogram', trapezium: 'trapezium',
     gelijkzijdig: 'gelijkzijdige driehoek', gelijkbenig: 'gelijkbenige driehoek', ongelijkzijdig: 'ongelijkzijdige driehoek',
     scherphoekig: 'scherphoekige driehoek', rechthoekig: 'rechthoekige driehoek', stomphoekig: 'stomphoekige driehoek',
@@ -191,7 +192,7 @@ export function generateVormleerExercises(block: MathBlock): VormleerExercise[] 
                 rotation: randomRotation ? pick([0, 15, 30, 345, 330]) : 0,
                 isManuallyEdited: false,
             });
-        } else if (mode === 'herkennen' && niveau >= 2 && relKinds.length) {
+        } else if ((mode === 'herkennen' || mode === 'tekenen') && niveau >= 2 && relKinds.length) {
             if (niveau === 2) {
                 const relKind = pick(relKinds);
                 out.push({ ...buildRelationExercise(relKind, randomRotation, nextLetters, nextLineLetters), niveau });

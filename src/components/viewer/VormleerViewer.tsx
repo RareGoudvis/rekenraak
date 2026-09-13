@@ -468,8 +468,25 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     }
 
     // ── TEKENEN: instruction + empty (raster) box; solution draws the element red ──
+    // Niveau 2/3 (punt-lijn only) reuses the same relation exercises as herkennen —
+    // the pupil draws the relation instead of filling in a sentence.
     if (mode === 'tekenen') {
         const boxPx = boxH * CM;
+        const drawBox = (target: VormleerExercise) => (
+            <div key={target.id} style={{ position: 'relative', width: '100%', maxWidth: '280px', height: `${boxPx}px`, border: '1px solid #000' }}>
+                {raster && (
+                    <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+                        {Array.from({ length: Math.ceil(280 / CM) }, (_, i) => <line key={`v${i}`} x1={(i + 1) * CM} y1={0} x2={(i + 1) * CM} y2={boxPx} stroke="#ccc" strokeWidth={0.6} />)}
+                        {Array.from({ length: Math.ceil(boxPx / CM) }, (_, i) => <line key={`h${i}`} x1={0} y1={(i + 1) * CM} x2={280} y2={(i + 1) * CM} stroke="#ccc" strokeWidth={0.6} />)}
+                    </svg>
+                )}
+                {showSolutions && (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', ...solutionText }}>
+                        <div style={{ filter: 'none' }}>{mini({ ...target, id: `${target.id}-sol` }, Math.min(boxPx, 110), true)}</div>
+                    </div>
+                )}
+            </div>
+        );
         return (
             <FragmentableGrid
                 cols={2}
@@ -477,21 +494,19 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                 rowGap={gap + 6}
                 alignItems="flex-start"
                 items={exercises.map(ex => (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: 'calc(var(--sheet-size-text) * 0.65)' }}>
-                        <span>Teken: <strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong></span>
-                        <div style={{ position: 'relative', width: '100%', maxWidth: '280px', height: `${boxPx}px`, border: '1px solid #000' }}>
-                            {raster && (
-                                <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
-                                    {Array.from({ length: Math.ceil(280 / CM) }, (_, i) => <line key={`v${i}`} x1={(i + 1) * CM} y1={0} x2={(i + 1) * CM} y2={boxPx} stroke="#ccc" strokeWidth={0.6} />)}
-                                    {Array.from({ length: Math.ceil(boxPx / CM) }, (_, i) => <line key={`h${i}`} x1={0} y1={(i + 1) * CM} x2={280} y2={(i + 1) * CM} stroke="#ccc" strokeWidth={0.6} />)}
-                                </svg>
-                            )}
-                            {showSolutions && (
-                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', ...solutionText }}>
-                                    <div style={{ filter: 'none' }}>{mini({ ...ex, id: `${ex.id}-sol` }, Math.min(boxPx, 110), true)}</div>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: 'calc(var(--sheet-size-text) * 0.65)' }}>
+                        {ex.subExercises
+                            // niveau 3: two independent relations, each its own instruction + box.
+                            ? ex.subExercises.map(sub => (
+                                <div key={sub.id} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <span>Teken: <strong>{CONCEPT_NAMES[sub.concept] ?? sub.concept}</strong></span>
+                                    {drawBox(sub)}
                                 </div>
-                            )}
-                        </div>
+                            ))
+                            : <>
+                                <span>Teken: <strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong></span>
+                                {drawBox(ex)}
+                            </>}
                     </div>
                 ))}
             />
