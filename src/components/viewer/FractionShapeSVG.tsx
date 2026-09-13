@@ -16,7 +16,19 @@ interface Props {
     fixedHeightPx?: number;    // rectangle outer height
     fixedSidePx?: number;      // square outer side
     fixedDiameterPx?: number;  // circle diameter
+    // The fixed* sizes above are a teacher's cm request ("een vierkant van 4 cm"), so they
+    // must stay physical px; everything else follows the Lettergrootte slider.
+    physicalSize?: boolean;
 }
+
+// 13pt (the --sheet-size-math default) = 17.33px, so writing the shape geometry as em over
+// this divisor reproduces today's pixels at the default and grows with the slider above it.
+export const PX_PER_EM_AT_DEFAULT = 17.33;
+
+// Widest a shape may be drawn, in viewBox units = px at the 13pt default: one column of the
+// 2-up fraction grid. SYNC: FractionViewer turns it into px to pick its column count and
+// FractionExerciseItem caps its cell size with it.
+export const SHAPE_BUDGET_AT_DEFAULT = 265;
 
 const FILL_COLOR = '#93c5fd';
 const STROKE = '#000';
@@ -36,8 +48,12 @@ function piePath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 export default function FractionShapeSVG({
     denominator, shape, coloredIndices,
     gridRows, gridCols, showColored = true, cellSize = 35, style,
-    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx,
+    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false,
 }: Props) {
+    // The viewBox always keeps the geometry below in its own units; only the element size
+    // switches between physical px and font-relative em.
+    const size = (px: number): string => (physicalSize ? `${px}px` : `${px / PX_PER_EM_AT_DEFAULT}em`);
+    const shapeStyle: React.CSSProperties = { fontSize: 'var(--sheet-size-math)', ...style };
     if (shape === 'circle') {
         const r = fixedDiameterPx ? fixedDiameterPx / 2 : 44;
         const margin = 6;
@@ -46,7 +62,7 @@ export default function FractionShapeSVG({
         const sliceDeg = 360 / denominator;
 
         return (
-            <svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`} style={style}>
+            <svg width={size(svgSize)} height={size(svgSize)} viewBox={`0 0 ${svgSize} ${svgSize}`} style={shapeStyle}>
                 {denominator === 1 ? (
                     <circle cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? FILL_COLOR : 'white'} stroke={STROKE} strokeWidth={1.5} />
                 ) : (
@@ -70,7 +86,7 @@ export default function FractionShapeSVG({
         const side = fixedSidePx ?? 90;
         const stripW = side / denominator;
         return (
-            <svg width={side} height={side} viewBox={`0 0 ${side} ${side}`} style={style}>
+            <svg width={size(side)} height={size(side)} viewBox={`0 0 ${side} ${side}`} style={shapeStyle}>
                 {Array.from({ length: denominator }, (_, i) => (
                     <rect
                         key={i}
@@ -94,7 +110,7 @@ export default function FractionShapeSVG({
     const height = gridRows * ch;
 
     return (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={style}>
+        <svg width={size(width)} height={size(height)} viewBox={`0 0 ${width} ${height}`} style={shapeStyle}>
             {Array.from({ length: gridRows }, (_, row) =>
                 Array.from({ length: gridCols }, (_, col) => {
                     const idx = row * gridCols + col;

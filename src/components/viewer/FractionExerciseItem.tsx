@@ -3,11 +3,20 @@ import FractionShapeSVG from './FractionShapeSVG';
 import VerticalFraction from './VerticalFraction';
 import type { FractionConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
+import { useSheetSizePx } from './BlockWidthContext';
+
+// Object geometry is written as px at the 13pt default and emitted as em, so the drawn
+// hoeveelheid objects follow the Lettergrootte slider.
+const em = (px: number): string => `${px / PX_PER_EM_AT_DEFAULT}em`;
 
 interface Props {
     ex: FractionExercise;
     block: MathBlock;
     showSolutions: boolean;
+    // Printable width of the grid column this item lands in — the figure caps its own
+    // font-size against it (FractionViewer computes it from the block width).
+    columnWidth: number;
 }
 
 // Object row sizes for the concreet variant. Easier grouping helps starters see the parts.
@@ -31,10 +40,15 @@ function groupRows(total: number, denominator: number, mode: string): number[] {
     return Array.from({ length: Math.ceil(total / perRow) }, (_, r) => Math.min(perRow, total - r * perRow));
 }
 
-export default function FractionExerciseItem({ ex, block, showSolutions }: Props) {
+export default function FractionExerciseItem({ ex, block, showSolutions, columnWidth }: Props) {
     const subType = ex.subType;
     const c = block.constraints as FractionConstraints;
     const answerFormat: string = c.answerFormat || 'fraction-questions';
+    const sheetSizePx = useSheetSizePx('math');
+    // A figure `figureUnits` wide at the 13pt default may only grow until it fills the
+    // column; past that the slider would push it off the page instead of enlarging it.
+    const figureFont = (figureUnits: number): React.CSSProperties =>
+        ({ fontSize: `${Math.min(sheetSizePx, (columnWidth / Math.max(1, figureUnits)) * PX_PER_EM_AT_DEFAULT)}px` });
     const sol = (text: string) => <span style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>;
     const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />;
 
@@ -53,21 +67,28 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
             fixedSidePx: (c.staticSide ?? 4) * CM,
             fixedDiameterPx: (c.staticDiam ?? 4) * CM,
         } : {};
-        // Cap the shape at the 2-up column width (~265px inside the block) so prime
-        // denominators that only render as a 1×d strip (7, 11, 13) shrink their cells
-        // instead of running off the page; grids ≤ 6 columns keep the classic 38px cell.
+        // Cap the shape at the 2-up column budget (units at the 13pt default; the em box
+        // scales it) so prime denominators that only render as a 1×d strip (7, 11, 13)
+        // shrink their cells instead of running off the page; grids ≤ 6 columns keep the
+        // classic 38px cell. SYNC: FractionViewer sizes its columns from the same budget.
         const gridCols = ex.gridCols ?? ex.denominator;
-        const cappedCell = Math.min(38, Math.floor(265 / Math.max(1, gridCols)));
+        const cappedCell = Math.min(38, Math.floor(SHAPE_BUDGET_AT_DEFAULT / Math.max(1, gridCols)));
         // When width-capped, pin the height back to the classic 38px per row so narrow
         // strip cells stay tall enough to color in.
         const heightProp = cappedCell < 38 && !c.staticSize
             ? { fixedHeightPx: 38 * (ex.gridRows ?? 1) } : {};
+        // What the SVG below draws, in viewBox units: a circle adds its 6px margin twice.
+        const shapeUnitsW = ex.shape === 'circle' ? (staticProps.fixedDiameterPx ?? 88) + 12
+            : ex.shape === 'square' ? (staticProps.fixedSidePx ?? 90)
+            : (staticProps.fixedWidthPx ?? gridCols * cappedCell);
         const shape = (
             <FractionShapeSVG
                 numerator={ex.numerator} denominator={ex.denominator}
                 shape={ex.shape ?? 'rectangle'} coloredIndices={ex.coloredIndices ?? []}
                 gridRows={ex.gridRows ?? 1} gridCols={gridCols}
                 showColored={showColored} cellSize={cappedCell}
+                physicalSize={!!c.staticSize}
+                style={c.staticSize ? undefined : figureFont(shapeUnitsW)}
                 {...heightProp}
                 {...staticProps}
             />
@@ -152,15 +173,17 @@ export default function FractionExerciseItem({ ex, block, showSolutions }: Props
         const rowSizes = groupRows(total, ex.denominator, groupingMode);
 
         const objEl = (idx: number, colored: boolean) => ex.objectShape === 'circle'
-            ? <svg key={idx} width={objSize} height={objSize}><circle cx={objSize/2} cy={objSize/2} r={objSize/2-1.5} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>
-            : <svg key={idx} width={objSize} height={objSize}><rect x={1.5} y={1.5} width={objSize-3} height={objSize-3} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>;
+            ? <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><circle cx={objSize/2} cy={objSize/2} r={objSize/2-1.5} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>
+            : <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><rect x={1.5} y={1.5} width={objSize-3} height={objSize-3} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>;
 
         const simpleGrid = (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: `${objGap}px` }}>
+            // One font-size wrapper per figure: the object svgs and the gaps between them are
+            // em, so the whole hoeveelheid grid scales as a unit with the sheet font.
+            <div style={{ display: 'flex', flexDirection: 'column', gap: em(objGap), ...figureFont(Math.max(...rowSizes, 1) * (objSize + objGap) - objGap) }}>
                 {rowSizes.map((n, r) => {
                     const start = rowSizes.slice(0, r).reduce((a, b) => a + b, 0);
                     return (
-                        <div key={r} style={{ display: 'flex', gap: `${objGap}px` }}>
+                        <div key={r} style={{ display: 'flex', gap: em(objGap) }}>
                             {Array.from({ length: n }, (_, c) => {
                                 const idx = start + c;
                                 return objEl(idx, showSolutions && idx < coloredCount);
