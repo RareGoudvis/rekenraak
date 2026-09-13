@@ -51,6 +51,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         ({ fontSize: `${Math.min(sheetSizePx, (columnWidth / Math.max(1, figureUnits)) * PX_PER_EM_AT_DEFAULT)}px` });
     const sol = (text: string) => <span style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>;
     const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', margin: '0 2px' }} />;
+    // lijnstuk's calc rows (cm : denominator = part, numerator × part = arc) size their blanks
+    // in em so they scale with the row's own font, and the row wraps instead of overflowing
+    // the narrow columns (¼ width) that a to-scale segment can leave little room beside.
+    const calcBlank = (w: number) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}em`, height: ANSWER_LINE_H, display: 'inline-block', margin: '0 1px' }} />;
 
     const vertFrac = (n: number, d: number, color?: string) => (
         <VerticalFraction value={{ n, d }} color={color} fontSize={13} mono />
@@ -406,11 +410,11 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                     {instructions}
                     {lineEl}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
-                            {blank(56)}<span>:</span>{blank(56)}<span>=</span>{blank(72)}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
+                            {calcBlank(3.6)}<span>:</span>{calcBlank(3.6)}<span>=</span>{calcBlank(4.6)}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
-                            {blank(56)}<span>×</span>{blank(56)}<span>=</span>{blank(72)}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
+                            {calcBlank(3.6)}<span>×</span>{calcBlank(3.6)}<span>=</span>{calcBlank(4.6)}
                         </div>
                     </div>
                 </div>
@@ -435,11 +439,11 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                 {instructions}
                 {lineEl}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        {showSolutions ? sol(String(cm)) : blank(28)}<span>cm</span><span>:</span>{showSolutions ? sol(String(ex.denominator)) : blank(24)}<span>=</span>{showSolutions ? sol(String(partLength)) : blank(28)}<span>cm</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        {showSolutions ? sol(String(cm)) : calcBlank(1.8)}<span>cm</span><span>:</span>{showSolutions ? sol(String(ex.denominator)) : calcBlank(1.5)}<span>=</span>{showSolutions ? sol(String(partLength)) : calcBlank(1.8)}<span>cm</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        {showSolutions ? sol(String(ex.numerator)) : blank(24)}<span>×</span>{showSolutions ? sol(String(partLength)) : blank(28)}<span>cm</span><span>=</span>{showSolutions ? sol(String(arcLength)) : blank(28)}<span>cm</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        {showSolutions ? sol(String(ex.numerator)) : calcBlank(1.5)}<span>×</span>{showSolutions ? sol(String(partLength)) : calcBlank(1.8)}<span>cm</span><span>=</span>{showSolutions ? sol(String(arcLength)) : calcBlank(1.8)}<span>cm</span>
                     </div>
                 </div>
             </div>

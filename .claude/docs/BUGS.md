@@ -13,15 +13,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   ½; the horizontal-overflow banner now says so, but the table itself should drop to fewer columns
   or wrap the headers (`VormleerViewer` eigenschappen branch).
 
-- **Breuken lijnstuk calc row clips at a quarter width** (2026-09-13, C1 step 8 review):
-  `___ cm : ___ = ___ cm` and the `___ × ___ cm = ___ cm` line below it run past the right
-  edge at width 1 (163px) even with the drawn segment itself capped to half the column
-  (C1 step 11) — overflow 1.086 with a 15cm segment. The blanks (`blank(28)`/`blank(24)`
-  etc.) are fixed px and never shrink or wrap; not floored by SETTINGS_FLOOR since
-  `lijnstuk` isn't `hoeveelheid`. Fix direction: either float the calc row's blanks in `em`
-  with a narrower floor at small widths, or wrap the row like the getalfunctie schrijven
-  answer line does.
-
 - **even-oneven measures two different intrinsic widths on identical code** (2026-09-13,
   branch G): two `font:baseline` runs of the SAME build put `even-oneven-rooster` and
   `even-oneven-cirkels` at width 2 in different tiers — intrinsic 425/562px in one run,
