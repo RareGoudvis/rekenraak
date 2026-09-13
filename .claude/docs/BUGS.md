@@ -14,15 +14,13 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   or wrap the headers (`VormleerViewer` eigenschappen branch).
 
 - **Stale settings draw the wrong picture (no crash)** (2026-09-13, viewers.stale sweep):
-  the viewers survive every setting drift without throwing, but three draw nonsense until
-  Genereer is pressed. `WeegschaalViewer` takes the dial range from `bereikGram` while the
-  exercise carries only `grams`, so dropping the range sends the needle round the dial more
-  than once; `CijferViewer` builds its column grid from `numberType`/`decimalPlaces` while
-  the operands carry their own decimals, so switching to `natural` drops the comma column
-  under decimal operands; `ClockExerciseItem` reads `exerciseMode`/`clockType`/`is24hour`
-  live, so a mode switch can print the very time it asks the pupil to draw. Fix direction:
-  the generator stores its own `bereikGram` / `decimalPlaces` / `is24hour` on the exercise
-  and the viewer reads `ex.field ?? c.field`. The Inspector's stale flag covers it for now.
+  the viewers survive every setting drift without throwing, but one still draws nonsense
+  until Genereer is pressed. `CijferViewer` builds its column grid from
+  `numberType`/`decimalPlaces` while the operands carry their own decimals, so switching to
+  `natural` drops the comma column under decimal operands. Fix direction: the generator
+  stores its own `decimalPlaces` on the exercise and the viewer reads `ex.field ?? c.field`.
+  The Inspector's stale flag covers it for now. (`WeegschaalViewer` and `ClockExerciseItem`
+  fixed on branch fix/own-data-weegschaal-klok.)
 
 - **Breuken lijnstuk calc row clips at a quarter width** (2026-09-13, C1 step 8 review):
   `___ cm : ___ = ___ cm` and the `___ × ___ cm = ___ cm` line below it run past the right

@@ -20,10 +20,12 @@ const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_
 
 export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     const c = block.constraints as ClockConstraints;
-    const clockType = (c.clockType || 'analoog') as ClockType;
-    const exerciseMode = (c.exerciseMode || 'lezen') as ExerciseMode;
-    const is24hour = c.is24hour || false;
-    const handChoice = (c.handChoice || 'beide') as HandChoice;
+    // Own data: an exercise renders under the mode/clock-type/24h/hand it was generated
+    // with, not whatever the block's settings drift to before Genereer runs again.
+    const clockType = (ex.clockType ?? c.clockType ?? 'analoog') as ClockType;
+    const exerciseMode = (ex.exerciseMode ?? c.exerciseMode ?? 'lezen') as ExerciseMode;
+    const is24hour = ex.is24hour ?? c.is24hour ?? false;
+    const handChoice = (ex.handChoice ?? c.handChoice ?? 'beide') as HandChoice;
 
     const clock = (showH: boolean, showM: boolean) => (
         <AnalogClockSVG hours={ex.hours} minutes={ex.minutes} showHourHand={showH} showMinuteHand={showM} is24hour={is24hour} size={110} />
