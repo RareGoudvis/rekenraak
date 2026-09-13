@@ -678,6 +678,12 @@ export default function App() {
       <span className="mobile-block-title">RekenRaak werkt op een groot scherm</span>
       <span>Hiermee maak je werkbladen op A4-formaat — daarvoor staan het blad én alle instellingen naast elkaar. Open de tool op een computer, laptop of tablet om aan de slag te gaan.</span>
       <span className="mobile-block-hint">Tip: draai je tablet in liggende stand (landscape).</span>
+      {/* A phone must not be a dead end: the static pages read fine on any screen. */}
+      <nav className="mobile-block-links" aria-label="Meer over RekenRaak">
+        <a href="/about.html">Over RekenRaak</a>
+        <a href="/faq.html">Veelgestelde vragen</a>
+        <a href="/oefeningen.html">Alle oefeningen</a>
+      </nav>
     </div>
     {tourOpen && <TourOverlay onClose={closeTour} />}
     <div className="print-root" style={styles.appShell}>

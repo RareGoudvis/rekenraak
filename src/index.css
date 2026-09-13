@@ -566,6 +566,12 @@ textarea:focus-visible,
 }
 .mobile-block-title { font-size: 20px; font-weight: 700; }
 .mobile-block > span:not(.mobile-block-title) { max-width: 420px; font-size: 15px; }
+.mobile-block-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 8px; }
+.mobile-block-links a {
+  color: #fff; text-decoration: none; font-size: 14px; font-weight: 600;
+  padding: 10px 16px; border: 1px solid rgba(255, 255, 255, 0.45); border-radius: 999px;
+}
+.mobile-block-links a:first-child { background: var(--accent); border-color: var(--accent); }
 
 @media screen and (max-width: 768px) {
   .mobile-block {
