@@ -199,7 +199,9 @@ export default function VormleerConfig({ block }: Props) {
                 </div>
             )}
 
-            {!isTekenen && !isMeten && mode !== 'eigenschappen' && (
+            {/* Punt/lijn/rechte has no per-rij control: a scenario's width is set by its
+                sentence, so the grid follows the block width instead of a fixed count. */}
+            {!isTekenen && !isMeten && mode !== 'eigenschappen' && kind !== 'punt-lijn' && (
                 <div style={styles.section}>
                     <SettingLabel text="Figuren per rij:" info="Hoeveel tekeningen naast elkaar staan." />
                     <PopupSelect
