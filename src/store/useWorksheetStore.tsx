@@ -364,6 +364,8 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             if ('widthUnits' in updates) allowed.widthUnits = updates.widthUnits;
             // Same reasoning for the opdracht title row: presentation, not difficulty.
             if ('showInstruction' in updates) allowed.showInstruction = updates.showInstruction;
+            // And for leaving that block out of the opdracht numbering.
+            if ('skipNumbering' in updates) allowed.skipNumbering = updates.skipNumbering;
             if (Object.keys(allowed).length === 0) return state;   // drop difficulty/wording/points edits
             next = allowed;
         }

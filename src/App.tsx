@@ -4,6 +4,7 @@ import Sidebar from './components/layout/sidebar';
 import PageSheet, { PAGE_W_PX } from './components/layout/PageSheet';
 import { packPages, pageIndexByBlock, type PackedBlock } from './services/layout/pagePacker';
 import { minWidthUnits } from './services/layout/blockLayout';
+import { numberBlocks } from './services/layout/blockNumbering';
 import type { FooterSlot } from './services/math/types';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
@@ -370,12 +371,7 @@ export default function App() {
   const visibleBlockId = hoveredBlockId ?? (activeSelectionId && activeSelectionId !== 'document' ? activeSelectionId : null);
   const visibleBlock = visibleBlockId ? blocks.find((b) => b.id === visibleBlockId) : undefined;
 
-  const blockOrder = useMemo(() => {
-    const m: Record<string, number> = {};
-    let n = 0;
-    blocks.forEach((b) => { if (!b.typeId.startsWith('layout-')) n += 1; m[b.id] = n; });
-    return m;
-  }, [blocks]);
+  const blockOrder = useMemo(() => numberBlocks(blocks), [blocks]);
 
   // Per-block page index for the Overzicht markers. It used to be MEASURED from the DOM
   // against a fixed 1044px page height; now it is simply what the packer decided, so the
@@ -582,8 +578,8 @@ export default function App() {
                     fitToPage={block.constraints?.fitToPage === true}
                   >
                   {/* showInstruction === false hides the title row the way furniture has none;
-                      blockOrder still counted the block, so the rest of the sheet keeps its
-                      numbers and only this block's own prefix goes with the row. */}
+                      blockOrder still counts the block unless skipNumbering says otherwise, so
+                      the rest of the sheet keeps its numbers. */}
                   {!isFurniture && block.showInstruction !== false && <div className="print-opdracht" style={overlayRegionStyle({
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
                     // SYNC with appStyles.instructionDisplay, which inherits it: the size

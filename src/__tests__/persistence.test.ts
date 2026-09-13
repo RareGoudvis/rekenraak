@@ -178,6 +178,15 @@ describe('share link', () => {
         expect(decoded!.blocks.map(b => b.showInstruction)).toEqual([undefined, false, undefined]);
     });
 
+    // skipNumbering rides the same block spread. Dropping it would renumber the receiver's
+    // sheet, which is exactly the thing the setting exists to control.
+    test('a block left out of the numbering survives the round-trip', () => {
+        const s = state();
+        const skipped = { ...s, blocks: s.blocks.map((b, i) => (i === 1 ? { ...b, showInstruction: false as const, skipNumbering: true } : b)) };
+        const decoded = fileFromShare(encodeShareLink(skipped));
+        expect(decoded!.blocks.map(b => b.skipNumbering)).toEqual([undefined, true, undefined]);
+    });
+
     test('template mode strips the generated exercises but keeps the settings', () => {
         const s = state();
         const decoded = fileFromShare(encodeShareLink(s, { template: true }));

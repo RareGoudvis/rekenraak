@@ -378,6 +378,9 @@ export interface MathBlock<C extends BlockConstraints = BlockConstraints> {
     // The block still counts in the opdracht numbering, so hiding one title never
     // renumbers the exercises after it. Absent = shown.
     showInstruction?: boolean;
+    // true = not counted by blockOrder; only meaningful with showInstruction false, since a
+    // numbered block that shows no number would renumber everything after it for nothing.
+    skipNumbering?: boolean;
     layoutPreset: LayoutPreset;
     instructionMode: 'geen' | 'mag' | 'moet' | 'plus' | 'aangepast';
     customInstructionText?: string;

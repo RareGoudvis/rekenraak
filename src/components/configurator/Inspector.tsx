@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { minWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
+import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles, WarningCircle, Info } from '@phosphor-icons/react';
@@ -38,9 +39,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     // rather than read once: the measurement lands a frame after the render that caused it,
     // and a stale picker could grey out a width the sheet would now accept.
     const intrinsicWidth = useIntrinsicWidth(activeBlockId ?? '');
-    // The chip's subject line: the printed opdracht number and a human label.
-    // SYNC: numbering must match App.tsx's blockOrder — layout-* furniture is not an
-    // opdracht, so it is skipped in the count and shows no number.
+    // The chip's subject line: the printed opdracht number and a human label. The number
+    // comes from the shared numberBlocks helper, so it cannot drift from the sheet.
     const blocks = useWorksheetStore((state) => state.blocks);
     const labelByType = useMemo(() => {
         const m: Record<string, string> = {};
@@ -49,15 +49,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     }, []);
     const subject = useMemo(() => {
         if (!activeBlock) return null;
-        let n = 0;
-        for (const b of blocks) {
-            if (!b.typeId.startsWith('layout-')) n += 1;
-            if (b.id === activeBlock.id) break;
-        }
         const label = labelByType[activeBlock.typeId]
             || (activeBlock.instructionText || '').replace(/:\s*$/, '').trim()
             || activeBlock.typeId;
-        return { number: activeBlock.typeId.startsWith('layout-') ? null : n, label };
+        return { number: numberBlocks(blocks)[activeBlock.id] ?? null, label };
     }, [activeBlock, blocks, labelByType]);
     const locked = useWorksheetStore((state) => !!state.curriculum?.locked);
 
@@ -579,7 +574,20 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                     aria-label="Opdrachttekst tonen"
                                                 />
                                             </div>
-                                            <p style={S.hintText}>Uit: het blok krijgt geen titelregel; de nummering telt het blok wel mee.</p>
+                                            <p style={S.hintText}>Uit: het blok krijgt geen titelregel. De nummering telt het blok standaard nog mee.</p>
+                                            {/* Only offered once the title row is hidden: a numbered block that shows
+                                                no number would renumber the whole sheet for nothing. */}
+                                            {activeBlock.showInstruction === false && (<>
+                                            <div style={{ ...S.switchRow, marginTop: '12px' }}>
+                                                <span style={S.switchText}>Meetellen in de nummering</span>
+                                                <Switch
+                                                    checked={activeBlock.skipNumbering !== true}
+                                                    onChange={(v) => updateBlockSettings(activeBlock.id, { skipNumbering: v ? undefined : true })}
+                                                    aria-label="Meetellen in de nummering"
+                                                />
+                                            </div>
+                                            <p style={S.hintText}>Uit: de volgende opdracht krijgt dit nummer.</p>
+                                            </>)}
                                             </>)}
 
                                             {/* Opt-in height back-off (ScaledBlock): only bites on a block that is

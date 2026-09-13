@@ -1,6 +1,7 @@
 import { Component, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { WorksheetFile } from '../../services/persistence';
 import { EXERCISE_UI } from '../../config/exerciseUI';
+import { numberBlocks } from '../../services/layout/blockNumbering';
 
 interface Props {
     file: WorksheetFile;
@@ -61,6 +62,9 @@ export default function SheetThumbnail({ file, height = 200, maxBlocks = 3 }: Pr
         // eslint-disable-next-line react-hooks/exhaustive-deps -- refs are stable
     }, [inView]);
 
+    // Numbered over the WHOLE file, not the slice: the thumbnail used to count by array
+    // index, so furniture (and a block left out of the numbering) shifted every number.
+    const numbers = numberBlocks(file.blocks || []);
     const blocks = (file.blocks || []).slice(0, maxBlocks);
 
     return (
@@ -77,7 +81,7 @@ export default function SheetThumbnail({ file, height = 200, maxBlocks = 3 }: Pr
                         return (
                             <div key={block.id ?? i} style={blockWrap}>
                                 {block.instructionText && block.showInstruction !== false ? (
-                                    <div style={opdracht}>{i + 1}. {block.instructionText}</div>
+                                    <div style={opdracht}>{numbers[block.id] != null ? `${numbers[block.id]}. ` : ''}{block.instructionText}</div>
                                 ) : null}
                                 {Viewer ? (
                                     <ThumbBoundary>
