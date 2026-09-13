@@ -120,7 +120,14 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
             const places = placesFor(ex);
             return places.length + (places.some(p => p.weight < 1) ? 1 : 0);
         }));
-        const numColWidth = tight ? undefined : `calc(${(numChars * 0.62 + 0.3).toFixed(2)} * var(--sheet-size-math))`;
+        // `ch` is the advance of "0" in THIS element's own font, so a mono column of
+        // numChars digits is exactly numChars ch — no 0.62em guess that under-measures the
+        // glyph and lets the longest number push its own arrow out of the column (9 vs 10,
+        // 34 vs 6,20: the short numbers sat at the reserved width and the long ones a few px
+        // past it, so the arrows stepped instead of lining up). The two constants are the
+        // markup's own: 1px of letter-spacing after every glyph, and the 0 1px padding the
+        // underlined digit always carries.
+        const numColWidth = tight ? undefined : `calc(${numChars}ch + ${numChars + 2}px)`;
         return (
             <FragmentableGrid
                 cols={fitCols(availableWidth, 260, 2)}
