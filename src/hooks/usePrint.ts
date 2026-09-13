@@ -18,14 +18,34 @@ function injectMarginStyle() {
     document.head.appendChild(style);
 }
 
-export function usePrint() {
+const PRINT_HINT_KEY = 'rekenraak_print_hint_seen_v1';
+
+// `beforeFirstPrint` runs once per browser, before the first print dialog, with the
+// continuation that actually prints — App shows the "Marges op Geen" modal there. Both
+// the print button and the intercepted Ctrl+P pass through it.
+export function usePrint(beforeFirstPrint?: (proceed: () => void) => void) {
     // True between handlePrint() and its afterprint, so the native-print guards below
     // stay out of the way of the app's own (already complete) preparation.
     const appInitiated = useRef(false);
     // Selection to restore after a native print; `undefined` = nothing captured.
     const nativeSelection = useRef<string | null | undefined>(undefined);
+    const gate = useRef(beforeFirstPrint);
+    useEffect(() => { gate.current = beforeFirstPrint; });
 
     const handlePrint = (withSolutions: boolean) => {
+        let seen = true;
+        try { seen = localStorage.getItem(PRINT_HINT_KEY) === '1'; } catch { /* ignore */ }
+        if (!seen && gate.current) {
+            gate.current(() => {
+                try { localStorage.setItem(PRINT_HINT_KEY, '1'); } catch { /* ignore */ }
+                doPrint(withSolutions);
+            });
+            return;
+        }
+        doPrint(withSolutions);
+    };
+
+    const doPrint = (withSolutions: boolean) => {
         const store = useWorksheetStore.getState();
         const prevSolutions = store.showSolutions;
         const prevSelection = store.activeBlockId;
