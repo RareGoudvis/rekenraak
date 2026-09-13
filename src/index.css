@@ -310,24 +310,48 @@ textarea:focus-visible,
   display: flex; flex-direction: column;
   pointer-events: none; border-radius: var(--radius-md); overflow: visible;
   container-type: size; container-name: sheet-dropzones;
+  /* Every candidate is framed for the whole drag, not just the block under the pointer —
+     "where can I even drop this" was the complaint. Outline, not border: it takes no box
+     width, so the thirds stay exactly the thirds the hook measures. */
+  outline: 2px dashed var(--accent); outline-offset: -2px;
 }
 .sheet-dropzone {
   flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
-  border: 1px dashed var(--separator);
-  transition: background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out);
+  border: 1px dashed var(--accent);
+  transition: background-color var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out),
+              opacity var(--dur) var(--ease-out);
 }
 .sheet-dropzone + .sheet-dropzone { border-top: none; }
-.sheet-dropzone.is-on { background: var(--accent-soft); border-color: var(--accent); border-style: solid; }
+/* Alternating faint bands so the three thirds are countable at a glance. */
+.sheet-dropzone:nth-child(odd) { background: var(--accent-soft); }
+.sheet-dropzone.is-on { background: var(--accent-soft); border-color: var(--accent); border-style: solid; border-width: 2px; }
+/* Only the third that would actually fire stays at full strength. */
+.sheet-dropzones.has-on .sheet-dropzone:not(.is-on) { opacity: 0.35; }
 .sheet-dropzone-label {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 2px 8px; border-radius: var(--radius-pill);
-  background: var(--bg-panel); color: var(--text-muted);
+  background: var(--bg-panel); color: var(--text-main);
   font-family: var(--font-ui); font-size: 11px; font-weight: 600;
-  opacity: 0.75; white-space: nowrap;
+  border: 1px solid var(--separator);
+  opacity: 0.95; white-space: nowrap;
 }
-.sheet-dropzone.is-on .sheet-dropzone-label { background: var(--accent); color: var(--accent-on); opacity: 1; }
+.sheet-dropzone.is-on .sheet-dropzone-label { background: var(--accent); color: var(--accent-on); border-color: var(--accent); opacity: 1; }
 @container sheet-dropzones (max-height: 66px) {
   .sheet-dropzone-label-text { display: none; }
+}
+
+/* Drag hint strip: what the three thirds mean, for the duration of a drag. Portalled to
+   <body> and fixed (top set inline from `.print-scroll`), so it cannot reflow the sheet
+   under the pointer. pointer-events:none for the same elementFromPoint() reason as above;
+   .no-print keeps it off paper. */
+.sheet-drag-hint {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 9998;
+  padding: 5px 14px; border-radius: var(--radius-pill);
+  background: var(--bg-panel); color: var(--text-main);
+  border: 1px solid var(--accent); box-shadow: var(--shadow-2);
+  font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+  pointer-events: none; white-space: nowrap;
+  max-width: 92vw; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* Landing flash after undo/redo scrolls to the block a history step changed. Screen
