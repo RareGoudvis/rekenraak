@@ -127,7 +127,9 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "controleren": { rowUnits: 4.67, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "deelbaarheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 1 },
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 1 },
-    "even-oneven": { rowUnits: 2.17, perRowFull: 1, minWidth: 4 },
+    // C1 step 7: the rooster's perRow now clamps to the column, so it never overflows —
+    // SETTINGS_FLOOR (2) is what actually keeps it off a quarter, not this table.
+    "even-oneven": { rowUnits: 1.9, perRowFull: 1, minWidth: 2 },
     "geld-herkennen": { rowUnits: 10.08, perRowFull: 3, minWidth: 1 },
     "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
     "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 2 },

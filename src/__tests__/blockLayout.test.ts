@@ -11,10 +11,10 @@ import { makeBlock } from './helpers/makeBlock';
 const measure = (px: number, atWidth: WidthUnits = 4) => ({ intrinsicPx: px, atWidth });
 
 describe('minWidthUnits — fallback (no measurement)', () => {
-    // even-oneven stands in for "the table says full width" since the 2026-09-13 matrix
-    // rerun put rekenvolgorde at a half (its answer lines made the rows 1-up).
+    // verbanden stands in for "the table says full width" since C1 step 7 clamped
+    // even-oneven's rooster to reflow instead of overflow, dropping its own table entry to ½.
     test('a full-width table entry still claims the full width, as it did before measuring', () => {
-        expect(minWidthUnits(makeBlock('even-oneven', { block: { numberOfExercises: 3 } }))).toBe(4);
+        expect(minWidthUnits(makeBlock('verbanden', { block: { numberOfExercises: 3 } }))).toBe(4);
     });
 
     test('hoofdrekenen at a million needs the full width', () => {

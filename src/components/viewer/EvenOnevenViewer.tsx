@@ -1,7 +1,7 @@
 import type { MathBlock, EvenOnevenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { EvenOnevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -13,9 +13,15 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 const FILL = '#93c5fd';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
+// SYNC: same convention as GetallenasViewer / ClockViewer / MabViewer.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const em = (px: number) => `${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)}em`;
 
 export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // Called unconditionally (used by the rooster branch only) so a subType switch never
+    // changes how many hooks this component calls.
+    const mathScale = useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT;
     const exercises: EvenOnevenExercise[] = block.evenOnevenExercises || [];
     const c = block.constraints as EvenOnevenConstraints;
     const subType: string = c.subType ?? 'rooster';
@@ -73,23 +79,26 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     }
 
     // ── ROOSTER: colour the even (or oneven) numbers ──────────────────────────
-    // Fixed `perRow`-column grid (NOT width-based flex-wrap) so cells align and the
-    // 'Getallen per rij' setting is honoured. marginLeft/-Top:-1 collapse shared borders.
+    // A `perRow`-column grid, clamped to whatever the column actually fits so a narrow
+    // block reflows to more rows instead of running the row off the page. `em`-sized
+    // cells so they follow the Lettergrootte slider; marginLeft/-Top:-1 collapse shared borders.
     const cellW = 46, cellH = 34;
+    const cellWPx = cellW * mathScale;
+    const cols = Math.max(1, Math.min(perRow, Math.floor((availableWidth + 1) / (cellWPx + 1))));
     return (
         <FragmentableGrid
             cols={1}
             rowGap={gap}
             items={exercises.map(ex => (
                 <div key={ex.id} className="print-exercise" style={{
-                    display: 'grid', gridTemplateColumns: `repeat(${perRow}, ${cellW}px)`, width: 'fit-content',
+                    display: 'grid', gridTemplateColumns: `repeat(${cols}, ${em(cellW)})`, width: 'fit-content',
                 }}>
                     {(ex.numbers || []).map((num, i) => (
                         <div key={i} style={{
-                            width: cellW, height: cellH, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: em(cellW), height: em(cellH), display: 'flex', alignItems: 'center', justifyContent: 'center',
                             border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)',
                             // collapse with left neighbour (same row) and the row above
-                            marginLeft: i % perRow === 0 ? 0 : -1, marginTop: i >= perRow ? -1 : 0,
+                            marginLeft: i % cols === 0 ? 0 : -1, marginTop: i >= cols ? -1 : 0,
                             backgroundColor: showSolutions && isTarget(num) ? FILL : 'white',
                         }}>
                             {formatMathNumber(num)}
