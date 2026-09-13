@@ -112,29 +112,35 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     // place is shown as a row of chips (one per digit, in the same descending E/T/H/...
     // order placesFor already uses) instead of an underline, and the pupil circles it.
     if (subType === 'omcirkelen') {
+        // The number keeps its underlined digit (same as 'plaats'); the answer is not written but
+        // circled among the place letters, which are printed in the number's own place order.
         return (
             <FragmentableGrid
-                cols={1}
+                cols={fitCols(availableWidth, 260, 2)}
+                columnGap={24}
                 rowGap={gap}
                 items={exercises.map(ex => {
                     const places = placesFor(ex);
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '8px' : '14px', flexWrap: 'wrap', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
-                            <span style={{ whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)} →</span>
-                            {places.map(p => {
-                                const isAns = showSolutions && p.key === ex.placeKey;
-                                return (
-                                    <span key={p.key} style={{
-                                        padding: '2px 10px',
-                                        border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
-                                        borderRadius: '50%',
-                                        color: isAns ? SOL : 'inherit',
-                                        minWidth: 0,
-                                    }}>
-                                        {p.digit}
-                                    </span>
-                                );
-                            })}
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '8px' : '14px', flexWrap: 'nowrap', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+                            {numberWithUnderline(ex)}
+                            <span>→</span>
+                            <span style={{ display: 'inline-flex', gap: tight ? '2px' : '6px' }}>
+                                {places.map(p => {
+                                    const isAns = showSolutions && p.key === ex.placeKey;
+                                    return (
+                                        <span key={p.key} style={{
+                                            padding: '2px 8px',
+                                            border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
+                                            borderRadius: '50%',
+                                            color: isAns ? SOL : 'inherit',
+                                            fontWeight: isAns ? 'bold' : undefined,
+                                        }}>
+                                            {p.key}
+                                        </span>
+                                    );
+                                })}
+                            </span>
                         </div>
                     );
                 })}
