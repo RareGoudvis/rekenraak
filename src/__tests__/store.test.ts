@@ -408,3 +408,47 @@ describe('generateAllBlocks', () => {
         useWorksheetStore.getState().toggleBlockLock(a);
     });
 });
+
+// The count slider is the one setting that keeps the exercises already on the sheet; the
+// tail it appends now runs through generateExtra, the same dedupe/pad path as a generate.
+describe('raising the exercise count', () => {
+    const keyOf = (ex: unknown) => { const { id: _id, ...rest } = ex as Record<string, unknown>; return JSON.stringify(rest); };
+
+    beforeEach(() => { useWorksheetStore.getState().clearBlocks(); });
+
+    test('keeps the existing exercises and fills up to the new count without repeats', () => {
+        useWorksheetStore.getState().addBlockFromType('hr-std-optellen', 'Optellen', { maxGetal: 1000 });
+        const block = useWorksheetStore.getState().blocks[0];
+        const before = block.exercises;
+
+        useWorksheetStore.getState().updateBlockSettings(block.id, { numberOfExercises: before.length + 6 });
+
+        const after = useWorksheetStore.getState().blocks[0].exercises;
+        expect(after).toHaveLength(before.length + 6);
+        expect(after.slice(0, before.length)).toEqual(before);
+        expect(new Set(after.map(keyOf)).size).toBe(after.length);
+    });
+
+    test('a pool too small to fill the tail pads with repeats and says so', () => {
+        // tafels [2] up to 10 holds ~5 distinct facts, far fewer than the 20 asked for.
+        useWorksheetStore.getState().addBlockFromType('hr-std-vermenigvuldigen', 'Tafels', {
+            multiplicationMode: 'tafels', selectedTables: [2], tableLimit: 10,
+        });
+        const block = useWorksheetStore.getState().blocks[0];
+
+        useWorksheetStore.getState().updateBlockSettings(block.id, { numberOfExercises: 20 });
+
+        const after = useWorksheetStore.getState().blocks[0];
+        expect(after.exercises).toHaveLength(20);
+        expect(after.generationNote).toMatch(/Kleine reeks/);
+    });
+
+    test('lowering the count just drops the tail', () => {
+        useWorksheetStore.getState().addBlockFromType('hr-std-optellen', 'Optellen');
+        const block = useWorksheetStore.getState().blocks[0];
+
+        useWorksheetStore.getState().updateBlockSettings(block.id, { numberOfExercises: 3 });
+
+        expect(useWorksheetStore.getState().blocks[0].exercises).toEqual(block.exercises.slice(0, 3));
+    });
+});

@@ -46,9 +46,12 @@ function dedupeWithTopUp(
     generate: (b: MathBlock) => unknown[],
     initial: unknown[],
     keyFn: (ex: unknown) => string,
+    // Topping up an existing block: `exclude` are the keys already on the sheet, `pad`
+    // the exercises a too-small pool may repeat from. Both empty on a first generate.
+    opts: { wanted?: number; exclude?: Set<string>; pad?: unknown[] } = {},
 ): { items: unknown[]; shortBy: number } {
-    const wanted = initial.length;
-    const seen = new Set<string>();
+    const wanted = opts.wanted ?? initial.length;
+    const seen = new Set<string>(opts.exclude ?? []);
     const kept: unknown[] = [];
     const take = (candidates: unknown[]) => {
         for (const ex of candidates) {
@@ -66,7 +69,7 @@ function dedupeWithTopUp(
     // The teacher asked for `wanted` exercises: a pool too small to fill them (12 hours-only
     // clock times for 15 questions) pads with repeats rather than handing back a short block.
     const shortBy = wanted - kept.length;
-    for (const ex of initial) {
+    for (const ex of [...initial, ...(opts.pad ?? [])]) {
         if (kept.length >= wanted) break;
         if (!kept.includes(ex)) kept.push(ex);
     }
@@ -81,8 +84,37 @@ export function generateForBlock(block: MathBlock, uniqueExercises?: boolean): {
     const { items, note } = def.generateNoted ? def.generateNoted(block) : { items: def.generate(block), note: null };
     if (!uniqueExercises || items.length <= 1) return { items, note };
     const { items: deduped, shortBy } = dedupeWithTopUp(block, def.generate, items, def.exerciseKey ?? defaultExerciseKey);
-    const dedupeNote = shortBy > 0 ? `Kleine reeks: ${shortBy} oefening${shortBy === 1 ? '' : 'en'} kom${shortBy === 1 ? 't' : 'en'} dubbel voor.` : null;
-    return { items: deduped, note: note && dedupeNote ? `${note} ${dedupeNote}` : (note ?? dedupeNote) };
+    return { items: deduped, note: joinNotes(note, shortNote(shortBy)) };
+}
+
+// Teacher-facing wording for a pool too small to fill the block — one phrasing for both
+// the first generate and a later count increase.
+function shortNote(shortBy: number): string | null {
+    if (shortBy <= 0) return null;
+    return `Kleine reeks: ${shortBy} oefening${shortBy === 1 ? '' : 'en'} kom${shortBy === 1 ? 't' : 'en'} dubbel voor.`;
+}
+
+function joinNotes(a: string | null, b: string | null): string | null {
+    return a && b ? `${a} ${b}` : (a ?? b);
+}
+
+/** The block's exercises after its count was raised: `existing` stays, the tail is generated
+    under the same dedupe-and-pad policy as a first generate. Shrinking just cuts the tail. */
+export function generateExtra(block: MathBlock, existing: unknown[], want: number, unique?: boolean): { items: unknown[]; note: string | null } {
+    const def = REGISTRY[block.typeId];
+    if (!def || want <= existing.length) return { items: existing.slice(0, Math.max(want, 0)), note: null };
+    const need = want - existing.length;
+    // Ask the generator for the shortfall only — the kept exercises already cover the rest.
+    const sized = { ...block, numberOfExercises: need };
+    const { items, note } = def.generateNoted ? def.generateNoted(sized) : { items: def.generate(sized), note: null };
+    if (!unique) return { items: [...existing, ...items.slice(0, need)], note };
+    const keyFn = def.exerciseKey ?? defaultExerciseKey;
+    const { items: fresh, shortBy } = dedupeWithTopUp(sized, def.generate, items, keyFn, {
+        wanted: need,
+        exclude: new Set(existing.map(keyFn)),
+        pad: existing,
+    });
+    return { items: [...existing, ...fresh], note: joinNotes(note, shortNote(shortBy)) };
 }
 
 /** Content key of one exercise, for callers that add to an existing set. */

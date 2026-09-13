@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { MathBlock, Equation, CijferExercise, FooterData, LayoutPreset } from '../services/math/types';
-import { generateForBlock, exerciseKeyOf, GENERATION_FAILED } from '../services/generateDispatch';
+import { generateForBlock, generateExtra, GENERATION_FAILED } from '../services/generateDispatch';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
@@ -434,13 +434,10 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
                 return { ...merged, [field]: current.slice(0, want) } as MathBlock;
             }
             try {
-                // Raising the count keeps the existing exercises; the new tail must not
-                // repeat them when the sheet asks for unique exercises.
-                const unique = state.docSettings.uniqueExercises ?? true;
-                const have = new Set(unique ? current.map(ex => exerciseKeyOf(b.typeId, ex)) : []);
-                const extra = generateForBlock(merged, unique).items.filter(ex => !unique || !have.has(exerciseKeyOf(b.typeId, ex)));
-                const tail = extra.slice(0, want - current.length);
-                return { ...merged, [field]: [...current, ...tail] } as MathBlock;
+                // One top-up policy for the whole app: generateExtra keeps what is there and
+                // dedupes/pads the tail exactly like a first generate.
+                const { items, note } = generateExtra(merged, current, want, state.docSettings.uniqueExercises ?? true);
+                return { ...merged, [field]: items, generationNote: note } as MathBlock;
             } catch { return merged; }
         });
         // Any other setting means the exercises no longer match the settings — say so
