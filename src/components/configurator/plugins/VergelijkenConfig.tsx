@@ -15,7 +15,7 @@ const REP_MAX_PRESETS = [10, 100, 1000];   // representaties: tienden/honderdste
 
 export default function VergelijkenConfig({ block }: Props) {
     const [c, patch] = useConstraints<VergelijkenConstraints>(block);
-    const { subType = 'getallen', maxGetal = 1000, numberMask = {}, chooseTarget = 'grootste', setSize = 4, decimalPlaces = 0, leftRep = 'breuk', rightRep = 'kommagetal', leftMask = {}, rightMask = {},
+    const { subType = 'getallen', maxGetal = 1000, numberMask = {}, chooseTarget = 'grootste', setSize = 3, decimalPlaces = 0, leftRep = 'breuk', rightRep = 'kommagetal', leftMask = {}, rightMask = {},
         leftFracN = 4, leftFracD = 8, rightFracN = 4, rightFracD = 8 } = c;
 
     const set = (key: string, value: unknown) =>
@@ -98,7 +98,7 @@ export default function VergelijkenConfig({ block }: Props) {
                     </div>
                     <div style={styles.section}>
                         <SettingLabel text={`Getallen per oefening: ${setSize}`} info="Uit hoeveel getallen de leerling moet kiezen." />
-                        <input type="range" min="3" max="6" step="1" value={setSize}
+                        <input type="range" min="2" max="6" step="1" value={setSize}
                             onChange={(e) => set('setSize', Number(e.target.value))}
                             style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
                     </div>

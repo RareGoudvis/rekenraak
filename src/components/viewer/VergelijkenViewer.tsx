@@ -37,9 +37,14 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                     const nums = ex.numbers || [];
                     const answer = (ex.target ?? 'grootste') === 'kleinste' ? Math.min(...nums) : Math.max(...nums);
                     return (
-                        // 1-up cell: centre the chip row instead of space-between stretching
-                        // the gaps to the cell's full width (looked hard left in a wide cell).
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'center', width: '100%', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
+                        // C3: same "never wrap" treatment as ordenen — one CSS grid, columns
+                        // sized to content, laid out in a single row instead of a flex-wrap
+                        // that could break the chip list onto a second line.
+                        <div key={ex.id} className="print-exercise" style={{
+                            display: 'grid', gridAutoFlow: 'column', gridAutoColumns: 'max-content',
+                            columnGap: '18px', justifyContent: 'center', width: '100%',
+                            fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)',
+                        }}>
                             {nums.map((n, i) => {
                                 const isAns = showSolutions && n === answer;
                                 return (
@@ -48,8 +53,6 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                                         border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
                                         borderRadius: '50%',
                                         color: isAns ? SOL : 'inherit',
-                                        // A wrapped flex line can otherwise report an intrinsic width wider than the cell.
-                                        minWidth: 0,
                                     }}>
                                         {formatMathNumber(n)}
                                     </span>
