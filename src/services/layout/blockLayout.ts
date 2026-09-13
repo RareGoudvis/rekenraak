@@ -321,6 +321,9 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
     if (block.typeId.startsWith('hr-std-')) {
         if (c.numberType === 'decimal') return Math.max(base, 2) as WidthUnits;
         if (c.preset === 'compenseren' && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap') return Math.max(base, 2) as WidthUnits;
+        // 'Delen met rest' carries a second answer ("= ___ r ___") next to the first, which
+        // is ~30px more than a quarter has left after the division itself.
+        if (c.multiplicationMode === 'met_rest') return Math.max(base, 2) as WidthUnits;
     }
 
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;

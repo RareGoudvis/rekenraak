@@ -245,8 +245,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const compScaffoldOn = c.preset === 'compenseren'
         && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
     const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : answerLinePx + 19;
+    // A met-rest row carries the help column, the "r" and the rest blank on top of the sum:
+    // ~70px of help box + 8px gap + r + a 30px blank + the gaps around them.
+    const MET_REST_EXTRA_PX = 160;
     const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
-        + 8 + answerW + (anyRemainder ? 90 : 0);
+        + 8 + answerW + (anyRemainder ? MET_REST_EXTRA_PX : 0);
     // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
     // workline, so what it really needs is writing room for a hand-written tussenstap.
     // That room scales with the block's widest operand instead of the fixed 94px field.
@@ -299,6 +302,14 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const EQ_GAP = tight ? 6 : 10;
     const ANSWER_GAP = tight ? 4 : 8;
     const termPx = (chars: number) => Math.ceil(chars * CHAR_PX) + 4;
+    // Met-rest extras. The quotient and rest blanks are one width for the whole block (a
+    // blank sized to its own answer would tell the child how many digits to expect), and
+    // the help column is the "(" + dotted blank + ")" measured as a box so it can be a
+    // fixed column rather than inline content that shifts the sum.
+    const HELP_BLANK_PX = 40;
+    const QUOTIENT_BLANK_PX = 40;
+    const REST_BLANK_PX = 30;
+    const HELP_COL_PX = 2 * OP_GLYPH_PX + HELP_BLANK_PX + 4;
     // The fill-in blank (mathDottedLine) is 40px wide inside 6px margins; a column box
     // narrower than that would let a blank overrun its neighbour. Fractions size
     // themselves, so a block containing one keeps intrinsic widths throughout.
@@ -317,27 +328,44 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
             items={block.exercises.map((ex) => {
                 if (!ex || !ex.operands) return null;
 
-                // MET REST
+                // MET REST — same unit boxes as a normal row (dividend in the block's term
+                // box, ':' + divisor as one left-aligned unit, "=" after a fixed gap), so
+                // "21 : 4" and "77 : 10" put their ':', '=' and blanks on the same x.
+                // Before this the row was bare spans with 2-4px margins, and every row of a
+                // block started its sum at whatever x its own dividend happened to end.
                 if (ex.remainder !== undefined) {
-                    const helpBlank = <div style={{ borderBottom: '1.5px dotted #000', width: '40px', height: '18px', display: 'inline-block', margin: '0 2px' }} />;
-                    const qPart = showSolutions
-                        ? <span style={solutionText}>{formatMathNumber(ex.answer as number)}</span>
-                        : <div style={{ borderBottom: '1.5px solid #000', width: '40px', height: '18px', display: 'inline-block' }} />;
-                    const rPart = showSolutions
-                        ? <span style={solutionText}>{String(ex.remainder)}</span>
-                        : <div style={{ borderBottom: '1.5px solid #000', width: '30px', height: '18px', display: 'inline-block' }} />;
+                    const slot = (w: number, val: string) => showSolutions
+                        ? <span style={{ ...solutionText, padding: 0, width: `${w}px`, display: 'inline-block', textAlign: 'center' }}>{val}</span>
+                        : <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block' }} />;
                     return (
-                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
+                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
                             {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
-                                cell it is the first thing to go, so the division itself still fits. */}
-                            {!tight && <><span>(</span>{helpBlank}<span>)</span></>}
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>{formatMathNumber(ex.operands[0] as number)}</span>
-                            <span>:</span>
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>{formatMathNumber(ex.operands[1] as number)}</span>
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>=</span>
-                            {qPart}
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px`, fontStyle: 'italic' }}>r</span>
-                            {rPart}
+                                cell it is the first thing to go, so the division itself still fits.
+                                It gets its OWN fixed column so the dividends below it still line up. */}
+                            {!tight && (
+                                <div style={{ display: 'flex', alignItems: 'center', width: `${HELP_COL_PX}px`, flexShrink: 0, marginRight: `${ANSWER_GAP}px` }}>
+                                    <span>(</span>
+                                    <div style={{ borderBottom: '1.5px dotted #000', width: `${HELP_BLANK_PX}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />
+                                    <span>)</span>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0, ...(termBoxPx !== undefined && { width: `${termBoxPx}px` }) }}>
+                                <span>{formatMathNumber(ex.operands[0] as number)}</span>
+                            </div>
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flexShrink: 0,
+                                marginLeft: `${TERM_UNIT_GAP}px`,
+                                ...(termBoxPx !== undefined && { width: `${OP_GLYPH_PX + OP_TERM_GAP + termBoxPx}px` }),
+                            }}>
+                                <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>:</span>
+                                <span>{formatMathNumber(ex.operands[1] as number)}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: `${ANSWER_GAP}px` }}>
+                                <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
+                                {slot(QUOTIENT_BLANK_PX, formatMathNumber(ex.answer as number))}
+                                <span style={{ margin: `0 ${EQ_GAP}px`, fontStyle: 'italic' }}>r</span>
+                                {slot(REST_BLANK_PX, String(ex.remainder))}
+                            </div>
                         </div>
                     );
                 }
