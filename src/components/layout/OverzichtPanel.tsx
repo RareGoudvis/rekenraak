@@ -222,7 +222,8 @@ const S = {
     pageBreak: { fontSize: '10px', color: 'var(--accent-purple)', textAlign: 'center', letterSpacing: '0.05em', margin: '6px 0 2px', pointerEvents: 'none', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
     row: { display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: '1px solid transparent', background: 'var(--bg-surface-2)' } as React.CSSProperties,
     // Domain rail, same tint as the sidebar's — the outline reads back against the
-    // list it was built from. Layout blocks have no domain, so they get a plain edge.
+    // list it was built from. Every typeId in DOMAIN_BY_TYPE has one (sheet furniture
+    // maps to 'vraagstukken'); only an unknown typeId falls back to a plain edge.
     // The instruction as it is printed on the sheet, so a row can be matched to the page
     // by its heading as well as by its number.
     instrLabel: {
@@ -236,14 +237,19 @@ const S = {
     // sides and swallow the domain rail on the left, so a selected row lost the one thing
     // telling you which domain it belongs to. Ring = state, rail = identity, both visible.
     rowActive: { background: 'var(--accent-soft)', boxShadow: 'inset 0 0 0 1.5px var(--accent)' } as React.CSSProperties,
-    // Three zones, same meaning as the sheet's SheetDropZones: a top border = insert
-    // before, a filled row = swap, a bottom border = insert after. A row is too short
+    // Three zones, same meaning as the sheet's SheetDropZones: a line at the top = insert
+    // before, a filled row = swap, a line at the bottom = insert after. A row is too short
     // for three labelled bands, so the edge that lit up stands in for the label.
+    // Like rowActive, this may only use outline/box-shadow: any border* here repaints all
+    // four sides and swallows the domain rail, so the hovered row lost its identity colour
+    // at the exact moment the teacher is looking for it.
     rowOverZone: (zone: DropZone): React.CSSProperties => ({
-        borderColor: 'var(--accent)', borderStyle: 'dashed',
+        outline: '1px dashed var(--accent)', outlineOffset: '-1px',
         ...(zone === 'before' ? { boxShadow: 'inset 0 2px 0 var(--accent)' } : {}),
         ...(zone === 'after' ? { boxShadow: 'inset 0 -2px 0 var(--accent)' } : {}),
-        ...(zone === 'swap' ? { background: 'var(--accent-soft)' } : {}),
+        // Shorthand, not outlineWidth: React warns (and drops the value) when a longhand
+        // is mixed with the shorthand set on the same object.
+        ...(zone === 'swap' ? { background: 'var(--accent-soft)', outline: '2px dashed var(--accent)' } : {}),
     }),
     // touch-action: none on the handle only — the list itself must stay scrollable with
     // a finger, so a touch drag starts from the grip.
