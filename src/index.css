@@ -104,10 +104,14 @@
 .page-sheet-head { padding: 30px 53px 0; flex: none; }
 .page-sheet-body {
   flex: 1; min-height: 0; padding: 0 53px; position: relative;
-  display: grid; grid-template-columns: repeat(4, 1fr); align-content: start;
   /* Clipped on screen exactly as it will be on paper, so what you see is what prints. */
   overflow: hidden;
 }
+/* Every cell is placed absolutely at the x/y the packer chose (skyline packing), so a
+   short block can sit under a shorter neighbour instead of waiting for a new row. Nothing
+   inside a page flows any more, which is also why screen == print: the browser never gets
+   to make a layout decision of its own. */
+.page-sheet-canvas { position: relative; height: 100%; }
 .page-sheet-foot { flex: none; padding: 15px 53px 30px; }
 
 /* The printed header and footer are editable in place: hovering shows an outline and a

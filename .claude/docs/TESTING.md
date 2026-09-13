@@ -19,7 +19,7 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 |---|---|
 | `generators.matrix.test.ts` | Every generator runs, across every constraint option. See below. |
 | `generators.answers.test.ts` | The answer follows from the question: mathEngine ops (incl. fractions, decimals, multi-term chains, division remainder), bruggetjes, cijferen, splitsen sums, breuken-bewerken equivalence, ordenen ordering, deelbaarheid, procenten, verbanden, tijdsduur, kalender, negenproef, herleidingen unit factors. |
-| `pagePacker.test.ts` | Placement rules: join a row, start a row, exact fit, page flush, `pageBreakBefore`, spanning blocks, min-width promotion, `pageIndexByBlock`. Written against `COL_UNITS` / `ROW_BUDGET`, never literal 6/36, so it survives the grid change. |
+| `pagePacker.test.ts` | Placement rules, twice. Every pre-skyline test (join a row, start a row, exact fit, page flush, `pageBreakBefore`, spanning blocks, min-width promotion, `pageIndexByBlock`) now runs against `mode: 'rijen'` and is the regression guard; the `aansluitend` suite pins the skyline itself — a block filling the space under a shorter neighbour, ties to the leftmost, a full-width block waiting for the deepest column, per-column page overflow, no overlap, `skylineSlot`. Written against `COL_UNITS` / `ROW_BUDGET`, never literal 6/36, so it survives the grid change. |
 | `persistence.test.ts` | File round-trip, version gate (a newer file throws in Dutch), malformed input, share-link encode/decode, template stripping, curriculum lock, size backstop. |
 | `store.test.ts` | Block order: `swapBlocks` (trade places, no-ops, history, curriculum lock) and the insert-before compensation both drag surfaces apply to `reorderBlocks`. jsdom — the store touches `localStorage` on import. |
 | `blockErrorBoundary.test.tsx` | The shared boundary: a throwing child renders the on-sheet message and logs, `fallback={null}` renders nothing, a `resetKey` change recovers; every `EXERCISE_UI` viewer is mounted with wrong-shaped exercise data and must never throw past the boundary (jsdom, `console.error` spy scoped). |
@@ -162,7 +162,7 @@ measure pass, and then prints per cell:
 |---|---|
 | `measured` | the px the PACKER used (`window.__rekenraak.measured()`, the live map) |
 | `own` | the BLOCK's own height: `.print-block` offsetHeight + its margins |
-| `row` | the grid CELL's rect — a stretched cell reports its ROW's height, not its own |
+| `row` | the CELL's rect. Since skyline packing a cell is positioned, not stretched into a grid row, so this must equal `own` |
 | `print` | `.print-opdracht` top to the last `.print-row` bottom |
 | `chrome` | `own − print`: the block padding/border/margin that also prints |
 | `Δ pack` | `measured − own`: the packer disagreeing with the paper. Must be 0. |
@@ -176,8 +176,8 @@ npm run dev
 node scripts/height-audit.mjs --url http://localhost:5174/ --seed 1234
 ```
 
-Verdicts to read: **(a)** must be `0/10`, **(a2)** lists the stretched cells (expected —
-that is the grid, not a bug, as long as `Δ pack` stays 0), **(b)** the packer's row gap must
+Verdicts to read: **(a)** must be `0/10`, **(a2)** must be `none` — a stretched
+cell would mean something other than the packer is still laying the page out, **(b)** the packer's row gap must
 equal the CSS `rowGap`, **(c)** the screen body must equal the print body on every page,
 **(d)** no unmeasured cells, **(e)** no repack-loop warnings.
 

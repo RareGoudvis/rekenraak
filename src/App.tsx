@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
 import PageSheet, { PAGE_W_PX } from './components/layout/PageSheet';
-import { packPages, pageIndexByBlock, type PackedBlock } from './services/layout/pagePacker';
+import { packPages, pageIndexByBlock, skylineSlot, type PackedBlock } from './services/layout/pagePacker';
 import { minWidthUnits } from './services/layout/blockLayout';
 import { numberBlocks } from './services/layout/blockNumbering';
 import type { FooterSlot } from './services/math/types';
@@ -301,6 +301,9 @@ export default function App() {
   // blockSpacing, so the packer's vertical budget is untouched.
   const colGapPx = (docSettings.blockSpacing ?? 12) + (docSettings.showColumnDividers ? 16 : 0);
   const cellWidth = (units: number) => cellWidthPx(units, colGapPx);
+  // Left edge of a cell that starts at column unit `x`: the width of the units before it
+  // plus the one gap that separates them from it.
+  const cellLeft = (x: number) => (x <= 0 ? 0 : cellWidth(x) + colGapPx);
 
   // Pagination is decided by the packer, which pages a first time on its settings-derived
   // budget and then repacks on the heights the sheet actually rendered. Estimating alone
@@ -374,6 +377,7 @@ export default function App() {
 
   const packedPages = useMemo(
     () => packPages(blocks, {
+      mode: docSettings.packMode ?? 'aansluitend',
       blockSpacingPx: docSettings.blockSpacing ?? 12,
       heightPxOf: measured.heightPxOf,
       pageBudgetPx: measured.pageBudgetPx,
@@ -386,7 +390,7 @@ export default function App() {
       answerSpacePx: docSettings.answerSpace,
       ignoreMinWidth: debugIgnoreMinWidth,
     }),
-    [blocks, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth],
+    [blocks, docSettings.packMode, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth],
   );
   // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
   // separator never renumbers the exercises after it.
@@ -755,11 +759,18 @@ export default function App() {
               onFooterClick={() => openBladCard('voettekst')}
               onBodyMeasure={measured.onBodyMeasure}
               onCellMeasure={measured.onCellMeasure}
-              tailRow={page.rows.length + 1}
+              tailPx={(() => {
+                // The blank tail is not "how far down the ink goes" any more: with a
+                // skyline the next block drops into the LOWEST gap wide enough for it, so
+                // the room it has is measured at its own width.
+                const next = packedPages[pi + 1]?.blocks[0];
+                if (!next) return undefined;
+                return Math.max(0, page.budgetPx - skylineSlot(page.fill, next.width, docSettings.blockSpacing ?? 12).y);
+              })()}
               onSplitNext={(() => {
                 // Only offer the split when there IS a next page whose first block can be
                 // cut — otherwise the blank tail is simply the end of the worksheet.
-                const next = packedPages[pi + 1]?.rows[0]?.items[0]?.block;
+                const next = packedPages[pi + 1]?.blocks[0]?.block;
                 if (!next || splittableCount(next) < 2) return undefined;
                 return (tailPx: number, anchorRect: DOMRect) => openSplit(next.id, anchorRect, tailPx);
               })()}
@@ -771,7 +782,7 @@ export default function App() {
               footer={renderFooterRegion(pi, packedPages.length)}
             >
               {blocks.length === 0 && pi === 0 && (
-                <div className="no-print" style={{ ...styles.heroEmpty, gridColumn: 'span 4' }}>
+                <div className="no-print" style={{ ...styles.heroEmpty, width: '100%' }}>
                   <h1 style={styles.heroTitle}>RekenRaak — gratis werkbladgenerator voor wiskunde in het lager onderwijs</h1>
                   <p style={styles.heroPitch}>
                     Stel in enkele minuten een eigen wiskundewerkblad samen voor het lager onderwijs —
@@ -785,21 +796,14 @@ export default function App() {
                   <p style={styles.heroHint}>Voeg links een oefening toe om te beginnen.</p>
                 </div>
               )}
-              {/* Place every cell EXPLICITLY on the row the packer chose. Auto-placement
-                  lets the browser backfill a gap in an earlier row, which silently moves a
-                  block away from the row the pagination was costed against. Rows stay
-                  `auto` height so content (and ScaledBlock's zoom) still sizes them.
-                  Keep each item's position WITHIN its row: only a block that has a
-                  neighbour to its left gets the column rule, so the setting is a no-op
-                  on a single-column sheet instead of drawing a stray line down the page. */}
-              {page.rows.flatMap((row, ri) => {
-                let start = 0;
-                return row.items.map((item, i) => {
-                  const placed = { item, rowIndex: ri, start, firstInRow: i === 0 };
-                  start += item.width;
-                  return placed;
-                });
-              }).map(({ item, rowIndex, start, firstInRow }) => {
+              {/* Place every cell EXACTLY where the packer put it: left/top in px, width
+                  from its column units, height its own. Nothing flows, so the browser can
+                  never move a block away from the position the pagination was costed
+                  against — and the page on screen is the page on paper.
+                  Only a block that does not start at the left edge has a neighbour beside
+                  it, so the column rule is a no-op on a single-column sheet instead of
+                  drawing a stray line down the page. */}
+              {page.blocks.map((item) => {
                 // Horizontal twin of the page's own overflow banner: a page that runs long
                 // outlines itself and says by how much, but a cell wider than its column
                 // clipped in silence (print hides the overflow, so nobody saw it until
@@ -820,12 +824,13 @@ export default function App() {
                   key={item.block.id}
                   data-block-id={item.block.id}
                   data-width={item.width}
-                  className={!firstInRow && docSettings.showColumnDividers ? 'col-divider' : undefined}
+                  className={item.x > 0 && docSettings.showColumnDividers ? 'col-divider' : undefined}
                   style={{
-                    gridRow: rowIndex + 1,
-                    gridColumn: `${start + 1} / span ${item.width}`,
+                    position: 'absolute',
+                    left: `${cellLeft(item.x)}px`,
+                    top: `${item.y}px`,
+                    width: `${cellWidth(item.w)}px`,
                     minWidth: 0,
-                    position: 'relative',
                     // The rule is centred in the gutter, which is the COLUMN gap.
                     ['--col-gap' as string]: `${colGapPx}px`,
                   }}
