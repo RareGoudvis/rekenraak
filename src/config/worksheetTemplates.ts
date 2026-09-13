@@ -1,7 +1,9 @@
 import type { MathBlock, FooterData } from '../services/math/types';
 import type { WorksheetFile } from '../services/persistence';
+import type { BlockConstraints } from '../services/math/constraintTypes';
 import type { Leerjaar } from './gradePresets';
 import { REGISTRY } from './exerciseRegistry';
+import { resolveInstruction } from './instructionPresets';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderData, type DocSettings } from '../store/useWorksheetStore';
 
 // A curated, ready-made worksheet shown in the "Kant-en-klare bladen" library.
@@ -25,17 +27,20 @@ interface BlockSpec { typeId: string; label: string; constraints?: Record<string
 function buildBlock(spec: BlockSpec): MathBlock {
     const def = REGISTRY[spec.typeId];
     const defaults = def ? def.defaultConstraints(spec.typeId) : {};
+    const constraints = { ...defaults, ...(spec.constraints ?? {}) } as BlockConstraints;
     return {
         id: Math.random().toString(36).substring(2, 9),
         typeId: spec.typeId,
-        instructionText: `${spec.label}:`,
+        // Curated templates don't carry a leafId, so this falls through to the typeId-level
+        // default (see resolveInstruction) — still a real task instead of the old "<label>:".
+        instructionText: resolveInstruction(undefined, spec.typeId, spec.label, constraints),
         instructionMode: 'geen',
         layoutPreset: 'inline-short',
         steppedLines: 3,
         numberOfExercises: spec.count ?? (def ? def.defaultCount : 10),
         totalPoints: 5,
         verticalSpacing: 14,
-        constraints: { ...defaults, ...(spec.constraints ?? {}) },
+        constraints,
         exercises: [],
     };
 }

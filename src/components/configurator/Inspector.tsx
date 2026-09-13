@@ -3,6 +3,7 @@ import { minWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
 import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
+import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { ArrowUp, ArrowDown, Sparkle as Sparkles, WarningCircle, Info } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
@@ -434,7 +435,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 onChange={(e) => { if (e.target.value) updateBlockInstruction(activeBlock.id, e.target.value); }}
                             >
                                 <option value="">Standaardtekst…</option>
-                                {suggestionsFor(activeBlock.typeId).map((t) => (
+                                {suggestionsFor(activeBlock.typeId, activeBlock.leafId, activeBlock.constraints as BlockConstraints).map((t) => (
                                     <option key={t} value={t}>{t}</option>
                                 ))}
                             </select>

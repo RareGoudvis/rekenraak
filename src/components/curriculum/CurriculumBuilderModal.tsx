@@ -4,7 +4,9 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { EXERCISE_UI } from '../../config/exerciseUI';
+import { resolveInstruction } from '../../config/instructionPresets';
 import { encodeShareLink } from '../../services/persistence';
+import type { BlockConstraints } from '../../services/math/constraintTypes';
 import type { MathBlock } from '../../services/math/types';
 import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
@@ -83,10 +85,16 @@ export default function CurriculumBuilderModal({ onClose }: Props) {
         const allowedTypes = includedItems.map(item => {
             const draft = draftFor(item.typeId);
             const variant = chosenVariant(item);
+            const label = item.variants.length > 1 ? variant.label : item.label;
+            const lockedConstraints = draft ? draft.constraints : {};
             return {
                 typeId: item.typeId,
-                label: item.variants.length > 1 ? variant.label : item.label,
-                lockedConstraints: draft ? draft.constraints : {},
+                label,
+                lockedConstraints,
+                leafId: variant.key,
+                // A function-valued instruction can't survive JSON — freeze it to the line it
+                // resolves to for THESE locked constraints now, at authoring time.
+                instruction: resolveInstruction(variant.instruction, item.typeId, label, lockedConstraints as BlockConstraints),
             };
         });
         const link = encodeShareLink(

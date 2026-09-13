@@ -5,9 +5,18 @@ import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
 import { GRADE_PRESETS, type Leerjaar } from '../config/gradePresets';
-import { defaultInstructionFor } from '../config/instructionPresets';
+import { resolveInstruction } from '../config/instructionPresets';
+import type { InstructionFn } from '../config/appstructure';
 import { generateMixedOne, mixedKey } from '../services/math/mixedGenerator';
 import type { BlockConstraints, MixedVariantId } from '../services/math/constraintTypes';
+
+// The leaf's own default opdracht-titel, passed down from wherever a block is added
+// (sidebar click, mass-add, a curriculum lock, the dev hook) — see appstructure.ts's
+// LeafExercise.instruction and instructionPresets.ts's resolveInstruction.
+export interface AddBlockOpts {
+    leafId?: string;
+    instruction?: string | InstructionFn;
+}
 
 export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
 
@@ -106,7 +115,7 @@ interface WorksheetState {
     debugIgnoreMinWidth: boolean;
     _history: MathBlock[][];
     _historyIndex: number;
-    addBlockFromType: (typeId: string, label: string, overrideConstraints?: Record<string, unknown>) => void;
+    addBlockFromType: (typeId: string, label: string, overrideConstraints?: Record<string, unknown>, opts?: AddBlockOpts) => void;
     removeBlock: (id: string) => void;
     clearBlocks: () => void;
     moveBlockUp: (id: string) => void;
@@ -248,7 +257,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         blocks: state.blocks.map(b => (b.id === id ? { ...b, generationNote: note } : b)),
     })),
 
-    addBlockFromType: (typeId, label, overrideConstraints) => set((state) => {
+    addBlockFromType: (typeId, label, overrideConstraints, opts) => set((state) => {
         // All per-type defaults live in the registry. The appstructure leaf's
         // defaultConstraints (e.g. { numberType:'decimal' }) arrive as
         // overrideConstraints and are merged on top.
@@ -258,11 +267,13 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         // Order matters: registry defaults → base snapshot → leaf override, so a
         // leaf that pins a value (e.g. splitsen-basis maxGetal:10) always wins.
         const baseSnapshot = def ? baseApply(state.baseSettings, defaultConstraints) : {};
+        const mergedConstraints = { ...defaultConstraints, ...baseSnapshot, ...overrideConstraints } as BlockConstraints;
 
         const newBlock: MathBlock = {
             id: Math.random().toString(36).substring(2, 9),
             typeId,
-            instructionText: defaultInstructionFor(typeId, label),
+            leafId: opts?.leafId,
+            instructionText: resolveInstruction(opts?.instruction, typeId, label, mergedConstraints),
             instructionMode: 'geen',
             layoutPreset: 'inline-short',
             steppedLines: 3,
@@ -271,7 +282,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             // Writing room between exercises. 14 was tight for a 7-year-old's handwriting;
             // teachers can still dial it 8-40 per block under Opmaak.
             verticalSpacing: 18,
-            constraints: { ...defaultConstraints, ...baseSnapshot, ...overrideConstraints },
+            constraints: mergedConstraints,
             exercises: []
         };
 

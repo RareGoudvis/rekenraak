@@ -1,4 +1,4 @@
-import { APP_STRUCTURE } from './appstructure';
+import { APP_STRUCTURE, type InstructionFn } from './appstructure';
 import { REGISTRY } from './exerciseRegistry';
 
 // ── Flat, addable catalog of every IMPLEMENTED exercise type ──────────────────
@@ -11,6 +11,7 @@ export interface CatalogVariant {
     key: string;                              // leaf.id — stable, unique
     label: string;                            // variant display label
     constraints: Record<string, unknown>;     // leaf.defaultConstraints (the override)
+    instruction?: string | InstructionFn;     // leaf.instruction — the block's default opdracht-titel
 }
 
 export interface CatalogItem {
@@ -28,6 +29,7 @@ interface RawLeaf {
     leafId: string;
     leafLabel: string;
     constraints: Record<string, unknown>;
+    instruction?: string | InstructionFn;
     parentLabel: string | null;   // accordion parent label, null for direct leaves
     subdomainLabel: string;
     domainId: string;
@@ -51,6 +53,7 @@ function collectLeaves(): RawLeaf[] {
                         leaves.push({
                             typeId: leaf.typeId, leafId: leaf.id, leafLabel: leaf.label,
                             constraints: leaf.defaultConstraints ?? {},
+                            instruction: leaf.instruction,
                             parentLabel: type.label, subdomainLabel: sub.label,
                             domainId: domain.id, domainLabel: domain.label, accentVar: domain.accentVar,
                         });
@@ -59,6 +62,7 @@ function collectLeaves(): RawLeaf[] {
                     leaves.push({
                         typeId: type.typeId, leafId: type.id, leafLabel: type.label,
                         constraints: type.defaultConstraints ?? {},
+                        instruction: type.instruction,
                         parentLabel: null, subdomainLabel: sub.label,
                         domainId: domain.id, domainLabel: domain.label, accentVar: domain.accentVar,
                     });
@@ -103,6 +107,7 @@ export function buildCatalog(): CatalogItem[] {
                 key: l.leafId,
                 label: multiParent && l.parentLabel ? `${l.parentLabel} · ${l.leafLabel}` : l.leafLabel,
                 constraints: l.constraints,
+                instruction: l.instruction,
             })),
         });
     }
