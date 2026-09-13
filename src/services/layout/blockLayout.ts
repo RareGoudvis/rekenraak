@@ -240,6 +240,12 @@ const VETO_MIN: Record<string, WidthUnits> = {
     "oppervlakte": 4,
     "kalender": 2,
     "geld-teruggeven": 2,
+    // Round 4 owner pass: at a quarter the draw-the-amount boxes are ~17mm and the wissel
+    // rows lose the coin/note glyphs a child has to compare — numerically they fit, but
+    // neither is usable on paper. Half is the floor for both; the packer clamps a stored
+    // quarter back up and the picker greys it out.
+    "geld-tekenen": 2,
+    "geld-wissel": 2,
     // Owner rule (round 3): the hulptabel overflowed at a half and these blocks rarely
     // pair with others, so herleidingen stays simple — full width only.
     "herleidingen": 4,

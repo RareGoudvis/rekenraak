@@ -134,6 +134,13 @@ describe('pickerMinWidthUnits — the optimistic picker (round 4)', () => {
         expect(pickerMinWidthUnits(block, measure(300, 1))).toBe(2);
     });
 
+    test('geld tekenen/wissel never offer a quarter (round 4 owner pass)', () => {
+        expect(pickerMinWidthUnits(makeBlock('geld-tekenen'), measure(10, 1))).toBe(2);
+        expect(pickerMinWidthUnits(makeBlock('geld-wissel'), measure(10, 1))).toBe(2);
+        expect(minWidthUnits(makeBlock('geld-tekenen'), measure(10, 1))).toBe(2);
+        expect(minWidthUnits(makeBlock('geld-wissel'), measure(10, 1))).toBe(2);
+    });
+
     test('the editorial floor still greys tiers out', () => {
         expect(pickerMinWidthUnits(makeBlock('getallenas'), measure(10, 1))).toBe(4);
         expect(pickerMinWidthUnits(makeBlock('mab-herkennen'), measure(10, 1))).toBe(2);
