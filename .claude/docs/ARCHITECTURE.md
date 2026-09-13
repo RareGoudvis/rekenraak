@@ -790,7 +790,11 @@ both `onCellMeasure` and the tail measurement it depends on.
 
 ### Print mechanics
 
-- **[usePrint.ts](../../src/hooks/usePrint.ts)** — `handlePrint(withSolutions)`: deselects the
+- **[usePrint.ts](../../src/hooks/usePrint.ts)** — `usePrint(beforeFirstPrint?)`: the first
+  print per browser (`rekenraak_print_hint_seen_v1` absent) hands a continuation to App, which
+  shows [PrintHintModal.tsx](../../src/components/layout/PrintHintModal.tsx) ("Zet Marges op
+  Geen") and prints on "Begrepen"; the button and the intercepted Ctrl+P both pass that gate.
+  `handlePrint(withSolutions)`: deselects the
   active block, optionally flips `showSolutions`, injects a dynamic `<style>` that blanks the
   browser's `@page` header/footer margin boxes, then `window.print()` after **two** animation
   frames — deselecting changes a block's height, so the dialog must not open before the
@@ -982,7 +986,8 @@ src/
 │   ├── kalender/kalenderGenerator.ts           # month grid / date arithmetic / notatie (nl-BE names)
 │   ├── controleren/controlerenGenerator.ts     # negenproef + omgekeerde bewerking (negenrest)
 │   ├── weegschaal/weegschaalGenerator.ts       # dial values on the schaalverdeling (BEREIK_STEPS, formatGewicht)
-│   └── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES
+│   ├── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES + buildScenario (one niveau scenario for both modes)
+│   └── vormleer/scenarioLayout.ts              # layoutScenario(): viewBox geometry + collision-free label placement for punt-lijn figures (asserted by vormleer.test.ts)
 └── components/
     ├── layout/
     │   ├── SheetDropZones.tsx  # the three labelled drop thirds over every candidate block during a drag + SheetDragHint strip (screen only)
