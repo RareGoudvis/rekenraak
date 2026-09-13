@@ -14,7 +14,6 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
-// headerFs stays a raw px shrink-to-fit value (JS layout math against a fixed-px column width, not a static style).
 
 export default function AfrondenViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
@@ -52,8 +51,10 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                             {showSolutions
                                 ? <span style={{ ...solutionText, minWidth: '58px' }}>{formatMathNumber(roundTo(ex.number ?? 0, t.weight))}</span>
                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: '58px', height: '15px', display: 'inline-block' }} />}
-                            {/* nowrap + trimmed min-widths so the long 'tienduizendtal' hint doesn't wrap the 2-up row */}
-                            <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', color: '#555', whiteSpace: 'nowrap' }}>(op {t.label})</span>
+                            {/* t.key ('T', 'H', 'E', 't', ...) instead of the full Dutch label — short
+                                enough to never wrap the 2-up row on its own, so the nowrap trick that
+                                held 'tienduizendtal' is no longer needed. */}
+                            <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', color: '#555' }}>({t.key})</span>
                         </div>
                     );
                 })}
@@ -72,9 +73,6 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     const roosterW = numberColPx + targets.length * targetColPx;
     const roosterCols = roosterW * 2 + ROOSTER_GAP <= A4_CONTENT_PX ? 2 : 1;
     const grid = `${numberColPx}px ${targets.map(() => `${targetColPx}px`).join(' ')}`;
-    // Long headers like "op tienduizendtal" shrink to stay inside their column.
-    const maxLabelLen = Math.max(...targets.map(t => t.label.length)) + 3;
-    const headerFs = Math.max(9, Math.min(11, Math.floor(targetColPx / (maxLabelLen * 0.62))));
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '32px', display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box',
@@ -89,8 +87,9 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                 <div key={ex.id} className="print-exercise" style={{ width: 'fit-content' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: grid }}>
                         <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>afronden</div>
-                        {/* Long headers ("op tienduizendtal") may wrap to 2 lines inside the 32px cell */}
-                        {targets.map(t => <div key={t.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: `${headerFs}px`, textAlign: 'center', lineHeight: 1.15 }}>op {t.label}</div>)}
+                        {/* t.key ('T', 'H', 'E', 't', ...) instead of "op <label>" — short enough that
+                            it never needs its own shrink-to-fit, unlike the old "op tienduizendtal". */}
+                        {targets.map(t => <div key={t.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{t.key}</div>)}
                     </div>
                     {(ex.numbers || []).map((num, i) => (
                         <div key={i} style={{ display: 'grid', gridTemplateColumns: grid }}>
