@@ -53,7 +53,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -62,7 +62,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -71,7 +71,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -80,7 +80,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -89,7 +89,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -98,7 +98,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -107,7 +107,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -116,7 +116,7 @@
       "rows": null,
       "perRowFull": null,
       "rowUnits": 0,
-      "count": 2,
+      "count": 4,
       "hDefault": 240,
       "hSingle": 240
     },
@@ -157,8 +157,7 @@
       "hSingle": 188
     },
     "geld-tekenen": {
-      "minWidth": 2,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
       "rowUnits": 5.83,
@@ -167,8 +166,7 @@
       "hSingle": 204
     },
     "geld-wissel": {
-      "minWidth": 2,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rows": 2,
       "perRowFull": 2,
       "rowUnits": 5.58,
@@ -288,9 +286,9 @@
       "minWidth": 4,
       "rows": 6,
       "perRowFull": 1,
-      "rowUnits": 21.42,
+      "rowUnits": 12.69,
       "count": 6,
-      "hDefault": 3140,
+      "hDefault": 2093,
       "hSingle": 570
     },
     "temperatuur": {
@@ -367,7 +365,7 @@
       "hSingle": 106
     },
     "verbanden": {
-      "minWidth": 4,
+      "minWidth": 2,
       "rows": null,
       "perRowFull": null,
       "rowUnits": 1.36,
@@ -388,19 +386,19 @@
       "minWidth": 1,
       "rows": 8,
       "perRowFull": 1,
-      "rowUnits": 1.58,
+      "rowUnits": 2.67,
       "count": 8,
-      "hDefault": 368,
-      "hSingle": 102
+      "hDefault": 576,
+      "hSingle": 128
     },
     "geld-rekenen": {
-      "minWidth": 4,
+      "minWidth": 2,
       "rows": 5,
       "perRowFull": 1,
       "rowUnits": 1.5,
       "count": 5,
-      "hDefault": 294,
-      "hSingle": 150
+      "hDefault": 296,
+      "hSingle": 152
     },
     "rekenvolgorde": {
       "minWidth": 2,
@@ -475,7 +473,7 @@
       "hSingle": 146
     },
     "tijdsduur": {
-      "minWidth": 4,
+      "minWidth": 2,
       "rows": 6,
       "perRowFull": 1,
       "rowUnits": 1.5,
@@ -506,9 +504,9 @@
       "minWidth": 4,
       "rows": 4,
       "perRowFull": 1,
-      "rowUnits": 18.15,
+      "rowUnits": 12.38,
       "count": 4,
-      "hDefault": 1798,
+      "hDefault": 1382,
       "hSingle": 491
     },
     "weegschaal": {
@@ -913,7 +911,7 @@
       "typeId": "cijferen-optellen-nat",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -937,7 +935,19 @@
       "typeId": "cijferen-optellen-nat",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 410,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-optellen-nat",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
@@ -947,26 +957,14 @@
     },
     {
       "typeId": "cijferen-optellen-nat",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-optellen-nat",
       "width": 1,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 410,
+      "cellHeight": 750,
       "rowCount": 0
     },
     {
@@ -985,7 +983,7 @@
       "typeId": "cijferen-optellen-dec",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -1009,7 +1007,19 @@
       "typeId": "cijferen-optellen-dec",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 410,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-optellen-dec",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
@@ -1019,26 +1029,14 @@
     },
     {
       "typeId": "cijferen-optellen-dec",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-optellen-dec",
       "width": 1,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 410,
+      "cellHeight": 750,
       "rowCount": 0
     },
     {
@@ -1057,7 +1055,7 @@
       "typeId": "cijferen-aftrekken-nat",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -1081,7 +1079,19 @@
       "typeId": "cijferen-aftrekken-nat",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 410,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-aftrekken-nat",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
@@ -1091,26 +1101,14 @@
     },
     {
       "typeId": "cijferen-aftrekken-nat",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-aftrekken-nat",
       "width": 1,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 410,
+      "cellHeight": 750,
       "rowCount": 0
     },
     {
@@ -1129,7 +1127,7 @@
       "typeId": "cijferen-aftrekken-dec",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -1153,7 +1151,19 @@
       "typeId": "cijferen-aftrekken-dec",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 410,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-aftrekken-dec",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
@@ -1163,26 +1173,14 @@
     },
     {
       "typeId": "cijferen-aftrekken-dec",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-aftrekken-dec",
       "width": 1,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 410,
+      "cellHeight": 750,
       "rowCount": 0
     },
     {
@@ -1201,7 +1199,7 @@
       "typeId": "cijferen-vermenigvuldigen-nat",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -1225,40 +1223,40 @@
       "typeId": "cijferen-vermenigvuldigen-nat",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-vermenigvuldigen-nat",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-vermenigvuldigen-nat",
-      "width": 1,
-      "mode": "default",
-      "count": 2,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
       "cellHeight": 410,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-nat",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 240,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-vermenigvuldigen-nat",
+      "width": 1,
+      "mode": "default",
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 750,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-vermenigvuldigen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1273,7 +1271,7 @@
       "typeId": "cijferen-vermenigvuldigen-dec",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -1297,40 +1295,40 @@
       "typeId": "cijferen-vermenigvuldigen-dec",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-vermenigvuldigen-dec",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-vermenigvuldigen-dec",
-      "width": 1,
-      "mode": "default",
-      "count": 2,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
       "cellHeight": 410,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-vermenigvuldigen-dec",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 240,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-vermenigvuldigen-dec",
+      "width": 1,
+      "mode": "default",
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 750,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-vermenigvuldigen-dec",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1345,7 +1343,7 @@
       "typeId": "cijferen-delen-nat",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -1369,40 +1367,40 @@
       "typeId": "cijferen-delen-nat",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-delen-nat",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-delen-nat",
-      "width": 1,
-      "mode": "default",
-      "count": 2,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
       "cellHeight": 410,
       "rowCount": 0
     },
     {
       "typeId": "cijferen-delen-nat",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 240,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-delen-nat",
+      "width": 1,
+      "mode": "default",
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 750,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-delen-nat",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1417,7 +1415,7 @@
       "typeId": "cijferen-delen-dec",
       "width": 4,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 688,
@@ -1441,36 +1439,36 @@
       "typeId": "cijferen-delen-dec",
       "width": 2,
       "mode": "default",
-      "count": 2,
+      "count": 4,
       "overflow": 1,
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-delen-dec",
-      "width": 2,
-      "mode": "single",
-      "count": 1,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 338,
-      "clientWidth": 338,
-      "cellHeight": 240,
-      "rowCount": 0
-    },
-    {
-      "typeId": "cijferen-delen-dec",
-      "width": 1,
-      "mode": "default",
-      "count": 2,
-      "overflow": 1,
-      "zoom": 1,
-      "scrollWidth": 163,
-      "clientWidth": 163,
       "cellHeight": 410,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-delen-dec",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 240,
+      "rowCount": 0
+    },
+    {
+      "typeId": "cijferen-delen-dec",
+      "width": 1,
+      "mode": "default",
+      "count": 4,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 750,
       "rowCount": 0
     },
     {
@@ -1662,8 +1660,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 553,
-      "rowCount": 3
+      "cellHeight": 879,
+      "rowCount": 5
     },
     {
       "typeId": "splitsen",
@@ -1806,8 +1804,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 344,
-      "rowCount": 2
+      "cellHeight": 484,
+      "rowCount": 3
     },
     {
       "typeId": "geld-tekenen",
@@ -1826,12 +1824,12 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.8282,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 298,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 368,
-      "rowCount": 2
+      "cellHeight": 928,
+      "rowCount": 6
     },
     {
       "typeId": "geld-tekenen",
@@ -1878,8 +1876,8 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 332,
-      "rowCount": 2
+      "cellHeight": 600,
+      "rowCount": 4
     },
     {
       "typeId": "geld-wissel",
@@ -1898,12 +1896,12 @@
       "width": 1,
       "mode": "default",
       "count": 4,
-      "overflow": 1.5276,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 249,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 356,
-      "rowCount": 2
+      "cellHeight": 624,
+      "rowCount": 4
     },
     {
       "typeId": "geld-wissel",
@@ -2790,7 +2788,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 3140,
+      "cellHeight": 2093,
       "rowCount": 6
     },
     {
@@ -2814,7 +2812,7 @@
       "zoom": 1,
       "scrollWidth": 462,
       "clientWidth": 338,
-      "cellHeight": 3140,
+      "cellHeight": 2093,
       "rowCount": 6
     },
     {
@@ -2838,7 +2836,7 @@
       "zoom": 1,
       "scrollWidth": 462,
       "clientWidth": 163,
-      "cellHeight": 3164,
+      "cellHeight": 2117,
       "rowCount": 6
     },
     {
@@ -3458,9 +3456,9 @@
       "width": 2,
       "mode": "default",
       "count": 8,
-      "overflow": 1.7751,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 338,
       "clientWidth": 338,
       "cellHeight": 374,
       "rowCount": 0
@@ -3470,9 +3468,9 @@
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1.7751,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 338,
       "clientWidth": 338,
       "cellHeight": 146,
       "rowCount": 0
@@ -3482,9 +3480,9 @@
       "width": 1,
       "mode": "default",
       "count": 8,
-      "overflow": 3.681,
+      "overflow": 1.5706,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 256,
       "clientWidth": 163,
       "cellHeight": 374,
       "rowCount": 0
@@ -3494,9 +3492,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 3.681,
+      "overflow": 1.5706,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 256,
       "clientWidth": 163,
       "cellHeight": 146,
       "rowCount": 0
@@ -3582,7 +3580,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 368,
+      "cellHeight": 576,
       "rowCount": 8
     },
     {
@@ -3594,7 +3592,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 102,
+      "cellHeight": 128,
       "rowCount": 1
     },
     {
@@ -3606,7 +3604,7 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 592,
+      "cellHeight": 576,
       "rowCount": 8
     },
     {
@@ -3618,7 +3616,7 @@
       "zoom": 1,
       "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 134,
+      "cellHeight": 128,
       "rowCount": 1
     },
     {
@@ -3630,7 +3628,7 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 828,
+      "cellHeight": 780,
       "rowCount": 8
     },
     {
@@ -3642,7 +3640,7 @@
       "zoom": 1,
       "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 178,
+      "cellHeight": 172,
       "rowCount": 1
     },
     {
@@ -3654,7 +3652,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 294,
+      "cellHeight": 296,
       "rowCount": 6
     },
     {
@@ -3666,7 +3664,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 150,
+      "cellHeight": 152,
       "rowCount": 2
     },
     {
@@ -3674,11 +3672,11 @@
       "width": 2,
       "mode": "default",
       "count": 5,
-      "overflow": 1.7751,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 294,
+      "cellHeight": 296,
       "rowCount": 6
     },
     {
@@ -3686,11 +3684,11 @@
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1.7751,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 150,
+      "cellHeight": 152,
       "rowCount": 2
     },
     {
@@ -3698,11 +3696,11 @@
       "width": 1,
       "mode": "default",
       "count": 5,
-      "overflow": 3.681,
+      "overflow": 1.865,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 304,
       "clientWidth": 163,
-      "cellHeight": 294,
+      "cellHeight": 296,
       "rowCount": 6
     },
     {
@@ -3710,11 +3708,11 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 3.681,
+      "overflow": 1.865,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 304,
       "clientWidth": 163,
-      "cellHeight": 150,
+      "cellHeight": 152,
       "rowCount": 2
     },
     {
@@ -4322,9 +4320,9 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.7751,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 338,
       "clientWidth": 338,
       "cellHeight": 330,
       "rowCount": 7
@@ -4334,9 +4332,9 @@
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1.7751,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 338,
       "clientWidth": 338,
       "cellHeight": 150,
       "rowCount": 2
@@ -4346,9 +4344,9 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 3.681,
+      "overflow": 1.454,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 237,
       "clientWidth": 163,
       "cellHeight": 330,
       "rowCount": 7
@@ -4358,9 +4356,9 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 3.681,
+      "overflow": 1.2331,
       "zoom": 1,
-      "scrollWidth": 600,
+      "scrollWidth": 201,
       "clientWidth": 163,
       "cellHeight": 150,
       "rowCount": 2
@@ -4518,7 +4516,7 @@
       "zoom": 1,
       "scrollWidth": 688,
       "clientWidth": 688,
-      "cellHeight": 1798,
+      "cellHeight": 1382,
       "rowCount": 4
     },
     {
@@ -4542,7 +4540,7 @@
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 338,
-      "cellHeight": 1798,
+      "cellHeight": 1382,
       "rowCount": 4
     },
     {
@@ -4566,7 +4564,7 @@
       "zoom": 1,
       "scrollWidth": 382,
       "clientWidth": 163,
-      "cellHeight": 1876,
+      "cellHeight": 1460,
       "rowCount": 4
     },
     {
