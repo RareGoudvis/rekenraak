@@ -22,6 +22,7 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `pagePacker.test.ts` | Placement rules: join a row, start a row, exact fit, page flush, `pageBreakBefore`, spanning blocks, min-width promotion, `pageIndexByBlock`. Written against `COL_UNITS` / `ROW_BUDGET`, never literal 6/36, so it survives the grid change. |
 | `persistence.test.ts` | File round-trip, version gate (a newer file throws in Dutch), malformed input, share-link encode/decode, template stripping, curriculum lock, size backstop. |
 | `store.test.ts` | Block order: `swapBlocks` (trade places, no-ops, history, curriculum lock) and the insert-before compensation both drag surfaces apply to `reorderBlocks`. jsdom — the store touches `localStorage` on import. |
+| `blockErrorBoundary.test.tsx` | The shared boundary: a throwing child renders the on-sheet message and logs, `fallback={null}` renders nothing, a `resetKey` change recovers; every `EXERCISE_UI` viewer is mounted with wrong-shaped exercise data and must never throw past the boundary (jsdom, `console.error` spy scoped). |
 | `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. |
 
 ## The generator matrix

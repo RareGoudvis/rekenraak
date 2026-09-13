@@ -447,6 +447,15 @@ viewers lay their items out through
   (exchange a bill), [GeldTeruggevenViewer](../../src/components/viewer/GeldTeruggevenViewer.tsx)
   (make change). Coins/bills are monochrome SVG (print-friendly).
 
+**Every viewer renders inside [BlockErrorBoundary](../../src/components/viewer/BlockErrorBoundary.tsx)**
+(since 2026-09-13): the sheet's block dispatch in App, `SheetThumbnail` and `ExercisePreview` wrap only
+the `Viewer`, so a crashing viewer keeps its title row, badge and number and shows a `.no-print` line
+"Kon dit blok niet tekenen — klik Genereer" (thumbnail: a gap; preview: "Voorbeeld niet beschikbaar")
+instead of blanking the whole sheet. `componentDidCatch` logs `[rekenraak] viewer crashed: <typeId>`.
+`resetKey` is the block's exercise-array reference, so Genereer (which swaps that array) clears a
+tripped boundary. The fallback is `minWidth: 0` + wrapping text so it never pins the intrinsic-width
+probe (§9). `viewers.smoke.test.tsx` deliberately renders without it, so real errors still fail tests.
+
 **SVG figures follow the Lettergrootte sliders** (since 2026-09-13; clock faces, weegschaal
 dial, thermometer, vormleer drawings, MAB glyphs, fraction shapes, coins and bills). The
 mechanism is the same everywhere: the px geometry stays as the `viewBox`, the element is
@@ -911,6 +920,7 @@ src/
         ├── BlockWidthContext.tsx       # printable width of the block's CELL — viewers MUST read this, never a constant
         ├── VerticalFraction.tsx        # shared stacked-fraction component
         ├── LayoutBlockViewer.tsx       # sheet furniture: sectie / schrijflijnen / raster / kader / lege pagina
+        ├── BlockErrorBoundary.tsx      # shared crash guard around every Viewer (sheet, thumbnail, preview); resets on the exercise array (§8)
         ├── ScaledBlock.tsx             # per-block body-zoom wrapper (bodyFontScale); fits to page height when constraints.fitToPage, to column width ONLY when constraints.fitToWidth (badge "verkleind tot N %")
         ├── scaledBlockFit.ts           # pure nextZoom()/FIT_FLOOR helper for ScaledBlock (tested)
         ├── solutionStyle.ts            # SOL / solutionText / solutionStroke — the one solution-red token (--ink-solution), bold
