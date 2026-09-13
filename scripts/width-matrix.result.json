@@ -485,7 +485,7 @@
       "hSingle": 154
     },
     "kalender": {
-      "minWidth": 4,
+      "minWidth": 2,
       "rows": 1,
       "perRowFull": 1,
       "rowUnits": null,
@@ -4395,11 +4395,11 @@
       "width": 2,
       "mode": "default",
       "count": 1,
-      "overflow": 1.1805,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 399,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 415,
+      "cellHeight": 434,
       "rowCount": 1
     },
     {
@@ -4407,11 +4407,11 @@
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1.1805,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 399,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 415,
+      "cellHeight": 434,
       "rowCount": 1
     },
     {
@@ -4419,11 +4419,11 @@
       "width": 1,
       "mode": "default",
       "count": 1,
-      "overflow": 2.4479,
+      "overflow": 1.7178,
       "zoom": 1,
-      "scrollWidth": 399,
+      "scrollWidth": 280,
       "clientWidth": 163,
-      "cellHeight": 415,
+      "cellHeight": 510,
       "rowCount": 1
     },
     {
@@ -4431,11 +4431,11 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 2.4479,
+      "overflow": 1.7178,
       "zoom": 1,
-      "scrollWidth": 399,
+      "scrollWidth": 280,
       "clientWidth": 163,
-      "cellHeight": 415,
+      "cellHeight": 510,
       "rowCount": 1
     },
     {
