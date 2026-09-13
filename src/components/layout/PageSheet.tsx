@@ -37,8 +37,10 @@ interface Props {
     /** Report one cell's rendered height and the block's intrinsic content width; the
         packer prefers both over its own per-type estimates. */
     onCellMeasure?: (blockId: string, width: number, px: number, intrinsicWidthPx?: number) => void;
-    /** Kept for the App contract; the hint is out of flow now, so it no longer needs a row. */
-    tailRow?: number;
+    /** Blank px under the page's skyline, as the PACKER sees it for the width of the next
+        page's first block. Given, it beats the measured tail: the packer knows exactly
+        where that block would land, the DOM can only say where the ink stops. */
+    tailPx?: number;
     /** Offer to split the block that starts the NEXT page, when this page ends in a big
         blank tail. Absent when there is no next page or its first block cannot be cut. */
     onSplitNext?: (tailPx: number, anchor: DOMRect) => void;
@@ -92,8 +94,13 @@ function ownHeight(cell: HTMLElement): number {
 export default function PageSheet({
     index, total, header, footer, contentGap, blockSpacing, columnGap, children, onBackgroundClick,
     onHeaderClick, onFooterClick, onBodyMeasure, onCellMeasure, onSplitNext, onFitBlock, onSplitBlock,
+    tailPx: packedTailPx,
 }: Props) {
     const bodyRef = useRef<HTMLDivElement>(null);
+    // The positioning layer for the cells. The body itself carries the side padding, and
+    // an absolutely positioned child resolves against its containing block's PADDING box —
+    // hung off the body directly, every cell would start 53px too far left.
+    const canvasRef = useRef<HTMLDivElement>(null);
     // The same pass that feeds real heights back to the packer also catches what it could
     // not prevent — a single block taller than one page. When that happens the page must
     // SAY so rather than clip in silence: print hides the overflow, and a teacher would
@@ -110,10 +117,9 @@ export default function PageSheet({
 
     useLayoutEffect(() => {
         const el = bodyRef.current;
-        if (!el) return;
+        const canvas = canvasRef.current;
+        if (!el || !canvas) return;
         const check = () => {
-            const over = el.scrollHeight - el.clientHeight;
-            setOverflowPx(over > 2 ? Math.round(over) : 0);
             // clientHeight is the body's usable box, not its content: it is the page budget.
             onBodyMeasure?.(index, el.clientHeight);
             // Measured on the GRID CELL — outside ScaledBlock's CSS zoom, so offsetHeight is
@@ -127,7 +133,7 @@ export default function PageSheet({
             let lastBottom = bodyRect.top;
             let tallestCell = 0;
             let tallestId: string | null = null;
-            for (const child of Array.from(el.children) as HTMLElement[]) {
+            for (const child of Array.from(canvas.children) as HTMLElement[]) {
                 const blockId = child.dataset.blockId;
                 const width = Number(child.dataset.width);
                 if (!blockId || !(width > 0)) continue;
@@ -139,13 +145,18 @@ export default function PageSheet({
                 lastBottom = Math.max(lastBottom, child.getBoundingClientRect().bottom);
             }
             setOversizeBlockId(tallestCell > el.clientHeight + 2 ? tallestId : null);
+            // Cells are positioned, so the body has no flow left to overflow and
+            // scrollHeight no longer answers this. The page runs over when the DEEPEST
+            // block ends past the body — which is also the number the banner should say.
+            const over = (lastBottom - bodyRect.bottom) / zoom;
+            setOverflowPx(over > 2 ? Math.round(over) : 0);
             const tail = (bodyRect.bottom - lastBottom) / zoom;
             setTailPx(prev => (Math.abs(prev - tail) > 2 ? Math.round(tail) : prev));
         };
         check();
         const ro = new ResizeObserver(check);
         ro.observe(el);
-        for (const child of Array.from(el.children)) ro.observe(child);
+        for (const child of Array.from(canvas.children)) ro.observe(child);
         return () => ro.disconnect();
     });
 
@@ -182,18 +193,21 @@ export default function PageSheet({
                 {onHeaderClick && <span className="no-print sheet-zone-hint">Koptekst aanpassen</span>}
             </div>
 
+            {/* rowGap / columnGap no longer lay anything out — the packer does — but they
+                stay declared so height-audit.mjs can check that the CSS and the packer
+                still agree on the spacing a teacher set. */}
             <div ref={bodyRef} className="page-sheet-body" style={{ rowGap: `${blockSpacing}px`, columnGap: `${columnGap}px` }}>
-                {children}
+                <div ref={canvasRef} className="page-sheet-canvas">{children}</div>
                 {/* Never automatic: the page says what it sees and the teacher decides.
-                    Absolutely positioned (see .page-tail-hint) so it adds nothing to the
-                    body's scrollHeight — in the grid it tripped the overflow banner. */}
-                {onSplitNext && tailPx > TAIL_HINT_PX && (
+                    Absolutely positioned (see .page-tail-hint) and outside the canvas, so
+                    it is never mistaken for a cell by the measure pass. */}
+                {onSplitNext && (packedTailPx ?? tailPx) > TAIL_HINT_PX && (
                     <div
                         className="no-print page-tail-hint"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <span>Het volgende blok past hier niet meer —</span>
-                        <button type="button" onClick={(e) => onSplitNext(tailPx, e.currentTarget.getBoundingClientRect())}>splitsen</button>
+                        <button type="button" onClick={(e) => onSplitNext(packedTailPx ?? tailPx, e.currentTarget.getBoundingClientRect())}>splitsen</button>
                     </div>
                 )}
             </div>

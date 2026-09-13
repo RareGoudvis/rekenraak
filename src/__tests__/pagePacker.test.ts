@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { packPages, pageIndexByBlock } from '../services/layout/pagePacker';
+import { packPages as packRaw, pageIndexByBlock, skylineSlot, type PackedPage, type PlacedBlock } from '../services/layout/pagePacker';
 import { COL_UNITS, ROW_BUDGET, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 import { cellWidthPx, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
@@ -20,13 +20,31 @@ function narrow(widthUnits: WidthUnits, count = 2, extra: Partial<Parameters<typ
     });
 }
 
-const flat = (pages: ReturnType<typeof packPages>) => pages.map(p => p.rows.map(r => r.items.map(i => i.block.id)));
+// Everything below the skyline suite is the REGRESSION GUARD: the rules the row layout
+// has always followed, re-run against 'rijen'. Skyline placement gets its own suite at the
+// bottom of the file, and the two must never be judged by the same expectations.
+const packPages = (blocks: Parameters<typeof packRaw>[0], opts: Parameters<typeof packRaw>[1] = {}) =>
+    packRaw(blocks, { mode: 'rijen', ...opts });
+
+// The old output was rows of items; the packer now returns placed blocks with a y. Blocks
+// that share a y ARE a row, so the row assertions keep their meaning.
+const rowsOf = (page: PackedPage): PlacedBlock[][] => {
+    const out: PlacedBlock[][] = [];
+    for (const b of page.blocks) {
+        const last = out[out.length - 1];
+        if (last && Math.abs(last[0].y - b.y) < 0.5) last.push(b);
+        else out.push([b]);
+    }
+    return out;
+};
+
+const flat = (pages: PackedPage[]) => pages.map(p => rowsOf(p).map(r => r.map(i => i.block.id)));
 
 describe('packPages', () => {
     test('empty input still yields one (empty) page', () => {
         const pages = packPages([]);
         expect(pages).toHaveLength(1);
-        expect(pages[0].rows).toHaveLength(0);
+        expect(pages[0].blocks).toHaveLength(0);
     });
 
     test('two half-width blocks share one row', () => {
@@ -45,12 +63,12 @@ describe('packPages', () => {
     test('exact fit: widths summing to COL_UNITS stay in one row, one more spills', () => {
         const perRow = COL_UNITS / HALF;
         const exact = Array.from({ length: perRow }, (_, i) => narrow(HALF, 2, { id: `e${i}` }));
-        expect(packPages(exact)[0].rows).toHaveLength(1);
+        expect(rowsOf(packPages(exact)[0])).toHaveLength(1);
 
         const oneMore = [...exact, narrow(HALF, 2, { id: 'spill' })];
-        const rows = packPages(oneMore)[0].rows;
+        const rows = rowsOf(packPages(oneMore)[0]);
         expect(rows).toHaveLength(2);
-        expect(rows[1].items.map(i => i.block.id)).toEqual(['spill']);
+        expect(rows[1].map(i => i.block.id)).toEqual(['spill']);
     });
 
     test('a full-width block never shares a row', () => {
@@ -82,10 +100,10 @@ describe('packPages', () => {
         for (const page of pages) {
             // A block taller than one page is capped and owns its page, so only pages with
             // more than one row are held to the budget.
-            if (page.rows.length > 1) expect(page.used).toBeLessThanOrEqual(ROW_BUDGET);
+            if (rowsOf(page).length > 1) expect(page.used).toBeLessThanOrEqual(ROW_BUDGET);
         }
         // Nothing may be lost or duplicated.
-        const placed = pages.flatMap(p => p.rows.flatMap(r => r.items.map(i => i.block.id)));
+        const placed = pages.flatMap(p => p.blocks.map(i => i.block.id));
         expect(placed).toEqual(blocks.map(b => b.id));
     });
 
@@ -94,7 +112,7 @@ describe('packPages', () => {
         const tall = narrow(COL_UNITS as WidthUnits, 200, { id: 'tall' });
         const after = narrow(HALF, 2, { id: 'after' });
         const pages = packPages([tall, after]);
-        const first = pages[0].rows[0].items[0];
+        const first = pages[0].blocks[0];
         expect(first.block.id).toBe('tall');
         expect(first.spans).toBe(true);
         expect(flat(pages)).toEqual([[['tall']], [['after']]]);
@@ -114,7 +132,7 @@ describe('packPages', () => {
             block: { widthUnits: HALF, numberOfExercises: 2 },
             id: 'wide',
         });
-        const item = packPages([wide])[0].rows[0].items[0];
+        const item = packPages([wide])[0].blocks[0];
         expect(item.width).toBe(COL_UNITS);
         expect(item.promoted).toBe(true);
     });
@@ -169,14 +187,14 @@ describe('packPages', () => {
             block: { widthUnits: 1 },
             id: 'wide',
         });
-        expect(packPages([wide])[0].rows[0].items[0].width).toBe(COL_UNITS);
-        expect(packPages([wide], { ignoreMinWidth: true })[0].rows[0].items[0].width).toBe(1);
+        expect(packPages([wide])[0].blocks[0].width).toBe(COL_UNITS);
+        expect(packPages([wide], { ignoreMinWidth: true })[0].blocks[0].width).toBe(1);
     });
 
     test('every packed row fits the column grid', () => {
         const blocks = Array.from({ length: 9 }, (_, i) => narrow(i % 3 === 0 ? (COL_UNITS as WidthUnits) : HALF, 3, { id: `b${i}` }));
         for (const page of packPages(blocks)) {
-            for (const row of page.rows) expect(row.width).toBeLessThanOrEqual(COL_UNITS);
+            for (const row of rowsOf(page)) expect(row.reduce((a, i) => a + i.width, 0)).toBeLessThanOrEqual(COL_UNITS);
         }
     });
 });
@@ -195,27 +213,27 @@ describe('packPages with a measured minWidthOf', () => {
         // that, as each in turn was measured or floored differently.)
         const a = makeBlock('getallenas', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
         const b = makeBlock('getallenas', { id: 'b', block: { widthUnits: 1, numberOfExercises: 3 } });
-        expect(packPages([a, b])[0].rows[0].items.map(i => i.width)).toEqual([COL_UNITS]);
+        expect(rowsOf(packPages([a, b])[0])[0].map(i => i.width)).toEqual([COL_UNITS]);
         const pages = packPages([a, b], { minWidthOf: () => 1 });
         expect(flat(pages)).toEqual([[['a', 'b']]]);
-        expect(pages[0].rows[0].items.every(i => i.width === 1 && !i.promoted)).toBe(true);
+        expect(pages[0].blocks.every(i => i.width === 1 && !i.promoted)).toBe(true);
     });
 
     test('the clamp only ever widens, and says so via `promoted`', () => {
         const a = makeBlock('rekenvolgorde', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
         // Feeding the chosen width back in changes nothing: max(asked, min) is idempotent,
         // so a repack on a fresh measurement cannot ping-pong between two widths.
-        const once = packPages([a], { minWidthOf: () => HALF })[0].rows[0].items[0];
+        const once = packPages([a], { minWidthOf: () => HALF })[0].blocks[0];
         expect(once.width).toBe(HALF);
         expect(once.promoted).toBe(true);
-        const twice = packPages([{ ...a, widthUnits: once.width }], { minWidthOf: () => HALF })[0].rows[0].items[0];
+        const twice = packPages([{ ...a, widthUnits: once.width }], { minWidthOf: () => HALF })[0].blocks[0];
         expect(twice.width).toBe(HALF);
         expect(twice.promoted).toBe(false);
     });
 
     test('ignoreMinWidth still beats the closure, for the width-matrix harness', () => {
         const a = makeBlock('rekenvolgorde', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
-        const item = packPages([a], { minWidthOf: () => COL_UNITS as WidthUnits, ignoreMinWidth: true })[0].rows[0].items[0];
+        const item = packPages([a], { minWidthOf: () => COL_UNITS as WidthUnits, ignoreMinWidth: true })[0].blocks[0];
         expect(item.width).toBe(1);
     });
 });
@@ -283,5 +301,122 @@ describe('cellWidthPx', () => {
 
     test('a wider gap makes every cell narrower', () => {
         expect(cellWidthPx(2, 28)).toBeLessThan(cellWidthPx(2, 12));
+    });
+});
+
+// ── Skyline ('aansluitend', the default) ─────────────────────────────────────
+// The layout the row packer could not do: a block drops into the lowest gap wide enough
+// for it, so the paper under a short block is used instead of wasted.
+describe('packPages in aansluitend mode', () => {
+    const BODY = 1000;
+    const GAP = 12;
+    // Heights per block id, so each case reads as the picture it describes.
+    const sky = (blocks: ReturnType<typeof narrow>[], h: Record<string, number>) =>
+        packRaw(blocks, {
+            blockSpacingPx: GAP,
+            pageBudgetPx: () => BODY,
+            heightPxOf: (b) => h[b.id],
+        });
+    const at = (page: PackedPage, id: string) => page.blocks.find(b => b.block.id === id)!;
+
+    test('a short block fills the space under its shorter neighbour (the review screenshot)', () => {
+        // Tall half left, short half right, another short half: the third belongs UNDER
+        // the second, not on a new row below the tall one.
+        const [a, b, c] = ['a', 'b', 'c'].map(id => narrow(HALF, 2, { id }));
+        const pages = sky([a, b, c], { a: 600, b: 200, c: 200 });
+        expect(pages).toHaveLength(1);
+        expect(at(pages[0], 'a')).toMatchObject({ x: 0, y: 0 });
+        expect(at(pages[0], 'b')).toMatchObject({ x: HALF, y: 0 });
+        expect(at(pages[0], 'c')).toMatchObject({ x: HALF, y: 200 + GAP });
+    });
+
+    test('equally low columns tie to the leftmost', () => {
+        const [a, b, c] = ['a', 'b', 'c'].map(id => narrow(HALF, 2, { id }));
+        const pages = sky([a, b, c], { a: 200, b: 200, c: 200 });
+        expect(at(pages[0], 'c')).toMatchObject({ x: 0, y: 200 + GAP });
+    });
+
+    test('a full-width block waits for the deepest column', () => {
+        const [a, b, c] = ['a', 'b', 'c'].map(id => narrow(HALF, 2, { id }));
+        const full = { ...c, widthUnits: COL_UNITS as WidthUnits };
+        const pages = sky([a, b, full], { a: 300, b: 100, c: 150 });
+        expect(at(pages[0], 'c')).toMatchObject({ x: 0, w: COL_UNITS, y: 300 + GAP });
+    });
+
+    test('a block that fits in only one column stays on the page', () => {
+        const [a, b, c] = ['a', 'b', 'c'].map(id => narrow(HALF, 2, { id }));
+        // Under `a` there is no room left; under `b` there is plenty.
+        const pages = sky([a, b, c], { a: 900, b: 50, c: 200 });
+        expect(pages).toHaveLength(1);
+        expect(at(pages[0], 'c')).toMatchObject({ x: HALF, y: 50 + GAP });
+    });
+
+    test('a block that fits under neither column goes to the next page', () => {
+        const [a, b, c] = ['a', 'b', 'c'].map(id => narrow(HALF, 2, { id }));
+        const pages = sky([a, b, c], { a: 900, b: 900, c: 200 });
+        expect(pages).toHaveLength(2);
+        expect(at(pages[1], 'c')).toMatchObject({ x: 0, y: 0 });
+    });
+
+    test('nothing is placed past the page budget, and nothing overlaps', () => {
+        const blocks = Array.from({ length: 14 }, (_, i) => narrow(i % 3 === 0 ? (COL_UNITS as WidthUnits) : HALF, 3, { id: `b${i}` }));
+        const heights = Object.fromEntries(blocks.map((b, i) => [b.id, 120 + (i % 5) * 90]));
+        const pages = sky(blocks, heights);
+        for (const page of pages) {
+            for (const p of page.blocks) {
+                expect(p.y).toBeGreaterThanOrEqual(0);
+                expect(p.y + p.h).toBeLessThanOrEqual(BODY + 0.5);
+                expect(p.x + p.w).toBeLessThanOrEqual(COL_UNITS);
+            }
+            // Two blocks that share a column may not share any y.
+            for (const p of page.blocks) for (const q of page.blocks) {
+                if (p === q) continue;
+                const columnsOverlap = p.x < q.x + q.w && q.x < p.x + p.w;
+                const rowsOverlap = p.y < q.y + q.h - 0.5 && q.y < p.y + p.h - 0.5;
+                expect(columnsOverlap && rowsOverlap).toBe(false);
+            }
+        }
+        // Reading order is array order, and y stays monotone within a column.
+        expect(pages.flatMap(p => p.blocks.map(b => b.block.id))).toEqual(blocks.map(b => b.id));
+    });
+
+    test('blockSpacing is charged between stacked blocks', () => {
+        const [a, b] = ['a', 'b'].map(id => narrow(COL_UNITS as WidthUnits, 2, { id }));
+        const h: Record<string, number> = { a: 200, b: 200 };
+        const tight = packRaw([a, b], { blockSpacingPx: 0, pageBudgetPx: () => BODY, heightPxOf: (x) => h[x.id] });
+        const airy = packRaw([a, b], { blockSpacingPx: 40, pageBudgetPx: () => BODY, heightPxOf: (x) => h[x.id] });
+        expect(at(tight[0], 'b').y).toBe(200);
+        expect(at(airy[0], 'b').y).toBe(240);
+    });
+
+    test('pageBreakBefore and spans behave as they do in rijen mode', () => {
+        const a = narrow(HALF, 2, { id: 'a' });
+        const broken = makeBlock('hr-std-optellen', {
+            constraints: { numberType: 'natural', maxGetal: 100 },
+            block: { widthUnits: HALF, numberOfExercises: 2, pageBreakBefore: true },
+            id: 'b',
+        });
+        const pages = packRaw([a, broken]);
+        expect(pages.map(p => p.blocks.map(b => b.block.id))).toEqual([['a'], ['b']]);
+
+        const tall = narrow(COL_UNITS as WidthUnits, 200, { id: 'tall' });
+        const after = narrow(HALF, 2, { id: 'after' });
+        const spanned = packRaw([tall, after]);
+        expect(spanned[0].blocks[0].spans).toBe(true);
+        expect(spanned.map(p => p.blocks.map(b => b.block.id))).toEqual([['tall'], ['after']]);
+    });
+
+    test('rijen keeps the hole the skyline fills', () => {
+        const [a, b, c] = ['a', 'b', 'c'].map(id => narrow(HALF, 2, { id }));
+        const h: Record<string, number> = { a: 600, b: 200, c: 200 };
+        const opts = { blockSpacingPx: GAP, pageBudgetPx: () => BODY, heightPxOf: (x: { id: string }) => h[x.id] };
+        expect(at(packRaw([a, b, c], { ...opts, mode: 'rijen' })[0], 'c').y).toBe(600 + GAP);
+        expect(at(packRaw([a, b, c], { ...opts, mode: 'aansluitend' })[0], 'c').y).toBe(200 + GAP);
+    });
+
+    test('skylineSlot answers where the next block of a width would go', () => {
+        expect(skylineSlot([600, 600, 200, 200], HALF, GAP)).toEqual({ x: HALF, y: 212 });
+        expect(skylineSlot([0, 0, 0, 0], COL_UNITS, GAP)).toEqual({ x: 0, y: 0 });
+        expect(skylineSlot([600, 600, 200, 200], COL_UNITS, GAP)).toEqual({ x: 0, y: 612 });
     });
 });
