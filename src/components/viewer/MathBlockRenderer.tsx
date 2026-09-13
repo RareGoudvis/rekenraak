@@ -6,7 +6,7 @@ import { formatMathNumber, opGlyph as printedOp } from '../../services/math/form
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { FULL_BLOCK_WIDTH_PX, useBlockWidth } from './BlockWidthContext';
+import { FULL_BLOCK_WIDTH_PX, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../services/math/constraintTypes';
 import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
@@ -126,6 +126,8 @@ function OperatorSwitch({ blockId, exerciseId, glyph, current, options }: {
 
 export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
+    // The math token in px, so the column widths below follow the Lettergrootte slider.
+    const sheetPx = useSheetSizePx('math');
     // Third sizing tier. A quarter-width cell is 163px (688 − 3×12 gap, ÷4), and the
     // "narrow" tier below still spends ~60px on column boxes and operator gaps that the
     // writing line needs. Below 200px everything that is air rather than ink gives way:
@@ -209,27 +211,48 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
     // longest formatted operand, and drop the 2-up grid to 1-up when two widened rows
     // no longer fit the printable width (A4 content ≈ 625px).
-    const CHAR_PX = 11.1; // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
+    // Azeret Mono's advance is 0.64em (11.06px measured in Chrome at the default 17.33px
+    // token), so the operand columns follow the Lettergrootte slider instead of freezing
+    // at 13pt the way a hardcoded 11.1 did.
+    const CHAR_PX = sheetPx * 0.64;
+    // What ONE VerticalFraction occupies: two stacked digit cells whose minWidth is
+    // (fontSize + 9)/17.33 em of the math token inside 4px of padding either side, plus the
+    // whole number of a mixed number. SYNC: VerticalFraction's cellMin and FractionDisplay's
+    // fontSize={15}. A digit there is not mono, so 0.62em is the (generous) advance.
+    const FRACTION_FONT_PX = 15;
+    const FRACTION_CELL_MIN_EM = (FRACTION_FONT_PX + 9) / 17.33;
+    const FRACTION_DIGIT_EM = 0.62;
+    const fractionPx = (f: Fraction): number => {
+        const digits = Math.max(String(f.n).length, String(f.d).length);
+        const stack = Math.max(FRACTION_CELL_MIN_EM, digits * FRACTION_DIGIT_EM) * sheetPx + 8;
+        const whole = f.whole ? String(f.whole).length * FRACTION_DIGIT_EM * sheetPx + 4 : 0;
+        return Math.ceil(stack + whole);
+    };
     let maxChars = 0;
     let maxAnswerChars = 0;
     let maxTerms = 2;
     let anyRemainder = false;
     let anyMissingTerm = false;
-    let anyFractionTerm = false;
+    let maxFractionPx = 0;
     for (const ex of block.exercises) {
         if (!ex?.operands) continue;
         maxTerms = Math.max(maxTerms, ex.operands.length);
         if (ex.remainder !== undefined) anyRemainder = true;
         for (const o of ex.operands) {
             if (typeof o === 'number') maxChars = Math.max(maxChars, formatMathNumber(o).length);
-            else if (isFraction(o)) anyFractionTerm = true;
+            else if (isFraction(o)) maxFractionPx = Math.max(maxFractionPx, fractionPx(o));
         }
         // With a missing operand the (red) solution renders inside the operand cell too.
         const hasMissing = ex.missingIndex !== undefined || ex.missingTerm === 'operand1' || ex.missingTerm === 'operand2';
         if (hasMissing) anyMissingTerm = true;
         if (hasMissing && typeof ex.answer === 'number') maxChars = Math.max(maxChars, formatMathNumber(ex.answer).length);
+        if (hasMissing && isFraction(ex.answer)) maxFractionPx = Math.max(maxFractionPx, fractionPx(ex.answer));
         if (typeof ex.answer === 'number') maxAnswerChars = Math.max(maxAnswerChars, formatMathNumber(ex.answer).length);
     }
+    // ONE term width for the whole block, fractions included. A block with a fraction used
+    // to fall back to intrinsic widths for every term, so "=" and the answer line wandered
+    // from row to row: 10/10 x 10/7 pushed them far right of 3/6 x 1/8.
+    const widestTermPx = Math.max(Math.ceil(maxChars * CHAR_PX), maxFractionPx);
     // The answer blank used to be a flat 75px whatever the answer was, so a block of
     // units and a block of thousands got the same line. It now follows the block's
     // WIDEST answer — one width for the whole block, never per exercise: a blank sized
@@ -244,12 +267,12 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const answerLinePx = tight
         ? Math.max(tightAnswerFloor, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
         : Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
-    const cellPx = Math.max(85, Math.ceil(maxChars * CHAR_PX) + 6);
+    const cellPx = Math.max(85, widestTermPx + 6);
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
     // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
     const compScaffoldOn = c.preset === 'compenseren'
         && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
-    const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : answerLinePx + 19;
+    const answerW = compScaffoldOn ? 175 + widestTermPx : answerLinePx + 19;
     // A met-rest row carries the help column, the "r" and the rest blank on top of the sum:
     // ~70px of help box + 8px gap + r + a 30px blank + the gaps around them.
     const MET_REST_EXTRA_PX = 160;
@@ -258,11 +281,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
     // workline, so what it really needs is writing room for a hand-written tussenstap.
     // That room scales with the block's widest operand instead of the fixed 94px field.
-    const worklineMinPx = Math.max(80, Math.ceil(maxChars * CHAR_PX) + 30);
+    const worklineMinPx = Math.max(80, widestTermPx + 30);
     // In the 2-up stepped grid the operand columns tighten — no 85px alignment floor and a
     // narrower operator gap — so the freed width goes to the work line instead. The wide
     // sizing stays everywhere else, where column alignment matters more than writing room.
-    const compactCellPx = Math.max(46, Math.ceil(maxChars * CHAR_PX) + 6);
+    const compactCellPx = Math.max(46, widestTermPx + 6);
     // 26, not 16: both operand cells are right-aligned, so a full-width number butts
     // straight against the operator unless the span carries its own padding either side.
     const COMPACT_OP_GAP = 26;
@@ -321,8 +344,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const MISSING_BLANK_PX = BLANK_W + 2 * BLANK_M;
     // Tight drops the alignment floor entirely: the box is exactly as wide as the block's
     // longest operand, so columns still line up but nothing is reserved for air.
-    const termBoxPx = anyFractionTerm ? undefined
-        : Math.max(anyMissingTerm ? MISSING_BLANK_PX : (tight ? 0 : compact ? 24 : 40), termPx(maxChars));
+    const termBoxPx = Math.max(anyMissingTerm ? MISSING_BLANK_PX : (tight ? 0 : compact ? 24 : 40), widestTermPx + 4);
     return (
         <FragmentableGrid
             cols={gridCols}

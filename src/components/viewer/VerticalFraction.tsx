@@ -16,8 +16,10 @@ const toMathFactor = (px: number): number => Math.round((px / 17.33) * 100) / 10
 // mixed numbers (e.g. 1¾). Single source for every vertical-fraction render.
 export default function VerticalFraction({ value, color, fontSize = 15, mono = false }: Props) {
     const hasWhole = value.whole !== undefined && value.whole > 0;
-    // cellMin stays raw px (layout geometry derived from the nominal size, not a font itself).
-    const cellMin = `${fontSize + 9}px`;
+    // The digit cell follows the token like the digits inside it. It was raw px, so at 16pt
+    // the numbers grew and their box did not — the bar stopped clearing the digits and two
+    // fractions in one row no longer had the same width.
+    const cellMin = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize + 9)})`;
     const fontFamily = mono ? 'Azeret Mono, monospace' : undefined;
     const digitFontSize = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize)})`;
     const wholeFontSize = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize * 1.2)})`;
