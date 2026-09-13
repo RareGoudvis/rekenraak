@@ -348,7 +348,8 @@ function HoekMetenSVG({ ex, raster, hulplijn }: { ex: VormleerExercise; raster: 
     // Protractor baseline: collinear with leg 1, extended through the vertex both ways.
     const hulp = hulplijn ? <line x1={V.x - legPx * Math.cos(a1)} y1={V.y - legPx * Math.sin(a1)} x2={V.x + legPx * Math.cos(a1)} y2={V.y + legPx * Math.sin(a1)} stroke="#bbb" strokeDasharray="3 3" strokeWidth={1} /> : null;
     return (
-        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ border: '1px solid #000' }}>
+        // No enclosing rectangle — the angle stands on its own, Ruben's preference (BUGS.md).
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: 'visible' }}>
             {grid}
             {hulp}
             <line x1={V.x} y1={V.y} x2={E1.x} y2={E1.y} stroke="#000" strokeWidth={2} />
