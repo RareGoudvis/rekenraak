@@ -134,7 +134,9 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "geld-teruggeven": { rowUnits: 8.4, perRowFull: 1, minWidth: 1 },
     "geld-wissel": { rowUnits: 5.58, perRowFull: 2, minWidth: 2 },
     "getalfunctie": { rowUnits: 1.33, perRowFull: 1, minWidth: 4 },
-    "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 1 },
+    // minWidth is academic here: SETTINGS_FLOOR floors getallenas at 4 regardless (axis
+    // labels collide well before the content itself overflows a narrower cell).
+    "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 4 },
     "getallenrijen": { rowUnits: 2.88, perRowFull: 1, minWidth: 4 },
     // C1 step 1: the vertical fallback below 200px is gone from PatroonViewer, so the
     // fallback table floor moves up to match SETTINGS_FLOOR's ½.

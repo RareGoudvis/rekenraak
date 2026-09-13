@@ -113,7 +113,6 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'getalbegrip-getallenrijen-geh', label: 'Gehele getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 } },
                         ],
                     },
-                    { id: 'getalbegrip-functie', label: 'Functie van getallen', typeId: 'getalfunctie', minLeerjaar: 2 },
                     {
                         id: 'getalbegrip-verbanden', label: 'Verbanden (breuk · decimaal · procent)',
                         children: [
@@ -121,6 +120,16 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'verbanden-paren', label: 'Omzettingen', typeId: 'verbanden', defaultConstraints: { subType: 'paren' }, minLeerjaar: 5 },
                         ],
                     },
+                ],
+            },
+            {
+                // C1 step 2: getalfunctie used to be a bare leaf inside 'getalbegrip', sitting
+                // oddly among the plaatswaarde/splitsen/vergelijken accordions — it is its own
+                // topic (a number's role: hoeveelheid/rang/maat/code), not a getalbegrip skill.
+                id: 'functie-van-getallen',
+                label: 'Functie van getallen',
+                types: [
+                    { id: 'getalbegrip-functie', label: 'Functie van getallen', typeId: 'getalfunctie', minLeerjaar: 2 },
                 ],
             },
             {
