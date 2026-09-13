@@ -86,6 +86,7 @@ lives in memory.
 | `inspectorTab` | `'blad' \| 'weergave' \| 'oefening'` | Which inspector tab is open. Labels read Oefeningen / Opmaak / Blad (content first); default `oefening` |
 | `bladSection` | `'koptekst' \| 'opdrachten' \| 'voettekst'` | Which Blad sub-tab shows. Set by its own tab strip AND by clicking the header/footer **on the sheet**, so both routes land in the same place |
 | `_history` / `_historyIndex` | `MathBlock[][]` / `number` | Undo/redo, max `MAX_HISTORY = 50` |
+| `saveState` / `lastSavedAt` | `'idle' \| 'saving' \| 'saved' \| 'error'` / `number \| null` | Autosave status for the TopBar dot. `'error'` = the last write was refused (`saveAutosave` returned false, storage full); `lastSavedAt` stays at the last successful write. TopBar shows a `--danger` dot + "Kon niet bewaren (opslag vol?) — bewaar als bestand." |
 
 **`undo`/`redo` return a value:** both hand back the id of the block that step actually
 changed (or `null`), so the caller can scroll to it and flash it — an undo whose block is
@@ -93,7 +94,7 @@ off-screen otherwise looks like nothing happened. It is a return value, not a sl
 
 **History rule (important):** mutations that change `blocks` call `pushHistory`
 (addBlock, remove, move, duplicate, updateBlockSettings, `setExercises`,
-updateExercise, `patchExercise`). `setSidebarTab` / `setInspectorTab` (pure view state) /
+updateExercise, `patchExercise`). `generateAllBlocks` is ONE step: it maps every unlocked block through `generateForBlock` and pushes history once, so one undo restores the whole sheet. `setSidebarTab` / `setInspectorTab` (pure view state) /
 `updateHeader` / `updateFooter` /
 `updateDocSettings` / `setShowSolutions` / `setBladSection` / `toggleBlockLock` /
 `updateBaseSettings` / `setDraftBlocks` do **NOT** push history.
@@ -295,9 +296,11 @@ sharing one reference.
 
 **Sheet-wide dedupe sits above the generators** (since 2026-09-14): every path that fills a
 block — `regenerateBlock` (Genereer / Genereer alles), the first generate in `addBlockFromType`,
-the mode-switch regenerates in the breuken/MAB configs and the count top-up in
-`updateBlockSettings` — goes through `generateForBlock(block, uniqueExercises)` in
-[generateDispatch.ts](../../src/services/generateDispatch.ts). With the toggle on it keys
+the mode-switch regenerates in the breuken/MAB configs — goes through `generateForBlock(block, uniqueExercises)` in
+[generateDispatch.ts](../../src/services/generateDispatch.ts); the count top-up in `updateBlockSettings`
+goes through its sibling `generateExtra(block, existing, want, unique)`, which reuses the same
+`dedupeWithTopUp` (dedupes against the keys already on the sheet, pads from existing, may set the
+same "Kleine reeks" note), so raising a count and generating fresh follow one policy. With the toggle on it keys
 each exercise (`def.exerciseKey?.(ex)`, else the exercise with every `id` field stripped,
 stringified), drops repeats and re-rolls the generator up to 8 rounds to refill; a pool too
 small to fill the count (12 hours-only clock times for 15 questions) is padded with repeats and
@@ -861,11 +864,12 @@ All localStorage; nothing leaves the browser except share links the user copies.
   the store keeps a defensive normaliser for library callers that hand over a payload which
   never passed through a versioned parse.
 - **Full vs template mode** (`WorksheetFileMode`): `full` = complete snapshot with
-  exercises; `template` = settings only (exercise arrays stripped by
-  `stripBlock`), so the recipient configures-then-Genereer to populate.
+  exercises; `template` = settings only (every `REGISTRY[*].exerciseField` blanked by
+  `stripBlock`, derived from the registry so a new type is covered automatically), so the
+  recipient configures-then-Genereer to populate.
 - **`CurriculumLock`** (`{ locked, allowedTypes: [{typeId, label, lockedConstraints}] }`)
   rides in the payload for locked curriculum share links (§13).
-- **Autosave** — single slot `rekenraak_autosave_v1`; `saveAutosave` /
+- **Autosave** — single slot `rekenraak_autosave_v1`; `saveAutosave` (returns `false` on a refused write → `saveState: 'error'`) /
   `loadAutosave` / `clearAutosave`. App.tsx offers to restore on boot if the
   current sheet is empty.
 - **Presets** — named library `rekenraak_presets_v1`, `MAX_PRESETS = 20`. CRUD via
@@ -930,7 +934,7 @@ src/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
-│   ├── generateDispatch.ts      # generateForBlock / regenerateBlock: registry lookup, sheet-wide dedupe (§6) → generic setExercises
+│   ├── generateDispatch.ts      # generateForBlock / generateExtra / regenerateBlock: registry lookup, sheet-wide dedupe (§6) → generic setExercises
 │   ├── persistence.ts           # autosave / presets / share-link / file import-export (§10)
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
