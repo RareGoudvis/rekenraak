@@ -119,7 +119,9 @@ serialized — `persistence.ts` strips it; never in history). `setGenerationNote
 written by `regenerateBlock` ([generateDispatch.ts](../../src/services/generateDispatch.ts))
 and `addBlockFromType`: a thrown generator becomes "Kon geen oefeningen maken: …" (danger
 colour), a relaxed hoofdrekenen run becomes "Instellingen versoepeld …" and a genuine
-shortfall "Slechts N oefeningen mogelijk …". Shown under Genereer in the Inspector.
+shortfall "Slechts N oefeningen mogelijk …". Shown under Genereer in the Inspector as a
+callout (icon + `--accent-soft`, or `--danger-soft` for a failure), lead sentence bold — a muted
+hint line was too easy to miss.
 
 Exercises are written by one **generic** action: `setExercises(id, field, data)`
 where `field` is the registry-declared `exerciseField` (e.g. `'mabExercises'`).
@@ -625,7 +627,9 @@ like InfoTip and the split popover, `position: fixed` from the block's rect (re-
 scroll of `.print-scroll`, window resize and a ResizeObserver on the block). Inside
 `.print-block` they were clipped by the page body's `overflow: hidden` near the page bottom;
 outside it they also play no part in measurement or packing. Compact: 26px buttons, 14px
-icons, groups [handle, lock, duplicate, split] · [page-break, up, down] · [delete].
+icons, groups [handle, lock, duplicate, split] · [page-break, up, down] · [delete]. The rail
+carries its own surface (`--bg-surface`, separator border, `--shadow-2`, `appStyles.blockControls`)
+because at ½/¼ it lands on top of the neighbouring block's ink.
 
 **Splitting instead of reordering.** A block that does not fit the rest of a page still moves
 whole, so `PageSheet` measures the blank tail it leaves and, past three row units (72px),
@@ -672,6 +676,19 @@ Five non-exercise blocks (sectie, schrijflijnen, raster, kader, lege pagina) wit
 generator: everything comes from constraints. They take a normal registry row so the packer,
 the width grid and printing need no special case. They are **not opdrachten** — no title row,
 and the opdracht numbering skips them.
+
+Schrijflijnen, raster and kader are ¼-capable **by content**: they render `width: 100%`
+furniture, so the min-content probe reports nothing and the LAYOUT fallback (`minWidth: 1`)
+rules. A furniture viewer must never set a bare computed px width — the raster did
+(`cols * cell`) until 2026-09-13 and pinned its own tier to full width; it is `width: 100%`
++ `maxWidth` now, squares still whole. Sectie and lege pagina stay full width by veto.
+
+The **onthoudkader body** is a plain string with light markup, rendered by the pure
+[kaderMarkup.tsx](../../src/services/layout/kaderMarkup.tsx): `**vet**`, `*cursief*`,
+`__onderstreept__` (nestable, an unmatched marker stays literal) and runs of lines starting
+`1. ` / `- ` / `•  ` become `<ol>` / `<ul>`; other lines keep their line breaks. `LayoutConfig`
+offers a B / I / U / 1. / • toolbar that wraps the textarea selection. No format bump: an
+old body without markers renders exactly as before.
 
 ### Shell
 
@@ -774,6 +791,7 @@ src/
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
+│   ├── layout/kaderMarkup.tsx   # pure renderKaderBody(): **vet** / *cursief* / __onderstreept__ / 1. and - lists for the onthoudkader (§9 furniture; tested)
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts,validators.ts}   # validators.ts is EMPTY
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
