@@ -14,6 +14,7 @@ import PopupSelect from './components/ui/PopupSelect';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
 import { BlockErrorBoundary } from './components/viewer/BlockErrorBoundary';
 import { cellWidthPx } from './components/viewer/BlockWidthContext';
+import { WIDTH_FIT_FLOOR } from './components/viewer/scaledBlockFit';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
@@ -352,6 +353,24 @@ export default function App() {
     setActiveSelection(blockId);
     setInspectorTab('weergave');
   }, [blocks, updateBlockSettings, setActiveSelection, setInspectorTab]);
+
+  // The horizontal twin of fitBlockToPage: a cell whose content is wider than its column
+  // ("Verklein om te passen") gets the same fix as the width picker's own switch.
+  const fitBlockToWidth = useCallback((blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    updateBlockSettings(blockId, { constraints: { ...block.constraints, fitToWidth: true } });
+    setActiveSelection(blockId);
+    setInspectorTab('weergave');
+  }, [blocks, updateBlockSettings, setActiveSelection, setInspectorTab]);
+
+  // "Verbreed": one width tier up (1 -> 2 -> 4), offered only below the widest tier.
+  const widenBlock = useCallback((blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    const current = (block.widthUnits ?? 4) as 1 | 2 | 4;
+    updateBlockSettings(blockId, { widthUnits: current === 1 ? 2 : 4 });
+  }, [blocks, updateBlockSettings]);
 
   const packedPages = useMemo(
     () => packPages(blocks, {
@@ -774,7 +793,23 @@ export default function App() {
                   start += item.width;
                   return placed;
                 });
-              }).map(({ item, rowIndex, start, firstInRow }) => (
+              }).map(({ item, rowIndex, start, firstInRow }) => {
+                // Horizontal twin of the page's own overflow banner: a page that runs long
+                // outlines itself and says by how much, but a cell wider than its column
+                // clipped in silence (print hides the overflow, so nobody saw it until
+                // paper). Only fire once the packer could not promote the block any
+                // further — a block that still has a wider tier to grow into is the
+                // packer's job, not the teacher's.
+                const iw = measured.intrinsicOf(item.block.id);
+                const cellPx = cellWidth(item.width);
+                // fitToWidth judges against the shrunk-to floor, same as minWidthUnits: the raw
+                // intrinsic map deliberately holds the size the teacher ASKED for (see
+                // useMeasuredHeights), so the banner must apply the same floor itself or it
+                // would keep firing right after "Verklein om te passen" fixed the cell.
+                const fitsPx = iw && item.block.constraints?.fitToWidth ? iw.px * WIDTH_FIT_FLOOR : iw?.px;
+                const overPx = iw && iw.atWidth === item.width && fitsPx !== undefined ? Math.round(fitsPx - cellPx) : 0;
+                const hOverflow = overPx > 2 && (item.width === 4 || item.promoted);
+                return (
                 <div
                   key={item.block.id}
                   data-block-id={item.block.id}
@@ -790,8 +825,18 @@ export default function App() {
                   }}
                 >
                   {renderBlock(item, blockOrder[item.block.id] ?? null)}
+                  {hOverflow && (
+                    <div className="no-print cell-hoverflow-warn" onClick={(e) => e.stopPropagation()}>
+                      <span>Dit blok is {overPx}px te breed voor zijn kolom.</span>
+                      <button type="button" onClick={() => fitBlockToWidth(item.block.id)}>Verklein om te passen</button>
+                      {item.width < 4 && (
+                        <button type="button" onClick={() => widenBlock(item.block.id)}>Verbreed</button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </PageSheet>
           ))}
         </div>

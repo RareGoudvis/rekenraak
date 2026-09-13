@@ -90,9 +90,16 @@ interface FigureMarks { equalSides: boolean; rightAngles: boolean; parallel: boo
 
 function FigureSVG({ ex, size, marks: opt, toScale }: { ex: VormleerExercise; size: number; marks: FigureMarks; toScale: boolean }) {
     const scale = 0.55;   // minis: ~55% of true size so a row of them fits
-    const raw = (ex.points ?? []).map(p => rot(p, ex.rotation ?? 0)).map(p => ({ x: p.x * CM * scale, y: -p.y * CM * scale }));
-    const minX = Math.min(...raw.map(p => p.x)), minY = Math.min(...raw.map(p => p.y));
-    const w = Math.max(...raw.map(p => p.x)) - minX, h = Math.max(...raw.map(p => p.y)) - minY;
+    const margin = 6;
+    const unfitted = (ex.points ?? []).map(p => rot(p, ex.rotation ?? 0)).map(p => ({ x: p.x * CM * scale, y: -p.y * CM * scale }));
+    const preMinX = Math.min(...unfitted.map(p => p.x)), preMinY = Math.min(...unfitted.map(p => p.y));
+    const preW = Math.max(...unfitted.map(p => p.x)) - preMinX, preH = Math.max(...unfitted.map(p => p.y)) - preMinY;
+    // A rotated vierhoek's bounding box can exceed `size` even at scale 0.55 — fit it down
+    // rather than let the polygon spill into the neighbouring table cell.
+    const fit = Math.min(1, (size - margin * 2) / (preW || 1), (size - margin * 2) / (preH || 1));
+    const raw = unfitted.map(p => ({ x: p.x * fit, y: p.y * fit }));
+    const minX = preMinX * fit, minY = preMinY * fit;
+    const w = preW * fit, h = preH * fit;
     const ox = (size - w) / 2 - minX, oy = (size - h) / 2 - minY;
     const pts = raw.map(p => ({ x: p.x + ox, y: p.y + oy }));
     const sides = ex.sides ?? [];

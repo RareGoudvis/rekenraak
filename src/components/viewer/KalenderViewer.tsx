@@ -61,6 +61,8 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
             cols={1}
             columnGap={24}
             rowGap={gap}
+            // 1-up: centre datum-rekenen/notatie sentence rows rather than leave them left-hugging.
+            justifyItems="center"
             items={exercises.map(ex => {
                 if (ex.subType === 'maandrooster') {
                     return (
@@ -68,11 +70,18 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
                             <MonthGrid year={ex.year} month={ex.month} />
                             {/* One grid for all questions: the text column is as wide as the longest
                                 question, so every answer line starts at the same x. */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: '16px', rowGap: '8px', alignItems: 'baseline', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
+                            {/* minmax(0,max-content), not plain max-content: the text column must be able
+                                to shrink and wrap at narrow widths instead of forcing the row wider than
+                                its cell (this was the ½-width overflow); the answer column keeps a floor. */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,max-content) minmax(90px, 1fr)', columnGap: '16px', rowGap: '8px', alignItems: 'baseline', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
                                 {(ex.questions ?? []).map((q, i) => (
                                     <Fragment key={i}>
-                                        <span>{q.text}</span>
-                                        <span style={{ justifySelf: 'start' }}>{answer(q.answer, 120)}</span>
+                                        <span style={{ minWidth: 0 }}>{q.text}</span>
+                                        {/* The answer line's own min-width must match the column's floor (90px),
+                                            not the wider 120px used elsewhere — a bigger inline min-width on the
+                                            grid ITEM overrides the track's minmax and reopened the ½-width
+                                            overflow even after the text column above could shrink. */}
+                                        <span style={{ justifySelf: 'start' }}>{answer(q.answer, 90)}</span>
                                     </Fragment>
                                 ))}
                             </div>

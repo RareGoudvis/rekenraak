@@ -26,6 +26,8 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
             cols={1}
             columnGap={24}
             rowGap={gap}
+            // 1-up: centre the sentence+chip row rather than leave it hugging the left edge.
+            justifyItems="center"
             items={exercises.map(ex => {
                 // Schatten shows value+unit combos ("180 g / 180 kg"); eenheid shows bare units.
                 const chipText = (u: string) => subType === 'schatten' ? `${formatMathNumber(ex.value)} ${u}` : u;
@@ -34,7 +36,7 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                     ? ex.sentence.replace(`${String(ex.value).replace('.', ',')} ___`, '___').replace(/\d+(,\d+)? ___/, '___')
                     : ex.sentence;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: 'calc(var(--sheet-size-text) * 0.75)', flexWrap: 'wrap' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: 'calc(var(--sheet-size-text) * 0.75)', flexWrap: 'wrap', minWidth: 0 }}>
                         <span>{sentence.split('___')[0]}
                             {ex.choices
                                 ? <span style={{ borderBottom: '1px dotted #999', minWidth: '30px', display: 'inline-block' }} />
