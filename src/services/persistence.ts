@@ -3,6 +3,7 @@ import type { MathBlock, FooterData } from './math/types';
 import type { DocSettings } from '../store/useWorksheetStore';
 import type { BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
+import { REGISTRY } from '../config/exerciseRegistry';
 
 // Bump this when the JSON schema gains/loses required fields so older files
 // fail loudly instead of half-loading. Keep the parser strict on read.
@@ -116,22 +117,20 @@ function todayStamp(): string {
     return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// Every array field any registry type generates into. Derived, never hand-listed: a
+// hardcoded subset silently leaked the other types' exercises into a "template".
+const EXERCISE_FIELDS: string[] = [...new Set(Object.values(REGISTRY).map(def => def.exerciseField as string))];
+
 // Strip all generated exercise content from a block, keeping every setting that
 // the Inspector controls. Used for template export/share — the receiver gets a
 // pre-configured but empty worksheet.
 function stripBlock(b: MathBlock): MathBlock {
-    return {
-        ...b,
-        exercises: [],
-        clockExercises: b.clockExercises ? [] : undefined,
-        fractionExercises: b.fractionExercises ? [] : undefined,
-        splitsenExercises: b.splitsenExercises ? [] : undefined,
-        cijferExercises: b.cijferExercises ? [] : undefined,
-        geldExercises: b.geldExercises ? [] : undefined,
-        geldWisselExercises: b.geldWisselExercises ? [] : undefined,
-        geldTeruggevenExercises: b.geldTeruggevenExercises ? [] : undefined,
-        mabExercises: b.mabExercises ? [] : undefined,
-    };
+    const out = { ...b, exercises: [] } as Record<string, unknown>;
+    for (const field of EXERCISE_FIELDS) {
+        // Leave absent fields absent: a template must not grow keys the block never had.
+        if (out[field] !== undefined) out[field] = [];
+    }
+    return out as unknown as MathBlock;
 }
 
 // `generationNote` is feedback about the last generate shown in the Inspector; it means

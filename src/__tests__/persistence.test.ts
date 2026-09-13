@@ -11,6 +11,7 @@ import {
 import type { FooterData } from '../services/math/types';
 import type { DocSettings } from '../store/useWorksheetStore';
 import { DEFAULT_BASE } from '../config/baseSettings';
+import { REGISTRY } from '../config/exerciseRegistry';
 import { makeBlock, generateFor } from './helpers/makeBlock';
 
 // encodeShareLink builds an absolute URL from `location`; node has none. A stub keeps the
@@ -237,6 +238,26 @@ describe('share link', () => {
         // Settings must survive, or the receiver's "Genereer alles" produces the wrong sheet.
         expect(decoded!.blocks.map(b => b.constraints)).toEqual(s.blocks.map(b => b.constraints));
         expect(decoded!.blocks.map(b => b.numberOfExercises)).toEqual(s.blocks.map(b => b.numberOfExercises));
+    });
+
+    // stripBlock used to clear a hardcoded 8 of the 35 exercise fields, so a template of
+    // any other type shipped the exercises the teacher meant to strip.
+    test('template mode empties every registry exercise field, for every typeId', () => {
+        const fields = [...new Set(Object.values(REGISTRY).map(def => def.exerciseField as string))];
+        const blocks = Object.keys(REGISTRY).map((typeId, i) => {
+            const block = makeBlock(typeId, { id: `all${i}` });
+            return { ...block, [REGISTRY[typeId].exerciseField]: generateFor(block) };
+        });
+        // Guard the guard: the source blocks must actually hold what the template strips.
+        expect(blocks.some(b => ((b as unknown as Record<string, unknown[]>)[REGISTRY[b.typeId].exerciseField] ?? []).length > 0)).toBe(true);
+
+        const template = fileFromShare(encodeShareLink({ ...state(), blocks }, { template: true }));
+        for (const block of template!.blocks) {
+            for (const field of fields) {
+                const value = (block as unknown as Record<string, unknown>)[field];
+                expect(value ?? [], `${block.typeId}.${field}`).toEqual([]);
+            }
+        }
     });
 
     test('a curriculum lock travels with the link', () => {
