@@ -29,9 +29,12 @@ export default function ProcentenViewer({ block, showSolutions }: Props) {
         ? <span style={{ ...solutionText, minWidth: `${width}px`, textAlign: 'center', display: 'inline-block' }}>{val}</span>
         : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
 
+    // itemMinPx 200 (was 150): a "welk-percent" row is the widest of the two sentence
+    // shapes and needs the extra room, which is also what keeps a half column 1-up
+    // instead of squeezing two in.
     return (
         <FragmentableGrid
-            cols={scaffold ? 1 : fitCols(availableWidth, 150, 2, 24)}
+            cols={scaffold ? 1 : fitCols(availableWidth, 200, 2, 24)}
             columnGap={24}
             rowGap={gap}
             items={exercises.map(ex => (
