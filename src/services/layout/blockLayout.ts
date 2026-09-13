@@ -136,7 +136,9 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "getalfunctie": { rowUnits: 1.33, perRowFull: 1, minWidth: 4 },
     "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 1 },
     "getallenrijen": { rowUnits: 2.88, perRowFull: 1, minWidth: 4 },
-    "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 1 },
+    // C1 step 1: the vertical fallback below 200px is gone from PatroonViewer, so the
+    // fallback table floor moves up to match SETTINGS_FLOOR's ½.
+    "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 2 },
     "herleidingen": { rowUnits: 2.03, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
@@ -145,7 +147,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "hr-std-vermenigvuldigen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     // Measured 4 since 2026-09-13: the question row overflows a half (BUGS.md) — 2 once fixed.
     "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 4 },
-    "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 1 },
+    "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 2 },
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
     "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.58, perRowFull: 1, minWidth: 1 },
