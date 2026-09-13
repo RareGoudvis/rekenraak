@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { VormleerConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { layoutScenario } from '../../services/vormleer/scenarioLayout';
 
 interface Props {
     block: MathBlock;
@@ -20,6 +21,10 @@ const SALMON = '#f4cbb8';
 // the token reproduces today's pixels exactly and then follows the Lettergrootte slider.
 // SYNC: same divisor in every viewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
+// Flemish notation for a named angle: the VERTEX letter carries a circumflex, so
+// "hoek AB̂C" reads as the angle at B. U+0302 is a combining mark — it must follow
+// the letter it sits on.
+const hoekNaam = (l: string[]) => `${l[0]}${l[1]}̂${l[2]}`;
 const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)})`;
 
 // A mini keeps `size` as its viewBox geometry; only the rendered box follows the token.
@@ -247,7 +252,7 @@ function HoekSVG({ ex, size, showBoog, toScale }: { ex: VormleerExercise; size: 
             <circle cx={cx} cy={cy} r={2} fill="currentColor" />
             {names && [
                 nameAt(end1, names[0], 'n0'),
-                glyph(cx - Math.cos(bisector) * 22, cy - Math.sin(bisector) * 22, names[1], 'n1'),
+                glyph(cx - Math.cos(bisector) * 22, cy - Math.sin(bisector) * 22, `${names[1]}̂`, 'n1'),
                 nameAt(end2, names[2], 'n2'),
             ]}
         </svg>
@@ -255,52 +260,36 @@ function HoekSVG({ ex, size, showBoog, toScale }: { ex: VormleerExercise; size: 
 }
 
 // ── punt-lijn scenario: every element of the scenario, each carrying its name ──
-// Geometry arrives normalised (0..1, y down) from the generator, so this only scales.
+// Geometry and label placement both come from layoutScenario, so what the unit test
+// checks for overlaps is literally what this draws.
 function ScenarioSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number; toScale: boolean }) {
-    // The letters sit OUTSIDE the figure, so the drawing keeps a margin all round.
-    const pad = size * 0.14;
-    const S = size - pad * 2;
-    const at = (p: MeetPoint): MeetPoint => ({ x: pad + p.x * S, y: pad + p.y * S });
-    const mid = { x: size / 2, y: size / 2 };
     // Plain viewBox units: the SVG element itself already follows --sheet-size-math.
     const fs = 0.62 * PX_PER_EM_AT_DEFAULT;
-    const label = (p: MeetPoint, s: string, key: string, away: MeetPoint = mid) => {
-        const dx = p.x - away.x, dy = p.y - away.y;
-        const l = Math.hypot(dx, dy) || 1;
-        const d = Math.max(9, fs * 0.75);
-        return (
-            <text key={key} x={p.x + (dx / l) * d} y={p.y + (dy / l) * d} textAnchor="middle"
-                dominantBaseline="central" fontSize={fs} fontFamily={mono} fontStyle="italic" fill="currentColor">{s}</text>
-        );
-    };
+    const { elements, labels } = layoutScenario(ex.elements ?? [], size, fs);
     const parts: React.ReactNode[] = [];
-    (ex.elements ?? []).forEach((el, i) => {
+    elements.forEach(({ el, pts }, i) => {
         if (el.type === 'punt') {
-            const p = at(el.pts[0]);
-            parts.push(<circle key={`d${i}`} cx={p.x} cy={p.y} r={2.8} fill="currentColor" />);
-            parts.push(label(p, el.name, `n${i}`, { x: p.x, y: p.y + 10 }));
+            parts.push(<circle key={`d${i}`} cx={pts[0].x} cy={pts[0].y} r={2.8} fill="currentColor" />);
             return;
         }
-        const a = at(el.pts[0]), b = at(el.pts[1]);
+        const [a, b] = pts;
         parts.push(<line key={`l${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={1.8} />);
-        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-        const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
-        if (el.type === 'rechte') {
-            // A rechte carries no arrowheads (Flemish notation): the lowercase name at one
-            // end is what identifies it.
-            parts.push(label({ x: b.x + ux * 6, y: b.y + uy * 6 }, el.name, `n${i}`, a));
+        if (el.type === 'rechte') return;   // a rechte carries no dots or arrowheads (Flemish notation)
+        parts.push(<circle key={`a${i}`} cx={a.x} cy={a.y} r={2.5} fill="currentColor" />);
+        if (el.type === 'halfrechte') {
+            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+            const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+            const s = 7, nx = -uy, ny = ux;
+            parts.push(<polyline key={`ar${i}`} fill="none" stroke="currentColor" strokeWidth={1.5}
+                points={`${b.x - ux * s + nx * s * 0.6},${b.y - uy * s + ny * s * 0.6} ${b.x},${b.y} ${b.x - ux * s - nx * s * 0.6},${b.y - uy * s - ny * s * 0.6}`} />);
         } else {
-            parts.push(<circle key={`a${i}`} cx={a.x} cy={a.y} r={2.5} fill="currentColor" />);
-            if (el.type === 'halfrechte') {
-                const s = 7, nx = -uy, ny = ux;
-                parts.push(<polyline key={`ar${i}`} fill="none" stroke="currentColor" strokeWidth={1.5}
-                    points={`${b.x - ux * s + nx * s * 0.6},${b.y - uy * s + ny * s * 0.6} ${b.x},${b.y} ${b.x - ux * s - nx * s * 0.6},${b.y - uy * s - ny * s * 0.6}`} />);
-            } else {
-                parts.push(<circle key={`b${i}`} cx={b.x} cy={b.y} r={2.5} fill="currentColor" />);
-            }
-            parts.push(label(a, el.name[0], `n${i}a`, b), label(b, el.name[1] ?? '', `n${i}b`, a));
+            parts.push(<circle key={`b${i}`} cx={b.x} cy={b.y} r={2.5} fill="currentColor" />);
         }
     });
+    labels.forEach((lb, i) => parts.push(
+        <text key={`n${i}`} x={lb.cx} y={lb.cy} textAnchor="middle" dominantBaseline="central"
+            fontSize={fs} fontFamily={mono} fontStyle="italic" fill="currentColor">{lb.text}</text>
+    ));
     return <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>{parts}</svg>;
 }
 
@@ -525,7 +514,9 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     // line under the figure that this leaf has always had.
     if (isScenario && mode === 'herkennen') {
         const figure = niveau >= 2 ? 150 : 115;
-        const cols = fitCols(availableWidth, (niveau >= 2 ? 200 : 120) * tokenRatio + 18, niveau >= 2 ? 2 : perRow, 18);
+        // Columns come from the cell width alone — punt-lijn has no 'Figuren per rij'
+        // control, because a scenario's width is set by the sentence, not by the teacher.
+        const cols = fitCols(availableWidth, (niveau >= 2 ? 200 : 120) * tokenRatio + 18, niveau >= 2 ? 2 : 3, 18);
         return (
             <FragmentableGrid
                 cols={1}
@@ -615,7 +606,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
         );
         // A hoek gets its three-letter name in the instruction when the generator wrote one.
         const hoekLine = (ex: VormleerExercise) => {
-            const names = (ex.labels ?? []).length === 3 ? ex.labels!.join('') : null;
+            const names = (ex.labels ?? []).length === 3 ? hoekNaam(ex.labels!) : null;
             return <span>Teken: <strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong>{names ? <> <strong>{names}</strong></> : null}</span>;
         };
         return (

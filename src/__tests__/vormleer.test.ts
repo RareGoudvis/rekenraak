@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { makeBlock, generateFor } from './helpers/makeBlock';
 import type { VormleerExercise } from '../services/math/types';
+import { layoutScenario, rectSegDist, rectRectDist } from '../services/vormleer/scenarioLayout';
 
 // Covers the punt-lijn scenario builder (the one both modes read) and the hoeken
 // 'meten' angle range — the parts of vormleerGenerator not exercised by name-only
@@ -96,6 +97,58 @@ describe('vormleer punt-lijn scenarios', () => {
                 expect(el.name).not.toBe('o');
             }
         }
+    });
+});
+
+// The viewer draws exactly what layoutScenario returns, so checking it here is
+// checking the sheet: a name may never sit on a stroke or on another name.
+describe('vormleer scenario label placement', () => {
+    // Deterministic RNG so a failure names one reproducible seed.
+    const mulberry32 = (seed: number) => () => {
+        seed = (seed + 0x6D2B79F5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+
+    test('no label touches a stroke or another label, over 200 seeded scenarios', () => {
+        const native = Math.random;
+        const failures: string[] = [];
+        try {
+            for (let seed = 1; seed <= 200; seed++) {
+                Math.random = mulberry32(seed);
+                const niveau = (seed % 3) + 1;
+                const block = makeBlock('vormleer-punt-lijn', {
+                    constraints: {
+                        kind: 'punt-lijn', mode: seed % 2 ? 'herkennen' : 'tekenen', niveau,
+                        concepts: ['punt', 'rechte', 'halfrechte', 'lijnstuk', 'evenwijdig', 'snijdend', 'loodrecht'],
+                        allowHorizontaal: seed % 4 < 2, allowVerticaal: seed % 4 > 1,
+                    },
+                });
+                // The two figure sizes the viewer uses (niveau 1 minis and the wider ones).
+                for (const size of [115, 150]) {
+                    for (const ex of generateFor(block) as VormleerExercise[]) {
+                        const fs = 0.62 * 17.33;
+                        const { labels, segs } = layoutScenario(ex.elements ?? [], size, fs);
+                        labels.forEach((lb, i) => {
+                            for (const sg of segs) {
+                                if (rectSegDist(lb.rect, sg) <= 0) failures.push(`seed ${seed} size ${size}: "${lb.text}" sits on a stroke`);
+                            }
+                            for (let j = i + 1; j < labels.length; j++) {
+                                if (rectRectDist(lb.rect, labels[j].rect) <= 0) failures.push(`seed ${seed} size ${size}: "${lb.text}" overlaps "${labels[j].text}"`);
+                            }
+                            const r = lb.rect;
+                            if (r.x < -1 || r.y < -1 || r.x + r.w > size + 1 || r.y + r.h > size + 1) {
+                                failures.push(`seed ${seed} size ${size}: "${lb.text}" falls outside the figure box`);
+                            }
+                        });
+                    }
+                }
+            }
+        } finally {
+            Math.random = native;
+        }
+        expect(failures.slice(0, 5)).toEqual([]);
     });
 });
 
