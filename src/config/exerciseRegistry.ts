@@ -272,7 +272,7 @@ const herleidingenDefaults = (): HerleidingenConstraints => ({
 
 const schattendDefaults = (): SchattendConstraints => ({
     operators: ['+', '-'], numberType: 'natural', maxGetal: 1000, decimalPlaces: 2,
-    roundTargets: ['H'], scaffolding: 'tussenstappen',
+    roundTargets: ['H'], scaffolding: 'tussenstappen', answerLine: 'kort',
 });
 
 const verbandenDefaults = (): VerbandenConstraints => ({

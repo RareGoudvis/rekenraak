@@ -6,7 +6,7 @@ import { formatMathNumber, opGlyph as printedOp } from '../../services/math/form
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { FULL_BLOCK_WIDTH_PX, useBlockWidth } from './BlockWidthContext';
+import { FULL_BLOCK_WIDTH_PX, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../services/math/constraintTypes';
 import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
@@ -126,6 +126,8 @@ function OperatorSwitch({ blockId, exerciseId, glyph, current, options }: {
 
 export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
+    // The math token in px, so the column widths below follow the Lettergrootte slider.
+    const sheetPx = useSheetSizePx('math');
     // Third sizing tier. A quarter-width cell is 163px (688 − 3×12 gap, ÷4), and the
     // "narrow" tier below still spends ~60px on column boxes and operator gaps that the
     // writing line needs. Below 200px everything that is air rather than ink gives way:
@@ -209,52 +211,81 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
     // longest formatted operand, and drop the 2-up grid to 1-up when two widened rows
     // no longer fit the printable width (A4 content ≈ 625px).
-    const CHAR_PX = 11.1; // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
+    // Azeret Mono's advance is 0.64em (11.06px measured in Chrome at the default 17.33px
+    // token), so the operand columns follow the Lettergrootte slider instead of freezing
+    // at 13pt the way a hardcoded 11.1 did.
+    const CHAR_PX = sheetPx * 0.64;
+    // What ONE VerticalFraction occupies: two stacked digit cells whose minWidth is
+    // (fontSize + 9)/17.33 em of the math token inside 4px of padding either side, plus the
+    // whole number of a mixed number. SYNC: VerticalFraction's cellMin and FractionDisplay's
+    // fontSize={15}. A digit there is not mono, so 0.62em is the (generous) advance.
+    const FRACTION_FONT_PX = 15;
+    const FRACTION_CELL_MIN_EM = (FRACTION_FONT_PX + 9) / 17.33;
+    const FRACTION_DIGIT_EM = 0.62;
+    const fractionPx = (f: Fraction): number => {
+        const digits = Math.max(String(f.n).length, String(f.d).length);
+        const stack = Math.max(FRACTION_CELL_MIN_EM, digits * FRACTION_DIGIT_EM) * sheetPx + 8;
+        const whole = f.whole ? String(f.whole).length * FRACTION_DIGIT_EM * sheetPx + 4 : 0;
+        return Math.ceil(stack + whole);
+    };
     let maxChars = 0;
     let maxAnswerChars = 0;
     let maxTerms = 2;
     let anyRemainder = false;
     let anyMissingTerm = false;
-    let anyFractionTerm = false;
+    let maxFractionPx = 0;
     for (const ex of block.exercises) {
         if (!ex?.operands) continue;
         maxTerms = Math.max(maxTerms, ex.operands.length);
         if (ex.remainder !== undefined) anyRemainder = true;
         for (const o of ex.operands) {
             if (typeof o === 'number') maxChars = Math.max(maxChars, formatMathNumber(o).length);
-            else if (isFraction(o)) anyFractionTerm = true;
+            else if (isFraction(o)) maxFractionPx = Math.max(maxFractionPx, fractionPx(o));
         }
         // With a missing operand the (red) solution renders inside the operand cell too.
         const hasMissing = ex.missingIndex !== undefined || ex.missingTerm === 'operand1' || ex.missingTerm === 'operand2';
         if (hasMissing) anyMissingTerm = true;
         if (hasMissing && typeof ex.answer === 'number') maxChars = Math.max(maxChars, formatMathNumber(ex.answer).length);
+        if (hasMissing && isFraction(ex.answer)) maxFractionPx = Math.max(maxFractionPx, fractionPx(ex.answer));
         if (typeof ex.answer === 'number') maxAnswerChars = Math.max(maxAnswerChars, formatMathNumber(ex.answer).length);
     }
+    // ONE term width for the whole block, fractions included. A block with a fraction used
+    // to fall back to intrinsic widths for every term, so "=" and the answer line wandered
+    // from row to row: 10/10 x 10/7 pushed them far right of 3/6 x 1/8.
+    const widestTermPx = Math.max(Math.ceil(maxChars * CHAR_PX), maxFractionPx);
     // The answer blank used to be a flat 75px whatever the answer was, so a block of
     // units and a block of thousands got the same line. It now follows the block's
     // WIDEST answer — one width for the whole block, never per exercise: a blank sized
     // to its own answer would tell the child how many digits to expect.
     // In a tight cell the same blank is sized to the answer alone: 50px is still three
     // handwritten digits, and every px above that comes straight out of the operands.
+    // A tafels block answers in at most three digits, and a 40px line is still three
+    // handwritten ones — the 10px that buys is what puts "7 x 8 = ___" inside a 163px
+    // quarter. Read off the block's own answers, not off multiplicationMode: the rule is
+    // about how much the child writes, not about which mode produced it.
+    const tightAnswerFloor = maxAnswerChars <= 3 ? 40 : 50;
     const answerLinePx = tight
-        ? Math.max(50, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
+        ? Math.max(tightAnswerFloor, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
         : Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
-    const cellPx = Math.max(85, Math.ceil(maxChars * CHAR_PX) + 6);
+    const cellPx = Math.max(85, widestTermPx + 6);
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
     // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
     const compScaffoldOn = c.preset === 'compenseren'
         && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
-    const answerW = compScaffoldOn ? 175 + Math.ceil(maxChars * CHAR_PX) : answerLinePx + 19;
+    const answerW = compScaffoldOn ? 175 + widestTermPx : answerLinePx + 19;
+    // A met-rest row carries the help column, the "r" and the rest blank on top of the sum:
+    // ~70px of help box + 8px gap + r + a 30px blank + the gaps around them.
+    const MET_REST_EXTRA_PX = 160;
     const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
-        + 8 + answerW + (anyRemainder ? 90 : 0);
+        + 8 + answerW + (anyRemainder ? MET_REST_EXTRA_PX : 0);
     // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
     // workline, so what it really needs is writing room for a hand-written tussenstap.
     // That room scales with the block's widest operand instead of the fixed 94px field.
-    const worklineMinPx = Math.max(80, Math.ceil(maxChars * CHAR_PX) + 30);
+    const worklineMinPx = Math.max(80, widestTermPx + 30);
     // In the 2-up stepped grid the operand columns tighten — no 85px alignment floor and a
     // narrower operator gap — so the freed width goes to the work line instead. The wide
     // sizing stays everywhere else, where column alignment matters more than writing room.
-    const compactCellPx = Math.max(46, Math.ceil(maxChars * CHAR_PX) + 6);
+    const compactCellPx = Math.max(46, widestTermPx + 6);
     // 26, not 16: both operand cells are right-aligned, so a full-width number butts
     // straight against the operator unless the span carries its own padding either side.
     const COMPACT_OP_GAP = 26;
@@ -299,14 +330,21 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const EQ_GAP = tight ? 6 : 10;
     const ANSWER_GAP = tight ? 4 : 8;
     const termPx = (chars: number) => Math.ceil(chars * CHAR_PX) + 4;
+    // Met-rest extras. The quotient and rest blanks are one width for the whole block (a
+    // blank sized to its own answer would tell the child how many digits to expect), and
+    // the help column is the "(" + dotted blank + ")" measured as a box so it can be a
+    // fixed column rather than inline content that shifts the sum.
+    const HELP_BLANK_PX = 40;
+    const QUOTIENT_BLANK_PX = 40;
+    const REST_BLANK_PX = 30;
+    const HELP_COL_PX = 2 * OP_GLYPH_PX + HELP_BLANK_PX + 4;
     // The fill-in blank (mathDottedLine) is 40px wide inside 6px margins; a column box
     // narrower than that would let a blank overrun its neighbour. Fractions size
     // themselves, so a block containing one keeps intrinsic widths throughout.
     const MISSING_BLANK_PX = BLANK_W + 2 * BLANK_M;
     // Tight drops the alignment floor entirely: the box is exactly as wide as the block's
     // longest operand, so columns still line up but nothing is reserved for air.
-    const termBoxPx = anyFractionTerm ? undefined
-        : Math.max(anyMissingTerm ? MISSING_BLANK_PX : (tight ? 0 : compact ? 24 : 40), termPx(maxChars));
+    const termBoxPx = Math.max(anyMissingTerm ? MISSING_BLANK_PX : (tight ? 0 : compact ? 24 : 40), widestTermPx + 4);
     return (
         <FragmentableGrid
             cols={gridCols}
@@ -317,27 +355,44 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
             items={block.exercises.map((ex) => {
                 if (!ex || !ex.operands) return null;
 
-                // MET REST
+                // MET REST — same unit boxes as a normal row (dividend in the block's term
+                // box, ':' + divisor as one left-aligned unit, "=" after a fixed gap), so
+                // "21 : 4" and "77 : 10" put their ':', '=' and blanks on the same x.
+                // Before this the row was bare spans with 2-4px margins, and every row of a
+                // block started its sum at whatever x its own dividend happened to end.
                 if (ex.remainder !== undefined) {
-                    const helpBlank = <div style={{ borderBottom: '1.5px dotted #000', width: '40px', height: '18px', display: 'inline-block', margin: '0 2px' }} />;
-                    const qPart = showSolutions
-                        ? <span style={solutionText}>{formatMathNumber(ex.answer as number)}</span>
-                        : <div style={{ borderBottom: '1.5px solid #000', width: '40px', height: '18px', display: 'inline-block' }} />;
-                    const rPart = showSolutions
-                        ? <span style={solutionText}>{String(ex.remainder)}</span>
-                        : <div style={{ borderBottom: '1.5px solid #000', width: '30px', height: '18px', display: 'inline-block' }} />;
+                    const slot = (w: number, val: string) => showSolutions
+                        ? <span style={{ ...solutionText, padding: 0, width: `${w}px`, display: 'inline-block', textAlign: 'center' }}>{val}</span>
+                        : <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block' }} />;
                     return (
-                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
+                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
                             {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
-                                cell it is the first thing to go, so the division itself still fits. */}
-                            {!tight && <><span>(</span>{helpBlank}<span>)</span></>}
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>{formatMathNumber(ex.operands[0] as number)}</span>
-                            <span>:</span>
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>{formatMathNumber(ex.operands[1] as number)}</span>
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px` }}>=</span>
-                            {qPart}
-                            <span style={{ margin: `0 ${tight ? 2 : 4}px`, fontStyle: 'italic' }}>r</span>
-                            {rPart}
+                                cell it is the first thing to go, so the division itself still fits.
+                                It gets its OWN fixed column so the dividends below it still line up. */}
+                            {!tight && (
+                                <div style={{ display: 'flex', alignItems: 'center', width: `${HELP_COL_PX}px`, flexShrink: 0, marginRight: `${ANSWER_GAP}px` }}>
+                                    <span>(</span>
+                                    <div style={{ borderBottom: '1.5px dotted #000', width: `${HELP_BLANK_PX}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />
+                                    <span>)</span>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0, ...(termBoxPx !== undefined && { width: `${termBoxPx}px` }) }}>
+                                <span>{formatMathNumber(ex.operands[0] as number)}</span>
+                            </div>
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flexShrink: 0,
+                                marginLeft: `${TERM_UNIT_GAP}px`,
+                                ...(termBoxPx !== undefined && { width: `${OP_GLYPH_PX + OP_TERM_GAP + termBoxPx}px` }),
+                            }}>
+                                <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>:</span>
+                                <span>{formatMathNumber(ex.operands[1] as number)}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, marginLeft: `${ANSWER_GAP}px` }}>
+                                <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
+                                {slot(QUOTIENT_BLANK_PX, formatMathNumber(ex.answer as number))}
+                                <span style={{ margin: `0 ${EQ_GAP}px`, fontStyle: 'italic' }}>r</span>
+                                {slot(REST_BLANK_PX, String(ex.remainder))}
+                            </div>
                         </div>
                     );
                 }

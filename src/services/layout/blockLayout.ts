@@ -112,22 +112,29 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "layout-kader": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
     "afronden": { rowUnits: 10.33, perRowFull: 2, minWidth: 2 },
     "breuken": { rowUnits: 6.23, perRowFull: 2, minWidth: 1 },
-    "breuken-bewerken": { rowUnits: 2.58, perRowFull: 2, minWidth: 2 },
+    // ¼ since 2026-09-13: BreukBewerkViewer picks its column count with fitCols off a
+    // per-subType item minimum, so a gemengd/vereenvoudigen row (one fraction, one line)
+    // stacks 1-up in a quarter instead of being pinned to a half by the type.
+    "breuken-bewerken": { rowUnits: 2.58, perRowFull: 2, minWidth: 1 },
     // C3 (2026-09-13 seeded rerun, grid alignment): rowUnits 5.04 → 3.79, minWidth 1 → 2 —
     // a quarter now measures overflow 1.20 (SETTINGS_FLOOR floors it to 2 or 4 anyway,
     // since the viewer never wraps a row onto a second line).
     "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2 },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
     // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
-    "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "cijferen-optellen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "cijferen-aftrekken-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "cijferen-aftrekken-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "cijferen-vermenigvuldigen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "cijferen-vermenigvuldigen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
+    // perRowFull 3 since 2026-09-13: CijferViewer measures the grid of the exercises it was
+    // actually given instead of guessing a column count off maxRange, and three of them fit
+    // a full row (three is also the cap — four leaves no writing room). Only a decimal
+    // staartdeling is still wide enough that two is all that fits.
+    "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-optellen-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-aftrekken-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-aftrekken-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-vermenigvuldigen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-vermenigvuldigen-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
     "cijferen-delen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "controleren": { rowUnits: 4.67, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "controleren": { rowUnits: 5, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "deelbaarheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 1 },
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 1 },
     // C1 step 7: the rooster's perRow now clamps to the column, so it never overflows —
@@ -173,7 +180,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // rows 1-up in a half cell (overflow 1.30 → 1.00). A quarter still overflows (1.33).
     "rekenvolgorde": { rowUnits: 1.58, perRowFull: 2, minWidth: 2 },
     "romeinse-cijfers": { rowUnits: 1.75, perRowFull: 2, minWidth: 2 },
-    "schattend": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
+    "schattend": { rowUnits: 1.71, perRowFull: 1, minWidth: 4 },
     "splitsen": { rowUnits: 6.79, perRowFull: 2.5, minWidth: 1 },
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 1 },
     "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
@@ -423,13 +430,27 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
     if (block.typeId.startsWith('hr-std-')) {
         if (c.numberType === 'decimal') return Math.max(base, 2) as WidthUnits;
         if (c.preset === 'compenseren' && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap') return Math.max(base, 2) as WidthUnits;
+        // 'Delen met rest' carries a second answer ("= ___ r ___") next to the first, which
+        // is ~30px more than a quarter has left after the division itself.
+        if (c.multiplicationMode === 'met_rest') return Math.max(base, 2) as WidthUnits;
     }
 
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;
 
+    // Tafels and deeltafels are bounded by the TABLE, not by maxGetal: "7 x 8 = ___" fits a
+    // quarter however high the block's maxGetal slider happens to sit from another mode
+    // (the slider is shared across the +-x: settings bag and only 'andere'/'vrij' reads it).
+    const tables = Array.isArray(c.selectedTables) ? (c.selectedTables as number[]) : [];
+    const tableLimit = typeof c.tableLimit === 'number' ? c.tableLimit : 10;
+    const tafelsOnly = block.typeId.startsWith('hr-std-')
+        && c.multiplicationMode === 'tafels' && c.numberType !== 'decimal'
+        && tables.length > 0 && Math.max(...tables) * tableLimit <= 100;
+
     // Wide numbers need wide columns whatever the type's baseline tier says.
-    if (maxGetal >= 100000) return 4;
-    if (maxGetal >= 10000 && base < 4) return Math.max(base, 2) as WidthUnits;
+    if (!tafelsOnly) {
+        if (maxGetal >= 100000) return 4;
+        if (maxGetal >= 10000 && base < 4) return Math.max(base, 2) as WidthUnits;
+    }
 
     // Multi-term chains and the stepped layout both eat horizontal room.
     const termCount = typeof c.termCount === 'number' ? c.termCount : 2;

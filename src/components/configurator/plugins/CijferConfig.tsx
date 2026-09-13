@@ -7,6 +7,8 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import BridgeControl from '../BridgeControl';
 import SettingLabel from './SettingLabel';
+import { useSheetSizePx } from '../../viewer/BlockWidthContext';
+import { cellPxOf, PX_PER_MM } from '../../viewer/cijferGrid';
 
 interface Props {
     block: MathBlock;
@@ -210,11 +212,14 @@ export function CijferStyleConfig({ block }: Props) {
 // ── Geavanceerd: the printed squared-paper grid the columns are written on.
 export function CijferAdvancedConfig({ block }: Props) {
     const [c, patch] = useConstraints<CijferConstraints>(block);
+    const sheetPx = useSheetSizePx('math');
     const slider = { width: '100%', accentColor: 'var(--accent-bewerkingen)', cursor: 'pointer' };
     return (
         <>
-            {/* 25pt ≈ 9mm: the ruitjes are printed at a real-world size, so the label says both. */}
-            <label style={F.label}>Ruitjesgrootte: {c.gridCellSize || 25}pt (~{Math.round((c.gridCellSize || 25) / 2.835)}mm)</label>
+            {/* The ruitje is a multiplier of the 25px nominal times the math token, so its
+                real size moves with the Lettergrootte slider — the label says the mm that
+                actually print rather than reading the number as points (it never was). */}
+            <label style={F.label}>Ruitjesgrootte: {c.gridCellSize || 25} (~{(cellPxOf(c.gridCellSize, sheetPx) / PX_PER_MM).toFixed(1)} mm)</label>
             <input
                 type="range" min="16" max="32" step="2"
                 value={c.gridCellSize || 25}

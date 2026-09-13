@@ -369,6 +369,7 @@ const schattendSpace: OptionSpace = {
     decimalPlaces: [1, 2],
     roundTargets: [['T'], ['H'], ['D'], ['T', 'H'], ['E']],
     scaffolding: ['tussenstappen', 'enkel-schatting'],
+    answerLine: ['kort', 'lang'],
 };
 
 const verbandenSpace: OptionSpace = {

@@ -13,15 +13,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   ½; the horizontal-overflow banner now says so, but the table itself should drop to fewer columns
   or wrap the headers (`VormleerViewer` eigenschappen branch).
 
-- **Stale settings draw the wrong picture (no crash)** (2026-09-13, viewers.stale sweep):
-  the viewers survive every setting drift without throwing, but one still draws nonsense
-  until Genereer is pressed. `CijferViewer` builds its column grid from
-  `numberType`/`decimalPlaces` while the operands carry their own decimals, so switching to
-  `natural` drops the comma column under decimal operands. Fix direction: the generator
-  stores its own `decimalPlaces` on the exercise and the viewer reads `ex.field ?? c.field`.
-  The Inspector's stale flag covers it for now. (`WeegschaalViewer` and `ClockExerciseItem`
-  fixed on branch fix/own-data-weegschaal-klok.)
-
 - **Breuken lijnstuk calc row clips at a quarter width** (2026-09-13, C1 step 8 review):
   `___ cm : ___ = ___ cm` and the `___ × ___ cm = ___ cm` line below it run past the right
   edge at width 1 (163px) even with the drawn segment itself capped to half the column
@@ -30,6 +21,14 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   `lijnstuk` isn't `hoeveelheid`. Fix direction: either float the calc row's blanks in `em`
   with a narrower floor at small widths, or wrap the row like the getalfunctie schrijven
   answer line does.
+
+- **A fitCols viewer can never reach the tier its content allows** (2026-09-13, C2 step 8):
+  `PageSheet.probeIntrinsicWidth` measures min-content at the column count the viewer picked
+  for the width it currently has, so a block rendering 2-up at a half probes ~2 items wide and
+  `minWidthUnits()` refuses the quarter — even when the viewer would drop to 1-up there and the
+  width matrix measures overflow 1.000 (breuken-bewerken gemengd/vereenvoudigen). Fix direction:
+  probe at the narrowest tier (render the cell once at 163px off-screen), or let a viewer report
+  its own single-item minimum alongside the probe.
 
 ## Docs
 

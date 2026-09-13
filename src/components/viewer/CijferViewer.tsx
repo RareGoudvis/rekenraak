@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
-import { useBlockWidth } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -12,8 +13,16 @@ const GRID_COLOR = '#aaaaaa';
 const PLACE_ABBREVS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M'];
 const DEC_ABBREVS = ['t', 'h', 'd'];
 
-// A4 content width in px: 793px (210mm@96dpi) - 2×68px (18mm margins) - 2×16px (block padding)
 const ROW_GAP_PX = 12;
+// The header row ("1 234 + 567 =") is Azeret Mono (0.64em advance) at 0.64 of the math
+// token, inside 8px of padding either side and a 0.5px border.
+const HEADER_CHAR_EM = 0.64 * 0.64;
+const HEADER_PAD_PX = 18;
+
+/** Decimal columns this exercise was generated with; the constraints are the old-sheet fallback. */
+function dpOf(ex: CijferExercise, c: CijferConstraints): number {
+    return ex.decimalPlaces ?? (c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0);
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -46,6 +55,19 @@ function computeEstimation(ex: CijferExercise): string {
         else if (ex.operator === ':') est = Math.round(est / rounded[i]);
     }
     return rounded.map(fmtR).join(` ${opStr} `) + ` ≈ ${fmtR(est)}`;
+}
+
+// The clickable "1 234 + 567 =" line above the grid. Module level because the width
+// estimate needs it too — the header can be wider than the grid for small operands.
+function headerTextOf(ex: CijferExercise, dp: number): string {
+    const opStr = ex.operator === 'x' ? '×' : ex.operator;
+    return ex.operands.map((o, i) => {
+        // divisor and multiplier are normally integers; use dp only when they are decimal
+        if ((ex.operator === ':' && i === 1) || (ex.operator === 'x' && i > 0)) {
+            return fmtDisplay(o, Number.isInteger(o) ? 0 : dp);
+        }
+        return fmtDisplay(o, dp);
+    }).join(` ${opStr} `) + ' =';
 }
 
 // Decimal cols at intCols+i (no comma column).
@@ -112,40 +134,70 @@ function placeLabel(gridCol: number, maxInt: number, dp: number): string | null 
     return null;
 }
 
-// Estimates exercise grid width from constraints (for layout).
-function estimateExWidth(c: CijferConstraints): number {
-    const CELL = c.gridCellSize || 25;
-    const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
-    const maxRange = c.maxRange || 1000;
-    const maxInt = String(Math.round(maxRange)).length;
-    const extra = c.extraCols || 0;
-    if (c.operator === ':') {
-        const divisorLen = maxRange <= 100 ? 1 : maxRange <= 10_000 ? 2 : 3;
-        const dividendLen = String(Math.max(1, Math.round(maxRange) - 1)).length;
-        const quotientLen = String(Math.max(1, Math.round(maxRange / 2))).length;
-        const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
-        const leftCols = dividendLen + workingDecCols;
-        const rightCols = Math.max(divisorLen, quotientLen + dp) + 2;
-        return (leftCols + rightCols + extra) * CELL;
-    }
-    return (1 + maxInt + dp + extra) * CELL;
+// ── How many columns each grid draws ─────────────────────────────────────────
+// SYNC: the three grid components below call these, and so does the width estimate. They
+// used to be two separate calculations — the estimate guessed from maxRange, which
+// over-stated a block of small numbers by a whole column and cost it an exercise per row.
+
+function addSubGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
+    const maxInt = Math.max(...[...ex.operands, ex.answer].map(intLen));
+    return 1 + maxInt + dp + extraCols;
 }
 
-function computeExPerRow(c: CijferConstraints, availableWidth: number): number {
-    const w = estimateExWidth(c);
-    return Math.max(1, Math.min(4, Math.floor((availableWidth + ROW_GAP_PX) / (w + ROW_GAP_PX))));
+function partialProductsOf(ex: CijferExercise, dp: number): number[] {
+    const scaledMultiplicand = Math.round(ex.operands[0] * Math.pow(10, dp));
+    return String(Math.round(ex.operands[1])).split('').reverse()
+        .map((d, shift) => scaledMultiplicand * Number(d) * Math.pow(10, shift));
+}
+
+function mulGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
+    const maxPPLen = Math.max(...partialProductsOf(ex, dp).map(pp => pp === 0 ? 1 : String(Math.round(pp)).length));
+    return 1 + Math.max(intLen(ex.answer), maxPPLen) + dp + extraCols;
+}
+
+function divGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
+    // The working area always keeps at least 3 decimal columns so a pupil can work past dp.
+    const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
+    const leftCols = intLen(ex.operands[0]) + workingDecCols;
+    const rightCols = Math.max(intLen(ex.operands[1]), intLen(ex.operands[0]) + dp);
+    return leftCols + rightCols + extraCols;
+}
+
+function gridColsOf(ex: CijferExercise, dp: number, extraCols: number): number {
+    return ex.operator === ':' ? divGridCols(ex, dp, extraCols)
+        : ex.operator === 'x' ? mulGridCols(ex, dp, extraCols)
+        : addSubGridCols(ex, dp, extraCols);
+}
+
+// The exercise box is as wide as the WIDER of its grid and its clickable header line.
+function exWidthPx(ex: CijferExercise, c: CijferConstraints, CELL: number, sheetPx: number): number {
+    const dp = dpOf(ex, c);
+    const grid = gridColsOf(ex, dp, c.extraCols || 0) * CELL;
+    const header = headerTextOf(ex, dp).length * HEADER_CHAR_EM * sheetPx + HEADER_PAD_PX;
+    return Math.max(grid, header);
+}
+
+// Exercises per row, from the exercises themselves, and never so many that the row runs off
+// its column: the boxes sit in a nowrap flex row, so a miscount overflows horizontally
+// rather than wrapping. Capped at 3 — four columned sums across a full-width block leaves
+// no writing room between them, which is the whole point of squared paper.
+const MAX_EX_PER_ROW = 3;
+function computeExPerRow(exercises: CijferExercise[], c: CijferConstraints, CELL: number, sheetPx: number, availableWidth: number): number {
+    const w = Math.max(...exercises.map(ex => exWidthPx(ex, c, CELL, sheetPx)));
+    return Math.max(1, Math.min(MAX_EX_PER_ROW, Math.floor((availableWidth + ROW_GAP_PX) / (w + ROW_GAP_PX))));
 }
 
 // ── Digit overlay ─────────────────────────────────────────────────────────────
 
-interface DCProps { col: number; row: number; char: string; CELL: number; color?: string; small?: boolean; }
+interface DCProps { col: number; row: number; char: string; CELL: number; rowH?: number; color?: string; small?: boolean; }
 
-function DC({ col, row, char, CELL, color = '#000', small = false }: DCProps) {
+function DC({ col, row, char, CELL, rowH, color = '#000', small = false }: DCProps) {
+    const H = rowH ?? CELL;
     return (
         <div style={{
             position: 'absolute',
-            left: col * CELL, top: row * CELL,
-            width: CELL, height: CELL,
+            left: col * CELL, top: row * H,
+            width: CELL, height: H,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             // Multipliers chosen so the main digit lands at 17 px at the default CELL=25,
             // matching MathBlockRenderer's font size and avoiding the "cijferen looks
@@ -159,14 +211,14 @@ function DC({ col, row, char, CELL, color = '#000', small = false }: DCProps) {
 }
 
 // Small comma rendered at the right edge of the E column (no dedicated column).
-function CommaEdge({ afterGridCol, row, CELL }: { afterGridCol: number; row: number; CELL: number }) {
+function CommaEdge({ afterGridCol, row, CELL, rowH }: { afterGridCol: number; row: number; CELL: number; rowH?: number }) {
     return (
         <div style={{
             position: 'absolute',
             left: (afterGridCol + 1) * CELL - CELL * 0.28,
-            top: row * CELL,
+            top: row * (rowH ?? CELL),
             width: CELL * 0.32,
-            height: CELL,
+            height: rowH ?? CELL,
             display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
             paddingBottom: CELL * 0.04,
             fontSize: CELL * 0.60,
@@ -183,11 +235,10 @@ interface GridProps { ex: CijferExercise; CELL: number; dp: number; scaffolding:
 
 function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows }: GridProps) {
     const numTerms = ex.operands.length;
-    const allNums = [...ex.operands, ex.answer];
-    const maxInt = Math.max(...allNums.map(n => intLen(n)));
+    const maxInt = Math.max(...[...ex.operands, ex.answer].map(intLen));
     const decCols = dp;  // no dedicated comma column
 
-    const gridCols = 1 + maxInt + decCols + extraCols;
+    const gridCols = addSubGridCols(ex, dp, extraCols);
     const freeRows = ex.operator === '-' ? 2 : 1;
     const firstOperandRow = 1 + freeRows;
     const lastOperandRow = firstOperandRow + numTerms - 1;
@@ -203,12 +254,16 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
 
     return (
         <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: 4 }}>
-            <svg width={gridW} height={gridH} style={{ position: 'absolute', top: 0, left: 0 }}>
+            {/* One px wider and taller than the grid, and every line offset half a stroke:
+                a line drawn exactly at gridW/gridH sits half outside the viewport and is
+                clipped away on screen (it survives at print DPI, so the sheet and the paper
+                disagreed about the closing line of every grid). */}
+            <svg width={gridW + 1} height={gridH + 1} shapeRendering="crispEdges" style={{ position: 'absolute', top: 0, left: 0 }}>
                 {Array.from({ length: totalRows + 1 }, (_, r) => (
-                    <line key={`h${r}`} x1={0} y1={r * CELL} x2={gridW} y2={r * CELL} stroke={GRID_COLOR} strokeWidth={0.5} />
+                    <line key={`h${r}`} x1={0} y1={r * CELL + 0.5} x2={gridW} y2={r * CELL + 0.5} stroke={GRID_COLOR} strokeWidth={0.5} />
                 ))}
                 {Array.from({ length: gridCols + 1 }, (_, c) => (
-                    <line key={`v${c}`} x1={c * CELL} y1={0} x2={c * CELL} y2={gridH} stroke={GRID_COLOR} strokeWidth={0.5} />
+                    <line key={`v${c}`} x1={c * CELL + 0.5} y1={0} x2={c * CELL + 0.5} y2={gridH} stroke={GRID_COLOR} strokeWidth={0.5} />
                 ))}
                 {scaffolding <= 2 && (
                     <>
@@ -274,16 +329,12 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
 function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows }: GridProps) {
     const multiplicand = ex.operands[0];
     const multiplier = Math.round(ex.operands[1]);
-    const s = Math.pow(10, dp);
 
-    const scaledMultiplicand = Math.round(multiplicand * s);
     const mulDigits = String(multiplier).split('').reverse();
-    const partialProducts = mulDigits.map((d, shift) => scaledMultiplicand * Number(d) * Math.pow(10, shift));
+    const partialProducts = partialProductsOf(ex, dp);
 
-    const answerIntLen = intLen(ex.answer);
     const maxPPLen = Math.max(...partialProducts.map(pp => pp === 0 ? 1 : String(Math.round(pp)).length));
-    const maxInt = Math.max(answerIntLen, maxPPLen);
-    const decCols = dp;  // no dedicated comma column
+    const maxInt = Math.max(intLen(ex.answer), maxPPLen);
 
     const n = mulDigits.length;
     const multiplicandRow = 2;
@@ -294,7 +345,7 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
     const answerRow = lineRow2;       // answer sits right below the second thick line (no gap row)
     const totalRows = answerRow + 1 + extraRows;
 
-    const gridCols = 1 + maxInt + decCols + extraCols;
+    const gridCols = mulGridCols(ex, dp, extraCols);
     const gridW = gridCols * CELL;
     const gridH = totalRows * CELL;
 
@@ -302,12 +353,16 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
 
     return (
         <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: 4 }}>
-            <svg width={gridW} height={gridH} style={{ position: 'absolute', top: 0, left: 0 }}>
+            {/* One px wider and taller than the grid, and every line offset half a stroke:
+                a line drawn exactly at gridW/gridH sits half outside the viewport and is
+                clipped away on screen (it survives at print DPI, so the sheet and the paper
+                disagreed about the closing line of every grid). */}
+            <svg width={gridW + 1} height={gridH + 1} shapeRendering="crispEdges" style={{ position: 'absolute', top: 0, left: 0 }}>
                 {Array.from({ length: totalRows + 1 }, (_, r) => (
-                    <line key={`h${r}`} x1={0} y1={r * CELL} x2={gridW} y2={r * CELL} stroke={GRID_COLOR} strokeWidth={0.5} />
+                    <line key={`h${r}`} x1={0} y1={r * CELL + 0.5} x2={gridW} y2={r * CELL + 0.5} stroke={GRID_COLOR} strokeWidth={0.5} />
                 ))}
                 {Array.from({ length: gridCols + 1 }, (_, c) => (
-                    <line key={`v${c}`} x1={c * CELL} y1={0} x2={c * CELL} y2={gridH} stroke={GRID_COLOR} strokeWidth={0.5} />
+                    <line key={`v${c}`} x1={c * CELL + 0.5} y1={0} x2={c * CELL + 0.5} y2={gridH} stroke={GRID_COLOR} strokeWidth={0.5} />
                 ))}
                 {scaffolding <= 2 && (
                     <>
@@ -400,55 +455,65 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
     const workingRows = leftCols * 2 + 1;
     const totalRows = 1 + workingRows + extraRows;
 
+    // A staartdeling's working rows carry a subtraction written UNDER the digits above it,
+    // so a square ruitje is the one place on the sheet where the cell is the writing room
+    // rather than a guide. 10% taller is what makes the row writable without turning the
+    // column guides into rectangles anyone would notice.
+    const ROW_H = CELL * 1.1;
+
     const gridW = totalCols * CELL;
-    const gridH = totalRows * CELL;
+    const gridH = totalRows * ROW_H;
 
     return (
         <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: 4 }}>
-            <svg width={gridW} height={gridH} style={{ position: 'absolute', top: 0, left: 0 }}>
+            {/* One px wider and taller than the grid, and every line offset half a stroke:
+                a line drawn exactly at gridW/gridH sits half outside the viewport and is
+                clipped away on screen (it survives at print DPI, so the sheet and the paper
+                disagreed about the closing line of every grid). */}
+            <svg width={gridW + 1} height={gridH + 1} shapeRendering="crispEdges" style={{ position: 'absolute', top: 0, left: 0 }}>
                 {Array.from({ length: totalRows + 1 }, (_, r) => (
-                    <line key={`h${r}`} x1={0} y1={r * CELL} x2={gridW} y2={r * CELL} stroke={GRID_COLOR} strokeWidth={0.5} />
+                    <line key={`h${r}`} x1={0} y1={r * ROW_H + 0.5} x2={gridW} y2={r * ROW_H + 0.5} stroke={GRID_COLOR} strokeWidth={0.5} />
                 ))}
                 {Array.from({ length: totalCols + 1 }, (_, c) => (
-                    <line key={`v${c}`} x1={c * CELL} y1={0} x2={c * CELL} y2={gridH} stroke={GRID_COLOR} strokeWidth={0.5} />
+                    <line key={`v${c}`} x1={c * CELL + 0.5} y1={0} x2={c * CELL + 0.5} y2={gridH} stroke={GRID_COLOR} strokeWidth={0.5} />
                 ))}
                 {scaffolding <= 2 && (
                     <>
                         {/* Vertical separator: left section | right section (full height) */}
                         <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="#222" strokeWidth={2} />
                         {/* Divisor box top (right section only) */}
-                        <line x1={leftCols * CELL} y1={0} x2={gridW} y2={0} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="#222" strokeWidth={2} />
                         {/* Divisor box bottom = quotient separator */}
-                        <line x1={leftCols * CELL} y1={CELL} x2={gridW} y2={CELL} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="#222" strokeWidth={2} />
                     </>
                 )}
             </svg>
 
             {/* Dividend integer digits (left, row 0) */}
             {scaffolding <= 1 && getDigitCols(dividend, 0, dividendIntCols).map((d, i) => (
-                <DC key={`dv${i}`} col={d.col} row={0} char={d.char} CELL={CELL} />
+                <DC key={`dv${i}`} col={d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
             {/* Decimal digits of dividend (actual digits if dividend is decimal, else "0") */}
             {scaffolding <= 1 && workingDecCols > 0 && Array.from({ length: dp }, (_, i) => (
-                <DC key={`dvd${i}`} col={dividendIntCols + i} row={0} char={dividendDecStr[i] || '0'} CELL={CELL} />
+                <DC key={`dvd${i}`} col={dividendIntCols + i} row={0} char={dividendDecStr[i] || '0'} CELL={CELL} rowH={ROW_H} />
             ))}
             {/* Comma after dividend units column */}
             {scaffolding <= 1 && workingDecCols > 0 && (
-                <CommaEdge afterGridCol={dividendIntCols - 1} row={0} CELL={CELL} />
+                <CommaEdge afterGridCol={dividendIntCols - 1} row={0} CELL={CELL} rowH={ROW_H} />
             )}
 
             {/* Divisor digits (right section, row 0) */}
             {scaffolding <= 1 && getDigitCols(divisor, 0, divisorCols).map((d, i) => (
-                <DC key={`dr${i}`} col={leftCols + d.col} row={0} char={d.char} CELL={CELL} />
+                <DC key={`dr${i}`} col={leftCols + d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
 
             {/* Quotient digits (right section, row 1 — below horizontal line) */}
             {scaffolding <= 1 && showSolutions && (
                 getDigitCols(quotient, dp, quotientIntCols)
-                    .map((d, i) => <DC key={`qt${i}`} col={leftCols + d.col} row={1} char={d.char} CELL={CELL} color={SOL} />)
+                    .map((d, i) => <DC key={`qt${i}`} col={leftCols + d.col} row={1} char={d.char} CELL={CELL} rowH={ROW_H} color={SOL} />)
             )}
             {scaffolding <= 1 && showSolutions && dp > 0 && (
-                <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} />
+                <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} rowH={ROW_H} />
             )}
         </div>
     );
@@ -456,15 +521,14 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
 
 // ── Exercise box ──────────────────────────────────────────────────────────────
 
-interface ExProps { ex: CijferExercise; c: CijferConstraints; showSolutions: boolean; blockId: string; }
+interface ExProps { ex: CijferExercise; c: CijferConstraints; CELL: number; showSolutions: boolean; blockId: string; }
 
-function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
+function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps) {
     const updateCijferExercise = useWorksheetStore((s) => s.updateCijferExercise);
     const [editing, setEditing] = useState(false);
     const [editValues, setEditValues] = useState<string[]>([]);
 
-    const CELL = c.gridCellSize || 25;
-    const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
+    const dp = dpOf(ex, c);
     const scaffolding = c.scaffolding || 3;
     const isDivision = ex.operator === ':';
     const isMultiplication = ex.operator === 'x';
@@ -472,13 +536,7 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
     const extraRows = c.extraRows || 0;
 
     const opStr = ex.operator === 'x' ? '×' : ex.operator;
-    const headerText = ex.operands.map((o, i) => {
-        // divisor and multiplier are normally integers; use dp only when they are decimal
-        if ((isDivision && i === 1) || (isMultiplication && i > 0)) {
-            return fmtDisplay(o, Number.isInteger(o) ? 0 : dp);
-        }
-        return fmtDisplay(o, dp);
-    }).join(` ${opStr} `) + ' =';
+    const headerText = headerTextOf(ex, dp);
 
     const confirmEdit = () => {
         const operands = editValues.map(v => parseFloat(v.replace(',', '.')));
@@ -563,8 +621,8 @@ function CijferExercisePreview({ ex, c, showSolutions, blockId }: ExProps) {
                 <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (
                         <>
-                            <span>q  {fmtDisplay(ex.answer, dp)}</span>
-                            <span>r  {ex.remainder > 0 ? fmtDisplay(ex.remainder, dp) : '0'}</span>
+                            <span>q  <span style={solutionText}>{fmtDisplay(ex.answer, dp)}</span></span>
+                            <span>r  <span style={solutionText}>{ex.remainder > 0 ? fmtDisplay(ex.remainder, dp) : '0'}</span></span>
                         </>
                     ) : (
                         <>
@@ -590,14 +648,19 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 
 export default function CijferViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const sheetPx = useSheetSizePx('math');
     const c = block.constraints as CijferConstraints;
     const exercises = (block.cijferExercises || []) as CijferExercise[];
+    // The ruitje is a multiplier of the 25px nominal times the math token, so the squared
+    // paper grows with the Lettergrootte slider like the digits written on it (they were
+    // raw px, so at 16pt the header and estimation rows grew and the grid did not).
+    const CELL = cellPxOf(c.gridCellSize, sheetPx);
 
     if (exercises.length === 0) {
         return <div style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
-    const exPerRow = computeExPerRow(c, availableWidth);
+    const exPerRow = computeExPerRow(exercises, c, CELL, sheetPx, availableWidth);
 
     const groups: CijferExercise[][] = [];
     exercises.forEach((ex, i) => {
@@ -608,7 +671,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
     if (exPerRow === 1) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'flex-start' }}>
-                {exercises.map(ex => <CijferExercisePreview key={ex.id} ex={ex} c={c} showSolutions={showSolutions} blockId={block.id} />)}
+                {exercises.map(ex => <CijferExercisePreview key={ex.id} ex={ex} c={c} CELL={CELL} showSolutions={showSolutions} blockId={block.id} />)}
             </div>
         );
     }
@@ -617,7 +680,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {groups.map((group, i) => (
                 <div key={i} className="print-exercise" style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start' }}>
-                    {group.map(ex => <CijferExercisePreview key={ex.id} ex={ex} c={c} showSolutions={showSolutions} blockId={block.id} />)}
+                    {group.map(ex => <CijferExercisePreview key={ex.id} ex={ex} c={c} CELL={CELL} showSolutions={showSolutions} blockId={block.id} />)}
                 </div>
             ))}
         </div>
