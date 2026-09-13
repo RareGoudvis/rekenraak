@@ -15,6 +15,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   look at ¼ and, if illegible, a `VETO_MIN` entry. The drawing-shaped types already sit on
   the veto list.
 
+- **Vormleer eigenschappen: the figure spills out of its table cell** (2026-09-13): the mini
+  is drawn at `size=76` with `overflow: visible`, but a rotated vierhoek's polygon is wider
+  than 76 units, so it paints over the neighbouring property columns. Pre-existing, visible
+  at every font size; it needs the mini to fit its box (scale the polygon to `size`) rather
+  than a bigger cell.
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
