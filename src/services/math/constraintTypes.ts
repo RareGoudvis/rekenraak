@@ -395,6 +395,10 @@ export type DeelbaarheidConstraints = {
 
 export type DeelbaarheidKleurConstraints = {
     viewMode: 'strip' | 'markeren' | 'raster';
+    // Only meaningful when viewMode === 'strip'. 'lijn' = a wrapped number strip
+    // (perRow); 'rechthoek' = a fixed-column grid (rasterCols) — the shape the standalone
+    // 'raster' viewMode used to be, before C1 step 6 merged it into 'strip'.
+    rasterVorm?: 'lijn' | 'rechthoek';
     divisors: number[];
     maxGetal: number;
     perRow: number;

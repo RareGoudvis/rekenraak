@@ -241,7 +241,8 @@ const deelbaarheidSpace: OptionSpace = {
 };
 
 const deelbaarheidKleurSpace: OptionSpace = {
-    viewMode: ['strip', 'markeren', 'raster'],
+    viewMode: ['strip', 'markeren'],
+    rasterVorm: ['lijn', 'rechthoek'],
     divisors: [[2], [2, 5, 10], [3, 7, 11, 12]],
     maxGetal: [20, 100, 1000],
     perRow: [5, 10],

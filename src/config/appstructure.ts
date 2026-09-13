@@ -195,7 +195,9 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'deelbaarheid-rooster', label: 'Rooster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'strip', divisors: [2, 5, 10] } },
                             { id: 'deelbaarheid-omcirkelen', label: 'Omcirkelen', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'markeren', divisors: [2, 5, 10] } },
-                            { id: 'deelbaarheid-kleurraster', label: 'Kleurraster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'raster', divisors: [2, 5, 10] } },
+                            // 'raster' is now the strip mode's 'rechthoek' shape (C1 step 6) — the
+                            // leaf id/label stay the same, only what they set underneath changed.
+                            { id: 'deelbaarheid-kleurraster', label: 'Kleurraster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'strip', rasterVorm: 'rechthoek', divisors: [2, 5, 10] } },
                         ],
                     },
                 ],

@@ -18,7 +18,13 @@ function stripNumbers(perRow: number, maxGetal: number, divisor: number, minMult
 
 export function generateDeelbaarheidKleurExercises(block: MathBlock): DeelbaarheidKleurExercise[] {
     const c = block.constraints as DeelbaarheidKleurConstraints;
-    const viewMode: string = c.viewMode ?? 'strip';
+    const viewModeRaw: string = c.viewMode ?? 'strip';
+    // 'raster' used to be its own viewMode; it is now the strip mode's 'rechthoek' shape
+    // (C1 step 6) — accepted here too so a block saved before the merge still generates.
+    const legacyRaster = viewModeRaw === 'raster';
+    const viewMode = legacyRaster ? 'strip' : viewModeRaw;
+    const rasterVorm: string = c.rasterVorm ?? (legacyRaster ? 'rechthoek' : 'lijn');
+    const isRechthoek = viewMode === 'strip' && rasterVorm === 'rechthoek';
     const divisors: number[] = Array.isArray(c.divisors) && c.divisors.length ? c.divisors : [2, 5, 10];
     const maxGetal: number = c.maxGetal ?? 100;
     const perRow: number = c.perRow ?? 10;
@@ -28,9 +34,14 @@ export function generateDeelbaarheidKleurExercises(block: MathBlock): Deelbaarhe
 
     return Array.from({ length: n }, () => {
         const divisor = divisors[randInt(0, divisors.length - 1)];   // random divisor per row
-        if (viewMode === 'raster') {
+        if (isRechthoek) {
+            // Pad UP to a full rectangle (a multiple of rasterCols) so the last visual row
+            // is not ragged — capped at maxGetal, since there are no more distinct numbers
+            // to add past that.
+            const raw = Math.min(rasterCount, maxGetal);
+            const rows = Math.max(1, Math.ceil(raw / rasterCols));
+            const count = Math.min(rows * rasterCols, maxGetal);
             // Non-repeating randoms (not 1..N) so the coloured answer varies each generate.
-            const count = Math.min(rasterCount, maxGetal);
             return { id: rndId(), divisor, numbers: stripNumbers(count, maxGetal, divisor), cols: rasterCols, isManuallyEdited: false };
         }
         return { id: rndId(), divisor, numbers: stripNumbers(perRow, maxGetal, divisor), isManuallyEdited: false };

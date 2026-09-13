@@ -98,8 +98,13 @@ const evenOnevenViews = (maxGetal: number, count: number): BlockSpec[] => [
     { typeId: 'even-oneven', label: 'Even/oneven (rooster)', constraints: { subType: 'rooster', maxGetal }, count },
     { typeId: 'even-oneven', label: 'Even/oneven (cirkels)', constraints: { subType: 'cirkels', maxGetal }, count },
 ];
-const deelbaarheidKleurViews = (maxGetal: number, divisors: number[], count: number): BlockSpec[] =>
-    (['strip', 'markeren', 'raster'] as const).map(v => ({ typeId: 'deelbaarheid-kleuren', label: `Veelvouden (${v})`, constraints: { viewMode: v, maxGetal, divisors }, count }));
+// 'raster' is now the strip mode's 'rechthoek' shape (C1 step 6): the same three visual
+// variants, expressed the current way rather than the legacy viewMode value.
+const deelbaarheidKleurViews = (maxGetal: number, divisors: number[], count: number): BlockSpec[] => [
+    { typeId: 'deelbaarheid-kleuren', label: 'Veelvouden (strip)', constraints: { viewMode: 'strip', rasterVorm: 'lijn', maxGetal, divisors }, count },
+    { typeId: 'deelbaarheid-kleuren', label: 'Veelvouden (markeren)', constraints: { viewMode: 'markeren', maxGetal, divisors }, count },
+    { typeId: 'deelbaarheid-kleuren', label: 'Veelvouden (raster)', constraints: { viewMode: 'strip', rasterVorm: 'rechthoek', maxGetal, divisors }, count },
+];
 const geldViews = (count: number): BlockSpec[] => [
     { typeId: 'geld-herkennen', label: 'Geld herkennen', count },
     { typeId: 'geld-tekenen', label: 'Bedrag tekenen', count },
