@@ -12,8 +12,9 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 // Same operator glyphs as everywhere else, plus the brackets this viewer alone prints.
 const GLYPH: Record<string, string> = { ...OP_GLYPH, '(': '(', ')': ')' };
-// Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
-// CHAR_PX stays a raw px shrink-to-fit constant (measured Azeret Mono advance, not a static style).
+// SYNC: keep the mono face, the *1 size factor and CHAR_PX aligned with MathBlockRenderer —
+// a rekenvolgorde sum and a hoofdrekenen sum on the same sheet must print at one size.
+// CHAR_PX stays a raw px shrink-to-fit constant (measured Azeret Mono advance, not a style).
 
 export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     const exercises: RekenvolgordeExercise[] = block.rekenvolgordeExercises || [];
@@ -33,7 +34,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     // right-aligned, so the "=" and the writing line land at one x instead of tracking each
     // expression's own length.
     const A4_CONTENT_PX = 625;
-    const CHAR_PX = 10.4;   // Azeret Mono 16px advance (11.06px measured at 17px, scaled)
+    const CHAR_PX = 11.1;   // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
     const COL_GAP = 24;
     const LINE_PX = 56;
     const exprs = exercises.map(ex => renderTokens(ex.tokens));
@@ -50,7 +51,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
             columnGap={COL_GAP}
             rowGap={gap}
             items={exercises.map((ex, i) => (
-                <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
+                <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
                     <span style={{ width: `${exprW}px`, textAlign: 'right', whiteSpace: 'pre', flexShrink: 0 }}>{exprs[i]}</span>
                     <span>=</span>
                     {showSolutions
