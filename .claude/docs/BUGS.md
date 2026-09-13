@@ -30,6 +30,15 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   probe at the narrowest tier (render the cell once at 163px off-screen), or let a viewer report
   its own single-item minimum alongside the probe.
 
+- **even-oneven measures two different intrinsic widths on identical code** (2026-09-13,
+  branch G): two `font:baseline` runs of the SAME build put `even-oneven-rooster` and
+  `even-oneven-cirkels` at width 2 in different tiers — intrinsic 425/562px in one run,
+  297/308px in the next, so the packer promotes the block to full width or doesn't, and the
+  cell height swings ~80-100px. Reproduced with no source change between the two runs, so it
+  is the measurement, not the viewer: EvenOnevenViewer's rooster derives `perRow` from
+  `useBlockWidth()`, and `probeIntrinsicWidth` reads min-content after a reflow that has
+  sometimes not settled. Fix direction: the same one as the fitCols entry above.
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`

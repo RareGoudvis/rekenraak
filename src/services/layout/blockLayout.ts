@@ -153,7 +153,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // C1 step 1: the vertical fallback below 200px is gone from PatroonViewer, so the
     // fallback table floor moves up to match SETTINGS_FLOOR's ½.
     "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 2 },
-    "herleidingen": { rowUnits: 2.03, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "herleidingen": { rowUnits: 2.14, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-gemengd": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
@@ -175,7 +175,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // measures overflow 1.03 (SETTINGS_FLOOR floors it to 2 or 4 anyway, see below).
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 2 },
     "plaatswaarde": { rowUnits: 1.63, perRowFull: 2, minWidth: 1 },
-    "procenten": { rowUnits: 1.54, perRowFull: 2, minWidth: 1 },
+    "procenten": { rowUnits: 1.67, perRowFull: 2, minWidth: 1 },
     // ½ since the 2026-09-13 rerun: the viewer's kort/lang/stappen answer lines put the
     // rows 1-up in a half cell (overflow 1.30 → 1.00). A quarter still overflows (1.33).
     "rekenvolgorde": { rowUnits: 1.58, perRowFull: 2, minWidth: 2 },
