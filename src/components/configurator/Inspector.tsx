@@ -73,7 +73,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
     const handleGenerate = () => {
         if (!activeBlock) return;
-        regenerateBlock(activeBlock, setExercises, setGenerationNote);
+        regenerateBlock(activeBlock, setExercises, setGenerationNote, docSettings.uniqueExercises ?? true);
     };
 
     // Document ("Blad") settings. Always reachable from its own tab rather than only by
@@ -217,6 +217,10 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             korter buurblok; off keeps whole rows aligned across the page. */}
                         <div style={S.switchRow}><span style={S.switchText}>Blokken aansluiten</span><Switch checked={(docSettings.packMode ?? 'aansluitend') === 'aansluitend'} onChange={(v) => updateDocSettings({ packMode: v ? 'aansluitend' : 'rijen' })} aria-label="Blokken aansluiten" /></div>
                         <p style={S.hintText}>Blokken schuiven op onder een korter buurblok. Uit: blokken blijven in rijen uitgelijnd.</p>
+                        {/* Sheet-wide dedupe: regenerateBlock (generateDispatch.ts) re-rolls a generated
+                            block's duplicates away, up to a capped number of top-up rounds. */}
+                        <div style={S.switchRow}><span style={S.switchText}>Geen dubbele oefeningen</span><Switch checked={docSettings.uniqueExercises ?? true} onChange={(v) => updateDocSettings({ uniqueExercises: v })} aria-label="Geen dubbele oefeningen" /></div>
+                        <p style={S.hintText}>Elke oefening komt hoogstens één keer voor in een blok; bij kleine reeksen (bv. klok op het uur) blijven herhalingen toegestaan.</p>
                         <div style={S.switchRow}><span style={S.switchText}>Opdrachten nummeren</span><Switch checked={docSettings.numberBlocks} onChange={(v) => updateDocSettings({ numberBlocks: v })} aria-label="Opdrachten nummeren" /></div>
 
                         <label style={{ ...S.label, marginTop: '10px' }}>Ruimte tussen oefenreeksen: {docSettings.blockSpacing ?? 12}px</label>

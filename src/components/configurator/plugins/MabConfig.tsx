@@ -32,6 +32,7 @@ export default function MabConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const setExercises = useWorksheetStore((state) => state.setExercises);
     const setGenerationNote = useWorksheetStore((state) => state.setGenerationNote);
+    const uniqueExercises = useWorksheetStore((state) => state.docSettings.uniqueExercises ?? true);
 
     const {
         mabStyle: rawMabStyle = 'symbolic',
@@ -43,7 +44,7 @@ export default function MabConfig({ block }: Props) {
 
     const applyAndRegenerate = (updates: Partial<MathBlock>) => {
         updateBlockSettings(block.id, updates);
-        regenerateBlock({ ...block, ...updates } as MathBlock, setExercises, setGenerationNote);
+        regenerateBlock({ ...block, ...updates } as MathBlock, setExercises, setGenerationNote, uniqueExercises);
     };
 
     // Mutates one constraint key and immediately regenerates: the old numbers may

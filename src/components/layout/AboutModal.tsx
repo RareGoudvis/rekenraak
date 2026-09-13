@@ -46,6 +46,9 @@ export default function AboutModal({ onClose }: Props) {
                     <p style={{ ...S.p, marginTop: 'var(--sp-4)', marginBottom: 0 }}>
                         <a href="/about.html" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>Lees meer over het project &rarr;</a>
                     </p>
+                    <p style={{ ...S.p, marginTop: 'var(--sp-2)', marginBottom: 0, fontSize: 'var(--text-sm)' }}>
+                        <A href="/faq.html">Veelgestelde vragen</A> &middot; <A href="/oefeningen.html">Alle oefeningen</A>
+                    </p>
                     <span style={{ display: 'block', textAlign: 'right', marginTop: '20px', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-muted)' }}>Gemaakt door Ruben V.H.</span>
                 </div>
         </ModalShell>

@@ -126,13 +126,13 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // actually given instead of guessing a column count off maxRange, and three of them fit
     // a full row (three is also the cap — four leaves no writing room). Only a decimal
     // staartdeling is still wide enough that two is all that fits.
-    "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-optellen-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-aftrekken-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-aftrekken-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-vermenigvuldigen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-optellen-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-optellen-dec": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-aftrekken-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-aftrekken-dec": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
+    "cijferen-vermenigvuldigen-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
     "cijferen-vermenigvuldigen-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
-    "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
+    "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 4, minWidth: 1 },
     "cijferen-delen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
     "controleren": { rowUnits: 5, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "deelbaarheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 1 },
@@ -141,7 +141,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // SETTINGS_FLOOR (2) is what actually keeps it off a quarter, not this table.
     "even-oneven": { rowUnits: 1.9, perRowFull: 1, minWidth: 2 },
     "geld-herkennen": { rowUnits: 10.08, perRowFull: 3, minWidth: 1 },
-    "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
+    "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 2 },
     "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 2 },
     "geld-teruggeven": { rowUnits: 8.4, perRowFull: 1, minWidth: 1 },
     "geld-wissel": { rowUnits: 5.58, perRowFull: 2, minWidth: 2 },
@@ -153,7 +153,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // C1 step 1: the vertical fallback below 200px is gone from PatroonViewer, so the
     // fallback table floor moves up to match SETTINGS_FLOOR's ½.
     "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 2 },
-    "herleidingen": { rowUnits: 2.14, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "herleidingen": { rowUnits: 2.14, perRowFull: 2, minWidth: 4 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-gemengd": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
@@ -183,7 +183,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "schattend": { rowUnits: 1.71, perRowFull: 1, minWidth: 4 },
     "splitsen": { rowUnits: 6.79, perRowFull: 2.5, minWidth: 1 },
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 1 },
-    "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
+    "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 2 },
     // minWidth 4 → 2: the tabel subtype's columns are font-relative `ch` widths now
     // instead of a fixed 220px split, so a ½ column holds the 3-column breuk·decimaal·
     // procent table.
@@ -238,9 +238,13 @@ const VETO_MIN: Record<string, WidthUnits> = {
     "lengte-meten": 4,
     "omtrek": 4,
     "oppervlakte": 4,
-    "geld-tekenen": 4,
     "kalender": 2,
     "geld-teruggeven": 2,
+    // Owner rule (round 3): the hulptabel overflowed at a half and these blocks rarely
+    // pair with others, so herleidingen stays simple — full width only.
+    "herleidingen": 4,
+    // A maateenheid sentence never fits a quarter; the chips wrap under it at a half.
+    "maateenheid": 2,
     // deelbaarheid-kleuren used to be pinned here because its cells were fixed px and a
     // 4-digit number wrapped inside them; the strip/raster cells are `em`-sized now (C1
     // step 6), so the width clamp judges it on measurement like everything else.
@@ -335,6 +339,16 @@ const SETTINGS_FLOOR: Record<string, FloorRule> = {
     // draws ONE place-value figure, which has no such pairing and can go to a quarter.
     'mab-herkennen': () => 2,
     'mab-tekenen': () => 1,
+    // Relation sentences ("rechte a staat ___ op rechte b") never fit a quarter.
+    'vormleer-punt-lijn': (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;
+        return (c.niveau ?? 1) >= 2 ? 2 : 1;
+    },
+    // Meten draws 5 cm legs to scale: two per row at full, one at a half, never a quarter.
+    'vormleer-hoeken': (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;
+        return c.mode === 'meten' ? 2 : 1;
+    },
     ordenen: ordenenFloor,
     'breuken-rangschikken': ordenenFloor,
 };

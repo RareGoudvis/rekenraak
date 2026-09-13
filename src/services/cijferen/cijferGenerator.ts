@@ -102,7 +102,7 @@ function applyMask(
 
 export function generateCijferExercises(block: MathBlock): CijferExercise[] {
     const c = block.constraints as CijferConstraints;
-    const count = block.numberOfExercises || 2;
+    const count = block.numberOfExercises || 4;
     // Stamp the decimal-place count on every exercise: the grid draws the columns the
     // exercise was made with, not the ones the settings happen to say now.
     const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;

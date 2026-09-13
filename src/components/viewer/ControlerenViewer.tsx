@@ -6,6 +6,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as GLYPH } from '../../services/math/formatters';
 import type { ControlerenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { ANSWER_LINE_H } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -109,8 +110,10 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
     // The blank a pupil writes a number on. 160px is roughly six digits at the default
     // slider — 64px was a stub nobody could write "1 248" in; flex:1 lets it take whatever
     // the row has left over.
+    // Writing-space token, not a fixed em value: the check line grows with the
+    // Lettergrootte slider (or a per-block override) like every other answer line.
     const writeLine: React.CSSProperties = {
-        borderBottom: '1.5px solid #000', flex: 1, minWidth: '160px', height: '1.4em', display: 'inline-block',
+        borderBottom: '1.5px solid #000', flex: 1, minWidth: '160px', height: ANSWER_LINE_H, display: 'inline-block',
     };
     // 'teken' puts three blanks on one row, so each gets a third of the floor — three
     // 160px minimums would not fit the half a single exercise is allowed to take.

@@ -20,7 +20,8 @@ export function generateWeegschaalExercises(block: MathBlock): WeegschaalExercis
     const allowed = BEREIK_STEPS[bereikGram] ?? [50];
     const stepGram: number = allowed.includes(c.stepGram) ? c.stepGram : allowed[0];
     const notatie: string = c.notatie ?? 'g';
-    const mode: 'aflezen' | 'tekenen' = c.mode === 'tekenen' ? 'tekenen' : 'aflezen';
+    // Legacy saves may still carry 'tekenen' (renamed to 'kleuren' — a needle looked like a clock exercise).
+    const mode: 'aflezen' | 'kleuren' = (c.mode === 'kleuren' || (c.mode as string) === 'tekenen') ? 'kleuren' : 'aflezen';
     const count = block.numberOfExercises || 4;
 
     const out: WeegschaalExercise[] = [];

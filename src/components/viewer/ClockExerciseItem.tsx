@@ -50,8 +50,10 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
         <span style={{ ...solutionText, fontSize: isMath ? 'calc(var(--sheet-size-math) * 0.7)' : 'calc(var(--sheet-size-text) * 0.6)' }}>{text}</span>
     );
     // Empty digital display for the pupil to fill in (matches the omzetten __:__ box).
+    // 84x40 (was 65x32, owner review R3): the old box's edges sat too close to the digits
+    // for a pupil to write inside — bigger so the box itself has margin, not just the text.
     const emptyDigitalBox = (
-        <div style={{ border: '2px solid #000', width: mathPx(65), height: mathPx(32), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.92)', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
+        <div style={{ border: '2px solid #000', width: mathPx(84), height: mathPx(40), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.92)', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
             {showSolutions ? ex.digitalText : '__:__'}
         </div>
     );

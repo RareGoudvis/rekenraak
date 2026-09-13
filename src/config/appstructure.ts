@@ -420,6 +420,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'vormleer-hoeken-herkennen', label: 'Herkennen', typeId: 'vormleer-hoeken', defaultConstraints: { mode: 'herkennen' }, minLeerjaar: 3, instruction: 'Welke soort hoek is dit?' },
                             { id: 'vormleer-hoeken-tekenen', label: 'Tekenen', typeId: 'vormleer-hoeken', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 3, instruction: 'Teken de hoek.' },
+                            { id: 'vormleer-hoeken-meten', label: 'Meten', typeId: 'vormleer-hoeken', defaultConstraints: { kind: 'hoek', mode: 'meten', exercisesPerRow: 2 }, minLeerjaar: 4, instruction: 'Meet de hoek en schrijf het aantal graden.' },
                         ],
                     },
                     {
@@ -511,7 +512,7 @@ export const APP_STRUCTURE: Domain[] = [
                 label: 'Massa',
                 types: [
                     { id: 'massa-weegschaal-aflezen', label: 'Weegschaal aflezen', typeId: 'weegschaal', defaultConstraints: { mode: 'aflezen' }, minLeerjaar: 2, instruction: 'Lees het gewicht af.' },
-                    { id: 'massa-weegschaal-tekenen', label: 'Wijzer tekenen', typeId: 'weegschaal', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 2, instruction: 'Teken de wijzer.' },
+                    { id: 'massa-weegschaal-tekenen', label: 'Weegschaal kleuren', typeId: 'weegschaal', defaultConstraints: { mode: 'kleuren' }, minLeerjaar: 2, instruction: 'Kleur de weegschaal tot het gegeven gewicht.' },
                 ],
             },
             {

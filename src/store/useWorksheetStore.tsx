@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { MathBlock, Equation, CijferExercise, FooterData, LayoutPreset } from '../services/math/types';
-import { regenerateBlock, GENERATION_FAILED } from '../services/generateDispatch';
+import { regenerateBlock, generateForBlock, exerciseKeyOf, GENERATION_FAILED } from '../services/generateDispatch';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
@@ -72,6 +72,9 @@ export interface DocSettings {
     // under a shorter neighbour (skyline), 'rijen' keeps whole rows aligned across the
     // page the way the sheet worked before. Optional → back-compat: absent = aansluitend.
     packMode?: 'aansluitend' | 'rijen';
+    // Sheet-wide "no duplicate exercises" toggle, read by regenerateBlock (generateDispatch.ts).
+    // Optional → back-compat: absent = true (old/shared sheets keep the safer default).
+    uniqueExercises?: boolean;
     numberBlocks: boolean;
     // Style-builder overrides (custom wins over the enum presets above). Optional → back-compat.
     headerCustom?: RegionStyle;
@@ -301,7 +304,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         // A generator that throws must not take the whole add down with it.
         if (def) {
             try {
-                const generated = def.generateNoted ? def.generateNoted(newBlock) : { items: def.generate(newBlock), note: null };
+                const generated = generateForBlock(newBlock, state.docSettings.uniqueExercises ?? true);
                 (newBlock as unknown as Record<string, unknown>)[def.exerciseField] = generated.items;
                 newBlock.generationNote = generated.note;
             } catch (err) {
@@ -429,7 +432,11 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
                 return { ...merged, [field]: current.slice(0, want) } as MathBlock;
             }
             try {
-                const extra = def.generate(merged) as unknown as Array<unknown>;
+                // Raising the count keeps the existing exercises; the new tail must not
+                // repeat them when the sheet asks for unique exercises.
+                const unique = state.docSettings.uniqueExercises ?? true;
+                const have = new Set(unique ? current.map(ex => exerciseKeyOf(b.typeId, ex)) : []);
+                const extra = generateForBlock(merged, unique).items.filter(ex => !unique || !have.has(exerciseKeyOf(b.typeId, ex)));
                 const tail = extra.slice(0, want - current.length);
                 return { ...merged, [field]: [...current, ...tail] } as MathBlock;
             } catch { return merged; }
@@ -509,7 +516,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         const state = get();
         for (const block of state.blocks) {
             if (block.locked) continue;
-            regenerateBlock(block, state.setExercises, state.setGenerationNote);
+            regenerateBlock(block, state.setExercises, state.setGenerationNote, state.docSettings.uniqueExercises ?? true);
         }
     },
     updateHeader: (updates) => set((state) => ({ header: { ...state.header, ...updates } })),

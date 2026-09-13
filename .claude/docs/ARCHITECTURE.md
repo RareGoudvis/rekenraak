@@ -76,7 +76,7 @@ lives in memory.
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector context. `setActiveSelection` with a real block id ALSO sets `inspectorTab: 'oefening'` (content first); `'document'`/`null` leave the tab alone, since the block tabs are disabled without a selection |
 | `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths** |
 | `footer` | `FooterData` | three configurable slots (`slotLeft`/`slotCenter`/`slotRight` + their texts) and `brandSlot` — where the "Gemaakt met RekenRaak.be" credit sits; the credit always prints, only its position is a choice |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten") |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten"), uniqueExercises (default and absent = true — Blad › Opdrachten › "Geen dubbele oefeningen"; read by `generateForBlock` in generateDispatch.ts, see §6) |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point: seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
@@ -227,7 +227,7 @@ one exercise array **per family** (only one is populated per block, keyed by
 | `kalenderExercises` | `KalenderExercise` | `kalender` |
 | `controleExercises` | `ControleExercise` | `controleren` (negenproef/omgekeerde) |
 | `weegschaalExercises` | `WeegschaalExercise` | `weegschaal` |
-| `vormleerExercises` | `VormleerExercise` | `vormleer-punt-lijn`, `vormleer-hoeken`, `vormleer-figuren` (kind-discriminated) |
+| `vormleerExercises` | `VormleerExercise` | `vormleer-punt-lijn`, `vormleer-hoeken`, `vormleer-figuren` (kind-discriminated); since 2026-09-14 also `niveau`, `relations[]` (`{kind: loodrecht/evenwijdig/snijdt/ligt-op, a, b, at?, before, after, answer}` — the sentence around the blank), `subExercises?` (niveau 3 = two relations), `pointT/pointOffset` (ligt-op placement) |
 
 `kettingsommen` reuses `patroonExercises`;
 `oppervlakte` reuses `meetExercises` (adds `area?: number`).
@@ -292,6 +292,17 @@ sharing one reference.
 ---
 
 ## 6. The generator contract (shared by every generator)
+
+**Sheet-wide dedupe sits above the generators** (since 2026-09-14): every path that fills a
+block — `regenerateBlock` (Genereer / Genereer alles), the first generate in `addBlockFromType`,
+the mode-switch regenerates in the breuken/MAB configs and the count top-up in
+`updateBlockSettings` — goes through `generateForBlock(block, uniqueExercises)` in
+[generateDispatch.ts](../../src/services/generateDispatch.ts). With the toggle on it keys
+each exercise (`def.exerciseKey?.(ex)`, else the exercise with every `id` field stripped,
+stringified), drops repeats and re-rolls the generator up to 8 rounds to refill; a pool too
+small to fill the count (12 hours-only clock times for 15 questions) is padded with repeats and
+the generation note says "Kleine reeks: N oefeningen komen dubbel voor." Generators keep their
+own within-block `used` set — the wrapper is for what the generator's key cannot see.
 
 Every `generate<X>Exercises` follows the same shape — document/learn it once:
 
@@ -365,7 +376,7 @@ only.
 | `hr-std-vermenigvuldigen` | `exercises` | `generateMultiplicationExercises` | `MathBlockRenderer` | `MultiplicationConfig` | `MulDivConstraints` via `mulDivDefaults`: multiplicationMode, selectedTables, tableLimit, fractionMultMode |
 | `hr-std-delen` | `exercises` | `generateDivisionExercises` | `MathBlockRenderer` | `DivisionConfig` | `mulDivDefaults`: divisionLevel, metRestLevel, selectedTables, tableLimit |
 | `hr-std-gemengd` | `exercises` | `math/mixedGenerator.ts` (per exercise: pick a VARIANT, build the effective hr-std block, run `mathEngine` + `relax`) | `MathBlockRenderer` | `GemengdConfig` (per-variant tabs mount the four hr-std plugins under a `ConstraintScope`) | `MixedConstraints`: shared AddSub bag + `variants` (8 ids in `MIXED_VARIANTS` = operator × optional preset compenseren/tienvoud), `mix` random/cycle, `perVariant[id]` sparse tab overrides merged by `effectiveBlockFor` (shared → preset defaults → tab). Two leaves (natural / decimal), last under Hoofdrekenen. Per-exercise switch: `regenerateExercise` (§3) |
-| `cijferen-optellen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` (ruitje size = `cijferGrid.ts`, a factor of `--sheet-size-math` × the `gridCellSize` multiplier; grid lines on the half-stroke; ≤3 per row measured from the exercises themselves) | `CijferConfig` | operator, numberType, maxRange, numberOfTerms, bridges, operand0-3Mask; each exercise carries `decimalPlaces` (own-data rule) |
+| `cijferen-optellen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` (default 4 exercises, 4 per row at full / 2 at ½ / 1 at ¼ — decimal × 3, decimal : 2; ruitje size = `cijferGrid.ts`, a factor of `--sheet-size-math` × the `gridCellSize` multiplier; grid lines on the half-stroke; ≤3 per row measured from the exercises themselves) | `CijferConfig` | operator, numberType, maxRange, numberOfTerms, bridges, operand0-3Mask; each exercise carries `decimalPlaces` (own-data rule) |
 | `cijferen-aftrekken-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-vermenigvuldigen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-delen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above + withRemainder |
@@ -409,8 +420,8 @@ only.
 | `kalender` | `kalenderExercises` | `generateKalenderExercises` | `KalenderViewer` | `KalenderConfig` | subType (maandrooster/datum-rekenen/notatie — leaf), questionTypes[] + questionCount (rooster), month (random/0–11), year (pinned 2026 for stable regeneration); ma-first CSS-grid month |
 | `controleren` | `controleExercises` | `generateControleExercises` | `ControlerenViewer` | `ControlerenConfig` | subType (negenproef/omgekeerde — leaf), operators[] (omgekeerde: +/−), maxGetal, foutAandeel (geen/helft/alles; planted deltas never ≡ 0 mod 9), showKruis (inline SVG cross; rests red in solutions) |
 | `oppervlakte` | `meetExercises` (reused, + `area`) | `generateOppervlakteExercises` | `OppervlakteViewer` | `OppervlakteConfig` | subType (rooster = 1 cm grid count, whole-cm rect/L-figuur / berekenen = l×b, ½·b·h for rechth. driehoek — leaf), shapes[], min/maxLength sliders, scaffoldFormule (`opp = ___ × ___ = ___`), askOmtrek; SYNC cm→px 37.8 with MetenViewer |
-| `weegschaal` | `weegschaalExercises` | `generateWeegschaalExercises` | `WeegschaalViewer` | `WeegschaalConfig` | mode (aflezen = black needle / tekenen = red solution needle — leaf), bereikGram (1000/2000/5000) with dependent stepGram (BEREIK_STEPS), notatie (g/kg-komma/kg-g), exercisesPerRow, boxHeight; values snap to the schaalverdeling; each exercise carries its own `bereikGram/stepGram/notatie/mode` (own-data rule) |
-| `vormleer-punt-lijn` · `-hoeken` · `-figuren` | `vormleerExercises` (shared) | `generateVormleerExercises` | `VormleerViewer` (shared) | `VormleerConfig` (shared) | kind from typeId (registry default), mode (herkennen/tekenen; figuren: benoemen/eigenschappen), concepts[] per kind (leaf presets; figuren classify axis driehoeken-hoeken/-zijden/vierhoeken), answerMode (woordbank/schrijven), randomRotation, showBoog (hoeken; square marker at 90°), showMarks (equal-side ticks + right-angle squares), raster + boxHeight (tekenen), exercisesPerRow; `CONCEPT_NAMES` maps keys → leerplan names |
+| `weegschaal` | `weegschaalExercises` | `generateWeegschaalExercises` | `WeegschaalViewer` | `WeegschaalConfig` | mode (aflezen = black needle / kleuren = no needle, the pupil shades the dial from 0 to the value, solution paints that wedge in `SOL` — leaf; a legacy `tekenen` loads as kleuren), bereikGram (1000/2000/5000) with dependent stepGram (BEREIK_STEPS), notatie (g/kg-komma/kg-g), exercisesPerRow, boxHeight; values snap to the schaalverdeling; each exercise carries its own `bereikGram/stepGram/notatie/mode` (own-data rule) |
+| `vormleer-punt-lijn` · `-hoeken` · `-figuren` | `vormleerExercises` (shared) | `generateVormleerExercises` | `VormleerViewer` (shared) | `VormleerConfig` (shared) | kind from typeId (registry default), mode (herkennen/tekenen; hoeken also **meten** = one to-scale angle in 5° steps 20–160° on a grid, pupil writes the degrees, `showHulplijn` faint 0–180 line — leaf "Meten", floor ½; figuren: benoemen/eigenschappen), **niveau** 1/2/3 for punt-lijn herkennen (1 = name the labelled element — points uppercase, rechten lowercase, `[AB` / `[AB]`; 2 = one relation sentence with a blank, all four relation kinds unless relation pills narrow them; 3 = two relations; niveau ≥ 2 floors at ½), concepts[] per kind (leaf presets; figuren classify axis driehoeken-hoeken/-zijden/vierhoeken), answerMode (woordbank/schrijven), randomRotation, showBoog (hoeken; square marker at 90°), showMarks (equal-side ticks + right-angle squares), raster + boxHeight (tekenen), exercisesPerRow; `CONCEPT_NAMES` maps keys → leerplan names |
 
 > Note: matching is now exact-key, so the old substring collision between
 > `hr-std-optellen` and `cijferen-optellen-*` (which forced
@@ -914,10 +925,12 @@ src/
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
 │  (repo root) scripts/font-baseline.mjs # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
 │  (repo root) scripts/font-compare.mjs  # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
+│  (repo root) scripts/catalogue.mjs     # walks every leaf → public/oefeningen.html + public/oefeningen/*.png (npm run catalogue; re-run after a leaf changes)
+│  (repo root) public/about.html, faq.html, oefeningen.html  # static SEO pages, own token copy (oefeningen.html is generated, never hand-edited)
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
-│   ├── generateDispatch.ts      # regenerateBlock: registry lookup → generic setExercises
+│   ├── generateDispatch.ts      # generateForBlock / regenerateBlock: registry lookup, sheet-wide dedupe (§6) → generic setExercises
 │   ├── persistence.ts           # autosave / presets / share-link / file import-export (§10)
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)

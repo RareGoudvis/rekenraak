@@ -11,10 +11,10 @@ import { makeBlock } from './helpers/makeBlock';
 const measure = (px: number, atWidth: WidthUnits = 4) => ({ intrinsicPx: px, atWidth });
 
 describe('minWidthUnits — fallback (no measurement)', () => {
-    // tijdsduur stands in for "the table says full width" since verbanden dropped to ½
+    // herleidingen stands in for "the table says full width" (verbanden and tijdsduur dropped to ½)
     // when its tabel columns became font-relative `ch` widths instead of a fixed 220px split.
     test('a full-width table entry still claims the full width, as it did before measuring', () => {
-        expect(minWidthUnits(makeBlock('tijdsduur', { block: { numberOfExercises: 3 } }))).toBe(4);
+        expect(minWidthUnits(makeBlock('herleidingen', { block: { numberOfExercises: 3 } }))).toBe(4);
     });
 
     test('hoofdrekenen at a million needs the full width', () => {

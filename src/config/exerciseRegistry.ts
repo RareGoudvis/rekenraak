@@ -85,6 +85,11 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
     // Receives typeId because a few defaults differ by leaf (e.g. geld scaffolding).
     defaultConstraints: (typeId: string) => C;
     defaultCount: number;
+    // Content key for sheet-level "Geen dubbele oefeningen" dedup (regenerateBlock,
+    // generateDispatch.ts). Only needed when an exercise carries random display-only
+    // fields that would make two identical sums look different under the default
+    // JSON.stringify(id-stripped) key; omit otherwise.
+    exerciseKey?: (ex: unknown) => string;
 }
 
 // Names each row's constraint family, so a default factory that drops or misspells a key
@@ -360,7 +365,7 @@ const vormleerDefaults = (typeId: string): VormleerConstraints => ({
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => row<CijferConstraints>({
     exerciseField: 'cijferExercises', generate: generateCijferExercises,
-    defaultConstraints: cijferDefaults, defaultCount: 2,
+    defaultConstraints: cijferDefaults, defaultCount: 4,
 });
 
 export const REGISTRY: Record<string, ExerciseTypeDef> = {

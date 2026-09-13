@@ -27,8 +27,6 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
             cols={1}
             columnGap={24}
             rowGap={gap}
-            // 1-up: centre the sentence+chip row rather than leave it hugging the left edge.
-            justifyItems="center"
             items={exercises.map(ex => {
                 // Schatten shows value+unit combos ("180 g / 180 kg"); eenheid shows bare units.
                 const chipText = (u: string) => subType === 'schatten' ? `${formatMathNumber(ex.value)} ${u}` : u;
@@ -37,7 +35,9 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                     ? ex.sentence.replace(`${String(ex.value).replace('.', ',')} ___`, '___').replace(/\d+(,\d+)? ___/, '___')
                     : ex.sentence;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: 'calc(var(--sheet-size-text) * 0.75)', flexWrap: 'wrap', minWidth: 0 }}>
+                    // Sentence left-aligned; chips (when present) sit on their own line below at a
+                    // fixed indent, so circling stays consistent across every exercise in the block.
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: 'calc(var(--sheet-size-text) * 0.75)', minWidth: 0 }}>
                         <span>{sentence.split('___')[0]}
                             {ex.choices
                                 ? <span style={{ borderBottom: '1px dotted #999', minWidth: '30px', display: 'inline-block' }} />
@@ -47,7 +47,7 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                             {sentence.split('___')[1]}
                         </span>
                         {ex.choices && (
-                            <span style={{ display: 'inline-flex', gap: '10px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
+                            <span style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6em', paddingLeft: '24px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
                                 {ex.choices.map(u => (
                                     // Solutions circle the right chip in red (print-safe ring).
                                     <span key={u} style={{
