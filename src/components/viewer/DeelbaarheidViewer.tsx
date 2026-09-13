@@ -27,17 +27,22 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
 
     // ── Veelvouden: a fill-in multiples row per exercise ──────────────────────
     if (layout === 'veelvouden') {
+        // A wrapped sequence looks like a mistake ("why did the row break there?"), so cap
+        // how many terms are PRINTED to what the column actually holds (~56px per term
+        // including its gap and dash) instead of letting it wrap. "– (enz.)" always closes
+        // the row, so trimming reads as "and so on" rather than as a cut-off answer.
+        const maxTerms = Math.max(3, Math.floor((A4_CONTENT_PX - 60) / 56));
         return (
             <FragmentableGrid
                 cols={1}
                 rowGap={gap + 4}
                 items={exercises.map((ex) => {
-                    const seq = ex.sequence || [];
+                    const seq = (ex.sequence || []).slice(0, maxTerms);
                     const given = ex.givenCount ?? 2;
                     return (
                         <div key={ex.id} className="print-exercise" style={{ fontFamily: mono }}>
                             <div style={{ marginBottom: '8px', fontSize: 'calc(var(--sheet-size-text) * 0.8)' }}>Vul de rij veelvouden van <strong>{ex.base}</strong> aan:</div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'wrap', fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'nowrap', fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                                 {seq.map((v, i) => (
                                     <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '6px' }}>
                                         {i > 0 && <span>–</span>}
