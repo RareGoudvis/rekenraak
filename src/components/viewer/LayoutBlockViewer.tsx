@@ -70,7 +70,11 @@ export default function LayoutBlockViewer({ block }: Props) {
         const cols = Math.max(1, Math.floor(width / cell));
         return (
             <div style={{
-                width: `${cols * cell}px`,
+                // width:100% capped by maxWidth (not a fixed width) so the min-content probe
+                // that decides ½/¼ eligibility can shrink this box instead of reporting the
+                // full cell width back at itself (PageSheet.probeIntrinsicWidth).
+                width: '100%',
+                maxWidth: `${cols * cell}px`,
                 height: `${rows * cell}px`,
                 border: '1px solid #000',
                 backgroundImage:

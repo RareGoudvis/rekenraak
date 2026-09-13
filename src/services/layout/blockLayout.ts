@@ -99,6 +99,11 @@ interface LayoutFacts {
 const LAYOUT: Record<string, LayoutFacts> = {
     "layout-sectie": { rowUnits: 1, perRowFull: 1, minWidth: 4 },
     "layout-lege-pagina": { rowUnits: 1, perRowFull: 1, minWidth: 4 },
+    // schrijflijnen/raster/kader render width:100% furniture (schrijflijnen's lines are
+    // absolutely positioned so they measure 0; kader wraps text) — their min-content probe
+    // (see PageSheet.probeIntrinsicWidth) reports narrow, so they are ¼-capable by content
+    // rather than by this table's minWidth alone. Raster used a fixed cols*cell px width
+    // until 2026-09-13, which pinned its probe to the full cell and greyed out ½ and ¼.
     "layout-schrijflijnen": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
     "layout-raster": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
     "layout-kader": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
