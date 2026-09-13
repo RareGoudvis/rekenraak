@@ -1,6 +1,6 @@
 import type { MathBlock, SplitsenExercise } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
+import { useBlockWidth, fitCols, ANSWER_LINE_H, useSheetSizePx } from './BlockWidthContext';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
@@ -24,6 +24,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     const gap = block.verticalSpacing || 14;
     // Column counts follow the cell width (¼ stacks 1-up), never a fixed 2/4/5-up grid.
     const availableWidth = useBlockWidth();
+    const mathPx = useSheetSizePx('math');
     const rowHeight: number = c.rowHeight || 28;
 
     if (exercises.length === 0) {
@@ -35,7 +36,18 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     }
 
     if (layout === 'basic') {
-        const cols = fitCols(availableWidth, 160, Math.min(exercises.length, 4), gap);
+        // itemMinPx scales with the widest value in the block (two pair-cells side by side)
+        // instead of a flat 160 — a bigger maxGetal (more digits) still fits exactly the
+        // preferred column count instead of silently cramming in one extra per row.
+        // Coefficients tuned so chars=2 (the common 1–10/1–20 case) gives ~149px: four fit
+        // the ~670px full cell (160 just missed and left the row 3-up), two a half, one a
+        // quarter; wider values grow it per extra digit.
+        const chars = Math.max(2, ...exercises.flatMap(ex => [ex.total, ...ex.pairs.flatMap(p => [p.given, p.answer])]).map(v => fmt(v).length));
+        const itemMinPx = Math.round((chars * 0.9 + 2.5) * 2 * mathPx);
+        // preferred stays a flat 4 (not capped to exercises.length): width alone decides how
+        // many fit per row, so a short block (few exercises) doesn't fall back to fewer, wider
+        // 1fr tracks that stretch its boxes — full → 4-up, half → 2-up, quarter → 1-up.
+        const cols = fitCols(availableWidth, itemMinPx, 4, gap);
         return (
             <FragmentableGrid
                 cols={cols}
@@ -49,12 +61,18 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     }
 
     if (layout === 'splitsboom') {
-        const cols = fitCols(availableWidth, 130, Math.min(exercises.length, 4), gap + 10);
         // One box width for the whole block (not per-exercise) so every tree in the block
         // lines up; sized to the WIDEST value anywhere in it rather than a flat 46px, which
         // clipped once numbers grew past two digits.
         const chars = Math.max(2, ...exercises.flatMap(ex => [ex.total, ex.pairs[0]?.given ?? 0, ex.pairs[0]?.answer ?? 0]).map(v => fmt(v).length));
-        const boxMinWidth = `max(46px, calc(${(chars * 0.62 + 0.8).toFixed(2)} * var(--sheet-size-math)))`;
+        const boxWidthEm = chars * 0.62 + 0.8;
+        const boxMinWidth = `max(46px, calc(${boxWidthEm.toFixed(2)} * var(--sheet-size-math)))`;
+        // fitCols needs the tree's REAL rendered width (two boxes + the 18px inner gap), not
+        // a flat guess — otherwise a block with big numbers keeps too many trees per row and
+        // the sheet shows the "Verklein om te passen" overflow banner instead of wrapping.
+        const boxMinWidthPx = Math.max(46, boxWidthEm * mathPx);
+        const itemMinPx = boxMinWidthPx * 2 + 18;
+        const cols = fitCols(availableWidth, itemMinPx, Math.min(exercises.length, 4), gap + 10);
         return (
             <FragmentableGrid
                 cols={cols}
@@ -140,9 +158,21 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     if (layout === 'positie-math') {
         // 1-up (was a hardcoded 2): the term chain wraps at `flexWrap: 'wrap'` inside
         // PositieMathRow, so two per row left uneven, overlapping wraps in a narrow column.
+        // One left-column width for the whole block so "=" lands at the same x on every row
+        // (decompose: the number; compose: the term chain) instead of tracking each row's
+        // own content width.
+        const leftText = (ex: SplitsenExercise) => {
+            if (ex.mathDirection !== 'compose') return fmt(ex.total);
+            const raw = ex.placeBreakdown || [];
+            const places = ex.placeOrder ? ex.placeOrder.map(k => raw.find(p => p.key === k)).filter((p): p is NonNullable<typeof p> => !!p) : raw;
+            const letters = ex.mathForm === 'letters';
+            return places.map(p => letters ? `${p.digit}${p.key}` : placeValueStr(p.digit, p.weight)).join(' + ');
+        };
+        const chars = Math.max(1, ...exercises.map(ex => leftText(ex).length));
+        const leftColWidth = `calc(${(chars * 0.62 + 0.4).toFixed(2)} * var(--sheet-size-math))`;
         return (
             <FragmentableGrid cols={1} columnGap={gap + 20} rowGap={gap + 4}
-                items={exercises.map(ex => <PositieMathRow key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+                items={exercises.map(ex => <PositieMathRow key={ex.id} ex={ex} showSolutions={showSolutions} leftColWidth={leftColWidth} />)} />
         );
     }
 
@@ -218,7 +248,7 @@ function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
 
 // ── Place-value: mathematical (letters / expanded × decompose / compose) ──────
 
-function PositieMathRow({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+function PositieMathRow({ ex, showSolutions, leftColWidth }: { ex: SplitsenExercise; showSolutions: boolean; leftColWidth: string }) {
     // mathOrder: 'gehusseld' shuffled the term order once at generation (ex.placeOrder);
     // 'volgorde' (no placeOrder) renders place-value order as generated.
     const raw = ex.placeBreakdown || [];
@@ -235,19 +265,22 @@ function PositieMathRow({ ex, showSolutions }: { ex: SplitsenExercise; showSolut
 
     const result = () => showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60);
 
+    // Left/right of "=" swap with direction, but both sit in fixed-width grid columns (sized
+    // to the block's widest left-side content) so the "=" itself lands at the same x on
+    // every row, whichever term order (gehusseld or not) the terms come in.
     return (
-        <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
-            {compose ? (
-                <>
-                    {places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)}
-                    <span>=</span>{result()}
-                </>
-            ) : (
-                <>
-                    <span style={{ fontWeight: 'normal' }}>{fmt(ex.total)}</span><span>=</span>
-                    {places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termBlank(p)}</span>)}
-                </>
-            )}
+        <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+            <span style={{ display: 'inline-flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '6px', minWidth: leftColWidth }}>
+                {compose
+                    ? places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)
+                    : <span style={{ fontWeight: 'normal' }}>{fmt(ex.total)}</span>}
+            </span>
+            <span style={{ width: '20px', textAlign: 'center', flexShrink: 0 }}>=</span>
+            <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
+                {compose
+                    ? result()
+                    : places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termBlank(p)}</span>)}
+            </span>
         </div>
     );
 }

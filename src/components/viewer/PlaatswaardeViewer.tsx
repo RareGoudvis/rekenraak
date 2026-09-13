@@ -114,6 +114,13 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     if (subType === 'omcirkelen') {
         // The number keeps its underlined digit (same as 'plaats'); the answer is not written but
         // circled among the place letters, which are printed in the number's own place order.
+        // Fixed-width right-aligned number column (widest number's digit + comma count in the
+        // block) so every "→" lands at the same x, matching the waarde/plaats section below.
+        const numChars = Math.max(1, ...exercises.map(ex => {
+            const places = placesFor(ex);
+            return places.length + (places.some(p => p.weight < 1) ? 1 : 0);
+        }));
+        const numColWidth = tight ? undefined : `calc(${(numChars * 0.62 + 0.3).toFixed(2)} * var(--sheet-size-math))`;
         return (
             <FragmentableGrid
                 cols={fitCols(availableWidth, 260, 2)}
@@ -123,7 +130,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                     const places = placesFor(ex);
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '8px' : '14px', flexWrap: 'nowrap', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
-                            {numberWithUnderline(ex)}
+                            <span style={{ display: 'inline-block', minWidth: numColWidth, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
                             <span>→</span>
                             <span style={{ display: 'inline-flex', gap: tight ? '2px' : '6px' }}>
                                 {places.map(p => {

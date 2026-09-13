@@ -29,6 +29,14 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
 
     // ── KIEZEN: circle the largest / smallest ─────────────────────────────────
     if (subType === 'kiezen') {
+        // One column width for the whole block (not per-row max-content) sized to the
+        // WIDEST number anywhere in it, and right-aligned, so hundreds line up under
+        // hundreds across rows instead of each row's chips floating at their own width.
+        const parts = exercises.flatMap(ex => ex.numbers || []).map(v => formatMathNumber(v).split(','));
+        const intChars = Math.max(2, ...parts.map(p => p[0].length));
+        const fracChars = Math.max(0, ...parts.map(p => p[1]?.length ?? 0));
+        const chipChars = intChars + (fracChars > 0 ? fracChars + 1 : 0);
+        const chipColWidth = `calc(${(chipChars * 0.62 + 0.6).toFixed(2)} * var(--sheet-size-math))`;
         return (
             <FragmentableGrid
                 cols={1}
@@ -41,20 +49,25 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                         // sized to content, laid out in a single row instead of a flex-wrap
                         // that could break the chip list onto a second line.
                         <div key={ex.id} className="print-exercise" style={{
-                            display: 'grid', gridAutoFlow: 'column', gridAutoColumns: 'max-content',
+                            display: 'grid', gridAutoFlow: 'column', gridAutoColumns: chipColWidth,
                             columnGap: '18px', justifyContent: 'center', width: '100%',
                             fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)',
                         }}>
                             {nums.map((n, i) => {
                                 const isAns = showSolutions && n === answer;
+                                // Split at the comma so 976,9 and 61,96 line up on it (place value
+                                // under place value), not on their right edge.
+                                const [int, frac] = formatMathNumber(n).split(',');
                                 return (
                                     <span key={i} style={{
                                         padding: '2px 8px',
+                                        display: 'inline-grid', gridTemplateColumns: `${intChars}ch ${fracChars > 0 ? `${fracChars + 1}ch` : ''}`,
                                         border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
                                         borderRadius: '50%',
                                         color: isAns ? SOL : 'inherit',
                                     }}>
-                                        {formatMathNumber(n)}
+                                        <span style={{ textAlign: 'right' }}>{int}</span>
+                                        {fracChars > 0 && <span style={{ textAlign: 'left' }}>{frac !== undefined ? `,${frac}` : ''}</span>}
                                     </span>
                                 );
                             })}
