@@ -452,3 +452,14 @@ describe('raising the exercise count', () => {
         expect(useWorksheetStore.getState().blocks[0].exercises).toEqual(block.exercises.slice(0, 3));
     });
 });
+
+describe('addBlockFromType opens the new block', () => {
+    test('selects it and switches the inspector to Oefeningen even from Blad', () => {
+        useWorksheetStore.getState().clearBlocks();
+        useWorksheetStore.getState().setInspectorTab('blad');
+        useWorksheetStore.getState().addBlockFromType('hr-std-optellen', 'Optellen');
+        const s = useWorksheetStore.getState();
+        expect(s.activeBlockId).toBe(s.blocks[0].id);
+        expect(s.inspectorTab).toBe('oefening');
+    });
+});

@@ -318,7 +318,9 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         }
 
         const newBlocks = [...state.blocks, newBlock];
-        return { blocks: newBlocks, activeBlockId: newBlock.id, ...pushHistory(state._history, state._historyIndex, newBlocks) };
+        // Same rule as setActiveSelection: a fresh block opens its own settings, otherwise a
+        // teacher who added it from the Blad tab sees nothing change on the right.
+        return { blocks: newBlocks, activeBlockId: newBlock.id, inspectorTab: 'oefening', ...pushHistory(state._history, state._historyIndex, newBlocks) };
     }),
 
     removeBlock: (id) => set((state) => {
