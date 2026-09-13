@@ -26,8 +26,8 @@ export default function AboutModal({ onClose }: Props) {
                     <p style={S.lead}>
                         Een gratis generator voor wiskunde, gebaseerd op de leerstof in de nieuwe minimumdoelen.
                         Geen accounts. Geen abonnement. Geen 'paywall' — nooit. Lesmateriaal verkopen mag geen
-                        verdienmodel zijn. Daarom kan je deze tool ook terugvinden via KlasCement, het portaal van de
-                        Vlaamse Overheid waar leerkrachten hun materiaal gratis delen.
+                        verdienmodel zijn. Daarom kan je deze tool binnenkort ook terugvinden via KlasCement, het
+                        portaal van de Vlaamse Overheid waar leerkrachten hun materiaal gratis delen.
                     </p>
 
                     <h3 style={S.h3}>Wat doet rekenraak?</h3>
