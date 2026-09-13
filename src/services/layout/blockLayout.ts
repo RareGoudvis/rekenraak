@@ -372,39 +372,52 @@ function narrower(w: WidthUnits): WidthUnits {
 // the type's editorial veto. That replaces a per-type table measured once at default
 // settings, which is what told a three-item rekenvolgorde block it needed the whole page.
 //
-// REFLOW RULE. The measurement is taken at the width the block currently sits in, and a
-// viewer that lays out 2-up there lays out 1-up in a narrower cell — so a measurement at
-// width 4 says nothing about what the same block needs at width 2. When the block reflows
-// (perRow > 1 at the measured width) and its content fits where it is, the tier is allowed
-// ONE step narrower than the width it was measured at. The teacher picks that width, the
-// block is measured again THERE, and either it opens the next step or the packer clamps it
-// back with the `promoted` hint. One step at a time is what keeps this honest: each step
-// is backed by a real measurement instead of a guess two tiers out.
+// REFLOW RULE. A measurement is taken at the width the block sits in, and a viewer that
+// lays out 2-up there lays out 1-up in a narrower cell — so a measurement at width 4 says
+// nothing about what the same block needs at width 2. Every entry is read as one of two
+// facts: content that OVERFLOWED its cell is a demand (the smallest tier holding that px);
+// content that FIT while laid out multi-column or in a viewer that shrinks below this width (the probe's `reflows`, or the per-type
+// perRow table when the viewer has no FragmentableGrid) allows ONE step narrower than the
+// width it was measured at; content that fit 1-up is the whole truth and allows its own
+// tier. The answer is the strongest demand, but never below the narrowest allowance's
+// step. The teacher picks that width, the block is measured again THERE, and either the
+// next step opens or the packer clamps it back with the `promoted` hint — each step is
+// backed by a real measurement instead of a guess two tiers out.
 //
-// This cannot oscillate. Measuring at a narrower width writes a NEW `blockId:width` entry;
-// the entry that allowed the step stays, and `intrinsicOf` takes the SMALLEST — so the
-// allowance can only grow, the clamp is monotone in it, and a clamp-up re-measures at a
-// key that was not the input to the decision. See useMeasuredHeights' convergence note.
+// Judging all entries (not just the widest) is what lets a quarter open at all: the full-
+// width 2-up entry stays in the map after the teacher picks a half, and taken alone it
+// would keep saying "one step below 4" forever.
+//
+// This cannot oscillate: demands only add up, an allowance only opens after a real
+// measurement at that width, and entries are dropped together when the content changes.
 //
 // WITHOUT a measurement (first paint, tests, the Inspector before the sheet rendered) the
 // old settings-derived gates below run unchanged: they are the fallback, not the truth.
-export function minWidthUnits(block: MathBlock, measured?: { intrinsicPx?: number; atWidth?: WidthUnits }): WidthUnits {
+export interface WidthMeasure { intrinsicPx?: number; px?: number; atWidth?: WidthUnits; reflows?: boolean }
+
+export function minWidthUnits(block: MathBlock, measured?: WidthMeasure | WidthMeasure[]): WidthUnits {
     const floor = editorialFloor(block);
-    const px = measured?.intrinsicPx;
-    if (px !== undefined && px > 0) {
+    const entries = (Array.isArray(measured) ? measured : measured ? [measured] : [])
+        .map(m => ({ px: m.intrinsicPx ?? m.px ?? 0, at: m.atWidth ?? (COL_UNITS as WidthUnits), reflows: m.reflows }))
+        .filter(m => m.px > 0);
+    if (entries.length === 0) return Math.max(fallbackMinWidth(block), floor) as WidthUnits;
+
+    let demand: WidthUnits = 1;
+    let allowance: WidthUnits | undefined;
+    for (const e of entries) {
         // `fitToWidth` is the teacher saying "shrink this block rather than widen it", so
         // the tier is judged against what the block is allowed to shrink TO. It buys one
         // 15% step, not a licence to clip: a block that does not fit even at the floor is
         // still promoted, because nothing on the sheet may run off its column in print.
-        const fits = block.constraints?.fitToWidth ? px * WIDTH_FIT_FLOOR : px;
-        let tier = tierFor(fits);
-        const at = measured?.atWidth ?? (COL_UNITS as WidthUnits);
-        if (tier > 1 && perRow(block, at) > 1 && fits <= tierWidthPx(at)) {
-            tier = Math.min(tier, narrower(at)) as WidthUnits;
-        }
-        return Math.max(tier, floor) as WidthUnits;
+        const fits = block.constraints?.fitToWidth ? e.px * WIDTH_FIT_FLOOR : e.px;
+        const tier = tierFor(fits);
+        if (fits > tierWidthPx(e.at)) { demand = Math.max(demand, tier) as WidthUnits; continue; }
+        const reflows = e.reflows ?? perRow(block, e.at) > 1;
+        const allowed = reflows ? Math.min(tier, narrower(e.at)) as WidthUnits : tier;
+        allowance = allowance === undefined ? allowed : Math.min(allowance, allowed) as WidthUnits;
     }
-    return Math.max(fallbackMinWidth(block), floor) as WidthUnits;
+    const tier = allowance === undefined ? demand : Math.max(demand, allowance) as WidthUnits;
+    return Math.max(tier, floor) as WidthUnits;
 }
 
 // Pre-measurement tiers: the hand-measured per-type table plus the settings that were

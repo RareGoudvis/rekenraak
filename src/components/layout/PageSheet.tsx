@@ -36,7 +36,7 @@ interface Props {
     onBodyMeasure?: (pageIndex: number, px: number) => void;
     /** Report one cell's rendered height and the block's intrinsic content width; the
         packer prefers both over its own per-type estimates. */
-    onCellMeasure?: (blockId: string, width: number, px: number, intrinsicWidthPx?: number) => void;
+    onCellMeasure?: (blockId: string, width: number, px: number, intrinsicWidthPx?: number, reflows?: boolean) => void;
     /** Blank px under the page's skyline, as the PACKER sees it for the width of the next
         page's first block. Given, it beats the measured tail: the packer knows exactly
         where that block would land, the DOM can only say where the ink stops. */
@@ -64,7 +64,7 @@ const TAIL_HINT_PX = 72;
 // scrollWidth inside a CSS `zoom` is in UNZOOMED local px, so it is multiplied by the
 // REQUESTED scale (data-scale) rather than the applied one: the tier must hold at the size
 // the teacher asked for, not at whatever the fit loop has backed off to this frame.
-function probeIntrinsicWidth(cell: HTMLElement): number | undefined {
+function probeIntrinsicWidth(cell: HTMLElement): { px: number; reflows?: boolean } | undefined {
     const inner = cell.querySelector<HTMLElement>('[data-scaled-inner]');
     if (!inner) return undefined;
     const prev = inner.style.width;
@@ -72,7 +72,15 @@ function probeIntrinsicWidth(cell: HTMLElement): number | undefined {
     const local = inner.scrollWidth;
     inner.style.width = prev;
     const scale = Number(inner.dataset.scale) || 1;
-    return local > 0 ? local * scale : undefined;
+    if (!(local > 0)) return undefined;
+    // Whether this probe is the last word for a narrower cell: a viewer that laid out 2-up
+    // (FragmentableGrid data-cols) or that shrinks its content below some width
+    // (data-shrinks) measures narrower there, and the clamp must not hold it to this px.
+    let reflows: boolean | undefined;
+    for (const g of Array.from(inner.querySelectorAll<HTMLElement>('[data-cols]'))) {
+        reflows = (reflows ?? false) || Number(g.dataset.cols) > 1 || g.dataset.shrinks === '1';
+    }
+    return { px: local * scale, reflows };
 }
 
 // The height of the BLOCK, not of the grid cell around it. Grid items stretch to the
@@ -139,7 +147,8 @@ export default function PageSheet({
                 const width = Number(child.dataset.width);
                 if (!blockId || !(width > 0)) continue;
                 const own = ownHeight(child);
-                onCellMeasure?.(blockId, width, own, probeIntrinsicWidth(child));
+                const probe = probeIntrinsicWidth(child);
+                onCellMeasure?.(blockId, width, own, probe?.px, probe?.reflows);
                 if (own > tallestCell) { tallestCell = own; tallestId = blockId; }
                 // The deepest point of the skyline: where the page's ink actually stops,
                 // which is what both the tail hint and the overflow banner are about.

@@ -26,28 +26,21 @@ const EPSILON_PX = 2;
 // nothing and App's markup belongs to other work.
 //
 // Keyed `${blockId}:${width}` like the heights: a viewer that lays out 2-up really is
-// wider in a wide cell, so the same block has more than one honest answer. `intrinsicOf`
-// returns the entry that demands the WIDEST tier (most recent wins a tie), and entries are
-// dropped as soon as the block's content changes (see the prune effect below).
+// wider in a wide cell, so the same block has more than one honest answer. The clamp
+// (blockLayout.minWidthUnits) reads ALL of a block's entries via `intrinsicEntries`: an
+// entry that overflowed its cell is a demand, an entry that fit while laid out multi-column
+// opens exactly one tier below the width it was taken at. `intrinsicOf` (the widest entry,
+// most recent wins a tie) is what the banner and the Inspector tooltip quote in px.
 //
-// It used to return the SMALLEST entry across widths, and that is how a quarter-width
-// vergelijken block slipped past the clamp: the block is measured while it is still empty
-// ("(Nog geen oefeningen — klik Genereer)" min-contents at 67px), Genereer fills it to
-// 199px under a NEW key, and the stale 67 stayed the smallest for good — so the clamp kept
-// saying a quarter (151px, content 199px) was fine and the block rendered overflowing or,
-// at a bodyFontScale above 1, silently zoomed back down to 1.
+// Entries are dropped as soon as the block's content changes (see the prune effect below):
+// a quarter-width vergelijken block once slipped past the clamp because it was measured
+// while still empty (67px), Genereer filled it to 199px under a NEW key, and the stale 67
+// kept saying a quarter was fine.
 //
-// Convergence still holds, in the safe direction: entries only accumulate between content
-// changes and the clamp is a MAX over them, so the tier can only widen and settles. Taking
-// the smallest was monotone the other way — once any narrow measurement existed the block
-// stayed narrow whatever the content did — and taking simply the most recent would let a
-// reflowing type flip between two tiers (wide cell measures narrow, so ¼ is allowed; ¼
-// measures wide, so it is promoted back).
-//
-// Narrowing is not lost: minWidthUnits' reflow rule opens exactly one tier below the width
-// a reflowing block was measured at, and the next tier only opens after a real measurement
-// there.
-const intrinsic = new Map<string, { px: number; seq: number }>();
+// Convergence: entries only accumulate between content changes, a demand can only widen
+// the tier and an allowance can only open the next tier after a real measurement there —
+// so the tier settles instead of flipping between two widths.
+const intrinsic = new Map<string, { px: number; seq: number; reflows?: boolean }>();
 // Monotone write counter — the tie-break between two entries that demand the same tier has
 // to survive Map's insertion order, which a re-`set` of an existing key does not move.
 let intrinsicSeq = 0;
@@ -63,6 +56,8 @@ export interface IntrinsicWidth {
     px: number;
     /** The cell width that measurement was taken in. */
     atWidth: WidthUnits;
+    /** The viewer laid out multi-column or said it shrinks in a narrower cell. */
+    reflows?: boolean;
 }
 
 // The map is written from a layout effect and read by the Inspector, which does not
@@ -93,14 +88,31 @@ export function intrinsicOf(blockId: string): IntrinsicWidth | undefined {
         const cut = key.lastIndexOf(':');
         if (key.slice(0, cut) !== blockId) continue;
         const atWidth = Number(key.slice(cut + 1)) as WidthUnits;
-        // "Widest tier demanded" is judged per cell, not on px alone: the same 300px is a
-        // half in a half-cell and a comfortable fit in a full one.
         if (!best || entry.px > best.px || (entry.px === best.px && entry.seq > bestSeq)) {
             bestSeq = entry.seq;
-            best = { px: entry.px, atWidth };
+            best = { px: entry.px, atWidth, reflows: entry.reflows };
         }
     }
     return best;
+}
+
+/** Every measurement of this block's current content, one per cell width it sat in. */
+export function intrinsicEntries(blockId: string): IntrinsicWidth[] {
+    const out: IntrinsicWidth[] = [];
+    for (const [key, entry] of intrinsic) {
+        const cut = key.lastIndexOf(':');
+        if (key.slice(0, cut) !== blockId) continue;
+        out.push({ px: entry.px, atWidth: Number(key.slice(cut + 1)) as WidthUnits, reflows: entry.reflows });
+    }
+    return out;
+}
+
+/** All measurements of a block, re-rendering when they change — what the Inspector's width
+    picker feeds minWidthUnits so it greys out exactly what the packer would clamp. */
+export function useIntrinsicEntries(blockId: string): IntrinsicWidth[] {
+    const version = useSyncExternalStore(subscribeIntrinsic, () => intrinsicVersion, () => intrinsicVersion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- version IS the map's identity
+    return useMemo(() => intrinsicEntries(blockId), [blockId, version]);
 }
 
 // DEV-only window into the two maps the packer reads, for scripts/height-audit.mjs: the
@@ -122,9 +134,11 @@ export interface MeasuredHeights {
     heightPxOf: (block: MathBlock, width: number) => number | undefined;
     /** Measured px height of a page's body box, or undefined before first paint. */
     pageBudgetPx: (pageIndex: number) => number | undefined;
-    onCellMeasure: (blockId: string, width: number, px: number, intrinsicWidthPx?: number) => void;
-    /** Measured content-minimum for this block, for the packer and the Inspector. */
+    onCellMeasure: (blockId: string, width: number, px: number, intrinsicWidthPx?: number, reflows?: boolean) => void;
+    /** Widest measured content-minimum for this block, for the overflow banner. */
     intrinsicOf: (blockId: string) => IntrinsicWidth | undefined;
+    /** Every measurement of this block, for the packer's width clamp. */
+    intrinsicEntries: (blockId: string) => IntrinsicWidth[];
     onBodyMeasure: (pageIndex: number, px: number) => void;
     /** Bumped whenever a measurement actually changed — the packer's only dependency. */
     version: number;
@@ -213,7 +227,7 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         }
     }, [blocks]);
 
-    const onCellMeasure = useCallback((blockId: string, width: number, px: number, intrinsicWidthPx?: number) => {
+    const onCellMeasure = useCallback((blockId: string, width: number, px: number, intrinsicWidthPx?: number, reflows?: boolean) => {
         if (paused()) return;
         const key = `${blockId}:${width}`;
         let changed = '';
@@ -229,14 +243,14 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         // exactly as a height could.
         if (intrinsicWidthPx !== undefined && intrinsicWidthPx > 0) {
             const prev = intrinsic.get(key);
-            if (prev === undefined || Math.abs(prev.px - intrinsicWidthPx) > EPSILON_PX) {
-                intrinsic.set(key, { px: intrinsicWidthPx, seq: ++intrinsicSeq });
+            if (prev === undefined || Math.abs(prev.px - intrinsicWidthPx) > EPSILON_PX || prev.reflows !== reflows) {
+                intrinsic.set(key, { px: intrinsicWidthPx, seq: ++intrinsicSeq, reflows });
                 notifyIntrinsic();
                 changed = changed || `width ${key} ${prev?.px ?? '–'}→${Math.round(intrinsicWidthPx)}px`;
             } else if (prev.seq < intrinsicSeq) {
                 // Unchanged in px, but this IS the current rendering — move it to the front
                 // of the recency order so a stale entry from another width cannot outrank it.
-                intrinsic.set(key, { px: prev.px, seq: ++intrinsicSeq });
+                intrinsic.set(key, { px: prev.px, seq: ++intrinsicSeq, reflows });
             }
         }
         if (changed) bump(changed);
@@ -270,7 +284,7 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     // One object whose identity changes only when a measurement did: consumers can depend
     // on it wholesale instead of threading the version counter through their dep arrays.
     return useMemo(
-        () => ({ heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, intrinsicOf, version }),
+        () => ({ heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, intrinsicOf, intrinsicEntries, version }),
         [heightPxOf, pageBudgetPx, onCellMeasure, onBodyMeasure, version],
     );
 }

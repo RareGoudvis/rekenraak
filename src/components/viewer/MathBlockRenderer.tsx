@@ -348,6 +348,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     return (
         <FragmentableGrid
             cols={gridCols}
+            shrinks={!tight}
             gridTemplateColumns={gridCols === 2 ? '1fr 1fr' : '1fr'}
             columnGap={colGap}
             rowGap={block.verticalSpacing || 14}

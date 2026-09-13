@@ -383,10 +383,7 @@ export default function App() {
       pageBudgetPx: measured.pageBudgetPx,
       // The width clamp is measured too: a block only needs a wider column when its
       // CONTENT does, not because its type once did at default settings.
-      minWidthOf: (b) => {
-        const w = measured.intrinsicOf(b.id);
-        return minWidthUnits(b, w && { intrinsicPx: w.px, atWidth: w.atWidth });
-      },
+      minWidthOf: (b) => minWidthUnits(b, measured.intrinsicEntries(b.id)),
       answerSpacePx: docSettings.answerSpace,
       ignoreMinWidth: debugIgnoreMinWidth,
     }),

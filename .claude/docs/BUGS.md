@@ -22,14 +22,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   with a narrower floor at small widths, or wrap the row like the getalfunctie schrijven
   answer line does.
 
-- **A fitCols viewer can never reach the tier its content allows** (2026-09-13, C2 step 8):
-  `PageSheet.probeIntrinsicWidth` measures min-content at the column count the viewer picked
-  for the width it currently has, so a block rendering 2-up at a half probes ~2 items wide and
-  `minWidthUnits()` refuses the quarter — even when the viewer would drop to 1-up there and the
-  width matrix measures overflow 1.000 (breuken-bewerken gemengd/vereenvoudigen). Fix direction:
-  probe at the narrowest tier (render the cell once at 163px off-screen), or let a viewer report
-  its own single-item minimum alongside the probe.
-
 - **even-oneven measures two different intrinsic widths on identical code** (2026-09-13,
   branch G): two `font:baseline` runs of the SAME build put `even-oneven-rooster` and
   `even-oneven-cirkels` at width 2 in different tiers — intrinsic 425/562px in one run,
@@ -37,7 +29,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   cell height swings ~80-100px. Reproduced with no source change between the two runs, so it
   is the measurement, not the viewer: EvenOnevenViewer's rooster derives `perRow` from
   `useBlockWidth()`, and `probeIntrinsicWidth` reads min-content after a reflow that has
-  sometimes not settled. Fix direction: the same one as the fitCols entry above.
+  sometimes not settled. Fix direction: probe after the reflow settles (a second frame), or let the viewer report its own single-item minimum.
 
 ## Docs
 
