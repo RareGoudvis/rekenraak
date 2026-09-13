@@ -77,10 +77,9 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
     const sheetPx = useSheetSizePx('math');
     const exercises: WeegschaalExercise[] = block.weegschaalExercises || [];
     const c = block.constraints as WeegschaalConstraints;
-    const mode: string = c.mode ?? 'aflezen';
-    const bereik: number = c.bereikGram ?? 1000;
-    const step: number = c.stepGram ?? 50;
-    const notatie: string = c.notatie ?? 'g';
+    // exercisesPerRow/boxHeight are layout-only and always follow the live constraints;
+    // bereik/step/notatie/mode are drawn structure, so each exercise falls back to its
+    // own generation-time value first (see BUGS.md, stale settings).
     const perRow: number = c.exercisesPerRow ?? 2;
     const boxHeight: number = c.boxHeight ?? 170;
     const gap = block.verticalSpacing || 14;
@@ -100,7 +99,12 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
             columnGap={24}
             rowGap={gap + 10}
             alignItems="flex-start"
-            items={exercises.map(ex => (
+            items={exercises.map(ex => {
+                const bereik = ex.bereikGram ?? c.bereikGram ?? 1000;
+                const step = ex.stepGram ?? c.stepGram ?? 50;
+                const notatie = ex.notatie ?? c.notatie ?? 'g';
+                const mode = ex.mode ?? c.mode ?? 'aflezen';
+                return (
                 <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     {mode === 'aflezen'
                         // aflezen: needle printed black, pupil writes the weight.
@@ -118,7 +122,8 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                             : <span>{formatGewicht(ex.grams, notatie)}</span>}
                     </div>
                 </div>
-            ))}
+                );
+            })}
         />
     );
 }

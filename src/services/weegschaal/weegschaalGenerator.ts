@@ -19,6 +19,8 @@ export function generateWeegschaalExercises(block: MathBlock): WeegschaalExercis
     const bereikGram: number = c.bereikGram ?? 1000;
     const allowed = BEREIK_STEPS[bereikGram] ?? [50];
     const stepGram: number = allowed.includes(c.stepGram) ? c.stepGram : allowed[0];
+    const notatie: string = c.notatie ?? 'g';
+    const mode: 'aflezen' | 'tekenen' = c.mode === 'tekenen' ? 'tekenen' : 'aflezen';
     const count = block.numberOfExercises || 4;
 
     const out: WeegschaalExercise[] = [];
@@ -30,7 +32,9 @@ export function generateWeegschaalExercises(block: MathBlock): WeegschaalExercis
         const grams = randInt(1, bereikGram / stepGram - 1) * stepGram;
         if (seen.has(grams)) continue;
         seen.add(grams);
-        out.push({ id: Math.random().toString(36).substring(2, 9), grams, isManuallyEdited: false });
+        // Own data: bereik/step/notatie/mode ride along so a later dial-range or mode
+        // drift never sends this needle past a full turn (see BUGS.md, stale settings).
+        out.push({ id: Math.random().toString(36).substring(2, 9), grams, bereikGram, stepGram, notatie, mode, isManuallyEdited: false });
     }
     return out;
 }

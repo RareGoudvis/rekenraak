@@ -342,9 +342,15 @@ export interface ControleExercise {
 }
 
 // Weegschaal — kitchen-scale dial: read the needle (aflezen) or draw it (tekenen).
+// bereikGram/stepGram/notatie/mode ride along from generation time so a later bereik/step/
+// notatie/mode drift never sends the needle past a dial it was never drawn for (§4).
 export interface WeegschaalExercise {
     id: string;
     grams: number;
+    bereikGram?: number;
+    stepGram?: number;
+    notatie?: string;
+    mode?: 'aflezen' | 'tekenen';
     isManuallyEdited: boolean;
 }
 
