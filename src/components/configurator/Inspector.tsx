@@ -570,7 +570,9 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                 <span style={S.switchText}>Opdrachttekst tonen</span>
                                                 <Switch
                                                     checked={activeBlock.showInstruction !== false}
-                                                    onChange={(v) => updateBlockSettings(activeBlock.id, { showInstruction: v ? undefined : false })}
+                                                    // Turning the title back on also clears skipNumbering: that flag only
+                                                    // means something while the title is hidden, else "0." leaks through.
+                                                    onChange={(v) => updateBlockSettings(activeBlock.id, v ? { showInstruction: undefined, skipNumbering: undefined } : { showInstruction: false })}
                                                     aria-label="Opdrachttekst tonen"
                                                 />
                                             </div>

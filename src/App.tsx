@@ -541,7 +541,7 @@ export default function App() {
 
   // One block in a page-grid cell. `index` counts across the whole worksheet so the
   // opdracht numbering keeps running across pages.
-  const renderBlock = (item: PackedBlock, index: number) => {
+  const renderBlock = (item: PackedBlock, index: number | null) => {
     const block = item.block;
     // Sheet furniture (a rule, writing lines, a grid) is not an opdracht: it gets no
     // title row and takes no number, so the opdracht numbering skips over it.
@@ -625,7 +625,7 @@ export default function App() {
                           <Lock size={14} />
                         </span>
                       )}
-                      <EditableInstruction block={block} prefix={docSettings.numberBlocks ? `${index}. ` : ''} />
+                      <EditableInstruction block={block} prefix={docSettings.numberBlocks && index != null ? `${index}. ` : ''} />
                     </div>
                     {docSettings.showScores && (block.totalPoints || 0) > 0 && <div style={styles.pointsText}>__ / {block.totalPoints}</div>}
                   </div>}
@@ -777,7 +777,7 @@ export default function App() {
                     ['--col-gap' as string]: `${colGapPx}px`,
                   }}
                 >
-                  {renderBlock(item, blockOrder[item.block.id] ?? 0)}
+                  {renderBlock(item, blockOrder[item.block.id] ?? null)}
                 </div>
               ))}
             </PageSheet>

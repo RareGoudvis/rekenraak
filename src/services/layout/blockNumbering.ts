@@ -6,6 +6,7 @@ export interface NumberableBlock {
     id: string;
     typeId: string;
     skipNumbering?: boolean;
+    showInstruction?: boolean;
 }
 
 // layout-* furniture is not an opdracht, and a teacher can leave a block out of the count
@@ -14,7 +15,10 @@ export function numberBlocks(blocks: readonly NumberableBlock[]): Record<string,
     const numbers: Record<string, number | null> = {};
     let n = 0;
     for (const b of blocks) {
-        const counted = !b.typeId.startsWith('layout-') && b.skipNumbering !== true;
+        // skipNumbering only means something while the title row is hidden — belt and
+        // braces against it surviving a re-enable of showInstruction (see Inspector.tsx).
+        const skip = b.skipNumbering === true && b.showInstruction === false;
+        const counted = !b.typeId.startsWith('layout-') && !skip;
         if (counted) n += 1;
         numbers[b.id] = counted ? n : null;
     }
