@@ -1,3 +1,4 @@
+import type React from 'react';
 import type { MathBlock, ControleExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import { negenrest } from '../../services/controleren/controlerenGenerator';
@@ -12,6 +13,9 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
+// 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` em
+// reproduces its old pixels at the default slider and grows with the text from there.
+const PX_PER_EM_AT_DEFAULT = 17.33;
 const INVERSE: Record<string, string> = { '+': '−', '-': '+' };
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
@@ -23,11 +27,18 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
     const rB = negenrest(ex.b);
     const rProduct = negenrest(rA * rB);
     const rShown = negenrest(ex.shownAnswer);
+    // Plain viewBox units, never a token: the <svg> is already sized in em below, so a
+    // calc(--sheet-size-math) here would scale the digits a second time.
     const num = (x: number, y: number, val: number) => showSolutions
-        ? <text x={x} y={y} textAnchor="middle" dominantBaseline="central" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.87)' }} fontFamily={mono} fill={SOL}>{val}</text>
+        ? <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={15} fontFamily={mono} fill={SOL}>{val}</text>
         : null;
     return (
-        <svg width={size} height={size} style={{ flexShrink: 0 }}>
+        <svg
+            viewBox={`0 0 ${size} ${size}`}
+            width={`${size / PX_PER_EM_AT_DEFAULT}em`}
+            height={`${size / PX_PER_EM_AT_DEFAULT}em`}
+            style={{ flexShrink: 0, fontSize: 'var(--sheet-size-math)' }}
+        >
             <line x1={8} y1={8} x2={size - 8} y2={size - 8} stroke="#000" strokeWidth={1.5} />
             <line x1={size - 8} y1={8} x2={8} y2={size - 8} stroke="#000" strokeWidth={1.5} />
             {num(size / 2, 12, rA)}
@@ -63,18 +74,26 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
 
     // ── NEGENPROEF: worked × + kruis + juist/fout ──────────────────────────────
     if (subType === 'negenproef') {
+        const sumOf = (ex: ControleExercise) =>
+            `${formatMathNumber(ex.a)} × ${formatMathNumber(ex.b)} = ${formatMathNumber(ex.shownAnswer)}`;
+        // One sum column for the whole block: the widest sum in ch (the text is monospaced,
+        // so a character count is an exact width). Without it every kruis sat at its own x
+        // and the column of crosses zig-zagged down the page.
+        const sumCh = Math.max(...exercises.map(ex => sumOf(ex).length));
         return (
             <FragmentableGrid
                 cols={2}
                 columnGap={28}
-                rowGap={gap + 8}
+                rowGap={gap + 16}
                 alignItems="flex-start"
                 items={exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
-                                {formatMathNumber(ex.a)} × {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}
-                            </span>
+                        <div style={{
+                            display: 'flex', flexDirection: 'column', gap: '8px',
+                            fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)',
+                            minWidth: `${sumCh}ch`, flexShrink: 0,
+                        }}>
+                            <span>{sumOf(ex)}</span>
                             {juistFout(ex)}
                         </div>
                         {showKruis && <NegenproefKruis ex={ex} showSolutions={showSolutions} />}
@@ -87,6 +106,15 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
     // ── OMGEKEERDE BEWERKING: exercise on top, full write-line for the check below ──
     // prefill: 'niets' = empty line · 'teken' = inverse operator hinted · 'alles' = numbers filled.
     const prefill: string = c.prefill ?? 'niets';
+    // The blank a pupil writes a number on. 160px is roughly six digits at the default
+    // slider — 64px was a stub nobody could write "1 248" in; flex:1 lets it take whatever
+    // the row has left over.
+    const writeLine: React.CSSProperties = {
+        borderBottom: '1.5px solid #000', flex: 1, minWidth: '160px', height: '1.4em', display: 'inline-block',
+    };
+    // 'teken' puts three blanks on one row, so each gets a third of the floor — three
+    // 160px minimums would not fit the half a single exercise is allowed to take.
+    const writeLineShort: React.CSSProperties = { ...writeLine, minWidth: '54px' };
     return (
         <FragmentableGrid
             cols={1}
@@ -103,24 +131,27 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                             <span>{formatMathNumber(ex.a)} {GLYPH[ex.operator]} {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}</span>
                             {juistFout(ex)}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', paddingLeft: '16px' }}>
+                        {/* 1.4em of line, not 15px: the pupil writes the check BY HAND on
+                            this line, so it has to grow with the Lettergrootte slider like
+                            the sum above it. */}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px', paddingLeft: '16px' }}>
                             <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', color: '#555' }}>controle:</span>
                             {showSolutions
                                 ? <span style={{ ...solutionText }}>{solution}</span>
                                 : prefill === 'alles'
                                     ? <>
                                         <span>{formatMathNumber(ex.shownAnswer)} {inv} {formatMathNumber(ex.b)} =</span>
-                                        <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                        <span style={writeLine} />
                                     </>
                                     : prefill === 'teken'
                                         ? <>
-                                            <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                            <span style={writeLineShort} />
                                             <span>{inv}</span>
-                                            <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                            <span style={writeLineShort} />
                                             <span>=</span>
-                                            <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />
+                                            <span style={writeLineShort} />
                                         </>
-                                        : <span style={{ borderBottom: '1.5px solid #000', flex: 1, height: '15px', display: 'inline-block' }} />}
+                                        : <span style={{ ...writeLine, minWidth: undefined }} />}
                         </div>
                     </div>
                 );

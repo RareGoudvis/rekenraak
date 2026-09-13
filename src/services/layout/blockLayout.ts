@@ -128,7 +128,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "cijferen-vermenigvuldigen-dec": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
     "cijferen-delen-nat": { rowUnits: 7.25, perRowFull: 3, minWidth: 1 },
     "cijferen-delen-dec": { rowUnits: 7.25, perRowFull: 2, minWidth: 1 },
-    "controleren": { rowUnits: 4.67, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "controleren": { rowUnits: 5, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "deelbaarheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 1 },
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 1 },
     "even-oneven": { rowUnits: 2.17, perRowFull: 1, minWidth: 4 },
