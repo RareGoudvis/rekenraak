@@ -22,19 +22,22 @@ const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_
 
 // Dial geometry mirrors AnalogClockSVG's polar math: ticks around the rim,
 // labels at the majors, a red needle from the centre.
-function Dial({ grams, bereik, step, showNeedle, needleColor, size }: {
-    grams: number; bereik: number; step: number; showNeedle: boolean; needleColor: string; size: number;
+function Dial({ grams, bereik, step, needleColor, arcColor, size }: {
+    grams: number; bereik: number; step: number;
+    needleColor?: string;   // aflezen: draws the needle at `grams` in this colour
+    arcColor?: string;      // kleuren solutions: fills a wedge from 0 to `grams` in this colour
+    size: number;
 }) {
     const cx = size / 2, cy = size / 2;
     const rOuter = size / 2 - 6;
+    const angleOf = (v: number) => (v / bereik) * 2 * Math.PI - Math.PI / 2;   // 0 g at top, clockwise
     const ticks: React.ReactNode[] = [];
     const majorEvery = bereik / 10;   // 10 labelled majors round the dial
     const total = bereik / step;
     for (let i = 0; i < total; i++) {
         const value = i * step;
         const isMajor = value % majorEvery === 0;
-        // 0 g at the top, clockwise; full range = full turn (kitchen-scale convention).
-        const ang = (value / bereik) * 2 * Math.PI - Math.PI / 2;
+        const ang = angleOf(value);
         const r1 = isMajor ? rOuter - 12 : rOuter - 7;
         ticks.push(
             <line key={i}
@@ -51,19 +54,34 @@ function Dial({ grams, bereik, step, showNeedle, needleColor, size }: {
             );
         }
     }
-    const needleAng = (grams / bereik) * 2 * Math.PI - Math.PI / 2;
+    const needleAng = angleOf(grams);
     const rn = rOuter - 16;
+
+    // Solution wedge for 'kleuren': a filled pie slice from 0 up to `grams`, drawn
+    // under the ticks so the scale markings stay legible through the shading.
+    let wedge: React.ReactNode = null;
+    if (arcColor && grams > 0) {
+        const rArc = rOuter - 6;
+        const startAng = angleOf(0);
+        const endAng = angleOf(grams);
+        const largeArc = endAng - startAng > Math.PI ? 1 : 0;
+        const sx = cx + rArc * Math.cos(startAng), sy = cy + rArc * Math.sin(startAng);
+        const ex = cx + rArc * Math.cos(endAng), ey = cy + rArc * Math.sin(endAng);
+        wedge = <path d={`M ${cx} ${cy} L ${sx} ${sy} A ${rArc} ${rArc} 0 ${largeArc} 1 ${ex} ${ey} Z`} fill={arcColor} fillOpacity={0.35} />;
+    }
+
     return (
-        // `size` stays the viewBox geometry (ticks, labels and needle are all in those units);
-        // only the rendered box follows the token, so the whole dial scales as one.
+        // `size` stays the viewBox geometry (ticks, labels, needle/wedge are all in those
+        // units); only the rendered box follows the token, so the dial scales as one.
         <svg width={mathPx(size)} height={mathPx(size)} viewBox={`0 0 ${size} ${size}`}>
             <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="#000" strokeWidth={2} />
+            {wedge}
             {ticks}
             {/* Unit in the dial face; kg dials label in kg to keep numbers readable. */}
             <text x={cx} y={cy + rOuter * 0.45} textAnchor="middle" fontSize={0.64 * PX_PER_EM_AT_DEFAULT} fontFamily={mono} fill="#555">
                 {bereik >= 2000 ? 'kg' : 'g'}
             </text>
-            {showNeedle && (
+            {needleColor && (
                 <line x1={cx} y1={cy} x2={cx + rn * Math.cos(needleAng)} y2={cy + rn * Math.sin(needleAng)}
                     stroke={needleColor} strokeWidth={2.5} strokeLinecap="round" />
             )}
@@ -103,14 +121,16 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                 const bereik = ex.bereikGram ?? c.bereikGram ?? 1000;
                 const step = ex.stepGram ?? c.stepGram ?? 50;
                 const notatie = ex.notatie ?? c.notatie ?? 'g';
-                const mode = ex.mode ?? c.mode ?? 'aflezen';
+                // Legacy saves may still carry 'tekenen' (renamed to 'kleuren').
+                const rawMode = ex.mode ?? c.mode ?? 'aflezen';
+                const mode = (rawMode as string) === 'tekenen' ? 'kleuren' : rawMode;
                 return (
                 <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     {mode === 'aflezen'
                         // aflezen: needle printed black, pupil writes the weight.
-                        ? <Dial grams={ex.grams} bereik={bereik} step={step} showNeedle needleColor="#000" size={size} />
-                        // tekenen: weight printed, solution needle in red.
-                        : <Dial grams={ex.grams} bereik={bereik} step={step} showNeedle={showSolutions} needleColor={SOL} size={size} />}
+                        ? <Dial grams={ex.grams} bereik={bereik} step={step} needleColor="#000" size={size} />
+                        // kleuren: no needle at all — pupil colours the dial, red wedge only in solutions.
+                        : <Dial grams={ex.grams} bereik={bereik} step={step} arcColor={showSolutions ? SOL : undefined} size={size} />}
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
                         {mode === 'aflezen'
                             ? showSolutions
@@ -119,7 +139,7 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                                     <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: mathPx(70), height: ANSWER_LINE_H }} />
                                     <span>{notatie === 'g' ? 'g' : notatie === 'kg-komma' ? 'kg' : ''}</span>
                                 </>
-                            : <span>{formatGewicht(ex.grams, notatie)}</span>}
+                            : <span>Kleur tot {formatGewicht(ex.grams, notatie)}</span>}
                     </div>
                 </div>
                 );

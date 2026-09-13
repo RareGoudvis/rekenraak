@@ -10,7 +10,8 @@ interface Props { block: MathBlock; }
 
 export default function WeegschaalConfig({ block }: Props) {
     const [c, patch] = useConstraints<WeegschaalConstraints>(block);
-    const mode: string = c.mode ?? 'aflezen';
+    // Legacy saves may still carry 'tekenen' (renamed to 'kleuren').
+    const mode: string = (c.mode as string) === 'tekenen' ? 'kleuren' : (c.mode ?? 'aflezen');
     const bereikGram: number = c.bereikGram ?? 1000;
     const allowed = BEREIK_STEPS[bereikGram] ?? [50];
     const stepGram: number = allowed.includes(c.stepGram) ? c.stepGram : allowed[0];
@@ -27,10 +28,10 @@ export default function WeegschaalConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <SettingLabel text="Opdracht:" info="Wijzer aflezen en het gewicht noteren, of het gewicht krijgen en de wijzer tekenen." />
+                <SettingLabel text="Opdracht:" info="Wijzer aflezen en het gewicht noteren, of het gewicht krijgen en de weegschaal kleuren." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('mode', 'aflezen')} style={styles.radioBtn(mode === 'aflezen')}>Aflezen</button>
-                    <button onClick={() => set('mode', 'tekenen')} style={styles.radioBtn(mode === 'tekenen')}>Wijzer tekenen</button>
+                    <button onClick={() => set('mode', 'kleuren')} style={styles.radioBtn(mode === 'kleuren')}>Weegschaal kleuren</button>
                 </div>
             </div>
 

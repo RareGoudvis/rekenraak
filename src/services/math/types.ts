@@ -353,7 +353,7 @@ export interface WeegschaalExercise {
     bereikGram?: number;
     stepGram?: number;
     notatie?: string;
-    mode?: 'aflezen' | 'tekenen';
+    mode?: 'aflezen' | 'kleuren';
     isManuallyEdited: boolean;
 }
 

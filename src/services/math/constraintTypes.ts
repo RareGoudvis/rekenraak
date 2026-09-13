@@ -577,7 +577,7 @@ export type TemperatuurConstraints = {
 };
 
 export type WeegschaalConstraints = {
-    mode: 'aflezen' | 'tekenen';
+    mode: 'aflezen' | 'kleuren';
     bereikGram: number;
     stepGram: number;
     notatie: string;

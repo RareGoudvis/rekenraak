@@ -438,7 +438,7 @@ const controlerenSpace: OptionSpace = {
 };
 
 const weegschaalSpace: OptionSpace = {
-    mode: ['aflezen', 'tekenen'],
+    mode: ['aflezen', 'kleuren'],
     bereikGram: [1000, 2000, 5000],
     // Snapped to the bereik by the generator; the plugin only offers the legal steps.
     stepGram: [20, 50, 100, 250],

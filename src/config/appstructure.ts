@@ -511,7 +511,7 @@ export const APP_STRUCTURE: Domain[] = [
                 label: 'Massa',
                 types: [
                     { id: 'massa-weegschaal-aflezen', label: 'Weegschaal aflezen', typeId: 'weegschaal', defaultConstraints: { mode: 'aflezen' }, minLeerjaar: 2, instruction: 'Lees het gewicht af.' },
-                    { id: 'massa-weegschaal-tekenen', label: 'Wijzer tekenen', typeId: 'weegschaal', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 2, instruction: 'Teken de wijzer.' },
+                    { id: 'massa-weegschaal-tekenen', label: 'Weegschaal kleuren', typeId: 'weegschaal', defaultConstraints: { mode: 'kleuren' }, minLeerjaar: 2, instruction: 'Kleur de weegschaal tot het gegeven gewicht.' },
                 ],
             },
             {
