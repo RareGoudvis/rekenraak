@@ -513,6 +513,11 @@ export interface CijferExercise {
     operator: CijferOperator;
     answer: number;
     remainder: number;
+    // How many decimal columns this exercise was GENERATED with. The grid is drawn from it
+    // (`ex.decimalPlaces ?? c.decimalPlaces`), so flipping the setting afterwards no longer
+    // redraws yesterday's natural sum with two decimal columns. Optional: sheets saved
+    // before this existed fall back to the constraints.
+    decimalPlaces?: number;
     isManuallyEdited: boolean;
 }
 

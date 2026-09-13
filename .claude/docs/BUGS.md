@@ -14,14 +14,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   or wrap the headers (`VormleerViewer` eigenschappen branch).
 
 - **Stale settings draw the wrong picture (no crash)** (2026-09-13, viewers.stale sweep):
-  the viewers survive every setting drift without throwing, but three draw nonsense until
+  the viewers survive every setting drift without throwing, but two draw nonsense until
   Genereer is pressed. `WeegschaalViewer` takes the dial range from `bereikGram` while the
   exercise carries only `grams`, so dropping the range sends the needle round the dial more
-  than once; `CijferViewer` builds its column grid from `numberType`/`decimalPlaces` while
-  the operands carry their own decimals, so switching to `natural` drops the comma column
-  under decimal operands; `ClockExerciseItem` reads `exerciseMode`/`clockType`/`is24hour`
+  than once; `ClockExerciseItem` reads `exerciseMode`/`clockType`/`is24hour`
   live, so a mode switch can print the very time it asks the pupil to draw. Fix direction:
-  the generator stores its own `bereikGram` / `decimalPlaces` / `is24hour` on the exercise
+  the generator stores its own `bereikGram` / `is24hour` on the exercise
   and the viewer reads `ex.field ?? c.field`. The Inspector's stale flag covers it for now.
 
 ## Docs
