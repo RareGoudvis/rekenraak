@@ -6,6 +6,13 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ---
 
+## Layout / sheet
+
+- **Vormleer eigenschappen table is wider than its column** (2026-09-13): with all property columns
+  on, the driehoeken/vierhoeken table needs more than the full 688px (≈212px over) and is clipped at
+  ½; the horizontal-overflow banner now says so, but the table itself should drop to fewer columns
+  or wrap the headers (`VormleerViewer` eigenschappen branch).
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`

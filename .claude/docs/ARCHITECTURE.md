@@ -548,6 +548,14 @@ PageSheet tracks the oversize block's id (`oversizeBlockId`) for that, via `onFi
 `PackedBlock.promoted` marks a block the clamp had to widen; the Inspector says so under the
 width picker. `ignoreMinWidth` disables the clamp for the width-matrix harness.
 
+**Horizontal overflow has a banner too** (since 2026-09-13). A cell whose measured intrinsic width
+(judged through `WIDTH_FIT_FLOOR` when `fitToWidth` is on, like `minWidthUnits`) exceeds its
+`cellWidthPx` by more than 2px — and that the packer could not promote further (`widthUnits === 4`
+or `promoted`) — gets a `.no-print .cell-hoverflow-warn` strip on the cell: "Dit blok is N px te
+breed voor zijn kolom" with "Verklein om te passen" (App's `fitBlockToWidth`: sets
+`constraints.fitToWidth`, selects, opens Opmaak) and, below the widest tier, "Verbreed" (`widenBlock`,
+one tier up). It sits outside `[data-scaled-inner]`, so it plays no part in the width probe.
+
 **Measure → pack convergence**: a cell's height depends only on (block, width, spacing,
 docSettings) and never on where it was placed, and widths are settings-derived rather than
 measurement-derived — so one remeasure reaches a fixed point. Writes under 2px are dropped;
