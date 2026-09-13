@@ -131,13 +131,14 @@ field (used by ordenen click-to-edit and the splitsen "type a number" textboxes)
 
 **Curriculum lock gate:** `updateBlockSettings` / `updateBlockLayout` /
 `updateBlockInstruction` check `curriculum?.locked` and, when locked, allow only
-`numberOfExercises` + `pageBreakBefore` + `widthUnits` + `showInstruction` + `skipNumbering` (difficulty/wording
+`numberOfExercises` + `pageBreakBefore` + `widthUnits` + `showInstruction` + `skipNumbering` +
+`constraints.fitToWidth` (difficulty/wording
 frozen; layout and presentation are not difficulty). This single
 choke point enforces the lock without touching the ~16 config plugins. Draft-block
 edits bypass the gate (authoring runs unlocked).
 
 **`MathBlock.constraints` is `BlockConstraints`** (since 2026-09-12; was `any`) —
-`Record<string, unknown> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType?, fitToPage? }` —
+`Record<string, unknown> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType?, fitToPage?, fitToWidth? }` —
 an unnamed key read is a compile error; `scaffolding` is declared per family (7 literal types),
 never cross-cutting.
 The per-family shapes (43 `XConstraints` types + `ConstraintsByType`) live in
@@ -390,7 +391,7 @@ only.
 | `procenten` | `procentExercises` | `generateProcentExercises` | `ProcentenViewer` | `ProcentenConfig` | subType (nemen/welk-percent — leaf), percents[], maxGetal, scaffold (10 %/1 % hulplijn, only when the tussenstap is whole); answer-first → natural results |
 | `maateenheid` | `maateenheidExercises` | `generateMaateenheidExercises` | `MaateenheidViewer` | `MaateenheidConfig` | grootheden[] (lengte/massa/inhoud/tijd/temperatuur), answerMode (omcirkelen/schrijven; omcirkelen needs ≥3 units so temperatuur is schrijven-only), subType (eenheid/schatten = value+unit chips); curated item bank in maateenheidData.ts |
 | `geld-rekenen` | `geldRekenenExercises` | `generateGeldRekenenExercises` | `GeldRekenenViewer` | `GeldRekenenConfig` | subType (korting/winst/intrest — leaf), percents[] (pool differs per variant), maxEuro, wholeEuros, halfYear (intrest pro rata); cents internal, whole-cent answers guaranteed, `formatEuro` |
-| `rekenvolgorde` | `rekenvolgordeExercises` | `generateRekenvolgordeExercises` | `RekenvolgordeViewer` | `RekenvolgordeConfig` | operators[] (≥1 ×/: enforced), opsCount (2/3), maxGetal, haakjes (only planted when they change the outcome), scaffold ("eerst: ___" line); tokens rendered verbatim |
+| `rekenvolgorde` | `rekenvolgordeExercises` | `generateRekenvolgordeExercises` | `RekenvolgordeViewer` (reads `useBlockWidth()`; digits at the `*1` math factor, SYNC with MathBlockRenderer) | `RekenvolgordeConfig` + `RekenvolgordeStyleConfig` (Kort / Lang / Stappen → `layoutPreset` inline-short 2-up / inline-long 1-up full-width line / stepped N `steppedLines`, 2-up while two rows keep the writing room, like hoofdrekenen) | operators[] (≥1 ×/: enforced), opsCount (2/3), maxGetal, haakjes (only planted when they change the outcome); tokens rendered verbatim |
 | `kettingsommen` | `patroonExercises` (reused) | `generateKettingExercises` | `PatroonViewer` (reused) | `KettingConfig` | ops[] (no two equal in a row), opSettings per op, chainLength (3–5; cycle length = ticks−1), maxGetal, blankMiddle; defaults force showArrows/showOperators + operatorStyle 'full' |
 | `getalfunctie` | `getalFunctieExercises` | `generateGetalFunctieExercises` | `GetalFunctieViewer` | `GetalFunctieConfig` | functies[] (hoeveelheid/rang/maat/code, ≥2), answerMode (aankruisen = tick-table / schrijven), maxGetal (bounds substituted numbers) |
 | `tijdsduur` | `tijdsduurExercises` | `generateTijdsduurExercises` | `TijdsduurViewer` | `TijdsduurConfig` | granularity[] (heel-uur/kwartier/vijf-min/een-min), blanks[] (duur/einde/begin, rotates), maxDuurMin (60/240/720), overMidnight (einde prints "(volgende dag)") |
@@ -543,6 +544,15 @@ docSettings) and never on where it was placed, and widths are settings-derived r
 measurement-derived — so one remeasure reaches a fixed point. Writes under 2px are dropped;
 a dev-only counter warns at more than 5 repacks in a second.
 
+**A block never shrinks on its own** (since 2026-09-13). ScaledBlock renders at the requested
+zoom; content that does not fit its column is *promoted* to a wider tier by the measured clamp
+(the Inspector says "Verbreed naar ½ …"), never zoomed down — two blocks with the same
+settings must print at the same size. The teacher can opt in per block: Opmaak › "Verklein om
+in de kolom te passen" (`constraints.fitToWidth`) lets ScaledBlock back the zoom off to
+`WIDTH_FIT_FLOOR` 0.85 and shows a `.no-print` badge "verkleind tot N %"; `minWidthUnits`
+then judges the tier against `px × 0.85`, so it buys one 15% step and still promotes what
+would clip beyond it. `fitToPage` (height) stays the other explicit back-off.
+
 Each page cell is placed **explicitly** (`gridRow` / `gridColumn` from the packer). With
 auto-placement the browser backfills a gap in an earlier row and quietly moves a block off
 the row its pagination was costed against.
@@ -578,7 +588,8 @@ running dev server through `window.__rekenraak` (a DEV-only hook in
 4 / 2 / 1, at its default count and at a single exercise** — 354 cells. For each it reads
 the content's overflow ratio (`scrollWidth / clientWidth` of the ScaledBlock inner div),
 the applied zoom and the cell's `offsetHeight`, writes `scripts/width-matrix.result.json`
-and screenshots every cell. A width is allowed when **overflow ≤ 1.005 and zoom ≥ 0.85**;
+and screenshots every cell. A width is allowed when **overflow ≤ 1.005 at zoom 1** (until 2026-09-13 the rule accepted
+zoom ≥ 0.85, i.e. promised a silent 15% shrink that the owner ruled out);
 the screenshots then veto what passes numerically but is illegible (the veto list, with a
 reason each, lives in the `LAYOUT` header comment). The harness needs the store's UI-only
 `debugIgnoreMinWidth` flag — measuring a tier with the tier clamp on would only measure the
@@ -642,7 +653,11 @@ drives all of it with plain `mouse.move/down/up` (see TESTING.md).
 so a plain `scrollWidth` only echoes the cell — the probe swaps the inline width to
 `min-content`, reads, restores, all inside the layout effect so nothing paints) and reports it
 through `onCellMeasure(blockId, width, heightPx, intrinsicWidthPx)`; `useMeasuredHeights`
-keeps it per `blockId:width` and `intrinsicOf()` returns the narrowest seen. `packPages` takes
+keeps it per `blockId:width`, **drops every entry when the block's content changes** (a block is
+measured before Genereer too — the 67px empty-state line once pinned a vergelijken block to ¼
+forever) and `intrinsicOf()` returns the entry that demands the **widest** tier — monotone in
+the safe direction, so it cannot oscillate; "most recent" would flip a reflowing type between
+tiers. `packPages` takes
 the clamp as an injected `minWidthOf` closure so it stays pure; App fills it with
 `minWidthUnits(block, measured)`. Reflow rule: a block that fits where it is and lays out
 more than 1-up may go **one** tier narrower than it was measured at; the next tier only opens
@@ -889,13 +904,14 @@ src/
     │   ├── ConstraintScope.ts     # context: when set to ['perVariant', id] the hook reads {...root, ...root.perVariant[id]} and writes ONLY into perVariant[id] (sparse); fixedPreset/hidden let a tab pin its preset and hide shared controls
     │   ├── plugins/shared/fieldStyles.ts      # F: Inspector field chrome shared by Inspector + StyleConfigs
     │   ├── plugins/shared/HrStdStyleConfig.tsx # AddSub/MulDiv StyleConfig (niveau, compenseren-tussenstap, kort/lang/stappen)
+    │   ├── plugins/RekenvolgordeStyleConfig.tsx # rekenvolgorde Kort/Lang/Stappen (own file: HrStdStyleConfig's rows are gated on hoofdrekenen-only settings)
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components
         ├── BlockWidthContext.tsx       # printable width of the block's CELL — viewers MUST read this, never a constant
         ├── VerticalFraction.tsx        # shared stacked-fraction component
         ├── LayoutBlockViewer.tsx       # sheet furniture: sectie / schrijflijnen / raster / kader / lege pagina
-        ├── ScaledBlock.tsx             # per-block body-zoom wrapper (bodyFontScale); auto-fits to width, and to page height when constraints.fitToPage
+        ├── ScaledBlock.tsx             # per-block body-zoom wrapper (bodyFontScale); fits to page height when constraints.fitToPage, to column width ONLY when constraints.fitToWidth (badge "verkleind tot N %")
         ├── scaledBlockFit.ts           # pure nextZoom()/FIT_FLOOR helper for ScaledBlock (tested)
         ├── solutionStyle.ts            # SOL / solutionText / solutionStroke — the one solution-red token (--ink-solution), bold
         └── FragmentableGrid.tsx        # block-stack-of-rows layout so items flow across print page breaks
