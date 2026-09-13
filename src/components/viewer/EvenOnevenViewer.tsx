@@ -1,7 +1,7 @@
 import type { MathBlock, EvenOnevenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { EvenOnevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -69,7 +69,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
                                 <span>{n} is</span>
                                 {showSolutions
                                     ? <span style={solutionText}>{n % 2 === 0 ? 'even' : 'oneven'}</span>
-                                    : <span style={{ borderBottom: '1.5px solid #000', minWidth: '70px', height: '16px', display: 'inline-block' }} />}
+                                    : <span style={{ borderBottom: '1.5px solid #000', minWidth: '70px', height: ANSWER_LINE_H, display: 'inline-block' }} />}
                             </div>
                         </div>
                     );

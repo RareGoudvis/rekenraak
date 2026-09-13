@@ -1,7 +1,7 @@
 import type { MathBlock, GeldExercise, GeldDenomination } from '../../services/math/types';
 import { DENOMINATION_CATALOGUE, formatAmount, denominationLabel } from '../../services/geld/geldGenerator';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -114,7 +114,7 @@ function HerkennenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: 
             {format === 'decimaal' ? '€ ___ , ___' : '€ _______'}
         </div>
     ) : (
-        <div style={{ borderBottom: '1.5px solid #000', width: '100px', height: '20px', marginTop: '8px' }} />
+        <div style={{ borderBottom: '1.5px solid #000', width: '100px', height: ANSWER_LINE_H, marginTop: '8px' }} />
     );
 
     const rowStyle: React.CSSProperties = { ...FIGURE_FONT, display: 'flex', flexWrap: 'wrap', gap: em(6), justifyContent: 'center', alignContent: 'flex-start', width: '100%' };

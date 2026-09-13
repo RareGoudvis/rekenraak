@@ -1,7 +1,7 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth } from './BlockWidthContext';
+import { useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
 import type { OppervlakteConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -41,7 +41,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
 
     const blank = (sol: string | null, width = 56) => sol !== null
         ? <span style={{ ...solutionText }}>{sol}</span>
-        : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: '16px' }} />;
+        : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: ANSWER_LINE_H }} />;
 
     const pad = 40;
     const geoms = exercises.map(ex => {

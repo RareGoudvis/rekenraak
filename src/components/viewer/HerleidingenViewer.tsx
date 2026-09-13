@@ -6,6 +6,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import type { HerleidingenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { ANSWER_LINE_H } from './BlockWidthContext';
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
@@ -13,8 +14,8 @@ const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
-const numLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: '16px', display: 'inline-block' }} />;
-const unitLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '34px', height: '16px', display: 'inline-block' }} />;
+const numLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: ANSWER_LINE_H, display: 'inline-block' }} />;
+const unitLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '34px', height: ANSWER_LINE_H, display: 'inline-block' }} />;
 
 // Click a given number → inline input; click a given unit → dropdown of valid ladder units.
 function EditableNumber({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {
@@ -167,10 +168,10 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         // cells start at the same x — without it the variable-width prompt staircases them.
         const promptW = Math.round(Math.max(0, ...exercises.map(ex => promptStr(ex).length)) * 8.4) + 8;
         const ansEl = (ex: HerleidingExercise) => {
-            if (tableAnswer === 'blank') return <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px' }}>= <span style={{ borderBottom: '1.5px solid #000', width: '90px', display: 'inline-block', height: '15px' }} /></span>;
+            if (tableAnswer === 'blank') return <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px' }}>= <span style={{ borderBottom: '1.5px solid #000', width: '90px', display: 'inline-block', height: ANSWER_LINE_H }} /></span>;
             // Shrink the blank lines when the answer has many parts (volledig) so the row fits.
             const many = ex.toParts.length >= 3;
-            const line = (w: number) => <span style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '15px', display: 'inline-block' }} />;
+            const line = (w: number) => <span style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />;
             return <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: many ? '4px' : '6px' }}>= {ex.toParts.map((p, i) => (
                 <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: many ? '3px' : '4px' }}>
                     {ex.blank === 'number' ? line(many ? 30 : 56) : <span>{formatMathNumber(p.value)}</span>}

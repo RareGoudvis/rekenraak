@@ -1,7 +1,7 @@
 import type { MathBlock, ProcentExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, fitCols } from './BlockWidthContext';
+import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import type { ProcentenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -27,7 +27,7 @@ export default function ProcentenViewer({ block, showSolutions }: Props) {
 
     const blank = (val: number | string, width: number) => showSolutions
         ? <span style={{ ...solutionText, minWidth: `${width}px`, textAlign: 'center', display: 'inline-block' }}>{val}</span>
-        : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
+        : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />;
 
     // itemMinPx 200 (was 150): a "welk-percent" row is the widest of the two sentence
     // shapes and needs the extra room, which is also what keeps a half column 1-up

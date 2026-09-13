@@ -2,7 +2,7 @@ import type { MathBlock, RekenvolgordeExercise } from '../../services/math/types
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH } from '../../services/math/formatters';
-import { useBlockWidth, ANSWER_ROW_H } from './BlockWidthContext';
+import { useBlockWidth, ANSWER_ROW_H, ANSWER_LINE_H } from './BlockWidthContext';
 import { solutionText } from './solutionStyle';
 
 interface Props {
@@ -64,7 +64,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
         width: stretch ? '100%' : `${LINE_PX}px`,
         // Kort/Lang share one baseline with the expression, so the blank needs a body to sit
         // on; a Stappen line is bottom-aligned inside its own working row and needs none.
-        ...(layout === 'stepped' ? {} : { height: '15px', display: 'inline-block' }),
+        ...(layout === 'stepped' ? {} : { height: ANSWER_LINE_H, display: 'inline-block' }),
     }} />;
 
     return (

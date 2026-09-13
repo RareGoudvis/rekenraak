@@ -3,6 +3,7 @@ import { formatDigitalTime } from '../../services/clock/clockTypes';
 import { formatDuur } from '../../services/tijdsduur/tijdsduurGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { solutionText } from './solutionStyle';
+import { ANSWER_ROW_H } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -14,7 +15,7 @@ const SALMON = '#f4cbb8';
 
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
 const cell: React.CSSProperties = {
-    border: '1px solid #000', minHeight: '34px', display: 'flex', alignItems: 'center',
+    border: '1px solid #000', minHeight: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
     justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box', padding: '2px 10px',
 };
 
