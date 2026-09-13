@@ -139,14 +139,61 @@ describe('APP_STRUCTURE leaves', () => {
 });
 
 // ── (c) pairwise over the declared option space ──────────────────────────────
+// PAIRWISE_CAP (200) is a safety ceiling, not the working number: the greedy row
+// generator in pairwise() stops as soon as every pair is covered, and the largest
+// declared space (hr-std-gemengd, 8 keys) needs 56 rows to do that — so 200 leaves
+// headroom for a future space without letting a broken one silently truncate.
 describe.each(typeIds)('constraint matrix: %s', (typeId) => {
     const space = constraintSpaceFor(typeId);
     const combos = pairwise(space, PAIRWISE_CAP);
+    const keys = Object.keys(space).filter(k => (space[k]?.length ?? 0) > 0);
+
+    // Recomputed independently of pairwise()'s own bookkeeping: this is what proves the
+    // matrix actually reaches full coverage rather than trusting the row generator's
+    // internal "uncovered" set, which would pass even if the generator quietly gave up.
+    function requiredPairs(): Set<string> {
+        const req = new Set<string>();
+        for (let a = 0; a < keys.length; a++) {
+            for (let b = a + 1; b < keys.length; b++) {
+                for (let i = 0; i < space[keys[a]].length; i++) {
+                    for (let j = 0; j < space[keys[b]].length; j++) req.add(`${keys[a]}=${i}|${keys[b]}=${j}`);
+                }
+            }
+        }
+        return req;
+    }
+
+    function coveredPairs(): Set<string> {
+        const cov = new Set<string>();
+        for (const combo of combos) {
+            for (let a = 0; a < keys.length; a++) {
+                for (let b = a + 1; b < keys.length; b++) {
+                    const ka = keys[a], kb = keys[b];
+                    if (!(ka in combo) || !(kb in combo)) continue;
+                    const ia = space[ka].indexOf(combo[ka]);
+                    const ib = space[kb].indexOf(combo[kb]);
+                    if (ia < 0 || ib < 0) continue;
+                    cov.add(`${ka}=${ia}|${kb}=${ib}`);
+                }
+            }
+        }
+        return cov;
+    }
 
     test(`covers ${combos.length} pairwise combinations`, () => {
         // Every exercise type must declare its options — an empty space means the sweep
         // silently skips it, which is exactly the gap this suite exists to close.
         if (!isLayoutType(typeId)) expect(Object.keys(space).length, `${typeId} has no CONSTRAINT_SPACE entry`).toBeGreaterThan(0);
+
+        if (keys.length >= 2) {
+            const required = requiredPairs();
+            const covered = coveredPairs();
+            console.log(`${typeId}: ${combos.length} rows / ${required.size} pairs`);
+            // A space that cannot be covered within the cap must fail loudly, with the
+            // numbers, rather than pass on however many rows it happened to reach.
+            expect(covered.size, `${typeId}: only ${covered.size}/${required.size} pairs covered by ${combos.length} rows (cap ${PAIRWISE_CAP})`).toBe(required.size);
+        }
+
         for (const combo of combos) runOne(typeId, combo, { allowEmpty: true });
     });
 });
