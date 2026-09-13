@@ -505,8 +505,10 @@ textarea:focus-visible,
 /* Second-level tabs (Blad -> Koptekst/Opdrachten/Voettekst). Deliberately NOT a second
    .seg-group: two identical pill rows stacked gave no clue which level you were
    operating. Underline reads as subordinate to the segmented control above it. */
-.sub-tabs { display: flex; gap: var(--sp-4); border-bottom: 1px solid var(--separator); }
+.sub-tabs { display: flex; border-bottom: 1px solid var(--separator); }
+/* Equal thirds, like the pill strip above it, so the two levels line up edge to edge. */
 .sub-tab {
+  flex: 1 1 0; text-align: center;
   padding: 6px 2px 8px;
   font: inherit; font-size: var(--text-sm); font-weight: 500;
   color: var(--text-muted); background: none; border: none;
