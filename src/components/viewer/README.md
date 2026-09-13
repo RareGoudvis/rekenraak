@@ -19,6 +19,9 @@ broke it clipped, overflowed or measured wrong on paper.
    at real-world scale (the meten rulers, the vormleer 1 cm raster) keep px — say so in a
    comment. A viewer whose items hold a scaled figure derives its `itemMinPx` from
    `useSheetSizePx('math')`.
+   **Writing lines take `--sheet-answer-h`:** `calc(var(--sheet-answer-h) * ANSWER_LINE_H)` for a
+   blank, `* ANSWER_ROW_H` for a stepped or table row — never a px literal, except a box that owns
+   its own slider (MAB, splitsen rowHeight, geld, weegschaal, herleidingen, cijferen, cm boxes).
 3. **Solutions use `solutionText` / `SOL`** from `solutionStyle.ts` — red **and bold**
    (a b/w printer only sees the bold). No other red on the sheet unless it is a domain colour.
 4. **Items flow through `FragmentableGrid`.** One `.print-row` per row lets the block split

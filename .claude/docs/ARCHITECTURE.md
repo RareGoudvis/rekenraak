@@ -76,7 +76,7 @@ lives in memory.
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector context. `setActiveSelection` with a real block id ALSO sets `inspectorTab: 'oefening'` (content first); `'document'`/`null` leave the tab alone, since the block tabs are disabled without a selection |
 | `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths** |
 | `footer` | `FooterData` | three configurable slots (`slotLeft`/`slotCenter`/`slotRight` + their texts) and `brandSlot` — where the "Gemaakt met RekenRaak.be" credit sits; the credit always prints, only its position is a choice |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte) |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`) |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point: seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
@@ -138,7 +138,7 @@ choke point enforces the lock without touching the ~16 config plugins. Draft-blo
 edits bypass the gate (authoring runs unlocked).
 
 **`MathBlock.constraints` is `BlockConstraints`** (since 2026-09-12; was `any`) —
-`Record<string, unknown> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType?, fitToPage?, fitToWidth? }` —
+`Record<string, unknown> & CrossCutting`, where `CrossCutting = { bodyFontScale?, subType?, fitToPage?, fitToWidth?, answerSpace? }` —
 an unnamed key read is a compile error; `scaffolding` is declared per family (7 literal types),
 never cross-cutting.
 The per-family shapes (43 `XConstraints` types + `ConstraintsByType`) live in
@@ -466,6 +466,17 @@ change and Genereer the sheet shows old exercises under new settings, and that m
 (`viewers.stale.test.tsx` sweeps every leaf × every option). Three families still draw the wrong
 picture in that window (weegschaal range, cijferen decimals, klok mode — BUGS.md); a mode switch in
 `FractionConfig` / `MabConfig` regenerates the block instead of clearing it.
+
+**Writing space is one token** (since 2026-09-13, branch G). `--sheet-answer-h` in `theme.css` =
+`calc(var(--sheet-size-math) * 1.0385)` = 18px at 13pt, overridden by `docSettings.answerSpace` on
+`.print-area-shell` and by `constraints.answerSpace` on the block's `ScaledBlock` inner. Every
+writing line is `calc(var(--sheet-answer-h) * f)` with `ANSWER_LINE_H` (1×, a blank) or
+`ANSWER_ROW_H` (32/18, a stepped row / table row) from `BlockWidthContext` (`useSheetAnswerPx` for JS
+maths); the 15–16px and 20–22px outliers were normalised to 1× in one reviewed commit (`font:compare`
+report in the commit body). Boxes that own a slider (MAB, splitsen rowHeight, geld, weegschaal,
+herleidingen tableCellH, cijferen gridCellSize, cm boxes) stay on their slider. `verticalSpacing`
+is still the gap BETWEEN exercises. The estimate charges `(answerSpace − 18)` per row and a stepped
+row as `answerSpace × 32/18` (`PackOptions.answerSpacePx`).
 
 **Every viewer renders inside [BlockErrorBoundary](../../src/components/viewer/BlockErrorBoundary.tsx)**
 (since 2026-09-13): the sheet's block dispatch in App, `SheetThumbnail` and `ExercisePreview` wrap only
