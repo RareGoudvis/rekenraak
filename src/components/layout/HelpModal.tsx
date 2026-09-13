@@ -4,6 +4,7 @@ import ModalShell from '../ui/ModalShell';
 interface Props {
     onClose: () => void;
     onStartTour?: () => void;
+    onShowVideo?: () => void;
 }
 
 type Tab = 'maken' | 'opslaan' | 'delen';
@@ -11,7 +12,7 @@ type Tab = 'maken' | 'opslaan' | 'delen';
 // Step-by-step usage guide in three levels: build a worksheet, save/load worksheets,
 // share worksheets. Kept in sync with the current chrome (topbar "Meer" menu,
 // Oefeningen/Overzicht tabs, Bibliotheek presets). Reuses theme CSS variables.
-export default function HelpModal({ onClose, onStartTour }: Props) {
+export default function HelpModal({ onClose, onStartTour, onShowVideo }: Props) {
     const [tab, setTab] = useState<Tab>('maken');
 
     return (
@@ -22,16 +23,28 @@ export default function HelpModal({ onClose, onStartTour }: Props) {
                     <p style={{ margin: '0 0 14px', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
                         Liever meteen aan de slag? De rondleiding wijst de knoppen aan terwijl je ze gebruikt.
                     </p>
-                    {onStartTour && (
-                        <button
-                            onClick={onStartTour}
-                            style={{
-                                padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                                fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
-                                border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--accent-on)',
-                            }}
-                        >▶ Start de rondleiding</button>
-                    )}
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        {onStartTour && (
+                            <button
+                                onClick={onStartTour}
+                                style={{
+                                    padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                    fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
+                                    border: '1px solid var(--accent)', background: 'var(--accent)', color: 'var(--accent-on)',
+                                }}
+                            >▶ Start de rondleiding</button>
+                        )}
+                        {onShowVideo && (
+                            <button
+                                onClick={onShowVideo}
+                                style={{
+                                    padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                    fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
+                                    border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
+                                }}
+                            >Bekijk de video</button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Tabs = three levels */}

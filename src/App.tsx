@@ -19,6 +19,7 @@ import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
 import TourOverlay from './components/onboarding/TourOverlay';
+import WelcomeModal from './components/onboarding/WelcomeModal';
 import BlockControlsRail from './components/layout/BlockControlsRail';
 import { Lock, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
@@ -205,12 +206,28 @@ export default function App() {
   const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
 
   const [helpOpen, setHelpOpen] = useState(false);
-  // First-run interactive tour (replaces the old AlphaPopup). Shown once; replayable from Help.
-  const [tourOpen, setTourOpen] = useState<boolean>(() => {
+  const [helpVideoOpen, setHelpVideoOpen] = useState(false);
+  // First-run welcome (tour / demo video / skip) replaces auto-opening the tour. Shown once;
+  // the tour itself stays replayable from Help regardless.
+  const [welcomeOpen, setWelcomeOpen] = useState<boolean>(() => {
     try { return !localStorage.getItem('rekenraak_tour_seen_v1'); } catch { return false; }
   });
-  const closeTour = () => {
+  const markTourSeen = () => {
     try { localStorage.setItem('rekenraak_tour_seen_v1', '1'); } catch { /* ignore */ }
+  };
+  const closeWelcome = () => {
+    markTourSeen();
+    setWelcomeOpen(false);
+  };
+  // First-run interactive tour (replaces the old AlphaPopup). Shown once; replayable from Help.
+  const [tourOpen, setTourOpen] = useState(false);
+  const startTourFromWelcome = () => {
+    markTourSeen();
+    setWelcomeOpen(false);
+    setTourOpen(true);
+  };
+  const closeTour = () => {
+    markTourSeen();
     setTourOpen(false);
   };
   const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
@@ -685,6 +702,7 @@ export default function App() {
         <a href="/oefeningen.html">Alle oefeningen</a>
       </nav>
     </div>
+    {welcomeOpen && <WelcomeModal onClose={closeWelcome} onStartTour={startTourFromWelcome} />}
     {tourOpen && <TourOverlay onClose={closeTour} />}
     <div className="print-root" style={styles.appShell}>
       <div className="print-body-row" style={styles.appBody}>
@@ -892,7 +910,14 @@ export default function App() {
     )}
     {/* Screen-only strip explaining the three drop thirds, for the duration of a drag. */}
     {dnd.fromId !== null && <SheetDragHint />}
-    {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
+    {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} onShowVideo={() => { setHelpOpen(false); setHelpVideoOpen(true); }} />}
+    {helpVideoOpen && (
+      <WelcomeModal
+        mode="video"
+        onClose={() => setHelpVideoOpen(false)}
+        onStartTour={() => { setHelpVideoOpen(false); setTourOpen(true); }}
+      />
+    )}
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
     {view === 'mijn-bladen' && <MijnBladenView />}
     {view === 'bibliotheek' && <BibliotheekView />}
