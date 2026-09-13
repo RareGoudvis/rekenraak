@@ -50,7 +50,7 @@ function DefaultFallback() {
                 minWidth: 0,
                 fontSize: 'calc(var(--sheet-size-text) * 0.7)',
                 color: 'var(--danger)',
-                fontFamily: 'Azeret Mono, monospace',
+                fontFamily: 'var(--font-sheet-text)',
                 whiteSpace: 'normal',
                 overflowWrap: 'break-word',
             }}
