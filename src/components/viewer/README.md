@@ -11,8 +11,14 @@ broke it clipped, overflowed or measured wrong on paper.
 2. **Sizes are factors of the sheet tokens.** Digits and math:
    `calc(var(--sheet-size-math) * f)`; words: `calc(var(--sheet-size-text) * f)`. The base
    moves with the teacher's Lettergrootte sliders; the factor keeps your deliberate size
-   differences. Box geometry that must stay proportional to its own shape (an SVG coin, a
-   grid cell in mm) may keep px — say so in a comment.
+   differences. **SVG figures follow the token too:** keep the px geometry as the `viewBox`
+   and size the element in `em` inside a box with `fontSize: var(--sheet-size-math)`
+   (`px / PX_PER_EM_AT_DEFAULT`, 17.33 = 13pt at 96dpi, so the default slider reproduces the
+   old pixels exactly). A `<text>` inside such an SVG takes a plain viewBox-unit
+   `fontSize={n}`, never `calc(var(--sheet-size-*))` — that would scale twice. Only drawings
+   at real-world scale (the meten rulers, the vormleer 1 cm raster) keep px — say so in a
+   comment. A viewer whose items hold a scaled figure derives its `itemMinPx` from
+   `useSheetSizePx('math')`.
 3. **Solutions use `solutionText` / `SOL`** from `solutionStyle.ts` — red **and bold**
    (a b/w printer only sees the bold). No other red on the sheet unless it is a domain colour.
 4. **Items flow through `FragmentableGrid`.** One `.print-row` per row lets the block split

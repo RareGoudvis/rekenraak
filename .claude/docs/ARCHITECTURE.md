@@ -446,6 +446,21 @@ viewers lay their items out through
   (exchange a bill), [GeldTeruggevenViewer](../../src/components/viewer/GeldTeruggevenViewer.tsx)
   (make change). Coins/bills are monochrome SVG (print-friendly).
 
+**SVG figures follow the Lettergrootte sliders** (since 2026-09-13; clock faces, weegschaal
+dial, thermometer, vormleer drawings, MAB glyphs, fraction shapes, coins and bills). The
+mechanism is the same everywhere: the px geometry stays as the `viewBox`, the element is
+sized in `em` inside a box whose `font-size` is `--sheet-size-math`, with
+`PX_PER_EM_AT_DEFAULT = 17.33` (13pt at 96dpi, declared per viewer) as the divisor so the
+default slider reproduces the old pixels exactly. `<text>` inside such an SVG uses plain
+viewBox-unit `fontSize`, never the token (it would scale twice). Column counts derive their
+`itemMinPx` from `useSheetSizePx('math')` (BlockWidthContext.tsx: the token in px, read from
+`docSettings`, reactive), and MAB / breuken cap a figure's font-size at what its column can
+hold instead of clipping. Only real-world-scale drawings keep px: the meten rulers and the
+vormleer 1 cm tekenen raster (a breuken figure asked for in cm keeps px via `physicalSize`).
+Per-block adjustment stays Opmaak › Tekstgrootte (`bodyFontScale`, CSS zoom, SVG included).
+Consequence: measured heights and the intrinsic-width clamp now move with `fontSizeMath`; at
+16pt a default-count MAB / breuken / teruggeven block can outgrow a page and the banner fires.
+
 ---
 
 ## 9. Print / PDF export — the page model
