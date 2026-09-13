@@ -2,6 +2,7 @@ import type { MathBlock, RekenvolgordeExercise } from '../../services/math/types
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH } from '../../services/math/formatters';
+import { useBlockWidth } from './BlockWidthContext';
 import { solutionText } from './solutionStyle';
 
 interface Props {
@@ -19,6 +20,7 @@ const GLYPH: Record<string, string> = { ...OP_GLYPH, '(': '(', ')': ')' };
 export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     const exercises: RekenvolgordeExercise[] = block.rekenvolgordeExercises || [];
     const gap = block.verticalSpacing || 14;
+    const availablePx = useBlockWidth();
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -33,16 +35,37 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     // Every row gets the same expression column, sized to the block's longest expression and
     // right-aligned, so the "=" and the writing line land at one x instead of tracking each
     // expression's own length.
-    const A4_CONTENT_PX = 625;
     const CHAR_PX = 11.1;   // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
     const COL_GAP = 24;
     const LINE_PX = 56;
+    // Same three answer-line presets as hoofdrekenen: Kort (2-up, answer-sized blank),
+    // Lang (1-up, the line runs to the cell edge), Stappen (1-up + N blank working lines).
+    const layout = block.layoutPreset ?? 'inline-short';
     const exprs = exercises.map(ex => renderTokens(ex.tokens));
     const exprW = Math.ceil(Math.max(...exprs.map(e => e.length)) * CHAR_PX);
     // "=" (8px gap + ~10px glyph + 8px gap) then the answer line. A 4-bewerkingen expression
     // at maximum 1 000 is too wide for a half column, so drop to 1-up rather than overflow.
     const rowPx = exprW + 8 + 10 + 8 + LINE_PX;
-    const cols = rowPx * 2 + COL_GAP <= A4_CONTENT_PX ? 2 : 1;
+    // Stappen is 2-up whenever two rows fit with real writing room — the same rule
+    // MathBlockRenderer applies, so a stepped rekenvolgorde block is the same height as a
+    // stepped hoofdrekenen one instead of running off the bottom of the page.
+    // SYNC: MathBlockRenderer's `worklineMinPx` floor (80px = room for a hand-written step).
+    const WORKLINE_MIN_PX = 80;
+    const steppedRowPx = exprW + 8 + 10 + 8 + WORKLINE_MIN_PX;
+    const twoUpPx = layout === 'stepped' ? steppedRowPx : rowPx;
+    // Lang gives the answer line the whole cell, which only means something 1-up.
+    const cols = layout !== 'inline-long' && twoUpPx * 2 + COL_GAP <= availablePx ? 2 : 1;
+    // Stappen: the lines a child writes the tussenstappen on, 32px apart like hoofdrekenen's.
+    const stepCount = layout === 'stepped' ? (block.steppedLines || 1) : 1;
+    const stretch = layout !== 'inline-short';
+
+    const answerLine = <div style={{
+        borderBottom: '1.5px solid #000', minWidth: `${LINE_PX}px`,
+        width: stretch ? '100%' : `${LINE_PX}px`,
+        // Kort/Lang share one baseline with the expression, so the blank needs a body to sit
+        // on; a Stappen line is bottom-aligned inside its own 32px row and needs none.
+        ...(layout === 'stepped' ? {} : { height: '15px', display: 'inline-block' }),
+    }} />;
 
     return (
         <FragmentableGrid
@@ -51,12 +74,42 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
             columnGap={COL_GAP}
             rowGap={gap}
             items={exercises.map((ex, i) => (
-                <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
-                    <span style={{ width: `${exprW}px`, textAlign: 'right', whiteSpace: 'pre', flexShrink: 0 }}>{exprs[i]}</span>
-                    <span>=</span>
-                    {showSolutions
-                        ? <span style={{ ...solutionText, minWidth: `${LINE_PX}px`, textAlign: 'center' }}>{formatMathNumber(ex.answer)}</span>
-                        : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${LINE_PX}px`, height: '15px', display: 'inline-block' }} />}
+                <div key={ex.id} className="print-exercise" style={{
+                    display: 'flex',
+                    // Stappen stacks extra lines below the first, so the expression pins to the
+                    // top of the row instead of sharing one baseline with a multi-line column.
+                    alignItems: layout === 'stepped' ? 'flex-start' : 'baseline',
+                    gap: '8px',
+                    fontFamily: mono,
+                    fontSize: 'calc(var(--sheet-size-math) * 1)',
+                    // Without extra room underneath, the next exercise sits exactly as far away
+                    // as the next step line and three steps of one sum read as three sums.
+                    ...(layout === 'stepped' ? { paddingBottom: '16px' } : {}),
+                }}>
+                    <span style={{
+                        width: `${exprW}px`, textAlign: 'right', whiteSpace: 'pre', flexShrink: 0,
+                        // Pin the expression ON line 1's baseline rather than letting it float
+                        // above the stack of step lines.
+                        ...(layout === 'stepped' ? { display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', height: '32px' } : {}),
+                    }}>{exprs[i]}</span>
+                    <div style={{
+                        display: 'flex', flexDirection: 'column', gap: `${gap * 0.8}px`,
+                        ...(stretch ? { flex: 1, minWidth: 0 } : {}),
+                    }}>
+                        {Array.from({ length: stepCount }).map((_, s) => (
+                            <div key={s} style={{
+                                display: 'flex', gap: '8px', width: '100%',
+                                ...(layout === 'stepped'
+                                    ? { alignItems: 'flex-end', height: '32px' }
+                                    : { alignItems: 'baseline' }),
+                            }}>
+                                <span style={{ flexShrink: 0 }}>=</span>
+                                {(s === 0 && showSolutions)
+                                    ? <span style={{ ...solutionText, minWidth: `${LINE_PX}px`, textAlign: 'center' }}>{formatMathNumber(ex.answer)}</span>
+                                    : answerLine}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             ))}
         />

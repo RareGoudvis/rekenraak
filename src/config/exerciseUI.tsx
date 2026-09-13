@@ -79,6 +79,7 @@ import ProcentenConfig from '../components/configurator/plugins/ProcentenConfig'
 import MaateenheidConfig from '../components/configurator/plugins/MaateenheidConfig';
 import GeldRekenenConfig from '../components/configurator/plugins/GeldRekenenConfig';
 import RekenvolgordeConfig from '../components/configurator/plugins/RekenvolgordeConfig';
+import RekenvolgordeStyleConfig from '../components/configurator/plugins/RekenvolgordeStyleConfig';
 import KettingConfig from '../components/configurator/plugins/KettingConfig';
 import GetalFunctieConfig from '../components/configurator/plugins/GetalFunctieConfig';
 import TijdsduurConfig from '../components/configurator/plugins/TijdsduurConfig';
@@ -180,7 +181,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'maateenheid':  { Viewer: MaateenheidViewer, Config: MaateenheidConfig },
     'geld-rekenen': { Viewer: GeldRekenenViewer, Config: GeldRekenenConfig, AdvancedConfig: GeldAdvancedConfig },
 
-    'rekenvolgorde':  { Viewer: RekenvolgordeViewer, Config: RekenvolgordeConfig },
+    'rekenvolgorde':  { Viewer: RekenvolgordeViewer, Config: RekenvolgordeConfig, StyleConfig: RekenvolgordeStyleConfig },
     'layout-sectie':        { Viewer: LayoutBlockViewer, Config: LayoutConfig },
     'layout-schrijflijnen': { Viewer: LayoutBlockViewer, Config: LayoutConfig },
     'layout-raster':        { Viewer: LayoutBlockViewer, Config: LayoutConfig },
