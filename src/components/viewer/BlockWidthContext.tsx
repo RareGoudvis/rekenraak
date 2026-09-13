@@ -1,3 +1,4 @@
+import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { createContext, useContext } from 'react';
 
 // Printable content width of a FULL-WIDTH block, in CSS px.
@@ -35,4 +36,21 @@ export function cellWidthPx(units: number, gapPx: number): number {
 export function fitCols(availableWidth: number, itemMinPx: number, preferred: number, gapPx = 12): number {
     const fits = Math.floor((availableWidth + gapPx) / (itemMinPx + gapPx));
     return Math.max(1, Math.min(preferred, fits));
+}
+
+// The sheet font tokens (--sheet-size-math / --sheet-size-text, theme.css) in CSS px, for
+// the few places that must know a size in JS: a viewer picking a column count around an
+// SVG face that is sized `calc(var(--sheet-size-math) * K)` cannot measure that in CSS.
+// Read from docSettings rather than getComputedStyle so it is reactive and works before
+// first paint; 13pt / 15pt are the token defaults. 1pt = 96/72 px.
+export const SHEET_SIZE_DEFAULT_PT = { math: 13, text: 15 } as const;
+const PX_PER_PT = 96 / 72;
+
+export function sheetSizePx(kind: 'math' | 'text', pt?: number): number {
+    return (pt ?? SHEET_SIZE_DEFAULT_PT[kind]) * PX_PER_PT;
+}
+
+export function useSheetSizePx(kind: 'math' | 'text'): number {
+    const pt = useWorksheetStore(s => (kind === 'math' ? s.docSettings.fontSizeMath : s.docSettings.fontSizeText));
+    return sheetSizePx(kind, pt);
 }
