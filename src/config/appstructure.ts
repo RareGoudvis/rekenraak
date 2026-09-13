@@ -49,11 +49,11 @@ function joinNL(items: (string | number)[]): string {
     return `${items.slice(0, -1).join(', ')} en ${items[items.length - 1]}`;
 }
 
-// splitsen-benen: which place-value letters the legs actually show for this maxGetal
+// splitsen-benen: which place-value letters the legs actually show for this maxGetal ("tot 1000" never rolls 1000 itself, so D stays out)
 // (SYNC: mirrors splitsenGenerator.ts's INT_PLACES key/weight for D/H/T/E).
 function placeLetters(maxGetal: number): string {
     const PLACES = [{ key: 'D', weight: 1000 }, { key: 'H', weight: 100 }, { key: 'T', weight: 10 }, { key: 'E', weight: 1 }];
-    const inPlay = PLACES.filter(p => p.weight <= Math.max(1, maxGetal)).map(p => p.key);
+    const inPlay = PLACES.filter(p => p.weight < Math.max(2, maxGetal)).map(p => p.key);
     return joinNL(inPlay.length ? inPlay : ['E']);
 }
 

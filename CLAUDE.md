@@ -103,8 +103,8 @@ the per-typeId table is §7.
 4. Config plugin at `src/components/configurator/plugins/[Type]Config.tsx`, `{ block }`,
    reading/writing through `useConstraints<XConstraints>`
 5. One `row<XConstraints>({...})` in `REGISTRY` + one row in `EXERCISE_UI` (same key)
-6. One leaf in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.ts)) with `typeId`
-   + optional `defaultConstraints`; its options in [constraintSpace.ts](src/config/constraintSpace.ts)
+6. One leaf in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.ts)) with `typeId`,
+   optional `defaultConstraints` and an `instruction` (default opdracht-titel, string or fn); its options in [constraintSpace.ts](src/config/constraintSpace.ts)
    so the generator matrix tests them
 7. A `rowUnits` / `minWidth` entry in [blockLayout.ts](src/services/layout/blockLayout.ts)
    (first-paint fallback; the real clamp and heights are measured) — run `npm run matrix`

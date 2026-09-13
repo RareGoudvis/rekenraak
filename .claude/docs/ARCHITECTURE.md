@@ -150,6 +150,16 @@ The per-family shapes (43 `XConstraints` types + `ConstraintsByType`) live in
 rows heterogeneously so `generate` keeps the plain `MathBlock` signature. Defaults come from
 the registry's typed factories (`row<C>()`), which is what catches factory drift.
 
+**`MathBlock.leafId?: string` + per-leaf instruction** (since 2026-09-13). A sidebar leaf may carry
+`instruction: string | ((c) => string)` in `APP_STRUCTURE`; `addBlockFromType(typeId, label,
+overrideConstraints?, opts?: { leafId?, instruction? })` resolves it against the merged constraints
+through one pure `resolveInstruction()` in `instructionPresets.ts` (also used by the worksheet
+templates and the curriculum builder, which freezes a function to text in the share link —
+`CurriculumLock.allowedTypes[].leafId/instruction`, additive, no format bump). Fallback stays the
+typeId-prefix table. The Inspector's "Standaardtekst…" list floats the leaf's own line first
+(`suggestionsFor(typeId, leafId?, constraints?)`, `LEAF_BY_ID`). Every leaf is covered by
+`instructions.test.ts`.
+
 **`MathBlock.showInstruction?: boolean`** — `false` hides the block's opdracht title row on the
 sheet (same code path as `layout-*` furniture). The block is still counted by the numbering
 by default, so hiding a title never renumbers the rest of the sheet — unless
@@ -266,7 +276,8 @@ The four consumers are now **table lookups, not branches**:
    taking `{ block }`.
 5. **Registry rows** — add **one row** to `REGISTRY` (exerciseRegistry.ts) and
    **one row** to `EXERCISE_UI` (exerciseUI.tsx), under the same `typeId` key.
-6. **Sidebar tree** — add the leaf (with `typeId` + optional `defaultConstraints`)
+6. **Sidebar tree** — add the leaf (with `typeId`, optional `defaultConstraints` and an
+   `instruction` — the pupil-facing opdracht-titel, a string or a function of the constraints)
    to `APP_STRUCTURE` in [appstructure.ts](../../src/config/appstructure.ts). The leaf's
    `defaultConstraints` are merged on top of the registry defaults at add time.
 
