@@ -1,6 +1,8 @@
-import { Component, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { WorksheetFile } from '../../services/persistence';
 import { EXERCISE_UI } from '../../config/exerciseUI';
+import { REGISTRY } from '../../config/exerciseRegistry';
+import { BlockErrorBoundary } from '../viewer/BlockErrorBoundary';
 import { numberBlocks } from '../../services/layout/blockNumbering';
 
 interface Props {
@@ -12,13 +14,6 @@ interface Props {
 // Nominal page content width the inner renders at, then scaled to the card width.
 // Matches the on-sheet body width closely enough for a faithful top-of-page preview.
 const CONTENT_W = 700;
-
-// A single bad block/viewer must not blank the whole thumbnail.
-class ThumbBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-    state = { failed: false };
-    static getDerivedStateFromError() { return { failed: true }; }
-    render() { return this.state.failed ? null : this.props.children; }
-}
 
 // Only render once scrolled into view — a library grid can hold dozens of these,
 // each mounting real exercise viewers.
@@ -78,15 +73,18 @@ export default function SheetThumbnail({ file, height = 200, maxBlocks = 3 }: Pr
                     {file.header?.titel ? <div style={titleRow}>{file.header.titel}</div> : null}
                     {blocks.map((block, i) => {
                         const Viewer = EXERCISE_UI[block.typeId]?.Viewer;
+                        const exerciseField = REGISTRY[block.typeId]?.exerciseField ?? 'exercises';
+                        const resetKey = (block as unknown as Record<string, unknown>)[exerciseField];
                         return (
                             <div key={block.id ?? i} style={blockWrap}>
                                 {block.instructionText && block.showInstruction !== false ? (
                                     <div style={opdracht}>{numbers[block.id] != null ? `${numbers[block.id]}. ` : ''}{block.instructionText}</div>
                                 ) : null}
                                 {Viewer ? (
-                                    <ThumbBoundary>
+                                    // fallback=null: a broken block just leaves a gap in the mini page, no red text.
+                                    <BlockErrorBoundary fallback={null} label={block.typeId} resetKey={resetKey}>
                                         <Viewer block={block} showSolutions={false} />
-                                    </ThumbBoundary>
+                                    </BlockErrorBoundary>
                                 ) : null}
                             </div>
                         );

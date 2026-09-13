@@ -1,7 +1,8 @@
-import { Component, useMemo, useRef, useState, useEffect, useLayoutEffect, type ReactNode } from 'react';
+import { useMemo, useRef, useState, useEffect, useLayoutEffect } from 'react';
 import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { EXERCISE_UI } from '../../config/exerciseUI';
+import { BlockErrorBoundary } from '../viewer/BlockErrorBoundary';
 
 interface Props {
     typeId: string;
@@ -44,19 +45,6 @@ function buildPreviewBlock(typeId: string, rawConstraints: Record<string, unknow
     };
     const data = def.generate(block);
     return { ...block, [def.exerciseField]: data };
-}
-
-// One bad constraint combo must not crash a parent rendering many live viewers.
-class PreviewBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-    state = { failed: false };
-    static getDerivedStateFromError() { return { failed: true }; }
-    componentDidUpdate(prev: { children: ReactNode }) {
-        if (prev.children !== this.props.children && this.state.failed) this.setState({ failed: false });
-    }
-    render() {
-        if (this.state.failed) return <div style={fallbackStyle}>Voorbeeld niet beschikbaar</div>;
-        return this.props.children;
-    }
 }
 
 // Only build/render once scrolled into view — many live generators+viewers at once
@@ -128,9 +116,13 @@ export default function ExercisePreview({ typeId, constraints, nonce = 0, height
                 ? <div style={fallbackStyle}>Voorbeeld niet beschikbaar</div>
                 : (
                     <div ref={innerRef} style={{ ...scaleWrap, transform: `scale(${scale})` }}>
-                        <PreviewBoundary key={`${constraintsKey}:${nonce}`}>
+                        <BlockErrorBoundary
+                            resetKey={`${constraintsKey}:${nonce}`}
+                            fallback={<div style={fallbackStyle}>Voorbeeld niet beschikbaar</div>}
+                            label={typeId}
+                        >
                             <Viewer block={block} showSolutions />
-                        </PreviewBoundary>
+                        </BlockErrorBoundary>
                     </div>
                 ))}
         </div>
