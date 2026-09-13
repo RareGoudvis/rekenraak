@@ -76,7 +76,7 @@ lives in memory.
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector context. `setActiveSelection` with a real block id ALSO sets `inspectorTab: 'oefening'` (content first); `'document'`/`null` leave the tab alone, since the block tabs are disabled without a selection |
 | `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths** |
 | `footer` | `FooterData` | three configurable slots (`slotLeft`/`slotCenter`/`slotRight` + their texts) and `brandSlot` — where the "Gemaakt met RekenRaak.be" credit sits; the credit always prints, only its position is a choice |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`) |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten") |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point: seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
@@ -565,7 +565,17 @@ PDF page count.**
 never touches the DOM itself; App injects measurements as callbacks (`heightPxOf`,
 `pageBudgetPx`), so it stays unit-testable.
 
-Fill a row left to right; new row when the width runs out; new page when the page budget
+**Skyline packing** (since 2026-09-13, branch I): each page keeps `fill[0..3]`, the bottom px of
+every column unit; `skylineSlot(fill, w, gap)` returns the lowest y over x ∈ 0..4−w (tie → leftmost),
+so a ½ block slides under a shorter ½ neighbour instead of opening a new row (the owner's case: ten
+met-rest rows beside two cijferen grids left a hole nothing filled). A block fits when `y + h ≤
+budget`, else the page flushes. Everything is costed in px (0.5px epsilon); output is `PackedPage
+{ blocks: PlacedBlock[], used, fill, budgetPx }` with `PlacedBlock { x, y, w, h }` (x/w column
+units, y/h px). `mode: 'rijen'` runs the old algorithm verbatim (`packRows`) — the regression guard in
+`pagePacker.test.ts`. Reading order stays array order and y is monotone per column, so numbering
+never reads upward — but a short block can land bottom-left while its predecessor sits top-right.
+Placement is a pure function of the measured heights, so the convergence argument below is unchanged.
+The old row rule, kept for `rijen`: fill a row left to right; new row when the width runs out; new page when the page budget
 does; `pageBreakBefore` forces a page; a block taller than page 0 (the shortest — it carries
 the header) is marked `spans` and owns its page. It does **not** flow on paper: `.page-sheet`
 is `height: 297mm; overflow: hidden` in print, so screen and PDF clip it the same way; the
@@ -601,9 +611,11 @@ in de kolom te passen" (`constraints.fitToWidth`) lets ScaledBlock back the zoom
 then judges the tier against `px × 0.85`, so it buys one 15% step and still promotes what
 would clip beyond it. `fitToPage` (height) stays the other explicit back-off.
 
-Each page cell is placed **explicitly** (`gridRow` / `gridColumn` from the packer). With
-auto-placement the browser backfills a gap in an earlier row and quietly moves a block off
-the row its pagination was costed against.
+Each page cell is placed **absolutely** (`left/top/width` from the packer) inside
+`.page-sheet-canvas` (`position:relative; height:100%` inside `.page-sheet-body`, because an absolute
+child resolves against the padding box). The body is no longer a CSS grid; the column divider keys on
+`x > 0` per block for its own height; the tail hint takes `tailPx = budget − skylineSlot(...)` from
+the packer; the page-overflow banner compares the deepest cell bottom with the body rect.
 
 ### Rendering one page
 
