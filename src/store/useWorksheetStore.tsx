@@ -68,6 +68,10 @@ export interface DocSettings {
     titleFieldsGap: number;
     headerContentGap: number;
     blockSpacing: number;   // vertical gap between exercise sets (blocks)
+    // How the packer places blocks on a page: 'aansluitend' lets a block fill the space
+    // under a shorter neighbour (skyline), 'rijen' keeps whole rows aligned across the
+    // page the way the sheet worked before. Optional → back-compat: absent = aansluitend.
+    packMode?: 'aansluitend' | 'rijen';
     numberBlocks: boolean;
     // Style-builder overrides (custom wins over the enum presets above). Optional → back-compat.
     headerCustom?: RegionStyle;

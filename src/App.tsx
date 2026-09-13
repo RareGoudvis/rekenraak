@@ -377,6 +377,7 @@ export default function App() {
 
   const packedPages = useMemo(
     () => packPages(blocks, {
+      mode: docSettings.packMode ?? 'aansluitend',
       blockSpacingPx: docSettings.blockSpacing ?? 12,
       heightPxOf: measured.heightPxOf,
       pageBudgetPx: measured.pageBudgetPx,
@@ -389,7 +390,7 @@ export default function App() {
       answerSpacePx: docSettings.answerSpace,
       ignoreMinWidth: debugIgnoreMinWidth,
     }),
-    [blocks, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth],
+    [blocks, docSettings.packMode, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth],
   );
   // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
   // separator never renumbers the exercises after it.
