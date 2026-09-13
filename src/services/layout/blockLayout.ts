@@ -339,6 +339,16 @@ const SETTINGS_FLOOR: Record<string, FloorRule> = {
     // draws ONE place-value figure, which has no such pairing and can go to a quarter.
     'mab-herkennen': () => 2,
     'mab-tekenen': () => 1,
+    // Relation sentences ("rechte a staat ___ op rechte b") never fit a quarter.
+    'vormleer-punt-lijn': (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;
+        return (c.niveau ?? 1) >= 2 ? 2 : 1;
+    },
+    // Meten draws 5 cm legs to scale: two per row at full, one at a half, never a quarter.
+    'vormleer-hoeken': (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;
+        return c.mode === 'meten' ? 2 : 1;
+    },
     ordenen: ordenenFloor,
     'breuken-rangschikken': ordenenFloor,
 };

@@ -447,12 +447,13 @@ const weegschaalSpace: OptionSpace = {
 
 const vormleerSpace: OptionSpace = {
     kind: ['punt-lijn', 'hoek', 'figuur'],
-    mode: ['herkennen', 'benoemen', 'eigenschappen'],
+    mode: ['herkennen', 'benoemen', 'eigenschappen', 'meten'],
     answerMode: ['woordbank', 'schrijven'],
     classify: ['vierhoeken', 'driehoeken'],
     concepts: [
         ['punt', 'rechte', 'halfrechte', 'lijnstuk'],
-        ['evenwijdig', 'snijdend', 'loodrecht'],
+        // Include punt/lijnstuk so niveau 2/3 also exercises the 'ligt-op' relation.
+        ['punt', 'lijnstuk', 'evenwijdig', 'snijdend', 'loodrecht'],
         ['scherp', 'recht', 'stomp', 'gestrekt'],
         ['vierkant', 'rechthoek', 'ruit', 'parallellogram', 'trapezium'],
         ['scherphoekig', 'rechthoekig', 'stomphoekig', 'gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'],
@@ -461,6 +462,9 @@ const vormleerSpace: OptionSpace = {
     showBoog: [true, false],
     rightAngleStyle: ['vierkantje', 'haakje'],
     raster: [true, false],
+    // punt-lijn herkennen difficulty tier.
+    niveau: [1, 2, 3],
+    showHulplijn: [true, false],
 };
 
 // Sheet furniture: no generator, but the packer's height estimate reads these.

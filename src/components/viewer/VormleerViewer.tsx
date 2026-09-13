@@ -242,6 +242,8 @@ function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number
     const A = { x: cx - half * ux, y: cy - half * uy };
     const B = { x: cx + half * ux, y: cy + half * uy };
     const labels = ex.labels ?? [];
+    // Niveau 2/3 relation drawings carry line-name labels the plain herkennen pairs don't.
+    const showRelationLabels = !!ex.relations;
 
     const arrow = (tip: MeetPoint, dirX: number, dirY: number, key: string) => {
         const s = 7;
@@ -266,6 +268,13 @@ function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number
         parts.push(line(A, B, 'l'), dot(A, 'd'), arrow(B, ux, uy, 'a'), text(A, labels[0] ?? 'A', 't1'), text(B, labels[1] ?? 'B', 't2'));
     } else if (ex.concept === 'lijnstuk') {
         parts.push(line(A, B, 'l'), dot(A, 'd1'), dot(B, 'd2'), text(A, labels[0] ?? 'A', 't1'), text(B, labels[1] ?? 'B', 't2'));
+    } else if (ex.concept === 'ligt-op') {
+        // Niveau 2/3: a lijnstuk [CD] plus a loose point A, on the segment or offset from it.
+        const nx = -uy, ny = ux;
+        const t = ex.pointT ?? 0.5, off = (ex.pointOffset ?? 0) * half;
+        const P = { x: A.x + (B.x - A.x) * t + nx * off, y: A.y + (B.y - A.y) * t + ny * off };
+        parts.push(line(A, B, 'l'), dot(A, 'd1'), dot(B, 'd2'), text(A, labels[0] ?? 'C', 't1'), text(B, labels[1] ?? 'D', 't2'));
+        parts.push(dot(P, 'dp'), text(P, labels[2] ?? 'A', 'tp', off <= 0 ? 12 : -8));
     } else {
         // Pairs: evenwijdig / snijdend / loodrecht — two rechten, so no arrowheads either.
         const off = 14;
@@ -274,6 +283,7 @@ function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number
             const A2 = { x: A.x + nx, y: A.y + ny }, B2 = { x: B.x + nx, y: B.y + ny };
             const A1 = { x: A.x - nx, y: A.y - ny }, B1 = { x: B.x - nx, y: B.y - ny };
             parts.push(line(A1, B1, 'l1'), line(A2, B2, 'l2'));
+            if (showRelationLabels) parts.push(text(A1, (labels[0] ?? 'a').toLowerCase(), 't1', -6), text(A2, (labels[1] ?? 'b').toLowerCase(), 't2', 16));
         } else {
             const cross = ex.concept === 'loodrecht' ? 90 : 55;
             const ang2 = ang + (cross * Math.PI) / 180;
@@ -284,9 +294,69 @@ function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number
                 const s = 9;
                 parts.push(<polyline key="ra" points={`${cx + ux * s},${cy + uy * s} ${cx + ux * s + vx * s},${cy + uy * s + vy * s} ${cx + vx * s},${cy + vy * s}`} fill="none" stroke="#000" strokeWidth={1.2} />);
             }
+            if (showRelationLabels) {
+                parts.push(text(A, (labels[0] ?? 'a').toLowerCase(), 't1'), text(C, (labels[1] ?? 'b').toLowerCase(), 't2'));
+                if (ex.concept === 'snijdend') parts.push(dot({ x: cx, y: cy }, 'dx'), text({ x: cx, y: cy }, labels[2] ?? 'S', 'tx', 14));
+            }
         }
     }
     return <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>{parts}</svg>;
+}
+
+// ── hoek meten: to-scale drawing (legs ≥ 5 cm) with a small measuring arc ─────
+// Legs at real cm size can't rotate freely and still fit two-per-row (a wide angle
+// already spans most of a diameter), so the angle opens around a fixed diagonal
+// bisector and the SVG is sized to the exact bounding box of that one angle —
+// tight for a narrow angle, up to ~legPx*1.7 square for the widest (160°).
+const HOEK_METEN_LEG_PX = 5 * CM;
+// Tuned so the widest case (160° at max ±8° rotation jitter) still fits two boxes across
+// a full-width sheet (see the vormleer viewer report: fitCols needs the box ≤ ~335px).
+const HOEK_METEN_PAD = 18;
+
+// Shared by the SVG and by the column-count estimate below (the widest case: a
+// 160° angle at max rotation jitter needs the biggest bounding box).
+function hoekMetenGeom(angleDeg: number, rotation: number) {
+    const legPx = HOEK_METEN_LEG_PX;
+    const bisector = -45 + rotation;
+    const half = angleDeg / 2;
+    const a1 = ((bisector - half) * Math.PI) / 180;
+    const a2 = ((bisector + half) * Math.PI) / 180;
+    const e1 = { x: legPx * Math.cos(a1), y: legPx * Math.sin(a1) };
+    const e2 = { x: legPx * Math.cos(a2), y: legPx * Math.sin(a2) };
+    const minX = Math.min(0, e1.x, e2.x), maxX = Math.max(0, e1.x, e2.x);
+    const minY = Math.min(0, e1.y, e2.y), maxY = Math.max(0, e1.y, e2.y);
+    return { a1, a2, e1, e2, minX, maxX, minY, maxY, w: maxX - minX + HOEK_METEN_PAD * 2, h: maxY - minY + HOEK_METEN_PAD * 2 };
+}
+
+function HoekMetenSVG({ ex, raster, hulplijn }: { ex: VormleerExercise; raster: boolean; hulplijn: boolean }) {
+    const legPx = HOEK_METEN_LEG_PX;
+    const pad = HOEK_METEN_PAD;
+    const angleDeg = ex.angleDeg ?? 45;
+    const { a1, a2, e1, e2, minX, minY, w, h } = hoekMetenGeom(angleDeg, ex.rotation ?? 0);
+    const shift = (p: MeetPoint) => ({ x: p.x - minX + pad, y: p.y - minY + pad });
+    const V = shift({ x: 0, y: 0 }), E1 = shift(e1), E2 = shift(e2);
+    const r = 24;
+    // Grid lines offset from the vertex by whole cm so V always lands on an intersection.
+    const grid = raster ? (
+        <g stroke="#ccc" strokeWidth={0.6}>
+            {Array.from({ length: Math.ceil(w / CM) + 2 }, (_, i) => V.x - Math.ceil(V.x / CM) * CM + i * CM)
+                .filter(x => x >= 0 && x <= w).map(x => <line key={`v${x}`} x1={x} y1={0} x2={x} y2={h} />)}
+            {Array.from({ length: Math.ceil(h / CM) + 2 }, (_, i) => V.y - Math.ceil(V.y / CM) * CM + i * CM)
+                .filter(y => y >= 0 && y <= h).map(y => <line key={`h${y}`} x1={0} y1={y} x2={w} y2={y} />)}
+        </g>
+    ) : null;
+    // Protractor baseline: collinear with leg 1, extended through the vertex both ways.
+    const hulp = hulplijn ? <line x1={V.x - legPx * Math.cos(a1)} y1={V.y - legPx * Math.sin(a1)} x2={V.x + legPx * Math.cos(a1)} y2={V.y + legPx * Math.sin(a1)} stroke="#bbb" strokeDasharray="3 3" strokeWidth={1} /> : null;
+    return (
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ border: '1px solid #000' }}>
+            {grid}
+            {hulp}
+            <line x1={V.x} y1={V.y} x2={E1.x} y2={E1.y} stroke="#000" strokeWidth={2} />
+            <line x1={V.x} y1={V.y} x2={E2.x} y2={E2.y} stroke="#000" strokeWidth={2} />
+            <path d={`M ${V.x + r * Math.cos(a1)} ${V.y + r * Math.sin(a1)} A ${r} ${r} 0 0 1 ${V.x + r * Math.cos(a2)} ${V.y + r * Math.sin(a2)}`} fill="none" stroke="#000" strokeWidth={1.2} />
+            <circle cx={V.x} cy={V.y} r={2.5} fill="#000" />
+        </svg>
+    );
 }
 
 export default function VormleerViewer({ block, showSolutions }: Props) {
@@ -309,6 +379,8 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     const perRow: number = c.exercisesPerRow ?? 3;
     const classify: string = c.classify ?? 'vierhoeken';
     const concepts: string[] = c.concepts ?? [];
+    const niveau: number = c.niveau ?? 1;
+    const showHulplijn: boolean = c.showHulplijn ?? false;
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
@@ -321,12 +393,79 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
             : ex.kind === 'hoek' ? <HoekSVG ex={ex} size={size} showBoog={showBoog} toScale={toScale} />
             : <PuntLijnSVG ex={ex} size={size} toScale={toScale} />;
     const tokenRatio = sheetPx / PX_PER_EM_AT_DEFAULT;
+    const isRelationMode = kind === 'punt-lijn' && mode === 'herkennen' && niveau >= 2;
 
-    const woordbank = answerMode === 'woordbank' && (mode === 'herkennen' || mode === 'benoemen') && (
+    // Niveau 2/3: woordbank offers the fixed relation vocabulary — 'snijdt' answers are a
+    // per-exercise point letter read off the drawing, not a word, so it stays out of the bank.
+    const RELATION_WORDS: Record<string, string[]> = { loodrecht: ['loodrecht'], evenwijdig: ['evenwijdig'], 'ligt-op': ['op', 'niet op'] };
+    const bankWords = isRelationMode
+        ? [...new Set(exercises.flatMap(ex => (ex.relations ?? []).flatMap(r => RELATION_WORDS[r.kind] ?? [])))]
+        : concepts.map(k => CONCEPT_NAMES[k] ?? k);
+    const woordbank = answerMode === 'woordbank' && (mode === 'herkennen' || mode === 'benoemen') && bankWords.length > 0 && (
         <div key="bank" className="print-exercise" style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: '6px' }}>
-            <strong>Kies uit: </strong>{concepts.map(k => CONCEPT_NAMES[k] ?? k).join(' · ')}
+            <strong>Kies uit: </strong>{bankWords.join(' · ')}
         </div>
     );
+
+    // ── HOEKEN METEN: to-scale angle + a "___°" answer line ───────────────────
+    if (kind === 'hoek' && mode === 'meten') {
+        // to-scale (real cm px, font-size-proof) so no tokenRatio factor — each box is
+        // sized tight to its own angle; a 160° angle at max rotation jitter is the widest
+        // case, used here only to decide the column count (2 per row at full, 1 at half).
+        const worstBox = Math.max(hoekMetenGeom(160, 8).w, hoekMetenGeom(160, -8).w);
+        return (
+            <FragmentableGrid
+                cols={fitCols(availableWidth, worstBox, 2, 18)}
+                columnGap={24}
+                rowGap={gap + 10}
+                alignItems="flex-start"
+                items={exercises.map(ex => (
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-text) * 0.75)' }}>
+                        <HoekMetenSVG ex={ex} raster={raster} hulplijn={showHulplijn} />
+                        {showSolutions
+                            ? <span style={{ ...solutionText, fontFamily: mono, fontWeight: 'bold' }}>{ex.angleDeg}°</span>
+                            : <span>_____ °</span>}
+                    </div>
+                ))}
+            />
+        );
+    }
+
+    // ── PUNT-LIJN NIVEAU 2/3: drawing + fill-in-the-blank relation sentence(s) ──
+    if (isRelationMode) {
+        return (
+            <FragmentableGrid
+                cols={1}
+                columnGap={0}
+                rowGap={0}
+                items={[
+                    ...(woordbank ? [woordbank] : []),
+                    <div key="grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${fitCols(availableWidth, 170 * tokenRatio + 18, 2, 18)}, 1fr)`, gap: `${gap + 10}px 18px` }}>
+                        {exercises.map(ex => (
+                            <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                {ex.subExercises
+                                    ? <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        {ex.subExercises.map(sub => <div key={sub.id}>{mini(sub, 120)}</div>)}
+                                    </div>
+                                    : mini(ex, 140)}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
+                                    {(ex.relations ?? []).map((r, i) => (
+                                        <div key={i}>
+                                            {r.before}
+                                            {showSolutions
+                                                ? <span style={{ ...solutionText, fontFamily: mono, fontWeight: 'bold' }}>{r.answer}</span>
+                                                : <span style={{ display: 'inline-block', minWidth: '64px', borderBottom: '1.5px solid #000' }}>&nbsp;</span>}
+                                            {r.after}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>,
+                ]}
+            />
+        );
+    }
 
     // ── TEKENEN: instruction + empty (raster) box; solution draws the element red ──
     if (mode === 'tekenen') {

@@ -619,6 +619,11 @@ export type VormleerConstraints = {
     exercisesPerRow: number;
     // Pre-split value: one flag for both mark kinds; still read as the fallback.
     showMarks?: boolean;
+    // punt-lijn herkennen difficulty tier: 1 = name the element, 2/3 = complete a
+    // relation sentence with 1/2 blanks (loodrecht/evenwijdig/snijdt/ligt-op).
+    niveau?: 1 | 2 | 3;
+    // hoeken 'meten': faint 0/180° protractor baseline collinear with one leg.
+    showHulplijn?: boolean;
 };
 
 // ── Blad-onderdelen (sheet furniture; no generator) ──────────────────────────

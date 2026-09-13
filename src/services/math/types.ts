@@ -364,11 +364,26 @@ export interface VormleerExercise {
     kind: 'punt-lijn' | 'hoek' | 'figuur';
     concept: string;             // 'rechte' | 'lijnstuk' | … | 'scherp' | … | 'ruit' | 'gelijkzijdig' | …
     points?: MeetPoint[];        // figuur: polygon (cm) · punt-lijn: endpoints
-    labels?: string[];           // point letters (A, B, …)
+    labels?: string[];           // point/rechte letters (A, B, … or lowercase line names)
     angleDeg?: number;           // hoek: opening in degrees
     rotation?: number;           // hoek/figuur: random rotation (deg)
     sides?: number[];            // figuur: side lengths (cm) for tick-mark grouping
     isManuallyEdited: boolean;
+    // punt-lijn herkennen niveau 2/3: which difficulty tier produced this exercise.
+    niveau?: 1 | 2 | 3;
+    // niveau 2/3: the relation(s) drawn, each with the fill-in-the-blank sentence
+    // split around the blank so the viewer never re-derives Dutch wording.
+    relations?: Array<{
+        kind: 'loodrecht' | 'evenwijdig' | 'snijdt' | 'ligt-op';
+        a: string; b: string; at?: string;
+        before: string; after: string; answer: string;
+    }>;
+    // niveau 3: two independent niveau-2-shaped relation exercises stacked in one figure.
+    subExercises?: VormleerExercise[];
+    // concept 'ligt-op': where the loose point sits along the drawn lijnstuk —
+    // t = position along [AB] (0..1), offset = perpendicular distance (0 = op de lijn).
+    pointT?: number;
+    pointOffset?: number;
 }
 
 export interface MathBlock<C extends BlockConstraints = BlockConstraints> {

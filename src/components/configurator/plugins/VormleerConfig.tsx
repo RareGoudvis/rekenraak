@@ -50,6 +50,9 @@ export default function VormleerConfig({ block }: Props) {
     const showBoog: boolean = c.showBoog ?? true;
     const raster: boolean = c.raster ?? true;
     const perRow: number = c.exercisesPerRow ?? 3;
+    const niveau: number = c.niveau ?? 1;
+    const showHulplijn: boolean = c.showHulplijn ?? false;
+    const isMeten = kind === 'hoek' && mode === 'meten';
 
     const set = (key: keyof VormleerConstraints, value: unknown) => patch({ [key]: value } as Partial<VormleerConstraints>);
     const toggleConcept = (k: string) => {
@@ -71,7 +74,7 @@ export default function VormleerConfig({ block }: Props) {
                 </div>
             )}
 
-            {classify === 'driehoeken' && kind === 'figuur' ? (
+            {isMeten ? null : classify === 'driehoeken' && kind === 'figuur' ? (
                 // Two labelled clusters so the teacher can mix hoek- and zijde-klassen freely.
                 <div style={styles.section}>
                     <SettingLabel text="Driehoeken:" info="Kies vrij uit beide indelingen; de tabelkolommen volgen je keuze." />
@@ -99,7 +102,18 @@ export default function VormleerConfig({ block }: Props) {
                 </div>
             )}
 
-            {!isTekenen && mode !== 'eigenschappen' && (
+            {kind === 'punt-lijn' && mode === 'herkennen' && (
+                <div style={styles.section}>
+                    <SettingLabel text="Moeilijkheid:" info="1: benoemen. 2: één relatiezin met een leemte. 3: twee relatiezinnen." />
+                    <div style={styles.buttonGroup}>
+                        <button onClick={() => set('niveau', 1)} style={styles.radioBtn(niveau === 1)}>1 · benoemen</button>
+                        <button onClick={() => set('niveau', 2)} style={styles.radioBtn(niveau === 2)}>2 · één relatie</button>
+                        <button onClick={() => set('niveau', 3)} style={styles.radioBtn(niveau === 3)}>3 · twee relaties</button>
+                    </div>
+                </div>
+            )}
+
+            {!isTekenen && !isMeten && mode !== 'eigenschappen' && (
                 <div style={styles.section}>
                     <SettingLabel text="Antwoordvorm:" info="Met woordbank staan de namen bovenaan om uit te kiezen." />
                     <div style={styles.buttonGroup}>
@@ -109,16 +123,25 @@ export default function VormleerConfig({ block }: Props) {
                 </div>
             )}
 
+            {isMeten && (
+                <div style={styles.onOffRow}>
+                    <SettingLabel text="Hulplijn 0-180°" info="Een lichte stippellijn door het hoekpunt, in lijn met één been." />
+                    <button onClick={() => set('showHulplijn', !showHulplijn)} style={styles.onOffBtn(showHulplijn)}>{showHulplijn ? 'Aan' : 'Uit'}</button>
+                </div>
+            )}
+
             {kind === 'hoek' && (
                 <>
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Gedraaide hoeken" info="Uit: het basisbeen ligt horizontaal (makkelijker herkennen)." />
                         <button onClick={() => set('randomRotation', !randomRotation)} style={styles.onOffBtn(randomRotation)}>{randomRotation ? 'Aan' : 'Uit'}</button>
                     </div>
-                    <div style={styles.onOffRow}>
-                        <SettingLabel text="Hoekboog tonen" info="Tekent het boogje (of vierkantje bij een rechte hoek) in elke hoek." />
-                        <button onClick={() => set('showBoog', !showBoog)} style={styles.onOffBtn(showBoog)}>{showBoog ? 'Aan' : 'Uit'}</button>
-                    </div>
+                    {!isMeten && (
+                        <div style={styles.onOffRow}>
+                            <SettingLabel text="Hoekboog tonen" info="Tekent het boogje (of vierkantje bij een rechte hoek) in elke hoek." />
+                            <button onClick={() => set('showBoog', !showBoog)} style={styles.onOffBtn(showBoog)}>{showBoog ? 'Aan' : 'Uit'}</button>
+                        </div>
+                    )}
                 </>
             )}
 
@@ -152,14 +175,14 @@ export default function VormleerConfig({ block }: Props) {
                 </>
             )}
 
-            {isTekenen && (
+            {(isTekenen || isMeten) && (
                 <div style={styles.onOffRow}>
                     <SettingLabel text="Rasterlijnen" info="Een licht 1 cm-raster in het tekenvak." />
                     <button onClick={() => set('raster', !raster)} style={styles.onOffBtn(raster)}>{raster ? 'Aan' : 'Uit'}</button>
                 </div>
             )}
 
-            {!isTekenen && mode !== 'eigenschappen' && (
+            {!isTekenen && !isMeten && mode !== 'eigenschappen' && (
                 <div style={styles.section}>
                     <SettingLabel text="Figuren per rij:" info="Hoeveel tekeningen naast elkaar staan." />
                     <PopupSelect
