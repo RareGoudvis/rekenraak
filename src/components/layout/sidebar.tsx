@@ -78,7 +78,7 @@ function countLeaves(sub: Domain['subdomains'][number]): number {
     return n;
 }
 
-export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
+export default function Sidebar() {
     const addBlockFromType = useWorksheetStore((state) => state.addBlockFromType);
     const curriculum = useWorksheetStore((state) => state.curriculum);
     const selectedGrade = useWorksheetStore((state) => state.selectedGrade);
@@ -351,17 +351,18 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
             )}
 
             {/* The wordmark anchors the sidebar's foot instead of sitting in the toolbar's
-                centre track — that frees the middle of the bar for the sheet's own name. */}
-            <button
-                type="button"
+                centre track — that frees the middle of the bar for the sheet's own name.
+                Plain link to the static about page rather than a modal — one page to keep
+                the project write-up current instead of two. */}
+            <a
                 className="ui-hover"
                 style={S.brandFoot}
-                onClick={() => onOpenAbout?.()}
+                href="/about.html"
                 aria-label="Over dit project"
                 title="Over dit project"
             >
                 <Wordmark height={22} />
-            </button>
+            </a>
         </aside>
     );
 }

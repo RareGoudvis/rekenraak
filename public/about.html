@@ -38,228 +38,171 @@
       "creator": { "@type": "Person", "name": "Ruben V.H." }
     }
   </script>
-  <style>
-    /* Self-contained — copies the app's theme token values (theme.css) verbatim, since a
-       static page can't import the app's CSS. One palette, no dark mode (matches the app). */
-    :root {
-      --bg-base: #F2EFE9;
-      --bg-surface: #FBFAF8;
-      --bg-surface-2: #EDEAE4;
-      --separator: rgba(0, 0, 0, 0.20);
-      --text-main: #1D1D1F;
-      --text-muted: #5A5A5F;
-      --accent: #0A5FD0;
-      --accent-strong: #0847A8;
-      --accent-soft: rgba(10, 95, 208, 0.12);
-      --accent-on: #ffffff;
-
-      --accent-getallenkennis: #FF3B30;
-      --accent-bewerkingen: #007AFF;
-      --accent-metendrekenen: #34C759;
-      --accent-meetkunde: #AF52DE;
-      --accent-vraagstukken: #FF9500;
-
-      --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
-      --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
-    }
-
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      background: var(--bg-base);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .wrap { max-width: 720px; margin: 0 auto; padding: 40px 20px 64px; }
-
-    .top-link { display: inline-block; margin-bottom: 24px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 15px; }
-    .top-link:hover { text-decoration: underline; }
-
-    .hero { padding: 8px 0 28px; }
-    .wordmark { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; color: var(--text-main); margin: 0 0 10px; }
-    .wordmark .raak { color: var(--accent); }
-    h1 { font-size: 30px; line-height: 1.2; margin: 0 0 14px; }
-    .promise { font-size: 18px; color: var(--text-muted); margin: 0 0 20px; }
-    .cta {
-      display: inline-block; background: var(--accent); color: var(--accent-on); text-decoration: none;
-      font-weight: 600; font-size: 15px; padding: 12px 22px; border-radius: 12px; box-shadow: var(--shadow-2);
-    }
-    .cta:hover { background: var(--accent-strong); }
-
-    h2 { font-size: 20px; margin: 40px 0 12px; }
-    h3 { font-size: 16px; margin: 20px 0 8px; }
-    p { margin: 0 0 16px; }
-    ul { margin: 0 0 16px; padding-left: 22px; }
-    li { margin: 6px 0; }
-    ol { margin: 0 0 16px; padding-left: 22px; }
-    ol li { margin: 10px 0; }
-    a { color: var(--accent); }
-    strong { font-weight: 600; }
-
-    .card {
-      background: var(--bg-surface); border: 1px solid var(--separator); border-radius: 12px;
-      padding: 18px 22px; margin: 16px 0; box-shadow: var(--shadow-1);
-    }
-
-    .domain-list { list-style: none; margin: 0 0 20px; padding: 0; }
-    .domain-list > li { margin: 0 0 14px; padding-left: 16px; border-left: 3px solid var(--dot, var(--separator)); }
-    .domain-title { font-weight: 600; margin: 0 0 4px; }
-    .domain-count { font-weight: 400; color: var(--text-muted); }
-    .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
-
-    .stats { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 24px; }
-    .stat { flex: 1 1 130px; background: var(--bg-surface-2); border-radius: 12px; padding: 14px 16px; text-align: center; }
-    .stat b { display: block; font-size: 22px; }
-    .stat span { font-size: 13px; color: var(--text-muted); }
-
-    footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--separator); color: var(--text-muted); font-size: 13px; }
-    footer a { color: var(--text-muted); }
-    footer p { margin: 0 0 6px; }
-
-    @media (max-width: 400px) {
-      .wrap { padding: 24px 16px 48px; }
-      h1 { font-size: 24px; }
-      .promise { font-size: 16px; }
-      .stats { gap: 8px; }
-    }
-
-    @media print {
-      .cta { box-shadow: none; }
-      .top-link { display: none; }
-    }
-  </style>
+  <link rel="stylesheet" href="/site.css" />
 </head>
 
 <body>
-  <main class="wrap">
-    <a class="top-link" href="/">&larr; Terug naar RekenRaak</a>
+  <header class="site-topbar">
+    <a class="site-wordmark" href="/">reken<span class="raak">raak</span></a>
+    <nav class="site-nav-tabs" aria-label="Statische pagina's">
+      <a class="site-nav-tab" href="/about.html" aria-current="page">Over</a>
+      <a class="site-nav-tab" href="/faq.html">Vragen &amp; oefeningen</a>
+    </nav>
+    <span class="site-topbar-spacer"></span>
+    <a class="site-btn-primary" href="/">Open RekenRaak</a>
+  </header>
 
-    <section class="hero">
-      <p class="wordmark">reken<span class="raak">raak</span></p>
-      <h1>Over RekenRaak</h1>
-      <p class="promise">Gratis werkbladen wiskunde voor de lagere school, in je browser, zonder account.</p>
-      <a class="cta" href="/">Open RekenRaak</a>
-    </section>
+  <div class="site-shell">
+    <aside class="site-sidebar" id="site-sidebar">
+      <div class="site-sidebar-group">
+        <div class="site-sidebar-group-label">Op deze pagina</div>
+        <a class="site-row" href="#wat-is-het">Wat is het?</a>
+        <a class="site-row" href="#wat-zit-erin">Wat zit erin?</a>
+        <a class="site-row" href="#hoe-werkt-het">Hoe werkt het?</a>
+        <a class="site-row" href="#waarom-gratis">Waarom gratis, en voor altijd</a>
+        <a class="site-row" href="#voor-wie">Voor wie?</a>
+        <a class="site-row" href="#techniek-en-licentie">Techniek en licentie</a>
+      </div>
+    </aside>
 
-    <h2>Wat is het?</h2>
-    <p>
-      RekenRaak is een gratis online werkbladgenerator voor wiskunde in het lager onderwijs.
-      Het werkt een beetje zoals een legoset: je kiest de bouwblokken (de oefeningen), verfijnt
-      de instellingen per blok en laat de generator zijn werk doen. Binnen enkele minuten staat
-      er een werkblad op maat van jouw klas.
-    </p>
-    <p>
-      Een live A4-voorbeeld toont meteen wat er op papier komt — wat je op het scherm ziet, is
-      exact wat je afdrukt. Er is geen aparte pdf-motor: je drukt af of bewaart als pdf via de
-      ingebouwde printfunctie van de browser.
-    </p>
-    <p>
-      Voor elk blok stel je in hoe zwaar de opgaven zijn: maximumgetal, soort getallen, bruggen,
-      kommagetallen en meer. Zo maak je met dezelfde oefening moeiteloos een variant voor de
-      sterkste en voor de zwakste rekenaar van je klas — differentiëren zonder drie keer
-      hetzelfde blad over te typen.
-    </p>
+    <main class="site-main">
+      <section class="hero">
+        <h1>Over RekenRaak</h1>
+        <p class="promise">Gratis werkbladen wiskunde voor de lagere school, in je browser, zonder account.</p>
+      </section>
 
-    <h2>Wat zit erin?</h2>
-    <p>Op dit moment telt RekenRaak <strong>meer dan 115 oefentypes</strong>, verdeeld over vier leerdomeinen:</p>
-
-    <ul class="domain-list">
-      <li style="--dot: var(--accent-getallenkennis)">
-        <p class="domain-title"><span class="dot" style="background: var(--accent-getallenkennis)"></span>Getallenkennis <span class="domain-count">— 8 subdomeinen, 55 oefentypes</span></p>
-        <p style="margin:0">Getalbegrip (MAB, plaatswaarde, splitsen, vergelijken, ordenen, getallenassen en -rijen), breuken, afronden, patronen, even en oneven, veelvouden en deelbaarheid, procenten, Romeinse cijfers.</p>
-      </li>
-      <li style="--dot: var(--accent-bewerkingen)">
-        <p class="domain-title"><span class="dot" style="background: var(--accent-bewerkingen)"></span>Bewerkingen <span class="domain-count">— 6 subdomeinen, 28 oefentypes</span></p>
-        <p style="margin:0">Hoofdrekenen (optellen, aftrekken, vermenigvuldigen, delen — natuurlijke en decimale getallen), handig hoofdrekenen, cijferen, schattend rekenen, controleren, bewerkingen met breuken.</p>
-      </li>
-      <li style="--dot: var(--accent-meetkunde)">
-        <p class="domain-title"><span class="dot" style="background: var(--accent-meetkunde)"></span>Meetkunde <span class="domain-count">— 1 subdomein, 6 oefentypes</span></p>
-        <p style="margin:0">Vormleer: punten en lijnen, hoeken, driehoeken en vierhoeken.</p>
-      </li>
-      <li style="--dot: var(--accent-metendrekenen)">
-        <p class="domain-title"><span class="dot" style="background: var(--accent-metendrekenen)"></span>Meten en metend rekenen <span class="domain-count">— 7 subdomeinen, 30 oefentypes</span></p>
-        <p style="margin:0">Kloklezen en tijdsduur, kalender, geld, temperatuur, lengte en oppervlakte, massa, maateenheden en herleidingen.</p>
-      </li>
-    </ul>
-
-    <p>
-      Daarnaast staan er onder <strong>Bladonderdelen</strong> nog 5 stukken "bladmeubilair" klaar
-      om een werkblad af te werken: scheidingslijnen, schrijflijnen, een ruitjesraster, een
-      onthoudkader en een lege pagina.
-    </p>
-
-    <h2>Hoe werkt het?</h2>
-    <ol>
-      <li><strong>Kies</strong> een oefening in de lijst links, bijvoorbeeld <em>Hoofdrekenen &rsaquo; Optellen</em> of <em>Tijdstip en tijdsduur &rsaquo; Kloklezen</em>. Het blok staat meteen op het A4-blad.</li>
-      <li><strong>Stel in</strong> wat je nodig hebt: aantal oefeningen, getalbereik, getalsoort, met of zonder brug, differentiatie (MAG / MOET / &#9733;), hulpjes zoals een positietabel.</li>
-      <li><strong>Genereer.</strong> Elke klik geeft andere getallen. Niet tevreden? Klik opnieuw of pas de instellingen aan — en met ongedaan maken (Ctrl+Z) ga je altijd een stap terug.</li>
-      <li><strong>Afdrukken of opslaan als pdf</strong> met Ctrl+P. Met één knop print je ook de versie met oplossingen erbij.</li>
-    </ol>
-    <p>
-      Je werkblad wordt automatisch bewaard in je eigen browser, dus je vindt het terug als je
-      later verdergaat. Je kan het ook bewaren als bestand of een deellink maken die een collega
-      of ouder meteen opent. Voor ouders is er een aparte, vergrendelde curriculum-link: die toont
-      enkel de oefeningen die bij het leerjaar van hun kind horen.
-    </p>
-
-    <h2>Waarom gratis, en voor altijd</h2>
-    <div class="card">
-      <p style="margin:0 0 10px">
-        Een hele industrie verkoopt leerkrachten dingen die ze zelf zouden kunnen maken. Werkbladen
-        zijn daarvan het duidelijkste voorbeeld: scholen en leerkrachten betalen maandelijks om hun
-        eigen lesmateriaal te mogen gebruiken. Zo betaal je huur op je eigen werk.
+      <p>
+        Een gratis generator voor wiskunde, gebaseerd op de leerstof in de nieuwe minimumdoelen.
+        Geen accounts. Geen abonnement. Geen 'paywall' — nooit. Lesmateriaal verkopen mag geen
+        verdienmodel zijn. Daarom kan je deze tool binnenkort ook terugvinden via KlasCement, het
+        portaal van de Vlaamse Overheid waar leerkrachten hun materiaal gratis delen.
       </p>
-      <p style="margin:0">
-        RekenRaak kent geen account, geen abonnement en geen betaalmuur — nu niet en later niet.
-        Alles draait in je browser: er is geen server die je werkblad of je gegevens bijhoudt.
-        Delen is een morele plicht, dus staat de code volledig open source online, en komt deze
-        tool binnenkort ook op <a href="https://www.klascement.net/" target="_blank" rel="noopener noreferrer">KlasCement</a>,
-        het portaal van de Vlaamse Overheid waar leerkrachten hun materiaal gratis met elkaar delen.
+
+      <h2 id="wat-is-het">Wat is het?</h2>
+      <p>
+        RekenRaak is een gratis online werkbladgenerator voor wiskunde in het lager onderwijs.
+        Het werkt een beetje zoals een legoset: je kiest de bouwblokken (de oefeningen), verfijnt
+        de instellingen per blok en laat de generator zijn werk doen. Binnen enkele minuten staat
+        er een werkblad op maat van jouw klas.
       </p>
-    </div>
+      <p>
+        Een live A4-voorbeeld toont meteen wat er op papier komt — wat je op het scherm ziet, is
+        exact wat je afdrukt. Er is geen aparte pdf-motor: je drukt af of bewaart als pdf via de
+        ingebouwde printfunctie van de browser.
+      </p>
+      <p>
+        Voor elk blok stel je in hoe zwaar de opgaven zijn: maximumgetal, soort getallen, bruggen,
+        kommagetallen en meer. Zo maak je met dezelfde oefening moeiteloos een variant voor de
+        sterkste en voor de zwakste rekenaar van je klas — differentiëren zonder drie keer
+        hetzelfde blad over te typen.
+      </p>
 
-    <h2>Voor wie?</h2>
-    <p>
-      Voor leerkrachten van het eerste tot het zesde leerjaar die snel een werkblad op maat nodig
-      hebben, voor zorgleerkrachten die een oefening net iets makkelijker of moeilijker willen
-      maken, en voor ouders die thuis willen oefenen — via de curriculum-link zien zij enkel wat
-      bij het leerjaar van hun kind past.
-    </p>
+      <h2 id="wat-zit-erin">Wat zit erin?</h2>
+      <p>Op dit moment telt RekenRaak <strong>meer dan 125 oefentypes</strong>, verdeeld over vier leerdomeinen:</p>
 
-    <h2>Techniek en licentie</h2>
-    <p>
-      RekenRaak is een moderne webapplicatie, gebouwd met React en TypeScript. Ze draait volledig
-      in je browser: er is geen backend en er wordt niets naar een server verzonden of daar
-      bewaard. Je werkblad en je bewaarde bladen staan in de opslag van je eigen browser. Via
-      Cloudflare Pages (de hosting) zie ik wel hoeveel mensen de site bezoeken, maar niemand wordt
-      individueel gevolgd. Het printen loopt via de printfunctie van je browser: wat je op het
-      scherm ziet, is exact wat er op papier komt.
-    </p>
-    <p>
-      De code werd mede geschreven met <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">Claude Code</a>.
-      Inzendingen neem ik niet aan: deze site host enkel mijn eigen versie. Wil je iets anders?
-      Fork gerust en bouw je eigen ding — dat is net het punt van open source.
-    </p>
-    <p>
-      De code staat volledig open op <a href="https://github.com/RareGoudvis/rekenraak" target="_blank" rel="noopener noreferrer">GitHub</a>
-      onder de <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank" rel="noopener noreferrer">GNU AGPL-3.0</a>-licentie.
-      Iedereen mag de code inkijken, gebruiken, aanpassen en delen — bouw je erop voort, ook achter
-      een betaaldienst, dan moet je je volledige broncode onder diezelfde vrije licentie
-      openstellen. Zo kan RekenRaak nooit worden dichtgetimmerd en als gesloten product verkocht.
-    </p>
-    <p>
-      Werkt iets niet, of mis je een oefening? Laat het weten via het
-      <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer">feedbackformulier</a>.
-    </p>
+      <ul class="domain-list">
+        <li style="--dot: var(--accent-getallenkennis)">
+          <p class="domain-title"><span class="dot" style="background: var(--accent-getallenkennis)"></span>Getallenkennis <span class="domain-count">— 8 subdomeinen, 55 oefentypes</span></p>
+          <p style="margin:0">Getalbegrip (MAB, plaatswaarde, splitsen, vergelijken, ordenen, getallenassen en -rijen), breuken, afronden, patronen, even en oneven, veelvouden en deelbaarheid, procenten, Romeinse cijfers.</p>
+        </li>
+        <li style="--dot: var(--accent-bewerkingen)">
+          <p class="domain-title"><span class="dot" style="background: var(--accent-bewerkingen)"></span>Bewerkingen <span class="domain-count">— 6 subdomeinen, 28 oefentypes</span></p>
+          <p style="margin:0">Hoofdrekenen (optellen, aftrekken, vermenigvuldigen, delen — natuurlijke en decimale getallen), handig hoofdrekenen, cijferen, schattend rekenen, controleren, bewerkingen met breuken.</p>
+        </li>
+        <li style="--dot: var(--accent-meetkunde)">
+          <p class="domain-title"><span class="dot" style="background: var(--accent-meetkunde)"></span>Meetkunde <span class="domain-count">— 1 subdomein, 6 oefentypes</span></p>
+          <p style="margin:0">Vormleer: punten en lijnen, hoeken, driehoeken en vierhoeken.</p>
+        </li>
+        <li style="--dot: var(--accent-metendrekenen)">
+          <p class="domain-title"><span class="dot" style="background: var(--accent-metendrekenen)"></span>Meten en metend rekenen <span class="domain-count">— 7 subdomeinen, 30 oefentypes</span></p>
+          <p style="margin:0">Kloklezen en tijdsduur, kalender, geld, temperatuur, lengte en oppervlakte, massa, maateenheden en herleidingen.</p>
+        </li>
+      </ul>
 
-    <footer>
-      <p>Gemaakt met <a href="/">RekenRaak.be</a> — gratis werkbladgenerator wiskunde voor het lager onderwijs.</p>
-      <p><a href="/faq.html">Veelgestelde vragen</a> · <a href="/oefeningen.html">Oefeningen</a> · Versie v0.5.0 · bijgewerkt 13 september 2026 · AGPL-3.0</p>
-    </footer>
-  </main>
+      <p>
+        Daarnaast staan er onder <strong>Bladonderdelen</strong> nog 5 stukken "bladmeubilair" klaar
+        om een werkblad af te werken: scheidingslijnen, schrijflijnen, een ruitjesraster, een
+        onthoudkader en een lege pagina.
+      </p>
+
+      <h2 id="hoe-werkt-het">Hoe werkt het?</h2>
+      <ol>
+        <li><strong>Kies</strong> een oefening in de lijst links, bijvoorbeeld <em>Hoofdrekenen &rsaquo; Optellen</em> of <em>Tijdstip en tijdsduur &rsaquo; Kloklezen</em>. Het blok staat meteen op het A4-blad.</li>
+        <li><strong>Stel in</strong> wat je nodig hebt: aantal oefeningen, getalbereik, getalsoort, met of zonder brug, differentiatie (MAG / MOET / &#9733;), hulpjes zoals een positietabel.</li>
+        <li><strong>Genereer.</strong> Elke klik geeft andere getallen. Niet tevreden? Klik opnieuw of pas de instellingen aan — en met ongedaan maken (Ctrl+Z) ga je altijd een stap terug.</li>
+        <li><strong>Afdrukken of opslaan als pdf</strong> met Ctrl+P. Met één knop print je ook de versie met oplossingen erbij.</li>
+      </ol>
+      <p>
+        Je werkblad wordt automatisch bewaard in je eigen browser, dus je vindt het terug als je
+        later verdergaat. Je kan het ook bewaren als bestand of een deellink maken die een collega
+        of ouder meteen opent. Voor ouders is er een aparte, vergrendelde curriculum-link: die toont
+        enkel de oefeningen die bij het leerjaar van hun kind horen.
+      </p>
+      <p>
+        Het is een 'work in progress', het project zelf is dus zeker nog niet af. Feedback is daarbij
+        belangrijk. Werkt iets niet? Mis je een bepaald type oefening? Denk je aan een andere visuele
+        voorstelling bij een oefening? Geef het door via het
+        <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer">feedbackformulier</a>.
+        Ik kan niet beloven dat alles ook geïmplementeerd wordt.
+      </p>
+
+      <h2 id="waarom-gratis">Waarom gratis, en voor altijd</h2>
+      <div class="card">
+        <p style="margin:0 0 10px">
+          Een hele industrie verkoopt leerkrachten dingen die ze zelf zouden kunnen maken. Werkbladen
+          zijn daarvan het duidelijkste voorbeeld: scholen en leerkrachten betalen maandelijks om hun
+          eigen lesmateriaal te mogen gebruiken. Zo betaal je huur op je eigen werk.
+        </p>
+        <p style="margin:0">
+          RekenRaak kent geen account, geen abonnement en geen betaalmuur — nu niet en later niet.
+          Alles draait in je browser: er is geen server die je werkblad of je gegevens bijhoudt.
+          Delen is een morele plicht, dus staat de code volledig open source online, en komt deze
+          tool binnenkort ook op <a href="https://www.klascement.net/" target="_blank" rel="noopener noreferrer">KlasCement</a>,
+          het portaal van de Vlaamse Overheid waar leerkrachten hun materiaal gratis met elkaar delen.
+        </p>
+      </div>
+
+      <h2 id="voor-wie">Voor wie?</h2>
+      <p>
+        Voor leerkrachten van het eerste tot het zesde leerjaar die snel een werkblad op maat nodig
+        hebben, voor zorgleerkrachten die een oefening net iets makkelijker of moeilijker willen
+        maken, en voor ouders die thuis willen oefenen — via de curriculum-link zien zij enkel wat
+        bij het leerjaar van hun kind past.
+      </p>
+
+      <h2 id="techniek-en-licentie">Techniek en licentie</h2>
+      <p>
+        RekenRaak is een moderne webapplicatie, gebouwd met React en TypeScript. Ze draait volledig
+        in je browser: er is geen backend en er wordt niets naar een server verzonden of daar
+        bewaard. Je werkblad en je bewaarde bladen staan in de opslag van je eigen browser. Via
+        Cloudflare Pages (de hosting) zie ik wel hoeveel mensen de site bezoeken, maar niemand wordt
+        individueel gevolgd. Het printen loopt via de printfunctie van je browser: wat je op het
+        scherm ziet, is exact wat er op papier komt.
+      </p>
+      <p>
+        De code werd mede geschreven met <a href="https://claude.ai/" target="_blank" rel="noopener noreferrer">Claude Code</a>.
+        Inzendingen neem ik niet aan: deze site host enkel mijn eigen versie. Wil je iets anders?
+        Fork gerust en bouw je eigen ding — dat is net het punt van open source.
+      </p>
+      <p>
+        De code staat volledig open op <a href="https://github.com/RareGoudvis/rekenraak" target="_blank" rel="noopener noreferrer">GitHub</a>
+        onder de <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank" rel="noopener noreferrer">GNU AGPL-3.0</a>-licentie.
+        Iedereen mag de code inkijken, gebruiken, aanpassen en delen — bouw je erop voort, ook achter
+        een betaaldienst, dan moet je je volledige broncode onder diezelfde vrije licentie
+        openstellen. Zo kan RekenRaak nooit worden dichtgetimmerd en als gesloten product verkocht.
+      </p>
+      <p>
+        Werkt iets niet, of mis je een oefening? Laat het weten via het
+        <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer">feedbackformulier</a>.
+      </p>
+      <p style="text-align:right; color: var(--text-muted); font-weight: 500;">Gemaakt door Ruben V.H.</p>
+
+      <footer class="site-footer">
+        <p>Gemaakt met <a href="/">RekenRaak.be</a> — gratis werkbladgenerator wiskunde voor het lager onderwijs.</p>
+        <p><a href="/faq.html">Veelgestelde vragen &amp; oefeningen</a> · Versie v0.5.0 · bijgewerkt 13 september 2026 · AGPL-3.0</p>
+      </footer>
+    </main>
+  </div>
 </body>
 
 </html>

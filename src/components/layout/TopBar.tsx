@@ -14,7 +14,6 @@ import { useShedStages } from '../../hooks/useShedStages';
 interface Props {
     onPrint: (withSolutions: boolean) => void;
     onOpenHelp?: () => void;
-    onOpenAbout?: () => void;
 }
 
 // 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
@@ -73,7 +72,7 @@ function SheetTitle({ title, onChange }: { title: string; onChange: (t: string) 
     );
 }
 
-export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
+export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const undo = useWorksheetStore((s) => s.undo);
     const redo = useWorksheetStore((s) => s.redo);
     const canUndo = useWorksheetStore((s) => s.canUndo());
@@ -311,9 +310,9 @@ export default function TopBar({ onPrint, onOpenHelp, onOpenAbout }: Props) {
 
                                 <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Over dit project</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenAbout?.(); }}>
+                                <a className="ui-hover" style={{ ...S.menuItem, textDecoration: 'none' }} href="/about.html" onClick={() => setMenu(null)}>
                                     <Info size={15} /> Over dit project
-                                </button>
+                                </a>
                                 <a className="ui-hover" style={{ ...S.menuItem, textDecoration: 'none' }} href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" onClick={() => setMenu(null)}>
                                     <ChatText size={15} /> Feedback geven
                                 </a>

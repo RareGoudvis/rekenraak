@@ -18,7 +18,6 @@ import { WIDTH_FIT_FLOOR } from './components/viewer/scaledBlockFit';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
-import AboutModal from './components/layout/AboutModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import BlockControlsRail from './components/layout/BlockControlsRail';
 import { Lock, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phosphor-icons/react';
@@ -206,9 +205,6 @@ export default function App() {
   const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
 
   const [helpOpen, setHelpOpen] = useState(false);
-  // Opened from two places (the sidebar wordmark and the Meer menu), so it is mounted
-  // once here rather than duplicated in both panels.
-  const [aboutOpen, setAboutOpen] = useState(false);
   // First-run interactive tour (replaces the old AlphaPopup). Shown once; replayable from Help.
   const [tourOpen, setTourOpen] = useState<boolean>(() => {
     try { return !localStorage.getItem('rekenraak_tour_seen_v1'); } catch { return false; }
@@ -692,13 +688,13 @@ export default function App() {
           a hover flyout: teachers on 14" laptops got stuck in it even with the pin, so a
           narrow window shrinks the sheet instead (see sheetZoom above). */}
       <div className="no-print" style={{ display: 'flex', height: '100%', flex: '0 0 auto' }}>
-        <Sidebar onOpenAbout={() => setAboutOpen(true)} />
+        <Sidebar />
       </div>
 
       {/* CENTRE — the top bar belongs to the SHEET, so it spans only this column. */}
       <div style={styles.centreColumn}>
       <div className="no-print" onClick={(e) => e.stopPropagation()}>
-        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} onOpenAbout={() => setAboutOpen(true)} />
+        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
       </div>
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
@@ -891,7 +887,6 @@ export default function App() {
     {/* Screen-only strip explaining the three drop thirds, for the duration of a drag. */}
     {dnd.fromId !== null && <SheetDragHint />}
     {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
-    {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
     {view === 'mijn-bladen' && <MijnBladenView />}
     {view === 'bibliotheek' && <BibliotheekView />}

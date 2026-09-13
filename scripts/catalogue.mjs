@@ -1,5 +1,6 @@
-// Exercise catalogue: build public/oefeningen.html + one PNG per sidebar leaf, so the
-// full exercise list is indexable (SEO) and browsable outside the app.
+// Exercise catalogue: renders every sidebar leaf, screenshots it, and splices the result
+// into public/faq.html between marker comments — the FAQ questions in faq.html stay
+// hand-editable, only the catalogue section/sidebar-nav/ItemList JSON-LD are generated.
 //
 // Walks window.__rekenraak.leaves — the same flattened set the sidebar renders and
 // scripts/font-baseline.mjs measures (see flattenLeaves() in src/config/appstructure.ts).
@@ -11,12 +12,15 @@
 // the real object is still alive on window.__rekenraak.leaves.
 //
 // Usage (dev server must already be running):
-//   node scripts/catalogue.mjs --url http://localhost:5175/ --seed 1234
+//   node scripts/catalogue.mjs --url http://localhost:5173/ --seed 1234
 //
-// Writes public/oefeningen/<leafId>.png (one per leaf) and public/oefeningen.html.
+// Writes public/oefeningen/<leafId>.png (one per leaf) and rewrites the three marker
+// blocks inside public/faq.html: <!-- catalogue-jsonld:start/end --> (ItemList JSON-LD,
+// in <head>), <!-- catalogue-nav:start/end --> (sidebar "Oefeningen" group) and
+// <!-- catalogue:start/end --> (the card section in <main>).
 
 import { chromium } from 'playwright';
-import { mkdirSync, writeFileSync, readdirSync, statSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,8 +35,19 @@ const SEED = Number(arg('seed', 1234));
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC_DIR = join(ROOT, 'public');
 const IMG_DIR = join(PUBLIC_DIR, 'oefeningen');
-const OUT_HTML = join(PUBLIC_DIR, 'oefeningen.html');
+const FAQ_HTML = join(PUBLIC_DIR, 'faq.html');
 const SITE = 'https://www.rekenraak.be';
+
+// Domain label -> the domain half of its --accent-<name> token (src/config/appstructure.ts
+// APP_STRUCTURE, accentVar). Hardcoded rather than read from the page: the sidebar nav is
+// plain static HTML, and these five domain labels are stable Dutch product names.
+const DOMAIN_ACCENT = {
+    'Getallenkennis': 'getallenkennis',
+    'Bewerkingen': 'bewerkingen',
+    'Meetkunde': 'meetkunde',
+    'Meten en metend rekenen': 'metendrekenen',
+    'Bladonderdelen': 'vraagstukken',
+};
 
 // Fresh output dir each run so a renamed/removed leaf doesn't leave a stale png behind.
 rmSync(IMG_DIR, { recursive: true, force: true });
@@ -183,16 +198,30 @@ for (const row of ok) {
 
 const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-let toc = '<ul class="toc">\n';
-let sections = '';
+// Sidebar "Oefeningen" group: domain headers (colour rail like the app's sidebar) with
+// subdomain labels and one leaf row per card. Clicking a row filters the catalogue below
+// (see the inline script in faq.html) — the href still lets no-JS / crawlers jump there.
+let navHtml = '';
+// Main-column catalogue section: same domain/subdomain/card structure as the old
+// standalone oefeningen.html, now living inside faq.html.
+let sectionHtml = '';
 for (const [domainLabel, subs] of domains) {
     const domId = slug(domainLabel);
-    toc += `      <li><a href="#${domId}">${esc(domainLabel)}</a> <span class="domain-count">(${[...subs.values()].reduce((n, a) => n + a.length, 0)})</span></li>\n`;
-    sections += `\n    <section id="${domId}">\n      <h2>${esc(domainLabel)}</h2>\n`;
+    const accent = DOMAIN_ACCENT[domainLabel] ?? 'bewerkingen';
+
+    navHtml += `      <div class="site-domain">\n`;
+    navHtml += `        <div class="site-domain-head" style="--rail: var(--domain-${accent}-line); --fill: var(--domain-${accent}-soft)">${esc(domainLabel)}</div>\n`;
+    navHtml += `        <div class="site-domain-body">\n`;
+
+    sectionHtml += `    <section id="${domId}">\n      <h2>${esc(domainLabel)}</h2>\n`;
     for (const [subLabel, leafRows] of subs) {
-        if (subLabel) sections += `      <h3>${esc(subLabel)}</h3>\n`;
+        if (subLabel) {
+            navHtml += `          <div class="site-sub-label">${esc(subLabel)}</div>\n`;
+            sectionHtml += `      <h3>${esc(subLabel)}</h3>\n`;
+        }
         for (const row of leafRows) {
-            sections += `      <article class="ex-card" id="${esc(row.id)}">
+            navHtml += `          <a class="site-row" href="#${esc(row.id)}" data-card="${esc(row.id)}">${esc(row.label)}</a>\n`;
+            sectionHtml += `      <article class="ex-card" id="${esc(row.id)}">
         <h4>${esc(row.label)}</h4>
         <p class="ex-instruction">&ldquo;${esc(row.instruction)}&rdquo;</p>
         <p class="ex-desc">${esc(describeSettings(row.defaultConstraints))}</p>
@@ -200,9 +229,9 @@ for (const [domainLabel, subs] of domains) {
       </article>\n`;
         }
     }
-    sections += `    </section>\n`;
+    navHtml += `        </div>\n      </div>\n`;
+    sectionHtml += `    </section>\n`;
 }
-toc += '    </ul>';
 
 const itemListJson = JSON.stringify({
     '@context': 'https://schema.org',
@@ -212,142 +241,21 @@ const itemListJson = JSON.stringify({
         '@type': 'ListItem',
         position: i + 1,
         name: row.label,
-        url: `${SITE}/oefeningen.html#${row.id}`,
+        url: `${SITE}/faq.html#${row.id}`,
     })),
 }, null, 2);
 
-const today = new Date().toISOString().slice(0, 10);
+// ── splice the three generated blocks into the hand-edited faq.html ────────────────
+function replaceBetween(html, startMark, endMark, content) {
+    const s = html.indexOf(startMark);
+    const e = html.indexOf(endMark, s + startMark.length);
+    if (s === -1 || e === -1) throw new Error(`marker not found or out of order: ${startMark} / ${endMark}`);
+    return html.slice(0, s + startMark.length) + '\n' + content.replace(/\n$/, '') + '\n' + html.slice(e);
+}
 
-const html = `<!doctype html>
-<html lang="nl-BE">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <title>Oefeningen — alle oefentypes van RekenRaak</title>
-  <meta name="description" content="Alle ${ok.length} oefentypes van RekenRaak op een rij: getallenkennis, bewerkingen, meten en metend rekenen, meetkunde. Met voorbeeld en instelbare opties per oefening." />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="${SITE}/oefeningen.html" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Oefeningen — alle oefentypes van RekenRaak" />
-  <meta property="og:description" content="Alle oefentypes van RekenRaak op een rij, met voorbeeld en instelbare opties." />
-  <meta property="og:url" content="${SITE}/oefeningen.html" />
-  <meta property="og:locale" content="nl_BE" />
-  <meta property="og:image" content="${SITE}/favicon-96x96.png" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Oefeningen — alle oefentypes van RekenRaak" />
-  <meta name="twitter:description" content="Alle oefentypes van RekenRaak op een rij, met voorbeeld en instelbare opties." />
-  <meta name="twitter:image" content="${SITE}/favicon-96x96.png" />
-  <script type="application/ld+json">
-${itemListJson}
-  </script>
-  <style>
-    /* Self-contained — copies the app's theme token values (theme.css) verbatim, since a
-       static page can't import the app's CSS. Same palette as about.html / faq.html. */
-    :root {
-      --bg-base: #F2EFE9;
-      --bg-surface: #FBFAF8;
-      --bg-surface-2: #EDEAE4;
-      --separator: rgba(0, 0, 0, 0.20);
-      --text-main: #1D1D1F;
-      --text-muted: #5A5A5F;
-      --accent: #0A5FD0;
-      --accent-strong: #0847A8;
-      --accent-soft: rgba(10, 95, 208, 0.12);
-      --accent-on: #ffffff;
-      --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.06);
-      --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
-    }
-
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-      background: var(--bg-base);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .wrap { max-width: 920px; margin: 0 auto; padding: 40px 20px 64px; }
-    .top-link { display: inline-block; margin-bottom: 24px; color: var(--accent); text-decoration: none; font-weight: 600; font-size: 15px; }
-    .top-link:hover { text-decoration: underline; }
-    .hero { padding: 8px 0 28px; }
-    .wordmark { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; color: var(--text-main); margin: 0 0 10px; }
-    .wordmark .raak { color: var(--accent); }
-    h1 { font-size: 30px; line-height: 1.2; margin: 0 0 14px; }
-    .promise { font-size: 18px; color: var(--text-muted); margin: 0 0 20px; }
-    .cta {
-      display: inline-block; background: var(--accent); color: var(--accent-on); text-decoration: none;
-      font-weight: 600; font-size: 15px; padding: 12px 22px; border-radius: 12px; box-shadow: var(--shadow-2);
-    }
-    .cta:hover { background: var(--accent-strong); }
-    h2 { font-size: 22px; margin: 44px 0 14px; padding-top: 12px; border-top: 1px solid var(--separator); }
-    h3 { font-size: 16px; margin: 22px 0 10px; color: var(--text-muted); }
-    p { margin: 0 0 16px; }
-    a { color: var(--accent); }
-
-    .toc { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-    .toc li { background: var(--bg-surface-2); border-radius: 10px; padding: 8px 14px; }
-    .toc a { text-decoration: none; font-weight: 600; }
-    .domain-count { color: var(--text-muted); font-weight: 400; }
-
-    .ex-grid { display: block; }
-    .ex-card {
-      background: var(--bg-surface); border: 1px solid var(--separator); border-radius: 12px;
-      padding: 16px 18px; margin: 0 0 16px; box-shadow: var(--shadow-1);
-    }
-    .ex-card h4 { margin: 0 0 6px; font-size: 16px; }
-    .ex-instruction { margin: 0 0 6px; font-style: italic; color: var(--text-muted); }
-    .ex-desc { margin: 0 0 10px; font-size: 13px; color: var(--text-muted); }
-    .ex-card img { display: block; max-width: 100%; height: auto; border: 1px solid var(--separator); border-radius: 8px; background: #fff; }
-
-    footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--separator); color: var(--text-muted); font-size: 13px; }
-    footer a { color: var(--text-muted); }
-    footer p { margin: 0 0 6px; }
-
-    @media (max-width: 400px) {
-      .wrap { padding: 24px 16px 48px; }
-      h1 { font-size: 24px; }
-      .promise { font-size: 16px; }
-    }
-  </style>
-</head>
-
-<body>
-  <main class="wrap">
-    <a class="top-link" href="/">&larr; Terug naar RekenRaak</a>
-
-    <section class="hero">
-      <p class="wordmark">reken<span class="raak">raak</span></p>
-      <h1>Alle oefeningen</h1>
-      <p class="promise">${ok.length} oefentypes, elk met een voorbeeld en de instellingen die je kan aanpassen.</p>
-      <a class="cta" href="/">Open RekenRaak</a>
-    </section>
-
-    <p>
-      Dit is de volledige lijst van oefeningen die je in RekenRaak kan samenstellen, per
-      leerdomein. Klik links in de sidebar van de app op een oefening om ze meteen op je
-      werkblad te zetten — hier zie je vooraf wat elke oefening toont en wat je erin kan
-      instellen. Meer over hoe je een werkblad samenstelt: <a href="/faq.html">veelgestelde vragen</a>
-      en <a href="/about.html">over RekenRaak</a>.
-    </p>
-
-    ${toc}
-${sections}
-    <footer>
-      <p>Gemaakt met <a href="/">RekenRaak.be</a> — gratis werkbladgenerator wiskunde voor het lager onderwijs.</p>
-      <p>Bijgewerkt ${today} · <a href="/about.html">Over RekenRaak</a> · <a href="/faq.html">Veelgestelde vragen</a></p>
-    </footer>
-  </main>
-</body>
-
-</html>
-`;
-
-writeFileSync(OUT_HTML, html);
-console.log(`Wrote ${OUT_HTML}`);
+let faqHtml = readFileSync(FAQ_HTML, 'utf8');
+faqHtml = replaceBetween(faqHtml, '<!-- catalogue-jsonld:start -->\n  <script type="application/ld+json">\n', '\n  </script>\n  <!-- catalogue-jsonld:end -->', itemListJson);
+faqHtml = replaceBetween(faqHtml, '<!-- catalogue-nav:start -->', '<!-- catalogue-nav:end -->', navHtml);
+faqHtml = replaceBetween(faqHtml, '<!-- catalogue:start -->', '<!-- catalogue:end -->', sectionHtml);
+writeFileSync(FAQ_HTML, faqHtml);
+console.log(`\nWrote ${ok.length} cards into ${FAQ_HTML}`);

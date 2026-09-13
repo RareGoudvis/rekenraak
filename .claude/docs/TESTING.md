@@ -249,11 +249,14 @@ flagged rows only — a clean sweep should produce an almost-empty sheet).
 
 ## The exercise catalogue (`scripts/catalogue.mjs`)
 
-Not a test — builds the public, indexable `public/oefeningen.html` page (every sidebar
-exercise, one card with its default opdracht-titel, a plain-language settings summary and
-a screenshot) plus one PNG per leaf in `public/oefeningen/`. Like the width matrix and font
-baseline it drives a real browser and needs the DEV-only `window.__rekenraak` hook, so it
-cannot run against a production build.
+Not a test — renders every sidebar exercise (one card with its default opdracht-titel, a
+plain-language settings summary and a screenshot) plus one PNG per leaf in
+`public/oefeningen/`, then splices the result into the indexable `public/faq.html` — the
+catalogue section, the sidebar "Oefeningen" nav group, and the ItemList JSON-LD, each
+between their own `<!-- catalogue…:start/end -->` marker comments. The FAQ questions in
+faq.html live outside those markers and are hand-edited, never touched by this script.
+Like the width matrix and font baseline it drives a real browser and needs the DEV-only
+`window.__rekenraak` hook, so it cannot run against a production build.
 
 ```bash
 npm run dev                                          # in another terminal
