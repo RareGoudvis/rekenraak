@@ -1,12 +1,19 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { PAGE_BODY_PX } from '../../services/layout/blockLayout';
-import { FIT_FLOOR, nextZoom } from './scaledBlockFit';
+import { FIT_FLOOR, WIDTH_FIT_FLOOR, nextZoom } from './scaledBlockFit';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 
-// Scales a block's body via CSS `zoom`, but AUTO-FITS to the available width so an
-// enlarged wide block (Cijfer grid, getallenas number line) can never overflow and clip
-// in print. `zoom` magnifies layout (it can't reflow), so a too-wide block is capped to
-// the largest zoom that still fits.
+// Scales a block's body via CSS `zoom`. It renders at the zoom the teacher ASKED for
+// (global bodyFontScale x the per-block override) and nothing here quietly takes that
+// away: a block whose content is wider than its column is WIDENED by the measured clamp
+// and the packer (`promoted`, with the Inspector saying why), not shrunk. A quarter-width
+// block silently rendering at 77% beside an identical half-width one at 100% is a
+// font-size mismatch on a printed worksheet, which is never what a teacher wants.
+//
+// The two back-offs that remain are both opt-in, per block:
+//  - `fitToPage`  — height: shrink until the block fits one page (floor FIT_FLOOR)
+//  - `fitToWidth` — width: shrink until the content fits the column (floor WIDTH_FIT_FLOOR),
+//    and the block then carries a `.no-print` badge saying how far it was shrunk.
 //
 // The wrapper MUST stay width:100% + position:static + overflow:visible:
 //  - width:100% — viewers collapse if shrink-wrapped (FragmentableGrid rows spread full width)
@@ -19,7 +26,7 @@ import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 // `availableWidthPx` is the printable width of the cell this block sits in. It defaults to
 // a full-width block, so today's single-column sheet is unchanged; the page model passes the
 // real per-cell width once blocks can be half or third width.
-export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fitToPage = false, pageBudgetPx = PAGE_BODY_PX, children }: { scale: number; availableWidthPx?: number; fitToPage?: boolean; pageBudgetPx?: number; children: ReactNode }) {
+export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fitToPage = false, fitToWidth = false, pageBudgetPx = PAGE_BODY_PX, children }: { scale: number; availableWidthPx?: number; fitToPage?: boolean; fitToWidth?: boolean; pageBudgetPx?: number; children: ReactNode }) {
     const ref = useRef<HTMLDivElement>(null);
     const [applied, setApplied] = useState(scale);
     // Last parent content width — distinguishes a genuine resize (regeneration / panel
@@ -30,23 +37,27 @@ export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fit
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset before the measure pass
     useLayoutEffect(() => { setApplied(scale); }, [scale]);
 
-    // (b) After each paint, back off if the content overflows. Two ratios, both
+    // (b) After each paint, back off if the teacher asked for a back-off. Both ratios are
     // dimensionless so the applied-zoom factor cancels and they stay reliable despite
     // Chrome's `zoom` skewing absolute measurements:
-    //  - width: scrollWidth/clientWidth, floored at 1 — a block that still overflows at
-    //    zoom 1 is too wide for its column, which is the packer's tier to fix, not ours;
+    //  - width (only with `fitToWidth`): scrollWidth/clientWidth. WITHOUT it nothing
+    //    happens — a block that overflows its column is the clamp's and the packer's to
+    //    widen, not ours to shrink;
     //  - height (only with `fitToPage`): offsetHeight inside a CSS `zoom` is UNZOOMED
     //    local px, so the rendered height is offsetHeight × applied.
     // Both only ever DECREASE applied → converges, no oscillation.
     useLayoutEffect(() => {
         const el = ref.current;
         if (!el) return;
-        let next = nextZoom(applied, el.scrollWidth / el.clientWidth, 1);
+        let next = applied;
+        if (fitToWidth) {
+            next = Math.min(next, nextZoom(applied, el.scrollWidth / el.clientWidth, WIDTH_FIT_FLOOR));
+        }
         if (fitToPage && pageBudgetPx > 0) {
             next = Math.min(next, nextZoom(applied, (el.offsetHeight * applied) / pageBudgetPx, FIT_FLOOR));
         }
         if (next < applied - 1e-4) setApplied(Math.min(next, scale));
-    }, [applied, scale, fitToPage, pageBudgetPx]);
+    }, [applied, scale, fitToWidth, fitToPage, pageBudgetPx]);
 
     // (c) Re-fit on genuine layout changes (content regeneration grows/shrinks scrollWidth;
     // panel/window resize changes available width). Gate on parent content width so our own
@@ -76,9 +87,26 @@ export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fit
     // this block may sit in. `data-scale` is the REQUESTED zoom, not the applied one: the
     // width tier has to hold at the size the teacher asked for, even while the fit loop is
     // still backing off. SYNC: PageSheet.tsx measure pass, blockLayout.minWidthUnits.
+    // The badge makes an opted-in shrink VISIBLE on screen (never on paper): the teacher
+    // switched the fit on, so the mismatch with the neighbouring blocks is a choice, but it
+    // still has to be one they can see. It sits OUTSIDE `data-scaled-inner`, absolutely
+    // positioned against `.print-block`, so it costs the block no height and cannot widen
+    // the min-content probe PageSheet takes off the inner.
+    const shrunk = applied < scale - 1e-4;
     return (
-        <div ref={ref} data-scaled-inner="" data-scale={scale} style={{ zoom: applied, width: '100%', display: 'block', position: 'static', overflow: 'visible' }}>
-            <BlockWidthProvider value={availableWidthPx}>{children}</BlockWidthProvider>
-        </div>
+        <>
+            <div ref={ref} data-scaled-inner="" data-scale={scale} style={{ zoom: applied, width: '100%', display: 'block', position: 'static', overflow: 'visible' }}>
+                <BlockWidthProvider value={availableWidthPx}>{children}</BlockWidthProvider>
+            </div>
+            {shrunk && fitToWidth && (
+                <div className="no-print" style={{
+                    position: 'absolute', top: '2px', right: 0, pointerEvents: 'none',
+                    fontSize: '10px', fontFamily: 'Azeret Mono, monospace', letterSpacing: '0.5px',
+                    color: 'var(--accent-purple)',
+                }}>
+                    verkleind tot {Math.round((applied / scale) * 100)} %
+                </div>
+            )}
+        </>
     );
 }

@@ -187,6 +187,19 @@ describe('share link', () => {
         expect(decoded!.blocks.map(b => b.skipNumbering)).toEqual([undefined, true, undefined]);
     });
 
+    // The per-block width fit is presentation, and presentation is exactly what a teacher
+    // expects to find again in a shared or reopened sheet: a block the packer would widen
+    // must come back shrunk, not widened, or the receiver's layout silently differs.
+    test('fitToWidth round-trips through a share link and a template', () => {
+        const s = state();
+        const withFit = { ...s, blocks: s.blocks.map((b, i) => (i === 0 ? { ...b, widthUnits: 1 as const, constraints: { ...b.constraints, fitToWidth: true } } : b)) };
+        const decoded = fileFromShare(encodeShareLink(withFit));
+        expect(decoded!.blocks.map(b => b.constraints.fitToWidth)).toEqual([true, undefined, undefined]);
+        expect(decoded!.blocks[0].widthUnits).toBe(1);
+        const template = fileFromShare(encodeShareLink(withFit, { template: true }));
+        expect(template!.blocks[0].constraints.fitToWidth).toBe(true);
+    });
+
     test('template mode strips the generated exercises but keeps the settings', () => {
         const s = state();
         const decoded = fileFromShare(encodeShareLink(s, { template: true }));

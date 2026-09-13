@@ -10,6 +10,12 @@ export const EPS = 0.005;
 // How far the opt-in height back-off may shrink a block. Below ~0.7 the exercises stop
 // being writable-on by a child, so an even longer block is the teacher's to split.
 export const FIT_FLOOR = 0.7;
+// How far the opt-in WIDTH back-off (`constraints.fitToWidth`) may shrink a block. This is
+// the number the width matrix used to accept a tier at ("zoom >= 0.85"); it is now the
+// floor of a fit the teacher switches on per block, because the default is to widen the
+// block instead of shrinking it. Below it the block reads visibly smaller than its
+// neighbours, which is the whole complaint this opt-in exists to make explicit.
+export const WIDTH_FIT_FLOOR = 0.85;
 
 /**
  * The next zoom to apply when content overflows by `ratio` (> 1 = it does not fit).

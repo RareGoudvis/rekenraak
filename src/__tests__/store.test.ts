@@ -167,6 +167,15 @@ describe('updateBlockSettings under the curriculum lock', () => {
         expect(useWorksheetStore.getState().blocks[0].showInstruction).toBe(false);
     });
 
+    // Same reasoning as widthUnits: how the block is rendered, not what it asks of the child.
+    test('the width fit is presentation, so it goes through — and nothing else in the bag does', () => {
+        const { id, constraints } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { constraints: { ...constraints, fitToWidth: true, maxGetal: 1000000 } });
+        const after = useWorksheetStore.getState().blocks[0];
+        expect(after.constraints.fitToWidth).toBe(true);
+        expect(after.constraints.maxGetal).toBe(constraints.maxGetal);
+    });
+
     test('difficulty is still frozen', () => {
         const { id, constraints } = useWorksheetStore.getState().blocks[0];
         useWorksheetStore.getState().updateBlockSettings(id, { constraints: { ...constraints, maxGetal: 1000000 } });

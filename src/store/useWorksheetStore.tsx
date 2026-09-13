@@ -7,7 +7,7 @@ import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettin
 import { GRADE_PRESETS, type Leerjaar } from '../config/gradePresets';
 import { defaultInstructionFor } from '../config/instructionPresets';
 import { generateMixedOne, mixedKey } from '../services/math/mixedGenerator';
-import type { MixedVariantId } from '../services/math/constraintTypes';
+import type { BlockConstraints, MixedVariantId } from '../services/math/constraintTypes';
 
 export type HeaderField = 'naam' | 'klas' | 'nummer' | 'datum';
 
@@ -362,6 +362,14 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             // Width is layout, not difficulty: a locked curriculum fixes what the child
             // practises, not how the sheet is arranged (and the picker stays enabled).
             if ('widthUnits' in updates) allowed.widthUnits = updates.widthUnits;
+            // ...and for the shrink-to-fit-the-column switch that sits under it: it changes
+            // how the block is rendered, never what it asks the child to do. Only that one
+            // key is taken out of a constraints patch; the rest is difficulty.
+            if ('constraints' in updates) {
+                const prev = state.blocks.find(b => b.id === id)?.constraints ?? {};
+                const patch = (updates.constraints ?? {}) as BlockConstraints;
+                if (patch.fitToWidth !== prev.fitToWidth) allowed.constraints = { ...prev, fitToWidth: patch.fitToWidth };
+            }
             // Same reasoning for the opdracht title row: presentation, not difficulty.
             if ('showInstruction' in updates) allowed.showInstruction = updates.showInstruction;
             // And for leaving that block out of the opdracht numbering.
@@ -377,6 +385,15 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         const COUNT_SAFE = new Set(['numberOfExercises', 'totalPoints']);
         const countOnly = 'numberOfExercises' in next
             && Object.keys(next).every(k => COUNT_SAFE.has(k));
+        // The width fit is presentation too: flipping it re-renders the block, it does not
+        // make the exercises disagree with the settings, so it must not raise the
+        // "verouderd" flag the way a difficulty edit does.
+        const fitToWidthOnly = Object.keys(next).length === 1 && 'constraints' in next && (() => {
+            const prev = (state.blocks.find(b => b.id === id)?.constraints ?? {}) as Record<string, unknown>;
+            const patch = (next.constraints ?? {}) as Record<string, unknown>;
+            return [...new Set([...Object.keys(prev), ...Object.keys(patch)])]
+                .every(k => k === 'fitToWidth' || prev[k] === patch[k]);
+        })();
         const nb = state.blocks.map(b => {
             if (b.id !== id) return b;
             const merged = { ...b, ...next } as MathBlock;
@@ -398,7 +415,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         });
         // Any other setting means the exercises no longer match the settings — say so
         // rather than leaving the teacher to notice.
-        const stale = countOnly ? state.staleBlocks : { ...state.staleBlocks, [id]: true };
+        const stale = countOnly || fitToWidthOnly ? state.staleBlocks : { ...state.staleBlocks, [id]: true };
         return { blocks: nb, staleBlocks: stale, ...pushHistory(state._history, state._historyIndex, nb) };
     }),
     updateExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, exercises: b.exercises.map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),

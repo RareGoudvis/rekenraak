@@ -37,6 +37,13 @@ export type CrossCutting = {
      * behaviour (it spans, and the page shows the red overflow banner).
      */
     fitToPage?: boolean;
+    /**
+     * Opt-in: let ScaledBlock shrink this block's zoom (down to 0.85) until its content
+     * fits the WIDTH of the column it sits in. Off by default — a block that does not fit
+     * is widened by the packer instead, because a block that quietly renders at 85% next
+     * to an identical one at 100% is a font-size mismatch nobody asked for.
+     */
+    fitToWidth?: boolean;
 };
 
 /**

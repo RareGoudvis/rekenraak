@@ -27,12 +27,39 @@ const EPSILON_PX = 2;
 //
 // Keyed `${blockId}:${width}` like the heights: a viewer that lays out 2-up really is
 // wider in a wide cell, so the same block has more than one honest answer. `intrinsicOf`
-// returns the SMALLEST one seen and the width it was seen at — the smallest is the one
-// that reflects what this block can do when it stops sharing rows.
-const intrinsic = new Map<string, number>();
+// returns the entry that demands the WIDEST tier (most recent wins a tie), and entries are
+// dropped as soon as the block's content changes (see the prune effect below).
+//
+// It used to return the SMALLEST entry across widths, and that is how a quarter-width
+// vergelijken block slipped past the clamp: the block is measured while it is still empty
+// ("(Nog geen oefeningen — klik Genereer)" min-contents at 67px), Genereer fills it to
+// 199px under a NEW key, and the stale 67 stayed the smallest for good — so the clamp kept
+// saying a quarter (151px, content 199px) was fine and the block rendered overflowing or,
+// at a bodyFontScale above 1, silently zoomed back down to 1.
+//
+// Convergence still holds, in the safe direction: entries only accumulate between content
+// changes and the clamp is a MAX over them, so the tier can only widen and settles. Taking
+// the smallest was monotone the other way — once any narrow measurement existed the block
+// stayed narrow whatever the content did — and taking simply the most recent would let a
+// reflowing type flip between two tiers (wide cell measures narrow, so ¼ is allowed; ¼
+// measures wide, so it is promoted back).
+//
+// Narrowing is not lost: minWidthUnits' reflow rule opens exactly one tier below the width
+// a reflowing block was measured at, and the next tier only opens after a real measurement
+// there.
+const intrinsic = new Map<string, { px: number; seq: number }>();
+// Monotone write counter — the tie-break between two entries that demand the same tier has
+// to survive Map's insertion order, which a re-`set` of an existing key does not move.
+let intrinsicSeq = 0;
+// What a block's measurements were taken of. A measurement is a fact about CONTENT at a
+// width, so the moment the content changes (Genereer, a settings edit, a longer title) the
+// old entries are not stale-ish, they are wrong — and one of them, taken while the block
+// was still empty, is what let the ¼ through.
+const measuredOf = new Map<string, string>();
 
 export interface IntrinsicWidth {
-    /** Narrowest content width seen for this block, in layout px at its requested scale. */
+    /** Widest content-minimum seen for this block's current content, in layout px at its
+        requested scale — the one that decides the tier. */
     px: number;
     /** The cell width that measurement was taken in. */
     atWidth: WidthUnits;
@@ -61,10 +88,17 @@ export function useIntrinsicWidth(blockId: string): IntrinsicWidth | undefined {
 
 export function intrinsicOf(blockId: string): IntrinsicWidth | undefined {
     let best: IntrinsicWidth | undefined;
-    for (const [key, px] of intrinsic) {
+    let bestSeq = -1;
+    for (const [key, entry] of intrinsic) {
         const cut = key.lastIndexOf(':');
         if (key.slice(0, cut) !== blockId) continue;
-        if (!best || px < best.px) best = { px, atWidth: Number(key.slice(cut + 1)) as WidthUnits };
+        const atWidth = Number(key.slice(cut + 1)) as WidthUnits;
+        // "Widest tier demanded" is judged per cell, not on px alone: the same 300px is a
+        // half in a half-cell and a comfortable fit in a full one.
+        if (!best || entry.px > best.px || (entry.px === best.px && entry.seq > bestSeq)) {
+            bestSeq = entry.seq;
+            best = { px: entry.px, atWidth };
+        }
     }
     return best;
 }
@@ -89,7 +123,7 @@ export interface MeasuredHeights {
     /** Measured px height of a page's body box, or undefined before first paint. */
     pageBudgetPx: (pageIndex: number) => number | undefined;
     onCellMeasure: (blockId: string, width: number, px: number, intrinsicWidthPx?: number) => void;
-    /** Narrowest measured content width for this block, for the packer and the Inspector. */
+    /** Measured content-minimum for this block, for the packer and the Inspector. */
     intrinsicOf: (blockId: string) => IntrinsicWidth | undefined;
     onBodyMeasure: (pageIndex: number, px: number) => void;
     /** Bumped whenever a measurement actually changed — the packer's only dependency. */
@@ -152,9 +186,29 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
     // a block that is still there.
     useEffect(() => {
         const alive = new Set(blocks.map(b => b.id));
-        for (const map of [cells.current, intrinsic]) {
+        // Same pass drops the measurements of a block whose CONTENT changed: the block is
+        // the whole signature, so a regenerate, a settings edit or a longer title all
+        // invalidate every width it was measured at. Without this an entry taken before
+        // Genereer (an empty block min-contents at 67px) outlived the content it described
+        // and kept telling the clamp a quarter was fine. No version bump either way: the
+        // remeasure that follows is what changes the layout, and it bumps.
+        for (const b of blocks) {
+            const sig = JSON.stringify(b);
+            if (measuredOf.get(b.id) === sig) continue;
+            measuredOf.set(b.id, sig);
+            // Heights are not dropped: they are only ever READ at the width the block
+            // currently sits in, and the measure pass overwrites that key in the same
+            // frame. Dropping them would hand the packer an estimate for a frame on every
+            // keystroke. The intrinsic map is the one read across widths, so it is the one
+            // that can go stale.
+            for (const key of intrinsic.keys()) {
+                if (key.slice(0, key.lastIndexOf(':')) === b.id) intrinsic.delete(key);
+            }
+        }
+        for (const map of [cells.current, intrinsic, measuredOf]) {
             for (const key of map.keys()) {
-                if (!alive.has(key.slice(0, key.lastIndexOf(':')))) map.delete(key);
+                const id = map === measuredOf ? key : key.slice(0, key.lastIndexOf(':'));
+                if (!alive.has(id)) map.delete(key);
             }
         }
     }, [blocks]);
@@ -175,10 +229,14 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         // exactly as a height could.
         if (intrinsicWidthPx !== undefined && intrinsicWidthPx > 0) {
             const prev = intrinsic.get(key);
-            if (prev === undefined || Math.abs(prev - intrinsicWidthPx) > EPSILON_PX) {
-                intrinsic.set(key, intrinsicWidthPx);
+            if (prev === undefined || Math.abs(prev.px - intrinsicWidthPx) > EPSILON_PX) {
+                intrinsic.set(key, { px: intrinsicWidthPx, seq: ++intrinsicSeq });
                 notifyIntrinsic();
-                changed = changed || `width ${key} ${prev ?? '–'}→${Math.round(intrinsicWidthPx)}px`;
+                changed = changed || `width ${key} ${prev?.px ?? '–'}→${Math.round(intrinsicWidthPx)}px`;
+            } else if (prev.seq < intrinsicSeq) {
+                // Unchanged in px, but this IS the current rendering — move it to the front
+                // of the recency order so a stale entry from another width cannot outrank it.
+                intrinsic.set(key, { px: prev.px, seq: ++intrinsicSeq });
             }
         }
         if (changed) bump(changed);
@@ -197,7 +255,7 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         if (!import.meta.env.DEV) return;
         devSnapshot = () => ({
             cells: Object.fromEntries(cells.current),
-            intrinsic: Object.fromEntries(intrinsic),
+            intrinsic: Object.fromEntries([...intrinsic].map(([k, v]) => [k, v.px])),
             body: { ...body.current },
         });
         return () => { devSnapshot = null; };
