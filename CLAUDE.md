@@ -13,7 +13,7 @@ Guidance for Claude Code (claude.ai/code) working in this repository. This file 
 | [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | vitest suites (generator matrix, answers, packer, persistence, store, viewer smoke) + the Playwright harnesses (width matrix, height audit, font baseline/compare, drag recipe) |
 | [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Bugs found but not yet fixed — **append here instead of fixing silently**; delete the line in the commit that fixes it |
 | [.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) | Session log, newest first |
-| [.claude/docs/REVIEW-CHECKLIST.md](.claude/docs/REVIEW-CHECKLIST.md) | Per-leaf owner review checklist |
+| [.claude/docs/REVIEW-CHECKLIST.md](.claude/docs/REVIEW-CHECKLIST.md) | Pointer only — the owner review lives in the local, gitignored `REVIEW.local.md` |
 | [.claude/docs/klascement.md](.claude/docs/klascement.md) | Teacher-facing intro (Dutch): what it does, what's in it, why, free-forever ethos |
 | [src/components/viewer/README.md](src/components/viewer/README.md) | The five rules every viewer must follow |
 
