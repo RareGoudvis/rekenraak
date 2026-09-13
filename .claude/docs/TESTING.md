@@ -247,6 +247,30 @@ expected +4px never trips it) exceeds 0.5%. Writes `report.json` (every row),
 `report.md` (pixel-diff descending), and `contact-sheet.html` (before/after side by side,
 flagged rows only — a clean sweep should produce an almost-empty sheet).
 
+## The exercise catalogue (`scripts/catalogue.mjs`)
+
+Not a test — builds the public, indexable `public/oefeningen.html` page (every sidebar
+exercise, one card with its default opdracht-titel, a plain-language settings summary and
+a screenshot) plus one PNG per leaf in `public/oefeningen/`. Like the width matrix and font
+baseline it drives a real browser and needs the DEV-only `window.__rekenraak` hook, so it
+cannot run against a production build.
+
+```bash
+npm run dev                                          # in another terminal
+npm run catalogue -- --url http://localhost:5173/ --seed 1234
+```
+
+Walks `window.__rekenraak.leaves` (same set as `font-baseline.mjs`), and for each leaf:
+clears the sheet, adds the block at full width exactly the way a sidebar click does
+(`addBlockFromType(typeId, label, leaf.defaultConstraints)`), screenshots the
+`[data-block-id]` cell to `<leafId>.png`, and resolves the leaf's `instruction` **inside
+the page** — a function-valued instruction is lost the instant Playwright serialises the
+leaf object back to Node, so the resolution (`instruction(defaultConstraints)`) runs while
+`window.__rekenraak.leaves` still holds the live function. Re-run it whenever a leaf's
+label, `defaultConstraints`, `instruction` or a viewer's default rendering changes; nothing
+enforces that it stays in sync automatically. A screenshot over ~60 KB is logged, not
+failed — check it by hand.
+
 ## Driving drag-and-drop from Playwright
 
 Both drag surfaces (sheet blocks and the Overzicht outline) run on **pointer events**, so

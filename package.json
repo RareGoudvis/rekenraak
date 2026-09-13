@@ -15,7 +15,8 @@
     "matrix": "node scripts/width-matrix.mjs",
     "font:baseline": "node scripts/font-baseline.mjs",
     "font:compare": "node scripts/font-compare.mjs",
-    "height:audit": "node scripts/height-audit.mjs"
+    "height:audit": "node scripts/height-audit.mjs",
+    "catalogue": "node scripts/catalogue.mjs"
   },
   "dependencies": {
     "@fontsource/azeret-mono": "^5.2.11",
