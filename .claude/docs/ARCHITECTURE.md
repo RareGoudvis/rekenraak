@@ -865,7 +865,7 @@ src/
 ├── App.tsx                      # 3-panel layout, page routing (packer → PageSheet), boot hooks
 ├── main.tsx                     # React entry
 ├── index.css                    # global + ALL print CSS (@page, @media print)
-├── assets/{theme.css,fonts/}    # tokens + fonts used by the HTML preview only (favicons live in public/)
+├── assets/theme.css             # tokens (fonts come from @fontsource via index.css; favicons live in public/)
 ├── config/
 │   ├── appstructure.ts          # APP_STRUCTURE tree (Domain→Subdomain→ExerciseType)
 │   ├── exerciseRegistry.ts      # REGISTRY: typeId → {exerciseField, generate, defaultConstraints, defaultCount} (pure data)
@@ -897,7 +897,7 @@ src/
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
 │   ├── layout/blockNumbering.ts # pure numberBlocks(): opdracht numbers, skipping furniture + skipNumbering — one source for sheet, Inspector chip, thumbnail (§3)
 │   ├── layout/kaderMarkup.tsx   # pure renderKaderBody(): **vet** / *cursief* / __onderstreept__ / 1. and - lists for the onthoudkader (§9 furniture; tested)
-│   ├── math/{types.ts,mathEngine.ts,formatters.ts,validators.ts}   # validators.ts is EMPTY
+│   ├── math/{types.ts,mathEngine.ts,formatters.ts}
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
 │   ├── clock/{clockTypes.ts,clockGenerator.ts}
