@@ -1,11 +1,21 @@
 import type { MathBlock, GeldExercise, GeldDenomination } from '../../services/math/types';
 import { DENOMINATION_CATALOGUE, formatAmount, denominationLabel } from '../../services/geld/geldGenerator';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
+
+// Coins and bills keep their px geometry as the viewBox and their element size as em over
+// this divisor: 13pt (the --sheet-size-math default) = 17.33px, so a default sheet draws
+// exactly today's pixels and the Lettergrootte slider grows the figures with the text.
+// The numerals inside are viewBox units, so they scale with the coin for free.
+// SYNC: GeldTeruggevenViewer.tsx repeats `em` for the jump diagram.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const em = (px: number): string => `${px / PX_PER_EM_AT_DEFAULT}em`;
+// Each figure carries the token as its own font-size so the em above resolves against it.
+const FIGURE_FONT: React.CSSProperties = { fontSize: 'var(--sheet-size-math)' };
 
 // ── SVG helpers (print-friendly: white fill, black outline, no colour) ────────
 
@@ -19,7 +29,7 @@ export function Bill({ valueCents, width = 56, height = 32 }: BillProps) {
     const fs = Math.round(height * 0.42);
     const ty = Math.round(height * 0.62);
     return (
-        <svg width={width} height={height} viewBox="0 0 70 40">
+        <svg width={em(width)} height={em(height)} viewBox="0 0 70 40" style={FIGURE_FONT}>
             <rect x="1.5" y="1.5" width="67" height="37" rx="4" ry="4" fill="white" stroke="#000" strokeWidth="2" />
             <text x="35" y={(40 * ty) / height} textAnchor="middle" fontSize={(40 * fs) / height} fontWeight="bold"
                 fontFamily="'Azeret Mono', monospace" fill="#000">
@@ -31,7 +41,7 @@ export function Bill({ valueCents, width = 56, height = 32 }: BillProps) {
 
 function EuroCoin({ valueCents, size = 36 }: CoinProps) {
     return (
-        <svg width={size} height={size} viewBox="0 0 44 44">
+        <svg width={em(size)} height={em(size)} viewBox="0 0 44 44" style={FIGURE_FONT}>
             <circle cx="22" cy="22" r="20" fill="white" stroke="#000" strokeWidth="2" />
             <circle cx="22" cy="22" r="14" fill="white" stroke="#000" strokeWidth="1.5" />
             <text x="22" y="27" textAnchor="middle" fontSize="13" fontWeight="bold"
@@ -44,7 +54,7 @@ function EuroCoin({ valueCents, size = 36 }: CoinProps) {
 
 function CentCoin({ valueCents, size = 30 }: CoinProps) {
     return (
-        <svg width={size} height={size} viewBox="0 0 36 36">
+        <svg width={em(size)} height={em(size)} viewBox="0 0 36 36" style={FIGURE_FONT}>
             <circle cx="18" cy="18" r="16" fill="white" stroke="#000" strokeWidth="1.5" />
             <text x="18" y="23" textAnchor="middle" fontSize="11" fontWeight="bold"
                 fontFamily="'Azeret Mono', monospace" fill="#000">
@@ -107,7 +117,7 @@ function HerkennenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: 
         <div style={{ borderBottom: '1.5px solid #000', width: '100px', height: '20px', marginTop: '8px' }} />
     );
 
-    const rowStyle: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center', alignContent: 'flex-start', width: '100%' };
+    const rowStyle: React.CSSProperties = { ...FIGURE_FONT, display: 'flex', flexWrap: 'wrap', gap: em(6), justifyContent: 'center', alignContent: 'flex-start', width: '100%' };
 
     let denomArea: React.ReactNode;
     if (geldLayout === 'gescheiden') {
@@ -150,6 +160,8 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 
 export default function GeldViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // 150px of coins at the 13pt default; the figures are em, so the budget follows the slider.
+    const itemMinPx = 150 * (useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT);
     const exercises: GeldExercise[] = block.geldExercises || [];
     const gap: number = block.verticalSpacing || 14;
     const c = block.constraints as GeldConstraints;
@@ -169,7 +181,7 @@ export default function GeldViewer({ block, showSolutions }: Props) {
                 <VoorbeeldenBar allowedDenominations={allowedDenominations} voorbeeldTypes={voorbeeldTypes} />
             )}
             <FragmentableGrid
-                cols={fitCols(availableWidth, 150, perRow)}
+                cols={fitCols(availableWidth, itemMinPx, perRow)}
                 columnGap={gap}
                 rowGap={gap}
                 alignItems="stretch"

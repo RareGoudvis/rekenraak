@@ -32,6 +32,10 @@ const FS_TEXT = 'calc(var(--sheet-size-text) * 0.65)';
 const FS_LABEL = 'calc(var(--sheet-size-text) * 0.55)';
 const FONT = "'Azeret Mono', monospace";
 
+// SYNC: same divisor as GeldViewer.tsx (it cannot export it next to its components).
+// 13pt = 17.33px, so em over it is today's px on a default sheet.
+const em = (px: number): string => `${px / 17.33}em`;
+
 // ── Answer line renderers ─────────────────────────────────────────────────────
 
 function EuroCentLine({ changeCents, showSolutions }: { changeCents: number; showSolutions: boolean }) {
@@ -78,6 +82,11 @@ function AnswerLine({ ex, antwoordFormat, showSolutions }: { ex: GeldTeruggevenE
 
 // Compact viewBox: 440×100. Baseline y=72. Arcs stay proportional.
 // strokeWidth 1.2, uniform fontSize 12px.
+// The text inside is in viewBox units, not a token calc: the box itself is sized in em off
+// --sheet-size-math, so a calc would scale twice. 14.04 / 12.13 are what
+// calc(var(--sheet-size-math) * 0.81) / (* 0.7) resolved to at the 13pt default.
+const DIAG_FS = 14.04;
+const DIAG_FS_SMALL = 12.13;
 
 function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenExercise; scaffolding: string; showSolutions: boolean }) {
     const sol = showSolutions;
@@ -91,10 +100,10 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
     const label1Sol = `+ ${ex.step1Cents} cent`;
     const label2Sol = `+ €${ex.step2Cents / 100}`;
 
-    // maxWidth keeps the SVG ~400px so fontSize=14 ≈ 13px CSS at normal scale
+    // maxWidth keeps the SVG at 400px on a 13pt sheet and grows it with the slider
     // All arc endpoints at y=75 so arrows meet the text nodes at a consistent height
     return (
-        <svg viewBox="0 0 440 114" style={{ width: '100%', maxWidth: '400px', overflow: 'visible' }}>
+        <svg viewBox="0 0 440 114" style={{ fontSize: 'var(--sheet-size-math)', width: '100%', maxWidth: em(400), overflow: 'visible' }}>
             <defs>
                 <marker id="tg-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                     <path d="M 0,0 L 6,3 L 0,6 z" fill="#000" />
@@ -109,33 +118,33 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
             <path d="M 205,75 C 250,28 345,28 376,75"
                 fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
 
-            {showLeft  && <text x="50"  y="80" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill={col}>{fmtCents(ex.priceCents)}</text>}
-            {showRight && <text x="415" y="80" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill={col}>{fmtCents(ex.payWithCents)}</text>}
+            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.priceCents)}</text>}
+            {showRight && <text x="415" y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.payWithCents)}</text>}
 
             {/* Middle node: solution shows amount; otherwise € + blank line for student */}
             {showMiddle && (sol
-                ? <text x="173" y="80" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill={col}>{fmtCents(ex.waypointCents)}</text>
+                ? <text x="173" y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.waypointCents)}</text>
                 : <g>
-                    <text x="150" y="80" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.81)' }} fontFamily={FONT} fill="#000" textAnchor="start">€</text>
+                    <text x="150" y="80" fontSize={DIAG_FS} fontFamily={FONT} fill="#000" textAnchor="start">€</text>
                     <line x1="164" y1="81" x2="198" y2="81" stroke="#000" strokeWidth="1" />
                   </g>
             )}
 
             {/* Arc 1 label below small arc */}
             {showLabel1 && (sol
-                ? <text x="114" y="112" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col}>{label1Sol}</text>
+                ? <text x="114" y="112" textAnchor="middle" fontSize={DIAG_FS_SMALL} fontFamily={FONT} fill={col}>{label1Sol}</text>
                 : <g>
-                    <text x="86"  y="112" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col} textAnchor="start">+</text>
+                    <text x="86"  y="112" fontSize={DIAG_FS_SMALL} fontFamily={FONT} fill={col} textAnchor="start">+</text>
                     <line x1="98" y1="113" x2="132" y2="113" stroke={col} strokeWidth="1" />
-                    <text x="136" y="112" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col} textAnchor="start">cent</text>
+                    <text x="136" y="112" fontSize={DIAG_FS_SMALL} fontFamily={FONT} fill={col} textAnchor="start">cent</text>
                   </g>
             )}
 
             {/* Arc 2 label above large arc */}
             {showLabel2 && (sol
-                ? <text x="290" y="20" textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col}>{label2Sol}</text>
+                ? <text x="290" y="20" textAnchor="middle" fontSize={DIAG_FS_SMALL} fontFamily={FONT} fill={col}>{label2Sol}</text>
                 : <g>
-                    <text x="258" y="20" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={FONT} fill={col} textAnchor="start">+ €</text>
+                    <text x="258" y="20" fontSize={DIAG_FS_SMALL} fontFamily={FONT} fill={col} textAnchor="start">+ €</text>
                     <line x1="282" y1="21" x2="321" y2="21" stroke={col} strokeWidth="1" />
                   </g>
             )}
