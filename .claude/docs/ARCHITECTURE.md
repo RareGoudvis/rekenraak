@@ -424,7 +424,7 @@ only.
 | `controleren` | `controleExercises` | `generateControleExercises` | `ControlerenViewer` | `ControlerenConfig` | subType (negenproef/omgekeerde — leaf), operators[] (omgekeerde: +/−), maxGetal, foutAandeel (geen/helft/alles; planted deltas never ≡ 0 mod 9), showKruis (inline SVG cross; rests red in solutions) |
 | `oppervlakte` | `meetExercises` (reused, + `area`) | `generateOppervlakteExercises` | `OppervlakteViewer` | `OppervlakteConfig` | subType (rooster = 1 cm grid count, whole-cm rect/L-figuur / berekenen = l×b, ½·b·h for rechth. driehoek — leaf), shapes[], min/maxLength sliders, scaffoldFormule (`opp = ___ × ___ = ___`), askOmtrek; SYNC cm→px 37.8 with MetenViewer |
 | `weegschaal` | `weegschaalExercises` | `generateWeegschaalExercises` | `WeegschaalViewer` | `WeegschaalConfig` | mode (aflezen = black needle / kleuren = no needle, the pupil shades the dial from 0 to the value, solution paints that wedge in `SOL` — leaf; a legacy `tekenen` loads as kleuren), bereikGram (1000/2000/5000) with dependent stepGram (BEREIK_STEPS), notatie (g/kg-komma/kg-g), exercisesPerRow, boxHeight; values snap to the schaalverdeling; each exercise carries its own `bereikGram/stepGram/notatie/mode` (own-data rule) |
-| `vormleer-punt-lijn` · `-hoeken` · `-figuren` | `vormleerExercises` (shared) | `generateVormleerExercises` | `VormleerViewer` (shared) | `VormleerConfig` (shared) | kind from typeId (registry default), mode (herkennen/tekenen; hoeken also **meten** = one to-scale angle in 5° steps 20–160° on a grid, pupil writes the degrees, `showHulplijn` faint 0–180 line — leaf "Meten", floor ½; figuren: benoemen/eigenschappen), **niveau** 1/2/3 for punt-lijn herkennen (1 = name the labelled element — points uppercase, rechten lowercase, `[AB` / `[AB]`; 2 = one relation sentence with a blank, all four relation kinds unless relation pills narrow them; 3 = two relations; niveau ≥ 2 floors at ½), concepts[] per kind (leaf presets; figuren classify axis driehoeken-hoeken/-zijden/vierhoeken), answerMode (woordbank/schrijven), randomRotation, showBoog (hoeken; square marker at 90°), showMarks (equal-side ticks + right-angle squares), raster + boxHeight (tekenen), exercisesPerRow; `CONCEPT_NAMES` maps keys → leerplan names |
+| `vormleer-punt-lijn` · `-hoeken` · `-figuren` | `vormleerExercises` (shared) | `generateVormleerExercises` | `VormleerViewer` (shared) | `VormleerConfig` (shared) | kind from typeId (registry default), mode (herkennen/tekenen; hoeken also **meten** = one to-scale angle in 5° steps 20–160° on a grid, pupil writes the degrees, `showHulplijn` faint 0–180 line, no frame around the angle — leaf "Meten", floor ½; figuren eigenschappen table sizes its columns from `useBlockWidth()` and splits into stacked mini-tables when they would overflow; figuren: benoemen/eigenschappen), **niveau** 1/2/3 for punt-lijn herkennen AND tekenen (since round 4: tekenen draws the relation — one box at 2, two stacked at 3 — instead of a fill-in sentence; 1 = name/draw the labelled element — points uppercase, rechten lowercase, `[AB` / `[AB]`; 2 = one relation sentence with a blank, all four relation kinds unless relation pills narrow them; 3 = two relations; niveau ≥ 2 floors at ½), concepts[] per kind (leaf presets; figuren classify axis driehoeken-hoeken/-zijden/vierhoeken), answerMode (woordbank/schrijven), randomRotation, showBoog (hoeken; square marker at 90°), showMarks (equal-side ticks + right-angle squares), raster + boxHeight (tekenen), exercisesPerRow; `CONCEPT_NAMES` maps keys → leerplan names |
 
 > Note: matching is now exact-key, so the old substring collision between
 > `hr-std-optellen` and `cijferen-optellen-*` (which forced
@@ -896,8 +896,10 @@ All localStorage; nothing leaves the browser except share links the user copies.
   [HelpModal.tsx](../../src/components/layout/HelpModal.tsx).
 - **First-run tutorial** — [TourOverlay.tsx](../../src/components/onboarding/TourOverlay.tsx),
   an interactive spotlight tour (add → settings → generate → print → WIP/feedback finale).
-  One-time via `localStorage` `rekenraak_tour_seen_v1`; replayable from HelpModal's
-  "Rondleiding" button. Targets elements by `data-tour="…"` anchors (sidebar-nav, inspector,
+  On a first visit [WelcomeModal.tsx](../../src/components/onboarding/WelcomeModal.tsx) comes
+  first (since round 4): tour / 1-min demo video (`public/rekenraak-demo.mp4`) / skip; any of the
+  three sets `localStorage` `rekenraak_tour_seen_v1`, so returning users never see it. Replayable
+  from HelpModal's "Rondleiding" button; HelpModal's "Bekijk de video" reuses WelcomeModal in `mode="video"`. Targets elements by `data-tour="…"` anchors (sidebar-nav, inspector,
   generate-block, print, feedback); advances on real store changes (block added / exercises
   generated). Replaced the old AlphaPopup (its WIP warning is now the final step).
 
@@ -993,6 +995,7 @@ src/
     │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay
     ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx)
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
+    ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video)
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)
     ├── shared/{ExercisePreview.tsx,SheetThumbnail.tsx}    # §13 fit-to-card live example; mini sheet preview

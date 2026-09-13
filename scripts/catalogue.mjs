@@ -263,7 +263,8 @@ function replaceBetween(html, startMark, endMark, content) {
     return html.slice(0, s + startMark.length) + '\n' + content.replace(/\n$/, '') + '\n' + html.slice(e);
 }
 
-let pageHtml = readFileSync(OEFENINGEN_HTML, 'utf8');
+// Normalise CRLF: a Windows checkout otherwise breaks the multi-line jsonld marker match.
+let pageHtml = readFileSync(OEFENINGEN_HTML, 'utf8').replace(/\r\n/g, '\n');
 pageHtml = replaceBetween(pageHtml, '<!-- catalogue-jsonld:start -->\n  <script type="application/ld+json">\n', '\n  </script>\n  <!-- catalogue-jsonld:end -->', itemListJson);
 pageHtml = replaceBetween(pageHtml, '<!-- catalogue-nav:start -->', '<!-- catalogue-nav:end -->', navHtml);
 pageHtml = replaceBetween(pageHtml, '<!-- catalogue:start -->', '<!-- catalogue:end -->', sectionHtml);
