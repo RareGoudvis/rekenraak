@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { IconContext } from '@phosphor-icons/react';
 import App from './App.tsx';
-import { useWorksheetStore } from './store/useWorksheetStore';
+import { useWorksheetStore, type AddBlockOpts } from './store/useWorksheetStore';
 import { REGISTRY } from './config/exerciseRegistry';
 import { flattenLeaves } from './config/appstructure';
 import { measuredSnapshot } from './hooks/useMeasuredHeights';
@@ -44,8 +44,8 @@ if (import.meta.env.DEV) {
     // Every addable sidebar leaf, flattened — the font-baseline harness walks this
     // instead of re-deriving it, so it always matches what a teacher can click.
     leaves: flattenLeaves(),
-    addBlockFromType: (typeId: string, label?: string, overrideConstraints?: Record<string, unknown>) =>
-      useWorksheetStore.getState().addBlockFromType(typeId, label ?? typeId, overrideConstraints),
+    addBlockFromType: (typeId: string, label?: string, overrideConstraints?: Record<string, unknown>, opts?: AddBlockOpts) =>
+      useWorksheetStore.getState().addBlockFromType(typeId, label ?? typeId, overrideConstraints, opts),
     updateBlockSettings: (id: string, updates: Record<string, unknown>) =>
       useWorksheetStore.getState().updateBlockSettings(id, updates),
     setIgnoreMinWidth: (on: boolean) => useWorksheetStore.getState().setIgnoreMinWidth(on),

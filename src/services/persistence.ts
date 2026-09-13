@@ -42,6 +42,11 @@ export interface CurriculumLock {
         typeId: string;
         label: string;
         lockedConstraints?: Record<string, unknown>;
+        // The APP_STRUCTURE leaf this row was authored from, and its opdracht-titel already
+        // resolved to plain text at share-link time (a function can't survive JSON, and the
+        // teacher's chosen lockedConstraints are exactly what it would need to re-resolve).
+        leafId?: string;
+        instruction?: string;
     }>;
 }
 

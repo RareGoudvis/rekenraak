@@ -63,7 +63,7 @@ export default function MassAddModal({ onClose }: Props) {
             if (!selected[item.typeId]) continue;
             const variant = chosenVariant(item);
             const label = item.variants.length > 1 ? variant.label : item.label;
-            addBlockFromType(item.typeId, label, variant.constraints);
+            addBlockFromType(item.typeId, label, variant.constraints, { leafId: variant.key, instruction: variant.instruction });
         }
         generateAllBlocks();
         onClose();

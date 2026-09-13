@@ -1,6 +1,9 @@
 // Quick-pick opdracht-titel (instruction) texts so teachers click instead of retype.
 // Generic verbs cover most blocks; suggestionsFor() floats a few type-specific lines first.
 
+import type { BlockConstraints } from '../services/math/constraintTypes';
+import { LEAF_BY_ID, type InstructionFn } from './appstructure';
+
 const STANDARD_INSTRUCTIONS: string[] = [
     'Los op.',
     'Reken uit.',
@@ -79,10 +82,16 @@ const TYPE_SUGGESTIONS: Array<{ match: string; texts: string[] }> = [
     { match: 'vormleer', texts: ['Vul in.'] },
 ];
 
-// Type-specific lines first (deduped), then the generic verbs.
-export function suggestionsFor(typeId: string): string[] {
+// The leaf's own line first (its CURRENT resolved wording, for a function-valued
+// instruction), then the type-specific lines (deduped), then the generic verbs.
+export function suggestionsFor(typeId: string, leafId?: string, constraints?: BlockConstraints): string[] {
     const specific = TYPE_SUGGESTIONS.filter((s) => typeId.startsWith(s.match)).flatMap((s) => s.texts);
-    return [...new Set([...specific, ...STANDARD_INSTRUCTIONS])];
+    const leaf = leafId ? LEAF_BY_ID[leafId] : undefined;
+    const leafLine = leaf?.instruction
+        ? resolveInstruction(leaf.instruction, leaf.typeId, leaf.label, constraints ?? {})
+        : undefined;
+    const ordered = leafLine ? [leafLine, ...specific] : specific;
+    return [...new Set([...ordered, ...STANDARD_INSTRUCTIONS])];
 }
 
 /**
@@ -94,4 +103,20 @@ export function suggestionsFor(typeId: string): string[] {
 export function defaultInstructionFor(typeId: string, label: string): string {
     const match = TYPE_SUGGESTIONS.find((s) => typeId.startsWith(s.match));
     return match ? match.texts[0] : `${label}:`;
+}
+
+// Resolves a leaf's `instruction` (a per-leaf override, string or a function of its
+// merged constraints, from appstructure.ts) down to one final line — else the typeId-level
+// fallback above. The single choke point addBlockFromType, worksheetTemplates and
+// CurriculumBuilderModal (which must freeze a function to plain text for a share link) all
+// go through, so "what does a fresh block open with" is answered in exactly one place.
+export function resolveInstruction(
+    instruction: string | InstructionFn | undefined,
+    typeId: string,
+    label: string,
+    constraints: BlockConstraints,
+): string {
+    if (typeof instruction === 'function') return instruction(constraints);
+    if (typeof instruction === 'string' && instruction.trim()) return instruction;
+    return defaultInstructionFor(typeId, label);
 }

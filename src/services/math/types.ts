@@ -374,6 +374,10 @@ export interface VormleerExercise {
 export interface MathBlock<C extends BlockConstraints = BlockConstraints> {
     id: string;
     typeId: string;
+    // The APP_STRUCTURE leaf this block was added from (e.g. 'plaatswaarde-waarde'), when
+    // known — several leaves share one typeId with different constraints, so this is what
+    // lets the Inspector's "Standaardtekst…" picker float THIS leaf's own line first.
+    leafId?: string;
     locked?: boolean;
     // UI-only feedback from the last generate (relaxed settings / shortfall / failure).
     // Never persisted: persistence.ts strips it, and setting it pushes no history.

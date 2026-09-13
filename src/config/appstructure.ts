@@ -1,3 +1,9 @@
+import type { BlockConstraints } from '../services/math/constraintTypes';
+
+// A leaf's default opdracht-titel: a fixed line, or a function of its merged constraints
+// for families whose wording depends on a setting (e.g. ordenen's klein→groot / groot→klein).
+export type InstructionFn = (c: BlockConstraints) => string;
+
 export interface LeafExercise {
     id: string;
     label: string;
@@ -5,6 +11,7 @@ export interface LeafExercise {
     defaultConstraints?: Record<string, unknown>;
     placeholder?: boolean;
     minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // explicit grade gate; else inferred (gradePresets)
+    instruction?: string | InstructionFn;
 }
 
 export interface ExerciseType {
@@ -17,6 +24,7 @@ export interface ExerciseType {
     children?: LeafExercise[];
     placeholder?: boolean;
     minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // leaf-type grade gate (see gradePresets)
+    instruction?: string | InstructionFn;
 }
 
 export interface Subdomain {
@@ -581,6 +589,7 @@ export interface AppLeaf {
     typeId: string;
     label: string;
     defaultConstraints?: Record<string, unknown>;
+    instruction?: string | InstructionFn;
 }
 
 export function flattenLeaves(): AppLeaf[] {
@@ -598,6 +607,7 @@ export function flattenLeaves(): AppLeaf[] {
                         typeId: type.typeId,
                         label: type.label,
                         defaultConstraints: type.defaultConstraints,
+                        instruction: type.instruction,
                     });
                 } else {
                     for (const leaf of type.children ?? []) {
@@ -608,6 +618,7 @@ export function flattenLeaves(): AppLeaf[] {
                             typeId: leaf.typeId,
                             label: leaf.label,
                             defaultConstraints: leaf.defaultConstraints,
+                            instruction: leaf.instruction,
                         });
                     }
                 }
@@ -616,3 +627,10 @@ export function flattenLeaves(): AppLeaf[] {
     }
     return out;
 }
+
+// leafId → its instruction (typeId + label along for the fallback). Lets a caller that
+// only has a leafId (a persisted curriculum lock, a MathBlock.leafId) resolve the same
+// opdracht-titel a sidebar click would have produced, without holding onto the leaf's
+// own object reference (which a share link can't serialise — it may be a function).
+export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn }> =
+    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction }]));

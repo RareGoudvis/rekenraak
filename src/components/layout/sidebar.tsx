@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
-import { useWorksheetStore } from '../../store/useWorksheetStore';
+import { useWorksheetStore, type AddBlockOpts } from '../../store/useWorksheetStore';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { baseApply } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
@@ -118,10 +118,10 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
     // Adding a block switches the panel to Instellingen, which unmounts the leaf — so its
     // onMouseLeave never fires and a pending/open preview card would hang around on screen.
     // Every add goes through here so the hover state is always torn down with it.
-    const addLeaf = (typeId: string, label: string, constraints?: Record<string, unknown>) => {
+    const addLeaf = (typeId: string, label: string, constraints?: Record<string, unknown>, opts?: AddBlockOpts) => {
         if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null; }
         setPreview(null);
-        addBlockFromType(typeId, label, constraints);
+        addBlockFromType(typeId, label, constraints, opts);
     };
 
     const [openSubdomain, setOpenSubdomain] = useState<string | null>(null);
@@ -180,7 +180,7 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
                                 className="sidebar-leaf"
                                 style={S.leafBtn}
                                 title={`${t.label} toevoegen (één oefening)`}
-                                onClick={() => addLeaf(t.typeId, t.label, t.lockedConstraints)}
+                                onClick={() => addLeaf(t.typeId, t.label, t.lockedConstraints, { leafId: t.leafId, instruction: t.instruction })}
                                 {...leafHover(t.typeId, t.lockedConstraints)}
                             >
                                 <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
@@ -277,7 +277,7 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
                                                                         className="sidebar-leaf"
                                                                         style={S.leafBtn}
                                                                         title={`${type.label} toevoegen (één oefening)`}
-                                                                        onClick={() => addLeaf(type.typeId!, type.label, type.defaultConstraints)}
+                                                                        onClick={() => addLeaf(type.typeId!, type.label, type.defaultConstraints, { leafId: type.id, instruction: type.instruction })}
                                                                         {...leafHover(type.typeId!, type.defaultConstraints)}
                                                                     >
                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
@@ -314,7 +314,7 @@ export default function Sidebar({ onOpenAbout }: { onOpenAbout?: () => void }) {
                                                                                         className="sidebar-leaf"
                                                                                         style={S.leafBtn}
                                                                                         title={`${leaf.label} toevoegen (één oefening)`}
-                                                                                        onClick={() => addLeaf(leaf.typeId, leaf.label, leaf.defaultConstraints)}
+                                                                                        onClick={() => addLeaf(leaf.typeId, leaf.label, leaf.defaultConstraints, { leafId: leaf.id, instruction: leaf.instruction })}
                                                                                         {...leafHover(leaf.typeId, leaf.defaultConstraints)}
                                                                                     >
                                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
