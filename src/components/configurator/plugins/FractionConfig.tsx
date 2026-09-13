@@ -1,4 +1,5 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { regenerateBlock } from '../../../services/generateDispatch';
 import { useConstraints } from '../useConstraints';
 import { F } from './shared/fieldStyles';
 import type { MathBlock, FractionSubType } from '../../../services/math/types';
@@ -28,6 +29,8 @@ function defaultsFor(subType: FractionSubType): Record<string, unknown> {
 
 export default function FractionConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const setExercises = useWorksheetStore((state) => state.setExercises);
+    const setGenerationNote = useWorksheetStore((state) => state.setGenerationNote);
 
     const c = block.constraints as FractionConstraints;
     const subType: FractionSubType = c.subType || 'kleuren';
@@ -45,11 +48,14 @@ export default function FractionConfig({ block }: Props) {
 
     const handleSubTypeChange = (newSubType: FractionSubType) => {
         const isHoeveelheidType = newSubType === 'hoeveelheid' || newSubType === 'hoeveelheid-rechthoek' || newSubType === 'hoeveelheid-abstract';
-        updateBlockSettings(block.id, {
+        const updates: Partial<MathBlock> = {
             constraints: { subType: newSubType, ...defaultsFor(newSubType) },
-            fractionExercises: [],
             ...(isHoeveelheidType ? { numberOfExercises: 1 } : {}),
-        });
+        };
+        updateBlockSettings(block.id, updates);
+        // A mode switch used to blank the block until the teacher pressed Genereer; the
+        // new mode's exercises are exactly what they switched over to look at.
+        regenerateBlock({ ...block, ...updates } as MathBlock, setExercises, setGenerationNote);
     };
 
     const isHoeveelheid       = subType === 'hoeveelheid';
