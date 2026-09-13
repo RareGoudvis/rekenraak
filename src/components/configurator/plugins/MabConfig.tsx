@@ -1,4 +1,5 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
+import { regenerateBlock } from '../../../services/generateDispatch';
 import { useConstraints } from '../useConstraints';
 import { F } from './shared/fieldStyles';
 import type { MathBlock } from '../../../services/math/types';
@@ -29,6 +30,8 @@ const placeKeysFor = (maxNumber: number): string[] => {
 
 export default function MabConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
+    const setExercises = useWorksheetStore((state) => state.setExercises);
+    const setGenerationNote = useWorksheetStore((state) => state.setGenerationNote);
 
     const {
         mabStyle: rawMabStyle = 'symbolic',
@@ -38,10 +41,14 @@ export default function MabConfig({ block }: Props) {
     // Back-compat: blocks saved before the rename used 'realistic'.
     const mabStyle = rawMabStyle === 'realistic' ? 'mab-bw' : rawMabStyle;
 
-    // Mutates one constraint key. Wipes mabExercises so the preview shows the
-    // empty-state prompt instead of stale numbers that may violate the new constraint.
-    const set = (key: string, value: unknown) =>
-        updateBlockSettings(block.id, { constraints: { ...block.constraints, [key]: value }, mabExercises: [] });
+    const applyAndRegenerate = (updates: Partial<MathBlock>) => {
+        updateBlockSettings(block.id, updates);
+        regenerateBlock({ ...block, ...updates } as MathBlock, setExercises, setGenerationNote);
+    };
+
+    // Mutates one constraint key and immediately regenerates: the old numbers may
+    // violate the new constraint, and a blank preview answers nothing.
+    const set = (key: string, value: unknown) => applyAndRegenerate({ constraints: { ...block.constraints, [key]: value } });
 
     const toggleMask = (k: string) => {
         const cur = operand1Mask || {};
@@ -82,10 +89,7 @@ export default function MabConfig({ block }: Props) {
                         const allowed = new Set(placeKeysFor(v));
                         const cleaned: Record<string, boolean> = {};
                         for (const k of Object.keys(operand1Mask || {})) if (allowed.has(k)) cleaned[k] = operand1Mask[k];
-                        updateBlockSettings(block.id, {
-                            constraints: { ...block.constraints, maxNumber: v, operand1Mask: cleaned },
-                            mabExercises: [],
-                        });
+                        applyAndRegenerate({ constraints: { ...block.constraints, maxNumber: v, operand1Mask: cleaned } });
                     }}
                     ariaLabel="Maximum getal"
                 />
