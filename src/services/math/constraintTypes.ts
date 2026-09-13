@@ -473,6 +473,8 @@ export type SchattendConstraints = {
     roundTargets: string[];
     /** Print the rounding step, or only the estimate. */
     scaffolding: 'tussenstappen' | 'enkel-schatting';
+    /** 'lang' runs the estimate's write-line to the end of the row (one exercise per row). */
+    answerLine?: 'kort' | 'lang';
 };
 
 export type ControlerenConstraints = {

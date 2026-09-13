@@ -164,7 +164,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // rows 1-up in a half cell (overflow 1.30 → 1.00). A quarter still overflows (1.33).
     "rekenvolgorde": { rowUnits: 1.58, perRowFull: 2, minWidth: 2 },
     "romeinse-cijfers": { rowUnits: 1.75, perRowFull: 2, minWidth: 2 },
-    "schattend": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
+    "schattend": { rowUnits: 1.71, perRowFull: 1, minWidth: 4 },
     "splitsen": { rowUnits: 6.79, perRowFull: 2.5, minWidth: 1 },
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 1 },
     "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },

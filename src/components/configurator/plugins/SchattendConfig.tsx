@@ -22,6 +22,7 @@ export default function SchattendConfig({ block }: Props) {
     const maxGetal = c.maxGetal ?? (isDecimal ? 100 : 1000);
     const roundTargets: string[] = c.roundTargets ?? (isDecimal ? ['E'] : ['H']);
     const scaffolding: string = c.scaffolding ?? 'tussenstappen';
+    const answerLine: string = c.answerLine ?? 'kort';
 
     const set = (key: keyof SchattendConstraints, value: unknown) => patch({ [key]: value } as Partial<SchattendConstraints>);
     const toggleIn = (key: keyof SchattendConstraints, list: unknown[], v: unknown) => {
@@ -66,6 +67,14 @@ export default function SchattendConfig({ block }: Props) {
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('scaffolding', 'tussenstappen')} style={styles.radioBtn(scaffolding === 'tussenstappen')}>Met tussenstappen</button>
                     <button onClick={() => set('scaffolding', 'enkel-schatting')} style={styles.radioBtn(scaffolding === 'enkel-schatting')}>Enkel schatting</button>
+                </div>
+            </div>
+
+            <div style={styles.section}>
+                <SettingLabel text="Antwoordlijn:" info="Een lange lijn loopt tot het einde van de rij; er past dan één oefening per rij." />
+                <div style={styles.buttonGroup}>
+                    <button onClick={() => set('answerLine', 'kort')} style={styles.radioBtn(answerLine === 'kort')}>Kort</button>
+                    <button onClick={() => set('answerLine', 'lang')} style={styles.radioBtn(answerLine === 'lang')}>Lang</button>
                 </div>
             </div>
         </div>
