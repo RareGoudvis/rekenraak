@@ -51,7 +51,8 @@ export const styles = {
   // the block's own getBoundingClientRect (top/left set inline, per-instance) — that's
   // what keeps the rail out of .page-sheet-body's overflow:hidden when the block sits at
   // the bottom of the page. Only top/left vary per block; the box itself stays here.
-  blockControls: { position: 'fixed', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 50 } as React.CSSProperties,
+  // A surface so the rail reads over a neighbouring ½/¼ block instead of floating bare on top of it.
+  blockControls: { position: 'fixed', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 50, background: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-md)', padding: '3px', boxShadow: 'var(--shadow-2)' } as React.CSSProperties,
   // Hairline + breathing room between the rail's three groups (drag/lock/duplicate/split,
   // page-break/up/down, delete) — kept tight so nine compact buttons don't read as tall
   // as a second toolbar.
