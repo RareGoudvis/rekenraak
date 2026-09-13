@@ -108,7 +108,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "layout-raster": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
     "layout-kader": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
     "afronden": { rowUnits: 10.33, perRowFull: 2, minWidth: 2 },
-    "breuken": { rowUnits: 6.23, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "breuken": { rowUnits: 6.23, perRowFull: 2, minWidth: 1 },
     "breuken-bewerken": { rowUnits: 2.58, perRowFull: 2, minWidth: 2 },
     "breuken-rangschikken": { rowUnits: 5.04, perRowFull: 2, minWidth: 1 },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
@@ -140,7 +140,8 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "hr-std-gemengd": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-optellen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-vermenigvuldigen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
-    "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 2 },
+    // Measured 4 since 2026-09-13: the question row overflows a half (BUGS.md) — 2 once fixed.
+    "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 4 },
     "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 1 },
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
     "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
@@ -159,11 +160,11 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 1 },
     "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
     "verbanden": { rowUnits: 3.69, perRowFull: 2, minWidth: 4 },
-    "vergelijken": { rowUnits: 2.17, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
-    "vormleer-figuren": { rowUnits: 6.5, perRowFull: 3, minWidth: 4, minWidthSingle: 2 },
-    "vormleer-hoeken": { rowUnits: 6.5, perRowFull: 3, minWidth: 4, minWidthSingle: 2 },
-    "vormleer-punt-lijn": { rowUnits: 6.5, perRowFull: 3, minWidth: 4, minWidthSingle: 2 },
-    "weegschaal": { rowUnits: 9.38, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "vergelijken": { rowUnits: 2.17, perRowFull: 2, minWidth: 2 },
+    "vormleer-figuren": { rowUnits: 6.5, perRowFull: 3, minWidth: 1 },
+    "vormleer-hoeken": { rowUnits: 6.5, perRowFull: 3, minWidth: 1 },
+    "vormleer-punt-lijn": { rowUnits: 6.5, perRowFull: 3, minWidth: 1 },
+    "weegschaal": { rowUnits: 9.38, perRowFull: 2, minWidth: 2 },
 };
 
 // Types added without a measurement fall back to a middling row and half width.

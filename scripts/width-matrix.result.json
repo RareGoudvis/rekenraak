@@ -39,6 +39,15 @@
       "hDefault": 314,
       "hSingle": 114
     },
+    "hr-std-gemengd": {
+      "minWidth": 1,
+      "rows": 5,
+      "perRowFull": 2,
+      "rowUnits": 2.08,
+      "count": 10,
+      "hDefault": 314,
+      "hSingle": 114
+    },
     "cijferen-optellen-nat": {
       "minWidth": 1,
       "rows": null,
@@ -121,8 +130,7 @@
       "hSingle": 234
     },
     "breuken": {
-      "minWidth": 4,
-      "minWidthSingle": 2,
+      "minWidth": 1,
       "rows": 3,
       "perRowFull": 2,
       "rowUnits": 6.23,
@@ -178,7 +186,7 @@
       "hSingle": 266
     },
     "mab-herkennen": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rows": 3,
       "perRowFull": 2,
       "rowUnits": 6.63,
@@ -187,7 +195,7 @@
       "hSingle": 223
     },
     "mab-tekenen": {
-      "minWidth": 2,
+      "minWidth": 1,
       "rows": 3,
       "perRowFull": 2,
       "rowUnits": 6.63,
@@ -314,8 +322,7 @@
       "hSingle": 116
     },
     "vergelijken": {
-      "minWidth": 4,
-      "minWidthSingle": 2,
+      "minWidth": 2,
       "rows": 3,
       "perRowFull": 2,
       "rowUnits": 2.17,
@@ -479,7 +486,7 @@
       "hSingle": 154
     },
     "kalender": {
-      "minWidth": 2,
+      "minWidth": 4,
       "rows": 1,
       "perRowFull": 1,
       "rowUnits": null,
@@ -507,8 +514,7 @@
       "hSingle": 489
     },
     "weegschaal": {
-      "minWidth": 4,
-      "minWidthSingle": 2,
+      "minWidth": 2,
       "rows": 2,
       "perRowFull": 2,
       "rowUnits": 9.38,
@@ -517,8 +523,7 @@
       "hSingle": 279
     },
     "vormleer-punt-lijn": {
-      "minWidth": 4,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
       "rowUnits": 6.5,
@@ -527,8 +532,7 @@
       "hSingle": 235
     },
     "vormleer-hoeken": {
-      "minWidth": 4,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
       "rowUnits": 6.5,
@@ -537,8 +541,7 @@
       "hSingle": 235
     },
     "vormleer-figuren": {
-      "minWidth": 4,
-      "minWidthSingle": 1,
+      "minWidth": 1,
       "rows": 2,
       "perRowFull": 3,
       "rowUnits": 6.5,
@@ -826,6 +829,78 @@
     },
     {
       "typeId": "hr-std-delen",
+      "width": 1,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 114,
+      "rowCount": 1
+    },
+    {
+      "typeId": "hr-std-gemengd",
+      "width": 4,
+      "mode": "default",
+      "count": 10,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 314,
+      "rowCount": 5
+    },
+    {
+      "typeId": "hr-std-gemengd",
+      "width": 4,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 688,
+      "clientWidth": 688,
+      "cellHeight": 114,
+      "rowCount": 1
+    },
+    {
+      "typeId": "hr-std-gemengd",
+      "width": 2,
+      "mode": "default",
+      "count": 10,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 564,
+      "rowCount": 10
+    },
+    {
+      "typeId": "hr-std-gemengd",
+      "width": 2,
+      "mode": "single",
+      "count": 1,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 338,
+      "clientWidth": 338,
+      "cellHeight": 114,
+      "rowCount": 1
+    },
+    {
+      "typeId": "hr-std-gemengd",
+      "width": 1,
+      "mode": "default",
+      "count": 10,
+      "overflow": 1,
+      "zoom": 1,
+      "scrollWidth": 163,
+      "clientWidth": 163,
+      "cellHeight": 564,
+      "rowCount": 10
+    },
+    {
+      "typeId": "hr-std-gemengd",
       "width": 1,
       "mode": "single",
       "count": 1,
@@ -1513,12 +1588,12 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.1598,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 392,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 513,
-      "rowCount": 3
+      "cellHeight": 962,
+      "rowCount": 6
     },
     {
       "typeId": "breuken",
@@ -1537,21 +1612,21 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.4049,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 392,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 537,
-      "rowCount": 3
+      "cellHeight": 986,
+      "rowCount": 6
     },
     {
       "typeId": "breuken",
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.0307,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 168,
+      "scrollWidth": 163,
       "clientWidth": 163,
       "cellHeight": 238,
       "rowCount": 1
@@ -1969,11 +2044,11 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.9264,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 314,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1018,
+      "cellHeight": 799,
       "rowCount": 6
     },
     {
@@ -1981,11 +2056,11 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.9264,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 314,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 223,
+      "cellHeight": 186,
       "rowCount": 1
     },
     {
@@ -2041,11 +2116,11 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 1.9264,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 314,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 1042,
+      "cellHeight": 823,
       "rowCount": 6
     },
     {
@@ -2053,11 +2128,11 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.9264,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 314,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 247,
+      "cellHeight": 210,
       "rowCount": 1
     },
     {
@@ -3025,12 +3100,12 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.2456,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 421,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 220,
-      "rowCount": 3
+      "cellHeight": 376,
+      "rowCount": 6
     },
     {
       "typeId": "vergelijken",
@@ -3049,12 +3124,12 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.5828,
+      "overflow": 1.2209,
       "zoom": 1,
-      "scrollWidth": 421,
+      "scrollWidth": 199,
       "clientWidth": 163,
-      "cellHeight": 244,
-      "rowCount": 3
+      "cellHeight": 400,
+      "rowCount": 6
     },
     {
       "typeId": "vergelijken",
@@ -4321,11 +4396,11 @@
       "width": 2,
       "mode": "default",
       "count": 1,
-      "overflow": 1,
+      "overflow": 1.1805,
       "zoom": 1,
-      "scrollWidth": 338,
+      "scrollWidth": 399,
       "clientWidth": 338,
-      "cellHeight": 434,
+      "cellHeight": 415,
       "rowCount": 1
     },
     {
@@ -4333,11 +4408,11 @@
       "width": 2,
       "mode": "single",
       "count": 1,
-      "overflow": 1,
+      "overflow": 1.1805,
       "zoom": 1,
-      "scrollWidth": 338,
+      "scrollWidth": 399,
       "clientWidth": 338,
-      "cellHeight": 434,
+      "cellHeight": 415,
       "rowCount": 1
     },
     {
@@ -4345,11 +4420,11 @@
       "width": 1,
       "mode": "default",
       "count": 1,
-      "overflow": 1.7178,
+      "overflow": 2.4479,
       "zoom": 1,
-      "scrollWidth": 280,
+      "scrollWidth": 399,
       "clientWidth": 163,
-      "cellHeight": 510,
+      "cellHeight": 415,
       "rowCount": 1
     },
     {
@@ -4357,11 +4432,11 @@
       "width": 1,
       "mode": "single",
       "count": 1,
-      "overflow": 1.7178,
+      "overflow": 2.4479,
       "zoom": 1,
-      "scrollWidth": 280,
+      "scrollWidth": 399,
       "clientWidth": 163,
-      "cellHeight": 510,
+      "cellHeight": 415,
       "rowCount": 1
     },
     {
@@ -4537,12 +4612,12 @@
       "width": 2,
       "mode": "default",
       "count": 4,
-      "overflow": 1.0769,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 364,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 504,
-      "rowCount": 2
+      "cellHeight": 954,
+      "rowCount": 4
     },
     {
       "typeId": "weegschaal",
@@ -4561,12 +4636,12 @@
       "width": 1,
       "mode": "default",
       "count": 4,
-      "overflow": 2.2331,
+      "overflow": 1.0429,
       "zoom": 1,
-      "scrollWidth": 364,
+      "scrollWidth": 170,
       "clientWidth": 163,
-      "cellHeight": 504,
-      "rowCount": 2
+      "cellHeight": 954,
+      "rowCount": 4
     },
     {
       "typeId": "weegschaal",
@@ -4609,11 +4684,11 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.0828,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 366,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 391,
+      "cellHeight": 547,
       "rowCount": 2
     },
     {
@@ -4633,11 +4708,11 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.2454,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 366,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 408,
+      "cellHeight": 1032,
       "rowCount": 2
     },
     {
@@ -4681,11 +4756,11 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.0828,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 366,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 391,
+      "cellHeight": 547,
       "rowCount": 2
     },
     {
@@ -4705,11 +4780,11 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.2454,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 366,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 408,
+      "cellHeight": 1032,
       "rowCount": 2
     },
     {
@@ -4753,11 +4828,11 @@
       "width": 2,
       "mode": "default",
       "count": 6,
-      "overflow": 1.0828,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 366,
+      "scrollWidth": 338,
       "clientWidth": 338,
-      "cellHeight": 408,
+      "cellHeight": 564,
       "rowCount": 2
     },
     {
@@ -4777,11 +4852,11 @@
       "width": 1,
       "mode": "default",
       "count": 6,
-      "overflow": 2.2454,
+      "overflow": 1,
       "zoom": 1,
-      "scrollWidth": 366,
+      "scrollWidth": 163,
       "clientWidth": 163,
-      "cellHeight": 425,
+      "cellHeight": 1049,
       "rowCount": 2
     },
     {
