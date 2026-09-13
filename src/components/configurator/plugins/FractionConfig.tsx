@@ -33,6 +33,7 @@ export default function FractionConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const setExercises = useWorksheetStore((state) => state.setExercises);
     const setGenerationNote = useWorksheetStore((state) => state.setGenerationNote);
+    const uniqueExercises = useWorksheetStore((state) => state.docSettings.uniqueExercises ?? true);
 
     const c = block.constraints as FractionConstraints;
     const subType: FractionSubType = c.subType || 'kleuren';
@@ -57,7 +58,7 @@ export default function FractionConfig({ block }: Props) {
         updateBlockSettings(block.id, updates);
         // A mode switch used to blank the block until the teacher pressed Genereer; the
         // new mode's exercises are exactly what they switched over to look at.
-        regenerateBlock({ ...block, ...updates } as MathBlock, setExercises, setGenerationNote);
+        regenerateBlock({ ...block, ...updates } as MathBlock, setExercises, setGenerationNote, uniqueExercises);
     };
 
     const isHoeveelheid       = subType === 'hoeveelheid';
