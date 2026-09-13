@@ -341,6 +341,17 @@ export default function App() {
       x: anchorRect.left - POPOVER_W - 8, y: anchorRect.bottom + 6,
     });
   }, [blocks]);
+  // The oversize banner's "Verklein dit blok": turn the switch on AND take the teacher to
+  // it, so the sheet's fix and the Inspector's switch are visibly the same setting.
+  // setActiveSelection resets the tab to 'oefening', so the tab is set after it.
+  const fitBlockToPage = useCallback((blockId: string) => {
+    const block = blocks.find(b => b.id === blockId);
+    if (!block) return;
+    updateBlockSettings(blockId, { constraints: { ...block.constraints, fitToPage: true } });
+    setActiveSelection(blockId);
+    setInspectorTab('weergave');
+  }, [blocks, updateBlockSettings, setActiveSelection, setInspectorTab]);
+
   const packedPages = useMemo(
     () => packPages(blocks, {
       blockSpacingPx: docSettings.blockSpacing ?? 12,
@@ -715,6 +726,8 @@ export default function App() {
                 if (!next || splittableCount(next) < 2) return undefined;
                 return (tailPx: number, anchorRect: DOMRect) => openSplit(next.id, anchorRect, tailPx);
               })()}
+              onFitBlock={fitBlockToPage}
+              onSplitBlock={(blockId, anchor) => openSplit(blockId, anchor)}
               header={pi === 0
                 ? renderHeaderRegion()
                 : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}
