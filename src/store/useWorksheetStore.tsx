@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { MathBlock, Equation, CijferExercise, FooterData, LayoutPreset } from '../services/math/types';
-import { regenerateBlock, generateForBlock, exerciseKeyOf, GENERATION_FAILED } from '../services/generateDispatch';
+import { generateForBlock, exerciseKeyOf, GENERATION_FAILED } from '../services/generateDispatch';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { saveAutosave, type CurriculumLock } from '../services/persistence';
 import { baseApply, DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
@@ -511,16 +511,26 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             _historyIndex: 0,
         };
     }),
-    generateAllBlocks: () => {
-        // Loop over the current snapshot. Each setExercises call inside
-        // regenerateBlock schedules a set() that pushes history individually, so
-        // iterating the pre-call snapshot is safe — we don't read state mid-loop.
-        const state = get();
-        for (const block of state.blocks) {
-            if (block.locked) continue;
-            regenerateBlock(block, state.setExercises, state.setGenerationNote, state.docSettings.uniqueExercises ?? true);
-        }
-    },
+    // One set(), one history entry: a per-block setExercises loop made "Genereer alles"
+    // cost one Ctrl+Z per block to undo, which nobody reads as a single action.
+    generateAllBlocks: () => set((state) => {
+        const unique = state.docSettings.uniqueExercises ?? true;
+        const stale = { ...state.staleBlocks };
+        const nb = state.blocks.map(block => {
+            const def = REGISTRY[block.typeId];
+            if (block.locked || !def) return block;
+            try {
+                const { items, note } = generateForBlock(block, unique);
+                delete stale[block.id];
+                return { ...block, [def.exerciseField]: items, generationNote: note } as MathBlock;
+            } catch (err) {
+                // One throwing generator must not cost the other blocks their regenerate.
+                console.warn(`[rekenraak] generator for ${block.typeId} threw`, err);
+                return { ...block, generationNote: `${GENERATION_FAILED} ${err instanceof Error ? err.message : String(err)}` };
+            }
+        });
+        return { blocks: nb, staleBlocks: stale, ...pushHistory(state._history, state._historyIndex, nb) };
+    }),
     updateHeader: (updates) => set((state) => ({ header: { ...state.header, ...updates } })),
     updateFooter: (updates) => set((state) => ({ footer: { ...state.footer, ...updates } })),
     updateDocSettings: (updates) => set((state) => ({ docSettings: { ...state.docSettings, ...updates } })),

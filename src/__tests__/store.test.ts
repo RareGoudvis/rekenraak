@@ -380,3 +380,31 @@ describe('autosave status', () => {
         expect(useWorksheetStore.getState().lastSavedAt).toBe(savedAt);
     });
 });
+
+describe('generateAllBlocks', () => {
+    beforeEach(() => seed(3));
+
+    // It used to push one history entry per block, so undoing a "Genereer alles" took as
+    // many Ctrl+Z's as there were blocks.
+    test('regenerates every block in a single undoable step', () => {
+        const before = useWorksheetStore.getState().blocks.map(b => b.exercises);
+
+        useWorksheetStore.getState().generateAllBlocks();
+        const after = useWorksheetStore.getState().blocks.map(b => b.exercises);
+        expect(after.some((ex, i) => JSON.stringify(ex) !== JSON.stringify(before[i]))).toBe(true);
+
+        useWorksheetStore.getState().undo();
+        expect(useWorksheetStore.getState().blocks.map(b => b.exercises)).toEqual(before);
+    });
+
+    test('leaves a locked block alone', () => {
+        const [a] = ids();
+        useWorksheetStore.getState().toggleBlockLock(a);
+        const locked = useWorksheetStore.getState().blocks[0].exercises;
+
+        useWorksheetStore.getState().generateAllBlocks();
+
+        expect(useWorksheetStore.getState().blocks[0].exercises).toEqual(locked);
+        useWorksheetStore.getState().toggleBlockLock(a);
+    });
+});
