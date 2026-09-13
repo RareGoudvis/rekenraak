@@ -46,6 +46,8 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                                         border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
                                         borderRadius: '50%',
                                         color: isAns ? SOL : 'inherit',
+                                        // A wrapped flex line can otherwise report an intrinsic width wider than the cell.
+                                        minWidth: 0,
                                     }}>
                                         {formatMathNumber(n)}
                                     </span>
@@ -93,9 +95,11 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
     }
 
     // ── GETALLEN: fill <, > or = between two numbers ──────────────────────────
+    // Row is two 70px number spans + a 34px op box + gaps ≈ 210px; 220px keeps 2-up at
+    // full width but forces 1-up in a ½ cell (~334px) so it can't spill into the neighbour.
     return (
         <FragmentableGrid
-            cols={2}
+            cols={fitCols(availableWidth, 220, 2, 24)}
             columnGap={24}
             rowGap={gap}
             items={exercises.map(ex => {
