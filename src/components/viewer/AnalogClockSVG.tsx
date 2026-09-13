@@ -10,6 +10,11 @@ interface Props {
     style?: React.CSSProperties;
 }
 
+// 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` em
+// inside a `font-size: var(--sheet-size-math)` box reproduces today's pixels exactly and
+// then follows the teacher's Lettergrootte slider. SYNC: same divisor in every viewer.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+
 export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinuteHand, is24hour, size = 130, style }: Props) {
     // In 24h mode the SVG canvas grows by 24px so the outer 13-24 ring fits without shrinking the clock circle.
     const svgSize = is24hour ? size + 24 : size;
@@ -35,7 +40,9 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
     const smallFontSize = Math.max(6, size * 0.058);
 
     return (
-        <svg width={svgSize} height={svgSize} viewBox={`0 0 ${svgSize} ${svgSize}`} style={style}>
+        // `size` stays the internal viewBox geometry; only the rendered box follows the token,
+        // so numerals, ticks and hand widths scale with it without any further arithmetic.
+        <svg width={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} height={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} viewBox={`0 0 ${svgSize} ${svgSize}`} style={style}>
             <circle cx={cx} cy={cy} r={r} fill="white" stroke="#000" strokeWidth="2" />
 
             {is24hour ? (

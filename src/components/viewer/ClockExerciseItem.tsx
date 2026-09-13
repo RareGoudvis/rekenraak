@@ -12,6 +12,12 @@ interface Props {
 
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
 
+// 13pt (the --sheet-size-math default) is 17.33 CSS px, so `px / 17.33` turns yesterday's
+// fixed pixel geometry into a token factor that reproduces it exactly at the default slider.
+// SYNC: same divisor in every viewer that scales an SVG figure.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)})`;
+
 export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     const c = block.constraints as ClockConstraints;
     const clockType = (c.clockType || 'analoog') as ClockType;
@@ -35,14 +41,14 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
         </span>
     );
 
-    const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: '18px' }} />;
+    const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: mathPx(18) }} />;
     // isMath: digitalText ("03:15") reads as math, timeText ("kwart over 3") reads as words
     const sol = (text: string, isMath = false) => (
         <span style={{ ...solutionText, fontSize: isMath ? 'calc(var(--sheet-size-math) * 0.7)' : 'calc(var(--sheet-size-text) * 0.6)' }}>{text}</span>
     );
     // Empty digital display for the pupil to fill in (matches the omzetten __:__ box).
     const emptyDigitalBox = (
-        <div style={{ border: '2px solid #000', width: '65px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.92)', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
+        <div style={{ border: '2px solid #000', width: mathPx(65), height: mathPx(32), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.92)', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
             {showSolutions ? ex.digitalText : '__:__'}
         </div>
     );
@@ -73,7 +79,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
                     {clock(true, true)}
                     {showSolutions
                         ? sol(ex.digitalText, true)
-                        : <div style={{ border: '1.5px solid #000', width: '65px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.7)', color: '#aaa' }}>__:__</div>
+                        : <div style={{ border: '1.5px solid #000', width: mathPx(65), height: mathPx(28), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.7)', color: '#aaa' }}>__:__</div>
                     }
                 </>
             );
@@ -83,7 +89,9 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     }
 
     return (
-        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '8px', boxSizing: 'border-box' }}>
+        // fontSize here is the em base the clock SVG sizes itself against, so the face follows
+        // the Lettergrootte slider; the DOM text inside keeps its own calc(token * f) sizes.
+        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '8px', boxSizing: 'border-box', fontSize: 'var(--sheet-size-math)' }}>
             {inner}
         </div>
     );
