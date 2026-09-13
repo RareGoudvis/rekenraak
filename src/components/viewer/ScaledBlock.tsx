@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { PAGE_BODY_PX } from '../../services/layout/blockLayout';
 import { FIT_FLOOR, WIDTH_FIT_FLOOR, nextZoom } from './scaledBlockFit';
-import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
+import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX, answerSpaceVar } from './BlockWidthContext';
 
 // Scales a block's body via CSS `zoom`. It renders at the zoom the teacher ASKED for
 // (global bodyFontScale x the per-block override) and nothing here quietly takes that
@@ -26,7 +26,7 @@ import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 // `availableWidthPx` is the printable width of the cell this block sits in. It defaults to
 // a full-width block, so today's single-column sheet is unchanged; the page model passes the
 // real per-cell width once blocks can be half or third width.
-export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fitToPage = false, fitToWidth = false, pageBudgetPx = PAGE_BODY_PX, children }: { scale: number; availableWidthPx?: number; fitToPage?: boolean; fitToWidth?: boolean; pageBudgetPx?: number; children: ReactNode }) {
+export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fitToPage = false, fitToWidth = false, pageBudgetPx = PAGE_BODY_PX, answerSpacePx, children }: { scale: number; availableWidthPx?: number; fitToPage?: boolean; fitToWidth?: boolean; pageBudgetPx?: number; answerSpacePx?: number; children: ReactNode }) {
     const ref = useRef<HTMLDivElement>(null);
     const [applied, setApplied] = useState(scale);
     // Last parent content width — distinguishes a genuine resize (regeneration / panel
@@ -95,7 +95,12 @@ export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fit
     const shrunk = applied < scale - 1e-4;
     return (
         <>
-            <div ref={ref} data-scaled-inner="" data-scale={scale} style={{ zoom: applied, width: '100%', display: 'block', position: 'static', overflow: 'visible' }}>
+            <div ref={ref} data-scaled-inner="" data-scale={scale} style={{
+                zoom: applied, width: '100%', display: 'block', position: 'static', overflow: 'visible',
+                // Per-block writing space: redeclares the sheet's --sheet-answer-h for this
+                // subtree only, so the viewers' calc() factors pick it up unchanged.
+                ...(answerSpacePx != null ? { ['--sheet-answer-h' as string]: answerSpaceVar(answerSpacePx) } : {}),
+            }}>
                 <BlockWidthProvider value={availableWidthPx}>{children}</BlockWidthProvider>
             </div>
             {shrunk && fitToWidth && (

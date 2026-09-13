@@ -85,6 +85,31 @@ describe('worksheet file', () => {
         expect(parsed.docSettings.fontSizeText).toBe(16);
     });
 
+    // The writing-space token must be invisible to sheets saved before it existed: a file
+    // with no answerSpace has to come back with no answerSpace (absent = 18 = today's px),
+    // and one that carries the setting has to keep it, sheet-wide and per block.
+    test('answerSpace: absent stays absent, set survives the round-trip', () => {
+        const s = state();
+        const docSettings = { ...s.docSettings } as DocSettings;
+        delete docSettings.answerSpace;
+        const file = (doc: DocSettings, blocks: typeof s.blocks) => JSON.stringify({
+            version: WORKSHEET_FORMAT_VERSION,
+            exportedAt: new Date().toISOString(),
+            mode: 'full',
+            blocks, header: s.header, footer: s.footer,
+            docSettings: doc, baseSettings: s.baseSettings, selectedGrade: s.selectedGrade,
+        });
+
+        const old = parseWorksheetFile(file(docSettings, s.blocks));
+        expect(old.docSettings.answerSpace).toBeUndefined();
+        expect(old.blocks.every(b => b.constraints?.answerSpace === undefined)).toBe(true);
+
+        const withSpace = s.blocks.map((b, i) => (i === 0 ? { ...b, constraints: { ...b.constraints, answerSpace: 28 } } : b));
+        const set = parseWorksheetFile(file({ ...docSettings, answerSpace: 24 }, withSpace));
+        expect(set.docSettings.answerSpace).toBe(24);
+        expect(set.blocks[0].constraints?.answerSpace).toBe(28);
+    });
+
     test('a file from a newer version is refused, in Dutch', () => {
         const json = JSON.stringify({ version: WORKSHEET_FORMAT_VERSION + 1, blocks: [], header: {}, footer: {}, docSettings: {} });
         expect(() => parseWorksheetFile(json)).toThrow(/nieuwere versie/);

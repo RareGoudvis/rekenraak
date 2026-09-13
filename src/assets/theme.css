@@ -55,6 +55,16 @@
     --sheet-size-text: 15pt;
     --sheet-size-small: calc(var(--sheet-size-math) * 0.82);
 
+    /* Writing space: the vertical room a pupil gets on ONE answer line. Every answer
+       line/box in a viewer is a factor of this (1x = 'lijn', 32/18 = 'regel' for the
+       stepped working rows), so one slider widens them all together. 1.0385 = 18px at the
+       13pt default (18 / 17.3333px), which is the de-facto height the viewers already used
+       -- the default therefore reproduces today's pixels exactly. Blad > Opdrachten >
+       "Schrijfruimte" overrides it on .print-area-shell; a per-block override lands on the
+       ScaledBlock wrapper. NOT the same thing as block.verticalSpacing, which is the gap
+       BETWEEN exercises. */
+    --sheet-answer-h: calc(var(--sheet-size-math) * 1.0385);
+
     /* Motion — ease-out for entrances, gentle spring for selection thumbs */
     --dur-fast: 120ms;
     --dur: 180ms;

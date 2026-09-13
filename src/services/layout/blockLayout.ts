@@ -1,5 +1,5 @@
 import type { MathBlock } from '../math/types';
-import { cellWidthPx } from '../../components/viewer/BlockWidthContext';
+import { cellWidthPx, ANSWER_SPACE_DEFAULT_PX, ANSWER_REGEL } from '../../components/viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from '../../components/viewer/scaledBlockFit';
 
 // ── Page grid ────────────────────────────────────────────────────────────────
@@ -490,7 +490,7 @@ function layoutBlockHeight(block: MathBlock): number | null {
     }
 }
 
-export function estimateHeightUnits(block: MathBlock, width: WidthUnits): number {
+export function estimateHeightUnits(block: MathBlock, width: WidthUnits, answerSpacePx?: number): number {
     const furniture = layoutBlockHeight(block);
     if (furniture !== null) return furniture;
 
@@ -498,16 +498,24 @@ export function estimateHeightUnits(block: MathBlock, width: WidthUnits): number
     const count = Math.max(1, block.numberOfExercises || 1);
     const rows = Math.ceil(count / perRow(block, width));
 
-    // Stepped layout adds its answer lines under every exercise.
+    // Writing space (--sheet-answer-h): per-block override wins over the sheet setting.
+    const answer = (block.constraints?.answerSpace as number | undefined) ?? answerSpacePx ?? ANSWER_SPACE_DEFAULT_PX;
+
+    // Stepped layout adds its answer lines under every exercise. A stepped row is one
+    // `regel` = 32/18 x the token, so 32px at the default reproduces today's estimate.
     const stepped = block.layoutPreset === 'stepped' ? Math.max(0, (block.steppedLines || 1) - 1) : 0;
-    const rowUnits = facts.rowUnits + stepped * (32 / ROW_UNIT_PX);
+    const rowUnits = facts.rowUnits + stepped * ((answer * ANSWER_REGEL) / ROW_UNIT_PX);
 
     // Whitespace is real height. rowUnits was calibrated at the 14px default gap, so only
     // the difference is charged on top — more air per exercise means fewer per page.
     const gap = block.verticalSpacing || 14;
     const gapExtra = Math.max(0, rows - 1) * ((gap - 14) / ROW_UNIT_PX);
 
+    // Same trick for the writing space: rowUnits were measured at 18px per answer line, so
+    // only the delta is charged, once per row (a row holds one line of answers).
+    const answerExtra = rows * ((answer - ANSWER_SPACE_DEFAULT_PX) / ROW_UNIT_PX);
+
     // Fixed chrome: the opdracht title plus the block's own padding.
     const TITLE_UNITS = 1;
-    return TITLE_UNITS + rows * rowUnits + gapExtra;
+    return TITLE_UNITS + rows * rowUnits + gapExtra + answerExtra;
 }
