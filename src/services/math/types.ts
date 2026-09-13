@@ -442,6 +442,12 @@ export interface ClockExercise {
     minutes: number;      // 0-59
     timeText: string;     // "kwart over 3", "25 voor 1"
     digitalText: string;  // "03:15"
+    // exerciseMode/clockType/is24hour/handChoice ride along from generation time so a mode
+    // or clock-type drift never prints the very time it was drawn to ask the pupil for (§4).
+    exerciseMode?: 'lezen' | 'tekenen' | 'omzetten';
+    clockType?: 'analoog' | 'digitaal';
+    is24hour?: boolean;
+    handChoice?: 'uur' | 'minuut' | 'beide';
     isManuallyEdited: boolean;
 }
 

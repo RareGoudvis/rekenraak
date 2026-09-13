@@ -2,12 +2,18 @@
 // CLOCK EXERCISE TYPES & DUTCH TIME FORMATTING
 // ============================================================================
 
+// SYNC: keep this shape aligned with ClockExercise in src/services/math/types.ts —
+// the generator's return type here must admit the same per-exercise fields.
 export interface ClockExercise {
     id: string;
     hours: number;        // 1-12 (12h mode) or 0-23 (24h mode)
     minutes: number;      // 0-59
     timeText: string;     // Dutch: "kwart over 3", "25 voor 1"
     digitalText: string;  // "03:15", "12:35"
+    exerciseMode?: ExerciseMode;
+    clockType?: ClockType;
+    is24hour?: boolean;
+    handChoice?: HandChoice;
     isManuallyEdited: boolean;
 }
 
