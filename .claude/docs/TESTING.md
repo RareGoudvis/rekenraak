@@ -23,6 +23,7 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `persistence.test.ts` | File round-trip, version gate (a newer file throws in Dutch), malformed input, share-link encode/decode, template stripping, curriculum lock, size backstop. |
 | `store.test.ts` | Block order: `swapBlocks` (trade places, no-ops, history, curriculum lock) and the insert-before compensation both drag surfaces apply to `reorderBlocks`. jsdom — the store touches `localStorage` on import. |
 | `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. |
+| `viewers.stale.test.tsx` | Every viewer renders exercises that were generated under DIFFERENT settings — the window between a setting change and the next Genereer. See below. |
 
 ## The generator matrix
 
@@ -45,6 +46,34 @@ set that under-produced. Read that table; a new line in it usually means a real 
 
 `KNOWN_THROWS` at the top of the file lists generators that crash on a reachable setting.
 Each entry names the file and line. Remove the entry when the generator is fixed.
+
+## The stale-settings sweep (`viewers.stale.test.tsx`)
+
+An exercise renders from its own data; `block.constraints` may only steer layout. A teacher
+who changes a structural setting leaves the sheet holding OLD exercises under NEW settings
+until they press Genereer (the store flags the block stale, but it keeps rendering), and a
+viewer that derives structure from the live constraints instead of from the exercise takes
+the whole sheet down there — as plaatswaarde did (`Cannot read properties of undefined
+(reading 'digit')`, ffcccdc).
+
+So for every sidebar leaf the suite generates three exercises once, then re-renders those
+same exercises under drifted settings at 681 and 338 px, solutions off and on, asserting no
+throw and no `console.error`: every value of every key in `constraintSpaceFor(typeId)` one at
+a time (exhaustive — a crashing value must never be sampled away), plus the viewer-only keys
+that space leaves out (`VIEWER_ONLY_DRIFT` in the suite: `equationType`, `prefill`,
+`groupingMode`, `tableAnswer`, `units`, …), plus a "everything moved at once" bundle. Then
+the reverse direction: generate under that bundle and drift back to the leaf defaults, so an
+exercise generated large must survive a small setting as well as the other way round.
+
+`Math.random` is stubbed with a seeded stream, so a failure reproduces instead of flaking;
+`STALE_SEED=<n> npx vitest run src/__tests__/viewers.stale.test.tsx` re-runs the whole sweep
+over different generated data. It is the slowest suite (~2 min); a leaf gets 120 s.
+
+Failures print as `<origin>: <key>=<value> @<width>px sol=<bool>: THREW …` — fix them in the
+viewer by reading the structure off the exercise (adding an optional field to the exercise
+type, `ex.field ?? c.field` for old saved sheets), never by guarding the symptom. A drift
+that draws the wrong picture without crashing is NOT a bug this suite can see, and is left to
+the Inspector's stale flag.
 
 ## Adding a constraint option
 
