@@ -16,7 +16,7 @@ const SALMON = '#f4cbb8';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
 const cell: React.CSSProperties = {
     border: '1px solid #000', minHeight: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
-    justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box', padding: '2px 10px',
+    justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box', padding: '2px 6px',
 };
 
 export default function TijdsduurViewer({ block, showSolutions }: Props) {
@@ -41,20 +41,32 @@ export default function TijdsduurViewer({ block, showSolutions }: Props) {
         return showSolutions ? <span style={{ ...solutionText }}>{value}</span> : '';
     };
 
-    // Fill the page (was 400px = 64%); the wider einde column also fits "(volgende dag)"
-    // on one line instead of wrapping and making that row taller.
-    const grid = '180px 230px 190px';
+    // Column width in `ch` (mono, so exact) off the widest value THIS rep actually prints —
+    // was a fixed 180/230/190px split that could only ever be full width (owner review R3).
+    // "einde" is sized off "HH:MM" only: "(volgende dag)" is left to wrap onto its own line
+    // rather than widen the column for a suffix that only some rows print.
+    const HHMM_CHARS = 5;
+    const duurChars = Math.max(...exercises.map(ex => formatDuur(ex.endMin - ex.startMin).length));
+    const COLS: Array<{ label: string; chars: number }> = [
+        { label: 'begin', chars: HHMM_CHARS },
+        { label: 'einde', chars: HHMM_CHARS },
+        { label: 'duur', chars: duurChars },
+    ];
+    const grid = COLS.map(c => `${Math.min(14, Math.max(2, c.label.length, c.chars) + 2)}ch`).join(' ');
+    // `ch` in gridTemplateColumns resolves against the GRID CONTAINER's own font, not the
+    // cells inside it (see VerbandenViewer) — match the cells' own mono/size here.
+    const gridFont: React.CSSProperties = { fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' };
     return (
         <FragmentableGrid
             cols={1}
             columnGap={0}
             rowGap={0}
             items={[
-                <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
-                    {['begin', 'einde', 'duur'].map(h => <div key={h} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)' }}>{h}</div>)}
+                <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content', ...gridFont }}>
+                    {COLS.map(c => <div key={c.label} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)' }}>{c.label}</div>)}
                 </div>,
                 ...exercises.map(ex => (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content', marginBottom: `${Math.max(0, gap - 14)}px` }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content', ...gridFont, marginBottom: `${Math.max(0, gap - 14)}px` }}>
                         <div style={cell}>{content(ex, 'begin')}</div>
                         <div style={cell}>{content(ex, 'einde')}</div>
                         <div style={cell}>{content(ex, 'duur')}</div>

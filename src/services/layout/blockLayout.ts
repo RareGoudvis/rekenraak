@@ -141,7 +141,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // SETTINGS_FLOOR (2) is what actually keeps it off a quarter, not this table.
     "even-oneven": { rowUnits: 1.9, perRowFull: 1, minWidth: 2 },
     "geld-herkennen": { rowUnits: 10.08, perRowFull: 3, minWidth: 1 },
-    "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
+    "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 2 },
     "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 2 },
     "geld-teruggeven": { rowUnits: 8.4, perRowFull: 1, minWidth: 1 },
     "geld-wissel": { rowUnits: 5.58, perRowFull: 2, minWidth: 2 },
@@ -183,7 +183,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "schattend": { rowUnits: 1.71, perRowFull: 1, minWidth: 4 },
     "splitsen": { rowUnits: 6.79, perRowFull: 2.5, minWidth: 1 },
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 1 },
-    "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
+    "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 2 },
     // minWidth 4 → 2: the tabel subtype's columns are font-relative `ch` widths now
     // instead of a fixed 220px split, so a ½ column holds the 3-column breuk·decimaal·
     // procent table.
@@ -238,7 +238,6 @@ const VETO_MIN: Record<string, WidthUnits> = {
     "lengte-meten": 4,
     "omtrek": 4,
     "oppervlakte": 4,
-    "geld-tekenen": 4,
     "kalender": 2,
     "geld-teruggeven": 2,
     // Owner rule (round 3): the hulptabel overflowed at a half and these blocks rarely

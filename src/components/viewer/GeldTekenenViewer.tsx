@@ -4,6 +4,11 @@ import { VoorbeeldenBar } from './GeldViewer';
 import FragmentableGrid from './FragmentableGrid';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { fitCols, useBlockWidth } from './BlockWidthContext';
+
+// 132px = 35mm at 96dpi (1cm ≈ 37.8px) — the narrowest a draw-the-amount box can go and
+// still be usable (owner review R3); + 16px for the cell's own 8px side padding.
+const ITEM_MIN_PX = 132 + 16;
 
 // Sizes below are factors of the sheet tokens (--sheet-size-math), not fixed px
 
@@ -50,6 +55,7 @@ function TekenenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: Ma
 interface Props { block: MathBlock; showSolutions: boolean; }
 
 export default function GeldTekenenViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
     const exercises: GeldExercise[] = block.geldExercises || [];
     const gap: number = block.verticalSpacing || 14;
     const c = block.constraints as GeldConstraints;
@@ -57,7 +63,9 @@ export default function GeldTekenenViewer({ block, showSolutions }: Props) {
     const voorbeeldTypes: number[] = c.voorbeeldTypes ?? [];
     const showVoorbeelden: boolean = c.showVoorbeelden ?? false;
     const exercisesPerRow: number | null = c.exercisesPerRow ?? null;
-    const perRow = exercisesPerRow ?? 4;
+    // 3-up at full width (was a flat 4 that ignored the column, so a ½ block squeezed the
+    // draw box to ~17mm — owner review R3); fitCols narrows further for a half/quarter.
+    const perRow = fitCols(availableWidth, ITEM_MIN_PX, exercisesPerRow ?? 3, gap);
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
