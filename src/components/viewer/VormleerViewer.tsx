@@ -205,8 +205,13 @@ function FigureSVG({ ex, size, marks: opt, toScale }: { ex: VormleerExercise; si
 
 // ── hoek mini: two rays + arc (square marker for a right angle) ──────────────
 function HoekSVG({ ex, size, showBoog, toScale }: { ex: VormleerExercise; size: number; showBoog: boolean; toScale: boolean }) {
-    const cx = size * 0.4, cy = size * 0.62;
-    const rayLen = size * 0.44;
+    // 'Hoeken benoemen': three letters with the vertex in the middle (hoek ABC). The
+    // generator only writes three labels when the toggle is on, so length is the switch.
+    const names = (ex.labels ?? []).length === 3 ? ex.labels! : null;
+    // Named angles pull in and re-centre: the letters hang past the ray ends, and a
+    // rotated arm would otherwise push its letter outside the tekenvak.
+    const cx = size * (names ? 0.46 : 0.4), cy = size * (names ? 0.56 : 0.62);
+    const rayLen = size * (names ? 0.36 : 0.44);
     const base = ex.rotation ?? 0;
     const a1 = (base * Math.PI) / 180;
     const a2 = ((base - (ex.angleDeg ?? 45)) * Math.PI) / 180;   // open counterclockwise (upward on screen)
@@ -216,30 +221,33 @@ function HoekSVG({ ex, size, showBoog, toScale }: { ex: VormleerExercise; size: 
         ? (() => {
             const s = 12;
             const u1 = { x: Math.cos(a1) * s, y: Math.sin(a1) * s }, u2 = { x: Math.cos(a2) * s, y: Math.sin(a2) * s };
-            return <polyline points={`${cx + u1.x},${cy + u1.y} ${cx + u1.x + u2.x},${cy + u1.y + u2.y} ${cx + u2.x},${cy + u2.y}`} fill="none" stroke="#000" strokeWidth={1.2} />;
+            return <polyline points={`${cx + u1.x},${cy + u1.y} ${cx + u1.x + u2.x},${cy + u1.y + u2.y} ${cx + u2.x},${cy + u2.y}`} fill="none" stroke="currentColor" strokeWidth={1.2} />;
         })()
         : (() => {
             const r = 16;
             const large = (ex.angleDeg ?? 0) > 180 ? 1 : 0;
-            return <path d={`M ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)} A ${r} ${r} 0 ${large} 0 ${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`} fill="none" stroke="#000" strokeWidth={1.2} />;
+            return <path d={`M ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)} A ${r} ${r} 0 ${large} 0 ${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`} fill="none" stroke="currentColor" strokeWidth={1.2} />;
         })());
-    // 'Hoeken benoemen': three letters with the vertex in the middle (hoek ABC). The
-    // generator only writes three labels when the toggle is on, so length is the switch.
-    const names = (ex.labels ?? []).length === 3 ? ex.labels! : null;
     const fs = 0.62 * PX_PER_EM_AT_DEFAULT;
+    // The arc (r 16) and the right-angle square (12) both sit around the vertex, so the
+    // vertex letter goes the OTHER way along the bisector and the arm letters a little
+    // past their ray ends — otherwise B lands on top of its own boog.
+    const bisector = (a1 + a2) / 2;
+    const glyph = (x: number, y: number, s: string, key: string) =>
+        <text key={key} x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={fs} fontFamily={mono} fontStyle="italic" fill="currentColor">{s}</text>;
     const nameAt = (p: MeetPoint, s: string, key: string) => {
         const dx = p.x - cx, dy = p.y - cy, l = Math.hypot(dx, dy) || 1;
-        return <text key={key} x={p.x + (dx / l) * 10} y={p.y + (dy / l) * 10} textAnchor="middle" dominantBaseline="central" fontSize={fs} fontFamily={mono} fontStyle="italic">{s}</text>;
+        return glyph(p.x + (dx / l) * 13, p.y + (dy / l) * 13, s, key);
     };
     return (
         <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
-            <line x1={cx} y1={cy} x2={end1.x} y2={end1.y} stroke="#000" strokeWidth={1.8} />
-            <line x1={cx} y1={cy} x2={end2.x} y2={end2.y} stroke="#000" strokeWidth={1.8} />
+            <line x1={cx} y1={cy} x2={end1.x} y2={end1.y} stroke="currentColor" strokeWidth={1.8} />
+            <line x1={cx} y1={cy} x2={end2.x} y2={end2.y} stroke="currentColor" strokeWidth={1.8} />
             {marker}
-            <circle cx={cx} cy={cy} r={2} fill="#000" />
+            <circle cx={cx} cy={cy} r={2} fill="currentColor" />
             {names && [
                 nameAt(end1, names[0], 'n0'),
-                <text key="n1" x={cx - 11} y={cy + 11} textAnchor="middle" dominantBaseline="central" fontSize={fs} fontFamily={mono} fontStyle="italic">{names[1]}</text>,
+                glyph(cx - Math.cos(bisector) * 22, cy - Math.sin(bisector) * 22, names[1], 'n1'),
                 nameAt(end2, names[2], 'n2'),
             ]}
         </svg>
