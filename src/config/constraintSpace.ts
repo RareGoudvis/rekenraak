@@ -303,7 +303,7 @@ const temperatuurSpace: OptionSpace = {
 };
 
 const plaatswaardeSpace: OptionSpace = {
-    subType: ['waarde', 'plaats', 'tabel'],
+    subType: ['waarde', 'plaats', 'tabel', 'omcirkelen'],
     maxGetal: [100, 1000, 10000, 100000, 1000000],
     numberMask: MASKS,
     decimalPlaces: [0, 1, 2, 3],

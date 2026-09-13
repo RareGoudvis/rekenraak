@@ -60,6 +60,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'plaatswaarde-waarde', label: 'Waarde van cijfer', typeId: 'plaatswaarde', defaultConstraints: { subType: 'waarde' } },
                             { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' } },
+                            { id: 'plaatswaarde-omcirkelen', label: 'Plaats omcirkelen', typeId: 'plaatswaarde', defaultConstraints: { subType: 'omcirkelen' } },
                             { id: 'plaatswaarde-tabel',  label: 'Tabel invullen',     typeId: 'plaatswaarde', defaultConstraints: { subType: 'tabel' } },
                         ],
                     },

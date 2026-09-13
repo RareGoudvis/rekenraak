@@ -336,7 +336,7 @@ export type OrdenenConstraints = {
 };
 
 export type PlaatswaardeConstraints = {
-    subType: 'waarde' | 'plaats' | 'tabel';
+    subType: 'waarde' | 'plaats' | 'tabel' | 'omcirkelen';
     maxGetal: number;
     numberMask: PlaceMask;
     decimalPlaces: number;
