@@ -747,11 +747,17 @@ two facts: content that **overflowed** its cell is a *demand* (the tier holding 
 content that **fit** while `reflows` — the probe saw a FragmentableGrid with `data-cols > 1`
 or a viewer's `data-shrinks` (MAB tekenen's 0.75 figure step, hoofdrekenen's tight tier
 below 200px), falling back to the `perRow` table — *allows* **one** tier below the width it was
-taken at; content that fit 1-up allows its own tier. Result = the strongest demand, never
-below the narrowest allowance. The next tier only opens after a real measurement there, so it
-cannot oscillate. `intrinsicOf()` (the widest entry) is what the overflow banner and the
-Inspector tooltip quote in px.
-Editorial vetoes override a measurement: `VETO_MIN` (typeId → floor) for type-shaped cases and
+taken at; content that fit 1-up allows its own tier. The verdict has **two readers** (since
+2026-09-13 round 4, owner decision "optimistic picker"): `minWidthUnits` = max(demand, allowance,
+editorial floor) for the packer's `promoted` clamp — the next tier only opens after a real
+measurement there, so it cannot oscillate; `pickerMinWidthUnits` = max(demand, editorial floor)
+for the Inspector's Breedte control, so a tier is only greyed out by a measured overflow or an
+editorial floor and ¼ is reachable straight from 1/1 (the packer re-measures there and clamps
+back with the hint if it truly does not fit). `intrinsicOf()` (the widest entry) is what the
+overflow banner and the Inspector tooltip quote in px. A viewer whose column count comes from
+`useBlockWidth()` MUST pass `shrinks` to `FragmentableGrid` (even-oneven rooster, 2026-09-13):
+otherwise its full-width probe reads as a hard 1-up demand and the packer promotes the block.
+Editorial vetoes override a measurement: `VETO_MIN` (typeId → floor; geld-tekenen and geld-wissel ½ since round 4) for type-shaped cases and
 `SETTINGS_FLOOR` (typeId → `(block) => WidthUnits`, since 2026-09-13) for settings-shaped ones —
 splitsen positietabel ½ only up to 100, splitsbenen ¼ up to 100, deelbaarheidstabel ½ up to three
 divisors, breuken hoeveelheid ≥ ½, getallenas/-rijen/getalfunctie full only, patronen ≥ ½, ordenen and

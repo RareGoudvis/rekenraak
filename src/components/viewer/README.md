@@ -27,7 +27,8 @@ broke it clipped, overflowed or measured wrong on paper.
 4. **Items flow through `FragmentableGrid`.** One `.print-row` per row lets the block split
    between pages on paper and lets the height audit count rows. A single CSS grid does not
    fragment in Chrome. Screen-only helpers (empty-state placeholder, edit affordances) are
-   `.no-print`.
+   `.no-print`. If your column count comes from `useBlockWidth()`, pass `shrinks={cols > 1}`:
+   otherwise the full-width probe reads as a hard 1-up demand and the packer widens the block.
 5. **No measuring yourself.** Heights and content widths are measured once by `PageSheet`
    and fed to the packer; a viewer that reads its own DOM to decide layout creates a feedback
    loop. If the content genuinely can't fit, let it overflow and the measured clamp will
