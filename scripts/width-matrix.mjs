@@ -6,11 +6,14 @@
 // fit" cannot be answered by looking: it needs the two numbers this harness reads back.
 //
 //   overflow = scrollWidth / clientWidth of the ScaledBlock inner div (> 1 = it clips)
-//   zoom     = the auto-fit zoom ScaledBlock applied (< 1 = it shrank to fit)
+//   zoom     = the zoom ScaledBlock applied (1 unless a block opted into a fit)
 //
-// A type is allowed at a width when overflow <= 1.005 AND zoom >= 0.85: fitting by
-// shrinking to 60% is not fitting. Measurement rules out the impossible; the screenshots
-// (and the editorial veto list in blockLayout.ts) rule out the illegible.
+// A type is allowed at a width when overflow <= 1.005 AND zoom === 1. It used to accept
+// zoom >= 0.85, back when ScaledBlock auto-fitted every block to its column; it does not
+// any more (a block that does not fit is WIDENED by the packer, and shrinking is the
+// per-block opt-in `constraints.fitToWidth`), so the matrix measures what a teacher
+// actually gets: the requested size, or nothing. Measurement rules out the impossible; the
+// screenshots (and the editorial veto list in blockLayout.ts) rule out the illegible.
 //
 // Usage (dev server must be running):
 //   npm run dev
@@ -134,7 +137,9 @@ for (const typeId of typeIds) {
     }
 }
 
-const OK = (r) => r.overflow <= 1.005 && r.zoom >= 0.85;
+// zoom === 1: with fitToWidth off (the default) nothing backs the zoom off, so a run that
+// reports anything else is a bug in the harness, not a tier that "fits small".
+const OK = (r) => r.overflow <= 1.005 && r.zoom === 1;
 const summary = {};
 for (const typeId of typeIds) {
     const at = (w, mode) => rows.find(r => r.typeId === typeId && r.width === w && r.mode === mode);
@@ -158,7 +163,7 @@ for (const typeId of typeIds) {
     summary[typeId] = { minWidth, minWidthSingle: minSingle < minWidth ? minSingle : undefined, rows: rowsFull, perRowFull, rowUnits, count: n, hDefault, hSingle };
 }
 
-writeFileSync(join(HERE, `width-matrix.result${SUFFIX}.json`), JSON.stringify({ viewport: VIEWPORT_W, seed: SEED, rule: 'overflow <= 1.005 && zoom >= 0.85', summary, rows }, null, 2));
+writeFileSync(join(HERE, `width-matrix.result${SUFFIX}.json`), JSON.stringify({ viewport: VIEWPORT_W, seed: SEED, rule: 'overflow <= 1.005 && zoom === 1', summary, rows }, null, 2));
 writeFileSync(
     join(HERE, `width-matrix.result${SUFFIX}.csv`),
     ['typeId,width,mode,count,overflow,zoom,scrollWidth,clientWidth,cellHeight,rowCount']

@@ -109,9 +109,13 @@ grid rows), which is where `perRowFull` and `rowUnits` come from — counted, no
 from the height ratio.
 Output: `scripts/width-matrix.result.json` (committed — the tiers are derived from it),
 a `.csv` of the same rows (gitignored) and one PNG per cell in `~/Downloads/width-matrix/`.
-Read the numbers with the rule **overflow ≤ 1.005 and zoom ≥ 0.85**, then look at the
+Read the numbers with the rule **overflow ≤ 1.005 and zoom === 1**, then look at the
 screenshots before widening a tier: several types pass numerically and are unreadable (see
-the veto list in the `LAYOUT` header comment).
+the veto list in the `LAYOUT` header comment). The rule accepted a zoom down to 0.85 until
+2026-09-13, from when ScaledBlock auto-fitted every block to its column. It no longer does:
+a block that does not fit is widened by the packer, and shrinking is the per-block opt-in
+`constraints.fitToWidth` ("Verklein om in de kolom te passen"), which the harness leaves
+off — so a tier now has to hold at the size the teacher asked for.
 
 It needs the DEV-only `window.__rekenraak` hook from `src/main.tsx`, so it cannot run
 against a production build.

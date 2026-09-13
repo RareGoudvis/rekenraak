@@ -156,7 +156,9 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 1 },
     "plaatswaarde": { rowUnits: 1.63, perRowFull: 2, minWidth: 1 },
     "procenten": { rowUnits: 1.54, perRowFull: 2, minWidth: 1 },
-    "rekenvolgorde": { rowUnits: 1.58, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    // ½ since the 2026-09-13 rerun: the viewer's kort/lang/stappen answer lines put the
+    // rows 1-up in a half cell (overflow 1.30 → 1.00). A quarter still overflows (1.33).
+    "rekenvolgorde": { rowUnits: 1.58, perRowFull: 2, minWidth: 2 },
     "romeinse-cijfers": { rowUnits: 1.75, perRowFull: 2, minWidth: 2 },
     "schattend": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
     "splitsen": { rowUnits: 6.79, perRowFull: 2.5, minWidth: 1 },
