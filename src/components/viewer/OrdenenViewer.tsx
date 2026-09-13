@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { MathBlock, Fraction } from '../../services/math/types';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, fitCols } from './BlockWidthContext';
+import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
 import { SOL } from './solutionStyle';
 import { ordenenRowPx } from '../../services/layout/blockLayout';
@@ -139,7 +139,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                                     ? renderVal(v, SOL)
                                     : answerStyle === 'vak'
                                         ? <span style={{ border: '1.5px solid #000', borderRadius: '4px', width: blankWidthCh, height: '26px', display: 'inline-block' }} />
-                                        : <span style={{ borderBottom: '1.5px solid #000', width: blankWidthCh, height: '18px', display: 'inline-block' }} />}
+                                        : <span style={{ borderBottom: '1.5px solid #000', width: blankWidthCh, height: ANSWER_LINE_H, display: 'inline-block' }} />}
                             </div>
                         ))}
                         {/* operator glyph between consecutive answers, in the separator column */}

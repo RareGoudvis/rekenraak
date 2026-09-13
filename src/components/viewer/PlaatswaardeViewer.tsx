@@ -3,7 +3,7 @@ import type { MathBlock, PlaatswaardeExercise } from '../../services/math/types'
 import { getMaskPlaces, digitAtPlace } from '../../services/math/mathEngine';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
 import type { PlaatswaardeConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -42,7 +42,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
-    const blank = (w = 80) => <span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: '18px', display: 'inline-block', verticalAlign: 'bottom' }} />;
+    const blank = (w = 80) => <span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', verticalAlign: 'bottom' }} />;
     const sol = (t: string) => <span style={{ ...solutionText }}>{t}</span>;
 
     // Places of an EXERCISE come from its own number, not from the block's current settings:
