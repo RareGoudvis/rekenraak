@@ -22,6 +22,14 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   the generator stores its own `bereikGram` / `is24hour` on the exercise
   and the viewer reads `ex.field ?? c.field`. The Inspector's stale flag covers it for now.
 
+- **A fitCols viewer can never reach the tier its content allows** (2026-09-13, C2 step 8):
+  `PageSheet.probeIntrinsicWidth` measures min-content at the column count the viewer picked
+  for the width it currently has, so a block rendering 2-up at a half probes ~2 items wide and
+  `minWidthUnits()` refuses the quarter — even when the viewer would drop to 1-up there and the
+  width matrix measures overflow 1.000 (breuken-bewerken gemengd/vereenvoudigen). Fix direction:
+  probe at the narrowest tier (render the cell once at 163px off-screen), or let a viewer report
+  its own single-item minimum alongside the probe.
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`

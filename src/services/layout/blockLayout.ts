@@ -112,7 +112,10 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "layout-kader": { rowUnits: 1, perRowFull: 1, minWidth: 1 },
     "afronden": { rowUnits: 10.33, perRowFull: 2, minWidth: 2 },
     "breuken": { rowUnits: 6.23, perRowFull: 2, minWidth: 1 },
-    "breuken-bewerken": { rowUnits: 2.58, perRowFull: 2, minWidth: 2 },
+    // ¼ since 2026-09-13: BreukBewerkViewer picks its column count with fitCols off a
+    // per-subType item minimum, so a gemengd/vereenvoudigen row (one fraction, one line)
+    // stacks 1-up in a quarter instead of being pinned to a half by the type.
+    "breuken-bewerken": { rowUnits: 2.58, perRowFull: 2, minWidth: 1 },
     "breuken-rangschikken": { rowUnits: 5.04, perRowFull: 2, minWidth: 1 },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
     // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
