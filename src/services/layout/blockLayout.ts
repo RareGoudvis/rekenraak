@@ -392,14 +392,28 @@ function narrower(w: WidthUnits): WidthUnits {
 // REFLOW RULE. A measurement is taken at the width the block sits in, and a viewer that
 // lays out 2-up there lays out 1-up in a narrower cell — so a measurement at width 4 says
 // nothing about what the same block needs at width 2. Every entry is read as one of two
-// facts: content that OVERFLOWED its cell is a demand (the smallest tier holding that px);
-// content that FIT while laid out multi-column or in a viewer that shrinks below this width (the probe's `reflows`, or the per-type
-// perRow table when the viewer has no FragmentableGrid) allows ONE step narrower than the
-// width it was measured at; content that fit 1-up is the whole truth and allows its own
-// tier. The answer is the strongest demand, but never below the narrowest allowance's
-// step. The teacher picks that width, the block is measured again THERE, and either the
-// next step opens or the packer clamps it back with the `promoted` hint — each step is
-// backed by a real measurement instead of a guess two tiers out.
+// facts:
+//   DEMAND    — content that OVERFLOWED its cell: the smallest tier holding that px. A
+//               demand is hard; nothing on the sheet may run off its column in print.
+//   ALLOWANCE — content that FIT while laid out multi-column or in a viewer that shrinks
+//               below this width (the probe's `reflows`, or the per-type perRow table when
+//               the viewer has no FragmentableGrid) is only good for ONE step narrower than
+//               the width it was measured at; content that fit 1-up is the whole truth and
+//               allows its own tier.
+//
+// The two are read by two different callers, and since round 4 (2026-09-13) they no longer
+// read them the same way:
+//   - The PACKER (minWidthUnits) keeps the conservative answer — max(demand, allowance),
+//     never below the editorial floor. It is what actually places a block, so it only ever
+//     narrows a block by one measured step at a time, and its `promoted` clamp is the
+//     safety net that widens a block back with the overflow hint.
+//   - The PICKER (pickerMinWidthUnits, the Inspector's Breedte segmented control) uses
+//     max(demand, floor) only. An allowance is one measurement's opinion about a width
+//     nothing has been rendered at yet, and using it as a LOWER BOUND greyed out ¼ until
+//     the teacher had first picked ½ and waited for that measurement — the quarter was
+//     reachable, but only two clicks and one reflow later. Optimistic picker (owner
+//     decision, round 4): offer every tier the measurements do not rule out, let the
+//     teacher pick it, and let the packer clamp back with the hint if it truly does not fit.
 //
 // Judging all entries (not just the widest) is what lets a quarter open at all: the full-
 // width 2-up entry stays in the map after the teacher picks a half, and taken alone it
@@ -412,12 +426,12 @@ function narrower(w: WidthUnits): WidthUnits {
 // old settings-derived gates below run unchanged: they are the fallback, not the truth.
 export interface WidthMeasure { intrinsicPx?: number; px?: number; atWidth?: WidthUnits; reflows?: boolean }
 
-export function minWidthUnits(block: MathBlock, measured?: WidthMeasure | WidthMeasure[]): WidthUnits {
-    const floor = editorialFloor(block);
+/** The two facts the entries carry, before either caller decides what to do with them. */
+function widthVerdict(block: MathBlock, measured?: WidthMeasure | WidthMeasure[]): { demand: WidthUnits; allowance?: WidthUnits } | null {
     const entries = (Array.isArray(measured) ? measured : measured ? [measured] : [])
         .map(m => ({ px: m.intrinsicPx ?? m.px ?? 0, at: m.atWidth ?? (COL_UNITS as WidthUnits), reflows: m.reflows }))
         .filter(m => m.px > 0);
-    if (entries.length === 0) return Math.max(fallbackMinWidth(block), floor) as WidthUnits;
+    if (entries.length === 0) return null;
 
     let demand: WidthUnits = 1;
     let allowance: WidthUnits | undefined;
@@ -433,8 +447,25 @@ export function minWidthUnits(block: MathBlock, measured?: WidthMeasure | WidthM
         const allowed = reflows ? Math.min(tier, narrower(e.at)) as WidthUnits : tier;
         allowance = allowance === undefined ? allowed : Math.min(allowance, allowed) as WidthUnits;
     }
+    return { demand, allowance };
+}
+
+export function minWidthUnits(block: MathBlock, measured?: WidthMeasure | WidthMeasure[]): WidthUnits {
+    const floor = editorialFloor(block);
+    const verdict = widthVerdict(block, measured);
+    if (!verdict) return Math.max(fallbackMinWidth(block), floor) as WidthUnits;
+    const { demand, allowance } = verdict;
     const tier = allowance === undefined ? demand : Math.max(demand, allowance) as WidthUnits;
     return Math.max(tier, floor) as WidthUnits;
+}
+
+/** Narrowest tier the width PICKER offers: the measured overflow demand and the editorial
+ *  floor, and nothing else. Allowances inform the packer, never the teacher's options. */
+export function pickerMinWidthUnits(block: MathBlock, measured?: WidthMeasure | WidthMeasure[]): WidthUnits {
+    const floor = editorialFloor(block);
+    const verdict = widthVerdict(block, measured);
+    if (!verdict) return Math.max(fallbackMinWidth(block), floor) as WidthUnits;
+    return Math.max(verdict.demand, floor) as WidthUnits;
 }
 
 // Pre-measurement tiers: the hand-measured per-type table plus the settings that were

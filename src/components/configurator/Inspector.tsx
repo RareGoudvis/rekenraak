@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { minWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
+import { minWidthUnits, pickerMinWidthUnits, tierWidthPx } from '../../services/layout/blockLayout';
 import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth, useIntrinsicEntries } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
@@ -497,12 +497,16 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 is a whole, a half or a quarter. Widths narrower than the block's
                                 own minimum are disabled rather than silently overridden. */}
                             {(() => {
-                                // Same measurement the packer clamps against (see App's
-                                // minWidthOf): the picker must never grey out a width the
-                                // sheet would in fact accept, and when it does grey one out
-                                // it can say in px why.
+                                // Two answers off the same measurements (REFLOW RULE in
+                                // blockLayout): `min` is what the PACKER will clamp to and
+                                // drives the active button plus the "verbreed" hint, while
+                                // `pickerMin` is the optimistic floor the buttons are greyed
+                                // against — only a measured overflow or the editorial floor
+                                // takes a tier away, so ¼ is reachable from Vol without
+                                // stepping through ½ first.
                                 const iw = intrinsicWidth;
                                 const min = minWidthUnits(activeBlock, intrinsicEntries);
+                                const pickerMin = pickerMinWidthUnits(activeBlock, intrinsicEntries);
                                 const cur = Math.max(activeBlock.widthUnits ?? 4, min);
                                 const OPTIONS: Array<{ w: 1 | 2 | 4; label: string }> = [
                                     { w: 4, label: 'Vol' }, { w: 2, label: '½' }, { w: 1, label: '¼' },
@@ -519,18 +523,18 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                     key={o.w}
                                                     className="seg-btn"
                                                     aria-pressed={cur === o.w}
-                                                    disabled={locked || o.w < min}
-                                                    title={o.w < min ? tooNarrow(o.w) : undefined}
+                                                    disabled={locked || o.w < pickerMin}
+                                                    title={o.w < pickerMin ? tooNarrow(o.w) : undefined}
                                                     onClick={() => updateBlockSettings(activeBlock.id, { widthUnits: o.w })}
                                                 >{o.label}</button>
                                             ))}
                                         </div>
                                         <p style={S.hintText}>
                                             {iw
-                                                ? `De inhoud is ${Math.round(iw.px)}px breed. Smalst mogelijk: ${min === 4 ? 'vol' : min === 2 ? '½' : '¼'}.`
-                                                : min === 4
+                                                ? `De inhoud is ${Math.round(iw.px)}px breed. Smalst mogelijk: ${pickerMin === 4 ? 'vol' : pickerMin === 2 ? '½' : '¼'}.`
+                                                : pickerMin === 4
                                                     ? 'Dit type heeft de volle breedte nodig.'
-                                                    : `Smalst mogelijk bij deze instellingen: ${min === 2 ? '½' : '¼'}.`}
+                                                    : `Smalst mogelijk bij deze instellingen: ${pickerMin === 2 ? '½' : '¼'}.`}
                                         </p>
                                         {/* Same condition the packer calls `promoted`: the chosen
                                             width was kept but overridden, so say so rather than

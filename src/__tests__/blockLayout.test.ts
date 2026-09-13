@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { minWidthUnits, tierWidthPx, type WidthUnits } from '../services/layout/blockLayout';
+import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 
 // The width clamp has two regimes: with a measured content width it answers the smallest
@@ -116,6 +116,32 @@ describe('minWidthUnits — measured', () => {
         const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'decimal', maxGetal: 100 }, block: { widthUnits: 1, numberOfExercises: 1 } });
         expect(minWidthUnits(block)).toBe(2);
         expect(minWidthUnits(block, measure(120, 1))).toBe(1);
+    });
+});
+
+describe('pickerMinWidthUnits — the optimistic picker (round 4)', () => {
+    // The packer steps one measured tier at a time; the picker offers everything no
+    // measurement has ruled out, so a teacher reaches the quarter from Vol in one click.
+    test('a full-width 2-up measurement does not grey out the quarter', () => {
+        const block = makeBlock('rekenvolgorde', { block: { numberOfExercises: 4, widthUnits: 4 } });
+        // The packer still only opens the half — that is its one-step-at-a-time rule.
+        expect(minWidthUnits(block, { ...measure(500, 4), reflows: true })).toBe(2);
+        expect(pickerMinWidthUnits(block, { ...measure(500, 4), reflows: true })).toBe(1);
+    });
+
+    test('a measured overflow is a hard demand for the picker too', () => {
+        const block = makeBlock('rekenvolgorde', { block: { numberOfExercises: 4, widthUnits: 1 } });
+        expect(pickerMinWidthUnits(block, measure(300, 1))).toBe(2);
+    });
+
+    test('the editorial floor still greys tiers out', () => {
+        expect(pickerMinWidthUnits(makeBlock('getallenas'), measure(10, 1))).toBe(4);
+        expect(pickerMinWidthUnits(makeBlock('mab-herkennen'), measure(10, 1))).toBe(2);
+    });
+
+    test('without a measurement the picker is the fallback table, like the packer', () => {
+        const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'natural', maxGetal: 1000000 } });
+        expect(pickerMinWidthUnits(block)).toBe(minWidthUnits(block));
     });
 });
 
