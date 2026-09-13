@@ -144,6 +144,7 @@ const splitsenSpace: OptionSpace = {
     benenVariants: [['legs-letters'], ['legs-numbers'], ['legs-letters', 'legs-numbers']],
     mathForms: [['letters'], ['expanded'], ['letters', 'expanded']],
     mathDirection: ['decompose', 'compose', 'beide'],
+    mathOrder: ['volgorde', 'gehusseld'],
     operand1Mask: MASKS,
 };
 

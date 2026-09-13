@@ -74,6 +74,7 @@ function generatePlaceValueExercises(block: MathBlock): SplitsenExercise[] {
         layout,
         maxGetal = 1000,
         mathDirection = 'decompose',
+        mathOrder = 'volgorde',
         operand1Mask = {},
     } = block.constraints as SplitsenConstraints;
     const dp = Math.min(3, Math.max(0, (block.constraints as SplitsenConstraints).decimalPlaces ?? 0));
@@ -104,7 +105,13 @@ function generatePlaceValueExercises(block: MathBlock): SplitsenExercise[] {
         } else {
             const form = mathFormList[randInt(0, mathFormList.length - 1)] === 'expanded' ? 'expanded' : 'letters';
             const dir: 'decompose' | 'compose' = mathDirection === 'beide' ? (Math.random() < 0.5 ? 'decompose' : 'compose') : mathDirection === 'compose' ? 'compose' : 'decompose';
-            results.push({ ...base, placeBreakdown: nonZeroPlaces(num, dp), mathForm: form, mathDirection: dir });
+            const places = nonZeroPlaces(num, dp);
+            // 'gehusseld': shuffle the term order once per exercise so the pupil can't just
+            // read the answer off in place-value order; 'volgorde' (default) keeps it.
+            const placeOrder = mathOrder === 'gehusseld'
+                ? [...places].sort(() => Math.random() - 0.5).map(p => p.key)
+                : undefined;
+            results.push({ ...base, placeBreakdown: places, mathForm: form, mathDirection: dir, placeOrder });
         }
     }
     return results;

@@ -256,6 +256,9 @@ export type SplitsenConstraints = {
     mathForm?: string;
     mathForms?: string[];
     mathDirection?: string;
+    // positie-math only: 'volgorde' (place-value order, e.g. H, T, E) or 'gehusseld'
+    // (shuffled once per exercise, stored on ex.placeOrder) — default 'volgorde'.
+    mathOrder?: 'volgorde' | 'gehusseld';
     notation?: string;
 };
 

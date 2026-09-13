@@ -35,7 +35,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     }
 
     if (layout === 'basic') {
-        const cols = fitCols(availableWidth, 130, Math.min(exercises.length, 4), gap);
+        const cols = fitCols(availableWidth, 160, Math.min(exercises.length, 4), gap);
         return (
             <FragmentableGrid
                 cols={cols}
@@ -50,13 +50,18 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
 
     if (layout === 'splitsboom') {
         const cols = fitCols(availableWidth, 130, Math.min(exercises.length, 4), gap + 10);
+        // One box width for the whole block (not per-exercise) so every tree in the block
+        // lines up; sized to the WIDEST value anywhere in it rather than a flat 46px, which
+        // clipped once numbers grew past two digits.
+        const chars = Math.max(2, ...exercises.flatMap(ex => [ex.total, ex.pairs[0]?.given ?? 0, ex.pairs[0]?.answer ?? 0]).map(v => fmt(v).length));
+        const boxMinWidth = `max(46px, calc(${(chars * 0.62 + 0.8).toFixed(2)} * var(--sheet-size-math)))`;
         return (
             <FragmentableGrid
                 cols={cols}
                 columnGap={gap + 10}
                 rowGap={gap + 14}
                 items={exercises.map(ex => (
-                    <SplitsboomItem key={ex.id} ex={ex} showSolutions={showSolutions} />
+                    <SplitsboomItem key={ex.id} ex={ex} showSolutions={showSolutions} boxMinWidth={boxMinWidth} />
                 ))}
             />
         );
@@ -91,12 +96,14 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         // Fixed grid (not flex-wrap) so screen and the narrower print body share the
         // same column count — otherwise print bumps the last heart to a new row.
         // 5-up: 5 × 120px hearts ≈ the full printable width (~625px), no dead right margin.
+        // justifyItems: 'center' used to inflate the min-content probe to the grid CELL's
+        // width rather than the heart's own 120px, which pinned this to a wider tier than
+        // one heart actually needs.
         return (
             <FragmentableGrid
                 cols={fitCols(availableWidth, 120, Math.min(allItems.length, 5), gap)}
                 columnGap={gap}
                 rowGap={gap}
-                justifyItems="center"
                 items={allItems.map(item => (
                     <HeartItem
                         key={item.uid}
@@ -112,8 +119,13 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     }
 
     if (layout === 'positie-benen') {
+        // The legs fan out from a single point, so the item's real width scales with
+        // maxGetal's place count (PositieBenenItem: W = max(120, places * 56)) — the
+        // itemMinPx fed to fitCols has to track that or a wide item gets squeezed 2-up.
+        const maxGetal = c.maxGetal ?? 1000;
+        const [itemMinPx, preferred] = maxGetal <= 100 ? [120, 4] : maxGetal <= 1000 ? [170, 2] : [330, 2];
         return (
-            <FragmentableGrid cols={fitCols(availableWidth, 150, 2, gap)} columnGap={gap} rowGap={gap + 10}
+            <FragmentableGrid cols={fitCols(availableWidth, itemMinPx, preferred, gap)} columnGap={gap} rowGap={gap + 10}
                 items={exercises.map(ex => <PositieBenenItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
         );
     }
@@ -126,8 +138,10 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     }
 
     if (layout === 'positie-math') {
+        // 1-up (was a hardcoded 2): the term chain wraps at `flexWrap: 'wrap'` inside
+        // PositieMathRow, so two per row left uneven, overlapping wraps in a narrow column.
         return (
-            <FragmentableGrid cols={2} columnGap={gap + 20} rowGap={gap + 4}
+            <FragmentableGrid cols={1} columnGap={gap + 20} rowGap={gap + 4}
                 items={exercises.map(ex => <PositieMathRow key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
         );
     }
@@ -205,7 +219,10 @@ function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
 // ── Place-value: mathematical (letters / expanded × decompose / compose) ──────
 
 function PositieMathRow({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
-    const places = ex.placeBreakdown || [];
+    // mathOrder: 'gehusseld' shuffled the term order once at generation (ex.placeOrder);
+    // 'volgorde' (no placeOrder) renders place-value order as generated.
+    const raw = ex.placeBreakdown || [];
+    const places = ex.placeOrder ? ex.placeOrder.map(k => raw.find(p => p.key === k)).filter((p): p is NonNullable<typeof p> => !!p) : raw;
     const letters = ex.mathForm === 'letters';
     const compose = ex.mathDirection === 'compose';
 
@@ -271,14 +288,14 @@ function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; show
 
 // ── Splitsboom layout (single split-tree, one blank slot) ─────────────────────
 
-function SplitsboomItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+function SplitsboomItem({ ex, showSolutions, boxMinWidth }: { ex: SplitsenExercise; showSolutions: boolean; boxMinWidth: string }) {
     const left = ex.pairs[0]?.given ?? 0;
     const right = ex.pairs[0]?.answer ?? 0;
     const blank: 'top' | 'left' | 'right' = ex.blankPos ?? 'right';
 
     const box = (value: number, isBlank: boolean) => (
         <div style={{
-            border: '1.5px solid #000', borderRadius: '4px', minWidth: '46px', height: '38px',
+            border: '1.5px solid #000', borderRadius: '4px', minWidth: boxMinWidth, height: '38px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)', boxSizing: 'border-box', padding: '0 6px',
         }}>
