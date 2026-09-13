@@ -3,6 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import type { MaateenheidConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { ANSWER_LINE_H } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -42,7 +43,7 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                                 ? <span style={{ borderBottom: '1px dotted #999', minWidth: '30px', display: 'inline-block' }} />
                                 : showSolutions
                                     ? <span style={{ ...solutionText, fontWeight: 600 }}>{chipText(ex.unit)}</span>
-                                    : <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: '15px', display: 'inline-block' }} />}
+                                    : <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: ANSWER_LINE_H, display: 'inline-block' }} />}
                             {sentence.split('___')[1]}
                         </span>
                         {ex.choices && (

@@ -13,7 +13,7 @@ import { REGISTRY } from './config/exerciseRegistry';
 import PopupSelect from './components/ui/PopupSelect';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
 import { BlockErrorBoundary } from './components/viewer/BlockErrorBoundary';
-import { cellWidthPx } from './components/viewer/BlockWidthContext';
+import { cellWidthPx, answerSpaceVar } from './components/viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from './components/viewer/scaledBlockFit';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
@@ -383,9 +383,10 @@ export default function App() {
         const w = measured.intrinsicOf(b.id);
         return minWidthUnits(b, w && { intrinsicPx: w.px, atWidth: w.atWidth });
       },
+      answerSpacePx: docSettings.answerSpace,
       ignoreMinWidth: debugIgnoreMinWidth,
     }),
-    [blocks, docSettings.blockSpacing, measured, debugIgnoreMinWidth],
+    [blocks, docSettings.blockSpacing, docSettings.answerSpace, measured, debugIgnoreMinWidth],
   );
   // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
   // separator never renumbers the exercises after it.
@@ -608,6 +609,7 @@ export default function App() {
                     availableWidthPx={cellWidth(item.width)}
                     fitToPage={block.constraints?.fitToPage === true}
                     fitToWidth={block.constraints?.fitToWidth === true}
+                    answerSpacePx={block.constraints?.answerSpace}
                   >
                   {/* showInstruction === false hides the title row the way furniture has none;
                       blockOrder still counts the block unless skipNumbering says otherwise, so
@@ -733,6 +735,10 @@ export default function App() {
             // touched the slider — omitted keys fall back to the CSS token default.
             ...(docSettings.fontSizeMath != null ? { ['--sheet-size-math' as string]: `${docSettings.fontSizeMath}pt` } : {}),
             ...(docSettings.fontSizeText != null ? { ['--sheet-size-text' as string]: `${docSettings.fontSizeText}pt` } : {}),
+            // Writing space, expressed against --sheet-size-math so it follows the Cijfers
+            // slider like every other sheet size. At the 18px default this is byte-identical
+            // to the token's own value in theme.css.
+            ...(docSettings.answerSpace != null ? { ['--sheet-answer-h' as string]: answerSpaceVar(docSettings.answerSpace) } : {}),
           }}
         >
 

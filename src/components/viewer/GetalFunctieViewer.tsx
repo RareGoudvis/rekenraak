@@ -2,6 +2,7 @@ import type { MathBlock, GetalFunctieExercise, GetalFunctie } from '../../servic
 import FragmentableGrid from './FragmentableGrid';
 import type { GetalFunctieConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -49,7 +50,7 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
                         <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.75)' }}>{ex.sentence}</span>
                         {showSolutions
                             ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>{FUNCTIE_FULL[ex.functie]}</span>
-                            : <span style={{ borderBottom: '1.5px solid #000', flex: '1 1 120px', minWidth: '120px', height: '15px', display: 'inline-block' }} />}
+                            : <span style={{ borderBottom: '1.5px solid #000', flex: '1 1 120px', minWidth: '120px', height: ANSWER_LINE_H, display: 'inline-block' }} />}
                     </div>
                 ))}
             />
@@ -60,7 +61,7 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
     const cols = functies.length ? functies : (['hoeveelheid', 'rang', 'maat', 'code'] as GetalFunctie[]);
     const grid = `minmax(230px, 1fr) ${cols.map(() => '86px').join(' ')}`;
     const cell: React.CSSProperties = {
-        border: '1px solid #000', minHeight: '32px', display: 'flex', alignItems: 'center',
+        border: '1px solid #000', minHeight: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontSize: 'calc(var(--sheet-size-text) * 0.65)', boxSizing: 'border-box', padding: '3px 8px',
     };
     return (

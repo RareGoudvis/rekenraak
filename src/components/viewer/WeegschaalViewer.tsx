@@ -1,7 +1,7 @@
 import type { MathBlock, WeegschaalExercise } from '../../services/math/types';
 import { formatGewicht } from '../../services/weegschaal/weegschaalGenerator';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { WeegschaalConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -116,7 +116,7 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                             ? showSolutions
                                 ? <span style={{ ...solutionText }}>{formatGewicht(ex.grams, notatie)}</span>
                                 : <>
-                                    <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: mathPx(70), height: mathPx(16) }} />
+                                    <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: mathPx(70), height: ANSWER_LINE_H }} />
                                     <span>{notatie === 'g' ? 'g' : notatie === 'kg-komma' ? 'kg' : ''}</span>
                                 </>
                             : <span>{formatGewicht(ex.grams, notatie)}</span>}

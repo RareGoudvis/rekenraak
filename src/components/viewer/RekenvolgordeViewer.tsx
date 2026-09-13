@@ -2,7 +2,7 @@ import type { MathBlock, RekenvolgordeExercise } from '../../services/math/types
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH } from '../../services/math/formatters';
-import { useBlockWidth } from './BlockWidthContext';
+import { useBlockWidth, ANSWER_ROW_H, ANSWER_LINE_H } from './BlockWidthContext';
 import { solutionText } from './solutionStyle';
 
 interface Props {
@@ -63,8 +63,8 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
         borderBottom: '1.5px solid #000', minWidth: `${LINE_PX}px`,
         width: stretch ? '100%' : `${LINE_PX}px`,
         // Kort/Lang share one baseline with the expression, so the blank needs a body to sit
-        // on; a Stappen line is bottom-aligned inside its own 32px row and needs none.
-        ...(layout === 'stepped' ? {} : { height: '15px', display: 'inline-block' }),
+        // on; a Stappen line is bottom-aligned inside its own working row and needs none.
+        ...(layout === 'stepped' ? {} : { height: ANSWER_LINE_H, display: 'inline-block' }),
     }} />;
 
     return (
@@ -90,7 +90,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
                         width: `${exprW}px`, textAlign: 'right', whiteSpace: 'pre', flexShrink: 0,
                         // Pin the expression ON line 1's baseline rather than letting it float
                         // above the stack of step lines.
-                        ...(layout === 'stepped' ? { display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', height: '32px' } : {}),
+                        ...(layout === 'stepped' ? { display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', height: ANSWER_ROW_H } : {}),
                     }}>{exprs[i]}</span>
                     <div style={{
                         display: 'flex', flexDirection: 'column', gap: `${gap * 0.8}px`,
@@ -100,7 +100,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
                             <div key={s} style={{
                                 display: 'flex', gap: '8px', width: '100%',
                                 ...(layout === 'stepped'
-                                    ? { alignItems: 'flex-end', height: '32px' }
+                                    ? { alignItems: 'flex-end', height: ANSWER_ROW_H }
                                     : { alignItems: 'baseline' }),
                             }}>
                                 <span style={{ flexShrink: 0 }}>=</span>

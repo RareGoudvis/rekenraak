@@ -16,6 +16,7 @@ import { BODY_FONT_PX } from '../../config/printPalette';
 import RegionStyleFields, { ResetAllStylesButton } from './RegionStyleFields';
 import Switch from '../ui/Switch';
 import { F } from './plugins/shared/fieldStyles';
+import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
 
 const FIELD_RANGE: Record<HeaderField, { min: number; max: number; label: string }> = {
     naam:   { min: 100, max: 500, label: 'Naam' },
@@ -218,6 +219,26 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             value={docSettings.blockSpacing ?? 12}
                             onChange={(e) => updateDocSettings({ blockSpacing: Number(e.target.value) })}
                             style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+
+                        {/* Writing space: the height of ONE answer line, fed onto
+                            .print-area-shell as --sheet-answer-h. Every answer line and
+                            one-line answer box in every viewer is a factor of it, so this
+                            one slider widens them all. Distinct from "Witruimte" per block,
+                            which is the gap BETWEEN exercises. */}
+                        {(() => {
+                            const px = docSettings.answerSpace ?? ANSWER_SPACE_DEFAULT_PX;
+                            const word = px <= 16 ? 'klein' : px >= 24 ? 'ruim' : 'normaal';
+                            return (
+                                <>
+                                    <label style={{ ...S.label, marginTop: '10px' }}>Schrijfruimte: {word} ({px}px)</label>
+                                    <input type="range" min="14" max="32" step="1"
+                                        value={px}
+                                        onChange={(e) => updateDocSettings({ answerSpace: Number(e.target.value) })}
+                                        style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
+                                    <p style={S.hintText}>Hoe hoog elke antwoordlijn is. Groeit mee met de lettergrootte.</p>
+                                </>
+                            );
+                        })()}
 
                         <label style={{ ...S.label, marginTop: '12px' }}>Opdracht stijl</label>
                         <div className="seg-group">
@@ -548,6 +569,36 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                                     />
                                                 </>
                                             )}
+
+                                            {/* Per-block writing space: overrides --sheet-answer-h for this block
+                                                only (ScaledBlock writes it). Falls back to Blad › Opdrachten ›
+                                                Schrijfruimte when no override is set. */}
+                                            {(() => {
+                                                const override: number | undefined = activeBlock.constraints?.answerSpace;
+                                                const px = override ?? docSettings.answerSpace ?? ANSWER_SPACE_DEFAULT_PX;
+                                                return (
+                                                    <>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
+                                                            <label style={{ ...S.label, marginTop: 0 }}>
+                                                                Schrijfruimte (dit blok) ({px}px){override == null ? ' · volgt blad' : ''}
+                                                            </label>
+                                                            {override != null && (
+                                                                <button
+                                                                    onClick={() => updateBlockSettings(activeBlock.id, { constraints: { ...activeBlock.constraints, answerSpace: undefined } })}
+                                                                    style={{ background: 'none', border: 'none', color: 'var(--accent-purple)', cursor: 'pointer', fontSize: '11px', padding: 0 }}>
+                                                                    ↺ volg blad
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <input
+                                                            type="range" min="14" max="32" step="1"
+                                                            value={px}
+                                                            onChange={(e) => updateBlockSettings(activeBlock.id, { constraints: { ...activeBlock.constraints, answerSpace: Number(e.target.value) } })}
+                                                            style={sliderStyle(true)}
+                                                        />
+                                                    </>
+                                                );
+                                            })()}
 
                                             {/* Per-block text-size override (CSS zoom). Falls back to the global
                                                 'Tekstgrootte oefeningen' when no override is set. */}

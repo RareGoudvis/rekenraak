@@ -4,7 +4,7 @@ import VerticalFraction from './VerticalFraction';
 import type { FractionConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
-import { useSheetSizePx } from './BlockWidthContext';
+import { useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 
 // Object geometry is written as px at the 13pt default and emitted as em, so the drawn
 // hoeveelheid objects follow the Lettergrootte slider.
@@ -50,7 +50,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const figureFont = (figureUnits: number): React.CSSProperties =>
         ({ fontSize: `${Math.min(sheetSizePx, (columnWidth / Math.max(1, figureUnits)) * PX_PER_EM_AT_DEFAULT)}px` });
     const sol = (text: string) => <span style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>;
-    const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />;
+    const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', margin: '0 2px' }} />;
 
     const vertFrac = (n: number, d: number, color?: string) => (
         <VerticalFraction value={{ n, d }} color={color} fontSize={13} mono />
@@ -137,8 +137,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                         {ex.denominator} gelijke delen gekleurd. Dat is{' '}
                         {showSolutions ? vertFrac(ex.numerator, ex.denominator, SOL)
                             : <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.75)', verticalAlign: 'middle' }}>
-                                <div style={{ borderBottom: '1.5px solid #000', minWidth: '24px', height: '16px' }} />
-                                <div style={{ minWidth: '24px', height: '16px' }} />
+                                <div style={{ borderBottom: '1.5px solid #000', minWidth: '24px', height: ANSWER_LINE_H }} />
+                                <div style={{ minWidth: '24px', height: ANSWER_LINE_H }} />
                               </div>
                         }.
                     </div>
@@ -274,8 +274,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                     {simpleGrid}
                 </div>
                 {questionLine}
-                <div style={{ borderBottom: '1.5px solid #000', width: '100%', height: '20px' }} />
-                <div style={{ borderBottom: '1.5px solid #000', width: '100%', height: '20px' }} />
+                <div style={{ borderBottom: '1.5px solid #000', width: '100%', height: ANSWER_LINE_H }} />
+                <div style={{ borderBottom: '1.5px solid #000', width: '100%', height: ANSWER_LINE_H }} />
             </div>
         );
     }
@@ -345,8 +345,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {questionLine}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: '22px' }} />
-                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: '22px' }} />
+                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: ANSWER_LINE_H }} />
+                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: ANSWER_LINE_H }} />
                     </div>
                 </div>
             );
@@ -423,8 +423,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                     {instructions}
                     {lineEl}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: '22px' }} />
-                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: '22px' }} />
+                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: ANSWER_LINE_H }} />
+                        <div style={{ borderBottom: '1.5px solid #000', width: '227px', height: ANSWER_LINE_H }} />
                     </div>
                 </div>
             );

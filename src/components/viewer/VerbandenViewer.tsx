@@ -5,6 +5,7 @@ import VerticalFraction from './VerticalFraction';
 import FragmentableGrid from './FragmentableGrid';
 import type { VerbandenConstraints } from '../../services/math/constraintTypes';
 import { SOL } from './solutionStyle';
+import { ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -49,7 +50,7 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
                             <span>=</span>
                             {showSolutions
                                 ? renderRep(ex, target, true)
-                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: '15px', display: 'inline-block' }} />}
+                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: '64px', height: ANSWER_LINE_H, display: 'inline-block' }} />}
                             {!showSolutions && <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.55)', color: '#555' }}>({REP_LABEL[target]})</span>}
                         </div>
                     );
@@ -60,7 +61,7 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
 
     // ── TABEL: rooster breuk | kommagetal | procent, one cell given per row ────
     const cell: React.CSSProperties = {
-        border: '1px solid #000', minHeight: '38px', display: 'flex', alignItems: 'center',
+        border: '1px solid #000', minHeight: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box', padding: '2px 6px',
     };
     // Widen columns so the table fills the page instead of hugging the left third

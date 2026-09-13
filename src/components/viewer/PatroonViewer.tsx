@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as SYM } from '../../services/math/formatters';
 import type { PatroonConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { ANSWER_LINE_H } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -50,7 +51,7 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
                         <div key={`n${i}`} style={{ textAlign: 'center' }}>
                             {ex.blankMask[i]
                                 ? (showSolutions ? <span style={{ ...solutionText }}>{formatMathNumber(v)}</span>
-                                    : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '46px', height: '18px' }} />)
+                                    : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '46px', height: ANSWER_LINE_H }} />)
                                 : formatMathNumber(v)}
                         </div>
                     );

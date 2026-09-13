@@ -3,6 +3,7 @@ import type { ClockType, ExerciseMode, HandChoice } from '../../services/clock/c
 import AnalogClockSVG from './AnalogClockSVG';
 import type { ClockConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { ANSWER_LINE_H } from './BlockWidthContext';
 
 interface Props {
     ex: ClockExercise;
@@ -43,7 +44,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
         </span>
     );
 
-    const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: mathPx(18) }} />;
+    const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: ANSWER_LINE_H }} />;
     // isMath: digitalText ("03:15") reads as math, timeText ("kwart over 3") reads as words
     const sol = (text: string, isMath = false) => (
         <span style={{ ...solutionText, fontSize: isMath ? 'calc(var(--sheet-size-math) * 0.7)' : 'calc(var(--sheet-size-text) * 0.6)' }}>{text}</span>

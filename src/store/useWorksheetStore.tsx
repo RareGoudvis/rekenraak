@@ -82,6 +82,12 @@ export interface DocSettings {
     // does that job as a multiplier on top of these.
     fontSizeMath?: number;   // pt, 11-16, default 13
     fontSizeText?: number;   // pt, 12-18, default 15
+    // Sheet-wide writing space: the height of ONE answer line, in px at the 13pt default.
+    // Fed onto .print-area-shell as --sheet-answer-h (theme.css) scaled by fontSizeMath, so
+    // it follows the Cijfers slider. Optional → back-compat; absent = 18 (what the viewers
+    // hardcoded before the token). Per-block override: constraints.answerSpace.
+    // NOT verticalSpacing, which is the gap BETWEEN exercises.
+    answerSpace?: number;    // px at 13pt, 14-32, default 18
 }
 
 // Which full-screen view is active. 'editor' = normal 3-panel editor; the others are
@@ -213,7 +219,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
     activeBlockId: null,
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
     footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: false, centerText: '', showCenterText: false },
-    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, showColumnDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1, fontSizeMath: 13, fontSizeText: 15 },
+    docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, showColumnDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1, fontSizeMath: 13, fontSizeText: 15, answerSpace: 18 },
     baseSettings: { ...DEFAULT_BASE },
     selectedGrade: null,
     staleBlocks: {},

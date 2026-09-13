@@ -3,6 +3,7 @@ import type { MathBlock, KalenderExercise } from '../../services/math/types';
 import { DAY_ABBR, DAY_NAMES, MONTH_NAMES, daysInMonth, formatDate } from '../../services/kalender/kalenderGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { solutionText } from './solutionStyle';
+import { ANSWER_LINE_H } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -48,7 +49,7 @@ export default function KalenderViewer({ block, showSolutions }: Props) {
 
     const answer = (text: string, width = 150) => showSolutions
         ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>
-        : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: '15px', display: 'inline-block' }} />;
+        : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />;
 
     const notatiePromptChars = Math.max(0, ...exercises
         .filter(ex => ex.subType !== 'maandrooster' && ex.subType !== 'datum-rekenen')

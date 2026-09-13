@@ -1,6 +1,6 @@
 import type { MathBlock, SplitsenExercise } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, fitCols } from './BlockWidthContext';
+import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
@@ -151,7 +151,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
 
 // ── Place-value: blank vs solution helpers ────────────────────────────────────
 
-const blankLine = (w = 44) => <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${w}px`, height: '18px' }} />;
+const blankLine = (w = 44) => <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${w}px`, height: ANSWER_LINE_H }} />;
 
 // ── Place-value: splitsbenen (legs) ───────────────────────────────────────────
 
@@ -336,7 +336,7 @@ function MathematicRow({ total, given, answer, showSolutions }: {
             <div style={{ width: '64px', display: 'flex', alignItems: 'flex-end' }}>
                 {showSolutions
                     ? <span style={solutionText}>{fmt(answer)}</span>
-                    : <div style={{ borderBottom: '1.5px solid #000', width: '52px', height: '18px' }} />
+                    : <div style={{ borderBottom: '1.5px solid #000', width: '52px', height: ANSWER_LINE_H }} />
                 }
             </div>
         </div>

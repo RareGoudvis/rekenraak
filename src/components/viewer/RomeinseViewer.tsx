@@ -1,7 +1,7 @@
 import type { MathBlock, RomeinseExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
 import type { RomeinseConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -54,7 +54,7 @@ export default function RomeinseViewer({ block, showSolutions }: Props) {
                         {/* long line so pupils can add the pieces of the numeral */}
                         {showSolutions
                             ? <span style={{ ...solutionText, letterSpacing: '1px', minWidth: `${answerMin}px`, whiteSpace: 'nowrap' }}>{answer}</span>
-                            : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${answerMin}px`, height: '18px', display: 'inline-block' }} />}
+                            : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${answerMin}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />}
                     </div>
                 );
             })}

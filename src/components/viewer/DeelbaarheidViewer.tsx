@@ -1,6 +1,6 @@
 import type { MathBlock } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth } from './BlockWidthContext';
+import { useBlockWidth, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import type { DeelbaarheidConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -50,7 +50,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
                                             ? <span>{v}</span>
                                             : (showSolutions
                                                 ? <span style={solutionText}>{v}</span>
-                                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: '40px', height: '18px', display: 'inline-block' }} />)}
+                                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: '40px', height: ANSWER_LINE_H, display: 'inline-block' }} />)}
                                     </span>
                                 ))}
                                 <span>– (enz.)</span>
@@ -107,7 +107,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const tickColPx = Math.min(100, Math.floor((A4_CONTENT_PX - numberColPx) / divisors.length));
     const cols = `${numberColCh}ch ${divisors.map(() => `${tickColPx}px`).join(' ')}`;
     const cell: React.CSSProperties = {
-        border: '1px solid #000', height: '34px', display: 'flex', alignItems: 'center',
+        border: '1px solid #000', height: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)', boxSizing: 'border-box',
     };
 

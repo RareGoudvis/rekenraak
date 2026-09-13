@@ -54,3 +54,38 @@ export function useSheetSizePx(kind: 'math' | 'text'): number {
     const pt = useWorksheetStore(s => (kind === 'math' ? s.docSettings.fontSizeMath : s.docSettings.fontSizeText));
     return sheetSizePx(kind, pt);
 }
+
+// ── Writing space ────────────────────────────────────────────────────────────
+// `--sheet-answer-h` (theme.css) is the height of ONE answer line. 18px at the 13pt
+// default is what ~11 viewers already hardcoded, so that is the default; the token is
+// expressed against --sheet-size-math so the Cijfers slider carries it along, exactly the
+// way the font factors do. Two factors are in use across the viewers:
+//   1x                  — a single writing line or a one-line blank box ("lijn")
+//   ANSWER_REGEL 32/18  — a full working row: stepped hoofdrekenen, table cells ("regel")
+export const ANSWER_SPACE_DEFAULT_PX = 18;
+export const ANSWER_REGEL = 32 / 18;
+
+/** One writing line: every answer line and one-line blank box. 18px at the defaults. */
+export const ANSWER_LINE_H = 'var(--sheet-answer-h)';
+/** One full working row: stepped hoofdrekenen rows, table cells. 32px at the defaults. */
+export const ANSWER_ROW_H = `calc(var(--sheet-answer-h) * ${ANSWER_REGEL.toFixed(4)})`;
+
+// 13pt at 96dpi = 17.333px. Same trick as PX_PER_EM_AT_DEFAULT in the viewers: dividing a
+// px literal by it yields the factor whose value at the default slider IS that px.
+const PX_PER_EM_AT_DEFAULT = sheetSizePx('math');
+
+/** The token's value for `px` of writing space, as a CSS length that follows the sliders. */
+export function answerSpaceVar(px?: number): string {
+    return `calc(var(--sheet-size-math) * ${((px ?? ANSWER_SPACE_DEFAULT_PX) / PX_PER_EM_AT_DEFAULT).toFixed(4)})`;
+}
+
+/** `--sheet-answer-h` in CSS px, for the packer estimate and any viewer that needs a number. */
+export function answerSpacePx(answerSpace?: number, fontSizeMath?: number): number {
+    return (answerSpace ?? ANSWER_SPACE_DEFAULT_PX) * (sheetSizePx('math', fontSizeMath) / PX_PER_EM_AT_DEFAULT);
+}
+
+export function useSheetAnswerPx(): number {
+    const answerSpace = useWorksheetStore(s => s.docSettings.answerSpace);
+    const pt = useWorksheetStore(s => s.docSettings.fontSizeMath);
+    return answerSpacePx(answerSpace, pt);
+}

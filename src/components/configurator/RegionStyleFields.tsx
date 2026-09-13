@@ -2,6 +2,7 @@ import Switch from '../ui/Switch';
 import { SwatchRow } from '../ui/Swatch';
 import { useWorksheetStore, type RegionStyle } from '../../store/useWorksheetStore';
 import { PRINT_PALETTE, PRINT_FILLS, STYLE_BOUNDS } from '../../config/printPalette';
+import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
 
 // Look-and-feel controls for one printed region. These used to live in a "Stijl
 // aanpassen" modal with its own miniature preview; the three regions map exactly onto
@@ -78,12 +79,12 @@ export function ResetAllStylesButton() {
         updateDocSettings({
             showScores: false, opdrachtTitelStyle: 'regular', showDividers: false,
             headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16,
-            headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1,
+            headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1, answerSpace: ANSWER_SPACE_DEFAULT_PX,
             headerCustom: undefined, titelCustom: undefined, footerCustom: undefined,
         });
         blocks.forEach((blk) => {
-            if (blk.constraints?.bodyFontScale !== undefined) {
-                updateBlockSettings(blk.id, { constraints: { ...blk.constraints, bodyFontScale: undefined } });
+            if (blk.constraints?.bodyFontScale !== undefined || blk.constraints?.answerSpace !== undefined) {
+                updateBlockSettings(blk.id, { constraints: { ...blk.constraints, bodyFontScale: undefined, answerSpace: undefined } });
             }
         });
     };

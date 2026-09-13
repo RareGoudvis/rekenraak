@@ -1,5 +1,5 @@
 import type { MathBlock } from '../math/types';
-import { cellWidthPx } from '../../components/viewer/BlockWidthContext';
+import { cellWidthPx, ANSWER_SPACE_DEFAULT_PX, ANSWER_REGEL } from '../../components/viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from '../../components/viewer/scaledBlockFit';
 
 // ── Page grid ────────────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // C1 step 1: the vertical fallback below 200px is gone from PatroonViewer, so the
     // fallback table floor moves up to match SETTINGS_FLOOR's ½.
     "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 2 },
-    "herleidingen": { rowUnits: 2.03, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
+    "herleidingen": { rowUnits: 2.14, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-gemengd": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
@@ -175,7 +175,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // measures overflow 1.03 (SETTINGS_FLOOR floors it to 2 or 4 anyway, see below).
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 2 },
     "plaatswaarde": { rowUnits: 1.63, perRowFull: 2, minWidth: 1 },
-    "procenten": { rowUnits: 1.54, perRowFull: 2, minWidth: 1 },
+    "procenten": { rowUnits: 1.67, perRowFull: 2, minWidth: 1 },
     // ½ since the 2026-09-13 rerun: the viewer's kort/lang/stappen answer lines put the
     // rows 1-up in a half cell (overflow 1.30 → 1.00). A quarter still overflows (1.33).
     "rekenvolgorde": { rowUnits: 1.58, perRowFull: 2, minWidth: 2 },
@@ -490,7 +490,7 @@ function layoutBlockHeight(block: MathBlock): number | null {
     }
 }
 
-export function estimateHeightUnits(block: MathBlock, width: WidthUnits): number {
+export function estimateHeightUnits(block: MathBlock, width: WidthUnits, answerSpacePx?: number): number {
     const furniture = layoutBlockHeight(block);
     if (furniture !== null) return furniture;
 
@@ -498,16 +498,24 @@ export function estimateHeightUnits(block: MathBlock, width: WidthUnits): number
     const count = Math.max(1, block.numberOfExercises || 1);
     const rows = Math.ceil(count / perRow(block, width));
 
-    // Stepped layout adds its answer lines under every exercise.
+    // Writing space (--sheet-answer-h): per-block override wins over the sheet setting.
+    const answer = (block.constraints?.answerSpace as number | undefined) ?? answerSpacePx ?? ANSWER_SPACE_DEFAULT_PX;
+
+    // Stepped layout adds its answer lines under every exercise. A stepped row is one
+    // `regel` = 32/18 x the token, so 32px at the default reproduces today's estimate.
     const stepped = block.layoutPreset === 'stepped' ? Math.max(0, (block.steppedLines || 1) - 1) : 0;
-    const rowUnits = facts.rowUnits + stepped * (32 / ROW_UNIT_PX);
+    const rowUnits = facts.rowUnits + stepped * ((answer * ANSWER_REGEL) / ROW_UNIT_PX);
 
     // Whitespace is real height. rowUnits was calibrated at the 14px default gap, so only
     // the difference is charged on top — more air per exercise means fewer per page.
     const gap = block.verticalSpacing || 14;
     const gapExtra = Math.max(0, rows - 1) * ((gap - 14) / ROW_UNIT_PX);
 
+    // Same trick for the writing space: rowUnits were measured at 18px per answer line, so
+    // only the delta is charged, once per row (a row holds one line of answers).
+    const answerExtra = rows * ((answer - ANSWER_SPACE_DEFAULT_PX) / ROW_UNIT_PX);
+
     // Fixed chrome: the opdracht title plus the block's own padding.
     const TITLE_UNITS = 1;
-    return TITLE_UNITS + rows * rowUnits + gapExtra;
+    return TITLE_UNITS + rows * rowUnits + gapExtra + answerExtra;
 }

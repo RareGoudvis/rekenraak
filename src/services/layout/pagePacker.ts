@@ -69,6 +69,8 @@ export interface PackOptions {
     /** Narrowest width a block may be clamped to. App passes a closure that feeds the
         MEASURED intrinsic content width in; the default is the settings-derived table. */
     minWidthOf?: (block: MathBlock) => WidthUnits;
+    /** docSettings.answerSpace — only reaches the first-paint ESTIMATE; measured wins after. */
+    answerSpacePx?: number;
 }
 
 const ROW_UNIT_PX = 24;
@@ -110,7 +112,7 @@ export function packPages(blocks: MathBlock[], opts: PackOptions = {}): PackedPa
         // A blank page is a whole page BY DEFINITION, so measuring it would only report
         // back whatever the last pagination gave it.
         const measuredPx = block.typeId === 'layout-lege-pagina' ? undefined : opts.heightPxOf?.(block, width);
-        const height = measuredPx !== undefined && measuredPx > 0 ? measuredPx / ROW_UNIT_PX : estimateHeightUnits(block, width);
+        const height = measuredPx !== undefined && measuredPx > 0 ? measuredPx / ROW_UNIT_PX : estimateHeightUnits(block, width, opts.answerSpacePx);
         // Judged against the FIRST page: it is the shortest, and a block that cannot fit
         // there must flow rather than be placed in a row anywhere.
         const spans = height > budgetFor(0) + FIT_EPSILON;

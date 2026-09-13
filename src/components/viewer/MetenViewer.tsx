@@ -1,7 +1,7 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth } from './BlockWidthContext';
+import { useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
 import type { MetenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -65,14 +65,14 @@ export default function MetenViewer({ block, showSolutions }: Props) {
     const ansBlank = (sol: number | null, width = 80) => (
         <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '3px' }}>
             {sol !== null ? <span style={{ ...solutionText }}>{fmt(sol)}</span>
-                : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: '18px' }} />}
+                : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: ANSWER_LINE_H }} />}
             {answerUnit === 'cm' && <span>cm</span>}
         </span>
     );
     const scaffoldBlank = (sol: number | null) => (
         <span style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '3px' }}>
             {sol !== null ? <span style={{ ...solutionText }}>{fmt(sol)}</span>
-                : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '38px', height: '15px' }} />}
+                : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '38px', height: ANSWER_LINE_H }} />}
             <span>cm</span>
         </span>
     );

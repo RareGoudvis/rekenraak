@@ -181,6 +181,36 @@ that is the grid, not a bug, as long as `Δ pack` stays 0), **(b)** the packer's
 equal the CSS `rowGap`, **(c)** the screen body must equal the print body on every page,
 **(d)** no unmeasured cells, **(e)** no repack-loop warnings.
 
+`--answer-space <px>` runs the same audit at a non-default Blad › Opdrachten ›
+Schrijfruimte (`docSettings.answerSpace`, the `--sheet-answer-h` token). Every answer line
+in the sheet grows, so it is the cheap check that the packer still agrees with the paper
+when the blocks are taller than the calibrated `rowUnits`. Run it at the default AND at 28
+after anything that touches a writing line:
+
+```bash
+node scripts/height-audit.mjs --url http://localhost:5174/                    # default (18)
+node scripts/height-audit.mjs --url http://localhost:5174/ --answer-space 28
+```
+
+### Guarding a writing-space change with font:compare
+
+The recipe branch G used, and the one to reuse for any change to `--sheet-answer-h` or to a
+viewer's answer lines. The baseline has to be captured BEFORE the first commit:
+
+```bash
+npx vite --port 5174                                                  # keep it running
+node scripts/font-baseline.mjs --url http://localhost:5174 --out ~/Downloads/g-baseline --seed 1234
+# … one commit …
+node scripts/font-baseline.mjs --url http://localhost:5174 --out ~/Downloads/g-after --seed 1234
+node scripts/font-compare.mjs --before ~/Downloads/g-baseline --after ~/Downloads/g-after --out ~/Downloads/g-cmp
+```
+
+A commit that only wires an EXISTING px value onto the token must report **0 flagged rows**;
+anything else is a bug, not a normalisation. A commit that deliberately moves pixels reports
+its flagged rows in the commit body. Known false positive: `even-oneven-rooster` and
+`even-oneven-cirkels` at width 2 flip tier between two runs of identical code (BUGS.md) —
+re-run before believing them.
+
 ## Font baseline / compare (`scripts/font-baseline.mjs`, `scripts/font-compare.mjs`)
 
 Guards the 7d font-token sweep (`--sheet-size-math`/`--sheet-size-text`, theme.css):

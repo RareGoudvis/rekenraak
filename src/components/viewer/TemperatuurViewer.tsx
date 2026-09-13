@@ -1,6 +1,6 @@
 import type { MathBlock, TemperatuurExercise, TemperatuurMode } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { TemperatuurConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -85,7 +85,7 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
     );
 }
 
-const answerLine = (w = 40) => <span style={{ borderBottom: '1.5px solid #000', width: mathPx(w), height: mathPx(18), display: 'inline-block' }} />;
+const answerLine = (w = 40) => <span style={{ borderBottom: '1.5px solid #000', width: mathPx(w), height: ANSWER_LINE_H, display: 'inline-block' }} />;
 
 // One thermometer in a verschil exercise, rendered per its given mode.
 function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number; temp: number; mode: TemperatuurMode; showSolutions: boolean; uid: string }) {
@@ -102,7 +102,7 @@ function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number
                 ? <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px' }}>
                     {showSolutions ? <span style={{ ...solutionText }}>{temp}</span> : answerLine(36)}<span>°C</span>
                 </div>
-                : <div style={{ height: mathPx(18) }} />}
+                : <div style={{ height: ANSWER_LINE_H }} />}
         </div>
     );
 }

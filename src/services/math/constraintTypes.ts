@@ -26,6 +26,12 @@ export type BridgeMap = Record<string, ConstraintType>;
 export type CrossCutting = {
     /** Per-block override of docSettings.bodyFontScale (exercise-body zoom). */
     bodyFontScale?: number;
+    /**
+     * Per-block override of docSettings.answerSpace: the height of one answer line, in px
+     * at the 13pt default (ScaledBlock writes it onto --sheet-answer-h for this block only).
+     * Distinct from `verticalSpacing`, which is the gap BETWEEN exercises.
+     */
+    answerSpace?: number;
     // `scaffolding` is deliberately NOT here. Every family that has one means something
     // different by it — a structure level for cijferen, a named answer box for geld, a
     // conversion table for herleidingen — so each declares its own literal type below.
