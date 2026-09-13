@@ -5,7 +5,7 @@ import { EXERCISE_UI } from '../config/exerciseUI';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { APP_STRUCTURE } from '../config/appstructure';
 import { constraintSpaceFor } from '../config/constraintSpace';
-import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
+import { BlockWidthProvider } from '../components/viewer/BlockWidthContext';
 import { makeBlock, isLayoutType } from './helpers/makeBlock';
 import type { MathBlock } from '../services/math/types';
 
@@ -21,7 +21,9 @@ import type { MathBlock } from '../services/math/types';
 // constraint drift the option space allows, plus one "everything moved at once"
 // bundle. The bar is the smoke suite's: no throw, no React console.error.
 
-const WIDTHS = [FULL_BLOCK_WIDTH_PX, 338];
+// One width: a stale-settings crash is data-shaped, not width-shaped, and the smoke suite already
+// covers three widths. Two widths doubled the gate to 150 s for no extra signal.
+const WIDTHS = [338];
 
 // CONSTRAINT_SPACE deliberately lists only what a GENERATOR reads. These keys are the
 // other half: settings only the viewer reads, which a teacher can still move under

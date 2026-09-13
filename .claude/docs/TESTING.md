@@ -58,7 +58,7 @@ the whole sheet down there — as plaatswaarde did (`Cannot read properties of u
 (reading 'digit')`, ffcccdc).
 
 So for every sidebar leaf the suite generates three exercises once, then re-renders those
-same exercises under drifted settings at 681 and 338 px, solutions off and on, asserting no
+same exercises under drifted settings at 338 px (one width: the crash is data-shaped; the smoke suite covers widths), solutions off and on, asserting no
 throw and no `console.error`: every value of every key in `constraintSpaceFor(typeId)` one at
 a time (exhaustive — a crashing value must never be sampled away), plus the viewer-only keys
 that space leaves out (`VIEWER_ONLY_DRIFT` in the suite: `equationType`, `prefill`,

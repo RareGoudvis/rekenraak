@@ -447,6 +447,15 @@ viewers lay their items out through
   (exchange a bill), [GeldTeruggevenViewer](../../src/components/viewer/GeldTeruggevenViewer.tsx)
   (make change). Coins/bills are monochrome SVG (print-friendly).
 
+**An exercise renders from its own data; settings only steer layout** (rule since 2026-09-13).
+A viewer may read `block.constraints` for columns, spacing, scaffolds and answer style, but every
+per-exercise structure (places, denominators, ticks, columns, units, mode) comes from the exercise
+the generator wrote — `ex.field ?? c.field` where an old sheet predates the field. Between a settings
+change and Genereer the sheet shows old exercises under new settings, and that must never throw
+(`viewers.stale.test.tsx` sweeps every leaf × every option). Three families still draw the wrong
+picture in that window (weegschaal range, cijferen decimals, klok mode — BUGS.md); a mode switch in
+`FractionConfig` / `MabConfig` regenerates the block instead of clearing it.
+
 **Every viewer renders inside [BlockErrorBoundary](../../src/components/viewer/BlockErrorBoundary.tsx)**
 (since 2026-09-13): the sheet's block dispatch in App, `SheetThumbnail` and `ExercisePreview` wrap only
 the `Viewer`, so a crashing viewer keeps its title row, badge and number and shows a `.no-print` line

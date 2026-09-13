@@ -1,4 +1,4 @@
-# Viewers — the five rules
+# Viewers — the six rules
 
 A viewer renders one block's exercises on the sheet: `({ block, showSolutions }) => JSX`.
 It is registered in `src/config/exerciseUI.tsx` and never branches on `typeId` beyond its
@@ -29,6 +29,11 @@ broke it clipped, overflowed or measured wrong on paper.
    and fed to the packer; a viewer that reads its own DOM to decide layout creates a feedback
    loop. If the content genuinely can't fit, let it overflow and the measured clamp will
    refuse the width in the Inspector.
+6. **Render from the exercise, not the settings.** `block.constraints` steers columns, spacing
+   and answer style only; places, denominators, ticks, units and modes come from the exercise
+   the generator wrote (`ex.field ?? c.field` for sheets saved before the field existed).
+   Between a settings change and Genereer the old exercises are drawn under new settings —
+   that must never throw or draw a wrong picture (`viewers.stale.test.tsx` sweeps it).
 
 Checks: `npm run check` (viewer smoke renders every type at 688/338/163px with solutions on
 and off), `npm run matrix` for tiers, `npm run font:baseline` + `font:compare` when sizes
