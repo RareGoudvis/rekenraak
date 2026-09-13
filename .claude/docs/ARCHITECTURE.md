@@ -504,6 +504,16 @@ Consequence: measured heights and the intrinsic-width clamp now move with `fontS
 
 ---
 
+**Centring in a single column.** A getallenkennis block whose exercises sit alone in a ½ (or ¼)
+column centres them in it — `centerWhenSingle(cols)` in
+[solutionStyle.ts](../../src/components/viewer/solutionStyle.ts) returns `'center'` for
+`cols === 1` and feeds `FragmentableGrid`'s `justifyItems` (ordenen, breuken-rangschikken,
+procenten, romeinse, deelbaarheid tabel/kleurraster; kalender, maateenheid, vergelijken and
+getalfunctie still carry the older inline form). Bewerkingen stay left-aligned: the writing
+space after `=` is the point. Rows whose items must line up across exercises (vergelijken
+kiezen, splitsen plaatswaarden, plaats omcirkelen) use one block-wide column width derived
+from the widest printed value, so place values sit under place values.
+
 ## 9. Print / PDF export — the page model
 
 **There is no react-pdf.** (Earlier versions had a `WorksheetPDF.tsx`; it was removed.)
@@ -712,16 +722,21 @@ drives all of it with plain `mouse.move/down/up` (see TESTING.md).
 (ScaledBlock's inner carries `data-scaled-inner` / `data-scale`; the inner is `width: 100%`,
 so a plain `scrollWidth` only echoes the cell — the probe swaps the inline width to
 `min-content`, reads, restores, all inside the layout effect so nothing paints) and reports it
-through `onCellMeasure(blockId, width, heightPx, intrinsicWidthPx)`; `useMeasuredHeights`
-keeps it per `blockId:width`, **drops every entry when the block's content changes** (a block is
+through `onCellMeasure(blockId, width, heightPx, intrinsicWidthPx, reflows)`; `useMeasuredHeights`
+keeps it per `blockId:width` and **drops every entry when the block's content changes** (a block is
 measured before Genereer too — the 67px empty-state line once pinned a vergelijken block to ¼
-forever) and `intrinsicOf()` returns the entry that demands the **widest** tier — monotone in
-the safe direction, so it cannot oscillate; "most recent" would flip a reflowing type between
-tiers. `packPages` takes
-the clamp as an injected `minWidthOf` closure so it stays pure; App fills it with
-`minWidthUnits(block, measured)`. Reflow rule: a block that fits where it is and lays out
-more than 1-up may go **one** tier narrower than it was measured at; the next tier only opens
-after a real measurement there, and a clamp-back writes a new key, so it cannot oscillate.
+forever). `packPages` takes the clamp as an injected `minWidthOf` closure so it stays pure; App
+fills it with `minWidthUnits(block, intrinsicEntries(id))` — **every** entry of the block, not
+the widest (since 2026-09-13 round 3: reading only the widest entry kept the full-width 2-up
+measurement in charge after the teacher picked ½, so the ¼ never opened). Each entry is one of
+two facts: content that **overflowed** its cell is a *demand* (the tier holding that px);
+content that **fit** while `reflows` — the probe saw a FragmentableGrid with `data-cols > 1`
+or a viewer's `data-shrinks` (MAB tekenen's 0.75 figure step, hoofdrekenen's tight tier
+below 200px), falling back to the `perRow` table — *allows* **one** tier below the width it was
+taken at; content that fit 1-up allows its own tier. Result = the strongest demand, never
+below the narrowest allowance. The next tier only opens after a real measurement there, so it
+cannot oscillate. `intrinsicOf()` (the widest entry) is what the overflow banner and the
+Inspector tooltip quote in px.
 Editorial vetoes override a measurement: `VETO_MIN` (typeId → floor) for type-shaped cases and
 `SETTINGS_FLOOR` (typeId → `(block) => WidthUnits`, since 2026-09-13) for settings-shaped ones —
 splitsen positietabel ½ only up to 100, splitsbenen ¼ up to 100, deelbaarheidstabel ½ up to three

@@ -70,7 +70,9 @@ export default function MabConfig({ block }: Props) {
             {!isTekenen && (
                 <div style={styles.section}>
                     <SettingLabel text="Stijl:" info="Hoe de oefening getoond wordt (symbolisch of met MAB-blokken)." />
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Grid spans the same row width as the PopupSelect below (width:100%) instead of
+                        a fixed 90px per card, so the thumbnail preview reads at a usable size. */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                         {STYLE_OPTIONS.map(o => {
                             const active = mabStyle === o.val;
                             return (
@@ -81,7 +83,7 @@ export default function MabConfig({ block }: Props) {
                                     aria-checked={active}
                                     onClick={() => set('mabStyle', o.val)}
                                     style={{
-                                        display: 'flex', flexDirection: 'column', gap: '4px', width: '90px', padding: '4px',
+                                        display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', minWidth: 0, padding: '4px',
                                         background: 'var(--bg-surface-2)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--separator)'}`,
                                         borderRadius: 'var(--radius-sm)', cursor: 'pointer', textAlign: 'left',
                                     }}

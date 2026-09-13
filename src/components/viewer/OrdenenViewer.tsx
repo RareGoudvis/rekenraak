@@ -4,7 +4,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
-import { SOL } from './solutionStyle';
+import { SOL, centerWhenSingle } from './solutionStyle';
 import { ordenenRowPx } from '../../services/layout/blockLayout';
 
 interface Props {
@@ -114,6 +114,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
             cols={ordCols}
             columnGap={28}
             rowGap={gap + 6}
+            justifyItems={centerWhenSingle(ordCols)}
             items={exercises.map((ex) => {
                 const n = ex.display.length;
                 // 2n-1 columns (number, separator, number, …), ONE grid shared by the prompt

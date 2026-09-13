@@ -111,8 +111,12 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
         justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)', boxSizing: 'border-box',
     };
 
+    // Alone in a ½ (or ¼) column, a table narrower than the cell (few divisors, capped
+    // tick columns) should sit centred rather than hug the left edge; a full-width block
+    // already spans most of the row so it keeps its natural position.
+    const centerTable = (block.widthUnits ?? 4) < 4;
     return (
-        <div>
+        <div style={centerTable ? { width: 'fit-content', margin: '0 auto' } : undefined}>
             {/* header: the number column has no label — the divisor headers say what the ticks mean */}
             <div className="print-row" style={{ display: 'grid', gridTemplateColumns: cols }}>
                 <div style={{ ...cell, backgroundColor: SALMON }} />

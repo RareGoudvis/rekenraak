@@ -11,10 +11,10 @@ import { makeBlock } from './helpers/makeBlock';
 const measure = (px: number, atWidth: WidthUnits = 4) => ({ intrinsicPx: px, atWidth });
 
 describe('minWidthUnits — fallback (no measurement)', () => {
-    // verbanden stands in for "the table says full width" since C1 step 7 clamped
-    // even-oneven's rooster to reflow instead of overflow, dropping its own table entry to ½.
+    // tijdsduur stands in for "the table says full width" since verbanden dropped to ½
+    // when its tabel columns became font-relative `ch` widths instead of a fixed 220px split.
     test('a full-width table entry still claims the full width, as it did before measuring', () => {
-        expect(minWidthUnits(makeBlock('verbanden', { block: { numberOfExercises: 3 } }))).toBe(4);
+        expect(minWidthUnits(makeBlock('tijdsduur', { block: { numberOfExercises: 3 } }))).toBe(4);
     });
 
     test('hoofdrekenen at a million needs the full width', () => {
@@ -82,6 +82,25 @@ describe('minWidthUnits — measured', () => {
         // Measured AT the half the viewer is already 1-up, so that measurement is the
         // whole truth and the quarter opens on its own arithmetic.
         expect(minWidthUnits(block, measure(140, 2))).toBe(1);
+    });
+
+    test('all entries are judged: the full-width entry cannot keep a quarter shut', () => {
+        // Measured 2-up at full (500px), then 2-up at a half (300px): the half entry proves
+        // the block fits there and reflows, so the quarter opens — the full entry alone
+        // would have said "one step below 4" for good.
+        const block = makeBlock('rekenvolgorde', { block: { numberOfExercises: 4, widthUnits: 2 } });
+        expect(minWidthUnits(block, [measure(500, 4), { ...measure(300, 2), reflows: true }])).toBe(1);
+        // Then measured AT the quarter and overflowing: that demand wins and stays.
+        expect(minWidthUnits(block, [measure(500, 4), { ...measure(300, 2), reflows: true }, measure(200, 1)])).toBe(2);
+    });
+
+    test('the grid-reported column count beats the per-type perRow table', () => {
+        // The table says splitsen is 1-up at a half, but the viewer's grid reports 2
+        // columns: the wide probe is a reflow artefact and the quarter may open.
+        const block = makeBlock('splitsen', { constraints: { layout: 'verliefde-harten', maxGetal: 20 }, block: { numberOfExercises: 4, widthUnits: 2 } });
+        expect(minWidthUnits(block, { ...measure(280, 2), reflows: true })).toBe(1);
+        // A 1-up grid at the same width means 280px is the honest single-item minimum.
+        expect(minWidthUnits(block, { ...measure(280, 2), reflows: false })).toBe(2);
     });
 
     test('a 1-up type is never opened up by the reflow rule', () => {

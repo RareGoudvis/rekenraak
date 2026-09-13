@@ -97,6 +97,7 @@ export default function MabViewer({ block, showSolutions }: Props) {
     return (
         <FragmentableGrid
             cols={mabPerRow(cols, perRow, gap)}
+            shrinks={mode === 'tekenen' && !narrowTekenen}
             columnGap={gap}
             rowGap={gap}
             items={exercises.map(ex => (
