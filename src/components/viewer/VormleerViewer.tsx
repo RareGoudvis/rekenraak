@@ -515,36 +515,43 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     }
 
     // ── EIGENSCHAPPEN: tick-table — figure column + property columns ──────────
+    // Column count varies with the ticked concepts (up to 6 for driehoeken): fixed 130px
+    // columns need up to 900px, well past the full 688px sheet column (BUGS.md). Both the
+    // figure and property column widths are read off the current cell width instead, and
+    // when even a narrow column would still overflow, the columns split across stacked
+    // mini-tables (each repeating the figure column) rather than clip off the sheet.
     if (mode === 'eigenschappen' && kind === 'figuur') {
         const cols = eigenschapCols(classify, concepts);
-        const grid = `${mathPx(120)} ${cols.map(() => '130px').join(' ')}`;
+        const figColPx = sheetPx * (120 / PX_PER_EM_AT_DEFAULT);
+        const PROP_COL_MIN_PX = 60;   // narrowest a two/three-line header still reads at
+        const colsPerTable = Math.max(1, Math.min(cols.length, Math.floor((availableWidth - figColPx) / PROP_COL_MIN_PX)));
+        const propColPx = Math.max(PROP_COL_MIN_PX, Math.floor((availableWidth - figColPx) / colsPerTable));
+        const grid = `${mathPx(120)} repeat(${colsPerTable}, ${propColPx}px)`;
         const cell: React.CSSProperties = {
             border: '1px solid #000', minHeight: '40px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 'calc(var(--sheet-size-text) * 0.6)', boxSizing: 'border-box', padding: '4px 6px', textAlign: 'center',
         };
-        return (
-            <FragmentableGrid
-                cols={1}
-                columnGap={0}
-                rowGap={0}
-                items={[
-                    <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
-                        <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>figuur</div>
-                        {cols.map(col => <div key={col.label} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{col.label}</div>)}
-                    </div>,
-                    ...exercises.map(ex => (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
-                            <div style={{ ...cell, minHeight: mathPx(86) }}>{mini(ex, 76)}</div>
-                            {cols.map(col => (
-                                <div key={col.label} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
-                                    {showSolutions && col.test(ex) ? '✕' : ''}
-                                </div>
-                            ))}
+        const tables: React.ReactNode[] = [];
+        for (let i = 0; i < cols.length; i += colsPerTable) {
+            const chunk = cols.slice(i, i + colsPerTable);
+            tables.push(
+                <div key={`head-${i}`} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content', marginTop: i > 0 ? '10px' : 0 }}>
+                    <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>figuur</div>
+                    {chunk.map(col => <div key={col.label} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{col.label}</div>)}
+                </div>
+            );
+            tables.push(...exercises.map(ex => (
+                <div key={`${ex.id}-${i}`} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
+                    <div style={{ ...cell, minHeight: mathPx(86) }}>{mini(ex, 76)}</div>
+                    {chunk.map(col => (
+                        <div key={col.label} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
+                            {showSolutions && col.test(ex) ? '✕' : ''}
                         </div>
-                    )),
-                ]}
-            />
-        );
+                    ))}
+                </div>
+            )));
+        }
+        return <FragmentableGrid cols={1} columnGap={0} rowGap={0} items={tables} />;
     }
 
     // ── HERKENNEN / BENOEMEN: grid of minis + name line beneath ────────────────
