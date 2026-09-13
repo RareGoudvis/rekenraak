@@ -1,5 +1,6 @@
 import type { MathBlock } from '../math/types';
 import { cellWidthPx } from '../../components/viewer/BlockWidthContext';
+import { WIDTH_FIT_FLOOR } from '../../components/viewer/scaledBlockFit';
 
 // ── Page grid ────────────────────────────────────────────────────────────────
 // A page's content area is COL_UNITS wide (4, so a block can be a whole, a half or a
@@ -58,8 +59,10 @@ export const PAGE_BODY_PX = BODY_HEIGHT_PX - 40;
 // the smallest tier that holds it. This table is what runs before that measurement exists
 // (first paint, unit tests), and it is why a three-item rekenvolgorde block used to be told
 // it needed the whole page: the tiers were measured once, at default settings, per type.
-//   RULE (how these numbers were set): a width is allowed when overflow <= 1.005 AND the
-//   applied zoom >= 0.85.
+//   RULE (how these numbers were set): a width is allowed when overflow <= 1.005 at the
+//   REQUESTED zoom (zoom === 1 in the harness). It used to also accept a zoom down to 0.85,
+//   from when ScaledBlock auto-fitted every block to its column; a block is widened rather
+//   than shrunk now, and shrinking is the per-block opt-in `constraints.fitToWidth`.
 // Measurement alone is not enough — viewers read an injected width, so they SHRINK
 // rather than overflow, and a number line at a quarter fits while being unreadable. The
 // tier is max(measured, editorial): measurement rules out the impossible, judgement rules
@@ -275,9 +278,14 @@ export function minWidthUnits(block: MathBlock, measured?: { intrinsicPx?: numbe
     const floor = editorialFloor(block);
     const px = measured?.intrinsicPx;
     if (px !== undefined && px > 0) {
-        let tier = tierFor(px);
+        // `fitToWidth` is the teacher saying "shrink this block rather than widen it", so
+        // the tier is judged against what the block is allowed to shrink TO. It buys one
+        // 15% step, not a licence to clip: a block that does not fit even at the floor is
+        // still promoted, because nothing on the sheet may run off its column in print.
+        const fits = block.constraints?.fitToWidth ? px * WIDTH_FIT_FLOOR : px;
+        let tier = tierFor(fits);
         const at = measured?.atWidth ?? (COL_UNITS as WidthUnits);
-        if (tier > 1 && perRow(block, at) > 1 && px <= tierWidthPx(at)) {
+        if (tier > 1 && perRow(block, at) > 1 && fits <= tierWidthPx(at)) {
             tier = Math.min(tier, narrower(at)) as WidthUnits;
         }
         return Math.max(tier, floor) as WidthUnits;
