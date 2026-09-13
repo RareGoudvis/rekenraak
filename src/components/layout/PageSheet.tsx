@@ -122,10 +122,11 @@ export default function PageSheet({
         const check = () => {
             // clientHeight is the body's usable box, not its content: it is the page budget.
             onBodyMeasure?.(index, el.clientHeight);
-            // Measured on the GRID CELL — outside ScaledBlock's CSS zoom, so offsetHeight is
-            // the height the grid actually gives the row. Children without a data-block-id
-            // (the empty-sheet hero, the tail hint) are not blocks: they report nothing and
-            // stay out of the tail measurement, so the hint cannot chase its own threshold.
+            // Measured on the CELL — outside ScaledBlock's CSS zoom. A positioned cell is
+            // exactly its block (nothing stretches it any more), but the measurement still
+            // reads the BLOCK: that is the number the packer may feed back to itself.
+            // Children without a data-block-id (the empty-sheet hero) are not blocks: they
+            // report nothing and stay out of the tail measurement.
             // The tail itself comes from rects divided back by the sheet zoom, so it is in
             // layout px whatever the sheet is scaled to.
             const bodyRect = el.getBoundingClientRect();
@@ -140,8 +141,8 @@ export default function PageSheet({
                 const own = ownHeight(child);
                 onCellMeasure?.(blockId, width, own, probeIntrinsicWidth(child));
                 if (own > tallestCell) { tallestCell = own; tallestId = blockId; }
-                // The TAIL, unlike the height, is about the row: a stretched cell ends
-                // where its row ends, which is exactly the ink boundary the hint is about.
+                // The deepest point of the skyline: where the page's ink actually stops,
+                // which is what both the tail hint and the overflow banner are about.
                 lastBottom = Math.max(lastBottom, child.getBoundingClientRect().bottom);
             }
             setOversizeBlockId(tallestCell > el.clientHeight + 2 ? tallestId : null);

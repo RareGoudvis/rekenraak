@@ -6,8 +6,9 @@
 //
 //   measuredPx  what the packer read out of useMeasuredHeights (window.__rekenraak.measured)
 //   ownPx       the BLOCK's own height: .print-block offsetHeight + its margins
-//   rowPx       the grid CELL's rect height — a stretched cell reports its ROW's height,
-//               which is why ownPx and rowPx are printed apart
+//   rowPx       the CELL's rect height. Since skyline packing the cell IS the block (it is
+//               positioned, not stretched into a grid row), so this must equal ownPx —
+//               verdict (a2) is what says so
 //   printPx     the printable content: .print-opdracht top to the last .print-row bottom
 //   chromePx    ownPx - printPx: block padding/border/margin around the printed content
 //   Δ pack      measuredPx - ownPx: the packer disagreeing with the paper
@@ -119,7 +120,7 @@ const audit = await page.evaluate(() => {
             - gap
             - (12 * MM + (px(foot.getBoundingClientRect().height) - parseFloat(getComputedStyle(foot).paddingTop) - parseFloat(getComputedStyle(foot).paddingBottom)));
 
-        const cells = [...body.children].filter(c => c.dataset && c.dataset.blockId).map(cell => {
+        const cells = [...body.querySelectorAll('[data-block-id]')].map(cell => {
             const cs = getComputedStyle(cell);
             const rect = cell.getBoundingClientRect();
             const opdracht = cell.querySelector('.print-opdracht');
