@@ -52,6 +52,9 @@ export default function VormleerConfig({ block }: Props) {
     const perRow: number = c.exercisesPerRow ?? 3;
     const niveau: number = c.niveau ?? 1;
     const showHulplijn: boolean = c.showHulplijn ?? false;
+    const allowHorizontaal: boolean = c.allowHorizontaal ?? false;
+    const allowVerticaal: boolean = c.allowVerticaal ?? false;
+    const nameAngles: boolean = c.nameAngles ?? true;
     const isMeten = kind === 'hoek' && mode === 'meten';
 
     const set = (key: keyof VormleerConstraints, value: unknown) => patch({ [key]: value } as Partial<VormleerConstraints>);
@@ -98,19 +101,25 @@ export default function VormleerConfig({ block }: Props) {
                         {pool.map(p => (
                             <button key={p.key} onClick={() => toggleConcept(p.key)} style={styles.pill(concepts.includes(p.key))}>{p.label}</button>
                         ))}
+                        {/* Stand-pills: same row as the begrippen, because they qualify them
+                            ("horizontale rechte"). Both off = elke lijn staat schuin/vrij. */}
+                        {kind === 'punt-lijn' && (
+                            <>
+                                <button onClick={() => set('allowHorizontaal', !allowHorizontaal)} style={styles.pill(allowHorizontaal)}>Horizontaal</button>
+                                <button onClick={() => set('allowVerticaal', !allowVerticaal)} style={styles.pill(allowVerticaal)}>Verticaal</button>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
 
             {kind === 'punt-lijn' && (mode === 'herkennen' || mode === 'tekenen') && (
                 <div style={styles.section}>
-                    <SettingLabel text="Moeilijkheid:" info={mode === 'tekenen'
-                        ? '1: los element. 2: één relatie tekenen. 3: twee relaties tekenen.'
-                        : '1: benoemen. 2: één relatiezin met een leemte. 3: twee relatiezinnen.'} />
+                    <SettingLabel text="Moeilijkheid:" info="Zelfde niveaus in beide opdrachten. 1: één benoemd element. 2: twee elementen in één relatie. 3: een opdracht in drie stappen." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('niveau', 1)} style={styles.radioBtn(niveau === 1)}>1 · benoemen</button>
+                        <button onClick={() => set('niveau', 1)} style={styles.radioBtn(niveau === 1)}>1 · één element</button>
                         <button onClick={() => set('niveau', 2)} style={styles.radioBtn(niveau === 2)}>2 · één relatie</button>
-                        <button onClick={() => set('niveau', 3)} style={styles.radioBtn(niveau === 3)}>3 · twee relaties</button>
+                        <button onClick={() => set('niveau', 3)} style={styles.radioBtn(niveau === 3)}>3 · drie stappen</button>
                     </div>
                 </div>
             )}
@@ -138,6 +147,12 @@ export default function VormleerConfig({ block }: Props) {
                         <SettingLabel text="Gedraaide hoeken" info="Uit: het basisbeen ligt horizontaal (makkelijker herkennen)." />
                         <button onClick={() => set('randomRotation', !randomRotation)} style={styles.onOffBtn(randomRotation)}>{randomRotation ? 'Aan' : 'Uit'}</button>
                     </div>
+                    {isTekenen && (
+                        <div style={styles.onOffRow}>
+                            <SettingLabel text="Hoeken benoemen" info="Zet de naam van de hoek (hoek ABC, met het hoekpunt in het midden) in de opdracht en in de oplossing." />
+                            <button onClick={() => set('nameAngles', !nameAngles)} style={styles.onOffBtn(nameAngles)}>{nameAngles ? 'Aan' : 'Uit'}</button>
+                        </div>
+                    )}
                     {!isMeten && (
                         <div style={styles.onOffRow}>
                             <SettingLabel text="Hoekboog tonen" info="Tekent het boogje (of vierkantje bij een rechte hoek) in elke hoek." />

@@ -411,8 +411,9 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'vormleer-punt-lijn', label: 'Punt / lijn / rechte',
                         children: [
-                            { id: 'vormleer-punt-lijn-herkennen', label: 'Herkennen', typeId: 'vormleer-punt-lijn', defaultConstraints: { mode: 'herkennen' }, minLeerjaar: 3, instruction: 'Hoe heet dit?' },
-                            { id: 'vormleer-punt-lijn-tekenen', label: 'Tekenen', typeId: 'vormleer-punt-lijn', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 3, instruction: 'Teken.' },
+                            { id: 'vormleer-punt-lijn-herkennen', label: 'Herkennen', typeId: 'vormleer-punt-lijn', defaultConstraints: { mode: 'herkennen' }, minLeerjaar: 3, instruction: (c) => ((c.niveau as number) ?? 1) >= 2 ? 'Vul aan.' : 'Hoe heet dit?' },
+                            // The per-exercise sentence lives in the exercise; the title only says what kind of work it is.
+                            { id: 'vormleer-punt-lijn-tekenen', label: 'Tekenen', typeId: 'vormleer-punt-lijn', defaultConstraints: { mode: 'tekenen' }, minLeerjaar: 3, instruction: (c) => ((c.niveau as number) ?? 1) >= 2 ? 'Teken volgens de opdracht.' : 'Teken.' },
                         ],
                     },
                     {

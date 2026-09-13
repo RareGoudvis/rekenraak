@@ -462,9 +462,14 @@ const vormleerSpace: OptionSpace = {
     showBoog: [true, false],
     rightAngleStyle: ['vierkantje', 'haakje'],
     raster: [true, false],
-    // punt-lijn herkennen/tekenen difficulty tier.
+    // punt-lijn herkennen/tekenen difficulty tier (same meaning in both modes).
     niveau: [1, 2, 3],
     showHulplijn: [true, false],
+    // Stand-pills: rechten/lijnstukken/halfrechten may be drawn truly flat.
+    allowHorizontaal: [false, true],
+    allowVerticaal: [false, true],
+    // hoeken tekenen: name the requested angle (hoek ABC).
+    nameAngles: [true, false],
 };
 
 // Sheet furniture: no generator, but the packer's height estimate reads these.

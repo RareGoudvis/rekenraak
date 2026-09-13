@@ -1,5 +1,5 @@
 import type { MathBlock, VormleerExercise, MeetPoint } from '../../services/math/types';
-import { CONCEPT_NAMES } from '../../services/vormleer/vormleerGenerator';
+import { CONCEPT_NAMES, elementName } from '../../services/vormleer/vormleerGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { VormleerConstraints } from '../../services/math/constraintTypes';
@@ -223,17 +223,82 @@ function HoekSVG({ ex, size, showBoog, toScale }: { ex: VormleerExercise; size: 
             const large = (ex.angleDeg ?? 0) > 180 ? 1 : 0;
             return <path d={`M ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)} A ${r} ${r} 0 ${large} 0 ${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`} fill="none" stroke="#000" strokeWidth={1.2} />;
         })());
+    // 'Hoeken benoemen': three letters with the vertex in the middle (hoek ABC). The
+    // generator only writes three labels when the toggle is on, so length is the switch.
+    const names = (ex.labels ?? []).length === 3 ? ex.labels! : null;
+    const fs = 0.62 * PX_PER_EM_AT_DEFAULT;
+    const nameAt = (p: MeetPoint, s: string, key: string) => {
+        const dx = p.x - cx, dy = p.y - cy, l = Math.hypot(dx, dy) || 1;
+        return <text key={key} x={p.x + (dx / l) * 10} y={p.y + (dy / l) * 10} textAnchor="middle" dominantBaseline="central" fontSize={fs} fontFamily={mono} fontStyle="italic">{s}</text>;
+    };
     return (
         <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
             <line x1={cx} y1={cy} x2={end1.x} y2={end1.y} stroke="#000" strokeWidth={1.8} />
             <line x1={cx} y1={cy} x2={end2.x} y2={end2.y} stroke="#000" strokeWidth={1.8} />
             {marker}
             <circle cx={cx} cy={cy} r={2} fill="#000" />
+            {names && [
+                nameAt(end1, names[0], 'n0'),
+                <text key="n1" x={cx - 11} y={cy + 11} textAnchor="middle" dominantBaseline="central" fontSize={fs} fontFamily={mono} fontStyle="italic">{names[1]}</text>,
+                nameAt(end2, names[2], 'n2'),
+            ]}
         </svg>
     );
 }
 
+// ── punt-lijn scenario: every element of the scenario, each carrying its name ──
+// Geometry arrives normalised (0..1, y down) from the generator, so this only scales.
+function ScenarioSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number; toScale: boolean }) {
+    // The letters sit OUTSIDE the figure, so the drawing keeps a margin all round.
+    const pad = size * 0.14;
+    const S = size - pad * 2;
+    const at = (p: MeetPoint): MeetPoint => ({ x: pad + p.x * S, y: pad + p.y * S });
+    const mid = { x: size / 2, y: size / 2 };
+    // Plain viewBox units: the SVG element itself already follows --sheet-size-math.
+    const fs = 0.62 * PX_PER_EM_AT_DEFAULT;
+    const label = (p: MeetPoint, s: string, key: string, away: MeetPoint = mid) => {
+        const dx = p.x - away.x, dy = p.y - away.y;
+        const l = Math.hypot(dx, dy) || 1;
+        const d = Math.max(9, fs * 0.75);
+        return (
+            <text key={key} x={p.x + (dx / l) * d} y={p.y + (dy / l) * d} textAnchor="middle"
+                dominantBaseline="central" fontSize={fs} fontFamily={mono} fontStyle="italic" fill="currentColor">{s}</text>
+        );
+    };
+    const parts: React.ReactNode[] = [];
+    (ex.elements ?? []).forEach((el, i) => {
+        if (el.type === 'punt') {
+            const p = at(el.pts[0]);
+            parts.push(<circle key={`d${i}`} cx={p.x} cy={p.y} r={2.8} fill="currentColor" />);
+            parts.push(label(p, el.name, `n${i}`, { x: p.x, y: p.y + 10 }));
+            return;
+        }
+        const a = at(el.pts[0]), b = at(el.pts[1]);
+        parts.push(<line key={`l${i}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={1.8} />);
+        const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+        const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+        if (el.type === 'rechte') {
+            // A rechte carries no arrowheads (Flemish notation): the lowercase name at one
+            // end is what identifies it.
+            parts.push(label({ x: b.x + ux * 6, y: b.y + uy * 6 }, el.name, `n${i}`, a));
+        } else {
+            parts.push(<circle key={`a${i}`} cx={a.x} cy={a.y} r={2.5} fill="currentColor" />);
+            if (el.type === 'halfrechte') {
+                const s = 7, nx = -uy, ny = ux;
+                parts.push(<polyline key={`ar${i}`} fill="none" stroke="currentColor" strokeWidth={1.5}
+                    points={`${b.x - ux * s + nx * s * 0.6},${b.y - uy * s + ny * s * 0.6} ${b.x},${b.y} ${b.x - ux * s - nx * s * 0.6},${b.y - uy * s - ny * s * 0.6}`} />);
+            } else {
+                parts.push(<circle key={`b${i}`} cx={b.x} cy={b.y} r={2.5} fill="currentColor" />);
+            }
+            parts.push(label(a, el.name[0], `n${i}a`, b), label(b, el.name[1] ?? '', `n${i}b`, a));
+        }
+    });
+    return <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>{parts}</svg>;
+}
+
 // ── punt-lijn mini: dot / line / half-line / segment / pair variants ─────────
+// LEGACY: only sheets saved before the scenario model reach this; new punt-lijn
+// exercises all carry `elements` and go through ScenarioSVG.
 function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number; toScale: boolean }) {
     const cx = size / 2, cy = size / 2;
     const half = size * 0.4;
@@ -392,15 +457,30 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     const mini = (ex: VormleerExercise, size: number, toScale = false) =>
         ex.kind === 'figuur' ? <FigureSVG ex={ex} size={size} marks={figMarks} toScale={toScale} />
             : ex.kind === 'hoek' ? <HoekSVG ex={ex} size={size} showBoog={showBoog} toScale={toScale} />
+            : ex.elements?.length ? <ScenarioSVG ex={ex} size={size} toScale={toScale} />
             : <PuntLijnSVG ex={ex} size={size} toScale={toScale} />;
     const tokenRatio = sheetPx / PX_PER_EM_AT_DEFAULT;
-    const isRelationMode = kind === 'punt-lijn' && mode === 'herkennen' && niveau >= 2;
+    // Scenario exercises (every new punt-lijn one) carry their own sentences; the legacy
+    // `relations` branch below only serves sheets saved before the scenario model.
+    const isScenario = kind === 'punt-lijn' && exercises.some(ex => !!ex.steps?.length);
+    const isRelationMode = kind === 'punt-lijn' && mode === 'herkennen' && niveau >= 2 && !isScenario;
 
-    // Niveau 2/3: woordbank offers the fixed relation vocabulary — 'snijdt' answers are a
-    // per-exercise point letter read off the drawing, not a word, so it stays out of the bank.
+    // Woordbank vocabulary. Niveau ≥ 2 offers the relation words actually used ('snijdt'
+    // answers are a point letter read off the drawing, not a word, so they stay out);
+    // niveau 1 offers the enabled begrippen plus their horizontale/verticale variants.
     const RELATION_WORDS: Record<string, string[]> = { loodrecht: ['loodrecht'], evenwijdig: ['evenwijdig'], 'ligt-op': ['op', 'niet op'] };
-    const bankWords = isRelationMode
-        ? [...new Set(exercises.flatMap(ex => (ex.relations ?? []).flatMap(r => RELATION_WORDS[r.kind] ?? [])))]
+    // A scenario always draws the point ON the element, so 'niet op' would be a bank word
+    // that is never an answer — the legacy branch below still offers both.
+    const SCENARIO_WORDS: Record<string, string[]> = { ...RELATION_WORDS, 'ligt-op': ['op'] };
+    const scenarioBank = () => niveau >= 2
+        ? [...new Set(exercises.flatMap(ex => (ex.steps ?? []).flatMap(s => (s.rel ? SCENARIO_WORDS[s.rel] ?? [] : []))))]
+        : [...new Set(concepts.flatMap(k => [
+            elementName(k),
+            ...(c.allowHorizontaal ? [elementName(k, 'horizontaal')] : []),
+            ...(c.allowVerticaal ? [elementName(k, 'verticaal')] : []),
+        ]))];
+    const bankWords = isScenario ? scenarioBank()
+        : isRelationMode ? [...new Set(exercises.flatMap(ex => (ex.relations ?? []).flatMap(r => RELATION_WORDS[r.kind] ?? [])))]
         : concepts.map(k => CONCEPT_NAMES[k] ?? k);
     const woordbank = answerMode === 'woordbank' && (mode === 'herkennen' || mode === 'benoemen') && bankWords.length > 0 && (
         <div key="bank" className="print-exercise" style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: '6px' }}>
@@ -432,7 +512,43 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
         );
     }
 
-    // ── PUNT-LIJN NIVEAU 2/3: drawing + fill-in-the-blank relation sentence(s) ──
+    // ── PUNT-LIJN HERKENNEN: the labelled scenario + its sentence(s) with blanks ──
+    // Niveau 1's single step has an empty before/after, so it renders as the bare naming
+    // line under the figure that this leaf has always had.
+    if (isScenario && mode === 'herkennen') {
+        const figure = niveau >= 2 ? 150 : 115;
+        const cols = fitCols(availableWidth, (niveau >= 2 ? 200 : 120) * tokenRatio + 18, niveau >= 2 ? 2 : perRow, 18);
+        return (
+            <FragmentableGrid
+                cols={1}
+                columnGap={0}
+                rowGap={0}
+                items={[
+                    ...(woordbank ? [woordbank] : []),
+                    <div key="grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: `${gap + 8}px 18px` }}>
+                        {exercises.map(ex => (
+                            <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                                {mini(ex, figure)}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', alignItems: niveau >= 2 ? 'flex-start' : 'center', fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>
+                                    {(ex.steps ?? []).filter(s => s.answer !== undefined).map((s, i) => (
+                                        <div key={i}>
+                                            {s.before}
+                                            {showSolutions
+                                                ? <span style={{ ...solutionText, fontFamily: mono, fontWeight: 'bold' }}>{s.answer}</span>
+                                                : <span style={{ display: 'inline-block', minWidth: '72px', borderBottom: '1.5px solid #000' }}>&nbsp;</span>}
+                                            {s.after}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>,
+                ]}
+            />
+        );
+    }
+
+    // ── PUNT-LIJN NIVEAU 2/3 (LEGACY sheets): drawing + fill-in-the-blank sentence(s) ──
     if (isRelationMode) {
         return (
             <FragmentableGrid
@@ -483,11 +599,17 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                 )}
                 {showSolutions && (
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', ...solutionText }}>
-                        <div style={{ filter: 'none' }}>{mini({ ...target, id: `${target.id}-sol` }, Math.min(boxPx, 110), true)}</div>
+                        {/* Fill the box rather than sit in the middle of it: the solution is what the pupil compares their own drawing with. */}
+                        <div style={{ filter: 'none' }}>{mini({ ...target, id: `${target.id}-sol` }, Math.min(boxPx - 6, 150), true)}</div>
                     </div>
                 )}
             </div>
         );
+        // A hoek gets its three-letter name in the instruction when the generator wrote one.
+        const hoekLine = (ex: VormleerExercise) => {
+            const names = (ex.labels ?? []).length === 3 ? ex.labels!.join('') : null;
+            return <span>Teken: <strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong>{names ? <> <strong>{names}</strong></> : null}</span>;
+        };
         return (
             <FragmentableGrid
                 cols={2}
@@ -496,8 +618,18 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                 alignItems="flex-start"
                 items={exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: 'calc(var(--sheet-size-text) * 0.65)' }}>
-                        {ex.subExercises
-                            // niveau 3: two independent relations, each its own instruction + box.
+                        {ex.steps?.length
+                            // The scenario: one box, and its steps numbered above it from niveau 3 on.
+                            ? <>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    {ex.steps.map((s, i) => (
+                                        <span key={i}>{ex.steps!.length > 1 ? <strong>{i + 1}. </strong> : null}{s.text}</span>
+                                    ))}
+                                </div>
+                                {drawBox(ex)}
+                            </>
+                            : ex.subExercises
+                            // LEGACY niveau 3: two independent relations, each its own instruction + box.
                             ? ex.subExercises.map(sub => (
                                 <div key={sub.id} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                     <span>Teken: <strong>{CONCEPT_NAMES[sub.concept] ?? sub.concept}</strong></span>
@@ -505,7 +637,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                                 </div>
                             ))
                             : <>
-                                <span>Teken: <strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong></span>
+                                {hoekLine(ex)}
                                 {drawBox(ex)}
                             </>}
                     </div>

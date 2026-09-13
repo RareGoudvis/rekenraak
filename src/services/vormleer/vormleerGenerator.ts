@@ -1,4 +1,4 @@
-import type { MathBlock, VormleerExercise, MeetPoint } from '../math/types';
+import type { MathBlock, VormleerExercise, VormleerElement, VormleerStep, MeetPoint } from '../math/types';
 import type { VormleerConstraints } from '../math/constraintTypes';
 
 // Vormleer — punt/lijn/rechte, hoeken and vlakke figuren. One generator, three
@@ -11,7 +11,7 @@ const rad = (deg: number) => (deg * Math.PI) / 180;
 const round1 = (v: number) => Math.round(v * 10) / 10;
 
 // Sequential capital letters for point labels, skipping ambiguous O.
-const LETTERS = 'ABCDEFGHIJKLMNP'.split('');
+const LETTERS = 'ABCDEFGHIJKLMNPQRSTUVWXYZ'.split('');
 // Rechte (line) names are lowercase and skip 'l' (looks like 1) and 'o' (looks like 0).
 const LINE_LETTERS = 'abcdefghijkmnpqrstuvwxyz'.split('');
 
@@ -79,54 +79,218 @@ function driehoekPoints(concept: string): { pts: MeetPoint[]; sides: number[] } 
     return { pts, sides };
 }
 
-// ── niveau 2/3 relation sentences ─────────────────────────────────────────────
-// One available relation kind per pair of enabled concepts; 'ligt-op' needs both
-// 'punt' and 'lijnstuk' enabled since it draws one of each.
+// ── punt-lijn scenarios (niveau 1/2/3) ───────────────────────────────────────
+// ONE builder for both modes, so a niveau means the same thing in tekenen and in
+// herkennen: niveau 1 = one named element, 2 = two elements in one named relation,
+// 3 = a three-step chain on one base element. The mode only picks the presentation —
+// tekenen prints `steps` as a numbered instruction above an empty box, herkennen
+// draws `elements` and blanks the same steps out.
 type RelKind = 'loodrecht' | 'evenwijdig' | 'snijdt' | 'ligt-op';
+type ElType = 'punt' | 'rechte' | 'halfrechte' | 'lijnstuk';
+type Orient = 'horizontaal' | 'verticaal' | 'vrij';
 
+// One available relation kind per pair of enabled concepts; 'ligt-op' needs both
+// 'punt' and a line-like pill since it draws one of each.
 function relKindsAvailable(concepts: string[]): RelKind[] {
     const out: RelKind[] = [];
     if (concepts.includes('loodrecht')) out.push('loodrecht');
     if (concepts.includes('evenwijdig')) out.push('evenwijdig');
     if (concepts.includes('snijdend')) out.push('snijdt');
-    if (concepts.includes('punt') && concepts.includes('lijnstuk')) out.push('ligt-op');
+    if (concepts.includes('punt')) out.push('ligt-op');
     return out;
 }
 
-// Builds one niveau-2-shaped punt-lijn exercise (a single drawn relation + its
-// fill-in-the-blank sentence). Reused twice for niveau 3.
-function buildRelationExercise(relKind: RelKind, randomRotation: boolean, nextLetters: (n: number) => string[], nextLineLetters: (n: number) => string[]): VormleerExercise {
-    const rotation = randomRotation ? randInt(-30, 30) : pick([0, -15, 10, 20, -25]);
-    if (relKind === 'loodrecht' || relKind === 'evenwijdig') {
-        const [a, b] = nextLineLetters(2);
-        const before = relKind === 'loodrecht' ? `rechte ${a} staat ` : `rechte ${a} is `;
-        const after = relKind === 'loodrecht' ? ` op rechte ${b}` : ` met rechte ${b}`;
+const LINE_TYPES: ElType[] = ['rechte', 'halfrechte', 'lijnstuk'];
+const EL_TYPES: ElType[] = ['punt', ...LINE_TYPES];
+
+// Dutch adjective agreement: 'de rechte' takes the -e form, 'het lijnstuk' does not.
+const ORIENT_ADJ: Record<ElType, Record<'horizontaal' | 'verticaal', string>> = {
+    punt: { horizontaal: '', verticaal: '' },
+    rechte: { horizontaal: 'horizontale', verticaal: 'verticale' },
+    halfrechte: { horizontaal: 'horizontale', verticaal: 'verticale' },
+    lijnstuk: { horizontaal: 'horizontaal', verticaal: 'verticaal' },
+};
+
+/** 'rechte' / 'horizontale rechte' / 'horizontaal lijnstuk' — also the woordbank entry. */
+export function elementName(type: string, orient?: 'horizontaal' | 'verticaal'): string {
+    const base = CONCEPT_NAMES[type] ?? type;
+    const adj = orient ? (ORIENT_ADJ[type as ElType]?.[orient] ?? '') : '';
+    return adj ? `${adj} ${base}` : base;
+}
+
+// How the name is written on paper: a lijnstuk gets both brackets, a halfrechte only
+// the closed one at its starting point (Flemish notation).
+const written = (type: ElType, name: string) =>
+    type === 'lijnstuk' ? `[${name}]` : type === 'halfrechte' ? `[${name}` : name;
+
+const phrase = (el: VormleerElement) => `${elementName(el.type, el.orient)} ${el.label}`;
+// Back-reference inside an instruction: the element was already introduced, so its
+// stand ("horizontale") would only repeat — "loodrecht op rechte a", not "… op de
+// horizontale rechte a".
+const shortRef = (el: VormleerElement) => `${CONCEPT_NAMES[el.type] ?? el.type} ${el.label}`;
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+type Vec = { x: number; y: number };
+const dirFor = (orient: Orient, deg: number): Vec =>
+    orient === 'horizontaal' ? { x: 1, y: 0 }
+        : orient === 'verticaal' ? { x: 0, y: 1 }
+        : { x: Math.cos(rad(deg)), y: Math.sin(rad(deg)) };
+const perp = (u: Vec): Vec => ({ x: -u.y, y: u.x });
+const rotVec = (u: Vec, deg: number): Vec => {
+    const r = rad(deg);
+    return { x: u.x * Math.cos(r) - u.y * Math.sin(r), y: u.x * Math.sin(r) + u.y * Math.cos(r) };
+};
+// Half-lengths in the normalised 0..1 box: a rechte runs nearly edge to edge, a
+// lijnstuk is visibly shorter so the two read differently even without the dots.
+const HALF: Record<ElType, number> = { punt: 0, rechte: 0.44, halfrechte: 0.42, lijnstuk: 0.30 };
+
+function geom(type: ElType, c: Vec, u: Vec): MeetPoint[] {
+    if (type === 'punt') return [{ x: c.x, y: c.y }];
+    const h = HALF[type];
+    // A halfrechte starts at its named endpoint and runs one way only.
+    const back = type === 'halfrechte' ? 0.18 : h;
+    return [{ x: c.x - u.x * back, y: c.y - u.y * back }, { x: c.x + u.x * h, y: c.y + u.y * h }];
+}
+
+interface Dispenser { pt: (n: number) => string[]; line: (n: number) => string[]; }
+
+function newElement(type: ElType, orient: Orient, c: Vec, u: Vec, d: Dispenser): VormleerElement {
+    const name = type === 'rechte' ? d.line(1)[0]
+        : type === 'punt' ? d.pt(1)[0]
+        : d.pt(2).join('');
+    return {
+        type, name, label: written(type, name),
+        ...(orient === 'vrij' ? {} : { orient }),
+        pts: geom(type, c, u),
+    };
+}
+
+const dirOfEl = (el: VormleerElement): Vec => {
+    const [a, b] = el.pts;
+    const l = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    return { x: (b.x - a.x) / l, y: (b.y - a.y) / l };
+};
+const midOfEl = (el: VormleerElement): Vec => ({ x: (el.pts[0].x + el.pts[1].x) / 2, y: (el.pts[0].y + el.pts[1].y) / 2 });
+const flip = (o?: 'horizontaal' | 'verticaal'): Orient =>
+    o === 'horizontaal' ? 'verticaal' : o === 'verticaal' ? 'horizontaal' : 'vrij';
+
+interface ScenarioOpts {
+    concepts: string[];
+    relKinds: RelKind[];
+    orients: Orient[];
+    randomRotation: boolean;
+    d: Dispenser;
+}
+
+// Adds one relation hanging off `base`; returns the step and pushes the new elements.
+function addRelation(base: VormleerElement, relKind: RelKind, namePoint: boolean, out: VormleerElement[], o: ScenarioOpts): VormleerStep {
+    const u = dirOfEl(base), m = midOfEl(base), v = perp(u);
+    if (relKind === 'loodrecht') {
+        const t = pick([-0.12, 0, 0.12]);
+        const at: Vec = { x: m.x + u.x * t, y: m.y + u.y * t };
+        const b = newElement('rechte', flip(base.orient), at, v, o.d);
+        out.push(b);
+        let where = '';
+        if (namePoint) {
+            const p = newElement('punt', 'vrij', at, u, o.d);
+            out.push(p);
+            where = ` in punt ${p.name}`;
+        }
         return {
-            id: rndId(), kind: 'punt-lijn', concept: relKind, rotation, labels: [a, b],
-            relations: [{ kind: relKind, a, b, before, after, answer: relKind }],
-            isManuallyEdited: false,
+            text: `Teken ${phrase(b)} loodrecht op ${shortRef(base)}${where}.`,
+            before: `${cap(phrase(b))} staat `, after: ` op ${phrase(base)}.`,
+            answer: 'loodrecht', rel: 'loodrecht',
+        };
+    }
+    if (relKind === 'evenwijdig') {
+        // A parallel partner may be a lijnstuk when that pill is on — same direction,
+        // so it inherits the base's orientation word.
+        const type: ElType = o.concepts.includes('lijnstuk') && Math.random() < 0.5 ? 'lijnstuk' : 'rechte';
+        const off = pick([-0.26, 0.26]);
+        const c: Vec = { x: m.x + v.x * off, y: m.y + v.y * off };
+        const e = newElement(type, base.orient ?? 'vrij', c, u, o.d);
+        out.push(e);
+        return {
+            text: `Teken ${phrase(e)} evenwijdig met ${shortRef(base)}.`,
+            before: `${cap(phrase(e))} ligt `, after: ` met ${phrase(base)}.`,
+            answer: 'evenwijdig', rel: 'evenwijdig',
         };
     }
     if (relKind === 'snijdt') {
-        const [a, b] = nextLineLetters(2);
-        const [at] = nextLetters(1);
+        const t = pick([-0.1, 0, 0.1]);
+        const at: Vec = { x: m.x + u.x * t, y: m.y + u.y * t };
+        const b = newElement('rechte', 'vrij', at, rotVec(u, pick([55, -55, 70, -70])), o.d);
+        const p = newElement('punt', 'vrij', at, u, o.d);
+        out.push(b, p);
         return {
-            id: rndId(), kind: 'punt-lijn', concept: 'snijdend', rotation, labels: [a, b, at],
-            relations: [{ kind: 'snijdt', a, b, at, before: `rechte ${a} snijdt rechte ${b} in punt `, after: '', answer: at }],
-            isManuallyEdited: false,
+            text: `Teken ${phrase(b)} die ${shortRef(base)} snijdt in punt ${p.name}.`,
+            before: `${cap(phrase(b))} snijdt ${phrase(base)} in punt `, after: '.',
+            answer: p.name, rel: 'snijdt',
         };
     }
-    // ligt-op: point A vs lijnstuk [CD], on or clearly off the segment.
-    const [point] = nextLetters(1);
-    const [segA, segB] = nextLetters(2);
-    const onSegment = Math.random() < 0.5;
+    // ligt-op: the point always lands ON the element, so the drawn figure and the
+    // tekenen instruction can never disagree; the blank is the position word.
+    // Kept clear of the middle so it cannot land on top of an intersection point.
+    const t = pick([-1, 1]) * (0.14 + Math.random() * 0.16);
+    const p = newElement('punt', 'vrij', { x: m.x + u.x * t, y: m.y + u.y * t }, u, o.d);
+    out.push(p);
     return {
-        id: rndId(), kind: 'punt-lijn', concept: 'ligt-op', rotation, labels: [segA, segB, point],
-        pointT: onSegment ? 0.3 + Math.random() * 0.4 : 0.2 + Math.random() * 0.6,
-        pointOffset: onSegment ? 0 : (Math.random() < 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.15),
-        relations: [{ kind: 'ligt-op', a: point, b: `${segA}${segB}`, before: `punt ${point} ligt `, after: ` lijnstuk [${segA}${segB}]`, answer: onSegment ? 'op' : 'niet op' }],
-        isManuallyEdited: false,
+        text: `Teken punt ${p.name} op ${shortRef(base)}.`,
+        before: `Punt ${p.name} ligt `, after: ` ${phrase(base)}.`,
+        answer: 'op', rel: 'ligt-op',
     };
+}
+
+function buildScenario(niveau: 1 | 2 | 3, concept: string, o: ScenarioOpts): { elements: VormleerElement[]; steps: VormleerStep[]; concept: string } {
+    const elements: VormleerElement[] = [];
+    const centre: Vec = { x: 0.5, y: 0.5 };
+    const baseDeg = o.randomRotation ? randInt(-32, 32) : pick([0, -15, 10, 20, -25]);
+    const pickOrient = (type: ElType): Orient => (type === 'punt' ? 'vrij' : pick(o.orients));
+
+    // Niveau 1 with a relation pill ticked still shows the classic pair (two evenwijdige
+    // rechten, …) — one drawing, one name, now with both lines lettered.
+    if (niveau === 1 && !EL_TYPES.includes(concept as ElType)) {
+        const relKind: RelKind = concept === 'loodrecht' ? 'loodrecht' : concept === 'snijdend' ? 'snijdt' : 'evenwijdig';
+        const orient = pickOrient('rechte');
+        const base = newElement('rechte', orient, centre, dirFor(orient, baseDeg), o.d);
+        elements.push(base);
+        addRelation(base, relKind, false, elements, o);
+        const [a, b] = elements;
+        const text = relKind === 'loodrecht'
+            ? `Teken rechte ${a.name} en rechte ${b.name} loodrecht op elkaar.`
+            : `Teken ${CONCEPT_NAMES[concept]} ${a.name} en ${b.name}.`;
+        return { elements, steps: [{ text, before: '', after: '', answer: CONCEPT_NAMES[concept] ?? concept }], concept };
+    }
+
+    if (niveau === 1) {
+        const type = concept as ElType;
+        const orient = pickOrient(type);
+        const el = newElement(type, orient, centre, dirFor(orient, baseDeg), o.d);
+        elements.push(el);
+        // 'een' only in front of an adjective — "Teken rechte a." but "Teken een horizontale rechte a."
+        const text = `Teken ${el.orient ? 'een ' : ''}${phrase(el)}.`;
+        return { elements, steps: [{ text, before: '', after: '', answer: elementName(el.type, el.orient) }], concept: type };
+    }
+
+    // Niveau 2/3: one base element carries every relation, so the figure stays one chain.
+    const baseType = pick(LINE_TYPES.filter(t => o.concepts.includes(t)).length
+        ? LINE_TYPES.filter(t => o.concepts.includes(t)) : ['rechte' as ElType]);
+    const baseOrient = pickOrient(baseType);
+    const base = newElement(baseType, baseOrient, centre, dirFor(baseOrient, baseDeg), o.d);
+    elements.push(base);
+    const baseStep: VormleerStep = { text: `Teken ${base.orient ? 'een ' : ''}${phrase(base)}.` };
+
+    if (niveau === 2) {
+        const rel = addRelation(base, pick(o.relKinds), false, elements, o);
+        // One two-part instruction; herkennen only blanks the relation half.
+        return { elements, steps: [{ ...rel, text: `${baseStep.text} ${rel.text}` }], concept: 'scenario' };
+    }
+
+    const k1 = pick(o.relKinds);
+    const k2 = o.relKinds.length > 1 ? pick(o.relKinds.filter(k => k !== k1)) : k1;
+    const s1 = addRelation(base, k1, k1 === 'loodrecht', elements, o);
+    const s2 = addRelation(base, k2, false, elements, o);
+    return { elements, steps: [baseStep, s1, s2], concept: 'scenario' };
 }
 
 export function generateVormleerExercises(block: MathBlock): VormleerExercise[] {
@@ -156,7 +320,19 @@ export function generateVormleerExercises(block: MathBlock): VormleerExercise[] 
     // pill ticked) offer all four kinds, otherwise a teacher would only ever see "ligt op".
     const ticked = relKindsAvailable(concepts);
     const anyRelationPill = concepts.some(k => k === 'loodrecht' || k === 'evenwijdig' || k === 'snijdend');
-    const relKinds: RelKind[] = kind !== 'punt-lijn' ? [] : anyRelationPill ? ticked : ['loodrecht', 'evenwijdig', 'snijdt', 'ligt-op'];
+    const relKinds: RelKind[] = kind !== 'punt-lijn' ? [] : anyRelationPill && ticked.length ? ticked : ['loodrecht', 'evenwijdig', 'snijdt', 'ligt-op'];
+
+    // Orientation pool for the Horizontaal/Verticaal pills. 'vrij' stays in the pool so a
+    // sheet with one pill on still varies; both pills off = the old free direction only.
+    const orients: Orient[] = [
+        ...(c.allowHorizontaal ? ['horizontaal' as Orient] : []),
+        ...(c.allowVerticaal ? ['verticaal' as Orient] : []),
+        'vrij',
+    ];
+    const scenarioOpts: ScenarioOpts = {
+        concepts, relKinds, orients, randomRotation,
+        d: { pt: nextLetters, line: nextLineLetters },
+    };
 
     // Cycle the enabled concepts so a herkennen sheet always mixes them evenly.
     const shuffled = [...concepts].sort(() => Math.random() - 0.5);
@@ -179,10 +355,13 @@ export function generateVormleerExercises(block: MathBlock): VormleerExercise[] 
                 : concept === 'gestrekt' ? 180
                 : concept === 'scherp' ? randInt(25, 70)
                 : randInt(110, 160);
+            // Tekenen with 'Hoeken benoemen' on names the angle by three points with the
+            // vertex in the middle (hoek ABC) — the instruction and the solution use them.
+            const named = mode === 'tekenen' && (c.nameAngles ?? true);
             out.push({
                 id: rndId(), kind, concept, angleDeg,
                 rotation: randomRotation ? randInt(0, 359) : 0,
-                labels: nextLetters(1), isManuallyEdited: false,
+                labels: named ? nextLetters(3) : nextLetters(1), isManuallyEdited: false,
             });
         } else if (kind === 'figuur') {
             const isTriangle = ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig', 'scherphoekig', 'rechthoekig', 'stomphoekig'].includes(concept);
@@ -192,30 +371,14 @@ export function generateVormleerExercises(block: MathBlock): VormleerExercise[] 
                 rotation: randomRotation ? pick([0, 15, 30, 345, 330]) : 0,
                 isManuallyEdited: false,
             });
-        } else if ((mode === 'herkennen' || mode === 'tekenen') && niveau >= 2 && relKinds.length) {
-            if (niveau === 2) {
-                const relKind = pick(relKinds);
-                out.push({ ...buildRelationExercise(relKind, randomRotation, nextLetters, nextLineLetters), niveau });
-            } else {
-                // niveau 3: two independent relations (possibly the same kind, different letters).
-                const kind1 = pick(relKinds);
-                const kind2 = relKinds.length > 1 ? pick(relKinds.filter(k => k !== kind1)) : kind1;
-                const sub1 = buildRelationExercise(kind1, randomRotation, nextLetters, nextLineLetters);
-                const sub2 = buildRelationExercise(kind2, randomRotation, nextLetters, nextLineLetters);
-                out.push({
-                    id: rndId(), kind: 'punt-lijn', concept: 'relatie-multi', niveau,
-                    subExercises: [sub1, sub2], relations: [...(sub1.relations ?? []), ...(sub2.relations ?? [])],
-                    isManuallyEdited: false,
-                });
-            }
         } else {
-            // punt-lijn niveau 1: endpoints of the drawn element (viewer adds arrowheads per concept).
-            const len = randInt(3, 6);
+            // punt-lijn, both modes, every niveau: one scenario, drawn or described.
+            const sc = buildScenario(niveau, concept, scenarioOpts);
             out.push({
-                id: rndId(), kind, concept, points: [{ x: 0, y: 0 }, { x: len, y: 0 }],
-                rotation: randomRotation ? randInt(-30, 30) : pick([0, -15, 10, 20, -25]),
-                labels: concept === 'punt' ? nextLetters(1) : concept === 'rechte' ? nextLineLetters(1) : nextLetters(2),
-                niveau, isManuallyEdited: false,
+                id: rndId(), kind: 'punt-lijn', concept: sc.concept, niveau,
+                elements: sc.elements, steps: sc.steps,
+                labels: sc.elements.map(e => e.label),
+                isManuallyEdited: false,
             });
         }
     }

@@ -619,9 +619,17 @@ export type VormleerConstraints = {
     exercisesPerRow: number;
     // Pre-split value: one flag for both mark kinds; still read as the fallback.
     showMarks?: boolean;
-    // punt-lijn herkennen difficulty tier: 1 = name the element, 2/3 = complete a
-    // relation sentence with 1/2 blanks (loodrecht/evenwijdig/snijdt/ligt-op).
+    // punt-lijn difficulty tier, identical for herkennen and tekenen: 1 = one named
+    // element, 2 = two elements in one named relation, 3 = a three-step chain on one
+    // base element. The scenario is built once; the mode only picks the presentation.
     niveau?: 1 | 2 | 3;
+    // punt-lijn: allow rechten/lijnstukken/halfrechten to be asked and drawn truly flat.
+    // Both off = every element follows the free (rotation-driven) direction.
+    allowHorizontaal?: boolean;
+    allowVerticaal?: boolean;
+    // hoeken 'tekenen': name the requested angle (hoek ABC, vertex in the middle) in the
+    // instruction and in the solution figure. Default on; off = the old class-only wording.
+    nameAngles?: boolean;
     // hoeken 'meten': faint 0/180° protractor baseline collinear with one leg.
     showHulplijn?: boolean;
 };

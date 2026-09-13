@@ -357,6 +357,31 @@ export interface WeegschaalExercise {
     isManuallyEdited: boolean;
 }
 
+// One drawn thing in a punt-lijn scenario. Geometry is normalised to a 0..1 box in
+// SCREEN orientation (y grows downwards) so the viewer only has to multiply by its
+// box size — nothing about the figure depends on the sheet font size.
+export interface VormleerElement {
+    type: 'punt' | 'rechte' | 'halfrechte' | 'lijnstuk';
+    // Bare name: 'P' (punt), 'a' (rechte), 'AB' (lijnstuk/halfrechte endpoints).
+    name: string;
+    // Name as it is written on paper: 'P', 'a', '[AB]', '[AB'.
+    label: string;
+    // Set only when the element was forced flat by the Horizontaal/Verticaal pills;
+    // absent means "vrij" (the rotation-driven direction).
+    orient?: 'horizontaal' | 'verticaal';
+    pts: MeetPoint[];            // punt: 1 point · the others: start + end
+}
+
+// One line of the scenario. `text` is the tekenen imperative; when `answer` is set the
+// same line doubles as the herkennen cloze (`before` ___ `after`).
+export interface VormleerStep {
+    text: string;
+    before?: string;
+    after?: string;
+    answer?: string;
+    rel?: 'loodrecht' | 'evenwijdig' | 'snijdt' | 'ligt-op';
+}
+
 // Vormleer — punt/lijn, hoeken and vlakke figuren share one exercise shape; the
 // viewer branches on `kind`. Coordinates in cm like MeetExercise.
 export interface VormleerExercise {
@@ -378,8 +403,14 @@ export interface VormleerExercise {
         a: string; b: string; at?: string;
         before: string; after: string; answer: string;
     }>;
-    // niveau 3: two independent niveau-2-shaped relation exercises stacked in one figure.
+    // LEGACY (sheets saved before the scenario model): niveau 3 used to stack two
+    // independent niveau-2 exercises. The viewer still renders them, nothing writes them.
     subExercises?: VormleerExercise[];
+    // punt-lijn niveau 1-3: the one scenario both modes read — tekenen turns `steps`
+    // into a numbered instruction above an empty box, herkennen draws `elements` and
+    // turns the same steps into fill-in blanks.
+    elements?: VormleerElement[];
+    steps?: VormleerStep[];
     // concept 'ligt-op': where the loose point sits along the drawn lijnstuk —
     // t = position along [AB] (0..1), offset = perpendicular distance (0 = op de lijn).
     pointT?: number;

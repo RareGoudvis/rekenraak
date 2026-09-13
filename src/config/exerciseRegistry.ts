@@ -359,6 +359,9 @@ const vormleerDefaults = (typeId: string): VormleerConstraints => ({
     // Figure marks split per notation kind; haakje = bare L-corner, vierkantje = closed square.
     showEqualSides: true, showRightAngles: true, showParallel: false, rightAngleStyle: 'vierkantje',
     raster: true, boxHeight: 4, exercisesPerRow: 3,
+    // punt-lijn stand-pills off by default (free direction, as before); hoeken tekenen
+    // names its angle unless the teacher turns it off.
+    allowHorizontaal: false, allowVerticaal: false, nameAngles: true,
 });
 
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
