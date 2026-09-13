@@ -6,7 +6,7 @@ import { formatMathNumber, opGlyph as printedOp } from '../../services/math/form
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { FULL_BLOCK_WIDTH_PX, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { FULL_BLOCK_WIDTH_PX, useBlockWidth, useSheetSizePx, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../services/math/constraintTypes';
 import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
@@ -363,7 +363,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 if (ex.remainder !== undefined) {
                     const slot = (w: number, val: string) => showSolutions
                         ? <span style={{ ...solutionText, padding: 0, width: `${w}px`, display: 'inline-block', textAlign: 'center' }}>{val}</span>
-                        : <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block' }} />;
+                        : <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />;
                     return (
                         <div key={ex.id} style={{ display: 'flex', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
                             {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
@@ -372,7 +372,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             {!tight && (
                                 <div style={{ display: 'flex', alignItems: 'center', width: `${HELP_COL_PX}px`, flexShrink: 0, marginRight: `${ANSWER_GAP}px` }}>
                                     <span>(</span>
-                                    <div style={{ borderBottom: '1.5px dotted #000', width: `${HELP_BLANK_PX}px`, height: '18px', display: 'inline-block', margin: '0 2px' }} />
+                                    <div style={{ borderBottom: '1.5px dotted #000', width: `${HELP_BLANK_PX}px`, height: ANSWER_LINE_H, display: 'inline-block', margin: '0 2px' }} />
                                     <span>)</span>
                                 </div>
                             )}
@@ -432,9 +432,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         ...(layout === 'stepped' ? { paddingBottom: '16px' } : {}),
                     }}>
                         {/* In stepped mode the row is flex-start so extra lines flow below; pin the
-                            operand to the first 32px line height + flex-end so it sits ON line 1's
+                            operand to the first working-row height (ANSWER_ROW_H) + flex-end so it sits ON line 1's
                             baseline instead of floating above it. */}
-                        <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: '32px' }) }}>
+                        <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: ANSWER_ROW_H }) }}>
                             {ex.operands.map((operand, i) => {
                                 const chars = typeof operand === 'number' ? formatMathNumber(operand).length : 0;
                                 // Unit = the sign plus its operand, in a box as wide as the block's widest
@@ -473,8 +473,8 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         <div style={{ ...((tight || layout !== 'inline-short') && { flex: 1, minWidth: 0 }), display: 'flex', flexDirection: 'column', marginLeft: `${ANSWER_GAP}px`, gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
                             {compParts && (
                                 // flex-end like the answer lines: the operand row pins its digits to the
-                                // bottom of a 32px line, so a centred tussenstap floated half a line above it.
-                                <div style={{ display: 'flex', alignItems: 'flex-end', height: '32px', whiteSpace: 'nowrap' }}>
+                                // bottom of a working row, so a centred tussenstap floated half a line above it.
+                                <div style={{ display: 'flex', alignItems: 'flex-end', height: ANSWER_ROW_H, whiteSpace: 'nowrap' }}>
                                     <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
                                     <span>{formatMathNumber(ex.operands[0] as number)}</span>
                                     <span style={{ margin: '0 6px' }}>{ex.operator === '-' ? '−' : '+'}</span>
@@ -485,7 +485,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             )}
                             {!anyMissing ? (
                                 Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
-                                    <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: '32px' }}>
+                                    <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: ANSWER_ROW_H }}>
                                         <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
                                         {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(layout, answerLinePx, tight)}></div>}
                                     </div>

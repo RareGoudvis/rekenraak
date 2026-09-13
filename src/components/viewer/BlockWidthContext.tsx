@@ -65,6 +65,11 @@ export function useSheetSizePx(kind: 'math' | 'text'): number {
 export const ANSWER_SPACE_DEFAULT_PX = 18;
 export const ANSWER_REGEL = 32 / 18;
 
+/** One writing line: every answer line and one-line blank box. 18px at the defaults. */
+export const ANSWER_LINE_H = 'var(--sheet-answer-h)';
+/** One full working row: stepped hoofdrekenen rows, table cells. 32px at the defaults. */
+export const ANSWER_ROW_H = `calc(var(--sheet-answer-h) * ${ANSWER_REGEL.toFixed(4)})`;
+
 // 13pt at 96dpi = 17.333px. Same trick as PX_PER_EM_AT_DEFAULT in the viewers: dividing a
 // px literal by it yields the factor whose value at the default slider IS that px.
 const PX_PER_EM_AT_DEFAULT = sheetSizePx('math');
