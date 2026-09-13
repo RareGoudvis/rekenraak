@@ -46,6 +46,9 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
         <FragmentableGrid
             cols={1}
             rowGap={gap + 6}
+            // Kleurraster ('rechthoek') is a compact grid that reads best centred alone in a
+            // ½ column; the strip/markeren forms flow left like a text line and stay put.
+            justifyItems={isRechthoek ? 'center' : undefined}
             items={exercises.map(ex => {
                 const isMul = (n: number) => n % ex.divisor === 0;
 
@@ -77,11 +80,17 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Omcirkel de veelvouden van {ex.divisor}:</span>
-                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`, rowGap: '10px', columnGap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
+                            {/* `perRow` columns forced via a fixed grid squeezed the numbers into
+                               overlapping text at ½/¼ instead of wrapping (BUGS.md). A flex item's
+                               default min-width is its content size, so a flex-basis of 100%/perRow
+                               with no shrink gives exactly `perRow` per line when that fits and
+                               naturally wraps fewer per line once it doesn't — nowrap only survives
+                               when the whole row actually fits. */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: '0.6em', columnGap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
                                 {ex.numbers.map((num, i) => {
                                     const ring = showSolutions && isMul(num);
                                     return (
-                                        <span key={i} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <span key={i} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', flex: `0 0 calc(100% / ${perRow})` }}>
                                             <span style={{ padding: '2px 8px', borderRadius: '50%', border: ring ? `2px solid ${SOL}` : '2px solid transparent', color: ring ? SOL : 'inherit' }}>{formatMathNumber(num)}</span>
                                             {showRest && restLine(num, ex.divisor)}
                                         </span>

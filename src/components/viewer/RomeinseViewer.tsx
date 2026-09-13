@@ -3,7 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
 import type { RomeinseConstraints } from '../../services/math/constraintTypes';
-import { solutionText } from './solutionStyle';
+import { solutionText, centerWhenSingle } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -37,11 +37,13 @@ export default function RomeinseViewer({ block, showSolutions }: Props) {
     // Answer line: fill what's left of the 2-up column, at least the longest answer.
     const answerMin = Math.max(Math.ceil(maxAnswerChars * 12.7) + 4, Math.min(150, 297 - promptW - 32));
 
+    const romCols = fitCols(availableWidth, 250, 2);
     return (
         <FragmentableGrid
-            cols={fitCols(availableWidth, 250, 2)}
+            cols={romCols}
             columnGap={28}
             rowGap={gap + 2}
+            justifyItems={centerWhenSingle(romCols)}
             items={exercises.map(ex => {
                 const prompt = herkennen ? ex.roman : formatMathNumber(ex.value);
                 const answer = herkennen ? formatMathNumber(ex.value) : ex.roman;

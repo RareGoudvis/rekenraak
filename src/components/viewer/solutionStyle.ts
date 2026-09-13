@@ -7,3 +7,7 @@ export const SOL = 'var(--ink-solution)';
 export const solutionText: CSSProperties = { color: SOL, fontWeight: 700 };
 
 // SVG viewers colour paths instead of text.
+
+// A single exercise alone in a ½ column reads better centred than pinned left (owner
+// rule for getallenkennis blocks); a multi-column row keeps its natural left flow.
+export const centerWhenSingle = (cols: number): CSSProperties['justifyItems'] => cols === 1 ? 'center' : undefined;

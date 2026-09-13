@@ -184,7 +184,10 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "splitsen": { rowUnits: 6.79, perRowFull: 2.5, minWidth: 1 },
     "temperatuur": { rowUnits: 10.63, perRowFull: 4, minWidth: 1 },
     "tijdsduur": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
-    "verbanden": { rowUnits: 3.69, perRowFull: 2, minWidth: 4 },
+    // minWidth 4 → 2: the tabel subtype's columns are font-relative `ch` widths now
+    // instead of a fixed 220px split, so a ½ column holds the 3-column breuk·decimaal·
+    // procent table.
+    "verbanden": { rowUnits: 3.69, perRowFull: 2, minWidth: 2 },
     "vergelijken": { rowUnits: 2.17, perRowFull: 2, minWidth: 2 },
     "vormleer-figuren": { rowUnits: 6.5, perRowFull: 3, minWidth: 1 },
     "vormleer-hoeken": { rowUnits: 6.5, perRowFull: 3, minWidth: 1 },

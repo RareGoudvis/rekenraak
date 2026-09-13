@@ -3,7 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import type { ProcentenConstraints } from '../../services/math/constraintTypes';
-import { solutionText } from './solutionStyle';
+import { solutionText, centerWhenSingle } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -32,11 +32,13 @@ export default function ProcentenViewer({ block, showSolutions }: Props) {
     // itemMinPx 200 (was 150): a "welk-percent" row is the widest of the two sentence
     // shapes and needs the extra room, which is also what keeps a half column 1-up
     // instead of squeezing two in.
+    const procCols = scaffold ? 1 : fitCols(availableWidth, 200, 2, 24);
     return (
         <FragmentableGrid
-            cols={scaffold ? 1 : fitCols(availableWidth, 200, 2, 24)}
+            cols={procCols}
             columnGap={24}
             rowGap={gap}
+            justifyItems={centerWhenSingle(procCols)}
             items={exercises.map(ex => (
                 <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>

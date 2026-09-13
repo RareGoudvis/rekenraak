@@ -64,17 +64,34 @@ export default function VerbandenViewer({ block, showSolutions }: Props) {
         border: '1px solid #000', minHeight: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)', boxSizing: 'border-box', padding: '2px 6px',
     };
-    // Widen columns so the table fills the page instead of hugging the left third
-    // (values are short, so wider cells just give more writing room).
-    const colW = Math.floor(Math.min(220, 600 / reps.length));
-    const grid = reps.map(() => `${colW}px`).join(' ');
+    // Column width in `ch` (mono, so exact) off the widest value THIS rep actually prints,
+    // not a fixed 220px split evenly — that let a 3-column breuk·decimaal·procent table
+    // overflow a ½ column even though every value in it is a few characters wide.
+    const charsFor = (rep: VerbandRep, ex: VerbandExercise): number => {
+        if (rep === 'breuk') {
+            const parts = [String(ex.fraction.n), String(ex.fraction.d)];
+            return Math.max(...parts.map(s => s.length)) + (ex.fraction.whole ? String(ex.fraction.whole).length + 1 : 0);
+        }
+        if (rep === 'decimaal') return String(formatMathNumber(fractionToDecimal(ex.fraction))).length;
+        return String(formatMathNumber(fractionToPercent(ex.fraction))).length + 2; // + ' %'
+    };
+    const grid = reps.map(rep => {
+        // The header label (e.g. "kommagetal") prints in a smaller font than the values, so
+        // its own char count is a generous — never tight — floor against the smaller values.
+        const chars = Math.max(2, REP_LABEL[rep].length, ...exercises.map(ex => charsFor(rep, ex)));
+        return `${Math.min(14, chars + 2)}ch`; // +2ch padding, capped so it never sprawls
+    }).join(' ');
+    // `ch` in gridTemplateColumns resolves against the GRID CONTAINER's own font, not the
+    // cells inside it — without this, the tracks were sized off the page's default font
+    // and clipped the (mono) header labels ("kommagetal") that are wider than the values.
+    const gridFont: React.CSSProperties = { fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' };
     return (
         <div className="print-exercise" style={{ width: 'fit-content' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: grid }}>
+            <div style={{ display: 'grid', gridTemplateColumns: grid, ...gridFont }}>
                 {reps.map(rep => <div key={rep} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)' }}>{REP_LABEL[rep]}</div>)}
             </div>
             {exercises.map(ex => (
-                <div key={ex.id} style={{ display: 'grid', gridTemplateColumns: grid }}>
+                <div key={ex.id} style={{ display: 'grid', gridTemplateColumns: grid, ...gridFont }}>
                     {reps.map(rep => (
                         <div key={rep} style={cell}>
                             {rep === ex.given ? renderRep(ex, rep, false) : showSolutions ? renderRep(ex, rep, true) : ''}
