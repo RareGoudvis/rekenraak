@@ -1,6 +1,6 @@
 import type { MathBlock, TemperatuurExercise, TemperatuurMode } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { TemperatuurConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -10,10 +10,17 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
+const THERMO_ITEM_MIN_PX = 140;   // one thermometer item (84px glass + labels + gap) at 13pt
 const MAX_T = 25;          // top labelled tick
 const HEAD = 12;           // glass headroom above MAX_T (no ticks)
 
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
+
+// 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` em
+// inside a `font-size: var(--sheet-size-math)` box reproduces today's pixels exactly and
+// then follows the teacher's Lettergrootte slider. SYNC: same divisor in every viewer.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)})`;
 
 // Glass thermometer: rounded tube with a subtle glass gradient, bulb, major (5°) +
 // minor (1°) ticks. `fillTo` = temp the mercury rises to (null = empty tube). `uid`
@@ -37,7 +44,9 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
     for (let t = minT; t <= MAX_T; t++) ticks.push(t);
 
     return (
-        <svg width={W} height={H} style={{ display: 'block', fontFamily: mono }}>
+        // Tube, bulb and ticks stay viewBox units; only the rendered box follows the token,
+        // so the whole thermometer scales as one with the Lettergrootte slider.
+        <svg width={mathPx(W)} height={mathPx(H)} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', fontFamily: mono }}>
             <defs>
                 <linearGradient id={glass} x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0" stopColor="#dfe7ec" />
@@ -68,7 +77,7 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
                 return (
                     <g key={t}>
                         <line x1={cx + tubeW / 2} y1={y(t)} x2={cx + tubeW / 2 + len} y2={y(t)} stroke="#5b6b73" strokeWidth={major ? 1.2 : 0.8} />
-                        {major && <text x={cx + tubeW / 2 + len + 3} y={y(t) + 3.5} style={{ fontSize: 'calc(var(--sheet-size-math) * 0.55)' }} fill="#333">{t}</text>}
+                        {major && <text x={cx + tubeW / 2 + len + 3} y={y(t) + 3.5} fontSize={0.55 * PX_PER_EM_AT_DEFAULT} fill="#333">{t}</text>}
                     </g>
                 );
             })}
@@ -76,7 +85,7 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
     );
 }
 
-const answerLine = (w = 40) => <span style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: '18px', display: 'inline-block' }} />;
+const answerLine = (w = 40) => <span style={{ borderBottom: '1.5px solid #000', width: mathPx(w), height: mathPx(18), display: 'inline-block' }} />;
 
 // One thermometer in a verschil exercise, rendered per its given mode.
 function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number; temp: number; mode: TemperatuurMode; showSolutions: boolean; uid: string }) {
@@ -87,19 +96,20 @@ function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
             {showNumber
                 ? <div>{temp} °C</div>
-                : <div style={{ height: '21px' }} />}
+                : <div style={{ height: mathPx(21) }} />}
             <Thermometer minT={minT} fillTo={fillTo} uid={uid} />
             {mode === 'gekleurd'
                 ? <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px' }}>
                     {showSolutions ? <span style={{ ...solutionText }}>{temp}</span> : answerLine(36)}<span>°C</span>
                 </div>
-                : <div style={{ height: '18px' }} />}
+                : <div style={{ height: mathPx(18) }} />}
         </div>
     );
 }
 
 export default function TemperatuurViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const sheetPx = useSheetSizePx('math');
     const exercises = block.temperatuurExercises || [];
     const c = block.constraints as TemperatuurConstraints;
     const includeNegatives = !!c.includeNegatives;
@@ -115,7 +125,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
 
     return (
         <FragmentableGrid
-            cols={fitCols(availableWidth, 140, isVerschil ? 2 : perRow)}
+            cols={fitCols(availableWidth, THERMO_ITEM_MIN_PX * (sheetPx / PX_PER_EM_AT_DEFAULT), isVerschil ? 2 : perRow)}
             columnGap={isVerschil ? gap + 48 : gap}
             rowGap={isVerschil ? gap + 14 : gap}
             items={exercises.map((ex: TemperatuurExercise) => {

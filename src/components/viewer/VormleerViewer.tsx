@@ -1,6 +1,7 @@
 import type { MathBlock, VormleerExercise, MeetPoint } from '../../services/math/types';
 import { CONCEPT_NAMES } from '../../services/vormleer/vormleerGenerator';
 import FragmentableGrid from './FragmentableGrid';
+import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { VormleerConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -14,6 +15,18 @@ const CM = 37.8;
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
+
+// 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` of
+// the token reproduces today's pixels exactly and then follows the Lettergrootte slider.
+// SYNC: same divisor in every viewer.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)})`;
+
+// A mini keeps `size` as its viewBox geometry; only the rendered box follows the token.
+// `toScale` minis (the tekenen raster box) must stay in real cm px instead — a figure the
+// pupil measures against a 1 cm grid may not grow with the font.
+const svgBox = (size: number, toScale: boolean) =>
+    toScale ? { width: size, height: size } : { width: mathPx(size), height: mathPx(size) };
 
 // Eigenschappen columns. Triangles are classified GEOMETRICALLY (sides/angles from the
 // drawn figure) so a gelijkbenige driehoek also ticks its hoek-column when both axes
@@ -75,7 +88,7 @@ const rot = (p: MeetPoint, deg: number): MeetPoint => {
 // ── figure mini (driehoeken/vierhoeken) with per-notation marks ──────────────
 interface FigureMarks { equalSides: boolean; rightAngles: boolean; parallel: boolean; rightAngleStyle: string; }
 
-function FigureSVG({ ex, size, marks: opt }: { ex: VormleerExercise; size: number; marks: FigureMarks }) {
+function FigureSVG({ ex, size, marks: opt, toScale }: { ex: VormleerExercise; size: number; marks: FigureMarks; toScale: boolean }) {
     const scale = 0.55;   // minis: ~55% of true size so a row of them fits
     const raw = (ex.points ?? []).map(p => rot(p, ex.rotation ?? 0)).map(p => ({ x: p.x * CM * scale, y: -p.y * CM * scale }));
     const minX = Math.min(...raw.map(p => p.x)), minY = Math.min(...raw.map(p => p.y));
@@ -176,7 +189,7 @@ function FigureSVG({ ex, size, marks: opt }: { ex: VormleerExercise; size: numbe
     }
 
     return (
-        <svg width={size} height={size} style={{ overflow: 'visible' }}>
+        <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
             <polygon points={pts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={1.8} />
             {marks}
         </svg>
@@ -184,7 +197,7 @@ function FigureSVG({ ex, size, marks: opt }: { ex: VormleerExercise; size: numbe
 }
 
 // ── hoek mini: two rays + arc (square marker for a right angle) ──────────────
-function HoekSVG({ ex, size, showBoog }: { ex: VormleerExercise; size: number; showBoog: boolean }) {
+function HoekSVG({ ex, size, showBoog, toScale }: { ex: VormleerExercise; size: number; showBoog: boolean; toScale: boolean }) {
     const cx = size * 0.4, cy = size * 0.62;
     const rayLen = size * 0.44;
     const base = ex.rotation ?? 0;
@@ -204,7 +217,7 @@ function HoekSVG({ ex, size, showBoog }: { ex: VormleerExercise; size: number; s
             return <path d={`M ${cx + r * Math.cos(a1)} ${cy + r * Math.sin(a1)} A ${r} ${r} 0 ${large} 0 ${cx + r * Math.cos(a2)} ${cy + r * Math.sin(a2)}`} fill="none" stroke="#000" strokeWidth={1.2} />;
         })());
     return (
-        <svg width={size} height={size} style={{ overflow: 'visible' }}>
+        <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
             <line x1={cx} y1={cy} x2={end1.x} y2={end1.y} stroke="#000" strokeWidth={1.8} />
             <line x1={cx} y1={cy} x2={end2.x} y2={end2.y} stroke="#000" strokeWidth={1.8} />
             {marker}
@@ -214,7 +227,7 @@ function HoekSVG({ ex, size, showBoog }: { ex: VormleerExercise; size: number; s
 }
 
 // ── punt-lijn mini: dot / line / half-line / segment / pair variants ─────────
-function PuntLijnSVG({ ex, size }: { ex: VormleerExercise; size: number }) {
+function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number; toScale: boolean }) {
     const cx = size / 2, cy = size / 2;
     const half = size * 0.4;
     const ang = ((ex.rotation ?? 0) * Math.PI) / 180;
@@ -230,7 +243,7 @@ function PuntLijnSVG({ ex, size }: { ex: VormleerExercise; size: number }) {
     };
     const dot = (p: MeetPoint, key: string) => <circle key={key} cx={p.x} cy={p.y} r={2.5} fill="#000" />;
     const text = (p: MeetPoint, s: string, key: string, dy = -8) =>
-        <text key={key} x={p.x} y={p.y + dy} textAnchor="middle" style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)' }} fontFamily={mono} fontStyle="italic">{s}</text>;
+        <text key={key} x={p.x} y={p.y + dy} textAnchor="middle" fontSize={0.7 * PX_PER_EM_AT_DEFAULT} fontFamily={mono} fontStyle="italic">{s}</text>;
 
     const parts: React.ReactNode[] = [];
     const line = (a: MeetPoint, b: MeetPoint, key: string, dash = false) =>
@@ -266,10 +279,12 @@ function PuntLijnSVG({ ex, size }: { ex: VormleerExercise; size: number }) {
             }
         }
     }
-    return <svg width={size} height={size} style={{ overflow: 'visible' }}>{parts}</svg>;
+    return <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>{parts}</svg>;
 }
 
 export default function VormleerViewer({ block, showSolutions }: Props) {
+    const availableWidth = useBlockWidth();
+    const sheetPx = useSheetSizePx('math');
     const exercises: VormleerExercise[] = block.vormleerExercises || [];
     const c = block.constraints as VormleerConstraints;
     const kind: string = c.kind ?? 'punt-lijn';
@@ -293,10 +308,12 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
-    const mini = (ex: VormleerExercise, size: number) =>
-        ex.kind === 'figuur' ? <FigureSVG ex={ex} size={size} marks={figMarks} />
-            : ex.kind === 'hoek' ? <HoekSVG ex={ex} size={size} showBoog={showBoog} />
-            : <PuntLijnSVG ex={ex} size={size} />;
+    // toScale = drawn against the 1 cm raster (tekenen box) and therefore font-size-proof.
+    const mini = (ex: VormleerExercise, size: number, toScale = false) =>
+        ex.kind === 'figuur' ? <FigureSVG ex={ex} size={size} marks={figMarks} toScale={toScale} />
+            : ex.kind === 'hoek' ? <HoekSVG ex={ex} size={size} showBoog={showBoog} toScale={toScale} />
+            : <PuntLijnSVG ex={ex} size={size} toScale={toScale} />;
+    const tokenRatio = sheetPx / PX_PER_EM_AT_DEFAULT;
 
     const woordbank = answerMode === 'woordbank' && (mode === 'herkennen' || mode === 'benoemen') && (
         <div key="bank" className="print-exercise" style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: '6px' }}>
@@ -325,7 +342,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                             )}
                             {showSolutions && (
                                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', ...solutionText }}>
-                                    <div style={{ filter: 'none' }}>{mini({ ...ex, id: `${ex.id}-sol` }, Math.min(boxPx, 110))}</div>
+                                    <div style={{ filter: 'none' }}>{mini({ ...ex, id: `${ex.id}-sol` }, Math.min(boxPx, 110), true)}</div>
                                 </div>
                             )}
                         </div>
@@ -338,7 +355,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     // ── EIGENSCHAPPEN: tick-table — figure column + property columns ──────────
     if (mode === 'eigenschappen' && kind === 'figuur') {
         const cols = eigenschapCols(classify, concepts);
-        const grid = `120px ${cols.map(() => '130px').join(' ')}`;
+        const grid = `${mathPx(120)} ${cols.map(() => '130px').join(' ')}`;
         const cell: React.CSSProperties = {
             border: '1px solid #000', minHeight: '40px', display: 'flex', alignItems: 'center',
             justifyContent: 'center', fontSize: 'calc(var(--sheet-size-text) * 0.6)', boxSizing: 'border-box', padding: '4px 6px', textAlign: 'center',
@@ -355,7 +372,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                     </div>,
                     ...exercises.map(ex => (
                         <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content' }}>
-                            <div style={{ ...cell, minHeight: '86px' }}>{mini(ex, 76)}</div>
+                            <div style={{ ...cell, minHeight: mathPx(86) }}>{mini(ex, 76)}</div>
                             {cols.map(col => (
                                 <div key={col.label} style={{ ...cell, ...solutionText, fontFamily: mono, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                                     {showSolutions && col.test(ex) ? '✕' : ''}
@@ -376,7 +393,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
             rowGap={0}
             items={[
                 ...(woordbank ? [woordbank] : []),
-                <div key="grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${perRow}, 1fr)`, gap: `${gap + 8}px 18px` }}>
+                <div key="grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${fitCols(availableWidth, 110 * tokenRatio + 18, perRow, 18)}, 1fr)`, gap: `${gap + 8}px 18px` }}>
                     {exercises.map(ex => (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                             {mini(ex, 110)}
