@@ -12,6 +12,7 @@ import { EXERCISE_UI } from './config/exerciseUI';
 import { REGISTRY } from './config/exerciseRegistry';
 import PopupSelect from './components/ui/PopupSelect';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
+import { BlockErrorBoundary } from './components/viewer/BlockErrorBoundary';
 import { cellWidthPx } from './components/viewer/BlockWidthContext';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
@@ -634,7 +635,17 @@ export default function App() {
                   {(() => {
                     // Registry decides which viewer renders this typeId.
                     const Viewer = EXERCISE_UI[block.typeId]?.Viewer;
-                    return Viewer ? <Viewer block={block} showSolutions={showSolutions} /> : null;
+                    if (!Viewer) return null;
+                    // resetKey = the block's own exercise array reference — regenerateBlock
+                    // (Genereer) swaps that reference, which is the teacher's recovery action
+                    // after a crash, so it must also clear a tripped boundary.
+                    const exerciseField = REGISTRY[block.typeId]?.exerciseField ?? 'exercises';
+                    const resetKey = (block as unknown as Record<string, unknown>)[exerciseField];
+                    return (
+                      <BlockErrorBoundary resetKey={resetKey} label={block.typeId}>
+                        <Viewer block={block} showSolutions={showSolutions} />
+                      </BlockErrorBoundary>
+                    );
                   })()}
                   </ScaledBlock>
                 </div>
