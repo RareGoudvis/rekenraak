@@ -27,17 +27,22 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
 
     // ── Veelvouden: a fill-in multiples row per exercise ──────────────────────
     if (layout === 'veelvouden') {
+        // A wrapped sequence looks like a mistake ("why did the row break there?"), so cap
+        // how many terms are PRINTED to what the column actually holds (~56px per term
+        // including its gap and dash) instead of letting it wrap. "– (enz.)" always closes
+        // the row, so trimming reads as "and so on" rather than as a cut-off answer.
+        const maxTerms = Math.max(3, Math.floor((A4_CONTENT_PX - 60) / 56));
         return (
             <FragmentableGrid
                 cols={1}
                 rowGap={gap + 4}
                 items={exercises.map((ex) => {
-                    const seq = ex.sequence || [];
+                    const seq = (ex.sequence || []).slice(0, maxTerms);
                     const given = ex.givenCount ?? 2;
                     return (
                         <div key={ex.id} className="print-exercise" style={{ fontFamily: mono }}>
                             <div style={{ marginBottom: '8px', fontSize: 'calc(var(--sheet-size-text) * 0.8)' }}>Vul de rij veelvouden van <strong>{ex.base}</strong> aan:</div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'wrap', fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'nowrap', fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                                 {seq.map((v, i) => (
                                     <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '6px' }}>
                                         {i > 0 && <span>–</span>}
@@ -90,12 +95,17 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     }
 
     // ── Tabel: shared header + one tick-row per number ────────────────────────
-    // Size columns to the printable width: fixed number column, tick columns share the
-    // rest (capped so few-divisor tables don't look stretched, shrunk so 7-10 divisors
-    // never overflow 625px and clip in print).
-    const numberColPx = 150;   // holds the "deelbaar door:" header label
+    // Size columns to the printable width: the number column is as wide as the widest
+    // number actually in the block (in `ch`, the monospace font makes that exact) rather
+    // than a fixed 150px that only existed to hold the "deelbaar door:" label — dropped
+    // below, since the divisor headers already say what the columns mean. Tick columns
+    // share the rest (capped so few-divisor tables don't look stretched, shrunk so
+    // 7-10 divisors never overflow and clip in print).
+    const numberChars = Math.max(2, ...exercises.map(ex => String(ex.number ?? '').length));
+    const numberColCh = numberChars + 2;
+    const numberColPx = numberColCh * 8.5; // ~0.85em/ch at this font, for the tick-column budget below
     const tickColPx = Math.min(100, Math.floor((A4_CONTENT_PX - numberColPx) / divisors.length));
-    const cols = `${numberColPx}px ${divisors.map(() => `${tickColPx}px`).join(' ')}`;
+    const cols = `${numberColCh}ch ${divisors.map(() => `${tickColPx}px`).join(' ')}`;
     const cell: React.CSSProperties = {
         border: '1px solid #000', height: '34px', display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)', boxSizing: 'border-box',
@@ -103,9 +113,9 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
 
     return (
         <div>
-            {/* header */}
+            {/* header: the number column has no label — the divisor headers say what the ticks mean */}
             <div className="print-row" style={{ display: 'grid', gridTemplateColumns: cols }}>
-                <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>deelbaar door:</div>
+                <div style={{ ...cell, backgroundColor: SALMON }} />
                 {divisors.map(d => (
                     <div key={d} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{d}?</div>
                 ))}

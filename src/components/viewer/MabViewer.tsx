@@ -43,6 +43,13 @@ function mabColWidth(cols: Array<{ key: string }>): number {
 
 export default function MabViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // herkennen = read drawn blocks → write number; tekenen = reverse (draw blocks).
+    const mode: 'herkennen' | 'tekenen' = block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen';
+    // mab-tekenen has no glyph/numeral pairing to keep legible (unlike herkennen, which
+    // floors at a half for exactly that reason — C1 step 0), so it is the one MAB mode
+    // allowed at a quarter. A quarter cell (~163px) is tight even at figureFontPx's normal
+    // fit-to-column cap, so tekenen gets one further explicit step down there (0.75).
+    const narrowTekenen = mode === 'tekenen' && availableWidth < 200;
     // The positietabel is drawn in em, so its real px width is the glyph geometry times the
     // teacher's Lettergrootte setting; the column count has to use the same factor.
     const sheetSizePx = useSheetSizePx('math');
@@ -58,9 +65,7 @@ export default function MabViewer({ block, showSolutions }: Props) {
     const figureFontPx = (cols: ColDef[]) => Math.min(
         sheetSizePx,
         ((availableWidth - 12) / (cols.length * mabColWidth(cols) + 4)) * PX_PER_EM_AT_DEFAULT,
-    );
-    // herkennen = read drawn blocks → write number; tekenen = reverse (draw blocks).
-    const mode: 'herkennen' | 'tekenen' = block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen';
+    ) * (narrowTekenen ? 0.75 : 1);
     const exercises: MabExercise[] = block.mabExercises || [];
     if (exercises.length === 0) {
         return (

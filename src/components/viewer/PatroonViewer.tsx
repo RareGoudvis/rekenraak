@@ -1,7 +1,6 @@
 import type { MathBlock, PatroonExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth } from './BlockWidthContext';
 import { OP_GLYPH as SYM } from '../../services/math/formatters';
 import type { PatroonConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
@@ -15,11 +14,9 @@ const mono = "'Azeret Mono', monospace";
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function PatroonViewer({ block, showSolutions }: Props) {
-    const availableWidth = useBlockWidth();
-    // A chain of five numbers laid out left to right needs ~300px; a quarter-width cell is
-    // 163px. Below 200px the chain turns a quarter turn and runs DOWN the cell instead —
-    // the arrows still say "and then", and nothing has to shrink to fit.
-    const stackVertically = availableWidth < 200;
+    // A chain of five numbers laid out left to right needs ~300px, which is why C1 step 0
+    // floors getalpatronen/kettingsommen at a half column (326px) — the vertical fallback
+    // this used to grow below 200px (a quarter, 163px) can no longer be reached.
     const exercises: PatroonExercise[] = block.patroonExercises || [];
     const gap = block.verticalSpacing || 14;
     const c = block.constraints as PatroonConstraints;
@@ -65,30 +62,19 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
                                 ? (showSolutions ? <span style={{ ...solutionText }}>{opText(ex, i)}</span>
                                     : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '26px', height: '13px' }} />)
                                 : null;
-                        cells.push(stackVertically
-                            // Stacked: the scaffold sits BESIDE the arrow rather than above it,
-                            // so a chain of six steps stays six short lines instead of twelve.
-                            ? (
-                                <div key={`c${i}`} style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '20px', fontSize: 'calc(var(--sheet-size-math) * 0.7)' }}>
-                                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', lineHeight: 1 }}>{showArrows ? '↓' : '│'}</span>
-                                    {stacked && <span style={{ display: 'flex', alignItems: 'center' }}>{top}</span>}
-                                </div>
-                            )
-                            : (
-                                <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 0.7)' }}>
-                                    {stacked && <span style={{ height: '15px', display: 'flex', alignItems: 'flex-end' }}>{top}</span>}
-                                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', lineHeight: 1 }}>{showArrows ? '→' : '–'}</span>
-                                </div>
-                            ));
+                        cells.push(
+                            <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 0.7)' }}>
+                                {stacked && <span style={{ height: '15px', display: 'flex', alignItems: 'flex-end' }}>{top}</span>}
+                                <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', lineHeight: 1 }}>{showArrows ? '→' : '–'}</span>
+                            </div>
+                        );
                     }
                 });
                 return (
-                    <div key={ex.id} className="print-exercise" style={stackVertically
-                        ? { display: 'flex', flexDirection: 'column', alignItems: 'center', rowGap: '2px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }
-                        : {
-                            display: 'grid', gridTemplateColumns: `repeat(${ex.values.length * 2 - 1}, 1fr)`,
-                            alignItems: 'end', columnGap: '2px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)',
-                        }}>
+                    <div key={ex.id} className="print-exercise" style={{
+                        display: 'grid', gridTemplateColumns: `repeat(${ex.values.length * 2 - 1}, 1fr)`,
+                        alignItems: 'end', columnGap: '2px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)',
+                    }}>
                         {cells}
                     </div>
                 );

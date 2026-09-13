@@ -2,7 +2,7 @@ import type { MathBlock, GetallenasExercise, Fraction } from '../../services/mat
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { useBlockWidth } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { GetallenrijConstraints } from '../../services/math/constraintTypes';
 import { SOL } from './solutionStyle';
 
@@ -13,11 +13,13 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
+// SYNC: same convention as GetallenasViewer / ClockViewer / MabViewer.
+const PX_PER_EM_AT_DEFAULT = 17.33;
 
-function Cell({ value, blank, showSolutions, fontSize }: { value: number | Fraction; blank: boolean; showSolutions: boolean; fontSize: number }) {
+function Cell({ value, blank, showSolutions, fontSize, scale }: { value: number | Fraction; blank: boolean; showSolutions: boolean; fontSize: number; scale: number }) {
     const color = blank && showSolutions ? SOL : undefined;
     const content = isFrac(value)
-        ? <VerticalFraction value={value} color={color} fontSize={Math.min(15, fontSize)} mono />
+        ? <VerticalFraction value={value} color={color} fontSize={Math.min(15 * scale, fontSize)} mono />
         : <span style={{ color: color ?? 'inherit', fontWeight: 'normal' }}>{formatMathNumber(value)}</span>;
 
     // Filled cell shows the value; blank shows a dotted writing line (or red solution).
@@ -32,6 +34,9 @@ function Cell({ value, blank, showSolutions, fontSize }: { value: number | Fract
 
 export default function GetallenrijenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // Called once here, not per exercise below — a hook inside .map() would change how many
+    // times it runs whenever the exercise count changes, which breaks React's hook order.
+    const scale = useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT;
     const exercises: GetallenasExercise[] = block.getallenasExercises || [];
     const gap = block.verticalSpacing || 14;
     const c = block.constraints as GetallenrijConstraints;
@@ -50,16 +55,21 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
                 // Shrink the font until all values fit one printable-width pill: cells
                 // are at least 44px (or the longest value at ~0.62em/char mono) + 14px gaps.
                 const maxChars = Math.max(1, ...vals.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
-                let fontSize = 18;
+                // Same shrink ladder as before (18px down to 12px at the 13pt default), now
+                // scaled by the math token so it follows the Lettergrootte slider.
                 const rowW = (fs: number) => vals.length * Math.max(44, maxChars * fs * 0.62 + 4) + (vals.length - 1) * 14 + (showFrame ? 47 : 0);
-                while (fontSize > 12 && rowW(fontSize) > availableWidth) fontSize -= 1;
+                let fontPx = 18;
+                while (fontPx > 12 && rowW(fontPx * scale) > availableWidth) fontPx -= 1;
+                const fontSize = fontPx * scale;
                 return (
                     <div key={ex.id} className="print-exercise" style={{
                         ...(showFrame ? { border: '1.5px solid #000', borderRadius: '22px', padding: '10px 22px' } : { padding: '6px 0' }),
-                        display: 'flex', alignItems: 'center', gap: '14px', fontFamily: mono, fontSize: `${fontSize}px`,
+                        // One pill per row (perRowFull: 1) so it centres rather than hugging
+                        // the left edge in a narrow column.
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0, gap: '14px', fontFamily: mono, fontSize: `${fontSize}px`,
                     }}>
                         {vals.map((v, i) => (
-                            <Cell key={i} value={v} blank={ex.blankMask[i]} showSolutions={showSolutions} fontSize={fontSize} />
+                            <Cell key={i} value={v} blank={ex.blankMask[i]} showSolutions={showSolutions} fontSize={fontSize} scale={scale} />
                         ))}
                     </div>
                 );

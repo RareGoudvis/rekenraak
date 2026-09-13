@@ -214,17 +214,6 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             </div>
         );
 
-        const calcLines = (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    {blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    {blank(24)}<span>×</span>{blank(28)}<span>=</span>{blank(28)}
-                </div>
-            </div>
-        );
-
         const gridWrap = (
             <div style={{ minHeight: '52px', display: 'flex', alignItems: 'center' }}>
                 {simpleGrid}
@@ -232,13 +221,19 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         );
 
         if (answerFormat === 'met-hulp') {
+            // One grid for the figure and both calc rows: the figure spans all 5 columns,
+            // then each calc line's cells land in those same 5 columns (a fragment's
+            // children become direct grid items, no wrapper element) — so the two "="
+            // signs share a column and line up instead of drifting with each row's
+            // differently-sized blanks. rowGap follows the block's own spacing setting
+            // rather than a fixed 4px, like the rest of the sheet.
+            const gap = block.verticalSpacing || 14;
             return (
-                <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                    {taskLine}
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', minHeight: '52px' }}>
-                        {simpleGrid}
-                    </div>
-                    {calcLines}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, auto)', columnGap: '3px', rowGap: `${Math.min(gap, 10)}px`, alignItems: 'center', width: '100%' }}>
+                    <div style={{ gridColumn: '1 / -1' }}>{taskLine}</div>
+                    <div style={{ gridColumn: '1 / -1', minHeight: '52px', display: 'flex', alignItems: 'center' }}>{simpleGrid}</div>
+                    {blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}
+                    {blank(24)}<span>×</span>{blank(28)}<span>=</span>{blank(28)}
                 </div>
             );
         }
@@ -379,10 +374,15 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         const partLength = parseFloat((cm / ex.denominator).toFixed(2));
         const arcLength  = parseFloat((partLength * ex.numerator).toFixed(2));
 
+        // To-scale (1cm = 38px) until it would eat more than half the column, at which
+        // point it caps there and is a drawn line to a REDUCED scale rather than to true
+        // size — a 15cm segment in a 163px quarter cell can't be both to-scale and legible.
+        const lineWidth = Math.min(cm * 38, columnWidth * 0.5);
+
         // Borders (not background-color) so the segment line always prints, even with
         // the print dialog's "Background graphics" off.
         const lineEl = (
-            <div style={{ width: `${cm * 38}px`, display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+            <div style={{ width: `${lineWidth}px`, display: 'flex', alignItems: 'center', margin: '10px 0' }}>
                 <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
                 <div style={{ flex: 1, height: 0, borderTop: '2px solid #000' }} />
                 <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />

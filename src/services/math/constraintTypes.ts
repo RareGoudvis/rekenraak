@@ -256,6 +256,9 @@ export type SplitsenConstraints = {
     mathForm?: string;
     mathForms?: string[];
     mathDirection?: string;
+    // positie-math only: 'volgorde' (place-value order, e.g. H, T, E) or 'gehusseld'
+    // (shuffled once per exercise, stored on ex.placeOrder) — default 'volgorde'.
+    mathOrder?: 'volgorde' | 'gehusseld';
     notation?: string;
 };
 
@@ -333,7 +336,7 @@ export type OrdenenConstraints = {
 };
 
 export type PlaatswaardeConstraints = {
-    subType: 'waarde' | 'plaats' | 'tabel';
+    subType: 'waarde' | 'plaats' | 'tabel' | 'omcirkelen';
     maxGetal: number;
     numberMask: PlaceMask;
     decimalPlaces: number;
@@ -395,6 +398,10 @@ export type DeelbaarheidConstraints = {
 
 export type DeelbaarheidKleurConstraints = {
     viewMode: 'strip' | 'markeren' | 'raster';
+    // Only meaningful when viewMode === 'strip'. 'lijn' = a wrapped number strip
+    // (perRow); 'rechthoek' = a fixed-column grid (rasterCols) — the shape the standalone
+    // 'raster' viewMode used to be, before C1 step 6 merged it into 'strip'.
+    rasterVorm?: 'lijn' | 'rechthoek';
     divisors: number[];
     maxGetal: number;
     perRow: number;

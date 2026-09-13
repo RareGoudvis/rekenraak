@@ -74,6 +74,9 @@ export interface SplitsenExercise {
     notation?: 'value' | 'letters';             // positie-benen: legs as 30 (value) vs 3T (letters)
     mathForm?: 'letters' | 'expanded';          // positie-math: 7H+9T+2E  vs  300+70+8
     mathDirection?: 'decompose' | 'compose';    // N=__+__+__  vs  __+__+__=N
+    // positie-math, mathOrder: 'gehusseld': the term order for THIS exercise (place `key`s),
+    // shuffled once at generation so the pupil can't just read off place value order.
+    placeOrder?: string[];
     words?: string;                             // positie-tabel: Dutch number-word prompt
     blankPos?: 'top' | 'left' | 'right';        // splitsboom: which slot the pupil fills
     isManuallyEdited: boolean;

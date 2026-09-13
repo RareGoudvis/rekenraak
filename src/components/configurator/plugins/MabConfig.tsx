@@ -6,7 +6,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
-import StylePicker from '../StylePicker';
+import ExercisePreview from '../../shared/ExercisePreview';
 import type { MabConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -57,24 +57,43 @@ export default function MabConfig({ block }: Props) {
 
     const keys = placeKeysFor(maxNumber);
 
+    // mab-tekenen always draws the blocks themselves — there is no symbolic/MAB choice to
+    // make, so the whole row would be a stijl picker with only one live option.
+    const isTekenen = block.typeId === 'mab-tekenen';
+
     return (
         <div style={styles.container}>
 
-            {/* STYLE — visual variant, so a modal card-gallery with live examples. */}
-            <div style={styles.section}>
-                <SettingLabel text="Stijl:" info="Hoe de oefening getoond wordt (symbolisch of met MAB-blokken)." />
-                <StylePicker
-                    typeId={block.typeId}
-                    value={mabStyle}
-                    title="Kies stijl"
-                    options={STYLE_OPTIONS.map(o => ({
-                        value: o.val,
-                        label: o.label,
-                        previewConstraints: { ...block.constraints, mabStyle: o.val },
-                    }))}
-                    onChange={(v) => set('mabStyle', v)}
-                />
-            </div>
+            {/* STYLE — visual variant, shown as a small inline card row instead of a modal:
+                three options doesn't need a gallery, and this keeps it on-screen with the
+                rest of the settings. */}
+            {!isTekenen && (
+                <div style={styles.section}>
+                    <SettingLabel text="Stijl:" info="Hoe de oefening getoond wordt (symbolisch of met MAB-blokken)." />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        {STYLE_OPTIONS.map(o => {
+                            const active = mabStyle === o.val;
+                            return (
+                                <button
+                                    key={o.val}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={active}
+                                    onClick={() => set('mabStyle', o.val)}
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', gap: '4px', width: '90px', padding: '4px',
+                                        background: 'var(--bg-surface-2)', border: `1.5px solid ${active ? 'var(--accent)' : 'var(--separator)'}`,
+                                        borderRadius: 'var(--radius-sm)', cursor: 'pointer', textAlign: 'left',
+                                    }}
+                                >
+                                    <ExercisePreview typeId={block.typeId} constraints={{ ...block.constraints, mabStyle: o.val }} height={64} />
+                                    <span style={{ fontSize: 'var(--text-xs)', color: active ? 'var(--accent)' : 'var(--text-main)', fontWeight: active ? 600 : 500, textAlign: 'center' }}>{o.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* MAX NUMBER */}
             <div style={styles.section}>

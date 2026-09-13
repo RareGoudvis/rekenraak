@@ -12,12 +12,23 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 const FILL = '#93c5fd';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
+// SYNC: same "px measured at the 13pt default, scaled by the slider" convention as
+// GetallenasViewer / ClockViewer / MabViewer.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const em = (px: number) => `${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)}em`;
 
 export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props) {
     const exercises: DeelbaarheidKleurExercise[] = block.deelbaarheidKleurExercises || [];
     const c = block.constraints as DeelbaarheidKleurConstraints;
-    const viewMode: string = c.viewMode ?? 'strip';
-    const showRest: boolean = (c.showRest ?? false) && viewMode !== 'raster';
+    const viewModeRaw: string = c.viewMode ?? 'strip';
+    // 'raster' used to be its own viewMode; it is now the strip mode's 'rechthoek' shape
+    // (C1 step 6), kept accepted here so a block saved before this change still renders —
+    // no persistence version bump needed for a value that still means the same thing.
+    const legacyRaster = viewModeRaw === 'raster';
+    const viewMode = legacyRaster ? 'strip' : viewModeRaw;
+    const rasterVorm: string = c.rasterVorm ?? (legacyRaster ? 'rechthoek' : 'lijn');
+    const isRechthoek = viewMode === 'strip' && rasterVorm === 'rechthoek';
+    const showRest: boolean = (c.showRest ?? false) && !isRechthoek;
     const perRow: number = c.perRow ?? 10;
     const gap = block.verticalSpacing || 14;
 
@@ -38,16 +49,19 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
             items={exercises.map(ex => {
                 const isMul = (n: number) => n % ex.divisor === 0;
 
-                // ── RASTER: consecutive grid, colour all multiples ──
-                if (viewMode === 'raster') {
+                // ── STRIP / RECHTHOEK: consecutive grid, colour all multiples ──
+                // (formerly the standalone 'raster' viewMode; merged into 'strip' as the
+                // 'rechthoek' shape — same rendering, `em`-sized instead of fixed px so it
+                // follows the Lettergrootte slider.)
+                if (isRechthoek) {
                     const cols = ex.cols ?? 10;
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
-                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 42px)`, width: 'fit-content' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${em(42)})`, width: 'fit-content' }}>
                                 {ex.numbers.map((num, i) => (
                                     <div key={i} style={{
-                                        width: 42, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        width: em(42), height: em(28), display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.7)',
                                         marginLeft: i % cols === 0 ? 0 : -1, marginTop: i >= cols ? -1 : 0,
                                         backgroundColor: showSolutions && isMul(num) ? FILL : 'white',
@@ -78,8 +92,7 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                     );
                 }
 
-                // ── STRIP: colour the multiples in a labelled number strip ──
-                const cellW = 46, cellH = 34;
+                // ── STRIP / LIJN: colour the multiples in a labelled number strip ──
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
@@ -87,7 +100,7 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                             {ex.numbers.map((num, i) => (
                                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: showRest || i === 0 ? 0 : -1 }}>
                                     <div style={{
-                                        width: cellW, height: cellH, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        width: em(46), height: em(34), display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)',
                                         backgroundColor: showSolutions && isMul(num) ? FILL : 'white',
                                     }}>{formatMathNumber(num)}</div>

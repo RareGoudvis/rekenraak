@@ -60,6 +60,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'plaatswaarde-waarde', label: 'Waarde van cijfer', typeId: 'plaatswaarde', defaultConstraints: { subType: 'waarde' } },
                             { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' } },
+                            { id: 'plaatswaarde-omcirkelen', label: 'Plaats omcirkelen', typeId: 'plaatswaarde', defaultConstraints: { subType: 'omcirkelen' } },
                             { id: 'plaatswaarde-tabel',  label: 'Tabel invullen',     typeId: 'plaatswaarde', defaultConstraints: { subType: 'tabel' } },
                         ],
                     },
@@ -113,7 +114,6 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'getalbegrip-getallenrijen-geh', label: 'Gehele getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 } },
                         ],
                     },
-                    { id: 'getalbegrip-functie', label: 'Functie van getallen', typeId: 'getalfunctie', minLeerjaar: 2 },
                     {
                         id: 'getalbegrip-verbanden', label: 'Verbanden (breuk · decimaal · procent)',
                         children: [
@@ -121,6 +121,16 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'verbanden-paren', label: 'Omzettingen', typeId: 'verbanden', defaultConstraints: { subType: 'paren' }, minLeerjaar: 5 },
                         ],
                     },
+                ],
+            },
+            {
+                // C1 step 2: getalfunctie used to be a bare leaf inside 'getalbegrip', sitting
+                // oddly among the plaatswaarde/splitsen/vergelijken accordions — it is its own
+                // topic (a number's role: hoeveelheid/rang/maat/code), not a getalbegrip skill.
+                id: 'functie-van-getallen',
+                label: 'Functie van getallen',
+                types: [
+                    { id: 'getalbegrip-functie', label: 'Functie van getallen', typeId: 'getalfunctie', minLeerjaar: 2 },
                 ],
             },
             {
@@ -186,7 +196,9 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'deelbaarheid-rooster', label: 'Rooster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'strip', divisors: [2, 5, 10] } },
                             { id: 'deelbaarheid-omcirkelen', label: 'Omcirkelen', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'markeren', divisors: [2, 5, 10] } },
-                            { id: 'deelbaarheid-kleurraster', label: 'Kleurraster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'raster', divisors: [2, 5, 10] } },
+                            // 'raster' is now the strip mode's 'rechthoek' shape (C1 step 6) — the
+                            // leaf id/label stay the same, only what they set underneath changed.
+                            { id: 'deelbaarheid-kleurraster', label: 'Kleurraster', typeId: 'deelbaarheid-kleuren', defaultConstraints: { viewMode: 'strip', rasterVorm: 'rechthoek', divisors: [2, 5, 10] } },
                         ],
                     },
                 ],

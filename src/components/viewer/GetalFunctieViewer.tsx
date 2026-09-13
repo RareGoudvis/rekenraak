@@ -32,17 +32,24 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
 
     // ── SCHRIJVEN: sentence + write-line ───────────────────────────────────────
     if (answerMode === 'schrijven') {
+        // A single exercise has no neighbours to sit beside, so it centres in the column
+        // rather than hugging the left edge — the same "single" idea as minWidthSingle.
+        const single = exercises.length === 1;
         return (
             <FragmentableGrid
                 cols={1}
                 columnGap={24}
                 rowGap={gap}
                 items={exercises.map(ex => (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '10px', fontSize: 'calc(var(--sheet-size-text) * 0.75)', flexWrap: 'wrap' }}>
-                        <span>{ex.sentence}</span>
+                    <div key={ex.id} className="print-exercise" style={{
+                        display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap',
+                        justifyContent: single ? 'center' : 'flex-start', minWidth: 0,
+                    }}>
+                        {/* May wrap to two lines in a narrow column; the answer line below takes whatever width is left over rather than a fixed one. */}
+                        <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.75)' }}>{ex.sentence}</span>
                         {showSolutions
                             ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>{FUNCTIE_FULL[ex.functie]}</span>
-                            : <span style={{ borderBottom: '1.5px solid #000', minWidth: '140px', height: '15px', display: 'inline-block' }} />}
+                            : <span style={{ borderBottom: '1.5px solid #000', flex: '1 1 120px', minWidth: '120px', height: '15px', display: 'inline-block' }} />}
                     </div>
                 ))}
             />

@@ -29,6 +29,7 @@ export default function SplitsenConfig({ block }: Props) {
         rowsPerBox = 4,
         rowHeight = 28,
         mathDirection = 'decompose',
+        mathOrder = 'volgorde',
     } = c;
 
     const isPositie = typeof layout === 'string' && layout.startsWith('positie');
@@ -144,6 +145,13 @@ export default function SplitsenConfig({ block }: Props) {
                             <button onClick={() => set('mathDirection', 'decompose')} style={styles.radioBtn(mathDirection === 'decompose')}>Splitsen (942=…)</button>
                             <button onClick={() => set('mathDirection', 'compose')} style={styles.radioBtn(mathDirection === 'compose')}>Samenstellen (…=942)</button>
                             <button onClick={() => set('mathDirection', 'beide')} style={styles.radioBtn(mathDirection === 'beide')}>Beide</button>
+                        </div>
+                    </div>
+                    <div style={styles.section}>
+                        <SettingLabel text="Volgorde van de termen:" info="Op volgorde (H, T, E) of gehusseld, zodat de leerling niet zomaar kan aflezen." />
+                        <div style={styles.buttonGroup}>
+                            <button onClick={() => set('mathOrder', 'volgorde')} style={styles.radioBtn(mathOrder === 'volgorde')}>Op volgorde</button>
+                            <button onClick={() => set('mathOrder', 'gehusseld')} style={styles.radioBtn(mathOrder === 'gehusseld')}>Gehusseld</button>
                         </div>
                     </div>
                 </>

@@ -144,6 +144,7 @@ const splitsenSpace: OptionSpace = {
     benenVariants: [['legs-letters'], ['legs-numbers'], ['legs-letters', 'legs-numbers']],
     mathForms: [['letters'], ['expanded'], ['letters', 'expanded']],
     mathDirection: ['decompose', 'compose', 'beide'],
+    mathOrder: ['volgorde', 'gehusseld'],
     operand1Mask: MASKS,
 };
 
@@ -241,7 +242,8 @@ const deelbaarheidSpace: OptionSpace = {
 };
 
 const deelbaarheidKleurSpace: OptionSpace = {
-    viewMode: ['strip', 'markeren', 'raster'],
+    viewMode: ['strip', 'markeren'],
+    rasterVorm: ['lijn', 'rechthoek'],
     divisors: [[2], [2, 5, 10], [3, 7, 11, 12]],
     maxGetal: [20, 100, 1000],
     perRow: [5, 10],
@@ -301,7 +303,7 @@ const temperatuurSpace: OptionSpace = {
 };
 
 const plaatswaardeSpace: OptionSpace = {
-    subType: ['waarde', 'plaats', 'tabel'],
+    subType: ['waarde', 'plaats', 'tabel', 'omcirkelen'],
     maxGetal: [100, 1000, 10000, 100000, 1000000],
     numberMask: MASKS,
     decimalPlaces: [0, 1, 2, 3],

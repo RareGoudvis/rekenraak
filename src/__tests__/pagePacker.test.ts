@@ -189,10 +189,12 @@ describe('packPages with a measured minWidthOf', () => {
     // must use it instead of the per-type table — that is the whole point of 7a — and the
     // clamp must stay one-directional so measure→pack→measure cannot oscillate.
     test('a measured closure can place a type the table would have widened', () => {
-        // even-oneven's table entry is full width; three short numbers are not. (It was
-        // rekenvolgorde until the 2026-09-13 matrix rerun measured that type at a half.)
-        const a = makeBlock('even-oneven', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
-        const b = makeBlock('even-oneven', { id: 'b', block: { widthUnits: 1, numberOfExercises: 3 } });
+        // getallenas' floor is full width regardless of settings (its axis labels collide
+        // well before anything overflows, C1 step 0's SETTINGS_FLOOR) — a fallback the
+        // measured closure below overrides. (It was even-oneven, then rekenvolgorde before
+        // that, as each in turn was measured or floored differently.)
+        const a = makeBlock('getallenas', { id: 'a', block: { widthUnits: 1, numberOfExercises: 3 } });
+        const b = makeBlock('getallenas', { id: 'b', block: { widthUnits: 1, numberOfExercises: 3 } });
         expect(packPages([a, b])[0].rows[0].items.map(i => i.width)).toEqual([COL_UNITS]);
         const pages = packPages([a, b], { minWidthOf: () => 1 });
         expect(flat(pages)).toEqual([[['a', 'b']]]);

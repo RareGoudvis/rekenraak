@@ -24,6 +24,15 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   the generator stores its own `bereikGram` / `decimalPlaces` / `is24hour` on the exercise
   and the viewer reads `ex.field ?? c.field`. The Inspector's stale flag covers it for now.
 
+- **Breuken lijnstuk calc row clips at a quarter width** (2026-09-13, C1 step 8 review):
+  `___ cm : ___ = ___ cm` and the `___ × ___ cm = ___ cm` line below it run past the right
+  edge at width 1 (163px) even with the drawn segment itself capped to half the column
+  (C1 step 11) — overflow 1.086 with a 15cm segment. The blanks (`blank(28)`/`blank(24)`
+  etc.) are fixed px and never shrink or wrap; not floored by SETTINGS_FLOOR since
+  `lijnstuk` isn't `hoeveelheid`. Fix direction: either float the calc row's blanks in `em`
+  with a narrower floor at small widths, or wrap the row like the getalfunctie schrijven
+  answer line does.
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`

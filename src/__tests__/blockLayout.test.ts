@@ -11,10 +11,10 @@ import { makeBlock } from './helpers/makeBlock';
 const measure = (px: number, atWidth: WidthUnits = 4) => ({ intrinsicPx: px, atWidth });
 
 describe('minWidthUnits — fallback (no measurement)', () => {
-    // even-oneven stands in for "the table says full width" since the 2026-09-13 matrix
-    // rerun put rekenvolgorde at a half (its answer lines made the rows 1-up).
+    // verbanden stands in for "the table says full width" since C1 step 7 clamped
+    // even-oneven's rooster to reflow instead of overflow, dropping its own table entry to ½.
     test('a full-width table entry still claims the full width, as it did before measuring', () => {
-        expect(minWidthUnits(makeBlock('even-oneven', { block: { numberOfExercises: 3 } }))).toBe(4);
+        expect(minWidthUnits(makeBlock('verbanden', { block: { numberOfExercises: 3 } }))).toBe(4);
     });
 
     test('hoofdrekenen at a million needs the full width', () => {
@@ -52,7 +52,7 @@ describe('minWidthUnits — measured', () => {
         // A number line measures narrow at a quarter and still may not go there: its axis
         // labels collide long before anything overflows.
         const as = makeBlock('getallenas', { block: { numberOfExercises: 1 } });
-        expect(minWidthUnits(as, measure(80, 1))).toBe(2);
+        expect(minWidthUnits(as, measure(80, 1))).toBe(4);
         // The to-scale rulers and the two layout blocks keep the whole width.
         expect(minWidthUnits(makeBlock('omtrek'), measure(80, 1))).toBe(4);
         expect(minWidthUnits(makeBlock('layout-lege-pagina'), measure(10, 1))).toBe(4);
@@ -81,5 +81,60 @@ describe('minWidthUnits — measured', () => {
         const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'decimal', maxGetal: 100 }, block: { widthUnits: 1, numberOfExercises: 1 } });
         expect(minWidthUnits(block)).toBe(2);
         expect(minWidthUnits(block, measure(120, 1))).toBe(1);
+    });
+});
+
+// The floors below read `block.constraints`, so a measurement of a tiny probe width must
+// not be able to talk a type below what the settings say it needs — these all pass a
+// generous measurement (or none) to isolate the floor itself.
+describe('minWidthUnits — settings-shaped editorial floors (C1 step 0)', () => {
+    test('getallenas / getallenrijen / getalfunctie stay full width regardless of settings', () => {
+        expect(minWidthUnits(makeBlock('getallenas'), measure(10, 1))).toBe(4);
+        expect(minWidthUnits(makeBlock('getallenrijen'), measure(10, 1))).toBe(4);
+        expect(minWidthUnits(makeBlock('getalfunctie'), measure(10, 1))).toBe(4);
+    });
+
+    test('getalpatronen / kettingsommen / even-oneven floor at a half', () => {
+        expect(minWidthUnits(makeBlock('getalpatronen'), measure(10, 1))).toBe(2);
+        expect(minWidthUnits(makeBlock('kettingsommen'), measure(10, 1))).toBe(2);
+        expect(minWidthUnits(makeBlock('even-oneven'), measure(10, 1))).toBe(2);
+    });
+
+    test('deelbaarheid: veelvouden floors at a half, tabel depends on the divisor count', () => {
+        const veelvouden = makeBlock('deelbaarheid', { constraints: { layout: 'veelvouden' } });
+        expect(minWidthUnits(veelvouden, measure(10, 1))).toBe(2);
+
+        const smallTable = makeBlock('deelbaarheid', { constraints: { layout: 'tabel', divisors: [2, 3, 5] } });
+        expect(minWidthUnits(smallTable, measure(10, 1))).toBe(2);
+
+        const bigTable = makeBlock('deelbaarheid', { constraints: { layout: 'tabel', divisors: [2, 3, 4, 5, 10] } });
+        expect(minWidthUnits(bigTable, measure(10, 1))).toBe(4);
+    });
+
+    test('splitsen: positie-tabel / positie-benen scale with maxGetal, positie-math floors at a half', () => {
+        const tabelSmall = makeBlock('splitsen', { constraints: { layout: 'positie-tabel', maxGetal: 100 } });
+        expect(minWidthUnits(tabelSmall, measure(10, 1))).toBe(2);
+        const tabelBig = makeBlock('splitsen', { constraints: { layout: 'positie-tabel', maxGetal: 1000 } });
+        expect(minWidthUnits(tabelBig, measure(10, 1))).toBe(4);
+
+        const benenSmall = makeBlock('splitsen', { constraints: { layout: 'positie-benen', maxGetal: 100 } });
+        expect(minWidthUnits(benenSmall, measure(10, 1))).toBe(1);
+        const benenBig = makeBlock('splitsen', { constraints: { layout: 'positie-benen', maxGetal: 1000 } });
+        expect(minWidthUnits(benenBig, measure(10, 1))).toBe(2);
+
+        const math = makeBlock('splitsen', { constraints: { layout: 'positie-math', maxGetal: 100 } });
+        expect(minWidthUnits(math, measure(10, 1))).toBe(2);
+    });
+
+    test('breuken hoeveelheid floors at a half, other subtypes stay unfloored', () => {
+        const hoeveelheid = makeBlock('breuken', { constraints: { subType: 'hoeveelheid' } });
+        expect(minWidthUnits(hoeveelheid, measure(10, 1))).toBe(2);
+        const lijnstuk = makeBlock('breuken', { constraints: { subType: 'lijnstuk' } });
+        expect(minWidthUnits(lijnstuk, measure(10, 1))).toBe(1);
+    });
+
+    test('mab-tekenen can go to a quarter, mab-herkennen stays at a half', () => {
+        expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(1);
+        expect(minWidthUnits(makeBlock('mab-herkennen'), measure(10, 1))).toBe(2);
     });
 });

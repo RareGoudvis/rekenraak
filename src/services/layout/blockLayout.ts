@@ -127,16 +127,22 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "controleren": { rowUnits: 4.67, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "deelbaarheid": { rowUnits: 1.42, perRowFull: 1, minWidth: 1 },
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 1 },
-    "even-oneven": { rowUnits: 2.17, perRowFull: 1, minWidth: 4 },
+    // C1 step 7: the rooster's perRow now clamps to the column, so it never overflows —
+    // SETTINGS_FLOOR (2) is what actually keeps it off a quarter, not this table.
+    "even-oneven": { rowUnits: 1.9, perRowFull: 1, minWidth: 2 },
     "geld-herkennen": { rowUnits: 10.08, perRowFull: 3, minWidth: 1 },
     "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 4 },
     "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 2 },
     "geld-teruggeven": { rowUnits: 8.4, perRowFull: 1, minWidth: 1 },
     "geld-wissel": { rowUnits: 5.58, perRowFull: 2, minWidth: 2 },
     "getalfunctie": { rowUnits: 1.33, perRowFull: 1, minWidth: 4 },
-    "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 1 },
+    // minWidth is academic here: SETTINGS_FLOOR floors getallenas at 4 regardless (axis
+    // labels collide well before the content itself overflows a narrower cell).
+    "getallenas": { rowUnits: 4.08, perRowFull: 1, minWidth: 4 },
     "getallenrijen": { rowUnits: 2.88, perRowFull: 1, minWidth: 4 },
-    "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 1 },
+    // C1 step 1: the vertical fallback below 200px is gone from PatroonViewer, so the
+    // fallback table floor moves up to match SETTINGS_FLOOR's ½.
+    "getalpatronen": { rowUnits: 1.92, perRowFull: 1, minWidth: 2 },
     "herleidingen": { rowUnits: 2.03, perRowFull: 2, minWidth: 4, minWidthSingle: 2 },
     "hr-std-aftrekken": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     "hr-std-delen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
@@ -145,12 +151,14 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "hr-std-vermenigvuldigen": { rowUnits: 2.08, perRowFull: 2, minWidth: 1 },
     // Measured 4 since 2026-09-13: the question row overflows a half (BUGS.md) — 2 once fixed.
     "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 2 },
-    "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 1 },
+    "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 2 },
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
     "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.58, perRowFull: 1, minWidth: 1 },
     "mab-herkennen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
-    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
+    // A single drawn place-value figure has no glyph table to read, so it can go to ¼ —
+    // unlike mab-herkennen, whose numeral/glyph pairing needs the ½ floor (SETTINGS_FLOOR).
+    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 1 },
     "omtrek": { rowUnits: 21.42, perRowFull: 1, minWidth: 4 },
     "oppervlakte": { rowUnits: 18.07, perRowFull: 1, minWidth: 4 },
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 1 },
@@ -216,17 +224,60 @@ const VETO_MIN: Record<string, WidthUnits> = {
     "omtrek": 4,
     "oppervlakte": 4,
     "geld-tekenen": 4,
-    "getallenas": 2,
     "kalender": 2,
-    "deelbaarheid-kleuren": 2,
     "geld-teruggeven": 2,
-    // MAB is sized by its glyphs rather than by its share of the block: at a quarter the
-    // place columns stop reading as places.
-    "mab-herkennen": 2,
-    "mab-tekenen": 2,
+    // deelbaarheid-kleuren used to be pinned here because its cells were fixed px and a
+    // 4-digit number wrapped inside them; the strip/raster cells are `em`-sized now (C1
+    // step 6), so the width clamp judges it on measurement like everything else.
+};
+
+// A typeId-only veto cannot see WHAT the teacher configured — a getallenrijen block reads
+// its own settings, and "the axis labels collide" is true regardless of them, while
+// "six place columns" only happens with the 'tabel' subtype. These rules read
+// `block.constraints` (narrowed per family) instead of being one more flat table entry,
+// so they stay a registry lookup rather than growing into an if-else chain in
+// `editorialFloor`. Every floor here is from the 2026-09-13 owner pass (see BUGS.md /
+// UpdateState.md for the screenshots that set each number).
+type FloorRule = (block: MathBlock) => WidthUnits;
+
+const SETTINGS_FLOOR: Record<string, FloorRule> = {
+    // Axis / sequence / function-table labels collide well before anything overflows —
+    // full width regardless of settings.
+    getallenas: () => 4,
+    getallenrijen: () => 4,
+    getalfunctie: () => 4,
+    getalpatronen: () => 2,
+    kettingsommen: () => 2,
+    'even-oneven': () => 2,
+    deelbaarheid: (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').DeelbaarheidConstraints>;
+        if (c.layout === 'tabel') return (c.divisors?.length ?? 0) <= 3 ? 2 : 4;
+        // 'veelvouden' (the default) never needs more than a half: C1 step 4 caps the
+        // printed sequence length to whatever the column actually holds.
+        return 2;
+    },
+    splitsen: (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').SplitsenConstraints>;
+        const maxGetal = c.maxGetal ?? 0;
+        if (c.layout === 'positie-tabel') return maxGetal <= 100 ? 2 : 4;
+        if (c.layout === 'positie-benen') return maxGetal <= 100 ? 1 : 2;
+        if (c.layout === 'positie-math') return 2;
+        return 1;
+    },
+    breuken: (block) => {
+        const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').FractionConstraints>;
+        return c.subType === 'hoeveelheid' ? 2 : 1;
+    },
+    // MAB is sized by its glyphs rather than by its share of the block: mab-herkennen
+    // pairs a numeral with a glyph table, which stops reading at a quarter; mab-tekenen
+    // draws ONE place-value figure, which has no such pairing and can go to a quarter.
+    'mab-herkennen': () => 2,
+    'mab-tekenen': () => 1,
 };
 
 function editorialFloor(block: MathBlock): WidthUnits {
+    const rule = SETTINGS_FLOOR[block.typeId];
+    if (rule) return rule(block);
     return VETO_MIN[block.typeId] ?? 1;
 }
 
@@ -305,9 +356,6 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
     const single = (block.numberOfExercises ?? 0) <= 1 && facts.minWidthSingle;
     const base = single ? facts.minWidthSingle! : facts.minWidth;
     const c = (block.constraints ?? {}) as Record<string, unknown>;
-
-    // MAB tops out at 1000, so its four place columns still fit a half.
-    if (block.typeId.startsWith('mab-')) return 2;
 
     if (base === 4) return 4;
 

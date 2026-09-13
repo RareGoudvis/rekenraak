@@ -5,7 +5,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import type { PlaatswaardeConstraints } from '../../services/math/constraintTypes';
-import { solutionText } from './solutionStyle';
+import { SOL, solutionText } from './solutionStyle';
 
 interface Props {
     block: MathBlock;
@@ -100,6 +100,41 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                                     {places.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}>{showSolutions ? p.digit : ''}</div>)}
                                 </div>
                             </div>
+                        </div>
+                    );
+                })}
+            />
+        );
+    }
+
+    // ── OMCIRKELEN: circle the digit at the marked place ───────────────────────
+    // Reuses the 'plaats' generator path (same number + placeKey shape); the marked
+    // place is shown as a row of chips (one per digit, in the same descending E/T/H/...
+    // order placesFor already uses) instead of an underline, and the pupil circles it.
+    if (subType === 'omcirkelen') {
+        return (
+            <FragmentableGrid
+                cols={1}
+                rowGap={gap}
+                items={exercises.map(ex => {
+                    const places = placesFor(ex);
+                    return (
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '8px' : '14px', flexWrap: 'wrap', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+                            <span style={{ whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)} →</span>
+                            {places.map(p => {
+                                const isAns = showSolutions && p.key === ex.placeKey;
+                                return (
+                                    <span key={p.key} style={{
+                                        padding: '2px 10px',
+                                        border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
+                                        borderRadius: '50%',
+                                        color: isAns ? SOL : 'inherit',
+                                        minWidth: 0,
+                                    }}>
+                                        {p.digit}
+                                    </span>
+                                );
+                            })}
                         </div>
                     );
                 })}

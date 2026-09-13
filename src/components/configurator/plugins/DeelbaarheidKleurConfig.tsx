@@ -15,7 +15,8 @@ const DIVISORS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 export default function DeelbaarheidKleurConfig({ block }: Props) {
     const [c, patch] = useConstraints<DeelbaarheidKleurConstraints>(block);
     const {
-        viewMode = 'strip',
+        viewMode: viewModeRaw = 'strip',
+        rasterVorm,
         divisors = [2, 5, 10],
         maxGetal = 100,
         perRow = 10,
@@ -23,6 +24,10 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
         rasterCols = 10,
         showRest = false,
     } = c;
+    // 'raster' is a legacy viewMode value (pre C1 step 6); a block saved with it still
+    // opens here as strip + rechthoek rather than losing its shape.
+    const viewMode = viewModeRaw === 'raster' ? 'strip' : viewModeRaw;
+    const vorm = rasterVorm ?? (viewModeRaw === 'raster' ? 'rechthoek' : 'lijn');
 
     const set = (key: string, value: unknown) =>
         patch({ [key]: value } as Partial<DeelbaarheidKleurConstraints>);
@@ -32,19 +37,28 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
         set('divisors', next.length ? next : divisors);   // keep ≥1
     };
 
-    const isRaster = viewMode === 'raster';
+    const isRaster = viewMode === 'strip' && vorm === 'rechthoek';
 
     return (
         <div style={styles.container}>
             {/* VIEW MODE */}
             <div style={styles.section}>
-                <SettingLabel text="Soort:" info="De weergave: rooster, omcirkelen of kleurraster." />
+                <SettingLabel text="Soort:" info="De weergave: rooster of omcirkelen." />
                 <div style={styles.buttonGroup}>
                     <button onClick={() => set('viewMode', 'strip')} style={styles.radioBtn(viewMode === 'strip')}>Rooster</button>
                     <button onClick={() => set('viewMode', 'markeren')} style={styles.radioBtn(viewMode === 'markeren')}>Omcirkelen</button>
-                    <button onClick={() => set('viewMode', 'raster')} style={styles.radioBtn(viewMode === 'raster')}>Kleurraster</button>
                 </div>
             </div>
+
+            {viewMode === 'strip' && (
+                <div style={styles.section}>
+                    <SettingLabel text="Vorm:" info="Lijn: een doorlopende strook. Rechthoek: een vast raster met kolommen." />
+                    <div style={styles.buttonGroup}>
+                        <button onClick={() => set('rasterVorm', 'lijn')} style={styles.radioBtn(vorm === 'lijn')}>Lijn</button>
+                        <button onClick={() => set('rasterVorm', 'rechthoek')} style={styles.radioBtn(vorm === 'rechthoek')}>Rechthoek</button>
+                    </div>
+                </div>
+            )}
 
             {/* DIVISORS */}
             <div style={styles.section}>

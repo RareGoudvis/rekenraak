@@ -2,7 +2,7 @@ import type { MathBlock, GetallenasExercise, Fraction } from '../../services/mat
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { useBlockWidth } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import { SOL } from './solutionStyle';
 
 interface Props {
@@ -12,9 +12,14 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
+// SYNC: same "px measured at the 13pt default, scaled by the slider" convention as
+// ClockViewer / MabViewer / FractionExerciseItem (see BlockWidthContext.tsx).
+const PX_PER_EM_AT_DEFAULT = 17.33;
 
-function label(v: number | Fraction, fontSize: number, color?: string) {
-    if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={Math.min(13, fontSize)} mono />;
+function label(v: number | Fraction, fontSize: number, scale: number, color?: string) {
+    // Fraction glyphs get cramped sooner than plain digits, so they cap at the middle
+    // shrink step (13px at the 13pt default) rather than following the top step.
+    if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={Math.min(13 * scale, fontSize)} mono />;
     return <span style={{ fontSize: `${fontSize}px`, fontWeight: 'normal', color: color || '#000', fontFamily: mono, whiteSpace: 'nowrap' }}>{formatMathNumber(v)}</span>;
 }
 
@@ -34,8 +39,15 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
     const pad = 24;
     const gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
     const labelChars = Math.max(1, ...values.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
-    let fontSize = 15;
-    while (fontSize > 11 && labelChars * fontSize * 0.62 + 12 > gap) fontSize -= 2;
+    // Same three stops as before (15/13/11px at the 13pt default), now scaled by the math
+    // token so the shrink follows the Lettergrootte slider instead of a fixed px ladder.
+    const scale = useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT;
+    const STEPS_PX = [15, 13, 11];
+    let fontSize = STEPS_PX[0] * scale;
+    for (const px of STEPS_PX) {
+        fontSize = px * scale;
+        if (labelChars * fontSize * 0.62 + 12 <= gap) break;
+    }
 
     const W = pad * 2 + gap * (tickCount - 1);
     const axisY = 30;
@@ -60,8 +72,8 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
                 return (
                     <div key={i} style={{ position: 'absolute', left: tickX(i), top: axisY + 12, transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                         {blank
-                            ? (showSolutions ? label(v, fontSize, SOL) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: '16px' }} />)
-                            : label(v, fontSize)}
+                            ? (showSolutions ? label(v, fontSize, scale, SOL) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: '16px' }} />)
+                            : label(v, fontSize, scale)}
                     </div>
                 );
             })}
