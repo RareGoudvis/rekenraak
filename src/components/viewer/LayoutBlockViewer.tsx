@@ -97,8 +97,10 @@ export default function LayoutBlockViewer({ block }: Props) {
                 background: emphasis === 'grijs' ? '#f2f2f2' : 'transparent',
                 fontFamily: "'Azeret Mono', monospace", color: '#000',
             }}>
-                {title && <div style={{ fontWeight: 700, fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: body ? '6px' : 0 }}>{title}</div>}
-                {body && <div style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{renderKaderBody(body)}</div>}
+                {/* Title at the opdracht-titel size, body near the digit size — the old 0.65/0.6
+                    caption-sized factors read too small next to the sheet's other text. */}
+                {title && <div style={{ fontWeight: 700, fontSize: 'calc(var(--sheet-size-text) * 1)', marginBottom: body ? '6px' : 0 }}>{title}</div>}
+                {body && <div style={{ fontSize: 'calc(var(--sheet-size-text) * 0.85)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{renderKaderBody(body)}</div>}
             </div>
         );
     }
