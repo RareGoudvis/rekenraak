@@ -37,7 +37,9 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                     const nums = ex.numbers || [];
                     const answer = (ex.target ?? 'grootste') === 'kleinste' ? Math.min(...nums) : Math.max(...nums);
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'space-between', width: '100%', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
+                        // 1-up cell: centre the chip row instead of space-between stretching
+                        // the gaps to the cell's full width (looked hard left in a wide cell).
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', justifyContent: 'center', width: '100%', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
                             {nums.map((n, i) => {
                                 const isAns = showSolutions && n === answer;
                                 return (
@@ -69,15 +71,17 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
         // 'woorden' spells a value out ("9 honderdtallen 8 tientallen …") and wraps to
         // several lines in a 2-up track — keep those comparisons full width (1-up).
         const hasWoorden = leftRep === 'woorden' || rightRep === 'woorden';
+        const repCols = hasWoorden ? 1 : fitCols(availableWidth, 230, 2);
         return (
             <FragmentableGrid
-                cols={hasWoorden ? 1 : fitCols(availableWidth, 230, 2)}
+                cols={repCols}
                 columnGap={24}
                 rowGap={gap + 4}
                 items={exercises.map(ex => {
                     const a = ex.a ?? 0, b = ex.b ?? 0;
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+                        // 1-up: centre the row in the cell instead of hugging the left edge.
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: repCols === 1 ? 'center' : 'flex-start', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
                             <span style={{ minWidth: '80px', display: 'inline-flex', justifyContent: 'flex-end', alignItems: 'center' }}><RepValue value={a} rep={leftRep} frac={ex.aFrac} /></span>
                             <span style={{
                                 width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
@@ -97,20 +101,23 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
     // ── GETALLEN: fill <, > or = between two numbers ──────────────────────────
     // Row is two 70px number spans + a 34px op box + gaps ≈ 210px; 220px keeps 2-up at
     // full width but forces 1-up in a ½ cell (~334px) so it can't spill into the neighbour.
+    const getallenCols = fitCols(availableWidth, 220, 2, 24);
     return (
         <FragmentableGrid
-            cols={fitCols(availableWidth, 220, 2, 24)}
+            cols={getallenCols}
             columnGap={24}
             rowGap={gap}
             items={exercises.map(ex => {
                 const a = ex.a ?? 0, b = ex.b ?? 0;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+                    // 1-up: centre the row so the two number spans line up around a centred box
+                    // instead of hugging the left edge with empty space on the right.
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: getallenCols === 1 ? 'center' : 'flex-start', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
                         <span style={{ minWidth: '70px', textAlign: 'right' }}>{formatMathNumber(a)}</span>
                         <span style={{
                             width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            ...solutionText,
+                            ...solutionText, flexShrink: 0,
                         }}>
                             {showSolutions ? op(a, b) : ''}
                         </span>
