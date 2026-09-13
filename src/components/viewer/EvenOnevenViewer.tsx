@@ -88,6 +88,16 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     return (
         <FragmentableGrid
             cols={1}
+            // The row's width is `cols` cells, and `cols` comes from useBlockWidth — a React
+            // value the min-content probe cannot see, so a probe taken at full width reported
+            // a 10-wide row as this block's honest minimum and the packer promoted it to full
+            // width for good. Which of the two fixed points a run landed in depended on
+            // whether the first measured render happened at ½ or at 1/1, so two font:baseline
+            // runs of the same build disagreed (BUGS.md, branch G). `shrinks` is the existing
+            // way to say "this measurement gets narrower in a narrower cell" (see
+            // probeIntrinsicWidth): with it the wide probe is an allowance, not a demand, and
+            // there is one fixed point again. A 1-column row has nothing left to give back.
+            shrinks={cols > 1}
             rowGap={gap}
             items={exercises.map(ex => (
                 <div key={ex.id} className="print-exercise" style={{
