@@ -247,7 +247,7 @@ const evenOnevenDefaults = (): EvenOnevenConstraints => ({
 });
 
 const vergelijkenDefaults = (): VergelijkenConstraints => ({
-    subType: 'getallen', maxGetal: 1000, numberMask: {}, chooseTarget: 'grootste', setSize: 4, decimalPlaces: 0,
+    subType: 'getallen', maxGetal: 1000, numberMask: {}, chooseTarget: 'grootste', setSize: 3, decimalPlaces: 0,
     // representaties: which representation each side shows + per-side getalopbouw
     leftRep: 'breuk', rightRep: 'kommagetal', leftMask: {}, rightMask: {},
     leftFracN: 4, leftFracD: 8, rightFracN: 4, rightFracD: 8,

@@ -32,7 +32,7 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
     const maxGetal: number = c.maxGetal ?? 1000;
     const numberMask: Record<string, boolean> = c.numberMask ?? {};
     const decimalPlaces: number = c.decimalPlaces ?? 0;
-    const setSize: number = c.setSize ?? 4;
+    const setSize: number = c.setSize ?? 3;
     const target: string = c.chooseTarget ?? 'grootste';
     const count = block.numberOfExercises || 6;
     const out: VergelijkenExercise[] = [];
