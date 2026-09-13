@@ -21,7 +21,9 @@ function defaultsFor(subType: FractionSubType): Record<string, unknown> {
         case 'hoeveelheid':           return { objectShape: 'circle', minDenominator: 2, maxDenominator: 5, maxTotal: 20, answerFormat: 'met-hulp' };
         case 'hoeveelheid-rechthoek': return { minDenominator: 2, maxDenominator: 5, maxTotal: 20, answerFormat: 'met-berekening' };
         case 'hoeveelheid-abstract':  return { minDenominator: 2, maxDenominator: 9, level: 1, answerMode: 'berekeningslijnen', maxAbstractN3: 1000 };
-        case 'lijnstuk':              return { minDenominator: 2, maxDenominator: 6, minLineLength: 4, maxLineLength: 12, answerMode: 'berekeningslijnen' };
+        // maxLineLength 12 -> 8 (C1 step 11): past 8cm the to-scale line eats more than
+        // half of even a full-width column, so the default now stays inside that budget.
+        case 'lijnstuk':              return { minDenominator: 2, maxDenominator: 6, minLineLength: 4, maxLineLength: 8, answerMode: 'berekeningslijnen' };
         case 'veelhoek':              return { minDenominator: 2, maxDenominator: 9, maxWidth: 6, maxHeight: 6 };
     }
 }
