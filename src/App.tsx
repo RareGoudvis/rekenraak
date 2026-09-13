@@ -22,7 +22,7 @@ import { Lock, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phos
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
 import { useSheetDnd } from './hooks/useSheetDnd';
-import SheetDropZones from './components/layout/SheetDropZones';
+import SheetDropZones, { SheetDragHint } from './components/layout/SheetDropZones';
 import { styles } from './styles/appStyles';
 import { overlayRegionStyle } from './services/regionStyle';
 import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, TRYOUT_SEEN_KEY } from './services/persistence';
@@ -275,11 +275,11 @@ export default function App() {
 
   // Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
   // optional repeating print header (.print-repeat-fields). Null if no field is enabled.
-  const renderFields = (align: 'left' | 'right' = 'left', subset?: HeaderField[]) => {
+  const renderFields = (align: 'left' | 'right' = 'left') => {
     const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
     const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
     const LABELS: Record<HeaderField, string> = { naam: 'Naam:', klas: 'Klas:', nummer: 'Nr:', datum: 'Datum:' };
-    const visibleFields = subset ?? order.filter(f => headerData?.[f]);
+    const visibleFields = order.filter(f => headerData?.[f]);
     if (visibleFields.length === 0) return null;
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', rowGap: '8px', width: '100%', justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
@@ -453,39 +453,8 @@ export default function App() {
                   </div>
                 );
               }
-              // center
-              const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
-              const fWidths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
-              const visible = order.filter(f => headerData?.[f]);
-              const wOf = (f: HeaderField) => fWidths[f] ?? DEFAULT_FIELD_WIDTHS[f];
-              const rowW = (fs: HeaderField[]) => fs.reduce((s, f) => s + wOf(f), 0) + Math.max(0, fs.length - 1) * 16;
-              // When score is shown it claims the right side, so all fields go left; otherwise
-              // split the fields half/half to flank the centred title (Naam left, Datum right).
-              const splitIdx = showScore ? visible.length : Math.ceil(visible.length / 2);
-              const leftFs = visible.slice(0, splitIdx);
-              const rightFs = showScore ? [] : visible.slice(splitIdx);
-              // Rough width of the title, used only to decide inline-flank vs stacked.
-              // Ubuntu bold averages ~0.62em/char (sheet-size-text base 20px → ~12.4px/char);
-              // erring high only ever falls back to the (always safe) stacked layout.
-              const titleW = hasTitle ? (headerData!.titel.length * 12.4 + 24) : 0;
-              const rightW = showScore ? 160 : rowW(rightFs);
-              // Inline-flank only if the whole thing comfortably fits one A4 line (~760px usable);
-              // otherwise fall back to the stacked layout (fields row on top, title beneath).
-              const inlineFlank = hasTitle && visible.length > 0 && (rowW(leftFs) + titleW + rightW + 2 * gap) <= 760;
-
-              if (inlineFlank) {
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', columnGap: `${gap}px`, alignItems: 'flex-end' }}>
-                    {/* Left fields hug the title (right-aligned); columnGap is the small margin. */}
-                    <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', minWidth: 0 }}>{renderFields('right', leftFs)}</div>
-                    <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap' }}>{headerData!.titel}</h1>
-                    <div className="print-body-fields" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', minWidth: 0 }}>
-                      {showScore ? <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div> : renderFields('left', rightFs)}
-                    </div>
-                  </div>
-                );
-              }
-
+              // center — the title ALWAYS sits on its own line under the fields, the way a
+              // real worksheet reads; flanking the title with half the fields looked odd.
               const centerFields = fieldsRowAligned('left');
               return (
                 <>
@@ -845,6 +814,8 @@ export default function App() {
         onPointerLeave={() => setHoveredBlockId((id) => (id === visibleBlock.id ? null : id))}
       />
     )}
+    {/* Screen-only strip explaining the three drop thirds, for the duration of a drag. */}
+    {dnd.fromId !== null && <SheetDragHint />}
     {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} />}
     {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
