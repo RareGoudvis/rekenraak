@@ -131,7 +131,7 @@ field (used by ordenen click-to-edit and the splitsen "type a number" textboxes)
 
 **Curriculum lock gate:** `updateBlockSettings` / `updateBlockLayout` /
 `updateBlockInstruction` check `curriculum?.locked` and, when locked, allow only
-`numberOfExercises` + `pageBreakBefore` + `widthUnits` + `showInstruction` (difficulty/wording
+`numberOfExercises` + `pageBreakBefore` + `widthUnits` + `showInstruction` + `skipNumbering` (difficulty/wording
 frozen; layout and presentation are not difficulty). This single
 choke point enforces the lock without touching the ~16 config plugins. Draft-block
 edits bypass the gate (authoring runs unlocked).
@@ -150,10 +150,15 @@ rows heterogeneously so `generate` keeps the plain `MathBlock` signature. Defaul
 the registry's typed factories (`row<C>()`), which is what catches factory drift.
 
 **`MathBlock.showInstruction?: boolean`** — `false` hides the block's opdracht title row on the
-sheet (same code path as `layout-*` furniture). The block is still counted by `blockOrder`,
-so hiding a title never renumbers the rest of the sheet. Optional field, serialised through
-the normal block spread — no format bump. Toggle: Inspector → Opmaak → "Opdrachttekst tonen";
-honoured by `SheetThumbnail` too.
+sheet (same code path as `layout-*` furniture). The block is still counted by the numbering
+by default, so hiding a title never renumbers the rest of the sheet — unless
+**`MathBlock.skipNumbering?: boolean`** is set (Opmaak → "Meetellen in de nummering", offered
+only while the title is hidden): then the next opdracht takes this block's number. Both are
+optional fields serialised through the normal block spread — no format bump. The numbering
+itself is one pure function, `numberBlocks(blocks)` in
+[blockNumbering.ts](../../src/services/layout/blockNumbering.ts) (furniture and skipped
+blocks → `null`), shared by the sheet (`blockOrder`), the Inspector chip and `SheetThumbnail`
+(which used to number by array index).
 
 **Measured layout is NOT store state.** Rendered cell heights and the page-body budget
 live in [useMeasuredHeights](../../src/hooks/useMeasuredHeights.ts), React state inside
@@ -508,8 +513,11 @@ Fill a row left to right; new row when the width runs out; new page when the pag
 does; `pageBreakBefore` forces a page; a block taller than page 0 (the shortest — it carries
 the header) is marked `spans` and owns its page. It does **not** flow on paper: `.page-sheet`
 is `height: 297mm; overflow: hidden` in print, so screen and PDF clip it the same way; the
-banner says so and points at the split control (§9 "Splitting") or the block's
-`constraints.fitToPage` ("Verklein om op één pagina te passen"), which lets
+banner says so and carries two buttons — "Verklein dit blok" (App's `fitBlockToPage`: sets
+`constraints.fitToPage`, selects the block, then `setInspectorTab('weergave')` because
+selecting resets the tab) and "Splitsen" (the same split popover as the Scissors control);
+PageSheet tracks the oversize block's id (`oversizeBlockId`) for that, via `onFitBlock` /
+`onSplitBlock`. `constraints.fitToPage` ("Verklein om op één pagina te passen") lets
 [ScaledBlock](../../src/components/viewer/ScaledBlock.tsx) back its zoom off down to 0.7
 (`FIT_FLOOR`, pure helper in `scaledBlockFit.ts`) until the cell fits `PAGE_BODY_PX`.
 `PackedBlock.promoted` marks a block the clamp had to widen; the Inspector says so under the
@@ -595,7 +603,12 @@ top = insert the dragged block before this one ("Hierboven invoegen"), middle = 
 sides, because a full-width block has no meaningful left/right, and all three are labelled
 on screen ([SheetDropZones](../../src/components/layout/SheetDropZones.tsx), `.no-print`,
 `pointer-events: none`; a container query hides the label text but keeps the icon when the
-block is shorter than ~66px). The sheet auto-scrolls while the pointer sits within 40px of
+block is shorter than ~66px). For the whole drag **every** candidate block is framed (accent
+dashed outline — an outline, not a border, so the thirds the hook measures stay the thirds)
+and its thirds banded in `--accent-soft`; the block under the pointer lights its live third
+and dims the other two (`.sheet-dropzones.has-on`), and a `.sheet-drag-hint` strip (portalled
+to `<body>`, fixed above `.print-scroll`) says what the three thirds do. Teachers could not
+tell where a drop was allowed from a 1px separator line. The sheet auto-scrolls while the pointer sits within 40px of
 `.print-scroll`'s top or bottom edge; Escape and `pointercancel` cancel; `pointerup` drops
 through `reorderBlocks(from, to > from ? to - 1 : to)` (before), `reorderBlocks(from,
 from < to ? to : to + 1)` (after) or `swapBlocks`, reading the store via
@@ -603,7 +616,10 @@ from < to ? to : to + 1)` (after) or `swapBlocks`, reading the store via
 moved block. The Overzicht outline ([OverzichtPanel](../../src/components/layout/OverzichtPanel.tsx))
 uses the same pointer approach and the same three zones (thirds of the row) with a 5px
 threshold and `[data-ov-index]` rows; the old "drop on the last row appends" special case
-falls out of the after-zone formula. Playwright
+falls out of the after-zone formula. A row's drop-zone signal is outline/box-shadow only,
+never `border*`, so the 3px domain rail on its left edge stays visible; rows are
+`user-select: none` because the first pointer move of a drag is the one that starts a text
+selection. Playwright
 drives all of it with plain `mouse.move/down/up` (see TESTING.md).
 
 **The width clamp is measured too.** PageSheet probes each cell's `min-content` width
@@ -655,6 +671,10 @@ both `onCellMeasure` and the tail measurement it depends on.
 - **`@page { margin: 0 }`** — on purpose. The dialog's "Margins: None/Minimum" silently
   overrides `@page` margins, so we don't rely on them: every visible margin comes from the
   page's own padding instead. Robust to any dialog setting.
+- **Header layout** — `docSettings.titlePosition` left/right put the title beside the field
+  row; **center always stacks**: the wrapping field row (score box at its end) on top, the
+  title on its own line beneath, the way a real worksheet reads. The former inline-flank
+  layout (half the fields on each side of the title, chosen by a width estimate) is gone.
 - **Repeating header toggle** — `header.repeatHeader`: when off, only page 1 draws the
   Naam/Klas/Nr/Datum strip; when on, every page does (each page owns its header, so this is
   now a plain conditional, not a `<thead>` trick).
@@ -791,6 +811,7 @@ src/
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
+│   ├── layout/blockNumbering.ts # pure numberBlocks(): opdracht numbers, skipping furniture + skipNumbering — one source for sheet, Inspector chip, thumbnail (§3)
 │   ├── layout/kaderMarkup.tsx   # pure renderKaderBody(): **vet** / *cursief* / __onderstreept__ / 1. and - lists for the onthoudkader (§9 furniture; tested)
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts,validators.ts}   # validators.ts is EMPTY
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
@@ -828,7 +849,7 @@ src/
 │   └── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES
 └── components/
     ├── layout/
-    │   ├── SheetDropZones.tsx  # labelled "Hier invoegen" / "Wisselen" halves over a drag target (screen only)
+    │   ├── SheetDropZones.tsx  # the three labelled drop thirds over every candidate block during a drag + SheetDragHint strip (screen only)
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
     │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = App's hoveredBlockId ?? activeBlockId, not CSS :hover
     │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, wordmark foot
