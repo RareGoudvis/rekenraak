@@ -1,7 +1,7 @@
 import type { MathBlock, MabExercise, MabStyle, MabScaffolding } from '../../services/math/types';
 import { MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { MabConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -12,6 +12,11 @@ interface Props {
 
 // Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
 // stays fixed px).
+// SYNC: same two lines as MabBlocksSVG.tsx (they cannot be exported from a file that also
+// exports a component). 13pt = 17.33px, so em over this divisor is today's px at the default.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const em = (px: number): string => `${px / PX_PER_EM_AT_DEFAULT}em`;
+
 const fmt = (n: number): string => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 interface ColDef { key: string; place: MabPlace; }
@@ -24,6 +29,7 @@ interface ColDef { key: string; place: MabPlace; }
 // cells wide, and ten of them stack vertically rather than side by side. This type tops out
 // at 1000, so a duizendtal column only ever holds ONE cube — its own width is enough.
 // SYNC: these are the glyph sizes in MabBlocksSVG.tsx — CELL 6, CELL_THOUSANDS 7, +4 offset.
+// They are px at the 13pt default and are emitted as em, so column and glyph scale together.
 const THOUSAND_GLYPH_PX = 7 * 10 + 4;    // RealisticThousands: S + OFFSET
 const HUNDRED_GLYPH_PX = 6 * 10;         // 10 cells wide (also the tens rod)
 // 4px: four duizendtal columns plus the box's own borders have to clear a half-width
@@ -37,11 +43,22 @@ function mabColWidth(cols: Array<{ key: string }>): number {
 
 export default function MabViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // The positietabel is drawn in em, so its real px width is the glyph geometry times the
+    // teacher's Lettergrootte setting; the column count has to use the same factor.
+    const sheetSizePx = useSheetSizePx('math');
+    const fontScale = sheetSizePx / PX_PER_EM_AT_DEFAULT;
     // The item carries its own 1.5px borders and the grid a 14px gap, so three tracks can
     // land exactly on the boundary and tip over. Under-filling a row is harmless; clipping
     // in print is not, so the fit keeps a small margin.
     const mabPerRow = (cols: Array<{ key: string }>, want: number, gap: number) =>
-        fitCols(availableWidth - 12, cols.length * mabColWidth(cols) + 4, want, gap);
+        fitCols(availableWidth - 12, (cols.length * mabColWidth(cols) + 4) * fontScale, want, gap);
+    // A four-place positietabel is 300 glyph-px wide, so above ~15pt it no longer fits a
+    // half-width cell however few per row: the figure's own font-size is therefore the sheet
+    // size capped at what the cell can hold. It stops growing instead of clipping in print.
+    const figureFontPx = (cols: ColDef[]) => Math.min(
+        sheetSizePx,
+        ((availableWidth - 12) / (cols.length * mabColWidth(cols) + 4)) * PX_PER_EM_AT_DEFAULT,
+    );
     // herkennen = read drawn blocks → write number; tekenen = reverse (draw blocks).
     const mode: 'herkennen' | 'tekenen' = block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen';
     const exercises: MabExercise[] = block.mabExercises || [];
@@ -86,6 +103,7 @@ export default function MabViewer({ block, showSolutions }: Props) {
                     scaffolding={scaffolding}
                     boxHeight={boxHeight}
                     answerHeight={answerHeight}
+                    figureFontPx={figureFontPx(cols)}
                     showSolutions={showSolutions}
                     mode={mode}
                 />
@@ -101,11 +119,12 @@ interface ItemProps {
     scaffolding: MabScaffolding;
     boxHeight: number;
     answerHeight: number;
+    figureFontPx: number;
     showSolutions: boolean;
     mode: 'herkennen' | 'tekenen';
 }
 
-function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSolutions, mode }: ItemProps) {
+function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figureFontPx, showSolutions, mode }: ItemProps) {
     const digits: Record<MabPlace, number> = {
         thousands: ex.thousands,
         hundreds: ex.hundreds,
@@ -117,11 +136,11 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
     // the place-value reading breaks. Each column therefore gets an explicit minimum equal
     // to its own glyph, and shares only the leftover slack.
     //
-    // The columns are FIXED px, not minmax(...,1fr): the header row and the drawing row are
+    // The columns are a FIXED em width, not minmax(...,1fr): the header row and the drawing row are
     // separate grids, and any flexible track resolves differently in each, so the H/T/E
     // labels drift out of line with the blocks underneath them. Fixed also means the
     // exercise never resizes — a narrow block simply fits fewer per row (as the clocks do).
-    const gridCols = `repeat(${cols.length}, ${mabColWidth(cols)}px)`;
+    const gridCols = `repeat(${cols.length}, ${em(mabColWidth(cols))})`;
     const hasBorder = scaffolding === 'positietabel' || scaffolding === 'kader';
     const hasHeader = scaffolding === 'positietabel';
     const hasDividers = scaffolding === 'positietabel';
@@ -132,7 +151,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
     const showNumberOnLine = mode === 'tekenen' || showSolutions;
 
     return (
-        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: "'Azeret Mono', monospace" }}>
+        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: `${figureFontPx}px` }}>
             {/* BOX = optional outer border + optional H/T/E header row + drawing area */}
             <div style={{
                 width: 'max-content',
@@ -167,14 +186,16 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, showSo
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: gridCols,
-                    height: `${boxHeight}px`,
+                    // em, not px: the drawing area has to grow with the glyphs it holds,
+                    // otherwise a bigger font clips them against `overflow: hidden`.
+                    height: em(boxHeight),
                 }}>
                     {cols.map((col, i) => (
                         <div key={col.key} style={{
                             display: 'flex',
                             alignItems: 'flex-end',
                             justifyContent: 'center',
-                            padding: '6px',
+                            padding: em(6),
                             borderRight: hasDividers && i < cols.length - 1 ? '1.5px solid #000' : 'none',
                             overflow: 'hidden',
                             boxSizing: 'border-box',

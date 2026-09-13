@@ -9,6 +9,15 @@ import type { MabStyle } from '../../services/math/types';
 
 export type MabPlace = 'thousands' | 'hundreds' | 'tens' | 'units';
 
+// The glyph geometry below stays written in px (a tens rod IS ten unit cubes wide), but it
+// is emitted as the SVG viewBox and as `em` on the element, so the whole Dienes figure
+// follows the teacher's Lettergrootte slider. 13pt (the --sheet-size-math default) = 17.33px,
+// so at the default the em values reproduce today's pixels exactly.
+// SYNC: MabViewer.tsx repeats these two lines and sets fontSize: var(--sheet-size-math)
+// on the figure, so the table columns and the glyphs inside them scale together.
+const PX_PER_EM_AT_DEFAULT = 17.33;
+const em = (px: number): string => `${px / PX_PER_EM_AT_DEFAULT}em`;
+
 interface ColumnProps {
     count: number;
     place: MabPlace;
@@ -53,7 +62,7 @@ export function MabPlaceColumn({ count, place, style, color = '#000' }: ColumnPr
             flexWrap: 'nowrap',
             justifyContent: 'flex-start',
             alignItems: 'center',
-            gap: '2px',
+            gap: em(2),
             width: '100%',
             height: '100%',
         }}>
@@ -86,8 +95,8 @@ function PatternedGrid({ count, maxRows, place, style, color }: {
             display: 'grid',
             gridTemplateColumns: `repeat(${cols}, auto)`,
             gridTemplateRows: `repeat(${maxRows}, auto)`,
-            columnGap: '3px',
-            rowGap: '2px',
+            columnGap: em(3),
+            rowGap: em(2),
             justifyContent: 'center',
             alignContent: 'end',
             height: '100%',
@@ -116,7 +125,7 @@ function Glyph({ place, style, color }: { place: MabPlace; style: MabStyle; colo
 function SymbolicUnits({ color }: { color: string }) {
     const r = 2.5;
     return (
-        <svg width={r * 2} height={r * 2}>
+        <svg width={em(r * 2)} height={em(r * 2)} viewBox={`0 0 ${r * 2} ${r * 2}`}>
             <circle cx={r} cy={r} r={r} fill={color} />
         </svg>
     );
@@ -126,7 +135,7 @@ function SymbolicUnits({ color }: { color: string }) {
 function SymbolicTens({ color }: { color: string }) {
     const W = 22, H = 3;
     return (
-        <svg width={W} height={H}>
+        <svg width={em(W)} height={em(H)} viewBox={`0 0 ${W} ${H}`}>
             <rect width={W} height={H} fill={color} />
         </svg>
     );
@@ -135,7 +144,7 @@ function SymbolicTens({ color }: { color: string }) {
 function SymbolicHundreds({ color }: { color: string }) {
     const SQ = 10;
     return (
-        <svg width={SQ} height={SQ}>
+        <svg width={em(SQ)} height={em(SQ)} viewBox={`0 0 ${SQ} ${SQ}`}>
             <rect width={SQ} height={SQ} stroke={color} strokeWidth={1} fill="none" />
         </svg>
     );
@@ -145,7 +154,7 @@ function SymbolicThousands({ color }: { color: string }) {
     const SQ = 10, GAP = 2;
     const total = SQ * 2 + GAP;
     return (
-        <svg width={total} height={total}>
+        <svg width={em(total)} height={em(total)} viewBox={`0 0 ${total} ${total}`}>
             <rect x={0} y={0} width={SQ} height={SQ} stroke={color} strokeWidth={1} fill="none" />
             <rect x={SQ + GAP} y={0} width={SQ} height={SQ} stroke={color} strokeWidth={1} fill="none" />
             <rect x={0} y={SQ + GAP} width={SQ} height={SQ} stroke={color} strokeWidth={1} fill="none" />
@@ -167,7 +176,7 @@ const STROKE = 0.5;
 
 function RealisticUnits({ stroke, fill }: { stroke: string; fill: string }) {
     return (
-        <svg width={CELL} height={CELL}>
+        <svg width={em(CELL)} height={em(CELL)} viewBox={`0 0 ${CELL} ${CELL}`}>
             <rect width={CELL} height={CELL} fill={fill} stroke={stroke} strokeWidth={STROKE} />
         </svg>
     );
@@ -178,7 +187,7 @@ function RealisticUnits({ stroke, fill }: { stroke: string; fill: string }) {
 function RealisticTens({ stroke, fill }: { stroke: string; fill: string }) {
     const W = CELL * 10;
     return (
-        <svg width={W} height={CELL}>
+        <svg width={em(W)} height={em(CELL)} viewBox={`0 0 ${W} ${CELL}`}>
             <rect width={W} height={CELL} fill={fill} stroke={stroke} strokeWidth={STROKE} />
             {Array.from({ length: 9 }).map((_, j) => (
                 <line key={j} x1={(j + 1) * CELL} y1={0} x2={(j + 1) * CELL} y2={CELL} stroke={stroke} strokeWidth={STROKE} />
@@ -191,7 +200,7 @@ function RealisticTens({ stroke, fill }: { stroke: string; fill: string }) {
 // hundreds get tiled by MabPlaceColumn into a 2×5 grid so up to 9 fit.
 function RealisticHundreds({ stroke, fill }: { stroke: string; fill: string }) {
     return (
-        <svg width={HUNDREDS_SQ} height={HUNDREDS_SQ}>
+        <svg width={em(HUNDREDS_SQ)} height={em(HUNDREDS_SQ)} viewBox={`0 0 ${HUNDREDS_SQ} ${HUNDREDS_SQ}`}>
             <rect width={HUNDREDS_SQ} height={HUNDREDS_SQ} fill={fill} stroke={stroke} strokeWidth={STROKE} />
         </svg>
     );
@@ -204,7 +213,7 @@ function RealisticThousands({ stroke, fill }: { stroke: string; fill: string }) 
     const total = S + OFFSET;
     // Front face = 10x10 grid + isometric back face.
     return (
-        <svg width={total} height={total}>
+        <svg width={em(total)} height={em(total)} viewBox={`0 0 ${total} ${total}`}>
             <rect x={OFFSET} y={0} width={S} height={S} fill="none" stroke={stroke} strokeWidth={STROKE} />
             <line x1={0} y1={OFFSET} x2={OFFSET} y2={0} stroke={stroke} strokeWidth={STROKE} />
             <line x1={S} y1={OFFSET} x2={S + OFFSET} y2={0} stroke={stroke} strokeWidth={STROKE} />
