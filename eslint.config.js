@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // .claude/worktrees holds agents' checkouts of this repo; linting them here lints their half-done work.
+  globalIgnores(['dist', '.claude/worktrees']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
