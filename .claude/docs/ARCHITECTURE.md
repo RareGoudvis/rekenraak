@@ -132,7 +132,7 @@ field (used by ordenen click-to-edit and the splitsen "type a number" textboxes)
 
 **Curriculum lock gate:** `updateBlockSettings` / `updateBlockLayout` /
 `updateBlockInstruction` check `curriculum?.locked` and, when locked, allow only
-`numberOfExercises` + `pageBreakBefore` + `widthUnits` + `showInstruction` + `skipNumbering` +
+`numberOfExercises` + `pageBreakBefore` + `widthUnits` + `showInstruction` + `skipNumbering` + `itemNumbering` +
 `constraints.fitToWidth` (difficulty/wording
 frozen; layout and presentation are not difficulty). This single
 choke point enforces the lock without touching the ~16 config plugins. Draft-block
@@ -171,6 +171,8 @@ itself is one pure function, `numberBlocks(blocks)` in
 [blockNumbering.ts](../../src/services/layout/blockNumbering.ts) (furniture and skipped
 blocks → `null`), shared by the sheet (`blockOrder`), the Inspector chip and `SheetThumbnail`
 (which used to number by array index).
+
+**`MathBlock.itemNumbering?: 'geen' | 'cijfer' | 'letter'`** (since 2026-09-14) — numbers the exercises *inside* a hoofdrekenen / rekenvolgorde block (`1)` … or `a)` … `z)`, `aa)`; Opmaak → "Nummering", shared `ItemNumberingRow`). Top-level, not in `constraints`, on purpose: it is presentation, so it passes the curriculum lock, never enters hr-std-gemengd's per-variant tabs, and does not raise the stale flag — `updateBlockSettings` treats a patch whose keys are all in `PRESENTATION_SAFE` (today: `itemNumbering`) like `countOnly` / `fitToWidthOnly`: exercises kept, one history step, no "verouderd". Absent = geen; serialised through the block spread, no format bump. Labels are a fixed-width column per block (`itemLabelChars` × the mono advance) so the `=` stays on one x; `MathBlockRenderer` charges it to the stepped row estimate but not to the Kort one (whose 85px cell floor already overstates a row), so a default block stays 2-up.
 
 **Measured layout is NOT store state.** Rendered cell heights and the page-body budget
 live in [useMeasuredHeights](../../src/hooks/useMeasuredHeights.ts), React state inside
@@ -446,7 +448,9 @@ viewers lay their items out through
   render as blanks / dotted lines / empty boxes. This colour is the convention
   across all viewers (some declare it as a local `SOL`/`SOL_COLOR` const).
 - **[MathBlockRenderer.tsx](../../src/components/viewer/MathBlockRenderer.tsx)** — the
-  standard equation renderer. `block.layoutPreset`:
+  standard equation renderer. `block.itemNumbering` prepends a fixed-width `1)` / `a)` label column
+  (shared [itemNumbering.ts](../../src/components/viewer/itemNumbering.ts), also used by
+  RekenvolgordeViewer). `block.layoutPreset`:
   - `inline-short` — 2-column grid, compact.
   - `inline-long` — 1-column, full width.
   - `stepped` — 1-column with `steppedLines` blank working lines under each.
@@ -824,6 +828,10 @@ both `onCellMeasure` and the tail measurement it depends on.
   - `.print-block` — block; `.page-break-before` forces a fresh page (per-block toggle).
   - `.print-opdracht` — `break-after/inside: avoid` (opdracht line never orphaned).
   - `.print-exercise` / `.print-row` — `break-inside: avoid` (never split an item/row).
+  - `.page-sheet-foot .print-tfoot-inner` — the footer's print padding (2mm top) is the one print
+    declaration WITHOUT `!important` (since 2026-09-14): the kader box (`8px 12px`, App.tsx) and a
+    teacher's `footerCustom.padX/padY` are inline styles and must reach paper; the `!important` that
+    was there put the footer text hard against the kader border in the PDF.
 
 ### Sheet furniture — `layout-*`
 
@@ -942,6 +950,11 @@ src/
 │  (repo root) scripts/font-baseline.mjs # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
 │  (repo root) scripts/font-compare.mjs  # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
 │  (repo root) scripts/catalogue.mjs     # walks every leaf → splices the exercise cards (data-leaf), the domain › leaf sidebar and an ItemList into oefeningen.html between marker comments; white pngs in public/oefeningen/ (npm run catalogue; catalogue.test.ts fails the gate when the page and APP_STRUCTURE differ)
+│  (repo root) scripts/visual-gate.mjs   # commit gate, browser half: staged files → typeIds (viewer/generator imports, shared surface → all) → seeded leaf walk vs scripts/visual-baseline.json; --accept rewrites the baseline (TESTING.md)
+│  (repo root) scripts/lib/leafWalk.mjs, scripts/lib/visualCompare.mjs  # the walk + thresholds shared by visual-gate / font-baseline / font-compare
+│  (repo root) scripts/visual-baseline.json  # committed: per leaf × width × solutions {height, intrinsic px, text hash} at seed 1234 — the gate's reference
+│  (repo root) .githooks/pre-commit      # git hook (core.hooksPath via npm prepare): npm run check + visual-gate --staged; SKIP_GATE / SKIP_VISUAL / --no-verify need a human
+│  (repo root) .claude/hooks/commit-bypass-guard.ps1  # Claude Code PreToolUse: any gate bypass in a shell command → permissionDecision 'ask'
 │  (repo root) about.html, faq.html, oefeningen.html + src/site.ts, src/site.css  # static SEO pages built by Vite (vite.config.ts rollupOptions.input) so they reuse the app's real CSS/classes (mac-vibrant, panel-head, seg-group, sidebar-row, Wordmark markup): sidebar = page tabs + anchors / questions / exercise filter, top bar = "Open RekenRaak", no inspector; sitemap/robots stay in public/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
@@ -1013,7 +1026,8 @@ src/
     │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins; honours ConstraintScope
     │   ├── ConstraintScope.ts     # context: when set to ['perVariant', id] the hook reads {...root, ...root.perVariant[id]} and writes ONLY into perVariant[id] (sparse); fixedPreset/hidden let a tab pin its preset and hide shared controls
     │   ├── plugins/shared/fieldStyles.ts      # F: Inspector field chrome shared by Inspector + StyleConfigs
-    │   ├── plugins/shared/HrStdStyleConfig.tsx # AddSub/MulDiv StyleConfig (niveau, compenseren-tussenstap, kort/lang/stappen)
+    │   ├── plugins/shared/HrStdStyleConfig.tsx # AddSub/MulDiv StyleConfig (niveau, compenseren-tussenstap, nummering, kort/lang/stappen)
+    │   ├── plugins/shared/ItemNumberingRow.tsx # Opmaak → Nummering (Geen / 1) / a)) → block.itemNumbering; mounted by HrStd + Rekenvolgorde StyleConfigs
     │   ├── plugins/RekenvolgordeStyleConfig.tsx # rekenvolgorde Kort/Lang/Stappen (own file: HrStdStyleConfig's rows are gated on hoofdrekenen-only settings)
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
     └── viewer/
@@ -1026,6 +1040,7 @@ src/
         ├── ScaledBlock.tsx             # per-block body-zoom wrapper (bodyFontScale); fits to page height when constraints.fitToPage, to column width ONLY when constraints.fitToWidth (badge "verkleind tot N %")
         ├── scaledBlockFit.ts           # pure nextZoom()/FIT_FLOOR helper for ScaledBlock (tested)
         ├── solutionStyle.ts            # SOL / solutionText / solutionStroke — the one solution-red token (--ink-solution), bold
+        ├── itemNumbering.ts            # itemLabel() / itemLabelChars(): the 1) / a) … aa) per-exercise labels for hoofdrekenen + rekenvolgorde (§3)
         └── FragmentableGrid.tsx        # block-stack-of-rows layout so items flow across print page breaks
 ```
 

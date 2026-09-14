@@ -30,6 +30,10 @@ npm run lint
 npm run matrix         # Playwright width matrix → scripts/width-matrix.result*.json (needs a dev server; --url --seed)
 npm run height:audit   # Playwright vertical measurement audit (needs a dev server)
 npm run font:baseline  # screenshot every sidebar leaf (--out dir --seed); font:compare diffs two runs
+npm run gate           # what the pre-commit hook runs: check + visual gate on the staged files
+npm run visual:gate    # -- --all | --files a,b | --scope-only : targeted leaf walk vs scripts/visual-baseline.json
+npm run visual:baseline # accept a visual change: rewrites the scoped rows of the baseline (stage the JSON)
+npm run prepare        # after a clone: git config core.hooksPath .githooks
 ```
 
 The dev build exposes `window.__rekenraak` (typeIds, leaves, seed, measured, addBlockFromType,
@@ -48,8 +52,13 @@ TypeScript + Vite + one Zustand store — no backend, no account, no tracking.
 
 ## Working rules (humans and agents)
 
-- **Gate before every commit:** `npm run check`. Commit per logical step, Conventional
-  Commits, English. Never `git add -A`; stage explicit paths. Do not push unless asked.
+- **Gate before every commit:** `npm run check` + the visual gate, **enforced** by
+  `.githooks/pre-commit` (a viewer/generator change walks its leaves against
+  `scripts/visual-baseline.json`; intended change → `npm run visual:baseline`, stage the JSON).
+  Bypassing it (`--no-verify`, `SKIP_GATE=1`, `SKIP_VISUAL=1`, moving `core.hooksPath`) needs an
+  explicit human yes: the PreToolUse guard turns those commands into a permission prompt. Agents
+  never bypass on their own. Commit per logical step, Conventional Commits, English. Never
+  `git add -A`; stage explicit paths. Do not push unless asked.
 - **Found a bug outside your task?** One line in [BUGS.md](.claude/docs/BUGS.md), never a
   silent fix. Fixing one? Delete its line in the same commit.
 - **Docs are the supervisor's:** agents do not edit ARCHITECTURE / CLAUDE / UpdateState;

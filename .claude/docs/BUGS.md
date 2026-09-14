@@ -8,6 +8,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- Inspector width picker (`updateBlockSettings({ widthUnits })`) marks the block "verouderd" although width is presentation (2026-09-14, seen while testing itemNumbering). Fix direction: add `widthUnits` to `PRESENTATION_SAFE` in useWorksheetStore.tsx and a store test.
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
