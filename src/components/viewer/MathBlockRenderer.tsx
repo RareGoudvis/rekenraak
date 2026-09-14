@@ -292,7 +292,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         if (!text) return null;
         return <span style={{ width: `${labelPx}px`, flexShrink: 0, textAlign: 'right', marginRight: `${OP_TERM_GAP}px`, whiteSpace: 'nowrap' }}>{text}</span>;
     };
-    // The label column is real width: the 2-up decision below has to pay for it too.
+    // The label column is real width. The stepped estimate pays for it; the Kort estimate
+    // does NOT: its 85px cellPx floor already overstates a default row by ~100px, and
+    // charging the label on top pushed a default 2-up block to 1-up for no visible reason.
     const labelColPx = labelPx > 0 ? labelPx + OP_TERM_GAP : 0;
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
     // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
@@ -303,7 +305,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // ~70px of help box + 8px gap + r + a 30px blank + the gaps around them.
     const MET_REST_EXTRA_PX = 160;
     const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
-        + 8 + answerW + (anyRemainder ? MET_REST_EXTRA_PX : 0) + labelColPx;
+        + 8 + answerW + (anyRemainder ? MET_REST_EXTRA_PX : 0);
     // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
     // workline, so what it really needs is writing room for a hand-written tussenstap.
     // That room scales with the block's widest operand instead of the fixed 94px field.
