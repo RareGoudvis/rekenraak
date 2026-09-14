@@ -10,10 +10,9 @@
 // Writes <out>/report.json (every row), <out>/report.md (table, pixel-diff descending) and
 // <out>/contact-sheet.html (before/after side by side for every flagged row).
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { PNG } from 'pngjs';
-import pixelmatch from 'pixelmatch';
+import { tierOf, pixelDiffPct, HEIGHT_DELTA_FLAG_PX, PIXEL_DIFF_FLAG_PCT } from './lib/visualCompare.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (name, fallback) => {
@@ -33,44 +32,6 @@ const afterIndex = JSON.parse(readFileSync(join(AFTER, 'index.json'), 'utf8'));
 
 const key = (r) => `${r.leafId}-w${r.width}-s${r.solutions}`;
 const afterByKey = new Map(afterIndex.rows.map(r => [key(r), r]));
-
-// Width tiers the packer actually promotes at (blockLayout.ts / pagePacker.ts): a leaf
-// whose intrinsic content width crosses one of these after the sweep would get measured
-// into a different minimum column count — a real layout change, not just nicer type.
-const TIER_BOUNDARIES = [151, 338, 688];
-const tierOf = (px) => {
-    if (px == null) return null;
-    for (let i = 0; i < TIER_BOUNDARIES.length; i++) if (px <= TIER_BOUNDARIES[i]) return i;
-    return TIER_BOUNDARIES.length;
-};
-
-// The title row is expected to move (+4px, 16->20px bold) — mask its top band so a
-// pixel diff there never trips the "unexpected visual change" flag on its own.
-const TITLE_MASK_PX = 28;
-const HEIGHT_DELTA_FLAG_PX = 8;
-const PIXEL_DIFF_FLAG_PCT = 0.5;
-
-function pixelDiffPct(beforePath, afterPath) {
-    if (!existsSync(beforePath) || !existsSync(afterPath)) return { pct: null, reason: 'missing screenshot' };
-    const a = PNG.sync.read(readFileSync(beforePath));
-    const b = PNG.sync.read(readFileSync(afterPath));
-    if (a.width !== b.width || a.height !== b.height) return { pct: null, reason: `size changed ${a.width}x${a.height} -> ${b.width}x${b.height}` };
-    // Blank the masked band identically in both buffers so pixelmatch never scores it.
-    const mask = (img) => {
-        const rows = Math.min(TITLE_MASK_PX, img.height);
-        for (let y = 0; y < rows; y++) {
-            for (let x = 0; x < img.width; x++) {
-                const idx = (img.width * y + x) << 2;
-                img.data[idx] = img.data[idx + 1] = img.data[idx + 2] = 0; img.data[idx + 3] = 255;
-            }
-        }
-    };
-    mask(a); mask(b);
-    const diffPng = new PNG({ width: a.width, height: a.height });
-    const diffCount = pixelmatch(a.data, b.data, diffPng.data, a.width, a.height, { threshold: 0.1 });
-    const total = a.width * a.height;
-    return { pct: total > 0 ? (diffCount / total) * 100 : 0 };
-}
 
 const rows = [];
 for (const before of beforeIndex.rows) {

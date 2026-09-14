@@ -114,6 +114,70 @@ changes in the store, change it here too.**
 Print output, the page-break CSS, layout measurement and anything that needs a real
 browser. Those stay manual (Ctrl+P, margins None, 100%) — see the review checklist.
 
+## The commit gate (`.githooks/pre-commit`, `scripts/visual-gate.mjs`)
+
+Every commit runs the gate. `npm install` wires it (`prepare` sets `core.hooksPath
+.githooks`); after a fresh clone `npm run prepare` is enough.
+
+```bash
+npm run gate                       # what the hook runs, by hand
+npm run visual:gate -- --all       # every leaf against the baseline
+npm run visual:gate -- --files src/components/viewer/ClockViewer.tsx
+npm run visual:gate -- --scope-only --files <paths>   # which typeIds would be rendered, no browser
+npm run visual:baseline -- --all   # accept the current rendering as the new baseline
+```
+
+`.githooks/pre-commit` runs, in order:
+
+1. `npm run check` (tsc, eslint, vite build, vitest). Output is silent unless it fails, then
+   the last 60 lines plus the full log path.
+2. `node scripts/visual-gate.mjs --staged` — the visual half.
+
+### What the visual gate does
+
+It maps the staged files to exercise types, renders only those leaves and compares the
+numbers to a committed baseline. It starts its own dev server (`vite --port 5299
+--strictPort`, killed on every exit path) unless `--url` points it at a running one, and
+reuses `scripts/lib/leafWalk.mjs` — the same leaf walk `font-baseline.mjs` uses, so there is
+one copy of the Playwright choreography, and `scripts/lib/visualCompare.mjs` for the
+thresholds shared with `font-compare.mjs`.
+
+| Changed file | Scope |
+|---|---|
+| `src/components/viewer/<X>.tsx` | every typeId whose `EXERCISE_UI` row imports its `Viewer` from that file |
+| a viewer helper (`AnalogClockSVG`, `VerticalFraction`, `MabBlocksSVG`, …) | the registered viewers that import it, transitively, then their typeIds |
+| `src/services/<family>/*.ts` | every typeId whose `REGISTRY` row references anything imported from that file (through `relaxing(…)` and row factories like `cijferRow()` too) |
+| `src/services/math/*`, `src/services/layout/*`, `src/store/*`, `src/config/{appstructure,exerciseRegistry,exerciseUI,baseSettings*}`, `src/components/viewer/{FragmentableGrid,BlockWidthContext,ScaledBlock,BlockErrorBoundary,solutionStyle}`, `src/components/layout/PageSheet.tsx`, `src/App.tsx`, `src/index.css`, `src/assets/theme.css`, `src/hooks/useMeasuredHeights.ts` | **all leaves** — the shared visual surface |
+| anything else (tests, docs, scripts, config plugins, `public/`, `*.html`) | none: "no visual scope", exit 0 without starting a browser |
+
+A new leaf needs no rule: it arrives with a change to `appstructure.ts`, which is already
+all-leaves, and a leaf with no baseline row is flagged as new.
+
+Each scoped leaf renders at widths **4, 2, 1** × solutions off/on, seed 1234. A cell is
+flagged when it throws, logs a `console.error`, shows the error-boundary text *"Kon dit blok
+niet tekenen"*, has no baseline row, or its text hash / height (|Δ| > 8px) / intrinsic width
+tier (151/338/688) moved. Full run: 768 cells in ~80 s; a single viewer ~5 s.
+
+### The baseline
+
+`scripts/visual-baseline.json` — committed, one row per `<leafId>-w<width>-s<0|1>` with
+`cellHeightPx`, `intrinsicPx` and a sha1 `textHash`. The hash, not the text, keeps the file
+at ~90 KB and reviewable; no PNGs are committed. Screenshots and `report.md` +
+`contact-sheet.html` (flagged rows, with the numbers) go to
+`~/Downloads/visual-gate/<timestamp>/`.
+
+When the gate flags a change you meant to make: look at the contact sheet, then
+`npm run visual:baseline -- --files <the same files>` (or `--all`, which also drops rows for
+leaves that no longer exist), stage `scripts/visual-baseline.json`, commit again.
+
+### Bypassing
+
+`SKIP_GATE=1 git commit …` skips everything, `SKIP_VISUAL=1` only the browser half, and
+`git commit --no-verify` skips the hook itself. All three — plus any `core.hooksPath` edit —
+are caught by the Claude Code PreToolUse hook `.claude/hooks/commit-bypass-guard.ps1`, which
+answers `permissionDecision: "ask"` so a human has to approve the bypass in person. It reads
+the command string only, so it cannot see a bypass hidden in a script the command runs.
+
 ## The width matrix (`scripts/width-matrix.mjs`)
 
 Not a vitest suite — it drives a real browser, because the question it answers ("can this

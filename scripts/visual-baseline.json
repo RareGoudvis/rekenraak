@@ -1,0 +1,3850 @@
+{
+ "seed": 1234,
+ "widths": [
+  4,
+  2,
+  1
+ ],
+ "rows": {
+  "afronden-dec-rooster-w1-s0": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 282,
+   "textHash": "070eba541430120a"
+  },
+  "afronden-dec-rooster-w1-s1": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 282,
+   "textHash": "c055cc9c538ad206"
+  },
+  "afronden-dec-rooster-w2-s0": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 282,
+   "textHash": "070eba541430120a"
+  },
+  "afronden-dec-rooster-w2-s1": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 282,
+   "textHash": "c055cc9c538ad206"
+  },
+  "afronden-dec-rooster-w4-s0": {
+   "cellHeightPx": 802,
+   "intrinsicPx": 584,
+   "textHash": "070eba541430120a"
+  },
+  "afronden-dec-rooster-w4-s1": {
+   "cellHeightPx": 802,
+   "intrinsicPx": 584,
+   "textHash": "c055cc9c538ad206"
+  },
+  "afronden-dec-simpel-w1-s0": {
+   "cellHeightPx": 187,
+   "intrinsicPx": 374,
+   "textHash": "c72e05f07b10948b"
+  },
+  "afronden-dec-simpel-w1-s1": {
+   "cellHeightPx": 178,
+   "intrinsicPx": 374,
+   "textHash": "80853d57c1505f11"
+  },
+  "afronden-dec-simpel-w2-s0": {
+   "cellHeightPx": 187,
+   "intrinsicPx": 374,
+   "textHash": "c72e05f07b10948b"
+  },
+  "afronden-dec-simpel-w2-s1": {
+   "cellHeightPx": 178,
+   "intrinsicPx": 374,
+   "textHash": "80853d57c1505f11"
+  },
+  "afronden-dec-simpel-w4-s0": {
+   "cellHeightPx": 187,
+   "intrinsicPx": 374,
+   "textHash": "c72e05f07b10948b"
+  },
+  "afronden-dec-simpel-w4-s1": {
+   "cellHeightPx": 178,
+   "intrinsicPx": 374,
+   "textHash": "80853d57c1505f11"
+  },
+  "afronden-nat-rooster-w1-s0": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 296,
+   "textHash": "4d04135916174bdd"
+  },
+  "afronden-nat-rooster-w1-s1": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 296,
+   "textHash": "6e4f3ad2ef9db2bf"
+  },
+  "afronden-nat-rooster-w2-s0": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 296,
+   "textHash": "4d04135916174bdd"
+  },
+  "afronden-nat-rooster-w2-s1": {
+   "cellHeightPx": 1546,
+   "intrinsicPx": 296,
+   "textHash": "6e4f3ad2ef9db2bf"
+  },
+  "afronden-nat-rooster-w4-s0": {
+   "cellHeightPx": 802,
+   "intrinsicPx": 612,
+   "textHash": "4d04135916174bdd"
+  },
+  "afronden-nat-rooster-w4-s1": {
+   "cellHeightPx": 802,
+   "intrinsicPx": 612,
+   "textHash": "6e4f3ad2ef9db2bf"
+  },
+  "afronden-nat-simpel-w1-s0": {
+   "cellHeightPx": 187,
+   "intrinsicPx": 374,
+   "textHash": "bbe13c7b001b70f1"
+  },
+  "afronden-nat-simpel-w1-s1": {
+   "cellHeightPx": 178,
+   "intrinsicPx": 374,
+   "textHash": "a6238bd8f565bc79"
+  },
+  "afronden-nat-simpel-w2-s0": {
+   "cellHeightPx": 187,
+   "intrinsicPx": 374,
+   "textHash": "bbe13c7b001b70f1"
+  },
+  "afronden-nat-simpel-w2-s1": {
+   "cellHeightPx": 178,
+   "intrinsicPx": 374,
+   "textHash": "a6238bd8f565bc79"
+  },
+  "afronden-nat-simpel-w4-s0": {
+   "cellHeightPx": 187,
+   "intrinsicPx": 374,
+   "textHash": "bbe13c7b001b70f1"
+  },
+  "afronden-nat-simpel-w4-s1": {
+   "cellHeightPx": 178,
+   "intrinsicPx": 374,
+   "textHash": "a6238bd8f565bc79"
+  },
+  "breuken-gelijknamig-w1-s0": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 319,
+   "textHash": "d9fd605b94f7382b"
+  },
+  "breuken-gelijknamig-w1-s1": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 217,
+   "textHash": "573a9f022fe8c443"
+  },
+  "breuken-gelijknamig-w2-s0": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 319,
+   "textHash": "d9fd605b94f7382b"
+  },
+  "breuken-gelijknamig-w2-s1": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 217,
+   "textHash": "573a9f022fe8c443"
+  },
+  "breuken-gelijknamig-w4-s0": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 663,
+   "textHash": "d9fd605b94f7382b"
+  },
+  "breuken-gelijknamig-w4-s1": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 458,
+   "textHash": "573a9f022fe8c443"
+  },
+  "breuken-gemengd-w1-s0": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 136,
+   "textHash": "1e135ef2e49017dd"
+  },
+  "breuken-gemengd-w1-s1": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 98,
+   "textHash": "7c9d32c320da13fe"
+  },
+  "breuken-gemengd-w2-s0": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 297,
+   "textHash": "1e135ef2e49017dd"
+  },
+  "breuken-gemengd-w2-s1": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 220,
+   "textHash": "7c9d32c320da13fe"
+  },
+  "breuken-gemengd-w4-s0": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 297,
+   "textHash": "1e135ef2e49017dd"
+  },
+  "breuken-gemengd-w4-s1": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 220,
+   "textHash": "7c9d32c320da13fe"
+  },
+  "breuken-herkennen-w1-s0": {
+   "cellHeightPx": 1156,
+   "intrinsicPx": 206,
+   "textHash": "bf3ca81d44c95053"
+  },
+  "breuken-herkennen-w1-s1": {
+   "cellHeightPx": 1084,
+   "intrinsicPx": 206,
+   "textHash": "7d968c45098cbab5"
+  },
+  "breuken-herkennen-w2-s0": {
+   "cellHeightPx": 1156,
+   "intrinsicPx": 206,
+   "textHash": "bf3ca81d44c95053"
+  },
+  "breuken-herkennen-w2-s1": {
+   "cellHeightPx": 1084,
+   "intrinsicPx": 206,
+   "textHash": "7d968c45098cbab5"
+  },
+  "breuken-herkennen-w4-s0": {
+   "cellHeightPx": 610,
+   "intrinsicPx": 392,
+   "textHash": "bf3ca81d44c95053"
+  },
+  "breuken-herkennen-w4-s1": {
+   "cellHeightPx": 574,
+   "intrinsicPx": 392,
+   "textHash": "7d968c45098cbab5"
+  },
+  "breuken-hoeveelheid-w1-s0": {
+   "cellHeightPx": 1214,
+   "intrinsicPx": 272,
+   "textHash": "131c2cac4a61444f"
+  },
+  "breuken-hoeveelheid-w1-s1": {
+   "cellHeightPx": 1214,
+   "intrinsicPx": 272,
+   "textHash": "131c2cac4a61444f"
+  },
+  "breuken-hoeveelheid-w2-s0": {
+   "cellHeightPx": 1214,
+   "intrinsicPx": 272,
+   "textHash": "131c2cac4a61444f"
+  },
+  "breuken-hoeveelheid-w2-s1": {
+   "cellHeightPx": 1214,
+   "intrinsicPx": 272,
+   "textHash": "131c2cac4a61444f"
+  },
+  "breuken-hoeveelheid-w4-s0": {
+   "cellHeightPx": 639,
+   "intrinsicPx": 562,
+   "textHash": "131c2cac4a61444f"
+  },
+  "breuken-hoeveelheid-w4-s1": {
+   "cellHeightPx": 639,
+   "intrinsicPx": 562,
+   "textHash": "131c2cac4a61444f"
+  },
+  "breuken-kleuren-w1-s0": {
+   "cellHeightPx": 962,
+   "intrinsicPx": 206,
+   "textHash": "89032ab4643bc74a"
+  },
+  "breuken-kleuren-w1-s1": {
+   "cellHeightPx": 962,
+   "intrinsicPx": 206,
+   "textHash": "89032ab4643bc74a"
+  },
+  "breuken-kleuren-w2-s0": {
+   "cellHeightPx": 962,
+   "intrinsicPx": 206,
+   "textHash": "89032ab4643bc74a"
+  },
+  "breuken-kleuren-w2-s1": {
+   "cellHeightPx": 962,
+   "intrinsicPx": 206,
+   "textHash": "89032ab4643bc74a"
+  },
+  "breuken-kleuren-w4-s0": {
+   "cellHeightPx": 513,
+   "intrinsicPx": 392,
+   "textHash": "89032ab4643bc74a"
+  },
+  "breuken-kleuren-w4-s1": {
+   "cellHeightPx": 513,
+   "intrinsicPx": 392,
+   "textHash": "89032ab4643bc74a"
+  },
+  "breuken-lijnstuk-w1-s0": {
+   "cellHeightPx": 1082,
+   "intrinsicPx": 352,
+   "textHash": "c545bb44bc5a8531"
+  },
+  "breuken-lijnstuk-w1-s1": {
+   "cellHeightPx": 1058,
+   "intrinsicPx": 352,
+   "textHash": "7a63dbcab3b4846b"
+  },
+  "breuken-lijnstuk-w2-s0": {
+   "cellHeightPx": 1082,
+   "intrinsicPx": 352,
+   "textHash": "c545bb44bc5a8531"
+  },
+  "breuken-lijnstuk-w2-s1": {
+   "cellHeightPx": 1058,
+   "intrinsicPx": 352,
+   "textHash": "7a63dbcab3b4846b"
+  },
+  "breuken-lijnstuk-w4-s0": {
+   "cellHeightPx": 1082,
+   "intrinsicPx": 352,
+   "textHash": "c545bb44bc5a8531"
+  },
+  "breuken-lijnstuk-w4-s1": {
+   "cellHeightPx": 1058,
+   "intrinsicPx": 352,
+   "textHash": "7a63dbcab3b4846b"
+  },
+  "breuken-rangschikken-w1-s0": {
+   "cellHeightPx": 605,
+   "intrinsicPx": 199,
+   "textHash": "16bcb1c130cf3518"
+  },
+  "breuken-rangschikken-w1-s1": {
+   "cellHeightPx": 690,
+   "intrinsicPx": 199,
+   "textHash": "27861220e17d68d7"
+  },
+  "breuken-rangschikken-w2-s0": {
+   "cellHeightPx": 605,
+   "intrinsicPx": 199,
+   "textHash": "16bcb1c130cf3518"
+  },
+  "breuken-rangschikken-w2-s1": {
+   "cellHeightPx": 690,
+   "intrinsicPx": 199,
+   "textHash": "27861220e17d68d7"
+  },
+  "breuken-rangschikken-w4-s0": {
+   "cellHeightPx": 331,
+   "intrinsicPx": 426,
+   "textHash": "16bcb1c130cf3518"
+  },
+  "breuken-rangschikken-w4-s1": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 426,
+   "textHash": "27861220e17d68d7"
+  },
+  "breuken-veelhoek-w1-s0": {
+   "cellHeightPx": 1102,
+   "intrinsicPx": 208,
+   "textHash": "b1abdcfd0254a4a3"
+  },
+  "breuken-veelhoek-w1-s1": {
+   "cellHeightPx": 1102,
+   "intrinsicPx": 208,
+   "textHash": "b1abdcfd0254a4a3"
+  },
+  "breuken-veelhoek-w2-s0": {
+   "cellHeightPx": 1102,
+   "intrinsicPx": 208,
+   "textHash": "b1abdcfd0254a4a3"
+  },
+  "breuken-veelhoek-w2-s1": {
+   "cellHeightPx": 1102,
+   "intrinsicPx": 208,
+   "textHash": "b1abdcfd0254a4a3"
+  },
+  "breuken-veelhoek-w4-s0": {
+   "cellHeightPx": 1102,
+   "intrinsicPx": 208,
+   "textHash": "b1abdcfd0254a4a3"
+  },
+  "breuken-veelhoek-w4-s1": {
+   "cellHeightPx": 1102,
+   "intrinsicPx": 208,
+   "textHash": "b1abdcfd0254a4a3"
+  },
+  "breuken-vereenvoudigen-w1-s0": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 136,
+   "textHash": "47fc9d0d0ed576a8"
+  },
+  "breuken-vereenvoudigen-w1-s1": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 81,
+   "textHash": "61cb196ea1be138f"
+  },
+  "breuken-vereenvoudigen-w2-s0": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 297,
+   "textHash": "47fc9d0d0ed576a8"
+  },
+  "breuken-vereenvoudigen-w2-s1": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 187,
+   "textHash": "61cb196ea1be138f"
+  },
+  "breuken-vereenvoudigen-w4-s0": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 297,
+   "textHash": "47fc9d0d0ed576a8"
+  },
+  "breuken-vereenvoudigen-w4-s1": {
+   "cellHeightPx": 304,
+   "intrinsicPx": 187,
+   "textHash": "61cb196ea1be138f"
+  },
+  "cijferen-aftrekken-dec-w1-s0": {
+   "cellHeightPx": 460,
+   "intrinsicPx": 301,
+   "textHash": "814400bb84246660"
+  },
+  "cijferen-aftrekken-dec-w1-s1": {
+   "cellHeightPx": 850,
+   "intrinsicPx": 151,
+   "textHash": "814400bb84246660"
+  },
+  "cijferen-aftrekken-dec-w2-s0": {
+   "cellHeightPx": 460,
+   "intrinsicPx": 301,
+   "textHash": "814400bb84246660"
+  },
+  "cijferen-aftrekken-dec-w2-s1": {
+   "cellHeightPx": 460,
+   "intrinsicPx": 301,
+   "textHash": "814400bb84246660"
+  },
+  "cijferen-aftrekken-dec-w4-s0": {
+   "cellHeightPx": 265,
+   "intrinsicPx": 601,
+   "textHash": "814400bb84246660"
+  },
+  "cijferen-aftrekken-dec-w4-s1": {
+   "cellHeightPx": 265,
+   "intrinsicPx": 601,
+   "textHash": "814400bb84246660"
+  },
+  "cijferen-aftrekken-nat-w1-s0": {
+   "cellHeightPx": 850,
+   "intrinsicPx": 101,
+   "textHash": "110b2c0f7b524885"
+  },
+  "cijferen-aftrekken-nat-w1-s1": {
+   "cellHeightPx": 850,
+   "intrinsicPx": 101,
+   "textHash": "110b2c0f7b524885"
+  },
+  "cijferen-aftrekken-nat-w2-s0": {
+   "cellHeightPx": 460,
+   "intrinsicPx": 201,
+   "textHash": "110b2c0f7b524885"
+  },
+  "cijferen-aftrekken-nat-w2-s1": {
+   "cellHeightPx": 460,
+   "intrinsicPx": 201,
+   "textHash": "110b2c0f7b524885"
+  },
+  "cijferen-aftrekken-nat-w4-s0": {
+   "cellHeightPx": 265,
+   "intrinsicPx": 401,
+   "textHash": "110b2c0f7b524885"
+  },
+  "cijferen-aftrekken-nat-w4-s1": {
+   "cellHeightPx": 265,
+   "intrinsicPx": 401,
+   "textHash": "110b2c0f7b524885"
+  },
+  "cijferen-delen-dec-w1-s0": {
+   "cellHeightPx": 1986,
+   "intrinsicPx": 276,
+   "textHash": "2db52a0b71a33654"
+  },
+  "cijferen-delen-dec-w1-s1": {
+   "cellHeightPx": 1962,
+   "intrinsicPx": 276,
+   "textHash": "10525df9ee2397ff"
+  },
+  "cijferen-delen-dec-w2-s0": {
+   "cellHeightPx": 1986,
+   "intrinsicPx": 276,
+   "textHash": "2db52a0b71a33654"
+  },
+  "cijferen-delen-dec-w2-s1": {
+   "cellHeightPx": 1962,
+   "intrinsicPx": 276,
+   "textHash": "10525df9ee2397ff"
+  },
+  "cijferen-delen-dec-w4-s0": {
+   "cellHeightPx": 1028,
+   "intrinsicPx": 551,
+   "textHash": "2db52a0b71a33654"
+  },
+  "cijferen-delen-dec-w4-s1": {
+   "cellHeightPx": 1016,
+   "intrinsicPx": 551,
+   "textHash": "10525df9ee2397ff"
+  },
+  "cijferen-delen-nat-w1-s0": {
+   "cellHeightPx": 1326,
+   "intrinsicPx": 151,
+   "textHash": "1523e7189d5d57bf"
+  },
+  "cijferen-delen-nat-w1-s1": {
+   "cellHeightPx": 1302,
+   "intrinsicPx": 151,
+   "textHash": "44aabd61952f0618"
+  },
+  "cijferen-delen-nat-w2-s0": {
+   "cellHeightPx": 698,
+   "intrinsicPx": 301,
+   "textHash": "1523e7189d5d57bf"
+  },
+  "cijferen-delen-nat-w2-s1": {
+   "cellHeightPx": 686,
+   "intrinsicPx": 301,
+   "textHash": "44aabd61952f0618"
+  },
+  "cijferen-delen-nat-w4-s0": {
+   "cellHeightPx": 384,
+   "intrinsicPx": 601,
+   "textHash": "1523e7189d5d57bf"
+  },
+  "cijferen-delen-nat-w4-s1": {
+   "cellHeightPx": 378,
+   "intrinsicPx": 601,
+   "textHash": "44aabd61952f0618"
+  },
+  "cijferen-optellen-dec-w1-s0": {
+   "cellHeightPx": 750,
+   "intrinsicPx": 151,
+   "textHash": "e493df4800d12825"
+  },
+  "cijferen-optellen-dec-w1-s1": {
+   "cellHeightPx": 750,
+   "intrinsicPx": 151,
+   "textHash": "e493df4800d12825"
+  },
+  "cijferen-optellen-dec-w2-s0": {
+   "cellHeightPx": 410,
+   "intrinsicPx": 301,
+   "textHash": "e493df4800d12825"
+  },
+  "cijferen-optellen-dec-w2-s1": {
+   "cellHeightPx": 410,
+   "intrinsicPx": 301,
+   "textHash": "e493df4800d12825"
+  },
+  "cijferen-optellen-dec-w4-s0": {
+   "cellHeightPx": 240,
+   "intrinsicPx": 601,
+   "textHash": "e493df4800d12825"
+  },
+  "cijferen-optellen-dec-w4-s1": {
+   "cellHeightPx": 240,
+   "intrinsicPx": 601,
+   "textHash": "e493df4800d12825"
+  },
+  "cijferen-optellen-nat-w1-s0": {
+   "cellHeightPx": 750,
+   "intrinsicPx": 101,
+   "textHash": "4aa21b8c8ba8b0dd"
+  },
+  "cijferen-optellen-nat-w1-s1": {
+   "cellHeightPx": 750,
+   "intrinsicPx": 101,
+   "textHash": "4aa21b8c8ba8b0dd"
+  },
+  "cijferen-optellen-nat-w2-s0": {
+   "cellHeightPx": 410,
+   "intrinsicPx": 201,
+   "textHash": "4aa21b8c8ba8b0dd"
+  },
+  "cijferen-optellen-nat-w2-s1": {
+   "cellHeightPx": 410,
+   "intrinsicPx": 201,
+   "textHash": "4aa21b8c8ba8b0dd"
+  },
+  "cijferen-optellen-nat-w4-s0": {
+   "cellHeightPx": 240,
+   "intrinsicPx": 401,
+   "textHash": "4aa21b8c8ba8b0dd"
+  },
+  "cijferen-optellen-nat-w4-s1": {
+   "cellHeightPx": 240,
+   "intrinsicPx": 401,
+   "textHash": "4aa21b8c8ba8b0dd"
+  },
+  "cijferen-vermenigvuldigen-dec-w1-s0": {
+   "cellHeightPx": 950,
+   "intrinsicPx": 201,
+   "textHash": "4acb9e634ee2744f"
+  },
+  "cijferen-vermenigvuldigen-dec-w1-s1": {
+   "cellHeightPx": 950,
+   "intrinsicPx": 201,
+   "textHash": "4acb9e634ee2744f"
+  },
+  "cijferen-vermenigvuldigen-dec-w2-s0": {
+   "cellHeightPx": 950,
+   "intrinsicPx": 201,
+   "textHash": "4acb9e634ee2744f"
+  },
+  "cijferen-vermenigvuldigen-dec-w2-s1": {
+   "cellHeightPx": 950,
+   "intrinsicPx": 201,
+   "textHash": "4acb9e634ee2744f"
+  },
+  "cijferen-vermenigvuldigen-dec-w4-s0": {
+   "cellHeightPx": 510,
+   "intrinsicPx": 576,
+   "textHash": "4acb9e634ee2744f"
+  },
+  "cijferen-vermenigvuldigen-dec-w4-s1": {
+   "cellHeightPx": 510,
+   "intrinsicPx": 576,
+   "textHash": "4acb9e634ee2744f"
+  },
+  "cijferen-vermenigvuldigen-nat-w1-s0": {
+   "cellHeightPx": 875,
+   "intrinsicPx": 101,
+   "textHash": "06a77826c8ddf0b0"
+  },
+  "cijferen-vermenigvuldigen-nat-w1-s1": {
+   "cellHeightPx": 875,
+   "intrinsicPx": 101,
+   "textHash": "06a77826c8ddf0b0"
+  },
+  "cijferen-vermenigvuldigen-nat-w2-s0": {
+   "cellHeightPx": 485,
+   "intrinsicPx": 201,
+   "textHash": "06a77826c8ddf0b0"
+  },
+  "cijferen-vermenigvuldigen-nat-w2-s1": {
+   "cellHeightPx": 485,
+   "intrinsicPx": 201,
+   "textHash": "06a77826c8ddf0b0"
+  },
+  "cijferen-vermenigvuldigen-nat-w4-s0": {
+   "cellHeightPx": 290,
+   "intrinsicPx": 401,
+   "textHash": "06a77826c8ddf0b0"
+  },
+  "cijferen-vermenigvuldigen-nat-w4-s1": {
+   "cellHeightPx": 290,
+   "intrinsicPx": 401,
+   "textHash": "06a77826c8ddf0b0"
+  },
+  "controleren-negenproef-w1-s0": {
+   "cellHeightPx": 288,
+   "intrinsicPx": 584,
+   "textHash": "24d7bb23add5bb89"
+  },
+  "controleren-negenproef-w1-s1": {
+   "cellHeightPx": 288,
+   "intrinsicPx": 584,
+   "textHash": "e10f6229d8383339"
+  },
+  "controleren-negenproef-w2-s0": {
+   "cellHeightPx": 288,
+   "intrinsicPx": 584,
+   "textHash": "24d7bb23add5bb89"
+  },
+  "controleren-negenproef-w2-s1": {
+   "cellHeightPx": 288,
+   "intrinsicPx": 584,
+   "textHash": "e10f6229d8383339"
+  },
+  "controleren-negenproef-w4-s0": {
+   "cellHeightPx": 288,
+   "intrinsicPx": 584,
+   "textHash": "24d7bb23add5bb89"
+  },
+  "controleren-negenproef-w4-s1": {
+   "cellHeightPx": 288,
+   "intrinsicPx": 584,
+   "textHash": "e10f6229d8383339"
+  },
+  "controleren-omgekeerde-w1-s0": {
+   "cellHeightPx": 338,
+   "intrinsicPx": 171,
+   "textHash": "3cb530759ddfa8f3"
+  },
+  "controleren-omgekeerde-w1-s1": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 173,
+   "textHash": "347b654c6f95198d"
+  },
+  "controleren-omgekeerde-w2-s0": {
+   "cellHeightPx": 338,
+   "intrinsicPx": 171,
+   "textHash": "3cb530759ddfa8f3"
+  },
+  "controleren-omgekeerde-w2-s1": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 173,
+   "textHash": "347b654c6f95198d"
+  },
+  "controleren-omgekeerde-w4-s0": {
+   "cellHeightPx": 338,
+   "intrinsicPx": 171,
+   "textHash": "3cb530759ddfa8f3"
+  },
+  "controleren-omgekeerde-w4-s1": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 173,
+   "textHash": "347b654c6f95198d"
+  },
+  "deelbaarheid-kleurraster-w1-s0": {
+   "cellHeightPx": 757,
+   "intrinsicPx": 388,
+   "textHash": "8a6b0a5b94b4e2c0"
+  },
+  "deelbaarheid-kleurraster-w1-s1": {
+   "cellHeightPx": 757,
+   "intrinsicPx": 388,
+   "textHash": "8a6b0a5b94b4e2c0"
+  },
+  "deelbaarheid-kleurraster-w2-s0": {
+   "cellHeightPx": 757,
+   "intrinsicPx": 388,
+   "textHash": "8a6b0a5b94b4e2c0"
+  },
+  "deelbaarheid-kleurraster-w2-s1": {
+   "cellHeightPx": 757,
+   "intrinsicPx": 388,
+   "textHash": "8a6b0a5b94b4e2c0"
+  },
+  "deelbaarheid-kleurraster-w4-s0": {
+   "cellHeightPx": 757,
+   "intrinsicPx": 388,
+   "textHash": "8a6b0a5b94b4e2c0"
+  },
+  "deelbaarheid-kleurraster-w4-s1": {
+   "cellHeightPx": 757,
+   "intrinsicPx": 388,
+   "textHash": "8a6b0a5b94b4e2c0"
+  },
+  "deelbaarheid-omcirkelen-w1-s0": {
+   "cellHeightPx": 806,
+   "intrinsicPx": 91,
+   "textHash": "1dfa951242a27ba5"
+  },
+  "deelbaarheid-omcirkelen-w1-s1": {
+   "cellHeightPx": 806,
+   "intrinsicPx": 91,
+   "textHash": "1dfa951242a27ba5"
+  },
+  "deelbaarheid-omcirkelen-w2-s0": {
+   "cellHeightPx": 395,
+   "intrinsicPx": 91,
+   "textHash": "1dfa951242a27ba5"
+  },
+  "deelbaarheid-omcirkelen-w2-s1": {
+   "cellHeightPx": 395,
+   "intrinsicPx": 91,
+   "textHash": "1dfa951242a27ba5"
+  },
+  "deelbaarheid-omcirkelen-w4-s0": {
+   "cellHeightPx": 395,
+   "intrinsicPx": 91,
+   "textHash": "1dfa951242a27ba5"
+  },
+  "deelbaarheid-omcirkelen-w4-s1": {
+   "cellHeightPx": 395,
+   "intrinsicPx": 91,
+   "textHash": "1dfa951242a27ba5"
+  },
+  "deelbaarheid-rooster-w1-s0": {
+   "cellHeightPx": 548,
+   "intrinsicPx": 91,
+   "textHash": "0eb855a1807e8370"
+  },
+  "deelbaarheid-rooster-w1-s1": {
+   "cellHeightPx": 548,
+   "intrinsicPx": 91,
+   "textHash": "0eb855a1807e8370"
+  },
+  "deelbaarheid-rooster-w2-s0": {
+   "cellHeightPx": 361,
+   "intrinsicPx": 91,
+   "textHash": "0eb855a1807e8370"
+  },
+  "deelbaarheid-rooster-w2-s1": {
+   "cellHeightPx": 361,
+   "intrinsicPx": 91,
+   "textHash": "0eb855a1807e8370"
+  },
+  "deelbaarheid-rooster-w4-s0": {
+   "cellHeightPx": 279,
+   "intrinsicPx": 91,
+   "textHash": "0eb855a1807e8370"
+  },
+  "deelbaarheid-rooster-w4-s1": {
+   "cellHeightPx": 279,
+   "intrinsicPx": 91,
+   "textHash": "0eb855a1807e8370"
+  },
+  "deelbaarheid-tabel-w1-s0": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 343,
+   "textHash": "c363f7e7dbf61903"
+  },
+  "deelbaarheid-tabel-w1-s1": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 343,
+   "textHash": "7207aeacb4617245"
+  },
+  "deelbaarheid-tabel-w2-s0": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 343,
+   "textHash": "c363f7e7dbf61903"
+  },
+  "deelbaarheid-tabel-w2-s1": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 343,
+   "textHash": "7207aeacb4617245"
+  },
+  "deelbaarheid-tabel-w4-s0": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 343,
+   "textHash": "c363f7e7dbf61903"
+  },
+  "deelbaarheid-tabel-w4-s1": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 343,
+   "textHash": "7207aeacb4617245"
+  },
+  "deelbaarheid-veelvouden-w1-s0": {
+   "cellHeightPx": 468,
+   "intrinsicPx": 236,
+   "textHash": "8fde6f7121b2a753"
+  },
+  "deelbaarheid-veelvouden-w1-s1": {
+   "cellHeightPx": 468,
+   "intrinsicPx": 198,
+   "textHash": "e194845faa18a306"
+  },
+  "deelbaarheid-veelvouden-w2-s0": {
+   "cellHeightPx": 468,
+   "intrinsicPx": 236,
+   "textHash": "8fde6f7121b2a753"
+  },
+  "deelbaarheid-veelvouden-w2-s1": {
+   "cellHeightPx": 468,
+   "intrinsicPx": 198,
+   "textHash": "e194845faa18a306"
+  },
+  "deelbaarheid-veelvouden-w4-s0": {
+   "cellHeightPx": 468,
+   "intrinsicPx": 361,
+   "textHash": "0c1aa7afcbee6f00"
+  },
+  "deelbaarheid-veelvouden-w4-s1": {
+   "cellHeightPx": 468,
+   "intrinsicPx": 284,
+   "textHash": "53912d2f1927756b"
+  },
+  "even-oneven-cirkels-w1-s0": {
+   "cellHeightPx": 367,
+   "intrinsicPx": 308,
+   "textHash": "1580c19ea97a9271"
+  },
+  "even-oneven-cirkels-w1-s1": {
+   "cellHeightPx": 352,
+   "intrinsicPx": 308,
+   "textHash": "46f4431e4aa5b76d"
+  },
+  "even-oneven-cirkels-w2-s0": {
+   "cellHeightPx": 367,
+   "intrinsicPx": 308,
+   "textHash": "1580c19ea97a9271"
+  },
+  "even-oneven-cirkels-w2-s1": {
+   "cellHeightPx": 352,
+   "intrinsicPx": 308,
+   "textHash": "46f4431e4aa5b76d"
+  },
+  "even-oneven-cirkels-w4-s0": {
+   "cellHeightPx": 264,
+   "intrinsicPx": 562,
+   "textHash": "1580c19ea97a9271"
+  },
+  "even-oneven-cirkels-w4-s1": {
+   "cellHeightPx": 254,
+   "intrinsicPx": 562,
+   "textHash": "46f4431e4aa5b76d"
+  },
+  "even-oneven-rooster-w1-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 297,
+   "textHash": "5f5c812b00208f32"
+  },
+  "even-oneven-rooster-w1-s1": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 297,
+   "textHash": "5f5c812b00208f32"
+  },
+  "even-oneven-rooster-w2-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 297,
+   "textHash": "5f5c812b00208f32"
+  },
+  "even-oneven-rooster-w2-s1": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 297,
+   "textHash": "5f5c812b00208f32"
+  },
+  "even-oneven-rooster-w4-s0": {
+   "cellHeightPx": 201,
+   "intrinsicPx": 425,
+   "textHash": "5f5c812b00208f32"
+  },
+  "even-oneven-rooster-w4-s1": {
+   "cellHeightPx": 201,
+   "intrinsicPx": 425,
+   "textHash": "5f5c812b00208f32"
+  },
+  "geld-herkennen-w1-s0": {
+   "cellHeightPx": 1014,
+   "intrinsicPx": 80,
+   "textHash": "43deb1bc168ba23c"
+  },
+  "geld-herkennen-w1-s1": {
+   "cellHeightPx": 1032,
+   "intrinsicPx": 72,
+   "textHash": "c1fb429e10aa97e9"
+  },
+  "geld-herkennen-w2-s0": {
+   "cellHeightPx": 634,
+   "intrinsicPx": 178,
+   "textHash": "43deb1bc168ba23c"
+  },
+  "geld-herkennen-w2-s1": {
+   "cellHeightPx": 643,
+   "intrinsicPx": 162,
+   "textHash": "c1fb429e10aa97e9"
+  },
+  "geld-herkennen-w4-s0": {
+   "cellHeightPx": 430,
+   "intrinsicPx": 374,
+   "textHash": "43deb1bc168ba23c"
+  },
+  "geld-herkennen-w4-s1": {
+   "cellHeightPx": 436,
+   "intrinsicPx": 342,
+   "textHash": "c1fb429e10aa97e9"
+  },
+  "geld-rekenen-intrest-w1-s0": {
+   "cellHeightPx": 294,
+   "intrinsicPx": 313,
+   "textHash": "de39aa7bd3a0d52b"
+  },
+  "geld-rekenen-intrest-w1-s1": {
+   "cellHeightPx": 294,
+   "intrinsicPx": 313,
+   "textHash": "b12c9b1fce4e9341"
+  },
+  "geld-rekenen-intrest-w2-s0": {
+   "cellHeightPx": 294,
+   "intrinsicPx": 313,
+   "textHash": "de39aa7bd3a0d52b"
+  },
+  "geld-rekenen-intrest-w2-s1": {
+   "cellHeightPx": 294,
+   "intrinsicPx": 313,
+   "textHash": "b12c9b1fce4e9341"
+  },
+  "geld-rekenen-intrest-w4-s0": {
+   "cellHeightPx": 294,
+   "intrinsicPx": 313,
+   "textHash": "de39aa7bd3a0d52b"
+  },
+  "geld-rekenen-intrest-w4-s1": {
+   "cellHeightPx": 294,
+   "intrinsicPx": 313,
+   "textHash": "b12c9b1fce4e9341"
+  },
+  "geld-rekenen-korting-w1-s0": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 304,
+   "textHash": "5b68ea1a2a1643a6"
+  },
+  "geld-rekenen-korting-w1-s1": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 304,
+   "textHash": "f6547cd13a7b8df3"
+  },
+  "geld-rekenen-korting-w2-s0": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 304,
+   "textHash": "5b68ea1a2a1643a6"
+  },
+  "geld-rekenen-korting-w2-s1": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 304,
+   "textHash": "f6547cd13a7b8df3"
+  },
+  "geld-rekenen-korting-w4-s0": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 304,
+   "textHash": "5b68ea1a2a1643a6"
+  },
+  "geld-rekenen-korting-w4-s1": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 304,
+   "textHash": "f6547cd13a7b8df3"
+  },
+  "geld-rekenen-winst-w1-s0": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 355,
+   "textHash": "8aa13b73bc5f25cb"
+  },
+  "geld-rekenen-winst-w1-s1": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 355,
+   "textHash": "5ffb0d057cd1aa8b"
+  },
+  "geld-rekenen-winst-w2-s0": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 355,
+   "textHash": "8aa13b73bc5f25cb"
+  },
+  "geld-rekenen-winst-w2-s1": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 355,
+   "textHash": "5ffb0d057cd1aa8b"
+  },
+  "geld-rekenen-winst-w4-s0": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 355,
+   "textHash": "8aa13b73bc5f25cb"
+  },
+  "geld-rekenen-winst-w4-s1": {
+   "cellHeightPx": 296,
+   "intrinsicPx": 355,
+   "textHash": "5ffb0d057cd1aa8b"
+  },
+  "geld-tekenen-w1-s0": {
+   "cellHeightPx": 484,
+   "intrinsicPx": 140,
+   "textHash": "acf84014a38a6d31"
+  },
+  "geld-tekenen-w1-s1": {
+   "cellHeightPx": 541,
+   "intrinsicPx": 140,
+   "textHash": "358b52c0e0dbdafa"
+  },
+  "geld-tekenen-w2-s0": {
+   "cellHeightPx": 484,
+   "intrinsicPx": 140,
+   "textHash": "acf84014a38a6d31"
+  },
+  "geld-tekenen-w2-s1": {
+   "cellHeightPx": 541,
+   "intrinsicPx": 140,
+   "textHash": "358b52c0e0dbdafa"
+  },
+  "geld-tekenen-w4-s0": {
+   "cellHeightPx": 344,
+   "intrinsicPx": 219,
+   "textHash": "acf84014a38a6d31"
+  },
+  "geld-tekenen-w4-s1": {
+   "cellHeightPx": 382,
+   "intrinsicPx": 219,
+   "textHash": "358b52c0e0dbdafa"
+  },
+  "geld-teruggeven-w1-s0": {
+   "cellHeightPx": 798,
+   "intrinsicPx": 54,
+   "textHash": "4a170548b5f1d3ec"
+  },
+  "geld-teruggeven-w1-s1": {
+   "cellHeightPx": 798,
+   "intrinsicPx": 54,
+   "textHash": "adc62df5ec73ecd3"
+  },
+  "geld-teruggeven-w2-s0": {
+   "cellHeightPx": 798,
+   "intrinsicPx": 54,
+   "textHash": "4a170548b5f1d3ec"
+  },
+  "geld-teruggeven-w2-s1": {
+   "cellHeightPx": 798,
+   "intrinsicPx": 54,
+   "textHash": "adc62df5ec73ecd3"
+  },
+  "geld-teruggeven-w4-s0": {
+   "cellHeightPx": 871,
+   "intrinsicPx": 54,
+   "textHash": "4a170548b5f1d3ec"
+  },
+  "geld-teruggeven-w4-s1": {
+   "cellHeightPx": 871,
+   "intrinsicPx": 54,
+   "textHash": "adc62df5ec73ecd3"
+  },
+  "geld-wissel-w1-s0": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 116,
+   "textHash": "7499a1af7a7193b3"
+  },
+  "geld-wissel-w1-s1": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 116,
+   "textHash": "7499a1af7a7193b3"
+  },
+  "geld-wissel-w2-s0": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 116,
+   "textHash": "7499a1af7a7193b3"
+  },
+  "geld-wissel-w2-s1": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 116,
+   "textHash": "7499a1af7a7193b3"
+  },
+  "geld-wissel-w4-s0": {
+   "cellHeightPx": 332,
+   "intrinsicPx": 249,
+   "textHash": "7499a1af7a7193b3"
+  },
+  "geld-wissel-w4-s1": {
+   "cellHeightPx": 332,
+   "intrinsicPx": 249,
+   "textHash": "7499a1af7a7193b3"
+  },
+  "getalbegrip-functie-w1-s0": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 574,
+   "textHash": "0fdade7cf3e647f9"
+  },
+  "getalbegrip-functie-w1-s1": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 574,
+   "textHash": "988fc8a1a0e27e3c"
+  },
+  "getalbegrip-functie-w2-s0": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 574,
+   "textHash": "0fdade7cf3e647f9"
+  },
+  "getalbegrip-functie-w2-s1": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 574,
+   "textHash": "988fc8a1a0e27e3c"
+  },
+  "getalbegrip-functie-w4-s0": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 574,
+   "textHash": "0fdade7cf3e647f9"
+  },
+  "getalbegrip-functie-w4-s1": {
+   "cellHeightPx": 306,
+   "intrinsicPx": 574,
+   "textHash": "988fc8a1a0e27e3c"
+  },
+  "getalbegrip-getallenassen-dec-w1-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "81d613e3b1d6a6d2"
+  },
+  "getalbegrip-getallenassen-dec-w1-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "96aea632d3dda995"
+  },
+  "getalbegrip-getallenassen-dec-w2-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "81d613e3b1d6a6d2"
+  },
+  "getalbegrip-getallenassen-dec-w2-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "96aea632d3dda995"
+  },
+  "getalbegrip-getallenassen-dec-w4-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "81d613e3b1d6a6d2"
+  },
+  "getalbegrip-getallenassen-dec-w4-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "96aea632d3dda995"
+  },
+  "getalbegrip-getallenassen-geh-w1-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "c7e69a46829bd9ad"
+  },
+  "getalbegrip-getallenassen-geh-w1-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "4b22eeef495c5f70"
+  },
+  "getalbegrip-getallenassen-geh-w2-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "c7e69a46829bd9ad"
+  },
+  "getalbegrip-getallenassen-geh-w2-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "4b22eeef495c5f70"
+  },
+  "getalbegrip-getallenassen-geh-w4-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "c7e69a46829bd9ad"
+  },
+  "getalbegrip-getallenassen-geh-w4-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "4b22eeef495c5f70"
+  },
+  "getalbegrip-getallenassen-nat-w1-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "f2ff9f83b69d0b43"
+  },
+  "getalbegrip-getallenassen-nat-w1-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "e207b11cdeb27fce"
+  },
+  "getalbegrip-getallenassen-nat-w2-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "f2ff9f83b69d0b43"
+  },
+  "getalbegrip-getallenassen-nat-w2-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "e207b11cdeb27fce"
+  },
+  "getalbegrip-getallenassen-nat-w4-s0": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "f2ff9f83b69d0b43"
+  },
+  "getalbegrip-getallenassen-nat-w4-s1": {
+   "cellHeightPx": 544,
+   "intrinsicPx": 528,
+   "textHash": "e207b11cdeb27fce"
+  },
+  "getalbegrip-getallenassen-rat-w1-s0": {
+   "cellHeightPx": 634,
+   "intrinsicPx": 528,
+   "textHash": "2e8cb0b876be23d0"
+  },
+  "getalbegrip-getallenassen-rat-w1-s1": {
+   "cellHeightPx": 634,
+   "intrinsicPx": 528,
+   "textHash": "1a0dee4aa725ea50"
+  },
+  "getalbegrip-getallenassen-rat-w2-s0": {
+   "cellHeightPx": 634,
+   "intrinsicPx": 528,
+   "textHash": "2e8cb0b876be23d0"
+  },
+  "getalbegrip-getallenassen-rat-w2-s1": {
+   "cellHeightPx": 634,
+   "intrinsicPx": 528,
+   "textHash": "1a0dee4aa725ea50"
+  },
+  "getalbegrip-getallenassen-rat-w4-s0": {
+   "cellHeightPx": 634,
+   "intrinsicPx": 528,
+   "textHash": "2e8cb0b876be23d0"
+  },
+  "getalbegrip-getallenassen-rat-w4-s1": {
+   "cellHeightPx": 634,
+   "intrinsicPx": 528,
+   "textHash": "1a0dee4aa725ea50"
+  },
+  "getalbegrip-getallenrijen-dec-w1-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "15e5316ae648dbb2"
+  },
+  "getalbegrip-getallenrijen-dec-w1-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "6083716a9ce99c92"
+  },
+  "getalbegrip-getallenrijen-dec-w2-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "15e5316ae648dbb2"
+  },
+  "getalbegrip-getallenrijen-dec-w2-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "6083716a9ce99c92"
+  },
+  "getalbegrip-getallenrijen-dec-w4-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "15e5316ae648dbb2"
+  },
+  "getalbegrip-getallenrijen-dec-w4-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "6083716a9ce99c92"
+  },
+  "getalbegrip-getallenrijen-geh-w1-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "a5aace42a28515e5"
+  },
+  "getalbegrip-getallenrijen-geh-w1-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "1527fb2d0a305735"
+  },
+  "getalbegrip-getallenrijen-geh-w2-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "a5aace42a28515e5"
+  },
+  "getalbegrip-getallenrijen-geh-w2-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "1527fb2d0a305735"
+  },
+  "getalbegrip-getallenrijen-geh-w4-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "a5aace42a28515e5"
+  },
+  "getalbegrip-getallenrijen-geh-w4-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "1527fb2d0a305735"
+  },
+  "getalbegrip-getallenrijen-nat-w1-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "3a9c313c4e8a1ef9"
+  },
+  "getalbegrip-getallenrijen-nat-w1-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "ba29e20e7c4a2a2e"
+  },
+  "getalbegrip-getallenrijen-nat-w2-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "3a9c313c4e8a1ef9"
+  },
+  "getalbegrip-getallenrijen-nat-w2-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "ba29e20e7c4a2a2e"
+  },
+  "getalbegrip-getallenrijen-nat-w4-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "3a9c313c4e8a1ef9"
+  },
+  "getalbegrip-getallenrijen-nat-w4-s1": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 190,
+   "textHash": "ba29e20e7c4a2a2e"
+  },
+  "getalbegrip-getallenrijen-rat-w1-s0": {
+   "cellHeightPx": 467,
+   "intrinsicPx": 190,
+   "textHash": "cfd76a46f4b90a07"
+  },
+  "getalbegrip-getallenrijen-rat-w1-s1": {
+   "cellHeightPx": 467,
+   "intrinsicPx": 190,
+   "textHash": "c917ad582729c56f"
+  },
+  "getalbegrip-getallenrijen-rat-w2-s0": {
+   "cellHeightPx": 467,
+   "intrinsicPx": 190,
+   "textHash": "cfd76a46f4b90a07"
+  },
+  "getalbegrip-getallenrijen-rat-w2-s1": {
+   "cellHeightPx": 467,
+   "intrinsicPx": 190,
+   "textHash": "c917ad582729c56f"
+  },
+  "getalbegrip-getallenrijen-rat-w4-s0": {
+   "cellHeightPx": 467,
+   "intrinsicPx": 190,
+   "textHash": "cfd76a46f4b90a07"
+  },
+  "getalbegrip-getallenrijen-rat-w4-s1": {
+   "cellHeightPx": 467,
+   "intrinsicPx": 190,
+   "textHash": "c917ad582729c56f"
+  },
+  "getalbegrip-ordenen-dec-w1-s0": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 269,
+   "textHash": "6ae4ed1172902dc5"
+  },
+  "getalbegrip-ordenen-dec-w1-s1": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 269,
+   "textHash": "194e3ae15a64ced3"
+  },
+  "getalbegrip-ordenen-dec-w2-s0": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 269,
+   "textHash": "6ae4ed1172902dc5"
+  },
+  "getalbegrip-ordenen-dec-w2-s1": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 269,
+   "textHash": "194e3ae15a64ced3"
+  },
+  "getalbegrip-ordenen-dec-w4-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 567,
+   "textHash": "6ae4ed1172902dc5"
+  },
+  "getalbegrip-ordenen-dec-w4-s1": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 567,
+   "textHash": "194e3ae15a64ced3"
+  },
+  "getalbegrip-ordenen-geh-w1-s0": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 202,
+   "textHash": "3827c1d89da355ba"
+  },
+  "getalbegrip-ordenen-geh-w1-s1": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 179,
+   "textHash": "8364b36d8e7d3cf5"
+  },
+  "getalbegrip-ordenen-geh-w2-s0": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 202,
+   "textHash": "3827c1d89da355ba"
+  },
+  "getalbegrip-ordenen-geh-w2-s1": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 179,
+   "textHash": "8364b36d8e7d3cf5"
+  },
+  "getalbegrip-ordenen-geh-w4-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 409,
+   "textHash": "3827c1d89da355ba"
+  },
+  "getalbegrip-ordenen-geh-w4-s1": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 375,
+   "textHash": "8364b36d8e7d3cf5"
+  },
+  "getalbegrip-ordenen-nat-w1-s0": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 168,
+   "textHash": "854a5e6be9ffea84"
+  },
+  "getalbegrip-ordenen-nat-w1-s1": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 168,
+   "textHash": "1dbc9e06c229c2e9"
+  },
+  "getalbegrip-ordenen-nat-w2-s0": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 168,
+   "textHash": "854a5e6be9ffea84"
+  },
+  "getalbegrip-ordenen-nat-w2-s1": {
+   "cellHeightPx": 502,
+   "intrinsicPx": 168,
+   "textHash": "1dbc9e06c229c2e9"
+  },
+  "getalbegrip-ordenen-nat-w4-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 364,
+   "textHash": "854a5e6be9ffea84"
+  },
+  "getalbegrip-ordenen-nat-w4-s1": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 364,
+   "textHash": "1dbc9e06c229c2e9"
+  },
+  "getalbegrip-ordenen-rat-w1-s0": {
+   "cellHeightPx": 331,
+   "intrinsicPx": 312,
+   "textHash": "8d4119a74ea1f28f"
+  },
+  "getalbegrip-ordenen-rat-w1-s1": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 312,
+   "textHash": "04f4f85c153de380"
+  },
+  "getalbegrip-ordenen-rat-w2-s0": {
+   "cellHeightPx": 331,
+   "intrinsicPx": 312,
+   "textHash": "8d4119a74ea1f28f"
+  },
+  "getalbegrip-ordenen-rat-w2-s1": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 312,
+   "textHash": "04f4f85c153de380"
+  },
+  "getalbegrip-ordenen-rat-w4-s0": {
+   "cellHeightPx": 331,
+   "intrinsicPx": 312,
+   "textHash": "8d4119a74ea1f28f"
+  },
+  "getalbegrip-ordenen-rat-w4-s1": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 312,
+   "textHash": "04f4f85c153de380"
+  },
+  "handig-rekenvolgorde-w1-s0": {
+   "cellHeightPx": 464,
+   "intrinsicPx": 217,
+   "textHash": "db5fa624ed7967ae"
+  },
+  "handig-rekenvolgorde-w1-s1": {
+   "cellHeightPx": 444,
+   "intrinsicPx": 217,
+   "textHash": "7626e1896fd9f132"
+  },
+  "handig-rekenvolgorde-w2-s0": {
+   "cellHeightPx": 464,
+   "intrinsicPx": 217,
+   "textHash": "db5fa624ed7967ae"
+  },
+  "handig-rekenvolgorde-w2-s1": {
+   "cellHeightPx": 444,
+   "intrinsicPx": 217,
+   "textHash": "7626e1896fd9f132"
+  },
+  "handig-rekenvolgorde-w4-s0": {
+   "cellHeightPx": 264,
+   "intrinsicPx": 459,
+   "textHash": "db5fa624ed7967ae"
+  },
+  "handig-rekenvolgorde-w4-s1": {
+   "cellHeightPx": 254,
+   "intrinsicPx": 459,
+   "textHash": "7626e1896fd9f132"
+  },
+  "herleidingen-inhoud-w1-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 552,
+   "textHash": "df7de1763b242ab2"
+  },
+  "herleidingen-inhoud-w1-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 494,
+   "textHash": "6cdf57484e9f2e38"
+  },
+  "herleidingen-inhoud-w2-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 552,
+   "textHash": "df7de1763b242ab2"
+  },
+  "herleidingen-inhoud-w2-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 494,
+   "textHash": "6cdf57484e9f2e38"
+  },
+  "herleidingen-inhoud-w4-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 552,
+   "textHash": "df7de1763b242ab2"
+  },
+  "herleidingen-inhoud-w4-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 494,
+   "textHash": "6cdf57484e9f2e38"
+  },
+  "herleidingen-lengte-w1-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 552,
+   "textHash": "a6af20826146f72f"
+  },
+  "herleidingen-lengte-w1-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 494,
+   "textHash": "4b29fcb166bcfe0f"
+  },
+  "herleidingen-lengte-w2-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 552,
+   "textHash": "a6af20826146f72f"
+  },
+  "herleidingen-lengte-w2-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 494,
+   "textHash": "4b29fcb166bcfe0f"
+  },
+  "herleidingen-lengte-w4-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 552,
+   "textHash": "a6af20826146f72f"
+  },
+  "herleidingen-lengte-w4-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 494,
+   "textHash": "4b29fcb166bcfe0f"
+  },
+  "herleidingen-massa-w1-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 563,
+   "textHash": "7655499e3e2200a3"
+  },
+  "herleidingen-massa-w1-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 505,
+   "textHash": "33652937d3574791"
+  },
+  "herleidingen-massa-w2-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 563,
+   "textHash": "7655499e3e2200a3"
+  },
+  "herleidingen-massa-w2-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 505,
+   "textHash": "33652937d3574791"
+  },
+  "herleidingen-massa-w4-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 563,
+   "textHash": "7655499e3e2200a3"
+  },
+  "herleidingen-massa-w4-s1": {
+   "cellHeightPx": 218,
+   "intrinsicPx": 505,
+   "textHash": "33652937d3574791"
+  },
+  "herleidingen-oppervlakte-w1-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 583,
+   "textHash": "710772bbf2e9e8d3"
+  },
+  "herleidingen-oppervlakte-w1-s1": {
+   "cellHeightPx": 237,
+   "intrinsicPx": 525,
+   "textHash": "beb00e6f2c38e299"
+  },
+  "herleidingen-oppervlakte-w2-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 583,
+   "textHash": "710772bbf2e9e8d3"
+  },
+  "herleidingen-oppervlakte-w2-s1": {
+   "cellHeightPx": 237,
+   "intrinsicPx": 525,
+   "textHash": "beb00e6f2c38e299"
+  },
+  "herleidingen-oppervlakte-w4-s0": {
+   "cellHeightPx": 258,
+   "intrinsicPx": 583,
+   "textHash": "710772bbf2e9e8d3"
+  },
+  "herleidingen-oppervlakte-w4-s1": {
+   "cellHeightPx": 237,
+   "intrinsicPx": 525,
+   "textHash": "beb00e6f2c38e299"
+  },
+  "hr-std-aftrekken-dec-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 295,
+   "textHash": "5c5c84496fe9dc2c"
+  },
+  "hr-std-aftrekken-dec-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 283,
+   "textHash": "b48a29254b37dd8f"
+  },
+  "hr-std-aftrekken-dec-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 295,
+   "textHash": "5c5c84496fe9dc2c"
+  },
+  "hr-std-aftrekken-dec-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 283,
+   "textHash": "b48a29254b37dd8f"
+  },
+  "hr-std-aftrekken-dec-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 641,
+   "textHash": "5c5c84496fe9dc2c"
+  },
+  "hr-std-aftrekken-dec-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 615,
+   "textHash": "b48a29254b37dd8f"
+  },
+  "hr-std-aftrekken-nat-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 161,
+   "textHash": "5c5c84496fe9dc2c"
+  },
+  "hr-std-aftrekken-nat-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 164,
+   "textHash": "f70802beb118cbe0"
+  },
+  "hr-std-aftrekken-nat-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 213,
+   "textHash": "5c5c84496fe9dc2c"
+  },
+  "hr-std-aftrekken-nat-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 181,
+   "textHash": "f70802beb118cbe0"
+  },
+  "hr-std-aftrekken-nat-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 485,
+   "textHash": "5c5c84496fe9dc2c"
+  },
+  "hr-std-aftrekken-nat-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 421,
+   "textHash": "f70802beb118cbe0"
+  },
+  "hr-std-aftrekken-rat-w1-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 211,
+   "textHash": "f23f32749fe693f1"
+  },
+  "hr-std-aftrekken-rat-w1-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 164,
+   "textHash": "399388eb9a4975b1"
+  },
+  "hr-std-aftrekken-rat-w2-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 211,
+   "textHash": "f23f32749fe693f1"
+  },
+  "hr-std-aftrekken-rat-w2-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 164,
+   "textHash": "399388eb9a4975b1"
+  },
+  "hr-std-aftrekken-rat-w4-s0": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 485,
+   "textHash": "f23f32749fe693f1"
+  },
+  "hr-std-aftrekken-rat-w4-s1": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 386,
+   "textHash": "399388eb9a4975b1"
+  },
+  "hr-std-delen-dec-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 279,
+   "textHash": "1273c0ab868ae830"
+  },
+  "hr-std-delen-dec-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 224,
+   "textHash": "3214fbaa4406b4fe"
+  },
+  "hr-std-delen-dec-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 279,
+   "textHash": "1273c0ab868ae830"
+  },
+  "hr-std-delen-dec-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 224,
+   "textHash": "3214fbaa4406b4fe"
+  },
+  "hr-std-delen-dec-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 609,
+   "textHash": "1273c0ab868ae830"
+  },
+  "hr-std-delen-dec-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 498,
+   "textHash": "3214fbaa4406b4fe"
+  },
+  "hr-std-delen-nat-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 161,
+   "textHash": "1273c0ab868ae830"
+  },
+  "hr-std-delen-nat-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 153,
+   "textHash": "a065ce6adb069230"
+  },
+  "hr-std-delen-nat-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 213,
+   "textHash": "1273c0ab868ae830"
+  },
+  "hr-std-delen-nat-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 170,
+   "textHash": "a065ce6adb069230"
+  },
+  "hr-std-delen-nat-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 485,
+   "textHash": "1273c0ab868ae830"
+  },
+  "hr-std-delen-nat-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 386,
+   "textHash": "a065ce6adb069230"
+  },
+  "hr-std-delen-rat-w1-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 159,
+   "textHash": "716fa41cf3592da3"
+  },
+  "hr-std-delen-rat-w1-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 147,
+   "textHash": "4641e0a935f6e97c"
+  },
+  "hr-std-delen-rat-w2-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 211,
+   "textHash": "716fa41cf3592da3"
+  },
+  "hr-std-delen-rat-w2-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 164,
+   "textHash": "4641e0a935f6e97c"
+  },
+  "hr-std-delen-rat-w4-s0": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 485,
+   "textHash": "716fa41cf3592da3"
+  },
+  "hr-std-delen-rat-w4-s1": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 386,
+   "textHash": "4641e0a935f6e97c"
+  },
+  "hr-std-gemengd-dec-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 227,
+   "textHash": "c135de357670e33d"
+  },
+  "hr-std-gemengd-dec-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 306,
+   "textHash": "8e3edc75a9bd2452"
+  },
+  "hr-std-gemengd-dec-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 317,
+   "textHash": "c135de357670e33d"
+  },
+  "hr-std-gemengd-dec-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 306,
+   "textHash": "8e3edc75a9bd2452"
+  },
+  "hr-std-gemengd-dec-w4-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 317,
+   "textHash": "c135de357670e33d"
+  },
+  "hr-std-gemengd-dec-w4-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 306,
+   "textHash": "8e3edc75a9bd2452"
+  },
+  "hr-std-gemengd-nat-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 213,
+   "textHash": "c135de357670e33d"
+  },
+  "hr-std-gemengd-nat-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 181,
+   "textHash": "44954476a709dc8e"
+  },
+  "hr-std-gemengd-nat-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 213,
+   "textHash": "c135de357670e33d"
+  },
+  "hr-std-gemengd-nat-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 181,
+   "textHash": "44954476a709dc8e"
+  },
+  "hr-std-gemengd-nat-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 485,
+   "textHash": "c135de357670e33d"
+  },
+  "hr-std-gemengd-nat-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 409,
+   "textHash": "44954476a709dc8e"
+  },
+  "hr-std-optellen-dec-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 295,
+   "textHash": "3f5e7c25a5ee3be8"
+  },
+  "hr-std-optellen-dec-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 283,
+   "textHash": "4666ae85f5a273c8"
+  },
+  "hr-std-optellen-dec-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 295,
+   "textHash": "3f5e7c25a5ee3be8"
+  },
+  "hr-std-optellen-dec-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 283,
+   "textHash": "4666ae85f5a273c8"
+  },
+  "hr-std-optellen-dec-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 641,
+   "textHash": "3f5e7c25a5ee3be8"
+  },
+  "hr-std-optellen-dec-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 615,
+   "textHash": "4666ae85f5a273c8"
+  },
+  "hr-std-optellen-nat-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 213,
+   "textHash": "3f5e7c25a5ee3be8"
+  },
+  "hr-std-optellen-nat-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 181,
+   "textHash": "8531127813192bc7"
+  },
+  "hr-std-optellen-nat-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 213,
+   "textHash": "3f5e7c25a5ee3be8"
+  },
+  "hr-std-optellen-nat-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 181,
+   "textHash": "8531127813192bc7"
+  },
+  "hr-std-optellen-nat-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 485,
+   "textHash": "3f5e7c25a5ee3be8"
+  },
+  "hr-std-optellen-nat-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 421,
+   "textHash": "8531127813192bc7"
+  },
+  "hr-std-optellen-rat-w1-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 211,
+   "textHash": "6f0d517bd4b93d0d"
+  },
+  "hr-std-optellen-rat-w1-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 164,
+   "textHash": "800490d38949acdd"
+  },
+  "hr-std-optellen-rat-w2-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 211,
+   "textHash": "6f0d517bd4b93d0d"
+  },
+  "hr-std-optellen-rat-w2-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 164,
+   "textHash": "800490d38949acdd"
+  },
+  "hr-std-optellen-rat-w4-s0": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 485,
+   "textHash": "6f0d517bd4b93d0d"
+  },
+  "hr-std-optellen-rat-w4-s1": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 390,
+   "textHash": "800490d38949acdd"
+  },
+  "hr-std-vermenigvuldigen-dec-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 295,
+   "textHash": "dc483bcf20ed870d"
+  },
+  "hr-std-vermenigvuldigen-dec-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 267,
+   "textHash": "e8e39bd9f11d1f27"
+  },
+  "hr-std-vermenigvuldigen-dec-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 295,
+   "textHash": "dc483bcf20ed870d"
+  },
+  "hr-std-vermenigvuldigen-dec-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 284,
+   "textHash": "e8e39bd9f11d1f27"
+  },
+  "hr-std-vermenigvuldigen-dec-w4-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 295,
+   "textHash": "dc483bcf20ed870d"
+  },
+  "hr-std-vermenigvuldigen-dec-w4-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 284,
+   "textHash": "e8e39bd9f11d1f27"
+  },
+  "hr-std-vermenigvuldigen-nat-w1-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 139,
+   "textHash": "dc483bcf20ed870d"
+  },
+  "hr-std-vermenigvuldigen-nat-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 142,
+   "textHash": "b4e22b5fd685247e"
+  },
+  "hr-std-vermenigvuldigen-nat-w2-s0": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 191,
+   "textHash": "dc483bcf20ed870d"
+  },
+  "hr-std-vermenigvuldigen-nat-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 159,
+   "textHash": "b4e22b5fd685247e"
+  },
+  "hr-std-vermenigvuldigen-nat-w4-s0": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 485,
+   "textHash": "dc483bcf20ed870d"
+  },
+  "hr-std-vermenigvuldigen-nat-w4-s1": {
+   "cellHeightPx": 314,
+   "intrinsicPx": 409,
+   "textHash": "b4e22b5fd685247e"
+  },
+  "hr-std-vermenigvuldigen-rat-w1-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 159,
+   "textHash": "48d24f206bb599d6"
+  },
+  "hr-std-vermenigvuldigen-rat-w1-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 147,
+   "textHash": "d2b1dead5f92414d"
+  },
+  "hr-std-vermenigvuldigen-rat-w2-s0": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 211,
+   "textHash": "48d24f206bb599d6"
+  },
+  "hr-std-vermenigvuldigen-rat-w2-s1": {
+   "cellHeightPx": 586,
+   "intrinsicPx": 164,
+   "textHash": "d2b1dead5f92414d"
+  },
+  "hr-std-vermenigvuldigen-rat-w4-s0": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 485,
+   "textHash": "48d24f206bb599d6"
+  },
+  "hr-std-vermenigvuldigen-rat-w4-s1": {
+   "cellHeightPx": 325,
+   "intrinsicPx": 386,
+   "textHash": "d2b1dead5f92414d"
+  },
+  "kalender-datum-rekenen-w1-s0": {
+   "cellHeightPx": 148,
+   "intrinsicPx": 200,
+   "textHash": "d3ade991ade6e3a7"
+  },
+  "kalender-datum-rekenen-w1-s1": {
+   "cellHeightPx": 146,
+   "intrinsicPx": 66,
+   "textHash": "de69b114ed1aca84"
+  },
+  "kalender-datum-rekenen-w2-s0": {
+   "cellHeightPx": 148,
+   "intrinsicPx": 200,
+   "textHash": "d3ade991ade6e3a7"
+  },
+  "kalender-datum-rekenen-w2-s1": {
+   "cellHeightPx": 146,
+   "intrinsicPx": 66,
+   "textHash": "de69b114ed1aca84"
+  },
+  "kalender-datum-rekenen-w4-s0": {
+   "cellHeightPx": 104,
+   "intrinsicPx": 200,
+   "textHash": "d3ade991ade6e3a7"
+  },
+  "kalender-datum-rekenen-w4-s1": {
+   "cellHeightPx": 101,
+   "intrinsicPx": 66,
+   "textHash": "de69b114ed1aca84"
+  },
+  "kalender-maandrooster-w1-s0": {
+   "cellHeightPx": 449,
+   "intrinsicPx": 280,
+   "textHash": "1c1f88684146a22d"
+  },
+  "kalender-maandrooster-w1-s1": {
+   "cellHeightPx": 434,
+   "intrinsicPx": 280,
+   "textHash": "fd55f8342290fe60"
+  },
+  "kalender-maandrooster-w2-s0": {
+   "cellHeightPx": 449,
+   "intrinsicPx": 280,
+   "textHash": "1c1f88684146a22d"
+  },
+  "kalender-maandrooster-w2-s1": {
+   "cellHeightPx": 434,
+   "intrinsicPx": 280,
+   "textHash": "fd55f8342290fe60"
+  },
+  "kalender-maandrooster-w4-s0": {
+   "cellHeightPx": 430,
+   "intrinsicPx": 280,
+   "textHash": "1c1f88684146a22d"
+  },
+  "kalender-maandrooster-w4-s1": {
+   "cellHeightPx": 415,
+   "intrinsicPx": 280,
+   "textHash": "fd55f8342290fe60"
+  },
+  "kalender-notatie-w1-s0": {
+   "cellHeightPx": 103,
+   "intrinsicPx": 343,
+   "textHash": "f9a3f4373baaac01"
+  },
+  "kalender-notatie-w1-s1": {
+   "cellHeightPx": 98,
+   "intrinsicPx": 284,
+   "textHash": "d7d123061ceb1e3a"
+  },
+  "kalender-notatie-w2-s0": {
+   "cellHeightPx": 103,
+   "intrinsicPx": 343,
+   "textHash": "f9a3f4373baaac01"
+  },
+  "kalender-notatie-w2-s1": {
+   "cellHeightPx": 98,
+   "intrinsicPx": 284,
+   "textHash": "d7d123061ceb1e3a"
+  },
+  "kalender-notatie-w4-s0": {
+   "cellHeightPx": 103,
+   "intrinsicPx": 343,
+   "textHash": "f9a3f4373baaac01"
+  },
+  "kalender-notatie-w4-s1": {
+   "cellHeightPx": 98,
+   "intrinsicPx": 284,
+   "textHash": "d7d123061ceb1e3a"
+  },
+  "klok-analoog-lezen-w1-s0": {
+   "cellHeightPx": 1788,
+   "intrinsicPx": 126,
+   "textHash": "444900e6f49912cf"
+  },
+  "klok-analoog-lezen-w1-s1": {
+   "cellHeightPx": 1768,
+   "intrinsicPx": 126,
+   "textHash": "2366a06d40ec8d51"
+  },
+  "klok-analoog-lezen-w2-s0": {
+   "cellHeightPx": 914,
+   "intrinsicPx": 270,
+   "textHash": "444900e6f49912cf"
+  },
+  "klok-analoog-lezen-w2-s1": {
+   "cellHeightPx": 904,
+   "intrinsicPx": 270,
+   "textHash": "2366a06d40ec8d51"
+  },
+  "klok-analoog-lezen-w4-s0": {
+   "cellHeightPx": 744,
+   "intrinsicPx": 414,
+   "textHash": "444900e6f49912cf"
+  },
+  "klok-analoog-lezen-w4-s1": {
+   "cellHeightPx": 736,
+   "intrinsicPx": 414,
+   "textHash": "2366a06d40ec8d51"
+  },
+  "klok-analoog-omzetten-w1-s0": {
+   "cellHeightPx": 1888,
+   "intrinsicPx": 126,
+   "textHash": "f2828a9f8b1db944"
+  },
+  "klok-analoog-omzetten-w1-s1": {
+   "cellHeightPx": 1768,
+   "intrinsicPx": 126,
+   "textHash": "f8a37ceb61c1710a"
+  },
+  "klok-analoog-omzetten-w2-s0": {
+   "cellHeightPx": 964,
+   "intrinsicPx": 270,
+   "textHash": "f2828a9f8b1db944"
+  },
+  "klok-analoog-omzetten-w2-s1": {
+   "cellHeightPx": 904,
+   "intrinsicPx": 270,
+   "textHash": "f8a37ceb61c1710a"
+  },
+  "klok-analoog-omzetten-w4-s0": {
+   "cellHeightPx": 784,
+   "intrinsicPx": 414,
+   "textHash": "f2828a9f8b1db944"
+  },
+  "klok-analoog-omzetten-w4-s1": {
+   "cellHeightPx": 736,
+   "intrinsicPx": 414,
+   "textHash": "f8a37ceb61c1710a"
+  },
+  "klok-analoog-tekenen-w1-s0": {
+   "cellHeightPx": 1758,
+   "intrinsicPx": 126,
+   "textHash": "56ca27b02e0589e3"
+  },
+  "klok-analoog-tekenen-w1-s1": {
+   "cellHeightPx": 1758,
+   "intrinsicPx": 126,
+   "textHash": "56ca27b02e0589e3"
+  },
+  "klok-analoog-tekenen-w2-s0": {
+   "cellHeightPx": 899,
+   "intrinsicPx": 270,
+   "textHash": "56ca27b02e0589e3"
+  },
+  "klok-analoog-tekenen-w2-s1": {
+   "cellHeightPx": 899,
+   "intrinsicPx": 270,
+   "textHash": "56ca27b02e0589e3"
+  },
+  "klok-analoog-tekenen-w4-s0": {
+   "cellHeightPx": 732,
+   "intrinsicPx": 414,
+   "textHash": "56ca27b02e0589e3"
+  },
+  "klok-analoog-tekenen-w4-s1": {
+   "cellHeightPx": 732,
+   "intrinsicPx": 414,
+   "textHash": "56ca27b02e0589e3"
+  },
+  "klok-digitaal-lezen-w1-s0": {
+   "cellHeightPx": 1038,
+   "intrinsicPx": 114,
+   "textHash": "943ec45fc0894795"
+  },
+  "klok-digitaal-lezen-w1-s1": {
+   "cellHeightPx": 1018,
+   "intrinsicPx": 114,
+   "textHash": "66daf945eb926e9c"
+  },
+  "klok-digitaal-lezen-w2-s0": {
+   "cellHeightPx": 539,
+   "intrinsicPx": 245,
+   "textHash": "943ec45fc0894795"
+  },
+  "klok-digitaal-lezen-w2-s1": {
+   "cellHeightPx": 529,
+   "intrinsicPx": 245,
+   "textHash": "66daf945eb926e9c"
+  },
+  "klok-digitaal-lezen-w4-s0": {
+   "cellHeightPx": 444,
+   "intrinsicPx": 377,
+   "textHash": "943ec45fc0894795"
+  },
+  "klok-digitaal-lezen-w4-s1": {
+   "cellHeightPx": 436,
+   "intrinsicPx": 377,
+   "textHash": "66daf945eb926e9c"
+  },
+  "klok-digitaal-tekenen-w1-s0": {
+   "cellHeightPx": 1058,
+   "intrinsicPx": 100,
+   "textHash": "372b8ae1bad44d44"
+  },
+  "klok-digitaal-tekenen-w1-s1": {
+   "cellHeightPx": 1058,
+   "intrinsicPx": 100,
+   "textHash": "9ac69192c08f46bb"
+  },
+  "klok-digitaal-tekenen-w2-s0": {
+   "cellHeightPx": 549,
+   "intrinsicPx": 218,
+   "textHash": "372b8ae1bad44d44"
+  },
+  "klok-digitaal-tekenen-w2-s1": {
+   "cellHeightPx": 549,
+   "intrinsicPx": 218,
+   "textHash": "9ac69192c08f46bb"
+  },
+  "klok-digitaal-tekenen-w4-s0": {
+   "cellHeightPx": 452,
+   "intrinsicPx": 336,
+   "textHash": "372b8ae1bad44d44"
+  },
+  "klok-digitaal-tekenen-w4-s1": {
+   "cellHeightPx": 452,
+   "intrinsicPx": 336,
+   "textHash": "9ac69192c08f46bb"
+  },
+  "layout-kader-w1-s0": {
+   "cellHeightPx": 90,
+   "intrinsicPx": 119,
+   "textHash": "b43bf1ebe23402b8"
+  },
+  "layout-kader-w1-s1": {
+   "cellHeightPx": 90,
+   "intrinsicPx": 119,
+   "textHash": "b43bf1ebe23402b8"
+  },
+  "layout-kader-w2-s0": {
+   "cellHeightPx": 90,
+   "intrinsicPx": 119,
+   "textHash": "b43bf1ebe23402b8"
+  },
+  "layout-kader-w2-s1": {
+   "cellHeightPx": 90,
+   "intrinsicPx": 119,
+   "textHash": "b43bf1ebe23402b8"
+  },
+  "layout-kader-w4-s0": {
+   "cellHeightPx": 90,
+   "intrinsicPx": 119,
+   "textHash": "b43bf1ebe23402b8"
+  },
+  "layout-kader-w4-s1": {
+   "cellHeightPx": 90,
+   "intrinsicPx": 119,
+   "textHash": "b43bf1ebe23402b8"
+  },
+  "layout-lege-pagina-w1-s0": {
+   "cellHeightPx": 42,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-lege-pagina-w1-s1": {
+   "cellHeightPx": 42,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-lege-pagina-w2-s0": {
+   "cellHeightPx": 42,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-lege-pagina-w2-s1": {
+   "cellHeightPx": 42,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-lege-pagina-w4-s0": {
+   "cellHeightPx": 42,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-lege-pagina-w4-s1": {
+   "cellHeightPx": 42,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-raster-w1-s0": {
+   "cellHeightPx": 344,
+   "intrinsicPx": 2,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-raster-w1-s1": {
+   "cellHeightPx": 344,
+   "intrinsicPx": 2,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-raster-w2-s0": {
+   "cellHeightPx": 344,
+   "intrinsicPx": 2,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-raster-w2-s1": {
+   "cellHeightPx": 344,
+   "intrinsicPx": 2,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-raster-w4-s0": {
+   "cellHeightPx": 344,
+   "intrinsicPx": 2,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-raster-w4-s1": {
+   "cellHeightPx": 344,
+   "intrinsicPx": 2,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-schrijflijnen-w1-s0": {
+   "cellHeightPx": 269,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-schrijflijnen-w1-s1": {
+   "cellHeightPx": 269,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-schrijflijnen-w2-s0": {
+   "cellHeightPx": 269,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-schrijflijnen-w2-s1": {
+   "cellHeightPx": 269,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-schrijflijnen-w4-s0": {
+   "cellHeightPx": 269,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-schrijflijnen-w4-s1": {
+   "cellHeightPx": 269,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-sectie-w1-s0": {
+   "cellHeightPx": 48,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-sectie-w1-s1": {
+   "cellHeightPx": 48,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-sectie-w2-s0": {
+   "cellHeightPx": 48,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-sectie-w2-s1": {
+   "cellHeightPx": 48,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-sectie-w4-s0": {
+   "cellHeightPx": 48,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "layout-sectie-w4-s1": {
+   "cellHeightPx": 48,
+   "intrinsicPx": null,
+   "textHash": "da39a3ee5e6b4b0d"
+  },
+  "lengte-meten-w1-s0": {
+   "cellHeightPx": 872,
+   "intrinsicPx": 462,
+   "textHash": "9d19273e5100e598"
+  },
+  "lengte-meten-w1-s1": {
+   "cellHeightPx": 866,
+   "intrinsicPx": 462,
+   "textHash": "5728441c2c83dabb"
+  },
+  "lengte-meten-w2-s0": {
+   "cellHeightPx": 872,
+   "intrinsicPx": 462,
+   "textHash": "9d19273e5100e598"
+  },
+  "lengte-meten-w2-s1": {
+   "cellHeightPx": 866,
+   "intrinsicPx": 462,
+   "textHash": "5728441c2c83dabb"
+  },
+  "lengte-meten-w4-s0": {
+   "cellHeightPx": 872,
+   "intrinsicPx": 462,
+   "textHash": "9d19273e5100e598"
+  },
+  "lengte-meten-w4-s1": {
+   "cellHeightPx": 866,
+   "intrinsicPx": 462,
+   "textHash": "5728441c2c83dabb"
+  },
+  "maateenheid-kiezen-w1-s0": {
+   "cellHeightPx": 576,
+   "intrinsicPx": 69,
+   "textHash": "0eb361c6bf98b8b4"
+  },
+  "maateenheid-kiezen-w1-s1": {
+   "cellHeightPx": 592,
+   "intrinsicPx": 71,
+   "textHash": "0eb361c6bf98b8b4"
+  },
+  "maateenheid-kiezen-w2-s0": {
+   "cellHeightPx": 576,
+   "intrinsicPx": 69,
+   "textHash": "0eb361c6bf98b8b4"
+  },
+  "maateenheid-kiezen-w2-s1": {
+   "cellHeightPx": 592,
+   "intrinsicPx": 71,
+   "textHash": "0eb361c6bf98b8b4"
+  },
+  "maateenheid-kiezen-w4-s0": {
+   "cellHeightPx": 576,
+   "intrinsicPx": 69,
+   "textHash": "0eb361c6bf98b8b4"
+  },
+  "maateenheid-kiezen-w4-s1": {
+   "cellHeightPx": 592,
+   "intrinsicPx": 71,
+   "textHash": "0eb361c6bf98b8b4"
+  },
+  "mab-herkennen-w1-s0": {
+   "cellHeightPx": 1018,
+   "intrinsicPx": 314,
+   "textHash": "878a7034e7e65597"
+  },
+  "mab-herkennen-w1-s1": {
+   "cellHeightPx": 1018,
+   "intrinsicPx": 314,
+   "textHash": "b3cfcb429ecd0d88"
+  },
+  "mab-herkennen-w2-s0": {
+   "cellHeightPx": 1018,
+   "intrinsicPx": 314,
+   "textHash": "878a7034e7e65597"
+  },
+  "mab-herkennen-w2-s1": {
+   "cellHeightPx": 1018,
+   "intrinsicPx": 314,
+   "textHash": "b3cfcb429ecd0d88"
+  },
+  "mab-herkennen-w4-s0": {
+   "cellHeightPx": 541,
+   "intrinsicPx": 646,
+   "textHash": "878a7034e7e65597"
+  },
+  "mab-herkennen-w4-s1": {
+   "cellHeightPx": 541,
+   "intrinsicPx": 646,
+   "textHash": "b3cfcb429ecd0d88"
+  },
+  "mab-tekenen-w1-s0": {
+   "cellHeightPx": 772,
+   "intrinsicPx": 114,
+   "textHash": "0323e83c314f6772"
+  },
+  "mab-tekenen-w1-s1": {
+   "cellHeightPx": 772,
+   "intrinsicPx": 114,
+   "textHash": "0323e83c314f6772"
+  },
+  "mab-tekenen-w2-s0": {
+   "cellHeightPx": 1018,
+   "intrinsicPx": 314,
+   "textHash": "0323e83c314f6772"
+  },
+  "mab-tekenen-w2-s1": {
+   "cellHeightPx": 1018,
+   "intrinsicPx": 314,
+   "textHash": "0323e83c314f6772"
+  },
+  "mab-tekenen-w4-s0": {
+   "cellHeightPx": 541,
+   "intrinsicPx": 646,
+   "textHash": "0323e83c314f6772"
+  },
+  "mab-tekenen-w4-s1": {
+   "cellHeightPx": 541,
+   "intrinsicPx": 646,
+   "textHash": "0323e83c314f6772"
+  },
+  "massa-weegschaal-aflezen-w1-s0": {
+   "cellHeightPx": 962,
+   "intrinsicPx": 170,
+   "textHash": "eb5d3b3b39b1c2ac"
+  },
+  "massa-weegschaal-aflezen-w1-s1": {
+   "cellHeightPx": 942,
+   "intrinsicPx": 170,
+   "textHash": "76003bbb577e6eab"
+  },
+  "massa-weegschaal-aflezen-w2-s0": {
+   "cellHeightPx": 962,
+   "intrinsicPx": 170,
+   "textHash": "eb5d3b3b39b1c2ac"
+  },
+  "massa-weegschaal-aflezen-w2-s1": {
+   "cellHeightPx": 942,
+   "intrinsicPx": 170,
+   "textHash": "76003bbb577e6eab"
+  },
+  "massa-weegschaal-aflezen-w4-s0": {
+   "cellHeightPx": 508,
+   "intrinsicPx": 364,
+   "textHash": "eb5d3b3b39b1c2ac"
+  },
+  "massa-weegschaal-aflezen-w4-s1": {
+   "cellHeightPx": 498,
+   "intrinsicPx": 364,
+   "textHash": "76003bbb577e6eab"
+  },
+  "massa-weegschaal-tekenen-w1-s0": {
+   "cellHeightPx": 942,
+   "intrinsicPx": 170,
+   "textHash": "97ae155199a8f418"
+  },
+  "massa-weegschaal-tekenen-w1-s1": {
+   "cellHeightPx": 942,
+   "intrinsicPx": 170,
+   "textHash": "97ae155199a8f418"
+  },
+  "massa-weegschaal-tekenen-w2-s0": {
+   "cellHeightPx": 942,
+   "intrinsicPx": 170,
+   "textHash": "97ae155199a8f418"
+  },
+  "massa-weegschaal-tekenen-w2-s1": {
+   "cellHeightPx": 942,
+   "intrinsicPx": 170,
+   "textHash": "97ae155199a8f418"
+  },
+  "massa-weegschaal-tekenen-w4-s0": {
+   "cellHeightPx": 498,
+   "intrinsicPx": 364,
+   "textHash": "97ae155199a8f418"
+  },
+  "massa-weegschaal-tekenen-w4-s1": {
+   "cellHeightPx": 498,
+   "intrinsicPx": 364,
+   "textHash": "97ae155199a8f418"
+  },
+  "omtrek-w1-s0": {
+   "cellHeightPx": 2093,
+   "intrinsicPx": 462,
+   "textHash": "827ef99530219ade"
+  },
+  "omtrek-w1-s1": {
+   "cellHeightPx": 2087,
+   "intrinsicPx": 462,
+   "textHash": "6e361cd79a303d40"
+  },
+  "omtrek-w2-s0": {
+   "cellHeightPx": 2093,
+   "intrinsicPx": 462,
+   "textHash": "827ef99530219ade"
+  },
+  "omtrek-w2-s1": {
+   "cellHeightPx": 2087,
+   "intrinsicPx": 462,
+   "textHash": "6e361cd79a303d40"
+  },
+  "omtrek-w4-s0": {
+   "cellHeightPx": 2093,
+   "intrinsicPx": 462,
+   "textHash": "827ef99530219ade"
+  },
+  "omtrek-w4-s1": {
+   "cellHeightPx": 2087,
+   "intrinsicPx": 462,
+   "textHash": "6e361cd79a303d40"
+  },
+  "oppervlakte-berekenen-w1-s0": {
+   "cellHeightPx": 1382,
+   "intrinsicPx": 382,
+   "textHash": "8c4b13b221fc90f7"
+  },
+  "oppervlakte-berekenen-w1-s1": {
+   "cellHeightPx": 1362,
+   "intrinsicPx": 382,
+   "textHash": "1f323d4b0cf1bec7"
+  },
+  "oppervlakte-berekenen-w2-s0": {
+   "cellHeightPx": 1382,
+   "intrinsicPx": 382,
+   "textHash": "8c4b13b221fc90f7"
+  },
+  "oppervlakte-berekenen-w2-s1": {
+   "cellHeightPx": 1362,
+   "intrinsicPx": 382,
+   "textHash": "1f323d4b0cf1bec7"
+  },
+  "oppervlakte-berekenen-w4-s0": {
+   "cellHeightPx": 1382,
+   "intrinsicPx": 382,
+   "textHash": "8c4b13b221fc90f7"
+  },
+  "oppervlakte-berekenen-w4-s1": {
+   "cellHeightPx": 1362,
+   "intrinsicPx": 382,
+   "textHash": "1f323d4b0cf1bec7"
+  },
+  "oppervlakte-rooster-w1-s0": {
+   "cellHeightPx": 1117,
+   "intrinsicPx": 382,
+   "textHash": "4eeacebb231b7e2a"
+  },
+  "oppervlakte-rooster-w1-s1": {
+   "cellHeightPx": 1097,
+   "intrinsicPx": 382,
+   "textHash": "72e74995681cdd4c"
+  },
+  "oppervlakte-rooster-w2-s0": {
+   "cellHeightPx": 1117,
+   "intrinsicPx": 382,
+   "textHash": "4eeacebb231b7e2a"
+  },
+  "oppervlakte-rooster-w2-s1": {
+   "cellHeightPx": 1097,
+   "intrinsicPx": 382,
+   "textHash": "72e74995681cdd4c"
+  },
+  "oppervlakte-rooster-w4-s0": {
+   "cellHeightPx": 1117,
+   "intrinsicPx": 382,
+   "textHash": "4eeacebb231b7e2a"
+  },
+  "oppervlakte-rooster-w4-s1": {
+   "cellHeightPx": 1097,
+   "intrinsicPx": 382,
+   "textHash": "72e74995681cdd4c"
+  },
+  "patronen-dec-w1-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 351,
+   "textHash": "dda6c295566a87b4"
+  },
+  "patronen-dec-w1-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 353,
+   "textHash": "c154e0d7b2d28298"
+  },
+  "patronen-dec-w2-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 351,
+   "textHash": "dda6c295566a87b4"
+  },
+  "patronen-dec-w2-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 353,
+   "textHash": "c154e0d7b2d28298"
+  },
+  "patronen-dec-w4-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 351,
+   "textHash": "dda6c295566a87b4"
+  },
+  "patronen-dec-w4-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 353,
+   "textHash": "c154e0d7b2d28298"
+  },
+  "patronen-geh-w1-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 326,
+   "textHash": "b4b3abe1697510c5"
+  },
+  "patronen-geh-w1-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 283,
+   "textHash": "b557ac63e0c71be3"
+  },
+  "patronen-geh-w2-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 326,
+   "textHash": "b4b3abe1697510c5"
+  },
+  "patronen-geh-w2-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 283,
+   "textHash": "b557ac63e0c71be3"
+  },
+  "patronen-geh-w4-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 326,
+   "textHash": "b4b3abe1697510c5"
+  },
+  "patronen-geh-w4-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 283,
+   "textHash": "b557ac63e0c71be3"
+  },
+  "patronen-kettingsommen-w1-s0": {
+   "cellHeightPx": 388,
+   "intrinsicPx": 235,
+   "textHash": "923fb78f246d3610"
+  },
+  "patronen-kettingsommen-w1-s1": {
+   "cellHeightPx": 388,
+   "intrinsicPx": 212,
+   "textHash": "4d8e45949479de3e"
+  },
+  "patronen-kettingsommen-w2-s0": {
+   "cellHeightPx": 388,
+   "intrinsicPx": 235,
+   "textHash": "923fb78f246d3610"
+  },
+  "patronen-kettingsommen-w2-s1": {
+   "cellHeightPx": 388,
+   "intrinsicPx": 212,
+   "textHash": "4d8e45949479de3e"
+  },
+  "patronen-kettingsommen-w4-s0": {
+   "cellHeightPx": 388,
+   "intrinsicPx": 235,
+   "textHash": "923fb78f246d3610"
+  },
+  "patronen-kettingsommen-w4-s1": {
+   "cellHeightPx": 388,
+   "intrinsicPx": 212,
+   "textHash": "4d8e45949479de3e"
+  },
+  "patronen-nat-w1-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 315,
+   "textHash": "bea60f9dae6a60b3"
+  },
+  "patronen-nat-w1-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 283,
+   "textHash": "bbf337f065b013f6"
+  },
+  "patronen-nat-w2-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 315,
+   "textHash": "bea60f9dae6a60b3"
+  },
+  "patronen-nat-w2-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 283,
+   "textHash": "bbf337f065b013f6"
+  },
+  "patronen-nat-w4-s0": {
+   "cellHeightPx": 334,
+   "intrinsicPx": 315,
+   "textHash": "bea60f9dae6a60b3"
+  },
+  "patronen-nat-w4-s1": {
+   "cellHeightPx": 328,
+   "intrinsicPx": 283,
+   "textHash": "bbf337f065b013f6"
+  },
+  "plaatswaarde-omcirkelen-w1-s0": {
+   "cellHeightPx": 346,
+   "intrinsicPx": 299,
+   "textHash": "4f2841f2d15ad5d9"
+  },
+  "plaatswaarde-omcirkelen-w1-s1": {
+   "cellHeightPx": 346,
+   "intrinsicPx": 299,
+   "textHash": "4f2841f2d15ad5d9"
+  },
+  "plaatswaarde-omcirkelen-w2-s0": {
+   "cellHeightPx": 346,
+   "intrinsicPx": 299,
+   "textHash": "4f2841f2d15ad5d9"
+  },
+  "plaatswaarde-omcirkelen-w2-s1": {
+   "cellHeightPx": 346,
+   "intrinsicPx": 299,
+   "textHash": "4f2841f2d15ad5d9"
+  },
+  "plaatswaarde-omcirkelen-w4-s0": {
+   "cellHeightPx": 205,
+   "intrinsicPx": 622,
+   "textHash": "4f2841f2d15ad5d9"
+  },
+  "plaatswaarde-omcirkelen-w4-s1": {
+   "cellHeightPx": 205,
+   "intrinsicPx": 622,
+   "textHash": "4f2841f2d15ad5d9"
+  },
+  "plaatswaarde-plaats-w1-s0": {
+   "cellHeightPx": 408,
+   "intrinsicPx": 78,
+   "textHash": "0bbd80cea5fb21a6"
+  },
+  "plaatswaarde-plaats-w1-s1": {
+   "cellHeightPx": 436,
+   "intrinsicPx": 135,
+   "textHash": "d94eda91765d0c73"
+  },
+  "plaatswaarde-plaats-w2-s0": {
+   "cellHeightPx": 298,
+   "intrinsicPx": 255,
+   "textHash": "0bbd80cea5fb21a6"
+  },
+  "plaatswaarde-plaats-w2-s1": {
+   "cellHeightPx": 298,
+   "intrinsicPx": 279,
+   "textHash": "d94eda91765d0c73"
+  },
+  "plaatswaarde-plaats-w4-s0": {
+   "cellHeightPx": 181,
+   "intrinsicPx": 534,
+   "textHash": "0bbd80cea5fb21a6"
+  },
+  "plaatswaarde-plaats-w4-s1": {
+   "cellHeightPx": 181,
+   "intrinsicPx": 552,
+   "textHash": "d94eda91765d0c73"
+  },
+  "plaatswaarde-tabel-w1-s0": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 306,
+   "textHash": "05f37481c103d8d7"
+  },
+  "plaatswaarde-tabel-w1-s1": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 306,
+   "textHash": "ad96c5ca162d7a24"
+  },
+  "plaatswaarde-tabel-w2-s0": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 306,
+   "textHash": "05f37481c103d8d7"
+  },
+  "plaatswaarde-tabel-w2-s1": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 306,
+   "textHash": "ad96c5ca162d7a24"
+  },
+  "plaatswaarde-tabel-w4-s0": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 306,
+   "textHash": "05f37481c103d8d7"
+  },
+  "plaatswaarde-tabel-w4-s1": {
+   "cellHeightPx": 600,
+   "intrinsicPx": 306,
+   "textHash": "ad96c5ca162d7a24"
+  },
+  "plaatswaarde-waarde-w1-s0": {
+   "cellHeightPx": 298,
+   "intrinsicPx": 215,
+   "textHash": "0bbd80cea5fb21a6"
+  },
+  "plaatswaarde-waarde-w1-s1": {
+   "cellHeightPx": 298,
+   "intrinsicPx": 186,
+   "textHash": "8b3ea04ce7d0710c"
+  },
+  "plaatswaarde-waarde-w2-s0": {
+   "cellHeightPx": 298,
+   "intrinsicPx": 215,
+   "textHash": "0bbd80cea5fb21a6"
+  },
+  "plaatswaarde-waarde-w2-s1": {
+   "cellHeightPx": 298,
+   "intrinsicPx": 186,
+   "textHash": "8b3ea04ce7d0710c"
+  },
+  "plaatswaarde-waarde-w4-s0": {
+   "cellHeightPx": 181,
+   "intrinsicPx": 454,
+   "textHash": "0bbd80cea5fb21a6"
+  },
+  "plaatswaarde-waarde-w4-s1": {
+   "cellHeightPx": 181,
+   "intrinsicPx": 376,
+   "textHash": "8b3ea04ce7d0710c"
+  },
+  "procenten-nemen-w1-s0": {
+   "cellHeightPx": 536,
+   "intrinsicPx": 109,
+   "textHash": "af7823365cb5de9e"
+  },
+  "procenten-nemen-w1-s1": {
+   "cellHeightPx": 512,
+   "intrinsicPx": 109,
+   "textHash": "43a28d5c298cf053"
+  },
+  "procenten-nemen-w2-s0": {
+   "cellHeightPx": 384,
+   "intrinsicPx": 109,
+   "textHash": "af7823365cb5de9e"
+  },
+  "procenten-nemen-w2-s1": {
+   "cellHeightPx": 360,
+   "intrinsicPx": 109,
+   "textHash": "43a28d5c298cf053"
+  },
+  "procenten-nemen-w4-s0": {
+   "cellHeightPx": 224,
+   "intrinsicPx": 242,
+   "textHash": "af7823365cb5de9e"
+  },
+  "procenten-nemen-w4-s1": {
+   "cellHeightPx": 212,
+   "intrinsicPx": 242,
+   "textHash": "43a28d5c298cf053"
+  },
+  "procenten-verbanden-w1-s0": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 256,
+   "textHash": "8da70458d6a21379"
+  },
+  "procenten-verbanden-w1-s1": {
+   "cellHeightPx": 399,
+   "intrinsicPx": 256,
+   "textHash": "90cfa0e575d45d71"
+  },
+  "procenten-verbanden-w2-s0": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 256,
+   "textHash": "8da70458d6a21379"
+  },
+  "procenten-verbanden-w2-s1": {
+   "cellHeightPx": 399,
+   "intrinsicPx": 256,
+   "textHash": "90cfa0e575d45d71"
+  },
+  "procenten-verbanden-w4-s0": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 256,
+   "textHash": "8da70458d6a21379"
+  },
+  "procenten-verbanden-w4-s1": {
+   "cellHeightPx": 399,
+   "intrinsicPx": 256,
+   "textHash": "90cfa0e575d45d71"
+  },
+  "procenten-welk-w1-s0": {
+   "cellHeightPx": 669,
+   "intrinsicPx": 113,
+   "textHash": "6d9ea10a73ff3456"
+  },
+  "procenten-welk-w1-s1": {
+   "cellHeightPx": 645,
+   "intrinsicPx": 113,
+   "textHash": "6256a24b5c561808"
+  },
+  "procenten-welk-w2-s0": {
+   "cellHeightPx": 384,
+   "intrinsicPx": 113,
+   "textHash": "6d9ea10a73ff3456"
+  },
+  "procenten-welk-w2-s1": {
+   "cellHeightPx": 360,
+   "intrinsicPx": 113,
+   "textHash": "6256a24b5c561808"
+  },
+  "procenten-welk-w4-s0": {
+   "cellHeightPx": 224,
+   "intrinsicPx": 251,
+   "textHash": "6d9ea10a73ff3456"
+  },
+  "procenten-welk-w4-s1": {
+   "cellHeightPx": 212,
+   "intrinsicPx": 251,
+   "textHash": "6256a24b5c561808"
+  },
+  "romeinse-herkennen-w1-s0": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 274,
+   "textHash": "229d82fffd329d84"
+  },
+  "romeinse-herkennen-w1-s1": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 274,
+   "textHash": "5cf42b284a616b56"
+  },
+  "romeinse-herkennen-w2-s0": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 274,
+   "textHash": "229d82fffd329d84"
+  },
+  "romeinse-herkennen-w2-s1": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 274,
+   "textHash": "5cf42b284a616b56"
+  },
+  "romeinse-herkennen-w4-s0": {
+   "cellHeightPx": 230,
+   "intrinsicPx": 576,
+   "textHash": "229d82fffd329d84"
+  },
+  "romeinse-herkennen-w4-s1": {
+   "cellHeightPx": 230,
+   "intrinsicPx": 576,
+   "textHash": "5cf42b284a616b56"
+  },
+  "romeinse-schrijven-w1-s0": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 241,
+   "textHash": "a437b3ccbd5e240f"
+  },
+  "romeinse-schrijven-w1-s1": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 241,
+   "textHash": "5b6bcfda798e094c"
+  },
+  "romeinse-schrijven-w2-s0": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 241,
+   "textHash": "a437b3ccbd5e240f"
+  },
+  "romeinse-schrijven-w2-s1": {
+   "cellHeightPx": 398,
+   "intrinsicPx": 241,
+   "textHash": "5b6bcfda798e094c"
+  },
+  "romeinse-schrijven-w4-s0": {
+   "cellHeightPx": 230,
+   "intrinsicPx": 510,
+   "textHash": "a437b3ccbd5e240f"
+  },
+  "romeinse-schrijven-w4-s1": {
+   "cellHeightPx": 230,
+   "intrinsicPx": 510,
+   "textHash": "5b6bcfda798e094c"
+  },
+  "schattend-dec-w1-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 355,
+   "textHash": "f4de5351dca5d01e"
+  },
+  "schattend-dec-w1-s1": {
+   "cellHeightPx": 368,
+   "intrinsicPx": 355,
+   "textHash": "6b865f1dd03cc886"
+  },
+  "schattend-dec-w2-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 355,
+   "textHash": "f4de5351dca5d01e"
+  },
+  "schattend-dec-w2-s1": {
+   "cellHeightPx": 368,
+   "intrinsicPx": 355,
+   "textHash": "6b865f1dd03cc886"
+  },
+  "schattend-dec-w4-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 355,
+   "textHash": "f4de5351dca5d01e"
+  },
+  "schattend-dec-w4-s1": {
+   "cellHeightPx": 368,
+   "intrinsicPx": 355,
+   "textHash": "6b865f1dd03cc886"
+  },
+  "schattend-nat-w1-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 376,
+   "textHash": "f43aab3705f015bb"
+  },
+  "schattend-nat-w1-s1": {
+   "cellHeightPx": 368,
+   "intrinsicPx": 376,
+   "textHash": "130438adbf6b09b5"
+  },
+  "schattend-nat-w2-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 376,
+   "textHash": "f43aab3705f015bb"
+  },
+  "schattend-nat-w2-s1": {
+   "cellHeightPx": 368,
+   "intrinsicPx": 376,
+   "textHash": "130438adbf6b09b5"
+  },
+  "schattend-nat-w4-s0": {
+   "cellHeightPx": 401,
+   "intrinsicPx": 376,
+   "textHash": "f43aab3705f015bb"
+  },
+  "schattend-nat-w4-s1": {
+   "cellHeightPx": 368,
+   "intrinsicPx": 376,
+   "textHash": "130438adbf6b09b5"
+  },
+  "splitsen-basis-w1-s0": {
+   "cellHeightPx": 879,
+   "intrinsicPx": 24,
+   "textHash": "b90b85366266ad9a"
+  },
+  "splitsen-basis-w1-s1": {
+   "cellHeightPx": 879,
+   "intrinsicPx": 24,
+   "textHash": "b90b85366266ad9a"
+  },
+  "splitsen-basis-w2-s0": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 67,
+   "textHash": "b90b85366266ad9a"
+  },
+  "splitsen-basis-w2-s1": {
+   "cellHeightPx": 553,
+   "intrinsicPx": 67,
+   "textHash": "b90b85366266ad9a"
+  },
+  "splitsen-basis-w4-s0": {
+   "cellHeightPx": 390,
+   "intrinsicPx": 151,
+   "textHash": "b90b85366266ad9a"
+  },
+  "splitsen-basis-w4-s1": {
+   "cellHeightPx": 390,
+   "intrinsicPx": 151,
+   "textHash": "b90b85366266ad9a"
+  },
+  "splitsen-benen-w1-s0": {
+   "cellHeightPx": 584,
+   "intrinsicPx": 168,
+   "textHash": "9d798f0fcaa8e589"
+  },
+  "splitsen-benen-w1-s1": {
+   "cellHeightPx": 579,
+   "intrinsicPx": 168,
+   "textHash": "3b4a1668238f0742"
+  },
+  "splitsen-benen-w2-s0": {
+   "cellHeightPx": 584,
+   "intrinsicPx": 168,
+   "textHash": "9d798f0fcaa8e589"
+  },
+  "splitsen-benen-w2-s1": {
+   "cellHeightPx": 579,
+   "intrinsicPx": 168,
+   "textHash": "3b4a1668238f0742"
+  },
+  "splitsen-benen-w4-s0": {
+   "cellHeightPx": 372,
+   "intrinsicPx": 306,
+   "textHash": "9d798f0fcaa8e589"
+  },
+  "splitsen-benen-w4-s1": {
+   "cellHeightPx": 369,
+   "intrinsicPx": 306,
+   "textHash": "3b4a1668238f0742"
+  },
+  "splitsen-boom-w1-s0": {
+   "cellHeightPx": 720,
+   "intrinsicPx": 110,
+   "textHash": "0a8e20442128dc58"
+  },
+  "splitsen-boom-w1-s1": {
+   "cellHeightPx": 720,
+   "intrinsicPx": 110,
+   "textHash": "8717295f9a758443"
+  },
+  "splitsen-boom-w2-s0": {
+   "cellHeightPx": 452,
+   "intrinsicPx": 248,
+   "textHash": "0a8e20442128dc58"
+  },
+  "splitsen-boom-w2-s1": {
+   "cellHeightPx": 452,
+   "intrinsicPx": 248,
+   "textHash": "8717295f9a758443"
+  },
+  "splitsen-boom-w4-s0": {
+   "cellHeightPx": 318,
+   "intrinsicPx": 524,
+   "textHash": "0a8e20442128dc58"
+  },
+  "splitsen-boom-w4-s1": {
+   "cellHeightPx": 318,
+   "intrinsicPx": 524,
+   "textHash": "8717295f9a758443"
+  },
+  "splitsen-harten-w1-s0": {
+   "cellHeightPx": 724,
+   "intrinsicPx": 120,
+   "textHash": "66b8077595ada449"
+  },
+  "splitsen-harten-w1-s1": {
+   "cellHeightPx": 724,
+   "intrinsicPx": 120,
+   "textHash": "ca93747745ef10c1"
+  },
+  "splitsen-harten-w2-s0": {
+   "cellHeightPx": 460,
+   "intrinsicPx": 258,
+   "textHash": "66b8077595ada449"
+  },
+  "splitsen-harten-w2-s1": {
+   "cellHeightPx": 460,
+   "intrinsicPx": 258,
+   "textHash": "ca93747745ef10c1"
+  },
+  "splitsen-harten-w4-s0": {
+   "cellHeightPx": 196,
+   "intrinsicPx": 672,
+   "textHash": "66b8077595ada449"
+  },
+  "splitsen-harten-w4-s1": {
+   "cellHeightPx": 196,
+   "intrinsicPx": 672,
+   "textHash": "ca93747745ef10c1"
+  },
+  "splitsen-plaatswaarden-w1-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 126,
+   "textHash": "2941915872a1508f"
+  },
+  "splitsen-plaatswaarden-w1-s1": {
+   "cellHeightPx": 275,
+   "intrinsicPx": 112,
+   "textHash": "db2dfa33daf7427e"
+  },
+  "splitsen-plaatswaarden-w2-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 126,
+   "textHash": "2941915872a1508f"
+  },
+  "splitsen-plaatswaarden-w2-s1": {
+   "cellHeightPx": 275,
+   "intrinsicPx": 112,
+   "textHash": "db2dfa33daf7427e"
+  },
+  "splitsen-plaatswaarden-w4-s0": {
+   "cellHeightPx": 280,
+   "intrinsicPx": 126,
+   "textHash": "2941915872a1508f"
+  },
+  "splitsen-plaatswaarden-w4-s1": {
+   "cellHeightPx": 275,
+   "intrinsicPx": 112,
+   "textHash": "db2dfa33daf7427e"
+  },
+  "splitsen-positietabel-w1-s0": {
+   "cellHeightPx": 538,
+   "intrinsicPx": 447,
+   "textHash": "93549e9e3e7d6dc5"
+  },
+  "splitsen-positietabel-w1-s1": {
+   "cellHeightPx": 538,
+   "intrinsicPx": 447,
+   "textHash": "64f87cec3ff575e6"
+  },
+  "splitsen-positietabel-w2-s0": {
+   "cellHeightPx": 538,
+   "intrinsicPx": 447,
+   "textHash": "93549e9e3e7d6dc5"
+  },
+  "splitsen-positietabel-w2-s1": {
+   "cellHeightPx": 538,
+   "intrinsicPx": 447,
+   "textHash": "64f87cec3ff575e6"
+  },
+  "splitsen-positietabel-w4-s0": {
+   "cellHeightPx": 538,
+   "intrinsicPx": 447,
+   "textHash": "93549e9e3e7d6dc5"
+  },
+  "splitsen-positietabel-w4-s1": {
+   "cellHeightPx": 538,
+   "intrinsicPx": 447,
+   "textHash": "64f87cec3ff575e6"
+  },
+  "temperatuur-aflezen-w1-s0": {
+   "cellHeightPx": 848,
+   "intrinsicPx": 84,
+   "textHash": "4486438c9de8a57c"
+  },
+  "temperatuur-aflezen-w1-s1": {
+   "cellHeightPx": 844,
+   "intrinsicPx": 84,
+   "textHash": "abbdf9cd8dd6720d"
+  },
+  "temperatuur-aflezen-w2-s0": {
+   "cellHeightPx": 456,
+   "intrinsicPx": 186,
+   "textHash": "4486438c9de8a57c"
+  },
+  "temperatuur-aflezen-w2-s1": {
+   "cellHeightPx": 454,
+   "intrinsicPx": 186,
+   "textHash": "abbdf9cd8dd6720d"
+  },
+  "temperatuur-aflezen-w4-s0": {
+   "cellHeightPx": 260,
+   "intrinsicPx": 390,
+   "textHash": "4486438c9de8a57c"
+  },
+  "temperatuur-aflezen-w4-s1": {
+   "cellHeightPx": 259,
+   "intrinsicPx": 390,
+   "textHash": "abbdf9cd8dd6720d"
+  },
+  "temperatuur-kleuren-w1-s0": {
+   "cellHeightPx": 844,
+   "intrinsicPx": 84,
+   "textHash": "80f1f54b91707f2f"
+  },
+  "temperatuur-kleuren-w1-s1": {
+   "cellHeightPx": 844,
+   "intrinsicPx": 84,
+   "textHash": "80f1f54b91707f2f"
+  },
+  "temperatuur-kleuren-w2-s0": {
+   "cellHeightPx": 454,
+   "intrinsicPx": 186,
+   "textHash": "80f1f54b91707f2f"
+  },
+  "temperatuur-kleuren-w2-s1": {
+   "cellHeightPx": 454,
+   "intrinsicPx": 186,
+   "textHash": "80f1f54b91707f2f"
+  },
+  "temperatuur-kleuren-w4-s0": {
+   "cellHeightPx": 259,
+   "intrinsicPx": 390,
+   "textHash": "80f1f54b91707f2f"
+  },
+  "temperatuur-kleuren-w4-s1": {
+   "cellHeightPx": 259,
+   "intrinsicPx": 390,
+   "textHash": "80f1f54b91707f2f"
+  },
+  "temperatuur-verschil-w1-s0": {
+   "cellHeightPx": 568,
+   "intrinsicPx": 438,
+   "textHash": "61c7cb78e041580c"
+  },
+  "temperatuur-verschil-w1-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 438,
+   "textHash": "74e2aff1f1d24ccf"
+  },
+  "temperatuur-verschil-w2-s0": {
+   "cellHeightPx": 568,
+   "intrinsicPx": 438,
+   "textHash": "61c7cb78e041580c"
+  },
+  "temperatuur-verschil-w2-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 438,
+   "textHash": "74e2aff1f1d24ccf"
+  },
+  "temperatuur-verschil-w4-s0": {
+   "cellHeightPx": 568,
+   "intrinsicPx": 438,
+   "textHash": "61c7cb78e041580c"
+  },
+  "temperatuur-verschil-w4-s1": {
+   "cellHeightPx": 564,
+   "intrinsicPx": 438,
+   "textHash": "74e2aff1f1d24ccf"
+  },
+  "tijdsduur-berekenen-w1-s0": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 237,
+   "textHash": "0058e23cc3a1f30c"
+  },
+  "tijdsduur-berekenen-w1-s1": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 237,
+   "textHash": "3fe5b9eb9dc30ec9"
+  },
+  "tijdsduur-berekenen-w2-s0": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 237,
+   "textHash": "0058e23cc3a1f30c"
+  },
+  "tijdsduur-berekenen-w2-s1": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 237,
+   "textHash": "3fe5b9eb9dc30ec9"
+  },
+  "tijdsduur-berekenen-w4-s0": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 237,
+   "textHash": "0058e23cc3a1f30c"
+  },
+  "tijdsduur-berekenen-w4-s1": {
+   "cellHeightPx": 330,
+   "intrinsicPx": 237,
+   "textHash": "3fe5b9eb9dc30ec9"
+  },
+  "verbanden-paren-w1-s0": {
+   "cellHeightPx": 231,
+   "intrinsicPx": 498,
+   "textHash": "ffe94130f180d3ba"
+  },
+  "verbanden-paren-w1-s1": {
+   "cellHeightPx": 254,
+   "intrinsicPx": 255,
+   "textHash": "0a61113af914888d"
+  },
+  "verbanden-paren-w2-s0": {
+   "cellHeightPx": 231,
+   "intrinsicPx": 498,
+   "textHash": "ffe94130f180d3ba"
+  },
+  "verbanden-paren-w2-s1": {
+   "cellHeightPx": 254,
+   "intrinsicPx": 255,
+   "textHash": "0a61113af914888d"
+  },
+  "verbanden-paren-w4-s0": {
+   "cellHeightPx": 231,
+   "intrinsicPx": 498,
+   "textHash": "ffe94130f180d3ba"
+  },
+  "verbanden-paren-w4-s1": {
+   "cellHeightPx": 254,
+   "intrinsicPx": 255,
+   "textHash": "0a61113af914888d"
+  },
+  "verbanden-tabel-w1-s0": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 256,
+   "textHash": "8da70458d6a21379"
+  },
+  "verbanden-tabel-w1-s1": {
+   "cellHeightPx": 399,
+   "intrinsicPx": 256,
+   "textHash": "90cfa0e575d45d71"
+  },
+  "verbanden-tabel-w2-s0": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 256,
+   "textHash": "8da70458d6a21379"
+  },
+  "verbanden-tabel-w2-s1": {
+   "cellHeightPx": 399,
+   "intrinsicPx": 256,
+   "textHash": "90cfa0e575d45d71"
+  },
+  "verbanden-tabel-w4-s0": {
+   "cellHeightPx": 374,
+   "intrinsicPx": 256,
+   "textHash": "8da70458d6a21379"
+  },
+  "verbanden-tabel-w4-s1": {
+   "cellHeightPx": 399,
+   "intrinsicPx": 256,
+   "textHash": "90cfa0e575d45d71"
+  },
+  "vergelijken-getallen-w1-s0": {
+   "cellHeightPx": 376,
+   "intrinsicPx": 199,
+   "textHash": "ea95e73f313df800"
+  },
+  "vergelijken-getallen-w1-s1": {
+   "cellHeightPx": 376,
+   "intrinsicPx": 199,
+   "textHash": "72bb72c6ab756085"
+  },
+  "vergelijken-getallen-w2-s0": {
+   "cellHeightPx": 376,
+   "intrinsicPx": 199,
+   "textHash": "ea95e73f313df800"
+  },
+  "vergelijken-getallen-w2-s1": {
+   "cellHeightPx": 376,
+   "intrinsicPx": 199,
+   "textHash": "72bb72c6ab756085"
+  },
+  "vergelijken-getallen-w4-s0": {
+   "cellHeightPx": 220,
+   "intrinsicPx": 421,
+   "textHash": "ea95e73f313df800"
+  },
+  "vergelijken-getallen-w4-s1": {
+   "cellHeightPx": 220,
+   "intrinsicPx": 421,
+   "textHash": "72bb72c6ab756085"
+  },
+  "vergelijken-kiezen-w1-s0": {
+   "cellHeightPx": 340,
+   "intrinsicPx": 263,
+   "textHash": "564c5d5c1bf33ae7"
+  },
+  "vergelijken-kiezen-w1-s1": {
+   "cellHeightPx": 340,
+   "intrinsicPx": 263,
+   "textHash": "564c5d5c1bf33ae7"
+  },
+  "vergelijken-kiezen-w2-s0": {
+   "cellHeightPx": 340,
+   "intrinsicPx": 263,
+   "textHash": "564c5d5c1bf33ae7"
+  },
+  "vergelijken-kiezen-w2-s1": {
+   "cellHeightPx": 340,
+   "intrinsicPx": 263,
+   "textHash": "564c5d5c1bf33ae7"
+  },
+  "vergelijken-kiezen-w4-s0": {
+   "cellHeightPx": 340,
+   "intrinsicPx": 263,
+   "textHash": "564c5d5c1bf33ae7"
+  },
+  "vergelijken-kiezen-w4-s1": {
+   "cellHeightPx": 340,
+   "intrinsicPx": 263,
+   "textHash": "564c5d5c1bf33ae7"
+  },
+  "vergelijken-representaties-w1-s0": {
+   "cellHeightPx": 397,
+   "intrinsicPx": 218,
+   "textHash": "869c7132c7715da1"
+  },
+  "vergelijken-representaties-w1-s1": {
+   "cellHeightPx": 397,
+   "intrinsicPx": 218,
+   "textHash": "bf034d8ea0c9c5f5"
+  },
+  "vergelijken-representaties-w2-s0": {
+   "cellHeightPx": 397,
+   "intrinsicPx": 218,
+   "textHash": "869c7132c7715da1"
+  },
+  "vergelijken-representaties-w2-s1": {
+   "cellHeightPx": 397,
+   "intrinsicPx": 218,
+   "textHash": "bf034d8ea0c9c5f5"
+  },
+  "vergelijken-representaties-w4-s0": {
+   "cellHeightPx": 228,
+   "intrinsicPx": 460,
+   "textHash": "869c7132c7715da1"
+  },
+  "vergelijken-representaties-w4-s1": {
+   "cellHeightPx": 228,
+   "intrinsicPx": 460,
+   "textHash": "bf034d8ea0c9c5f5"
+  },
+  "vormleer-driehoeken-w1-s0": {
+   "cellHeightPx": 408,
+   "intrinsicPx": 366,
+   "textHash": "a511df82e39cf84f"
+  },
+  "vormleer-driehoeken-w1-s1": {
+   "cellHeightPx": 404,
+   "intrinsicPx": 373,
+   "textHash": "787cb993bb150cdd"
+  },
+  "vormleer-driehoeken-w2-s0": {
+   "cellHeightPx": 408,
+   "intrinsicPx": 366,
+   "textHash": "a511df82e39cf84f"
+  },
+  "vormleer-driehoeken-w2-s1": {
+   "cellHeightPx": 404,
+   "intrinsicPx": 373,
+   "textHash": "787cb993bb150cdd"
+  },
+  "vormleer-driehoeken-w4-s0": {
+   "cellHeightPx": 408,
+   "intrinsicPx": 366,
+   "textHash": "a511df82e39cf84f"
+  },
+  "vormleer-driehoeken-w4-s1": {
+   "cellHeightPx": 404,
+   "intrinsicPx": 373,
+   "textHash": "787cb993bb150cdd"
+  },
+  "vormleer-hoeken-herkennen-w1-s0": {
+   "cellHeightPx": 391,
+   "intrinsicPx": 366,
+   "textHash": "992704ee39466d03"
+  },
+  "vormleer-hoeken-herkennen-w1-s1": {
+   "cellHeightPx": 387,
+   "intrinsicPx": 366,
+   "textHash": "79a07730df7aab03"
+  },
+  "vormleer-hoeken-herkennen-w2-s0": {
+   "cellHeightPx": 391,
+   "intrinsicPx": 366,
+   "textHash": "992704ee39466d03"
+  },
+  "vormleer-hoeken-herkennen-w2-s1": {
+   "cellHeightPx": 387,
+   "intrinsicPx": 366,
+   "textHash": "79a07730df7aab03"
+  },
+  "vormleer-hoeken-herkennen-w4-s0": {
+   "cellHeightPx": 391,
+   "intrinsicPx": 366,
+   "textHash": "992704ee39466d03"
+  },
+  "vormleer-hoeken-herkennen-w4-s1": {
+   "cellHeightPx": 387,
+   "intrinsicPx": 366,
+   "textHash": "79a07730df7aab03"
+  },
+  "vormleer-hoeken-meten-w1-s0": {
+   "cellHeightPx": 1841,
+   "intrinsicPx": 317,
+   "textHash": "047cb6e7ce8b2a9b"
+  },
+  "vormleer-hoeken-meten-w1-s1": {
+   "cellHeightPx": 1823,
+   "intrinsicPx": 317,
+   "textHash": "116fc775a4a44d88"
+  },
+  "vormleer-hoeken-meten-w2-s0": {
+   "cellHeightPx": 1841,
+   "intrinsicPx": 317,
+   "textHash": "047cb6e7ce8b2a9b"
+  },
+  "vormleer-hoeken-meten-w2-s1": {
+   "cellHeightPx": 1823,
+   "intrinsicPx": 317,
+   "textHash": "116fc775a4a44d88"
+  },
+  "vormleer-hoeken-meten-w4-s0": {
+   "cellHeightPx": 978,
+   "intrinsicPx": 564,
+   "textHash": "047cb6e7ce8b2a9b"
+  },
+  "vormleer-hoeken-meten-w4-s1": {
+   "cellHeightPx": 969,
+   "intrinsicPx": 564,
+   "textHash": "116fc775a4a44d88"
+  },
+  "vormleer-hoeken-tekenen-w1-s0": {
+   "cellHeightPx": 767,
+   "intrinsicPx": 117,
+   "textHash": "e910a6459e594dc5"
+  },
+  "vormleer-hoeken-tekenen-w1-s1": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 167,
+   "textHash": "d165b593c645ef61"
+  },
+  "vormleer-hoeken-tekenen-w2-s0": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 117,
+   "textHash": "e910a6459e594dc5"
+  },
+  "vormleer-hoeken-tekenen-w2-s1": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 167,
+   "textHash": "d165b593c645ef61"
+  },
+  "vormleer-hoeken-tekenen-w4-s0": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 117,
+   "textHash": "e910a6459e594dc5"
+  },
+  "vormleer-hoeken-tekenen-w4-s1": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 167,
+   "textHash": "d165b593c645ef61"
+  },
+  "vormleer-punt-lijn-herkennen-w1-s0": {
+   "cellHeightPx": 1098,
+   "intrinsicPx": 115,
+   "textHash": "efe95c958c829963"
+  },
+  "vormleer-punt-lijn-herkennen-w1-s1": {
+   "cellHeightPx": 1092,
+   "intrinsicPx": 115,
+   "textHash": "897b313f2b15b4fd"
+  },
+  "vormleer-punt-lijn-herkennen-w2-s0": {
+   "cellHeightPx": 580,
+   "intrinsicPx": 248,
+   "textHash": "efe95c958c829963"
+  },
+  "vormleer-punt-lijn-herkennen-w2-s1": {
+   "cellHeightPx": 577,
+   "intrinsicPx": 248,
+   "textHash": "897b313f2b15b4fd"
+  },
+  "vormleer-punt-lijn-herkennen-w4-s0": {
+   "cellHeightPx": 413,
+   "intrinsicPx": 381,
+   "textHash": "efe95c958c829963"
+  },
+  "vormleer-punt-lijn-herkennen-w4-s1": {
+   "cellHeightPx": 411,
+   "intrinsicPx": 381,
+   "textHash": "897b313f2b15b4fd"
+  },
+  "vormleer-punt-lijn-tekenen-w1-s0": {
+   "cellHeightPx": 733,
+   "intrinsicPx": 122,
+   "textHash": "57d85188047599e4"
+  },
+  "vormleer-punt-lijn-tekenen-w1-s1": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 170,
+   "textHash": "7b21c8a316647ae4"
+  },
+  "vormleer-punt-lijn-tekenen-w2-s0": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 122,
+   "textHash": "57d85188047599e4"
+  },
+  "vormleer-punt-lijn-tekenen-w2-s1": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 170,
+   "textHash": "7b21c8a316647ae4"
+  },
+  "vormleer-punt-lijn-tekenen-w4-s0": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 122,
+   "textHash": "57d85188047599e4"
+  },
+  "vormleer-punt-lijn-tekenen-w4-s1": {
+   "cellHeightPx": 665,
+   "intrinsicPx": 170,
+   "textHash": "7b21c8a316647ae4"
+  },
+  "vormleer-vierhoeken-w1-s0": {
+   "cellHeightPx": 391,
+   "intrinsicPx": 366,
+   "textHash": "737df464030070c5"
+  },
+  "vormleer-vierhoeken-w1-s1": {
+   "cellHeightPx": 387,
+   "intrinsicPx": 366,
+   "textHash": "b61b36f8aa15e407"
+  },
+  "vormleer-vierhoeken-w2-s0": {
+   "cellHeightPx": 391,
+   "intrinsicPx": 366,
+   "textHash": "737df464030070c5"
+  },
+  "vormleer-vierhoeken-w2-s1": {
+   "cellHeightPx": 387,
+   "intrinsicPx": 366,
+   "textHash": "b61b36f8aa15e407"
+  },
+  "vormleer-vierhoeken-w4-s0": {
+   "cellHeightPx": 391,
+   "intrinsicPx": 366,
+   "textHash": "737df464030070c5"
+  },
+  "vormleer-vierhoeken-w4-s1": {
+   "cellHeightPx": 387,
+   "intrinsicPx": 366,
+   "textHash": "b61b36f8aa15e407"
+  }
+ }
+}
