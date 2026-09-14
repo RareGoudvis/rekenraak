@@ -2,7 +2,7 @@
 
 Werkbladengenerator voor het Vlaamse basisonderwijs (de map heet nog `enderklas-v2`). Leerkrachten stellen wiskundige oefeningenblokken samen, configureren de moeilijkheidsgraad per blok, bekijken het resultaat live op virtuele A4-pagina's, en drukken af of slaan op als PDF.
 
-Live (beta): [rekenraak.be](https://www.rekenraak.be) · [over het project](https://www.rekenraak.be/about.html) · [vragen](https://www.rekenraak.be/faq.html) · [alle oefeningen met voorbeeld](https://www.rekenraak.be/oefeningen.html)
+Live: [rekenraak.be](https://www.rekenraak.be) · [over het project](https://www.rekenraak.be/about.html) · [vragen](https://www.rekenraak.be/faq.html) · [alle oefeningen met voorbeeld](https://www.rekenraak.be/oefeningen.html) · ook te vinden op KlasCement
 
 ## Wat kan je ermee?
 
@@ -23,7 +23,7 @@ Live (beta): [rekenraak.be](https://www.rekenraak.be) · [over het project](http
 
 ## Oefeningtypes
 
-Momenteel **128 oefeningen in de zijbalk** (varianten van ~55 registry-types in `src/config/exerciseRegistry.ts`), verdeeld over vier wiskundedomeinen, plus vijf bladonderdelen:
+Momenteel **128 oefeningen in de zijbalk** (varianten van ~60 registry-types in `src/config/exerciseRegistry.ts`), verdeeld over vier wiskundedomeinen, plus vijf bladonderdelen:
 
 | Domein | Waar het over gaat |
 |---|---|
@@ -52,6 +52,19 @@ npm run preview   # productiebuild bekijken
 npm run matrix    # Playwright: elk type op vol/½/¼ meten (breedtetabel in blockLayout.ts)
 npm run catalogue # Playwright: elk zijbalk-blad → oefeningen.html + public/oefeningen/*.png (de gate faalt als de pagina achterloopt op de zijbalk)
 ```
+
+## Documentatie
+
+| Document | Waarover |
+|---|---|
+| [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) | De diepe kaart: dataflow, state, datamodel, registry- en generatorcontract, viewers, print- en paginamodel, persistentie, bestandsoverzicht |
+| [.claude/docs/UI-GUIDE.md](.claude/docs/UI-GUIDE.md) | De ontwerpregels, de tokens uit `theme.css` en de canonieke componentstijlen |
+| [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | De vitest-suites en de Playwright-harnassen (breedtematrix, hoogte-audit, font-baseline, drag) |
+| [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Gekende bugs die nog niet gefixt zijn |
+| [.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) | Sessielogboek, nieuwste bovenaan |
+| [.claude/docs/klascement.md](.claude/docs/klascement.md) | Introductie voor leerkrachten: wat het doet, wat erin zit en waarom |
+| [src/components/viewer/README.md](src/components/viewer/README.md) | De zes regels waaraan elke viewer moet voldoen |
+| [CLAUDE.md](CLAUDE.md) | De werkregels voor wie (of wat) aan deze code werkt |
 
 ---
 
@@ -122,7 +135,7 @@ Details: [ARCHITECTURE.md §9](.claude/docs/ARCHITECTURE.md).
 
 ## Bijdragen
 
-Bug of suggestie? Via het feedbackformulier in de app (Meer → Feedback geven) of DM via [X (@ruben_vah)](https://x.com/ruben_vah). Pull requests neem ik niet aan — fork gerust.
+Bug of suggestie? Via het [feedbackformulier](https://forms.gle/jc1LcMXaRG3V3M556) (ook in de app: Meer → Feedback geven) of DM via [X (@ruben_vah)](https://x.com/ruben_vah). De code staat op [github.com/RareGoudvis/rekenraak](https://github.com/RareGoudvis/rekenraak). Pull requests neem ik niet aan — fork gerust.
 
 ## Licentie
 

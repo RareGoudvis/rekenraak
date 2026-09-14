@@ -1,7 +1,13 @@
 {
   "name": "rekenraak",
   "private": true,
-  "version": "0.5.0",
+  "version": "1.0.0",
+  "description": "Werkbladengenerator wiskunde voor het Vlaamse basisonderwijs",
+  "homepage": "https://www.rekenraak.be",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RareGoudvis/rekenraak"
+  },
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
