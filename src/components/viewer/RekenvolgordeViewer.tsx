@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH } from '../../services/math/formatters';
 import { useBlockWidth, ANSWER_ROW_H, ANSWER_LINE_H } from './BlockWidthContext';
 import { solutionText } from './solutionStyle';
+import { itemLabel, itemLabelChars } from './itemNumbering';
 
 interface Props {
     block: MathBlock;
@@ -45,13 +46,18 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     const exprW = Math.ceil(Math.max(...exprs.map(e => e.length)) * CHAR_PX);
     // "=" (8px gap + ~10px glyph + 8px gap) then the answer line. A 4-bewerkingen expression
     // at maximum 1 000 is too wide for a half column, so drop to 1-up rather than overflow.
-    const rowPx = exprW + 8 + 10 + 8 + LINE_PX;
+    // ONE label column for the whole block (its longest label), so "1)" and "10)" leave the
+    // "=" of every row on the same x; it is real width, so both 2-up tests pay for it.
+    const labelChars = itemLabelChars(block.itemNumbering, exercises.length);
+    const labelPx = labelChars > 0 ? Math.ceil(labelChars * CHAR_PX) + 4 : 0;
+    const labelColPx = labelPx > 0 ? labelPx + 8 : 0;
+    const rowPx = exprW + 8 + 10 + 8 + LINE_PX + labelColPx;
     // Stappen is 2-up whenever two rows fit with real writing room — the same rule
     // MathBlockRenderer applies, so a stepped rekenvolgorde block is the same height as a
     // stepped hoofdrekenen one instead of running off the bottom of the page.
     // SYNC: MathBlockRenderer's `worklineMinPx` floor (80px = room for a hand-written step).
     const WORKLINE_MIN_PX = 80;
-    const steppedRowPx = exprW + 8 + 10 + 8 + WORKLINE_MIN_PX;
+    const steppedRowPx = exprW + 8 + 10 + 8 + WORKLINE_MIN_PX + labelColPx;
     const twoUpPx = layout === 'stepped' ? steppedRowPx : rowPx;
     // Lang gives the answer line the whole cell, which only means something 1-up.
     const cols = layout !== 'inline-long' && twoUpPx * 2 + COL_GAP <= availablePx ? 2 : 1;
@@ -86,6 +92,13 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
                     // as the next step line and three steps of one sum read as three sums.
                     ...(layout === 'stepped' ? { paddingBottom: '16px' } : {}),
                 }}>
+                    {labelPx > 0 && (
+                        <span style={{
+                            width: `${labelPx}px`, flexShrink: 0, textAlign: 'right', whiteSpace: 'nowrap',
+                            // Pinned to line 1 like the expression next to it in Stappen.
+                            ...(layout === 'stepped' ? { display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', height: ANSWER_ROW_H } : {}),
+                        }}>{itemLabel(block.itemNumbering, i)}</span>
+                    )}
                     <span style={{
                         width: `${exprW}px`, textAlign: 'right', whiteSpace: 'pre', flexShrink: 0,
                         // Pin the expression ON line 1's baseline rather than letting it float

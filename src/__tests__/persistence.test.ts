@@ -213,6 +213,15 @@ describe('share link', () => {
         expect(decoded!.blocks.map(b => b.skipNumbering)).toEqual([undefined, true, undefined]);
     });
 
+    // itemNumbering rides the same block spread (no format bump). A sheet whose rows are
+    // '1) …' must come back numbered, or the teacher's printed key no longer matches.
+    test('the per-exercise numbering survives the round-trip', () => {
+        const s = state();
+        const numbered = { ...s, blocks: s.blocks.map((b, i) => (i === 1 ? { ...b, itemNumbering: 'letter' as const } : b)) };
+        const decoded = fileFromShare(encodeShareLink(numbered));
+        expect(decoded!.blocks.map(b => b.itemNumbering)).toEqual([undefined, 'letter', undefined]);
+    });
+
     // The per-block width fit is presentation, and presentation is exactly what a teacher
     // expects to find again in a shared or reopened sheet: a block the packer would widen
     // must come back shrunk, not widened, or the receiver's layout silently differs.

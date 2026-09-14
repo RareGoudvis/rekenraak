@@ -11,6 +11,7 @@ import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../
 import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
+import { itemLabel, itemLabelChars } from './itemNumbering';
 
 interface Props {
     block: MathBlock;
@@ -215,6 +216,10 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // token), so the operand columns follow the Lettergrootte slider instead of freezing
     // at 13pt the way a hardcoded 11.1 did.
     const CHAR_PX = sheetPx * 0.64;
+    // ONE label column for the whole block, sized to its longest label, so "1)" and "10)"
+    // still leave the "=" of every row on the same x. +4px of air after the widest label.
+    const labelChars = itemLabelChars(block.itemNumbering, block.exercises.length);
+    const labelPx = labelChars > 0 ? Math.ceil(labelChars * CHAR_PX) + 4 : 0;
     // What ONE VerticalFraction occupies: two stacked digit cells whose minWidth is
     // (fontSize + 9)/17.33 em of the math token inside 4px of padding either side, plus the
     // whole number of a mixed number. SYNC: VerticalFraction's cellMin and FractionDisplay's
@@ -268,6 +273,27 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         ? Math.max(tightAnswerFloor, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
         : Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
     const cellPx = Math.max(85, widestTermPx + 6);
+    // An operator belongs to the operand AFTER it. `[operator][OP_TERM_GAP][operand]` is
+    // therefore laid out as ONE right-aligned unit: the air after the sign is a constant
+    // (so "+ 51" and "+315" read identically), the air before it is a constant too, and the
+    // operand's last digit still lands on the block's column edge because the unit -- not
+    // the operand -- carries the fixed width. Before this the operand sat in a fixed
+    // right-aligned cell, so all of its slack fell between the sign and the digits.
+    const OP_GLYPH_PX = tight ? 12 : 13;  // one Azeret Mono glyph at 17px (11.06), rounded up
+    // The same air on both sides of a sign: the owner reads "72   + 1" as jitter.
+    const OP_TERM_GAP = tight ? 6 : 10;   // sign -> its operand
+    const TERM_UNIT_GAP = OP_TERM_GAP;    // operand -> the sign of the next one
+    // Air around the "=" and between the sum and its answer column. Halved when tight:
+    // 4 gaps x 4px is what buys `532 + 342 = ____` its place inside a 163px quarter.
+    const EQ_GAP = tight ? 6 : 10;
+    const ANSWER_GAP = tight ? 4 : 8;
+    const labelCell = (i: number) => {
+        const text = itemLabel(block.itemNumbering, i);
+        if (!text) return null;
+        return <span style={{ width: `${labelPx}px`, flexShrink: 0, textAlign: 'right', marginRight: `${OP_TERM_GAP}px`, whiteSpace: 'nowrap' }}>{text}</span>;
+    };
+    // The label column is real width: the 2-up decision below has to pay for it too.
+    const labelColPx = labelPx > 0 ? labelPx + OP_TERM_GAP : 0;
     // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
     // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
     const compScaffoldOn = c.preset === 'compenseren'
@@ -277,7 +303,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // ~70px of help box + 8px gap + r + a 30px blank + the gaps around them.
     const MET_REST_EXTRA_PX = 160;
     const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
-        + 8 + answerW + (anyRemainder ? MET_REST_EXTRA_PX : 0);
+        + 8 + answerW + (anyRemainder ? MET_REST_EXTRA_PX : 0) + labelColPx;
     // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
     // workline, so what it really needs is writing room for a hand-written tussenstap.
     // That room scales with the block's widest operand instead of the fixed 94px field.
@@ -290,7 +316,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // straight against the operator unless the span carries its own padding either side.
     const COMPACT_OP_GAP = 26;
     const steppedRowMin = maxTerms * compactCellPx + (maxTerms - 1) * COMPACT_OP_GAP
-        + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx;
+        + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx + labelColPx;
     // Keep the classic 2-up look as long as two rows fit with at least a 20px gap;
     // the gap then stretches up to the traditional 50px when there's room.
     const COL_GAP_MIN = 20;
@@ -315,20 +341,6 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     // operands tighten and the writing line keeps the space instead.
     const isNarrow = A4_CONTENT_PX < FULL_BLOCK_WIDTH_PX - 20;
     const compact = twoUpStepped || isNarrow;
-    // An operator belongs to the operand AFTER it. `[operator][OP_TERM_GAP][operand]` is
-    // therefore laid out as ONE right-aligned unit: the air after the sign is a constant
-    // (so "+ 51" and "+315" read identically), the air before it is a constant too, and the
-    // operand's last digit still lands on the block's column edge because the unit -- not
-    // the operand -- carries the fixed width. Before this the operand sat in a fixed
-    // right-aligned cell, so all of its slack fell between the sign and the digits.
-    const OP_GLYPH_PX = tight ? 12 : 13;  // one Azeret Mono glyph at 17px (11.06), rounded up
-    // The same air on both sides of a sign: the owner reads "72   + 1" as jitter.
-    const OP_TERM_GAP = tight ? 6 : 10;   // sign -> its operand
-    const TERM_UNIT_GAP = OP_TERM_GAP;    // operand -> the sign of the next one
-    // Air around the "=" and between the sum and its answer column. Halved when tight:
-    // 4 gaps x 4px is what buys `532 + 342 = ____` its place inside a 163px quarter.
-    const EQ_GAP = tight ? 6 : 10;
-    const ANSWER_GAP = tight ? 4 : 8;
     const termPx = (chars: number) => Math.ceil(chars * CHAR_PX) + 4;
     // Met-rest extras. The quotient and rest blanks are one width for the whole block (a
     // blank sized to its own answer would tell the child how many digits to expect), and
@@ -353,7 +365,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
             columnGap={colGap}
             rowGap={block.verticalSpacing || 14}
             justifyItems={colJustify}
-            items={block.exercises.map((ex) => {
+            items={block.exercises.map((ex, exIndex) => {
                 if (!ex || !ex.operands) return null;
 
                 // MET REST — same unit boxes as a normal row (dividend in the block's term
@@ -367,6 +379,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         : <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />;
                     return (
                         <div key={ex.id} style={{ display: 'flex', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
+                            {labelCell(exIndex)}
                             {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
                                 cell it is the first thing to go, so the division itself still fits.
                                 It gets its OWN fixed column so the dividends below it still line up. */}
@@ -432,6 +445,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         // read as three separate sums.
                         ...(layout === 'stepped' ? { paddingBottom: '16px' } : {}),
                     }}>
+                        {/* Stepped rows are flex-start, so the label is pinned to line 1's height
+                            like the operand box next to it instead of floating to the top. */}
+                        {labelPx > 0 && (
+                            <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: ANSWER_ROW_H }) }}>
+                                {labelCell(exIndex)}
+                            </div>
+                        )}
                         {/* In stepped mode the row is flex-start so extra lines flow below; pin the
                             operand to the first working-row height (ANSWER_ROW_H) + flex-end so it sits ON line 1's
                             baseline instead of floating above it. */}

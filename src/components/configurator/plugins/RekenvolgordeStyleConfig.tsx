@@ -1,5 +1,6 @@
 import { useWorksheetStore } from '../../../store/useWorksheetStore';
 import { F } from './shared/fieldStyles';
+import ItemNumberingRow from './shared/ItemNumberingRow';
 import type { MathBlock } from '../../../services/math/types';
 
 /**
@@ -14,6 +15,7 @@ export default function RekenvolgordeStyleConfig({ block }: { block: MathBlock }
     const preset = block.layoutPreset ?? 'inline-short';
     return (
         <>
+            <ItemNumberingRow block={block} />
             <label style={{ ...F.label, marginTop: '12px' }}>Scaffolding</label>
             <div className="seg-group">
                 <button onClick={() => updateBlockLayout(block.id, 'inline-short')} className="seg-btn" aria-pressed={preset === 'inline-short'}>Kort</button>

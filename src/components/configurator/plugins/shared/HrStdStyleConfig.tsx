@@ -1,6 +1,7 @@
 import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import { useConstraints } from '../../useConstraints';
 import { F } from './fieldStyles';
+import ItemNumberingRow from './ItemNumberingRow';
 import type { MathBlock } from '../../../../services/math/types';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
@@ -52,6 +53,10 @@ function HrStdStyleConfig({ block, withFractionDifficulty }: { block: MathBlock;
                     </div>
                 </>
             )}
+
+            {/* ── Nummering ── */}
+            {/* Outside the puntoefening guard below: those rows get numbered too. */}
+            <ItemNumberingRow block={block} />
 
             {/* ── Scaffolding (Kort / Lang / Stappen) ── */}
             {/* Puntoefeningen (a + . = c) staan per definitie op één korte lijn — geen layoutkeuze. */}

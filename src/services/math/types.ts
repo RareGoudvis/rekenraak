@@ -440,6 +440,10 @@ export interface MathBlock<C extends BlockConstraints = BlockConstraints> {
     // true = not counted by blockOrder; only meaningful with showInstruction false, since a
     // numbered block that shows no number would renumber everything after it for nothing.
     skipNumbering?: boolean;
+    // Prints '1)' / 'a)' before every exercise row. Top-level, not in `constraints`: it is
+    // presentation, so it must not raise the stale flag, must survive the locked-curriculum
+    // filter, and must stay out of hr-std-gemengd's per-variant constraint tabs.
+    itemNumbering?: 'geen' | 'cijfer' | 'letter';
     layoutPreset: LayoutPreset;
     instructionMode: 'geen' | 'mag' | 'moet' | 'plus' | 'aangepast';
     customInstructionText?: string;

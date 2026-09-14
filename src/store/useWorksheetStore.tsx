@@ -402,6 +402,8 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             if ('showInstruction' in updates) allowed.showInstruction = updates.showInstruction;
             // And for leaving that block out of the opdracht numbering.
             if ('skipNumbering' in updates) allowed.skipNumbering = updates.skipNumbering;
+            // And for the 1) / a) numbering in front of each exercise — same reasoning.
+            if ('itemNumbering' in updates) allowed.itemNumbering = updates.itemNumbering;
             if (Object.keys(allowed).length === 0) return state;   // drop difficulty/wording/points edits
             next = allowed;
         }
@@ -422,6 +424,11 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
             return [...new Set([...Object.keys(prev), ...Object.keys(patch)])]
                 .every(k => k === 'fitToWidth' || prev[k] === patch[k]);
         })();
+        // Pure presentation keys: they change how the block prints, never what it asks of
+        // the child, so they must not raise the "verouderd" flag either.
+        const PRESENTATION_SAFE = new Set(['itemNumbering']);
+        const presentationOnly = Object.keys(next).length > 0
+            && Object.keys(next).every(k => PRESENTATION_SAFE.has(k));
         const nb = state.blocks.map(b => {
             if (b.id !== id) return b;
             const merged = { ...b, ...next } as MathBlock;
@@ -444,7 +451,7 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         });
         // Any other setting means the exercises no longer match the settings — say so
         // rather than leaving the teacher to notice.
-        const stale = countOnly || fitToWidthOnly ? state.staleBlocks : { ...state.staleBlocks, [id]: true };
+        const stale = countOnly || fitToWidthOnly || presentationOnly ? state.staleBlocks : { ...state.staleBlocks, [id]: true };
         return { blocks: nb, staleBlocks: stale, ...pushHistory(state._history, state._historyIndex, nb) };
     }),
     updateExercise: (blockId, exerciseId, updates) => set((state) => { const nb = state.blocks.map(b => b.id !== blockId ? b : { ...b, exercises: b.exercises.map(ex => ex.id === exerciseId ? { ...ex, ...updates } : ex) }); return { blocks: nb, ...pushHistory(state._history, state._historyIndex, nb) }; }),

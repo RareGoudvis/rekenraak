@@ -176,6 +176,12 @@ describe('updateBlockSettings under the curriculum lock', () => {
         expect(after.constraints.maxGetal).toBe(constraints.maxGetal);
     });
 
+    test('the 1) / a) numbering is presentation, so it goes through', () => {
+        const { id } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { itemNumbering: 'cijfer' });
+        expect(useWorksheetStore.getState().blocks[0].itemNumbering).toBe('cijfer');
+    });
+
     test('difficulty is still frozen', () => {
         const { id, constraints } = useWorksheetStore.getState().blocks[0];
         useWorksheetStore.getState().updateBlockSettings(id, { constraints: { ...constraints, maxGetal: 1000000 } });
@@ -184,6 +190,27 @@ describe('updateBlockSettings under the curriculum lock', () => {
 });
 
 // "Blok splitsen" is layout: the teacher cuts a block that does not fit the rest of a page.
+// Numbering changes how the block prints, never what it asks of the child, so the
+// "verouderd" flag must stay down — while the change is still an undo step.
+describe('updateBlockSettings with a presentation-only key', () => {
+    beforeEach(() => seed(1));
+
+    test('setting itemNumbering does not mark the block stale, and pushes history', () => {
+        const { id } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { itemNumbering: 'letter' });
+        expect(useWorksheetStore.getState().blocks[0].itemNumbering).toBe('letter');
+        expect(useWorksheetStore.getState().staleBlocks[id]).toBeUndefined();
+        useWorksheetStore.getState().undo();
+        expect(useWorksheetStore.getState().blocks[0].itemNumbering).toBeUndefined();
+    });
+
+    test('a difficulty edit still marks it stale', () => {
+        const { id, constraints } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { constraints: { ...constraints, maxGetal: 500 } });
+        expect(useWorksheetStore.getState().staleBlocks[id]).toBe(true);
+    });
+});
+
 describe('splitBlock', () => {
     const first = () => useWorksheetStore.getState().blocks[0];
     beforeEach(() => seed(1));

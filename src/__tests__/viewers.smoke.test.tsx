@@ -33,6 +33,29 @@ test('every registry type has a UI row, and vice versa', () => {
     expect(Object.keys(EXERCISE_UI).sort()).toEqual(Object.keys(REGISTRY).sort());
 });
 
+// The 1) / a) labels are an extra first child in the row, at the widths where a block is
+// tightest — a label that pushed the sum off the cell would only show up here.
+describe.each(['hr-std-optellen', 'rekenvolgorde'])('%s with per-exercise numbering', (typeId) => {
+    test.each(WIDTHS.flatMap(w => [false, true].flatMap(sol =>
+        (['cijfer', 'letter'] as const).map(mode => [w, sol, mode] as const))))(
+        'renders at %ipx, showSolutions=%s, itemNumbering=%s', (width, showSolutions, itemNumbering) => {
+            const { Viewer } = EXERCISE_UI[typeId];
+            const def = REGISTRY[typeId];
+            const block = makeBlock(typeId, { block: { itemNumbering } });
+            (block as unknown as Record<string, unknown>)[def.exerciseField] = def.generate(block);
+
+            const { container } = render(
+                <BlockWidthProvider value={width}>
+                    <Viewer block={block} showSolutions={showSolutions} />
+                </BlockWidthProvider>,
+            );
+
+            expect(container.textContent).toContain(itemNumbering === 'cijfer' ? '1)' : 'a)');
+            const errors = consoleError.mock.calls.map((args: unknown[]) => String(args[0]));
+            expect(errors, `${typeId} logged a React error at ${width}px`).toEqual([]);
+        });
+});
+
 describe.each(typeIds)('%s', (typeId) => {
     test.each(WIDTHS.flatMap(w => [false, true].map(s => [w, s] as const)))('renders at %ipx, showSolutions=%s', (width, showSolutions) => {
         const { Viewer } = EXERCISE_UI[typeId];
