@@ -567,7 +567,7 @@ export default function App() {
               borderTopColor: docSettings.footerStyle === 'lijn' ? '#ccc'
                 : docSettings.footerStyle === 'kader' ? '#000' : 'transparent',
               ...(docSettings.footerStyle === 'kader'
-                ? { borderStyle: 'solid', borderWidth: '1.5px', borderColor: '#000', padding: '6px 10px', borderRadius: '6px' }
+                ? { borderStyle: 'solid', borderWidth: '1.5px', borderColor: '#000', padding: '8px 12px', borderRadius: '6px' }
                 : {}),
             }, docSettings.footerCustom)}>
               <span>{brandSlot === 'left' ? credit : left}</span>
