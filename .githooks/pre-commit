@@ -1,0 +1,35 @@
+#!/bin/sh
+# The commit gate. Runs the full check (tsc, eslint, vite build, vitest) and then the
+# targeted visual gate on whatever is staged. Git for Windows runs this with its bundled sh.
+#
+# Bypass is deliberately awkward: SKIP_GATE=1 skips everything, SKIP_VISUAL=1 skips only
+# the browser half. A Claude Code PreToolUse hook (.claude/hooks/commit-bypass-guard.ps1)
+# turns either of those, and --no-verify, into a prompt only a human can answer.
+
+if [ "$SKIP_GATE" = "1" ]; then
+    echo "[gate] skipped (SKIP_GATE=1)"
+    exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+log="$(mktemp -t rekenraak-gate.XXXXXX)"
+
+echo "[gate] npm run check ..."
+if ! npm run check >"$log" 2>&1; then
+    echo "[gate] FAILED — npm run check (tail):"
+    tail -n 60 "$log"
+    echo "[gate] full log: $log"
+    exit 1
+fi
+echo "[gate] check ok"
+rm -f "$log"
+
+if [ "$SKIP_VISUAL" = "1" ]; then
+    echo "[gate] visual gate skipped (SKIP_VISUAL=1)"
+    exit 0
+fi
+
+# --staged maps the staged files to exercise types itself and exits 0 fast when the change
+# cannot move a pixel, so the browser only starts when it has something to look at.
+node scripts/visual-gate.mjs --staged || exit 1
