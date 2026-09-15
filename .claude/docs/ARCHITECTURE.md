@@ -810,6 +810,13 @@ both `onCellMeasure` and the tail measurement it depends on.
 - **`@page { margin: 0 }`** — on purpose. The dialog's "Margins: None/Minimum" silently
   overrides `@page` margins, so we don't rely on them: every visible margin comes from the
   page's own padding instead. Robust to any dialog setting.
+- **Safari and `vw`** — `theme.css` pins `html/body/#root` to `width: 100vw` for the
+  on-screen shell. WebKit resolves `vw` in print against the browser *window*, not the paper
+  (Chrome/Firefox use the page box), so the printed document was ~2× wider than the 794px
+  sheet and Safari shrank the whole page to fit. The print block resets those widths to
+  `auto` (v1.0.2, 2026-09-15); never reintroduce viewport units on anything that prints.
+  Safari also ignores `@page { size }` (paper comes from the printer preset) and the
+  `break-*` rules carry their legacy `page-break-*` aliases for older WebKit.
 - **Header layout** — `docSettings.titlePosition` left/right put the title beside the field
   row; **center always stacks**: the wrapping field row (score box at its end) on top, the
   title on its own line beneath, the way a real worksheet reads. The former inline-flank
