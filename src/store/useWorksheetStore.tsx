@@ -426,7 +426,8 @@ export const useWorksheetStore = create<WorksheetState>((set, get) => ({
         })();
         // Pure presentation keys: they change how the block prints, never what it asks of
         // the child, so they must not raise the "verouderd" flag either.
-        const PRESENTATION_SAFE = new Set(['itemNumbering']);
+        // widthUnits: the exercises are unchanged, only the cell the packer places them in.
+        const PRESENTATION_SAFE = new Set(['itemNumbering', 'widthUnits']);
         const presentationOnly = Object.keys(next).length > 0
             && Object.keys(next).every(k => PRESENTATION_SAFE.has(k));
         const nb = state.blocks.map(b => {

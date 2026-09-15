@@ -204,6 +204,15 @@ describe('updateBlockSettings with a presentation-only key', () => {
         expect(useWorksheetStore.getState().blocks[0].itemNumbering).toBeUndefined();
     });
 
+    test('changing widthUnits does not mark the block stale, and pushes history', () => {
+        const { id, widthUnits: before } = useWorksheetStore.getState().blocks[0];
+        useWorksheetStore.getState().updateBlockSettings(id, { widthUnits: 2 });
+        expect(useWorksheetStore.getState().blocks[0].widthUnits).toBe(2);
+        expect(useWorksheetStore.getState().staleBlocks[id]).toBeUndefined();
+        useWorksheetStore.getState().undo();
+        expect(useWorksheetStore.getState().blocks[0].widthUnits).toBe(before);
+    });
+
     test('a difficulty edit still marks it stale', () => {
         const { id, constraints } = useWorksheetStore.getState().blocks[0];
         useWorksheetStore.getState().updateBlockSettings(id, { constraints: { ...constraints, maxGetal: 500 } });
