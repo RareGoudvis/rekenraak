@@ -28,7 +28,13 @@ export async function walkLeaves(opts) {
     // Console errors are collected per cell: a viewer that logs but does not throw still
     // renders something, and that is exactly the regression the gate wants to see.
     let cellErrors = [];
-    page.on('console', (m) => { if (m.type() === 'error') cellErrors.push(m.text()); });
+    // The measurer's breaker tripping means the cell's numbers are whatever got frozen, so
+    // the gate must see it as a finding, not a pass. (The softer "N repacks in 1s" warn is
+    // the walk's own cadence — several cells per second — and stays out.)
+    page.on('console', (m) => {
+        if (m.type() === 'error') cellErrors.push(m.text());
+        else if (m.type() === 'warning' && m.text().includes('repack loop broken')) cellErrors.push(m.text());
+    });
     page.on('pageerror', (e) => cellErrors.push(String(e)));
 
     try {
@@ -51,20 +57,56 @@ export async function walkLeaves(opts) {
                     const base = { leafId: leaf.id, path: leaf.path, typeId: leaf.typeId, width, solutions };
                     cellErrors = [];
                     try {
-                        const measured = await page.evaluate(async ({ leaf, width, solutions, seed }) => {
+                        // The measurer's breaker (12 repacks/s) can trip on the walk's own cadence
+                        // and then freezes measurements for 1.5 s; a cell caught in that window is
+                        // re-done once after the cooldown instead of being recorded frozen.
+                        let measured;
+                        for (let attempt = 0; attempt < 2; attempt++) {
+                        if (attempt) { await page.waitForTimeout(1700); cellErrors = []; }
+                        measured = await page.evaluate(async ({ leaf, width, solutions, seed }) => {
                             const r = window.__rekenraak;
-                            r.seed(seed);
+                            const frame = () => new Promise((res) => requestAnimationFrame(res));
+                            const emptyNow = () => {
+                                const m = r.measured?.();
+                                return !document.querySelector('[data-block-id]')
+                                    && (!m || (Object.keys(m.cells).length === 0 && Object.keys(m.intrinsic).length === 0));
+                            };
                             r.clearBlocks();
+                            // Wait for the empty sheet to land before adding: the seed below gives
+                            // every cell of a leaf the SAME block id, and the measurer prunes a
+                            // gone block in a passive effect. Adding in the same tick let the w4
+                            // and w2 intrinsic entries survive into the w1 cell (or not, depending
+                            // on effect timing), which clamped its width and flaked its height.
+                            const t0c = performance.now();
+                            while (!emptyNow() && performance.now() - t0c < 3000) await frame();
+                            r.seed(seed);
                             // Exactly what sidebar.tsx's addLeaf does on a real click: registry
                             // defaults + base snapshot (inside the store) + this leaf's override.
                             r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints);
                             const block = r.getState().blocks[0];
                             if (!block) return { error: 'no block produced' };
+                            // Settled = the applied zoom on every ScaledBlock and the measurer's
+                            // snapshot are unchanged across two consecutive frames. Two fixed
+                            // frames were not enough: the fit loop lowers the zoom one layout
+                            // pass at a time and the measure -> repack chain runs behind it, so
+                            // the gate used to record whatever height it caught mid-flight.
+                            const snap = () => JSON.stringify({
+                                z: [...document.querySelectorAll('[data-scaled-inner]')].map((el) => el.style.zoom),
+                                m: r.measured?.(),
+                            });
+                            const settle = async () => {
+                                let prev = snap(), stable = 0;
+                                const t0 = performance.now();
+                                while (stable < 2 && performance.now() - t0 < 3000) {
+                                    await frame();
+                                    const cur = snap();
+                                    stable = cur === prev ? stable + 1 : 0;
+                                    prev = cur;
+                                }
+                            };
                             r.updateBlockSettings(block.id, { widthUnits: width });
                             r.getState().setShowSolutions(!!solutions);
-                            // Two frames: one for React to commit the width/solutions change,
-                            // one for the measure -> repack pass PageSheet triggers off it.
-                            await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+                            await settle();
 
                             const cell = document.querySelector(`[data-block-id="${block.id}"]`);
                             if (!cell) return { error: 'cell not found after render' };
@@ -89,6 +131,8 @@ export async function walkLeaves(opts) {
                                 text: cell.innerText,
                             };
                         }, { leaf, width, solutions, seed });
+                        if (!cellErrors.some((e) => e.includes('repack loop broken'))) break;
+                        }
 
                         if (measured.error) {
                             const row = { ...base, error: measured.error, consoleErrors: [...cellErrors] };

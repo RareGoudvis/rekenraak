@@ -140,7 +140,12 @@ numbers to a committed baseline. It starts its own dev server (`vite --port 5299
 --strictPort`, killed on every exit path) unless `--url` points it at a running one, and
 reuses `scripts/lib/leafWalk.mjs` — the same leaf walk `font-baseline.mjs` uses, so there is
 one copy of the Playwright choreography, and `scripts/lib/visualCompare.mjs` for the
-thresholds shared with `font-compare.mjs`.
+thresholds shared with `font-compare.mjs`. Per cell the walk waits for the empty sheet to
+land before adding (every cell of a leaf gets the same seeded block id, and the measurer
+prunes the previous cell's intrinsic entries in a passive effect), then waits until the
+applied ScaledBlock zooms and the measurer snapshot are unchanged for two frames (cap 3 s);
+a cell whose measurement the breaker froze is redone once after the cooldown. Two `--all`
+runs in a row must produce identical rows — that is the determinism check.
 
 | Changed file | Scope |
 |---|---|
