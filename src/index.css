@@ -679,6 +679,10 @@ textarea:focus-visible,
      fraction fills, tints, solution overlays) — WYSIWYG: the preview is what prints. */
   html, body { height: 100% !important; overflow: visible !important; background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   #root { height: 100% !important; overflow: visible !important; }
+  /* Safari resolves vw/vh in print against the browser WINDOW, not the paper, so the 100vw
+     root from theme.css made the document wider than the page and Safari shrank the whole
+     sheet to fit ("the print is tiny on a Mac"). width:auto is the page box in every engine. */
+  html, body, #root { width: auto !important; min-width: 0 !important; max-width: none !important; }
 
   .no-print { display: none !important; }
 
@@ -794,13 +798,15 @@ textarea:focus-visible,
     box-shadow: none !important;
     border-radius: 0 !important;
     overflow: hidden !important;
+    /* Legacy page-break-* alias alongside: older WebKit only honours that spelling. */
+    page-break-after: always;
     break-after: page;
     break-inside: avoid;
     display: flex !important;
     flex-direction: column !important;
   }
   /* No trailing blank page after the last one. */
-  .page-sheet:last-of-type { break-after: auto; }
+  .page-sheet:last-of-type { page-break-after: auto; break-after: auto; }
   /* 16mm side margins live here now, not in @page — the dialog's margin setting silently
      overrides @page, so the margins have to come from the content box. */
   /* Side margins 14mm (15mm to the ink); the top is 8mm. SYNC: .page-sheet-head above
@@ -819,7 +825,7 @@ textarea:focus-visible,
   .print-block.is-dragging { opacity: 1 !important; }
   /* Force a set onto a fresh page — the packer already put it there, this is the
      belt-and-braces for a block whose estimate was optimistic. */
-  .print-block.page-break-before { break-before: page; }
+  .print-block.page-break-before { page-break-before: always; break-before: page; }
   /* Opdracht line stays glued to the first row of its set — never orphaned at a
      page bottom. break-after:avoid keeps the following content with it. */
   .print-opdracht { break-after: avoid; break-inside: avoid; }
