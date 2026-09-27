@@ -4,6 +4,7 @@ import { useBlockWidth, fitCols, ANSWER_LINE_H, useSheetSizePx } from './BlockWi
 import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
 
 // Every printed digit/mono size below is a factor of --sheet-size-math (the empty-state
 // placeholder is screen-only chrome and stays a fixed px).
@@ -142,16 +143,19 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         // itemMinPx fed to fitCols has to track that or a wide item gets squeezed 2-up.
         const maxGetal = c.maxGetal ?? 1000;
         const [itemMinPx, preferred] = maxGetal <= 100 ? [120, 4] : maxGetal <= 1000 ? [170, 2] : [330, 2];
+        // Past a million the legs' real width (from each exercise's own labels) outgrows the table above.
+        const geoms = exercises.map(ex => benenGeometry(ex, mathPx, availableWidth));
+        const widest = Math.max(itemMinPx, ...geoms.map(g => g.W));
         return (
-            <FragmentableGrid cols={fitCols(availableWidth, itemMinPx, preferred, gap)} columnGap={gap} rowGap={gap + 10}
-                items={exercises.map(ex => <PositieBenenItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+            <FragmentableGrid cols={fitCols(availableWidth, widest, preferred, gap)} columnGap={gap} rowGap={gap + 10}
+                items={exercises.map((ex, i) => <PositieBenenItem key={ex.id} ex={ex} showSolutions={showSolutions} geom={geoms[i]} />)} />
         );
     }
 
     if (layout === 'positie-tabel') {
         return (
             <FragmentableGrid cols={1} rowGap={gap + 6}
-                items={exercises.map(ex => <PositieTabelItem key={ex.id} ex={ex} showSolutions={showSolutions} />)} />
+                items={exercises.map(ex => <PositieTabelItem key={ex.id} ex={ex} showSolutions={showSolutions} availableWidth={availableWidth} mathPx={mathPx} />)} />
         );
     }
 
@@ -169,7 +173,18 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
             return places.map(p => letters ? `${p.digit}${p.key}` : placeValueStr(p.digit, p.weight)).join(' + ');
         };
         const chars = Math.max(1, ...exercises.map(ex => leftText(ex).length));
-        const leftColWidth = `calc(${(chars * 0.62 + 0.4).toFixed(2)} * var(--sheet-size-math))`;
+        // 0.62em + 0.4 covers up to ~7 glyphs; past that the real 1.04 × 0.65em advance wins, or a
+        // million-sized number would overhang its right-aligned column on the left.
+        const estEm = chars * 0.62 + 0.4;
+        const realEm = chars * MONO_ADVANCE_EM * 1.04;
+        const colEm = Math.max(estEm, realEm);
+        const estimate = realEm > estEm ? `calc(${realEm.toFixed(3)} * var(--sheet-size-math))` : `calc(${estEm.toFixed(2)} * var(--sheet-size-math))`;
+        // A compose chain of nine million-sized terms is wider than the page: cap the column so
+        // the chain wraps inside it and leaves the result (or, in 'beide', the other side's
+        // chain) room. 32px is the "=" slot plus its two 6px gaps.
+        const resultPx = Math.max(60, ...exercises.map(ex => monoTextPx(fmt(ex.total).length, 1.04, mathPx)));
+        const capPx = Math.floor(Math.min(availableWidth - 32 - resultPx, availableWidth * 0.6));
+        const leftColWidth = colEm * mathPx > capPx ? `min(${estimate}, ${capPx}px)` : estimate;
         return (
             <FragmentableGrid cols={1} columnGap={gap + 20} rowGap={gap + 4}
                 items={exercises.map(ex => <PositieMathRow key={ex.id} ex={ex} showSolutions={showSolutions} leftColWidth={leftColWidth} />)} />
@@ -185,11 +200,55 @@ const blankLine = (w = 44) => <span style={{ borderBottom: '1.5px solid #000', d
 
 // ── Place-value: splitsbenen (legs) ───────────────────────────────────────────
 
-function PositieBenenItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+type BenenGeometry = { W: number; slot: number | null; stagger: boolean; rowPx: number; pad: number };
+
+// The width a splitsbenen item needs from its own labels. Up to a thousand every label fits the
+// 56px slot and the old spaced-around row stands (slot null); a wider label gets a fixed slot per
+// leg so each leg still ends at its label, and when even that is wider than the cell the labels
+// alternate between two rows so neighbours only need half a slot each.
+function benenGeometry(ex: SplitsenExercise, mathPx: number, availableWidth: number): BenenGeometry {
+    const places = ex.placeBreakdown || [];
+    const n = Math.max(1, places.length);
+    const ch = monoTextPx(1, 1.04, mathPx);
+    const asValue = ex.notation === 'value';
+    // Widest label, blank or filled: value text vs its 40px line, or digit/24px line + 2px + key.
+    const labelPx = Math.max(0, ...places.map(p => asValue
+        ? Math.max(40, placeValueStr(p.digit, p.weight).length * ch)
+        : Math.max(24, ch) + 2 + p.key.length * ch));
+    const rowPx = Math.round(mathPx * 1.5);
+    if (labelPx + 8 <= 56) return { W: Math.max(120, places.length * 56), slot: null, stagger: false, rowPx, pad: 0 };
+    // A glyph of air either side: the thousands spaces inside "700 000" must not read as the gap between labels.
+    const need = Math.ceil(labelPx + 2 * ch);
+    const single = Math.max(120, n * need);
+    if (single <= availableWidth || n < 3) return { W: single, slot: need, stagger: false, rowPx, pad: 0 };
+    // Same-row neighbours sit two slots apart (8px of air keeps nine 100-million labels on a full
+    // row); the end labels overhang their half slot, so the item is padded by that overhang.
+    const half = Math.max(56, Math.ceil(labelPx / 2 + 4));
+    const pad = Math.max(0, Math.ceil((labelPx - half) / 2));
+    return { W: n * half + 2 * pad, slot: half, stagger: true, rowPx, pad };
+}
+
+function PositieBenenItem({ ex, showSolutions, geom }: { ex: SplitsenExercise; showSolutions: boolean; geom: BenenGeometry }) {
     const places = ex.placeBreakdown || [];
     const topBlank = ex.blankSide === 'top';
-    const W = Math.max(120, places.length * 56);
-    const xs = places.map((_, i) => ((i + 0.5) / places.length) * W);
+    const { W, stagger, rowPx, pad } = geom;
+    const xs = places.map((_, i) => pad + ((i + 0.5) / places.length) * (W - 2 * pad));
+    const asValue = ex.notation === 'value';
+    const label = (p: { digit: number; key: string; weight: number }) => {
+        const shown = asValue ? placeValueStr(p.digit, p.weight) : String(p.digit);
+        return (
+            <>
+                {topBlank
+                    ? <span style={{ fontWeight: 'normal' }}>{shown}</span>
+                    : (showSolutions ? <span style={solutionText}>{shown}</span> : blankLine(asValue ? 40 : 24))}
+                {!asValue && <span style={{ fontWeight: 'normal' }}>{p.key}</span>}
+            </>
+        );
+    };
+    // Odd legs of a staggered item drop straight down one label row further, in the gap between
+    // two even labels, so no leg crosses a label on its way.
+    const legEnd = (i: number) => 24 + (stagger && i % 2 === 1 ? rowPx : 0);
+    const svgH = stagger ? 26 + rowPx : 26;
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
@@ -199,33 +258,53 @@ function PositieBenenItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
                     ? (showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60))
                     : <span style={{ fontWeight: 'normal' }}>{fmt(ex.total)}</span>}
             </div>
-            {/* legs */}
-            <svg width={W} height="26" style={{ display: 'block' }}>
-                {xs.map((x, i) => <line key={i} x1={W / 2} y1="2" x2={x} y2="24" stroke="#000" strokeWidth="1.5" />)}
-            </svg>
-            {/* place boxes — 'value' shows the whole value (30); 'letters' shows digit + key (3T) */}
-            <div style={{ display: 'flex', justifyContent: 'space-around', width: W }}>
-                {places.map((p, i) => {
-                    const asValue = ex.notation === 'value';
-                    const shown = asValue ? placeValueStr(p.digit, p.weight) : String(p.digit);
-                    return (
-                        <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
-                            {topBlank
-                                ? <span style={{ fontWeight: 'normal' }}>{shown}</span>
-                                : (showSolutions ? <span style={solutionText}>{shown}</span> : blankLine(asValue ? 40 : 24))}
-                            {!asValue && <span style={{ fontWeight: 'normal' }}>{p.key}</span>}
+            {stagger ? (
+                <div style={{ position: 'relative', width: W, height: svgH + rowPx }}>
+                    <svg width={W} height={svgH} style={{ display: 'block' }}>
+                        {xs.map((x, i) => <polyline key={i} points={`${W / 2},2 ${x},24 ${x},${legEnd(i)}`} fill="none" stroke="#000" strokeWidth="1.5" />)}
+                    </svg>
+                    {places.map((p, i) => (
+                        <div key={i} style={{ position: 'absolute', left: xs[i], top: legEnd(i) + 2, transform: 'translateX(-50%)', display: 'flex', alignItems: 'baseline', gap: '2px', whiteSpace: 'nowrap' }}>
+                            {label(p)}
                         </div>
-                    );
-                })}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <>
+                    {/* legs */}
+                    <svg width={W} height="26" style={{ display: 'block' }}>
+                        {xs.map((x, i) => <line key={i} x1={W / 2} y1="2" x2={x} y2="24" stroke="#000" strokeWidth="1.5" />)}
+                    </svg>
+                    {/* place boxes — 'value' shows the whole value (30); 'letters' shows digit + key (3T) */}
+                    <div style={{ display: 'flex', justifyContent: 'space-around', width: W }}>
+                        {places.map((p, i) => (
+                            <div key={i} style={geom.slot === null
+                                ? { display: 'flex', alignItems: 'baseline', gap: '2px' }
+                                : { display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2px', width: geom.slot, whiteSpace: 'nowrap' }}>
+                                {label(p)}
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
 
 // ── Place-value: positietabel (word → digit grid) ─────────────────────────────
 
-function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSolutions: boolean }) {
+// Break opportunities after each number-word morpheme: Dutch writes 999 999 as one 60-letter word.
+const WORD_BREAKS = /(honderd|duizend|miljoen|miljard)/;
+
+function PositieTabelItem({ ex, showSolutions, availableWidth, mathPx }: { ex: SplitsenExercise; showSolutions: boolean; availableWidth: number; mathPx: number }) {
     const cols = ex.placeBreakdown || [];
+    // Only a word that cannot sit beside the table unbroken gets break points (and, past those,
+    // any-letter breaks), so the width probe sees a column that can narrow instead of overflow.
+    const longestWord = Math.max(0, ...(ex.words ?? '').split(' ').map(w => w.length));
+    const breakWords = monoTextPx(longestWord, 0.92, mathPx) + 20 + cols.length * 42 > availableWidth;
+    const words = breakWords
+        ? (ex.words ?? '').split(new RegExp(WORD_BREAKS.source, 'g')).filter(Boolean).map((part, i) => <span key={i}>{part}{WORD_BREAKS.test(part) && <wbr />}</span>)
+        : ex.words;
     const cell: React.CSSProperties = {
         border: '1px solid #000', width: '42px', height: '36px', display: 'flex',
         alignItems: 'center', justifyContent: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.92)', boxSizing: 'border-box',
@@ -233,7 +312,7 @@ function PositieTabelItem({ ex, showSolutions }: { ex: SplitsenExercise; showSol
     return (
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', width: '100%' }}>
             {/* Word fills the left; tables pin to the far right so all line up with room to spare. */}
-            <div style={{ flex: 1, minWidth: 0, fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{ex.words}</div>
+            <div style={{ flex: 1, minWidth: 0, fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.92)', ...(breakWords && { overflowWrap: 'anywhere' }) }}>{words}</div>
             <div style={{ flexShrink: 0 }}>
                 <div style={{ display: 'flex' }}>
                     {cols.map(p => <div key={p.key} style={{ ...cell, backgroundColor: '#f4cbb8', fontWeight: 'bold' }}>{p.key}</div>)}
@@ -263,7 +342,8 @@ function PositieMathRow({ ex, showSolutions, leftColWidth }: { ex: SplitsenExerc
             ? <span style={solutionText}>{letters ? `${(places.find(x => x.key === p.key)?.digit)}${p.key}` : placeValueStr(places.find(x => x.key === p.key)?.digit ?? 0, places.find(x => x.key === p.key)?.weight ?? 1)}</span>
             : <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '1px' }}>{blankLine(letters ? 24 : 40)}{letters && <span>{p.key}</span>}</span>;
 
-    const result = () => showSolutions ? <span style={solutionText}>{fmt(ex.total)}</span> : blankLine(60);
+    // Thousands spaces are ordinary spaces (formatMathNumber), so every number and term holds itself together.
+    const result = () => showSolutions ? <span style={{ ...solutionText, whiteSpace: 'nowrap' }}>{fmt(ex.total)}</span> : blankLine(60);
 
     // Left/right of "=" swap with direction, but both sit in fixed-width grid columns (sized
     // to the block's widest left-side content) so the "=" itself lands at the same x on
@@ -272,14 +352,14 @@ function PositieMathRow({ ex, showSolutions, leftColWidth }: { ex: SplitsenExerc
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
             <span style={{ display: 'inline-flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '6px', minWidth: leftColWidth }}>
                 {compose
-                    ? places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)
-                    : <span style={{ fontWeight: 'normal' }}>{fmt(ex.total)}</span>}
+                    ? places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', whiteSpace: 'nowrap' }}>{i > 0 && <span>+</span>}{termGiven(p)}</span>)
+                    : <span style={{ fontWeight: 'normal', whiteSpace: 'nowrap' }}>{fmt(ex.total)}</span>}
             </span>
             <span style={{ width: '20px', textAlign: 'center', flexShrink: 0 }}>=</span>
             <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
                 {compose
                     ? result()
-                    : places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px' }}>{i > 0 && <span>+</span>}{termBlank(p)}</span>)}
+                    : places.map((p, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '6px', whiteSpace: 'nowrap' }}>{i > 0 && <span>+</span>}{termBlank(p)}</span>)}
             </span>
         </div>
     );
