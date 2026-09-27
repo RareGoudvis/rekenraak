@@ -146,7 +146,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         if (isMissing) {
             if (showSolutions) {
                 if (isFraction(val)) return <span style={styles.solutionText}><FractionDisplay val={val} /></span>;
-                return <span style={styles.solutionText}>{formatMathNumber(val)}</span>;
+                return <span style={fitted(styles.solutionText, 1.04)}>{formatMathNumber(val)}</span>;
             }
             return <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
         }
@@ -172,7 +172,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 // block's column box, for the first operand). A fixed 70px box with centred
                 // text is what pushed a short second operand away from its operator and a
                 // long one flush against it: the width, not the spacing, was the bug.
-                style={{ ...styles.mathInput, textAlign: 'right', width: widthPx === undefined ? undefined : `${widthPx}px` }}
+                style={{ ...fitted(styles.mathInput, 1), textAlign: 'right', width: widthPx === undefined ? undefined : `${widthPx}px` }}
             />
         );
     };
@@ -180,13 +180,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const renderGiven = (val: number | Fraction | undefined) => {
         if (val === undefined) return null;
         if (isFraction(val)) return <FractionDisplay val={val} />;
-        return <span style={{ fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 1)', color: '#000' }}>{formatMathNumber(val as number)}</span>;
+        return <span style={fitted({ fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 1)', color: '#000' }, 1)}>{formatMathNumber(val as number)}</span>;
     };
 
     const renderAnswer = (val: number | Fraction | undefined) => {
         if (val === undefined) return null;
         if (isFraction(val)) return <FractionDisplay val={val} color={SOL} />;
-        return <span style={styles.solutionText}>{formatMathNumber(val)}</span>;
+        return <span style={fitted(styles.solutionText, 1.04)}>{formatMathNumber(val)}</span>;
     };
 
     if (!block.exercises || block.exercises.length === 0) {
@@ -208,18 +208,6 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         ? MIXED_VARIANTS.filter(v => mixedC.variants.includes(v.id))
         : null;
 
-    // Adaptive sizing: the classic fixed 85px operand column fits 8 mono chars, so
-    // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
-    // longest formatted operand, and drop the 2-up grid to 1-up when two widened rows
-    // no longer fit the printable width (A4 content ≈ 625px).
-    // Azeret Mono's advance is 0.64em (11.06px measured in Chrome at the default 17.33px
-    // token), so the operand columns follow the Lettergrootte slider instead of freezing
-    // at 13pt the way a hardcoded 11.1 did.
-    const CHAR_PX = sheetPx * 0.64;
-    // ONE label column for the whole block, sized to its longest label, so "1)" and "10)"
-    // still leave the "=" of every row on the same x. +4px of air after the widest label.
-    const labelChars = itemLabelChars(block.itemNumbering, block.exercises.length);
-    const labelPx = labelChars > 0 ? Math.ceil(labelChars * CHAR_PX) + 4 : 0;
     // What ONE VerticalFraction occupies: two stacked digit cells whose minWidth is
     // (fontSize + 9)/17.33 em of the math token inside 4px of padding either side, plus the
     // whole number of a mixed number. SYNC: VerticalFraction's cellMin and FractionDisplay's
@@ -254,6 +242,63 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         if (hasMissing && isFraction(ex.answer)) maxFractionPx = Math.max(maxFractionPx, fractionPx(ex.answer));
         if (typeof ex.answer === 'number') maxAnswerChars = Math.max(maxAnswerChars, formatMathNumber(ex.answer).length);
     }
+    const labelChars = itemLabelChars(block.itemNumbering, block.exercises.length);
+
+    // An operator belongs to the operand AFTER it. `[operator][OP_TERM_GAP][operand]` is
+    // therefore laid out as ONE right-aligned unit: the air after the sign is a constant
+    // (so "+ 51" and "+315" read identically), the air before it is a constant too, and the
+    // operand's last digit still lands on the block's column edge because the unit -- not
+    // the operand -- carries the fixed width. Before this the operand sat in a fixed
+    // right-aligned cell, so all of its slack fell between the sign and the digits.
+    const OP_GLYPH_PX = tight ? 12 : 13;  // one Azeret Mono glyph at 17px (11.06), rounded up
+    // The same air on both sides of a sign: the owner reads "72   + 1" as jitter.
+    const OP_TERM_GAP = tight ? 6 : 10;   // sign -> its operand
+    const TERM_UNIT_GAP = OP_TERM_GAP;    // operand -> the sign of the next one
+    // Air around the "=" and between the sum and its answer column. Halved when tight:
+    // 4 gaps x 4px is what buys `532 + 342 = ____` its place inside a 163px quarter.
+    const EQ_GAP = tight ? 6 : 10;
+    const ANSWER_GAP = tight ? 4 : 8;
+    // Long chains at the 1e9 ceiling: 3-4 terms of 10+ characters ("10 000 000" and up, never
+    // reachable at a max ≤ 1e6) can outrun even a full-width row — three 13-char terms in Kort
+    // need ~711px of 688. Estimated from the block, never measured (viewer rule 5): the math
+    // font steps down toward the floor first, then the chain wraps before its last term. A
+    // row that already fits skips all of it, so every other block renders exactly as before.
+    const FIT_MIN_CHARS = 10;
+    // 0.85 = WIDTH_FIT_FLOOR, the smallest size the sheet ever shrinks a block to.
+    const FIT_FONT_STEPS = [1, 0.95, 0.9, 0.85];
+    const rowNeedPx = (f: number, wrap: boolean): number => {
+        const ch = sheetPx * 0.64 * f;
+        const label = labelChars > 0 ? Math.ceil(labelChars * ch) + 4 + OP_TERM_GAP : 0;
+        const box = Math.max(anyMissingTerm ? BLANK_W + 2 * BLANK_M : 0, Math.ceil(maxChars * ch) + 4);
+        const unit = TERM_UNIT_GAP + OP_GLYPH_PX + OP_TERM_GAP + box;
+        // The answer slot: Kort's answer-sized blank or Lang/Stappen's 55px line floor, or the red answer if wider.
+        const blank = isInlineShort ? Math.max(75, Math.ceil(maxAnswerChars * ch) + 24) : 55;
+        const answer = ANSWER_GAP + ch + EQ_GAP + Math.max(blank, Math.ceil(maxAnswerChars * ch * 1.04) + 8);
+        return wrap
+            ? label + box + Math.max((maxTerms - 2) * unit, unit + answer)
+            : label + box + (maxTerms - 1) * unit + answer;
+    };
+    const fitCandidate = !tight && maxTerms >= 3 && maxChars >= FIT_MIN_CHARS && maxFractionPx === 0 && !anyRemainder;
+    const fit = fitCandidate && rowNeedPx(1, false) > A4_CONTENT_PX
+        ? [false, true].flatMap(wrap => FIT_FONT_STEPS.map(f => ({ f, wrap }))).find(o => rowNeedPx(o.f, o.wrap) <= A4_CONTENT_PX)
+        : undefined;
+    const fitFont = fit?.f ?? 1;
+    const wrapChain = fit?.wrap ?? false;
+    // A style at the fitted font size; the very same object when nothing had to fit.
+    const fitted = (style: React.CSSProperties, factor: number): React.CSSProperties => fitFont === 1 ? style
+        : { ...style, fontSize: `calc(var(--sheet-size-math) * ${Math.round(factor * fitFont * 1000) / 1000})` };
+
+    // Adaptive sizing: the classic fixed 85px operand column fits 8 mono chars, so
+    // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
+    // longest formatted operand, and drop the 2-up grid to 1-up when two widened rows
+    // no longer fit the printable width (A4 content ≈ 625px).
+    // Azeret Mono's advance is 0.64em (11.06px measured in Chrome at the default 17.33px
+    // token), so the operand columns follow the Lettergrootte slider instead of freezing
+    // at 13pt the way a hardcoded 11.1 did.
+    const CHAR_PX = sheetPx * 0.64 * fitFont;
+    // ONE label column for the whole block, sized to its longest label, so "1)" and "10)"
+    // still leave the "=" of every row on the same x. +4px of air after the widest label.
+    const labelPx = labelChars > 0 ? Math.ceil(labelChars * CHAR_PX) + 4 : 0;
     // ONE term width for the whole block, fractions included. A block with a fraction used
     // to fall back to intrinsic widths for every term, so "=" and the answer line wandered
     // from row to row: 10/10 x 10/7 pushed them far right of 3/6 x 1/8.
@@ -273,20 +318,6 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         ? Math.max(tightAnswerFloor, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
         : Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
     const cellPx = Math.max(85, widestTermPx + 6);
-    // An operator belongs to the operand AFTER it. `[operator][OP_TERM_GAP][operand]` is
-    // therefore laid out as ONE right-aligned unit: the air after the sign is a constant
-    // (so "+ 51" and "+315" read identically), the air before it is a constant too, and the
-    // operand's last digit still lands on the block's column edge because the unit -- not
-    // the operand -- carries the fixed width. Before this the operand sat in a fixed
-    // right-aligned cell, so all of its slack fell between the sign and the digits.
-    const OP_GLYPH_PX = tight ? 12 : 13;  // one Azeret Mono glyph at 17px (11.06), rounded up
-    // The same air on both sides of a sign: the owner reads "72   + 1" as jitter.
-    const OP_TERM_GAP = tight ? 6 : 10;   // sign -> its operand
-    const TERM_UNIT_GAP = OP_TERM_GAP;    // operand -> the sign of the next one
-    // Air around the "=" and between the sum and its answer column. Halved when tight:
-    // 4 gaps x 4px is what buys `532 + 342 = ____` its place inside a 163px quarter.
-    const EQ_GAP = tight ? 6 : 10;
-    const ANSWER_GAP = tight ? 4 : 8;
     const labelCell = (i: number) => {
         const text = itemLabel(block.itemNumbering, i);
         if (!text) return null;
@@ -437,9 +468,61 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     ? <span style={{ ...solutionText, padding: '0 4px' }}>{formatMathNumber(v)}</span>
                     : <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
 
-                return (
+                // Unit = the sign plus its operand, in a box as wide as the block's widest
+                // operand plus the sign. The first operand is right-aligned in its box (last
+                // digits line up); every later unit is LEFT-aligned, so the sign sits in a
+                // fixed column and "=" stays put whatever the operand's width — a
+                // right-aligned unit let the "+" drift with 1- vs 2-digit operands.
+                const unitAt = (operand: number | Fraction, i: number) => {
+                    const chars = typeof operand === 'number' ? formatMathNumber(operand).length : 0;
+                    const unitPx = termBoxPx === undefined ? undefined
+                        : (i === 0 ? termBoxPx : OP_GLYPH_PX + OP_TERM_GAP + termBoxPx);
+                    return (
+                        <div key={i} style={{
+                            display: 'flex', alignItems: 'center', justifyContent: i === 0 ? 'flex-end' : 'flex-start', flexShrink: 0,
+                            ...(unitPx !== undefined && { width: `${unitPx}px` }),
+                            ...(i > 0 && { marginLeft: `${TERM_UNIT_GAP}px` }),
+                        }}>
+                            {i > 0 && (
+                                <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>
+                                    {mixedOptions ? (
+                                        <OperatorSwitch
+                                            blockId={block.id}
+                                            exerciseId={ex.id}
+                                            glyph={opGlyph(i - 1)}
+                                            current={guessVariant(ex, mixedOptions)}
+                                            options={mixedOptions}
+                                        />
+                                    ) : opGlyph(i - 1)}
+                                </span>
+                            )}
+                            {renderTerm(operand, isMissing(i), block.id, ex.id, i,
+                                termBoxPx === undefined ? undefined : (i === 0 ? termBoxPx : termPx(chars)))}
+                        </div>
+                    );
+                };
+                // In stepped mode the row is flex-start so extra lines flow below; pin the
+                // operand to the first working-row height (ANSWER_ROW_H) + flex-end so it sits ON line 1's
+                // baseline instead of floating above it.
+                const operandBox = (units: React.ReactNode) => (
+                    <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: ANSWER_ROW_H }) }}>
+                        {units}
+                    </div>
+                );
+                // Stepped rows are flex-start, so the label is pinned to line 1's height
+                // like the operand box next to it instead of floating to the top.
+                const labelBox = labelPx > 0 && (
+                    <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: ANSWER_ROW_H }) }}>
+                        {labelCell(exIndex)}
+                    </div>
+                );
+                // A wrapped chain puts all but its last term on a line of their own; the last
+                // unit then sits under the second one, so the signs keep their column.
+                const lastI = ex.operands.length - 1;
+                const wrapHere = wrapChain && lastI >= 2;
+                const row = (
                     <div key={ex.id} style={{
-                        ...styles.exerciseRow,
+                        ...fitted(styles.exerciseRow, 1),
                         alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end',
                         // The step lines of one exercise sit 32px apart. Without extra room
                         // underneath, the next exercise sits exactly as far away as the next
@@ -447,51 +530,10 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                         // read as three separate sums.
                         ...(layout === 'stepped' ? { paddingBottom: '16px' } : {}),
                     }}>
-                        {/* Stepped rows are flex-start, so the label is pinned to line 1's height
-                            like the operand box next to it instead of floating to the top. */}
-                        {labelPx > 0 && (
-                            <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: ANSWER_ROW_H }) }}>
-                                {labelCell(exIndex)}
-                            </div>
-                        )}
-                        {/* In stepped mode the row is flex-start so extra lines flow below; pin the
-                            operand to the first working-row height (ANSWER_ROW_H) + flex-end so it sits ON line 1's
-                            baseline instead of floating above it. */}
-                        <div style={{ display: 'flex', flexShrink: 0, alignItems: layout === 'stepped' ? 'flex-end' : 'center', ...(layout === 'stepped' && { height: ANSWER_ROW_H }) }}>
-                            {ex.operands.map((operand, i) => {
-                                const chars = typeof operand === 'number' ? formatMathNumber(operand).length : 0;
-                                // Unit = the sign plus its operand, in a box as wide as the block's widest
-                                // operand plus the sign. The first operand is right-aligned in its box (last
-                                // digits line up); every later unit is LEFT-aligned, so the sign sits in a
-                                // fixed column and "=" stays put whatever the operand's width — a
-                                // right-aligned unit let the "+" drift with 1- vs 2-digit operands.
-                                const unitPx = termBoxPx === undefined ? undefined
-                                    : (i === 0 ? termBoxPx : OP_GLYPH_PX + OP_TERM_GAP + termBoxPx);
-                                return (
-                                    <div key={i} style={{
-                                        display: 'flex', alignItems: 'center', justifyContent: i === 0 ? 'flex-end' : 'flex-start', flexShrink: 0,
-                                        ...(unitPx !== undefined && { width: `${unitPx}px` }),
-                                        ...(i > 0 && { marginLeft: `${TERM_UNIT_GAP}px` }),
-                                    }}>
-                                        {i > 0 && (
-                                            <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>
-                                                {mixedOptions ? (
-                                                    <OperatorSwitch
-                                                        blockId={block.id}
-                                                        exerciseId={ex.id}
-                                                        glyph={opGlyph(i - 1)}
-                                                        current={guessVariant(ex, mixedOptions)}
-                                                        options={mixedOptions}
-                                                    />
-                                                ) : opGlyph(i - 1)}
-                                            </span>
-                                        )}
-                                        {renderTerm(operand, isMissing(i), block.id, ex.id, i,
-                                            termBoxPx === undefined ? undefined : (i === 0 ? termBoxPx : termPx(chars)))}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        {wrapHere ? labelColPx > 0 && <div style={{ width: `${labelColPx}px`, flexShrink: 0 }} /> : labelBox}
+                        {operandBox(wrapHere
+                            ? [<div key="lead" style={{ width: `${termBoxPx}px`, flexShrink: 0 }} />, unitAt(ex.operands[lastI], lastI)]
+                            : ex.operands.map(unitAt))}
 
                         <div style={{ ...((tight || layout !== 'inline-short') && { flex: 1, minWidth: 0 }), display: 'flex', flexDirection: 'column', marginLeft: `${ANSWER_GAP}px`, gap: `${(block.verticalSpacing || 14) * 0.8}px` }}>
                             {compParts && (
@@ -520,6 +562,16 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                 </div>
                             )}
                         </div>
+                    </div>
+                );
+                if (!wrapHere) return row;
+                return (
+                    <div key={ex.id} style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ ...fitted(styles.exerciseRow, 1), alignItems: 'flex-end' }}>
+                            {labelBox}
+                            {operandBox(ex.operands.slice(0, lastI).map(unitAt))}
+                        </div>
+                        {row}
                     </div>
                 );
             })}

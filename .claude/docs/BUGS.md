@@ -14,6 +14,11 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   "all-longhand" comment, and SheetFooter's `kader` spreads `borderStyle` over `borderTopStyle`.
   Repro: set headerStyle kader → onderstreept, footerStyle kader → lijn. Fix: write all four sides
   as longhands (changes no pixels). 2026-09-27
+- Hoofdrekenen puntoefening with solutions on: the red answer in a missing operand is bold at 1.04×
+  plus 8px padding, but its box (`termBoxPx`, MathBlockRenderer) is sized for 1× digits, so any
+  answer with a thousands space wraps onto two lines ("26 / 778"). Repro: optellen, Tot 100 000,
+  puntoefening, Oplossingen aan. Fix: size the box for the solution width when `anyMissingTerm`
+  (widens every puntoefening block a few px; `nowrap` alone overflows the cell's left edge). 2026-09-27
 
 ## Config
 
