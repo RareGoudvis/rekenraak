@@ -5,6 +5,7 @@ import { useBlockWidth, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidth
 import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
 import { SOL, solutionText } from './solutionStyle';
+import { divideToDecimals } from '../../services/cijferen/cijferGenerator';
 
 // Printed sheet text (equation header, estimation/controle/QR rows) is a factor of
 // --sheet-size-math; the digit-grid overlay scales off the per-block gridCellSize instead
@@ -560,10 +561,8 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
         else if (ex.operator === '-') answer = parseFloat((operands[0] - operands[1]).toFixed(dp));
         else if (ex.operator === 'x') answer = parseFloat((operands[0] * operands[1]).toFixed(dp));
         else if (dp > 0) {
-            // Decimal division: quotient rounded to dp, remainder = |dividend − q×divisor|
-            // (mirror cijferGenerator so an edited exercise recomputes like the generator).
-            answer = parseFloat((operands[0] / operands[1]).toFixed(dp));
-            remainder = parseFloat(Math.abs(operands[0] - answer * operands[1]).toFixed(dp));
+            // Same helper as the generator, so an edited exercise gets the same true q and r.
+            ({ quotient: answer, remainder } = divideToDecimals(operands[0], operands[1], dp));
         }
         else { answer = Math.floor(operands[0] / operands[1]); remainder = operands[0] % operands[1]; }
         updateCijferExercise(blockId, ex.id, { operands, answer, remainder, isManuallyEdited: true });

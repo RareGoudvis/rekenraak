@@ -102,7 +102,7 @@ function applyMask(
 
 // A staartdeling stops after `dp` decimals: the quotient is truncated there (not rounded) and
 // dividend = q·divisor + r with 0 ≤ r < divisor·10^-dp, in scaled integers so no float drift.
-// SYNC: CijferViewer's confirmEdit still recomputes an edited exercise the old rounded way.
+// SYNC: CijferViewer's confirmEdit recomputes a teacher-edited division with this helper too.
 export function divideToDecimals(dividend: number, divisor: number, dp: number): { quotient: number; remainder: number } {
     const s = scaleOf(dp);
     const d = Math.round(dividend * s);
