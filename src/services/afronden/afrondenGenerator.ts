@@ -10,6 +10,12 @@ const NATURAL_TARGETS: RoundTarget[] = [
     { key: 'H',  label: 'honderdtal',     weight: 100 },
     { key: 'D',  label: 'duizendtal',     weight: 1000 },
     { key: 'TD', label: 'tienduizendtal', weight: 10000 },
+    // Appended, never inserted: the fallback is all[0] and random picks index the pool in this order,
+    // and usableTargets only offers each once maxGetal exceeds its weight (HD from max 1e6 on).
+    { key: 'HD', label: 'honderdduizendtal', weight: 100000 },
+    { key: 'M',  label: 'miljoental',        weight: 1000000 },
+    { key: 'TM', label: 'tienmiljoental',    weight: 10000000 },
+    { key: 'HM', label: 'honderdmiljoental', weight: 100000000 },
 ];
 
 // Decimal rounding targets.
