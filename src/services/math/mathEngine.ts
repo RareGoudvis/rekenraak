@@ -1,5 +1,6 @@
 import type { MathBlock, Equation, Fraction } from './types';
 import type { AddSubConstraints, MulDivConstraints, BridgeMap } from './constraintTypes';
+import { RANGES } from '../../config/numberRanges';
 
 // ============================================================================
 // 1. CONSTANTEN & GLOBALE INSTELLINGEN
@@ -27,9 +28,9 @@ export const PLACE_VALUES = [
 
 // JavaScript afrondingsfouten vermijden door intern alles met integers te berekenen
 const INTERNAL_SCALE = 1000000;
-// The tienvoud preset's own ceiling (RANGES.hrTienvoud tops at 10 000). Gemengd shares one
-// max with its other variants, so at 1e9 the base would otherwise reach 1e9 × 1000.
-const TIENVOUD_BASE_MAX = 10_000;
+// The tienvoud preset's own ceiling, the top of its picker list. Gemengd shares one max
+// with its other variants, so at 1e9 the base would otherwise reach 1e9 × 1000.
+const TIENVOUD_BASE_MAX = Math.max(...RANGES.hrTienvoud);
 const MAX_ATTEMPTS = 20000;
 
 // ============================================================================
