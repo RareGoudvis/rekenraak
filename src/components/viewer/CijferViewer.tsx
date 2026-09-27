@@ -4,14 +4,17 @@ import type { MathBlock, CijferExercise, CijferConstraints } from '../../service
 import { useBlockWidth, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
+import { PLACE_VALUES } from '../../services/math/mathEngine';
 import { SOL, solutionText } from './solutionStyle';
 
 // Printed sheet text (equation header, estimation/controle/QR rows) is a factor of
 // --sheet-size-math; the digit-grid overlay scales off the per-block gridCellSize instead
 // (its own system, not the sheet-wide token), and manual-edit affordances stay screen px.
 const GRID_COLOR = '#aaaaaa';
-const PLACE_ABBREVS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M'];
+// Units first, so index = columns left of the E column; derived so TM / HM / Mrd grids get headers.
+const PLACE_ABBREVS = PLACE_VALUES.filter(p => p.weight >= 1).map(p => p.key).reverse();
 const DEC_ABBREVS = ['t', 'h', 'd'];
+const NBSP = String.fromCharCode(0xa0);
 
 const ROW_GAP_PX = 12;
 // The header row ("1 234 + 567 =") is Azeret Mono (0.64em advance) at 0.64 of the math
@@ -44,7 +47,9 @@ function computeEstimation(ex: CijferExercise): string {
         const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(n))) - 1);
         return Math.round(n / mag) * mag;
     };
-    const fmtR = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Same space thousands separator as the header line (was '.'), but non-breaking: this row
+    // wraps inside its box at 1e9, and "≈ 1 / 000 000 000" split a number across two lines.
+    const fmtR = (n: number) => (Math.round(n) < 0 ? '-' : '') + fmtDisplay(n, 0).replace(/ /g, NBSP);
     const opStr = ex.operator === 'x' ? '×' : ex.operator === ':' ? '÷' : ex.operator;
     const rounded = ex.operands.map(o => roundSig(parseFloat(o.toFixed(0))));
     let est = rounded[0];
