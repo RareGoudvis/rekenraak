@@ -3,13 +3,12 @@ import type { MathBlock } from '../../../services/math/types';
 import { targetsFor } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { SchattendConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
-const NAT_PRESETS = [100, 1000, 10000, 100000];
-const DEC_PRESETS = [10, 100, 1000];
 const OPS: { key: string; label: string }[] = [
     { key: '+', label: '+' }, { key: '-', label: '−' }, { key: 'x', label: '×' }, { key: ':', label: ':' },
 ];
@@ -47,7 +46,7 @@ export default function SchattendConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isDecimal ? DEC_PRESETS : NAT_PRESETS).map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={(isDecimal ? RANGES.decimal() : RANGES.schattendNatural()).map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

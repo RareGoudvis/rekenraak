@@ -3,6 +3,7 @@ import { F } from './shared/fieldStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { ControlerenConstraints } from '../../../services/math/constraintTypes';
 
@@ -39,7 +40,7 @@ export default function ControlerenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={[1000, 10000].map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={RANGES.controleren().map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

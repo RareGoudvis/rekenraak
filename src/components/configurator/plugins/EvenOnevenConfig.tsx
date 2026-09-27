@@ -3,11 +3,10 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import type { EvenOnevenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
-
-const MAX_PRESETS = [20, 100, 1000, 10000];
 
 export default function EvenOnevenConfig({ block }: Props) {
     const [c, patch] = useConstraints<EvenOnevenConstraints>(block);
@@ -34,7 +33,7 @@ export default function EvenOnevenConfig({ block }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            options={RANGES.evenOneven().map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />

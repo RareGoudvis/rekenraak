@@ -4,6 +4,7 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import PopupSelect from '../../../ui/PopupSelect';
+import { RANGES } from '../../../../config/numberRanges';
 import SettingLabel from '../SettingLabel';
 import type { MulDivConstraints } from '../../../../services/math/constraintTypes';
 
@@ -48,7 +49,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={[10, 100, 1000].map(val => ({ value: val, label: `Tot ${val}` }))}
+                    options={RANGES.decimal().map(val => ({ value: val, label: `Tot ${val}` }))}
                     onChange={(val) => updateConstraint('maxGetal', val)}
                     ariaLabel="Maximum uitkomst"
                 />

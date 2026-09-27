@@ -5,6 +5,7 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import SettingLabel from '../SettingLabel';
 import PopupSelect from '../../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../../config/numberRanges';
 import BridgeControl from '../../BridgeControl';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
@@ -21,7 +22,7 @@ export default function NaturalSettings({ block }: Props) {
     // Haal de juiste arrays op (Zijn al gesorteerd Groot -> Klein!)
     const maskPlaces = getMaskPlaces(maxGetal, 'natural');
     const bridgePlaces = getBridgePlaces(maxGetal, 'natural');
-    const maxPresets = [10, 20, 100, 1000, 10000, 100000, 1000000];
+    const maxPresets = RANGES.hrNatural();
 
     // Term i mask: legacy operand1/2Mask for 0/1, operandMasks[] beyond (SYNC: maskFor in mathEngine).
     const maskAt = (i: number): Record<string, boolean> =>
@@ -51,7 +52,7 @@ export default function NaturalSettings({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={maxPresets.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    options={maxPresets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />

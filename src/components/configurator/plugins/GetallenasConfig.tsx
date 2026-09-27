@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { GetallenasConstraints } from '../../../services/math/constraintTypes';
 
@@ -10,7 +11,6 @@ interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [20, 100, 1000, 10000, 100000];
 const STEP_PRESETS = [1, 2, 5, 10, 25, 50, 100];
 const DECIMAL_STEPS = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.5, 1];
 const FRACTION_STEPS = [2, 3, 4, 5, 8, 10];   // denominator d → step 1/d
@@ -99,7 +99,7 @@ export default function GetallenasConfig({ block }: Props) {
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                        options={RANGES.getallenas().map(val => ({ value: val, label: presetLabel(val) }))}
                         onChange={(val) => set('maxGetal', val)}
                         ariaLabel="Maximum getal"
                     />

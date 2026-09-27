@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { KettingConstraints, OpSetting } from '../../../services/math/constraintTypes';
 
@@ -64,7 +65,7 @@ export default function KettingConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={[20, 100, 1000].map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={RANGES.ketting().map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

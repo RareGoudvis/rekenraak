@@ -4,13 +4,11 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { targetsFor } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { AfrondenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
-
-const NAT_PRESETS = [100, 1000, 10000, 100000, 1000000];
-const DEC_PRESETS = [10, 100, 1000];
 
 export default function AfrondenConfig({ block }: Props) {
     const [c, patch] = useConstraints<AfrondenConstraints>(block);
@@ -39,7 +37,7 @@ export default function AfrondenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isDecimal ? DEC_PRESETS : NAT_PRESETS).map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={(isDecimal ? RANGES.decimal() : RANGES.afrondenNatural()).map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

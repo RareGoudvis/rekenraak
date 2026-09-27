@@ -6,6 +6,7 @@ import SettingLabel from './SettingLabel';
 import { ladderFor } from '../../../services/herleidingen/herleidingenGenerator';
 import type { MathBlock } from '../../../services/math/types';
 import type { HerleidingenConstraints } from '../../../services/math/constraintTypes';
+import { RANGES, HERLEIDINGEN_ENKEL } from '../../../config/numberRanges';
 
 const FORMATS = [
     { key: 'enkel-getal', label: 'Getal invullen' },          // 1 kg = ___ g
@@ -18,7 +19,7 @@ const OPP_FORMATS = [
     { key: 'vierkant-are', label: 'Vierkant → are (ha/a/ca)' },
     { key: 'are-vierkant', label: 'Are → vierkant' },
 ];
-const SAM_STOPS = [10, 100, 1000, 10000, 100000, 1000000];
+const SAM_STOPS = RANGES.herleidingenSamengesteld();
 
 export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<HerleidingenConstraints>(block);
@@ -42,7 +43,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const toggleFormat = (k: string) => { const next = formats.includes(k) ? formats.filter(x => x !== k) : [...formats, k]; if (next.length) set('formats', next); };
 
     // Breakpoint slider — snaps to power-of-10 stops.
-    const stopSlider = (key: string, val: number, stops: number[], label: string) => {
+    const stopSlider = (key: string, val: number, stops: readonly number[], label: string) => {
         const idx = Math.max(0, stops.indexOf(val));
         return (
             <div style={styles.section}>
@@ -78,7 +79,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
             {hasEnkel && (
                 <div style={styles.section}>
                     <SettingLabel text={`Maximum getal (enkelvoudig): ${maxEnkel.toLocaleString('nl-BE')}`} info="De bovengrens voor enkelvoudige omzettingen." />
-                    <input type="range" min={10} max={1000} step={10} value={Math.min(1000, Math.max(10, maxEnkel))}
+                    <input type="range" min={HERLEIDINGEN_ENKEL.min} max={HERLEIDINGEN_ENKEL.max} step={HERLEIDINGEN_ENKEL.step} value={Math.min(HERLEIDINGEN_ENKEL.max, Math.max(HERLEIDINGEN_ENKEL.min, maxEnkel))}
                         onChange={e => set('maxEnkel', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
                 </div>

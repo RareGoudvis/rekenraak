@@ -9,11 +9,22 @@
 // stops covering it. Where a key is a free numeric (a slider, a count), three values
 // are listed: minimum, default, maximum.
 //
+// Max-number lists are NOT mirrored: they come from numberRanges.ts, the same selectors
+// the plugins render, called with force=true so the matrix already covers the grown
+// (1e7 / 1e8 / 1e9) lists. A space is flat, so a type whose config switches lists (by
+// numberType, layout, mode) gets the union of every list it can show.
+//
 // Keys deliberately left out: pure cosmetics that no generator reads (boxHeight,
 // exercisesPerRow, gridCellSize, tableCellW/H, …) and per-block layout fields that
 // live on MathBlock rather than in constraints.
 
+import { RANGES, HERLEIDINGEN_ENKEL } from './numberRanges';
+
 export type OptionSpace = Record<string, unknown[]>;
+
+// Every list a config can show for one key, sorted and deduped (flat space, see header).
+const union = (...lists: ReadonlyArray<readonly number[]>): number[] =>
+    [...new Set(lists.flat())].sort((a, b) => a - b);
 
 const NUMBER_TYPES = ['natural', 'decimal', 'rational', 'geheel'];
 const OPS = ['+', '-', 'x', ':'];
@@ -34,7 +45,8 @@ const MASKS = [{}, { E: true }, { T: true, E: true }];
 // + HrPresetRow. All four operations share one plugin family and one defaults factory.
 const hrShared: OptionSpace = {
     numberType: NUMBER_TYPES,
-    maxGetal: [10, 20, 100, 1000, 10000, 100000, 1000000],
+    // addition/NaturalSettings + DecimalSettings; x/: override it below.
+    maxGetal: union(RANGES.hrNatural(true), RANGES.decimal(true)),
     decimalPlaces: [1, 2, 3],
     bridges: BRIDGE_SETS,
     operand1Mask: MASKS,
@@ -56,6 +68,8 @@ const hrAddSub: OptionSpace = {
 
 const hrMulDiv: OptionSpace = {
     ...hrShared,
+    // 'andere' mode, decimal and the tienvoud preset each have their own list.
+    maxGetal: union(RANGES.hrAndere(true), RANGES.decimal(true), RANGES.hrTienvoud(true)),
     // MultiplicationConfig + multiplication/NaturalSettings
     multiplicationMode: ['tafels', 'met_rest', 'andere'],
     selectedTables: [[2, 3, 4, 5, 10], [7], [0, 1, 2, 11, 12, 25, 50, 75]],
@@ -93,7 +107,7 @@ const hrMixed: OptionSpace = {
 const cijferSpace: OptionSpace = {
     operator: OPS,
     numberType: ['natural', 'decimal'],
-    maxRange: [20, 100, 1000, 10000, 100000, 1000000, 1000000000],
+    maxRange: union(RANGES.cijferNatural(true), RANGES.cijferDecimal(true)),
     decimalPlaces: [1, 2, 3],
     withEstimation: [false, true],
     withRemainder: [false, true],
@@ -137,7 +151,7 @@ const fractionSpace: OptionSpace = {
 // SplitsenConfig — 'splitsen' = decomposing a number into parts (7 → 3 + 4).
 const splitsenSpace: OptionSpace = {
     layout: ['basic', 'splitsboom', 'verliefde-harten', 'positie-tabel', 'positie-benen', 'positie-math'],
-    maxGetal: [10, 20, 100, 1000, 10000, 100000, 1000000],
+    maxGetal: union(RANGES.splitsenBasis(true), RANGES.splitsenBoom(true), RANGES.splitsenHarten(true), RANGES.splitsenTabel(true), RANGES.splitsenPositie(true)),
     fixedTotal: [null, 10],
     rowsPerBox: [1, 4, 8],
     blankPositions: [['right'], ['left'], ['top'], ['left', 'right', 'top']],
@@ -149,7 +163,7 @@ const splitsenSpace: OptionSpace = {
 };
 
 const geldSpace: OptionSpace = {
-    maxGetal: [10, 20, 100, 1000],
+    maxGetal: union(RANGES.geld(true)),
     format: ['euros', 'decimaal'],
     scaffolding: ['invullen', 'zelf-schrijven', 'eenvoudig', 'verdeeld'],
     geldLayout: ['samen', 'gescheiden'],
@@ -177,7 +191,7 @@ const geldTeruggevenSpace: OptionSpace = {
 // MAB = Dienes place-value blocks.
 const mabSpace: OptionSpace = {
     mabStyle: ['symbolic', 'mab-bw', 'mab-color'],
-    maxNumber: [10, 20, 100, 1000],
+    maxNumber: union(RANGES.mab(true)),
     scaffolding: ['positietabel', 'kader', 'geen'],
     operand1Mask: MASKS,
 };
@@ -186,7 +200,7 @@ const ordenenSpace: OptionSpace = {
     numberType: NUMBER_TYPES,
     count: [2, 3, 5],
     operatorMode: ['oplopend', 'aflopend', 'beide'],
-    maxGetal: [20, 100, 1000, 10000, 100000],
+    maxGetal: union(RANGES.ordenen(true)),
     decimalPlaces: [1, 2, 3],
     unitFractionsOnly: [false, true],
     allowMixed: [false, true],
@@ -214,7 +228,7 @@ const breukenRangschikkenSpace: OptionSpace = {
 
 const patroonSpace: OptionSpace = {
     numberType: ['natural', 'decimal'],
-    maxGetal: [20, 100, 1000, 10000, 100000],
+    maxGetal: union(RANGES.patronen(true)),
     ticks: [4, 6, 10],
     steps: [1, 2, 3, 4],
     ops: [['+'], ['-'], ['x'], [':'], ['+', '-'], ['+', '-', 'x', ':']],
@@ -226,7 +240,7 @@ const patroonSpace: OptionSpace = {
 
 const kettingSpace: OptionSpace = {
     numberType: ['natural'],
-    maxGetal: [20, 100, 1000],
+    maxGetal: union(RANGES.ketting(true)),
     chainLength: [2, 4, 6],
     ops: [['+'], ['+', '-'], ['+', '-', 'x', ':']],
     blankMiddle: [false, true],
@@ -237,7 +251,7 @@ const kettingSpace: OptionSpace = {
 const deelbaarheidSpace: OptionSpace = {
     layout: ['tabel', 'veelvouden'],
     divisors: [[2], [2, 5, 10], [3, 4, 6, 9, 25, 50, 100]],
-    maxGetal: [100, 1000, 10000, 100000],
+    maxGetal: union(RANGES.deelbaarheid(true)),
     base: [2, 9, 25],
     terms: [3, 6, 12],
     givenCount: [1, 2, 4],
@@ -247,7 +261,7 @@ const deelbaarheidKleurSpace: OptionSpace = {
     viewMode: ['strip', 'markeren'],
     rasterVorm: ['lijn', 'rechthoek'],
     divisors: [[2], [2, 5, 10], [3, 7, 11, 12]],
-    maxGetal: [20, 100, 1000],
+    maxGetal: union(RANGES.deelbaarheidKleurStrook(true), RANGES.deelbaarheidKleurRaster(true)),
     perRow: [5, 10],
     rasterCount: [100, 1000],
     rasterCols: [10],
@@ -256,7 +270,7 @@ const deelbaarheidKleurSpace: OptionSpace = {
 
 const getallenasSpace: OptionSpace = {
     numberType: NUMBER_TYPES,
-    maxGetal: [20, 100, 1000, 10000, 100000],
+    maxGetal: union(RANGES.getallenas(true)),
     step: [1, 2, 5, 10, 25, 50, 100, 0.1, 0.5],
     direction: ['right', 'left', 'beide'],
     hardMode: [false, true],
@@ -265,6 +279,7 @@ const getallenasSpace: OptionSpace = {
 
 const getallenrijSpace: OptionSpace = {
     ...getallenasSpace,
+    maxGetal: union(RANGES.getallenrijen(true)),
     numberMask: MASKS,
     fractionStep: [2, 4, 10],
     maxTeller: [10, 25],
@@ -306,21 +321,21 @@ const temperatuurSpace: OptionSpace = {
 
 const plaatswaardeSpace: OptionSpace = {
     subType: ['waarde', 'plaats', 'tabel', 'omcirkelen'],
-    maxGetal: [100, 1000, 10000, 100000, 1000000],
+    maxGetal: union(RANGES.plaatswaarde(true)),
     numberMask: MASKS,
     decimalPlaces: [0, 1, 2, 3],
 };
 
 const evenOnevenSpace: OptionSpace = {
     subType: ['rooster', 'cirkels'],
-    maxGetal: [20, 100, 1000, 10000],
+    maxGetal: union(RANGES.evenOneven(true)),
     target: ['even', 'oneven'],
     perRow: [5, 10],
 };
 
 const vergelijkenSpace: OptionSpace = {
     subType: ['getallen', 'kiezen', 'representaties'],
-    maxGetal: [10, 100, 1000, 10000, 100000, 1000000],
+    maxGetal: union(RANGES.vergelijken(true), RANGES.vergelijkenRepresentaties(true)),
     numberMask: MASKS,
     chooseTarget: ['grootste', 'kleinste'],
     setSize: [2, 4, 6],
@@ -332,7 +347,7 @@ const vergelijkenSpace: OptionSpace = {
 const afrondenSpace: OptionSpace = {
     subType: ['rooster', 'simpel'],
     numberType: ['natural', 'decimal'],
-    maxGetal: [10, 100, 1000, 10000, 100000, 1000000],
+    maxGetal: union(RANGES.afrondenNatural(true), RANGES.decimal(true)),
     numberMask: MASKS,
     roundTargets: [['T'], ['H'], ['T', 'H'], ['E'], ['E', 't']],
     roosterSize: [3, 6, 12],
@@ -346,8 +361,8 @@ const romeinseSpace: OptionSpace = {
 
 const herleidingenSpace: OptionSpace = {
     measure: ['lengte', 'inhoud', 'massa', 'oppervlakte'],
-    maxEnkel: [10, 100, 1000],
-    maxSamengesteld: [100, 1000, 10000],
+    maxEnkel: [HERLEIDINGEN_ENKEL.min, 100, HERLEIDINGEN_ENKEL.max],
+    maxSamengesteld: union(RANGES.herleidingenSamengesteld(true)),
     formats: [
         ['enkel-getal'],
         ['enkel-eenheid'],
@@ -365,7 +380,7 @@ const herleidingenSpace: OptionSpace = {
 const schattendSpace: OptionSpace = {
     operators: [['+'], ['-'], ['x'], [':'], ['+', '-'], ['+', '-', 'x', ':']],
     numberType: ['natural', 'decimal'],
-    maxGetal: [10, 100, 1000, 10000, 100000],
+    maxGetal: union(RANGES.schattendNatural(true), RANGES.decimal(true)),
     decimalPlaces: [1, 2],
     roundTargets: [['T'], ['H'], ['D'], ['T', 'H'], ['E']],
     scaffolding: ['tussenstappen', 'enkel-schatting'],
@@ -382,7 +397,7 @@ const verbandenSpace: OptionSpace = {
 const procentenSpace: OptionSpace = {
     subType: ['nemen', 'welk-percent'],
     percents: [[10], [10, 25, 50], [1, 5, 20, 75, 100]],
-    maxGetal: [100, 1000, 10000],
+    maxGetal: union(RANGES.procenten(true)),
     scaffold: [false, true],
 };
 
@@ -395,7 +410,7 @@ const maateenheidSpace: OptionSpace = {
 const geldRekenenSpace: OptionSpace = {
     subType: ['korting', 'winst', 'intrest'],
     percents: [[5], [10, 25, 50], [1, 2, 3, 4, 5, 10, 20, 75]],
-    maxEuro: [100, 1000, 10000],
+    maxEuro: union(RANGES.geldRekenen(true)),
     wholeEuros: [true, false],
     halfYear: [false, true],
 };
@@ -404,13 +419,14 @@ const rekenvolgordeSpace: OptionSpace = {
     operators: [['+', '-'], ['+', '-', 'x'], ['+', '-', 'x', ':']],
     haakjesMode: ['GEEN', 'MAG', 'MOET'],
     opsCount: [2, 3, 4],
-    maxGetal: [100, 1000],
+    maxGetal: union(RANGES.rekenvolgorde(true)),
     tableLimit: [10, 20],
 };
 
 const getalfunctieSpace: OptionSpace = {
     functies: [['hoeveelheid'], ['rang'], ['maat'], ['code'], ['hoeveelheid', 'rang', 'maat', 'code']],
     answerMode: ['aankruisen', 'schrijven'],
+    // No picker: only the base seed reaches this key, so sample low / default / high.
     maxGetal: [100, 1000, 10000],
 };
 
@@ -432,7 +448,7 @@ const kalenderSpace: OptionSpace = {
 const controlerenSpace: OptionSpace = {
     subType: ['negenproef', 'omgekeerde'],
     operators: [['+'], ['-'], ['+', '-']],
-    maxGetal: [100, 1000, 10000],
+    maxGetal: union(RANGES.controleren(true)),
     foutAandeel: ['geen', 'helft', 'alles'],
     showKruis: [true, false],
 };

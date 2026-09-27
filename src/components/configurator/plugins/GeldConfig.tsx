@@ -5,6 +5,7 @@ import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { GeldConstraints } from '../../../services/math/constraintTypes';
 
@@ -37,7 +38,7 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={[10, 20, 100, 1000].map(v => ({ value: v, label: `Tot ${v}` }))}
+                    options={RANGES.geld().map(v => ({ value: v, label: `Tot ${v}` }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

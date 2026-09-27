@@ -8,14 +8,13 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import type { SplitsenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [10, 20, 100, 1000, 10000, 100000, 1000000];
-const HEART_PRESETS = [10, 20, 100];
 
 export default function SplitsenConfig({ block }: Props) {
 
@@ -80,10 +79,12 @@ export default function SplitsenConfig({ block }: Props) {
 
     // Layout is fixed by the sidebar leaf; the config only refines that layout.
     const currentLayout = typeof layout === 'string' ? layout : 'basic';
-    const maxPresets = isPositie && currentLayout !== 'positie-tabel'
-        ? [...MAX_PRESETS, 1000000000]
-        : MAX_PRESETS;
-    const BOOM_PRESETS = [10, 20, 100, 1000];   // splitsboom capped at 1 000
+    // SYNC: splitsenMax in exerciseRegistry.ts picks the same list per layout.
+    const maxPresets = currentLayout === 'verliefde-harten' ? RANGES.splitsenHarten()
+        : isBoom ? RANGES.splitsenBoom()
+        : currentLayout === 'positie-tabel' ? RANGES.splitsenTabel()
+        : isPositie ? RANGES.splitsenPositie()
+        : RANGES.splitsenBasis();
 
     return (
         <div style={styles.container}>
@@ -189,7 +190,7 @@ export default function SplitsenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(currentLayout === 'verliefde-harten' ? HEART_PRESETS : isBoom ? BOOM_PRESETS : maxPresets).map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    options={maxPresets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => {
                         set('maxGetal', val);
                         if (fixedTotal && fixedTotal > val) set('fixedTotal', null);

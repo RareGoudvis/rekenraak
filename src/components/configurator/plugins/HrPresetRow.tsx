@@ -4,6 +4,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import type { MulDivConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -74,7 +75,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={c.maxGetal ?? 1000}
-                            options={[100, 1000, 10000].map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                            options={RANGES.hrTienvoud().map(v => ({ value: v, label: presetLabel(v) }))}
                             onChange={(v) => set('maxGetal', v)}
                             ariaLabel="Maximum getal"
                         />

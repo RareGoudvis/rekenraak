@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { DeelbaarheidKleurConstraints } from '../../../services/math/constraintTypes';
 
@@ -9,7 +10,6 @@ interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [20, 100, 1000];
 const DIVISORS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 export default function DeelbaarheidKleurConfig({ block }: Props) {
@@ -77,7 +77,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={[100, 1000].map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            options={RANGES.deelbaarheidKleurRaster().map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
@@ -105,7 +105,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            options={RANGES.deelbaarheidKleurStrook().map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />

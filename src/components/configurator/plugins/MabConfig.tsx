@@ -6,6 +6,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import ExercisePreview from '../../shared/ExercisePreview';
 import type { MabConstraints } from '../../../services/math/constraintTypes';
 
@@ -13,7 +14,6 @@ interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS: Array<10 | 20 | 100 | 1000> = [10, 20, 100, 1000];
 const STYLE_OPTIONS: Array<{ val: 'symbolic' | 'mab-bw' | 'mab-color'; label: string }> = [
     { val: 'symbolic',  label: 'Symbolisch' },
     { val: 'mab-bw',    label: 'MAB (zwart/wit)' },
@@ -104,7 +104,7 @@ export default function MabConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxNumber}
-                    options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={RANGES.mab().map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => {
                         // Drop mask keys that no longer apply to the new range so the
                         // generator doesn't try to satisfy an impossible constraint.

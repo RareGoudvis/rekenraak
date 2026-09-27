@@ -5,6 +5,7 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import SettingLabel from '../SettingLabel';
 import PopupSelect from '../../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../../config/numberRanges';
 import BridgeControl from '../../BridgeControl';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
@@ -19,7 +20,7 @@ export default function DecimalSettings({ block }: Props) {
     // Mask and bridge places that match the chosen number of decimal places
     const maskPlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces);
     const bridgePlaces = maskPlaces.filter(p => p.weight < maxGetal);
-    const maxPresets = [10, 100, 1000];
+    const maxPresets = RANGES.decimal();
 
     const toggleMask = (operand: 'operand1Mask' | 'operand2Mask', posKey: string) => {
         const currentMask = c[operand] ?? {};
@@ -43,7 +44,7 @@ export default function DecimalSettings({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={maxPresets.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    options={maxPresets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />

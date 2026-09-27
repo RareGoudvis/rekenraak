@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { DeelbaarheidConstraints } from '../../../services/math/constraintTypes';
 
@@ -10,7 +11,6 @@ interface Props {
 }
 
 const DIVISOR_OPTIONS = [2, 3, 4, 5, 6, 9, 10, 25, 50, 100];
-const MAX_PRESETS = [100, 1000, 10000, 100000];
 
 export default function DeelbaarheidConfig({ block }: Props) {
     const [c, patch] = useConstraints<DeelbaarheidConstraints>(block);
@@ -49,7 +49,7 @@ export default function DeelbaarheidConfig({ block }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={MAX_PRESETS.map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                            options={RANGES.deelbaarheid().map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />

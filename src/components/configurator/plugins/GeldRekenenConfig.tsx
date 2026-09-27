@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { GeldRekenenConstraints } from '../../../services/math/constraintTypes';
 
@@ -45,7 +46,7 @@ export default function GeldRekenenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxEuro}
-                    options={[100, 1000, 10000].map(v => ({ value: v, label: `Tot € ${v.toLocaleString('nl-BE')}` }))}
+                    options={RANGES.geldRekenen().map(v => ({ value: v, label: `Tot € ${v.toLocaleString('nl-BE')}` }))}
                     onChange={(v) => set('maxEuro', v)}
                     ariaLabel="Maximum bedrag"
                 />

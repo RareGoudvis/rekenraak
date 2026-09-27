@@ -4,6 +4,7 @@ import { ConstraintScopeContext } from '../ConstraintScope';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import AdditionConfig from './AdditionConfig';
 import SubtractionConfig from './SubtractionConfig';
 import MultiplicationConfig from './MultiplicationConfig';
@@ -40,9 +41,9 @@ const tabLabel = (op: MixedOp, preset?: string) =>
 // scope builds from it stays referentially stable across renders.
 const SHARED_KEYS = ['maxGetal', 'numberType'] as const;
 
-const MAX_PRESETS: Record<string, number[]> = {
-    natural: [10, 20, 100, 1000, 10000, 100000, 1000000],
-    decimal: [10, 100, 1000],
+const MAX_PRESETS: Record<string, readonly number[]> = {
+    natural: RANGES.hrNatural(),
+    decimal: RANGES.decimal(),
 };
 
 /**
@@ -88,7 +89,7 @@ export default function GemengdConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={c.maxGetal ?? (numberType === 'decimal' ? 100 : 1000)}
-                    options={(MAX_PRESETS[numberType] ?? MAX_PRESETS.natural).map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    options={(MAX_PRESETS[numberType] ?? MAX_PRESETS.natural).map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />

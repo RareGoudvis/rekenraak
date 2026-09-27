@@ -6,12 +6,11 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import FractionMaxField from './FractionMaxField';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import type { VergelijkenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
-const MAX_PRESETS = [100, 1000, 10000, 100000, 1000000];
-const REP_MAX_PRESETS = [10, 100, 1000];   // representaties: tienden/honderdsten range
 
 export default function VergelijkenConfig({ block }: Props) {
     const [c, patch] = useConstraints<VergelijkenConstraints>(block);
@@ -35,7 +34,7 @@ export default function VergelijkenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isRep ? REP_MAX_PRESETS : MAX_PRESETS).map(val => ({ value: val, label: `Tot ${val.toLocaleString('nl-BE')}` }))}
+                    options={(isRep ? RANGES.vergelijkenRepresentaties() : RANGES.vergelijken()).map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => set('maxGetal', val)}
                     ariaLabel="Maximum getal"
                 />

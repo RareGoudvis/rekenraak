@@ -5,6 +5,7 @@ import type { CijferConstraints } from '../../../services/math/types';
 import { getMaskPlaces, getBridgePlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import BridgeControl from '../BridgeControl';
 import SettingLabel from './SettingLabel';
 import { useSheetSizePx } from '../../viewer/BlockWidthContext';
@@ -13,8 +14,6 @@ import { cellPxOf, PX_PER_MM } from '../../viewer/cijferGrid';
 interface Props {
     block: MathBlock;
 }
-
-const MAX_RANGES = [20, 100, 1_000, 10_000, 100_000, 1_000_000, 1_000_000_000];
 
 export default function CijferConfig({ block }: Props) {
     const [c, patch] = useConstraints<CijferConstraints>(block);
@@ -49,7 +48,7 @@ export default function CijferConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={c.maxRange}
-                    options={MAX_RANGES.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                    options={(isDecimal ? RANGES.cijferDecimal() : RANGES.cijferNatural()).map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxRange', v)}
                     ariaLabel="Maximum getal"
                 />

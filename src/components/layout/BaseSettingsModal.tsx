@@ -3,12 +3,13 @@ import { getMaskPlaces, getBridgePlaces } from '../../services/math/mathEngine';
 import type { BaseBridgePolicy, BaseNumberType } from '../../config/baseSettings';
 import ModalShell from '../ui/ModalShell';
 import BridgeControl from '../configurator/BridgeControl';
+import { RANGES, presetLabel } from '../../config/numberRanges';
 
 interface Props {
     onClose: () => void;
 }
 
-const MAX_PRESETS = [10, 20, 100, 1000, 10000, 100000, 1000000];
+const MAX_PRESETS = RANGES.base();
 
 // Global base difficulty, mirroring the real exercise config (NaturalSettings).
 // Values snapshot into each NEW block at add-time (baseApply); existing blocks
@@ -45,7 +46,7 @@ export default function BaseSettingsModal({ onClose }: Props) {
                         <div style={S.wrapRow}>
                             {MAX_PRESETS.map(val => (
                                 <button key={val} onClick={() => updateBase({ baseMaxGetal: val })} style={S.preset(base.baseMaxGetal === val)}>
-                                    Tot {val.toLocaleString('nl-BE')}
+                                    {presetLabel(val)}
                                 </button>
                             ))}
                         </div>

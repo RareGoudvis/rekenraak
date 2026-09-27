@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
+import { RANGES, presetLabel } from '../../../config/numberRanges';
 import SettingLabel from './SettingLabel';
 import type { OrdenenConstraints } from '../../../services/math/constraintTypes';
 
@@ -10,7 +11,6 @@ interface Props {
     block: MathBlock;
 }
 
-const MAX_PRESETS = [20, 100, 1000, 10000, 100000];
 const OPERATORS = [
     { val: 'oplopend', label: 'Oplopend (<)' },
     { val: 'aflopend', label: 'Aflopend (>)' },
@@ -74,7 +74,7 @@ export default function OrdenenConfig({ block }: Props) {
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={MAX_PRESETS.map(v => ({ value: v, label: `Tot ${v.toLocaleString('nl-BE')}` }))}
+                        options={RANGES.ordenen().map(v => ({ value: v, label: presetLabel(v) }))}
                         onChange={(v) => set('maxGetal', v)}
                         ariaLabel="Maximum getal"
                     />
