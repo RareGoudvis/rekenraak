@@ -228,8 +228,7 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
         const index = state.blocks.findIndex(b => b.id === id);
         if (index === -1) return state;
         const src = state.blocks[index];
-        // Sheet furniture (a rule, writing lines, a grid) holds no exercises to cut.
-        if (src.typeId.startsWith('layout-')) return state;
+        if (REGISTRY[src.typeId]?.isFurniture) return state;
         // The registry names the array this type generates into — never hardcode 'exercises'.
         const field = REGISTRY[src.typeId]?.exerciseField;
         if (!field) return state;

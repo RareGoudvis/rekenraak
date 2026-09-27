@@ -3,6 +3,7 @@ import { flattenLeaves, LEAF_BY_ID } from '../config/appstructure';
 import { resolveInstruction } from '../config/instructionPresets';
 import { seedConstraints, DEFAULT_BASE } from '../config/baseSettings';
 import { WORKSHEET_TEMPLATES } from '../config/worksheetTemplates';
+import { isLayoutType } from './helpers/makeBlock';
 import type { BlockConstraints } from '../services/math/constraintTypes';
 
 // The constraints addBlockFromType would store for this leaf at the default base.
@@ -10,7 +11,7 @@ const mergedConstraintsFor = (typeId: string, leafDefaults?: Record<string, unkn
     seedConstraints({ typeId, base: DEFAULT_BASE, override: leafDefaults }) as BlockConstraints;
 
 describe('every sidebar leaf resolves to a real instruction', () => {
-    const leaves = flattenLeaves().filter((l) => !l.typeId.startsWith('layout-'));
+    const leaves = flattenLeaves().filter((l) => !isLayoutType(l.typeId));
 
     test.each(leaves.map((l) => [l.id, l] as const))('%s', (_id, leaf) => {
         const constraints = mergedConstraintsFor(leaf.typeId, leaf.defaultConstraints);
@@ -78,7 +79,7 @@ describe('curated templates never fall back to "<label>:"', () => {
     test('every template block has a real instruction', () => {
         for (const tmpl of WORKSHEET_TEMPLATES) {
             for (const block of tmpl.payload.blocks) {
-                if (block.typeId.startsWith('layout-')) continue;
+                if (isLayoutType(block.typeId)) continue;
                 expect(block.instructionText.length).toBeGreaterThan(0);
                 expect(block.instructionText.trim().endsWith(':')).toBe(false);
             }

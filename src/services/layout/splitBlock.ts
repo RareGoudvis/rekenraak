@@ -8,7 +8,7 @@ import type { MathBlock } from '../math/types';
 
 /** How many exercises this block holds, via the registry's own array field. */
 export function splittableCount(block: MathBlock): number {
-    if (block.typeId.startsWith('layout-')) return 0;      // furniture holds no exercises
+    if (REGISTRY[block.typeId]?.isFurniture) return 0;
     const field = REGISTRY[block.typeId]?.exerciseField;
     if (!field) return 0;
     const items = block[field] as unknown[] | undefined;

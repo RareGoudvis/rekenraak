@@ -95,6 +95,9 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
     // layout, mode…), top = the type's didactic ceiling. baseApply floors the grade seed
     // into it. Omitted / null = no max picker for these settings.
     maxPresets?: MaxPresetsFn;
+    // Sheet furniture (a rule, writing lines, a grid): no opdracht title or number, and no
+    // exercises to split.
+    isFurniture?: true;
 }
 
 // Names each row's constraint family, so a default factory that drops or misspells a key
@@ -517,11 +520,11 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'rekenvolgorde':  row<RekenvolgordeConstraints>({ exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10, maxPresets: fixedMax(RANGES.rekenvolgorde) }),
 
     // ── Blad-onderdelen (no generated content; constraints only) ────────────
-    'layout-sectie':       row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 }),
-    'layout-schrijflijnen':row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 }),
-    'layout-raster':       row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 }),
-    'layout-kader':        row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 }),
-    'layout-lege-pagina':  row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0 }),
+    'layout-sectie':       row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
+    'layout-schrijflijnen':row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
+    'layout-raster':       row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
+    'layout-kader':        row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
+    'layout-lege-pagina':  row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
     'kettingsommen':  row<KettingConstraints>({ exerciseField: 'patroonExercises',       generate: generateKettingExercises,       defaultConstraints: kettingDefaults,       defaultCount: 6, maxPresets: fixedMax(RANGES.ketting) }),
     'getalfunctie':   row<GetalFunctieConstraints>({ exerciseField: 'getalFunctieExercises',  generate: generateGetalFunctieExercises,  defaultConstraints: getalfunctieDefaults,  defaultCount: 6 }),
     'tijdsduur':      row<TijdsduurConstraints>({ exerciseField: 'tijdsduurExercises',     generate: generateTijdsduurExercises,     defaultConstraints: tijdsduurDefaults,     defaultCount: 6 }),

@@ -89,7 +89,7 @@ function SheetBlock({
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   // Sheet furniture (a rule, writing lines, a grid) is not an opdracht: it gets no
   // title row and takes no number, so the opdracht numbering skips over it.
-  const isFurniture = block.typeId.startsWith('layout-');
+  const isFurniture = !!REGISTRY[block.typeId]?.isFurniture;
   // dividers between blocks come from the page grid gap now
   const isNotLastBlock = false;
 

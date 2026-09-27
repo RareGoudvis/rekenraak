@@ -51,4 +51,4 @@ export function generateFor(block: MathBlock): unknown[] {
 }
 
 /** typeIds that carry no generator — sheet furniture drawn purely from constraints. */
-export const isLayoutType = (typeId: string) => typeId.startsWith('layout-');
+export const isLayoutType = (typeId: string) => !!REGISTRY[typeId]?.isFurniture;
