@@ -1,5 +1,6 @@
 import type { BlockConstraints } from '../services/math/constraintTypes';
 import { PLACE_VALUES } from '../services/math/mathEngine';
+import { targetHeading, targetsFor } from '../services/afronden/afrondenGenerator';
 
 // A leaf's default opdracht-titel: a fixed line, or a function of its merged constraints
 // for families whose wording depends on a setting (e.g. ordenen's klein→groot / groot→klein).
@@ -68,10 +69,14 @@ function orderDirectionInstruction(subject: string): InstructionFn {
 const ordenenInstruction = orderDirectionInstruction('');
 const breukenRangschikkenInstruction = orderDirectionInstruction('de breuken ');
 
-// afronden: the review table asks for the raw place-value letters ("Rond af op T en H."),
-// same shorthand the rooster/simpel viewers already print on the sheet.
+// afronden: the review table asks for the place-value shorthand ("Rond af op T en H."), exactly
+// the column header the rooster/simpel viewers print — so millions read '1M', not 'M'.
+const roundTargetName = (key: string): string => {
+    const t = [...targetsFor('natural'), ...targetsFor('decimal')].find(x => x.key === key);
+    return t ? targetHeading(t) : key;
+};
 const roundTargetsInstruction: InstructionFn = (c) =>
-    `Rond af op ${joinNL((c.roundTargets as string[] | undefined) ?? ['T', 'H'])}.`;
+    `Rond af op ${joinNL(((c.roundTargets as string[] | undefined) ?? ['T', 'H']).map(roundTargetName))}.`;
 
 const schattendInstruction: InstructionFn = (c) => c.scaffolding === 'tussenstappen' ? 'Rond af en schat.' : 'Schat het antwoord.';
 

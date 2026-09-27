@@ -54,6 +54,7 @@ describe('function-valued instructions cover every setting branch', () => {
         { leafId: 'getalbegrip-functie', overrides: { answerMode: 'aankruisen' }, expectContains: 'Kruis aan' },
         { leafId: 'getalbegrip-functie', overrides: { answerMode: 'schrijven' }, expectContains: 'in de zin' },
         { leafId: 'afronden-nat-rooster', overrides: { roundTargets: ['T', 'H'] }, expectContains: 'T en H' },
+        { leafId: 'afronden-nat-rooster', overrides: { maxGetal: 1_000_000_000, roundTargets: ['HD', 'M', 'TM', 'Mrd'] }, expectContains: 'HD, 1M, 10M en 1MLD' },
         { leafId: 'even-oneven-rooster', overrides: { target: 'even' }, expectContains: 'even getallen' },
         { leafId: 'even-oneven-rooster', overrides: { target: 'oneven' }, expectContains: 'oneven getallen' },
         { leafId: 'deelbaarheid-rooster', overrides: { divisors: [2, 5, 10] }, expectContains: '2, 5 en 10' },
