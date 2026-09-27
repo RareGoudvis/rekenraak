@@ -39,7 +39,11 @@ const gradeBase = (g: 1 | 2 | 3 | 4 | 5 | 6): BaseSettings => ({ ...DEFAULT_BASE
 describe('(a) the default base changes nothing', () => {
     test.each(cases)('%s', (_name, typeId, leaf) => {
         const defaults = REGISTRY[typeId].defaultConstraints(typeId);
-        const legacy = { ...defaults, ...legacyBaseApply(DEFAULT_BASE, defaults), ...(leaf ?? {}) };
+        const legacy: Record<string, unknown> = { ...defaults, ...legacyBaseApply(DEFAULT_BASE, defaults), ...(leaf ?? {}) };
+        // A hidden picker keeps the registry default (even-oneven cirkels: 100, drawn ≤ 24 either way).
+        if (REGISTRY[typeId].maxPresets?.(legacy) === null) {
+            for (const key of MAX_KEYS) if (key in defaults && !(leaf && key in leaf)) legacy[key] = defaults[key];
+        }
         expect(makeBlock(typeId, { constraints: leaf }).constraints).toEqual(legacy);
     });
 });
@@ -141,5 +145,25 @@ describe('(e) base masks and bridges stop at the block\'s own max', () => {
             expect(note, typeId).toBeNull();
             expect(items.length, typeId).toBe(block.numberOfExercises);
         }
+    });
+});
+
+describe('(f) a hidden max picker keeps the registry default', () => {
+    const base = gradeBase(6);
+    test.each<[string, string, Record<string, unknown>, number]>([
+        ['tafels', 'hr-std-vermenigvuldigen', {}, 1000],
+        ['delen tafels', 'hr-std-delen', {}, 1000],
+        ['even-oneven cirkels', 'even-oneven', { subType: 'cirkels' }, 100],
+        ['veelvouden', 'deelbaarheid', { layout: 'veelvouden' }, 1000],
+        ['rationaal optellen', 'hr-std-optellen', { numberType: 'rational' }, 1000],
+    ])('%s', (_name, typeId, leaf, want) => {
+        expect(makeBlock(typeId, { base, constraints: leaf }).constraints.maxGetal).toBe(want);
+    });
+
+    test('switching tafels to andere lands on a value the picker lists', () => {
+        const c: Record<string, unknown> = { ...makeBlock('hr-std-vermenigvuldigen', { base }).constraints, multiplicationMode: 'andere' };
+        const range = REGISTRY['hr-std-vermenigvuldigen'].maxPresets!(c)!;
+        expect(range.presets).toContain(c.maxGetal);
+        expect(c.maxGetal).toBe(1000);
     });
 });

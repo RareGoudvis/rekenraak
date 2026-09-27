@@ -50,7 +50,8 @@ const hasKeys = (o: Record<string, unknown>) => Object.keys(o).length > 0;
 // `range` is the list the type's config will show (REGISTRY[typeId].maxPresets): the
 //   seed floors into it, so a type with a lower didactic ceiling (deelbaarheid 1e5,
 //   MAB 1000) gets its own top instead of a value its picker would snap to "Tot 10".
-//   Without a range the seed is copied, capped at NAT_CEILING.
+//   A null range (picker hidden) writes no max; without a range (the type declares no
+//   maxPresets) the seed is copied, capped at NAT_CEILING.
 // Masks + bridges only matter for place-value arithmetic (hoofdrekenen, cijferen,
 // splitsen, mab) and are written only when the teacher actually set something, so
 // an untouched base leaves each type's registry default intact. Nested objects are
@@ -64,11 +65,16 @@ export function baseApply(
 
     const capped = Math.min(base.baseMaxGetal, NAT_CEILING);
     const floored = range ? floorToPreset(base.baseMaxGetal, range.presets) : undefined;
-    if ('maxGetal' in registryDefaults) out.maxGetal = range?.key === 'maxGetal' ? floored : capped;
-    if ('maxRange' in registryDefaults) out.maxRange = range?.key === 'maxRange' ? floored : capped;
-    // maxNumber is MAB-only, and MAB draws place-value blocks up to 1000 — never hand it
-    // the five/ten-digit base seeds the other types accept.
-    if ('maxNumber' in registryDefaults) out.maxNumber = range?.key === 'maxNumber' ? floored : Math.min(base.baseMaxGetal, 9999);
+    // null = these settings hide the max picker (tafels, cirkels, veelvouden): the type keeps
+    // its registry default, or a later switch to a mode with a picker inherits an invisible
+    // grade max that the picker then has to floor (a stale block and an extra undo step).
+    if (range !== null) {
+        if ('maxGetal' in registryDefaults) out.maxGetal = range?.key === 'maxGetal' ? floored : capped;
+        if ('maxRange' in registryDefaults) out.maxRange = range?.key === 'maxRange' ? floored : capped;
+        // maxNumber is MAB-only, and MAB draws place-value blocks up to 1000 — never hand it
+        // the five/ten-digit base seeds the other types accept.
+        if ('maxNumber' in registryDefaults) out.maxNumber = range?.key === 'maxNumber' ? floored : Math.min(base.baseMaxGetal, 9999);
+    }
 
     if ('numberType' in registryDefaults) out.numberType = base.baseNumberType;
 
