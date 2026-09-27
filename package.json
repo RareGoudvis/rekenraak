@@ -27,7 +27,8 @@
     "font:compare": "node scripts/font-compare.mjs",
     "height:audit": "node scripts/height-audit.mjs",
     "catalogue": "node scripts/catalogue.mjs",
-    "bignum:audit": "node scripts/bignum-audit.mjs"
+    "bignum:audit": "node scripts/bignum-audit.mjs",
+    "sweep": "node scripts/full-sweep.mjs"
   },
   "dependencies": {
     "@fontsource/azeret-mono": "^5.2.11",

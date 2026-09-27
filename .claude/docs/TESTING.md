@@ -333,6 +333,7 @@ Flags: `--seed n` / `--seeds a,b` (default `1234,7`), `--widths` (default `4,2,1
 (default `~/Downloads/bignum-audit/<timestamp>/`), `--no-stress`. ~4.5 min for the full run
 (~1050 cells); needs the DEV-only `window.__rekenraak` hook, so never a production build.
 
+The cell checks live in `scripts/lib/cellProbe.mjs` (shared with the full sweep).
 It reuses the visual gate's leaf walk (`scripts/lib/leafWalk.mjs`) through three opt-in hooks
 the gate never passes: `overrideFor(leaf, page)` turns one leaf into tagged cell variants,
 `probe(page, { key })` measures the settled cell, and `deselect` clears the selection in the
@@ -364,6 +365,75 @@ viewer, identical failures collapsed across requested widths and seeds), `contac
 + `contact-sheet.png` (one card per group, with a screenshot of the cell plus whatever sticks
 out of it), and one PNG per failing or overlapping cell under `seed-<n>/`. Exit code 1 when
 any cell fails.
+
+## The full sweep (`scripts/full-sweep.mjs`)
+
+Every exercise type × every setting the generator matrix covers, rendered in a real browser.
+The matrix proves the generators survive every pairwise row of `constraintSpace.ts`; the sweep
+puts those same rows on the sheet and checks what a teacher would see. Not part of the
+pre-commit hook — run it before a release or after a change that touches many viewers.
+
+```bash
+npm run sweep                                              # starts its own vite on a free port (5330+)
+npm run sweep -- --url http://localhost:5173/
+npm run sweep -- --only splitsen,klok-kloklezen --seeds 1234   # typeIds or leaf ids
+npm run sweep -- --domain bewerkingen --out <dir>          # substrings of the domain label, comma-separated
+npm run sweep -- --chunk 2/4 --out <dir> --resume          # contiguous quarter of the settings
+npm run sweep -- --merge <dirA>,<dirB>,<dirC> --out <dir>  # one report over parallel runs
+npm run sweep -- --report --out <dir>                      # rebuild report + contact sheets only
+npm run sweep -- --review-png --out <dir>                  # + PNG strips per type under review/
+npm run sweep -- --print                                   # the print pass (below)
+```
+
+**Settings** per typeId: every sidebar leaf at its defaults (added exactly as a sidebar click
+adds it, `leafId` and instruction included), every pairwise row of `constraintSpaceFor(typeId)`
+over the registry defaults (the matrix's pass (c): the same `pairwise()` helper and cap, loaded
+in the page from `src/` through Vite, so the rows cannot drift), and the registry defaults with
+the max key at the top of `maxPresetsFor()`. Each × widths {4, 2, 1} × solutions × seeds
+{1234, 7}. 1 937 settings → 23 244 cells; ~4 cells/s per process, so the whole run is split per
+domain into three parallel processes (`--domain bewerkingen` / `getallen,meetkunde,blad` /
+`meten en`) and merged — about 50 minutes. `--resume` skips every cell already in the out
+dir's `cells.jsonl`; a lost browser restarts the walk where it stopped.
+
+It reuses `scripts/lib/leafWalk.mjs` with four opt-ins no other harness passes (a variant with
+`replace: true` gets exactly its constraints instead of the leaf's merged under them;
+`skip(key)` for resume; `sidebarOpts`; a 1600 × 2600 `viewport`, so a block taller than a page
+still screenshots whole), `deselect` like bignum-audit, and the cell checks of
+`scripts/lib/cellProbe.mjs` (shared with bignum-audit). The min-width clamp stays ON.
+
+A cell **fails** on bignum-audit's kinds (`hoverflow`, `inner-scroll`, `outside`, `text`,
+`console` / `error`, `boundary`, `harness` for the max cells) plus:
+
+| kind | what |
+|---|---|
+| `page-overflow` | the page banner (`.page-sheet-warn`) with a block that is not taller than the page body (packer and paper disagree), or on a sidebar leaf at its defaults at full width (effective width 4: widening cannot help). A narrowed leaf or a pairwise row taller than a page is reported as `tall` instead |
+| `empty` | the block has no exercises and no generation note (furniture exempt) |
+
+**Reported, not failed:** `overlap` (text boxes overlapping inside one exercise), `note`
+(the generator relaxed or came up short — the Inspector's note), `empty-noted` (empty, but
+the note says why), `tall` (the block is taller than one page body; with a pairwise row that
+is usually a legitimate extreme).
+
+Output (`--out`, default `~/Downloads/full-sweep/<timestamp>/`): `cells.jsonl` (one line per
+cell), `result.json` (every cell with its verdict, per-type and per-kind totals), `report.md`
+(type → setting → failure, identical failures across widths/seeds collapsed, plus a table of
+the reported-only groups), `index.html` → `sheets/<typeId>.html` (one contact sheet per type:
+rows = setting × seed, columns = width × solutions, failing cells outlined red, reported
+amber, hover a cell for the details), `shots/<typeId>/<cell>-seed<n>.png` (every cell).
+`--review-png` also writes `review/<typeId>-NN.png`: solutions on, first seed, the three
+widths side by side, for a reviewer who reads images. Exit code 1 when any cell fails.
+
+**Print pass** (`--print`, `--per-domain n`, default 6): per domain one mixed sheet — every
+k-th leaf at its defaults plus the domain's first leaf with a max list at its top — packed by
+the real packer, then printed through Chromium (`emulateMedia print`, `page.pdf` A4, margins
+0, backgrounds). It checks PDF page count == screen `.page-sheet` count, the block order per
+page is the same under print media as on screen, no cell ends outside its page in print, and
+no console error; `print/<domain>.pdf`, `<domain>-screen.png` and `print.json` stay for a
+human look (the PDF pixels themselves are not compared).
+
+What it cannot judge: whether the content is RIGHT (wrong answers, a solution drawn in the
+wrong box, odd wrapping that still fits, unreadably small text, Dutch wording). That needs the
+contact sheets, read by a person.
 
 ## Font baseline / compare (`scripts/font-baseline.mjs`, `scripts/font-compare.mjs`)
 

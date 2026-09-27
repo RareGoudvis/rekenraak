@@ -16,22 +16,29 @@ import { join } from 'node:path';
  * merged over the leaf's defaultConstraints, and `[]` skips the leaf. probe(page, { key }) runs
  * after the cell settled, before its screenshot, and its fields are spread onto the row.
  * deselect clears the selection right after the add (the catalogue's plain-sheet state).
+ * Opt-ins full-sweep.mjs uses (the other harnesses pass none of them): a variant with
+ * `replace: true` gets exactly its constraints, not merged over the leaf's; skip(key) → true
+ * leaves a cell out (resume); sidebarOpts passes the leaf's { leafId, instruction } like
+ * sidebar.tsx does (not for replace variants: they are type-level, not the leaf); viewport
+ * overrides the 1600×1100 window.
  * @param {{url:string,out:string,widths:number[],seed:number,only?:string[],
  *          screenshots?:boolean,log?:(s:string)=>void,onRow?:(r:object)=>void,
- *          overrideFor?:(leaf:object,page:import('playwright').Page)=>Promise<Array<{tag:string,constraints:object}>|null|undefined>|Array<{tag:string,constraints:object}>|null|undefined,
- *          probe?:(page:import('playwright').Page,cell:{key:string})=>Promise<object>,deselect?:boolean}} opts
+ *          overrideFor?:(leaf:object,page:import('playwright').Page)=>Promise<Array<{tag:string,constraints:object,replace?:boolean}>|null|undefined>|Array<{tag:string,constraints:object,replace?:boolean}>|null|undefined,
+ *          probe?:(page:import('playwright').Page,cell:{key:string})=>Promise<object>,deselect?:boolean,
+ *          skip?:(key:string)=>boolean,sidebarOpts?:boolean,viewport?:{width:number,height:number}}} opts
  */
 export async function walkLeaves(opts) {
     const {
         url, out, widths, seed, only = [],
         screenshots = true, log = console.log, onRow,
         overrideFor, probe, deselect = false,
+        skip, sidebarOpts = false, viewport = { width: 1600, height: 1100 },
     } = opts;
 
     mkdirSync(out, { recursive: true });
 
     const browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1600, height: 1100 } });
+    const page = await browser.newPage({ viewport });
 
     // Console errors are collected per cell: a viewer that logs but does not throw still
     // renders something, and that is exactly the regression the gate wants to see.
@@ -63,12 +70,14 @@ export async function walkLeaves(opts) {
             for (const variant of variants) {
                 // A variant only swaps the constraints the add receives; everything else is the leaf.
                 const leaf = variant
-                    ? { ...sourceLeaf, defaultConstraints: { ...(sourceLeaf.defaultConstraints ?? {}), ...variant.constraints } }
+                    ? { ...sourceLeaf, defaultConstraints: variant.replace ? { ...variant.constraints } : { ...(sourceLeaf.defaultConstraints ?? {}), ...variant.constraints } }
                     : sourceLeaf;
+                const asLeaf = sidebarOpts && !variant?.replace;
                 const tag = variant ? `~${variant.tag}` : '';
                 for (const width of widths) {
                     for (const solutions of [0, 1]) {
                         const key = `${leaf.id}${tag}-w${width}-s${solutions}`;
+                        if (skip?.(key)) continue;
                         const base = { leafId: leaf.id, path: leaf.path, typeId: leaf.typeId, width, solutions, ...(variant ? { variant: variant.tag, constraints: leaf.defaultConstraints } : {}) };
                         cellErrors = [];
                         try {
@@ -78,7 +87,7 @@ export async function walkLeaves(opts) {
                             let measured;
                             for (let attempt = 0; attempt < 2; attempt++) {
                             if (attempt) { await page.waitForTimeout(1700); cellErrors = []; }
-                            measured = await page.evaluate(async ({ leaf, width, solutions, seed, deselect }) => {
+                            measured = await page.evaluate(async ({ leaf, width, solutions, seed, deselect, asLeaf }) => {
                                 const r = window.__rekenraak;
                                 const frame = () => new Promise((res) => requestAnimationFrame(res));
                                 const emptyNow = () => {
@@ -97,7 +106,9 @@ export async function walkLeaves(opts) {
                                 r.seed(seed);
                                 // Exactly what sidebar.tsx's addLeaf does on a real click: registry
                                 // defaults + base snapshot (inside the store) + this leaf's override.
-                                r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints);
+                                // asLeaf: the in-page leaf's instruction may be a function, which cannot cross evaluate().
+                                const own = asLeaf ? r.leaves.find((l) => l.id === leaf.id) : null;
+                                r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints, own ? { leafId: own.id, instruction: own.instruction } : undefined);
                                 // Same tick, so the Inspector never mounts: its max picker would floor a
                                 // value outside the list shown before the block is measured.
                                 if (deselect) r.getState().setActiveSelection(null);
@@ -148,7 +159,7 @@ export async function walkLeaves(opts) {
                                     intrinsicPx: intrinsicPx ?? null,
                                     text: cell.innerText,
                                 };
-                            }, { leaf, width, solutions, seed, deselect });
+                            }, { leaf, width, solutions, seed, deselect, asLeaf });
                             if (!cellErrors.some((e) => e.includes('repack loop broken'))) break;
                             }
 
