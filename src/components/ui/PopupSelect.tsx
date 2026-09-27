@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CaretDown, Check } from '@phosphor-icons/react';
 import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
 import { floorToPreset } from '../../config/numberRanges';
@@ -27,6 +27,7 @@ interface Props<T> {
 export default function PopupSelect<T extends string | number>({ value, options, onChange, disabled, ariaLabel, clampToLowest }: Props<T>) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const current = options.find((o) => String(o.value) === String(value));
 
@@ -40,6 +41,16 @@ export default function PopupSelect<T extends string | number>({ value, options,
         const match = options.find((o) => Number(o.value) === target);
         if (match) onChange(match.value);
     }, [clampToLowest, current, options, onChange, value]);
+
+    // Open on the selected option: a 10-step max list puts "Tot 1.000.000.000" below the
+    // fold. Scroll the menu itself; scrollIntoView would also scroll the Inspector around it.
+    useLayoutEffect(() => {
+        const menu = menuRef.current;
+        if (!open || !menu) return;
+        const selected = menu.querySelector<HTMLElement>('[aria-selected="true"]');
+        if (!selected || selected.offsetTop + selected.offsetHeight <= menu.clientHeight) return;
+        menu.scrollTop = Math.max(0, selected.offsetTop - (menu.clientHeight - selected.offsetHeight) / 2);
+    }, [open]);
 
     // Close on outside click / Escape.
     useEffect(() => {
@@ -66,7 +77,7 @@ export default function PopupSelect<T extends string | number>({ value, options,
                 <CaretDown size={13} weight="bold" style={{ opacity: 0.6, flexShrink: 0 }} />
             </button>
             {open && (
-                <div role="listbox" style={S.selectMenu}>
+                <div ref={menuRef} role="listbox" style={S.selectMenu}>
                     {options.map((o) => {
                         const active = String(o.value) === String(value);
                         return (
