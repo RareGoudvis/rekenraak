@@ -5,7 +5,8 @@ import type { CijferConstraints } from '../../../services/math/types';
 import { getMaskPlaces, getBridgePlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import BridgeControl from '../BridgeControl';
 import SettingLabel from './SettingLabel';
 import { useSheetSizePx } from '../../viewer/BlockWidthContext';
@@ -17,6 +18,7 @@ interface Props {
 
 export default function CijferConfig({ block }: Props) {
     const [c, patch] = useConstraints<CijferConstraints>(block);
+    const range = useMaxPresets(block);
     const isDecimal = c.numberType === 'decimal';
     const isDivision = c.operator === ':';
     const isAddition = c.operator === '+';
@@ -43,16 +45,16 @@ export default function CijferConfig({ block }: Props) {
         <div style={styles.container}>
 
             {/* MAXIMUM BEREIK */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de oefeningen mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={c.maxRange}
-                    options={(isDecimal ? RANGES.cijferDecimal : RANGES.cijferNatural).map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxRange', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* DECIMAL PLACES */}
             {isDecimal && (

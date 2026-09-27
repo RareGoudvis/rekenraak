@@ -4,7 +4,7 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import PopupSelect from '../../../ui/PopupSelect';
-import { RANGES } from '../../../../config/numberRanges';
+import { useMaxPresets } from '../../useMaxPresets';
 import SettingLabel from '../SettingLabel';
 import type { MulDivConstraints } from '../../../../services/math/constraintTypes';
 
@@ -15,6 +15,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
     const [c, patch] = useConstraints<MulDivConstraints>(block);
     // Shared keys (maxGetal) are rendered by the gemengd panel instead; empty outside it.
     const hidden = useHiddenControls();
+    const range = useMaxPresets(block);
     const { maxGetal = 100, decimalPlaces = 2, operand1Mask = {}, operand2Mask = {} } = c;
 
     // Stuur decimalPlaces mee, zodat de maskers dynamisch inkrimpen!
@@ -44,12 +45,12 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
             </div>
 
             {/* MAXIMUM UITKOMST */}
-            {!hidden.has('maxGetal') && <div style={styles.section}>
+            {range && !hidden.has('maxGetal') && <div style={styles.section}>
                 <SettingLabel text="Maximum uitkomst:" info="Het grootste antwoord dat mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.decimal.map(val => ({ value: val, label: `Tot ${val}` }))}
+                    options={range.presets.map(val => ({ value: val, label: `Tot ${val}` }))}
                     onChange={(val) => updateConstraint('maxGetal', val)}
                     ariaLabel="Maximum uitkomst"
                 />

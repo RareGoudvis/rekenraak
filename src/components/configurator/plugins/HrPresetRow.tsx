@@ -4,7 +4,8 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import type { MulDivConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -20,6 +21,7 @@ export default function HrPresetRow({ block, variant }: Props) {
     // Inside a gemengd variant tab the oefenvorm IS the variant, so its picker is gone.
     const fixedPreset = useConstraintScope()?.fixedPreset;
     const hidden = useHiddenControls();
+    const range = useMaxPresets(block);
     const preset: string = c.preset ?? 'vrij';
     const termCount: number = Math.min(4, Math.max(2, c.termCount ?? 2));
     const presetDistance: number = c.presetDistance ?? 1;
@@ -69,13 +71,13 @@ export default function HrPresetRow({ block, variant }: Props) {
                             ))}
                         </div>
                     </div>
-                    {!hidden.has('maxGetal') && <div style={styles.section}>
+                    {range && !hidden.has('maxGetal') && <div style={styles.section}>
                         {/* The sub-config is hidden for this preset, so max getal lives here. */}
                         <SettingLabel text="Maximum getal:" info="Het grootste uitgangsgetal (bij : het quotiënt)." />
                         <PopupSelect
                             clampToLowest
                             value={c.maxGetal ?? 1000}
-                            options={RANGES.hrTienvoud.map(v => ({ value: v, label: presetLabel(v) }))}
+                            options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                             onChange={(v) => set('maxGetal', v)}
                             ariaLabel="Maximum getal"
                         />

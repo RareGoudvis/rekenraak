@@ -4,7 +4,8 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import PopupSelect from '../../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../../config/numberRanges';
+import { presetLabel } from '../../../../config/numberRanges';
+import { useMaxPresets } from '../../useMaxPresets';
 import SettingLabel from '../SettingLabel';
 import type { MulDivConstraints } from '../../../../services/math/constraintTypes';
 
@@ -27,6 +28,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
     const [c, patch] = useConstraints<MulDivConstraints>(block);
     // Shared keys (maxGetal) are rendered by the gemengd panel instead; empty outside it.
     const hidden = useHiddenControls();
+    const range = useMaxPresets(block);
     const {
         multiplicationMode = 'tafels',
         selectedTables = [2, 3, 4, 5, 10],
@@ -158,12 +160,12 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                 const availablePlaces = getMaskPlaces(maxGetal, 'natural');
                 return (
                     <div>
-                        {!hidden.has('maxGetal') && <div style={styles.section}>
+                        {range && !hidden.has('maxGetal') && <div style={styles.section}>
                             <SettingLabel text={isDivision ? 'Maximum deeltal:' : 'Maximum uitkomst:'} info={isDivision ? 'Het grootste deeltal (het getal dat gedeeld wordt).' : 'Het grootste antwoord dat mag voorkomen.'} />
                             <PopupSelect
                                 clampToLowest
                                 value={maxGetal}
-                                options={RANGES.hrAndere.map(val => ({ value: val, label: presetLabel(val) }))}
+                                options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                                 onChange={(val) => updateConstraint('maxGetal', val)}
                                 ariaLabel={isDivision ? 'Maximum deeltal' : 'Maximum uitkomst'}
                             />

@@ -4,7 +4,8 @@ import { ConstraintScopeContext } from '../ConstraintScope';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import AdditionConfig from './AdditionConfig';
 import SubtractionConfig from './SubtractionConfig';
 import MultiplicationConfig from './MultiplicationConfig';
@@ -41,11 +42,6 @@ const tabLabel = (op: MixedOp, preset?: string) =>
 // scope builds from it stays referentially stable across renders.
 const SHARED_KEYS = ['maxGetal', 'numberType'] as const;
 
-const MAX_PRESETS: Record<string, readonly number[]> = {
-    natural: RANGES.hrNatural,
-    decimal: RANGES.decimal,
-};
-
 /**
  * `hr-std-gemengd`: one block that mixes several bewerkingen. The teacher picks the
  * VARIANTS in the mix (a bewerking plus optionally its oefenvorm, so "+" and
@@ -56,6 +52,7 @@ const MAX_PRESETS: Record<string, readonly number[]> = {
  */
 export default function GemengdConfig({ block }: Props) {
     const [c, patch] = useConstraints<MixedConstraints>(block);
+    const range = useMaxPresets(block);
     const numberType = c.numberType ?? 'natural';
     const variants: MixedVariantId[] = c.variants?.length ? c.variants : ['+', '-', 'x', ':'];
     const mix = c.mix ?? 'random';
@@ -84,16 +81,16 @@ export default function GemengdConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             {/* ── ALGEMEEN — the settings every variant inherits ── */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum uitkomst:" info="Geldt voor alle bewerkingen in het blok; per bewerking kan je het in de tab hieronder niet apart zetten." />
                 <PopupSelect
                     clampToLowest
                     value={c.maxGetal ?? (numberType === 'decimal' ? 100 : 1000)}
-                    options={(MAX_PRESETS[numberType] ?? MAX_PRESETS.natural).map(val => ({ value: val, label: presetLabel(val) }))}
+                    options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Bewerkingen in het blok:" info="Kies wat door elkaar mag komen. Een oefenvorm (compenseren, met 10-100-1000) telt als een aparte keuze, dus + en + compenseren kunnen samen." />

@@ -5,7 +5,8 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import SettingLabel from '../SettingLabel';
 import PopupSelect from '../../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../../config/numberRanges';
+import { presetLabel } from '../../../../config/numberRanges';
+import { useMaxPresets } from '../../useMaxPresets';
 import BridgeControl from '../../BridgeControl';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
@@ -22,7 +23,7 @@ export default function NaturalSettings({ block }: Props) {
     // Haal de juiste arrays op (Zijn al gesorteerd Groot -> Klein!)
     const maskPlaces = getMaskPlaces(maxGetal, 'natural');
     const bridgePlaces = getBridgePlaces(maxGetal, 'natural');
-    const maxPresets = RANGES.hrNatural;
+    const range = useMaxPresets(block);
 
     // Term i mask: legacy operand1/2Mask for 0/1, operandMasks[] beyond (SYNC: maskFor in mathEngine).
     const maskAt = (i: number): Record<string, boolean> =>
@@ -47,12 +48,12 @@ export default function NaturalSettings({ block }: Props) {
 
     return (
         <div>
-            {!hidden.has('maxGetal') && <div style={styles.section}>
+            {range && !hidden.has('maxGetal') && <div style={styles.section}>
                 <SettingLabel text="Maximum uitkomst:" info="Het grootste antwoord dat in de oefeningen mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={maxPresets.map(val => ({ value: val, label: presetLabel(val) }))}
+                    options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => patch({ maxGetal: val })}
                     ariaLabel="Maximum uitkomst"
                 />
