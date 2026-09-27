@@ -6,6 +6,8 @@
 
 import { NAT_CEILING, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import { REGISTRY } from './exerciseRegistry';
+import { LEAF_BY_ID } from './appstructure';
+import type { Leerjaar } from './gradePresets';
 import { PLACE_VALUES } from '../services/math/mathEngine';
 
 export type BaseNumberType = 'natural' | 'decimal' | 'rational' | 'geheel';
@@ -110,6 +112,10 @@ export interface SeedInput {
     base: BaseSettings;
     // The leaf's defaultConstraints, a curriculum's locked constraints or an ad-hoc override.
     override?: Record<string, unknown>;
+    // The picked leerjaar, if any. With a leaf marked gradeSetsMax it beats the leaf's pinned
+    // max; pass null for a curriculum's locked constraints, which are the author's, not a seed.
+    grade?: Leerjaar | null;
+    leafId?: string;
 }
 
 const PLACE_WEIGHT: Record<string, number> = Object.fromEntries(PLACE_VALUES.map(p => [p.key, p.weight]));
@@ -127,11 +133,17 @@ function trimPlaces<V>(obj: Record<string, V>, max: number, inclusive: boolean):
 // A new block's constraints: registry defaults → base snapshot → override, so a leaf that
 // pins a value (splitsen-basis maxGetal:10) wins. The store, the sidebar hover card, the
 // MassAdd preview and the test helper all call this, so a preview is the block it adds.
-export function seedConstraints({ typeId, base, override }: SeedInput): Record<string, unknown> {
+export function seedConstraints({ typeId, base, override: leafOverride, grade, leafId }: SeedInput): Record<string, unknown> {
     const def = REGISTRY[typeId];
-    if (!def) return { ...(override ?? {}) };
+    if (!def) return { ...(leafOverride ?? {}) };
     const defaults = def.defaultConstraints(typeId) as Record<string, unknown>;
-    const range = baseRangeFor(base, defaults, override, def.maxPresets);
+    const range = baseRangeFor(base, defaults, leafOverride, def.maxPresets);
+    let override = leafOverride;
+    if (grade != null && range && override && leafId && LEAF_BY_ID[leafId]?.gradeSetsMax) {
+        const { [range.key]: _pinnedMax, ...rest } = override;
+        void _pinnedMax;
+        override = rest;
+    }
     const snapshot = baseApply(base, defaults, range);
     const merged: Record<string, unknown> = { ...defaults, ...snapshot, ...(override ?? {}) };
 

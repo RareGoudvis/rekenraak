@@ -1,6 +1,7 @@
 import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { seedConstraints, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
+import type { Leerjaar } from '../../config/gradePresets';
 
 // SYNC: mirrors the block literal of `addBlockFromType` (src/store/slices/blocksSlice.ts);
 // the constraints come from the same seedConstraints(). Reimplemented rather than imported
@@ -11,6 +12,9 @@ export interface MakeBlockOptions {
     constraints?: Record<string, unknown>;
     /** Global base difficulty to snapshot in (defaults to DEFAULT_BASE). */
     base?: BaseSettings;
+    /** Picked leerjaar + the leaf it came from, for leaves whose pinned max yields to it. */
+    grade?: Leerjaar | null;
+    leafId?: string;
     /** Overrides for the block's own fields (count, layoutPreset, widthUnits, …). */
     block?: Partial<MathBlock>;
     /** Deterministic id instead of a random one, so failures name the block. */
@@ -33,7 +37,7 @@ export function makeBlock(typeId: string, opts: MakeBlockOptions = {}): MathBloc
         numberOfExercises: def ? def.defaultCount : 10,
         totalPoints: 5,
         verticalSpacing: 18,
-        constraints: seedConstraints({ typeId, base, override: opts.constraints }),
+        constraints: seedConstraints({ typeId, base, override: opts.constraints, grade: opts.grade, leafId: opts.leafId }),
         exercises: [],
         ...(opts.block ?? {}),
     } as MathBlock;

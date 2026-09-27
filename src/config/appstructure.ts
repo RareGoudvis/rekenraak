@@ -14,6 +14,9 @@ export interface LeafExercise {
     placeholder?: boolean;
     minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // explicit grade gate; else inferred (gradePresets)
     instruction?: string | InstructionFn;
+    // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
+    // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
+    gradeSetsMax?: true;
 }
 
 export interface ExerciseType {
@@ -27,6 +30,9 @@ export interface ExerciseType {
     placeholder?: boolean;
     minLeerjaar?: 1 | 2 | 3 | 4 | 5 | 6;   // leaf-type grade gate (see gradePresets)
     instruction?: string | InstructionFn;
+    // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
+    // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
+    gradeSetsMax?: true;
 }
 
 export interface Subdomain {
@@ -120,9 +126,9 @@ export const APP_STRUCTURE: Domain[] = [
                             { id: 'splitsen-basis', label: 'Rooster', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'basic', rowsPerBox: 4 }, instruction: 'Splits het getal.' },
                             { id: 'splitsen-boom', label: 'Splitsboom', typeId: 'splitsen', defaultConstraints: { maxGetal: 100, layout: 'splitsboom', blankPositions: ['right'] }, instruction: 'Vul de splitsboom aan.' },
                             { id: 'splitsen-harten', label: 'Verliefde harten', typeId: 'splitsen', defaultConstraints: { maxGetal: 10, layout: 'verliefde-harten' }, instruction: 'Vul de verliefde harten aan.' },
-                            { id: 'splitsen-positietabel', label: 'Positietabel', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-tabel' }, instruction: 'Vul de positietabel in.' },
-                            { id: 'splitsen-benen', label: 'Splitsbenen (H/T/E)', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-benen', benenVariants: ['legs-letters'] }, instruction: (c) => `Splits in ${placeLetters(Number(c.maxGetal ?? 1000))}.` },
-                            { id: 'splitsen-plaatswaarden', label: 'Plaatswaarden', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-math', mathForms: ['letters'], mathDirection: 'decompose' }, instruction: (c) => c.mathDirection === 'compose' ? 'Schrijf het getal.' : c.mathDirection === 'beide' ? 'Splits of schrijf het getal volgens plaatswaarde.' : 'Splits volgens plaatswaarde.' },
+                            { id: 'splitsen-positietabel', label: 'Positietabel', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-tabel' }, gradeSetsMax: true, instruction: 'Vul de positietabel in.' },
+                            { id: 'splitsen-benen', label: 'Splitsbenen (H/T/E)', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-benen', benenVariants: ['legs-letters'] }, gradeSetsMax: true, instruction: (c) => `Splits in ${placeLetters(Number(c.maxGetal ?? 1000))}.` },
+                            { id: 'splitsen-plaatswaarden', label: 'Plaatswaarden', typeId: 'splitsen', defaultConstraints: { maxGetal: 1000, layout: 'positie-math', mathForms: ['letters'], mathDirection: 'decompose' }, gradeSetsMax: true, instruction: (c) => c.mathDirection === 'compose' ? 'Schrijf het getal.' : c.mathDirection === 'beide' ? 'Splits of schrijf het getal volgens plaatswaarde.' : 'Splits volgens plaatswaarde.' },
                         ],
                     },
                     {
@@ -203,8 +209,8 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'afronden-nat', label: 'Natuurlijke getallen',
                         children: [
-                            { id: 'afronden-nat-rooster', label: 'Rooster', typeId: 'afronden', defaultConstraints: { subType: 'rooster', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, instruction: roundTargetsInstruction },
-                            { id: 'afronden-nat-simpel',  label: 'Eenvoudig (≈)', typeId: 'afronden', defaultConstraints: { subType: 'simpel', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, instruction: roundTargetsInstruction },
+                            { id: 'afronden-nat-rooster', label: 'Rooster', typeId: 'afronden', defaultConstraints: { subType: 'rooster', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, gradeSetsMax: true, instruction: roundTargetsInstruction },
+                            { id: 'afronden-nat-simpel',  label: 'Eenvoudig (≈)', typeId: 'afronden', defaultConstraints: { subType: 'simpel', numberType: 'natural', maxGetal: 1000, roundTargets: ['T', 'H'] }, gradeSetsMax: true, instruction: roundTargetsInstruction },
                         ],
                     },
                     {
@@ -633,6 +639,7 @@ export interface AppLeaf {
     label: string;
     defaultConstraints?: Record<string, unknown>;
     instruction?: string | InstructionFn;
+    gradeSetsMax?: true;
 }
 
 export function flattenLeaves(): AppLeaf[] {
@@ -651,6 +658,7 @@ export function flattenLeaves(): AppLeaf[] {
                         label: type.label,
                         defaultConstraints: type.defaultConstraints,
                         instruction: type.instruction,
+                        gradeSetsMax: type.gradeSetsMax,
                     });
                 } else {
                     for (const leaf of type.children ?? []) {
@@ -662,6 +670,7 @@ export function flattenLeaves(): AppLeaf[] {
                             label: leaf.label,
                             defaultConstraints: leaf.defaultConstraints,
                             instruction: leaf.instruction,
+                            gradeSetsMax: leaf.gradeSetsMax,
                         });
                     }
                 }
@@ -675,5 +684,5 @@ export function flattenLeaves(): AppLeaf[] {
 // only has a leafId (a persisted curriculum lock, a MathBlock.leafId) resolve the same
 // opdracht-titel a sidebar click would have produced, without holding onto the leaf's
 // own object reference (which a share link can't serialise — it may be a function).
-export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn }> =
-    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction }]));
+export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn; gradeSetsMax?: true }> =
+    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction, gradeSetsMax: l.gradeSetsMax }]));

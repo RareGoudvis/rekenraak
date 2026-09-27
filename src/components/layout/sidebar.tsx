@@ -91,11 +91,13 @@ export default function Sidebar() {
     // to its right (or left if it would overflow). Gated on the sidebarPreview setting.
     const [preview, setPreview] = useState<{ typeId: string; constraints: Record<string, unknown>; top: number; left: number } | null>(null);
     const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const resolveConstraints = (typeId: string, override?: Record<string, unknown>): Record<string, unknown> | null => {
+    // No leafId for the locked palette: its constraints are the curriculum author's, and the
+    // store likewise keeps a picked leerjaar away from them.
+    const resolveConstraints = (typeId: string, override?: Record<string, unknown>, leafId?: string): Record<string, unknown> | null => {
         if (!REGISTRY[typeId]) return null;
-        return seedConstraints({ typeId, base: baseSettings, override });
+        return seedConstraints({ typeId, base: baseSettings, override, grade: selectedGrade, leafId });
     };
-    const leafHover = (typeId: string, override?: Record<string, unknown>) => ({
+    const leafHover = (typeId: string, override?: Record<string, unknown>, leafId?: string) => ({
         onMouseEnter: (e: React.MouseEvent) => {
             if (!sidebarPreview) return;
             const rect = e.currentTarget.getBoundingClientRect();
@@ -103,7 +105,7 @@ export default function Sidebar() {
             const left = rect.right + 12 + W > window.innerWidth ? rect.left - W - 12 : rect.right + 12;
             if (hoverTimer.current) clearTimeout(hoverTimer.current);
             hoverTimer.current = setTimeout(() => {
-                const constraints = resolveConstraints(typeId, override);
+                const constraints = resolveConstraints(typeId, override, leafId);
                 if (constraints) setPreview({ typeId, constraints, top: rect.top, left });
             }, 250);
         },
@@ -276,7 +278,7 @@ export default function Sidebar() {
                                                                         style={S.leafBtn}
                                                                         title={`${type.label} toevoegen (één oefening)`}
                                                                         onClick={() => addLeaf(type.typeId!, type.label, type.defaultConstraints, { leafId: type.id, instruction: type.instruction })}
-                                                                        {...leafHover(type.typeId!, type.defaultConstraints)}
+                                                                        {...leafHover(type.typeId!, type.defaultConstraints, type.id)}
                                                                     >
                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                         <span>{type.label}</span>
@@ -313,7 +315,7 @@ export default function Sidebar() {
                                                                                         style={S.leafBtn}
                                                                                         title={`${leaf.label} toevoegen (één oefening)`}
                                                                                         onClick={() => addLeaf(leaf.typeId, leaf.label, leaf.defaultConstraints, { leafId: leaf.id, instruction: leaf.instruction })}
-                                                                                        {...leafHover(leaf.typeId, leaf.defaultConstraints)}
+                                                                                        {...leafHover(leaf.typeId, leaf.defaultConstraints, leaf.id)}
                                                                                     >
                                                                                         <span style={S.addBadge}><Plus size={13} weight="bold" /></span>
                                                                                         <span>{leaf.label}</span>

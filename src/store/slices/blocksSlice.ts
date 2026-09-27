@@ -22,7 +22,9 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
 
     addBlockFromType: (typeId, label, overrideConstraints, opts) => set((state) => {
         const def = REGISTRY[typeId];
-        const mergedConstraints = seedConstraints({ typeId, base: state.baseSettings, override: overrideConstraints }) as BlockConstraints;
+        // A locked curriculum's constraints are the author's: the teacher's leerjaar never re-seeds them.
+        const grade = state.curriculum?.locked ? null : state.selectedGrade;
+        const mergedConstraints = seedConstraints({ typeId, base: state.baseSettings, override: overrideConstraints, grade, leafId: opts?.leafId }) as BlockConstraints;
 
         const newBlock: MathBlock = {
             id: Math.random().toString(36).substring(2, 9),
