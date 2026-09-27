@@ -2,7 +2,15 @@ import type { MathBlock, AfrondenExercise } from '../math/types';
 import { getMaskPlaces } from '../math/mathEngine';
 import type { AfrondenConstraints } from '../math/constraintTypes';
 
-export interface RoundTarget { key: string; label: string; weight: number; }
+export interface RoundTarget {
+    key: string;
+    label: string;
+    weight: number;
+    // What the sheet's column header prints when the key alone would not read ('M' vs 'MLD').
+    heading?: string;
+    // Offered once maxGetal REACHES the weight instead of exceeding it: only 1MLD, the top of the list.
+    inclusive?: boolean;
+}
 
 // Natural rounding targets (units excluded — rounding to E is a no-op).
 const NATURAL_TARGETS: RoundTarget[] = [
@@ -13,9 +21,12 @@ const NATURAL_TARGETS: RoundTarget[] = [
     // Appended, never inserted: the fallback is all[0] and random picks index the pool in this order,
     // and usableTargets only offers each once maxGetal exceeds its weight (HD from max 1e6 on).
     { key: 'HD', label: 'honderdduizendtal', weight: 100000 },
-    { key: 'M',  label: 'miljoental',        weight: 1000000 },
-    { key: 'TM', label: 'tienmiljoental',    weight: 10000000 },
-    { key: 'HM', label: 'honderdmiljoental', weight: 100000000 },
+    // Owner decision (2026-09-27): the millions read as 1M / 10M / 100M / 1MLD, in the config and on the sheet.
+    { key: 'M',   label: '1M',   heading: '1M',   weight: 1000000 },
+    { key: 'TM',  label: '10M',  heading: '10M',  weight: 10000000 },
+    { key: 'HM',  label: '100M', heading: '100M', weight: 100000000 },
+    // Rounding a number ≤ 1e9 to the billion gives 0 or 1 000 000 000 — still a real question at the ceiling.
+    { key: 'Mrd', label: '1MLD', heading: '1MLD', weight: 1000000000, inclusive: true },
 ];
 
 // Decimal rounding targets.
@@ -37,8 +48,18 @@ export function targetsFor(numberType: string): RoundTarget[] {
 export function usableTargets(numberType: string, maxGetal: number, decimalPlaces: number, selected: string[]): RoundTarget[] {
     const minChanging = Math.pow(10, -decimalPlaces);
     return targetsFor(numberType).filter(t => selected.includes(t.key) && (
-        numberType === 'decimal' ? t.weight > minChanging + 1e-9 : t.weight < maxGetal
+        numberType === 'decimal' ? t.weight > minChanging + 1e-9 : naturalTargetOffered(t, maxGetal)
     ));
+}
+
+// SYNC: AfrondenConfig offers exactly these pills for a natural block.
+export function naturalTargetOffered(t: RoundTarget, maxGetal: number): boolean {
+    return t.inclusive ? t.weight <= maxGetal : t.weight < maxGetal;
+}
+
+/** The column header a sheet prints for a target: the short heading, else its key. */
+export function targetHeading(t: RoundTarget): string {
+    return t.heading ?? t.key;
 }
 
 // Decimal-safe round to a place weight (10, 100, 0.1, 0.01, …).

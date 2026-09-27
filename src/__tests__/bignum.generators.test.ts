@@ -2,7 +2,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { MathBlock } from '../services/math/types';
 import { numberToDutchWords } from '../services/splitsen/dutchWords';
 import { generateSplitsenExercises, recomputeSplitsenExercise } from '../services/splitsen/splitsenGenerator';
-import { generateAfrondenExercises, targetsFor, usableTargets, roundTo } from '../services/afronden/afrondenGenerator';
+import { generateAfrondenExercises, targetsFor, usableTargets, roundTo, targetHeading } from '../services/afronden/afrondenGenerator';
 import { generateVergelijkenExercises } from '../services/vergelijken/vergelijkenGenerator';
 import { repText } from '../services/vergelijken/representations';
 import { generatePlaatswaardeExercises } from '../services/plaatswaarde/plaatswaardeGenerator';
@@ -193,7 +193,34 @@ const roundRef = (n: number, w: number) => {
 
 describe('afronden big targets', () => {
     test('existing targets keep their order; the new ones are appended', () => {
-        expect(targetsFor('natural').map(t => t.key)).toEqual(['T', 'H', 'D', 'TD', 'HD', 'M', 'TM', 'HM']);
+        expect(targetsFor('natural').map(t => t.key)).toEqual(['T', 'H', 'D', 'TD', 'HD', 'M', 'TM', 'HM', 'Mrd']);
+    });
+
+    test('the millions read 1M / 10M / 100M / 1MLD in the config and on the sheet; the rest keep theirs', () => {
+        const t = Object.fromEntries(targetsFor('natural').map(x => [x.key, x]));
+        expect(['M', 'TM', 'HM', 'Mrd'].map(k => [t[k].label, targetHeading(t[k])])).toEqual([['1M', '1M'], ['10M', '10M'], ['100M', '100M'], ['1MLD', '1MLD']]);
+        expect(t.HD.label).toBe('honderdduizendtal');
+        expect(['T', 'H', 'D', 'TD', 'HD'].map(k => targetHeading(t[k]))).toEqual(['T', 'H', 'D', 'TD', 'HD']);
+    });
+
+    test('1MLD is offered only once the max reaches a billion', () => {
+        const all = targetsFor('natural').map(t => t.key);
+        const usable = (max: number) => usableTargets('natural', max, 0, all).map(t => t.key);
+        expect(usable(100_000_000)).not.toContain('Mrd');
+        expect(usable(999_999_999)).not.toContain('Mrd');
+        expect(usable(1e9)).toContain('Mrd');
+    });
+
+    test('rounding to 1MLD gives 0 or 1 000 000 000, as the reference does', () => {
+        for (const n of [1, 499_999_999, 500_000_000, 500_000_001, 999_999_999, 1e9]) expect(roundTo(n, 1e9), String(n)).toBe(roundRef(n, 1e9));
+        const exs = generateAfrondenExercises(block('afronden', {
+            subType: 'simpel', numberType: 'natural', maxGetal: 1e9, roundTargets: ['Mrd'],
+        }, 50));
+        for (const ex of exs) {
+            expect(ex.targetKey).toBe('Mrd');
+            expect([0, 1e9]).toContain(roundTo(ex.number!, 1e9));
+            expect(roundTo(ex.number!, 1e9)).toBe(roundRef(ex.number!, 1e9));
+        }
     });
 
     test('a target is only usable below the max, so schattend (≤ 1e5) and today\'s sheets see no new one', () => {

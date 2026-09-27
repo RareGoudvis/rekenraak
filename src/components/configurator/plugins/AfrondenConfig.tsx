@@ -1,7 +1,7 @@
 import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
-import { targetsFor } from '../../../services/afronden/afrondenGenerator';
+import { targetsFor, naturalTargetOffered } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import { RANGES, presetLabel } from '../../../config/numberRanges';
@@ -28,7 +28,7 @@ export default function AfrondenConfig({ block }: Props) {
         if (next.length) set('roundTargets', next);   // keep ≥1
     };
     const places = getMaskPlaces(maxGetal, 'natural');
-    const usableTargets = targetsFor(numberType).filter(t => isDecimal || t.weight < maxGetal);
+    const usableTargets = targetsFor(numberType).filter(t => isDecimal || naturalTargetOffered(t, maxGetal));
 
     return (
         <div style={styles.container}>
