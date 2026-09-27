@@ -111,7 +111,10 @@ the per-typeId table is §7.
    [viewer/README.md](src/components/viewer/README.md)
 4. Config plugin at `src/components/configurator/plugins/[Type]Config.tsx`, `{ block }`,
    reading/writing through `useConstraints<XConstraints>`
-5. One `row<XConstraints>({...})` in `REGISTRY` + one row in `EXERCISE_UI` (same key)
+5. One `row<XConstraints>({...})` in `REGISTRY` + one row in `EXERCISE_UI` (same key). A type
+   with a max-number picker declares `maxPresets` on its row and takes the list from
+   [numberRanges.ts](src/config/numberRanges.ts) (its top = the type's didactic ceiling; never a
+   literal in the config — constraintSpace reads the same list)
 6. One leaf in `APP_STRUCTURE` ([appstructure.ts](src/config/appstructure.ts)) with `typeId`,
    optional `defaultConstraints` and an `instruction` (default opdracht-titel, string or fn); its options in [constraintSpace.ts](src/config/constraintSpace.ts)
    so the generator matrix tests them

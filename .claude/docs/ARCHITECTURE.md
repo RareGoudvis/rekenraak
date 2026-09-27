@@ -89,7 +89,7 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 | `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten"), uniqueExercises (default and absent = true — Blad › Opdrachten › "Geen dubbele oefeningen"; read by `generateForBlock` in generateDispatch.ts, see §6) |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
-| `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point: seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
+| `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point (base max L1 20 · L2 100 · L3 1 000 · L4 10 000 · L5 1 000 000 · L6 1 000 000 000, floored per type — §13): seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
 | `curriculum` | `CurriculumLock \| null` | Non-null + `locked` = restricted parent mode (whitelisted sidebar + frozen difficulty) — see §13 |
 | `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks the curriculum builder edits via the real config plugins; not rendered/autosaved/historied — see §13 |
 | `sidebarTab` | `'oefeningen' \| 'overzicht'` | Which sidebar tab is open. The strip renders in the TopBar (above the sidebar column), the panel renders the content — see §9 "Shell" |
@@ -257,10 +257,15 @@ Exercise types are declared in a **central registry**, split across two files
 keyed by **exact** `typeId` (no substring matching):
 
 - [exerciseRegistry.ts](../../src/config/exerciseRegistry.ts) — **pure data** (no React):
-  `{ exerciseField, generate, defaultConstraints, defaultCount }`. Imported by the
-  store and `generateDispatch`.
+  `{ exerciseField, generate, defaultConstraints, defaultCount, maxPresets? }`. Imported by the
+  store and `generateDispatch`. `maxPresets(c, force?) → { key, presets } | null` names the
+  max-number list the type's config shows for constraints `c` (branching on numberType /
+  layout / mode exactly like the config); its top is the type's **didactic ceiling**. The lists
+  themselves live once in [numberRanges.ts](../../src/config/numberRanges.ts) — configs render
+  them, `baseApply` floors the grade/base seed into them (§13), `constraintSpace.ts` sweeps them
+  with `force=true`. `null` = no picker.
 - [exerciseUI.tsx](../../src/config/exerciseUI.tsx) — **React**: `{ Viewer, Config }`.
-  Imported by `App.tsx` and `Inspector.tsx`.
+  Imported by `components/sheet/SheetBlock.tsx` and `Inspector.tsx`.
 
 The split exists to avoid a cycle: configs import the store, so if the store
 imported a registry that pulled in configs it would loop. The store only needs the
@@ -288,7 +293,9 @@ The four consumers are now **table lookups, not branches**:
 4. **Config plugin** — create `src/components/configurator/plugins/<X>Config.tsx`
    taking `{ block }`.
 5. **Registry rows** — add **one row** to `REGISTRY` (exerciseRegistry.ts) and
-   **one row** to `EXERCISE_UI` (exerciseUI.tsx), under the same `typeId` key.
+   **one row** to `EXERCISE_UI` (exerciseUI.tsx), under the same `typeId` key. A type with a
+   max-number picker declares `maxPresets` on its REGISTRY row and takes its list from
+   `numberRanges.ts` (a new capped list is added there, never as a literal in the config).
 6. **Sidebar tree** — add the leaf (with `typeId`, optional `defaultConstraints` and an
    `instruction` — the pupil-facing opdracht-titel, a string or a function of the constraints)
    to `APP_STRUCTURE` in [appstructure.ts](../../src/config/appstructure.ts). The leaf's
@@ -371,6 +378,14 @@ the retry loop and build exactly `n` items directly.
 ---
 
 ## 7. Exercise-type registry table
+
+> Max-number lists (2026-09-27): each row's `maxPresets` picks its list from
+> [numberRanges.ts](../../src/config/numberRanges.ts). Lists capped by the old global 1 000 000
+> (hr natural + / − / gemengd, ×/: 'andere', cijferen natural, afronden natural, plaatswaarde,
+> splitsen positie-*, vergelijken getallen/kiezen, base) grow to 1 000 000 000; every other list
+> keeps its own didactic ceiling (MAB 1 000, geld 1 000, deelbaarheid / getallenas / ordenen /
+> patronen / schattend 100 000, …). `PLACE_VALUES` (mathEngine.ts) runs Mrd · HM · TM · M … td, so
+> masks / bridges / plaatswaarde reach the miljarden; `getMaskPlaces(max)` only exposes places ≤ max.
 
 > Multi-term (2026-07-06): hr-std equations support 2-4 termen/factoren (`termCount`,
 > `operandMasks[]`, `operandMax[]`, `Equation.operators[]` + `missingIndex`) and presets
@@ -949,10 +964,11 @@ src/
 │   ├── appstructure.ts          # APP_STRUCTURE tree (Domain→Subdomain→ExerciseType)
 │   ├── exerciseRegistry.ts      # REGISTRY: typeId → {exerciseField, generate, defaultConstraints, defaultCount} (pure data)
 │   ├── exerciseUI.tsx           # EXERCISE_UI: typeId → {Viewer, Config} (React)
-│   ├── baseSettings.ts          # BaseSettings + baseApply (global snapshot-on-add, §13)
+│   ├── baseSettings.ts          # BaseSettings + baseApply/baseRangeFor (snapshot-on-add, floored into the type's list, §13)
 │   ├── exerciseCatalog.ts       # flat addable catalog for mass-add / curriculum (§13)
 │   ├── instructionPresets.ts    # quick-pick opdracht-titel texts + defaultInstructionFor()
-│   ├── gradePresets.ts          # Leerjaar 1–6: base-difficulty seed + leaf grade-gate (soft starting point)
+│   ├── gradePresets.ts          # Leerjaar 1–6: base-difficulty seed (L6 = 1 000 000 000) + leaf grade-gate (soft starting point)
+│   ├── numberRanges.ts          # every max-number option list once: NAT_CEILING, NAT_STEPS, RANGES, floorToPreset, presetLabel (§5, §13)
 │   ├── printPalette.ts          # curated print-safe swatches + STYLE_BOUNDS clamps (style builder)
 │   ├── rekenmethodes.ts         # rekenmethode metadata (bibliotheek)
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
@@ -1128,7 +1144,7 @@ drive the existing registry/config machinery.
 
 [baseSettings.ts](../../src/config/baseSettings.ts) — pure data: `BaseSettings`
 (max/getalsoort/operand masks/bridges map/decimalen/breuk-opties) + `DEFAULT_BASE` +
-`baseApply(base, registryDefaults)`. The teacher sets these once (sidebar →
+`baseApply(base, registryDefaults, range)`. The teacher sets these once (sidebar →
 Geavanceerd → Basisinstellingen, [BaseSettingsModal.tsx](../../src/components/layout/BaseSettingsModal.tsx)).
 `addBlockFromType` snapshots them into each **new** block:
 `constraints = { ...registryDefaults, ...baseApply(base, defaults), ...leafOverride }`
@@ -1136,6 +1152,17 @@ Geavanceerd → Basisinstellingen, [BaseSettingsModal.tsx](../../src/components/
 it (`'key' in defaults`), mapping the semantic max onto `maxGetal`/`maxRange`/`maxNumber`
 and the masks/bridges/decimalen/breuk-toggles where present. Snapshot, not live — changing
 the base never retro-affects existing blocks.
+
+**Per-type ceiling.** The max is **floored into the type's own list**: `range` =
+`REGISTRY[typeId].maxPresets(ctx)` where `baseRangeFor` builds `ctx` from registry defaults →
+the base's numberType → the leaf override (so a decimal base or leaf picks the decimal list), and
+`floorToPreset` takes the largest preset ≤ base (below the lowest → lowest). No list →
+`min(base, NAT_CEILING)`. So leerjaar 5/6 seeds land on each type's own top (MAB 1 000,
+deelbaarheid 100 000, …) instead of an unlisted value. Safety nets for old saves / share links:
+`loadWorksheet` clamps `baseMaxGetal` > `NAT_CEILING` (1e9); `generateForBlock` generates from a
+clamped copy (`withinCeiling`, 1e10 × INTERNAL_SCALE would pass 2^53); `PopupSelect`'s
+`clampToLowest` floors an unmatched value to the nearest lower option. Until the grown lists
+are switched on (`BIG_NUMBERS_ENABLED` in numberRanges.ts, temporary), they stop at 1e6.
 
 ### Mass-add modal ("Toevoegen")
 
