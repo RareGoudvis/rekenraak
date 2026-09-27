@@ -2,7 +2,8 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { RekenvolgordeConstraints } from '../../../services/math/constraintTypes';
 
@@ -14,6 +15,7 @@ const OPS = [
 
 export default function RekenvolgordeConfig({ block }: Props) {
     const [c, patch] = useConstraints<RekenvolgordeConstraints>(block);
+    const range = useMaxPresets(block);
     const operators: string[] = c.operators ?? ['+', '-', 'x'];
     const haakjesMode: string = c.haakjesMode ?? 'MAG';
     const opsCount: number = c.opsCount ?? 2;
@@ -46,16 +48,16 @@ export default function RekenvolgordeConfig({ block }: Props) {
                 </div>
             </div>
 
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum uitkomst:" info="Antwoorden blijven onder dit getal." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.rekenvolgorde.map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum uitkomst"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Haakjes:" info="Geen = nooit haakjes · Mag = bij ongeveer de helft · Moet = bij elke oefening. Haakjes veranderen altijd echt de uitkomst." />

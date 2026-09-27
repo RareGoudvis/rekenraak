@@ -3,7 +3,8 @@ import { F } from './shared/fieldStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { ControlerenConstraints } from '../../../services/math/constraintTypes';
 
@@ -11,6 +12,7 @@ interface Props { block: MathBlock; }
 
 export default function ControlerenConfig({ block }: Props) {
     const [c, patch] = useConstraints<ControlerenConstraints>(block);
+    const range = useMaxPresets(block);
     const subType: string = c.subType ?? 'negenproef';
     const operators: string[] = c.operators ?? ['+', '-'];
     const maxGetal = c.maxGetal ?? 1000;
@@ -35,16 +37,16 @@ export default function ControlerenConfig({ block }: Props) {
                 </div>
             )}
 
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Grootte van de te controleren bewerking." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.controleren.map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Foute uitkomsten:" info="Hoeveel rijen een bewust fout antwoord tonen. Fouten zijn altijd betrapbaar met de proef." />

@@ -2,7 +2,8 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { ProcentenConstraints } from '../../../services/math/constraintTypes';
 
@@ -12,6 +13,7 @@ const PERCENTS = [1, 5, 10, 20, 25, 50, 75, 100];
 
 export default function ProcentenConfig({ block }: Props) {
     const [c, patch] = useConstraints<ProcentenConstraints>(block);
+    const range = useMaxPresets(block);
     const subType: string = c.subType ?? 'nemen';
     const percents: number[] = c.percents ?? [10, 25, 50];
     const maxGetal = c.maxGetal ?? 1000;
@@ -34,16 +36,16 @@ export default function ProcentenConfig({ block }: Props) {
                 </div>
             </div>
 
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste basisgetal. Antwoorden zijn altijd natuurlijke getallen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.procenten.map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {subType === 'nemen' && (
                 <div style={styles.onOffRow}>

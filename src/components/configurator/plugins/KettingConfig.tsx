@@ -2,7 +2,8 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { KettingConstraints, OpSetting } from '../../../services/math/constraintTypes';
 
@@ -14,6 +15,7 @@ const OPS = [
 
 export default function KettingConfig({ block }: Props) {
     const [c, patch] = useConstraints<KettingConstraints>(block);
+    const range = useMaxPresets(block);
     const ops: string[] = c.ops ?? ['+', '-'];
     const opSettings: Record<string, OpSetting> = c.opSettings ?? {};
     const chainLength: number = c.chainLength ?? 4;
@@ -60,16 +62,16 @@ export default function KettingConfig({ block }: Props) {
                 </div>
             </div>
 
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Tussenresultaten blijven onder dit getal." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.ketting.map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.onOffRow}>
                 <SettingLabel text="Ook tussenstap blanco" info="Naast het eindresultaat wordt ook één tussenwaarde opengelaten." />

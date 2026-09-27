@@ -6,7 +6,8 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import ExercisePreview from '../../shared/ExercisePreview';
 import type { MabConstraints } from '../../../services/math/constraintTypes';
 
@@ -29,6 +30,7 @@ const placeKeysFor = (maxNumber: number): string[] => {
 };
 
 export default function MabConfig({ block }: Props) {
+    const range = useMaxPresets(block);
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
     const setExercises = useWorksheetStore((state) => state.setExercises);
     const setGenerationNote = useWorksheetStore((state) => state.setGenerationNote);
@@ -99,12 +101,12 @@ export default function MabConfig({ block }: Props) {
             )}
 
             {/* MAX NUMBER */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxNumber}
-                    options={RANGES.mab.map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => {
                         // Drop mask keys that no longer apply to the new range so the
                         // generator doesn't try to satisfy an impossible constraint.
@@ -115,7 +117,7 @@ export default function MabConfig({ block }: Props) {
                     }}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* SPECIFIC NUMBER GENERATOR — mask */}
             <div style={styles.section}>

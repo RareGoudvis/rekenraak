@@ -5,12 +5,13 @@ import { sharedPluginStyles as S } from './sharedPluginStyles';
 import type { MathBlock } from '../../../services/math/types';
 import { DENOMINATION_CATALOGUE, denominationLabel } from '../../../services/geld/geldGenerator';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { GeldConstraints } from '../../../services/math/constraintTypes';
 
 export default function GeldConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<GeldConstraints>(block);
+    const range = useMaxPresets(block);
     const isHerkennen = block.typeId === 'geld-herkennen';
 
     const set = (key: keyof GeldConstraints, val: unknown) => patch({ [key]: val } as Partial<GeldConstraints>);
@@ -33,16 +34,16 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
         <div style={S.container}>
 
             {/* ── Maximum getal ── */}
-            <div style={S.section}>
+            {range && <div style={S.section}>
                 <SettingLabel text="Maximum getal" info="Het grootste bedrag dat mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.geld.map(v => ({ value: v, label: `Tot ${v}` }))}
+                    options={range.presets.map(v => ({ value: v, label: `Tot ${v}` }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* ── Toegestane coupures ── */}
             <div style={S.section}>
