@@ -6,12 +6,13 @@ import { formatMathNumber, opGlyph as printedOp } from '../../services/math/form
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { FULL_BLOCK_WIDTH_PX, useBlockWidth, useSheetSizePx, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../services/math/constraintTypes';
 import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
 import { itemLabel, itemLabelChars } from './itemNumbering';
+import { hrRowLayout, hrRowStats, HR_SOLUTION_FONT } from '../../services/layout/hrRowLayout';
 
 interface Props {
     block: MathBlock;
@@ -21,16 +22,16 @@ interface Props {
 // Sheet font sizes below are factors of --sheet-size-math (digits/mono) so the Blad-tab
 // sliders rescale every rendered number; screen-only chrome (emptyStateText) is exempt.
 const styles = {
-    solutionText: { ...solutionText, padding: '0 4px', fontSize: 'calc(var(--sheet-size-math) * 1.04)' } as React.CSSProperties,
+    solutionText: { ...solutionText, padding: '0 4px' } as React.CSSProperties,
     // The fill-in blank shrinks with the cell: 40px inside 6px margins at full width, a
     // narrower line in a quarter-width block where those 52px are a third of the row.
     mathDottedLine: (w = 40, m = 6): React.CSSProperties => ({ borderBottom: '1.5px solid #000', width: `${w}px`, margin: `0 ${m}px`, display: 'inline-block', height: ANSWER_LINE_H }),
-    mathInput: { width: '70px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', border: '1px solid transparent', background: 'transparent', outline: 'none', color: '#000', padding: 0 } as React.CSSProperties,
+    mathInput: { width: '70px', textAlign: 'center', fontFamily: 'Azeret Mono, monospace', border: '1px solid transparent', background: 'transparent', outline: 'none', color: '#000', padding: 0 } as React.CSSProperties,
     fractionWrapper: { display: 'inline-flex', flexDirection: 'column', alignItems: 'center', margin: '0 4px', fontSize: 'calc(var(--sheet-size-math) * 0.87)' } as React.CSSProperties,
     fractionTop: { borderBottom: '1.5px solid #000', padding: '0 4px', minWidth: '24px', textAlign: 'center' } as React.CSSProperties,
     fractionBottom: { padding: '0 4px', minWidth: '24px', textAlign: 'center' } as React.CSSProperties,
     wholeNumberStyle: { fontSize: 'calc(var(--sheet-size-math) * 1.04)', marginRight: '4px', color: '#000' } as React.CSSProperties,
-    exerciseRow: { display: 'flex', alignItems: 'flex-end', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
+    exerciseRow: { display: 'flex', alignItems: 'flex-end', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
     // widthPx applies only to the inline-short blank; inline-long and stepped keep their
     // full-width work line, which is writing room rather than an answer-sized slot.
     // In a tight cell the line is FLEXIBLE instead of fixed: it takes whatever the sum
@@ -126,26 +127,52 @@ function OperatorSwitch({ blockId, exerciseId, glyph, current, options }: {
 }
 
 export default function MathBlockRenderer({ block, showSolutions }: Props) {
-    const A4_CONTENT_PX = useBlockWidth();
-    // The math token in px, so the column widths below follow the Lettergrootte slider.
+    const blockPx = useBlockWidth();
+    // The math token in px, so the column widths follow the Lettergrootte slider.
     const sheetPx = useSheetSizePx('math');
-    // Third sizing tier. A quarter-width cell is 163px (688 − 3×12 gap, ÷4), and the
-    // "narrow" tier below still spends ~60px on column boxes and operator gaps that the
-    // writing line needs. Below 200px everything that is air rather than ink gives way:
-    // no column floors, 6px gaps, a blank sized to the answer, one exercise per row.
-    const TIGHT_MAX_PX = 200;
-    const tight = A4_CONTENT_PX < TIGHT_MAX_PX;
-    const BLANK_W = tight ? 30 : 40;
-    const BLANK_M = tight ? 3 : 6;
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
+
+    if (!block.exercises || block.exercises.length === 0) {
+        return <div className="no-print" style={styles.emptyStateText}>(Nog geen oefeningen — klik Genereer)</div>;
+    }
+
+    // Puntoefeningen (a + . = c) are by definition single short lines — force inline-short
+    // regardless of the stored preset (the Kort/Lang/Stappen control is hidden for them).
+    const c = block.constraints as MulDivConstraints;
+    const isPunt = c.equationType === 'puntoefening';
+    const layout = isPunt ? 'inline-short' : block.layoutPreset;
+
+    // 'Gemengd' (mixed-operator) block: NOT a typeId check — any family whose constraints
+    // carry a `variants` array gets the per-exercise operator switch (only hr-std-gemengd
+    // does today, but a future family that reuses this shape gets it for free).
+    const mixedC = block.constraints as MixedConstraints;
+    const mixedOptions = Array.isArray(mixedC.variants)
+        ? MIXED_VARIANTS.filter(v => mixedC.variants.includes(v.id))
+        : null;
+
+    const compScaffoldOn = c.preset === 'compenseren'
+        && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
+    const {
+        tight, fontScale, wrapChain, labelPx, labelColPx, termBoxPx, answerLinePx,
+        gridCols, colGap, colJustify, blankW: BLANK_W, blankM: BLANK_M,
+        opGlyphPx: OP_GLYPH_PX, opTermGap: OP_TERM_GAP, termUnitGap: TERM_UNIT_GAP, eqGap: EQ_GAP, answerGap: ANSWER_GAP, charPx,
+    } = hrRowLayout({
+        ...hrRowStats(block.exercises, sheetPx),
+        widthPx: blockPx, mathPx: sheetPx, layout, compScaffoldOn,
+        labelChars: itemLabelChars(block.itemNumbering, block.exercises.length),
+    });
+    // A style at `factor` × the math token, scaled by the fit ladder's font step.
+    const atFont = (style: React.CSSProperties, factor: number): React.CSSProperties =>
+        ({ ...style, fontSize: `calc(var(--sheet-size-math) * ${Math.round(factor * fontScale * 1000) / 1000})` });
+    const termPx = (chars: number) => Math.ceil(chars * charPx) + 4;
 
     const renderTerm = (val: number | Fraction | undefined, isMissing: boolean, blockId: string, exId: string, opIdx: number, widthPx?: number) => {
         if (val === undefined) return null;
 
         if (isMissing) {
             if (showSolutions) {
-                if (isFraction(val)) return <span style={styles.solutionText}><FractionDisplay val={val} /></span>;
-                return <span style={fitted(styles.solutionText, 1.04)}>{formatMathNumber(val)}</span>;
+                if (isFraction(val)) return <span style={atFont(styles.solutionText, HR_SOLUTION_FONT)}><FractionDisplay val={val} /></span>;
+                return <span style={atFont(styles.solutionText, HR_SOLUTION_FONT)}>{formatMathNumber(val)}</span>;
             }
             return <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
         }
@@ -172,7 +199,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 // block's column box, for the first operand). A fixed 70px box with centred
                 // text is what pushed a short second operand away from its operator and a
                 // long one flush against it: the width, not the spacing, was the bug.
-                style={{ ...fitted(styles.mathInput, 1), textAlign: 'right', width: widthPx === undefined ? undefined : `${widthPx}px` }}
+                style={{ ...atFont(styles.mathInput, 1), textAlign: 'right', width: widthPx === undefined ? undefined : `${widthPx}px` }}
             />
         );
     };
@@ -180,201 +207,15 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const renderGiven = (val: number | Fraction | undefined) => {
         if (val === undefined) return null;
         if (isFraction(val)) return <FractionDisplay val={val} />;
-        return <span style={fitted({ fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 1)', color: '#000' }, 1)}>{formatMathNumber(val as number)}</span>;
+        return <span style={atFont({ fontFamily: 'Azeret Mono, monospace', color: '#000' }, 1)}>{formatMathNumber(val as number)}</span>;
     };
 
     const renderAnswer = (val: number | Fraction | undefined) => {
         if (val === undefined) return null;
         if (isFraction(val)) return <FractionDisplay val={val} color={SOL} />;
-        return <span style={fitted(styles.solutionText, 1.04)}>{formatMathNumber(val)}</span>;
+        return <span style={atFont(styles.solutionText, HR_SOLUTION_FONT)}>{formatMathNumber(val)}</span>;
     };
 
-    if (!block.exercises || block.exercises.length === 0) {
-        return <div className="no-print" style={styles.emptyStateText}>(Nog geen oefeningen — klik Genereer)</div>;
-    }
-
-    // Puntoefeningen (a + . = c) are by definition single short lines — force inline-short
-    // regardless of the stored preset (the Kort/Lang/Stappen control is hidden for them).
-    const c = block.constraints as MulDivConstraints;
-    const isPunt = c.equationType === 'puntoefening';
-    const layout = isPunt ? 'inline-short' : block.layoutPreset;
-    const isInlineShort = layout === 'inline-short';
-
-    // 'Gemengd' (mixed-operator) block: NOT a typeId check — any family whose constraints
-    // carry a `variants` array gets the per-exercise operator switch (only hr-std-gemengd
-    // does today, but a future family that reuses this shape gets it for free).
-    const mixedC = block.constraints as MixedConstraints;
-    const mixedOptions = Array.isArray(mixedC.variants)
-        ? MIXED_VARIANTS.filter(v => mixedC.variants.includes(v.id))
-        : null;
-
-    // What ONE VerticalFraction occupies: two stacked digit cells whose minWidth is
-    // (fontSize + 9)/17.33 em of the math token inside 4px of padding either side, plus the
-    // whole number of a mixed number. SYNC: VerticalFraction's cellMin and FractionDisplay's
-    // fontSize={15}. A digit there is not mono, so 0.62em is the (generous) advance.
-    const FRACTION_FONT_PX = 15;
-    const FRACTION_CELL_MIN_EM = (FRACTION_FONT_PX + 9) / 17.33;
-    const FRACTION_DIGIT_EM = 0.62;
-    const fractionPx = (f: Fraction): number => {
-        const digits = Math.max(String(f.n).length, String(f.d).length);
-        const stack = Math.max(FRACTION_CELL_MIN_EM, digits * FRACTION_DIGIT_EM) * sheetPx + 8;
-        const whole = f.whole ? String(f.whole).length * FRACTION_DIGIT_EM * sheetPx + 4 : 0;
-        return Math.ceil(stack + whole);
-    };
-    let maxChars = 0;
-    let maxAnswerChars = 0;
-    let maxTerms = 2;
-    let anyRemainder = false;
-    let anyMissingTerm = false;
-    let maxFractionPx = 0;
-    for (const ex of block.exercises) {
-        if (!ex?.operands) continue;
-        maxTerms = Math.max(maxTerms, ex.operands.length);
-        if (ex.remainder !== undefined) anyRemainder = true;
-        for (const o of ex.operands) {
-            if (typeof o === 'number') maxChars = Math.max(maxChars, formatMathNumber(o).length);
-            else if (isFraction(o)) maxFractionPx = Math.max(maxFractionPx, fractionPx(o));
-        }
-        // With a missing operand the (red) solution renders inside the operand cell too.
-        const hasMissing = ex.missingIndex !== undefined || ex.missingTerm === 'operand1' || ex.missingTerm === 'operand2';
-        if (hasMissing) anyMissingTerm = true;
-        if (hasMissing && typeof ex.answer === 'number') maxChars = Math.max(maxChars, formatMathNumber(ex.answer).length);
-        if (hasMissing && isFraction(ex.answer)) maxFractionPx = Math.max(maxFractionPx, fractionPx(ex.answer));
-        if (typeof ex.answer === 'number') maxAnswerChars = Math.max(maxAnswerChars, formatMathNumber(ex.answer).length);
-    }
-    const labelChars = itemLabelChars(block.itemNumbering, block.exercises.length);
-
-    // An operator belongs to the operand AFTER it. `[operator][OP_TERM_GAP][operand]` is
-    // therefore laid out as ONE right-aligned unit: the air after the sign is a constant
-    // (so "+ 51" and "+315" read identically), the air before it is a constant too, and the
-    // operand's last digit still lands on the block's column edge because the unit -- not
-    // the operand -- carries the fixed width. Before this the operand sat in a fixed
-    // right-aligned cell, so all of its slack fell between the sign and the digits.
-    const OP_GLYPH_PX = tight ? 12 : 13;  // one Azeret Mono glyph at 17px (11.06), rounded up
-    // The same air on both sides of a sign: the owner reads "72   + 1" as jitter.
-    const OP_TERM_GAP = tight ? 6 : 10;   // sign -> its operand
-    const TERM_UNIT_GAP = OP_TERM_GAP;    // operand -> the sign of the next one
-    // Air around the "=" and between the sum and its answer column. Halved when tight:
-    // 4 gaps x 4px is what buys `532 + 342 = ____` its place inside a 163px quarter.
-    const EQ_GAP = tight ? 6 : 10;
-    const ANSWER_GAP = tight ? 4 : 8;
-    // Long chains at the 1e9 ceiling: 3-4 terms of 10+ characters ("10 000 000" and up, never
-    // reachable at a max ≤ 1e6) can outrun even a full-width row — three 13-char terms in Kort
-    // need ~711px of 688. Estimated from the block, never measured (viewer rule 5): the math
-    // font steps down toward the floor first, then the chain wraps before its last term. A
-    // row that already fits skips all of it, so every other block renders exactly as before.
-    const FIT_MIN_CHARS = 10;
-    // 0.85 = WIDTH_FIT_FLOOR, the smallest size the sheet ever shrinks a block to.
-    const FIT_FONT_STEPS = [1, 0.95, 0.9, 0.85];
-    const rowNeedPx = (f: number, wrap: boolean): number => {
-        const ch = sheetPx * 0.64 * f;
-        const label = labelChars > 0 ? Math.ceil(labelChars * ch) + 4 + OP_TERM_GAP : 0;
-        const box = Math.max(anyMissingTerm ? BLANK_W + 2 * BLANK_M : 0, Math.ceil(maxChars * ch) + 4);
-        const unit = TERM_UNIT_GAP + OP_GLYPH_PX + OP_TERM_GAP + box;
-        // The answer slot: Kort's answer-sized blank or Lang/Stappen's 55px line floor, or the red answer if wider.
-        const blank = isInlineShort ? Math.max(75, Math.ceil(maxAnswerChars * ch) + 24) : 55;
-        const answer = ANSWER_GAP + ch + EQ_GAP + Math.max(blank, Math.ceil(maxAnswerChars * ch * 1.04) + 8);
-        return wrap
-            ? label + box + Math.max((maxTerms - 2) * unit, unit + answer)
-            : label + box + (maxTerms - 1) * unit + answer;
-    };
-    const fitCandidate = !tight && maxTerms >= 3 && maxChars >= FIT_MIN_CHARS && maxFractionPx === 0 && !anyRemainder;
-    const fit = fitCandidate && rowNeedPx(1, false) > A4_CONTENT_PX
-        ? [false, true].flatMap(wrap => FIT_FONT_STEPS.map(f => ({ f, wrap }))).find(o => rowNeedPx(o.f, o.wrap) <= A4_CONTENT_PX)
-        : undefined;
-    const fitFont = fit?.f ?? 1;
-    const wrapChain = fit?.wrap ?? false;
-    // A style at the fitted font size; the very same object when nothing had to fit.
-    const fitted = (style: React.CSSProperties, factor: number): React.CSSProperties => fitFont === 1 ? style
-        : { ...style, fontSize: `calc(var(--sheet-size-math) * ${Math.round(factor * fitFont * 1000) / 1000})` };
-
-    // Adaptive sizing: the classic fixed 85px operand column fits 8 mono chars, so
-    // "1 000 000" (9 chars) clipped its last digit. Widen the column to the block's
-    // longest formatted operand, and drop the 2-up grid to 1-up when two widened rows
-    // no longer fit the printable width (A4 content ≈ 625px).
-    // Azeret Mono's advance is 0.64em (11.06px measured in Chrome at the default 17.33px
-    // token), so the operand columns follow the Lettergrootte slider instead of freezing
-    // at 13pt the way a hardcoded 11.1 did.
-    const CHAR_PX = sheetPx * 0.64 * fitFont;
-    // ONE label column for the whole block, sized to its longest label, so "1)" and "10)"
-    // still leave the "=" of every row on the same x. +4px of air after the widest label.
-    const labelPx = labelChars > 0 ? Math.ceil(labelChars * CHAR_PX) + 4 : 0;
-    // ONE term width for the whole block, fractions included. A block with a fraction used
-    // to fall back to intrinsic widths for every term, so "=" and the answer line wandered
-    // from row to row: 10/10 x 10/7 pushed them far right of 3/6 x 1/8.
-    const widestTermPx = Math.max(Math.ceil(maxChars * CHAR_PX), maxFractionPx);
-    // The answer blank used to be a flat 75px whatever the answer was, so a block of
-    // units and a block of thousands got the same line. It now follows the block's
-    // WIDEST answer — one width for the whole block, never per exercise: a blank sized
-    // to its own answer would tell the child how many digits to expect.
-    // In a tight cell the same blank is sized to the answer alone: 50px is still three
-    // handwritten digits, and every px above that comes straight out of the operands.
-    // A tafels block answers in at most three digits, and a 40px line is still three
-    // handwritten ones — the 10px that buys is what puts "7 x 8 = ___" inside a 163px
-    // quarter. Read off the block's own answers, not off multiplicationMode: the rule is
-    // about how much the child writes, not about which mode produced it.
-    const tightAnswerFloor = maxAnswerChars <= 3 ? 40 : 50;
-    const answerLinePx = tight
-        ? Math.max(tightAnswerFloor, Math.ceil(maxAnswerChars * CHAR_PX) + 12)
-        : Math.max(75, Math.ceil(maxAnswerChars * CHAR_PX) + 24);
-    const cellPx = Math.max(85, widestTermPx + 6);
-    const labelCell = (i: number) => {
-        const text = itemLabel(block.itemNumbering, i);
-        if (!text) return null;
-        return <span style={{ width: `${labelPx}px`, flexShrink: 0, textAlign: 'right', marginRight: `${OP_TERM_GAP}px`, whiteSpace: 'nowrap' }}>{text}</span>;
-    };
-    // The label column is real width. The stepped estimate pays for it; the Kort estimate
-    // does NOT: its 85px cellPx floor already overstates a default row by ~100px, and
-    // charging the label on top pushed a default 2-up block to 1-up for no visible reason.
-    const labelColPx = labelPx > 0 ? labelPx + OP_TERM_GAP : 0;
-    // One row ≈ operand cells + operator gaps + "=" + answer workline (+ met-rest extras).
-    // The compenseren tussenstap line ("= a + ___ − ___") is much wider than the workline.
-    const compScaffoldOn = c.preset === 'compenseren'
-        && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
-    const answerW = compScaffoldOn ? 175 + widestTermPx : answerLinePx + 19;
-    // A met-rest row carries the help column, the "r" and the rest blank on top of the sum:
-    // ~70px of help box + 8px gap + r + a 30px blank + the gaps around them.
-    const MET_REST_EXTRA_PX = 160;
-    const rowEstimate = maxTerms * cellPx + (maxTerms - 1) * (maxTerms > 2 ? 20 : 26)
-        + 8 + answerW + (anyRemainder ? MET_REST_EXTRA_PX : 0);
-    // A stepped row is sized differently: the answer column is flex:1 with a 100%-wide
-    // workline, so what it really needs is writing room for a hand-written tussenstap.
-    // That room scales with the block's widest operand instead of the fixed 94px field.
-    const worklineMinPx = Math.max(80, widestTermPx + 30);
-    // In the 2-up stepped grid the operand columns tighten — no 85px alignment floor and a
-    // narrower operator gap — so the freed width goes to the work line instead. The wide
-    // sizing stays everywhere else, where column alignment matters more than writing room.
-    const compactCellPx = Math.max(46, widestTermPx + 6);
-    // 26, not 16: both operand cells are right-aligned, so a full-width number butts
-    // straight against the operator unless the span carries its own padding either side.
-    const COMPACT_OP_GAP = 26;
-    const steppedRowMin = maxTerms * compactCellPx + (maxTerms - 1) * COMPACT_OP_GAP
-        + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx + labelColPx;
-    // Keep the classic 2-up look as long as two rows fit with at least a 20px gap;
-    // the gap then stretches up to the traditional 50px when there's room.
-    const COL_GAP_MIN = 20;
-    const twoUpShort = !tight && isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
-    // 2-up Stappen is for numbers under 1 000 only: 3 mono chars, so no thousands separator.
-    // A pure width test would also let 4-digit operands through, but then the tussenstap line
-    // is too short to write on. Met-rest rows ignore layout entirely and the compenseren
-    // tussenstap line is far wider than a workline — both stay 1-up. Longer term chains stay
-    // eligible and fall out on width alone.
-    const STEPPED_2UP_MAX_CHARS = 3;
-    const twoUpStepped = !tight && layout === 'stepped' && !anyRemainder && !compScaffoldOn
-        && maxChars <= STEPPED_2UP_MAX_CHARS
-        && steppedRowMin * 2 + COL_GAP_MIN <= A4_CONTENT_PX;
-    const gridCols = (twoUpShort || twoUpStepped) ? 2 : 1;
-    const rowWidthUsed = twoUpShort ? rowEstimate : steppedRowMin;
-    const colGap = gridCols === 2 ? Math.min(50, A4_CONTENT_PX - 2 * rowWidthUsed) : 50;
-    // Centring a stepped row would collapse its flex:1 workline — only the
-    // intrinsically-sized inline-short rows get centred inside their column.
-    const colJustify = gridCols === 2 && isInlineShort ? 'center' : 'stretch';
-    // In a narrow cell the classic 85px operand columns and 26px operator gaps eat the
-    // width the ANSWER line needs. A worksheet exists so pupils can write on it, so the
-    // operands tighten and the writing line keeps the space instead.
-    const isNarrow = A4_CONTENT_PX < FULL_BLOCK_WIDTH_PX - 20;
-    const compact = twoUpStepped || isNarrow;
-    const termPx = (chars: number) => Math.ceil(chars * CHAR_PX) + 4;
     // Met-rest extras. The quotient and rest blanks are one width for the whole block (a
     // blank sized to its own answer would tell the child how many digits to expect), and
     // the help column is the "(" + dotted blank + ")" measured as a box so it can be a
@@ -383,13 +224,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const QUOTIENT_BLANK_PX = 40;
     const REST_BLANK_PX = 30;
     const HELP_COL_PX = 2 * OP_GLYPH_PX + HELP_BLANK_PX + 4;
-    // The fill-in blank (mathDottedLine) is 40px wide inside 6px margins; a column box
-    // narrower than that would let a blank overrun its neighbour. Fractions size
-    // themselves, so a block containing one keeps intrinsic widths throughout.
-    const MISSING_BLANK_PX = BLANK_W + 2 * BLANK_M;
-    // Tight drops the alignment floor entirely: the box is exactly as wide as the block's
-    // longest operand, so columns still line up but nothing is reserved for air.
-    const termBoxPx = Math.max(anyMissingTerm ? MISSING_BLANK_PX : (tight ? 0 : compact ? 24 : 40), widestTermPx + 4);
+    const labelCell = (i: number) => {
+        const text = itemLabel(block.itemNumbering, i);
+        if (!text) return null;
+        return <span style={{ width: `${labelPx}px`, flexShrink: 0, textAlign: 'right', marginRight: `${OP_TERM_GAP}px`, whiteSpace: 'nowrap' }}>{text}</span>;
+    };
     return (
         <FragmentableGrid
             cols={gridCols}
@@ -423,13 +262,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                     <span>)</span>
                                 </div>
                             )}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0, ...(termBoxPx !== undefined && { width: `${termBoxPx}px` }) }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0, width: `${termBoxPx}px` }}>
                                 <span>{formatMathNumber(ex.operands[0] as number)}</span>
                             </div>
                             <div style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'flex-start', flexShrink: 0,
                                 marginLeft: `${TERM_UNIT_GAP}px`,
-                                ...(termBoxPx !== undefined && { width: `${OP_GLYPH_PX + OP_TERM_GAP + termBoxPx}px` }),
+                                width: `${OP_GLYPH_PX + OP_TERM_GAP + termBoxPx}px`,
                             }}>
                                 <span style={{ marginRight: `${OP_TERM_GAP}px`, flexShrink: 0 }}>:</span>
                                 <span>{formatMathNumber(ex.operands[1] as number)}</span>
@@ -475,12 +314,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 // right-aligned unit let the "+" drift with 1- vs 2-digit operands.
                 const unitAt = (operand: number | Fraction, i: number) => {
                     const chars = typeof operand === 'number' ? formatMathNumber(operand).length : 0;
-                    const unitPx = termBoxPx === undefined ? undefined
-                        : (i === 0 ? termBoxPx : OP_GLYPH_PX + OP_TERM_GAP + termBoxPx);
+                    const unitPx = i === 0 ? termBoxPx : OP_GLYPH_PX + OP_TERM_GAP + termBoxPx;
                     return (
                         <div key={i} style={{
                             display: 'flex', alignItems: 'center', justifyContent: i === 0 ? 'flex-end' : 'flex-start', flexShrink: 0,
-                            ...(unitPx !== undefined && { width: `${unitPx}px` }),
+                            width: `${unitPx}px`,
                             ...(i > 0 && { marginLeft: `${TERM_UNIT_GAP}px` }),
                         }}>
                             {i > 0 && (
@@ -497,7 +335,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                 </span>
                             )}
                             {renderTerm(operand, isMissing(i), block.id, ex.id, i,
-                                termBoxPx === undefined ? undefined : (i === 0 ? termBoxPx : termPx(chars)))}
+                                i === 0 ? termBoxPx : termPx(chars))}
                         </div>
                     );
                 };
@@ -522,7 +360,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 const wrapHere = wrapChain && lastI >= 2;
                 const row = (
                     <div key={ex.id} style={{
-                        ...fitted(styles.exerciseRow, 1),
+                        ...atFont(styles.exerciseRow, 1),
                         alignItems: layout === 'stepped' ? 'flex-start' : 'flex-end',
                         // The step lines of one exercise sit 32px apart. Without extra room
                         // underneath, the next exercise sits exactly as far away as the next
@@ -567,7 +405,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 if (!wrapHere) return row;
                 return (
                     <div key={ex.id} style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ ...fitted(styles.exerciseRow, 1), alignItems: 'flex-end' }}>
+                        <div style={{ ...atFont(styles.exerciseRow, 1), alignItems: 'flex-end' }}>
                             {labelBox}
                             {operandBox(ex.operands.slice(0, lastI).map(unitAt))}
                         </div>
