@@ -39,7 +39,7 @@ export default function ProcentenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.procenten().map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={RANGES.procenten.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

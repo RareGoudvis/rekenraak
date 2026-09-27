@@ -48,7 +48,7 @@ export default function CijferConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={c.maxRange}
-                    options={(isDecimal ? RANGES.cijferDecimal() : RANGES.cijferNatural()).map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={(isDecimal ? RANGES.cijferDecimal : RANGES.cijferNatural).map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxRange', v)}
                     ariaLabel="Maximum getal"
                 />

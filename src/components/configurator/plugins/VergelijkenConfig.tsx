@@ -34,7 +34,7 @@ export default function VergelijkenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isRep ? RANGES.vergelijkenRepresentaties() : RANGES.vergelijken()).map(val => ({ value: val, label: presetLabel(val) }))}
+                    options={(isRep ? RANGES.vergelijkenRepresentaties : RANGES.vergelijken).map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => set('maxGetal', val)}
                     ariaLabel="Maximum getal"
                 />

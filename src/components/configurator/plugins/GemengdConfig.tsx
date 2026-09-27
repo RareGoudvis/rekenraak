@@ -42,8 +42,8 @@ const tabLabel = (op: MixedOp, preset?: string) =>
 const SHARED_KEYS = ['maxGetal', 'numberType'] as const;
 
 const MAX_PRESETS: Record<string, readonly number[]> = {
-    natural: RANGES.hrNatural(),
-    decimal: RANGES.decimal(),
+    natural: RANGES.hrNatural,
+    decimal: RANGES.decimal,
 };
 
 /**

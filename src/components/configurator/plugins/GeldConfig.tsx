@@ -38,7 +38,7 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.geld().map(v => ({ value: v, label: `Tot ${v}` }))}
+                    options={RANGES.geld.map(v => ({ value: v, label: `Tot ${v}` }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

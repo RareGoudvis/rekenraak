@@ -76,7 +76,7 @@ describe('(c) leerjaar 6 lands inside every picker', () => {
             for (const key of MAX_KEYS) {
                 if (key in c && !((c[key] as number) <= NAT_CEILING)) problems.push(`${name}: ${key}=${c[key]} above the ceiling`);
             }
-            const range = REGISTRY[typeId].maxPresets?.(c, false);
+            const range = REGISTRY[typeId].maxPresets?.(c);
             // A leaf that pins its own max wins over the seed; only the seeded value is judged here.
             if (range && !(leaf && range.key in leaf) && !range.presets.includes(c[range.key] as number)) {
                 problems.push(`${name}: ${range.key}=${c[range.key]} not in [${range.presets.join(', ')}]`);

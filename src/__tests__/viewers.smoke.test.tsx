@@ -78,12 +78,12 @@ describe.each(typeIds)('%s', (typeId) => {
 });
 
 // The 1e9 line: every sidebar leaf whose type has a max-number list, at the top of that
-// list (force=true reaches the grown lists before BIG_NUMBERS_ENABLED flips). Crash-only —
+// list. Crash-only —
 // jsdom has no layout, so fit and overflow belong to `npm run bignum:audit`.
 const ceilingLeaves = flattenLeaves().flatMap((leaf) => {
     const def = REGISTRY[leaf.typeId];
     const merged = { ...def.defaultConstraints(leaf.typeId), ...(leaf.defaultConstraints ?? {}) };
-    const range = def.maxPresets?.(merged, true);
+    const range = def.maxPresets?.(merged);
     if (!range || range.presets.length === 0) return [];
     const top = Math.max(...range.presets);
     return [[`${leaf.id} @${top}`, leaf.typeId, { ...(leaf.defaultConstraints ?? {}), [range.key]: top }] as const];

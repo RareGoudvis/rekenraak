@@ -37,7 +37,7 @@ export default function AfrondenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isDecimal ? RANGES.decimal() : RANGES.afrondenNatural()).map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={(isDecimal ? RANGES.decimal : RANGES.afrondenNatural).map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

@@ -80,11 +80,11 @@ export default function SplitsenConfig({ block }: Props) {
     // Layout is fixed by the sidebar leaf; the config only refines that layout.
     const currentLayout = typeof layout === 'string' ? layout : 'basic';
     // SYNC: splitsenMax in exerciseRegistry.ts picks the same list per layout.
-    const maxPresets = currentLayout === 'verliefde-harten' ? RANGES.splitsenHarten()
-        : isBoom ? RANGES.splitsenBoom()
-        : currentLayout === 'positie-tabel' ? RANGES.splitsenTabel()
-        : isPositie ? RANGES.splitsenPositie()
-        : RANGES.splitsenBasis();
+    const maxPresets = currentLayout === 'verliefde-harten' ? RANGES.splitsenHarten
+        : isBoom ? RANGES.splitsenBoom
+        : currentLayout === 'positie-tabel' ? RANGES.splitsenTabel
+        : isPositie ? RANGES.splitsenPositie
+        : RANGES.splitsenBasis;
 
     return (
         <div style={styles.container}>

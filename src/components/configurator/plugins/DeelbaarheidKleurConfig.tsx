@@ -77,7 +77,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={RANGES.deelbaarheidKleurRaster().map(val => ({ value: val, label: presetLabel(val) }))}
+                            options={RANGES.deelbaarheidKleurRaster.map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
@@ -105,7 +105,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={RANGES.deelbaarheidKleurStrook().map(val => ({ value: val, label: presetLabel(val) }))}
+                            options={RANGES.deelbaarheidKleurStrook.map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />

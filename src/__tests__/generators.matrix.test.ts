@@ -209,9 +209,8 @@ describe.each(LEERJAREN)('leerjaar %i base', (grade) => {
 });
 
 // ── (e) every type at the top of its own max list ────────────────────────────
-// The 1e9 line: a type's didactic ceiling (REGISTRY maxPresets, force=true so the grown
-// lists are reached while BIG_NUMBERS_ENABLED is still off) is a setting a teacher reaches
-// in one click, so it must generate a full, printable block — for every branch the config
+// The 1e9 line: a type's didactic ceiling (the top of its REGISTRY maxPresets list) is a
+// setting a teacher reaches in one click, so it must generate a full, printable block — for every branch the config
 // switches lists on, plus the stress knobs that widen an exercise the most.
 
 // Keys the registry's maxPresets branches on; a type gets one case per value combination.
@@ -235,7 +234,7 @@ function ceilingCases(typeId: string): Array<Record<string, unknown>> {
     const stressKeys = Object.keys(STRESS).filter(k => k in space);
     const out = new Map<string, Record<string, unknown>>();
     for (const c of combos) {
-        const range = def.maxPresets({ ...def.defaultConstraints(typeId), ...c }, true);
+        const range = def.maxPresets({ ...def.defaultConstraints(typeId), ...c });
         if (!range || range.presets.length === 0) continue;
         const atTop = { ...c, [range.key]: Math.max(...range.presets) };
         out.set(JSON.stringify(atTop), atTop);

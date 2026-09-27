@@ -20,7 +20,7 @@ export default function DecimalSettings({ block }: Props) {
     // Mask and bridge places that match the chosen number of decimal places
     const maskPlaces = getMaskPlaces(maxGetal, 'decimal', decimalPlaces);
     const bridgePlaces = maskPlaces.filter(p => p.weight < maxGetal);
-    const maxPresets = RANGES.decimal();
+    const maxPresets = RANGES.decimal;
 
     const toggleMask = (operand: 'operand1Mask' | 'operand2Mask', posKey: string) => {
         const currentMask = c[operand] ?? {};

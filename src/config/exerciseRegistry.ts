@@ -93,8 +93,7 @@ export interface ExerciseTypeDef<C extends BlockConstraints = BlockConstraints> 
     exerciseKey?: (ex: unknown) => string;
     // The max-number list this block's config shows for its current settings (numberType,
     // layout, mode…), top = the type's didactic ceiling. baseApply floors the grade seed
-    // into it; `force` returns the grown 1e9 lists even while BIG_NUMBERS_ENABLED is off.
-    // Omitted / null = no max picker for these settings.
+    // into it. Omitted / null = no max picker for these settings.
     maxPresets?: MaxPresetsFn;
 }
 
@@ -376,78 +375,78 @@ const vormleerDefaults = (typeId: string): VormleerConstraints => ({
 const maxGetal = (presets: readonly number[]): MaxRange => ({ key: 'maxGetal', presets });
 const numberTypeOf = (c: Record<string, unknown>) => (c.numberType as string | undefined) ?? 'natural';
 // Same fixed list whatever the settings.
-const fixedMax = (list: (force?: boolean) => readonly number[]): MaxPresetsFn => (_c, force) => maxGetal(list(force));
+const fixedMax = (list: readonly number[]): MaxPresetsFn => () => maxGetal(list);
 
 // AdditionConfig/SubtractionConfig: decimal → DecimalSettings, rational → no max picker,
 // anything else (incl. gehele) falls back to NaturalSettings.
-const addSubMax: MaxPresetsFn = (c, force) => {
+const addSubMax: MaxPresetsFn = (c) => {
     const nt = numberTypeOf(c);
     if (nt === 'rational') return null;
-    return maxGetal(nt === 'decimal' ? RANGES.decimal(force) : RANGES.hrNatural(force));
+    return maxGetal(nt === 'decimal' ? RANGES.decimal : RANGES.hrNatural);
 };
 
 // MultiplicationConfig/DivisionConfig: the tienvoud preset (HrPresetRow, any non-rational
 // type) wins; natural shows a max only in 'andere' mode (tafels / met rest have none).
-const mulDivMax: MaxPresetsFn = (c, force) => {
+const mulDivMax: MaxPresetsFn = (c) => {
     const nt = numberTypeOf(c);
     if (nt === 'rational') return null;
-    if (c.preset === 'tienvoud') return maxGetal(RANGES.hrTienvoud(force));
-    if (nt === 'decimal') return maxGetal(RANGES.decimal(force));
-    if (nt === 'natural' && (c.multiplicationMode ?? 'tafels') === 'andere') return maxGetal(RANGES.hrAndere(force));
+    if (c.preset === 'tienvoud') return maxGetal(RANGES.hrTienvoud);
+    if (nt === 'decimal') return maxGetal(RANGES.decimal);
+    if (nt === 'natural' && (c.multiplicationMode ?? 'tafels') === 'andere') return maxGetal(RANGES.hrAndere);
     return null;
 };
 
 // GemengdConfig: one shared picker, decimal list or the natural one for every other type.
-const mixedMax: MaxPresetsFn = (c, force) =>
-    maxGetal(numberTypeOf(c) === 'decimal' ? RANGES.decimal(force) : RANGES.hrNatural(force));
+const mixedMax: MaxPresetsFn = (c) =>
+    maxGetal(numberTypeOf(c) === 'decimal' ? RANGES.decimal : RANGES.hrNatural);
 
-const cijferMax: MaxPresetsFn = (c, force) => ({
+const cijferMax: MaxPresetsFn = (c) => ({
     key: 'maxRange',
-    presets: numberTypeOf(c) === 'decimal' ? RANGES.cijferDecimal(force) : RANGES.cijferNatural(force),
+    presets: numberTypeOf(c) === 'decimal' ? RANGES.cijferDecimal : RANGES.cijferNatural,
 });
 
 // SplitsenConfig: harten / splitsboom have their own short lists; positie-tabel grows on
 // its own list, the other positie-* layouts on theirs; rooster keeps the basic list.
-const splitsenMax: MaxPresetsFn = (c, force) => {
+const splitsenMax: MaxPresetsFn = (c) => {
     const layout = typeof c.layout === 'string' ? c.layout : 'basic';
-    if (layout === 'verliefde-harten') return maxGetal(RANGES.splitsenHarten(force));
-    if (layout === 'splitsboom') return maxGetal(RANGES.splitsenBoom(force));
-    if (layout === 'positie-tabel') return maxGetal(RANGES.splitsenTabel(force));
-    if (layout.startsWith('positie')) return maxGetal(RANGES.splitsenPositie(force));
-    return maxGetal(RANGES.splitsenBasis(force));
+    if (layout === 'verliefde-harten') return maxGetal(RANGES.splitsenHarten);
+    if (layout === 'splitsboom') return maxGetal(RANGES.splitsenBoom);
+    if (layout === 'positie-tabel') return maxGetal(RANGES.splitsenTabel);
+    if (layout.startsWith('positie')) return maxGetal(RANGES.splitsenPositie);
+    return maxGetal(RANGES.splitsenBasis);
 };
 
-const mabMax: MaxPresetsFn = (_c, force) => ({ key: 'maxNumber', presets: RANGES.mab(force) });
+const mabMax: MaxPresetsFn = () => ({ key: 'maxNumber', presets: RANGES.mab });
 
 // Rationals are driven by step + ticks there, so those configs hide the max picker.
-const nonRationalMax = (list: (force?: boolean) => readonly number[]): MaxPresetsFn => (c, force) =>
-    numberTypeOf(c) === 'rational' ? null : maxGetal(list(force));
+const nonRationalMax = (list: readonly number[]): MaxPresetsFn => (c) =>
+    numberTypeOf(c) === 'rational' ? null : maxGetal(list);
 
 // DeelbaarheidKleurConfig: the rechthoek raster (incl. the legacy viewMode 'raster') has
 // its own list; strook and omcirkelen share the other.
-const deelbaarheidKleurMax: MaxPresetsFn = (c, force) => {
+const deelbaarheidKleurMax: MaxPresetsFn = (c) => {
     const raw = c.viewMode ?? 'strip';
     const viewMode = raw === 'raster' ? 'strip' : raw;
     const vorm = c.rasterVorm ?? (raw === 'raster' ? 'rechthoek' : 'lijn');
     const isRaster = viewMode === 'strip' && vorm === 'rechthoek';
-    return maxGetal(isRaster ? RANGES.deelbaarheidKleurRaster(force) : RANGES.deelbaarheidKleurStrook(force));
+    return maxGetal(isRaster ? RANGES.deelbaarheidKleurRaster : RANGES.deelbaarheidKleurStrook);
 };
 
 // Veelvouden is steered by base + terms sliders; only the tabel layout has a max.
-const deelbaarheidMax: MaxPresetsFn = (c, force) =>
-    (c.layout ?? 'tabel') === 'tabel' ? maxGetal(RANGES.deelbaarheid(force)) : null;
+const deelbaarheidMax: MaxPresetsFn = (c) =>
+    (c.layout ?? 'tabel') === 'tabel' ? maxGetal(RANGES.deelbaarheid) : null;
 
-const evenOnevenMax: MaxPresetsFn = (c, force) =>
-    (c.subType ?? 'rooster') === 'rooster' ? maxGetal(RANGES.evenOneven(force)) : null;
+const evenOnevenMax: MaxPresetsFn = (c) =>
+    (c.subType ?? 'rooster') === 'rooster' ? maxGetal(RANGES.evenOneven) : null;
 
-const vergelijkenMax: MaxPresetsFn = (c, force) =>
-    maxGetal(c.subType === 'representaties' ? RANGES.vergelijkenRepresentaties(force) : RANGES.vergelijken(force));
+const vergelijkenMax: MaxPresetsFn = (c) =>
+    maxGetal(c.subType === 'representaties' ? RANGES.vergelijkenRepresentaties : RANGES.vergelijken);
 
-const afrondenMax: MaxPresetsFn = (c, force) =>
-    maxGetal(numberTypeOf(c) === 'decimal' ? RANGES.decimal(force) : RANGES.afrondenNatural(force));
+const afrondenMax: MaxPresetsFn = (c) =>
+    maxGetal(numberTypeOf(c) === 'decimal' ? RANGES.decimal : RANGES.afrondenNatural);
 
-const schattendMax: MaxPresetsFn = (c, force) =>
-    maxGetal(numberTypeOf(c) === 'decimal' ? RANGES.decimal(force) : RANGES.schattendNatural(force));
+const schattendMax: MaxPresetsFn = (c) =>
+    maxGetal(numberTypeOf(c) === 'decimal' ? RANGES.decimal : RANGES.schattendNatural);
 
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).

@@ -99,7 +99,7 @@ export default function GetallenasConfig({ block }: Props) {
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={RANGES.getallenas().map(val => ({ value: val, label: presetLabel(val) }))}
+                        options={RANGES.getallenas.map(val => ({ value: val, label: presetLabel(val) }))}
                         onChange={(val) => set('maxGetal', val)}
                         ariaLabel="Maximum getal"
                     />

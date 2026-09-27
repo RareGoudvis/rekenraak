@@ -104,7 +104,7 @@ export default function MabConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxNumber}
-                    options={RANGES.mab().map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={RANGES.mab.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => {
                         // Drop mask keys that no longer apply to the new range so the
                         // generator doesn't try to satisfy an impossible constraint.

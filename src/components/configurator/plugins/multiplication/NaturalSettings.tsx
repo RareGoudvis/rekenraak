@@ -163,7 +163,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             <PopupSelect
                                 clampToLowest
                                 value={maxGetal}
-                                options={RANGES.hrAndere().map(val => ({ value: val, label: presetLabel(val) }))}
+                                options={RANGES.hrAndere.map(val => ({ value: val, label: presetLabel(val) }))}
                                 onChange={(val) => updateConstraint('maxGetal', val)}
                                 ariaLabel={isDivision ? 'Maximum deeltal' : 'Maximum uitkomst'}
                             />

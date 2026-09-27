@@ -51,7 +51,7 @@ export default function RekenvolgordeConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.rekenvolgorde().map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={RANGES.rekenvolgorde.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum uitkomst"
                 />

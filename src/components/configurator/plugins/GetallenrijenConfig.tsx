@@ -117,7 +117,7 @@ export default function GetallenrijenConfig({ block }: Props) {
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={RANGES.getallenrijen().map(val => ({ value: val, label: presetLabel(val) }))}
+                        options={RANGES.getallenrijen.map(val => ({ value: val, label: presetLabel(val) }))}
                         onChange={(val) => set('maxGetal', val)}
                         ariaLabel="Maximum getal"
                     />

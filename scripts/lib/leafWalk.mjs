@@ -98,8 +98,8 @@ export async function walkLeaves(opts) {
                                 // Exactly what sidebar.tsx's addLeaf does on a real click: registry
                                 // defaults + base snapshot (inside the store) + this leaf's override.
                                 r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints);
-                                // Same tick, so the Inspector never mounts: its max picker floors a value
-                                // outside today's list (a forced 1e9) before the block is measured.
+                                // Same tick, so the Inspector never mounts: its max picker would floor a
+                                // value outside the list shown before the block is measured.
                                 if (deselect) r.getState().setActiveSelection(null);
                                 const block = r.getState().blocks[0];
                                 if (!block) return { error: 'no block produced' };

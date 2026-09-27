@@ -65,7 +65,7 @@ export default function KettingConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.ketting().map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={RANGES.ketting.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

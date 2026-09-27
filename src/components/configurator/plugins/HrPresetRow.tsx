@@ -75,7 +75,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={c.maxGetal ?? 1000}
-                            options={RANGES.hrTienvoud().map(v => ({ value: v, label: presetLabel(v) }))}
+                            options={RANGES.hrTienvoud.map(v => ({ value: v, label: presetLabel(v) }))}
                             onChange={(v) => set('maxGetal', v)}
                             ariaLabel="Maximum getal"
                         />

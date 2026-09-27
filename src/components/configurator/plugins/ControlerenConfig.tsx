@@ -40,7 +40,7 @@ export default function ControlerenConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.controleren().map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={RANGES.controleren.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

@@ -49,7 +49,7 @@ export default function DeelbaarheidConfig({ block }: Props) {
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={RANGES.deelbaarheid().map(val => ({ value: val, label: presetLabel(val) }))}
+                            options={RANGES.deelbaarheid.map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />

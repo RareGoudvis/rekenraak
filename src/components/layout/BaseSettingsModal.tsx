@@ -9,7 +9,7 @@ interface Props {
     onClose: () => void;
 }
 
-const MAX_PRESETS = RANGES.base();
+const MAX_PRESETS = RANGES.base;
 
 // Global base difficulty, mirroring the real exercise config (NaturalSettings).
 // Values snapshot into each NEW block at add-time (baseApply); existing blocks

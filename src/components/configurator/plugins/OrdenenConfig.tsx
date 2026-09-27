@@ -74,7 +74,7 @@ export default function OrdenenConfig({ block }: Props) {
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={RANGES.ordenen().map(v => ({ value: v, label: presetLabel(v) }))}
+                        options={RANGES.ordenen.map(v => ({ value: v, label: presetLabel(v) }))}
                         onChange={(v) => set('maxGetal', v)}
                         ariaLabel="Maximum getal"
                     />

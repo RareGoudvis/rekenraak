@@ -49,7 +49,7 @@ export default function DecimalSettings({ block, isDivision = false }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.decimal().map(val => ({ value: val, label: `Tot ${val}` }))}
+                    options={RANGES.decimal.map(val => ({ value: val, label: `Tot ${val}` }))}
                     onChange={(val) => updateConstraint('maxGetal', val)}
                     ariaLabel="Maximum uitkomst"
                 />

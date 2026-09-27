@@ -27,7 +27,7 @@ export default function PlaatswaardeConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.plaatswaarde().map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={RANGES.plaatswaarde.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />

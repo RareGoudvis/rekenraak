@@ -9,9 +9,8 @@
 //   npm run bignum:audit -- --only splitsen,plaatswaarde-tabel --seeds 1234
 //   npm run bignum:audit -- --defaults                 # same leaves at their defaults (triage)
 //
-// Per leaf whose type declares `maxPresets`: the max key set to the top of the FORCED list
-// (maxPresetsFor(…, force=true), so the grown lists are reached while BIG_NUMBERS_ENABLED is
-// still off), plus the STRESS variants below, × widths {4,2,1} × solutions × seeds {1234,7}.
+// Per leaf whose type declares `maxPresets`: the max key set to the top of its list
+// (maxPresetsFor), plus the STRESS variants below, × widths {4,2,1} × solutions × seeds {1234,7}.
 // The min-width clamp stays ON: it measures what a teacher gets after the packer widened
 // the block. A cell FAILS on: `.cell-hoverflow-warn`, scaled-inner scrollWidth overflow,
 // any content element > 1px outside the cell rect, "undefined"/"NaN" in its text, a
@@ -51,7 +50,7 @@ const OUT = arg('out', join(homedir(), 'Downloads', 'bignum-audit', stamp));
 mkdirSync(OUT, { recursive: true });
 
 // Settings that widen an exercise the most, per sidebar leaf. Merged over the leaf's own
-// defaults, THEN the max key is set to the forced top for those merged settings (×/:
+// defaults, THEN the max key is set to the list's top for those merged settings (×/:
 // 'andere' only has a max list once the mode is set).
 const STRESS = {
     'hr-std-optellen-nat': [{ tag: 'terms3', c: { termCount: 3 } }, { tag: 'terms4', c: { termCount: 4 } }],
@@ -130,7 +129,7 @@ async function startServer() {
 
 async function overrideFor(leaf, page) {
     const top = async (constraints) => page.evaluate(({ typeId, c }) => {
-        const r = window.__rekenraak.maxPresetsFor(typeId, c, true);
+        const r = window.__rekenraak.maxPresetsFor(typeId, c);
         return r && r.presets.length ? { key: r.key, top: Math.max(...r.presets) } : null;
     }, { typeId: leaf.typeId, c: constraints });
 
@@ -247,7 +246,7 @@ async function probe(page) {
             outside: outside.slice(0, 5),
             outsideCount: offenders.size,
             overlaps,
-            // Read back so the verdict can prove the forced max reached the block unfloored.
+            // Read back so the verdict can prove the top max reached the block unfloored.
             blockConstraints: window.__rekenraak.getState().blocks[0]?.constraints ?? null,
         };
     });
@@ -312,7 +311,7 @@ const results = allRows.map((r) => {
     if (r.text && BAD_TEXT.test(r.text)) fails.push({ kind: 'text', detail: r.text.match(new RegExp(`.{0,30}(${BAD_TEXT.source}).{0,30}`))?.[0] ?? 'undefined/NaN' });
     if (r.hoverflowWarn) fails.push({ kind: 'hoverflow', px: Number(r.hoverflowWarn.match(/(\d+)px/)?.[1]) || null, detail: r.hoverflowWarn });
     if (r.innerOverflowPx > 1) fails.push({ kind: 'inner-scroll', px: r.innerOverflowPx });
-    // The forced max must be what the block holds; anything else means the harness measured a smaller sheet.
+    // The top max must be what the block holds; anything else means the harness measured a smaller sheet.
     for (const [k, v] of Object.entries(r.constraints ?? {})) {
         if (/^(maxGetal|maxRange|maxNumber)$/.test(k) && r.blockConstraints && r.blockConstraints[k] !== v) fails.push({ kind: 'harness', detail: `${k} is ${r.blockConstraints[k]}, expected ${v}` });
     }

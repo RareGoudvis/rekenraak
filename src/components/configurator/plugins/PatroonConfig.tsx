@@ -61,7 +61,7 @@ export default function PatroonConfig({ block }: Props) {
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.patronen().map(val => ({ value: val, label: presetLabel(val) }))}
+                    options={RANGES.patronen.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => set('maxGetal', val)}
                     ariaLabel="Maximum getal"
                 />

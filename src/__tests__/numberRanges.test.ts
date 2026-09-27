@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { BIG_NUMBERS_ENABLED, NAT_CEILING, NAT_STEPS, RANGES, floorToPreset, presetLabel } from '../config/numberRanges';
+import { NAT_CEILING, NAT_STEPS, RANGES, floorToPreset, presetLabel } from '../config/numberRanges';
 
 const LIST = [10, 20, 100, 1000, 10000, 100000, 1000000];
 
@@ -38,20 +38,20 @@ describe('the lists', () => {
         expect(Number.isSafeInteger(NAT_CEILING * 1_000_000)).toBe(true);
     });
 
-    // Flag off, every picker must render exactly what it rendered before the refactor.
-    test.runIf(!BIG_NUMBERS_ENABLED)('flag off: the growing lists equal the legacy literals', () => {
-        expect(RANGES.base()).toEqual(LIST);
-        expect(RANGES.hrNatural()).toEqual(LIST);
-        expect(RANGES.hrAndere()).toEqual([1000, 10000, 100000, 1000000]);
-        expect(RANGES.cijferNatural()).toEqual([20, 100, 1000, 10000, 100000, 1000000, 1000000000]);
-        expect(RANGES.afrondenNatural()).toEqual([100, 1000, 10000, 100000, 1000000]);
-        expect(RANGES.plaatswaarde()).toEqual([100, 1000, 10000, 100000, 1000000]);
-        expect(RANGES.vergelijken()).toEqual([100, 1000, 10000, 100000, 1000000]);
-        expect(RANGES.splitsenTabel()).toEqual(LIST);
-        expect(RANGES.splitsenPositie()).toEqual([...LIST, 1000000000]);
+    test('the grown lists end in 1e7 / 1e8 / 1e9', () => {
+        const BIG = [10_000_000, 100_000_000, 1_000_000_000];
+        expect(RANGES.base).toEqual([...LIST, ...BIG]);
+        expect(RANGES.hrNatural).toEqual([...LIST, ...BIG]);
+        expect(RANGES.hrAndere).toEqual([1000, 10000, 100000, 1000000, ...BIG]);
+        expect(RANGES.cijferNatural).toEqual([20, 100, 1000, 10000, 100000, 1000000, ...BIG]);
+        expect(RANGES.afrondenNatural).toEqual([100, 1000, 10000, 100000, 1000000, ...BIG]);
+        expect(RANGES.plaatswaarde).toEqual([100, 1000, 10000, 100000, 1000000, ...BIG]);
+        expect(RANGES.vergelijken).toEqual([100, 1000, 10000, 100000, 1000000, ...BIG]);
+        expect(RANGES.splitsenTabel).toEqual([...LIST, ...BIG]);
+        expect(RANGES.splitsenPositie).toEqual([...LIST, ...BIG]);
     });
 
-    test('capped lists keep their own values, forced or not', () => {
+    test('capped lists keep their own values', () => {
         const fixed: Array<[keyof typeof RANGES, number[]]> = [
             ['hrTienvoud', [100, 1000, 10000]],
             ['decimal', [10, 100, 1000]],
@@ -78,19 +78,14 @@ describe('the lists', () => {
             ['rekenvolgorde', [100, 1000]],
             ['herleidingenSamengesteld', [10, 100, 1000, 10000, 100000, 1000000]],
         ];
-        for (const [name, want] of fixed) {
-            expect(RANGES[name](), name).toEqual(want);
-            expect(RANGES[name](true), `${name} forced`).toEqual(want);
-        }
+        for (const [name, want] of fixed) expect(RANGES[name], name).toEqual(want);
     });
 
-    test('forced, the growing lists end in 1e7 / 1e8 / 1e9, sorted and without duplicates', () => {
-        const growing: Array<keyof typeof RANGES> = ['base', 'hrNatural', 'hrAndere', 'cijferNatural', 'afrondenNatural', 'plaatswaarde', 'vergelijken', 'splitsenTabel', 'splitsenPositie'];
-        for (const name of growing) {
-            const list = RANGES[name](true);
-            expect(list.slice(-4), name).toEqual([1_000_000, 10_000_000, 100_000_000, 1_000_000_000]);
+    test('every list is sorted, deduped and never above the ceiling', () => {
+        for (const [name, list] of Object.entries(RANGES)) {
             expect([...list].sort((a, b) => a - b), name).toEqual(list);
             expect(new Set(list).size, name).toBe(list.length);
+            expect(Math.max(...list), name).toBeLessThanOrEqual(NAT_CEILING);
         }
     });
 

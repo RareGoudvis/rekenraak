@@ -56,10 +56,10 @@ if (import.meta.env.DEV) {
     // paper disagree.
     measured: () => measuredSnapshot(),
     // The max-number list a type's config shows for these settings (merged over the
-    // registry defaults); force=true returns the grown 1e9 lists while the flag is off.
-    maxPresetsFor: (typeId: string, constraints?: Record<string, unknown>, force?: boolean) => {
+    // registry defaults).
+    maxPresetsFor: (typeId: string, constraints?: Record<string, unknown>) => {
       const def = REGISTRY[typeId];
-      return def?.maxPresets?.({ ...def.defaultConstraints(typeId), ...(constraints ?? {}) }, force) ?? null;
+      return def?.maxPresets?.({ ...def.defaultConstraints(typeId), ...(constraints ?? {}) }) ?? null;
     },
     // DEV only, never shipped: replaces Math.random in place. seed(undefined) restores
     // the native RNG.

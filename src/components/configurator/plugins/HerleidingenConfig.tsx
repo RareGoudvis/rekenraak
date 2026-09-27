@@ -19,7 +19,7 @@ const OPP_FORMATS = [
     { key: 'vierkant-are', label: 'Vierkant → are (ha/a/ca)' },
     { key: 'are-vierkant', label: 'Are → vierkant' },
 ];
-const SAM_STOPS = RANGES.herleidingenSamengesteld();
+const SAM_STOPS = RANGES.herleidingenSamengesteld;
 
 export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<HerleidingenConstraints>(block);
