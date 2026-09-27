@@ -12,7 +12,7 @@ export const NAT_STEPS: readonly number[] = [10, 20, 100, 1_000, 10_000, 100_000
 
 // Temporary switch: off, the lists that will grow to 1e9 still return today's values, so
 // the groundwork lands without changing a single rendered option. Removed once enabled.
-export const BIG_NUMBERS_ENABLED = false;
+export const BIG_NUMBERS_ENABLED = true;
 
 export type MaxKey = 'maxGetal' | 'maxRange' | 'maxNumber';
 export interface MaxRange { key: MaxKey; presets: readonly number[] }

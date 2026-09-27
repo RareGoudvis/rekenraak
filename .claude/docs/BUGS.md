@@ -33,6 +33,9 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
+- PopupSelect opens its menu scrolled to the top (maxHeight 260px), so on the 10-option max lists
+  the selected "Tot 1.000.000.000" / "Tot 100.000.000" sit below the fold when the menu opens.
+  Fix: scroll the active option into view on open. 2026-09-27
 - Leaf `getalbegrip-getallenrijen-dec` (appstructure.ts:156) pins `maxGetal: 10`, which is not in
   the Getallenrijen max list (20 … 100 000): opening its config snaps the block to 20 and it
   regenerates. Fix direction: pin 20, or give decimal getallenrijen its own list (owner call). 2026-09-27
