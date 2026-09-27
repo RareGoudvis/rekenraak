@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CaretDown, Check } from '@phosphor-icons/react';
 import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
+import { floorToPreset } from '../../config/numberRanges';
 
 export interface PopupSelectOption<T> {
     value: T;
@@ -13,9 +14,10 @@ interface Props<T> {
     onChange: (value: T) => void;
     disabled?: boolean;
     ariaLabel?: string;
-    // Opt-in: if `value` matches no option (renders "—"), snap to the lowest option
-    // and persist via onChange. Used on numeric max dropdowns so a leftover base/grade
-    // value out of this list can't feed a generator an unbounded max → memory overflow.
+    // Opt-in, numeric lists only: if `value` matches no option (renders "—"), snap to the
+    // largest option ≤ value (the lowest when below the list, the top when above it) and
+    // persist via onChange. Used on max dropdowns so a leftover base/grade/old-save value
+    // can't feed a generator an unbounded max, without dropping a big one to "Tot 10".
     clampToLowest?: boolean;
 }
 
@@ -30,13 +32,14 @@ export default function PopupSelect<T extends string | number>({ value, options,
 
     // Out-of-range guard: a value with no matching option (e.g. a leftover base/grade
     // max) would render as "—" and reach the generator unclamped → memory overflow.
-    // Snap to the numerically lowest option and persist. Converges in one tick:
-    // once value is a real option, `current` is truthy and this no-ops.
+    // Floor to the nearest lower option and persist. Converges in one tick: once value
+    // is a real option, `current` is truthy and this no-ops.
     useEffect(() => {
         if (!clampToLowest || current || options.length === 0) return;
-        const lowest = options.reduce((a, b) => (Number(b.value) < Number(a.value) ? b : a));
-        onChange(lowest.value);
-    }, [clampToLowest, current, options, onChange]);
+        const target = floorToPreset(Number(value), options.map((o) => Number(o.value)));
+        const match = options.find((o) => Number(o.value) === target);
+        if (match) onChange(match.value);
+    }, [clampToLowest, current, options, onChange, value]);
 
     // Close on outside click / Escape.
     useEffect(() => {
