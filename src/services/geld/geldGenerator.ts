@@ -19,6 +19,7 @@ const DENOMINATION_CATALOGUE: { valueCents: number; type: GeldDenominationType }
 ];
 
 const MAX_ITEMS_PER_EXERCISE = 12;
+const MAX_DRAW_ATTEMPTS = 200;
 
 function breakdownAmount(
     amountCents: number,
@@ -46,7 +47,7 @@ function breakdownAmount(
         totalItems += maxCount;
     }
 
-    // If remaining > 0, we couldn't break it down perfectly — just ignore remainder
+    // remaining > 0 = not drawable within the cap; the caller redraws the amount
     return result;
 }
 
@@ -81,19 +82,28 @@ export function generateGeldExercises(block: MathBlock): GeldExercise[] {
     const rng = seededRng(Math.floor(Math.random() * 0x10000));
 
     for (let i = 0; i < n; i++) {
-        // Pick random amount, rounded to nearest allowed min denomination
-        const raw = Math.floor(rng() * (maxCents - minCents + 1)) + minCents;
-        const amountCents = Math.round(raw / minCents) * minCents;
+        let finalAmount = 0;
+        let denominations: GeldDenomination[] = [];
+        // Redraw when the breakdown cannot reach the amount (item cap, or a denomination set
+        // greedy cannot pay exactly): the key must equal what is drawn on the sheet.
+        for (let attempt = 0; attempt < MAX_DRAW_ATTEMPTS; attempt++) {
+            // Pick random amount, rounded to nearest allowed min denomination
+            const raw = Math.floor(rng() * (maxCents - minCents + 1)) + minCents;
+            const amountCents = Math.round(raw / minCents) * minCents;
 
-        // For 'euros' format: round to nearest 100 (whole euros) if no cents denominations allowed
-        const hasCents = allowedSorted.some(v => v < 100);
-        const finalAmount = (format === 'euros' && !hasCents)
-            ? Math.max(100, Math.round(amountCents / 100) * 100)
-            : amountCents;
+            // 'euros' format asks for a whole-euro answer, so the amount itself must be whole
+            // (was: only without cent coins, and the key then rounded the cents away).
+            finalAmount = format === 'euros'
+                ? Math.max(100, Math.round(amountCents / 100) * 100)
+                : amountCents;
 
-        const denominations: GeldDenomination[] = isTekenen
-            ? []  // Tekenen: student draws, we don't generate denominations
-            : breakdownAmount(finalAmount, allowedSet, rng);
+            if (isTekenen) break;  // Tekenen: student draws, we don't generate denominations
+            denominations = breakdownAmount(finalAmount, allowedSet, rng);
+            const drawnCents = denominations.reduce((sum, d) => sum + d.valueCents * d.count, 0);
+            if (drawnCents === finalAmount) break;
+            // Out of attempts (impossible settings): the drawn money is the amount.
+            if (attempt === MAX_DRAW_ATTEMPTS - 1) finalAmount = drawnCents;
+        }
 
         exercises.push({
             id: `geld-${Date.now()}-${i}-${Math.floor(rng() * 9999)}`,
@@ -179,8 +189,9 @@ export function generateGeldTeruggevenExercises(block: MathBlock): GeldTeruggeve
 }
 
 export function formatAmount(amountCents: number, format: string): string {
-    if (format === 'euros') {
-        return `€${Math.round(amountCents / 100)}`;
+    // Whole-euro form only when there are no cents to lose (older sheets can hold cents here)
+    if (format === 'euros' && amountCents % 100 === 0) {
+        return `€${amountCents / 100}`;
     }
     const euros = Math.floor(amountCents / 100);
     const cents = amountCents % 100;

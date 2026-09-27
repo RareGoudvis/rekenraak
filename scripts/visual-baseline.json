@@ -907,34 +907,34 @@
    "textHash": "5f5c812b00208f32"
   },
   "geld-herkennen-w1-s0": {
-   "cellHeightPx": 1014,
+   "cellHeightPx": 950,
    "intrinsicPx": 80,
-   "textHash": "43deb1bc168ba23c"
+   "textHash": "088b675fc7b82ac0"
   },
   "geld-herkennen-w1-s1": {
-   "cellHeightPx": 1032,
+   "cellHeightPx": 968,
    "intrinsicPx": 72,
-   "textHash": "c1fb429e10aa97e9"
+   "textHash": "284ceea94b0c1ea5"
   },
   "geld-herkennen-w2-s0": {
-   "cellHeightPx": 634,
+   "cellHeightPx": 560,
    "intrinsicPx": 178,
-   "textHash": "43deb1bc168ba23c"
+   "textHash": "088b675fc7b82ac0"
   },
   "geld-herkennen-w2-s1": {
-   "cellHeightPx": 643,
+   "cellHeightPx": 569,
    "intrinsicPx": 162,
-   "textHash": "c1fb429e10aa97e9"
+   "textHash": "284ceea94b0c1ea5"
   },
   "geld-herkennen-w4-s0": {
-   "cellHeightPx": 430,
+   "cellHeightPx": 392,
    "intrinsicPx": 374,
-   "textHash": "43deb1bc168ba23c"
+   "textHash": "088b675fc7b82ac0"
   },
   "geld-herkennen-w4-s1": {
-   "cellHeightPx": 436,
+   "cellHeightPx": 398,
    "intrinsicPx": 342,
-   "textHash": "c1fb429e10aa97e9"
+   "textHash": "284ceea94b0c1ea5"
   },
   "geld-rekenen-intrest-w1-s0": {
    "cellHeightPx": 294,
