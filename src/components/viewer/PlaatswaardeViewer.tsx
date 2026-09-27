@@ -3,7 +3,8 @@ import type { MathBlock, PlaatswaardeExercise } from '../../services/math/types'
 import { getMaskPlaces, digitAtPlace } from '../../services/math/mathEngine';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
 import type { PlaatswaardeConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -25,8 +26,23 @@ function placesOf(n: number, maxGetal: number, decimalPlaces: number) {
     return slice.map(p => ({ key: p.key, label: p.label, weight: p.weight, digit: digitAtPlace(n, p.weight) }));
 }
 
+type Place = ReturnType<typeof placesOf>[number];
+
+// A 5+ digit integer part reads in thousands groups ("703 411 989"), a space before each
+// H / HD / HM digit; up to 9 999 the digits stay together as they always printed.
+function groupBreaks(places: Place[]): boolean[] {
+    const intDigits = places.filter(p => p.weight >= 1).length;
+    return places.map((p, i) => intDigits >= 5 && i > 0 && p.weight >= 100 && Math.round(Math.log10(p.weight)) % 3 === 2);
+}
+
+// Glyphs the underlined number prints: digits, the decimal comma and the group spaces.
+function printedChars(places: Place[]): number {
+    return places.length + (places.some(p => p.weight < 1) ? 1 : 0) + groupBreaks(places).filter(Boolean).length;
+}
+
 export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const mathPx = useSheetSizePx('math');
     // Below 200px (a quarter-width cell is 163px) the fixed 120px number column, the 16px
     // gaps and the 40px table cells together are wider than the cell. Everything that was
     // sized for alignment across a wide row tightens to what the digits actually need.
@@ -43,7 +59,14 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     }
 
     const blank = (w = 80) => <span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', verticalAlign: 'bottom' }} />;
-    const sol = (t: string) => <span style={{ ...solutionText }}>{t}</span>;
+    const sol = (t: string) => <span style={{ ...solutionText, whiteSpace: 'nowrap' }}>{t}</span>;
+
+    // The underlined number: 1.04 × the math token plus 1px letter-spacing per glyph and the
+    // underlined digit's 2px padding. Columns tuned for ≤ 4 digits keep their px until a
+    // million-plus number would push past them.
+    const NUM_FACTOR = 1.04;
+    const numberPx = (chars: number) => monoTextPx(chars, NUM_FACTOR, mathPx) + chars + 2;
+    const numberCss = (chars: number) => `calc(var(--sheet-size-math) * ${(chars * MONO_ADVANCE_EM * NUM_FACTOR).toFixed(3)} + ${chars + 2}px)`;
 
     // Places of an EXERCISE come from its own number, not from the block's current settings:
     // an exercise generated at 3 decimals must still render after the teacher drops to 0,
@@ -56,12 +79,14 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     // Render the number with the targeted digit underlined (comma before the first decimal place).
     const numberWithUnderline = (ex: PlaatswaardeExercise) => {
         const places = placesFor(ex);
+        const breaks = groupBreaks(places);
         return (
             <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)', letterSpacing: '1px' }}>
                 {places.map((p, i) => {
                     const comma = p.weight < 1 && (i === 0 || places[i - 1].weight >= 1);
                     return (
                         <React.Fragment key={p.key}>
+                            {breaks[i] && ' '}
                             {comma && <span>,</span>}
                             <span style={p.key === ex.placeKey ? { borderBottom: '2px solid #000', padding: '0 1px' } : undefined}>{p.digit}</span>
                         </React.Fragment>
@@ -80,8 +105,11 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
         // Two-up when a row is narrow enough (default maxGetal 1000 = 4 places ≈ 266px),
         // so small place-value tables don't waste the right half of the page.
         const placeCount = placesOf(maxGetal, maxGetal, decimalPlaces).length;
-        const rowW = 90 + 16 + placeCount * 40;
+        const numCol = grownColumn(90, Math.max(0, ...exercises.map(ex => formatMathNumber(ex.number).length)), NUM_FACTOR, mathPx, 0);
+        const rowW = numCol.px + 16 + placeCount * 40;
         const tabCols = !tight && rowW * 2 + 24 <= availableWidth ? 2 : 1;
+        // Ten-plus place columns and a 13-digit number outgrow a full row: the table drops under its number.
+        const rowWraps = !tight && rowW > availableWidth;
         return (
             <FragmentableGrid
                 cols={tabCols}
@@ -90,8 +118,8 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                 items={exercises.map(ex => {
                     const places = placesOf(ex.number, maxGetal, decimalPlaces);
                     return (
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '6px' : '16px' }}>
-                            <span style={{ fontFamily: mono, fontSize: tight ? 'calc(var(--sheet-size-math) * 0.87)' : 'calc(var(--sheet-size-math) * 1.04)', minWidth: tight ? undefined : '90px', whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)}</span>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '6px' : rowWraps ? '4px 16px' : '16px', ...(rowWraps && { flexWrap: 'wrap' }) }}>
+                            <span style={{ fontFamily: mono, fontSize: tight ? 'calc(var(--sheet-size-math) * 0.87)' : 'calc(var(--sheet-size-math) * 1.04)', minWidth: tight ? undefined : numCol.css, whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)}</span>
                             <div>
                                 <div style={{ display: 'flex' }}>
                                     {places.map(p => <div key={p.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-math) * 0.75)' }}>{p.key}</div>)}
@@ -116,10 +144,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
         // circled among the place letters, which are printed in the number's own place order.
         // Fixed-width right-aligned number column (widest number's digit + comma count in the
         // block) so every "→" lands at the same x, matching the waarde/plaats section below.
-        const numChars = Math.max(1, ...exercises.map(ex => {
-            const places = placesFor(ex);
-            return places.length + (places.some(p => p.weight < 1) ? 1 : 0);
-        }));
+        const numChars = Math.max(1, ...exercises.map(ex => printedChars(placesFor(ex))));
         // `ch` is the advance of "0" in THIS element's own font, so a mono column of
         // numChars digits is exactly numChars ch — no 0.62em guess that under-measures the
         // glyph and lets the longest number push its own arrow out of the column (9 vs 10,
@@ -128,9 +153,23 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
         // markup's own: 1px of letter-spacing after every glyph, and the 0 1px padding the
         // underlined digit always carries.
         const numColWidth = tight ? undefined : `calc(${numChars}ch + ${numChars + 2}px)`;
+        // Real row width: number column, two 14px gaps around the arrow, and the widest chip row
+        // (each chip = its key + 16px padding + 4px border, 6px apart).
+        const chipsPx = Math.max(0, ...exercises.map(ex => {
+            const ps = placesFor(ex);
+            return ps.reduce((w, p) => w + monoTextPx(p.key.length, NUM_FACTOR, mathPx) + 20, 0) + (ps.length - 1) * 6;
+        }));
+        const itemPx = numberPx(numChars) + 28 + monoTextPx(1, NUM_FACTOR, mathPx) + chipsPx;
+        // Ten place chips next to a 13-digit number outgrow even a full row: the chips wrap under
+        // each other instead of running off the sheet.
+        const chipsWrap = !tight && itemPx > availableWidth;
+        // Balanced lines in a block-wide column grid, so a wrapped row never leaves one chip alone.
+        const chipRoom = Math.max(1, availableWidth - (itemPx - chipsPx));
+        const maxChips = Math.max(1, ...exercises.map(ex => placesFor(ex).length));
+        const chipCols = Math.ceil(maxChips / Math.max(2, Math.ceil(chipsPx / chipRoom)));
         return (
             <FragmentableGrid
-                cols={fitCols(availableWidth, 260, 2)}
+                cols={fitCols(availableWidth, Math.max(260, itemPx), 2)}
                 columnGap={24}
                 rowGap={gap}
                 items={exercises.map(ex => {
@@ -139,7 +178,9 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '8px' : '14px', flexWrap: 'nowrap', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
                             <span style={{ display: 'inline-block', minWidth: numColWidth, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
                             <span>→</span>
-                            <span style={{ display: 'inline-flex', gap: tight ? '2px' : '6px' }}>
+                            <span style={chipsWrap
+                                ? { display: 'inline-grid', gridTemplateColumns: `repeat(${chipCols}, auto)`, gap: '2px 6px' }
+                                : { display: 'inline-flex', gap: tight ? '2px' : '6px' }}>
                                 {places.map(p => {
                                     const isAns = showSolutions && p.key === ex.placeKey;
                                     return (
@@ -163,23 +204,32 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     }
 
     // ── WAARDE / PLAATS: underline a digit, write its value or its place name ──
+    const answerOf = (ex: PlaatswaardeExercise) => {
+        const place = placesFor(ex).find(p => p.key === ex.placeKey);
+        // A stale exercise keeps its number and an empty line rather than taking the sheet down.
+        if (!place) return '';
+        return subType === 'plaats' ? place.label.toLowerCase() : formatMathNumber(Number((place.digit * place.weight).toFixed(4)));
+    };
+    const blankPx = tight ? (subType === 'plaats' ? 70 : 45) : (subType === 'plaats' ? 110 : 70);
+    const wpChars = Math.max(0, ...exercises.map(ex => printedChars(placesFor(ex))));
+    const wpNumCol = numberPx(wpChars) > 120 ? numberCss(wpChars) : '120px';
+    // Judged on the longest answer whether or not solutions show, so the toggle never reflows.
+    const answerPx = Math.max(blankPx, monoTextPx(Math.max(0, ...exercises.map(ex => answerOf(ex).length)), 0.92, mathPx));
+    const wpItemPx = Math.max(120, numberPx(wpChars)) + 16 + monoTextPx(1, 0.92, mathPx) + answerPx;
     return (
         <FragmentableGrid
-            cols={fitCols(availableWidth, 260, 2)}
+            cols={fitCols(availableWidth, Math.max(260, wpItemPx), 2)}
             columnGap={24}
             rowGap={gap}
             items={exercises.map(ex => {
-                const place = placesFor(ex).find(p => p.key === ex.placeKey);
-                // A stale exercise keeps its number and an empty line rather than taking the sheet down.
-                const value = place ? Number((place.digit * place.weight).toFixed(4)) : 0;
-                const answer = !place ? '' : subType === 'plaats' ? place.label.toLowerCase() : formatMathNumber(value);
+                const answer = answerOf(ex);
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: tight ? '4px' : '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', ...(tight && { flexWrap: 'wrap' }) }}>
                         {/* Fixed-width right-aligned so the arrow + answer line align across rows.
                             Tight cells drop the reserved column — the digits are what has to fit. */}
-                        <span style={{ display: 'inline-block', minWidth: tight ? undefined : '120px', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
+                        <span style={{ display: 'inline-block', minWidth: tight ? undefined : wpNumCol, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{numberWithUnderline(ex)}</span>
                         <span style={{ alignSelf: 'center' }}>→</span>
-                        {showSolutions ? sol(answer) : blank(tight ? (subType === 'plaats' ? 70 : 45) : (subType === 'plaats' ? 110 : 70))}
+                        {showSolutions ? sol(answer) : blank(blankPx)}
                     </div>
                 );
             })}
