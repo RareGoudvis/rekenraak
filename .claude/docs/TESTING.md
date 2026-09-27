@@ -301,6 +301,57 @@ its flagged rows in the commit body. Known false positive: `even-oneven-rooster`
 `even-oneven-cirkels` at width 2 flip tier between two runs of identical code (BUGS.md) —
 re-run before believing them.
 
+## The big-number audit (`scripts/bignum-audit.mjs`)
+
+Does every exercise still fit its cell at the top of its own max list? The 1e9 line grows the
+arithmetic and getalbegrip max pickers to 1 000 000 000, and a 13-character number is where
+fixed-px columns, centred labels and absolutely placed digits break — which jsdom (the
+ceiling smoke pass) cannot see. Not part of the pre-commit hook; run it after a viewer or
+generator change that touches big numbers, and before flipping `BIG_NUMBERS_ENABLED`.
+
+```bash
+npm run bignum:audit                                   # starts its own vite on --port (5194), kills it after
+npm run bignum:audit -- --url http://localhost:5173/   # or drive a running dev server
+npm run bignum:audit -- --only splitsen,plaatswaarde-tabel --seeds 1234   # leaf ids or typeIds
+npm run bignum:audit -- --defaults                     # same leaves at their defaults: triage "was it already so?"
+```
+
+Flags: `--seed n` / `--seeds a,b` (default `1234,7`), `--widths` (default `4,2,1`), `--out`
+(default `~/Downloads/bignum-audit/<timestamp>/`), `--no-stress`. ~4.5 min for the full run
+(~1050 cells); needs the DEV-only `window.__rekenraak` hook, so never a production build.
+
+It reuses the visual gate's leaf walk (`scripts/lib/leafWalk.mjs`) through three opt-in hooks
+the gate never passes: `overrideFor(leaf, page)` turns one leaf into tagged cell variants,
+`probe(page, { key })` measures the settled cell, and `deselect` clears the selection in the
+same tick as the add — otherwise the Inspector mounts, and its max picker floors a forced 1e9
+into today's list before the cell is measured (each row is checked for exactly that: kind
+`harness`). Per leaf whose type declares `maxPresets`: the max key set to the top of the
+FORCED list (`maxPresetsFor(typeId, c, true)`), plus the `STRESS` table in the script (hr + / −
+with 3 and 4 terms, × / : 'andere', gemengd all four ops (and 4 terms), cijferen 4 terms /
+schatting / rest, splitsen benen and plaatswaarden with both forms, afronden rooster 12 and
+three targets, vergelijken 2 decimals and kiezen setSize 6, plaatswaarde 3 decimals) ×
+widths × solutions × seeds. The min-width clamp stays ON: it measures what a teacher gets, so
+`w 1 → 4` in the report means the packer widened the block to full width and it still failed.
+
+A cell **fails** on any of:
+
+| kind | what |
+|---|---|
+| `hoverflow` | the sheet shows `.cell-hoverflow-warn` ("Dit blok is Npx te breed") |
+| `inner-scroll` | the `[data-scaled-inner]` scrollWidth exceeds its clientWidth by > 1px |
+| `outside` | any visible descendant of the inner (clipped by its clipping ancestors — an svg clips by default) extends > 1px outside the cell rect; catches centred fixed-px content and absolutely placed labels that scrollWidth misses. The report names the outermost offenders |
+| `text` | `undefined` / `NaN` in the cell text |
+| `console` / `error` | a `console.error`, page error or a thrown cell |
+| `boundary` | the error-boundary text (`ERROR_BOUNDARY_TEXT` in `visualCompare.mjs`) |
+| `harness` | the block does not hold the forced max (see `deselect` above) |
+
+Overlapping text boxes inside one exercise (a grid item of a `.print-row`) are **reported,
+not failed**. Output: `result.json` (every cell), `report.md` (failing cells grouped by
+viewer, identical failures collapsed across requested widths and seeds), `contact-sheet.html`
++ `contact-sheet.png` (one card per group, with a screenshot of the cell plus whatever sticks
+out of it), and one PNG per failing or overlapping cell under `seed-<n>/`. Exit code 1 when
+any cell fails.
+
 ## Font baseline / compare (`scripts/font-baseline.mjs`, `scripts/font-compare.mjs`)
 
 Guards the 7d font-token sweep (`--sheet-size-math`/`--sheet-size-text`, theme.css):
