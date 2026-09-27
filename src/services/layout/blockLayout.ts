@@ -269,10 +269,9 @@ type FloorRule = (block: MathBlock) => WidthUnits;
 // Both the floor rule below and OrdenenViewer's own 2-up decision (`ordCols`) must agree
 // on how wide ONE exercise's number/blank row prints, so this is the single function both
 // read — SYNC: OrdenenViewer.tsx imports it rather than re-deriving the estimate by hand.
-// 0.62em/char at the sheet's default math size (13pt = 17.33px) is the same mono-advance
-// estimate GetallenrijenViewer/GetallenasViewer use; `+8` is per-number breathing room
-// (the underline's own padding), `SEP_PX` is the comma/operator glyph plus its flex gap.
-const ORDENEN_CHAR_EM = 0.62;
+// Numbers print in Azeret Mono at 1 × the math token, estimated at the sheet default (13pt =
+// 17.33px); `+8` is per-number breathing room (the underline's own padding), `SEP_PX` is the
+// comma/operator glyph plus its flex gap.
 const ORDENEN_DEFAULT_MATH_PX = 17.33;
 const ORDENEN_SEP_PX = 20;
 
@@ -298,7 +297,7 @@ export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): num
 /** Estimated px width of ONE exercise's row of `count` numbers/blanks, at the sheet default. */
 export function ordenenRowPx(typeId: string, c: Record<string, unknown>, count: number): number {
     const maxChars = ordenenMaxChars(typeId, c);
-    return count * (maxChars * ORDENEN_CHAR_EM * ORDENEN_DEFAULT_MATH_PX + 8) + Math.max(0, count - 1) * ORDENEN_SEP_PX;
+    return count * (monoTextPx(maxChars, 1, ORDENEN_DEFAULT_MATH_PX) + 8) + Math.max(0, count - 1) * ORDENEN_SEP_PX;
 }
 
 // A row that does not fit a half cell (330px, minus one column-gap reserved for a possible
@@ -314,8 +313,8 @@ const ordenenFloor: FloorRule = (block) => {
 
 // ── Mono text widths (getalbegrip viewers) ──────────────────────────────────
 // Azeret Mono advances every glyph by 650/1000 em — digits, letters, the thousands space,
-// regular and bold alike (measured in Chromium, 2026-09-27). The 0.62 used elsewhere
-// under-measures by ~5%, which is invisible at 3 digits and a whole glyph at 13.
+// regular and bold alike (measured in Chromium, 2026-09-27). Every mono width estimate reads
+// it: a 0.62 guess under-measured by ~5%, invisible at 3 digits and a whole glyph at 13.
 export const MONO_ADVANCE_EM = 0.65;
 
 /** Rendered px of `chars` Azeret Mono glyphs set at `fontFactor` × the math token (`mathPx`). */

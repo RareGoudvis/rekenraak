@@ -5,6 +5,7 @@ import type { MathBlock } from '../services/math/types';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 import { MONO_ADVANCE_EM } from '../services/layout/blockLayout';
 import SplitsenViewer from '../components/viewer/SplitsenViewer';
+import VergelijkenViewer from '../components/viewer/VergelijkenViewer';
 
 // Every mono width a viewer reserves is chars × MONO_ADVANCE_EM (0.65, measured) × its font
 // factor, one formula at every size: the older 0.62 / 0.64 estimates and their
@@ -37,5 +38,17 @@ describe('splitsen', () => {
         })} />).querySelector<HTMLElement>('.print-exercise div')!.style.minWidth;
         expect(tree(10)).toBe('46px');
         expect(tree(1_000_000)).toBe(`calc(var(--sheet-size-math) * ${em(9, 1.04)} + 15px)`);
+    });
+});
+
+describe('vergelijken kiezen', () => {
+    // A kiezen chip is its `ch` grid + 16px padding + 4px border. The column used to be a
+    // 0.62em guess up to five glyphs and the real width from six on: a ~23px jump at 5 → 6.
+    test.each([[[1_234, 9_999], 5], [[12_345, 99_999], 6], [[1_234_567, 7], 9]])('the chip column is the real chip width (%j → %i glyphs)', (numbers, glyphs) => {
+        const c = at(<VergelijkenViewer showSolutions={false} block={block({ subType: 'kiezen' }, {
+            vergelijkenExercises: [{ id: 'e', numbers, target: 'grootste', isManuallyEdited: false }],
+        })} />);
+        const row = c.querySelector<HTMLElement>('.print-exercise')!;
+        expect(row.style.gridAutoColumns).toBe(`calc(var(--sheet-size-math) * ${em(glyphs, 1)} + 20px)`);
     });
 });

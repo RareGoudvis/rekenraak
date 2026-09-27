@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, monoTextPx, grownColumn, splitColumns, MONO_ADVANCE_EM, type WidthUnits } from '../services/layout/blockLayout';
+import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, monoTextPx, grownColumn, splitColumns, ordenenRowPx, MONO_ADVANCE_EM, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 
 // The width clamp has two regimes: with a measured content width it answers the smallest
@@ -249,6 +249,11 @@ describe('getalbegrip width helpers', () => {
         expect(MONO_ADVANCE_EM).toBe(0.65);
         expect(monoTextPx(13, 1, MATH_PX)).toBeCloseTo(13 * 0.65 * MATH_PX);
         expect(monoTextPx(10, 0.81, 20)).toBeCloseTo(10 * 0.65 * 0.81 * 20);
+    });
+
+    test('ordenenRowPx charges each number its 0.65em mono width at the sheet default', () => {
+        // Five numbers up to 1000 (4 glyphs) + 8px air each, and four 20px separators.
+        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 1000 }, 5)).toBeCloseTo(5 * (4 * 0.65 * 17.33 + 8) + 4 * 20);
     });
 
     test('grownColumn keeps the tuned px while the text fits, so default sheets print as before', () => {

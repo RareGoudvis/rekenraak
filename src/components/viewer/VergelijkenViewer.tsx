@@ -38,16 +38,13 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
         const intChars = Math.max(2, ...parts.map(p => p[0].length));
         const fracChars = Math.max(0, ...parts.map(p => p[1]?.length ?? 0));
         const chipChars = intChars + (fracChars > 0 ? fracChars + 1 : 0);
-        // The chip's real width: its `ch` grid + 16px padding + 4px border. The old em estimate
-        // under-measures it by ~12px, which the 18px gap absorbs up to five characters; from
-        // there on (and whenever a row stops fitting) the chips need their real width.
+        // The chip's real width: its `ch` grid + 16px padding + 4px border, so the 18px gap
+        // stays 18px between the rings at every size.
         const chipPx = monoTextPx(chipChars, 1, mathPx) + 20;
         const setSize = Math.max(1, ...exercises.map(ex => ex.numbers?.length ?? 0));
         const CHIP_GAP = 18;
         const rowFits = setSize * chipPx + (setSize - 1) * CHIP_GAP <= availableWidth;
-        const chipColWidth = rowFits && chipChars <= 5
-            ? `calc(${(chipChars * 0.62 + 0.6).toFixed(2)} * var(--sheet-size-math))`
-            : `calc(var(--sheet-size-math) * ${(chipChars * MONO_ADVANCE_EM).toFixed(3)} + 20px)`;
+        const chipColWidth = `calc(var(--sheet-size-math) * ${(chipChars * MONO_ADVANCE_EM).toFixed(3)} + 20px)`;
         // A set too wide for one line breaks into equal lines of a block-wide column count,
         // so place values still line up under each other across every exercise.
         const perLine = rowFits ? setSize : Math.max(1, Math.floor((availableWidth + CHIP_GAP) / (chipPx + CHIP_GAP)));

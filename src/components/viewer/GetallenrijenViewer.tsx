@@ -5,6 +5,7 @@ import VerticalFraction from './VerticalFraction';
 import { useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { GetallenrijConstraints } from '../../services/math/constraintTypes';
 import { SOL } from './solutionStyle';
+import { monoTextPx } from '../../services/layout/blockLayout';
 
 interface Props {
     block: MathBlock;
@@ -53,11 +54,11 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
             items={exercises.map(ex => {
                 const vals = ex.values ?? [];
                 // Shrink the font until all values fit one printable-width pill: cells
-                // are at least 44px (or the longest value at ~0.62em/char mono) + 14px gaps.
+                // are at least 44px (or the longest mono value + 4px) + 14px gaps.
                 const maxChars = Math.max(1, ...vals.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
                 // Same shrink ladder as before (18px down to 12px at the 13pt default), now
                 // scaled by the math token so it follows the Lettergrootte slider.
-                const rowW = (fs: number) => vals.length * Math.max(44, maxChars * fs * 0.62 + 4) + (vals.length - 1) * 14 + (showFrame ? 47 : 0);
+                const rowW = (fs: number) => vals.length * Math.max(44, monoTextPx(maxChars, 1, fs) + 4) + (vals.length - 1) * 14 + (showFrame ? 47 : 0);
                 let fontPx = 18;
                 while (fontPx > 12 && rowW(fontPx * scale) > availableWidth) fontPx -= 1;
                 const fontSize = fontPx * scale;

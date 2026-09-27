@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import { SOL } from './solutionStyle';
+import { monoTextPx } from '../../services/layout/blockLayout';
 
 interface Props {
     block: MathBlock;
@@ -34,7 +35,7 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
 
     // Fit the axis to the printable width: shrink the classic 96px tick gap when many
     // ticks won't fit, and step the label font down until neighbouring labels can't
-    // collide (mono advance ≈ 0.62em). Big maxGetal + 10 ticks used to run off-page.
+    // collide. Big maxGetal + 10 ticks used to run off-page.
     const A4_CONTENT_PX = useBlockWidth();
     const pad = 24;
     const gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
@@ -46,7 +47,7 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
     let fontSize = STEPS_PX[0] * scale;
     for (const px of STEPS_PX) {
         fontSize = px * scale;
-        if (labelChars * fontSize * 0.62 + 12 <= gap) break;
+        if (monoTextPx(labelChars, 1, fontSize) + 12 <= gap) break;
     }
 
     const W = pad * 2 + gap * (tickCount - 1);
