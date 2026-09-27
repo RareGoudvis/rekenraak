@@ -8,12 +8,13 @@ import { makeBlock, isLayoutType } from './helpers/makeBlock';
 import { pairwise } from './helpers/pairwise';
 
 // ── The sweep ────────────────────────────────────────────────────────────────
-// Every generator, across every constraint option a teacher can reach. Four passes:
+// Every generator, across every constraint option a teacher can reach. Five passes:
 //   a) registry defaults, repeated (generators are random — one run proves little)
 //   b) every APP_STRUCTURE leaf's defaultConstraints (the sidebar's real entry points)
 //   c) pairwise combinations from CONSTRAINT_SPACE (every option value paired with
 //      every other at least once), capped per type so the suite stays fast
 //   d) every Leerjaar seed, which is how a teacher changes difficulty globally
+//   e) every type at the top of its own max-number list (the 1e9 ceiling)
 //
 // A generator returning FEWER items than asked is not a hard failure: over-restrictive
 // constraints legitimately exhaust the candidate space. Those are collected and printed
@@ -79,7 +80,7 @@ interface RunOptions {
     allowEmpty?: boolean;
 }
 
-function runOne(typeId: string, constraints: Record<string, unknown>, opts: RunOptions = {}) {
+function runOne(typeId: string, constraints: Record<string, unknown>, opts: RunOptions = {}): unknown[] {
     const def = REGISTRY[typeId];
     const block = makeBlock(typeId, { constraints, base: opts.base });
     const ctx = opts.label || JSON.stringify(constraints);
@@ -92,7 +93,7 @@ function runOne(typeId: string, constraints: Record<string, unknown>, opts: RunO
     if (isLayoutType(typeId)) {
         // Sheet furniture draws itself from constraints; it has no generated content.
         expect(data.length).toBe(0);
-        return;
+        return data;
     }
 
     const want = block.numberOfExercises;
@@ -115,6 +116,7 @@ function runOne(typeId: string, constraints: Record<string, unknown>, opts: RunO
         }
     }
     assertNoBadNumbers(data, `${typeId}`);
+    return data;
 }
 
 // ── (a) registry defaults ────────────────────────────────────────────────────
@@ -204,6 +206,92 @@ describe.each(LEERJAREN)('leerjaar %i base', (grade) => {
     test('every type generates under this grade seed', () => {
         for (const typeId of exerciseTypeIds) runOne(typeId, {}, { base, label: `leerjaar ${grade}` });
     });
+});
+
+// ── (e) every type at the top of its own max list ────────────────────────────
+// The 1e9 line: a type's didactic ceiling (REGISTRY maxPresets, force=true so the grown
+// lists are reached while BIG_NUMBERS_ENABLED is still off) is a setting a teacher reaches
+// in one click, so it must generate a full, printable block — for every branch the config
+// switches lists on, plus the stress knobs that widen an exercise the most.
+
+// Keys the registry's maxPresets branches on; a type gets one case per value combination.
+const BRANCH_KEYS = ['numberType', 'layout', 'subType', 'preset', 'multiplicationMode', 'viewMode', 'rasterVorm', 'operator'];
+// Widest setting of a length knob, combined on top of every branch case.
+const STRESS: Record<string, unknown> = { termCount: 4, numberOfTerms: 4, setSize: 6 };
+
+// Types that cannot yet hold their ceiling. Recorded and printed, not failed, because the
+// fix lands in generator files other agents own (1e9 plan, Phase 1 A/B); delete a line
+// when the report below says that type passes.
+const KNOWN_CEILING_FAILURES: Record<string, string> = {};
+
+function ceilingCases(typeId: string): Array<Record<string, unknown>> {
+    const def = REGISTRY[typeId];
+    if (!def.maxPresets) return [];
+    const space = constraintSpaceFor(typeId);
+    let combos: Array<Record<string, unknown>> = [{}];
+    for (const k of BRANCH_KEYS.filter(k => (space[k]?.length ?? 0) > 0)) {
+        combos = combos.flatMap(c => space[k].map(v => ({ ...c, [k]: v })));
+    }
+    const stressKeys = Object.keys(STRESS).filter(k => k in space);
+    const out = new Map<string, Record<string, unknown>>();
+    for (const c of combos) {
+        const range = def.maxPresets({ ...def.defaultConstraints(typeId), ...c }, true);
+        if (!range || range.presets.length === 0) continue;
+        const atTop = { ...c, [range.key]: Math.max(...range.presets) };
+        out.set(JSON.stringify(atTop), atTop);
+        if (stressKeys.length) {
+            const stressed = { ...atTop, ...Object.fromEntries(stressKeys.map(k => [k, STRESS[k]])) };
+            out.set(JSON.stringify(stressed), stressed);
+        }
+    }
+    return [...out.values()];
+}
+
+// A generated label ("… undefined miljoen", "NaN") prints as garbage even when every number is finite.
+function assertNoBadText(value: unknown, path: string, seen = new Set<unknown>()): void {
+    if (typeof value === 'string') {
+        expect(/undefined|NaN/.test(value), `${path} = "${value}"`).toBe(false);
+        return;
+    }
+    if (value === null || typeof value !== 'object' || seen.has(value)) return;
+    seen.add(value);
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) assertNoBadText(v, `${path}.${k}`, seen);
+}
+
+interface CeilingOutcome { typeId: string; known: boolean; failures: string[]; cases: number }
+const ceilingOutcomes: CeilingOutcome[] = [];
+
+const ceilingTypeIds = exerciseTypeIds.filter(t => REGISTRY[t].maxPresets);
+
+describe.each(ceilingTypeIds)('ceiling: %s', (typeId) => {
+    const cases = ceilingCases(typeId);
+    test(`generates at its own top across ${cases.length} branch case(s)`, () => {
+        expect(cases.length, `${typeId} declares maxPresets but no branch reaches a list`).toBeGreaterThan(0);
+        const failures: string[] = [];
+        for (const c of cases) {
+            for (let i = 0; i < 3; i++) {
+                try {
+                    // allowEmpty stays off: the top of a list is one click away, an empty block there is a bug.
+                    assertNoBadText(runOne(typeId, c, { label: `ceiling ${JSON.stringify(c)}` }), typeId);
+                } catch (e) {
+                    failures.push(`${JSON.stringify(c)}: ${String((e as Error).message ?? e).split('\n')[0]}`);
+                    break;
+                }
+            }
+        }
+        const known = typeId in KNOWN_CEILING_FAILURES;
+        ceilingOutcomes.push({ typeId, known, failures, cases: cases.length });
+        if (!known) expect(failures, `${typeId} fails at its ceiling`).toEqual([]);
+    });
+});
+
+test('report: ceiling pass known failures', () => {
+    const lines: string[] = [];
+    for (const o of ceilingOutcomes.filter(o => o.known)) {
+        if (o.failures.length === 0) lines.push(`  ${o.typeId}: now PASSES all ${o.cases} case(s) — remove it from KNOWN_CEILING_FAILURES`);
+        else lines.push(`  ${o.typeId} (${KNOWN_CEILING_FAILURES[o.typeId]}): ${o.failures.length}/${o.cases} case(s) fail; first: ${o.failures[0]}`);
+    }
+    if (lines.length) console.warn(['', '[matrix] ceiling pass (e), known failures:', ...lines, ''].join('\n'));
 });
 
 // Declared last so it runs last: a console.warn from an `afterAll` hook is dropped by

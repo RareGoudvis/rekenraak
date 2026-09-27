@@ -27,25 +27,38 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `store.test.ts` | Block order: `swapBlocks` (trade places, no-ops, history, curriculum lock) and the insert-before compensation both drag surfaces apply to `reorderBlocks`. jsdom — the store touches `localStorage` on import. |
 | `blockErrorBoundary.test.tsx` | The shared boundary: a throwing child renders the on-sheet message and logs, `fallback={null}` renders nothing, a `resetKey` change recovers; every `EXERCISE_UI` viewer is mounted with wrong-shaped exercise data and must never throw past the boundary (jsdom, `console.error` spy scoped). |
 | `instructions.test.ts` | Every sidebar leaf resolves to a non-empty default instruction that does not end in `:`; function-valued instructions are exercised per option; worksheet templates never fall back to `"<label>:"`. |
-| `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. |
+| `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. A **ceiling pass** repeats that for every sidebar leaf whose type has a max list, at the top of that list (`maxPresets(…, force=true)`), and also fails on `undefined`/`NaN` in the rendered text. Crash-only: jsdom has no layout, so fit and overflow at 1e9 belong to `npm run bignum:audit`. |
 | `viewers.stale.test.tsx` | Every viewer renders exercises that were generated under DIFFERENT settings — the window between a setting change and the next Genereer. See below. |
 
 ## The generator matrix
 
-Four passes over every `typeId` in `REGISTRY`:
+Five passes over every `typeId` in `REGISTRY`:
 
 - **(a) defaults** — registry defaults at `defaultCount`, 5 runs (generators are random).
 - **(b) sidebar leaves** — every `APP_STRUCTURE` leaf's `defaultConstraints`, 3 runs each.
 - **(c) constraint matrix** — pairwise combinations from `CONSTRAINT_SPACE`, capped at
   `PAIRWISE_CAP` (200) per type.
 - **(d) leerjaar seeds** — every Leerjaar 1-6 base seed through `baseApply` × every type.
+- **(e) ceiling** — every type with `maxPresets`, at the TOP of its own max list, forced
+  (`maxPresets(c, true)`: the grown 1e7/1e8/1e9 lists even while `BIG_NUMBERS_ENABLED` is
+  off). One case per value combination of the keys `maxPresets` branches on (`numberType`,
+  `layout`, `subType`, `preset`, `multiplicationMode`, `viewMode`, `rasterVorm`, `operator` —
+  whichever the type's space declares; branches with no list are skipped), each also with the
+  widest length knob the space has (`termCount` 4, `numberOfTerms` 4, `setSize` 6); 3 runs
+  per case.
 
 Each run asserts: no throw · the exercise array has `numberOfExercises` items · ids unique ·
 no `NaN`/`Infinity` anywhere in the returned data · no holes in arrays ·
 `isManuallyEdited === false`.
 
-Passes (a), (b) and (d) are settings a teacher reaches in one click, so an empty block there
-is a failure. Pass (c) mixes keys the UI would never show together, so an empty result is
+Passes (a), (b), (d) and (e) are settings a teacher reaches in one click, so an empty block there
+is a failure.
+Pass (e) additionally scans every generated string for `undefined` / `NaN` (a word or label
+built from a missing place prints as garbage even when every number is finite).
+`KNOWN_CEILING_FAILURES` at the top of pass (e) holds types that cannot yet hold their
+ceiling while the fix lands in a generator someone else owns: their failures are printed as a
+`[matrix] ceiling pass (e), known failures` table instead of failing the gate, and the table
+says when an entry passes again so it can be deleted. Empty since the 1e9 generators landed. Pass (c) mixes keys the UI would never show together, so an empty result is
 recorded instead of failed — the run ends with a `[matrix]` table listing every constraint
 set that under-produced. Read that table; a new line in it usually means a real narrowing.
 
@@ -84,7 +97,12 @@ the Inspector's stale flag.
 
 `src/config/constraintSpace.ts` mirrors the option lists in the config plugins. **A picker
 option added in a plugin must be added there**, or the matrix silently stops covering it —
-the SYNC note at the top of the file says the same. Numeric free fields (sliders, counts)
+the SYNC note at the top of the file says the same. Max-number lists are the exception: they
+are NOT mirrored but imported from `numberRanges.ts` with `force=true` (the union of every
+list the config can show for that key), so a list that grows there is covered here without
+an edit. The shared `MASKS` / `BRIDGE_SETS` carry big-place cases (`{M, E}`, `{HM}`,
+`{TM: 'REQUIRED'}`); pairwise meets them with small maxes too, where they must under-produce,
+never throw. Numeric free fields (sliders, counts)
 get three values: minimum, default, maximum. Purely cosmetic keys no generator reads
 (`boxHeight`, `exercisesPerRow`, …) are left out on purpose.
 

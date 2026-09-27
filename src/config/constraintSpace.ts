@@ -29,7 +29,8 @@ const union = (...lists: ReadonlyArray<readonly number[]>): number[] =>
 const NUMBER_TYPES = ['natural', 'decimal', 'rational', 'geheel'];
 const OPS = ['+', '-', 'x', ':'];
 
-// Place keys: 'E' = eenheden (units), 'T' = tientallen (tens), 'H' = honderdtallen.
+// Place keys: 'E' = eenheden (units), 'T' = tientallen (tens), 'H' = honderdtallen,
+// 'M' = miljoenen, 'TM' / 'HM' = tien- / honderdmiljoenen (PLACE_VALUES in mathEngine.ts).
 // A bridge is the Dutch 'bruggetje' — a carry/borrow across a place boundary.
 const BRIDGE_SETS = [
     {},
@@ -38,8 +39,10 @@ const BRIDGE_SETS = [
     { E: 'FORBIDDEN' },
     { E: 'REQUIRED', T: 'REQUIRED' },
     { E: 'FORBIDDEN', T: 'FORBIDDEN' },
+    // Big-place cases: pairwise meets them with a small max too, where they must under-produce, not throw.
+    { TM: 'REQUIRED' },
 ];
-const MASKS = [{}, { E: true }, { T: true, E: true }];
+const MASKS = [{}, { E: true }, { T: true, E: true }, { M: true, E: true }, { HM: true }];
 
 // hoofdrekenen: AdditionConfig/SubtractionConfig + addition/{Natural,Decimal,Rational}Settings
 // + HrPresetRow. All four operations share one plugin family and one defaults factory.
