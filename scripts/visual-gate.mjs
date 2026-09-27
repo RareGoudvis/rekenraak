@@ -129,8 +129,14 @@ function typeIdsForGeneratorFiles(files) {
 
     // A row may delegate to a file-local factory; inline that factory's body once so the
     // generator identifier inside it is visible to the same scan.
+    // A body runs to the next top-level declaration: a lazy match to the first `});` let one
+    // const swallow the next ones (cijferRow vanished into an earlier helper's body).
     const locals = new Map();
-    for (const m of text.matchAll(/^const (\w+)\s*=[\s\S]*?^\}\);?$/gm)) locals.set(m[1], m[0]);
+    const starts = [...text.matchAll(/^(?:export\s+)?(?:const|function|let)\s+(\w+)/gm)];
+    starts.forEach((m, i) => {
+        if (!/^const /.test(m[0])) return;
+        locals.set(m[1], text.slice(m.index, starts[i + 1]?.index ?? text.length));
+    });
 
     const registry = text.slice(text.indexOf('export const REGISTRY'));
     const out = new Set();
@@ -150,6 +156,42 @@ function viewerFilesReaching(changed) {
     // importer -> imported
     const edges = new Map();
     for (const f of listing) edges.set(f, new Set([...importMap(f).values()]));
+    const reaching = new Set(changed);
+    let grew = true;
+    while (grew) {
+        grew = false;
+        for (const [importer, imported] of edges) {
+            if (reaching.has(importer)) continue;
+            if ([...imported].some(t => reaching.has(t))) { reaching.add(importer); grew = true; }
+        }
+    }
+    return reaching;
+}
+
+// A generator helper (dutchWords, representations, …) is imported by a generator or a viewer,
+// not by the registry, so walk src/services' import graph back to every file that reaches it.
+function serviceFilesReaching(changed) {
+    const listing = [];
+    const walk = (dir) => {
+        for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+            const rel = `${dir}/${e.name}`;
+            if (e.isDirectory()) walk(rel);
+            else if (/\.ts$/.test(e.name)) listing.push(rel);
+        }
+    };
+    walk('src/services');
+    // Runtime edges only: constraintTypes.ts type-imports helpers, and following that would
+    // scope every registry row (they all name a constraints type) to a one-helper change.
+    const edges = new Map();
+    for (const f of listing) {
+        const text = readFileSync(join(ROOT, f), 'utf8');
+        const targets = new Set();
+        for (const m of text.matchAll(/(?:import|export)\s+(?!type\s)[^;]*?\s+from\s+['"]([^'"]+)['"]/g)) {
+            const t = resolveSpecifier(f, m[1]);
+            if (t) targets.add(t);
+        }
+        edges.set(f, targets);
+    }
     const reaching = new Set(changed);
     let grew = true;
     while (grew) {
@@ -189,7 +231,10 @@ function resolveScope() {
         for (const t of typeIdsForViewerFiles(viewerFilesReaching(viewerChanged))) typeIds.add(t);
     }
     if (serviceChanged.length) {
-        for (const t of typeIdsForGeneratorFiles(new Set(serviceChanged))) typeIds.add(t);
+        const reached = serviceFilesReaching(serviceChanged);
+        for (const t of typeIdsForGeneratorFiles(reached)) typeIds.add(t);
+        // A service helper can feed a viewer rather than a generator (representations.ts).
+        for (const t of typeIdsForViewerFiles(viewerFilesReaching([...reached]))) typeIds.add(t);
     }
     if (!typeIds.size) return { mode: 'none', typeIds, why: 'no visual files changed' };
     return { mode: 'types', typeIds, why: `${viewerChanged.concat(serviceChanged).join(', ')}` };

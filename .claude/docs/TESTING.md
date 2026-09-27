@@ -153,7 +153,7 @@ runs in a row must produce identical rows — that is the determinism check.
 |---|---|
 | `src/components/viewer/<X>.tsx` | every typeId whose `EXERCISE_UI` row imports its `Viewer` from that file |
 | a viewer helper (`AnalogClockSVG`, `VerticalFraction`, `MabBlocksSVG`, …) | the registered viewers that import it, transitively, then their typeIds |
-| `src/services/<family>/*.ts` | every typeId whose `REGISTRY` row references anything imported from that file (through `relaxing(…)` and row factories like `cijferRow()` too) |
+| `src/services/<family>/*.ts` | every typeId whose `REGISTRY` row references anything imported from that file (through `relaxing(…)` and row factories like `cijferRow()` too) — or from any services file that imports it at runtime, transitively (a helper such as `splitsen/dutchWords.ts` scopes to `splitsen`); plus the typeIds of every viewer that imports one of those files (`vergelijken/representations.ts` → `vergelijken`). `import type` edges are not followed: `constraintTypes.ts` type-imports helpers and would scope every row |
 | `src/services/math/*`, `src/services/layout/*`, `src/store/*`, `src/config/{appstructure,exerciseRegistry,exerciseUI,baseSettings*}`, `src/components/viewer/{FragmentableGrid,BlockWidthContext,ScaledBlock,BlockErrorBoundary,solutionStyle}`, `src/components/layout/PageSheet.tsx`, `src/App.tsx`, `src/components/sheet/*`, `src/hooks/useSheetZoom.ts`, `src/config/numberRanges.ts`, `src/index.css`, `src/assets/theme.css`, `src/hooks/useMeasuredHeights.ts` | **all leaves** — the shared visual surface |
 | anything else (tests, docs, scripts, config plugins, `public/`, `*.html`) | none: "no visual scope", exit 0 without starting a browser |
 

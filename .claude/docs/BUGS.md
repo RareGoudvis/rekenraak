@@ -23,9 +23,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Tooling
 
-- `visual-gate --staged` maps a service file to types only via exerciseRegistry imports, so helpers like
-  `vergelijken/representations.ts` or `splitsen/dutchWords.ts` alone give "no visual scope" and skip. 2026-09-27
-
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
