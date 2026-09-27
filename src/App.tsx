@@ -5,7 +5,6 @@ import PageSheet, { PAGE_W_PX } from './components/layout/PageSheet';
 import { packPages, pageIndexByBlock, skylineSlot, type PackedBlock } from './services/layout/pagePacker';
 import { minWidthUnits } from './services/layout/blockLayout';
 import { numberBlocks } from './services/layout/blockNumbering';
-import type { FooterSlot } from './services/math/types';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
 import { EXERCISE_UI } from './config/exerciseUI';
@@ -21,19 +20,23 @@ import PrintHintModal from './components/layout/PrintHintModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import WelcomeModal from './components/onboarding/WelcomeModal';
 import BlockControlsRail from './components/layout/BlockControlsRail';
-import { Lock, Hand, ListChecks, SlidersHorizontal, Printer, Flask } from '@phosphor-icons/react';
+import { Lock } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
 import { useSheetDnd } from './hooks/useSheetDnd';
 import SheetDropZones, { SheetDragHint } from './components/layout/SheetDropZones';
 import { styles } from './styles/appStyles';
 import { overlayRegionStyle } from './services/regionStyle';
-import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, TRYOUT_SEEN_KEY } from './services/persistence';
-import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from './store/useWorksheetStore';
-import { RELEASE_VERSION, TRYOUT_TYPE_IDS } from './config/version';
 import type { MathBlock } from './services/math/types';
 import { splittableCount, fittingSplitIndex } from './services/layout/splitBlock';
 import SplitPopover, { POPOVER_W, type SplitTarget } from './components/sheet/SplitPopover';
+import SheetHeader, { SheetRepeatFields } from './components/sheet/SheetHeader';
+import SheetFooter from './components/sheet/SheetFooter';
+import EmptySheetHero from './components/sheet/EmptySheetHero';
+import SheetBanners from './components/sheet/SheetBanners';
+import { useSheetZoom } from './hooks/useSheetZoom';
+import { useBootLoad } from './hooks/useBootLoad';
+import { useOnboarding } from './hooks/useOnboarding';
 
 // Click-to-edit the opdracht title directly on the A4 preview (mirrors the
 // OrdenenViewer inline-edit pattern). Commit on blur/Enter, Esc cancels; frozen
@@ -76,28 +79,8 @@ function EditableInstruction({ block, prefix }: { block: MathBlock; prefix: stri
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
-  // Sheet zoom-to-fit. The panels no longer collapse, so on a narrow laptop the sheet is
-  // what gives way: it scales down to whatever width is left instead of hiding a panel.
-  // Floored at 55% — below that the preview stops being readable and shrinking further
-  // would trade one unusable state for another.
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [sheetZoom, setSheetZoom] = useState(1);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    // The page is a real A4 at 96dpi now; the old 920px card is gone, and measuring
-    // against it made the sheet shrink long before it needed to.
-    const SHEET_PX = 794;
-    const SIDE_PAD = 96;       // .print-scroll horizontal padding
-    const fit = () => {
-      const avail = el.clientWidth - SIDE_PAD;
-      setSheetZoom(Math.max(0.55, Math.min(1, avail / SHEET_PX)));
-    };
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const sheetZoom = useSheetZoom(scrollRef);
   // Pending continuation of a first print: the modal's "naar afdrukken" button calls it.
   const [printHint, setPrintHint] = useState<(() => void) | null>(null);
   const { handlePrint } = usePrint((proceed) => setPrintHint(() => proceed));
@@ -130,72 +113,9 @@ export default function App() {
   const toggleBlockLock = useWorksheetStore((state) => state.toggleBlockLock);
   const duplicateBlock = useWorksheetStore((state) => state.duplicateBlock);
   const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
-  const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
 
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [helpVideoOpen, setHelpVideoOpen] = useState(false);
-  // First-run welcome (tour / demo video / skip) replaces auto-opening the tour. Shown once;
-  // the tour itself stays replayable from Help regardless.
-  const [welcomeOpen, setWelcomeOpen] = useState<boolean>(() => {
-    try { return !localStorage.getItem('rekenraak_tour_seen_v1'); } catch { return false; }
-  });
-  const markTourSeen = () => {
-    try { localStorage.setItem('rekenraak_tour_seen_v1', '1'); } catch { /* ignore */ }
-  };
-  const closeWelcome = () => {
-    markTourSeen();
-    setWelcomeOpen(false);
-  };
-  // First-run interactive tour (replaces the old AlphaPopup). Shown once; replayable from Help.
-  const [tourOpen, setTourOpen] = useState(false);
-  const startTourFromWelcome = () => {
-    markTourSeen();
-    setWelcomeOpen(false);
-    setTourOpen(true);
-  };
-  const closeTour = () => {
-    markTourSeen();
-    setTourOpen(false);
-  };
-  const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
-  // "Nog in proef" notice for the July exercise types. Dismissal is per browser and sticky;
-  // the banner itself only renders while such a block is actually on the sheet.
-  const [tryoutDismissed, setTryoutDismissed] = useState(() => {
-    try { return localStorage.getItem(TRYOUT_SEEN_KEY) === '1'; } catch { return false; }
-  });
-
-  // Boot-time hooks: share-link, autosave-restore offer, release-banner check.
-  // Each runs exactly once. Order matters — a shared link wins over an autosave.
-  useEffect(() => {
-    // 1. Shared link in URL hash.
-    const shared = decodeShareHash(window.location.hash);
-    if (shared) {
-      const isTemplate = shared.mode === 'template';
-      const isCurriculum = !!shared.curriculum?.locked;
-      const msg = isCurriculum
-        ? 'Vergrendelde werkbundel laden? Je kan enkel oefeningen uit de gekozen lijst toevoegen, het aantal aanpassen en opnieuw genereren. Huidige werkbundel wordt vervangen.'
-        : isTemplate
-        ? 'Sjabloon gedeeld via link laden? Bevat enkel instellingen — klik daarna op "Genereer alles" om oefeningen te maken. Huidige werkbundel wordt vervangen.'
-        : 'Werkbundel gedeeld via link laden? Huidige werkbundel wordt vervangen.';
-      if (window.confirm(msg)) {
-        loadWorksheet(shared);
-      }
-      window.history.replaceState(null, '', window.location.pathname);
-      return;
-    }
-    // 2. Auto-resume: silently restore the last session on a fresh tab so the user
-    // picks up where they left off. "Nieuw blad" (TopBar) clears it to start over.
-    const auto = loadAutosave();
-    if (auto && useWorksheetStore.getState().blocks.length === 0) {
-      loadWorksheet(auto.payload);
-    }
-    // 3. Release banner: shown until user dismisses this exact version.
-    try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time boot init
-      if (localStorage.getItem(RELEASE_SEEN_KEY) !== RELEASE_VERSION) setReleaseBannerVisible(true);
-    } catch { /* ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const onboarding = useOnboarding();
+  const { releaseBannerVisible, dismissReleaseBanner } = useBootLoad();
 
   // Browser tab title follows the worksheet title.
   useEffect(() => {
@@ -203,38 +123,8 @@ export default function App() {
     document.title = t ? `${t} — Rekenraak` : 'Rekenraak';
   }, [headerData?.titel]);
 
-  const dismissTryoutBanner = () => {
-    try { localStorage.setItem(TRYOUT_SEEN_KEY, '1'); } catch { /* ignore */ }
-    setTryoutDismissed(true);
-  };
-
-  const dismissReleaseBanner = () => {
-    try { localStorage.setItem(RELEASE_SEEN_KEY, RELEASE_VERSION); } catch { /* ignore */ }
-    setReleaseBannerVisible(false);
-  };
-
   const totalScore = blocks.reduce((sum, block) => sum + (block.totalPoints || 0), 0);
 
-
-  // Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
-  // optional repeating print header (.print-repeat-fields). Null if no field is enabled.
-  const renderFields = (align: 'left' | 'right' = 'left') => {
-    const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
-    const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
-    const LABELS: Record<HeaderField, string> = { naam: 'Naam:', klas: 'Klas:', nummer: 'Nr:', datum: 'Datum:' };
-    const visibleFields = order.filter(f => headerData?.[f]);
-    if (visibleFields.length === 0) return null;
-    return (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', rowGap: '8px', width: '100%', justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
-        {visibleFields.map(f => (
-          <div key={f} style={{ display: 'flex', alignItems: 'flex-end', width: `${widths[f] ?? DEFAULT_FIELD_WIDTHS[f]}px` }}>
-            <span style={styles.sheetHeaderLabel}>{LABELS[f]}</span>
-            <div style={styles.sheetHeaderLine}></div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   // A column rule needs air on both sides or the right-hand block's digits sit flush
   // against it. The COLUMN gap widens by 16px when the rule is on; the ROW gap keeps
@@ -352,154 +242,6 @@ export default function App() {
   useEffect(() => {
     setBlockPages(pageIndexByBlock(packedPages));
   }, [packedPages, setBlockPages]);
-
-  // ── Page chrome, rendered per page instead of once per sheet ──────────────
-  const renderHeaderRegion = () => (
-    <>
-          {/* ── HEADER ── (enum base style + optional style-builder overlay; custom wins) */}
-          <div style={overlayRegionStyle({
-            // Vertical padding belongs to the BOX, not to the header: with headerStyle
-            // 'geen' (the default) there is no border and no rule, so 12px above and below
-            // was 24px of paper reserved for a frame nobody asked for. It comes back for
-            // 'onderstreept' / 'kader', which do need air inside their line.
-            display: 'flex', flexDirection: 'column', width: '100%',
-            padding: docSettings.headerStyle === 'geen' ? '0 12px' : '12px',
-            boxSizing: 'border-box',
-            // The title's size lives HERE, on the region container, because that is what
-            // the Blad tab's "Tekengrootte" slider writes to (overlayRegionStyle sets
-            // fontSize on this box). An <h1> with its own fontSize simply won out and the
-            // slider did nothing. The name fields, the score box and the badge keep their
-            // own sizes — only the title inherits. A flanking title is a size smaller than
-            // a centred one, which is the one thing the old per-h1 sizes were saying.
-            fontSize: (docSettings.titlePosition === 'left' || docSettings.titlePosition === 'right') ? '22px' : '24px',
-            // 'onderstreept' = one line under the whole header (separates it from the body);
-            // 'kader' = full box. All-longhand borders avoid the shorthand/longhand React warning.
-            borderRadius: docSettings.headerStyle === 'onderstreept' ? 0 : '6px',
-            borderStyle: 'solid',
-            borderWidth: docSettings.headerStyle === 'kader' ? '1.5px' : '1px',
-            borderColor: docSettings.headerStyle === 'kader' ? '#000' : 'transparent',
-            borderBottomWidth: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '1.5px' : '1px',
-            borderBottomColor: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '#000' : 'transparent',
-          }, docSettings.headerCustom)}>
-            {(() => {
-              const showScore = docSettings.showScores && totalScore > 0;
-              const hasTitle = !!headerData?.titel;
-              const gap = docSettings.titleFieldsGap ?? 16;
-              // Wrapped so print CSS can hide this page-1 copy when repeatHeader moves the strip to .print-thead.
-              // Fields align opposite the title: title-left → fields flush right, title-right → fields left.
-              const fieldsRowAligned = (align: 'left' | 'right') => {
-                const f = renderFields(align);
-                return f ? <div className="print-body-fields">{f}</div> : null;
-              };
-              const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
-                  {hasTitle && <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: align }}>{headerData!.titel}</h1>}
-                  {showScore && <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
-                </div>
-              ) : null;
-              if (docSettings.titlePosition === 'right') {
-                const fr = fieldsRowAligned('left');
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', columnGap: `${gap}px`, rowGap: '8px' }}>
-                    {fr && <div style={{ gridColumn: '1', gridRow: '1', display: 'flex', alignItems: 'flex-end' }}>{fr}</div>}
-                    {titleScore('right')}
-                  </div>
-                );
-              }
-              if (docSettings.titlePosition === 'left') {
-                // Fields hug the sheet's right edge as a block with a straight LEFT edge
-                // (left-aligned rows inside a right-pushed fit-content wrapper) — plain
-                // renderFields('right') right-justified each wrapped row raggedly.
-                const fr = renderFields('left');
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: `${gap}px`, rowGap: '8px' }}>
-                    {titleScore('left')}
-                    {fr && (
-                      <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
-                        <div className="print-body-fields" style={{ width: 'fit-content', maxWidth: '100%' }}>{fr}</div>
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-              // center — the title ALWAYS sits on its own line under the fields, the way a
-              // real worksheet reads; flanking the title with half the fields looked odd.
-              const centerFields = fieldsRowAligned('left');
-              return (
-                <>
-                  {/* Name fields + Score share the top row so the Score box sits at the
-                      Naam/Klas height (not floating below); the centered title drops beneath. */}
-                  {(centerFields || showScore) && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: `${gap}px` }}>
-                      <div style={{ minWidth: 0 }}>{centerFields}</div>
-                      {showScore && <div style={{ ...styles.scoreBox, flexShrink: 0 }}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
-                    </div>
-                  )}
-                  {/* The 8px only separates the title from the fields/score row above it;
-                      with every field off there is nothing to separate it from and the gap
-                      is paper margin pretending to be layout. */}
-                  {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? '8px 0 0' : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center' }}>{headerData!.titel}</h1>}
-                </>
-              );
-            })()}
-          </div>
-
-    </>
-  );
-
-  // Footer is three slots. The left one always carries the credit and takes no setting;
-  // the other two are free. Page numbers are only possible at all because the packer knows
-  // the index and the total — the browser cannot count pages from HTML.
-  const footerSlotText = (slot: FooterSlot | undefined, pageIndex: number, pageCount: number): string => {
-    switch (slot) {
-      case 'vrije-tekst':  return footerData?.centerText ?? '';
-      case 'paginanummer': {
-        const fmt = footerData?.pageFormat ?? 'lang';
-        if (fmt === 'cijfer') return String(pageIndex + 1);
-        if (fmt === 'kort') return `${pageIndex + 1} / ${pageCount}`;
-        return `Pagina ${pageIndex + 1} van ${pageCount}`;
-      }
-      case 'school':     return footerData?.school || '';
-      case 'klas':       return footerData?.klas || '';
-      case 'leerkracht': return footerData?.leerkracht || '';
-      case 'datum':      return new Date().toLocaleDateString('nl-BE');
-      default:           return '';
-    }
-  };
-
-  const renderFooterRegion = (pageIndex: number, pageCount: number) => {
-    // Old worksheets have no slots; derive something sensible from the v2 fields so a
-    // saved sheet keeps looking like itself.
-    const centerSlot: FooterSlot = footerData?.slotCenter
-      ?? (footerData?.showCenterText ? 'vrije-tekst' : 'leeg');
-    const rightSlot: FooterSlot = footerData?.slotRight
-      ?? (footerData?.showPagina ? 'paginanummer'
-        : footerData?.showSchool ? 'school'
-        : footerData?.showKlas ? 'klas'
-        : footerData?.showLeerkracht ? 'leerkracht' : 'leeg');
-    const leftSlot: FooterSlot = footerData?.slotLeft ?? 'leeg';
-    const right = rightSlot === 'vrije-tekst' ? (footerData?.rightText ?? '') : footerSlotText(rightSlot, pageIndex, pageCount);
-    const left = leftSlot === 'vrije-tekst' ? (footerData?.leftText ?? '') : footerSlotText(leftSlot, pageIndex, pageCount);
-    // The credit always prints; only its position is the teacher's choice. Whichever
-    // position holds it shows the credit instead of that position's own slot.
-    const brandSlot = footerData?.brandSlot ?? 'left';
-    const credit = <span className="footer-credit">Gemaakt met RekenRaak.be</span>;
-    return (
-            <div className="print-tfoot-inner" style={overlayRegionStyle({
-              borderTopStyle: 'solid',
-              borderTopWidth: docSettings.footerStyle === 'kader' ? '1.5px' : '1px',
-              borderTopColor: docSettings.footerStyle === 'lijn' ? '#ccc'
-                : docSettings.footerStyle === 'kader' ? '#000' : 'transparent',
-              ...(docSettings.footerStyle === 'kader'
-                ? { borderStyle: 'solid', borderWidth: '1.5px', borderColor: '#000', padding: '8px 12px', borderRadius: '6px' }
-                : {}),
-            }, docSettings.footerCustom)}>
-              <span>{brandSlot === 'left' ? credit : left}</span>
-              <span>{brandSlot === 'center' ? credit : footerSlotText(centerSlot, pageIndex, pageCount)}</span>
-              <span>{brandSlot === 'right' ? credit : right}</span>
-            </div>
-    );
-  };
 
   // One block in a page-grid cell. `index` counts across the whole worksheet so the
   // opdracht numbering keeps running across pages.
@@ -629,8 +371,8 @@ export default function App() {
         <a href="/oefeningen.html">Alle oefeningen</a>
       </nav>
     </div>
-    {welcomeOpen && <WelcomeModal onClose={closeWelcome} onStartTour={startTourFromWelcome} />}
-    {tourOpen && <TourOverlay onClose={closeTour} />}
+    {onboarding.welcomeOpen && <WelcomeModal onClose={onboarding.closeWelcome} onStartTour={onboarding.startTourFromWelcome} />}
+    {onboarding.tourOpen && <TourOverlay onClose={onboarding.closeTour} />}
     <div className="print-root" style={styles.appShell}>
       <div className="print-body-row" style={styles.appBody}>
       {/* LEFT — the exercise palette, running the FULL height of the window. Its own tab
@@ -645,7 +387,7 @@ export default function App() {
       {/* CENTRE — the top bar belongs to the SHEET, so it spans only this column. */}
       <div style={styles.centreColumn}>
       <div className="no-print" onClick={(e) => e.stopPropagation()}>
-        <TopBar onPrint={handlePrint} onOpenHelp={() => setHelpOpen(true)} />
+        <TopBar onPrint={handlePrint} onOpenHelp={onboarding.openHelp} />
       </div>
       <main className="print-main" style={styles.mainContent} onClick={() => setActiveSelection('document')}>
 
@@ -657,21 +399,7 @@ export default function App() {
             The tag is absolutely positioned, so this changes nothing the packer measures. */}
         <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 48px 48px' }}>
 
-        {releaseBannerVisible && (
-          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
-            <Hand size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
-            <span>Welkom bij Rekenraak! Stel links je oefenblad samen, pas het rechts aan en druk af als PDF. Nieuw hier? <button onClick={() => setHelpOpen(true)} style={bannerStyles.inlineLink}>Lees de uitleg</button>.</span>
-            <button onClick={dismissReleaseBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
-          </div>
-        )}
-
-        {!tryoutDismissed && blocks.some(b => TRYOUT_TYPE_IDS.has(b.typeId)) && (
-          <div className="no-print" onClick={(e) => e.stopPropagation()} style={bannerStyles.release}>
-            <Flask size={16} style={{ flexShrink: 0 }} aria-hidden="true" />
-            <span>Enkele oefeningen op dit blad zijn nieuw en nog in proef. Kijk het afgedrukte blad even na voor je het uitdeelt.</span>
-            <button onClick={dismissTryoutBanner} style={bannerStyles.bannerClose} title="Verbergen">×</button>
-          </div>
-        )}
+        <SheetBanners releaseVisible={releaseBannerVisible} onDismissRelease={dismissReleaseBanner} onOpenHelp={onboarding.openHelp} />
 
         <div
           ref={a4Ref}
@@ -721,71 +449,12 @@ export default function App() {
               onFitBlock={fitBlockToPage}
               onSplitBlock={(blockId, anchor) => openSplit(blockId, anchor)}
               header={pi === 0
-                ? renderHeaderRegion()
-                : (headerData?.repeatHeader ? <div className="print-repeat-fields">{renderFields()}</div> : null)}
-              footer={renderFooterRegion(pi, packedPages.length)}
+                ? <SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} />
+                : (headerData?.repeatHeader ? <SheetRepeatFields header={headerData} /> : null)}
+              footer={<SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
             >
               {blocks.length === 0 && pi === 0 && (
-                <div className="no-print" style={{ ...styles.heroEmpty, width: '100%' }}>
-                  <h1 style={styles.heroTitle}>Zo maak je een rekenblad</h1>
-                  <p style={styles.heroPitch}>
-                    Dit blad is nog leeg. Deze uitleg verdwijnt zodra je links een eerste oefening toevoegt.
-                    Wat je hier op het scherm ziet, is exact wat er straks uit de printer komt.
-                  </p>
-                  <ol style={styles.heroSteps}>
-                    <li style={styles.heroStep}>
-                      <span style={styles.heroStepIcon}><ListChecks size={20} weight="bold" /></span>
-                      <div>
-                        <p style={styles.heroStepTitle}>1. Kies een oefening</p>
-                        <p style={styles.heroStepBody}>Links staan alle oefeningen per domein, geordend zoals het leerplan. Zoek op naam of filter op leerjaar met het menu naast het zoekveld. Eén klik zet een blok op het blad.</p>
-                      </div>
-                    </li>
-                    <li style={styles.heroStep}>
-                      <span style={styles.heroStepIcon}><SlidersHorizontal size={20} weight="bold" /></span>
-                      <div>
-                        <p style={styles.heroStepTitle}>2. Stel het blok in</p>
-                        <p style={styles.heroStepBody}>Rechts kies je aantal, getalbereik, met of zonder brug, hulpjes en niveau. De prefix MAG / MOET / ★ zet differentiatie in de opdrachttitel.</p>
-                      </div>
-                    </li>
-                    <li style={styles.heroStep}>
-                      <span style={styles.heroStepIcon}><Flask size={20} weight="bold" /></span>
-                      <div>
-                        <p style={styles.heroStepTitle}>3. Genereer</p>
-                        <p style={styles.heroStepBody}>Elke klik geeft andere getallen; "Genereer alles" doet het hele blad in één keer. Past een opgave niet? Klik erop en verander ze zelf. Vergrendel een blok dat goed zit.</p>
-                      </div>
-                    </li>
-                    <li style={styles.heroStep}>
-                      <span style={styles.heroStepIcon}><Hand size={20} weight="bold" /></span>
-                      <div>
-                        <p style={styles.heroStepTitle}>4. Schik het blad</p>
-                        <p style={styles.heroStepBody}>Zet een blok vol, half of kwart breed, sleep het naar de juiste plaats of laat het op een nieuwe pagina beginnen. Het tabblad Overzicht toont alle blokken op een rij.</p>
-                      </div>
-                    </li>
-                    <li style={styles.heroStep}>
-                      <span style={styles.heroStepIcon}><Lock size={20} weight="bold" /></span>
-                      <div>
-                        <p style={styles.heroStepTitle}>5. Werk af</p>
-                        <p style={styles.heroStepBody}>Onder Blad regel je naam- en klasvelden, titel, voettekst, nummering en scores. Onder Opmaak de lettergrootte en de ruimte tussen de blokken.</p>
-                      </div>
-                    </li>
-                    <li style={styles.heroStep}>
-                      <span style={styles.heroStepIcon}><Printer size={20} weight="bold" /></span>
-                      <div>
-                        <p style={styles.heroStepTitle}>6. Druk af</p>
-                        <p style={styles.heroStepBody}>Printknop of Ctrl+P, marges op "Geen", of bewaar als pdf. Zet het oogje aan om de oplossingen in het rood te tonen en druk die versie apart af.</p>
-                      </div>
-                    </li>
-                  </ol>
-                  <p style={styles.heroTipsTitle}>Goed om te weten</p>
-                  <ul style={styles.heroTips}>
-                    <li>Je blad wordt automatisch bewaard in deze browser. Wil je het meenemen of bijhouden, bewaar het dan als bestand via "Meer".</li>
-                    <li>Een deellink opent bij een collega exact dit blad; een sjabloonlink geeft alleen de instellingen door, zodat elke klas andere getallen krijgt.</li>
-                    <li>Geen tijd? Onder "Meer" staan kant-en-klare bladen per leerjaar om van te vertrekken.</li>
-                    <li>Met "Geen dubbele oefeningen" komt een opgave nergens op het blad twee keer voor.</li>
-                    <li>De rondleiding en de video vind je terug achter de knop met het vraagteken.</li>
-                  </ul>
-                  <p style={styles.heroHint}>Gratis, zonder account. Niets verlaat je browser tenzij je zelf afdrukt of deelt.</p>
-                </div>
+                <EmptySheetHero />
               )}
               {/* Place every cell EXACTLY where the packer put it: left/top in px, width
                   from its column units, height its own. Nothing flows, so the browser can
@@ -885,12 +554,12 @@ export default function App() {
     {/* Screen-only strip explaining the three drop thirds, for the duration of a drag. */}
     {dnd.fromId !== null && <SheetDragHint />}
     {printHint && <PrintHintModal onClose={() => setPrintHint(null)} onContinue={() => { const go = printHint; setPrintHint(null); go(); }} />}
-    {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} onStartTour={() => { setHelpOpen(false); setTourOpen(true); }} onShowVideo={() => { setHelpOpen(false); setHelpVideoOpen(true); }} />}
-    {helpVideoOpen && (
+    {onboarding.helpOpen && <HelpModal onClose={onboarding.closeHelp} onStartTour={onboarding.startTourFromHelp} onShowVideo={onboarding.showVideoFromHelp} />}
+    {onboarding.helpVideoOpen && (
       <WelcomeModal
         mode="video"
-        onClose={() => setHelpVideoOpen(false)}
-        onStartTour={() => { setHelpVideoOpen(false); setTourOpen(true); }}
+        onClose={onboarding.closeHelpVideo}
+        onStartTour={onboarding.startTourFromVideo}
       />
     )}
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
@@ -900,39 +569,3 @@ export default function App() {
   );
 }
 
-const bannerStyles = {
-  autosave: {
-    display: 'flex', alignItems: 'center', gap: '12px',
-    padding: '10px 16px', marginBottom: '12px',
-    backgroundColor: 'rgba(155, 48, 255, 0.10)',
-    border: '1px solid var(--accent-purple)',
-    borderRadius: '8px',
-    fontSize: '13px', color: 'var(--text-main)',
-    fontFamily: "'Azeret Mono', monospace",
-  } as React.CSSProperties,
-  release: {
-    display: 'flex', alignItems: 'center', gap: '12px',
-    padding: '8px 16px', marginBottom: '12px',
-    backgroundColor: 'var(--bg-panel)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    fontSize: '12px', color: 'var(--text-muted)',
-    fontFamily: "'Azeret Mono', monospace",
-  } as React.CSSProperties,
-  bannerPrimary: {
-    padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 700, fontSize: '12px',
-    border: 'none', backgroundColor: 'var(--accent-purple)', color: '#fff',
-  } as React.CSSProperties,
-  bannerSecondary: {
-    padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px',
-    border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-input)', color: 'var(--text-main)',
-  } as React.CSSProperties,
-  bannerClose: {
-    marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-muted)',
-    fontSize: '18px', cursor: 'pointer', padding: '0 4px', lineHeight: 1,
-  } as React.CSSProperties,
-  inlineLink: {
-    background: 'none', border: 'none', padding: 0, color: 'var(--accent-purple)',
-    textDecoration: 'underline', cursor: 'pointer', font: 'inherit',
-  } as React.CSSProperties,
-};
