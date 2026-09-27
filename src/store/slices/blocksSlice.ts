@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { MathBlock } from '../../services/math/types';
 import { generateForBlock, generateExtra, GENERATION_FAILED, withinCeiling } from '../../services/generateDispatch';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply, baseRangeFor } from '../../config/baseSettings';
+import { seedConstraints } from '../../config/baseSettings';
 import { resolveInstruction } from '../../config/instructionPresets';
 import { generateMixedOne, mixedKey } from '../../services/math/mixedGenerator';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
@@ -21,17 +21,8 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
     })),
 
     addBlockFromType: (typeId, label, overrideConstraints, opts) => set((state) => {
-        // All per-type defaults live in the registry. The appstructure leaf's
-        // defaultConstraints (e.g. { numberType:'decimal' }) arrive as
-        // overrideConstraints and are merged on top.
         const def = REGISTRY[typeId];
-        const defaultConstraints = def ? def.defaultConstraints(typeId) : {};
-        // Snapshot the global base difficulty onto this block's constraints.
-        // Order matters: registry defaults → base snapshot → leaf override, so a
-        // leaf that pins a value (e.g. splitsen-basis maxGetal:10) always wins.
-        const range = def ? baseRangeFor(state.baseSettings, defaultConstraints, overrideConstraints, def.maxPresets) : undefined;
-        const baseSnapshot = def ? baseApply(state.baseSettings, defaultConstraints, range) : {};
-        const mergedConstraints = { ...defaultConstraints, ...baseSnapshot, ...overrideConstraints } as BlockConstraints;
+        const mergedConstraints = seedConstraints({ typeId, base: state.baseSettings, override: overrideConstraints }) as BlockConstraints;
 
         const newBlock: MathBlock = {
             id: Math.random().toString(36).substring(2, 9),

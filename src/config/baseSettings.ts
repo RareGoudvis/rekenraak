@@ -5,6 +5,7 @@
 // retro-affects existing blocks. Pure data (no React) so the store can import it.
 
 import { NAT_CEILING, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
+import { REGISTRY } from './exerciseRegistry';
 
 export type BaseNumberType = 'natural' | 'decimal' | 'rational' | 'geheel';
 export type BaseBridgePolicy = 'FREE' | 'REQUIRED' | 'FORBIDDEN';
@@ -95,4 +96,22 @@ export function baseRangeFor(
     if (!maxPresets) return undefined;
     const numberType = 'numberType' in registryDefaults ? { numberType: base.baseNumberType } : {};
     return maxPresets({ ...registryDefaults, ...numberType, ...(override ?? {}) });
+}
+
+export interface SeedInput {
+    typeId: string;
+    base: BaseSettings;
+    // The leaf's defaultConstraints, a curriculum's locked constraints or an ad-hoc override.
+    override?: Record<string, unknown>;
+}
+
+// A new block's constraints: registry defaults → base snapshot → override, so a leaf that
+// pins a value (splitsen-basis maxGetal:10) wins. The store, the sidebar hover card, the
+// MassAdd preview and the test helper all call this, so a preview is the block it adds.
+export function seedConstraints({ typeId, base, override }: SeedInput): Record<string, unknown> {
+    const def = REGISTRY[typeId];
+    if (!def) return { ...(override ?? {}) };
+    const defaults = def.defaultConstraints(typeId) as Record<string, unknown>;
+    const range = baseRangeFor(base, defaults, override, def.maxPresets);
+    return { ...defaults, ...baseApply(base, defaults, range), ...(override ?? {}) };
 }

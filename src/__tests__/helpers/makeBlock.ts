@@ -1,11 +1,10 @@
 import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply, baseRangeFor, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
+import { seedConstraints, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
 
-// SYNC: mirrors `addBlockFromType` in src/store/slices/blocksSlice.ts (the block literal
-// plus the registry-defaults → base-snapshot → leaf-override merge order). Reimplemented
-// rather than imported because the store is React/zustand and these suites run in node.
-// If the store's block literal changes, change it here too.
+// SYNC: mirrors the block literal of `addBlockFromType` (src/store/slices/blocksSlice.ts);
+// the constraints come from the same seedConstraints(). Reimplemented rather than imported
+// because the store is React/zustand and these suites run in node.
 
 export interface MakeBlockOptions {
     /** Leaf `defaultConstraints` from APP_STRUCTURE, or an ad-hoc constraint override. */
@@ -22,10 +21,7 @@ let seq = 0;
 
 export function makeBlock(typeId: string, opts: MakeBlockOptions = {}): MathBlock {
     const def = REGISTRY[typeId];
-    const registryDefaults = def ? def.defaultConstraints(typeId) : {};
     const base = opts.base ?? DEFAULT_BASE;
-    const range = def ? baseRangeFor(base, registryDefaults, opts.constraints, def.maxPresets) : undefined;
-    const baseSnapshot = def ? baseApply(base, registryDefaults, range) : {};
 
     return {
         id: opts.id ?? `t${(seq += 1).toString(36)}`,
@@ -37,7 +33,7 @@ export function makeBlock(typeId: string, opts: MakeBlockOptions = {}): MathBloc
         numberOfExercises: def ? def.defaultCount : 10,
         totalPoints: 5,
         verticalSpacing: 18,
-        constraints: { ...registryDefaults, ...baseSnapshot, ...(opts.constraints ?? {}) },
+        constraints: seedConstraints({ typeId, base, override: opts.constraints }),
         exercises: [],
         ...(opts.block ?? {}),
     } as MathBlock;

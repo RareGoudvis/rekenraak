@@ -4,7 +4,7 @@ import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore, type AddBlockOpts } from '../../store/useWorksheetStore';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply, baseRangeFor } from '../../config/baseSettings';
+import { seedConstraints } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 import PopupSelect from '../ui/PopupSelect';
@@ -92,11 +92,8 @@ export default function Sidebar() {
     const [preview, setPreview] = useState<{ typeId: string; constraints: Record<string, unknown>; top: number; left: number } | null>(null);
     const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const resolveConstraints = (typeId: string, override?: Record<string, unknown>): Record<string, unknown> | null => {
-        const def = REGISTRY[typeId];
-        if (!def) return null;
-        const defaults = def.defaultConstraints(typeId);
-        const range = baseRangeFor(baseSettings, defaults, override, def.maxPresets);
-        return { ...defaults, ...baseApply(baseSettings, defaults, range), ...(override ?? {}) };
+        if (!REGISTRY[typeId]) return null;
+        return seedConstraints({ typeId, base: baseSettings, override });
     };
     const leafHover = (typeId: string, override?: Record<string, unknown>) => ({
         onMouseEnter: (e: React.MouseEvent) => {

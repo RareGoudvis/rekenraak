@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react';
 import { ArrowClockwise as RotateCw, Check, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
-import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply, baseRangeFor } from '../../config/baseSettings';
+import { seedConstraints } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
 
@@ -32,12 +31,8 @@ export default function MassAddModal({ onClose }: Props) {
     };
 
     // Resolve the same way addBlockFromType does, so the preview matches a real add.
-    const resolvedConstraints = (item: CatalogItem, variantConstraints: Record<string, unknown>) => {
-        const def = REGISTRY[item.typeId];
-        const defaults = def.defaultConstraints(item.typeId);
-        const range = baseRangeFor(base, defaults, variantConstraints, def.maxPresets);
-        return { ...defaults, ...baseApply(base, defaults, range), ...variantConstraints };
-    };
+    const resolvedConstraints = (item: CatalogItem, variantConstraints: Record<string, unknown>) =>
+        seedConstraints({ typeId: item.typeId, base, override: variantConstraints });
 
     const toggleSelected = (typeId: string) => setSelected(s => ({ ...s, [typeId]: !s[typeId] }));
     const reroll = (typeId: string) => setNonceByType(n => ({ ...n, [typeId]: (n[typeId] ?? 0) + 1 }));
