@@ -1,5 +1,6 @@
-// Bounded Dutch number-to-words for the positietabel splitsen variant (0 … 1 000 000).
-// Refine later for edge cases / larger ranges.
+// Dutch number-to-words for the positietabel splitsen variant (0 … 1 000 000 000 and beyond).
+// Spelling: everything below a million is one word ("vijfhonderdduizenddrieëntwintig", the
+// file's long-standing convention); "miljoen" / "miljard" stand apart with their own "een".
 
 const ONES = [
     'nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen',
@@ -22,18 +23,32 @@ function underThousand(n: number): string {
     return (h === 1 ? '' : ONES[h]) + 'honderd' + (r ? underHundred(r) : '');
 }
 
-function intToDutchWords(n: number): string {
-    if (n === 0) return 'nul';
-    if (n === 1000000) return 'een miljoen';
-    let out = '';
+// 1 … 999 999 as one word; "duizend" and "honderd" drop their "een".
+function underMillion(n: number): string {
     const th = Math.floor(n / 1000);
     const rest = n % 1000;
+    let out = '';
     if (th) out += (th === 1 ? '' : underThousand(th)) + 'duizend';
     if (rest) out += underThousand(rest);
-    return out || underThousand(n);
+    return out;
+}
+
+function intToDutchWords(n: number): string {
+    if (n < 0) return 'min ' + intToDutchWords(-n);
+    if (n === 0) return 'nul';
+    const mrd = Math.floor(n / 1_000_000_000);
+    const mln = Math.floor(n / 1_000_000) % 1000;
+    const low = n % 1_000_000;
+    const groups: string[] = [];
+    // Recursion keeps a thousand-plus miljard count spelled ("duizend miljard") instead of undefined.
+    if (mrd) groups.push(intToDutchWords(mrd) + ' miljard');
+    if (mln) groups.push(underThousand(mln) + ' miljoen');
+    if (low) groups.push(underMillion(low));
+    return groups.join(' ');
 }
 
 export function numberToDutchWords(n: number): string {
+    if (!Number.isFinite(n)) return '';
     if (Number.isInteger(n)) return intToDutchWords(n);
     // Decimal: "<int> komma <digit> <digit> …" (e.g. 3,45 → "drie komma vier vijf").
     const neg = n < 0;

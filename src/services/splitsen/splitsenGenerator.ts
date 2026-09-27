@@ -2,6 +2,7 @@ import type { MathBlock, SplitsenExercise } from '../math/types';
 import { digitAtPlace, PLACE_VALUES } from '../math/mathEngine';
 import { numberToDutchWords } from './dutchWords';
 import type { SplitsenConstraints } from '../math/constraintTypes';
+import { NAT_CEILING } from '../../config/numberRanges';
 
 const randInt = (min: number, max: number): number =>
     Math.floor(Math.random() * (max - min + 1)) + min;
@@ -79,7 +80,8 @@ function generatePlaceValueExercises(block: MathBlock): SplitsenExercise[] {
     const used = new Set<number>();
 
     for (let i = 0; i < n; i++) {
-        const cap = layout === 'positie-tabel' ? Math.min(maxGetal, 1_000_000) : maxGetal;
+        // The words reach miljard, so the tabel shares the global ceiling (old saves may hold more).
+        const cap = layout === 'positie-tabel' ? Math.min(maxGetal, NAT_CEILING) : maxGetal;
         let num = numFromMask(cap, operand1Mask, dp);
         let attempts = 0;
         while (used.has(Math.round(num * scale)) && attempts < 200) { num = numFromMask(cap, operand1Mask, dp); attempts++; }
@@ -200,11 +202,14 @@ export function recomputeSplitsenExercise(block: MathBlock, ex: SplitsenExercise
     const dp = dpAllowed ? Math.min(3, Math.max(0, c.decimalPlaces ?? 0)) : 0;
     const scale = Math.pow(10, dp);
     const maxGetal: number = c.maxGetal ?? 1000;
-    // Snap the typed total to the decimal grid so header and pairs agree.
-    const total = Math.round(newTotal * scale) / scale;
+    // Snap the typed total to the decimal grid so header and pairs agree; above the ceiling
+    // the place list (PLACE_VALUES tops out at Mrd) would silently drop digits.
+    const total = Math.round(Math.min(newTotal, NAT_CEILING) * scale) / scale;
 
     if (layout === 'positie-tabel') {
-        return { total, placeBreakdown: fullColumns(total, maxGetal, dp), words: numberToDutchWords(total), isManuallyEdited: true };
+        // A typed total above the block's max still gets a column for every digit it has.
+        const columnsMax = Math.min(NAT_CEILING, Math.max(maxGetal, Math.abs(total)));
+        return { total, placeBreakdown: fullColumns(total, columnsMax, dp), words: numberToDutchWords(total), isManuallyEdited: true };
     }
     if (layout === 'positie-benen' || layout === 'positie-math') {
         return { total, placeBreakdown: nonZeroPlaces(total, dp), isManuallyEdited: true };
