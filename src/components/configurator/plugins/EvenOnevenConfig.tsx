@@ -3,13 +3,15 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import type { EvenOnevenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
 
 export default function EvenOnevenConfig({ block }: Props) {
     const [c, patch] = useConstraints<EvenOnevenConstraints>(block);
+    const range = useMaxPresets(block);
     const { subType = 'rooster', maxGetal = 100, target = 'even', perRow = 10 } = c;
 
     const set = (key: string, value: unknown) =>
@@ -28,16 +30,16 @@ export default function EvenOnevenConfig({ block }: Props) {
 
             {subType === 'rooster' ? (
                 <>
-                    <div style={styles.section}>
+                    {range && <div style={styles.section}>
                         <SettingLabel text="Maximum getal:" info="Het grootste getal in het rooster." />
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={RANGES.evenOneven.map(val => ({ value: val, label: presetLabel(val) }))}
+                            options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
-                    </div>
+                    </div>}
                     <div style={styles.section}>
                         <SettingLabel text={`Getallen per rij: ${perRow}`} info="Hoeveel getallen er per rij in het rooster staan." />
                         <input type="range" min="5" max="14" step="1" value={perRow}

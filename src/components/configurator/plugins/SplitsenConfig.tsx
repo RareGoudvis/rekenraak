@@ -8,7 +8,8 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import type { SplitsenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 export default function SplitsenConfig({ block }: Props) {
 
     const [c, patch] = useConstraints<SplitsenConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         maxGetal = 10,
         operand1Mask = {},
@@ -79,12 +81,6 @@ export default function SplitsenConfig({ block }: Props) {
 
     // Layout is fixed by the sidebar leaf; the config only refines that layout.
     const currentLayout = typeof layout === 'string' ? layout : 'basic';
-    // SYNC: splitsenMax in exerciseRegistry.ts picks the same list per layout.
-    const maxPresets = currentLayout === 'verliefde-harten' ? RANGES.splitsenHarten
-        : isBoom ? RANGES.splitsenBoom
-        : currentLayout === 'positie-tabel' ? RANGES.splitsenTabel
-        : isPositie ? RANGES.splitsenPositie
-        : RANGES.splitsenBasis;
 
     return (
         <div style={styles.container}>
@@ -185,12 +181,12 @@ export default function SplitsenConfig({ block }: Props) {
             )}
 
             {/* MAXIMUM GETAL */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat gesplitst mag worden." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={maxPresets.map(val => ({ value: val, label: presetLabel(val) }))}
+                    options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => {
                         set('maxGetal', val);
                         if (fixedTotal && fixedTotal > val) set('fixedTotal', null);
@@ -198,7 +194,7 @@ export default function SplitsenConfig({ block }: Props) {
                     }}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* SPECIFIC NUMBER STRUCTURE — place-value layouts (which places the number has) */}
             {isPositie && (

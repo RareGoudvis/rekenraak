@@ -2,7 +2,8 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { DeelbaarheidKleurConstraints } from '../../../services/math/constraintTypes';
 
@@ -14,6 +15,7 @@ const DIVISORS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 export default function DeelbaarheidKleurConfig({ block }: Props) {
     const [c, patch] = useConstraints<DeelbaarheidKleurConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         viewMode: viewModeRaw = 'strip',
         rasterVorm,
@@ -72,16 +74,16 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
 
             {isRaster ? (
                 <>
-                    <div style={styles.section}>
+                    {range && <div style={styles.section}>
                         <SettingLabel text="Maximum getal:" info="Het grootste getal in het raster." />
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={RANGES.deelbaarheidKleurRaster.map(val => ({ value: val, label: presetLabel(val) }))}
+                            options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
-                    </div>
+                    </div>}
                     <div style={styles.section}>
                         {/* Cap at maxGetal: the raster holds distinct numbers ≤ maxGetal, so you
                             can't have 120 cells when the max is 100 — the generator clamps and the
@@ -100,16 +102,16 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                 </>
             ) : (
                 <>
-                    <div style={styles.section}>
+                    {range && <div style={styles.section}>
                         <SettingLabel text="Maximum getal:" info="Het grootste getal in de strook." />
                         <PopupSelect
                             clampToLowest
                             value={maxGetal}
-                            options={RANGES.deelbaarheidKleurStrook.map(val => ({ value: val, label: presetLabel(val) }))}
+                            options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                             onChange={(val) => set('maxGetal', val)}
                             ariaLabel="Maximum getal"
                         />
-                    </div>
+                    </div>}
                     <div style={styles.section}>
                         <SettingLabel text={`Getallen per rij: ${perRow}`} info="Hoeveel getallen er per rij staan." />
                         <input type="range" min="5" max="14" step="1" value={perRow}

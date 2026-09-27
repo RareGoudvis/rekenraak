@@ -6,7 +6,8 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import FractionMaxField from './FractionMaxField';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import type { VergelijkenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -14,6 +15,7 @@ interface Props { block: MathBlock; }
 
 export default function VergelijkenConfig({ block }: Props) {
     const [c, patch] = useConstraints<VergelijkenConstraints>(block);
+    const range = useMaxPresets(block);
     const { subType = 'getallen', maxGetal = 1000, numberMask = {}, chooseTarget = 'grootste', setSize = 3, decimalPlaces = 0, leftRep = 'breuk', rightRep = 'kommagetal', leftMask = {}, rightMask = {},
         leftFracN = 4, leftFracD = 8, rightFracN = 4, rightFracD = 8 } = c;
 
@@ -29,16 +31,16 @@ export default function VergelijkenConfig({ block }: Props) {
 
     return (
         <div style={styles.container}>
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat vergeleken wordt." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isRep ? RANGES.vergelijkenRepresentaties : RANGES.vergelijken).map(val => ({ value: val, label: presetLabel(val) }))}
+                    options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => set('maxGetal', val)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Decimalen:" info="Hoeveel cijfers er na de komma staan." />

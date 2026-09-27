@@ -6,7 +6,8 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import type { PatroonConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -19,6 +20,7 @@ const OPS: Array<{ key: string; label: string }> = [
 
 export default function PatroonConfig({ block }: Props) {
     const [c, patch] = useConstraints<PatroonConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         numberType = 'natural',
         maxGetal = 100,
@@ -56,16 +58,16 @@ export default function PatroonConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             {/* MAX */}
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat in het patroon mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.patronen.map(val => ({ value: val, label: presetLabel(val) }))}
+                    options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                     onChange={(val) => set('maxGetal', val)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {/* GEHELE — lower bound */}
             {numberType === 'geheel' && (

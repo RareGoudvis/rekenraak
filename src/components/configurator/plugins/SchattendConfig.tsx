@@ -3,7 +3,8 @@ import type { MathBlock } from '../../../services/math/types';
 import { targetsFor } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { SchattendConstraints } from '../../../services/math/constraintTypes';
 
@@ -15,6 +16,7 @@ const OPS: { key: string; label: string }[] = [
 
 export default function SchattendConfig({ block }: Props) {
     const [c, patch] = useConstraints<SchattendConstraints>(block);
+    const range = useMaxPresets(block);
     const operators: string[] = c.operators ?? ['+', '-'];
     const numberType: string = c.numberType ?? 'natural';
     const isDecimal = numberType === 'decimal';
@@ -41,16 +43,16 @@ export default function SchattendConfig({ block }: Props) {
                 </div>
             </div>
 
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal in de oefening." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isDecimal ? RANGES.decimal : RANGES.schattendNatural).map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Afronden op:" info="Op welke positie de getallen eerst afgerond worden." />

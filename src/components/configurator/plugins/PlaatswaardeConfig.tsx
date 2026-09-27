@@ -3,7 +3,8 @@ import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { PlaatswaardeConstraints } from '../../../services/math/constraintTypes';
 
@@ -11,6 +12,7 @@ interface Props { block: MathBlock; }
 
 export default function PlaatswaardeConfig({ block }: Props) {
     const [c, patch] = useConstraints<PlaatswaardeConstraints>(block);
+    const range = useMaxPresets(block);
     const { maxGetal = 1000, numberMask = {}, decimalPlaces = 0 } = c;
 
     const set = (key: string, value: unknown) =>
@@ -22,16 +24,16 @@ export default function PlaatswaardeConfig({ block }: Props) {
     // subType (view) is chosen by the sidebar leaf — not repeated here.
     return (
         <div style={styles.container}>
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de oefeningen mag voorkomen." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={RANGES.plaatswaarde.map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             <div style={styles.section}>
                 <SettingLabel text="Decimalen:" info="Aantal decimalen achter de komma." />

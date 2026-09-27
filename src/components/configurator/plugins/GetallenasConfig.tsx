@@ -3,7 +3,8 @@ import { useState } from 'react';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { GetallenasConstraints } from '../../../services/math/constraintTypes';
 
@@ -17,6 +18,7 @@ const FRACTION_STEPS = [2, 3, 4, 5, 8, 10];   // denominator d → step 1/d
 
 export default function GetallenasConfig({ block }: Props) {
     const [c, patch] = useConstraints<GetallenasConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         maxGetal = 100,
         step = 5,
@@ -93,13 +95,13 @@ export default function GetallenasConfig({ block }: Props) {
             </div>
 
             {/* MAX — not for rationals (range driven by step + ticks) */}
-            {!isRational && (
+            {range && (
                 <div style={styles.section}>
                     <SettingLabel text="Maximum getal:" info="Het grootste getal op de getallenas." />
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={RANGES.getallenas.map(val => ({ value: val, label: presetLabel(val) }))}
+                        options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                         onChange={(val) => set('maxGetal', val)}
                         ariaLabel="Maximum getal"
                     />

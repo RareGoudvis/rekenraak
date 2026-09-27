@@ -7,7 +7,8 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import FractionMaxField from './FractionMaxField';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { GetallenrijConstraints } from '../../../services/math/constraintTypes';
 
@@ -28,6 +29,7 @@ const stepDecimals = (s: number): number => {
 
 export default function GetallenrijenConfig({ block }: Props) {
     const [c, patch] = useConstraints<GetallenrijConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         maxGetal = 100,
         step = 5,
@@ -111,13 +113,13 @@ export default function GetallenrijenConfig({ block }: Props) {
             </div>
 
             {/* MAX — not for rationals (range driven by step + cells) */}
-            {!isRational && (
+            {range && (
                 <div style={styles.section}>
                     <SettingLabel text="Maximum getal:" info="Het grootste getal in de reeks." />
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={RANGES.getallenrijen.map(val => ({ value: val, label: presetLabel(val) }))}
+                        options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
                         onChange={(val) => set('maxGetal', val)}
                         ariaLabel="Maximum getal"
                     />

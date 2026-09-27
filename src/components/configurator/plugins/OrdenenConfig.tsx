@@ -3,7 +3,8 @@ import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { OrdenenConstraints } from '../../../services/math/constraintTypes';
 
@@ -21,6 +22,7 @@ const numInput: React.CSSProperties = { width: '70px', padding: '6px 8px', backg
 
 export default function OrdenenConfig({ block }: Props) {
     const [c, patch] = useConstraints<OrdenenConstraints>(block);
+    const range = useMaxPresets(block);
     const {
         count = 3,
         operatorMode = 'oplopend',
@@ -68,13 +70,13 @@ export default function OrdenenConfig({ block }: Props) {
             </div>
 
             {/* MAX — natural/decimal/geheel only (rationals use denominators) */}
-            {numberType !== 'rational' && (
+            {range && (
                 <div style={styles.section}>
                     <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de reeksen mag voorkomen." />
                     <PopupSelect
                         clampToLowest
                         value={maxGetal}
-                        options={RANGES.ordenen.map(v => ({ value: v, label: presetLabel(v) }))}
+                        options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                         onChange={(v) => set('maxGetal', v)}
                         ariaLabel="Maximum getal"
                     />

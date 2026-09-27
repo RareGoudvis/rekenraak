@@ -4,7 +4,8 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { targetsFor, naturalTargetOffered } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
-import { RANGES, presetLabel } from '../../../config/numberRanges';
+import { presetLabel } from '../../../config/numberRanges';
+import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { AfrondenConstraints } from '../../../services/math/constraintTypes';
 
@@ -12,6 +13,7 @@ interface Props { block: MathBlock; }
 
 export default function AfrondenConfig({ block }: Props) {
     const [c, patch] = useConstraints<AfrondenConstraints>(block);
+    const range = useMaxPresets(block);
     const numberType: string = c.numberType ?? 'natural';
     const isDecimal = numberType === 'decimal';
     const subType: string = c.subType ?? 'rooster';
@@ -32,16 +34,16 @@ export default function AfrondenConfig({ block }: Props) {
 
     return (
         <div style={styles.container}>
-            <div style={styles.section}>
+            {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat afgerond moet worden." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
-                    options={(isDecimal ? RANGES.decimal : RANGES.afrondenNatural).map(v => ({ value: v, label: presetLabel(v) }))}
+                    options={range.presets.map(v => ({ value: v, label: presetLabel(v) }))}
                     onChange={(v) => set('maxGetal', v)}
                     ariaLabel="Maximum getal"
                 />
-            </div>
+            </div>}
 
             {isDecimal && (
                 <div style={styles.section}>
