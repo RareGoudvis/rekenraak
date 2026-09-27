@@ -4,7 +4,7 @@ import { useBlockWidth, fitCols, ANSWER_LINE_H, useSheetSizePx } from './BlockWi
 import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
-import { monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
+import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
 
 // Every printed digit/mono size below is a factor of --sheet-size-math (the empty-state
 // placeholder is screen-only chrome and stays a fixed px).
@@ -66,12 +66,11 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
         // lines up; sized to the WIDEST value anywhere in it rather than a flat 46px, which
         // clipped once numbers grew past two digits.
         const chars = Math.max(2, ...exercises.flatMap(ex => [ex.total, ex.pairs[0]?.given ?? 0, ex.pairs[0]?.answer ?? 0]).map(v => fmt(v).length));
-        const boxWidthEm = chars * 0.62 + 0.8;
-        const boxMinWidth = `max(46px, calc(${boxWidthEm.toFixed(2)} * var(--sheet-size-math)))`;
+        // The value at 1.04 inside 6px padding + a 1.5px border either side. SYNC: SplitsboomItem's box.
+        const { px: boxMinWidthPx, css: boxMinWidth } = grownColumn(46, chars, 1.04, mathPx, 15);
         // fitCols needs the tree's REAL rendered width (two boxes + the 18px inner gap), not
         // a flat guess — otherwise a block with big numbers keeps too many trees per row and
         // the sheet shows the "Verklein om te passen" overflow banner instead of wrapping.
-        const boxMinWidthPx = Math.max(46, boxWidthEm * mathPx);
         const itemMinPx = boxMinWidthPx * 2 + 18;
         const cols = fitCols(availableWidth, itemMinPx, Math.min(exercises.length, 4), gap + 10);
         return (
@@ -173,12 +172,10 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
             return places.map(p => letters ? `${p.digit}${p.key}` : placeValueStr(p.digit, p.weight)).join(' + ');
         };
         const chars = Math.max(1, ...exercises.map(ex => leftText(ex).length));
-        // 0.62em + 0.4 covers up to ~7 glyphs; past that the real 1.04 × 0.65em advance wins, or a
-        // million-sized number would overhang its right-aligned column on the left.
-        const estEm = chars * 0.62 + 0.4;
-        const realEm = chars * MONO_ADVANCE_EM * 1.04;
-        const colEm = Math.max(estEm, realEm);
-        const estimate = realEm > estEm ? `calc(${realEm.toFixed(3)} * var(--sheet-size-math))` : `calc(${estEm.toFixed(2)} * var(--sheet-size-math))`;
+        // The widest left side at the row's 1.04 × math size, so a million-sized number never
+        // overhangs its right-aligned column on the left.
+        const colEm = chars * MONO_ADVANCE_EM * 1.04;
+        const estimate = `calc(${colEm.toFixed(3)} * var(--sheet-size-math))`;
         // A compose chain of nine million-sized terms is wider than the page: cap the column so
         // the chain wraps inside it and leaves the result (or, in 'beide', the other side's
         // chain) room. 32px is the "=" slot plus its two 6px gaps.
@@ -406,6 +403,7 @@ function SplitsboomItem({ ex, showSolutions, boxMinWidth }: { ex: SplitsenExerci
     const right = ex.pairs[0]?.answer ?? 0;
     const blank: 'top' | 'left' | 'right' = ex.blankPos ?? 'right';
 
+    // SYNC: the splitsboom grownColumn(…, 15) sizing — 1.04 font, 6px padding, 1.5px border.
     const box = (value: number, isBlank: boolean) => (
         <div style={{
             border: '1.5px solid #000', borderRadius: '4px', minWidth: boxMinWidth, height: '38px',
