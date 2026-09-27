@@ -137,7 +137,6 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const tight = A4_CONTENT_PX < TIGHT_MAX_PX;
     const BLANK_W = tight ? 30 : 40;
     const BLANK_M = tight ? 3 : 6;
-    const blocks = useWorksheetStore((state) => state.blocks);
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
 
     const renderTerm = (val: number | Fraction | undefined, isMissing: boolean, blockId: string, exId: string, opIdx: number, widthPx?: number) => {
@@ -161,7 +160,8 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     const cleanVal = e.target.value.replace(/\s/g, '').replace(',', '.');
                     const nVal = Number(cleanVal);
                     if (!isNaN(nVal)) {
-                        const currentEx = blocks.find(b => b.id === blockId)?.exercises.find(ex => ex.id === exId);
+                        // Read at edit time: a `blocks` subscription re-rendered every hoofdrekenen viewer on any block's edit.
+                        const currentEx = useWorksheetStore.getState().blocks.find(b => b.id === blockId)?.exercises.find(ex => ex.id === exId);
                         if (currentEx) {
                             const newOps = currentEx.operands.map((o, i) => (i === opIdx ? nVal : o));
                             updateExercise(blockId, exId, { operands: newOps });
