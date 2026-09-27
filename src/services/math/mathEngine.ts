@@ -27,6 +27,9 @@ export const PLACE_VALUES = [
 
 // JavaScript afrondingsfouten vermijden door intern alles met integers te berekenen
 const INTERNAL_SCALE = 1000000;
+// The tienvoud preset's own ceiling (RANGES.hrTienvoud tops at 10 000). Gemengd shares one
+// max with its other variants, so at 1e9 the base would otherwise reach 1e9 × 1000.
+const TIENVOUD_BASE_MAX = 10_000;
 const MAX_ATTEMPTS = 20000;
 
 // ============================================================================
@@ -132,9 +135,15 @@ function bridgesSatisfied(bridges: BridgeMap | undefined, hits: Set<string>): bo
     return true;
 }
 
+// Past a million the round unit follows the ceiling (10^(digits − 2)): at 1e9 that is 299 999 999
+// = 300 000 000 − 1, not 734 512 299 = 734 512 300 − 1. At ≤ 1e6 it stays the classic 10 / 100.
+const BIG_MAX = 1_000_000;
+const compenserenUnit = (maxGetal: number): number =>
+    maxGetal > BIG_MAX ? Math.pow(10, String(Math.floor(maxGetal)).length - 2) : (maxGetal > 100 ? 100 : 10);
+
 // Compenseren preset: an operand just under a round number (29 = 30 − 1), scaled units.
 function compenserenOperand(c: MulDivConstraints, maxGetal: number): number {
-    const unit = maxGetal > 100 ? 100 : 10;
+    const unit = compenserenUnit(maxGetal);
     const distance = Math.max(1, Math.min(2, c.presetDistance ?? 1));
     const tens = randInt(2, Math.max(2, Math.floor(maxGetal / unit) - 1)) * unit;
     return tens - randInt(1, distance);
@@ -396,7 +405,7 @@ export const generateAdditionExercises = (block: MathBlock): Equation[] => {
         }
         if (bad || ints.length !== N || ints.reduce((a, b) => a + b, 0) > intMaxGetal) continue;
         // Compenseren is pointless when the first term is itself round.
-        if (constraints.preset === 'compenseren' && ints[0] % Math.round((maxGetal > 100 ? 100 : 10) * INTERNAL_SCALE) === 0) continue;
+        if (constraints.preset === 'compenseren' && ints[0] % Math.round(compenserenUnit(maxGetal) * INTERNAL_SCALE) === 0) continue;
 
         // Brugcontrole — column addition with running carry (exact for any N).
         if (!bridgesSatisfied(bridges, additionCarryPlaces(ints))) continue;
@@ -536,7 +545,7 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
             running -= v;
         }
         if (bad || ints.length !== N || running <= 0) continue;
-        if (constraints.preset === 'compenseren' && ints[0] % Math.round((maxGetal > 100 ? 100 : 10) * INTERNAL_SCALE) === 0) continue;
+        if (constraints.preset === 'compenseren' && ints[0] % Math.round(compenserenUnit(maxGetal) * INTERNAL_SCALE) === 0) continue;
 
         // Brugcontrole (lenen) — any borrow in the sequential chain counts.
         if (!bridgesSatisfied(bridges, subtractionBorrowPlaces(ints))) continue;
@@ -673,7 +682,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             const factor = pool[randInt(0, pool.length - 1)];
             const base = numberType === 'decimal'
                 ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
-                : randInt(2, Math.max(2, maxGetal));
+                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX)));
             const answer = Number((base * factor).toFixed(6));
             const comboId = `${base}*${factor}`;
             if (usedCombinations.has(comboId)) continue;
@@ -921,7 +930,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const factor = pool[randInt(0, pool.length - 1)];
             const quotient = numberType === 'decimal'
                 ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
-                : randInt(2, Math.max(2, maxGetal));
+                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX)));
             const dividend = Number((quotient * factor).toFixed(6));
             const comboId = `${dividend}:${factor}`;
             if (usedCombinations.has(comboId)) continue;
@@ -1054,6 +1063,8 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             : (divisionLevel >= 1 ? [divisionLevel] : []);
         const useDividendMask = Object.values(operand1Mask).some(v => v);
         const useDivisorMask = Object.values(operand2Mask).some(v => v);
+        // SYNC: every bigNatural branch below is new; ≤ 1e6 keeps its exact RNG stream.
+        const bigNatural = numberType === 'natural' && maxGetal > BIG_MAX;
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
@@ -1090,6 +1101,23 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                     dividendVal = quotientVal * divisorVal;
                     if (dividendVal > maxGetal || dividendVal <= 0) continue;
                 }
+            } else if (bigNatural && useDividendMask && !useDivisorMask) {
+                // Past a million a masked dividend over a divisor drawn up to itself is almost never
+                // exact, so the block starved into relaxation: a 2-digit divisor that divides it is.
+                const rawA = generateMaskedInt(operand1Mask);
+                if (rawA === null) continue;
+                dividendVal = Math.round(rawA / INTERNAL_SCALE);
+                divisorVal = randInt(2, 99);
+                if (dividendVal <= 0 || dividendVal > maxGetal || dividendVal % divisorVal !== 0) continue;
+                quotientVal = dividendVal / divisorVal;
+            } else if (bigNatural && useDivisorMask && !useDividendMask) {
+                // Same starvation with only the divisor masked: answer-first makes it exact by construction.
+                const rawB = generateMaskedInt(operand2Mask);
+                if (rawB === null) continue;
+                divisorVal = Math.round(rawB / INTERNAL_SCALE);
+                if (divisorVal < 1 || divisorVal > maxGetal) continue;
+                quotientVal = randInt(1, Math.floor(maxGetal / divisorVal));
+                dividendVal = quotientVal * divisorVal;
             } else if (useDividendMask || useDivisorMask) {
                 // Gebruik maskers om deeltal en/of deler te bepalen, controleer op exacte deling
                 const rawA = useDividendMask ? generateMaskedInt(operand1Mask) : null;
@@ -1111,6 +1139,15 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 if (rawQuotient <= 0 || Math.abs(scaledQ - Math.round(scaledQ)) > 1e-9) continue;
                 quotientVal = Math.round(scaledQ) / displayScale;
 
+            } else if (bigNatural) {
+                // A divisor drawn uniformly below the max is > max / 2 most of the time, so past a
+                // million nearly every quotient was 1. Keep the divisor to at most half the
+                // dividend's digits (≤ 4 at 1e9) and let the quotient carry the size.
+                const k = randInt(1, Math.max(1, Math.floor((String(maxGetal).length - 1) / 2)));
+                divisorVal = randInt(k === 1 ? 2 : Math.pow(10, k - 1), Math.pow(10, k) - 1);
+                quotientVal = randInt(2, Math.max(2, Math.floor(maxGetal / divisorVal)));
+                dividendVal = divisorVal * quotientVal;
+                if (dividendVal > maxGetal || String(divisorVal).length * 2 > String(dividendVal).length) continue;
             } else {
                 // Geen maskers: bouw clean oefening (deler × geheel quotiënt = deeltal)
                 const intDivisorScaled = randInt(1, (maxGetal - 1) * displayScale);

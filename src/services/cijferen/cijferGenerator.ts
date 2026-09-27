@@ -15,12 +15,18 @@ function scaleOf(dp: number): number {
     return Math.pow(10, dp);
 }
 
-const BRIDGE_KEYS = ['E', 'T', 'H', 'D', 'TD', 'HD'];
+// Integer place keys from the units up (E, T, H, … M, TM, HM, Mrd): index = column above the comma.
+// Derived so a bridge the config offers at M or above is actually enforced.
+const BRIDGE_KEYS = PLACE_VALUES.filter(p => p.weight >= 1).map(p => p.key).reverse();
+
+// Every column that can hold a bridge key, decimals included — a fixed 8-column scan never
+// reached HD with three decimals (or anything above HM on whole numbers).
+const scanColumns = (dp: number): number => dp + BRIDGE_KEYS.length;
 
 function checkAdditionBridges(operands: number[], dp: number, bridges: Record<string, ConstraintType>): boolean {
     const scale = Math.pow(10, dp);
     let carry = 0;
-    for (let pos = 0; pos <= 7; pos++) {
+    for (let pos = 0; pos < scanColumns(dp); pos++) {
         let sum = carry;
         for (const op of operands) {
             const scaled = Math.round(Math.abs(op) * scale);
@@ -42,7 +48,7 @@ function checkSubtractionBridges(a: number, b: number, dp: number, bridges: Reco
     const aScaled = Math.round(a * scale);
     const bScaled = Math.round(b * scale);
     let borrow = 0;
-    for (let pos = 0; pos <= 7; pos++) {
+    for (let pos = 0; pos < scanColumns(dp); pos++) {
         const aDigit = Math.floor(aScaled / Math.pow(10, pos)) % 10;
         const bDigit = Math.floor(bScaled / Math.pow(10, pos)) % 10;
         const diff = aDigit - borrow - bDigit;
@@ -201,7 +207,8 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     }
 
     if (c.operator === 'x') {
-        const maxMultiplier = maxVal <= 100 ? 9 : maxVal <= 10000 ? 99 : maxVal <= 1_000_000 ? 999 : 9999;
+        // Tiers past a million: 3-digit multipliers up to 1e7, 4-digit ones up to 1e9.
+        const maxMultiplier = maxVal <= 100 ? 9 : maxVal <= 10000 ? 99 : maxVal <= 10_000_000 ? 999 : 9999;
         const minMultiplier = maxVal <= 100 ? 2 : 10;
 
         // pass dp so decimal place keys (t, h) generate proper fractional multipliers
@@ -235,7 +242,12 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     }
 
     // Division ':'
-    const maxDivisor = maxVal <= 100 ? 9 : maxVal <= 10_000 ? 99 : 999;
+    // Past 1e7 a 3-digit divisor leaves a 7-digit quotient, so natural numbers grow to 4 digits —
+    // not under a dividend mask (its exact-match retry starves once the divisor outgrows the
+    // dividend) and not for decimals, whose lists stay as they were.
+    const dividendMasked = Object.values(getMask(c, 0)).some(v => v);
+    const bigDivisor = maxVal > 10_000_000 && !isDecimal && !dividendMasked;
+    const maxDivisor = maxVal <= 100 ? 9 : maxVal <= 10_000 ? 99 : bigDivisor ? 9999 : 999;
 
     // pass dp so decimal mask keys (t, h) produce fractional divisors
     const mask1d = getMask(c, 1);
