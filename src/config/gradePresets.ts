@@ -16,14 +16,16 @@ export const LEERJAREN: Leerjaar[] = [1, 2, 3, 4, 5, 6];
 // updateBaseSettings, so it only affects NEW blocks (existing stay put).
 // Number type stays 'natural' by default; we widen the max range as the grade climbs.
 // Ceilings follow the leerplan (Natuurlijke getallen interpreteren-clusters per leerjaar):
-//   L1 ≤20 · L2 ≤100 · L3 ≤1.000 · L4 ≤10.000 · L5 ≤1.000.000 · L6 ≤10 miljard
+//   L1 ≤20 · L2 ≤100 · L3 ≤1.000 · L4 ≤10.000 · L5 ≤1.000.000 · L6 ≤1 miljard.
+// 1 miljard is this app's ceiling (NAT_CEILING): it keeps the scaled-integer engine exact.
+// Each new block floors the seed into its own type's list (baseApply + maxPresets).
 export const GRADE_PRESETS: Record<Leerjaar, Partial<BaseSettings>> = {
     1: { baseMaxGetal: 20 },
     2: { baseMaxGetal: 100 },
     3: { baseMaxGetal: 1000 },
     4: { baseMaxGetal: 10000, baseDecimalPlaces: 2 },
     5: { baseMaxGetal: 1000000, baseDecimalPlaces: 2 },
-    6: { baseMaxGetal: 10000000000, baseDecimalPlaces: 2 },
+    6: { baseMaxGetal: 1_000_000_000, baseDecimalPlaces: 2 },
 };
 
 // Earliest leerjaar each NUMBER TYPE is introduced (leerplan-grounded):

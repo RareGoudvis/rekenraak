@@ -4,6 +4,7 @@ import { flattenLeaves } from '../config/appstructure';
 import { DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
 import { GRADE_PRESETS } from '../config/gradePresets';
 import { NAT_CEILING } from '../config/numberRanges';
+import { withinCeiling, generateForBlock } from '../services/generateDispatch';
 import { makeBlock } from './helpers/makeBlock';
 
 // Snapshot of baseApply before the per-type floor (≤ 2026-09-27): what every block got at
@@ -82,5 +83,21 @@ describe('(c) leerjaar 6 lands inside every picker', () => {
             }
         }
         expect(problems).toEqual([]);
+    });
+});
+
+describe('(d) old saves above the ceiling', () => {
+    test('a max ≤ NAT_CEILING passes through as the very same block', () => {
+        const b = makeBlock('hr-std-optellen', { constraints: { maxGetal: NAT_CEILING } });
+        expect(withinCeiling(b)).toBe(b);
+    });
+
+    test('a 1e10 maxGetal / maxRange generates from a clamped copy, the stored block untouched', () => {
+        const hr = makeBlock('hr-std-optellen', { constraints: { maxGetal: 1e10 } });
+        expect(withinCeiling(hr).constraints.maxGetal).toBe(NAT_CEILING);
+        expect(hr.constraints.maxGetal).toBe(1e10);
+        const cijfer = makeBlock('cijferen-optellen-nat', { constraints: { operator: '+', maxRange: 1e10 } });
+        expect(withinCeiling(cijfer).constraints.maxRange).toBe(NAT_CEILING);
+        expect(generateForBlock(cijfer, true).items.length).toBe(cijfer.numberOfExercises);
     });
 });

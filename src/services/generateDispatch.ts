@@ -1,5 +1,6 @@
 import type { MathBlock } from './math/types';
 import { REGISTRY } from '../config/exerciseRegistry';
+import { NAT_CEILING } from '../config/numberRanges';
 
 // Generic exercise setter shape (the store's setExercises action).
 export type SetExercises = (id: string, field: keyof MathBlock, data: unknown[]) => void;
@@ -76,9 +77,24 @@ function dedupeWithTopUp(
     return { items: kept, shortBy };
 }
 
+// Old saves and share links can carry a 1e10 max (the pre-1e9 leerjaar-6 seed), and
+// 1e10 × INTERNAL_SCALE is past 2^53. Generate from a clamped copy; the stored block keeps
+// its value, and anything ≤ NAT_CEILING passes through as the very same object.
+export function withinCeiling(block: MathBlock): MathBlock {
+    const c = block.constraints as Record<string, unknown> | undefined;
+    if (!c) return block;
+    const over = (k: string) => typeof c[k] === 'number' && (c[k] as number) > NAT_CEILING;
+    if (!over('maxGetal') && !over('maxRange')) return block;
+    const clamped = { ...c };
+    if (over('maxGetal')) clamped.maxGetal = NAT_CEILING;
+    if (over('maxRange')) clamped.maxRange = NAT_CEILING;
+    return { ...block, constraints: clamped } as MathBlock;
+}
+
 /** A block's exercises the way every generate path produces them: the registry generator,
     deduped and topped up when the sheet says "Geen dubbele oefeningen". */
-export function generateForBlock(block: MathBlock, uniqueExercises?: boolean): { items: unknown[]; note: string | null } {
+export function generateForBlock(stored: MathBlock, uniqueExercises?: boolean): { items: unknown[]; note: string | null } {
+    const block = withinCeiling(stored);
     const def = REGISTRY[block.typeId];
     if (!def) return { items: [], note: null };
     const { items, note } = def.generateNoted ? def.generateNoted(block) : { items: def.generate(block), note: null };
@@ -105,7 +121,7 @@ export function generateExtra(block: MathBlock, existing: unknown[], want: numbe
     if (!def || want <= existing.length) return { items: existing.slice(0, Math.max(want, 0)), note: null };
     const need = want - existing.length;
     // Ask the generator for the shortfall only — the kept exercises already cover the rest.
-    const sized = { ...block, numberOfExercises: need };
+    const sized = { ...withinCeiling(block), numberOfExercises: need };
     const { items, note } = def.generateNoted ? def.generateNoted(sized) : { items: def.generate(sized), note: null };
     if (!unique) return { items: [...existing, ...items.slice(0, need)], note };
     const keyFn = def.exerciseKey ?? defaultExerciseKey;

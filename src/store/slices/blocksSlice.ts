@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { MathBlock } from '../../services/math/types';
-import { generateForBlock, generateExtra, GENERATION_FAILED } from '../../services/generateDispatch';
+import { generateForBlock, generateExtra, GENERATION_FAILED, withinCeiling } from '../../services/generateDispatch';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { baseApply, baseRangeFor } from '../../config/baseSettings';
 import { resolveInstruction } from '../../config/instructionPresets';
@@ -178,7 +178,7 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
             const avoid = new Set(
                 b.exercises.filter((_, i) => i !== idx).map(mixedKey)
             );
-            const generated = generateMixedOne(b, variant, avoid);
+            const generated = generateMixedOne(withinCeiling(b), variant, avoid);
             if (!generated) {
                 // Generator found nothing for this variant under the block's current
                 // settings — leave the exercise as-is and surface why, rather than
