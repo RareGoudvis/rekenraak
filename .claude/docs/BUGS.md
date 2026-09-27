@@ -8,6 +8,13 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- Switching Blad › koptekst/voettekst style at runtime logs React's "Updating/Removing a style
+  property during rerender … when a conflicting property is set" (dev only): SheetHeader mixes
+  `borderWidth`/`borderColor`/`borderStyle` shorthands with `borderBottom*` longhands despite its
+  "all-longhand" comment, and SheetFooter's `kader` spreads `borderStyle` over `borderTopStyle`.
+  Repro: set headerStyle kader → onderstreept, footerStyle kader → lijn. Fix: write all four sides
+  as longhands (changes no pixels). 2026-09-27
+
 ## Config
 
 - Leaf `getalbegrip-getallenrijen-dec` (appstructure.ts:156) pins `maxGetal: 10`, which is not in
