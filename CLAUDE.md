@@ -29,6 +29,7 @@ npm run build          # tsc -b && vite build
 npm run lint
 npm run matrix         # Playwright width matrix → scripts/width-matrix.result*.json (needs a dev server; --url --seed)
 npm run height:audit   # Playwright vertical measurement audit (needs a dev server)
+npm run bignum:audit   # Playwright: every leaf at its max-list top (1e9) × widths × solutions → overflow/NaN report + contact sheet
 npm run font:baseline  # screenshot every sidebar leaf (--out dir --seed); font:compare diffs two runs
 npm run gate           # what the pre-commit hook runs: check + visual gate on the staged files
 npm run visual:gate    # -- --all | --files a,b | --scope-only : targeted leaf walk vs scripts/visual-baseline.json

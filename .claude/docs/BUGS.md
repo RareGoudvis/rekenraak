@@ -20,11 +20,26 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   puntoefening, Oplossingen aan. Fix: size the box for the solution width when `anyMissingTerm`
   (widens every puntoefening block a few px; `nowrap` alone overflows the cell's left edge). 2026-09-27
 
+- Getallenas at its 1e5 top (all numberTypes, every width): the first tick label hangs 5–15 px
+  outside the cell's left edge (`npm run bignum:audit -- --only getalbegrip-getallenassen-nat`).
+  Fix: inset the axis by half the widest label. 2026-09-27
+- Even-oneven rooster at its 1e4 top, width ½ / ¼: four-digit numbers wrap inside the 46 px cells
+  and the lines overlap. Fix: size cells from the character count (46 px floor). 2026-09-27
+
 ## Config
 
 - Leaf `getalbegrip-getallenrijen-dec` (appstructure.ts:156) pins `maxGetal: 10`, which is not in
   the Getallenrijen max list (20 … 100 000): opening its config snaps the block to 20 and it
   regenerates. Fix direction: pin 20, or give decimal getallenrijen its own list (owner call). 2026-09-27
+
+## Generators
+
+- Hoofdrekenen delen 'andere' at max ≤ 1e6 (natural, no mask): the divisor is uniform up to the
+  max, so most quotients are 1; with only the dividend masked an exact division is rare and the
+  block relaxes. Fixed above 1e6 only (RNG-stream rule). Fix direction: the >1e6 branches. 2026-09-27
+- REQUIRED bridge on the TOP place (e.g. H at max 1 000, HM at 1e9) is unreachable by construction
+  (needs a sum/minuend of exactly the max); cijferen then silently falls back to its [max/2, max/4]
+  exercise, ignoring the bridges. Fix: hide the top place in BridgeControl or note it. 2026-09-27
 
 ## Tooling
 

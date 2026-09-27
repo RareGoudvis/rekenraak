@@ -386,6 +386,13 @@ the retry loop and build exactly `n` items directly.
 > keeps its own didactic ceiling (MAB 1 000, geld 1 000, deelbaarheid / getallenas / ordenen /
 > patronen / schattend 100 000, …). `PLACE_VALUES` (mathEngine.ts) runs Mrd · HM · TM · M … td, so
 > masks / bridges / plaatswaarde reach the miljarden; `getMaskPlaces(max)` only exposes places ≤ max.
+> Above 1e6 (only): compenseren rounds to 10^(digits−2) (… 299 999 999); tienvoud's base is capped at
+> 10 000; delen 'andere' keeps the divisor ≤ half the dividend's digits (mask-only paths divide exactly);
+> cijferen bridges cover every place to Mrd, multiplier/divisor tiers go to 9 999. MathBlockRenderer fits a
+> 3–4-term chain of 10+-char operands that its estimate says overflows `useBlockWidth()`: font steps 0.95 →
+> 0.85 (= WIDTH_FIT_FLOOR), then the chain wraps before its last term; otherwise styles are untouched.
+> Afronden natural targets: T H D TD HD, then 1M 10M 100M (and 1MLD at max 1e9). Splitsen positietabel
+> spells to een miljard (dutchWords). Everything ≤ 1e6 keeps its old random stream.
 
 > Multi-term (2026-07-06): hr-std equations support 2-4 termen/factoren (`termCount`,
 > `operandMasks[]`, `operandMax[]`, `Equation.operators[]` + `missingIndex`) and presets
@@ -990,6 +997,7 @@ src/
 │   ├── useBootLoad.ts           # boot order: share link → autosave restore → release-banner check
 │   ├── useOnboarding.ts         # welcome / tour / help / video modal state + localStorage keys
 │   └── useSheetDnd.ts           # sheet drag-and-drop state: handle + whole-block drag (draggable toggled at mousedown), top/bottom drop zones (§9)
+│  (repo root) scripts/bignum-audit.mjs  # Playwright: every leaf at its max-list top × widths × solutions; fails on overflow (incl. rects outside the cell), NaN/undefined, console errors (TESTING.md)
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
 │  (repo root) scripts/font-baseline.mjs # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
 │  (repo root) scripts/font-compare.mjs  # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md

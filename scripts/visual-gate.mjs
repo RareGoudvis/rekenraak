@@ -60,6 +60,8 @@ const SHARED_SURFACE = [
     // App.tsx's page chrome, cell placement and opdracht-titel row moved here (R1 split).
     /^src\/components\/sheet\//,
     /^src\/hooks\/useSheetZoom\.ts$/,
+    // Header / titel / footer style overlay, imported only by the sheet chrome above.
+    /^src\/services\/regionStyle\.ts$/,
     // Feeds baseApply's per-type floor, so it reaches every freshly added block.
     /^src\/config\/numberRanges\.ts$/,
     /^src\/index\.css$/,
