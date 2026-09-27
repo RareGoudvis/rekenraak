@@ -10,7 +10,6 @@ import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
 import { EXERCISE_UI } from './config/exerciseUI';
 import { REGISTRY } from './config/exerciseRegistry';
-import PopupSelect from './components/ui/PopupSelect';
 import { ScaledBlock } from './components/viewer/ScaledBlock';
 import { BlockErrorBoundary } from './components/viewer/BlockErrorBoundary';
 import { cellWidthPx, answerSpaceVar } from './components/viewer/BlockWidthContext';
@@ -33,6 +32,8 @@ import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, TRYOUT_SEEN_KEY } from
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from './store/useWorksheetStore';
 import { RELEASE_VERSION, TRYOUT_TYPE_IDS } from './config/version';
 import type { MathBlock } from './services/math/types';
+import { splittableCount, fittingSplitIndex } from './services/layout/splitBlock';
+import SplitPopover, { POPOVER_W, type SplitTarget } from './components/sheet/SplitPopover';
 
 // Click-to-edit the opdracht title directly on the A4 preview (mirrors the
 // OrdenenViewer inline-edit pattern). Commit on blur/Enter, Esc cancels; frozen
@@ -71,83 +72,6 @@ function EditableInstruction({ block, prefix }: { block: MathBlock; prefix: stri
       {prefix}{block.instructionText || ''}
     </span>
   );
-}
-
-// ── "Blok splitsen" ───────────────────────────────────────────────────────────
-// A block that does not fit the rest of a page moves whole to the next one and leaves a
-// blank tail. The packer cannot break a block by itself, so the teacher does it: cut
-// after exercise N and the first N stay where there is still room.
-
-/** How many exercises this block holds, via the registry's own array field. */
-function splittableCount(block: MathBlock): number {
-    if (block.typeId.startsWith('layout-')) return 0;      // furniture holds no exercises
-    const field = REGISTRY[block.typeId]?.exerciseField;
-    if (!field) return 0;
-    const items = block[field] as unknown[] | undefined;
-    return Array.isArray(items) ? items.length : 0;
-}
-
-// Largest N whose leading rows still fit `availablePx`, measured off the rendered cell.
-// `.print-row` (FragmentableGrid) is the only place a block really breaks, so the count
-// walks whole rows and adds up the exercises in them. Returns null when the DOM says
-// nothing useful — one row, no measurement, or everything fits anyway.
-//
-// All heights come from getBoundingClientRect and are divided back by the sheet zoom:
-// offsetHeight inside ScaledBlock's CSS `zoom` is unzoomed local px and would not
-// compare with the page box around it.
-function fittingSplitIndex(cell: HTMLElement, availablePx: number, count: number, zoom: number): number | null {
-    const rows = Array.from(cell.querySelectorAll<HTMLElement>('.print-row'));
-    if (rows.length < 2 || !(availablePx > 0)) return null;
-    const h = (el: HTMLElement) => el.getBoundingClientRect().height / zoom;
-    const rowsTotal = rows.reduce((sum, r) => sum + h(r), 0);
-    // Whatever is not an exercise row — the opdracht title, block padding — has to fit too.
-    let used = h(cell) - rowsTotal;
-    let n = 0;
-    for (const row of rows) {
-        used += h(row);
-        if (used > availablePx) break;
-        n += row.children.length || 1;
-    }
-    return n >= 1 && n < count ? n : null;
-}
-
-interface SplitTarget { blockId: string; count: number; suggested: number; x: number; y: number; }
-
-const POPOVER_W = 240;   // SYNC: .split-popover width in index.css
-
-// Tiny popover: pick where to cut, confirm. Positioned next to whatever opened it (the
-// scissors control, or the page-tail hint), clamped into the viewport.
-function SplitPopover({ target, onSplit, onClose }: { target: SplitTarget; onSplit: (n: number) => void; onClose: () => void }) {
-    const [n, setN] = useState(target.suggested);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-        document.addEventListener('mousedown', onDoc);
-        document.addEventListener('keydown', onKey);
-        return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
-    }, [onClose]);
-
-    const options = Array.from({ length: target.count - 1 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
-    return (
-        <div
-            ref={ref}
-            className="no-print split-popover"
-            style={{
-                left: Math.max(8, Math.min(target.x, window.innerWidth - POPOVER_W - 8)),
-                top: Math.max(8, Math.min(target.y, window.innerHeight - 150)),
-            }}
-            onClick={(e) => e.stopPropagation()}
-        >
-            <div className="split-popover-title">Splitsen na oefening</div>
-            <PopupSelect value={n} options={options} onChange={setN} ariaLabel="Splitsen na oefening" />
-            <div className="split-popover-actions">
-                <button type="button" className="split-popover-cancel" onClick={onClose}>Annuleren</button>
-                <button type="button" className="split-popover-confirm" onClick={() => { onSplit(n); onClose(); }}>Splitsen</button>
-            </div>
-        </div>
-    );
 }
 
 export default function App() {
