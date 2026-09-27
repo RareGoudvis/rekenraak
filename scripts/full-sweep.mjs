@@ -55,6 +55,8 @@ const [CHUNK_I, CHUNK_N] = (arg('chunk', '1/1')).split('/').map(Number);
 const RESUME = has('resume');
 const REPORT_ONLY = has('report');
 const REVIEW_PNG = has('review-png');
+// --review-kind leaf,max: strips of only the one-click settings (sidebar defaults, max top) → review-<kinds>/.
+const REVIEW_KINDS = arg('review-kind', '').split(',').filter(Boolean);
 const PRINT = has('print');
 // Output dirs of runs made in parallel (one process per domain); their cells.jsonl are joined
 // into --out/cells.jsonl with the screenshot paths made relative to --out.
@@ -455,8 +457,8 @@ ${order.map(e => `<tr><td class="lab"><b>${esc(settingLabel(e.c0))}</b> · #${e.
 // Three full-width cells (3 x 700px at 0.65) side by side.
 const REVIEW_W = 1420;
 async function reviewPngs() {
-    const cells = [...readCells().values()].filter(c => c.solutions === 1 && c.seed === SEEDS[0] && c.shot);
-    const dir = join(OUT, 'review'); mkdirSync(dir, { recursive: true });
+    const cells = [...readCells().values()].filter(c => c.solutions === 1 && c.seed === SEEDS[0] && c.shot && (!REVIEW_KINDS.length || REVIEW_KINDS.includes(c.kind)));
+    const dir = join(OUT, REVIEW_KINDS.length ? `review-${REVIEW_KINDS.join('-')}` : 'review'); mkdirSync(dir, { recursive: true });
     const types = [...new Set(cells.map(c => c.typeId))].sort();
     const browser = await chromium.launch();
     const page = await browser.newPage({ viewport: { width: REVIEW_W, height: 1000 } });

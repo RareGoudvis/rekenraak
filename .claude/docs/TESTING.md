@@ -382,6 +382,7 @@ npm run sweep -- --chunk 2/4 --out <dir> --resume          # contiguous quarter 
 npm run sweep -- --merge <dirA>,<dirB>,<dirC> --out <dir>  # one report over parallel runs
 npm run sweep -- --report --out <dir>                      # rebuild report + contact sheets only
 npm run sweep -- --review-png --out <dir>                  # + PNG strips per type under review/
+npm run sweep -- --review-png --review-kind leaf,max --out <dir>   # strips of the one-click settings only
 npm run sweep -- --print                                   # the print pass (below)
 ```
 
@@ -392,7 +393,8 @@ in the page from `src/` through Vite, so the rows cannot drift), and the registr
 the max key at the top of `maxPresetsFor()`. Each × widths {4, 2, 1} × solutions × seeds
 {1234, 7}. 1 937 settings → 23 244 cells; ~4 cells/s per process, so the whole run is split per
 domain into three parallel processes (`--domain bewerkingen` / `getallen,meetkunde,blad` /
-`meten en`) and merged — about 50 minutes. `--resume` skips every cell already in the out
+`meten en`) and merged — about an hour wall-clock (2026-09-27: Bewerkingen 11 700 cells in 57 min at
+3.4 cells/s, the other two in 24 and 7 min alongside). `--resume` skips every cell already in the out
 dir's `cells.jsonl`; a lost browser restarts the walk where it stopped.
 
 It reuses `scripts/lib/leafWalk.mjs` with four opt-ins no other harness passes (a variant with
