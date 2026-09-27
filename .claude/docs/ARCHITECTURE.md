@@ -56,7 +56,7 @@ User clicks "Genereer" (Inspector) or "Genereer alles" (TopBar)
   → EXERCISE_UI[typeId].Viewer re-renders from block.<field>
 ```
 
-Key files: [App.tsx](../../src/App.tsx) (viewer routing via registry),
+Key files: [SheetBlock.tsx](../../src/components/sheet/SheetBlock.tsx) (viewer routing via registry),
 [Inspector.tsx](../../src/components/configurator/Inspector.tsx) (Genereer + config mount
 via registry), [sidebar.tsx](../../src/components/layout/sidebar.tsx) (leaf →
 `addBlockFromType`), [generateDispatch.ts](../../src/services/generateDispatch.ts),
@@ -67,8 +67,18 @@ via registry), [sidebar.tsx](../../src/components/layout/sidebar.tsx) (leaf →
 
 ## 3. State — the Zustand store
 
-Single store: [useWorksheetStore.tsx](../../src/store/useWorksheetStore.tsx). All state
-lives in memory.
+Single store: [useWorksheetStore.tsx](../../src/store/useWorksheetStore.tsx) — still the only
+import path. All state lives in memory. Its body is split into four slices composed into ONE
+`create()` (one store on purpose: `addBlockFromType` sets blocks + activeBlockId + inspectorTab in a
+single `set`): [blocksSlice](../../src/store/slices/blocksSlice.ts) (block CRUD, reorder/swap/split,
+exercises, generate), [documentSlice](../../src/store/slices/documentSlice.ts) (header/footer/
+docSettings/baseSettings/grade/curriculum/draft blocks, `loadWorksheet`),
+[uiSlice](../../src/store/slices/uiSlice.ts) (selection, tabs, view, preview, save state, debug),
+[historySlice](../../src/store/slices/historySlice.ts) (undo/redo; every block write goes through
+`commitBlocks(state, blocks)`). Types live in [types.ts](../../src/store/types.ts); the autosave
+subscription is [autosave.ts](../../src/store/autosave.ts) (installed once). `updateBlockSettings`
+delegates the curriculum-lock filter and the stale ("verouderd") classification to the pure
+[blockRules.ts](../../src/store/blockRules.ts).
 
 | Slice | Type | Purpose |
 |---|---|---|
@@ -262,8 +272,8 @@ The four consumers are now **table lookups, not branches**:
 |---|---|---|
 | Generate | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generate` + `.exerciseField` |
 | Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches. A Config may mount OTHER families' plugins for a sub-bag through `ConstraintScope` (gemengd's per-variant tabs) — the plugin code stays unaware |
-| Viewer routing | [App.tsx](../../src/App.tsx) | `EXERCISE_UI[typeId].Viewer` |
-| Block defaults | [useWorksheetStore.tsx](../../src/store/useWorksheetStore.tsx) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `.defaultCount` |
+| Viewer routing | [SheetBlock.tsx](../../src/components/sheet/SheetBlock.tsx) | `EXERCISE_UI[typeId].Viewer` |
+| Block defaults | [blocksSlice.ts](../../src/store/slices/blocksSlice.ts) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `.defaultCount` |
 
 ### Checklist to add a type
 
@@ -607,7 +617,7 @@ The old row rule, kept for `rijen`: fill a row left to right; new row when the w
 does; `pageBreakBefore` forces a page; a block taller than page 0 (the shortest — it carries
 the header) is marked `spans` and owns its page. It does **not** flow on paper: `.page-sheet`
 is `height: 297mm; overflow: hidden` in print, so screen and PDF clip it the same way; the
-banner says so and carries two buttons — "Verklein dit blok" (App's `fitBlockToPage`: sets
+banner says so and carries two buttons — "Verklein dit blok" (SheetPages's `fitBlockToPage`: sets
 `constraints.fitToPage`, selects the block, then `setInspectorTab('weergave')` because
 selecting resets the tab) and "Splitsen" (the same split popover as the Scissors control);
 PageSheet tracks the oversize block's id (`oversizeBlockId`) for that, via `onFitBlock` /
@@ -621,7 +631,7 @@ width picker. `ignoreMinWidth` disables the clamp for the width-matrix harness.
 (judged through `WIDTH_FIT_FLOOR` when `fitToWidth` is on, like `minWidthUnits`) exceeds its
 `cellWidthPx` by more than 2px — and that the packer could not promote further (`widthUnits === 4`
 or `promoted`) — gets a `.no-print .cell-hoverflow-warn` strip on the cell: "Dit blok is N px te
-breed voor zijn kolom" with "Verklein om te passen" (App's `fitBlockToWidth`: sets
+breed voor zijn kolom" with "Verklein om te passen" (SheetPages's `fitBlockToWidth`: sets
 `constraints.fitToWidth`, selects, opens Opmaak) and, below the widest tier, "Verbreed" (`widenBlock`,
 one tier up). It sits outside `[data-scaled-inner]`, so it plays no part in the width probe.
 
@@ -836,7 +846,7 @@ both `onCellMeasure` and the tail measurement it depends on.
   - `.print-opdracht` — `break-after/inside: avoid` (opdracht line never orphaned).
   - `.print-exercise` / `.print-row` — `break-inside: avoid` (never split an item/row).
   - `.page-sheet-foot .print-tfoot-inner` — the footer's print padding (2mm top) is the one print
-    declaration WITHOUT `!important` (since 2026-09-14): the kader box (`8px 12px`, App.tsx) and a
+    declaration WITHOUT `!important` (since 2026-09-14): the kader box (`8px 12px`, SheetFooter.tsx) and a
     teacher's `footerCustom.padX/padY` are inline styles and must reach paper; the `!important` that
     was there put the footer text hard against the kader border in the PDF.
 
@@ -895,7 +905,7 @@ All localStorage; nothing leaves the browser except share links the user copies.
 - **`CurriculumLock`** (`{ locked, allowedTypes: [{typeId, label, lockedConstraints}] }`)
   rides in the payload for locked curriculum share links (§13).
 - **Autosave** — single slot `rekenraak_autosave_v1`; `saveAutosave` (returns `false` on a refused write → `saveState: 'error'`) /
-  `loadAutosave` / `clearAutosave`. App.tsx offers to restore on boot if the
+  `loadAutosave` / `clearAutosave`. `hooks/useBootLoad.ts` offers to restore on boot if the
   current sheet is empty.
 - **Presets** — named library `rekenraak_presets_v1`, `MAX_PRESETS = 20`. CRUD via
   `loadPresets` / `savePreset` / `deletePreset` / `renamePreset`. Managed in
@@ -904,7 +914,7 @@ All localStorage; nothing leaves the browser except share links the user copies.
   `compressToEncodedURIComponent` → `#share=…` in the URL hash (never sent to a
   server). `MAX_SHARE_BYTES = 30000` (worksheet JSON compresses ~8×, so this covers
   ~100+ blocks); returns `null` if too big. `decodeShareHash` decompresses + parses;
-  App.tsx consumes it on boot (a shared link wins over autosave) with a confirm whose
+  `hooks/useBootLoad.ts` consumes it on boot (a shared link wins over autosave) with a confirm whose
   wording differs for full / template / locked-curriculum links. `opts.curriculum`
   embeds a `CurriculumLock` (used by the curriculum builder, §13).
 - **File export/import** — `exportWorksheet` (JSON blob,
@@ -931,7 +941,7 @@ The per-typeId detail (generator → field → viewer → config) is the §7 tab
 
 ```
 src/
-├── App.tsx                      # 3-panel layout, page routing (packer → PageSheet), boot hooks
+├── App.tsx                      # shell: 3-panel layout, packing (packPages + measured), composition of components/sheet/
 ├── main.tsx                     # React entry
 ├── index.css                    # global + ALL print CSS (@page, @media print)
 ├── assets/theme.css             # tokens (fonts come from @fontsource via index.css; favicons live in public/)
@@ -948,10 +958,21 @@ src/
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
 │   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner
 ├── store/
-│   └── useWorksheetStore.tsx    # single Zustand store: state, actions, history, autosave subscription
+│   ├── useWorksheetStore.tsx    # public entry: composes the slices into ONE Zustand store + installs autosave
+│   ├── types.ts                 # state/action interfaces + exported sheet types (HeaderData, DocSettings, …)
+│   ├── blockRules.ts            # pure: curriculum-lock filter + stale classification for updateBlockSettings
+│   ├── autosave.ts              # debounced autosave subscription (installed once)
+│   └── slices/
+│       ├── blocksSlice.ts       # blocks + staleBlocks: add/remove/reorder/split/duplicate, exercises, generate
+│       ├── documentSlice.ts     # header/footer/docSettings/baseSettings/grade/curriculum/draft blocks, loadWorksheet
+│       ├── uiSlice.ts           # selection, tabs, view, sidebar preview, save state, block pages, debug flag
+│       └── historySlice.ts      # undo/redo, pushHistory, commitBlocks
 ├── hooks/
 │   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (waits 2 rAF for the repack)
 │   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
+│   ├── useSheetZoom.ts          # sheet zoom-to-fit (ResizeObserver, floor 55%)
+│   ├── useBootLoad.ts           # boot order: share link → autosave restore → release-banner check
+│   ├── useOnboarding.ts         # welcome / tour / help / video modal state + localStorage keys
 │   └── useSheetDnd.ts           # sheet drag-and-drop state: handle + whole-block drag (draggable toggled at mousedown), top/bottom drop zones (§9)
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
 │  (repo root) scripts/font-baseline.mjs # walks every sidebar leaf (window.__rekenraak.leaves, seeded RNG) → cell shots + heights/intrinsic widths/text
@@ -972,6 +993,7 @@ src/
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
 │   ├── layout/blockNumbering.ts # pure numberBlocks(): opdracht numbers, skipping furniture + skipNumbering — one source for sheet, Inspector chip, thumbnail (§3)
+│   ├── layout/splitBlock.ts     # pure "Blok splitsen" heuristics: splittableCount + fittingSplitIndex (§9; tested)
 │   ├── layout/kaderMarkup.tsx   # pure renderKaderBody(): **vet** / *cursief* / __onderstreept__ / 1. and - lists for the onthoudkader (§9 furniture; tested)
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts}
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
@@ -1009,10 +1031,20 @@ src/
 │   ├── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES + buildScenario (one niveau scenario for both modes)
 │   └── vormleer/scenarioLayout.ts              # layoutScenario(): viewBox geometry + collision-free label placement for punt-lijn figures (asserted by vormleer.test.ts)
 └── components/
+    ├── sheet/                  # the A4 sheet surface, split out of App.tsx (R1)
+    │   ├── SheetPages.tsx      # PageSheet loop: cell width/left, tail + split wiring, fit/widen handlers
+    │   ├── SheetBlock.tsx      # React.memo cell: positioned wrapper, opdracht-titel row, registry Viewer, "te breed" banner
+    │   ├── SheetHeader.tsx     # page-1 header region + repeating name-field strip
+    │   ├── SheetFooter.tsx     # three footer slots + credit
+    │   ├── SheetBanners.tsx    # release + tryout banners
+    │   ├── SheetControlsRail.tsx # picks hovered ?? selected block, wires BlockControlsRail
+    │   ├── hoveredBlock.ts     # tiny external store for the hovered block id (keeps hover from re-rendering every viewer)
+    │   ├── EmptySheetHero.tsx  # empty-sheet how-to
+    │   └── SplitPopover.tsx    # "Splitsen na oefening" popover
     ├── layout/
     │   ├── SheetDropZones.tsx  # the three labelled drop thirds over every candidate block during a drag + SheetDragHint strip (screen only)
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
-    │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = App's hoveredBlockId ?? activeBlockId, not CSS :hover
+    │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = hovered id (`components/sheet/hoveredBlock.ts` external store) ?? activeBlockId, resolved in SheetControlsRail, not CSS :hover
     │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, wordmark foot
     │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈1900px of viewport because the bar spans only the centre column.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)

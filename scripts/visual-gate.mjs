@@ -57,6 +57,11 @@ const SHARED_SURFACE = [
     /^src\/components\/viewer\/(FragmentableGrid|BlockWidthContext|ScaledBlock|BlockErrorBoundary|solutionStyle)\./,
     /^src\/components\/layout\/PageSheet\.tsx$/,
     /^src\/App\.tsx$/,
+    // App.tsx's page chrome, cell placement and opdracht-titel row moved here (R1 split).
+    /^src\/components\/sheet\//,
+    /^src\/hooks\/useSheetZoom\.ts$/,
+    // Feeds baseApply's per-type floor, so it reaches every freshly added block.
+    /^src\/config\/numberRanges\.ts$/,
     /^src\/index\.css$/,
     /^src\/assets\/theme\.css$/,
     /^src\/store\//,
