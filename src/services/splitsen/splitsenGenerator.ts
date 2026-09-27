@@ -1,5 +1,5 @@
 import type { MathBlock, SplitsenExercise } from '../math/types';
-import { digitAtPlace } from '../math/mathEngine';
+import { digitAtPlace, PLACE_VALUES } from '../math/mathEngine';
 import { numberToDutchWords } from './dutchWords';
 import type { SplitsenConstraints } from '../math/constraintTypes';
 
@@ -8,19 +8,9 @@ const randInt = (min: number, max: number): number =>
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 
-// Integer place values, high→low, up to one billion (PLACE_VALUES only reaches M).
-const INT_PLACES = [
-    { key: 'Mrd', label: 'Miljardtallen', weight: 1_000_000_000 },
-    { key: 'HM', label: 'Honderdmiljoentallen', weight: 100_000_000 },
-    { key: 'TM', label: 'Tienmiljoentallen', weight: 10_000_000 },
-    { key: 'M', label: 'Miljoentallen', weight: 1_000_000 },
-    { key: 'HD', label: 'Honderdduizendtallen', weight: 100_000 },
-    { key: 'TD', label: 'Tienduizendtallen', weight: 10_000 },
-    { key: 'D', label: 'Duizendtallen', weight: 1_000 },
-    { key: 'H', label: 'Honderdtallen', weight: 100 },
-    { key: 'T', label: 'Tientallen', weight: 10 },
-    { key: 'E', label: 'Eenheden', weight: 1 },
-];
+// Integer place values, high→low, up to one billion. The label rides along in
+// placeBreakdown but no viewer prints it, so the shared plural labels are safe here.
+const INT_PLACES = PLACE_VALUES.filter(p => p.weight >= 1);
 // Decimal place values (tienden / honderdsten / duizendsten).
 const DEC_PLACES = [
     { key: 't', label: 'Tienden', weight: 0.1 },

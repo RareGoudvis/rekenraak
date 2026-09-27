@@ -1,4 +1,5 @@
 import type { BlockConstraints } from '../services/math/constraintTypes';
+import { PLACE_VALUES } from '../services/math/mathEngine';
 
 // A leaf's default opdracht-titel: a fixed line, or a function of its merged constraints
 // for families whose wording depends on a setting (e.g. ordenen's klein→groot / groot→klein).
@@ -50,10 +51,9 @@ function joinNL(items: (string | number)[]): string {
 }
 
 // splitsen-benen: which place-value letters the legs actually show for this maxGetal ("tot 1000" never rolls 1000 itself, so D stays out)
-// (SYNC: mirrors splitsenGenerator.ts's INT_PLACES key/weight for D/H/T/E).
+// (SYNC: splitsenGenerator.ts's INT_PLACES is the same PLACE_VALUES slice).
 function placeLetters(maxGetal: number): string {
-    const PLACES = [{ key: 'D', weight: 1000 }, { key: 'H', weight: 100 }, { key: 'T', weight: 10 }, { key: 'E', weight: 1 }];
-    const inPlay = PLACES.filter(p => p.weight < Math.max(2, maxGetal)).map(p => p.key);
+    const inPlay = PLACE_VALUES.filter(p => p.weight >= 1 && p.weight < Math.max(2, maxGetal)).map(p => p.key);
     return joinNL(inPlay.length ? inPlay : ['E']);
 }
 

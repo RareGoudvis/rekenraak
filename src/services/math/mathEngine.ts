@@ -5,7 +5,13 @@ import type { AddSubConstraints, MulDivConstraints, BridgeMap } from './constrai
 // 1. CONSTANTEN & GLOBALE INSTELLINGEN
 // ============================================================================
 
+// Labels are plural on purpose: PlaatswaardeViewer prints `label.toLowerCase()` as the
+// "plaats" answer. Places above M only enter a UI or generator once max ≥ 1e7
+// (getMaskPlaces filters on weight ≤ max), so smaller sheets never see them.
 export const PLACE_VALUES = [
+    { key: 'Mrd', label: 'Miljarden', weight: 1000000000 },
+    { key: 'HM', label: 'Honderdmiljoenen', weight: 100000000 },
+    { key: 'TM', label: 'Tienmiljoenen', weight: 10000000 },
     { key: 'M', label: 'Miljoenen', weight: 1000000 },
     { key: 'HD', label: 'Honderdduizendtallen', weight: 100000 },
     { key: 'TD', label: 'Tienduizendtallen', weight: 10000 },
@@ -155,11 +161,26 @@ export const getBridgePlaces = (maxGetal: number, numberType: 'natural' | 'decim
 // Digit (0-9) at a given place weight. Scales to integers first so decimals
 // (e.g. extracting the thousandths of 12.345) don't suffer float drift.
 export const digitAtPlace = (num: number, weight: number): number => {
-    const S = 1e6;   // covers PLACE_VALUES down to 0.0001 and numbers up to ~1e6
+    // 1e6 covers PLACE_VALUES down to 0.0001; num × 1e6 stays an exact integer up to ~9e9 (2^53).
+    const S = 1e6;
     const intNum = Math.round(Math.abs(num) * S);
     const intWeight = Math.round(weight * S);
     if (intWeight <= 0) return 0;
     return Math.floor(intNum / intWeight) % 10;
+};
+
+// A natural number ≤ maxGetal whose nonzero places are exactly the masked ones, or null
+// when the mask names no place in range or no build fits in `tries` rolls.
+// Rolls one digit per masked place only, so an unmasked place never costs an RNG call.
+export const buildMaskedNatural = (mask: Record<string, boolean>, maxGetal: number, tries = 200): number | null => {
+    const active = getMaskPlaces(maxGetal, 'natural').filter(p => mask[p.key]);
+    if (!active.length) return null;
+    for (let i = 0; i < tries; i++) {
+        let n = 0;
+        for (const p of active) n += randInt(1, 9) * p.weight;
+        if (n <= maxGetal) return n;
+    }
+    return null;
 };
 
 // 'Specifieke getalopbouw': a number matches the mask when its nonzero places are

@@ -36,7 +36,8 @@ export default function BridgeControl({ places, bridges, onChange }: Props) {
     if (places.length === 0) return null;
     return (
         <div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px' }}>
+            {/* Wraps so 9+ places (max ≥ 1e7) stay inside the inspector column. */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
                 {places.map((p) => {
                     const state = bridges[p.key] ?? 'FREE';
                     const m = META[state];
