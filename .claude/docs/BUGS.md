@@ -21,6 +21,11 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   the Getallenrijen max list (20 … 100 000): opening its config snaps the block to 20 and it
   regenerates. Fix direction: pin 20, or give decimal getallenrijen its own list (owner call). 2026-09-27
 
+## Tooling
+
+- `visual-gate --staged` maps a service file to types only via exerciseRegistry imports, so helpers like
+  `vergelijken/representations.ts` or `splitsen/dutchWords.ts` alone give "no visual scope" and skip. 2026-09-27
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
