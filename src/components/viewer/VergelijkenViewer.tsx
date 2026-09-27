@@ -3,7 +3,8 @@ import { formatMathNumber } from '../../services/math/formatters';
 import type { RepKind } from '../../services/vergelijken/representations';
 import RepValue from './RepValue';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
 import type { VergelijkenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -18,6 +19,7 @@ const mono = "'Azeret Mono', monospace";
 
 export default function VergelijkenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const mathPx = useSheetSizePx('math');
     const exercises: VergelijkenExercise[] = block.vergelijkenExercises || [];
     const c = block.constraints as VergelijkenConstraints;
     const subType: string = c.subType ?? 'getallen';
@@ -36,7 +38,20 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
         const intChars = Math.max(2, ...parts.map(p => p[0].length));
         const fracChars = Math.max(0, ...parts.map(p => p[1]?.length ?? 0));
         const chipChars = intChars + (fracChars > 0 ? fracChars + 1 : 0);
-        const chipColWidth = `calc(${(chipChars * 0.62 + 0.6).toFixed(2)} * var(--sheet-size-math))`;
+        // The chip's real width: its `ch` grid + 16px padding + 4px border. The old em estimate
+        // under-measures it by ~12px, which the 18px gap absorbs up to five characters; from
+        // there on (and whenever a row stops fitting) the chips need their real width.
+        const chipPx = monoTextPx(chipChars, 1, mathPx) + 20;
+        const setSize = Math.max(1, ...exercises.map(ex => ex.numbers?.length ?? 0));
+        const CHIP_GAP = 18;
+        const rowFits = setSize * chipPx + (setSize - 1) * CHIP_GAP <= availableWidth;
+        const chipColWidth = rowFits && chipChars <= 5
+            ? `calc(${(chipChars * 0.62 + 0.6).toFixed(2)} * var(--sheet-size-math))`
+            : `calc(var(--sheet-size-math) * ${(chipChars * MONO_ADVANCE_EM).toFixed(3)} + 20px)`;
+        // A set too wide for one line breaks into equal lines of a block-wide column count,
+        // so place values still line up under each other across every exercise.
+        const perLine = rowFits ? setSize : Math.max(1, Math.floor((availableWidth + CHIP_GAP) / (chipPx + CHIP_GAP)));
+        const lineCols = rowFits ? 0 : Math.ceil(setSize / Math.ceil(setSize / perLine));
         return (
             <FragmentableGrid
                 cols={1}
@@ -49,8 +64,10 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                         // sized to content, laid out in a single row instead of a flex-wrap
                         // that could break the chip list onto a second line.
                         <div key={ex.id} className="print-exercise" style={{
-                            display: 'grid', gridAutoFlow: 'column', gridAutoColumns: chipColWidth,
-                            columnGap: '18px', justifyContent: 'center', width: '100%',
+                            display: 'grid', columnGap: `${CHIP_GAP}px`, justifyContent: 'center', width: '100%',
+                            ...(lineCols
+                                ? { gridTemplateColumns: `repeat(${lineCols}, ${chipColWidth})`, rowGap: '6px' }
+                                : { gridAutoFlow: 'column', gridAutoColumns: chipColWidth }),
                             fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)',
                         }}>
                             {nums.map((n, i) => {
@@ -117,7 +134,11 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
     // ── GETALLEN: fill <, > or = between two numbers ──────────────────────────
     // Row is two 70px number spans + a 34px op box + gaps ≈ 210px; 220px keeps 2-up at
     // full width but forces 1-up in a ½ cell (~334px) so it can't spill into the neighbour.
-    const getallenCols = fitCols(availableWidth, 220, 2, 24);
+    // Both number spans keep 70px and grow to the block's widest number, so the op boxes stay
+    // in one column and a 2-up row of millions is judged at its real width.
+    const numChars = Math.max(0, ...exercises.flatMap(ex => [formatMathNumber(ex.a ?? 0).length, formatMathNumber(ex.b ?? 0).length]));
+    const numCol = grownColumn(70, numChars, 1.04, mathPx, 0);
+    const getallenCols = fitCols(availableWidth, Math.max(220, 2 * numCol.px + 34 + 24), 2, 24);
     return (
         <FragmentableGrid
             cols={getallenCols}
@@ -129,7 +150,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                     // 1-up: centre the row so the two number spans line up around a centred box
                     // instead of hugging the left edge with empty space on the right.
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: getallenCols === 1 ? 'center' : 'flex-start', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
-                        <span style={{ minWidth: '70px', textAlign: 'right' }}>{formatMathNumber(a)}</span>
+                        <span style={{ minWidth: numCol.css, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatMathNumber(a)}</span>
                         <span style={{
                             width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -137,7 +158,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                         }}>
                             {showSolutions ? op(a, b) : ''}
                         </span>
-                        <span style={{ minWidth: '70px' }}>{formatMathNumber(b)}</span>
+                        <span style={{ minWidth: numCol.css, whiteSpace: 'nowrap' }}>{formatMathNumber(b)}</span>
                     </div>
                 );
             })}
