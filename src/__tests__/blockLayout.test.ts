@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, type WidthUnits } from '../services/layout/blockLayout';
+import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, monoTextPx, grownColumn, splitColumns, MONO_ADVANCE_EM, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 
 // The width clamp has two regimes: with a measured content width it answers the smallest
@@ -226,5 +226,53 @@ describe('minWidthUnits — settings-shaped editorial floors (C1 step 0)', () =>
     test('breuken-rangschikken: wide denominators and a long row need the full width', () => {
         const block = makeBlock('breuken-rangschikken', { constraints: { maxDenominator: 1000, count: 5 } });
         expect(minWidthUnits(block, measure(10, 1))).toBe(4);
+    });
+});
+
+describe('fallbackMinWidth — cijferen reads maxRange', () => {
+    // Cijferen keeps its ceiling under maxRange; reading only maxGetal sent a 1e9 grid to a quarter.
+    test('a cijferen block at a billion claims the full width before it is measured', () => {
+        const block = makeBlock('cijferen-optellen-nat', { constraints: { maxRange: 1_000_000_000 } });
+        expect(minWidthUnits(block)).toBe(4);
+    });
+
+    test('at ten thousand it claims a half, at its default a quarter', () => {
+        expect(minWidthUnits(makeBlock('cijferen-optellen-nat', { constraints: { maxRange: 10_000 } }))).toBe(2);
+        expect(minWidthUnits(makeBlock('cijferen-optellen-nat', { constraints: { maxRange: 1000 } }))).toBe(1);
+    });
+});
+
+describe('getalbegrip width helpers', () => {
+    const MATH_PX = 13 * 96 / 72;
+
+    test('monoTextPx is chars x 0.65em x the font factor', () => {
+        expect(MONO_ADVANCE_EM).toBe(0.65);
+        expect(monoTextPx(13, 1, MATH_PX)).toBeCloseTo(13 * 0.65 * MATH_PX);
+        expect(monoTextPx(10, 0.81, 20)).toBeCloseTo(10 * 0.65 * 0.81 * 20);
+    });
+
+    test('grownColumn keeps the tuned px while the text fits, so default sheets print as before', () => {
+        // "1 000" in an afronden rooster cell: 5 glyphs at 0.81 are far under 104px.
+        expect(grownColumn(104, 5, 0.81, MATH_PX, 8)).toEqual({ px: 104, css: '104px' });
+    });
+
+    test('grownColumn grows to the widest text past a million, following the math token', () => {
+        const col = grownColumn(96, 13, 0.81, MATH_PX, 8);                 // "1 000 000 000"
+        expect(col.px).toBeCloseTo(13 * 0.65 * 0.81 * MATH_PX + 8);
+        expect(col.px).toBeGreaterThan(96);
+        expect(col.css).toBe('calc(var(--sheet-size-math) * 6.845 + 8px)');
+    });
+
+    test('splitColumns keeps one table while it fits', () => {
+        expect(splitColumns(2, 104, 96, 688)).toEqual([2]);
+        expect(splitColumns(0, 104, 96, 688)).toEqual([]);
+    });
+
+    test('splitColumns splits an over-wide rooster into balanced tables, larger first', () => {
+        // 8 targets of 128px after a 110px number column: 4 fit a full row.
+        expect(splitColumns(8, 110, 128, 688)).toEqual([4, 4]);
+        expect(splitColumns(5, 110, 128, 688)).toEqual([3, 2]);
+        // A column wider than the cell still gets a table of one, never zero.
+        expect(splitColumns(3, 110, 400, 334)).toEqual([1, 1, 1]);
     });
 });

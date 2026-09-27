@@ -312,6 +312,36 @@ const ordenenFloor: FloorRule = (block) => {
     return rowPx <= 330 - 28 ? 2 : 4;
 };
 
+// ── Mono text widths (getalbegrip viewers) ──────────────────────────────────
+// Azeret Mono advances every glyph by 650/1000 em — digits, letters, the thousands space,
+// regular and bold alike (measured in Chromium, 2026-09-27). The 0.62 used elsewhere
+// under-measures by ~5%, which is invisible at 3 digits and a whole glyph at 13.
+export const MONO_ADVANCE_EM = 0.65;
+
+/** Rendered px of `chars` Azeret Mono glyphs set at `fontFactor` × the math token (`mathPx`). */
+export function monoTextPx(chars: number, fontFactor: number, mathPx: number): number {
+    return chars * MONO_ADVANCE_EM * fontFactor * mathPx;
+}
+
+/** A fixed-px column that grows only when its widest text (+ `padPx`) no longer fits it.
+ *  `css` is the untouched `${defaultPx}px` while the text fits, so tuned sheets print as
+ *  before; a grown column follows the Cijfers slider like the text inside it. */
+export function grownColumn(defaultPx: number, chars: number, fontFactor: number, mathPx: number, padPx: number): { px: number; css: string } {
+    const need = monoTextPx(chars, fontFactor, mathPx) + padPx;
+    if (need <= defaultPx) return { px: defaultPx, css: `${defaultPx}px` };
+    return { px: need, css: `calc(var(--sheet-size-math) * ${(chars * MONO_ADVANCE_EM * fontFactor).toFixed(3)} + ${padPx}px)` };
+}
+
+/** Split `count` columns into the fewest equal-ish groups whose tables fit `availablePx`,
+ *  each table repeating a `fixedPx` lead column. One group when everything fits. */
+export function splitColumns(count: number, fixedPx: number, colPx: number, availablePx: number): number[] {
+    if (count <= 0) return [];
+    const perTable = Math.max(1, Math.min(count, Math.floor((availablePx - fixedPx) / colPx)));
+    const tables = Math.ceil(count / perTable);
+    const base = Math.floor(count / tables), extra = count % tables;
+    return Array.from({ length: tables }, (_, i) => base + (i < extra ? 1 : 0));
+}
+
 const SETTINGS_FLOOR: Record<string, FloorRule> = {
     // Axis / sequence / function-table labels collide well before anything overflows —
     // full width regardless of settings.
@@ -502,7 +532,8 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
         if (c.multiplicationMode === 'met_rest') return Math.max(base, 2) as WidthUnits;
     }
 
-    const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 0;
+    // Cijferen keeps its ceiling under `maxRange`; every other type under `maxGetal`.
+    const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : typeof c.maxRange === 'number' ? c.maxRange : 0;
 
     // Tafels and deeltafels are bounded by the TABLE, not by maxGetal: "7 x 8 = ___" fits a
     // quarter however high the block's maxGetal slider happens to sit from another mode
