@@ -352,7 +352,8 @@ const afrondenSpace: OptionSpace = {
     numberType: ['natural', 'decimal'],
     maxGetal: union(RANGES.afrondenNatural(true), RANGES.decimal(true)),
     numberMask: MASKS,
-    roundTargets: [['T'], ['H'], ['T', 'H'], ['E'], ['E', 't']],
+    // Mrd is inclusive (offered AT 1e9), so it gets its own row; the millions ride together.
+    roundTargets: [['T'], ['H'], ['T', 'H'], ['E'], ['E', 't'], ['Mrd'], ['M', 'TM', 'HM', 'Mrd']],
     roosterSize: [3, 6, 12],
     decimalPlaces: [1, 2, 3],
 };
