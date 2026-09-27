@@ -2,6 +2,7 @@ import type { Equation, Fraction } from '../math/types';
 import { isFraction } from '../math/types';
 import { formatMathNumber } from '../math/formatters';
 import { FULL_BLOCK_WIDTH_PX } from '../../components/viewer/BlockWidthContext';
+import { monoTextPx } from './blockLayout';
 
 // ── The hoofdrekenen row (MathBlockRenderer) ─────────────────────────────────
 // One pure function sizes the row — label column, operand boxes, answer slot, the 2-up
@@ -59,8 +60,6 @@ export interface HrRowLayout {
 // line needs. Below 200px everything that is air rather than ink gives way: no column
 // floors, 6px gaps, a blank sized to the answer, one exercise per row.
 const TIGHT_MAX_PX = 200;
-// Azeret Mono's advance, 11.06px measured in Chrome at the default 17.33px token.
-const HR_CHAR_EM = 0.64;
 // Long chains at the 1e9 ceiling: 3-4 terms of 10+ characters ("10 000 000" and up, never
 // reachable at a max ≤ 1e6) can outrun even a full-width row — three 13-char terms in Kort
 // need ~711px of 688. The math font steps down toward the floor first, then the chain
@@ -86,17 +85,18 @@ const COMPACT_OP_GAP = 26;
 
 // What ONE VerticalFraction occupies: two stacked digit cells whose minWidth is
 // (fontSize + 9)/17.33 em of the math token inside 4px of padding either side, plus the
-// whole number of a mixed number. SYNC: VerticalFraction's cellMin and FractionDisplay's
-// fontSize={15}. 0.62em is a (generous) digit advance at that size.
+// whole number of a mixed number. SYNC: VerticalFraction's cellMin / digit / whole sizes and
+// FractionDisplay's fontSize={15}. The digits inherit the row's Azeret Mono.
 const FRACTION_FONT_PX = 15;
 const FRACTION_CELL_MIN_EM = (FRACTION_FONT_PX + 9) / 17.33;
-const FRACTION_DIGIT_EM = 0.62;
+const FRACTION_DIGIT_FONT = FRACTION_FONT_PX / 17.33;
+const FRACTION_WHOLE_FONT = FRACTION_FONT_PX * 1.2 / 17.33;
 
 /** Width in px of one FractionDisplay at the math token `mathPx`. */
 export function hrFractionPx(f: Fraction, mathPx: number): number {
     const digits = Math.max(String(f.n).length, String(f.d).length);
-    const stack = Math.max(FRACTION_CELL_MIN_EM, digits * FRACTION_DIGIT_EM) * mathPx + 8;
-    const whole = f.whole ? String(f.whole).length * FRACTION_DIGIT_EM * mathPx + 4 : 0;
+    const stack = Math.max(FRACTION_CELL_MIN_EM * mathPx, monoTextPx(digits, FRACTION_DIGIT_FONT, mathPx)) + 8;
+    const whole = f.whole ? monoTextPx(String(f.whole).length, FRACTION_WHOLE_FONT, mathPx) + 4 : 0;
     return Math.ceil(stack + whole);
 }
 
@@ -138,7 +138,7 @@ function geometry(inp: HrRowInput, fontScale: number, wrapChain: boolean) {
     const eqGap = tight ? 6 : 10;
     const answerGap = tight ? 4 : 8;
 
-    const charPx = mathPx * HR_CHAR_EM * fontScale;
+    const charPx = monoTextPx(1, fontScale, mathPx);
     // ONE label column for the whole block, sized to its longest label, so "1)" and "10)"
     // still leave the "=" of every row on the same x. +4px of air after the widest label.
     const labelPx = labelChars > 0 ? Math.ceil(labelChars * charPx) + 4 : 0;

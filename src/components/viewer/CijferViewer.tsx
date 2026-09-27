@@ -6,6 +6,7 @@ import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
 import { PLACE_VALUES } from '../../services/math/mathEngine';
 import { SOL, solutionText } from './solutionStyle';
+import { monoTextPx } from '../../services/layout/blockLayout';
 
 // Printed sheet text (equation header, estimation/controle/QR rows) is a factor of
 // --sheet-size-math; the digit-grid overlay scales off the per-block gridCellSize instead
@@ -17,9 +18,9 @@ const DEC_ABBREVS = ['t', 'h', 'd'];
 const NBSP = String.fromCharCode(0xa0);
 
 const ROW_GAP_PX = 12;
-// The header row ("1 234 + 567 =") is Azeret Mono (0.64em advance) at 0.64 of the math
-// token, inside 8px of padding either side and a 0.5px border.
-const HEADER_CHAR_EM = 0.64 * 0.64;
+// The header row ("1 234 + 567 =") is Azeret Mono at 0.64 of the math token, inside 8px
+// of padding either side and a 0.5px border. SYNC: the header cell's fontSize below.
+const HEADER_FONT = 0.64;
 const HEADER_PAD_PX = 18;
 
 /** Decimal columns this exercise was generated with; the constraints are the old-sheet fallback. */
@@ -178,7 +179,7 @@ function gridColsOf(ex: CijferExercise, dp: number, extraCols: number): number {
 function exWidthPx(ex: CijferExercise, c: CijferConstraints, CELL: number, sheetPx: number): number {
     const dp = dpOf(ex, c);
     const grid = gridColsOf(ex, dp, c.extraCols || 0) * CELL;
-    const header = headerTextOf(ex, dp).length * HEADER_CHAR_EM * sheetPx + HEADER_PAD_PX;
+    const header = monoTextPx(headerTextOf(ex, dp).length, HEADER_FONT, sheetPx) + HEADER_PAD_PX;
     return Math.max(grid, header);
 }
 
