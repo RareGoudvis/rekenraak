@@ -31,6 +31,9 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
 
+- RekenvolgordeViewer (`CHAR_PX = 11.1`, ~:39) and RomeinseViewer (12.7 px per char, ~:36/38) still size
+  text with fixed px that don't follow the Lettergrootte slider; move to `monoTextPx`. 2026-09-27
+
 ## Config
 
 - Leaf `getalbegrip-getallenrijen-dec` (appstructure.ts:156) pins `maxGetal: 10`, which is not in

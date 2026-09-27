@@ -397,6 +397,10 @@ the retry loop and build exactly `n` items directly.
 > cijferen bridges cover every place to Mrd, multiplier/divisor tiers go to 9 999. MathBlockRenderer fits a
 > 3–4-term chain of 10+-char operands that its estimate says overflows `useBlockWidth()`: font steps 0.95 →
 > 0.85 (= WIDTH_FIT_FLOOR), then the chain wraps before its last term; otherwise styles are untouched.
+> Width estimates: every mono text width goes through `monoTextPx` / `MONO_ADVANCE_EM` (0.65 em, measured)
+> in blockLayout.ts — no per-viewer glyph constants or size-threshold formulas. Hoofdrekenen's row geometry
+> and its fit ladder (font 1 → 0.95 → 0.9 → 0.85, then wrap before the last term) live in the pure
+> [hrRowLayout.ts](../../src/services/layout/hrRowLayout.ts); the viewer draws from the same `geometry()`.
 > Afronden natural targets: T H D TD HD, then 1M 10M 100M (and 1MLD at max 1e9). Splitsen positietabel
 > spells to een miljard (dutchWords). Everything ≤ 1e6 keeps its old random stream.
 
@@ -1024,6 +1028,7 @@ src/
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
 │   ├── layout/blockNumbering.ts # pure numberBlocks(): opdracht numbers, skipping furniture + skipNumbering — one source for sheet, Inspector chip, thumbnail (§3)
 │   ├── layout/splitBlock.ts     # pure "Blok splitsen" heuristics: splittableCount + fittingSplitIndex (§9; tested)
+│   ├── layout/hrRowLayout.ts    # pure hoofdrekenen row geometry + 1e9 fit ladder (font steps, then wrap), shared by MathBlockRenderer (§7; tested)
 │   ├── layout/kaderMarkup.tsx   # pure renderKaderBody(): **vet** / *cursief* / __onderstreept__ / 1. and - lists for the onthoudkader (§9 furniture; tested)
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts}
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
