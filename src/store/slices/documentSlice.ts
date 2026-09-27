@@ -2,7 +2,18 @@ import type { StateCreator } from 'zustand';
 import { DEFAULT_BASE } from '../../config/baseSettings';
 import { GRADE_PRESETS } from '../../config/gradePresets';
 import { NAT_CEILING } from '../../config/numberRanges';
+import { floorMaxIntoList } from '../../config/exerciseRegistry';
+import type { MathBlock } from '../../services/math/types';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type DocumentSlice, type WorksheetState } from '../types';
+
+// Normalised here, once, so an old 1e10 sheet is right before anyone opens a block: the
+// picker's own floor would otherwise fire on click, under a curriculum lock show "—", and
+// cost a stale flag plus an undo step. withinCeiling and the picker floor stay as nets.
+function withListedMax(b: MathBlock): MathBlock {
+    const c = b.constraints as Record<string, unknown>;
+    const floored = floorMaxIntoList(b.typeId, c);
+    return floored === c ? b : { ...b, constraints: floored as MathBlock['constraints'] };
+}
 
 export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentSlice> = (set) => ({
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
@@ -20,8 +31,8 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
         // versioned migration, so widths from the old 6-unit grid can still arrive here.
         const blocks = file.blocks.map(b => {
             const w = b.widthUnits as number | undefined;
-            if (w === undefined || w === 1 || w === 2 || w === 4) return b;
-            return { ...b, widthUnits: (w === 3 ? 2 : 4) as 1 | 2 | 4 };
+            const fixedWidth = (w === undefined || w === 1 || w === 2 || w === 4) ? b : { ...b, widthUnits: (w === 3 ? 2 : 4) as 1 | 2 | 4 };
+            return withListedMax(fixedWidth);
         });
         const baseSettings = file.baseSettings ? { ...DEFAULT_BASE, ...file.baseSettings } : { ...DEFAULT_BASE };
         // Old leerjaar-6 saves carry a 1e10 seed, beyond what the scaled-integer engine holds exactly.
@@ -32,7 +43,12 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
             footer: file.footer,
             docSettings: file.docSettings,
             baseSettings,
-            curriculum: file.curriculum ?? null,
+            curriculum: file.curriculum ? {
+                ...file.curriculum,
+                allowedTypes: file.curriculum.allowedTypes.map(t => t.lockedConstraints
+                    ? { ...t, lockedConstraints: floorMaxIntoList(t.typeId, t.lockedConstraints) }
+                    : t),
+            } : null,
             // Set the grade value directly — base is already restored above, so we must
             // NOT re-run setSelectedGrade's preset seeding here.
             selectedGrade: file.selectedGrade ?? null,

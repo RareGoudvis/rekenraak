@@ -50,7 +50,7 @@ import { generateKalenderExercises } from '../services/kalender/kalenderGenerato
 import { generateControleExercises } from '../services/controleren/controlerenGenerator';
 import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGenerator';
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
-import { RANGES, type MaxPresetsFn, type MaxRange } from './numberRanges';
+import { RANGES, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -369,8 +369,8 @@ const vormleerDefaults = (typeId: string): VormleerConstraints => ({
     allowHorizontaal: false, allowVerticaal: false, nameAngles: true,
 });
 
-// ── max-number lists per type (SYNC: each branch mirrors which PopupSelect list the
-// type's config plugin renders for those settings) ──
+// ── max-number lists per type: the one source; each config plugin renders
+// useMaxPresets(block), i.e. exactly what these return for the block's settings ──
 
 const maxGetal = (presets: readonly number[]): MaxRange => ({ key: 'maxGetal', presets });
 const numberTypeOf = (c: Record<string, unknown>) => (c.numberType as string | undefined) ?? 'natural';
@@ -535,3 +535,15 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'vormleer-hoeken':    row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
     'vormleer-figuren':   row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
 };
+
+// An old save or share link can hold a max its picker no longer lists (the 1e10 leerjaar-6
+// seed): floor it once at load, as the picker would, so opening the block changes nothing.
+// Flooring never raises: a value below the list (a leaf pin) is left for the picker.
+export function floorMaxIntoList(typeId: string, constraints: Record<string, unknown>): Record<string, unknown> {
+    const def = REGISTRY[typeId];
+    const range = def?.maxPresets?.({ ...def.defaultConstraints(typeId), ...constraints });
+    if (!range || range.presets.length === 0) return constraints;
+    const v = constraints[range.key];
+    if (typeof v !== 'number' || range.presets.includes(v) || v < Math.min(...range.presets)) return constraints;
+    return { ...constraints, [range.key]: floorToPreset(v, range.presets) };
+}
