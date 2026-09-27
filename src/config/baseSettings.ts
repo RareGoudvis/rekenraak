@@ -6,6 +6,7 @@
 
 import { NAT_CEILING, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import { REGISTRY } from './exerciseRegistry';
+import { PLACE_VALUES } from '../services/math/mathEngine';
 
 export type BaseNumberType = 'natural' | 'decimal' | 'rational' | 'geheel';
 export type BaseBridgePolicy = 'FREE' | 'REQUIRED' | 'FORBIDDEN';
@@ -105,6 +106,18 @@ export interface SeedInput {
     override?: Record<string, unknown>;
 }
 
+const PLACE_WEIGHT: Record<string, number> = Object.fromEntries(PLACE_VALUES.map(p => [p.key, p.weight]));
+const MAX_KEYS = ['maxGetal', 'maxRange', 'maxNumber'] as const;
+
+// Keep only the places a number up to `max` has (masks: weight ≤ max) or can carry out of
+// (bridges: weight < max, like getBridgePlaces). Unknown keys stay.
+function trimPlaces<V>(obj: Record<string, V>, max: number, inclusive: boolean): Record<string, V> {
+    return Object.fromEntries(Object.entries(obj).filter(([k]) => {
+        const w = PLACE_WEIGHT[k];
+        return w === undefined || (inclusive ? w <= max : w < max);
+    }));
+}
+
 // A new block's constraints: registry defaults → base snapshot → override, so a leaf that
 // pins a value (splitsen-basis maxGetal:10) wins. The store, the sidebar hover card, the
 // MassAdd preview and the test helper all call this, so a preview is the block it adds.
@@ -113,5 +126,20 @@ export function seedConstraints({ typeId, base, override }: SeedInput): Record<s
     if (!def) return { ...(override ?? {}) };
     const defaults = def.defaultConstraints(typeId) as Record<string, unknown>;
     const range = baseRangeFor(base, defaults, override, def.maxPresets);
-    return { ...defaults, ...baseApply(base, defaults, range), ...(override ?? {}) };
+    const snapshot = baseApply(base, defaults, range);
+    const merged: Record<string, unknown> = { ...defaults, ...snapshot, ...(override ?? {}) };
+
+    // A leerjaar-6 HM mask on a block whose max is 1 000 (decimal hr, MAB, splitsen basis)
+    // asks for a place the block can never show: trim the base's places to the block's own
+    // max, and fall back to the type's default when nothing is left.
+    const maxKey = MAX_KEYS.find(k => typeof merged[k] === 'number');
+    if (maxKey) {
+        const max = merged[maxKey] as number;
+        for (const key of ['operand1Mask', 'operand2Mask', 'bridges'] as const) {
+            if (!(key in snapshot) || (override && key in override)) continue;
+            const trimmed = trimPlaces(snapshot[key] as Record<string, unknown>, max, key !== 'bridges');
+            merged[key] = Object.keys(trimmed).length > 0 ? trimmed : defaults[key];
+        }
+    }
+    return merged;
 }

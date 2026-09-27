@@ -101,3 +101,45 @@ describe('(d) old saves above the ceiling', () => {
         expect(generateForBlock(cijfer, true).items.length).toBe(cijfer.numberOfExercises);
     });
 });
+
+describe('(e) base masks and bridges stop at the block\'s own max', () => {
+    // Leerjaar 6 with an HM-only mask and an HM brug: fine for natural hoofdrekenen at 1e9,
+    // impossible for a block whose list tops at 1 000 or a leaf that pins 10.
+    const base: BaseSettings = { ...gradeBase(6), baseOperand1Mask: { HM: true }, baseOperand2Mask: { HM: true, E: true }, baseBridges: { HM: 'REQUIRED', E: 'FORBIDDEN' } };
+    const leafOf = (id: string) => leaves.find((l) => l.id === id)!;
+    const seeded = (typeId: string, leaf?: Record<string, unknown>) =>
+        makeBlock(typeId, { base, constraints: leaf }).constraints as Record<string, Record<string, unknown>>;
+
+    test('hoofdrekenen natuurlijk keeps HM', () => {
+        const c = seeded('hr-std-optellen');
+        expect(c.operand1Mask).toEqual({ HM: true });
+        expect(c.bridges).toEqual({ HM: 'REQUIRED', E: 'FORBIDDEN' });
+    });
+
+    test('hoofdrekenen decimaal drops HM, keeps what fits', () => {
+        const c = seeded('hr-std-optellen', { numberType: 'decimal' });
+        expect(c.operand1Mask).toEqual({});
+        expect(c.operand2Mask).toEqual({ E: true });
+        expect(c.bridges).toEqual({ E: 'FORBIDDEN' });
+    });
+
+    test('MAB drops HM', () => {
+        expect(seeded('mab-herkennen').operand1Mask).toEqual({});
+    });
+
+    test('splitsen basis (pinned 10) drops HM', () => {
+        const leaf = leafOf('splitsen-basis');
+        const c = seeded(leaf.typeId, leaf.defaultConstraints);
+        expect(c.operand1Mask).toEqual({});
+        expect(c.operand2Mask).toEqual({ E: true });
+    });
+
+    test('none of them leaves a generation note', () => {
+        for (const [typeId, leaf] of [['hr-std-optellen', { numberType: 'decimal' }], ['mab-herkennen', undefined], ['splitsen', leafOf('splitsen-basis').defaultConstraints]] as const) {
+            const block = makeBlock(typeId, { base, constraints: leaf });
+            const { items, note } = generateForBlock(block, true);
+            expect(note, typeId).toBeNull();
+            expect(items.length, typeId).toBe(block.numberOfExercises);
+        }
+    });
+});
