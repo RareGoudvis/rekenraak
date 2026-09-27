@@ -1,6 +1,7 @@
 import type { StateCreator } from 'zustand';
 import { DEFAULT_BASE } from '../../config/baseSettings';
 import { GRADE_PRESETS } from '../../config/gradePresets';
+import { NAT_CEILING } from '../../config/numberRanges';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type DocumentSlice, type WorksheetState } from '../types';
 
 export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentSlice> = (set) => ({
@@ -22,12 +23,15 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
             if (w === undefined || w === 1 || w === 2 || w === 4) return b;
             return { ...b, widthUnits: (w === 3 ? 2 : 4) as 1 | 2 | 4 };
         });
+        const baseSettings = file.baseSettings ? { ...DEFAULT_BASE, ...file.baseSettings } : { ...DEFAULT_BASE };
+        // Old leerjaar-6 saves carry a 1e10 seed, beyond what the scaled-integer engine holds exactly.
+        if (baseSettings.baseMaxGetal > NAT_CEILING) baseSettings.baseMaxGetal = NAT_CEILING;
         return {
             blocks,
             header: file.header,
             footer: file.footer,
             docSettings: file.docSettings,
-            baseSettings: file.baseSettings ? { ...DEFAULT_BASE, ...file.baseSettings } : { ...DEFAULT_BASE },
+            baseSettings,
             curriculum: file.curriculum ?? null,
             // Set the grade value directly — base is already restored above, so we must
             // NOT re-run setSelectedGrade's preset seeding here.

@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { flattenLeaves, LEAF_BY_ID } from '../config/appstructure';
 import { resolveInstruction } from '../config/instructionPresets';
 import { REGISTRY } from '../config/exerciseRegistry';
-import { baseApply, DEFAULT_BASE } from '../config/baseSettings';
+import { baseApply, baseRangeFor, DEFAULT_BASE } from '../config/baseSettings';
 import { WORKSHEET_TEMPLATES } from '../config/worksheetTemplates';
 import type { BlockConstraints } from '../services/math/constraintTypes';
 
@@ -10,7 +10,8 @@ import type { BlockConstraints } from '../services/math/constraintTypes';
 function mergedConstraintsFor(typeId: string, leafDefaults?: Record<string, unknown>): BlockConstraints {
     const def = REGISTRY[typeId];
     const registryDefaults = def ? def.defaultConstraints(typeId) : {};
-    const baseSnapshot = def ? baseApply(DEFAULT_BASE, registryDefaults) : {};
+    const range = def ? baseRangeFor(DEFAULT_BASE, registryDefaults, leafDefaults, def.maxPresets) : undefined;
+    const baseSnapshot = def ? baseApply(DEFAULT_BASE, registryDefaults, range) : {};
     return { ...registryDefaults, ...baseSnapshot, ...(leafDefaults ?? {}) } as BlockConstraints;
 }
 

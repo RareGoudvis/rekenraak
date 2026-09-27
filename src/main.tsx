@@ -55,6 +55,12 @@ if (import.meta.env.DEV) {
     // them against the rendered rects, which is the only way to see the packer and the
     // paper disagree.
     measured: () => measuredSnapshot(),
+    // The max-number list a type's config shows for these settings (merged over the
+    // registry defaults); force=true returns the grown 1e9 lists while the flag is off.
+    maxPresetsFor: (typeId: string, constraints?: Record<string, unknown>, force?: boolean) => {
+      const def = REGISTRY[typeId];
+      return def?.maxPresets?.({ ...def.defaultConstraints(typeId), ...(constraints ?? {}) }, force) ?? null;
+    },
     // DEV only, never shipped: replaces Math.random in place. seed(undefined) restores
     // the native RNG.
     seed: (n?: number) => { Math.random = n === undefined ? nativeRandom : mulberry32(n); },

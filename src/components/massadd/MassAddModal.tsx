@@ -3,7 +3,7 @@ import { ArrowClockwise as RotateCw, Check, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply } from '../../config/baseSettings';
+import { baseApply, baseRangeFor } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
 
@@ -35,7 +35,8 @@ export default function MassAddModal({ onClose }: Props) {
     const resolvedConstraints = (item: CatalogItem, variantConstraints: Record<string, unknown>) => {
         const def = REGISTRY[item.typeId];
         const defaults = def.defaultConstraints(item.typeId);
-        return { ...defaults, ...baseApply(base, defaults), ...variantConstraints };
+        const range = baseRangeFor(base, defaults, variantConstraints, def.maxPresets);
+        return { ...defaults, ...baseApply(base, defaults, range), ...variantConstraints };
     };
 
     const toggleSelected = (typeId: string) => setSelected(s => ({ ...s, [typeId]: !s[typeId] }));

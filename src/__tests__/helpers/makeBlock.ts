@@ -1,8 +1,8 @@
 import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
+import { baseApply, baseRangeFor, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
 
-// SYNC: mirrors `addBlockFromType` in src/store/useWorksheetStore.tsx (the block literal
+// SYNC: mirrors `addBlockFromType` in src/store/slices/blocksSlice.ts (the block literal
 // plus the registry-defaults → base-snapshot → leaf-override merge order). Reimplemented
 // rather than imported because the store is React/zustand and these suites run in node.
 // If the store's block literal changes, change it here too.
@@ -23,7 +23,9 @@ let seq = 0;
 export function makeBlock(typeId: string, opts: MakeBlockOptions = {}): MathBlock {
     const def = REGISTRY[typeId];
     const registryDefaults = def ? def.defaultConstraints(typeId) : {};
-    const baseSnapshot = def ? baseApply(opts.base ?? DEFAULT_BASE, registryDefaults) : {};
+    const base = opts.base ?? DEFAULT_BASE;
+    const range = def ? baseRangeFor(base, registryDefaults, opts.constraints, def.maxPresets) : undefined;
+    const baseSnapshot = def ? baseApply(base, registryDefaults, range) : {};
 
     return {
         id: opts.id ?? `t${(seq += 1).toString(36)}`,

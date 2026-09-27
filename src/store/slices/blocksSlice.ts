@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand';
 import type { MathBlock } from '../../services/math/types';
 import { generateForBlock, generateExtra, GENERATION_FAILED } from '../../services/generateDispatch';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply } from '../../config/baseSettings';
+import { baseApply, baseRangeFor } from '../../config/baseSettings';
 import { resolveInstruction } from '../../config/instructionPresets';
 import { generateMixedOne, mixedKey } from '../../services/math/mixedGenerator';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
@@ -29,7 +29,8 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
         // Snapshot the global base difficulty onto this block's constraints.
         // Order matters: registry defaults → base snapshot → leaf override, so a
         // leaf that pins a value (e.g. splitsen-basis maxGetal:10) always wins.
-        const baseSnapshot = def ? baseApply(state.baseSettings, defaultConstraints) : {};
+        const range = def ? baseRangeFor(state.baseSettings, defaultConstraints, overrideConstraints, def.maxPresets) : undefined;
+        const baseSnapshot = def ? baseApply(state.baseSettings, defaultConstraints, range) : {};
         const mergedConstraints = { ...defaultConstraints, ...baseSnapshot, ...overrideConstraints } as BlockConstraints;
 
         const newBlock: MathBlock = {

@@ -8,6 +8,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+## Config
+
+- Leaf `getalbegrip-getallenrijen-dec` (appstructure.ts:156) pins `maxGetal: 10`, which is not in
+  the Getallenrijen max list (20 … 100 000): opening its config snaps the block to 20 and it
+  regenerates. Fix direction: pin 20, or give decimal getallenrijen its own list (owner call). 2026-09-27
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`

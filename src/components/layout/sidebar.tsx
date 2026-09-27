@@ -4,7 +4,7 @@ import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore, type AddBlockOpts } from '../../store/useWorksheetStore';
 import { REGISTRY } from '../../config/exerciseRegistry';
-import { baseApply } from '../../config/baseSettings';
+import { baseApply, baseRangeFor } from '../../config/baseSettings';
 import ExercisePreview from '../shared/ExercisePreview';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 import PopupSelect from '../ui/PopupSelect';
@@ -95,7 +95,8 @@ export default function Sidebar() {
         const def = REGISTRY[typeId];
         if (!def) return null;
         const defaults = def.defaultConstraints(typeId);
-        return { ...defaults, ...baseApply(baseSettings, defaults), ...(override ?? {}) };
+        const range = baseRangeFor(baseSettings, defaults, override, def.maxPresets);
+        return { ...defaults, ...baseApply(baseSettings, defaults, range), ...(override ?? {}) };
     };
     const leafHover = (typeId: string, override?: Record<string, unknown>) => ({
         onMouseEnter: (e: React.MouseEvent) => {
