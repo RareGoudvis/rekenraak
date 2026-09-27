@@ -2,15 +2,11 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useWorksheetStore } from './store/useWorksheetStore';
 import Sidebar from './components/layout/sidebar';
 import PageSheet, { PAGE_W_PX } from './components/layout/PageSheet';
-import { packPages, pageIndexByBlock, skylineSlot, type PackedBlock } from './services/layout/pagePacker';
+import { packPages, pageIndexByBlock, skylineSlot } from './services/layout/pagePacker';
 import { minWidthUnits } from './services/layout/blockLayout';
 import { numberBlocks } from './services/layout/blockNumbering';
 import Inspector from './components/configurator/Inspector';
 import TopBar from './components/layout/TopBar';
-import { EXERCISE_UI } from './config/exerciseUI';
-import { REGISTRY } from './config/exerciseRegistry';
-import { ScaledBlock } from './components/viewer/ScaledBlock';
-import { BlockErrorBoundary } from './components/viewer/BlockErrorBoundary';
 import { cellWidthPx, answerSpaceVar } from './components/viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from './components/viewer/scaledBlockFit';
 import MijnBladenView from './components/library/MijnBladenView';
@@ -19,63 +15,22 @@ import HelpModal from './components/layout/HelpModal';
 import PrintHintModal from './components/layout/PrintHintModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import WelcomeModal from './components/onboarding/WelcomeModal';
-import BlockControlsRail from './components/layout/BlockControlsRail';
-import { Lock } from '@phosphor-icons/react';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
 import { useSheetDnd } from './hooks/useSheetDnd';
-import SheetDropZones, { SheetDragHint } from './components/layout/SheetDropZones';
+import { SheetDragHint } from './components/layout/SheetDropZones';
 import { styles } from './styles/appStyles';
-import { overlayRegionStyle } from './services/regionStyle';
-import type { MathBlock } from './services/math/types';
 import { splittableCount, fittingSplitIndex } from './services/layout/splitBlock';
 import SplitPopover, { POPOVER_W, type SplitTarget } from './components/sheet/SplitPopover';
 import SheetHeader, { SheetRepeatFields } from './components/sheet/SheetHeader';
 import SheetFooter from './components/sheet/SheetFooter';
 import EmptySheetHero from './components/sheet/EmptySheetHero';
+import SheetBlock from './components/sheet/SheetBlock';
+import SheetControlsRail from './components/sheet/SheetControlsRail';
 import SheetBanners from './components/sheet/SheetBanners';
 import { useSheetZoom } from './hooks/useSheetZoom';
 import { useBootLoad } from './hooks/useBootLoad';
 import { useOnboarding } from './hooks/useOnboarding';
-
-// Click-to-edit the opdracht title directly on the A4 preview (mirrors the
-// OrdenenViewer inline-edit pattern). Commit on blur/Enter, Esc cancels; frozen
-// in locked (curriculum) mode. The index prefix stays non-editable.
-function EditableInstruction({ block, prefix }: { block: MathBlock; prefix: string }) {
-  const updateBlockInstruction = useWorksheetStore((s) => s.updateBlockInstruction);
-  const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState('');
-
-  if (editing && !locked) {
-    return (
-      <span style={{ display: 'inline-flex', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
-        {prefix && <span style={styles.instructionDisplay}>{prefix}</span>}
-        <input
-          autoFocus
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onBlur={() => { updateBlockInstruction(block.id, text); setEditing(false); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
-          style={{ ...styles.instructionDisplay, border: '1px solid var(--accent)', borderRadius: '4px', padding: '0 4px', background: 'transparent', outline: 'none', minWidth: '180px' }}
-        />
-      </span>
-    );
-  }
-  return (
-    <span
-      onClick={locked ? undefined : (e) => { e.stopPropagation(); setText(block.instructionText || ''); setEditing(true); }}
-      title={locked ? undefined : 'Klik om aan te passen'}
-      // A Dutch opdracht title is one long compound word often enough
-      // ("Vermenigvuldigingsoefeningen:"), and a single token has no break opportunity —
-      // in a quarter-width cell it ran straight out of the block. `anywhere` also lets the
-      // flex row below it shrink, which is what min-content width is probed against.
-      style={{ ...styles.instructionDisplay, cursor: locked ? 'default' : 'text', overflowWrap: 'anywhere', minWidth: 0 }}
-    >
-      {prefix}{block.instructionText || ''}
-    </span>
-  );
-}
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
@@ -96,9 +51,6 @@ export default function App() {
   // Harness escape hatch: measure a type at a width its tier forbids (scripts/width-matrix.mjs).
   const debugIgnoreMinWidth = useWorksheetStore((state) => state.debugIgnoreMinWidth);
 
-  const removeBlock = useWorksheetStore((state) => state.removeBlock);
-  const moveBlockUp = useWorksheetStore((state) => state.moveBlockUp);
-  const moveBlockDown = useWorksheetStore((state) => state.moveBlockDown);
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   const setInspectorTab = useWorksheetStore((state) => state.setInspectorTab);
   const setBladSection = useWorksheetStore((state) => state.setBladSection);
@@ -110,8 +62,6 @@ export default function App() {
     setInspectorTab('blad');
     setBladSection(card);
   }, [setActiveSelection, setInspectorTab, setBladSection]);
-  const toggleBlockLock = useWorksheetStore((state) => state.toggleBlockLock);
-  const duplicateBlock = useWorksheetStore((state) => state.duplicateBlock);
   const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
 
   const onboarding = useOnboarding();
@@ -124,7 +74,6 @@ export default function App() {
   }, [headerData?.titel]);
 
   const totalScore = blocks.reduce((sum, block) => sum + (block.totalPoints || 0), 0);
-
 
   // A column rule needs air on both sides or the right-hand block's digits sit flush
   // against it. The COLUMN gap widens by 16px when the rule is on; the ROW gap keeps
@@ -145,16 +94,14 @@ export default function App() {
   const dnd = useSheetDnd();
   const splitBlock = useWorksheetStore((s) => s.splitBlock);
   const [splitTarget, setSplitTarget] = useState<SplitTarget | null>(null);
-  // Drives BlockControlsRail: which block's controls are showing. Hover wins over
-  // selection (matches the old CSS :hover-over-:is-active rule) so moving off a selected
-  // block onto another one shows THAT block's controls, not two rails at once.
-  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
 
   // Open the split popover for a block. `availableOverridePx` is the space the block has
   // to fit into; the page-tail hint passes the tail of the PREVIOUS page, because the
   // block it offers to split already sits at the top of the next one.
   const openSplit = useCallback((blockId: string, anchorRect: DOMRect, availableOverridePx?: number) => {
-    const block = blocks.find(b => b.id === blockId);
+    // These callbacks read the live block list instead of closing over `blocks`, so they
+    // stay stable and the memoised SheetBlock is not re-rendered by every block edit.
+    const block = useWorksheetStore.getState().blocks.find(b => b.id === blockId);
     if (!block) return;
     const count = splittableCount(block);
     if (count < 2) return;
@@ -175,35 +122,35 @@ export default function App() {
       // block's right edge, and a popover on top of that rail hides the buttons.
       x: anchorRect.left - POPOVER_W - 8, y: anchorRect.bottom + 6,
     });
-  }, [blocks]);
+  }, []);
   // The oversize banner's "Verklein dit blok": turn the switch on AND take the teacher to
   // it, so the sheet's fix and the Inspector's switch are visibly the same setting.
   // setActiveSelection resets the tab to 'oefening', so the tab is set after it.
   const fitBlockToPage = useCallback((blockId: string) => {
-    const block = blocks.find(b => b.id === blockId);
+    const block = useWorksheetStore.getState().blocks.find(b => b.id === blockId);
     if (!block) return;
     updateBlockSettings(blockId, { constraints: { ...block.constraints, fitToPage: true } });
     setActiveSelection(blockId);
     setInspectorTab('weergave');
-  }, [blocks, updateBlockSettings, setActiveSelection, setInspectorTab]);
+  }, [updateBlockSettings, setActiveSelection, setInspectorTab]);
 
   // The horizontal twin of fitBlockToPage: a cell whose content is wider than its column
   // ("Verklein om te passen") gets the same fix as the width picker's own switch.
   const fitBlockToWidth = useCallback((blockId: string) => {
-    const block = blocks.find(b => b.id === blockId);
+    const block = useWorksheetStore.getState().blocks.find(b => b.id === blockId);
     if (!block) return;
     updateBlockSettings(blockId, { constraints: { ...block.constraints, fitToWidth: true } });
     setActiveSelection(blockId);
     setInspectorTab('weergave');
-  }, [blocks, updateBlockSettings, setActiveSelection, setInspectorTab]);
+  }, [updateBlockSettings, setActiveSelection, setInspectorTab]);
 
   // "Verbreed": one width tier up (1 -> 2 -> 4), offered only below the widest tier.
   const widenBlock = useCallback((blockId: string) => {
-    const block = blocks.find(b => b.id === blockId);
+    const block = useWorksheetStore.getState().blocks.find(b => b.id === blockId);
     if (!block) return;
     const current = (block.widthUnits ?? 4) as 1 | 2 | 4;
     updateBlockSettings(blockId, { widthUnits: current === 1 ? 2 : 4 });
-  }, [blocks, updateBlockSettings]);
+  }, [updateBlockSettings]);
 
   const packedPages = useMemo(
     () => packPages(blocks, {
@@ -221,19 +168,6 @@ export default function App() {
   );
   // Opdracht numbering runs across pages and counts exercise blocks only, so inserting a
   // separator never renumbers the exercises after it.
-  // id -> position in blocks[]. Distinct from blockOrder below, which is the printed
-  // opdracht number and deliberately skips layout-* furniture.
-  const blockPos = useMemo(() => {
-    const m: Record<string, number> = {};
-    blocks.forEach((b, i) => { m[b.id] = i; });
-    return m;
-  }, [blocks]);
-
-  // The single rail mounted below the page stack (outside the packer's clipped body) —
-  // hover beats selection, and 'document' (nothing selected) shows no rail at all.
-  const visibleBlockId = hoveredBlockId ?? (activeSelectionId && activeSelectionId !== 'document' ? activeSelectionId : null);
-  const visibleBlock = visibleBlockId ? blocks.find((b) => b.id === visibleBlockId) : undefined;
-
   const blockOrder = useMemo(() => numberBlocks(blocks), [blocks]);
 
   // Per-block page index for the Overzicht markers. It used to be MEASURED from the DOM
@@ -242,120 +176,6 @@ export default function App() {
   useEffect(() => {
     setBlockPages(pageIndexByBlock(packedPages));
   }, [packedPages, setBlockPages]);
-
-  // One block in a page-grid cell. `index` counts across the whole worksheet so the
-  // opdracht numbering keeps running across pages.
-  const renderBlock = (item: PackedBlock, index: number | null) => {
-    const block = item.block;
-    // Sheet furniture (a rule, writing lines, a grid) is not an opdracht: it gets no
-    // title row and takes no number, so the opdracht numbering skips over it.
-    const isFurniture = block.typeId.startsWith('layout-');
-
-              const isActive = block.id === activeSelectionId;
-              // dividers between blocks come from the page grid gap now
-      const isNotLastBlock = false;
-
-              return (
-                <div
-                  key={block.id}
-                  id={`block-${block.id}`}
-                  className={`print-block${block.pageBreakBefore ? ' page-break-before' : ''}${isActive ? ' is-active' : ''}${dnd.fromId === block.id ? ' is-dragging' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); setActiveSelection(block.id); }}
-                  // Controls used to live inside this div and reveal on CSS :hover; they're
-                  // portalled out now (BlockControlsRail, rendered once below for whichever
-                  // block is hovered or active) so a block at the bottom of the page can't
-                  // have its buttons clipped by .page-sheet-body's overflow:hidden.
-                  onPointerEnter={() => setHoveredBlockId(block.id)}
-                  onPointerLeave={() => setHoveredBlockId((id) => (id === block.id ? null : id))}
-                  {...dnd.blockProps(block.id)}
-                  style={styles.blockContainer(isActive, isNotLastBlock, docSettings.showDividers)}
-                >
-                  {/* Only while something is being dragged, and never on the block that
-                      is being dragged itself. */}
-                  {dnd.fromId !== null && dnd.fromId !== block.id && (
-                    <SheetDropZones
-                      zone={dnd.overId === block.id ? dnd.zone : null}
-                      noop={dnd.zone !== null && dnd.isNoop(block.id, dnd.zone)}
-                    />
-                  )}
-
-                  {block.pageBreakBefore && (
-                    <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'Azeret Mono, monospace', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>
-                  )}
-
-                  {/* Body zoom: scales the opdracht-titel + exercise viewer together (text AND
-                      its coupled SVG/boxes), auto-fitting to width so a wide block can't clip in
-                      print. Per-block override wins over the global default; block chrome
-                      (controls/spacing/dividers/page-break) stays outside, unscaled. */}
-                  <ScaledBlock
-                    scale={block.constraints?.bodyFontScale ?? docSettings.bodyFontScale ?? 1}
-                    availableWidthPx={cellWidth(item.width)}
-                    fitToPage={block.constraints?.fitToPage === true}
-                    fitToWidth={block.constraints?.fitToWidth === true}
-                    answerSpacePx={block.constraints?.answerSpace}
-                  >
-                  {/* showInstruction === false hides the title row the way furniture has none;
-                      blockOrder still counts the block unless skipNumbering says otherwise, so
-                      the rest of the sheet keeps its numbers. */}
-                  {!isFurniture && block.showInstruction !== false && <div className="print-opdracht" style={overlayRegionStyle({
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px',
-                    // SYNC with appStyles.instructionDisplay, which inherits it: the size
-                    // has to sit on the container the "Tekengrootte" slider writes to.
-                    fontSize: 'var(--sheet-size-text)',
-                    ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
-                    ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
-                  }, docSettings.titelCustom)}>
-                    {/* minWidth:0 so the title can actually take the wrap above: a flex
-                        item's default min-width is its content, which is exactly the
-                        overflow it was supposed to prevent. */}
-                    <div style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, gap: '12px' }}>
-                      {(() => {
-                        // The prefix marks differentiatie (MAG/MOET/★ or custom text).
-                        const mode = block.instructionMode;
-                        const label = mode === 'mag' ? 'MAG' : mode === 'moet' ? 'MOET' : mode === 'plus' ? '★'
-                          : mode === 'aangepast' ? (block.customInstructionText || '') : '';
-                        if (!label) return null;
-                        // Inside a Kader titel the pill's own border would double the frame —
-                        // render it as plain bold text + a vertical rule instead.
-                        const boxed = docSettings.opdrachtTitelStyle === 'boxed';
-                        if (boxed) return (
-                          <>
-                            <span style={{ fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)', whiteSpace: 'nowrap' }}>{label}</span>
-                            <span style={{ width: '1.5px', alignSelf: 'stretch', background: '#000' }} />
-                          </>
-                        );
-                        return <span style={styles.badge(mode as 'mag' | 'moet' | 'plus' | 'aangepast')}>{label}</span>;
-                      })()}
-                      {block.locked && (
-                        <span className="no-print" title="Vergrendeld" style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent-purple)' }}>
-                          <Lock size={14} />
-                        </span>
-                      )}
-                      <EditableInstruction block={block} prefix={docSettings.numberBlocks && index != null ? `${index}. ` : ''} />
-                    </div>
-                    {docSettings.showScores && (block.totalPoints || 0) > 0 && <div style={styles.pointsText}>__ / {block.totalPoints}</div>}
-                  </div>}
-
-                  {(() => {
-                    // Registry decides which viewer renders this typeId.
-                    const Viewer = EXERCISE_UI[block.typeId]?.Viewer;
-                    if (!Viewer) return null;
-                    // resetKey = the block's own exercise array reference — regenerateBlock
-                    // (Genereer) swaps that reference, which is the teacher's recovery action
-                    // after a crash, so it must also clear a tripped boundary.
-                    const exerciseField = REGISTRY[block.typeId]?.exerciseField ?? 'exercises';
-                    const resetKey = (block as unknown as Record<string, unknown>)[exerciseField];
-                    return (
-                      <BlockErrorBoundary resetKey={resetKey} label={block.typeId}>
-                        <Viewer block={block} showSolutions={showSolutions} />
-                      </BlockErrorBoundary>
-                    );
-                  })()}
-                  </ScaledBlock>
-                </div>
-              );
-  };
-
 
   return (
     <>
@@ -479,33 +299,32 @@ export default function App() {
                 const fitsPx = iw && item.block.constraints?.fitToWidth ? iw.px * WIDTH_FIT_FLOOR : iw?.px;
                 const overPx = iw && iw.atWidth === item.width && fitsPx !== undefined ? Math.round(fitsPx - cellPx) : 0;
                 const hOverflow = overPx > 2 && (item.width === 4 || item.promoted);
+                // Only the block under the pointer shows a live zone during a drag.
+                const dropZone = dnd.overId === item.block.id ? dnd.zone : null;
                 return (
-                <div
-                  key={item.block.id}
-                  data-block-id={item.block.id}
-                  data-width={item.width}
-                  className={item.x > 0 && docSettings.showColumnDividers ? 'col-divider' : undefined}
-                  style={{
-                    position: 'absolute',
-                    left: `${cellLeft(item.x)}px`,
-                    top: `${item.y}px`,
-                    width: `${cellWidth(item.w)}px`,
-                    minWidth: 0,
-                    // The rule is centred in the gutter, which is the COLUMN gap.
-                    ['--col-gap' as string]: `${colGapPx}px`,
-                  }}
-                >
-                  {renderBlock(item, blockOrder[item.block.id] ?? null)}
-                  {hOverflow && (
-                    <div className="no-print cell-hoverflow-warn" onClick={(e) => e.stopPropagation()}>
-                      <span>Dit blok is {overPx}px te breed voor zijn kolom.</span>
-                      <button type="button" onClick={() => fitBlockToWidth(item.block.id)}>Verklein om te passen</button>
-                      {item.width < 4 && (
-                        <button type="button" onClick={() => widenBlock(item.block.id)}>Verbreed</button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                  <SheetBlock
+                    key={item.block.id}
+                    block={item.block}
+                    index={blockOrder[item.block.id] ?? null}
+                    leftPx={cellLeft(item.x)}
+                    topPx={item.y}
+                    cellWidthPx={cellWidth(item.w)}
+                    widthUnits={item.width}
+                    availableWidthPx={cellPx}
+                    colGapPx={colGapPx}
+                    columnDivider={item.x > 0 && !!docSettings.showColumnDividers}
+                    hOverflowPx={hOverflow ? overPx : 0}
+                    isActive={item.block.id === activeSelectionId}
+                    isDragging={dnd.fromId === item.block.id}
+                    showDropZones={dnd.fromId !== null && dnd.fromId !== item.block.id}
+                    dropZone={dropZone}
+                    dropNoop={dropZone !== null && dnd.isNoop(item.block.id, dropZone)}
+                    showSolutions={showSolutions}
+                    docSettings={docSettings}
+                    blockProps={dnd.blockProps}
+                    onFitWidth={fitBlockToWidth}
+                    onWiden={widenBlock}
+                  />
                 );
               })}
             </PageSheet>
@@ -529,28 +348,7 @@ export default function App() {
         onClose={() => setSplitTarget(null)}
       />
     )}
-    {visibleBlock && (
-      <BlockControlsRail
-        key={visibleBlock.id}
-        anchorId={`block-${visibleBlock.id}`}
-        locked={!!visibleBlock.locked}
-        canSplit={splittableCount(visibleBlock) >= 2}
-        splitActive={splitTarget?.blockId === visibleBlock.id}
-        pageBreakBefore={!!visibleBlock.pageBreakBefore}
-        canMoveUp={(blockPos[visibleBlock.id] ?? 0) > 0}
-        canMoveDown={(blockPos[visibleBlock.id] ?? 0) < blocks.length - 1}
-        handleProps={dnd.handleProps(visibleBlock.id)}
-        onToggleLock={() => toggleBlockLock(visibleBlock.id)}
-        onDuplicate={() => duplicateBlock(visibleBlock.id)}
-        onSplit={(e) => openSplit(visibleBlock.id, e.currentTarget.getBoundingClientRect())}
-        onTogglePageBreak={() => updateBlockSettings(visibleBlock.id, { pageBreakBefore: !visibleBlock.pageBreakBefore })}
-        onMoveUp={() => moveBlockUp(visibleBlock.id)}
-        onMoveDown={() => moveBlockDown(visibleBlock.id)}
-        onDelete={() => removeBlock(visibleBlock.id)}
-        onPointerEnter={() => setHoveredBlockId(visibleBlock.id)}
-        onPointerLeave={() => setHoveredBlockId((id) => (id === visibleBlock.id ? null : id))}
-      />
-    )}
+    <SheetControlsRail splitBlockId={splitTarget?.blockId ?? null} handleProps={dnd.handleProps} onOpenSplit={openSplit} />
     {/* Screen-only strip explaining the three drop thirds, for the duration of a drag. */}
     {dnd.fromId !== null && <SheetDragHint />}
     {printHint && <PrintHintModal onClose={() => setPrintHint(null)} onContinue={() => { const go = printHint; setPrintHint(null); go(); }} />}
