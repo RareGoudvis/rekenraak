@@ -258,12 +258,12 @@ keyed by **exact** `typeId` (no substring matching):
 
 - [exerciseRegistry.ts](../../src/config/exerciseRegistry.ts) — **pure data** (no React):
   `{ exerciseField, generate, defaultConstraints, defaultCount, maxPresets? }`. Imported by the
-  store and `generateDispatch`. `maxPresets(c, force?) → { key, presets } | null` names the
+  store and `generateDispatch`. `maxPresets(c) → { key, presets } | null` names the
   max-number list the type's config shows for constraints `c` (branching on numberType /
   layout / mode exactly like the config); its top is the type's **didactic ceiling**. The lists
   themselves live once in [numberRanges.ts](../../src/config/numberRanges.ts) — configs render
-  them, `baseApply` floors the grade/base seed into them (§13), `constraintSpace.ts` sweeps them
-  with `force=true`. `null` = no picker.
+  them, `baseApply` floors the grade/base seed into them (§13), `constraintSpace.ts` sweeps the
+  same lists. `null` = no picker.
 - [exerciseUI.tsx](../../src/config/exerciseUI.tsx) — **React**: `{ Viewer, Config }`.
   Imported by `components/sheet/SheetBlock.tsx` and `Inspector.tsx`.
 
@@ -1169,8 +1169,7 @@ the base's numberType → the leaf override (so a decimal base or leaf picks the
 deelbaarheid 100 000, …) instead of an unlisted value. Safety nets for old saves / share links:
 `loadWorksheet` clamps `baseMaxGetal` > `NAT_CEILING` (1e9); `generateForBlock` generates from a
 clamped copy (`withinCeiling`, 1e10 × INTERNAL_SCALE would pass 2^53); `PopupSelect`'s
-`clampToLowest` floors an unmatched value to the nearest lower option. Until the grown lists
-are switched on (`BIG_NUMBERS_ENABLED` in numberRanges.ts, temporary), they stop at 1e6.
+`clampToLowest` floors an unmatched value to the nearest lower option.
 
 ### Mass-add modal ("Toevoegen")
 
