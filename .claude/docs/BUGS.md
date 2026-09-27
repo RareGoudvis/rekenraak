@@ -46,6 +46,13 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   (needs a sum/minuend of exactly the max); cijferen then silently falls back to its [max/2, max/4]
   exercise, ignoring the bridges. Fix: hide the top place in BridgeControl or note it. 2026-09-27
 
+- `loadWorksheet` doesn't reset `staleBlocks`: the previous sheet's "verouderd" flags linger in the
+  map (harmless ids, but it grows). Fix: `staleBlocks: {}` in documentSlice.loadWorksheet. 2026-09-27
+- `typeId.startsWith('layout-')` is still used in Inspector.tsx (~443, ~649), blockLayout.ts (~562) and
+  blockNumbering.ts (~21); switch to `REGISTRY[t]?.isFurniture`. 2026-09-27
+- Picking L4-L6 and then "Alle leerjaren" keeps the grade's `baseDecimalPlaces: 2` in the base, so new
+  vergelijken / plaatswaarde blocks come out with decimals. Pre-existing. Owner call. 2026-09-27
+
 ## Tooling
 
 ## Docs

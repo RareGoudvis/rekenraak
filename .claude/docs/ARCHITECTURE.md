@@ -263,7 +263,13 @@ keyed by **exact** `typeId` (no substring matching):
   layout / mode exactly like the config); its top is the type's **didactic ceiling**. The lists
   themselves live once in [numberRanges.ts](../../src/config/numberRanges.ts) — configs render
   them, `baseApply` floors the grade/base seed into them (§13), `constraintSpace.ts` sweeps the
-  same lists. `null` = no picker.
+  same lists. `null` = no picker. Configs never pick a list themselves: they render
+  `useMaxPresets(block)?.presets` ([useMaxPresets.ts](../../src/components/configurator/useMaxPresets.ts);
+  inside a gemengd variant tab it resolves the variant operator's row), guarded by the
+  `maxPicker.render` and `maxPresets.sources` tests (allowlist: herleidingen slider stops,
+  geld-rekenen `maxEuro`, the base seed buttons). `floorMaxIntoList(typeId, c)` lowers a stored
+  max onto its list (used by `loadWorksheet`). `isFurniture: true` marks the `layout-*` rows
+  (no title, no number, nothing to split) — read it instead of the typeId prefix.
 - [exerciseUI.tsx](../../src/config/exerciseUI.tsx) — **React**: `{ Viewer, Config }`.
   Imported by `components/sheet/SheetBlock.tsx` and `Inspector.tsx`.
 
@@ -1085,6 +1091,7 @@ src/
     │   ├── Inspector.tsx       # mounts EXERCISE_UI[typeId].Config; locked-mode gating
     │   ├── RegionStyleFields.tsx  # per-region look-and-feel (size/bold/colour/fill/padding) + ResetAllStylesButton
     │   ├── BridgeControl.tsx   # carry-arrow ('bruggetje') diagram: per-place geen/mag/moet via tappable gap arrows
+    │   ├── useMaxPresets.ts  # the block's max list = REGISTRY.maxPresets over the constraints the plugin sees (gemengd tabs → variant row) (§5)
     │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff + divider/sectionBox/select + hint/label text tiers
     │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins; honours ConstraintScope
     │   ├── ConstraintScope.ts     # context: when set to ['perVariant', id] the hook reads {...root, ...root.perVariant[id]} and writes ONLY into perVariant[id] (sparse); fixedPreset/hidden let a tab pin its preset and hide shared controls
@@ -1160,6 +1167,16 @@ Geavanceerd → Basisinstellingen, [BaseSettingsModal.tsx](../../src/components/
 it (`'key' in defaults`), mapping the semantic max onto `maxGetal`/`maxRange`/`maxNumber`
 and the masks/bridges/decimalen/breuk-toggles where present. Snapshot, not live — changing
 the base never retro-affects existing blocks.
+
+**One pipeline.** `seedConstraints({ typeId, base, override, grade, leafId })` (baseSettings.ts)
+is the only place that builds a new block's constraints — store, sidebar hover card, MassAdd preview
+and the test helpers all call it. After merging, base masks/bridges are trimmed to the block's final
+max (masks ≤ max, bridges < max; a leaf-pinned mask/bridge is left alone). A leaf flagged
+`gradeSetsMax: true` (afronden rooster/simpel, splitsen positietabel/benen/plaatswaarden) yields its
+pinned max to the grade when a leerjaar is picked (not under a locked curriculum); other pinned keys
+still win. A hidden picker (`maxPresets` → `null`: tafels, cirkels, veelvouden, rational) keeps its
+registry default max. `loadWorksheet` floors every block's and every locked-curriculum max onto its
+list once, inside the load's single history entry, with no stale flag.
 
 **Per-type ceiling.** The max is **floored into the type's own list**: `range` =
 `REGISTRY[typeId].maxPresets(ctx)` where `baseRangeFor` builds `ctx` from registry defaults →
