@@ -119,7 +119,7 @@ export default function MabConfig({ block }: Props) {
 
             {/* SPECIFIC NUMBER GENERATOR — mask */}
             <div style={styles.section}>
-                <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
+                <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer (1 tot 9) krijgen; de andere posities worden 0. Niets aangeduid = vrij." />
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {keys.map(k => (
                         <button key={k} onClick={() => toggleMask(k)} style={styles.maskBtn(!!operand1Mask?.[k])}>
@@ -128,7 +128,7 @@ export default function MabConfig({ block }: Props) {
                     ))}
                 </div>
                 <p style={styles.hint}>
-                    Aangevinkte posities verplicht ≥ 1.
+                    Aangeduid = cijfer 1–9, niet aangeduid = 0.
                 </p>
             </div>
 
