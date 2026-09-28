@@ -65,6 +65,11 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   ~2 px apart: nine tens read as one solid block). mab-tekenen at width ¼ (default leaf, the packer keeps
   w1): the D/H/T/E table is ~75 px wide, no room to draw. Fix: bigger pieces; minWidth 2 for
   mab-tekenen. 2026-09-27
+- MAB herkennen "Specifieke getalopbouw" (D/H/T/E mask) has no visible effect on the numbers (owner
+  report). Code: the mask only forces a ticked place >= 1 and leaves unticked places free (so ticking
+  E alone changes almost nothing), and mabGenerator's fallback loop silently keeps non-matching values
+  after 500 tries (D at max 1000 → only 1000 fits). Fix: decide the semantics (unticked = 0?), then
+  enumerate the matching values instead of rejection sampling. 2026-09-28
 - Narrow-width wrapping: procenten-nemen / -welk DEFAULT at ¼ split "452 van / de 904 / ="; cijferen
   headers with 3-4 terms at ¼ wrap inside a number ("… + 1 / 445 + 28 ="); vergelijken representaties
   woorden vs plaatswaarde at ½ / ¼ (pw021): the "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
