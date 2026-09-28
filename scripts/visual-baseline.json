@@ -1658,32 +1658,32 @@
   },
   "hr-std-aftrekken-dec-w1-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 295,
+   "intrinsicPx": 298,
    "textHash": "5c5c84496fe9dc2c"
   },
   "hr-std-aftrekken-dec-w1-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 283,
+   "intrinsicPx": 285,
    "textHash": "b48a29254b37dd8f"
   },
   "hr-std-aftrekken-dec-w2-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 295,
+   "intrinsicPx": 298,
    "textHash": "5c5c84496fe9dc2c"
   },
   "hr-std-aftrekken-dec-w2-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 283,
+   "intrinsicPx": 285,
    "textHash": "b48a29254b37dd8f"
   },
   "hr-std-aftrekken-dec-w4-s0": {
    "cellHeightPx": 314,
-   "intrinsicPx": 641,
+   "intrinsicPx": 647,
    "textHash": "5c5c84496fe9dc2c"
   },
   "hr-std-aftrekken-dec-w4-s1": {
    "cellHeightPx": 314,
-   "intrinsicPx": 615,
+   "intrinsicPx": 619,
    "textHash": "b48a29254b37dd8f"
   },
   "hr-std-aftrekken-nat-w1-s0": {
@@ -1748,32 +1748,32 @@
   },
   "hr-std-delen-dec-w1-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 279,
+   "intrinsicPx": 281,
    "textHash": "1273c0ab868ae830"
   },
   "hr-std-delen-dec-w1-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 224,
+   "intrinsicPx": 226,
    "textHash": "3214fbaa4406b4fe"
   },
   "hr-std-delen-dec-w2-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 279,
+   "intrinsicPx": 281,
    "textHash": "1273c0ab868ae830"
   },
   "hr-std-delen-dec-w2-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 224,
+   "intrinsicPx": 226,
    "textHash": "3214fbaa4406b4fe"
   },
   "hr-std-delen-dec-w4-s0": {
    "cellHeightPx": 314,
-   "intrinsicPx": 609,
+   "intrinsicPx": 613,
    "textHash": "1273c0ab868ae830"
   },
   "hr-std-delen-dec-w4-s1": {
    "cellHeightPx": 314,
-   "intrinsicPx": 498,
+   "intrinsicPx": 502,
    "textHash": "3214fbaa4406b4fe"
   },
   "hr-std-delen-nat-w1-s0": {
@@ -1838,32 +1838,32 @@
   },
   "hr-std-gemengd-dec-w1-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 317,
+   "intrinsicPx": 321,
    "textHash": "c135de357670e33d"
   },
   "hr-std-gemengd-dec-w1-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 306,
+   "intrinsicPx": 308,
    "textHash": "8e3edc75a9bd2452"
   },
   "hr-std-gemengd-dec-w2-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 317,
+   "intrinsicPx": 321,
    "textHash": "c135de357670e33d"
   },
   "hr-std-gemengd-dec-w2-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 306,
+   "intrinsicPx": 308,
    "textHash": "8e3edc75a9bd2452"
   },
   "hr-std-gemengd-dec-w4-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 317,
+   "intrinsicPx": 321,
    "textHash": "c135de357670e33d"
   },
   "hr-std-gemengd-dec-w4-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 306,
+   "intrinsicPx": 308,
    "textHash": "8e3edc75a9bd2452"
   },
   "hr-std-gemengd-nat-w1-s0": {
@@ -1898,32 +1898,32 @@
   },
   "hr-std-optellen-dec-w1-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 295,
+   "intrinsicPx": 298,
    "textHash": "3f5e7c25a5ee3be8"
   },
   "hr-std-optellen-dec-w1-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 283,
+   "intrinsicPx": 285,
    "textHash": "4666ae85f5a273c8"
   },
   "hr-std-optellen-dec-w2-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 295,
+   "intrinsicPx": 298,
    "textHash": "3f5e7c25a5ee3be8"
   },
   "hr-std-optellen-dec-w2-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 283,
+   "intrinsicPx": 285,
    "textHash": "4666ae85f5a273c8"
   },
   "hr-std-optellen-dec-w4-s0": {
    "cellHeightPx": 314,
-   "intrinsicPx": 641,
+   "intrinsicPx": 647,
    "textHash": "3f5e7c25a5ee3be8"
   },
   "hr-std-optellen-dec-w4-s1": {
    "cellHeightPx": 314,
-   "intrinsicPx": 615,
+   "intrinsicPx": 619,
    "textHash": "4666ae85f5a273c8"
   },
   "hr-std-optellen-nat-w1-s0": {
@@ -1988,32 +1988,32 @@
   },
   "hr-std-vermenigvuldigen-dec-w1-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 295,
+   "intrinsicPx": 299,
    "textHash": "dc483bcf20ed870d"
   },
   "hr-std-vermenigvuldigen-dec-w1-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 284,
+   "intrinsicPx": 286,
    "textHash": "e8e39bd9f11d1f27"
   },
   "hr-std-vermenigvuldigen-dec-w2-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 295,
+   "intrinsicPx": 299,
    "textHash": "dc483bcf20ed870d"
   },
   "hr-std-vermenigvuldigen-dec-w2-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 284,
+   "intrinsicPx": 286,
    "textHash": "e8e39bd9f11d1f27"
   },
   "hr-std-vermenigvuldigen-dec-w4-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 295,
+   "intrinsicPx": 299,
    "textHash": "dc483bcf20ed870d"
   },
   "hr-std-vermenigvuldigen-dec-w4-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 284,
+   "intrinsicPx": 286,
    "textHash": "e8e39bd9f11d1f27"
   },
   "hr-std-vermenigvuldigen-nat-w1-s0": {
@@ -2918,22 +2918,22 @@
   },
   "plaatswaarde-tabel-w1-s0": {
    "cellHeightPx": 600,
-   "intrinsicPx": 306,
+   "intrinsicPx": 200,
    "textHash": "05f37481c103d8d7"
   },
   "plaatswaarde-tabel-w1-s1": {
    "cellHeightPx": 600,
-   "intrinsicPx": 306,
+   "intrinsicPx": 200,
    "textHash": "ad96c5ca162d7a24"
   },
   "plaatswaarde-tabel-w2-s0": {
    "cellHeightPx": 600,
-   "intrinsicPx": 306,
+   "intrinsicPx": 200,
    "textHash": "05f37481c103d8d7"
   },
   "plaatswaarde-tabel-w2-s1": {
    "cellHeightPx": 600,
-   "intrinsicPx": 306,
+   "intrinsicPx": 200,
    "textHash": "ad96c5ca162d7a24"
   },
   "plaatswaarde-tabel-w4-s0": {
@@ -3308,32 +3308,32 @@
   },
   "splitsen-plaatswaarden-w1-s0": {
    "cellHeightPx": 280,
-   "intrinsicPx": 126,
+   "intrinsicPx": 122,
    "textHash": "2941915872a1508f"
   },
   "splitsen-plaatswaarden-w1-s1": {
    "cellHeightPx": 275,
-   "intrinsicPx": 112,
+   "intrinsicPx": 108,
    "textHash": "db2dfa33daf7427e"
   },
   "splitsen-plaatswaarden-w2-s0": {
    "cellHeightPx": 280,
-   "intrinsicPx": 126,
+   "intrinsicPx": 122,
    "textHash": "2941915872a1508f"
   },
   "splitsen-plaatswaarden-w2-s1": {
    "cellHeightPx": 275,
-   "intrinsicPx": 112,
+   "intrinsicPx": 108,
    "textHash": "db2dfa33daf7427e"
   },
   "splitsen-plaatswaarden-w4-s0": {
    "cellHeightPx": 280,
-   "intrinsicPx": 126,
+   "intrinsicPx": 122,
    "textHash": "2941915872a1508f"
   },
   "splitsen-plaatswaarden-w4-s1": {
    "cellHeightPx": 275,
-   "intrinsicPx": 112,
+   "intrinsicPx": 108,
    "textHash": "db2dfa33daf7427e"
   },
   "splitsen-positietabel-w1-s0": {
@@ -3578,32 +3578,32 @@
   },
   "vergelijken-kiezen-w1-s0": {
    "cellHeightPx": 340,
-   "intrinsicPx": 263,
+   "intrinsicPx": 299,
    "textHash": "564c5d5c1bf33ae7"
   },
   "vergelijken-kiezen-w1-s1": {
    "cellHeightPx": 340,
-   "intrinsicPx": 263,
+   "intrinsicPx": 299,
    "textHash": "564c5d5c1bf33ae7"
   },
   "vergelijken-kiezen-w2-s0": {
    "cellHeightPx": 340,
-   "intrinsicPx": 263,
+   "intrinsicPx": 299,
    "textHash": "564c5d5c1bf33ae7"
   },
   "vergelijken-kiezen-w2-s1": {
    "cellHeightPx": 340,
-   "intrinsicPx": 263,
+   "intrinsicPx": 299,
    "textHash": "564c5d5c1bf33ae7"
   },
   "vergelijken-kiezen-w4-s0": {
    "cellHeightPx": 340,
-   "intrinsicPx": 263,
+   "intrinsicPx": 299,
    "textHash": "564c5d5c1bf33ae7"
   },
   "vergelijken-kiezen-w4-s1": {
    "cellHeightPx": 340,
-   "intrinsicPx": 263,
+   "intrinsicPx": 299,
    "textHash": "564c5d5c1bf33ae7"
   },
   "vergelijken-representaties-w1-s0": {
