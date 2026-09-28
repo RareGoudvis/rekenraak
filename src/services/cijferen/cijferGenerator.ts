@@ -106,6 +106,22 @@ function applyMask(
     return Math.round(rounded * s) / s;
 }
 
+// A staartdeling stops after `dp` decimals: the quotient is truncated there (not rounded) and
+// dividend = q·divisor + r with 0 ≤ r < divisor·10^-dp, in scaled integers so no float drift.
+// SYNC: CijferViewer's confirmEdit recomputes a teacher-edited division with this helper too.
+export function divideToDecimals(dividend: number, divisor: number, dp: number): { quotient: number; remainder: number } {
+    const s = scaleOf(dp);
+    const d = Math.round(dividend * s);
+    const v = Math.round(divisor * s);
+    // Both operands carry ≤ dp decimals, so q·10^dp = d·10^dp / v and r counts 10^-2dp units.
+    const num = d * s;
+    let q = Math.floor(num / v);
+    if (q * v > num) q -= 1;
+    if (num - q * v >= v) q += 1;
+    const r = num - q * v;
+    return { quotient: q / s, remainder: r / (s * s) };
+}
+
 export function generateCijferExercises(block: MathBlock): CijferExercise[] {
     const c = block.constraints as CijferConstraints;
     const count = block.numberOfExercises || 4;
@@ -279,9 +295,7 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
             if (divisor * 2 > maxVal) return null;
             dividend = randInt(divisor * 2, maxVal);
         }
-        const exactQuotient = dividend / divisor;
-        const quotient = parseFloat(exactQuotient.toFixed(dp));
-        const remainder = parseFloat(Math.abs(dividend - quotient * divisor).toFixed(dp));
+        const { quotient, remainder } = divideToDecimals(dividend, divisor, dp);
         return { id: genId(), operands: [dividend, divisor], operator: ':', answer: quotient, remainder, isManuallyEdited: false };
     }
 

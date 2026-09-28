@@ -65,12 +65,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   ~2 px apart: nine tens read as one solid block). mab-tekenen at width ¼ (default leaf, the packer keeps
   w1): the D/H/T/E table is ~75 px wide, no room to draw. Fix: bigger pieces; minWidth 2 for
   mab-tekenen. 2026-09-27
-- MAB herkennen "Specifieke getalopbouw" (D/H/T/E mask) does not restrict the numbers. Repro (owner):
-  Tot 1 000, H + T ticked, E unticked → numbers still have units. Cause: maskMatches (mabGenerator.ts)
-  only forces a ticked place >= 1 and leaves unticked places free; the owner expects unticked = 0.
-  Also its fallback loop silently keeps non-matching values after 500 tries (D at max 1000 → only
-  1000 fits). Fix: unticked place = 0, ticked = 1-9; enumerate the matching values instead of
-  rejection sampling; update the "Aangevinkte posities verplicht ≥ 1" hint. 2026-09-28
 - Narrow-width wrapping: procenten-nemen / -welk DEFAULT at ¼ split "452 van / de 904 / ="; cijferen
   headers with 3-4 terms at ¼ wrap inside a number ("… + 1 / 445 + 28 ="); vergelijken representaties
   woorden vs plaatswaarde at ½ / ¼ (pw021): the "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
@@ -103,17 +97,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- WRONG KEY, geld-herkennen DEFAULT: format 'euros' with cent coins allowed keeps the cents in
-  `amountCents` and `formatAmount` rounds (geldGenerator.ts ~88 / ~181): 100 + 3 × 50 c shows "€102".
-  And `breakdownAmount` (~23-51) stops at MAX_ITEMS and "ignores the remainder": €147 is drawn as
-  146,40; coins-only pw006 draws 12 × €2 for €84,25. Fix: whole-euro amounts in 'euros' format; never
-  emit an amount the breakdown cannot draw. 2026-09-27
-- WRONG KEY, afronden decimal DEFAULT (afronden-dec-rooster): "97,05 → t = 97". `roundTo`
-  (afrondenGenerator.ts ~66) divides by 0.1 first (970.4999…), so 349 of the 1 000 values x,x5 below 100
-  round down. Fix: integer scaling with an epsilon. A whole result also prints "56" in a t column. 2026-09-27
-- WRONG KEY, cijferen-delen-dec DEFAULT: the quotient is rounded (`toFixed`) and the remainder is
-  `Math.abs(dividend − q·divisor)` (cijferGenerator.ts ~283-284): "495,00 : 80 → q 6,19 r 0,20" (correct
-  q 6,18 r 0,60); ~43 % of dividend/divisor pairs. Fix: truncate q, remainder = dividend − q·divisor. 2026-09-27
+- afronden-dec-rooster: a whole rounded result prints "56" in a t column instead of "56,0" (left over
+  from the 97,05 wrong-key fix, which only fixed `roundTo`). 2026-09-27
 - Dutch clock text (clockTypes.ts ~45-50 `formatTimeText`): no "voor half / over half": 01:25 → "25 over
   1" (should be "5 voor half 2"), 20:31 → "29 voor 21", 00:05 → "5 over 0". Reachable with the 5-minute /
   1-minute timeTypes (pw004, pw007), not at the leaf defaults. 2026-09-27

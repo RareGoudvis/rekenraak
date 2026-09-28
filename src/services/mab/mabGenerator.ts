@@ -13,15 +13,12 @@ function decompose(n: number): { thousands: number; hundreds: number; tens: numb
     };
 }
 
-// User can require specific place-values to be non-zero via operand1Mask.
-// E.g. mask = { H:true, E:true } forces hundreds≥1 and units≥1; tens free.
-function maskMatches(n: number, mask: Record<string, boolean>, maxNumber: number): boolean {
+// "Specifieke getalopbouw": a ticked place holds 1-9, an unticked place must be 0
+// (H + T at 1000 → 110, 120 … 990). An empty mask means free.
+function maskMatches(n: number, mask: Record<string, boolean>): boolean {
     const { thousands, hundreds, tens, units } = decompose(n);
-    if (mask.D && maxNumber >= 1000 && thousands < 1) return false;
-    if (mask.H && hundreds < 1) return false;
-    if (mask.T && tens < 1) return false;
-    if (mask.E && units < 1) return false;
-    return true;
+    const digits: Record<string, number> = { D: thousands, H: hundreds, T: tens, E: units };
+    return Object.entries(digits).every(([k, d]) => (mask[k] ? d >= 1 : d === 0));
 }
 
 const MAX_ATTEMPTS = 20000;
@@ -48,23 +45,31 @@ export function generateMabExercises(block: MathBlock): MabExercise[] {
         results.push({ id: Math.random().toString(36).substring(2, 9), value: v, ...decompose(v), isManuallyEdited: false });
     };
 
-    let attempts = 0;
-    while (results.length < n && attempts < MAX_ATTEMPTS) {
-        attempts++;
-        const v = randInt(1, maxNumber);
-        if (!maskMatches(v, operand1Mask, maxNumber)) continue;
-        if (used.has(v)) continue;
-        used.add(v);
-        push(v);
+    const hasMask = Object.values(operand1Mask).some(Boolean);
+    if (!hasMask) {
+        // Unchanged rejection loop so the default (free) blocks keep their random stream.
+        let attempts = 0;
+        while (results.length < n && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            const v = randInt(1, maxNumber);
+            if (used.has(v)) continue;
+            used.add(v);
+            push(v);
+        }
+        while (results.length < n) push(randInt(1, maxNumber));
+        return results;
     }
 
-    // A near-empty mask (H at maxNumber 100 → only {100}) or an impossible one (D+H at 1000
-    // → none) exhausts the attempts; repeat matching values, or drop the mask entirely, so
-    // the teacher gets `n` exercises instead of a blank block.
+    // A mask admits few values (H+T at 1000 → 81), so list them and draw without
+    // replacement; repeat only when the pool is smaller than the block.
+    let pool: number[] = [];
+    for (let v = 1; v <= maxNumber; v++) if (maskMatches(v, operand1Mask)) pool.push(v);
+    // An impossible mask (T+E at max 10) falls back to free numbers rather than a blank block.
+    if (pool.length === 0) pool = Array.from({ length: maxNumber }, (_, i) => i + 1);
+    let bag: number[] = [];
     while (results.length < n) {
-        let v = randInt(1, maxNumber);
-        for (let i = 0; i < 500 && !maskMatches(v, operand1Mask, maxNumber); i++) v = randInt(1, maxNumber);
-        push(v);
+        if (bag.length === 0) bag = [...pool];
+        push(bag.splice(randInt(0, bag.length - 1), 1)[0]);
     }
 
     return results;
