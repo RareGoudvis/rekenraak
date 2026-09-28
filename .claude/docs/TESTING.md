@@ -213,6 +213,12 @@ When the gate flags a change you meant to make: look at the contact sheet, then
 `npm run visual:baseline -- --files <the same files>` (or `--all`, which also drops rows for
 leaves that no longer exist), stage `scripts/visual-baseline.json`, commit again.
 
+Run the gate from a checkout with its **own** `node_modules`. In a scratch worktree whose
+`node_modules` is a junction to another folder, Vite answers 403 for files outside its root, and
+the walk flags ~81 cells (heights 10-150 px off, "Failed to load resource: 403") that are not
+there in the real folder (2026-09-28). `intrinsicPx` is recorded but never flagged, so it drifts
+until an `--all` refresh.
+
 ### Bypassing
 
 `SKIP_GATE=1 git commit …` skips everything, `SKIP_VISUAL=1` only the browser half, and
