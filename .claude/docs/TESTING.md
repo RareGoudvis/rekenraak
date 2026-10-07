@@ -98,7 +98,7 @@ noemer 5, "Zijden tot 10 cm" means no 11 cm side.
 | `helpers/limitRules.ts` | The rule book. Per generating typeId (`LIMIT_SPECS`): an extractor (operands, answers, intermediates, every printed number, never ids) and the rules that encode its config's promise, each returning `{ rule, observed, limit, example }`. Generic checks for every type in `checkLimits`: `underfill` (only when the block carries no generation note: a short block that says why is intended) / `overfill`, `non-finite`, `empty-exercise`, `malformed`. Answer keys (`answer-key`) are checked wherever the key can be recomputed. The header lists the owner's "not a violation" calls; they are deliberately absent. `GRADE1_MAX_20_TYPES` is the data for the Leerjaar-1 = 20 rule (L20). |
 | `helpers/answerKeys.ts` | The arithmetic both this harness and `generators.answers.test.ts` check keys with. |
 | `helpers/limitHarness.ts` | The runner. `runCase` builds the block like the store (`makeBlock`, grade base, leaf id), generates under a seeded `Math.random` (mulberry32, restored after) through `generateNoted` when the type has one (the store's entry point; the note is kept on the result), times it (`slow` above 2 s per 10 exercises), checks it and labels every violation with its known-bug id. Also the case lists: `leafGradeCases` (every leaf × no grade + Leerjaar 1-6), `pairwiseCases` (the matrix's rows, the max snapped into the list that combo's picker shows: `reachableMax`), `triggerCases`, plus `comboKey` / `stableStringify` / `normalizeForDump`. |
-| `limits.knownBugs.ts` | One `KNOWN_BUGS` entry per open BUGS.md id (`{ id, typeIds, rules, match(typeId, c, grade) }`; `c` = the block's effective constraints) and `KNOWN_SKIPS` for a hang ([E1], never run anywhere) or crash ([E2], skipped by the generator matrix, caught here). `skip()` is what `generators.matrix.test.ts` consults. A gemengd rule carries its variant after `@` (`answer>max@x:tienvoud`); an entry rule without `@` covers every variant. |
+| `limits.knownBugs.ts` | One `KNOWN_BUGS` entry per open BUGS.md id (`{ id, typeIds, rules, match(typeId, c, grade) }`; `c` = the block's effective constraints) and `KNOWN_SKIPS` for a hang (never run anywhere) or crash (skipped by the generator matrix, caught here). Both lists are empty since the 2026-10-08 fix campaign; the [E1] hang and [E2] crash entries were the template. `skip()` is what `generators.matrix.test.ts` consults. A gemengd rule carries its variant after `@` (`answer>max@x:tienvoud`); an entry rule without `@` covers every variant. |
 | `scripts/limit-trigger-cases.json` | ≥ 1 repro per id: `{ bugId, leafId, typeId, constraints, grade, seed, note }`, run at the leaf's default count. `constraints` is the whole override (leaf defaults included). Shared with the screenshot tool: keep the shape. |
 
 The gate (`npm run check`, ~6 s): every leaf × leerjaar plus every pairwise row, seed 1234, and
@@ -578,8 +578,11 @@ the run carries on, and `font:compare` flags those rows.
 **`npm run limits:diff`** compares two `limits:audit` output dirs (`summary.json`,
 `violations.json`, optional `dump/<typeId>.jsonl`):
 
+A full dump is ~1.3 GB, which overruns Node's default heap: run the script directly with a bigger
+heap (`npm run limits:diff` cannot pass the flag).
+
 ```bash
-node scripts/limits-diff.mjs --before <audit-before> --after <audit-after> \
+node --max-old-space-size=24000 scripts/limits-diff.mjs --before <audit-before> --after <audit-after> \
      --out ~/Downloads/limit-fix-check/limits-diff --touched getallenas,omtrek --samples 3
 ```
 
