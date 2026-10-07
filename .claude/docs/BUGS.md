@@ -188,6 +188,12 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a
   generation note. 2026-10-07
 
+### WP3 Cijferen (cijferGenerator.ts)
+
+- [E9] CijferViewer builds the × partial products from `String(Math.round(operands[1]))`, so a
+  fractional multiplier (Getal 2 decimal-place mask on cijferen-vermenigvuldigen-dec) is drawn as a
+  rounded one (0,5 → 1): the ×dec grid and its partial products are wrong. Found by WP3. 2026-10-07
+
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
 - [L5] vergelijken-representaties: a Getalopbouw mask (leftMask/rightMask) offers the top place whose
