@@ -17,6 +17,9 @@ export interface LeafExercise {
     // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
     // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
     gradeSetsMax?: true;
+    // Exercises per new block when this leaf wants another count than its type's registry
+    // default (rooster figures are tall: 2 fill a page). Read via LEAF_BY_ID.
+    defaultCount?: number;
 }
 
 export interface ExerciseType {
@@ -513,7 +516,7 @@ export const APP_STRUCTURE: Domain[] = [
                     {
                         id: 'oppervlakte', label: 'Oppervlakte',
                         children: [
-                            { id: 'oppervlakte-rooster', label: 'Rooster tellen', typeId: 'oppervlakte', defaultConstraints: { subType: 'rooster', shapes: ['rechthoek', 'l-figuur'] }, minLeerjaar: 3, instruction: 'Tel de vierkantjes. Wat is de oppervlakte?' },
+                            { id: 'oppervlakte-rooster', label: 'Rooster tellen', typeId: 'oppervlakte', defaultConstraints: { subType: 'rooster', shapes: ['rechthoek', 'l-figuur'] }, defaultCount: 2, minLeerjaar: 3, instruction: 'Tel de vierkantjes. Wat is de oppervlakte?' },
                             { id: 'oppervlakte-berekenen', label: 'Berekenen', typeId: 'oppervlakte', defaultConstraints: { subType: 'berekenen' }, minLeerjaar: 5, instruction: 'Bereken de oppervlakte.' },
                         ],
                     },
@@ -640,6 +643,7 @@ export interface AppLeaf {
     defaultConstraints?: Record<string, unknown>;
     instruction?: string | InstructionFn;
     gradeSetsMax?: true;
+    defaultCount?: number;
 }
 
 export function flattenLeaves(): AppLeaf[] {
@@ -671,6 +675,7 @@ export function flattenLeaves(): AppLeaf[] {
                             defaultConstraints: leaf.defaultConstraints,
                             instruction: leaf.instruction,
                             gradeSetsMax: leaf.gradeSetsMax,
+                            defaultCount: leaf.defaultCount,
                         });
                     }
                 }
@@ -684,5 +689,5 @@ export function flattenLeaves(): AppLeaf[] {
 // only has a leafId (a persisted curriculum lock, a MathBlock.leafId) resolve the same
 // opdracht-titel a sidebar click would have produced, without holding onto the leaf's
 // own object reference (which a share link can't serialise — it may be a function).
-export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn; gradeSetsMax?: true }> =
-    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction, gradeSetsMax: l.gradeSetsMax }]));
+export const LEAF_BY_ID: Record<string, { typeId: string; label: string; instruction?: string | InstructionFn; gradeSetsMax?: true; defaultCount?: number }> =
+    Object.fromEntries(flattenLeaves().map((l) => [l.id, { typeId: l.typeId, label: l.label, instruction: l.instruction, gradeSetsMax: l.gradeSetsMax, defaultCount: l.defaultCount }]));

@@ -174,27 +174,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
   divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
 
-### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
-
-- [L5] vergelijken-representaties: a Getalopbouw mask (leftMask/rightMask) offers the top place whose
-  weight equals the max (T at 10, H at 100, D at 1000); the masked digit is 1-9 with no max check
-  (`buildRepMasked`, vergelijkenGenerator.ts ~50-60). Repro: max 10 + rightMask {T} → value 20 (88 %;
-  {T,E} 100 %); up to 9 × max. 2026-10-07
-- [L11] breuken-bewerken gelijknamig with noemer "van X tot X": `hi = Math.max(lo + 1, maxD)`
-  (breukBewerkGenerator.ts:57) gives noemers X and X+1 ("tot 20" shows 21), 100 %. 2026-10-07
-- [L12] omtrek / oppervlakte-berekenen rechthoek: `if (w === h) h = h + 1` (metenGenerator.ts ~95)
-  overshoots when w = h = max → sides 10 × 11 at max 10 (1 % default, 2-4 % at narrow ranges). 2026-10-07
-- [L13] oppervlakte rooster ignores minLength: `h = randInt(2, min(6, maxL))`, vierkant takes min(w,h)
-  → "3 × 2" at "Zijden van 3 tot 4 cm" (32 %). Same branch: shapes ['l-figuur'] at maxLength 3 falls
-  back to a rechthoek (32 %). 2026-10-07
-- [L16] Edge settings (hand-typed values):
-  - breuken-bewerken gemengd at teller max 1-2 still gives 3/2 (`hi = max(lo, maxNum)`, :19-22);
-  - vereenvoudigen at max noemer 2-3 / teller max 1 falls back to 2/4 ignoring both caps (:100);
-  - gelijknamig "Vaste gemeenschappelijke noemer" with < 2 divisors in range is silently swapped for the
-    KGV (:53-65, e.g. 7 at 2-10 → 14);
-  - breuken hoeveelheid with maxTotal < minDenominator: total > maxTotal (fractionGenerator.ts:62-63);
-  - omtrek at max 1-3: trapezium `cTop + 2` and the circle radius floor 2 exceed the max. 2026-10-07
-
 ### WP6 Misc generators (herleidingen/, ordenen/, verbanden/, kalender/, geld/, breukenRangschikken)
 
 - [E2] CRASH: herleidingen with units m² + ca, hm² + ha or dam² + a throws "Cannot read properties of

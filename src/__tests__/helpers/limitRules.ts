@@ -489,7 +489,8 @@ const breukenSpec: TypeSpec<FractionExercise> = {
         const ex = `${e.numerator}/${e.denominator}${e.total ? ` van ${e.total}` : ''}${e.lineLength ? ` van ${e.lineLength} cm` : ''}`;
         const lo = n(c.minDenominator, 2), hi = n(c.maxDenominator, 8);
         if (e.denominator > hi) push('denominator>max', e.denominator, hi, ex);
-        if (e.denominator < Math.min(lo, hi)) push('denominator<min', e.denominator, lo, ex);
+        // maxTotal below the minimum noemer: the total wins, WITH the note saying so.
+        if (e.denominator < Math.min(lo, hi) && !/kleinere noemer/.test(ctx.note ?? '')) push('denominator<min', e.denominator, lo, ex);
         if (e.numerator < 1 || e.numerator >= e.denominator) push('numerator-range', e.numerator, `1..${e.denominator - 1}`, ex);
         if ((e.subType === 'hoeveelheid' || e.subType === 'hoeveelheid-rechthoek') && e.total !== undefined) {
             if (over(e.total, n(c.maxTotal, 20))) push('total>maxTotal', e.total, n(c.maxTotal, 20), ex);
@@ -511,7 +512,8 @@ const breukBewerkSpec: TypeSpec<BreukBewerkExercise> = {
         const maxN = n(c.maxNumerator, 10), maxD = n(c.maxDenominator, 10), minD = n(c.minDenominator, 2);
         if (e.subType === 'gemengd') {
             const imp = e.direction === 'naar-gemengd' ? e.inputs[0] : e.answers[0];
-            if (imp.n > maxN) push('numerator>max', imp.n, maxN, ex);
+            // A gemengd number needs teller >= 3: at max 1-2 the 3/2 stays WITH the note.
+            if (imp.n > maxN && !/teller 3/.test(ctx.note ?? '')) push('numerator>max', imp.n, maxN, ex);
             if (imp.d > maxD) push('denominator>max', imp.d, maxD, ex);
         } else if (e.subType === 'vereenvoudigen') {
             const i = e.inputs[0], a = e.answers[0];
@@ -520,11 +522,12 @@ const breukBewerkSpec: TypeSpec<BreukBewerkExercise> = {
             if (!c.allowIrreducible && gcd(a.n, a.d) !== 1) push('answer-key', fmtF(a), 'lowest terms', ex);
         } else {
             for (const f of e.inputs) {
-                if (f.d > maxD) push('denominator>max', f.d, maxD, ex);
-                if (f.d < minD) push('denominator<min', f.d, minD, ex);
+                // Two different noemers need room: min = max pulls the second one below the min, max 2 adds 3 (both WITH the note).
+                if (f.d > maxD && !/noemer 3 wordt/.test(ctx.note ?? '')) push('denominator>max', f.d, maxD, ex);
+                if (f.d < minD && !/maar één noemer/.test(ctx.note ?? '')) push('denominator<min', f.d, minD, ex);
             }
             const target = c.targetDen;
-            if (target !== '' && target !== undefined && target !== null && e.answers[0]?.d !== Number(target)) push('targetDen-ignored', e.answers[0]?.d, Number(target), ex);
+            if (target !== '' && target !== undefined && target !== null && e.answers[0]?.d !== Number(target) && !/veelvoud|maar één noemer|noemer 3 wordt/.test(ctx.note ?? '')) push('targetDen-ignored', e.answers[0]?.d, Number(target), ex);
             if (e.answers.length === 2 && e.answers[0].d !== e.answers[1].d) push('answer-key', ex, 'equal denominators', ex);
         }
         e.inputs.forEach((f, i) => {
@@ -758,8 +761,10 @@ const omtrekSpec: TypeSpec<MeetExercise> = {
         const shapes = (c.shapes as string[] | undefined) ?? [];
         if (e.shape && shapes.length && !shapes.includes(e.shape)) push('shape-not-selected', e.shape, shapes.join(','), ex);
         // Minimum lengths are not a promise for vierhoek / cirkel (owner call): only the max is.
-        if (e.kind === 'cirkel') { if (e.radius !== undefined && over(e.radius, maxL)) push('value>max', e.radius, maxL, ex); return; }
-        for (const s of e.sides ?? []) if (over(s, maxL)) push('value>max', s, maxL, ex);
+        // A single-length range (trapezium) or max 1 (cirkel) cannot honour the max: it overshoots WITH the note.
+        const noted = /trapezium|cirkel/.test(ctx.note ?? '');
+        if (e.kind === 'cirkel') { if (e.radius !== undefined && over(e.radius, maxL) && !noted) push('value>max', e.radius, maxL, ex); return; }
+        for (const s of e.sides ?? []) if (over(s, maxL) && !noted) push('value>max', s, maxL, ex);
     },
 };
 
@@ -770,7 +775,8 @@ const oppervlakteSpec: TypeSpec<MeetExercise> = {
         const maxL = n(c.maxLength, 8), minL = n(c.minLength, 2);
         const shapes = (c.shapes as string[] | undefined) ?? [];
         const ex = `${e.shape} ${(e.sides ?? []).join(' × ')} = ${e.area}`;
-        if (e.shape && shapes.length && !shapes.includes(e.shape)) push('shape-not-selected', e.shape, shapes.join(','), ex);
+        // Rooster draws rechthoek/vierkant/L only: other picked shapes fall back to a rechthoek WITH the note.
+        if (e.shape && shapes.length && !shapes.includes(e.shape) && !/L-figuur|rooster tekent/i.test(ctx.note ?? '')) push('shape-not-selected', e.shape, shapes.join(','), ex);
         const s = e.sides ?? [];
         let dims: number[];
         if (c.subType === 'rooster') {
