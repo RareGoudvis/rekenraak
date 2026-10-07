@@ -389,7 +389,7 @@ const addSubMax: MaxPresetsFn = (c) => {
 };
 
 // MultiplicationConfig/DivisionConfig: the tienvoud preset (HrPresetRow, any non-rational
-// type) wins; natural shows a max only in 'andere' mode (tafels / met rest have none).
+// type) wins; natural shows a max only in 'andere' mode (tafels has none).
 const mulDivMax: MaxPresetsFn = (c) => {
     const nt = numberTypeOf(c);
     if (nt === 'rational') return null;
@@ -398,6 +398,12 @@ const mulDivMax: MaxPresetsFn = (c) => {
     if (nt === 'natural' && (c.multiplicationMode ?? 'tafels') === 'andere') return maxGetal(RANGES.hrAndere);
     return null;
 };
+
+// DivisionConfig adds met rest (natural only): its deeltal max follows the leerjaar.
+const divMax: MaxPresetsFn = (c) =>
+    c.preset !== 'tienvoud' && numberTypeOf(c) === 'natural' && c.multiplicationMode === 'met_rest'
+        ? maxGetal(RANGES.hrMetRest)
+        : mulDivMax(c);
 
 // GemengdConfig: one shared picker, decimal list or the natural one for every other type.
 const mixedMax: MaxPresetsFn = (c) =>
@@ -463,7 +469,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax }),
     'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax }),
     'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax }),
-    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises),       defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax }),
+    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises),       defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: divMax }),
     // Mixed already relaxes per variant inside its own generator, so it brings its own note.
     'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10, maxPresets: mixedMax }),
 

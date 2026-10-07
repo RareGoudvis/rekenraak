@@ -38,6 +38,9 @@ export const RANGES = {
     hrAndere: NAT_STEPS.filter(v => v >= 1_000),
     // ×/: 'Met 10, 100, 1000': the factor does the work, the base number stays small.
     hrTienvoud: HR_TIENVOUD,
+    // : 'Met rest': the deeltal follows the grade (owner rule). N1/N2 stay two-digit, so 100 is
+    // the floor (leerjaar 1 lands there too) and N3's three-digit deeltal needs 1000.
+    hrMetRest: [100, 1_000] as readonly number[],
     // Every decimal list (hoofdrekenen, gemengd, afronden, schattend, vergelijken-representaties).
     decimal: DECIMAL,
     cijferNatural: NAT_STEPS.filter(v => v >= 20),
@@ -74,6 +77,18 @@ export const RANGES = {
     // Herleidingen are unit-based (km² ≥ 1e4 already overflows), so they never grow.
     herleidingenSamengesteld: [10, 100, 1_000, 10_000, 100_000, 1_000_000] as readonly number[],
 } as const;
+
+// Met rest niveau → the lowest deeltal max that still fills a block: N1 (quotiënt 1-9) fits
+// any max, N2 needs a deeltal ≥ 21 (10 × 2 + 1), N3 a three-digit deeltal (100-999).
+// SYNC: the met-rest branch of generateDivisionExercises (mathEngine.ts) draws inside these.
+export const MET_REST_LEVEL_MIN_MAX: Readonly<Record<number, number>> = { 1: 0, 2: 100, 3: 1_000 };
+export const metRestLevelFits = (level: number, max: number): boolean => max >= (MET_REST_LEVEL_MIN_MAX[level] ?? 0);
+// The highest niveau ≤ `level` that fits under `max` (N1 always does).
+export function clipMetRestLevel(level: number, max: number): number {
+    let l = level;
+    while (l > 1 && !metRestLevelFits(l, max)) l--;
+    return l;
+}
 
 // maxEnkel is a free slider (step 10), not a list; the matrix samples min / default / max.
 export const HERLEIDINGEN_ENKEL = { min: 10, max: 1_000, step: 10 } as const;

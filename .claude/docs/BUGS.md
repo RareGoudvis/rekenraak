@@ -257,8 +257,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP7 Grade lists (numberRanges.ts, exerciseRegistry.ts, baseSettings.ts, NaturalSettings.tsx)
 
-- [L19] (list side) hr-std-delen 'met rest': no max picker and no seeding, so the Leerjaar max never
-  reaches it. Fix: a met-rest list (100 / 1000) seeded from the grade, N1-N3 clipped to it. 2026-10-07
 - [L20] Leerjaar 1 (max 20) floors to 100 on every list that starts at 100 (floorToPreset). Owner rule:
   add 20 only where it makes sense — vergelijken, plaatswaarde, deelbaarheid-kleuren (signed off); the rest
   keep their floor and the gap gets documented in ARCHITECTURE §7. 2026-10-07

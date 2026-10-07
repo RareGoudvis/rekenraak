@@ -54,6 +54,7 @@ describe('the lists', () => {
     test('capped lists keep their own values', () => {
         const fixed: Array<[keyof typeof RANGES, number[]]> = [
             ['hrTienvoud', [100, 1000, 10000]],
+            ['hrMetRest', [100, 1000]],
             ['decimal', [10, 100, 1000]],
             ['cijferDecimal', [20, 100, 1000, 10000, 100000, 1000000, 1000000000]],
             ['vergelijkenRepresentaties', [10, 100, 1000]],
