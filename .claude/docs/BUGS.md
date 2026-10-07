@@ -205,10 +205,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
-- [L5] vergelijken-representaties: a Getalopbouw mask (leftMask/rightMask) offers the top place whose
-  weight equals the max (T at 10, H at 100, D at 1000); the masked digit is 1-9 with no max check
-  (`buildRepMasked`, vergelijkenGenerator.ts ~50-60). Repro: max 10 + rightMask {T} → value 20 (88 %;
-  {T,E} 100 %); up to 9 × max. 2026-10-07
 - [L11] breuken-bewerken gelijknamig with noemer "van X tot X": `hi = Math.max(lo + 1, maxD)`
   (breukBewerkGenerator.ts:57) gives noemers X and X+1 ("tot 20" shows 21), 100 %. 2026-10-07
 - [L12] omtrek / oppervlakte-berekenen rechthoek: `if (w === h) h = h + 1` (metenGenerator.ts ~95)

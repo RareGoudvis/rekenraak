@@ -55,10 +55,17 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
             const scale = Math.pow(10, dp);
             return Math.round(randInt(1, Math.max(1, maxGetal * scale - 1))) / scale;
         }
-        // Build from the masked decimal places (each digit 1–9 × its weight).
-        let n = 0;
-        for (const p of active) n += randInt(1, 9) * p.weight;
-        return Number(n.toFixed(maxDp));
+        // Build from the masked decimal places (each digit 1–9 × its weight). The top place
+        // can weigh as much as maxGetal, so retry until the value fits (same rule as buildNumber).
+        for (let tries = 0; tries < 200; tries++) {
+            let n = 0;
+            for (const p of active) n += randInt(1, 9) * p.weight;
+            const v = Number(n.toFixed(maxDp));
+            if (v <= maxGetal) return v;
+        }
+        // Impossible mask (smallest masked value already > maxGetal): free in-range number.
+        const scale = Math.pow(10, dp);
+        return Math.round(randInt(1, Math.max(1, maxGetal * scale - 1))) / scale;
     };
     // A breuk side → an actual fraction within the teller/noemer caps.
     const buildFrac = (maxN: number, maxD: number): Fraction => {
