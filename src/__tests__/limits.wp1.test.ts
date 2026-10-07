@@ -146,6 +146,44 @@ describe('[L15] rational × / : decimal_fraction draws a real kommagetal', () =>
     }
 });
 
+describe('[L14] "Maximum per getal" (operandMax) is honoured', () => {
+    const cases: [string, Record<string, unknown>][] = [
+        ['hr-std-aftrekken', { numberType: 'natural', maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' }],
+        ['hr-std-aftrekken', { numberType: 'natural', maxGetal: 1000, operandMax: [null, 30], operand2Mask: { T: true, E: true } }],
+        ['hr-std-aftrekken', { numberType: 'decimal', maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' }],
+        ['hr-std-gemengd', { numberType: 'natural', maxGetal: 1000, variants: ['-:compenseren'], operandMax: [null, 30] }],
+        ['hr-std-vermenigvuldigen', { numberType: 'natural', maxGetal: 1000, termCount: 3, operandMax: [5, 5, 5] }],
+        ['hr-std-vermenigvuldigen', { numberType: 'natural', maxGetal: 1000000, termCount: 3, selectedTables: [6, 8, 9, 12, 15], operandMax: [10, 1000000000] }],
+    ];
+    for (const [typeId, c] of cases) {
+        test(`${typeId} ${JSON.stringify(c)}`, () => {
+            const max = c.operandMax as (number | null)[];
+            for (const items of runSeeded(typeId, c)) {
+                expect(items).toHaveLength(20);
+                for (const eq of items) {
+                    eq.operands.forEach((o, i) => {
+                        if (typeof max[i] === 'number') expect(o as number).toBeLessThanOrEqual(max[i] as number);
+                    });
+                }
+            }
+        });
+    }
+
+    test('a compenseren term that cannot fit says the strategie was dropped', () => {
+        const block = makeBlock('hr-std-aftrekken', { constraints: { maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' } });
+        expect(REGISTRY['hr-std-aftrekken'].generateNoted!(block).note).toBe('Instellingen versoepeld om genoeg oefeningen te maken: strategie.');
+    });
+
+    test('3 factors: the first stays a picked table under its own max', () => {
+        for (const items of runSeeded('hr-std-vermenigvuldigen', { maxGetal: 1000, termCount: 3, operandMax: [5, 5, 5] })) {
+            for (const eq of items) {
+                expect(eq.operands).toHaveLength(3);
+                expect([2, 3, 4, 5]).toContain(eq.operands[0]);
+            }
+        }
+    });
+});
+
 describe('[L8] decimal : keeps the quotient within "Maximum uitkomst"', () => {
     const cases: [string, Record<string, unknown>][] = [
         ['hr-std-delen', { numberType: 'decimal', maxGetal: 10 }],

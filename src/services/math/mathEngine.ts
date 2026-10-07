@@ -566,7 +566,8 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
                 if (hi < 1) { bad = true; break; }
                 v = randInt(1, hi) * step;
             }
-            if (v < step || v >= running) { bad = true; break; }
+            // A masked or compenseren term skips the drawn ceiling, so "Maximum per getal" is checked here.
+            if (v < step || v >= running || (opCeil !== null && v > Math.round(opCeil * INTERNAL_SCALE))) { bad = true; break; }
             ints.push(v);
             running -= v;
         }
@@ -740,7 +741,10 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
                 const budget = Math.floor(maxGetal / product);
                 const hi = Math.min(opCeil ?? tableLimit, budget);
                 if (hi < 2) { bad = true; break; }
-                const f = fromTables ? selectedTables[randInt(0, selectedTables.length - 1)] : randInt(2, Math.max(2, Math.min(hi, 12)));
+                // "Maximum per getal" also bounds the table the first factor comes from.
+                const tables = opCeil !== null ? selectedTables.filter((t: number) => t <= opCeil) : selectedTables;
+                if (fromTables && !tables.length) { bad = true; break; }
+                const f = fromTables ? tables[randInt(0, tables.length - 1)] : randInt(2, Math.max(2, Math.min(hi, 12)));
                 if (f * product > maxGetal) { bad = true; break; }
                 factors.push(f);
                 product *= f;
