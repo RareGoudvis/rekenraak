@@ -16,6 +16,10 @@ describe('meten notes for unfixable settings', () => {
         expect(noted('omtrek', { shapes: ['rechthoek'], minLength: 5, maxLength: 5 })).toMatch(/vierkanten/);
         expect(noted('omtrek', { shapes: ['trapezium'], minLength: 3, maxLength: 10 })).toBeNull();
     });
+    test('rooster with a shape it cannot draw', () => {
+        expect(noted('oppervlakte', { subType: 'rooster', shapes: ['rechthoekige-driehoek'], minLength: 2, maxLength: 8 })).toMatch(/rooster tekent/i);
+        expect(noted('oppervlakte', { subType: 'rooster', shapes: ['rechthoek', 'l-figuur'], minLength: 2, maxLength: 8 })).toBeNull();
+    });
     test('circle at max 1, L-figuur at max 2', () => {
         expect(noted('omtrek', { shapes: ['cirkel'], minLength: 1, maxLength: 1 })).toMatch(/cirkel/i);
         expect(noted('omtrek', { shapes: ['cirkel'], minLength: 1, maxLength: 3 })).toBeNull();

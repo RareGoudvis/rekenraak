@@ -145,36 +145,6 @@ export const KNOWN_BUGS: KnownBug[] = [
             && (masked(c.operand1Mask, DECIMAL_PLACES) || (masked(c.operand0Mask) && !masked(c.operand0Mask, ['Mrd', 'HM', 'TM', 'M', 'HD', 'TD', 'D', 'H', 'T']))),
     },
 
-    // ── WP4 Geometry, fractions, vergelijken ──
-    {
-        id: 'L5', typeIds: ['vergelijken'], rules: ['value>max'],
-        match: (_t, c) => c.subType === 'representaties' && (masked(c.leftMask) || masked(c.rightMask)),
-    },
-    {
-        id: 'L11', typeIds: ['breuken-bewerken'], rules: ['denominator>max'],
-        match: (_t, c) => c.subType === 'gelijknamig' && num(c.minDenominator, 2) >= num(c.maxDenominator, 10),
-    },
-    {
-        // w = h = max → h + 1 (metenGenerator.ts ~83).
-        id: 'L12', typeIds: ['omtrek', 'oppervlakte'], rules: ['value>max'],
-        match: (_t, c) => ((c.shapes as string[] | undefined) ?? []).includes('rechthoek'),
-    },
-    {
-        id: 'L13', typeIds: ['oppervlakte'], rules: ['value<min', 'shape-not-selected'],
-        match: (_t, c) => c.subType === 'rooster',
-    },
-    {
-        id: 'L16', typeIds: ['breuken-bewerken', 'breuken', 'omtrek'],
-        rules: ['numerator>max', 'denominator>max', 'targetDen-ignored', 'total>maxTotal', 'value>max'],
-        match: (t, c) => {
-            if (t === 'breuken') return num(c.maxTotal, 20) < Math.max(2, num(c.minDenominator, 2));
-            if (t === 'omtrek') return num(c.maxLength, 10) <= 3;
-            if (c.subType === 'gemengd') return num(c.maxNumerator, 10) <= 2;
-            if (c.subType === 'vereenvoudigen') return num(c.maxDenominator, 10) <= 3 || num(c.maxNumerator, 10) <= 1;
-            return c.subType === 'gelijknamig' && c.targetDen !== '' && c.targetDen !== undefined && c.targetDen !== null;
-        },
-    },
-
     // ── WP5 Result caps ──
     {
         id: 'L6', typeIds: ['rekenvolgorde'], rules: ['answer>max', 'factor>tableLimit'],

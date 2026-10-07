@@ -203,7 +203,10 @@ export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
 function shapeNote(shapes: string[], min: number, max: number, precision: string, rooster: boolean): string | null {
     const lo = Math.max(1, Math.min(min, max)), hi = Math.max(lo, max);
     const room = precision === 'mm' ? hi > lo : Math.floor(hi) - Math.ceil(lo) >= 1;
-    if (rooster) return shapes.includes('l-figuur') && max < 3 ? 'Een L-figuur heeft zijden van minstens 3 cm: er komen rechthoeken in de plaats.' : null;
+    if (rooster) {
+        if (shapes.includes('l-figuur') && max < 3) return 'Een L-figuur heeft zijden van minstens 3 cm: er komen rechthoeken in de plaats.';
+        return shapes.some(s => !['rechthoek', 'vierkant', 'l-figuur'].includes(s)) ? 'Het rooster tekent alleen rechthoeken, vierkanten en L-figuren: andere gekozen vormen worden rechthoeken.' : null;
+    }
     if (shapes.includes('trapezium') && !room) return 'Een trapezium heeft twee verschillende evenwijdige zijden: bij één lengte is de langste zijde 2 cm langer dan het maximum.';
     if (shapes.includes('cirkel') && max < 2) return 'Een cirkel met straal 1 cm is breder dan het maximum.';
     if (shapes.includes('rechthoek') && !room) return 'Van–tot laat maar één lengte toe: de rechthoeken zijn vierkanten.';
