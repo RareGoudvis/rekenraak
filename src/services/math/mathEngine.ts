@@ -306,6 +306,19 @@ const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[
     return exercises;
 };
 
+// 'multi_step' noemers: neither equals, divides nor is a multiple of the other. Null when the
+// drawn d1 has no such partner in [2, maxD2] (max noemer 2, or d1 = 6 at max 3): the
+// rejection draw would never end, so the caller redraws d1 within its bounded attempts.
+function multiStepDenominators(maxD1: number, maxD2: number): [number, number] | null {
+    const d1 = randInt(2, maxD1);
+    let hasPartner = false;
+    for (let d = 2; d <= maxD2 && !hasPartner; d++) hasPartner = d1 !== d && d % d1 !== 0 && d1 % d !== 0;
+    if (!hasPartner) return null;
+    let d2: number;
+    do { d2 = randInt(2, maxD2); } while (d1 === d2 || d2 % d1 === 0 || d1 % d2 === 0);
+    return [d1, d2];
+}
+
 const generateFractionAddition = (block: MathBlock): Equation[] => {
     if (termCountOf(block.constraints as MulDivConstraints) > 2) return generateFractionChain(block, '+');
     const { numberOfExercises } = block;
@@ -336,8 +349,9 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
             }
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
-            d1 = randInt(2, maxDenominator1);
-            do { d2 = randInt(2, maxDenominator2); } while (d1 === d2 || d2 % d1 === 0 || d1 % d2 === 0);
+            const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) continue;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
 
@@ -463,8 +477,9 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
             }
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
-            d1 = randInt(2, maxDenominator1);
-            do { d2 = randInt(2, maxDenominator2); } while (d1 === d2 || d2 % d1 === 0 || d1 % d2 === 0);
+            const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) continue;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
 

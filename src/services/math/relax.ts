@@ -87,9 +87,14 @@ export function generateWithRelaxation(block: MathBlock, gen: (b: MathBlock) => 
     return { items: best, relaxed: bestSteps, shortfall: true };
 }
 
+// An impossible setting (max noemer 2 with 'ongelijknamig') yields 0, which "Slechts 0" misreads.
+export const shortfallNote = (n: number): string =>
+    n === 0 ? 'Geen oefeningen mogelijk bij deze instellingen.'
+        : `Slechts ${n} ${n === 1 ? 'oefening' : 'oefeningen'} mogelijk bij deze instellingen.`;
+
 /** The line shown under Genereer. `null` when the teacher's own settings were enough. */
 export function relaxationNote(result: RelaxResult): string | null {
-    if (result.shortfall) return `Slechts ${result.items.length} oefeningen mogelijk bij deze instellingen.`;
+    if (result.shortfall) return shortfallNote(result.items.length);
     if (!result.relaxed.length) return null;
     return `Instellingen versoepeld om genoeg oefeningen te maken: ${result.relaxed.map(s => STEP_NAMES[s]).join(', ')}.`;
 }

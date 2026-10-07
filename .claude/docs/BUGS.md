@@ -166,9 +166,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   dividends 100-999 (~1005-1053), so Leerjaar 2 ("tot 100") gets "890 : 7". Owner rule: the dividend
   follows the grade max (100 at L2, 1000 at L3); tafels and andere stay as they are. Generator side
   here, list/picker side in WP7. 2026-10-07
-- [E1] PAGE FREEZE: rational +/− 2 terms 'multi_step' (also reached when a 3-4 term chain relaxes to 2):
-  the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
-  divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
 
 ### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
 

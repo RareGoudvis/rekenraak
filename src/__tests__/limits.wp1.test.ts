@@ -1,0 +1,74 @@
+import { describe, test, expect, afterEach } from 'vitest';
+import type { Equation, Fraction } from '../services/math/types';
+import { makeBlock, generateFor } from './helpers/makeBlock';
+import { REGISTRY } from '../config/exerciseRegistry';
+import { shortfallNote } from '../services/math/relax';
+
+// Limit-audit 2026-10-07, package WP1 (hoofdrekenen engine): each block below is a repro
+// setting from BUGS.md, generated under several seeds, and every exercise must respect the
+// limit the teacher set (or the block comes back shorter, never over the limit).
+
+function mulberry32(a: number) {
+    return () => {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+const realRandom = Math.random;
+afterEach(() => { Math.random = realRandom; });
+
+const SEEDS = [11, 2222, 333333, 4, 55];
+
+function runSeeded(typeId: string, constraints: Record<string, unknown>, count = 20): Equation[][] {
+    return SEEDS.map(seed => {
+        Math.random = mulberry32(seed);
+        const block = makeBlock(typeId, { constraints, block: { numberOfExercises: count } });
+        return generateFor(block) as Equation[];
+    });
+}
+
+const frac = (o: unknown) => o as Fraction;
+
+describe('shortfall note wording', () => {
+    test('0 / 1 / many', () => {
+        expect(shortfallNote(0)).toBe('Geen oefeningen mogelijk bij deze instellingen.');
+        expect(shortfallNote(1)).toBe('Slechts 1 oefening mogelijk bij deze instellingen.');
+        expect(shortfallNote(3)).toBe('Slechts 3 oefeningen mogelijk bij deze instellingen.');
+    });
+});
+
+describe('[E1] rational +/− multi_step terminates', () => {
+    test('max noemer 2 says why the block is empty', () => {
+        const block = makeBlock('hr-std-optellen', { constraints: { numberType: 'rational', fractionDifficulty: 'multi_step', maxDenominator1: 2, maxDenominator2: 2 } });
+        const result = REGISTRY['hr-std-optellen'].generateNoted!(block);
+        expect(result.items).toHaveLength(0);
+        expect(result.note).toBe('Geen oefeningen mogelijk bij deze instellingen.');
+    });
+
+    const cases: Record<string, unknown>[] = [
+        { maxDenominator1: 2, maxDenominator2: 2 },
+        { linkFractions: false, maxDenominator1: 10, maxDenominator2: 2 },
+        { linkFractions: false, maxDenominator1: 10, maxDenominator2: 3 },
+        { maxDenominator1: 2, maxDenominator2: 2, termCount: 3 },
+    ];
+    for (const typeId of ['hr-std-optellen', 'hr-std-aftrekken']) {
+        for (const c of cases) {
+            test(`${typeId} ${JSON.stringify(c)}`, () => {
+                const constraints = { numberType: 'rational', fractionDifficulty: 'multi_step', ...c };
+                for (const items of runSeeded(typeId, constraints)) {
+                    for (const eq of items) {
+                        const [a, b] = eq.operands.map(frac);
+                        expect(a.d).toBeLessThanOrEqual(c.maxDenominator1 as number);
+                        expect(b.d).toBeLessThanOrEqual(c.maxDenominator2 as number);
+                        // multi_step: neither noemer equals or divides the other
+                        if (eq.operands.length === 2) expect(a.d % b.d !== 0 && b.d % a.d !== 0).toBe(true);
+                    }
+                }
+            });
+        }
+    }
+});
