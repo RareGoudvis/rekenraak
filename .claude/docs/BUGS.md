@@ -172,9 +172,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
 
-- [E10] getallenrijen numberMask: after 80 attempts the anchor (first value) silently ignores the mask
-  (MASK_NOT_HONORED_ANCHOR, 1896 combos, e.g. decimal mask T + t, start 840). Fix: honour it or note
-  it. Found by WP2. 2026-10-07
 - [E11] A block whose generator legitimately produced 0 exercises (with a "Geen … mogelijk" note) still
   shows "(Nog geen oefeningen — klik Genereer)" on the sheet, which contradicts the note. Found by
   WP2. 2026-10-07

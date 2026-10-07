@@ -5,6 +5,7 @@ import { generateGetallenrijExercisesNoted } from '../services/getallenrij/getal
 import { generatePatroonExercisesNoted } from '../services/patroon/patroonGenerator';
 import { generateKettingExercisesNoted } from '../services/patroon/kettingGenerator';
 import { makeBlock, generateFor } from './helpers/makeBlock';
+import { numberMatchesMask } from '../services/math/mathEngine';
 
 // Limit-audit WP2: every value a row/pattern generator prints stays within the block's
 // bounds, also on the settings that used to overrun them. Seeded so a failure reproduces;
@@ -211,5 +212,33 @@ describe('[E5a] getalpatronen / kettingsommen keep the chosen operations', () =>
         const { items, note } = generateKettingExercisesNoted(block('kettingsommen', { maxGetal: 20, chainLength: 5, ops: ['x'] }));
         expect(items).toHaveLength(0);
         expect(note).toBe('Geen kettingsom mogelijk met deze bewerkingen tot 20.');
+    });
+});
+
+describe('[E10] getallenrijen honour the getalopbouw of the first value', () => {
+    const cases: [Record<string, unknown>, number][] = [
+        [{ numberType: 'decimal', maxGetal: 1000, step: 0.1, ticks: 6, direction: 'beide', numberMask: { T: true, t: true } }, 1],
+        [{ numberType: 'natural', maxGetal: 10000, step: 5, ticks: 8, direction: 'left', numberMask: { D: true, T: true, E: true } }, 0],
+        [{ numberType: 'natural', maxGetal: 100000, step: 1, ticks: 6, direction: 'right', numberMask: { E: true } }, 0],
+    ];
+    for (const [c, dp] of cases) {
+        test(JSON.stringify(c), () => {
+            for (const seed of SEEDS) {
+                seeded(seed);
+                const items = lines('getallenrijen', c);
+                expect(items).toHaveLength(20);
+                for (const ex of items) {
+                    expect(numberMatchesMask(ex.start, c.numberMask as Record<string, boolean>, c.maxGetal as number, c.numberType as 'natural' | 'decimal', dp)).toBe(true);
+                    for (const v of ex.values ?? []) expect(num(v)).toBeLessThanOrEqual(c.maxGetal as number);
+                }
+            }
+        });
+    }
+
+    test('a mask no multiple of the step can match is dropped with a note', () => {
+        seeded(11);
+        const { items, note } = generateGetallenrijExercisesNoted(block('getallenrijen', { numberType: 'natural', maxGetal: 10000, step: 100, ticks: 8, numberMask: { H: true, E: true } }));
+        expect(items).toHaveLength(20);
+        expect(note).toBe('De getalopbouw (H, E) van het eerste getal past niet bij sprong +100 tot 10.000 en is genegeerd.');
     });
 });
