@@ -119,3 +119,13 @@ describe('procenten short blocks', () => {
         expect(generateProcentNoted(mk({ subType: 'nemen', percents: [10, 25, 50], maxGetal: 1000 }, 8)).note).toBeNull();
     });
 });
+
+describe('controleren negenproef first factor', () => {
+    for (const max of RANGES.controleren) it(`no multiple of 10 as first factor at max ${max}`, () => {
+        for (let i = 0; i < 20; i++) {
+            const items = generateControleExercises(mk({ subType: 'negenproef', maxGetal: max }, 8));
+            expect(items.length).toBe(8);
+            for (const ex of items) expect(ex.a % 10).not.toBe(0);
+        }
+    });
+});

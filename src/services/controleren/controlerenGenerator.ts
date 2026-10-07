@@ -44,6 +44,11 @@ export function generateControleExercises(block: MathBlock): ControleExercise[] 
             const aMax = Math.floor(maxGetal / b);
             const aMin = Math.min(aMax, Math.max(bLo === 12 ? 10 : 2, Math.floor(aMax / 4)));
             a = randInt(aMin, aMax);
+            // A round first factor (10 × 97) teaches nothing for the proef; redraw while the range has room.
+            if (bLo === 12) {
+                for (let r = 0; r < 20 && a % 10 === 0; r++) a = randInt(aMin, aMax);
+                if (a % 10 === 0) continue;
+            }
         } else if (operator === '+') {
             if (maxGetal < 8) continue;
             a = randInt(Math.floor(maxGetal / 4), Math.floor((maxGetal * 3) / 4));
