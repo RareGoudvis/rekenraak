@@ -3,6 +3,7 @@ import type { MathBlock } from '../../services/math/types';
 import { generateForBlock, generateExtra, GENERATION_FAILED, withinCeiling } from '../../services/generateDispatch';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { seedConstraints } from '../../config/baseSettings';
+import { LEAF_BY_ID } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import { generateMixedOne, mixedKey } from '../../services/math/mixedGenerator';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
@@ -34,7 +35,7 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
             instructionMode: 'geen',
             layoutPreset: 'inline-short',
             steppedLines: 3,
-            numberOfExercises: def ? def.defaultCount : 10,
+            numberOfExercises: (opts?.leafId ? LEAF_BY_ID[opts.leafId]?.defaultCount : undefined) ?? (def ? def.defaultCount : 10),
             totalPoints: 5,
             // Writing room between exercises. 14 was tight for a 7-year-old's handwriting;
             // teachers can still dial it 8-40 per block under Opmaak.

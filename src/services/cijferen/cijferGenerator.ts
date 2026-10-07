@@ -11,6 +11,10 @@ const randInt = (min: number, max: number): number => {
 
 const genId = (): string => Math.random().toString(36).substring(2, 9);
 
+function gcd(a: number, b: number): number {
+    return b === 0 ? a : gcd(b, a % b);
+}
+
 function scaleOf(dp: number): number {
     return Math.pow(10, dp);
 }
@@ -122,17 +126,28 @@ export function divideToDecimals(dividend: number, divisor: number, dp: number):
     return { quotient: q / s, remainder: r / (s * s) };
 }
 
-export function generateCijferExercises(block: MathBlock): CijferExercise[] {
+export function generateCijferExercisesNoted(block: MathBlock): { items: CijferExercise[]; note: string | null } {
     const c = block.constraints as CijferConstraints;
     const count = block.numberOfExercises || 4;
     // Stamp the decimal-place count on every exercise: the grid draws the columns the
     // exercise was made with, not the ones the settings happen to say now.
     const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
     const results: CijferExercise[] = [];
+    let fallbacks = 0;
     for (let i = 0; i < count; i++) {
-        results.push({ ...generateOne(c), decimalPlaces: dp });
+        const { ex, fellBack } = generateOne(c);
+        if (fellBack) fallbacks++;
+        results.push({ ...ex, decimalPlaces: dp });
     }
-    return results;
+    const note = fallbacks === 0 ? null
+        : fallbacks === 1
+            ? '1 oefening past niet bij de gekozen getalopbouw en het maximum; daarvoor staat er een eenvoudige oefening binnen het maximum.'
+            : `${fallbacks === count ? 'Alle' : fallbacks} oefeningen passen niet bij de gekozen getalopbouw en het maximum; daarvoor staan er eenvoudige oefeningen binnen het maximum.`;
+    return { items: results, note };
+}
+
+export function generateCijferExercises(block: MathBlock): CijferExercise[] {
+    return generateCijferExercisesNoted(block).items;
 }
 
 function getMask(c: CijferConstraints, i: number): Record<string, boolean> {
@@ -140,20 +155,29 @@ function getMask(c: CijferConstraints, i: number): Record<string, boolean> {
     return (c[keys[Math.min(i, 3)]] || {}) as Record<string, boolean>;
 }
 
-function generateOne(c: CijferConstraints): CijferExercise {
+function generateOne(c: CijferConstraints): { ex: CijferExercise; fellBack: boolean } {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const ex = tryGenerate(c);
-        if (ex) return ex;
+        if (ex) return { ex, fellBack: false };
     }
-    // Fallback: simple guaranteed valid exercise
+    // Fallback ignores masks and numberOfTerms but must stay inside the max (operands and answer)
     const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
     const s = scaleOf(dp);
     const half = Math.round((c.maxRange / 2) * s) / s;
     const quarter = Math.round((c.maxRange / 4) * s) / s;
-    if (c.operator === '+') return { id: genId(), operands: [half, quarter], operator: '+', answer: parseFloat((half + quarter).toFixed(dp)), remainder: 0, isManuallyEdited: false };
-    if (c.operator === '-') return { id: genId(), operands: [half, quarter], operator: '-', answer: parseFloat((half - quarter).toFixed(dp)), remainder: 0, isManuallyEdited: false };
-    if (c.operator === 'x') return { id: genId(), operands: [half, 3], operator: 'x', answer: parseFloat((half * 3).toFixed(dp)), remainder: 0, isManuallyEdited: false };
-    return { id: genId(), operands: [c.maxRange, 4], operator: ':', answer: Math.floor(c.maxRange / 4), remainder: c.maxRange % 4, isManuallyEdited: false };
+    const mk = (operands: number[], operator: CijferExercise['operator'], answer: number, remainder = 0): { ex: CijferExercise; fellBack: boolean } =>
+        ({ ex: { id: genId(), operands, operator, answer, remainder, isManuallyEdited: false }, fellBack: true });
+    if (c.operator === '+') return mk([half, quarter], '+', parseFloat((half + quarter).toFixed(dp)));
+    if (c.operator === '-') return mk([half, quarter], '-', parseFloat((half - quarter).toFixed(dp)));
+    if (c.operator === 'x') {
+        // multiplicand ≤ max/multiplier so the product stays ≤ max
+        const mult = c.maxRange >= 3 ? 3 : 2;
+        const multiplicand = Math.max(1, Math.floor((c.maxRange * s) / mult)) / s;
+        return mk([multiplicand, mult], 'x', parseFloat((multiplicand * mult).toFixed(dp)));
+    }
+    // With a remainder requested, pick the first divisor that leaves one (max % 4 is often 0)
+    const divisor = (c.withRemainder && c.numberType !== 'decimal' && [4, 3, 7, 9, 6, 5].find(d => c.maxRange % d !== 0)) || 4;
+    return mk([c.maxRange, divisor], ':', Math.floor(c.maxRange / divisor), c.maxRange % divisor);
 }
 
 function tryGenerate(c: CijferConstraints): CijferExercise | null {
@@ -193,7 +217,10 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     }
 
     if (c.operator === '-') {
-        const maskedA = applyMask(getMask(c, 0), maxVal, dp);
+        const maskA = getMask(c, 0);
+        const maskedA = applyMask(maskA, maxVal, dp);
+        // a mask that doesn't fit used to be dropped silently; retry, then fall back with a note
+        if (maskedA === null && Object.values(maskA).some(v => v)) return null;
         const a = maskedA !== null
             ? maskedA
             : parseFloat((randInt(Math.ceil(maxVal * s * 0.1), Math.round(maxVal * s)) / s).toFixed(dp));
@@ -236,19 +263,32 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
         const multiplier = hasMaskedMultiplier ? maskedMultiplier : randInt(minMultiplier, maxMultiplier);
         if (multiplier <= 0 || multiplier > maxMultiplier) return null;
 
-        const maxMultiplicandScaled = Math.floor((maxVal * s) / multiplier);
+        // A fractional multiplier shrinks the product, so the multiplicand itself is what the max bounds
+        const maxMultiplicandScaled = Math.floor((maxVal * s) / Math.max(multiplier, 1));
         if (maxMultiplicandScaled < s) return null;
 
+        // Scaled integers keep the key exact: the product needs dp decimals only when
+        // multiplicandScaled × multiplierScaled is a multiple of s, so step to such multiplicands
+        const multiplierScaled = Math.round(multiplier * s);
+        const step = s / gcd(multiplierScaled, s);
         const mask0 = getMask(c, 0);
         const hasMask0 = Object.values(mask0).some(v => v);
         const masked = applyMask(mask0, maxMultiplicandScaled / s, dp);
         // if mask was set but generated value is out of range, retry instead of falling back to random
         if (hasMask0 && masked === null) return null;
-        const multiplicand = masked !== null
-            ? masked
-            : parseFloat((randInt(s, maxMultiplicandScaled) / s).toFixed(dp));
+        let multiplicandScaled: number;
+        if (masked !== null) {
+            multiplicandScaled = Math.round(masked * s);
+            if (multiplicandScaled % step !== 0) return null;
+        } else {
+            const lo = Math.ceil(s / step);
+            const hi = Math.floor(maxMultiplicandScaled / step);
+            if (lo > hi) return null;
+            multiplicandScaled = randInt(lo, hi) * step;
+        }
+        const multiplicand = parseFloat((multiplicandScaled / s).toFixed(dp));
 
-        const answer = parseFloat((multiplicand * multiplier).toFixed(dp));
+        const answer = Math.round((multiplicandScaled * multiplierScaled) / s) / s;
         const mcLen = String(Math.round(multiplicand)).replace('.', '').length;
         const mlLen = String(multiplier).length;
         if (!isDecimal && mcLen < mlLen) {
@@ -275,6 +315,8 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     if (divisor <= 0) return null;
     // for unmasked integer divisors enforce minimum of 2
     if (!hasMaskedDivisor && divisor < 2) return null;
+    // A divisor of 1 is no cijfer sum (and leaves no room for a remainder); a mask digit can still roll a 1
+    if (!isDecimal && divisor < 2) return null;
 
     if (isDecimal) {
         const maskDiv = getMask(c, 0);
@@ -295,7 +337,10 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
             if (divisor * 2 > maxVal) return null;
             dividend = randInt(divisor * 2, maxVal);
         }
+        // a fractional divisor makes randInt's offset overshoot the max; a quotient that truncates to 0 is no sum
+        if (dividend > maxVal) return null;
         const { quotient, remainder } = divideToDecimals(dividend, divisor, dp);
+        if (quotient <= 0) return null;
         return { id: genId(), operands: [dividend, divisor], operator: ':', answer: quotient, remainder, isManuallyEdited: false };
     }
 

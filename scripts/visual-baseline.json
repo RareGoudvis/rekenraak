@@ -578,32 +578,32 @@
   },
   "cijferen-vermenigvuldigen-dec-w1-s0": {
    "cellHeightPx": 950,
-   "intrinsicPx": 201,
+   "intrinsicPx": 151,
    "textHash": "4acb9e634ee2744f"
   },
   "cijferen-vermenigvuldigen-dec-w1-s1": {
    "cellHeightPx": 950,
-   "intrinsicPx": 201,
+   "intrinsicPx": 151,
    "textHash": "4acb9e634ee2744f"
   },
   "cijferen-vermenigvuldigen-dec-w2-s0": {
-   "cellHeightPx": 950,
-   "intrinsicPx": 201,
+   "cellHeightPx": 510,
+   "intrinsicPx": 301,
    "textHash": "4acb9e634ee2744f"
   },
   "cijferen-vermenigvuldigen-dec-w2-s1": {
-   "cellHeightPx": 950,
-   "intrinsicPx": 201,
+   "cellHeightPx": 510,
+   "intrinsicPx": 301,
    "textHash": "4acb9e634ee2744f"
   },
   "cijferen-vermenigvuldigen-dec-w4-s0": {
-   "cellHeightPx": 510,
-   "intrinsicPx": 576,
+   "cellHeightPx": 290,
+   "intrinsicPx": 601,
    "textHash": "4acb9e634ee2744f"
   },
   "cijferen-vermenigvuldigen-dec-w4-s1": {
-   "cellHeightPx": 510,
-   "intrinsicPx": 576,
+   "cellHeightPx": 290,
+   "intrinsicPx": 601,
    "textHash": "4acb9e634ee2744f"
   },
   "cijferen-vermenigvuldigen-nat-w1-s0": {
@@ -638,63 +638,63 @@
   },
   "controleren-negenproef-w1-s0": {
    "cellHeightPx": 288,
-   "intrinsicPx": 584,
-   "textHash": "24d7bb23add5bb89"
+   "intrinsicPx": 501,
+   "textHash": "409c143400b0c9b7"
   },
   "controleren-negenproef-w1-s1": {
    "cellHeightPx": 288,
-   "intrinsicPx": 584,
-   "textHash": "e10f6229d8383339"
+   "intrinsicPx": 501,
+   "textHash": "3d463219c835264b"
   },
   "controleren-negenproef-w2-s0": {
    "cellHeightPx": 288,
-   "intrinsicPx": 584,
-   "textHash": "24d7bb23add5bb89"
+   "intrinsicPx": 501,
+   "textHash": "409c143400b0c9b7"
   },
   "controleren-negenproef-w2-s1": {
    "cellHeightPx": 288,
-   "intrinsicPx": 584,
-   "textHash": "e10f6229d8383339"
+   "intrinsicPx": 501,
+   "textHash": "3d463219c835264b"
   },
   "controleren-negenproef-w4-s0": {
    "cellHeightPx": 288,
-   "intrinsicPx": 584,
-   "textHash": "24d7bb23add5bb89"
+   "intrinsicPx": 501,
+   "textHash": "409c143400b0c9b7"
   },
   "controleren-negenproef-w4-s1": {
    "cellHeightPx": 288,
-   "intrinsicPx": 584,
-   "textHash": "e10f6229d8383339"
+   "intrinsicPx": 501,
+   "textHash": "3d463219c835264b"
   },
   "controleren-omgekeerde-w1-s0": {
    "cellHeightPx": 338,
    "intrinsicPx": 171,
-   "textHash": "3cb530759ddfa8f3"
+   "textHash": "bc5b94a508a68a55"
   },
   "controleren-omgekeerde-w1-s1": {
    "cellHeightPx": 330,
    "intrinsicPx": 173,
-   "textHash": "347b654c6f95198d"
+   "textHash": "7999bdf4f3169a2a"
   },
   "controleren-omgekeerde-w2-s0": {
    "cellHeightPx": 338,
    "intrinsicPx": 171,
-   "textHash": "3cb530759ddfa8f3"
+   "textHash": "bc5b94a508a68a55"
   },
   "controleren-omgekeerde-w2-s1": {
    "cellHeightPx": 330,
    "intrinsicPx": 173,
-   "textHash": "347b654c6f95198d"
+   "textHash": "7999bdf4f3169a2a"
   },
   "controleren-omgekeerde-w4-s0": {
    "cellHeightPx": 338,
    "intrinsicPx": 171,
-   "textHash": "3cb530759ddfa8f3"
+   "textHash": "bc5b94a508a68a55"
   },
   "controleren-omgekeerde-w4-s1": {
    "cellHeightPx": 330,
    "intrinsicPx": 173,
-   "textHash": "347b654c6f95198d"
+   "textHash": "7999bdf4f3169a2a"
   },
   "deelbaarheid-kleurraster-w1-s0": {
    "cellHeightPx": 757,
@@ -2707,34 +2707,34 @@
    "textHash": "1f323d4b0cf1bec7"
   },
   "oppervlakte-rooster-w1-s0": {
-   "cellHeightPx": 1117,
+   "cellHeightPx": 700,
    "intrinsicPx": 382,
-   "textHash": "4eeacebb231b7e2a"
+   "textHash": "8b96cd1fe88acea4"
   },
   "oppervlakte-rooster-w1-s1": {
-   "cellHeightPx": 1097,
+   "cellHeightPx": 690,
    "intrinsicPx": 382,
-   "textHash": "72e74995681cdd4c"
+   "textHash": "b1d03b969375957f"
   },
   "oppervlakte-rooster-w2-s0": {
-   "cellHeightPx": 1117,
+   "cellHeightPx": 700,
    "intrinsicPx": 382,
-   "textHash": "4eeacebb231b7e2a"
+   "textHash": "8b96cd1fe88acea4"
   },
   "oppervlakte-rooster-w2-s1": {
-   "cellHeightPx": 1097,
+   "cellHeightPx": 690,
    "intrinsicPx": 382,
-   "textHash": "72e74995681cdd4c"
+   "textHash": "b1d03b969375957f"
   },
   "oppervlakte-rooster-w4-s0": {
-   "cellHeightPx": 1117,
+   "cellHeightPx": 700,
    "intrinsicPx": 382,
-   "textHash": "4eeacebb231b7e2a"
+   "textHash": "8b96cd1fe88acea4"
   },
   "oppervlakte-rooster-w4-s1": {
-   "cellHeightPx": 1097,
+   "cellHeightPx": 690,
    "intrinsicPx": 382,
-   "textHash": "72e74995681cdd4c"
+   "textHash": "b1d03b969375957f"
   },
   "patronen-dec-w1-s0": {
    "cellHeightPx": 334,
@@ -3127,64 +3127,64 @@
    "textHash": "5b6bcfda798e094c"
   },
   "schattend-dec-w1-s0": {
-   "cellHeightPx": 401,
-   "intrinsicPx": 355,
-   "textHash": "f4de5351dca5d01e"
+   "cellHeightPx": 393,
+   "intrinsicPx": 353,
+   "textHash": "c00c327c792be76a"
   },
   "schattend-dec-w1-s1": {
-   "cellHeightPx": 368,
-   "intrinsicPx": 355,
-   "textHash": "6b865f1dd03cc886"
+   "cellHeightPx": 360,
+   "intrinsicPx": 353,
+   "textHash": "08d6fdcfbb8629bd"
   },
   "schattend-dec-w2-s0": {
-   "cellHeightPx": 401,
-   "intrinsicPx": 355,
-   "textHash": "f4de5351dca5d01e"
+   "cellHeightPx": 393,
+   "intrinsicPx": 353,
+   "textHash": "c00c327c792be76a"
   },
   "schattend-dec-w2-s1": {
-   "cellHeightPx": 368,
-   "intrinsicPx": 355,
-   "textHash": "6b865f1dd03cc886"
+   "cellHeightPx": 360,
+   "intrinsicPx": 353,
+   "textHash": "08d6fdcfbb8629bd"
   },
   "schattend-dec-w4-s0": {
-   "cellHeightPx": 401,
-   "intrinsicPx": 355,
-   "textHash": "f4de5351dca5d01e"
+   "cellHeightPx": 393,
+   "intrinsicPx": 353,
+   "textHash": "c00c327c792be76a"
   },
   "schattend-dec-w4-s1": {
-   "cellHeightPx": 368,
-   "intrinsicPx": 355,
-   "textHash": "6b865f1dd03cc886"
+   "cellHeightPx": 360,
+   "intrinsicPx": 353,
+   "textHash": "08d6fdcfbb8629bd"
   },
   "schattend-nat-w1-s0": {
-   "cellHeightPx": 401,
-   "intrinsicPx": 376,
-   "textHash": "f43aab3705f015bb"
+   "cellHeightPx": 393,
+   "intrinsicPx": 374,
+   "textHash": "dbafab38b558bba3"
   },
   "schattend-nat-w1-s1": {
-   "cellHeightPx": 368,
-   "intrinsicPx": 376,
-   "textHash": "130438adbf6b09b5"
+   "cellHeightPx": 360,
+   "intrinsicPx": 374,
+   "textHash": "41e776f3a3b4a89e"
   },
   "schattend-nat-w2-s0": {
-   "cellHeightPx": 401,
-   "intrinsicPx": 376,
-   "textHash": "f43aab3705f015bb"
+   "cellHeightPx": 393,
+   "intrinsicPx": 374,
+   "textHash": "dbafab38b558bba3"
   },
   "schattend-nat-w2-s1": {
-   "cellHeightPx": 368,
-   "intrinsicPx": 376,
-   "textHash": "130438adbf6b09b5"
+   "cellHeightPx": 360,
+   "intrinsicPx": 374,
+   "textHash": "41e776f3a3b4a89e"
   },
   "schattend-nat-w4-s0": {
-   "cellHeightPx": 401,
-   "intrinsicPx": 376,
-   "textHash": "f43aab3705f015bb"
+   "cellHeightPx": 393,
+   "intrinsicPx": 374,
+   "textHash": "dbafab38b558bba3"
   },
   "schattend-nat-w4-s1": {
-   "cellHeightPx": 368,
-   "intrinsicPx": 376,
-   "textHash": "130438adbf6b09b5"
+   "cellHeightPx": 360,
+   "intrinsicPx": 374,
+   "textHash": "41e776f3a3b4a89e"
   },
   "splitsen-basis-w1-s0": {
    "cellHeightPx": 879,
