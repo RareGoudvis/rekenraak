@@ -42,6 +42,8 @@ const BRIDGE_SETS = [
     { TM: 'REQUIRED' },
 ];
 const MASKS = [{}, { E: true }, { T: true, E: true }, { M: true, E: true }, { HM: true }];
+// Decimal places too ('t' = tienden, 'h' = honderdsten); on a natural block they are stale and ignored.
+const DEC_MASKS = [{}, { E: true }, { T: true }, { t: true }, { E: true, h: true }];
 
 // hoofdrekenen: AdditionConfig/SubtractionConfig + addition/{Natural,Decimal,Rational}Settings
 // + HrPresetRow. All four operations share one plugin family and one defaults factory.
@@ -54,11 +56,19 @@ const hrShared: OptionSpace = {
     operand1Mask: MASKS,
     operand2Mask: MASKS,
     termCount: [2, 3, 4],
-    fractionDifficulty: ['same', 'multiple', 'different'],
+    // addition/NaturalSettings per-term rows: a ceiling per term (null = vrij) and a mask per term.
+    operandMax: [[], [50], [null, 30], [20, 20, 20, 20]],
+    operandMasks: [[], [{}, {}, { H: true }], [{ E: true }, { T: true }, { E: true }, { E: true }]],
+    equationType: ['normal', 'puntoefening'],
+    // HrStdStyleConfig: 'one_step' = ongelijknamig (eenvoudig), 'multi_step' = (moeilijk).
+    fractionDifficulty: ['same', 'one_step', 'multi_step'],
     mixedNumber1: [false, true],
     mixedNumber2: [false, true],
     maxNumerator1: [5, 10, 20],
     maxDenominator1: [4, 10, 20],
+    // RationalSettings' second operand row when the fractions are not linked.
+    maxNumerator2: [1, 10, 20],
+    maxDenominator2: [2, 4, 10, 20],
     linkFractions: [true, false],
 };
 
@@ -77,8 +87,13 @@ const hrMulDiv: OptionSpace = {
     selectedTables: [[2, 3, 4, 5, 10], [7], [0, 1, 2, 11, 12, 25, 50, 75]],
     tableLimit: [10, 20, 50, 100],
     fractionMultMode: ['natural_fraction', 'fraction_fraction', 'decimal_fraction'],
+    fractionOrderMode: ['AB', 'BA', 'beide'],
     preset: ['vrij', 'tienvoud'],
     presetFactors: [[10], [10, 100, 1000]],
+    excludeOne: [false, true],
+    // multiplication/NaturalSettings 'Met rest' niveau and the 'andere' delen niveaus (N1-N6).
+    metRestLevel: [1, 2, 3],
+    divisionLevels: [[], [1], [6], [1, 2, 3, 4, 5, 6]],
 };
 
 // GemengdConfig — one block that mixes variants (operator + optional preset). The leaves
@@ -102,6 +117,7 @@ const hrMixed: OptionSpace = {
         {},
         { x: { selectedTables: [7] } },
         { '+': { maxGetal: 20 }, ':': { tableLimit: 5 } },
+        { x: { multiplicationMode: 'andere' }, ':': { multiplicationMode: 'met_rest', selectedTables: [7], metRestLevel: 3 } },
     ],
 };
 
@@ -116,6 +132,10 @@ const cijferSpace: OptionSpace = {
     numberOfTerms: [2, 3, 4],
     scaffolding: [0, 3],
     bridges: BRIDGE_SETS,
+    // 'Specifieke getalopbouw' per getal: operand0Mask = Getal 1, operand1Mask = Getal 2, …
+    operand0Mask: DEC_MASKS,
+    operand1Mask: DEC_MASKS,
+    operand2Mask: [{}, { T: true }],
 };
 
 const clockSpace: OptionSpace = {
@@ -142,7 +162,8 @@ const fractionSpace: OptionSpace = {
     answerFormat: ['fraction-questions', 'met-hulp', 'met-berekening'],
     answerMode: ['berekeningslijnen', 'structuurlijnen', 'blanco'],
     level: [1, 2],
-    maxTotal: [10, 20, 60],
+    // 2 sits below a noemer of 3: the edge where no multiple of the noemer fits.
+    maxTotal: [2, 10, 20, 60],
     maxAbstractN3: [100, 1000],
     minLineLength: [2, 4],
     maxLineLength: [8, 12, 20],
@@ -172,6 +193,10 @@ const geldSpace: OptionSpace = {
     allowedDenominations: [
         [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5],
         [200, 100, 50, 20, 10, 5],
+        // Degenerate pickers a teacher can still click: nothing ticked, one coin, one big bill.
+        [],
+        [5],
+        [50000],
     ],
 };
 
@@ -182,7 +207,7 @@ const geldWisselSpace: OptionSpace = {
 const geldTeruggevenSpace: OptionSpace = {
     minPriceEuros: [1],
     maxPriceEuros: [9, 49, 99, 999],
-    payWithOptions: [[1000], [1000, 2000, 5000], [5000, 10000, 20000, 50000]],
+    payWithOptions: [[500], [1000], [1000, 2000, 5000], [5000, 10000, 20000, 50000]],
     centenDeel: ['vijfentwintig', 'tien', 'vijf'],
     scaffolding: ['ingevuld', 'leeg'],
     antwoordType: ['schrijven', 'tekenen-schrijven'],
@@ -204,6 +229,7 @@ const ordenenSpace: OptionSpace = {
     operatorMode: ['oplopend', 'aflopend', 'beide'],
     maxGetal: union(RANGES.ordenen),
     decimalPlaces: [1, 2, 3],
+    numberMask: [{}, { E: true }, { D: true }, { T: true, t: true }],
     unitFractionsOnly: [false, true],
     allowMixed: [false, true],
     answerStyle: ['lijn', 'vak'],
@@ -212,11 +238,14 @@ const ordenenSpace: OptionSpace = {
 const breukBewerkSpace: OptionSpace = {
     subType: ['gemengd', 'gelijknamig', 'vereenvoudigen'],
     direction: ['naar-gemengd', 'naar-breuk', 'beide'],
-    minDenominator: [2, 3],
+    // 6 meets maxDenominator 6: the 'van X tot X' range.
+    minDenominator: [2, 3, 6],
     maxDenominator: [6, 10, 20],
-    maxNumerator: [5, 10, 30],
+    maxNumerator: [1, 2, 5, 10, 30],
     tablesOnly: [true, false],
     allowIrreducible: [false, true],
+    // 'Vaste gemeenschappelijke noemer' ('' = the KGV).
+    targetDen: ['', 2, 7, 12],
 };
 
 const breukenRangschikkenSpace: OptionSpace = {
@@ -229,11 +258,18 @@ const breukenRangschikkenSpace: OptionSpace = {
 };
 
 const patroonSpace: OptionSpace = {
-    numberType: ['natural', 'decimal'],
+    numberType: ['natural', 'decimal', 'geheel'],
     maxGetal: union(RANGES.patronen),
     ticks: [4, 6, 10],
     steps: [1, 2, 3, 4],
     ops: [['+'], ['-'], ['x'], [':'], ['+', '-'], ['+', '-', 'x', ':']],
+    // PatroonConfig per-operator rows: 'Stap (max)' plus an optional getalopbouw mask for + / −.
+    opSettings: [
+        {},
+        { '+': { max: 50, mask: { H: true, T: true } } },
+        { '+': { max: 1, mask: {} }, '-': { max: 5, mask: { E: true } } },
+        { x: { max: 3, mask: {} }, ':': { max: 12, mask: {} } },
+    ],
     maxDecimals: [1, 2],
     showArrows: [false, true],
     showOperators: [false, true],
@@ -244,7 +280,9 @@ const kettingSpace: OptionSpace = {
     numberType: ['natural'],
     maxGetal: union(RANGES.ketting),
     chainLength: [2, 4, 6],
-    ops: [['+'], ['+', '-'], ['+', '-', 'x', ':']],
+    ops: [['+'], ['+', '-'], ['x'], [':'], ['+', '-', 'x', ':']],
+    // KettingConfig 'max' per + / − operator.
+    opSettings: [{}, { '+': { max: 10 }, '-': { max: 10 } }, { '+': { max: 50 }, '-': { max: 50 } }],
     blankMiddle: [false, true],
     showArrows: [true, false],
     operatorStyle: ['symbol', 'full'],
@@ -276,7 +314,9 @@ const getallenasSpace: OptionSpace = {
     step: [1, 2, 5, 10, 25, 50, 100, 0.1, 0.5],
     direction: ['right', 'left', 'beide'],
     hardMode: [false, true],
-    ticks: [4, 6, 10],
+    ticks: [4, 5, 6, 7, 8, 9, 10],
+    // Ondergrens (gehele getallen only; the other number types ignore it).
+    minGetal: [0, -50, -1000],
 };
 
 const getallenrijSpace: OptionSpace = {
@@ -284,7 +324,7 @@ const getallenrijSpace: OptionSpace = {
     maxGetal: union(RANGES.getallenrijen),
     numberMask: MASKS,
     fractionStep: [2, 4, 10],
-    maxTeller: [10, 25],
+    maxTeller: [1, 3, 10, 25],
     showFrame: [true, false],
 };
 
@@ -292,7 +332,8 @@ const metenSpace: OptionSpace = {
     measureModel: ['meten', 'gegeven'],
     precision: ['cm', 'mm'],
     minLength: [2, 3],
-    maxLength: [6, 10, 18],
+    // 2 is the slider's low edge, where the fixed-size shapes (trapezium, cirkel) overshoot.
+    maxLength: [2, 6, 10, 18],
     maxCorners: [0, 1, 2, 3, 4],
     perSideScaffold: [false, true],
     answerMode: ['single', 'sum'],
@@ -302,14 +343,15 @@ const metenSpace: OptionSpace = {
         ['driehoek', 'rechthoek', 'vierkant'],
         ['cirkel'],
         ['ruit', 'parallellogram', 'trapezium'],
+        ['rechthoek'],
     ],
 };
 
 const oppervlakteSpace: OptionSpace = {
     subType: ['rooster', 'berekenen'],
     shapes: [['rechthoek'], ['rechthoek', 'vierkant'], ['l-figuur'], ['rechthoekige-driehoek']],
-    minLength: [2],
-    maxLength: [5, 8, 12],
+    minLength: [2, 3],
+    maxLength: [3, 4, 5, 8, 12],
     askOmtrek: [false, true],
     scaffoldFormule: [true, false],
 };
@@ -344,6 +386,9 @@ const vergelijkenSpace: OptionSpace = {
     decimalPlaces: [0, 1, 2],
     leftRep: ['breuk', 'kommagetal', 'plaatswaarde', 'woorden'],
     rightRep: ['breuk', 'kommagetal', 'plaatswaarde', 'woorden'],
+    // representaties: per-side getalopbouw (the breuk side has its own teller/noemer caps).
+    leftMask: [{}, { T: true }, { E: true, t: true }],
+    rightMask: [{}, { T: true }, { E: true, t: true }],
 };
 
 const afrondenSpace: OptionSpace = {
@@ -384,8 +429,8 @@ const schattendSpace: OptionSpace = {
     operators: [['+'], ['-'], ['x'], [':'], ['+', '-'], ['+', '-', 'x', ':']],
     numberType: ['natural', 'decimal'],
     maxGetal: union(RANGES.schattendNatural, RANGES.decimal),
-    decimalPlaces: [1, 2],
-    roundTargets: [['T'], ['H'], ['D'], ['T', 'H'], ['E']],
+    decimalPlaces: [1, 2, 3],
+    roundTargets: [['T'], ['H'], ['D'], ['T', 'H'], ['E'], ['t'], ['h']],
     scaffolding: ['tussenstappen', 'enkel-schatting'],
     answerLine: ['kort', 'lang'],
 };
@@ -399,7 +444,7 @@ const verbandenSpace: OptionSpace = {
 
 const procentenSpace: OptionSpace = {
     subType: ['nemen', 'welk-percent'],
-    percents: [[10], [10, 25, 50], [1, 5, 20, 75, 100]],
+    percents: [[10], [10, 25, 50], [1, 5, 20, 75, 100], [1], [5], [100], [1, 5, 10, 20, 25, 50, 75, 100]],
     maxGetal: union(RANGES.procenten),
     scaffold: [false, true],
 };
@@ -419,7 +464,7 @@ const geldRekenenSpace: OptionSpace = {
 };
 
 const rekenvolgordeSpace: OptionSpace = {
-    operators: [['+', '-'], ['+', '-', 'x'], ['+', '-', 'x', ':']],
+    operators: [['+', '-'], ['+', '-', 'x'], ['+', '-', 'x', ':'], ['x'], [':'], ['x', ':']],
     haakjesMode: ['GEEN', 'MAG', 'MOET'],
     opsCount: [2, 3, 4],
     maxGetal: union(RANGES.rekenvolgorde),

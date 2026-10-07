@@ -18,6 +18,7 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | File | What it guards |
 |---|---|
 | `generators.matrix.test.ts` | Every generator runs, across every constraint option. See below. |
+| `limits.matrix.test.ts` | Every generated number stays inside the limit the config promises (max, noemer, zijden, per-term max, …), the block is full, keys are right. Known bugs are listed, not failed. See "The limit harness" below. |
 | `generators.answers.test.ts` | The answer follows from the question: mathEngine ops (incl. fractions, decimals, multi-term chains, division remainder), bruggetjes, cijferen, splitsen sums, breuken-bewerken equivalence, ordenen ordering, deelbaarheid, procenten, verbanden, tijdsduur, kalender, negenproef, herleidingen unit factors. |
 | `geldKey.test.ts` | geld-herkennen key == the money drawn: Σ coupures == `amountCents` (≤ 12 items) and the printed key parses back to it, over 8 settings × 60 seeds; 'euros' format draws whole euros; geld-tekenen too. |
 | `afrondenRound.test.ts` | `roundTo` rounds half up in every place: every x,xx and x,xxx value 0–1000 to E/t/h and every natural 0–100 000 to T/H/D/TD, and sampled naturals up to 1e9 (plus the half-way values) to every natural target up to 1MLD, against an integer/string reference (97,05 → t = 97,1). |
@@ -80,8 +81,36 @@ says when an entry passes again so it can be deleted. Empty since the 1e9 genera
 recorded instead of failed — the run ends with a `[matrix]` table listing every constraint
 set that under-produced. Read that table; a new line in it usually means a real narrowing.
 
+A setting matching a `KNOWN_SKIPS` entry in `limits.knownBugs.ts` (a known hang or crash) is
+not run here; the limit harness tracks it.
+
 `KNOWN_THROWS` at the top of the file lists generators that crash on a reachable setting.
 Each entry names the file and line. Remove the entry when the generator is fixed.
+
+## The limit harness (`limits.matrix.test.ts`, `npm run limits:audit`)
+
+The generator matrix proves a generator survives a setting; the limit harness proves it keeps
+the setting's promise. "Maximum uitkomst 100" means no answer above 100, "Max. noemer 4" means no
+noemer 5, "Zijden tot 10 cm" means no 11 cm side.
+
+| File | Role |
+|---|---|
+| `helpers/limitRules.ts` | The rule book. Per generating typeId (`LIMIT_SPECS`): an extractor (operands, answers, intermediates, every printed number, never ids) and the rules that encode its config's promise, each returning `{ rule, observed, limit, example }`. Generic checks for every type in `checkLimits`: `underfill` / `overfill`, `non-finite`, `empty-exercise`, `malformed`. Answer keys (`answer-key`) are checked wherever the key can be recomputed. The header lists the owner's "not a violation" calls; they are deliberately absent. `GRADE1_MAX_20_TYPES` is the data for the Leerjaar-1 = 20 rule (L20). |
+| `helpers/answerKeys.ts` | The arithmetic both this harness and `generators.answers.test.ts` check keys with. |
+| `helpers/limitHarness.ts` | The runner. `runCase` builds the block like the store (`makeBlock`, grade base, leaf id), generates under a seeded `Math.random` (mulberry32, restored after), times it (`slow` above 2 s), checks it and labels every violation with its known-bug id. Also the case lists: `leafGradeCases` (every leaf × no grade + Leerjaar 1-6), `pairwiseCases` (the matrix's rows, the max snapped into the list that combo's picker shows: `reachableMax`), `triggerCases`, plus `comboKey` / `stableStringify` / `normalizeForDump`. |
+| `limits.knownBugs.ts` | One `KNOWN_BUGS` entry per open BUGS.md id (`{ id, typeIds, rules, match(typeId, c, grade) }`; `c` = the block's effective constraints) and `KNOWN_SKIPS` for a hang ([E1], never run anywhere) or crash ([E2], skipped by the generator matrix, caught here). `skip()` is what `generators.matrix.test.ts` consults. A gemengd rule carries its variant after `@` (`answer>max@x:tienvoud`); an entry rule without `@` covers every variant. |
+| `scripts/limit-trigger-cases.json` | ≥ 1 repro per id: `{ bugId, leafId, typeId, constraints, grade, seed, note }`, run at the leaf's default count. `constraints` is the whole override (leaf defaults included). Shared with the screenshot tool: keep the shape. |
+
+The gate (`npm run check`, ~6 s): every leaf × leerjaar plus every pairwise row, seed 1234, and
+every trigger case. It fails on (1) any violation no `KNOWN_BUGS` entry matches, printed as
+`<typeId> <comboKey> grade= seed=: <rule> observed … limit … :: <example>`, and (2) a known
+bug that no longer reproduces on its trigger cases: `known bug L7 no longer reproduces: delete
+its entry …`. So a fix commit deletes the entry and its BUGS.md line; the trigger case stays as a
+regression guard. A new bug the harness finds gets a BUGS.md line (`[Nx]`), an entry and a trigger
+case. A hang cannot prove it still hangs: delete an `E1`-style skip by hand once fixed.
+
+When a rule is wrong rather than the generator, fix the rule (and say why in one line); when a
+setting is out of reach in the UI, fix `constraintSpace.ts` or `reachableMax`, never the entry.
 
 ## The stale-settings sweep (`viewers.stale.test.tsx`)
 
