@@ -1,6 +1,7 @@
 import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
+import { formatSignedInt } from '../../../services/math/formatters';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import { presetLabel } from '../../../config/numberRanges';
@@ -86,7 +87,7 @@ export default function OrdenenConfig({ block }: Props) {
             {/* GEHELE GETALLEN — lower bound slider, down to -maxGetal */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <label style={styles.label}>Ondergrens: {lowerBound.toLocaleString('nl-BE')}</label>
+                    <label style={styles.label}>Ondergrens: {formatSignedInt(lowerBound)}</label>
                     <input
                         type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound}
@@ -94,7 +95,7 @@ export default function OrdenenConfig({ block }: Props) {
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
                     />
                     {lowerBound < -maxGetal && (
-                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (−${maxGetal.toLocaleString('nl-BE')} tot ${maxGetal.toLocaleString('nl-BE')}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
+                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (${formatSignedInt(-maxGetal)} tot ${formatSignedInt(maxGetal)}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
                     )}
                 </div>
             )}

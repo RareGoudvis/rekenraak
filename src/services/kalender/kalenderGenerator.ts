@@ -69,6 +69,13 @@ function buildQuestions(year: number, month: number, questionTypes: string[], am
     return qs;
 }
 
+export function kalenderShortNote(fewest: number, asked: number): string | null {
+    if (fewest >= asked) return null;
+    return fewest === 1
+        ? `Bij deze vraagsoorten is er maar 1 vraag per rooster mogelijk (gevraagd: ${asked}).`
+        : `Bij deze vraagsoorten zijn er maar ${fewest} verschillende vragen per rooster mogelijk (gevraagd: ${asked}).`;
+}
+
 export function generateKalenderExercises(block: MathBlock): KalenderExercise[] {
     return generateKalenderExercisesNoted(block).items;
 }
@@ -108,6 +115,6 @@ export function generateKalenderExercisesNoted(block: MathBlock): { items: Kalen
     }
     // A short question list (e.g. only 'tellen') cannot reach the asked count: say so instead of printing a thin rooster silently.
     const fewest = subType === 'maandrooster' ? out.reduce((m, e) => Math.min(m, e.questions?.length ?? questionCount), questionCount) : questionCount;
-    const note = fewest < questionCount ? `Bij deze vraagsoorten zijn er maar ${fewest} verschillende ${fewest === 1 ? 'vraag' : 'vragen'} per rooster mogelijk (gevraagd: ${questionCount}).` : null;
+    const note = kalenderShortNote(fewest, questionCount);
     return { items: out, note };
 }

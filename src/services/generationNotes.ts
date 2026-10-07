@@ -1,5 +1,5 @@
 // Teacher-facing notes a generator attaches when it could not do exactly what the settings ask.
-// SYNC: the duplicate wording mirrors shortNote() in generateDispatch.ts ("Kleine reeks: …").
+// One source for the "Kleine reeks" wording: generateDispatch and the generators' own repeat fills use it.
 export const countOefeningen = (n: number) => `${n} oefening${n === 1 ? '' : 'en'}`;
 
 export function repeatNote(repeats: number): string | null {

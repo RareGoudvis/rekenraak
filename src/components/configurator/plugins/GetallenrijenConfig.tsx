@@ -4,6 +4,7 @@ import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
+import { formatSignedInt } from '../../../services/math/formatters';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import FractionMaxField from './FractionMaxField';
 import PopupSelect from '../../ui/PopupSelect';
@@ -129,7 +130,7 @@ export default function GetallenrijenConfig({ block }: Props) {
             {/* GEHELE GETALLEN — lower bound */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <SettingLabel text={`Ondergrens: ${lowerBound.toLocaleString('nl-BE')}`} info="Het kleinste (negatieve) getal in de reeks." />
+                    <SettingLabel text={`Ondergrens: ${formatSignedInt(lowerBound)}`} info="Het kleinste (negatieve) getal in de reeks." />
                     <input
                         type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound}
@@ -137,7 +138,7 @@ export default function GetallenrijenConfig({ block }: Props) {
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
                     />
                     {lowerBound < -maxGetal && (
-                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (−${maxGetal.toLocaleString('nl-BE')} tot ${maxGetal.toLocaleString('nl-BE')}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
+                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (${formatSignedInt(-maxGetal)} tot ${formatSignedInt(maxGetal)}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
                     )}
                 </div>
             )}

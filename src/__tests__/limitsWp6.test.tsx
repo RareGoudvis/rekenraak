@@ -4,6 +4,8 @@ import { render, cleanup } from '@testing-library/react';
 import { makeBlock, generateFor } from './helpers/makeBlock';
 import { EXERCISE_UI } from '../config/exerciseUI';
 import { REGISTRY } from '../config/exerciseRegistry';
+import { kalenderShortNote } from '../services/kalender/kalenderGenerator';
+import { generateForBlock } from '../services/generateDispatch';
 import type { OrdenenExercise, GeldExercise, VerbandExercise } from '../services/math/types';
 
 // Limit-audit WP6: generators must never throw or come back empty on reachable settings.
@@ -85,12 +87,20 @@ describe('generation notes (never silently change what the teacher picked)', () 
     });
     test('kalender: fewer questions than asked is reported', () => {
         const r = noted('kalender', { subType: 'maandrooster', questionTypes: ['tellen'], questionCount: 5 }, 1);
-        expect(r.note).toBe('Bij deze vraagsoorten zijn er maar 1 verschillende vraag per rooster mogelijk (gevraagd: 5).');
+        expect(r.note).toBe('Bij deze vraagsoorten is er maar 1 vraag per rooster mogelijk (gevraagd: 5).');
+        expect(kalenderShortNote(3, 5)).toBe('Bij deze vraagsoorten zijn er maar 3 verschillende vragen per rooster mogelijk (gevraagd: 5).');
+        expect(kalenderShortNote(5, 5)).toBeNull();
     });
     test('repeat fills carry the duplicate note', () => {
         expect(noted('maateenheid', { grootheden: ['temperatuur'] }, 40).note).toMatch(/^Kleine reeks: \d+ oefeningen komen dubbel voor\.$/);
         expect(noted('herleidingen', { measure: 'lengte', units: ['hm', 'dam'], maxEnkel: 20, formats: ['enkel-getal'] }, 40).note).toMatch(/^Kleine reeks: 20 oefeningen komen dubbel voor\.$/);
         expect(noted('geld-teruggeven', { payWithOptions: [500], centenDeel: 'vijfentwintig' }, 40).note).toMatch(/^Kleine reeks: 28 oefeningen komen dubbel voor\.$/);
+    });
+    test('dispatch keeps its Kleine reeks wording (single source in generationNotes)', () => {
+        const block = makeBlock('maateenheid', { constraints: { grootheden: ['temperatuur'] }, block: { numberOfExercises: 40 } });
+        expect(generateForBlock(block, true).note).toMatch(/Kleine reeks: \d+ oefeningen komen dubbel voor\./);
+        const one = makeBlock('geld-teruggeven', { constraints: { payWithOptions: [500], minPriceEuros: 1, maxPriceEuros: 1, centenDeel: 'vijfentwintig' }, block: { numberOfExercises: 4 } });
+        expect(generateForBlock(one, true).note).toBe('Kleine reeks: 1 oefening komt dubbel voor.');
     });
     test('breuken-rangschikken: too few noemers for the count is reported', () => {
         const r = noted('breuken-rangschikken', { fractionMode: 'gelijknamig-te-maken', minDenominator: 7, maxDenominator: 7, count: 4 }, 3);
@@ -105,7 +115,8 @@ describe('L21 stale Ondergrens hint', () => {
         const stale = makeBlock(typeId, { constraints: { numberType: 'geheel', maxGetal: 100, minGetal: -1000 } });
         const { container, unmount } = render(<Config block={stale} />);
         expect(container.textContent).toMatch(HINT);
-        expect(container.textContent).toContain('−100 tot 100');
+        expect(container.textContent).toContain('(−100 tot 100)');
+        expect(container.textContent).toContain('Ondergrens: −1 000');
         unmount();
         const ok = makeBlock(typeId, { constraints: { numberType: 'geheel', maxGetal: 100, minGetal: -100 } });
         const r2 = render(<Config block={ok} />);
