@@ -226,9 +226,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP5 Result caps (rekenvolgorde/, schattend/, controleren/, procenten/)
 
-- [L18] controleren: owner rule as schattend, the result stays ≤ max. Today negenproef × is a in
-  [max/10, max] × b in [12, 99] → up to 91 × max ("577 × 65 = 37505" at 1000, 100 %); omgekeerde +
-  up to 1,9 × max (37 %). 2026-10-07
 - [E4a] Short / empty blocks: procenten 1 % at max 100 → 1 of 8, 5 % → 5 of 8, welk-percent [100] → 0. 2026-10-07
 
 ### WP6 Misc generators (herleidingen/, ordenen/, verbanden/, kalender/, geld/, breukenRangschikken)

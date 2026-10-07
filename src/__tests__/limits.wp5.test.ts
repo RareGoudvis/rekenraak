@@ -3,6 +3,7 @@ import type { MathBlock } from '../services/math/types';
 import { generateSchattendNoted } from '../services/schattend/schattendGenerator';
 import { targetsFor, roundTo } from '../services/afronden/afrondenGenerator';
 import { RANGES } from '../config/numberRanges';
+import { generateControleExercises } from '../services/controleren/controlerenGenerator';
 import { generateRekenvolgordeNoted } from '../services/rekenvolgorde/rekenvolgordeGenerator';
 
 const mk = (constraints: object, n: number): MathBlock => ({ constraints, numberOfExercises: n } as unknown as MathBlock);
@@ -79,4 +80,21 @@ describe('schattend limits', () => {
         expect(items.every(e => e.targetKey === 't')).toBe(true);
         expect(note).toBeTruthy();
     });
+});
+
+describe('controleren limits', () => {
+    for (const max of [...RANGES.controleren, 50, 100]) for (const subType of ['negenproef', 'omgekeerde']) for (const operators of [['+'], ['-'], ['+', '-']])
+        for (const foutAandeel of ['geen', 'helft', 'alles'])
+            it(`${subType} ${operators.join('')} max${max} ${foutAandeel}: result and shown answer <= max`, () => {
+                for (let seed = 0; seed < 3; seed++) {
+                    const items = generateControleExercises(mk({ subType, operators, maxGetal: max, foutAandeel }, 6));
+                    expect(items.length).toBe(6);
+                    for (const ex of items) {
+                        expect(ex.correctAnswer).toBeLessThanOrEqual(max);
+                        expect(ex.shownAnswer).toBeLessThanOrEqual(max);
+                        expect(ex.a).toBeLessThanOrEqual(max);
+                        if (ex.operator === 'x' && max >= 1000) { expect(ex.b).toBeGreaterThanOrEqual(12); expect(ex.a).toBeGreaterThanOrEqual(10); }
+                    }
+                }
+            });
 });
