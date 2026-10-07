@@ -32,6 +32,10 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
 
+- CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
+  `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of
+  `var(--text-muted)` (as do the Geld*/Herleidingen placeholders). Found by WP2. 2026-10-07
+
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
 - Blocks taller than one A4 page at their sidebar DEFAULTS, full width (clipped on paper): omtrek,
@@ -169,31 +173,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [E1] PAGE FREEZE: rational +/− 2 terms 'multi_step' (also reached when a 3-4 term chain relaxes to 2):
   the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
   divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
-
-### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
-
-- [L1] getallenas / getallenrijen run past the max whenever step × (ticks−1) > range: the ascending
-  branch anchors at lo and overruns hi (`upper = floor((hi−span)/stepN)`; descending clamps to `need`
-  and goes below lo). Repro: default leaf at Leerjaar 1 (max 20, step 5, 6 ticks) → 0…25; step 50 at
-  max 20 → 0…150. 819/6384 as-combos, 1881/16008 rij-combos, 100 % per combo. Fix: shrink the step or
-  the tick count (with a note) when the span cannot fit. 2026-10-07
-- [L9] getalpatronen: a per-op mask on + / − replaces "Stap (max)" (`buildOperand` mask branch ignores
-  `s.max`). Repro: opSettings['+'].max 50 + mask {H,T} → step 110. 2385 combos. 2026-10-07
-- [L10] getallenrijen rational: `maxTeller ≤ fractionStep` is silently replaced by 5·d (maxTeller 1, d 4
-  → rows up to 5 wholes); `ticks−1 > maxTeller` climbs past it (d 2, maxTeller 3, 6 ticks → 2 1/2);
-  descending with span > maxWholeUnits prints a NEGATIVE noemer ({n:1, d:−4}: maxTeller 5, d 4, ticks
-  9-10, direction links). 2026-10-07
-- [E5a] getalpatronen / kettingsommen fall back to a "+1" ladder (1, 2, 3, …) that ignores the chosen
-  operations: patronen with a lone ×, '−' + an H mask, tiny op max + mask (16 842/77 700 combos);
-  kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a
-  generation note. 2026-10-07
-
-- [E10] getallenrijen numberMask: after 80 attempts the anchor (first value) silently ignores the mask
-  (MASK_NOT_HONORED_ANCHOR, 1896 combos, e.g. decimal mask T + t, start 840). Fix: honour it or note
-  it. Found by WP2. 2026-10-07
-- [E11] A block whose generator legitimately produced 0 exercises (with a "Geen … mogelijk" note) still
-  shows "(Nog geen oefeningen — klik Genereer)" on the sheet, which contradicts the note. Found by
-  WP2. 2026-10-07
 
 ### WP3 Cijferen (cijferGenerator.ts)
 
