@@ -170,13 +170,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
   divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
 
-### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
-
-- [E5a] getalpatronen / kettingsommen fall back to a "+1" ladder (1, 2, 3, …) that ignores the chosen
-  operations: patronen with a lone ×, '−' + an H mask, tiny op max + mask (16 842/77 700 combos);
-  kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a
-  generation note. 2026-10-07
-
 ### WP3 Cijferen (cijferGenerator.ts)
 
 - [L3] cijferen-vermenigvuldigen-nat / -dec: when a "Specifieke getalopbouw" mask can't fit under the

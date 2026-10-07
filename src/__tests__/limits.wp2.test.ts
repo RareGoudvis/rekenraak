@@ -3,6 +3,7 @@ import type { GetallenasExercise, PatroonExercise, Fraction } from '../services/
 import { generateGetallenasExercisesNoted } from '../services/getallenas/getallenasGenerator';
 import { generateGetallenrijExercisesNoted } from '../services/getallenrij/getallenrijGenerator';
 import { generatePatroonExercisesNoted } from '../services/patroon/patroonGenerator';
+import { generateKettingExercisesNoted } from '../services/patroon/kettingGenerator';
 import { makeBlock, generateFor } from './helpers/makeBlock';
 
 // Limit-audit WP2: every value a row/pattern generator prints stays within the block's
@@ -160,5 +161,55 @@ describe('[L9] getalpatronen: "Stap (max)" bounds a masked +/− step', () => {
         seeded(11);
         expect(generatePatroonExercisesNoted(block('getalpatronen', { maxGetal: 1000, ops: ['+'], opSettings: { '+': { max: 50, mask: { H: true, T: true } } } })).note)
             .toBe('De getalopbouw bij optellen (H, T) past niet onder de grootste stap 50 en is genegeerd.');
+    });
+});
+
+describe('[E5a] getalpatronen / kettingsommen keep the chosen operations', () => {
+    test('getalpatronen with a lone × stays a × pattern within the max', () => {
+        for (const seed of SEEDS) {
+            seeded(seed);
+            const items = patterns('getalpatronen', { maxGetal: 100, ticks: 7, ops: ['x'], opSettings: { x: { max: 12, mask: {} } } });
+            expect(items).toHaveLength(20);
+            for (const ex of items) {
+                expect(ex.cycle.every(st => st.op === 'x')).toBe(true);
+                expectPatternWithin(ex, 1, 100);
+            }
+        }
+    });
+
+    test('getalpatronen that cannot fit gives fewer patterns and says so', () => {
+        for (const seed of SEEDS) {
+            seeded(seed);
+            const items = patterns('getalpatronen', { maxGetal: 100, ticks: 6, ops: ['-'], opSettings: { '-': { max: 1000, mask: { H: true } } } });
+            for (const ex of items) {
+                expect(ex.cycle.every(st => st.op === '-')).toBe(true);
+                expectPatternWithin(ex, 1, 100);
+            }
+        }
+        seeded(11);
+        const { items, note } = generatePatroonExercisesNoted(block('getalpatronen', { maxGetal: 100, ticks: 6, ops: ['-'], opSettings: { '-': { max: 1000, mask: { H: true } } } }));
+        expect(items).toHaveLength(0);
+        expect(note).toBe('Geen patroon mogelijk met deze bewerkingen tussen 1 en 100.');
+    });
+
+    for (const op of ['x', ':']) {
+        test(`kettingsommen with only ${op} at max 20 keeps ${op}`, () => {
+            for (const seed of SEEDS) {
+                seeded(seed);
+                const items = patterns('kettingsommen', { maxGetal: 20, chainLength: 4, ops: [op] });
+                expect(items).toHaveLength(20);
+                for (const ex of items) {
+                    expect(ex.cycle.every(st => st.op === op)).toBe(true);
+                    expectPatternWithin(ex, 0, 20);
+                }
+            }
+        });
+    }
+
+    test('kettingsommen that cannot fit gives no chain and says so', () => {
+        seeded(11);
+        const { items, note } = generateKettingExercisesNoted(block('kettingsommen', { maxGetal: 20, chainLength: 5, ops: ['x'] }));
+        expect(items).toHaveLength(0);
+        expect(note).toBe('Geen kettingsom mogelijk met deze bewerkingen tot 20.');
     });
 });
