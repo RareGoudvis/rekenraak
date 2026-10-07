@@ -50,6 +50,8 @@ for (let idx = 0; idx < cases.length; idx++) {
     const walk = walkLeaves({
         url: URL, out: OUT, widths: WIDTHS, seed: c.seed ?? 1234, only: [c.leafId],
         solutionsList: SOLUTIONS,
+        // Same block as a sidebar click: the leaf's own opdracht, not the type's default.
+        sidebarOpts: true,
         log: () => {},
         onBrowser: (b) => { browser = b; },
         // Variant constraints merge over the leaf's own defaults, like a sidebar click + config tweak.
