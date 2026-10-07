@@ -1,6 +1,7 @@
 import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
 import { numberMatchesMask } from '../math/mathEngine';
 import type { GetallenrijConstraints } from '../math/constraintTypes';
+import { fitLine } from '../getallenas/getallenasGenerator';
 
 // Getallenrijen = number sequences (start ± k·step) shown in a pill, some cells blank.
 // Same value model as getallenas (GetallenasExercise) minus the drawn axis line; adds
@@ -42,14 +43,18 @@ const stepDecimals = (s: number): number => {
     return i < 0 ? 0 : str.length - i - 1;
 };
 
-export function generateGetallenrijExercises(block: MathBlock): GetallenasExercise[] {
+export function generateGetallenrijExercisesNoted(block: MathBlock): { items: GetallenasExercise[]; note: string | null } {
     const c = block.constraints as GetallenrijConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const maxGetal: number = c.maxGetal ?? 100;
     const step: number = c.step ?? 5;
     const directionMode: string = c.direction ?? 'right';
     const hardMode: boolean = c.hardMode ?? false;
-    const ticks: number = c.ticks ?? 6;
+    const lo = numberType === 'geheel' ? (c.minGetal ?? -maxGetal) : 0;
+    const fit = numberType === 'rational'
+        ? { step, ticks: c.ticks ?? 6, note: null }
+        : fitLine(lo, maxGetal, step || 1, c.ticks ?? 6, directionMode, numberType === 'decimal' ? 0.001 : 1, 'vakjes');
+    const ticks = fit.ticks;
     const numberMask: Record<string, boolean> = c.numberMask ?? {};
     // 'Specifieke getalopbouw' only constrains place-value number types (anchor value).
     const useMask = (numberType === 'natural' || numberType === 'decimal') && Object.values(numberMask).some(Boolean);
@@ -63,7 +68,7 @@ export function generateGetallenrijExercises(block: MathBlock): GetallenasExerci
 
         let values: (number | Fraction)[];
         let start = 0;
-        const usedStep = step;
+        const usedStep = fit.step;
 
         if (numberType === 'rational') {
             const d = c.fractionStep && c.fractionStep > 1 ? c.fractionStep : 4;
@@ -76,7 +81,6 @@ export function generateGetallenrijExercises(block: MathBlock): GetallenasExerci
                 : pick(0, Math.max(0, maxWholeUnits - span));
             values = Array.from({ length: ticks }, (_, k) => fracFromQuarters(arrowLeft ? startUnits - k : startUnits + k, d, fracOpts));
         } else {
-            const lo = numberType === 'geheel' ? (c.minGetal ?? -maxGetal) : 0;
             const hi = maxGetal;
             const stepN = usedStep || 1;
             const span = stepN * (ticks - 1);
@@ -107,5 +111,9 @@ export function generateGetallenrijExercises(block: MathBlock): GetallenasExerci
 
         results.push({ id: rndId(), start, step: usedStep, tickCount: ticks, blankMask, direction: arrowLeft ? 'left' : 'right', values, numberType, isManuallyEdited: false });
     }
-    return results;
+    return { items: results, note: fit.note };
+}
+
+export function generateGetallenrijExercises(block: MathBlock): GetallenasExercise[] {
+    return generateGetallenrijExercisesNoted(block).items;
 }

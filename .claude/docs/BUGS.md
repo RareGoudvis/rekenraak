@@ -172,11 +172,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
 
-- [L1] getallenas / getallenrijen run past the max whenever step × (ticks−1) > range: the ascending
-  branch anchors at lo and overruns hi (`upper = floor((hi−span)/stepN)`; descending clamps to `need`
-  and goes below lo). Repro: default leaf at Leerjaar 1 (max 20, step 5, 6 ticks) → 0…25; step 50 at
-  max 20 → 0…150. 819/6384 as-combos, 1881/16008 rij-combos, 100 % per combo. Fix: shrink the step or
-  the tick count (with a note) when the span cannot fit. 2026-10-07
 - [L9] getalpatronen: a per-op mask on + / − replaces "Stap (max)" (`buildOperand` mask branch ignores
   `s.max`). Repro: opSettings['+'].max 50 + mask {H,T} → step 110. 2385 combos. 2026-10-07
 - [L10] getallenrijen rational: `maxTeller ≤ fractionStep` is silently replaced by 5·d (maxTeller 1, d 4
