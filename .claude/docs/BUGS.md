@@ -148,9 +148,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   branches never read maxGetal. Repro: gemengd-nat at Leerjaar 1 (max 20) → "4 × 10 = 40",
   "50 : 5 = 10" (12 %, 76 % with only ×); variants ['x','x:tienvoud'] at max 10 → "9 × 1000".
   Fix: cap table products / dividends / tienvoud answers by maxGetal inside gemengd. 2026-10-07
-- [L8] Decimal ':' quotient exceeds "Maximum uitkomst" ("Het grootste antwoord"): the no-mask branch
-  (~1120-1128) draws the divisor from 0,01 and caps only the dividend. Repro: delen-dec max 10 →
-  "7,5 : 0,5 = 15" (5-9 %); gemengd-dec ':' 3-6 %. 2026-10-07
 - [L14] "Maximum per getal" (operandMax) silently ignored: aftrekken with operand2Mask or preset
   compenseren skips the ceiling check (~516-535: "770 − 399" with [null,30], 80-100 %, also gemengd
   '-:compenseren'); × tafels with 3-4 factors takes the first factor from the tables (~713-716:

@@ -1179,6 +1179,9 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 if (dividendVal > maxGetal || dividendVal <= 0) continue;
             }
 
+            // A divisor below 1 (0,48) lifts the quotient over the max that the label promises
+            // ("Maximum uitkomst"); natural quotients never exceed their dividend, so they never trip this.
+            if (quotientVal > maxGetal) continue;
             const comboId = `${dividendVal}:${divisorVal}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);

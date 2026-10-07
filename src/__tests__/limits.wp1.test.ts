@@ -145,3 +145,24 @@ describe('[L15] rational × / : decimal_fraction draws a real kommagetal', () =>
         }
     }
 });
+
+describe('[L8] decimal : keeps the quotient within "Maximum uitkomst"', () => {
+    const cases: [string, Record<string, unknown>][] = [
+        ['hr-std-delen', { numberType: 'decimal', maxGetal: 10 }],
+        ['hr-std-delen', { numberType: 'decimal', maxGetal: 10, decimalPlaces: 1 }],
+        ['hr-std-delen', { numberType: 'decimal', maxGetal: 100 }],
+        ['hr-std-delen', { numberType: 'decimal', maxGetal: 10, operand1Mask: { E: true, t: true } }],
+        ['hr-std-gemengd', { numberType: 'decimal', maxGetal: 10, variants: [':'] }],
+    ];
+    for (const [typeId, c] of cases) {
+        test(`${typeId} ${JSON.stringify(c)}`, () => {
+            for (const items of runSeeded(typeId, c, 40)) {
+                expect(items).toHaveLength(40);
+                for (const eq of items) {
+                    expect(eq.answer as number).toBeLessThanOrEqual(c.maxGetal as number);
+                    expect(eq.operands[0] as number).toBeLessThanOrEqual(c.maxGetal as number);
+                }
+            }
+        });
+    }
+});
