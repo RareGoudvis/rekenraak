@@ -188,21 +188,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a
   generation note. 2026-10-07
 
-### WP3 Cijferen (cijferGenerator.ts)
-
-- [L3] cijferen-vermenigvuldigen-nat / -dec: when a "Specifieke getalopbouw" mask can't fit under the
-  max, the 500-attempt fallback (cijferGenerator.ts:155) returns [max/2, 3] → answer 1,5 × max and the
-  masks ignored. Repro: operand1Mask {T}, max 100 → "50 × 3 = 150"; 982/1328 nat and 2004/3057 dec
-  masked combos, 100 % each. All 8 cijferen leaves share the silent fallback (masks and numberOfTerms
-  dropped). Fix: a fallback within max + a generation note. 2026-10-07
-- [L4] cijferen-vermenigvuldigen-dec with a decimal-place mask on Getal 2 (fractional multiplier): the
-  multiplicand bound `maxVal·s/multiplier` lets operand 1 exceed the max ("21,7 × 0,5" at max 20, 13 %)
-  and `toFixed(dp)` rounds the key wrong ("= 10,8", true 10,85; "0,5 × 0,5 = 0,3"; 16 %). 2026-10-07
-- [E3] cijferen-delen-nat with an E mask on the divisor gives divisor 1; with remainder on the key reads
-  "6 : 1 = 6 r 1". 2026-10-07
-- [E7] cijferen-delen-dec with a decimal-place divisor mask: quotient 0 ("0,5 : 6", 1,4 %) and a
-  dividend a hair over max ("1000,18 : 0,09", 0,04 %). Low priority. 2026-10-07
-
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
 - [L5] vergelijken-representaties: a Getalopbouw mask (leftMask/rightMask) offers the top place whose
