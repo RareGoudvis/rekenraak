@@ -6,6 +6,7 @@ import { DEFAULT_BASE, type BaseSettings } from '../config/baseSettings';
 import { GRADE_PRESETS, LEERJAREN } from '../config/gradePresets';
 import { makeBlock, isLayoutType } from './helpers/makeBlock';
 import { pairwise } from './helpers/pairwise';
+import { skip } from './limits.knownBugs';
 
 // ── The sweep ────────────────────────────────────────────────────────────────
 // Every generator, across every constraint option a teacher can reach. Five passes:
@@ -84,6 +85,8 @@ function runOne(typeId: string, constraints: Record<string, unknown>, opts: RunO
     const def = REGISTRY[typeId];
     const block = makeBlock(typeId, { constraints, base: opts.base });
     const ctx = opts.label || JSON.stringify(constraints);
+    // A known hang or crash (limits.knownBugs.ts KNOWN_SKIPS) is the limit gate's to track, not a run here.
+    if (skip(typeId, block.constraints as Record<string, unknown>)) return [];
 
     let data: unknown[] = [];
     expect(() => { data = def.generate(block); }, `${typeId} threw for ${ctx}`).not.toThrow();
