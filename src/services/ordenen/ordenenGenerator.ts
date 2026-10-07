@@ -1,6 +1,7 @@
 import type { MathBlock, OrdenenExercise, Fraction } from '../math/types';
 import { numberMatchesMask } from '../math/mathEngine';
 import type { OrdenenConstraints } from '../math/constraintTypes';
+import { countOefeningen } from '../generationNotes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -45,6 +46,10 @@ function genValue(numberType: string, c: OrdConstraints): number | Fraction {
 }
 
 export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
+    return generateOrdenenExercisesNoted(block).items;
+}
+
+export function generateOrdenenExercisesNoted(block: MathBlock): { items: OrdenenExercise[]; note: string | null } {
     const c = block.constraints as OrdenenConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const count: number = c.count ?? 3;
@@ -62,15 +67,19 @@ export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
 
     const n = block.numberOfExercises;
     const results: OrdenenExercise[] = [];
+    let relaxed = 0;
 
     for (let i = 0; i < n; i++) {
         const values: (number | Fraction)[] = [];
         const seen = new Set<number>();
         let attempts = 0;
-        while (values.length < count && attempts < 2000) {
+        // A mask the range can't fill (decimal + H at max 100) gives a short or empty row: finish unmasked and say so.
+        let maskOn = useMask;
+        while (values.length < count && attempts < 4000) {
             attempts++;
+            if (maskOn && attempts > 2000) { maskOn = false; relaxed++; }
             const v = genValue(numberType, oc);
-            if (useMask && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
+            if (maskOn && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
             const key = val(v);
             if (seen.has(key)) continue;
             seen.add(key);
@@ -87,5 +96,6 @@ export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
         results.push({ id: rndId(), values: ordered, display, operator, isManuallyEdited: false });
     }
 
-    return results;
+    const note = relaxed > 0 ? `De getalopbouw past niet bij dit maximum; voor ${countOefeningen(relaxed)} is ze losgelaten.` : null;
+    return { items: results, note };
 }

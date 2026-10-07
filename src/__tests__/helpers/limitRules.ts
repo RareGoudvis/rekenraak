@@ -330,7 +330,7 @@ const ordenenSpec: TypeSpec<OrdenenExercise> = {
         const max = n(c.maxGetal, 100);
         const ex = e.display.map(fmtV).join(', ');
         if (e.values.length === 0) push('empty-exercise', 0, n(c.count, 3), '(no values)');
-        else if (e.values.length < n(c.count, 3)) push('count-short', e.values.length, n(c.count, 3), ex);
+        else if (e.values.length < n(c.count, 3) && !/getalopbouw past niet/.test(ctx.note ?? '')) push('count-short', e.values.length, n(c.count, 3), ex);
         if (nt === 'rational') {
             const lo = Math.max(2, n(c.minDenominator, 2)), hi = Math.max(2, n(c.maxDenominator, 10));
             for (const v of e.values) {
@@ -341,6 +341,12 @@ const ordenenSpec: TypeSpec<OrdenenExercise> = {
         } else {
             const lo = nt === 'geheel' ? n(c.minGetal, -max) : 0;
             valueRange(e.values.map(numValue), lo, max, ex, push);
+            // A getalopbouw the range cannot fill is dropped for that exercise, intended only WITH the note saying so.
+            const mask = c.numberMask as Record<string, boolean> | undefined;
+            if ((nt === 'natural' || nt === 'decimal') && mask && !/getalopbouw past niet/.test(ctx.note ?? '')
+                && e.values.some(v => !numberMatchesMask(numValue(v), mask, max, nt, nt === 'decimal' ? Math.min(3, Math.max(1, n(c.decimalPlaces, 1))) : 0))) {
+                push('mask-not-honored', ex, Object.keys(mask).filter(k => mask[k]).join(','), ex);
+            }
         }
         const vals = e.values.map(numValue);
         for (let i = 1; i < vals.length; i++) {
@@ -473,7 +479,8 @@ const herleidingenSpec: TypeSpec<HerleidingExercise> = {
         const units = (c.units as string[] | undefined) ?? [];
         // Fewer than two of this measure's units ticked: the generator uses the whole ladder.
         const ownUnits = ladder.filter(u => units.includes(u.key)).length >= 2;
-        if (e.format !== 'vierkant-are' && e.format !== 'are-vierkant' && ownUnits) {
+        // Alias-only picks (m² + ca) fall back to the whole ladder WITH the note saying so.
+        if (e.format !== 'vierkant-are' && e.format !== 'are-vierkant' && ownUnits && !/alle eenheden van deze maat/.test(ctx.note ?? '')) {
             for (const p of parts) if (!units.includes(p.key)) push('unit-not-selected', p.key, units.join(','), ex);
         }
         const total = (ps: typeof parts) => ps.reduce((s, p) => s + p.value * factor(p.key), 0);
@@ -692,11 +699,12 @@ const geldSpec: TypeSpec<GeldExercise> = {
         if (over(e.amountCents, max)) push('value>max', e.amountCents, max, ex);
         if (!(e.amountCents > 0)) push('amount<=0', e.amountCents, 1, ex);
         if (c.format === 'euros' && e.amountCents % 100 !== 0) push('cents-in-euros', e.amountCents, 'whole euros', ex);
-        for (const d of e.denominations) if (!allowed.includes(d.valueCents)) push('denomination-not-allowed', d.valueCents, allowed.join(','), ex);
+        // Coupures the teacher did not tick are used only WITH the note saying so.
+        for (const d of e.denominations) if (!allowed.includes(d.valueCents) && !/andere coupures/.test(ctx.note ?? '')) push('denomination-not-allowed', d.valueCents, allowed.join(','), ex);
         if (ctx.typeId === 'geld-herkennen') {
             const sum = e.denominations.reduce((s, d) => s + d.valueCents * d.count, 0);
             if (sum !== e.amountCents) push('answer-key', sum, e.amountCents, ex);
-        } else if (allowed.length && e.amountCents > 0 && e.amountCents % Math.min(...allowed) !== 0 && c.format !== 'euros') {
+        } else if (allowed.length && e.amountCents > 0 && e.amountCents % Math.min(...allowed) !== 0 && c.format !== 'euros' && !/niet met de gekozen coupures/.test(ctx.note ?? '')) {
             push('unpayable', e.amountCents, `multiple of ${Math.min(...allowed)}c`, ex);
         }
     },
@@ -814,7 +822,7 @@ const kalenderSpec: TypeSpec<KalenderExercise> = {
         if (e.year !== n(c.year, 2026)) push('year-not-chosen', e.year, c.year, ex);
         if (e.subType === 'maandrooster') {
             const want = n(c.questionCount, 5);
-            if ((e.questions?.length ?? 0) < want) push('questions<questionCount', e.questions?.length ?? 0, want, ex);
+            if ((e.questions?.length ?? 0) < want && !/Bij deze vraagsoorten/.test(ctx.note ?? '')) push('questions<questionCount', e.questions?.length ?? 0, want, ex);
         }
     },
 };

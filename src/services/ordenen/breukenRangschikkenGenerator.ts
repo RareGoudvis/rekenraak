@@ -43,6 +43,10 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
         // Distinct small denominators (unlike) — pupil makes them gelijknamig first.
         // Strictly within [lo, hi]; if the range holds fewer than `count`, emit fewer.
         const pool = [2, 3, 4, 5, 6, 8, 10, 12].filter(d => d >= lo && d <= hi);
+        // Range holds too few curated denominators (7, 9, 11 …): top up with the other integers in range.
+        if (pool.length < count) {
+            for (let d = lo; d <= hi && pool.length < Math.max(count, 1) + 8; d++) if (!pool.includes(d)) pool.push(d);
+        }
         const dens = shuffle(pool).slice(0, count);
         return dens.map(d => ({ n: randInt(1, d - 1), d }));
     }
@@ -54,6 +58,10 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
 }
 
 export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenExercise[] {
+    return generateBreukenRangschikkenExercisesNoted(block).items;
+}
+
+export function generateBreukenRangschikkenExercisesNoted(block: MathBlock): { items: OrdenenExercise[]; note: string | null } {
     const c = block.constraints as BreukenRangschikkenConstraints;
     const mode: string = c.fractionMode ?? 'stambreuken';
     const count: number = Math.min(5, Math.max(2, c.count ?? 4));
@@ -89,5 +97,8 @@ export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenE
 
         results.push({ id: rndId(), values: ordered, display, operator, isManuallyEdited: false });
     }
-    return results;
+    // The noemer range can hold fewer distinct fractions than the asked count.
+    const fewest = results.reduce((m, r) => Math.min(m, r.values.length), count);
+    const note = fewest < count ? `Bij dit bereik van noemers passen maar ${fewest} breuken per oefening (gevraagd: ${count}).` : null;
+    return { items: results, note };
 }

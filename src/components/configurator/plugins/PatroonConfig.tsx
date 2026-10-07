@@ -3,6 +3,7 @@ import { F } from './shared/fieldStyles';
 import Switch from '../../ui/Switch';
 import type { MathBlock } from '../../../services/math/types';
 import { getMaskPlaces } from '../../../services/math/mathEngine';
+import { formatSignedInt } from '../../../services/math/formatters';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import PopupSelect from '../../ui/PopupSelect';
@@ -72,10 +73,13 @@ export default function PatroonConfig({ block }: Props) {
             {/* GEHELE — lower bound */}
             {numberType === 'geheel' && (
                 <div style={styles.section}>
-                    <SettingLabel text={`Ondergrens: ${lowerBound.toLocaleString('nl-BE')}`} info="Hoe ver het patroon onder nul mag gaan (negatieve getallen)." />
+                    <SettingLabel text={`Ondergrens: ${formatSignedInt(lowerBound)}`} info="Hoe ver het patroon onder nul mag gaan (negatieve getallen)." />
                     <input type="range" min={-maxGetal} max={0} step={Math.max(1, Math.round(maxGetal / 100))}
                         value={lowerBound} onChange={(e) => set('minGetal', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+                    {lowerBound < -maxGetal && (
+                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (${formatSignedInt(-maxGetal)} tot ${formatSignedInt(maxGetal)}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
+                    )}
                 </div>
             )}
 

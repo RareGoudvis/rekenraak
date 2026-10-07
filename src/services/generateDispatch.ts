@@ -1,3 +1,4 @@
+import { repeatNote } from './generationNotes';
 import type { MathBlock } from './math/types';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { NAT_CEILING } from '../config/numberRanges';
@@ -106,11 +107,11 @@ export function generateForBlock(stored: MathBlock, uniqueExercises?: boolean): 
 // Teacher-facing wording for a pool too small to fill the block — one phrasing for both
 // the first generate and a later count increase.
 function shortNote(shortBy: number): string | null {
-    if (shortBy <= 0) return null;
-    return `Kleine reeks: ${shortBy} oefening${shortBy === 1 ? '' : 'en'} kom${shortBy === 1 ? 't' : 'en'} dubbel voor.`;
+    return repeatNote(shortBy);
 }
 
 function joinNotes(a: string | null, b: string | null): string | null {
+    if (a && b && a.includes(b)) return a;   // generator and dedupe pass can report the same repeats
     return a && b ? `${a} ${b}` : (a ?? b);
 }
 

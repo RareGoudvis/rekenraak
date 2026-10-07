@@ -16,6 +16,9 @@ export const formatMathNumber = (num: number | string | undefined): string => {
     }
     return formattedInteger;
 };
+/** Whole number as printed on sheets and in the sidebar: space thousands, true minus (U+2212). */
+export const formatSignedInt = (n: number): string => formatMathNumber(n).replace('-', '−');
+
 /**
  * Printed glyphs for the four operators. Display only — the stored operator stays
  * ASCII ('+' | '-' | 'x' | ':'), so nothing that parses or compares an operator has
