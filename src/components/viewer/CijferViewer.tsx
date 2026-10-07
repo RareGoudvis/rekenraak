@@ -151,15 +151,29 @@ function addSubGridCols(ex: CijferExercise, dp: number, extraCols: number): numb
     return 1 + maxInt + dp + extraCols;
 }
 
-function partialProductsOf(ex: CijferExercise, dp: number): number[] {
+// Multiply as whole numbers, then place the comma by the total decimal count (how a child does it):
+// every row is right-aligned across the digit columns and only the comma edges differ per row.
+function mulLayout(ex: CijferExercise, dp: number) {
+    const multiplier = ex.operands[1];
+    // Decimals the multiplier really uses (trailing zeros of its dp padding don't count)
+    let mdp = 0;
+    while (mdp < dp && Math.abs(Math.round(multiplier * Math.pow(10, mdp)) / Math.pow(10, mdp) - multiplier) > 1e-9) mdp++;
+    const tdp = dp + mdp;
     const scaledMultiplicand = Math.round(ex.operands[0] * Math.pow(10, dp));
-    return String(Math.round(ex.operands[1])).split('').reverse()
-        .map((d, shift) => scaledMultiplicand * Number(d) * Math.pow(10, shift));
+    const multiplierDigits = String(Math.round(multiplier * Math.pow(10, mdp))).split('').reverse();
+    const partialProducts = multiplierDigits.map((d, shift) => scaledMultiplicand * Number(d) * Math.pow(10, shift));
+    const ppLen = (pp: number) => (pp === 0 ? 1 : String(Math.round(pp)).length);
+    const digitCols = Math.max(
+        intLen(ex.operands[0]) + dp,
+        intLen(multiplier) + mdp,
+        intLen(ex.answer) + tdp,
+        ...partialProducts.map(ppLen),
+    );
+    return { mdp, tdp, partialProducts, digitCols, n: multiplierDigits.length };
 }
 
 function mulGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
-    const maxPPLen = Math.max(...partialProductsOf(ex, dp).map(pp => pp === 0 ? 1 : String(Math.round(pp)).length));
-    return 1 + Math.max(intLen(ex.answer), maxPPLen) + dp + extraCols;
+    return 1 + mulLayout(ex, dp).digitCols + extraCols;
 }
 
 function divGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
@@ -348,15 +362,13 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
 
 function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows }: GridProps) {
     const multiplicand = ex.operands[0];
-    const multiplier = Math.round(ex.operands[1]);
+    const multiplier = ex.operands[1];
 
-    const mulDigits = String(multiplier).split('').reverse();
-    const partialProducts = partialProductsOf(ex, dp);
-
-    const maxPPLen = Math.max(...partialProducts.map(pp => pp === 0 ? 1 : String(Math.round(pp)).length));
-    const maxInt = Math.max(intLen(ex.answer), maxPPLen);
-
-    const n = mulDigits.length;
+    const { mdp, tdp, partialProducts, digitCols, n } = mulLayout(ex, dp);
+    // Whole-number rows are right-aligned over digitCols; each row's comma sits after its own integer part
+    const maxInt = digitCols - tdp;
+    const mcInt = digitCols - dp;
+    const mlInt = digitCols - mdp;
     const multiplicandRow = 2;
     const multiplierRow = 3;
     const lineRow1 = 4;
@@ -368,8 +380,6 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
     const gridCols = mulGridCols(ex, dp, extraCols);
     const gridW = gridCols * CELL;
     const gridH = totalRows * CELL;
-
-    const eGridCol = maxInt;
 
     return (
         <div style={{ position: 'relative', width: gridW, height: gridH, flexShrink: 0, marginTop: 4 }}>
@@ -395,7 +405,7 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
 
             {/* Place value headers */}
             {scaffolding <= 2 && Array.from({ length: gridCols }, (_, c) => {
-                const label = placeLabel(c, maxInt, dp);
+                const label = placeLabel(c, maxInt, tdp);
                 if (!label) return null;
                 return (
                     <div key={`pv${c}`} style={{
@@ -418,34 +428,37 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
 
             {/* Level 1: multiplicand */}
             {scaffolding <= 1 &&
-                getDigitCols(multiplicand, dp, maxInt)
+                getDigitCols(multiplicand, dp, mcInt)
                     .map((d, i) => <DC key={`mc${i}`} col={toGridCol(d.col)} row={multiplicandRow} char={d.char} CELL={CELL} />)
             }
             {scaffolding <= 1 && dp > 0 && (
-                <CommaEdge afterGridCol={eGridCol} row={multiplicandRow} CELL={CELL} />
+                <CommaEdge afterGridCol={mcInt} row={multiplicandRow} CELL={CELL} />
             )}
 
             {/* Level 1: multiplier */}
             {scaffolding <= 1 &&
-                getDigitCols(multiplier, 0, maxInt)
+                getDigitCols(multiplier, mdp, mlInt)
                     .map((d, i) => <DC key={`ml${i}`} col={toGridCol(d.col)} row={multiplierRow} char={d.char} CELL={CELL} />)
             }
+            {scaffolding <= 1 && mdp > 0 && (
+                <CommaEdge afterGridCol={mlInt} row={multiplierRow} CELL={CELL} />
+            )}
 
             {/* Partial products — student fills these in; shown as solutions only */}
             {scaffolding <= 1 && showSolutions && partialProducts.map((pp, ppIdx) => {
                 const row = ppStartRow + (n - 1 - ppIdx);
-                return ppDigitCols(pp, maxInt).map((d, i) => (
+                return ppDigitCols(pp, digitCols).map((d, i) => (
                     <DC key={`pp${ppIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} color={SOL} />
                 ));
             })}
 
             {/* Level 1 + solutions: answer */}
             {scaffolding <= 1 && showSolutions &&
-                getDigitCols(ex.answer, dp, maxInt)
+                getDigitCols(ex.answer, tdp, maxInt)
                     .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL} />)
             }
-            {scaffolding <= 1 && showSolutions && dp > 0 && (
-                <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
+            {scaffolding <= 1 && showSolutions && tdp > 0 && (
+                <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />
             )}
         </div>
     );
@@ -565,7 +578,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
         let remainder = 0;
         if (ex.operator === '+') answer = parseFloat(operands.reduce((a, b) => a + b, 0).toFixed(dp));
         else if (ex.operator === '-') answer = parseFloat((operands[0] - operands[1]).toFixed(dp));
-        else if (ex.operator === 'x') answer = parseFloat((operands[0] * operands[1]).toFixed(dp));
+        else if (ex.operator === 'x') answer = parseFloat((operands[0] * operands[1]).toFixed(2 * dp));
         else if (dp > 0) {
             // Same helper as the generator, so an edited exercise gets the same true q and r.
             ({ quotient: answer, remainder } = divideToDecimals(operands[0], operands[1], dp));

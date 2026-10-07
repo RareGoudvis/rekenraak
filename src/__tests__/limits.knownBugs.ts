@@ -34,13 +34,10 @@ export interface KnownSkip {
 }
 
 const HR = ['hr-std-optellen', 'hr-std-aftrekken', 'hr-std-vermenigvuldigen', 'hr-std-delen', 'hr-std-gemengd'];
-// The eight cijferen typeIds share one generator; the operator and number type come from the block.
-const CIJFEREN = ['optellen', 'aftrekken', 'vermenigvuldigen', 'delen'].flatMap(op => [`cijferen-${op}-nat`, `cijferen-${op}-dec`]);
 const num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const str = (v: unknown, fallback: string) => (typeof v === 'string' ? v : fallback);
 const masked = (m: unknown, keys?: string[]) =>
     !!m && typeof m === 'object' && Object.entries(m as Record<string, boolean>).some(([k, on]) => on && (!keys || keys.includes(k)));
-const DECIMAL_PLACES = ['t', 'h', 'd', 'td'];
 
 // Some d1 in [2..D1] for which every d2 in [2..D2] equals, divides or is divisible by it:
 // the multi_step do/while (mathEngine.ts ~351 / ~474) then never finds a d2.
@@ -102,26 +99,6 @@ export const KNOWN_BUGS: KnownBug[] = [
         match: (_t, c) => c.multiplicationMode === 'met_rest',
     },
 
-    // ── WP3 Cijferen ──
-    {
-        id: 'L3', typeIds: CIJFEREN, rules: ['answer>max'],
-        match: (_t, c) => c.operator === 'x' && (masked(c.operand0Mask) || masked(c.operand1Mask)),
-    },
-    {
-        id: 'L4', typeIds: CIJFEREN, rules: ['operand>max', 'answer-key', 'answer>max'],
-        match: (_t, c) => c.operator === 'x' && c.numberType === 'decimal' && masked(c.operand1Mask, DECIMAL_PLACES),
-    },
-    {
-        // A divisor mask with no tens (E, or a decimal place a natural block cannot show) gives 1.
-        id: 'E3', typeIds: CIJFEREN, rules: ['divisor<2', 'answer-key'],
-        match: (_t, c) => c.operator === ':' && c.numberType !== 'decimal' && masked(c.operand1Mask),
-    },
-    {
-        // Also a Getal 1 mask with no place above E: the dividend stays below 10, the quotient is 0.
-        id: 'E7', typeIds: CIJFEREN, rules: ['quotient<=0', 'dividend>max'],
-        match: (_t, c) => c.operator === ':' && c.numberType === 'decimal'
-            && (masked(c.operand1Mask, DECIMAL_PLACES) || (masked(c.operand0Mask) && !masked(c.operand0Mask, ['Mrd', 'HM', 'TM', 'M', 'HD', 'TD', 'D', 'H', 'T']))),
-    },
 
     // ── WP4 Geometry, fractions, vergelijken ──
     {

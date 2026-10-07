@@ -20,7 +20,7 @@ import { generateFractionExercises } from '../services/fractions/fractionGenerat
 import { generateBreukBewerkExercises } from '../services/fractions/breukBewerkGenerator';
 import { generateBreukenRangschikkenExercises } from '../services/ordenen/breukenRangschikkenGenerator';
 import { generateSplitsenExercises } from '../services/splitsen/splitsenGenerator';
-import { generateCijferExercises } from '../services/cijferen/cijferGenerator';
+import { generateCijferExercises, generateCijferExercisesNoted } from '../services/cijferen/cijferGenerator';
 import { generateGeldExercises, generateGeldWisselExercises, generateGeldTeruggevenExercises } from '../services/geld/geldGenerator';
 import { generateMabExercises } from '../services/mab/mabGenerator';
 import { generateOrdenenExercises } from '../services/ordenen/ordenenGenerator';
@@ -454,7 +454,7 @@ const schattendMax: MaxPresetsFn = (c) =>
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => row<CijferConstraints>({
-    exerciseField: 'cijferExercises', generate: generateCijferExercises,
+    exerciseField: 'cijferExercises', generate: generateCijferExercises, generateNoted: generateCijferExercisesNoted,
     defaultConstraints: cijferDefaults, defaultCount: 4, maxPresets: cijferMax,
 });
 
