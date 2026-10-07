@@ -21,6 +21,10 @@ describe('breuken-bewerken limits', () => {
         expect(items.every(e => e.inputs[0].d !== e.inputs[1].d)).toBe(true);
         expect(note).toMatch(/noemer 3/);
     });
+    test('gelijknamig min = max notes the noemer picked below the minimum; a real range does not', () => {
+        expect(generateBreukBewerkExercisesNoted(bew({ subType: 'gelijknamig', minDenominator: 20, maxDenominator: 20 })).note).toMatch(/maar één noemer/);
+        expect(generateBreukBewerkExercisesNoted(bew({ subType: 'gelijknamig', minDenominator: 2, maxDenominator: 10 })).note).toBeNull();
+    });
     // L16
     test('fixed common denominator without 2 divisors in range gets a note', () => {
         const { note } = generateBreukBewerkExercisesNoted(bew({ subType: 'gelijknamig', minDenominator: 2, maxDenominator: 10, targetDen: 7 }));

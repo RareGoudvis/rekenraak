@@ -120,6 +120,8 @@ function limitNote(subType: string, c: BreukBewerkConstraints): string | null {
     if (subType === 'vereenvoudigen' && !canReduce(maxN, maxD)) return 'Bij dit maximum bestaat geen breuk om te vereenvoudigen: de breuken zijn al vereenvoudigd.';
     if (subType === 'gelijknamig') {
         const targetDen = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
+        // A noemer leaves [min, max]: min = max (second one picked just below) or max 2 (3 added).
+        if (Math.max(maxD, 2) >= 3 && Math.max(2, minD) >= maxD) return 'Van–tot laat maar één noemer toe; de tweede noemer is er net onder gekozen.';
         if (Math.max(maxD, 2) < 3) return 'Bij maximum noemer 2 zijn er geen twee verschillende noemers: noemer 3 wordt ook gebruikt.';
         if (targetDen && targetDen >= 2) {
             const hi = Math.max(2, maxD), lo = Math.min(Math.max(2, minD), hi - 1);

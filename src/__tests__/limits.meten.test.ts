@@ -1,9 +1,27 @@
 import { describe, test, expect } from 'vitest';
 import { makeBlock, generateFor } from './helpers/makeBlock';
+import { generateOmtrekExercisesNoted, generateOppervlakteExercisesNoted } from '../services/meten/metenGenerator';
 import type { MeetExercise } from '../services/math/types';
 
 const gen = (typeId: string, constraints: Record<string, unknown>, n = 40) =>
     Array.from({ length: 10 }, () => generateFor(makeBlock(typeId, { constraints, block: { numberOfExercises: n } })) as MeetExercise[]).flat();
+
+describe('meten notes for unfixable settings', () => {
+    const noted = (typeId: string, constraints: Record<string, unknown>) => {
+        const block = makeBlock(typeId, { constraints });
+        return (typeId === 'omtrek' ? generateOmtrekExercisesNoted : generateOppervlakteExercisesNoted)(block).note;
+    };
+    test('single-length range', () => {
+        expect(noted('omtrek', { shapes: ['trapezium'], minLength: 5, maxLength: 5 })).toMatch(/trapezium/i);
+        expect(noted('omtrek', { shapes: ['rechthoek'], minLength: 5, maxLength: 5 })).toMatch(/vierkanten/);
+        expect(noted('omtrek', { shapes: ['trapezium'], minLength: 3, maxLength: 10 })).toBeNull();
+    });
+    test('circle at max 1, L-figuur at max 2', () => {
+        expect(noted('omtrek', { shapes: ['cirkel'], minLength: 1, maxLength: 1 })).toMatch(/cirkel/i);
+        expect(noted('omtrek', { shapes: ['cirkel'], minLength: 1, maxLength: 3 })).toBeNull();
+        expect(noted('oppervlakte', { subType: 'rooster', shapes: ['l-figuur'], minLength: 2, maxLength: 2 })).toMatch(/L-figuur/);
+    });
+});
 
 describe('meten limits', () => {
     // L12

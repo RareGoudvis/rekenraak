@@ -199,6 +199,30 @@ export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
     return Array.from({ length: n }, make);
 }
 
+// Settings no figure can honour exactly (the output stays as close as possible): say what gave.
+function shapeNote(shapes: string[], min: number, max: number, precision: string, rooster: boolean): string | null {
+    const lo = Math.max(1, Math.min(min, max)), hi = Math.max(lo, max);
+    const room = precision === 'mm' ? hi > lo : Math.floor(hi) - Math.ceil(lo) >= 1;
+    if (rooster) return shapes.includes('l-figuur') && max < 3 ? 'Een L-figuur heeft zijden van minstens 3 cm: er komen rechthoeken in de plaats.' : null;
+    if (shapes.includes('trapezium') && !room) return 'Een trapezium heeft twee verschillende evenwijdige zijden: bij één lengte is de langste zijde 2 cm langer dan het maximum.';
+    if (shapes.includes('cirkel') && max < 2) return 'Een cirkel met straal 1 cm is breder dan het maximum.';
+    if (shapes.includes('rechthoek') && !room) return 'Van–tot laat maar één lengte toe: de rechthoeken zijn vierkanten.';
+    return null;
+}
+
+export function generateOmtrekExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
+    const c = block.constraints as MetenConstraints;
+    const shapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['driehoek', 'rechthoek', 'vierkant'];
+    return { items: generateOmtrekExercises(block), note: shapeNote(shapes, c.minLength ?? 3, c.maxLength ?? 10, c.precision ?? 'cm', false) };
+}
+
+export function generateOppervlakteExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
+    const c = block.constraints as MetenConstraints;
+    const shapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['rechthoek', 'vierkant'];
+    const rooster = (c.subType ?? 'berekenen') === 'rooster';
+    return { items: generateOppervlakteExercises(block), note: shapeNote(shapes, c.minLength ?? 2, c.maxLength ?? 8, 'cm', rooster) };
+}
+
 export function generateOmtrekExercises(block: MathBlock): MeetExercise[] {
     const c = block.constraints as MetenConstraints;
     const precision: string = c.precision ?? 'cm';
