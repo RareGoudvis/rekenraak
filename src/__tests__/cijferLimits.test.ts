@@ -68,6 +68,11 @@ describe('cijferen limits', () => {
         }
     });
 
+    test('divisor 1 is never produced, also without a remainder', () => {
+        for (const rem of [false, true]) for (const r of run('cijferen-delen-nat', { maxRange: 100, withRemainder: rem, operand1Mask: { E: true } }, 12))
+            for (const ex of r.items) expect(ex.operands[1]).toBeGreaterThan(1);
+    });
+
     test('E3: no divisor 1 with a remainder', () => {
         for (const r of run('cijferen-delen-nat', { maxRange: 100, withRemainder: true, operand1Mask: { E: true } }, 12))
             for (const ex of r.items) {

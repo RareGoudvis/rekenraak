@@ -315,8 +315,8 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     if (divisor <= 0) return null;
     // for unmasked integer divisors enforce minimum of 2
     if (!hasMaskedDivisor && divisor < 2) return null;
-    // A divisor of 1 leaves no room for a remainder (a mask digit can still roll a 1)
-    if (!isDecimal && c.withRemainder && divisor < 2) return null;
+    // A divisor of 1 is no cijfer sum (and leaves no room for a remainder); a mask digit can still roll a 1
+    if (!isDecimal && divisor < 2) return null;
 
     if (isDecimal) {
         const maskDiv = getMask(c, 0);
