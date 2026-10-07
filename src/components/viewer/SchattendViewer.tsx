@@ -1,6 +1,6 @@
 import type { MathBlock, SchattendExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
-import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
+import { targetsFor, roundTo, ROUND_SCALE } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
 import { OP_GLYPH } from '../../services/math/formatters';
@@ -47,8 +47,10 @@ export default function SchattendViewer({ block, showSolutions }: Props) {
         // ×/: keep the small factor as-is; +/− round both operands.
         const roundsB = ex.operator === '+' || ex.operator === '-';
         const rb = roundsB ? roundTo(ex.b, t.weight) : ex.b;
-        const estimate = ex.operator === '+' ? ra + rb
-            : ex.operator === '-' ? ra - rb
+        // Sum in roundTo's micro-units: 13.9 + 34.8 in floats prints "48,699999999999996".
+        const toUnits = (n: number) => Math.round(n * ROUND_SCALE);
+        const estimate = ex.operator === '+' ? (toUnits(ra) + toUnits(rb)) / ROUND_SCALE
+            : ex.operator === '-' ? (toUnits(ra) - toUnits(rb)) / ROUND_SCALE
             : ex.operator === 'x' ? Number((ra * rb).toFixed(6))
             : Number((ra / rb).toFixed(6));
         return {

@@ -142,9 +142,6 @@ UpdateState). Left over, found while fixing:
   relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
   scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
   Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
-- [P1] SchattendViewer (~50-51) adds/subtracts the rounded estimate in floats: schattend-dec key shows
-  "66,39999999999999", "9,200000000000003". Pre-existing; E5b's h → t fallback now reaches it. Repro:
-  trigger E5b-43 or schattend-dec target 't'. Found by the after-run. 2026-10-08
 - [P2] breuken-rangschikken shortfall note: "passen maar 1 breuken per oefening" → singular "past maar 1
   breuk". Repro: trigger E4b-38. 2026-10-08
 - [P3] Identical fills without a note: kettingsommen only × at max 20 → six identical chains; cijferen ×
