@@ -201,7 +201,8 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [E3] cijferen-delen-nat with an E mask on the divisor gives divisor 1; with remainder on the key reads
   "6 : 1 = 6 r 1". 2026-10-07
 - [E7] cijferen-delen-dec with a decimal-place divisor mask: quotient 0 ("0,5 : 6", 1,4 %) and a
-  dividend a hair over max ("1000,18 : 0,09", 0,04 %). Low priority. 2026-10-07
+  dividend a hair over max ("1000,18 : 0,09", 0,04 %). Low priority. 2026-10-07 (Limit harness: a Getal 1
+  mask with no place above E does the same, "0,1 : 627 = 0 r 0,1", "1,05 : 627 = 0".)
 
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
@@ -273,8 +274,9 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 - [N1] hr-std-aftrekken rational with "Gemengd getal" on Getal 2: when Getal 1 is the smaller value the
   whole of Getal 2 prints as 0 and the key is wrong ("1/9 − 0 1/3 = 2 7/9"; one_step, teller max 2 / 1:
-  100 %; teller max 5 / 1 at 40 exercises: 48 %). The other rational keys check out. 2026-10-07
-- [N2] plaatswaarde / vergelijken getallen: a getalopbouw mask on only the top place (weight = max, e.g.
+  100 %; teller max 5 / 1 at 40 exercises: 48 %); under multi_step Getal 2's noemer also passes its cap
+  ("15/4 − 2/6" at max noemer 4). The other rational keys check out. 2026-10-07
+- [N2] plaatswaarde / vergelijken / afronden: a getalopbouw mask on only the top place (weight = max, e.g.
   HM at 1e8) admits exactly one number, so the block holds 1 of 6. Same shape as the top-place bridge
   line under Generators. Fix: hide the top place in the mask row or note it. 2026-10-07
 

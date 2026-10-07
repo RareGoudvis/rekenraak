@@ -123,7 +123,8 @@ type's default count is a small candidate space running out, not a finding, so t
 reports `underfill` below the default count.
 
 ```bash
-npm run limits:audit                                              # everything (~15-30 min)
+npm run limits:audit                                              # everything (~72 min; hr-std-gemengd alone ~50)
+LIMITS_RANDOM=300 npm run limits:audit                            # same sweeps, fewer random rows (~15 min)
 LIMITS_ONLY=hr-std-gemengd,schattend-dec npm run limits:audit     # typeIds and/or leafIds
 LIMITS_OUT=<dir> LIMITS_DUMP=<dir>/dump LIMITS_SEEDS=1,2 LIMITS_RANDOM=500 npm run limits:audit
 ```

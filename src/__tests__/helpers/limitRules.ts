@@ -95,8 +95,10 @@ function checkHr(e: Equation, c: C, mode: HrMode, ctx: CheckContext, push: Push)
         const fmm = (c.fractionMultMode as string) ?? 'fraction_fraction';
         e.operands.forEach((o, i) => {
             if (isFraction(o)) {
-                // Natural/decimal × fraction keeps its fraction in the second slot's caps.
-                const maxD = addSub || fmm === 'fraction_fraction' ? n(i === 0 ? c.maxDenominator1 : c.maxDenominator2, 10) : n(c.maxDenominator2, 10);
+                // Natural/decimal × fraction keeps its fraction in the second slot's caps; a 3-4 term
+                // chain is all fractions, capped per position like fraction × fraction.
+                const perSlot = addSub || fmm === 'fraction_fraction' || e.operands.length > 2;
+                const maxD = perSlot ? n(i === 0 ? c.maxDenominator1 : c.maxDenominator2, 10) : n(c.maxDenominator2, 10);
                 if (o.d > maxD) push('denominator>max', o.d, maxD, ex);
             } else if (fmm === 'decimal_fraction' && !addSub && !(o > 0)) {
                 push('decimal-operand<=0', o, 0, ex);

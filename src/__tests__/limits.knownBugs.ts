@@ -139,8 +139,10 @@ export const KNOWN_BUGS: KnownBug[] = [
         match: (_t, c) => c.operator === ':' && c.numberType !== 'decimal' && masked(c.operand1Mask),
     },
     {
+        // Also a Getal 1 mask with no place above E: the dividend stays below 10, the quotient is 0.
         id: 'E7', typeIds: CIJFEREN, rules: ['quotient<=0', 'dividend>max'],
-        match: (_t, c) => c.operator === ':' && c.numberType === 'decimal' && masked(c.operand1Mask, DECIMAL_PLACES),
+        match: (_t, c) => c.operator === ':' && c.numberType === 'decimal'
+            && (masked(c.operand1Mask, DECIMAL_PLACES) || (masked(c.operand0Mask) && !masked(c.operand0Mask, ['Mrd', 'HM', 'TM', 'M', 'HD', 'TD', 'D', 'H', 'T']))),
     },
 
     // ── WP4 Geometry, fractions, vergelijken ──
@@ -226,12 +228,14 @@ export const KNOWN_BUGS: KnownBug[] = [
     // ── Found by this harness (BUGS.md 'Limit audit 2026-10-07', harness section) ──
     {
         // Gemengd getal on Getal 2 with Getal 1 the smaller fraction: the key is wrong.
-        id: 'N1', typeIds: ['hr-std-aftrekken'], rules: ['answer-key'],
+        // The same swap also lets Getal 2's noemer past its cap under multi_step.
+        id: 'N1', typeIds: ['hr-std-aftrekken'], rules: ['answer-key', 'denominator>max'],
         match: (_t, c) => c.numberType === 'rational' && c.mixedNumber2 === true,
     },
     {
         // A getalopbouw mask on only the top place (weight = max) admits one number.
-        id: 'N2', typeIds: ['plaatswaarde', 'vergelijken'], rules: ['underfill'],
+        // afronden too; the retry loop that hunts for more numbers makes kiezen slow.
+        id: 'N2', typeIds: ['plaatswaarde', 'vergelijken', 'afronden'], rules: ['underfill', 'slow'],
         match: (_t, c) => {
             const max = num(c.maxGetal, 1000);
             const on = getMaskPlaces(max, 'natural').filter(p => (c.numberMask as Record<string, boolean> | undefined)?.[p.key]);
