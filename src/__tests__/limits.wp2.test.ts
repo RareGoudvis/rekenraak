@@ -1,11 +1,13 @@
 import { describe, test, expect, afterEach } from 'vitest';
-import type { GetallenasExercise, Fraction } from '../services/math/types';
+import type { GetallenasExercise, PatroonExercise, Fraction } from '../services/math/types';
 import { generateGetallenasExercisesNoted } from '../services/getallenas/getallenasGenerator';
 import { generateGetallenrijExercisesNoted } from '../services/getallenrij/getallenrijGenerator';
-import { makeBlock } from './helpers/makeBlock';
+import { generatePatroonExercisesNoted } from '../services/patroon/patroonGenerator';
+import { makeBlock, generateFor } from './helpers/makeBlock';
 
 // Limit-audit WP2: every value a row/pattern generator prints stays within the block's
-// bounds, also on the settings that used to overrun them. Seeded so a failure reproduces.
+// bounds, also on the settings that used to overrun them. Seeded so a failure reproduces;
+// the limit checks go through the registry generator, the note checks through *Noted.
 
 const SEEDS = [11, 22, 33, 44, 55];
 
@@ -25,9 +27,25 @@ afterEach(() => { Math.random = realRandom; });
 const seeded = (seed: number) => { Math.random = mulberry32(seed); };
 
 const num = (v: number | Fraction) => (typeof v === 'number' ? v : (v.whole ?? 0) + v.n / v.d);
+const block = (typeId: string, constraints: Record<string, unknown>, count = 20) => makeBlock(typeId, { constraints, block: { numberOfExercises: count } });
+const lines = (typeId: string, c: Record<string, unknown>) => generateFor(block(typeId, c)) as GetallenasExercise[];
+const patterns = (typeId: string, c: Record<string, unknown>) => generateFor(block(typeId, c)) as PatroonExercise[];
 
-type Noted = (b: ReturnType<typeof makeBlock>) => { items: GetallenasExercise[]; note: string | null };
-const LINES: [string, Noted][] = [['getallenas', generateGetallenasExercisesNoted], ['getallenrijen', generateGetallenrijExercisesNoted]];
+const applyStep = (prev: number, op: string, operand: number) =>
+    op === '+' ? prev + operand : op === '-' ? prev - operand : op === 'x' ? prev * operand : prev / operand;
+
+// Values follow the printed cycle and stay within [lo, hi].
+function expectPatternWithin(ex: PatroonExercise, lo: number, hi: number) {
+    const vals = ex.values;
+    for (const v of vals) {
+        expect(v).toBeGreaterThanOrEqual(lo);
+        expect(v).toBeLessThanOrEqual(hi);
+    }
+    for (let i = 1; i < vals.length; i++) {
+        const st = ex.cycle[(i - 1) % ex.cycle.length];
+        expect(applyStep(vals[i - 1], st.op, st.operand)).toBeCloseTo(vals[i], 6);
+    }
+}
 
 describe('[L1] getallenas / getallenrijen stay within [lo, max]', () => {
     const cases: Record<string, unknown>[] = [
@@ -39,14 +57,13 @@ describe('[L1] getallenas / getallenrijen stay within [lo, max]', () => {
         { numberType: 'geheel', maxGetal: 20, minGetal: 0, step: 25, ticks: 8, direction: 'beide' },
         { numberType: 'geheel', maxGetal: 20, minGetal: -10, step: 10, ticks: 6, direction: 'right' },
     ];
-    for (const [typeId, gen] of LINES) for (const c of cases) {
+    for (const typeId of ['getallenas', 'getallenrijen']) for (const c of cases) {
         test(`${typeId} ${JSON.stringify(c)}`, () => {
             const lo = c.numberType === 'geheel' ? (c.minGetal as number) : 0;
             for (const seed of SEEDS) {
                 seeded(seed);
-                const { items, note } = gen(makeBlock(typeId, { constraints: c, block: { numberOfExercises: 20 } }));
+                const items = lines(typeId, c);
                 expect(items).toHaveLength(20);
-                expect(note).toMatch(/past niet/);
                 for (const ex of items) {
                     expect(ex.values).toHaveLength(ex.tickCount);
                     expect(ex.tickCount).toBeGreaterThanOrEqual(4);
@@ -61,21 +78,21 @@ describe('[L1] getallenas / getallenrijen stay within [lo, max]', () => {
 
     test('keeps the step and drops a tick when that is enough (Leerjaar 1 default)', () => {
         seeded(11);
-        const { items, note } = generateGetallenasExercisesNoted(makeBlock('getallenas', { constraints: { maxGetal: 20, step: 5, ticks: 6 } }));
+        const { items, note } = generateGetallenasExercisesNoted(block('getallenas', { maxGetal: 20, step: 5, ticks: 6 }));
         expect(items.every(ex => ex.step === 5 && ex.tickCount === 5)).toBe(true);
         expect(note).toBe('Sprong +5 met 6 streepjes past niet tot 20: 5 streepjes gebruikt.');
     });
 
     test('shrinks the step when even four ticks overrun', () => {
         seeded(11);
-        const { items, note } = generateGetallenrijExercisesNoted(makeBlock('getallenrijen', { constraints: { maxGetal: 20, step: 50, ticks: 6 } }));
+        const { items, note } = generateGetallenrijExercisesNoted(block('getallenrijen', { maxGetal: 20, step: 50, ticks: 6 }));
         expect(items.every(ex => ex.step === 2 && ex.tickCount === 6)).toBe(true);
         expect(note).toBe('Sprong +50 past niet tot 20: sprong +2 gebruikt.');
     });
 
     test('a line that fits gets no note', () => {
         seeded(11);
-        expect(generateGetallenasExercisesNoted(makeBlock('getallenas', { constraints: { maxGetal: 100, step: 5, ticks: 6 } })).note).toBeNull();
+        expect(generateGetallenasExercisesNoted(block('getallenas', { maxGetal: 100, step: 5, ticks: 6 })).note).toBeNull();
     });
 });
 
@@ -92,9 +109,8 @@ describe('[L10] rational getallenrijen stay within maxTeller', () => {
             const d = c.fractionStep as number;
             for (const seed of SEEDS) {
                 seeded(seed);
-                const { items, note } = generateGetallenrijExercisesNoted(makeBlock('getallenrijen', { constraints: { numberType: 'rational', ...c }, block: { numberOfExercises: 20 } }));
+                const items = lines('getallenrijen', { numberType: 'rational', ...c });
                 expect(items).toHaveLength(20);
-                expect(note).toMatch(/^Hoogste teller/);
                 for (const ex of items) {
                     expect(ex.values).toHaveLength(ex.tickCount);
                     for (const v of ex.values ?? []) {
@@ -107,10 +123,42 @@ describe('[L10] rational getallenrijen stay within maxTeller', () => {
         });
     }
 
-    test('a row that fits under maxTeller keeps its cells and gets no note', () => {
+    test('notes the shorter row; a row that fits keeps its cells and gets no note', () => {
         seeded(11);
-        const { items, note } = generateGetallenrijExercisesNoted(makeBlock('getallenrijen', { constraints: { numberType: 'rational', fractionStep: 4, maxTeller: 25, ticks: 6 } }));
+        expect(generateGetallenrijExercisesNoted(block('getallenrijen', { numberType: 'rational', fractionStep: 2, maxTeller: 3, ticks: 6 })).note)
+            .toBe('Hoogste teller 3 bij noemer 2: 4 vakjes i.p.v. 6.');
+        const { items, note } = generateGetallenrijExercisesNoted(block('getallenrijen', { numberType: 'rational', fractionStep: 4, maxTeller: 25, ticks: 6 }));
         expect(note).toBeNull();
         expect(items.every(ex => ex.tickCount === 6)).toBe(true);
+    });
+});
+
+describe('[L9] getalpatronen: "Stap (max)" bounds a masked +/− step', () => {
+    test('a mask that fits under the max: operands ≤ max and on the masked places', () => {
+        for (const seed of SEEDS) {
+            seeded(seed);
+            const items = patterns('getalpatronen', { maxGetal: 1000, ops: ['+'], opSettings: { '+': { max: 50, mask: { T: true, E: true } } } });
+            expect(items).toHaveLength(20);
+            for (const ex of items) for (const st of ex.cycle) {
+                expect(st.operand).toBeLessThanOrEqual(50);
+                expect(st.operand % 10).not.toBe(0);
+                expect(st.operand).toBeGreaterThan(10);
+            }
+        }
+    });
+
+    test('a mask above the max is dropped with a note, operands stay ≤ max', () => {
+        for (const seed of SEEDS) {
+            seeded(seed);
+            const items = patterns('getalpatronen', { maxGetal: 1000, ops: ['+'], opSettings: { '+': { max: 50, mask: { H: true, T: true } } } });
+            expect(items).toHaveLength(20);
+            for (const ex of items) {
+                expectPatternWithin(ex, 1, 1000);
+                for (const st of ex.cycle) expect(st.operand).toBeLessThanOrEqual(50);
+            }
+        }
+        seeded(11);
+        expect(generatePatroonExercisesNoted(block('getalpatronen', { maxGetal: 1000, ops: ['+'], opSettings: { '+': { max: 50, mask: { H: true, T: true } } } })).note)
+            .toBe('De getalopbouw bij optellen (H, T) past niet onder de grootste stap 50 en is genegeerd.');
     });
 });
