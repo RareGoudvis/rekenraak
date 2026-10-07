@@ -154,21 +154,23 @@ describe('v2 → v3 width migration', () => {
 
     test('6 → vol, 3 → ½, 2 → ½, absent stays absent', () => {
         const migrated = migrateWorksheetFile(v2File([6, 3, 2, undefined]));
-        expect(migrated.version).toBe(3);
+        expect(migrated.version).toBe(4);
         expect(migrated.blocks.map(b => b.widthUnits)).toEqual([4, 2, 2, undefined]);
     });
 
     test('parseWorksheetFile migrates a v2 file on the way in', () => {
         const parsed = parseWorksheetFile(JSON.stringify(v2File([6, 3, 2])));
-        expect(parsed.version).toBe(3);
+        expect(parsed.version).toBe(4);
         expect(parsed.blocks.map(b => b.widthUnits)).toEqual([4, 2, 2]);
     });
 
-    test('a v3 file is left alone (and migrating twice is a no-op)', () => {
+    test('a v3 file keeps its widths, a v4 file is left alone (migrating twice is a no-op)', () => {
         const v3 = { ...v2File([4, 2, 1]), version: 3 };
         const once = migrateWorksheetFile(v3);
-        expect(once).toBe(v3);
-        expect(migrateWorksheetFile(once).blocks.map(b => b.widthUnits)).toEqual([4, 2, 1]);
+        expect(once.blocks).toBe(v3.blocks);
+        expect(migrateWorksheetFile(once)).toBe(once);
+        const v4 = { ...v2File([4, 2, 1]), version: 4 };
+        expect(migrateWorksheetFile(v4)).toBe(v4);
     });
 
     test('a width the old grid never had widens instead of overflowing', () => {

@@ -1,5 +1,4 @@
 import type { Leerjaar } from '../config/gradePresets';
-import { getMaskPlaces } from '../services/math/mathEngine';
 
 // ── Known limit bugs ─────────────────────────────────────────────────────────
 // One entry per still-open BUGS.md id ([Lx] limit, [Ex] other, [Nx] found by this harness).
@@ -32,38 +31,13 @@ export interface KnownSkip {
     match: (typeId: string, c: C) => boolean;
 }
 
-const num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 
 // Empty since E1 (hang) and E2 (crash) were fixed; keep the list for the next one.
 export const KNOWN_SKIPS: KnownSkip[] = [];
 
-export const KNOWN_BUGS: KnownBug[] = [
-    // ── WP1 Hoofdrekenen engine ──
-    {
-        // L19 list side (WP7): met rest has no max picker yet, so the Leerjaar max never reaches
-        // the block; the generator already keeps every dividend within the block's own max.
-        id: 'L19', typeIds: ['hr-std-delen'], rules: ['dividend>gradeMax'],
-        match: (_t, c) => c.multiplicationMode === 'met_rest',
-    },
-
-    // ── WP7 Grade lists ──
-    {
-        id: 'L20', typeIds: ['vergelijken', 'plaatswaarde'], rules: ['seeded-max>grade'],
-        match: (_t, _c, grade) => grade === 1,
-    },
-
-    // ── Found by this harness (BUGS.md 'Limit audit 2026-10-07', harness section) ──
-    {
-        // A getalopbouw mask on only the top place (weight = max) admits one number.
-        // afronden too; the retry loop that hunts for more numbers makes kiezen slow.
-        id: 'N2', typeIds: ['plaatswaarde', 'vergelijken', 'afronden'], rules: ['underfill', 'slow'],
-        match: (_t, c) => {
-            const max = num(c.maxGetal, 1000);
-            const on = getMaskPlaces(max, 'natural').filter(p => (c.numberMask as Record<string, boolean> | undefined)?.[p.key]);
-            return on.length > 0 && on.every(p => p.weight === max);
-        },
-    },
-];
+// Empty: every bug the 2026-10-07 limit audit logged is fixed. A new one gets an entry here plus
+// a BUGS.md line and a case in scripts/limit-trigger-cases.json.
+export const KNOWN_BUGS: KnownBug[] = [];
 
 const ruleMatches = (entryRule: string, rule: string) => rule === entryRule || rule.startsWith(`${entryRule}@`);
 

@@ -34,7 +34,7 @@ import { generateTemperatuurExercises } from '../services/temperatuur/temperatuu
 import { generatePlaatswaardeExercises } from '../services/plaatswaarde/plaatswaardeGenerator';
 import { generateEvenOnevenExercises } from '../services/evenoneven/evenOnevenGenerator';
 import { generateVergelijkenExercises } from '../services/vergelijken/vergelijkenGenerator';
-import { generateAfrondenExercises } from '../services/afronden/afrondenGenerator';
+import { generateAfrondenExercises, targetsFor, usableTargets } from '../services/afronden/afrondenGenerator';
 import { generateRomeinseExercises } from '../services/romeinse/romeinseGenerator';
 import { generateHerleidingExercises, generateHerleidingExercisesNoted } from '../services/herleidingen/herleidingenGenerator';
 import { generateSchattendExercises, generateSchattendNoted } from '../services/schattend/schattendGenerator';
@@ -50,7 +50,7 @@ import { generateKalenderExercises, generateKalenderExercisesNoted } from '../se
 import { generateControleExercises } from '../services/controleren/controlerenGenerator';
 import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGenerator';
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
-import { RANGES, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
+import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, type MaxPresetsFn, type MaxRange } from './numberRanges';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -113,6 +113,21 @@ const relaxing = (gen: (b: MathBlock) => unknown[]) => ({
     generateNoted: (b: MathBlock) => {
         const result = generateWithRelaxation(b, gen);
         return { items: result.items, note: relaxationNote(result) };
+    },
+});
+
+// A digit mask under a low max can leave fewer distinct numbers than the block asks for
+// (mask T at max 20 → only 10 and 20): say so instead of handing back a silently short block.
+export function maskShortfallNote(got: number, want: number): string | null {
+    if (got >= want) return null;
+    if (got === 0) return 'Met deze getalopbouw en dit maximum past geen enkele oefening.';
+    return `Met deze getalopbouw en dit maximum ${got === 1 ? 'past' : 'passen'} maar ${got} van de ${want} oefeningen.`;
+}
+const notingShortfall = (gen: (b: MathBlock) => unknown[]) => ({
+    generate: gen,
+    generateNoted: (b: MathBlock) => {
+        const items = gen(b);
+        return { items, note: maskShortfallNote(items.length, b.numberOfExercises) };
     },
 });
 
@@ -202,8 +217,9 @@ const mabDefaults = (): MabConstraints => ({
 
 const ordenenDefaults = (): OrdenenConstraints => ({
     numberType: 'natural', count: 3, operatorMode: 'oplopend', maxGetal: 100,
-    // declared so the global base (decimalen / stambreuken / gemengd) can target them
-    decimalPlaces: 1, unitFractionsOnly: false, allowMixed: false,
+    // declared so the global base (decimalen / stambreuken / gemengd) can target them; 2 is what
+    // the old base (decimals 2) always wrote, so a base without decimals changes nothing here
+    decimalPlaces: 2, unitFractionsOnly: false, allowMixed: false,
     answerStyle: 'lijn',
 });
 
@@ -389,7 +405,7 @@ const addSubMax: MaxPresetsFn = (c) => {
 };
 
 // MultiplicationConfig/DivisionConfig: the tienvoud preset (HrPresetRow, any non-rational
-// type) wins; natural shows a max only in 'andere' mode (tafels / met rest have none).
+// type) wins; natural shows a max only in 'andere' mode (tafels has none).
 const mulDivMax: MaxPresetsFn = (c) => {
     const nt = numberTypeOf(c);
     if (nt === 'rational') return null;
@@ -398,6 +414,12 @@ const mulDivMax: MaxPresetsFn = (c) => {
     if (nt === 'natural' && (c.multiplicationMode ?? 'tafels') === 'andere') return maxGetal(RANGES.hrAndere);
     return null;
 };
+
+// DivisionConfig adds met rest (natural only): its deeltal max follows the leerjaar.
+const divMax: MaxPresetsFn = (c) =>
+    c.preset !== 'tienvoud' && numberTypeOf(c) === 'natural' && c.multiplicationMode === 'met_rest'
+        ? maxGetal(RANGES.hrMetRest)
+        : mulDivMax(c);
 
 // GemengdConfig: one shared picker, decimal list or the natural one for every other type.
 const mixedMax: MaxPresetsFn = (c) =>
@@ -463,7 +485,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax }),
     'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax }),
     'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax }),
-    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises), generateNoted: generateDivisionExercisesNoted, defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax }),
+    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises), generateNoted: generateDivisionExercisesNoted, defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: divMax }),
     // Mixed already relaxes per variant inside its own generator, so it brings its own note.
     'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10, maxPresets: mixedMax }),
 
@@ -500,10 +522,10 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises,  defaultConstraints: metenDefaults,        defaultCount: 6 }),
     'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises, generateNoted: generateOmtrekExercisesNoted,       defaultConstraints: metenDefaults,        defaultCount: 6 }),
     'temperatuur':  row<TemperatuurConstraints>({ exerciseField: 'temperatuurExercises',  generate: generateTemperatuurExercises,  defaultConstraints: temperatuurDefaults,  defaultCount: 4 }),
-    'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', generate: generatePlaatswaardeExercises, defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) }),
+    'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', ...notingShortfall(generatePlaatswaardeExercises), defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) }),
     'even-oneven':  row<EvenOnevenConstraints>({ exerciseField: 'evenOnevenExercises',   generate: generateEvenOnevenExercises,   defaultConstraints: evenOnevenDefaults,   defaultCount: 3, maxPresets: evenOnevenMax }),
-    'vergelijken':  row<VergelijkenConstraints>({ exerciseField: 'vergelijkenExercises',  generate: generateVergelijkenExercises,  defaultConstraints: vergelijkenDefaults,  defaultCount: 6, maxPresets: vergelijkenMax }),
-    'afronden':     row<AfrondenConstraints>({ exerciseField: 'afrondenExercises',     generate: generateAfrondenExercises,     defaultConstraints: afrondenDefaults,     defaultCount: 6, maxPresets: afrondenMax }),
+    'vergelijken':  row<VergelijkenConstraints>({ exerciseField: 'vergelijkenExercises',  ...notingShortfall(generateVergelijkenExercises),  defaultConstraints: vergelijkenDefaults,  defaultCount: 6, maxPresets: vergelijkenMax }),
+    'afronden':     row<AfrondenConstraints>({ exerciseField: 'afrondenExercises',     ...notingShortfall(generateAfrondenExercises),     defaultConstraints: afrondenDefaults,     defaultCount: 6, maxPresets: afrondenMax }),
     'romeinse-cijfers': row<RomeinseConstraints>({ exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 }),
     'herleidingen': row<HerleidingenConstraints>({ exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, generateNoted: generateHerleidingExercisesNoted, defaultConstraints: herleidingenDefaults, defaultCount: 8 }),
 
@@ -537,6 +559,55 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'vormleer-punt-lijn': row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
     'vormleer-hoeken':    row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
     'vormleer-figuren':   row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
+};
+
+// ── Seed-time fit: settings that only make sense under the seeded max ────────
+// A leerjaar seed can lower a block's max under what its default settings assume (H at max
+// 100, a 5-step line of 6 ticks at max 20). seedConstraints runs these on the merged seed so
+// a fresh block never starts on a setting its generator would have to replace with a note.
+
+// Rounding targets that cannot round at this max (usableTargets, the rule both generators
+// use) are dropped; when none is left, the nearest valid target takes over.
+const fitRoundTargets = (c: Record<string, unknown>): Record<string, unknown> => {
+    const selected = c.roundTargets;
+    if (!Array.isArray(selected) || typeof c.maxGetal !== 'number') return c;
+    const nt = numberTypeOf(c);
+    const dp = typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 2;
+    const keep = usableTargets(nt, c.maxGetal, dp, selected as string[]).map(t => t.key);
+    if (keep.length === selected.length) return c;
+    if (keep.length) return { ...c, roundTargets: (selected as string[]).filter(k => keep.includes(k)) };
+    const all = targetsFor(nt);
+    const valid = usableTargets(nt, c.maxGetal, dp, all.map(t => t.key));
+    const wanted = all.filter(t => (selected as string[]).includes(t.key));
+    if (!valid.length || !wanted.length) return c;
+    const ref = Math.max(...wanted.map(t => t.weight));
+    const nearest = valid.reduce((best, t) => (Math.abs(Math.log(t.weight / ref)) < Math.abs(Math.log(best.weight / ref)) ? t : best));
+    return { ...c, roundTargets: [nearest.key] };
+};
+
+// A getallenas / getallenrij spans step × (ticks − 1) from its lower bound: when that overruns
+// the max, fewer ticks first (down to 4, the slider's floor), then a smaller step.
+const fitAxisSpan = (c: Record<string, unknown>): Record<string, unknown> => {
+    const nt = numberTypeOf(c);
+    const { maxGetal: max, step, ticks } = c;
+    if (nt === 'rational' || typeof max !== 'number' || typeof step !== 'number' || typeof ticks !== 'number' || step <= 0) return c;
+    const lo = nt === 'geheel' ? (typeof c.minGetal === 'number' ? c.minGetal : -max) : 0;
+    const room = max - lo;
+    // 1e-9: decimal steps (0.1 × 5) must not miss a fit by a float hair.
+    const fits = (s: number, t: number) => s * (t - 1) <= room + 1e-9;
+    if (fits(step, ticks)) return c;
+    const MIN_TICKS = 4;
+    const t = Math.max(MIN_TICKS, Math.min(ticks, Math.floor(room / step + 1e-9) + 1));
+    if (fits(step, t)) return { ...c, ticks: t };
+    const steps = AXIS_FALLBACK_STEPS[nt === 'decimal' ? 'decimal' : 'natural'].filter(s => s < step && fits(s, t));
+    return steps.length ? { ...c, ticks: t, step: Math.max(...steps) } : { ...c, ticks: t };
+};
+
+export const SEED_FIT: Record<string, (c: Record<string, unknown>) => Record<string, unknown>> = {
+    'afronden': fitRoundTargets,
+    'schattend': fitRoundTargets,
+    'getallenas': fitAxisSpan,
+    'getallenrijen': fitAxisSpan,
 };
 
 // An old save or share link can hold a max its picker no longer lists (the 1e10 leerjaar-6

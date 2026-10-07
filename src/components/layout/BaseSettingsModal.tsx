@@ -61,7 +61,7 @@ export default function BaseSettingsModal({ onClose }: Props) {
                                 { val: 'rational', label: 'Rationaal' },
                                 { val: 'geheel', label: 'Geheel' },
                             ] as Array<{ val: BaseNumberType; label: string }>).map(({ val, label }) => (
-                                <button key={val} onClick={() => updateBase({ baseNumberType: val })} style={S.preset(base.baseNumberType === val)}>
+                                <button key={val} onClick={() => updateBase({ baseNumberType: val, ...(val === 'decimal' && base.baseDecimalPlaces === 0 ? { baseDecimalPlaces: 2 } : {}) })} style={S.preset(base.baseNumberType === val)}>
                                     {label}
                                 </button>
                             ))}

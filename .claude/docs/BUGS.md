@@ -132,32 +132,11 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   map (harmless ids, but it grows). Fix: `staleBlocks: {}` in documentSlice.loadWorksheet. 2026-09-27
 - `typeId.startsWith('layout-')` is still used in Inspector.tsx (~443, ~649), blockLayout.ts (~562) and
   blockNumbering.ts (~21); switch to `REGISTRY[t]?.isFurniture`. 2026-09-27
-- Picking L4-L6 and then "Alle leerjaren" keeps the grade's `baseDecimalPlaces: 2` in the base, so new
-  vergelijken / plaatswaarde blocks come out with decimals. Pre-existing. Owner call. 2026-09-27
-  (Full sweep: a FRESH profile does it too — `DEFAULT_BASE.baseDecimalPlaces` is 2 (baseSettings.ts:36)
-  and baseApply copies it over vergelijken's own 0, so vergelijken-getallen / -kiezen and every
-  plaatswaarde leaf show "703,41" at their sidebar defaults.)
 
 ## Limit audit 2026-10-07
 
-Six-agent number-limit audit on rc (~35M generated exercises; harnesses and repro seeds under the
-session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) key the entries of
-`limits.knownBugs.ts` once that exists. Owner triage of the ambiguous findings is folded in; the
-"fine as is" ones are not listed. Grouped per fix package so parallel deletions merge cleanly.
-
-### WP7 Grade lists (numberRanges.ts, exerciseRegistry.ts, baseSettings.ts, NaturalSettings.tsx)
-
-- [L19] (list side) hr-std-delen 'met rest': no max picker and no seeding, so the Leerjaar max never
-  reaches it. Fix: a met-rest list (100 / 1000) seeded from the grade, N1-N3 clipped to it. 2026-10-07
-- [L20] Leerjaar 1 (max 20) floors to 100 on every list that starts at 100 (floorToPreset). Owner rule:
-  add 20 only where it makes sense — vergelijken, plaatswaarde, deelbaarheid-kleuren (signed off); the rest
-  keep their floor and the gap gets documented in ARCHITECTURE §7. 2026-10-07
-
-### Found by the limit harness (limits.matrix.test.ts, repro in scripts/limit-trigger-cases.json)
-
-- [N2] plaatswaarde / vergelijken / afronden: a getalopbouw mask on only the top place (weight = max, e.g.
-  HM at 1e8) admits exactly one number, so the block holds 1 of 6. Same shape as the top-place bridge
-  line under Generators. Fix: hide the top place in the mask row or note it. 2026-10-07
+All [L1]-[L21], [E1]-[E11], [N1]-[N2] and [T1] are fixed on rc (fix campaign 2026-10-07/08, see
+UpdateState). Left over, found while fixing:
 
 - MathBlockRenderer draws the compenseren tussenstap from the block's stored `preset`, so when the
   relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense

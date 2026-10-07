@@ -5,7 +5,7 @@
 // retro-affects existing blocks. Pure data (no React) so the store can import it.
 
 import { NAT_CEILING, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
-import { REGISTRY } from './exerciseRegistry';
+import { REGISTRY, SEED_FIT } from './exerciseRegistry';
 import { LEAF_BY_ID } from './appstructure';
 import type { Leerjaar } from './gradePresets';
 import { PLACE_VALUES } from '../services/math/mathEngine';
@@ -23,7 +23,8 @@ export interface BaseSettings {
     // 'bruggetje' = carry/borrow across a place-value boundary (Dutch primary term).
     // Place → policy ('FREE'=MAG, 'REQUIRED'=MOET, 'FORBIDDEN'=GEEN). Empty {} = default.
     baseBridges: Record<string, BaseBridgePolicy>;
-    baseDecimalPlaces: number;          // global decimal precision (1..3)
+    // 0 = whole numbers (the default, leerjaar 1-3); 1..3 = decimal precision (leerjaar 4-6 seed 2).
+    baseDecimalPlaces: number;
     baseUnitFractionsOnly: boolean;     // rational: stambreuken
     baseAllowMixed: boolean;            // rational: gemengde getallen
 }
@@ -34,7 +35,7 @@ export const DEFAULT_BASE: BaseSettings = {
     baseOperand1Mask: {},
     baseOperand2Mask: {},
     baseBridges: {},
-    baseDecimalPlaces: 2,
+    baseDecimalPlaces: 0,
     baseUnitFractionsOnly: false,
     baseAllowMixed: false,
 };
@@ -85,8 +86,13 @@ export function baseApply(
 
     if ('bridges' in registryDefaults && hasKeys(base.baseBridges)) out.bridges = { ...base.baseBridges };
 
-    // Decimal precision + fraction-display defaults, only where the type owns them.
-    if ('decimalPlaces' in registryDefaults) out.decimalPlaces = base.baseDecimalPlaces;
+    // Decimal precision + fraction-display defaults, only where the type owns them. Where a
+    // numberType picks decimals, decimalPlaces is just their precision and 0 is none, so the
+    // type keeps its own; where decimalPlaces IS the switch (plaatswaarde, vergelijken), 0 =
+    // whole numbers.
+    if ('decimalPlaces' in registryDefaults && (base.baseDecimalPlaces > 0 || !('numberType' in registryDefaults))) {
+        out.decimalPlaces = base.baseDecimalPlaces;
+    }
     if ('unitFractionsOnly' in registryDefaults) out.unitFractionsOnly = base.baseUnitFractionsOnly;
     if ('allowMixed' in registryDefaults) out.allowMixed = base.baseAllowMixed;
 
@@ -159,5 +165,9 @@ export function seedConstraints({ typeId, base, override: leafOverride, grade, l
             merged[key] = Object.keys(trimmed).length > 0 ? trimmed : defaults[key];
         }
     }
-    return merged;
+    // Same idea for settings that hang on the max (rounding targets, an axis span), but only
+    // when the max is the seed's: a max the override pins is the author's, and the generator's
+    // note then explains what it had to change.
+    const maxPinned = !!override && MAX_KEYS.some(k => k in override);
+    return (!maxPinned && SEED_FIT[typeId]?.(merged)) || merged;
 }

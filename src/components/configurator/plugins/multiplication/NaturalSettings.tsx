@@ -4,7 +4,9 @@ import type { MathBlock } from '../../../../services/math/types';
 import { sharedPluginStyles as styles } from '../sharedPluginStyles';
 import { getMaskPlaces } from '../../../../services/math/mathEngine';
 import PopupSelect from '../../../ui/PopupSelect';
-import { presetLabel } from '../../../../config/numberRanges';
+import { presetLabel, floorToPreset, metRestLevelFits, clipMetRestLevel, MET_REST_LEVEL_MIN_MAX } from '../../../../config/numberRanges';
+import { REGISTRY } from '../../../../config/exerciseRegistry';
+import { useWorksheetStore } from '../../../../store/useWorksheetStore';
 import { useMaxPresets } from '../../useMaxPresets';
 import SettingLabel from '../SettingLabel';
 import type { MulDivConstraints } from '../../../../services/math/constraintTypes';
@@ -29,6 +31,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
     // Shared keys (maxGetal) are rendered by the gemengd panel instead; empty outside it.
     const hidden = useHiddenControls();
     const range = useMaxPresets(block);
+    const baseMaxGetal = useWorksheetStore((s) => s.baseSettings.baseMaxGetal);
     const {
         multiplicationMode = 'tafels',
         selectedTables = [2, 3, 4, 5, 10],
@@ -76,6 +79,21 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         patch({ divisionLevels: [], divisionLevel: 0 });
     };
 
+    // Tafels has no max picker, so its maxGetal is the untouched registry default: entering
+    // met rest seeds the deeltal max from the base (the leerjaar) like a new block would.
+    // Inside a gemengd tab the shared max belongs to the gemengd panel, so it stays put.
+    const enterMetRest = () => {
+        if (multiplicationMode === 'met_rest') return;
+        const next = { ...c, multiplicationMode: 'met_rest' as const };
+        const metRange = hidden.has('maxGetal') ? null : REGISTRY[block.typeId]?.maxPresets?.(next);
+        if (!metRange) { patch({ multiplicationMode: 'met_rest' }); return; }
+        const seeded = floorToPreset(baseMaxGetal, metRange.presets);
+        patch({ multiplicationMode: 'met_rest', [metRange.key]: seeded, metRestLevel: clipMetRestLevel(metRestLevel, seeded) } as Partial<MulDivConstraints>);
+    };
+    // A niveau the deeltal max cannot hold is shown disabled; the stored one is clipped down.
+    const activeMetRestLevel = clipMetRestLevel(metRestLevel, maxGetal);
+    const blockedMetRestLevels = [1, 2, 3].filter(l => !metRestLevelFits(l, maxGetal));
+
     return (
         // Wrapper margin (not the inner sectionBox) keeps a gap before whatever
         // settings section the parent config plugin renders next.
@@ -90,7 +108,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                 </button>
                 {isDivision && (
                     <button
-                        onClick={() => updateConstraint('multiplicationMode', 'met_rest')}
+                        onClick={enterMetRest}
                         style={styles.radioBtn(multiplicationMode === 'met_rest')}
                     >
                         Met rest
@@ -136,6 +154,16 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             </button>
                         ))}
                     </div>
+                    {range && !hidden.has('maxGetal') && <div style={styles.section}>
+                        <SettingLabel text="Maximum deeltal:" info="Het grootste deeltal (het getal dat gedeeld wordt)." />
+                        <PopupSelect
+                            clampToLowest
+                            value={maxGetal}
+                            options={range.presets.map(val => ({ value: val, label: presetLabel(val) }))}
+                            onChange={(val) => patch({ maxGetal: val, metRestLevel: clipMetRestLevel(metRestLevel, val) })}
+                            ariaLabel="Maximum deeltal"
+                        />
+                    </div>}
                     <SettingLabel text="Niveau:" info="Moeilijkheidsgraad van de deling met rest (zie voorbeeld per niveau)." />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {([
@@ -143,15 +171,27 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                             { level: 2, label: 'N2', example: 'TE > 10×deler  (Bv. 67 : 6 = 11 r 1)' },
                             { level: 3, label: 'N3', example: 'Driecijferig deeltal  (Bv. 127 : 6 = 21 r 1)' },
                         ] as const).map(({ level, label, example }) => {
-                            const isActive = metRestLevel === level;
+                            const fits = metRestLevelFits(level, maxGetal);
+                            const isActive = activeMetRestLevel === level;
                             return (
-                                <div key={level} onClick={() => updateConstraint('metRestLevel', level)} style={levelRowStyle(isActive)}>
+                                <div
+                                    key={level}
+                                    onClick={fits ? () => updateConstraint('metRestLevel', level) : undefined}
+                                    aria-disabled={!fits}
+                                    title={fits ? undefined : `Vraagt een maximum deeltal van ${MET_REST_LEVEL_MIN_MAX[level].toLocaleString('nl-BE')}.`}
+                                    style={{ ...levelRowStyle(isActive), ...(fits ? {} : { opacity: 0.45, cursor: 'not-allowed' }) }}
+                                >
                                     <span style={levelLabelStyle(isActive)}>{label}</span>
                                     <span style={levelExampleStyle}>{example}</span>
                                 </div>
                             );
                         })}
                     </div>
+                    {blockedMetRestLevels.length > 0 && (
+                        <p style={styles.hint}>
+                            {blockedMetRestLevels.map(l => `N${l}`).join(' en ')} {blockedMetRestLevels.length > 1 ? 'passen' : 'past'} niet onder het maximum deeltal.
+                        </p>
+                    )}
                 </div>
             )}
 

@@ -34,12 +34,20 @@ const cases: Array<[string, string, Record<string, unknown> | undefined]> = [
 ];
 
 const MAX_KEYS = ['maxGetal', 'maxRange', 'maxNumber'] as const;
+// The default base as it was until 2026-10-07 (decimals 2), which the legacy snapshot assumes.
+const OLD_DEFAULT_BASE: BaseSettings = { ...DEFAULT_BASE, baseDecimalPlaces: 2 };
 const gradeBase = (g: 1 | 2 | 3 | 4 | 5 | 6): BaseSettings => ({ ...DEFAULT_BASE, ...GRADE_PRESETS[g] });
 
 describe('(a) the default base changes nothing', () => {
     test.each(cases)('%s', (_name, typeId, leaf) => {
         const defaults = REGISTRY[typeId].defaultConstraints(typeId);
-        const legacy: Record<string, unknown> = { ...defaults, ...legacyBaseApply(DEFAULT_BASE, defaults), ...(leaf ?? {}) };
+        const legacy: Record<string, unknown> = { ...defaults, ...legacyBaseApply(OLD_DEFAULT_BASE, defaults), ...(leaf ?? {}) };
+        // [S1] 2026-10-07: the base's decimals default to 0. Where decimalPlaces is the decimal switch
+        // (plaatswaarde, vergelijken) a block starts on whole numbers; where a numberType picks
+        // decimals the type keeps its own precision (2).
+        if ('decimalPlaces' in defaults && !(leaf && 'decimalPlaces' in leaf)) {
+            legacy.decimalPlaces = 'numberType' in defaults ? defaults.decimalPlaces : 0;
+        }
         // A hidden picker keeps the registry default (even-oneven cirkels: 100, drawn ≤ 24 either way).
         if (REGISTRY[typeId].maxPresets?.(legacy) === null) {
             for (const key of MAX_KEYS) if (key in defaults && !(leaf && key in leaf)) legacy[key] = defaults[key];

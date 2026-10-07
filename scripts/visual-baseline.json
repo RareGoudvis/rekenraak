@@ -2858,123 +2858,123 @@
   },
   "plaatswaarde-omcirkelen-w1-s0": {
    "cellHeightPx": 346,
-   "intrinsicPx": 299,
-   "textHash": "4f2841f2d15ad5d9"
+   "intrinsicPx": 185,
+   "textHash": "ea92ca61196bafaf"
   },
   "plaatswaarde-omcirkelen-w1-s1": {
    "cellHeightPx": 346,
-   "intrinsicPx": 299,
-   "textHash": "4f2841f2d15ad5d9"
+   "intrinsicPx": 185,
+   "textHash": "ea92ca61196bafaf"
   },
   "plaatswaarde-omcirkelen-w2-s0": {
    "cellHeightPx": 346,
-   "intrinsicPx": 299,
-   "textHash": "4f2841f2d15ad5d9"
+   "intrinsicPx": 185,
+   "textHash": "ea92ca61196bafaf"
   },
   "plaatswaarde-omcirkelen-w2-s1": {
    "cellHeightPx": 346,
-   "intrinsicPx": 299,
-   "textHash": "4f2841f2d15ad5d9"
+   "intrinsicPx": 185,
+   "textHash": "ea92ca61196bafaf"
   },
   "plaatswaarde-omcirkelen-w4-s0": {
    "cellHeightPx": 205,
-   "intrinsicPx": 622,
-   "textHash": "4f2841f2d15ad5d9"
+   "intrinsicPx": 394,
+   "textHash": "ea92ca61196bafaf"
   },
   "plaatswaarde-omcirkelen-w4-s1": {
    "cellHeightPx": 205,
-   "intrinsicPx": 622,
-   "textHash": "4f2841f2d15ad5d9"
+   "intrinsicPx": 394,
+   "textHash": "ea92ca61196bafaf"
   },
   "plaatswaarde-plaats-w1-s0": {
-   "cellHeightPx": 408,
-   "intrinsicPx": 78,
-   "textHash": "0bbd80cea5fb21a6"
+   "cellHeightPx": 298,
+   "intrinsicPx": 70,
+   "textHash": "1dec2a29eabbc736"
   },
   "plaatswaarde-plaats-w1-s1": {
-   "cellHeightPx": 436,
+   "cellHeightPx": 390,
    "intrinsicPx": 135,
-   "textHash": "d94eda91765d0c73"
+   "textHash": "fcbe8eb6c1ca99f0"
   },
   "plaatswaarde-plaats-w2-s0": {
    "cellHeightPx": 298,
    "intrinsicPx": 255,
-   "textHash": "0bbd80cea5fb21a6"
+   "textHash": "1dec2a29eabbc736"
   },
   "plaatswaarde-plaats-w2-s1": {
    "cellHeightPx": 298,
    "intrinsicPx": 279,
-   "textHash": "d94eda91765d0c73"
+   "textHash": "fcbe8eb6c1ca99f0"
   },
   "plaatswaarde-plaats-w4-s0": {
    "cellHeightPx": 181,
    "intrinsicPx": 534,
-   "textHash": "0bbd80cea5fb21a6"
+   "textHash": "1dec2a29eabbc736"
   },
   "plaatswaarde-plaats-w4-s1": {
    "cellHeightPx": 181,
-   "intrinsicPx": 552,
-   "textHash": "d94eda91765d0c73"
+   "intrinsicPx": 583,
+   "textHash": "fcbe8eb6c1ca99f0"
   },
   "plaatswaarde-tabel-w1-s0": {
    "cellHeightPx": 600,
-   "intrinsicPx": 200,
-   "textHash": "05f37481c103d8d7"
+   "intrinsicPx": 226,
+   "textHash": "87dc27d8e8370b80"
   },
   "plaatswaarde-tabel-w1-s1": {
    "cellHeightPx": 600,
-   "intrinsicPx": 200,
-   "textHash": "ad96c5ca162d7a24"
+   "intrinsicPx": 226,
+   "textHash": "b872b773d1533c80"
   },
   "plaatswaarde-tabel-w2-s0": {
    "cellHeightPx": 600,
-   "intrinsicPx": 200,
-   "textHash": "05f37481c103d8d7"
+   "intrinsicPx": 226,
+   "textHash": "87dc27d8e8370b80"
   },
   "plaatswaarde-tabel-w2-s1": {
    "cellHeightPx": 600,
-   "intrinsicPx": 200,
-   "textHash": "ad96c5ca162d7a24"
+   "intrinsicPx": 226,
+   "textHash": "b872b773d1533c80"
   },
   "plaatswaarde-tabel-w4-s0": {
-   "cellHeightPx": 600,
-   "intrinsicPx": 306,
-   "textHash": "05f37481c103d8d7"
+   "cellHeightPx": 330,
+   "intrinsicPx": 476,
+   "textHash": "87dc27d8e8370b80"
   },
   "plaatswaarde-tabel-w4-s1": {
-   "cellHeightPx": 600,
-   "intrinsicPx": 306,
-   "textHash": "ad96c5ca162d7a24"
+   "cellHeightPx": 330,
+   "intrinsicPx": 476,
+   "textHash": "b872b773d1533c80"
   },
   "plaatswaarde-waarde-w1-s0": {
    "cellHeightPx": 298,
-   "intrinsicPx": 78,
-   "textHash": "0bbd80cea5fb21a6"
+   "intrinsicPx": 45,
+   "textHash": "1dec2a29eabbc736"
   },
   "plaatswaarde-waarde-w1-s1": {
    "cellHeightPx": 298,
-   "intrinsicPx": 78,
-   "textHash": "8b3ea04ce7d0710c"
+   "intrinsicPx": 40,
+   "textHash": "78b9001aec808c7c"
   },
   "plaatswaarde-waarde-w2-s0": {
    "cellHeightPx": 298,
    "intrinsicPx": 215,
-   "textHash": "0bbd80cea5fb21a6"
+   "textHash": "1dec2a29eabbc736"
   },
   "plaatswaarde-waarde-w2-s1": {
    "cellHeightPx": 298,
-   "intrinsicPx": 186,
-   "textHash": "8b3ea04ce7d0710c"
+   "intrinsicPx": 176,
+   "textHash": "78b9001aec808c7c"
   },
   "plaatswaarde-waarde-w4-s0": {
    "cellHeightPx": 181,
    "intrinsicPx": 454,
-   "textHash": "0bbd80cea5fb21a6"
+   "textHash": "1dec2a29eabbc736"
   },
   "plaatswaarde-waarde-w4-s1": {
    "cellHeightPx": 181,
    "intrinsicPx": 376,
-   "textHash": "8b3ea04ce7d0710c"
+   "textHash": "78b9001aec808c7c"
   },
   "procenten-nemen-w1-s0": {
    "cellHeightPx": 536,
@@ -3548,63 +3548,63 @@
   },
   "vergelijken-getallen-w1-s0": {
    "cellHeightPx": 376,
-   "intrinsicPx": 199,
-   "textHash": "ea95e73f313df800"
+   "intrinsicPx": 198,
+   "textHash": "faa8bbd6d96bf558"
   },
   "vergelijken-getallen-w1-s1": {
    "cellHeightPx": 376,
-   "intrinsicPx": 199,
-   "textHash": "72bb72c6ab756085"
+   "intrinsicPx": 198,
+   "textHash": "a8e10c9d1dcd83df"
   },
   "vergelijken-getallen-w2-s0": {
    "cellHeightPx": 376,
-   "intrinsicPx": 199,
-   "textHash": "ea95e73f313df800"
+   "intrinsicPx": 198,
+   "textHash": "faa8bbd6d96bf558"
   },
   "vergelijken-getallen-w2-s1": {
    "cellHeightPx": 376,
-   "intrinsicPx": 199,
-   "textHash": "72bb72c6ab756085"
+   "intrinsicPx": 198,
+   "textHash": "a8e10c9d1dcd83df"
   },
   "vergelijken-getallen-w4-s0": {
    "cellHeightPx": 220,
-   "intrinsicPx": 421,
-   "textHash": "ea95e73f313df800"
+   "intrinsicPx": 420,
+   "textHash": "faa8bbd6d96bf558"
   },
   "vergelijken-getallen-w4-s1": {
    "cellHeightPx": 220,
-   "intrinsicPx": 421,
-   "textHash": "72bb72c6ab756085"
+   "intrinsicPx": 420,
+   "textHash": "a8e10c9d1dcd83df"
   },
   "vergelijken-kiezen-w1-s0": {
    "cellHeightPx": 340,
-   "intrinsicPx": 299,
-   "textHash": "564c5d5c1bf33ae7"
+   "intrinsicPx": 197,
+   "textHash": "c1c77fdbf8b11bb8"
   },
   "vergelijken-kiezen-w1-s1": {
    "cellHeightPx": 340,
-   "intrinsicPx": 299,
-   "textHash": "564c5d5c1bf33ae7"
+   "intrinsicPx": 197,
+   "textHash": "c1c77fdbf8b11bb8"
   },
   "vergelijken-kiezen-w2-s0": {
    "cellHeightPx": 340,
-   "intrinsicPx": 299,
-   "textHash": "564c5d5c1bf33ae7"
+   "intrinsicPx": 197,
+   "textHash": "c1c77fdbf8b11bb8"
   },
   "vergelijken-kiezen-w2-s1": {
    "cellHeightPx": 340,
-   "intrinsicPx": 299,
-   "textHash": "564c5d5c1bf33ae7"
+   "intrinsicPx": 197,
+   "textHash": "c1c77fdbf8b11bb8"
   },
   "vergelijken-kiezen-w4-s0": {
    "cellHeightPx": 340,
-   "intrinsicPx": 299,
-   "textHash": "564c5d5c1bf33ae7"
+   "intrinsicPx": 197,
+   "textHash": "c1c77fdbf8b11bb8"
   },
   "vergelijken-kiezen-w4-s1": {
    "cellHeightPx": 340,
-   "intrinsicPx": 299,
-   "textHash": "564c5d5c1bf33ae7"
+   "intrinsicPx": 197,
+   "textHash": "c1c77fdbf8b11bb8"
   },
   "vergelijken-representaties-w1-s0": {
    "cellHeightPx": 397,

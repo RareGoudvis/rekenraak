@@ -72,7 +72,7 @@ const decimalsOf = (x: number) => { const s = String(Math.round(x * 1e9) / 1e9);
 
 // L20 (owner rule): Leerjaar 1 seeds max 20 only on these lists; every other list floors
 // to its own lowest preset. Data, so widening the set is a one-line change.
-export const GRADE1_MAX_20_TYPES: readonly string[] = ['vergelijken', 'plaatswaarde'];
+export const GRADE1_MAX_20_TYPES: readonly string[] = ['vergelijken', 'plaatswaarde', 'deelbaarheid-kleuren'];
 
 // ── Hoofdrekenen ─────────────────────────────────────────────────────────────
 
@@ -319,6 +319,7 @@ const deelbaarheidSpec: TypeSpec<DeelbaarheidExercise> = {
 const deelbaarheidKleurSpec: TypeSpec<DeelbaarheidKleurExercise> = {
     extract: e => ex4([e.divisor, ...e.numbers], []),
     item: (e, ctx, push) => valueRange(e.numbers, 1, n(ctx.c.maxGetal, 100), `: ${e.divisor} over ${e.numbers.slice(0, 6).join(' ')}…`, push),
+    block: gradeMaxRule,
 };
 
 const ordenenSpec: TypeSpec<OrdenenExercise> = {
