@@ -321,6 +321,32 @@ describe('[L2] gemengd: the shared max holds for × and : too', () => {
     });
 });
 
+describe('[L14] "Maximum per getal" on every × / : branch', () => {
+    const all = ['+', '+:compenseren', '-', '-:compenseren', 'x', 'x:tienvoud', ':', ':tienvoud'];
+    const cases: [string, Record<string, unknown>][] = [
+        // ':' chain with picked tables: the divisors come from the tables under their own max
+        ['hr-std-delen', { numberType: 'natural', maxGetal: 10000, termCount: 3, selectedTables: [6, 8, 9, 12, 15], operandMax: [null, 9, 9] }],
+        ['hr-std-delen', { numberType: 'natural', maxGetal: 1000, termCount: 4, multiplicationMode: 'andere', selectedTables: [2, 11, 25, 50], operandMax: [null, 30, 30, 30] }],
+        ['hr-std-vermenigvuldigen', { numberType: 'natural', maxGetal: 100, preset: 'tienvoud', operandMax: [50] }],
+        ['hr-std-delen', { numberType: 'natural', maxGetal: 100, multiplicationMode: 'met_rest', selectedTables: [7], operandMax: [50] }],
+        ['hr-std-gemengd', { numberType: 'natural', maxGetal: 1000000, variants: all, operandMax: [20, 20, 20, 20], perVariant: { x: { multiplicationMode: 'andere' } } }],
+        ['hr-std-gemengd', { numberType: 'decimal', maxGetal: 1000, variants: ['x', ':'], operandMax: [20, 20, 20, 20] }],
+    ];
+    for (const [typeId, c] of cases) {
+        test(`${typeId} ${JSON.stringify(c)}`, () => {
+            const max = c.operandMax as (number | null)[];
+            for (const items of runSeeded(typeId, c)) {
+                expect(items.length).toBeGreaterThan(0);
+                for (const eq of items) {
+                    eq.operands.forEach((o, i) => {
+                        if (typeof max[i] === 'number') expect(o as number).toBeLessThanOrEqual(max[i] as number);
+                    });
+                }
+            }
+        });
+    }
+});
+
 describe('[L8] decimal : keeps the quotient within "Maximum uitkomst"', () => {
     const cases: [string, Record<string, unknown>][] = [
         ['hr-std-delen', { numberType: 'decimal', maxGetal: 10 }],

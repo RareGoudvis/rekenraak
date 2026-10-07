@@ -95,6 +95,14 @@ const maxOpFor = (c: MulDivConstraints, i: number): number | null => {
     return typeof v === 'number' && v > 0 ? v : null;
 };
 
+// × / : branches that don't draw under "Maximum per getal" (tafels, tienvoud, met rest, free
+// draws) reject a term over it instead. Without an operandMax this never consumes RNG.
+const breaksOperandMax = (c: MulDivConstraints, operands: number[]): boolean =>
+    !!c.operandMax?.length && operands.some((v, i) => {
+        const ceil = maxOpFor(c, i);
+        return ceil !== null && v > ceil + 1e-9;
+    });
+
 const digitAtScaled = (intVal: number, placeWeightScaled: number): number =>
     Math.floor(intVal / placeWeightScaled) % 10;
 
@@ -730,6 +738,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
                 ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
                 : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
             const answer = Number((base * factor).toFixed(6));
+            if (breaksOperandMax(constraints, [base, factor])) continue;
             const comboId = `${base}*${factor}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -769,6 +778,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             }
             if (bad || factors.length !== N_MUL) continue;
             if (excludeOne && factors.includes(1)) continue;
+            if (breaksOperandMax(constraints, factors)) continue;
             const comboId = factors.join('*');
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -801,6 +811,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
             if (excludeOne && (a === 1 || b === 1)) continue;
 
+            if (breaksOperandMax(constraints, [a, b])) continue;
             const comboId = `${a}*${b}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -839,6 +850,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             if (a * b > maxGetal || a <= 0 || b <= 0) continue;
             if (excludeOne && (a === 1 || b === 1)) continue;
 
+            if (breaksOperandMax(constraints, [a, b])) continue;
             const comboId = `${a}*${b}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1027,6 +1039,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
                 : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
             const dividend = Number((quotient * factor).toFixed(6));
+            if (breaksOperandMax(constraints, [dividend, factor])) continue;
             const comboId = `${dividend}:${factor}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1051,8 +1064,12 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const divisors = Array.from({ length: N_DIV - 1 }, (_, i) => {
                 const opCeil = maxOpFor(constraints, i + 1);
                 const hi = Math.min(opCeil ?? tableLimit, 12);
-                return divisorPool ? divisorPool[randInt(0, divisorPool.length - 1)] : randInt(2, Math.max(2, hi));
+                // "Maximum per getal" also bounds the tables a divisor comes from; NaN = none fits.
+                const pool = divisorPool && opCeil !== null ? divisorPool.filter((t: number) => t <= opCeil) : divisorPool;
+                if (opCeil !== null && pool && !pool.length) return NaN;
+                return pool ? pool[randInt(0, pool.length - 1)] : randInt(2, Math.max(2, hi));
             });
+            if (divisors.some(Number.isNaN)) continue;
             const divProduct = divisors.reduce((a, b) => a * b, 1);
             const maxQ = Math.floor(maxGetal / divProduct);
             if (maxQ < 1) continue;
@@ -1060,6 +1077,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const dividend = quotient * divProduct;
             if (dividend > maxGetal) continue;
             const operands = [dividend, ...divisors];
+            if (breaksOperandMax(constraints, operands)) continue;
             const comboId = operands.join(':');
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1089,6 +1107,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const quotient = randInt(1, constraints.capToMax ? Math.min(tableLimit, Math.floor(maxGetal / divisor)) : tableLimit);
             const dividend = divisor * quotient;
 
+            if (breaksOperandMax(constraints, [dividend, divisor])) continue;
             const comboId = `${dividend}:${divisor}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1136,6 +1155,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 if (dividend < lo || dividend > hi) continue;
             }
 
+            if (breaksOperandMax(constraints, [dividend, divisor])) continue;
             const comboId = `${dividend}:${divisor}r${remainder}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1266,6 +1286,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             // A divisor below 1 (0,48) lifts the quotient over the max that the label promises
             // ("Maximum uitkomst"); natural quotients never exceed their dividend, so they never trip this.
             if (quotientVal > maxGetal) continue;
+            if (breaksOperandMax(constraints, [dividendVal, divisorVal])) continue;
             const comboId = `${dividendVal}:${divisorVal}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
