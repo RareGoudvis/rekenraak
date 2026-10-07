@@ -98,3 +98,23 @@ describe('P3 forced identical fills say so', () => {
         expect(note).toBe('Kleine reeks: 5 oefeningen komen dubbel voor.');
     });
 });
+
+describe('P4 met rest level clip honours Maximum per getal', () => {
+    const METREST = { numberType: 'natural', multiplicationMode: 'met_rest' } as const;
+    test('N2 with deeltal max 20 falls back to N1 with the level note', () => {
+        const { items, note } = noted('hr-std-delen', { ...METREST, metRestLevel: 2, maxGetal: 100, operandMax: [20, null] }, 10);
+        expect(items).toHaveLength(10);
+        for (const ex of items as { operands: number[]; answer: number; remainder: number }[]) {
+            expect(ex.operands[0]).toBeLessThanOrEqual(20);
+            expect(ex.answer).toBeLessThanOrEqual(9);
+            expect(ex.remainder).toBeGreaterThan(0);
+        }
+        expect(note).toMatch(/^Niveau N2 past niet onder het maximum 20: oefeningen op niveau N1\./);
+    });
+    test('N3 with a deeltal max that still holds three digits keeps N3', () => {
+        const { items, note } = noted('hr-std-delen', { ...METREST, metRestLevel: 3, maxGetal: 1000, operandMax: [150, null] }, 10);
+        expect(items).toHaveLength(10);
+        for (const ex of items as { operands: number[] }[]) expect(ex.operands[0]).toBeGreaterThanOrEqual(100);
+        expect(note ?? '').not.toMatch(/Niveau/);
+    });
+});
