@@ -634,8 +634,16 @@ function tienvoudPool(c: MulDivConstraints, maxGetal: number, numberType: string
 function decimalFactor(mask: Record<string, boolean>, maxGetal: number, scale: number): number {
     const maskA = Object.values(mask).some(v => v) ? generateMaskedInt(mask) : null;
     return maskA !== null
-        ? Math.round((maskA / INTERNAL_SCALE) * scale) / scale
-        : randInt(1, maxGetal * scale) / scale;
+        ? withDecimals(Math.round((maskA / INTERNAL_SCALE) * scale), Infinity, scale) / scale
+        : withDecimals(randInt(1, maxGetal * scale), maxGetal * scale, scale) / scale;
+}
+
+// A kommagetal must show decimals: a whole draw (319 → 319,00) moves 1-9 steps of its last
+// decimal, derived from the value instead of a new draw so the rest of the block keeps its seed.
+function withDecimals(units: number, maxUnits: number, scale: number): number {
+    if (scale <= 1 || units % scale !== 0) return units;
+    const step = 1 + ((units / scale) % 9);
+    return units + step <= maxUnits ? units + step : units - step;
 }
 
 

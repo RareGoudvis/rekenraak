@@ -142,9 +142,9 @@ UpdateState). Left over, found while fixing:
   relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
   scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
   Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
-- [P5] Hoofdrekenen breuken "Kommagetal × Breuk": some "kommagetallen" are whole ("319", "641"), and
-  the key prints as an improper fraction ("19412/25"); rational mixed numbers can show "3 10/2" or
-  "1 2/2" (not simplified). 2026-10-08
+- [P5] Hoofdrekenen breuken "Kommagetal × Breuk": the key prints as an improper fraction ("19412/25");
+  rational mixed numbers can show "3 10/2" or "1 2/2" (not simplified). Key format is an owner call.
+  (Whole "kommagetallen" fixed 2026-10-08.) 2026-10-08
 - [P6] verbanden-tabel default repeats values (9/10 and 1/2 twice). 2026-10-08
 
 ## Tooling

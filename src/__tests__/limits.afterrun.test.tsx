@@ -118,3 +118,28 @@ describe('P4 met rest level clip honours Maximum per getal', () => {
         expect(note ?? '').not.toMatch(/Niveau/);
     });
 });
+
+describe('P5 the kommagetal of Kommagetal x/: Breuk is never whole', () => {
+    const RAT = { numberType: 'rational', fractionMultMode: 'decimal_fraction', fractionOrderMode: 'beide' } as const;
+    test.each([
+        ['hr-std-vermenigvuldigen', 1, 1000, {}],
+        ['hr-std-vermenigvuldigen', 2, 100, {}],
+        ['hr-std-vermenigvuldigen', 3, 10, {}],
+        ['hr-std-vermenigvuldigen', 2, 1000, { E: true, T: true }],
+        ['hr-std-delen', 1, 100, {}],
+        ['hr-std-delen', 2, 1000, { H: true }],
+    ] as const)('%s dp %i max %i mask %j', (typeId, dp, max, mask) => {
+        for (let seed = 1; seed <= 30; seed++) {
+            const block = makeBlock(typeId, { constraints: { ...RAT, decimalPlaces: dp, maxGetal: max, operand1Mask: mask }, block: { numberOfExercises: 20 } });
+            const items = seeded(seed, () => generateFor(block)) as { operands: unknown[] }[];
+            expect(items.length).toBeGreaterThan(0);
+            for (const ex of items) {
+                const dec = ex.operands.find(o => typeof o === 'number') as number;
+                const units = Math.round(dec * 10 ** dp);
+                expect(units % 10 ** dp, `seed ${seed}: ${dec}`).not.toBe(0);
+                expect(units).toBeGreaterThan(0);
+                if (!Object.keys(mask).length) expect(dec).toBeLessThanOrEqual(max);
+            }
+        }
+    });
+});
