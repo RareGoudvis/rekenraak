@@ -51,7 +51,7 @@ export interface CaseResult {
     skipped: string | null;
 }
 
-// A generator that needs longer than this for one block is as good as frozen on the sheet.
+// A generator that needs longer than this per 10 exercises is as good as frozen on the sheet.
 export const SLOW_MS = 2000;
 
 export const gradeBase = (grade: Leerjaar | null) => (grade ? { ...DEFAULT_BASE, ...GRADE_PRESETS[grade] } : DEFAULT_BASE);
@@ -90,7 +90,8 @@ export function runCase(cs: LimitCase, slowMs = SLOW_MS): CaseResult {
 
     const ctx = { typeId: cs.typeId, block, c, requested: block.numberOfExercises, grade: cs.grade, leafId: cs.leafId };
     const raw: Violation[] = threw ? [{ rule: 'threw', observed: threw, limit: 'no throw', example: threw }] : checkLimits(items, ctx);
-    if (ms > slowMs) raw.push({ rule: 'slow', observed: Math.round(ms), limit: slowMs, example: `${Math.round(ms)} ms for ${block.numberOfExercises}` });
+    const budget = slowMs * Math.max(1, block.numberOfExercises / 10);
+    if (ms > budget) raw.push({ rule: 'slow', observed: Math.round(ms), limit: Math.round(budget), example: `${Math.round(ms)} ms for ${block.numberOfExercises}` });
     const violations = raw.map(v => ({ ...v, bugId: knownBugFor(cs.typeId, c, cs.grade, v.rule)?.id ?? null }));
     return { cs, block, items, violations, ms, skipped: null };
 }

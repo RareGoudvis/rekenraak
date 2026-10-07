@@ -28,7 +28,8 @@
     "height:audit": "node scripts/height-audit.mjs",
     "catalogue": "node scripts/catalogue.mjs",
     "bignum:audit": "node scripts/bignum-audit.mjs",
-    "sweep": "node scripts/full-sweep.mjs"
+    "sweep": "node scripts/full-sweep.mjs",
+    "limits:audit": "vitest run --config vitest.audit.config.ts"
   },
   "dependencies": {
     "@fontsource/azeret-mono": "^5.2.11",

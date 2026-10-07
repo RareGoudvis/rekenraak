@@ -97,7 +97,7 @@ noemer 5, "Zijden tot 10 cm" means no 11 cm side.
 |---|---|
 | `helpers/limitRules.ts` | The rule book. Per generating typeId (`LIMIT_SPECS`): an extractor (operands, answers, intermediates, every printed number, never ids) and the rules that encode its config's promise, each returning `{ rule, observed, limit, example }`. Generic checks for every type in `checkLimits`: `underfill` / `overfill`, `non-finite`, `empty-exercise`, `malformed`. Answer keys (`answer-key`) are checked wherever the key can be recomputed. The header lists the owner's "not a violation" calls; they are deliberately absent. `GRADE1_MAX_20_TYPES` is the data for the Leerjaar-1 = 20 rule (L20). |
 | `helpers/answerKeys.ts` | The arithmetic both this harness and `generators.answers.test.ts` check keys with. |
-| `helpers/limitHarness.ts` | The runner. `runCase` builds the block like the store (`makeBlock`, grade base, leaf id), generates under a seeded `Math.random` (mulberry32, restored after), times it (`slow` above 2 s), checks it and labels every violation with its known-bug id. Also the case lists: `leafGradeCases` (every leaf × no grade + Leerjaar 1-6), `pairwiseCases` (the matrix's rows, the max snapped into the list that combo's picker shows: `reachableMax`), `triggerCases`, plus `comboKey` / `stableStringify` / `normalizeForDump`. |
+| `helpers/limitHarness.ts` | The runner. `runCase` builds the block like the store (`makeBlock`, grade base, leaf id), generates under a seeded `Math.random` (mulberry32, restored after), times it (`slow` above 2 s per 10 exercises), checks it and labels every violation with its known-bug id. Also the case lists: `leafGradeCases` (every leaf × no grade + Leerjaar 1-6), `pairwiseCases` (the matrix's rows, the max snapped into the list that combo's picker shows: `reachableMax`), `triggerCases`, plus `comboKey` / `stableStringify` / `normalizeForDump`. |
 | `limits.knownBugs.ts` | One `KNOWN_BUGS` entry per open BUGS.md id (`{ id, typeIds, rules, match(typeId, c, grade) }`; `c` = the block's effective constraints) and `KNOWN_SKIPS` for a hang ([E1], never run anywhere) or crash ([E2], skipped by the generator matrix, caught here). `skip()` is what `generators.matrix.test.ts` consults. A gemengd rule carries its variant after `@` (`answer>max@x:tienvoud`); an entry rule without `@` covers every variant. |
 | `scripts/limit-trigger-cases.json` | ≥ 1 repro per id: `{ bugId, leafId, typeId, constraints, grade, seed, note }`, run at the leaf's default count. `constraints` is the whole override (leaf defaults included). Shared with the screenshot tool: keep the shape. |
 
@@ -111,6 +111,38 @@ case. A hang cannot prove it still hangs: delete an `E1`-style skip by hand once
 
 When a rule is wrong rather than the generator, fix the rule (and say why in one line); when a
 setting is out of reach in the UI, fix `constraintSpace.ts` or `reachableMax`, never the entry.
+
+### The full diagnosis (`npm run limits:audit`)
+
+Not in the gate: `vitest.audit.config.ts` runs only `src/__tests__/audit/**`, which
+`vitest.config.ts` excludes. Same runner and rule book; per typeId it sweeps every leaf × (no
+grade, Leerjaar 1-6), one factor at a time (every value of every `constraintSpace` key × every
+value of the max key), the full cartesian product when ≤ 20 000 rows (else pairwise + seeded
+random rows) and the trigger cases — each row × every seed at 40 exercises. A shortfall above the
+type's default count is a small candidate space running out, not a finding, so the audit only
+reports `underfill` below the default count.
+
+```bash
+npm run limits:audit                                              # everything (~15-30 min)
+LIMITS_ONLY=hr-std-gemengd,schattend-dec npm run limits:audit     # typeIds and/or leafIds
+LIMITS_OUT=<dir> LIMITS_DUMP=<dir>/dump LIMITS_SEEDS=1,2 LIMITS_RANDOM=500 npm run limits:audit
+```
+
+| Env | Default | Meaning |
+|---|---|---|
+| `LIMITS_OUT` | `~/Downloads/limits-audit/<timestamp>` | report directory |
+| `LIMITS_DUMP` | off | also write `<dir>/<typeId>.jsonl` (below) |
+| `LIMITS_ONLY` | all | comma list; a typeId runs the whole type, a leafId runs that leaf and sweeps its type on top of the leaf's defaults |
+| `LIMITS_SEEDS` | `1,2,3` | mulberry32 seeds, each used as-is for every row |
+| `LIMITS_COUNT` | `40` | exercises per block |
+| `LIMITS_RANDOM` | `3000` | random rows for a space above 20 000 combinations |
+
+Output:
+
+- `summary.json` — `{ [typeId]: { combos, exercises, violationsByRule, knownBugHits, hangs, throws, underfill, seconds } }` (counts over every exercise; `hangs` = skipped known hangs + `slow` blocks).
+- `violations.json` — array of `{ bugId, typeId, leafId, comboKey, seed, rule, observed, limit, example }`, one row per (block, rule), `bugId: null` = a NEW finding. Every new row up to 5 000 per type and rule; a sample of 200 per known bug, type and rule.
+- `report.md` — per-type table, the NEW findings grouped by type and rule with one repro each, hits per known bug (a 0 there on a full run means the entry may be stale).
+- Dumps (`LIMITS_DUMP`): one line per (row, seed), `stableStringify({ comboKey, seed, exercises, [skipped | threw] })` — keys sorted at every level, so the line order is `comboKey`, `exercises`, `seed`; exercises with `id` (and any timestamp field) stripped. `comboKey` = `<leafId or ->|<tag>|<stable-sorted JSON of the override>`, tag ∈ `leaf`, `leaf-L1`…`leaf-L6`, `one-factor`, `cartesian`, `pairwise`, `random`, `trigger-<id>`. Two runs on the same code give byte-identical dumps (verified 2026-10-07; `violations.json` differs only in `slow` timings), which is what `scripts/limits-diff.mjs` compares across a fix. A full dump is large (~30 MB per busy type).
 
 ## The stale-settings sweep (`viewers.stale.test.tsx`)
 
