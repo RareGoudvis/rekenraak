@@ -60,7 +60,9 @@ function makeAmountExercise(subType: FractionSubType, block: MathBlock): Fractio
     // Total = denominator × multiplier must stay ≤ maxTotal, so the denominator can't
     // exceed maxTotal and the multiplier is bounded (was forced ≥2 → total up to 2×den
     // overshot maxTotal when maxTotal < 2×denominator).
-    const lo = Math.max(2, minDenominator);
+    // maxTotal under the minimum denominator: pull lo down so the total stays ≤ maxTotal
+    // (a denominator < 2 has no proper fraction, hence the floor of 2).
+    const lo = Math.min(Math.max(2, minDenominator), Math.max(2, maxTotal));
     const hi = Math.max(lo, Math.min(maxDenominator, maxTotal));
     const denominator = randInt(lo, hi);
     const numerator = randInt(1, denominator - 1);
@@ -162,6 +164,14 @@ function makeAbstractExercise(block: MathBlock): FractionExercise {
         total,
         isManuallyEdited: false,
     };
+}
+
+export function generateFractionExercisesNoted(block: MathBlock): { items: FractionExercise[]; note: string | null } {
+    const c = block.constraints as FractionConstraints;
+    const amount = c.subType === 'hoeveelheid' || c.subType === 'hoeveelheid-rechthoek';
+    const note = amount && Math.max(2, c.minDenominator ?? 2) > (c.maxTotal ?? 20)
+        ? 'Het totaal is kleiner dan de minimale noemer: er wordt een kleinere noemer gebruikt.' : null;
+    return { items: generateFractionExercises(block), note };
 }
 
 export function generateFractionExercises(block: MathBlock): FractionExercise[] {

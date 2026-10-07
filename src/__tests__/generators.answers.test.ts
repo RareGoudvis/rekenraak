@@ -1,43 +1,17 @@
 import { describe, test, expect } from 'vitest';
-import type { PatroonExercise, RekenvolgordeExercise, Equation, Fraction, CijferExercise, SplitsenExercise, BreukBewerkExercise, OrdenenExercise, DeelbaarheidExercise, ProcentExercise, VerbandExercise, TijdsduurExercise, KalenderExercise, ControleExercise, HerleidingExercise } from '../services/math/types';
+import type { PatroonExercise, RekenvolgordeExercise, Equation, CijferExercise, SplitsenExercise, BreukBewerkExercise, OrdenenExercise, DeelbaarheidExercise, ProcentExercise, VerbandExercise, TijdsduurExercise, KalenderExercise, ControleExercise, HerleidingExercise } from '../services/math/types';
 import { ladderFor } from '../services/herleidingen/herleidingenGenerator';
 import { daysInMonth } from '../services/kalender/kalenderGenerator';
 import { negenrest } from '../services/controleren/controlerenGenerator';
 import { fractionToDecimal, fractionToPercent, generateVerbandExercisesNoted } from '../services/verbanden/verbandenGenerator';
 import { makeBlock, generateFor } from './helpers/makeBlock';
+import { scaled, fracValue, numValue, applyOp, evaluateChain as evaluate, evaluateTokens } from './helpers/answerKeys';
 
 // Correctness, not smoke: does the answer the sheet prints actually follow from the
 // question it prints? Every check below runs over a batch of generated exercises, since
 // generators are random and a single sample proves nothing.
 
 const RUNS = 20;
-
-// mathEngine works in scaled integers (INTERNAL_SCALE = 1_000_000) to dodge JS float
-// rounding, so comparisons here scale the same way instead of using a tolerance.
-const SCALE = 1_000_000;
-const scaled = (x: number) => Math.round(x * SCALE);
-
-const isFraction = (v: unknown): v is Fraction => typeof v === 'object' && v !== null && 'n' in (v as object) && 'd' in (v as object);
-const fracValue = (f: Fraction) => (f.whole ?? 0) + f.n / f.d;
-const numValue = (v: number | Fraction) => (isFraction(v) ? fracValue(v) : v);
-
-function applyOp(a: number, op: string, b: number): number {
-    switch (op) {
-        case '+': return a + b;
-        case '-': return a - b;
-        case 'x': return a * b;
-        case ':': return a / b;
-        default: throw new Error(`unknown operator ${op}`);
-    }
-}
-
-/** Left-to-right evaluation — mathEngine builds chains, not precedence expressions. */
-function evaluate(eq: Equation): number {
-    const ops = eq.operators ?? eq.operands.slice(1).map(() => eq.operator);
-    let acc = numValue(eq.operands[0]);
-    for (let i = 1; i < eq.operands.length; i++) acc = applyOp(acc, ops[i - 1], numValue(eq.operands[i]));
-    return acc;
-}
 
 function equations(typeId: string, constraints: Record<string, unknown>, count = 10): Equation[] {
     const block = makeBlock(typeId, { constraints, block: { numberOfExercises: count } });
@@ -444,25 +418,7 @@ describe('herleidingen', () => {
 });
 
 describe('rekenvolgorde', () => {
-    // Independent evaluator: brackets first, then ×/: left-to-right, then +/−.
-    function evaluate(tokens: (number | string)[]): number {
-        const t = [...tokens];
-        while (t.includes('(')) {
-            const open = t.lastIndexOf('(');
-            const close = open + t.slice(open).indexOf(')');
-            t.splice(open, close - open + 1, evaluate(t.slice(open + 1, close)));
-        }
-        for (let i = 1; i < t.length - 1; i++) {
-            if (t[i] === 'x' || t[i] === ':') {
-                const a = t[i - 1] as number, b = t[i + 1] as number;
-                t.splice(i - 1, 3, t[i] === 'x' ? a * b : a / b);
-                i -= 1;
-            }
-        }
-        let acc = t[0] as number;
-        for (let i = 1; i < t.length - 1; i += 2) acc = t[i] === '+' ? acc + (t[i + 1] as number) : acc - (t[i + 1] as number);
-        return acc;
-    }
+    const evaluate = evaluateTokens;
 
     test.each([2, 3, 4])('%i operators: the printed answer matches the expression', (opsCount) => {
         const block = makeBlock('rekenvolgorde', { constraints: { opsCount, haakjesMode: 'MAG' } });
