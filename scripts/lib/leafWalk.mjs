@@ -20,24 +20,30 @@ import { join } from 'node:path';
  * `replace: true` gets exactly its constraints, not merged over the leaf's; skip(key) → true
  * leaves a cell out (resume); sidebarOpts passes the leaf's { leafId, instruction } like
  * sidebar.tsx does (not for replace variants: they are type-level, not the leaf); viewport
- * overrides the 1600×1100 window.
+ * overrides the 1600×1100 window. Opt-ins trigger-shots.mjs uses: keyFor(leaf, variant, width,
+ * solutions) renames the cell key (and so the PNG); prepare(page, variant) runs before each cell
+ * (e.g. to set the leerjaar); solutionsList narrows the solutions {0,1} axis; onBrowser(browser) hands out the browser so a caller can kill a hung walk.
  * @param {{url:string,out:string,widths:number[],seed:number,only?:string[],
  *          screenshots?:boolean,log?:(s:string)=>void,onRow?:(r:object)=>void,
  *          overrideFor?:(leaf:object,page:import('playwright').Page)=>Promise<Array<{tag:string,constraints:object,replace?:boolean}>|null|undefined>|Array<{tag:string,constraints:object,replace?:boolean}>|null|undefined,
  *          probe?:(page:import('playwright').Page,cell:{key:string})=>Promise<object>,deselect?:boolean,
- *          skip?:(key:string)=>boolean,sidebarOpts?:boolean,viewport?:{width:number,height:number}}} opts
+ *          skip?:(key:string)=>boolean,sidebarOpts?:boolean,
+ *          keyFor?:(leaf:object,variant:object|null,width:number,solutions:number)=>string,
+ *          prepare?:(page:import('playwright').Page,variant:object|null)=>Promise<void>,
+ *          onBrowser?:(b:import('playwright').Browser)=>void,viewport?:{width:number,height:number}}} opts
  */
 export async function walkLeaves(opts) {
     const {
         url, out, widths, seed, only = [],
         screenshots = true, log = console.log, onRow,
         overrideFor, probe, deselect = false,
-        skip, sidebarOpts = false, viewport = { width: 1600, height: 1100 },
+        skip, sidebarOpts = false, keyFor, prepare, onBrowser, solutionsList = [0, 1], viewport = { width: 1600, height: 1100 },
     } = opts;
 
     mkdirSync(out, { recursive: true });
 
     const browser = await chromium.launch();
+    onBrowser?.(browser);
     const page = await browser.newPage({ viewport });
 
     // Console errors are collected per cell: a viewer that logs but does not throw still
@@ -75,12 +81,13 @@ export async function walkLeaves(opts) {
                 const asLeaf = sidebarOpts && !variant?.replace;
                 const tag = variant ? `~${variant.tag}` : '';
                 for (const width of widths) {
-                    for (const solutions of [0, 1]) {
-                        const key = `${leaf.id}${tag}-w${width}-s${solutions}`;
+                    for (const solutions of solutionsList) {
+                        const key = keyFor ? keyFor(leaf, variant ?? null, width, solutions) : `${leaf.id}${tag}-w${width}-s${solutions}`;
                         if (skip?.(key)) continue;
                         const base = { leafId: leaf.id, path: leaf.path, typeId: leaf.typeId, width, solutions, ...(variant ? { variant: variant.tag, constraints: leaf.defaultConstraints } : {}) };
                         cellErrors = [];
                         try {
+                            await prepare?.(page, variant ?? null);
                             // The measurer's breaker (12 repacks/s) can trip on the walk's own cadence
                             // and then freezes measurements for 1.5 s; a cell caught in that window is
                             // re-done once after the cooldown instead of being recorded frozen.

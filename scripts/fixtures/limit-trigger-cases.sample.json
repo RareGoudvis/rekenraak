@@ -1,0 +1,8 @@
+[
+  { "bugId": "L1", "leafId": "getalbegrip-getallenassen-nat", "typeId": "getallenas", "constraints": { "numberType": "natural" }, "grade": 1, "seed": 1234, "note": "getallenas at leerjaar 1 overshoots the range" },
+  { "bugId": "L3", "leafId": "cijferen-vermenigvuldigen-nat", "typeId": "cijferen-vermenigvuldigen-nat", "constraints": { "operand1Mask": { "T": true }, "maxRange": 100 }, "grade": null, "seed": 1234, "note": "operand1 with tens only, max 100" },
+  { "bugId": "L5", "leafId": "vergelijken-representaties", "typeId": "vergelijken", "constraints": { "maxGetal": 10, "rightMask": { "T": true } }, "grade": null, "seed": 1234, "note": "breuk vs kommagetal, right side tens only" },
+  { "bugId": "L12", "leafId": "omtrek", "typeId": "omtrek", "constraints": {}, "grade": null, "seed": 1, "note": "defaults, seed 1" },
+  { "bugId": "L6", "leafId": "handig-rekenvolgorde", "typeId": "rekenvolgorde", "constraints": { "opsCount": 3, "maxGetal": 100 }, "grade": 4, "seed": 1234, "note": "three operations up to 100" },
+  { "bugId": "L17", "leafId": "schattend-dec", "typeId": "schattend", "constraints": { "numberType": "decimal", "maxGetal": 100, "roundTargets": ["E"] }, "grade": 4, "seed": 1234, "note": "schattend decimal" }
+]
