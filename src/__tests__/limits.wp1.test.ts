@@ -173,6 +173,7 @@ describe('[L15] rational × / : decimal_fraction draws a real kommagetal', () =>
 describe('[L14] "Maximum per getal" (operandMax) is honoured', () => {
     const cases: [string, Record<string, unknown>][] = [
         ['hr-std-aftrekken', { numberType: 'natural', maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' }],
+        ['hr-std-optellen', { numberType: 'natural', maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' }],
         ['hr-std-aftrekken', { numberType: 'natural', maxGetal: 1000, operandMax: [null, 30], operand2Mask: { T: true, E: true } }],
         ['hr-std-aftrekken', { numberType: 'decimal', maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' }],
         ['hr-std-gemengd', { numberType: 'natural', maxGetal: 1000, variants: ['-:compenseren'], operandMax: [null, 30] }],
@@ -193,8 +194,19 @@ describe('[L14] "Maximum per getal" (operandMax) is honoured', () => {
         });
     }
 
-    test('a compenseren term that cannot fit says the strategie was dropped', () => {
-        const block = makeBlock('hr-std-aftrekken', { constraints: { maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' } });
+    test('compenseren under a small "Maximum per getal" steps down to a round ten (29 = 30 − 1)', () => {
+        for (const typeId of ['hr-std-optellen', 'hr-std-aftrekken']) {
+            for (const items of runSeeded(typeId, { maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren', presetDistance: 2 })) {
+                expect(items).toHaveLength(20);
+                for (const eq of items) expect([18, 19, 28, 29]).toContain(eq.operands[1]);
+            }
+            const block = makeBlock(typeId, { constraints: { maxGetal: 1000, operandMax: [null, 30], preset: 'compenseren' } });
+            expect(REGISTRY[typeId].generateNoted!(block).note).toBeNull();
+        }
+    });
+
+    test('a compenseren term that cannot fit at all says the strategie was dropped', () => {
+        const block = makeBlock('hr-std-aftrekken', { constraints: { maxGetal: 1000, operandMax: [null, 15], preset: 'compenseren' } });
         expect(REGISTRY['hr-std-aftrekken'].generateNoted!(block).note).toBe('Instellingen versoepeld om genoeg oefeningen te maken: strategie.');
     });
 

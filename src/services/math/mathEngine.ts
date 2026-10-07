@@ -144,10 +144,14 @@ const compenserenUnit = (maxGetal: number): number =>
     maxGetal > BIG_MAX ? Math.pow(10, String(Math.floor(maxGetal)).length - 2) : (maxGetal > 100 ? 100 : 10);
 
 // Compenseren preset: an operand just under a round number (29 = 30 − 1), scaled units.
-function compenserenOperand(c: MulDivConstraints, maxGetal: number): number {
-    const unit = compenserenUnit(maxGetal);
+// `ceil` = "Maximum per getal" for this term: the round unit steps down (to 10 at least) until
+// 2 × unit − 1 fits under it, and the round number stays ≤ ceil + 1, so 29 = 30 − 1 at a max of 30.
+function compenserenOperand(c: MulDivConstraints, maxGetal: number, ceil: number | null = null): number {
+    let unit = compenserenUnit(maxGetal);
+    if (ceil !== null) while (unit > 10 && 2 * unit - 1 > ceil) unit /= 10;
     const distance = Math.max(1, Math.min(2, c.presetDistance ?? 1));
-    const tens = randInt(2, Math.max(2, Math.floor(maxGetal / unit) - 1)) * unit;
+    const top = Math.floor(maxGetal / unit) - 1;
+    const tens = randInt(2, Math.max(2, ceil !== null ? Math.min(top, Math.floor((ceil + 1) / unit)) : top)) * unit;
     return tens - randInt(1, distance);
 }
 
@@ -420,7 +424,7 @@ export const generateAdditionExercises = (block: MathBlock): Equation[] => {
             const ceil = Math.min(remaining - (N - 1 - i) * step, opCeil !== null ? Math.round(opCeil * INTERNAL_SCALE) : Infinity);
             let v: number;
             if (constraints.preset === 'compenseren' && i === 1) {
-                v = Math.round(compenserenOperand(constraints, maxGetal) * INTERNAL_SCALE);
+                v = Math.round(compenserenOperand(constraints, maxGetal, opCeil) * INTERNAL_SCALE);
             } else if (masked !== null) {
                 v = masked;
             } else {
@@ -561,7 +565,7 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
             const ceil = Math.min(running - step, opCeil !== null ? Math.round(opCeil * INTERNAL_SCALE) : Infinity);
             let v: number;
             if (constraints.preset === 'compenseren' && i === 1) {
-                v = Math.round(compenserenOperand(constraints, maxGetal) * INTERNAL_SCALE);
+                v = Math.round(compenserenOperand(constraints, maxGetal, opCeil) * INTERNAL_SCALE);
             } else if (masked !== null) {
                 v = masked;
             } else {
