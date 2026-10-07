@@ -188,6 +188,13 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a
   generation note. 2026-10-07
 
+- [E10] getallenrijen numberMask: after 80 attempts the anchor (first value) silently ignores the mask
+  (MASK_NOT_HONORED_ANCHOR, 1896 combos, e.g. decimal mask T + t, start 840). Fix: honour it or note
+  it. Found by WP2. 2026-10-07
+- [E11] A block whose generator legitimately produced 0 exercises (with a "Geen … mogelijk" note) still
+  shows "(Nog geen oefeningen — klik Genereer)" on the sheet, which contradicts the note. Found by
+  WP2. 2026-10-07
+
 ### WP3 Cijferen (cijferGenerator.ts)
 
 - [L3] cijferen-vermenigvuldigen-nat / -dec: when a "Specifieke getalopbouw" mask can't fit under the
