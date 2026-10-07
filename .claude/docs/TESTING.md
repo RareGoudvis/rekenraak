@@ -484,6 +484,58 @@ expected +4px never trips it) exceeds 0.5%. Writes `report.json` (every row),
 `report.md` (pixel-diff descending), and `contact-sheet.html` (before/after side by side,
 flagged rows only — a clean sweep should produce an almost-empty sheet).
 
+## Before/after review (limit campaign) (`scripts/trigger-shots.mjs`, `scripts/limits-diff.mjs`)
+
+After a batch of generator fixes the owner should only recheck what moved. Two tools, one
+recipe: `trigger:shots` shows the known-bug trigger cases as real sheet cells, `limits:diff`
+diffs two `npm run limits:audit` runs (exercise-level), and the existing `font:baseline` /
+`font:compare` catch visual collateral on every leaf.
+
+**`npm run trigger:shots`** renders each case of a case file as a cell, in exactly the
+font-baseline output shape, so `font:compare` diffs two runs unchanged.
+
+```bash
+npm run dev -- --port 5190 --strictPort                                  # own port, kill it afterwards
+node scripts/trigger-shots.mjs --url http://localhost:5190/ \
+     --cases scripts/limit-trigger-cases.json --out ~/Downloads/limit-fix-check/before
+# options: --widths 4,2  --solutions 0,1  --only L1,L3 (bugIds)  --timeout 60000 (ms per case)
+```
+
+Case file: `[{ bugId, leafId, typeId, constraints, grade: null|1..6, seed, note }]` (a small sample
+lives in `scripts/fixtures/limit-trigger-cases.sample.json`). Per case it opens a fresh page,
+seeds `Math.random`, sets the leerjaar via `getState().setSelectedGrade(grade)` (seeds base
+settings like picking a grade in the sidebar), adds the block through `leafWalk.mjs`
+(`addBlockFromType(typeId, label, {...leaf.defaultConstraints, ...constraints}, ...)`),
+deselects in the same tick (the Inspector's max picker would otherwise floor out-of-list
+values) and screenshots the cell. Cell keys are `<bugId>-<caseIdx>-w<w>-s<0|1>`; `caseIdx` is
+the position in the case file, so keep the file append-only between before and after. A case
+that hangs (timeout), throws, or names an unknown leaf becomes `error` rows in `index.json`;
+the run carries on, and `font:compare` flags those rows.
+
+**`npm run limits:diff`** compares two `limits:audit` output dirs (`summary.json`,
+`violations.json`, optional `dump/<typeId>.jsonl`):
+
+```bash
+node scripts/limits-diff.mjs --before <audit-before> --after <audit-after> \
+     --out ~/Downloads/limit-fix-check/limits-diff --touched getallenas,omtrek --samples 3
+```
+
+`report.md` + a self-contained `report.html` list, in order: NEW violations (in after, not
+before; a `bugId` of null in red is a fix that introduced a fresh limit break), totals per rule
+and per bugId, then per typeId: combos identical / changed / only-before / only-after, hangs,
+throws and underfill deltas, violations by rule and known-bug hits, and sample before/after
+exercise pairs of changed combos. A typeId not listed in `--touched` whose dump changed is
+flagged COLLATERAL (an untouched generator must stay byte-identical).
+
+**Recipe**
+
+1. On the pre-fix rc: `limits:audit` into `before/audit`, `trigger:shots` into `before/shots`,
+   `font:baseline --out before/font` (same `--seed` later).
+2. Land the fixes, repeat all three into `after/...`.
+3. `limits:diff` (pass `--touched`), then `font:compare` twice (`shots` and `font`). Open
+   `report.html` and the two `contact-sheet.html` files; the flagged rows are the owner's
+   review list.
+
 ## The exercise catalogue (`scripts/catalogue.mjs`)
 
 Not a test — renders every sidebar exercise (one card with its default opdracht-titel, a
