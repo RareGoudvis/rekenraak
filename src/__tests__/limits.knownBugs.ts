@@ -41,7 +41,6 @@ const str = (v: unknown, fallback: string) => (typeof v === 'string' ? v : fallb
 const masked = (m: unknown, keys?: string[]) =>
     !!m && typeof m === 'object' && Object.entries(m as Record<string, boolean>).some(([k, on]) => on && (!keys || keys.includes(k)));
 const DECIMAL_PLACES = ['t', 'h', 'd', 'td'];
-const opSetting = (c: C, op: string) => ((c.opSettings ?? {}) as Record<string, { max?: number; mask?: unknown }>)[op];
 
 // Some d1 in [2..D1] for which every d2 in [2..D2] equals, divides or is divisible by it:
 // the multi_step do/while (mathEngine.ts ~351 / ~474) then never finds a d2.
@@ -102,27 +101,6 @@ export const KNOWN_BUGS: KnownBug[] = [
         id: 'L19', typeIds: ['hr-std-delen'], rules: ['dividend>max', 'dividend>gradeMax'],
         match: (_t, c) => c.multiplicationMode === 'met_rest',
     },
-
-    // ── WP2 Rows and patterns ──
-    {
-        // The row cannot fit: step × (ticks − 1) is wider than the range it must stay in.
-        id: 'L1', typeIds: ['getallenas', 'getallenrijen'], rules: ['value>max', 'value<min'],
-        match: (_t, c) => {
-            if (c.numberType === 'rational') return false;
-            const max = num(c.maxGetal, 100);
-            const lo = c.numberType === 'geheel' ? num(c.minGetal, -max) : 0;
-            return num(c.step, 5) * (num(c.ticks, 6) - 1) > max - lo + 1e-9;
-        },
-    },
-    {
-        id: 'L9', typeIds: ['getalpatronen'], rules: ['step>opMax'],
-        match: (_t, c) => masked(opSetting(c, '+')?.mask) || masked(opSetting(c, '-')?.mask),
-    },
-    {
-        id: 'L10', typeIds: ['getallenrijen'], rules: ['teller>maxTeller', 'negative-denominator', 'value<min'],
-        match: (_t, c) => c.numberType === 'rational',
-    },
-    { id: 'E5a', typeIds: ['getalpatronen', 'kettingsommen'], rules: ['fallback-ladder'], match: () => true },
 
     // ── WP3 Cijferen ──
     {

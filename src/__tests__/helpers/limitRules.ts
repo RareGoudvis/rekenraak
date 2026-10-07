@@ -13,6 +13,7 @@ import { GRADE_PRESETS, type Leerjaar } from '../../config/gradePresets';
 import { effectiveBlockFor } from '../../services/math/mixedGenerator';
 import { ladderFor } from '../../services/herleidingen/herleidingenGenerator';
 import { NIVEAU_MAX } from '../../services/romeinse/romeinseGenerator';
+import { numberMatchesMask } from '../../services/math/mathEngine';
 import { scaled, isFraction, fracValue, numValue, applyOp, evaluateChain, evaluateTokens, gcd } from './answerKeys';
 
 // ── The limit harness rule book ──────────────────────────────────────────────
@@ -356,6 +357,10 @@ const asSpec = (isRij: boolean): TypeSpec<GetallenasExercise> => ({
         const max = n(c.maxGetal, 100);
         const vals = e.values ?? [];
         const ex = `${vals.slice(0, 8).map(fmtV).join(', ')}`;
+        // A line shortened (or a step shrunk) to fit its bounds is intended only when the note says so.
+        if (!ctx.note && (e.tickCount < n(c.ticks, 6) || (nt !== 'rational' && !sameNum(e.step, n(c.step, 5) || 1)))) {
+            push('line-shrunk-silently', `${e.tickCount} × +${e.step}`, `${n(c.ticks, 6)} × +${n(c.step, 5)}`, ex);
+        }
         if (nt === 'rational') {
             const d = n(c.fractionStep, 4) > 1 ? n(c.fractionStep, 4) : 4;
             for (const v of vals) {
@@ -368,11 +373,20 @@ const asSpec = (isRij: boolean): TypeSpec<GetallenasExercise> => ({
         }
         const lo = nt === 'geheel' ? n(c.minGetal, -max) : 0;
         valueRange(vals.map(numValue), lo, max, ex, push);
+        // getallenrijen 'Specifieke getalopbouw' shapes the first value; dropping it needs a note.
+        const mask = c.numberMask as Record<string, boolean> | undefined;
+        if (isRij && !ctx.note && (nt === 'natural' || nt === 'decimal') && mask && !numberMatchesMask(e.start, mask, max, nt, decimalsOf(e.step))) {
+            push('mask-ignored', e.start, Object.keys(mask).filter(k => mask[k]).join(','), ex);
+        }
     },
 });
 
+// PatroonViewer prints one connector per gap (ticks − 1), so with steps ≥ ticks the tail of the
+// cycle is never on the sheet and is no displayed value.
+const printedCycle = (e: PatroonExercise) => e.cycle.slice(0, Math.max(0, e.values.length - 1));
+
 const patroonSpec: TypeSpec<PatroonExercise> = {
-    extract: e => ex4(e.cycle.map(s => s.operand), e.values),
+    extract: e => ex4(printedCycle(e).map(s => s.operand), e.values),
     item: (e, ctx, push) => {
         const c = ctx.c;
         const nt = (c.numberType as string) ?? 'natural';
@@ -387,10 +401,15 @@ const patroonSpec: TypeSpec<PatroonExercise> = {
         if (e.cycle.length !== steps || e.cycle.some(s => !ops.includes(s.op))) {
             push('fallback-ladder', e.cycle.map(s => s.op).join(''), ops.join(''), ex);
         } else {
-            for (const s of e.cycle) {
+            for (const s of printedCycle(e)) {
                 const opMax = n(os[s.op]?.max, 10);
                 const lim = s.op === '+' || s.op === '-' ? opMax : Math.min(opMax, 12);
                 if (over(s.operand, lim)) push('step>opMax', s.operand, lim, ex);
+                // A +/− mask that cannot fit under "Stap (max)" is dropped, which needs a note.
+                const mask = os[s.op]?.mask;
+                if ((s.op === '+' || s.op === '-') && !ctx.note && mask && !numberMatchesMask(s.operand, mask, max, nt === 'decimal' ? 'decimal' : 'natural', dp)) {
+                    push('mask-ignored', s.operand, Object.keys(mask).filter(k => mask[k]).join(','), ex);
+                }
             }
         }
         for (let i = 1; i < e.values.length; i++) {
