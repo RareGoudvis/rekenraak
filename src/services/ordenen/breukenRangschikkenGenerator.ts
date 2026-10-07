@@ -43,6 +43,10 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
         // Distinct small denominators (unlike) — pupil makes them gelijknamig first.
         // Strictly within [lo, hi]; if the range holds fewer than `count`, emit fewer.
         const pool = [2, 3, 4, 5, 6, 8, 10, 12].filter(d => d >= lo && d <= hi);
+        // Range holds too few curated denominators (7, 9, 11 …): top up with the other integers in range.
+        if (pool.length < count) {
+            for (let d = lo; d <= hi && pool.length < Math.max(count, 1) + 8; d++) if (!pool.includes(d)) pool.push(d);
+        }
         const dens = shuffle(pool).slice(0, count);
         return dens.map(d => ({ n: randInt(1, d - 1), d }));
     }

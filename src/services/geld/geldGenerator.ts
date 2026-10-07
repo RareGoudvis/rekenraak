@@ -101,8 +101,17 @@ export function generateGeldExercises(block: MathBlock): GeldExercise[] {
             denominations = breakdownAmount(finalAmount, allowedSet, rng);
             const drawnCents = denominations.reduce((sum, d) => sum + d.valueCents * d.count, 0);
             if (drawnCents === finalAmount) break;
-            // Out of attempts (impossible settings): the drawn money is the amount.
-            if (attempt === MAX_DRAW_ATTEMPTS - 1) finalAmount = drawnCents;
+            if (attempt === MAX_DRAW_ATTEMPTS - 1) {
+                // Impossible settings (nothing ticked, only bills above the max, a small-coin set that
+                // busts the item cap): pay with the whole catalogue so the amount stays a real price.
+                const wide = new Set(DENOMINATION_CATALOGUE.filter(d => d.valueCents <= Math.max(maxCents, 5)).map(d => d.valueCents));
+                let fixed = false;
+                for (let r = 0; r < MAX_DRAW_ATTEMPTS && !fixed; r++) {
+                    const retry = breakdownAmount(finalAmount, wide, rng);
+                    if (retry.reduce((sum, d) => sum + d.valueCents * d.count, 0) === finalAmount) { denominations = retry; fixed = true; }
+                }
+                if (!fixed) finalAmount = drawnCents;
+            }
         }
 
         exercises.push({
@@ -184,6 +193,11 @@ export function generateGeldTeruggevenExercises(block: MathBlock): GeldTeruggeve
             step2Cents,
             isManuallyEdited: false,
         });
+    }
+    // A narrow price/pay-with space (e.g. only €5 notes) runs out of distinct sums; repeat rather than fall short.
+    const distinct = exercises.length;
+    for (let i = 0; distinct > 0 && exercises.length < n; i++) {
+        exercises.push({ ...exercises[i % distinct], id: `geld-tg-${Date.now()}-${exercises.length}` });
     }
     return exercises;
 }

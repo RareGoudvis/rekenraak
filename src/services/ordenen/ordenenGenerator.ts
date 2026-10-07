@@ -67,10 +67,14 @@ export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
         const values: (number | Fraction)[] = [];
         const seen = new Set<number>();
         let attempts = 0;
-        while (values.length < count && attempts < 2000) {
+        // A mask the range can't satisfy (decimal + D at max ≤ 100) would give an empty row: relax it then.
+        let maskOn = useMask;
+        while (values.length < count && attempts < 4000) {
             attempts++;
+            if (maskOn && attempts > 2000 && values.length === 0) maskOn = false;
+            if (!maskOn && attempts > 2000 && values.length >= count) break;
             const v = genValue(numberType, oc);
-            if (useMask && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
+            if (maskOn && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
             const key = val(v);
             if (seen.has(key)) continue;
             seen.add(key);

@@ -54,5 +54,10 @@ export function generateMaateenheidExercises(block: MathBlock): MaateenheidExerc
             grootheid, choices, isManuallyEdited: false,
         });
     }
+    // Small item pools (temperatuur only) run out of distinct sentences; repeat rather than fall short.
+    const distinct = out.length;
+    for (let i = 0; distinct > 0 && out.length < count; i++) {
+        out.push({ ...out[i % distinct], id: Math.random().toString(36).substring(2, 9) });
+    }
     return out;
 }

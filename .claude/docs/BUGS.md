@@ -241,16 +241,10 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP6 Misc generators (herleidingen/, ordenen/, verbanden/, kalender/, geld/, breukenRangschikken)
 
-- [E4b] Short / empty blocks: ordenen decimal + mask D at max ≤ 100 → `values: []`;
-  breuken-rangschikken "Gelijknamig te maken" with a noemer range outside {2,3,4,5,6,8,10,12} (min = max
-  = 7, 9, 11) → empty exercises (468/2280 combos); herleidingen hm + dam at maxEnkel 20 with only
-  'enkel-getal' → 20 of 40; maateenheid temperatuur-only → 8 of 40; kalender maandrooster ['tellen'] →
-  1 question of 5; geld-teruggeven payWith [500] + centen vijfentwintig → 12 of 40. 2026-10-07
-- [E6] verbanden: "Gegeven voorstelling" isn't filtered against "Voorstellingen" — pick given = Procent,
-  then untoggle Procent → exercises still give a percentage (verbandenGenerator.ts:36, 51). 2026-10-07
-- [E8] geld-herkennen / -tekenen with degenerate denominations (none ticked, or only bills > max): amount
-  0 with no money / an unpayable amount (6,95 with only €500); euros format with a small-coin-only set
-  ([5 c]) shows "60", "50055" (12-item cap fallback `finalAmount = drawnCents`). Low priority. 2026-10-07
+- [E4b] Left: kalender maandrooster ['tellen'] only yields 1 question of 5 (one distinct question; repeating
+  it would be absurd, so it needs a generation note via generateNoted in exerciseRegistry). 2026-10-07
+- [E8] Left: geld-tekenen with only bills above the max still asks for an amount the ticked set cannot pay
+  (herkennen is fixed: it falls back to the full catalogue). Low priority. 2026-10-07
 
 ### WP7 Grade lists (numberRanges.ts, exerciseRegistry.ts, baseSettings.ts, NaturalSettings.tsx)
 
@@ -259,12 +253,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [L20] Leerjaar 1 (max 20) floors to 100 on every list that starts at 100 (floorToPreset). Owner rule:
   add 20 only where it makes sense — vergelijken, plaatswaarde, deelbaarheid-kleuren (signed off); the rest
   keep their floor and the gap gets documented in ARCHITECTURE §7. 2026-10-07
-
-### WP8 Config hint (GetallenasConfig, GetallenrijenConfig, OrdenenConfig, PatroonConfig)
-
-- [L21] Stale Ondergrens: set it to −1000 at max 1000, lower the max to 100 → values reach −1000 at
-  "Tot 100" and the slider is pinned. Owner rule: no auto-clamp, show a `sharedPluginStyles.hint` under
-  the slider when minGetal < −maxGetal ("valt buiten het bereik — pas aan of genereer opnieuw"). 2026-10-07
 
 ## Tooling
 

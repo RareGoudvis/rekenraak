@@ -58,9 +58,12 @@ function generateFromPool(pool: number[], reps: VerbandRep[], subType: string, g
 export function generateVerbandExercisesNoted(block: MathBlock): { items: VerbandExercise[]; note: string | null } {
     const c = block.constraints as VerbandenConstraints;
     const subType: string = c.subType ?? 'tabel';
-    const reps: VerbandRep[] = c.reps ?? ['breuk', 'decimaal', 'procent'];
+    const repsRaw: VerbandRep[] = c.reps ?? ['breuk', 'decimaal', 'procent'];
+    // Fewer than 2 representations leaves nothing to convert to: fall back to all three.
+    const reps: VerbandRep[] = repsRaw.length >= 2 ? repsRaw : ['breuk', 'decimaal', 'procent'];
     const denominators: number[] = (c.denominators ?? [2, 4, 5, 10, 100]).filter((d: number) => BENCHMARK_DENOMINATORS.includes(d));
-    const given: string = c.given ?? 'random';
+    // A pinned 'Gegeven voorstelling' that was untoggled under 'Voorstellingen' falls back to a random selected one.
+    const given: string = c.given && reps.includes(c.given as VerbandRep) ? c.given : 'random';
     const count = block.numberOfExercises || 8;
 
     let pool = denominators.length ? [...denominators] : [2, 4, 10];
