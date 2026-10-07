@@ -44,7 +44,9 @@ function friendlyNums(ops: string[], maxGetal: number, tableLimit: number): numb
     const plusMinus = ops.every(o => o === '+' || o === '-');
     const allMul = ops.every(o => o === 'x');
     if (allMul) {
-        const [p, q] = MUL_PAIRS[randInt(0, MUL_PAIRS.length - 1)];
+        // Every factor next to × stays within the table limit, so friendly pairs above it (4 × 25) are out.
+        const fit = MUL_PAIRS.filter(([x, y]) => x <= tableLimit && y <= tableLimit);
+        const [p, q] = fit.length ? fit[randInt(0, fit.length - 1)] : [2, 3];
         const rest = Array.from({ length: opsCount - 1 }, () => randInt(2, Math.min(9, tableLimit)));
         // Friendly factors at the ends (4 × 7 × 25 pattern).
         return [p, ...rest, q];
@@ -65,7 +67,7 @@ function friendlyNums(ops: string[], maxGetal: number, tableLimit: number): numb
     return null;   // mixed ops with ×/: — no friendly bias, plain random works
 }
 
-export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeExercise[] {
+export function generateRekenvolgordeNoted(block: MathBlock): { items: RekenvolgordeExercise[]; note: string | null } {
     const c = block.constraints as RekenvolgordeConstraints;
     const operators: string[] = c.operators ?? ['+', '-', 'x'];
     // GEEN = never brackets · MAG = ~half the items · MOET = every item.
@@ -75,10 +77,21 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
     const tableLimit: number = c.tableLimit ?? 10;
     const count = block.numberOfExercises || 10;
 
+    // ×-only: (a × b) × c equals a × (b × c), so no bracket placement ever changes the answer.
+    const bracketsImpossible = operators.every(o => o === 'x');
+    const dropBrackets = bracketsImpossible && haakjesMode === 'MOET';
+
     const out: RekenvolgordeExercise[] = [];
     const seen = new Set<string>();
+    // Phase 2 widens the pool when phase 1 runs dry: no friendly pairs, and a dividend may exceed the table limit (56 : 7).
+    let wide = false;
+    let widened = false;
     let attempts = 0;
-    while (out.length < count && attempts < 20000) {
+    while (out.length < count) {
+        if (attempts >= 20000) {
+            if (wide) break;
+            wide = true; widened = true; attempts = 0;
+        }
         attempts++;
         const ops = Array.from({ length: opsCount }, () => pick(operators));
         // Long +/− chains are allowed without ×/: (volgorde = reordering practice);
@@ -89,12 +102,23 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         if (hasMulDiv && opsCount === 2 && !ops.some(o => o === 'x' || o === ':')) continue;
         const needBrackets = !hasMulDiv && opsCount === 2 && haakjesMode !== 'GEEN';
 
-        let nums: number[] | null = opsCount >= 3 ? friendlyNums(ops, maxGetal, tableLimit) : null;
+        let nums: number[] | null = opsCount >= 3 && !wide ? friendlyNums(ops, maxGetal, tableLimit) : null;
         if (!nums) {
             nums = [];
             for (let i = 0; i <= opsCount; i++) {
                 const nextToMul = ops[i] === 'x' || ops[i] === ':' || ops[i - 1] === 'x' || ops[i - 1] === ':';
                 nums.push(nextToMul ? randInt(2, tableLimit) : randInt(1, Math.min(50, maxGetal)));
+            }
+            if (wide) {
+                // Start of a ÷ chain: build the dividend as quotient × all chained divisors so it divides exactly (≤ maxGetal).
+                for (let i = 0; i < opsCount; i++) {
+                    if (ops[i] !== ':' || (i > 0 && (ops[i - 1] === 'x' || ops[i - 1] === ':'))) continue;
+                    let prod = 1;
+                    for (let j = i; ops[j] === ':'; j++) prod *= nums[j + 1];
+                    const qMax = Math.min(tableLimit, Math.floor(maxGetal / prod));
+                    if (qMax < 2) { nums.length = 0; break; }
+                    nums[i] = prod * randInt(2, qMax);
+                }
             }
         }
         if (nums.length !== opsCount + 1) continue;
@@ -102,17 +126,17 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         nums.forEach((n, i) => { flat.push(n); if (i < ops.length) flat.push(ops[i]); });
 
         const plain = evalFlat(flat);
-        if (plain === null || plain > maxGetal * (opsCount >= 3 ? 10 : 1) || plain < 0 || !Number.isInteger(plain)) continue;
+        if (plain === null || plain > maxGetal || plain < 0 || !Number.isInteger(plain)) continue;
 
         let tokens: Tok[] = flat;
         let answer = plain;
 
-        const wantBrackets = needBrackets || haakjesMode === 'MOET' || (haakjesMode === 'MAG' && Math.random() < 0.5);
+        const wantBrackets = !bracketsImpossible && (needBrackets || haakjesMode === 'MOET' || (haakjesMode === 'MAG' && Math.random() < 0.5));
         if (wantBrackets) {
             // Bracket the FIRST pair (a op b), or the LAST one when the first changes nothing:
             // in a − b + c only a − (b + c) shifts the result, which is the whole point of the
             // bracket. A placement that leaves the answer untouched teaches nothing → retry.
-            const cap = maxGetal * (opsCount >= 3 ? 10 : 1);
+            const cap = maxGetal;
             const placements: Array<{ tokens: Tok[]; answer: number }> = [];
             const head = evalFlat(flat.slice(0, 3));
             if (head !== null) {
@@ -136,5 +160,13 @@ export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeE
         seen.add(key);
         out.push({ id: Math.random().toString(36).substring(2, 9), tokens, answer, firstStep: 0, isManuallyEdited: false });
     }
-    return out;
+    const notes: string[] = [];
+    if (dropBrackets) notes.push('Haakjes weggelaten: bij alleen × veranderen ze de uitkomst niet.');
+    if (out.length < count) notes.push(`Slechts ${out.length} oefeningen mogelijk bij deze instellingen.`);
+    else if (widened) notes.push('Rekenreeksen uitgebreid: geen vaste vriendelijke paren, deeltallen tot het maximum.');
+    return { items: out, note: notes.length ? notes.join(' ') : null };
+}
+
+export function generateRekenvolgordeExercises(block: MathBlock): RekenvolgordeExercise[] {
+    return generateRekenvolgordeNoted(block).items;
 }
