@@ -284,7 +284,9 @@ The four consumers are now **table lookups, not branches**:
 | Generate | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generate` + `.exerciseField` |
 | Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches. A Config may mount OTHER families' plugins for a sub-bag through `ConstraintScope` (gemengd's per-variant tabs) — the plugin code stays unaware |
 | Viewer routing | [SheetBlock.tsx](../../src/components/sheet/SheetBlock.tsx) | `EXERCISE_UI[typeId].Viewer` |
-| Block defaults | [blocksSlice.ts](../../src/store/slices/blocksSlice.ts) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `.defaultCount` |
+| Block defaults | [blocksSlice.ts](../../src/store/slices/blocksSlice.ts) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `LEAF_BY_ID[leafId]?.defaultCount ?? .defaultCount` (a leaf may carry its own count; only oppervlakte-rooster does, = 2) |
+| Seed fit | [baseSettings.ts](../../src/config/baseSettings.ts) `seedConstraints` | `SEED_FIT[typeId]` (exerciseRegistry.ts) — runs last, only when the max came from the seed (not pinned by the override): schattend/afronden drop rounding targets that can't round at the seeded max; getallenas/-rijen lower ticks (min 4), then the step, so a default never needs a note |
+| Generation note | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generateNoted?` → `{ items, note }`; the note lands on the block (`generationNote`, Inspector box, §6) |
 
 ### Checklist to add a type
 
@@ -305,7 +307,12 @@ The four consumers are now **table lookups, not branches**:
 6. **Sidebar tree** — add the leaf (with `typeId`, optional `defaultConstraints` and an
    `instruction` — the pupil-facing opdracht-titel, a string or a function of the constraints)
    to `APP_STRUCTURE` in [appstructure.ts](../../src/config/appstructure.ts). The leaf's
-   `defaultConstraints` are merged on top of the registry defaults at add time.
+   `defaultConstraints` are merged on top of the registry defaults at add time; an optional leaf
+   `defaultCount` overrides the row's count.
+7. **Limit rules** — a `LIMIT_SPECS[typeId]` entry in
+   [limitRules.ts](../../src/__tests__/helpers/limitRules.ts) saying what the config promises (which
+   numbers stay ≤ max, noemer caps, sides, …), and the type's options in `constraintSpace.ts`;
+   `limits.matrix.test.ts` fails the gate without the entry (TESTING.md "The limit harness").
 
 Do **not** add `if (typeId === …)` branches in dispatch / Inspector / App — that
 pattern is gone. A missing registry row makes the block render/generate nothing
@@ -359,6 +366,17 @@ strict settings first; if short, a throwaway clone drops one rung at a time (pre
 operand2Mask → operand1Mask → bridges → termCount) and the block gets a `generationNote`
 (§3). Stored constraints are never mutated.
 
+**Limits are hard; notes instead of silent changes** (limit-fix campaign 2026-10-08). Every number
+a config promises to bound (max, noemer caps, sides, "Maximum per getal", …) stays inside it — the
+gate test `limits.matrix.test.ts` enforces it per type. When a generator cannot honour what the
+teacher picked (an impossible mask, a range too small, a span that cannot fit), it fills what it can
+WITHIN the limits and says so: the row exposes `generateNoted(block) → { items, note }` and the
+Dutch note lands in the Inspector box. Shared wording (singular/plural) lives in
+[generationNotes.ts](../../src/services/generationNotes.ts) (`countOefeningen`, `repeatNote` —
+also used by the dedupe's "Kleine reeks" note) and hr's `relax.shortfallNote`. Never exceed a
+limit to fill a block; fewer exercises + a note is the fallback. A block left EMPTY by a legitimate
+note is drawn by SheetBlock itself: the note on screen (`no-print`), only the title on paper.
+
 `MAX_ATTEMPTS` varies by generator (20000 for math/geld-teruggeven, 5000 for MAB,
 500 per-item for cijferen). Some simple generators (geld, fractions, clock) skip
 the retry loop and build exactly `n` items directly.
@@ -403,6 +421,27 @@ the retry loop and build exactly `n` items directly.
 > [hrRowLayout.ts](../../src/services/layout/hrRowLayout.ts); the viewer draws from the same `geometry()`.
 > Afronden natural targets: T H D TD HD, then 1M 10M 100M (and 1MLD at max 1e9). Splitsen positietabel
 > spells to een miljard (dutchWords). Everything ≤ 1e6 keeps its old random stream.
+
+> Limit-fix campaign (2026-10-08, BUGS ids L/E/N in git history):
+> - **Met rest** has a max list `hrMetRest` [100, 1000] ("Maximum deeltal") through `divMax` on the
+>   hr-std-delen row, seeded from the leerjaar (L1-2 → 100, L3+ → 1000). `MET_REST_LEVEL_MIN_MAX`
+>   / `clipMetRestLevel` (numberRanges.ts) is the one source for which niveau fits (N2 needs 100, N3
+>   1000); NaturalSettings greys out levels that don't fit, mathEngine lowers the level with a note.
+>   Old saves: `floorMaxIntoList` floors a carried-over 1e6 to 1000.
+> - **Leerjaar 1 = 20** only on `plaatswaarde`, `vergelijken` (getallen/kiezen) and
+>   `deelbaarheidKleurRaster`. Gap by owner decision: afronden ×4, controleren, deelbaarheid-tabel,
+>   rekenvolgorde, patronen-dec/-geh, procenten, schattend, splitsen-boom still floor 20 up to 100/1000.
+> - **Gemengd** applies its shared max to every variant: `effectiveBlockFor` sets the unstored
+>   `MulDivConstraints.capToMax`, under which tafels / deeltafels / tienvoud / andere respect maxGetal
+>   (standalone tafels and tienvoud are unchanged).
+> - **Result caps**: schattend (exact result and estimate), controleren (result and planted wrong
+>   answer) and rekenvolgorde (answer and every intermediate, 2-4 bewerkingen) stay ≤ max.
+> - **getallenas / -rijen** shrink to fit (`fitLine`, exported from getallenasGenerator): fewer ticks
+>   (min 4), then a smaller 1-2-5 step, with a note; rational rows cap at maxTeller.
+> - `generateNoted` rows: cijferen ×8, getallenas, getallenrijen, getalpatronen, kettingsommen,
+>   schattend, procenten, rekenvolgorde, breuken, breuken-bewerken, omtrek, oppervlakte, ordenen,
+>   breuken-rangschikken, herleidingen, maateenheid, kalender, geld-herkennen/-tekenen/-teruggeven,
+>   plaatswaarde, vergelijken, afronden (`notingShortfall`), hr-std-delen, verbanden.
 
 > Multi-term (2026-07-06): hr-std equations support 2-4 termen/factoren (`termCount`,
 > `operandMasks[]`, `operandMax[]`, `Equation.operators[]` + `missingIndex`) and presets
@@ -919,7 +958,12 @@ multi-item viewers go through `FragmentableGrid`.
 
 All localStorage; nothing leaves the browser except share links the user copies.
 
-- **Format gate:** `WORKSHEET_FORMAT_VERSION = 3`. `parseWorksheetFile` validates
+- **v3 → v4 migration (2026-10-08, base decimals):** `DEFAULT_BASE.baseDecimalPlaces` went 2 → 0,
+  so below v4 a base holding exactly 2 with a non-decimal numberType and no Leerjaar 4-6 is reset to
+  0 (that 2 can only be the old default or the never-undone grade). A decimal base, a Leerjaar 4-6
+  sheet, any 1 or 3, and every block are kept. A v4 file opened by a v3 app (today's main) is refused
+  ("nieuwere versie") — release-note item when rc ships.
+- **Format gate:** `WORKSHEET_FORMAT_VERSION = 4`. `parseWorksheetFile` validates
   version + required fields (blocks/header/footer/docSettings) + the optional
   `curriculum` shape, and rejects future/invalid files. v2 added optional
   `baseSettings` + `curriculum` (absent → defaults, so v1 files still load).
@@ -1029,6 +1073,7 @@ src/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
+│   ├── generationNotes.ts       # shared Dutch note wording (countOefeningen, repeatNote) for generateNoted rows + the dedupe's "Kleine reeks"
 │   ├── generateDispatch.ts      # generateForBlock / generateExtra / regenerateBlock: registry lookup, sheet-wide dedupe (§6) → generic setExercises
 │   ├── persistence.ts           # autosave / presets / share-link / file import-export (§10)
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
@@ -1200,6 +1245,13 @@ deelbaarheid 100 000, …) instead of an unlisted value. Safety nets for old sav
 `loadWorksheet` clamps `baseMaxGetal` > `NAT_CEILING` (1e9); `generateForBlock` generates from a
 clamped copy (`withinCeiling`, 1e10 × INTERNAL_SCALE would pass 2^53); `PopupSelect`'s
 `clampToLowest` floors an unmatched value to the nearest lower option.
+
+**Decimals (2026-10-08).** `DEFAULT_BASE.baseDecimalPlaces` is 0; Leerjaar 1-3 seed 0, Leerjaar 4-6
+seed 2, and "Alle leerjaren" (`setSelectedGrade(null)`) applies `NO_GRADE_PRESET` (back to 0).
+`baseApply` writes `decimalPlaces` only where it means something: types with a `numberType` get it only
+when the base has decimals (else they keep their own precision default, ordenen 2); plaatswaarde and
+vergelijken (no numberType — `decimalPlaces` IS their decimals switch) always get the base value.
+After the merge, `SEED_FIT` (§5) fits rounding targets and axis spans to the seeded max.
 
 ### Mass-add modal ("Toevoegen")
 

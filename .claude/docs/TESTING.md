@@ -50,6 +50,9 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `instructions.test.ts` | Every sidebar leaf resolves to a non-empty default instruction that does not end in `:`; function-valued instructions are exercised per option; worksheet templates never fall back to `"<label>:"`. |
 | `viewers.smoke.test.tsx` | Every `EXERCISE_UI` viewer renders with real generated data at three cell widths (681 / 338 / 163 px) with solutions on and off, and logs no `console.error`. A **ceiling pass** repeats that for every sidebar leaf whose type has a max list, at the top of that list (`maxPresets(…)`), and also fails on `undefined`/`NaN` in the rendered text. Crash-only: jsdom has no layout, so fit and overflow at 1e9 belong to `npm run bignum:audit`. |
 | `viewers.stale.test.tsx` | Every viewer renders exercises that were generated under DIFFERENT settings — the window between a setting change and the next Genereer. See below. |
+| `limits.wp1.test.ts` … `limits.wp5.test.ts`, `limits.{vergelijken,fractions,meten}.test.ts`, `limitsWp6.test.tsx`, `cijferLimits.test.ts` | The 2026-10-07/08 limit-fix campaign, one suite per fix package: each repro from BUGS.md (L/E/N ids) over several seeds stays within its limit, impossible settings give the documented Dutch note (singular/plural), valid settings keep their output. Every test was shown to fail on the pre-fix code. |
+| `metRest.test.tsx`, `gradeLists.test.ts`, `seedFit.test.ts`, `baseDecimals.test.ts` | Met rest's max list + level clipping, the Leerjaar 1 = 20 lists and grade switches, the seed-time fit (rounding targets, axis span), base decimals 0 / Leerjaar 4-6 = 2 and the v3 → v4 save migration. |
+| `leafDefaultCount.test.ts`, `sheetBlock.emptyNote.test.tsx` | A leaf's own `defaultCount` (oppervlakte-rooster = 2, everything else the row's); an empty block with a note shows the note on screen and nothing on paper. |
 
 ## The generator matrix
 
