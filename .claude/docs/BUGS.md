@@ -170,6 +170,15 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
   divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
 
+### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
+
+- [E10] getallenrijen numberMask: after 80 attempts the anchor (first value) silently ignores the mask
+  (MASK_NOT_HONORED_ANCHOR, 1896 combos, e.g. decimal mask T + t, start 840). Fix: honour it or note
+  it. Found by WP2. 2026-10-07
+- [E11] A block whose generator legitimately produced 0 exercises (with a "Geen … mogelijk" note) still
+  shows "(Nog geen oefeningen — klik Genereer)" on the sheet, which contradicts the note. Found by
+  WP2. 2026-10-07
+
 ### WP3 Cijferen (cijferGenerator.ts)
 
 - [L3] cijferen-vermenigvuldigen-nat / -dec: when a "Specifieke getalopbouw" mask can't fit under the
@@ -184,6 +193,9 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   "6 : 1 = 6 r 1". 2026-10-07
 - [E7] cijferen-delen-dec with a decimal-place divisor mask: quotient 0 ("0,5 : 6", 1,4 %) and a
   dividend a hair over max ("1000,18 : 0,09", 0,04 %). Low priority. 2026-10-07
+- [E9] CijferViewer builds the × partial products from `String(Math.round(operands[1]))`, so a
+  fractional multiplier (Getal 2 decimal-place mask on cijferen-vermenigvuldigen-dec) is drawn as a
+  rounded one (0,5 → 1): the ×dec grid and its partial products are wrong. Found by WP3. 2026-10-07
 
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
