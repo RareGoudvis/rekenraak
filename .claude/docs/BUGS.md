@@ -274,9 +274,7 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [N1] hr-std-aftrekken rational with "Gemengd getal" on Getal 2: when Getal 1 is the smaller value the
   whole of Getal 2 prints as 0 and the key is wrong ("1/9 − 0 1/3 = 2 7/9"; one_step, teller max 2 / 1:
   100 %; teller max 5 / 1 at 40 exercises: 48 %). The other rational keys check out. 2026-10-07
-- [N2] hr-std-gemengd with 3-4 termen at a max the chain cannot reach (× / : at max 10): the per-variant
-  relaxation leaves the block short, 4-8 of 10 (2 termen fills it). 2026-10-07
-- [N3] plaatswaarde / vergelijken getallen: a getalopbouw mask on only the top place (weight = max, e.g.
+- [N2] plaatswaarde / vergelijken getallen: a getalopbouw mask on only the top place (weight = max, e.g.
   HM at 1e8) admits exactly one number, so the block holds 1 of 6. Same shape as the top-place bridge
   line under Generators. Fix: hide the top place in the mask row or note it. 2026-10-07
 

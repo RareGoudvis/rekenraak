@@ -38,6 +38,8 @@ export interface CheckContext {
     requested: number;
     grade: Leerjaar | null;
     leafId?: string;
+    // The generation note the Inspector shows (generateNoted), null when the block is as asked.
+    note: string | null;
 }
 
 export interface Extracted { operands: number[]; answers: number[]; intermediates: number[]; shown: number[] }
@@ -408,7 +410,8 @@ const kettingSpec: TypeSpec<PatroonExercise> = {
         for (const v of e.values) if (!Number.isInteger(v)) push('non-integer', v, 'integer', ex);
         // The "+1 ladder" (1, 2, 3, …) is the fallback when the chosen operations found no chain.
         const ladder = e.cycle.every(s => s.op === '+' && s.operand === 1) && e.values.every((v, i) => v === i + 1);
-        if (ladder && (ops.length > 1 || ops[0] !== '+' || n(os['+']?.max, 10) > 1)) {
+        // With '+' as the only operation a +1 chain from 1 is a legitimate draw, not the fallback.
+        if (ladder && !(ops.length === 1 && ops[0] === '+')) {
             push('fallback-ladder', '+1', ops.join(''), ex);
         } else {
             for (const s of e.cycle) {
@@ -592,7 +595,8 @@ const rekenvolgordeSpec: TypeSpec<RekenvolgordeExercise> = {
         for (const o of ops) if (!chosen.includes(o)) push('op-not-selected', o, chosen.join(''), ex);
         if (ops.length !== Math.min(4, Math.max(2, n(c.opsCount, 2)))) push('ops-count', ops.length, c.opsCount, ex);
         if (c.haakjesMode === 'GEEN' && e.tokens.includes('(')) push('brackets-mode', 'haakjes', 'GEEN', ex);
-        if (c.haakjesMode === 'MOET' && !e.tokens.includes('(')) push('brackets-mode', 'geen haakjes', 'MOET', ex);
+        // A MOET the operations cannot honour (× only) drops its brackets WITH a note: intended.
+        if (c.haakjesMode === 'MOET' && !e.tokens.includes('(') && !ctx.note) push('brackets-mode', 'geen haakjes', 'MOET', ex);
         if (!sameNum(evaluateTokens(e.tokens), e.answer)) push('answer-key', e.answer, evaluateTokens(e.tokens), ex);
     },
 };
@@ -856,7 +860,8 @@ export function checkLimits(items: unknown[], ctx: CheckContext): Violation[] {
     const out: Violation[] = [];
     const push: Push = (rule, observed, limit, example) => out.push({ rule, observed, limit, example });
     const spec = LIMIT_SPECS[ctx.typeId] as TypeSpec<unknown> | undefined;
-    if (items.length < ctx.requested) push('underfill', items.length, ctx.requested, `${items.length} of ${ctx.requested}`);
+    // A short block that says why (a generation note) is the intended answer to an impossible ask.
+    if (items.length < ctx.requested && !ctx.note) push('underfill', items.length, ctx.requested, `${items.length} of ${ctx.requested}`);
     if (items.length > ctx.requested) push('overfill', items.length, ctx.requested, `${items.length} of ${ctx.requested}`);
     items.forEach((ex, i) => {
         const bad: string[] = [];

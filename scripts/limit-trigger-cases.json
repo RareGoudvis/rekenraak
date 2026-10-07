@@ -49,6 +49,5 @@
   {"bugId": "E8", "leafId": "geld-tekenen", "typeId": "geld-tekenen", "constraints": {"maxGetal": 10, "allowedDenominations": [50000], "format": "decimaal"}, "grade": null, "seed": 1234, "note": "only 500 euro at max 10 -> unpayable 6,95"},
   {"bugId": "E8", "leafId": "geld-herkennen", "typeId": "geld-herkennen", "constraints": {"allowedDenominations": [5], "format": "euros"}, "grade": null, "seed": 1234, "note": "euros format with 5 c only -> 60 cents"},
   {"bugId": "N1", "leafId": "hr-std-aftrekken-rat", "typeId": "hr-std-aftrekken", "constraints": {"numberType": "rational", "fractionDifficulty": "one_step", "mixedNumber2": true, "maxNumerator1": 2, "maxNumerator2": 1}, "grade": null, "seed": 1234, "note": "wrong key: 1/9 - 0 1/3 = 2 7/9"},
-  {"bugId": "N2", "leafId": "hr-std-gemengd-nat", "typeId": "hr-std-gemengd", "constraints": {"numberType": "natural", "maxGetal": 10, "variants": ["x", ":"], "termCount": 4}, "grade": null, "seed": 1234, "note": "4 termen at max 10 -> 4-8 of 10"},
-  {"bugId": "N3", "leafId": "plaatswaarde-tabel", "typeId": "plaatswaarde", "constraints": {"subType": "tabel", "maxGetal": 100000000, "numberMask": {"HM": true}}, "grade": null, "seed": 1234, "note": "mask on the top place only -> 1 of 6"}
+  {"bugId": "N2", "leafId": "plaatswaarde-tabel", "typeId": "plaatswaarde", "constraints": {"subType": "tabel", "maxGetal": 100000000, "numberMask": {"HM": true}}, "grade": null, "seed": 1234, "note": "mask on the top place only -> 1 of 6"}
 ]

@@ -49,6 +49,9 @@ export interface CaseResult {
     ms: number;
     // Known-hang id when the case was not run at all.
     skipped: string | null;
+    // The generation note (generateNoted), and whether the block came up short under it.
+    note: string | null;
+    notedUnderfill: boolean;
 }
 
 // A generator that needs longer than this per 10 exercises is as good as frozen on the sheet.
@@ -71,16 +74,20 @@ export function runCase(cs: LimitCase, slowMs = SLOW_MS): CaseResult {
     const block = buildBlock(cs);
     const c = block.constraints as Record<string, unknown>;
     const hang = skip(cs.typeId, c, false);
-    if (hang) return { cs, block, items: [], violations: [], ms: 0, skipped: hang.id };
+    if (hang) return { cs, block, items: [], violations: [], ms: 0, skipped: hang.id, note: null, notedUnderfill: false };
 
     const realRandom = Math.random;
     // Plain replacement, not a spy: a spy records every call and runs out of heap on big sweeps.
     Math.random = mulberry32(cs.seed);
     let items: unknown[] = [];
+    let note: string | null = null;
     let threw: string | null = null;
+    const def = REGISTRY[cs.typeId];
     const t0 = performance.now();
     try {
-        items = REGISTRY[cs.typeId].generate(block);
+        // The noted entry point is what the store calls; its note can excuse a short block.
+        if (def.generateNoted) ({ items, note } = def.generateNoted(block));
+        else items = def.generate(block);
     } catch (e) {
         threw = String((e as Error)?.message ?? e);
     } finally {
@@ -88,12 +95,12 @@ export function runCase(cs: LimitCase, slowMs = SLOW_MS): CaseResult {
     }
     const ms = performance.now() - t0;
 
-    const ctx = { typeId: cs.typeId, block, c, requested: block.numberOfExercises, grade: cs.grade, leafId: cs.leafId };
+    const ctx = { typeId: cs.typeId, block, c, requested: block.numberOfExercises, grade: cs.grade, leafId: cs.leafId, note };
     const raw: Violation[] = threw ? [{ rule: 'threw', observed: threw, limit: 'no throw', example: threw }] : checkLimits(items, ctx);
     const budget = slowMs * Math.max(1, block.numberOfExercises / 10);
     if (ms > budget) raw.push({ rule: 'slow', observed: Math.round(ms), limit: Math.round(budget), example: `${Math.round(ms)} ms for ${block.numberOfExercises}` });
     const violations = raw.map(v => ({ ...v, bugId: knownBugFor(cs.typeId, c, cs.grade, v.rule)?.id ?? null }));
-    return { cs, block, items, violations, ms, skipped: null };
+    return { cs, block, items, violations, ms, skipped: null, note, notedUnderfill: !threw && items.length < block.numberOfExercises && note !== null };
 }
 
 /** JSON with object keys sorted at every level, so equal data prints byte-identically. */

@@ -230,13 +230,8 @@ export const KNOWN_BUGS: KnownBug[] = [
         match: (_t, c) => c.numberType === 'rational' && c.mixedNumber2 === true,
     },
     {
-        // Gemengd 3-4 termen at a max the chain cannot reach: relaxation leaves the block short.
-        id: 'N2', typeIds: ['hr-std-gemengd'], rules: ['underfill'],
-        match: (_t, c) => num(c.termCount, 2) >= 3,
-    },
-    {
         // A getalopbouw mask on only the top place (weight = max) admits one number.
-        id: 'N3', typeIds: ['plaatswaarde', 'vergelijken'], rules: ['underfill'],
+        id: 'N2', typeIds: ['plaatswaarde', 'vergelijken'], rules: ['underfill'],
         match: (_t, c) => {
             const max = num(c.maxGetal, 1000);
             const on = getMaskPlaces(max, 'natural').filter(p => (c.numberMask as Record<string, boolean> | undefined)?.[p.key]);

@@ -1,5 +1,5 @@
 import { test } from 'vitest';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, openSync, writeSync, closeSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { REGISTRY } from '../../config/exerciseRegistry';
@@ -45,12 +45,16 @@ interface TypeSummary {
     hangs: number;
     throws: number;
     underfill: number;
+    // Short blocks that carry a generation note: intended, counted but not violations.
+    notedUnderfill: number;
     seconds: number;
 }
 
 interface ViolationRow {
     bugId: string | null; typeId: string; leafId: string | null; comboKey: string; seed: number;
     rule: string; observed: unknown; limit: unknown; example: string;
+    // The block's generation note, as context (null = generated as asked).
+    note: string | null;
 }
 
 const summary: Record<string, TypeSummary> = {};
@@ -119,6 +123,7 @@ function casesFor(typeId: string): LimitCase[] {
 function record(r: CaseResult, s: TypeSummary) {
     s.exercises += r.items.length;
     if (r.skipped) s.hangs++;
+    if (r.notedUnderfill) s.notedUnderfill++;
     const rules = new Set<string>();
     // Blocks here ask LIMITS_COUNT (40) exercises; a small candidate space legitimately runs out
     // above the type's own default count, so only a shortfall below that default is a finding.
@@ -136,7 +141,7 @@ function record(r: CaseResult, s: TypeSummary) {
         const n = sampled.get(bucket) ?? 0;
         if (n >= (v.bugId ? KNOWN_SAMPLE : NEW_CAP)) continue;
         sampled.set(bucket, n + 1);
-        violations.push({ bugId: v.bugId, typeId: r.cs.typeId, leafId: r.cs.leafId ?? null, comboKey: comboKey(r.cs), seed: r.cs.seed, rule: v.rule, observed: v.observed, limit: v.limit, example: v.example });
+        violations.push({ bugId: v.bugId, typeId: r.cs.typeId, leafId: r.cs.leafId ?? null, comboKey: comboKey(r.cs), seed: r.cs.seed, rule: v.rule, observed: v.observed, limit: v.limit, example: v.example, note: r.note });
     }
 }
 
@@ -145,22 +150,27 @@ if (DUMP) mkdirSync(DUMP, { recursive: true });
 
 test.each(typeIds)('audit %s', (typeId) => {
     const t0 = performance.now();
-    const s: TypeSummary = { combos: 0, exercises: 0, violationsByRule: {}, knownBugHits: {}, hangs: 0, throws: 0, underfill: 0, seconds: 0 };
+    const s: TypeSummary = { combos: 0, exercises: 0, violationsByRule: {}, knownBugHits: {}, hangs: 0, throws: 0, underfill: 0, notedUnderfill: 0, seconds: 0 };
     const combos = new Set<string>();
-    const dump: string[] = [];
-    for (const cs of casesFor(typeId)) {
-        const r = runCase(cs);
-        combos.add(comboKey(cs));
-        record(r, s);
-        if (DUMP) {
-            const extra = r.skipped ? { skipped: r.skipped } : r.violations.some(v => v.rule === 'threw') ? { threw: String(r.violations.find(v => v.rule === 'threw')!.observed) } : {};
-            dump.push(stableStringify({ comboKey: comboKey(cs), seed: cs.seed, exercises: normalizeForDump(r.items), ...extra }));
+    // Streamed line by line: holding a busy type's blocks in memory runs node out of heap.
+    const fd = DUMP ? openSync(join(DUMP, `${typeId}.jsonl`), 'w') : null;
+    try {
+        for (const cs of casesFor(typeId)) {
+            const r = runCase(cs);
+            combos.add(comboKey(cs));
+            record(r, s);
+            if (fd !== null) {
+                const threw = r.violations.find(v => v.rule === 'threw');
+                const extra = { ...(r.note !== null ? { note: r.note } : {}), ...(r.skipped ? { skipped: r.skipped } : threw ? { threw: String(threw.observed) } : {}) };
+                writeSync(fd, `${stableStringify({ comboKey: comboKey(cs), seed: cs.seed, exercises: normalizeForDump(r.items), ...extra })}\n`);
+            }
         }
+    } finally {
+        if (fd !== null) closeSync(fd);
     }
     s.combos = combos.size;
     s.seconds = Math.round((performance.now() - t0) / 100) / 10;
     summary[typeId] = s;
-    if (DUMP) writeFileSync(join(DUMP, `${typeId}.jsonl`), dump.length ? `${dump.join('\n')}\n` : '');
     console.log(`[limits:audit] ${typeId}: ${s.combos} combos, ${s.exercises} exercises, ${Object.values(s.violationsByRule).reduce((a, b) => a + b, 0)} violations, ${s.seconds}s`);
 });
 
@@ -172,11 +182,11 @@ test('write summary.json, violations.json, report.md', () => {
     const total = (f: (s: TypeSummary) => number) => Object.values(summary).reduce((a, s) => a + f(s), 0);
     lines.push('# Limit audit', '', `Seeds ${SEEDS.join(', ')} · ${COUNT} exercises per block · random rows ${RANDOM} · only ${ONLY.join(', ') || 'all'}`, '');
     lines.push(`${Object.keys(summary).length} types · ${total(s => s.combos)} combos · ${total(s => s.exercises)} exercises · ${total(s => s.seconds).toFixed(0)} s`, '');
-    lines.push('| typeId | combos | exercises | violations | known | new | hangs | throws | underfill | s |', '|---|---|---|---|---|---|---|---|---|---|');
+    lines.push('| typeId | combos | exercises | violations | known | new | hangs | throws | underfill | noted short | s |', '|---|---|---|---|---|---|---|---|---|---|---|');
     for (const [t, s] of Object.entries(summary)) {
         const all = Object.values(s.violationsByRule).reduce((a, b) => a + b, 0);
         const known = Object.values(s.knownBugHits).reduce((a, b) => a + b, 0);
-        lines.push(`| ${t} | ${s.combos} | ${s.exercises} | ${all} | ${known} | ${all - known} | ${s.hangs} | ${s.throws} | ${s.underfill} | ${s.seconds} |`);
+        lines.push(`| ${t} | ${s.combos} | ${s.exercises} | ${all} | ${known} | ${all - known} | ${s.hangs} | ${s.throws} | ${s.underfill} | ${s.notedUnderfill} | ${s.seconds} |`);
     }
 
     const fresh = new Map<string, { n: number; first: ViolationRow }>();
