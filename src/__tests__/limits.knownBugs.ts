@@ -1,5 +1,4 @@
 import type { Leerjaar } from '../config/gradePresets';
-import { ladderFor } from '../services/herleidingen/herleidingenGenerator';
 import { getMaskPlaces } from '../services/math/mathEngine';
 
 // ── Known limit bugs ─────────────────────────────────────────────────────────
@@ -36,8 +35,6 @@ export interface KnownSkip {
 const HR = ['hr-std-optellen', 'hr-std-aftrekken', 'hr-std-vermenigvuldigen', 'hr-std-delen', 'hr-std-gemengd'];
 const num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const str = (v: unknown, fallback: string) => (typeof v === 'string' ? v : fallback);
-const masked = (m: unknown, keys?: string[]) =>
-    !!m && typeof m === 'object' && Object.entries(m as Record<string, boolean>).some(([k, on]) => on && (!keys || keys.includes(k)));
 
 // Some d1 in [2..D1] for which every d2 in [2..D2] equals, divides or is divisible by it:
 // the multi_step do/while (mathEngine.ts ~351 / ~474) then never finds a d2.
@@ -58,16 +55,6 @@ export const KNOWN_SKIPS: KnownSkip[] = [
         match: (_t, c) => c.numberType === 'rational'
             && !['same', 'one_step'].includes(str(c.fractionDifficulty, 'same'))
             && fractionMultiStepHangs(num(c.maxDenominator1, 10), num(c.maxDenominator2, 10)),
-    },
-    {
-        // [E2] CRASH: herleidingen units whose factors are all equal (m² + ca, hm² + ha,
-        // dam² + a) leave gridUnits with one entry and pickPair reads index 1.
-        id: 'E2', kind: 'crash', typeIds: ['herleidingen'],
-        match: (_t, c) => {
-            const ladder = ladderFor(str(c.measure, 'lengte'));
-            const picked = ladder.filter(u => ((c.units as string[] | undefined) ?? []).includes(u.key));
-            return picked.length >= 2 && new Set(picked.map(u => u.factor)).size === 1;
-        },
     },
 ];
 
@@ -97,32 +84,6 @@ export const KNOWN_BUGS: KnownBug[] = [
     {
         id: 'L19', typeIds: ['hr-std-delen'], rules: ['dividend>max', 'dividend>gradeMax'],
         match: (_t, c) => c.multiplicationMode === 'met_rest',
-    },
-
-    // ── WP6 Misc generators ──
-    {
-        id: 'E2', typeIds: ['herleidingen'], rules: ['threw'],
-        match: (t, c) => KNOWN_SKIPS.find(s => s.id === 'E2')!.match(t, c),
-    },
-    {
-        id: 'E4b', typeIds: ['ordenen', 'breuken-rangschikken', 'herleidingen', 'maateenheid', 'kalender', 'geld-teruggeven'],
-        rules: ['underfill', 'empty-exercise', 'count-short', 'questions<questionCount'],
-        match: (t, c) => {
-            if (t === 'ordenen') return masked(c.numberMask);
-            if (t === 'breuken-rangschikken') return c.fractionMode === 'gelijknamig-te-maken';
-            if (t === 'maateenheid') return ((c.grootheden as string[] | undefined) ?? []).length <= 1;
-            if (t === 'kalender') return !((c.questionTypes as string[] | undefined) ?? []).includes('dag-van-datum');
-            if (t === 'geld-teruggeven') return ((c.payWithOptions as number[] | undefined) ?? []).length <= 1;
-            return true;
-        },
-    },
-    {
-        id: 'E6', typeIds: ['verbanden'], rules: ['given-not-in-reps', 'target-not-in-reps'],
-        match: (_t, c) => c.given !== 'random' && !((c.reps as string[] | undefined) ?? []).includes(str(c.given, 'random')),
-    },
-    {
-        id: 'E8', typeIds: ['geld-herkennen', 'geld-tekenen'], rules: ['amount<=0', 'cents-in-euros', 'unpayable'],
-        match: () => true,
     },
 
     // ── WP7 Grade lists ──
