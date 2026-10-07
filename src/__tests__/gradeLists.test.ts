@@ -139,8 +139,21 @@ describe('a mask that cannot fill the block says so', () => {
         expect(note).toBe(maskShortfallNote(0, 6));
     });
 
+    test('vergelijken representaties, a tientallen-only side at 10: the note covers it too', () => {
+        const { items, note } = noted('vergelijken', { subType: 'representaties', leftRep: 'plaatswaarde', rightRep: 'plaatswaarde', leftMask: { T: true }, rightMask: { T: true }, maxGetal: 10, decimalPlaces: 1 });
+        expect(items.length).toBeLessThan(6);
+        expect(note).toBe(maskShortfallNote(items.length, 6));
+    });
+
+    test('afronden, duizendtallen only at 1000: one number, so the block says so', () => {
+        const { items, note } = noted('afronden', { subType: 'simpel', numberType: 'natural', maxGetal: 1000, numberMask: { D: true }, roundTargets: ['T', 'H'] });
+        expect(items.length).toBeLessThan(6);
+        expect(note).toBe(maskShortfallNote(items.length, 6));
+    });
+
     test('a full block carries no note', () => {
         expect(noted('vergelijken', { subType: 'getallen', maxGetal: 20 }).note).toBeNull();
         expect(noted('plaatswaarde', { subType: 'waarde', maxGetal: 20 }).note).toBeNull();
+        expect(noted('afronden', { subType: 'simpel', numberType: 'natural', maxGetal: 1000 }).note).toBeNull();
     });
 });

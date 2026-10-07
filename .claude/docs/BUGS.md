@@ -197,9 +197,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   whole of Getal 2 prints as 0 and the key is wrong ("1/9 − 0 1/3 = 2 7/9"; one_step, teller max 2 / 1:
   100 %; teller max 5 / 1 at 40 exercises: 48 %); under multi_step Getal 2's noemer also passes its cap
   ("15/4 − 2/6" at max noemer 4). The other rational keys check out. 2026-10-07
-- [N2] plaatswaarde / vergelijken / afronden: a getalopbouw mask on only the top place (weight = max, e.g.
-  HM at 1e8) admits exactly one number, so the block holds 1 of 6. Same shape as the top-place bridge
-  line under Generators. Fix: hide the top place in the mask row or note it. 2026-10-07
 
 ## Tooling
 

@@ -1,6 +1,5 @@
 import type { Leerjaar } from '../config/gradePresets';
 import { ladderFor } from '../services/herleidingen/herleidingenGenerator';
-import { getMaskPlaces } from '../services/math/mathEngine';
 
 // ── Known limit bugs ─────────────────────────────────────────────────────────
 // One entry per still-open BUGS.md id ([Lx] limit, [Ex] other, [Nx] found by this harness).
@@ -125,28 +124,12 @@ export const KNOWN_BUGS: KnownBug[] = [
         match: () => true,
     },
 
-    // ── WP7 Grade lists ──
-    {
-        id: 'L20', typeIds: ['vergelijken', 'plaatswaarde'], rules: ['seeded-max>grade'],
-        match: (_t, _c, grade) => grade === 1,
-    },
-
     // ── Found by this harness (BUGS.md 'Limit audit 2026-10-07', harness section) ──
     {
         // Gemengd getal on Getal 2 with Getal 1 the smaller fraction: the key is wrong.
         // The same swap also lets Getal 2's noemer past its cap under multi_step.
         id: 'N1', typeIds: ['hr-std-aftrekken'], rules: ['answer-key', 'denominator>max'],
         match: (_t, c) => c.numberType === 'rational' && c.mixedNumber2 === true,
-    },
-    {
-        // A getalopbouw mask on only the top place (weight = max) admits one number.
-        // afronden too; the retry loop that hunts for more numbers makes kiezen slow.
-        id: 'N2', typeIds: ['plaatswaarde', 'vergelijken', 'afronden'], rules: ['underfill', 'slow'],
-        match: (_t, c) => {
-            const max = num(c.maxGetal, 1000);
-            const on = getMaskPlaces(max, 'natural').filter(p => (c.numberMask as Record<string, boolean> | undefined)?.[p.key]);
-            return on.length > 0 && on.every(p => p.weight === max);
-        },
     },
 ];
 

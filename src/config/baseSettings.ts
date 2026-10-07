@@ -165,6 +165,9 @@ export function seedConstraints({ typeId, base, override: leafOverride, grade, l
             merged[key] = Object.keys(trimmed).length > 0 ? trimmed : defaults[key];
         }
     }
-    // Same idea for settings that hang on the max (rounding targets, an axis span).
-    return SEED_FIT[typeId]?.(merged) ?? merged;
+    // Same idea for settings that hang on the max (rounding targets, an axis span), but only
+    // when the max is the seed's: a max the override pins is the author's, and the generator's
+    // note then explains what it had to change.
+    const maxPinned = !!override && MAX_KEYS.some(k => k in override);
+    return (!maxPinned && SEED_FIT[typeId]?.(merged)) || merged;
 }
