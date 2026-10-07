@@ -1,6 +1,7 @@
 import type { MathBlock, OrdenenExercise, Fraction } from '../math/types';
 import { numberMatchesMask } from '../math/mathEngine';
 import type { OrdenenConstraints } from '../math/constraintTypes';
+import { countOefeningen } from '../generationNotes';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -45,6 +46,10 @@ function genValue(numberType: string, c: OrdConstraints): number | Fraction {
 }
 
 export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
+    return generateOrdenenExercisesNoted(block).items;
+}
+
+export function generateOrdenenExercisesNoted(block: MathBlock): { items: OrdenenExercise[]; note: string | null } {
     const c = block.constraints as OrdenenConstraints;
     const numberType: string = c.numberType ?? 'natural';
     const count: number = c.count ?? 3;
@@ -62,17 +67,22 @@ export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
 
     const n = block.numberOfExercises;
     const results: OrdenenExercise[] = [];
+    let relaxed = 0;
 
     for (let i = 0; i < n; i++) {
         const values: (number | Fraction)[] = [];
         const seen = new Set<number>();
         let attempts = 0;
-        // A mask the range can't satisfy (decimal + D at max ≤ 100) would give an empty row: relax it then.
+        // A mask the range can't fill (decimal + H at max 100) gives a short or empty row: finish unmasked and say so.
         let maskOn = useMask;
         while (values.length < count && attempts < 4000) {
             attempts++;
-            if (maskOn && attempts > 2000 && values.length === 0) maskOn = false;
-            if (!maskOn && attempts > 2000 && values.length >= count) break;
+            if (maskOn && attempts > 2000) {
+                // Two masked values can still be ordered: keep that short row rather than mixing in unmasked numbers.
+                if (values.length >= 2) break;
+                maskOn = false;
+                relaxed++;
+            }
             const v = genValue(numberType, oc);
             if (maskOn && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
             const key = val(v);
@@ -91,5 +101,6 @@ export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {
         results.push({ id: rndId(), values: ordered, display, operator, isManuallyEdited: false });
     }
 
-    return results;
+    const note = relaxed > 0 ? `De getalopbouw past niet bij dit maximum; voor ${countOefeningen(relaxed)} is ze losgelaten.` : null;
+    return { items: results, note };
 }

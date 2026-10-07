@@ -70,6 +70,10 @@ function buildQuestions(year: number, month: number, questionTypes: string[], am
 }
 
 export function generateKalenderExercises(block: MathBlock): KalenderExercise[] {
+    return generateKalenderExercisesNoted(block).items;
+}
+
+export function generateKalenderExercisesNoted(block: MathBlock): { items: KalenderExercise[]; note: string | null } {
     const c = block.constraints as KalenderConstraints;
     const subType: 'maandrooster' | 'datum-rekenen' | 'notatie' = c.subType ?? 'maandrooster';
     const questionTypes: string[] = c.questionTypes ?? ['dag-van-datum', 'datum-van-dag', 'tellen'];
@@ -102,5 +106,8 @@ export function generateKalenderExercises(block: MathBlock): KalenderExercise[] 
             out.push({ id: id(), subType, year, month, day, direction: pick(['naar-cijfers', 'naar-woorden']), isManuallyEdited: false });
         }
     }
-    return out;
+    // A short question list (e.g. only 'tellen') cannot reach the asked count: say so instead of printing a thin rooster silently.
+    const fewest = subType === 'maandrooster' ? out.reduce((m, e) => Math.min(m, e.questions?.length ?? questionCount), questionCount) : questionCount;
+    const note = fewest < questionCount ? `Bij deze vraagsoorten zijn er maar ${fewest} verschillende ${fewest === 1 ? 'vraag' : 'vragen'} per rooster mogelijk (gevraagd: ${questionCount}).` : null;
+    return { items: out, note };
 }

@@ -3,6 +3,7 @@ import { describe, test, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { makeBlock, generateFor } from './helpers/makeBlock';
 import { EXERCISE_UI } from '../config/exerciseUI';
+import { REGISTRY } from '../config/exerciseRegistry';
 import type { OrdenenExercise, GeldExercise, VerbandExercise } from '../services/math/types';
 
 // Limit-audit WP6: generators must never throw or come back empty on reachable settings.
@@ -19,8 +20,8 @@ describe('E2 herleidingen alias-only units', () => {
 });
 
 describe('E4b no empty or short blocks', () => {
-    test('ordenen decimal + mask D at max 100 is not empty', () => {
-        const items = gen('ordenen', { numberType: 'decimal', maxGetal: 100, decimalPlaces: 1, numberMask: { D: true }, count: 3 }, 5) as OrdenenExercise[];
+    test('ordenen decimal + mask H at max 100 is not empty', () => {
+        const items = gen('ordenen', { numberType: 'decimal', maxGetal: 100, decimalPlaces: 1, numberMask: { H: true }, count: 3 }, 5) as OrdenenExercise[];
         expect(items.length).toBe(5);
         for (const ex of items) expect(ex.values.length).toBeGreaterThan(0);
     });
@@ -59,6 +60,41 @@ describe('E8 geld degenerate denominations', () => {
             expect(ex.denominations.reduce((s, d) => s + d.valueCents * d.count, 0)).toBe(ex.amountCents);
             if (constraints.format === 'euros') expect(ex.amountCents % 100).toBe(0);
         }
+    });
+});
+
+describe('generation notes (never silently change what the teacher picked)', () => {
+    const noted = (typeId: string, constraints: Record<string, unknown>, count: number) =>
+        REGISTRY[typeId].generateNoted!(makeBlock(typeId, { constraints, block: { numberOfExercises: count } }));
+
+    test('ordenen: a relaxed mask is reported, singular and plural', () => {
+        const c = { numberType: 'decimal', maxGetal: 100, decimalPlaces: 1, numberMask: { H: true }, count: 3 };
+        expect(noted('ordenen', c, 1).note).toBe('De getalopbouw past niet bij dit maximum; voor 1 oefening is ze losgelaten.');
+        expect(noted('ordenen', c, 4).note).toBe('De getalopbouw past niet bij dit maximum; voor 4 oefeningen is ze losgelaten.');
+        expect(noted('ordenen', { numberType: 'natural', maxGetal: 100, count: 3 }, 4).note).toBeNull();
+    });
+    test('geld-herkennen: coupures that were not ticked are reported', () => {
+        const r = noted('geld-herkennen', { allowedDenominations: [5], format: 'euros' }, 3);
+        expect(r.note).toBe('De gekozen coupures volstaan niet voor 3 oefeningen; daarvoor zijn ook andere coupures gebruikt.');
+        expect(noted('geld-herkennen', {}, 3).note).toBeNull();
+    });
+    test('geld-tekenen: an amount the ticked set cannot make is reported', () => {
+        const r = noted('geld-tekenen', { allowedDenominations: [50000], maxGetal: 10, format: 'euros' }, 2);
+        expect(r.note).toBe('Bij 2 oefeningen is het bedrag niet met de gekozen coupures te leggen.');
+        for (const ex of noted('geld-tekenen', { allowedDenominations: [200], maxGetal: 20, format: 'euros' }, 8).items as GeldExercise[]) expect(ex.amountCents % 200).toBe(0);
+    });
+    test('kalender: fewer questions than asked is reported', () => {
+        const r = noted('kalender', { subType: 'maandrooster', questionTypes: ['tellen'], questionCount: 5 }, 1);
+        expect(r.note).toBe('Bij deze vraagsoorten zijn er maar 1 verschillende vraag per rooster mogelijk (gevraagd: 5).');
+    });
+    test('repeat fills carry the duplicate note', () => {
+        expect(noted('maateenheid', { grootheden: ['temperatuur'] }, 40).note).toMatch(/^Kleine reeks: \d+ oefeningen komen dubbel voor\.$/);
+        expect(noted('herleidingen', { measure: 'lengte', units: ['hm', 'dam'], maxEnkel: 20, formats: ['enkel-getal'] }, 40).note).toMatch(/^Kleine reeks: 20 oefeningen komen dubbel voor\.$/);
+        expect(noted('geld-teruggeven', { payWithOptions: [500], centenDeel: 'vijfentwintig' }, 40).note).toMatch(/^Kleine reeks: 28 oefeningen komen dubbel voor\.$/);
+    });
+    test('breuken-rangschikken: too few noemers for the count is reported', () => {
+        const r = noted('breuken-rangschikken', { fractionMode: 'gelijknamig-te-maken', minDenominator: 7, maxDenominator: 7, count: 4 }, 3);
+        expect(r.note).toMatch(/maar 1 breuken/);
     });
 });
 

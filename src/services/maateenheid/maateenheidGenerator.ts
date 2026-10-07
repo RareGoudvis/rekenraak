@@ -1,6 +1,7 @@
 import type { MathBlock, MaateenheidExercise } from '../math/types';
 import { MAAT_ITEMS, UNIT_POOLS } from './maateenheidData';
 import type { MaateenheidConstraints } from '../math/constraintTypes';
+import { repeatNote } from '../generationNotes';
 
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -20,6 +21,10 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export function generateMaateenheidExercises(block: MathBlock): MaateenheidExercise[] {
+    return generateMaateenheidExercisesNoted(block).items;
+}
+
+export function generateMaateenheidExercisesNoted(block: MathBlock): { items: MaateenheidExercise[]; note: string | null } {
     const c = block.constraints as MaateenheidConstraints;
     const grootheden: string[] = c.grootheden ?? ['lengte', 'massa', 'inhoud'];
     let answerMode: string = c.answerMode ?? 'omcirkelen';
@@ -59,5 +64,5 @@ export function generateMaateenheidExercises(block: MathBlock): MaateenheidExerc
     for (let i = 0; distinct > 0 && out.length < count; i++) {
         out.push({ ...out[i % distinct], id: Math.random().toString(36).substring(2, 9) });
     }
-    return out;
+    return { items: out, note: repeatNote(out.length - distinct) };
 }

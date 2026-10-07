@@ -58,6 +58,10 @@ function buildSet(mode: string, count: number, minD: number, maxD: number): Frac
 }
 
 export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenExercise[] {
+    return generateBreukenRangschikkenExercisesNoted(block).items;
+}
+
+export function generateBreukenRangschikkenExercisesNoted(block: MathBlock): { items: OrdenenExercise[]; note: string | null } {
     const c = block.constraints as BreukenRangschikkenConstraints;
     const mode: string = c.fractionMode ?? 'stambreuken';
     const count: number = Math.min(5, Math.max(2, c.count ?? 4));
@@ -93,5 +97,8 @@ export function generateBreukenRangschikkenExercises(block: MathBlock): OrdenenE
 
         results.push({ id: rndId(), values: ordered, display, operator, isManuallyEdited: false });
     }
-    return results;
+    // The noemer range can hold fewer distinct fractions than the asked count.
+    const fewest = results.reduce((m, r) => Math.min(m, r.values.length), count);
+    const note = fewest < count ? `Bij dit bereik van noemers passen maar ${fewest} breuken per oefening (gevraagd: ${count}).` : null;
+    return { items: results, note };
 }

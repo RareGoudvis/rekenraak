@@ -239,13 +239,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [E5b] schattend silently swaps a selected rounding target ≥ max for the first target (default leaf H
   at max 100 → T at L1/L2); decimal target 'h' at 2 dp gives 0 exercises. 2026-10-07
 
-### WP6 Misc generators (herleidingen/, ordenen/, verbanden/, kalender/, geld/, breukenRangschikken)
-
-- [E4b] Left: kalender maandrooster ['tellen'] only yields 1 question of 5 (one distinct question; repeating
-  it would be absurd, so it needs a generation note via generateNoted in exerciseRegistry). 2026-10-07
-- [E8] Left: geld-tekenen with only bills above the max still asks for an amount the ticked set cannot pay
-  (herkennen is fixed: it falls back to the full catalogue). Low priority. 2026-10-07
-
 ### WP7 Grade lists (numberRanges.ts, exerciseRegistry.ts, baseSettings.ts, NaturalSettings.tsx)
 
 - [L19] (list side) hr-std-delen 'met rest': no max picker and no seeding, so the Leerjaar max never

@@ -1,5 +1,6 @@
 import type { MathBlock, HerleidingExercise, HerleidingPart } from '../math/types';
 import type { HerleidingenConstraints } from '../math/constraintTypes';
+import { repeatNote } from '../generationNotes';
 
 // Metric ladders. factor = value relative to the SMALLEST unit, so every factor is a power of
 // 10 and all conversions stay exact integers. Oppervlakte steps ×100 and includes the are-units
@@ -30,6 +31,10 @@ const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 const round6 = (x: number) => Number(x.toFixed(6)); // avoid float dust on non-exact teacher edits
 
 export function generateHerleidingExercises(block: MathBlock): HerleidingExercise[] {
+    return generateHerleidingExercisesNoted(block).items;
+}
+
+export function generateHerleidingExercisesNoted(block: MathBlock): { items: HerleidingExercise[]; note: string | null } {
     const c = block.constraints as HerleidingenConstraints;
     const measure: string = c.measure ?? 'lengte';
     const maxEnkel: number = Math.max(1, c.maxEnkel ?? c.maxGetal ?? 100);
@@ -48,7 +53,9 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
     const seenF = new Set<number>();
     let gridUnits = units.filter(u => seenF.has(u.factor) ? false : (seenF.add(u.factor), true));
     // Alias-only picks (m² + ca) collapse to one grid unit; fall back to the whole ladder so pairs exist.
+    let widenedUnits = false;
     if (gridUnits.length < 2) {
+        widenedUnits = true;
         const seenL = new Set<number>();
         gridUnits = ladder.filter(u => seenL.has(u.factor) ? false : (seenL.add(u.factor), true));
     }
@@ -173,7 +180,9 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
         const src = out[i % distinct];
         out.push({ ...src, id: `herl-${Math.random().toString(36).slice(2, 9)}` });
     }
-    return out;
+    const unitNote = widenedUnits ? 'Met alleen deze eenheden zijn geen omzettingen mogelijk; alle eenheden van deze maat zijn gebruikt.' : null;
+    const rep = repeatNote(out.length - distinct);
+    return { items: out, note: unitNote && rep ? `${unitNote} ${rep}` : (unitNote ?? rep) };
 }
 
 function mk(format: string, fromParts: HerleidingPart[], toParts: HerleidingPart[], blank: 'number' | 'unit'): HerleidingExercise {
