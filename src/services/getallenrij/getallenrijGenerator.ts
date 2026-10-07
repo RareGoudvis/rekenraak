@@ -43,6 +43,13 @@ const stepDecimals = (s: number): number => {
     return i < 0 ? 0 : str.length - i - 1;
 };
 
+// A 1/d row of `ticks` cells needs ticks − 1 units below the teller cap; fewer cells when not.
+function fitFractionRow(maxUnits: number, d: number, ticks: number): { ticks: number; note: string | null } {
+    if (ticks - 1 <= maxUnits) return { ticks, note: null };
+    const fewer = maxUnits + 1;
+    return { ticks: fewer, note: `Hoogste teller ${maxUnits} bij noemer ${d}: ${fewer} vakjes i.p.v. ${ticks}.` };
+}
+
 export function generateGetallenrijExercisesNoted(block: MathBlock): { items: GetallenasExercise[]; note: string | null } {
     const c = block.constraints as GetallenrijConstraints;
     const numberType: string = c.numberType ?? 'natural';
@@ -51,8 +58,11 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
     const directionMode: string = c.direction ?? 'right';
     const hardMode: boolean = c.hardMode ?? false;
     const lo = numberType === 'geheel' ? (c.minGetal ?? -maxGetal) : 0;
+    // Rational rows count in units of 1/d; maxTeller (getalopbouw) caps the highest teller.
+    const d = c.fractionStep && c.fractionStep > 1 ? c.fractionStep : 4;
+    const maxWholeUnits = c.maxTeller && c.maxTeller >= 1 ? Math.floor(c.maxTeller) : 5 * d;
     const fit = numberType === 'rational'
-        ? { step, ticks: c.ticks ?? 6, note: null }
+        ? { step, ...fitFractionRow(maxWholeUnits, d, c.ticks ?? 6) }
         : fitLine(lo, maxGetal, step || 1, c.ticks ?? 6, directionMode, numberType === 'decimal' ? 0.001 : 1, 'vakjes');
     const ticks = fit.ticks;
     const numberMask: Record<string, boolean> = c.numberMask ?? {};
@@ -71,10 +81,7 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
         const usedStep = fit.step;
 
         if (numberType === 'rational') {
-            const d = c.fractionStep && c.fractionStep > 1 ? c.fractionStep : 4;
             const fracOpts = { mixed: c.allowMixed ?? true, simplify: !(c.gelijknamig ?? false) };
-            // maxTeller (getalopbouw) caps the highest teller in the row; default ≤ 5 wholes.
-            const maxWholeUnits = c.maxTeller && c.maxTeller > d ? c.maxTeller : 5 * d;
             const span = ticks - 1;
             const startUnits = arrowLeft
                 ? pick(span, maxWholeUnits)

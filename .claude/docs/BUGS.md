@@ -174,10 +174,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 - [L9] getalpatronen: a per-op mask on + / − replaces "Stap (max)" (`buildOperand` mask branch ignores
   `s.max`). Repro: opSettings['+'].max 50 + mask {H,T} → step 110. 2385 combos. 2026-10-07
-- [L10] getallenrijen rational: `maxTeller ≤ fractionStep` is silently replaced by 5·d (maxTeller 1, d 4
-  → rows up to 5 wholes); `ticks−1 > maxTeller` climbs past it (d 2, maxTeller 3, 6 ticks → 2 1/2);
-  descending with span > maxWholeUnits prints a NEGATIVE noemer ({n:1, d:−4}: maxTeller 5, d 4, ticks
-  9-10, direction links). 2026-10-07
 - [E5a] getalpatronen / kettingsommen fall back to a "+1" ladder (1, 2, 3, …) that ignores the chosen
   operations: patronen with a lone ×, '−' + an H mask, tiny op max + mask (16 842/77 700 combos);
   kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a

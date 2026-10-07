@@ -78,3 +78,39 @@ describe('[L1] getallenas / getallenrijen stay within [lo, max]', () => {
         expect(generateGetallenasExercisesNoted(makeBlock('getallenas', { constraints: { maxGetal: 100, step: 5, ticks: 6 } })).note).toBeNull();
     });
 });
+
+describe('[L10] rational getallenrijen stay within maxTeller', () => {
+    const cases: Record<string, unknown>[] = [
+        { fractionStep: 4, maxTeller: 1, ticks: 6, direction: 'right' },
+        { fractionStep: 4, maxTeller: 4, ticks: 6, direction: 'beide' },
+        { fractionStep: 2, maxTeller: 3, ticks: 6, direction: 'right' },
+        { fractionStep: 4, maxTeller: 5, ticks: 9, direction: 'left' },
+        { fractionStep: 4, maxTeller: 5, ticks: 10, direction: 'left', gelijknamig: true, allowMixed: false },
+    ];
+    for (const c of cases) {
+        test(JSON.stringify(c), () => {
+            const d = c.fractionStep as number;
+            for (const seed of SEEDS) {
+                seeded(seed);
+                const { items, note } = generateGetallenrijExercisesNoted(makeBlock('getallenrijen', { constraints: { numberType: 'rational', ...c }, block: { numberOfExercises: 20 } }));
+                expect(items).toHaveLength(20);
+                expect(note).toMatch(/^Hoogste teller/);
+                for (const ex of items) {
+                    expect(ex.values).toHaveLength(ex.tickCount);
+                    for (const v of ex.values ?? []) {
+                        if (typeof v !== 'number') expect(v.d).toBeGreaterThan(0);
+                        expect(num(v)).toBeGreaterThanOrEqual(0);
+                        expect(Math.round(num(v) * d)).toBeLessThanOrEqual(c.maxTeller as number);
+                    }
+                }
+            }
+        });
+    }
+
+    test('a row that fits under maxTeller keeps its cells and gets no note', () => {
+        seeded(11);
+        const { items, note } = generateGetallenrijExercisesNoted(makeBlock('getallenrijen', { constraints: { numberType: 'rational', fractionStep: 4, maxTeller: 25, ticks: 6 } }));
+        expect(note).toBeNull();
+        expect(items.every(ex => ex.tickCount === 6)).toBe(true);
+    });
+});
