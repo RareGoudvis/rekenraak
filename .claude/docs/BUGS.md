@@ -141,14 +141,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 `limits.knownBugs.ts` once that exists. Owner triage of the ambiguous findings is folded in; the
 "fine as is" ones are not listed. Grouped per fix package so parallel deletions merge cleanly.
 
-### WP1 Hoofdrekenen engine (mathEngine.ts, mixedGenerator.ts)
-
-- [L2] hr-std-gemengd: × and : ignore the shared "Maximum uitkomst". MULDIV_BASE
-  (mixedGenerator.ts:35) injects tafels [2,3,4,5,10]×10, and the tafels / met_rest / tienvoud
-  branches never read maxGetal. Repro: gemengd-nat at Leerjaar 1 (max 20) → "4 × 10 = 40",
-  "50 : 5 = 10" (12 %, 76 % with only ×); variants ['x','x:tienvoud'] at max 10 → "9 × 1000".
-  Fix: cap table products / dividends / tienvoud answers by maxGetal inside gemengd. 2026-10-07
-
 ### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
 
 - [L1] getallenas / getallenrijen run past the max whenever step × (ticks−1) > range: the ascending

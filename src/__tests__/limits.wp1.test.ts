@@ -232,6 +232,59 @@ describe('[L19] delen met rest keeps the dividend within the max', () => {
     });
 });
 
+describe('[L2] gemengd: the shared max holds for × and : too', () => {
+    const all = ['+', '+:compenseren', '-', '-:compenseren', 'x', 'x:tienvoud', ':', ':tienvoud'];
+    const cases: Record<string, unknown>[] = [
+        { numberType: 'natural', maxGetal: 20 },
+        { numberType: 'natural', maxGetal: 20, variants: ['x'] },
+        { numberType: 'natural', maxGetal: 10, variants: ['x', 'x:tienvoud'] },
+        { numberType: 'decimal', maxGetal: 10, variants: ['x', 'x:tienvoud'] },
+        { numberType: 'natural', maxGetal: 10, variants: [':', ':tienvoud'] },
+        { numberType: 'decimal', maxGetal: 100, variants: [':', ':tienvoud'] },
+        { numberType: 'natural', maxGetal: 100, variants: all },
+        { numberType: 'natural', maxGetal: 1000, variants: all },
+        { numberType: 'natural', maxGetal: 100, variants: ['x', ':'], perVariant: { ':': { tableLimit: 100, selectedTables: [25, 50, 75] } } },
+        { numberType: 'natural', maxGetal: 50, variants: [':'], perVariant: { ':': { multiplicationMode: 'andere', divisionLevels: [2] } } },
+        { numberType: 'natural', maxGetal: 20, variants: ['x'], perVariant: { x: { selectedTables: [7], tableLimit: 10 } } },
+    ];
+    for (const c of cases) {
+        test(JSON.stringify(c), () => {
+            const max = c.maxGetal as number;
+            for (const items of runSeeded('hr-std-gemengd', c)) {
+                expect(items.length).toBeGreaterThan(0);
+                for (const eq of items) {
+                    const [first] = eq.operands as number[];
+                    if (eq.operator === 'x' || eq.operator === '+') expect(eq.answer as number).toBeLessThanOrEqual(max);
+                    if (eq.operator === ':' || eq.operator === '-') expect(first).toBeLessThanOrEqual(max);
+                    if (eq.operator === ':') expect(eq.answer as number).toBeLessThanOrEqual(max);
+                }
+            }
+        });
+    }
+
+    test('a tienvoud variant with no room under the max drops the strategie and says so', () => {
+        const block = makeBlock('hr-std-gemengd', { constraints: { maxGetal: 10, variants: ['x:tienvoud'] } });
+        const result = REGISTRY['hr-std-gemengd'].generateNoted!(block);
+        expect(result.items.length).toBeGreaterThan(0);
+        expect(result.note).toBe('Instellingen versoepeld om genoeg oefeningen te maken: strategie.');
+    });
+
+    test('tables that cannot fit leave the block short, with a note', () => {
+        const block = makeBlock('hr-std-gemengd', { constraints: { maxGetal: 20, variants: ['x'], perVariant: { x: { selectedTables: [25, 50] } } } });
+        const result = REGISTRY['hr-std-gemengd'].generateNoted!(block);
+        expect(result.items).toHaveLength(0);
+        expect(result.note).toBe('Geen oefeningen mogelijk bij deze instellingen.');
+    });
+
+    test('standalone tafels and tienvoud keep their own ceilings (by design)', () => {
+        Math.random = mulberry32(7);
+        const tafels = generateFor(makeBlock('hr-std-vermenigvuldigen', { constraints: { maxGetal: 20 }, block: { numberOfExercises: 40 } })) as Equation[];
+        expect(tafels.some(eq => (eq.answer as number) > 20)).toBe(true);
+        const tienvoud = generateFor(makeBlock('hr-std-vermenigvuldigen', { constraints: { maxGetal: 20, preset: 'tienvoud' } })) as Equation[];
+        expect(tienvoud.some(eq => (eq.answer as number) > 20)).toBe(true);
+    });
+});
+
 describe('[L8] decimal : keeps the quotient within "Maximum uitkomst"', () => {
     const cases: [string, Record<string, unknown>][] = [
         ['hr-std-delen', { numberType: 'decimal', maxGetal: 10 }],

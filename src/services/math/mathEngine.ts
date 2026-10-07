@@ -600,6 +600,18 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
 // 6. VERMENIGVULDIGEN (MULTIPLICATION)
 // ============================================================================
 
+// Tienvoud factors (10/100/1000) and, under gemengd's capToMax, how large a base (× answer, :
+// quotient) each factor leaves room for: in display steps for decimals, whole numbers otherwise.
+// A factor without room for the smallest base (2, or one display step) leaves the pool; an empty
+// pool yields no exercises, so the relax ladder drops the preset and says so.
+function tienvoudPool(c: MulDivConstraints, maxGetal: number, numberType: string, scale: number) {
+    const picked: number[] = (c.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
+    const all = picked.length ? picked : [10, 100, 1000];
+    if (!c.capToMax) return { pool: all, room: null };
+    const room = (f: number) => numberType === 'decimal' ? Math.floor(Math.round(maxGetal * scale) / f) : Math.floor(maxGetal / f);
+    return { pool: all.filter(f => room(f) >= (numberType === 'decimal' ? 1 : 2)), room };
+}
+
 // The kommagetal of 'Kommagetal × / ÷ Breuk'. A mask builds on the INTERNAL_SCALE grid; a free
 // draw is on the display grid (steps of 1/scale up to maxGetal) and must not be divided by
 // INTERNAL_SCALE too, which shrank it to 0 or 0,0x.
@@ -703,15 +715,14 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
     // Preset '× met 10/100/1000': base × tienvoud (comma shift). Decimal bases allowed.
     if (constraints.preset === 'tienvoud') {
-        const factors: number[] = (constraints.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
-        const pool = factors.length ? factors : [10, 100, 1000];
         const scale = Math.pow(10, decimalPlaces);
-        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+        const { pool, room } = tienvoudPool(constraints, maxGetal, numberType, scale);
+        while (pool.length && exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
             const factor = pool[randInt(0, pool.length - 1)];
-            const base = numberType === 'decimal'
-                ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
-                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX)));
+            const base =numberType === 'decimal'
+                ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
             const answer = Number((base * factor).toFixed(6));
             const comboId = `${base}*${factor}`;
             if (usedCombinations.has(comboId)) continue;
@@ -770,11 +781,14 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
     // Sub-scenario B1: Tafels automatiseren
     if (multiplicationMode === 'tafels' && numberType === 'natural') {
         if (selectedTables.length === 0) return [];
+        // capToMax (gemengd): only tables and multipliers whose product fits under the shared max.
+        const tables = constraints.capToMax ? selectedTables.filter((t: number) => t <= maxGetal) : selectedTables;
+        if (tables.length === 0) return [];
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
-            const baseTable = selectedTables[randInt(0, selectedTables.length - 1)];
-            const multiplier = randInt(1, tableLimit);
+            const baseTable = tables[randInt(0, tables.length - 1)];
+            const multiplier = randInt(1, constraints.capToMax && baseTable > 0 ? Math.min(tableLimit, Math.floor(maxGetal / baseTable)) : tableLimit);
 
             let a = baseTable, b = multiplier;
             if (Math.random() > 0.5) { a = multiplier; b = baseTable; }
@@ -998,15 +1012,14 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     // Preset ': met 10/100/1000' — answer-first so the quotient stays clean; dividends
     // legitimately exceed maxGetal (that's the point of ": 1000").
     if (constraints.preset === 'tienvoud') {
-        const factors: number[] = (constraints.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
-        const pool = factors.length ? factors : [10, 100, 1000];
         const scale = Math.pow(10, decimalPlaces);
-        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+        const { pool, room } = tienvoudPool(constraints, maxGetal, numberType, scale);
+        while (pool.length && exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
             const factor = pool[randInt(0, pool.length - 1)];
-            const quotient = numberType === 'decimal'
-                ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
-                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX)));
+            const quotient =numberType === 'decimal'
+                ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
             const dividend = Number((quotient * factor).toFixed(6));
             const comboId = `${dividend}:${factor}`;
             if (usedCombinations.has(comboId)) continue;
@@ -1059,12 +1072,15 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     // Sub-scenario B1: Deeltafels
     if (multiplicationMode === 'tafels' && numberType === 'natural') {
         if (selectedTables.length === 0) return [];
+        // capToMax (gemengd): the dividend (table × quotient) stays under the shared max.
+        const tables = constraints.capToMax ? selectedTables.filter((t: number) => t <= maxGetal) : selectedTables;
+        if (tables.length === 0) return [];
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
-            const divisor = selectedTables[randInt(0, selectedTables.length - 1)];
+            const divisor = tables[randInt(0, tables.length - 1)];
             if (divisor === 0) continue;
-            const quotient = randInt(1, tableLimit);
+            const quotient = randInt(1, constraints.capToMax ? Math.min(tableLimit, Math.floor(maxGetal / divisor)) : tableLimit);
             const dividend = divisor * quotient;
 
             const comboId = `${dividend}:${divisor}`;
@@ -1166,6 +1182,8 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                     quotientVal = randInt(10, maxQ);
                     if (quotientVal % 10 === 0) continue; // round quotients zijn N1-achtig
                     dividendVal = quotientVal * divisorVal; // ≤ 99 by construction → geen maxGetal-check
+                    // …except gemengd's shared max, which may sit below 99.
+                    if (constraints.capToMax && dividendVal > maxGetal) continue;
                 } else {
                     // Achterwaarts vanuit quotiëntstructuur
                     if (lvl === 1) {

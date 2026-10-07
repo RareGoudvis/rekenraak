@@ -62,6 +62,8 @@ export function effectiveBlockFor(block: MathBlock, variantId: MixedVariantId): 
             preset: variant.preset ?? 'vrij',
             ...(variant.preset ? PRESET_BASE[variant.preset] : {}),
             ...(perVariant?.[variantId] ?? {}),
+            // Owner rule: in gemengd the shared max holds for every variant, tafels and tienvoud included.
+            ...(isMulDiv ? { capToMax: true } : {}),
         },
     };
 }
