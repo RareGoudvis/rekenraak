@@ -139,9 +139,10 @@ export function generateCijferExercisesNoted(block: MathBlock): { items: CijferE
         if (fellBack) fallbacks++;
         results.push({ ...ex, decimalPlaces: dp });
     }
-    const note = fallbacks > 0
-        ? `${fallbacks === count ? 'Alle' : fallbacks} oefening${fallbacks === 1 ? '' : 'en'} past niet bij de gekozen getalopbouw en het maximum; er is een eenvoudige oefening binnen het maximum gebruikt.`
-        : null;
+    const note = fallbacks === 0 ? null
+        : fallbacks === 1
+            ? '1 oefening past niet bij de gekozen getalopbouw en het maximum; daarvoor staat er een eenvoudige oefening binnen het maximum.'
+            : `${fallbacks === count ? 'Alle' : fallbacks} oefeningen passen niet bij de gekozen getalopbouw en het maximum; daarvoor staan er eenvoudige oefeningen binnen het maximum.`;
     return { items: results, note };
 }
 

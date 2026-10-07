@@ -37,6 +37,13 @@ describe('cijferen limits', () => {
         }
     });
 
+    test('note grammar: singular and plural forms', () => {
+        const mk = (n: number) => generateCijferExercisesNoted(makeBlock('cijferen-optellen-nat', {
+            constraints: { operator: '+', numberType: 'natural', maxRange: 10, operand0Mask: { H: true } }, block: { numberOfExercises: n } }));
+        expect(mk(1).note).toMatch(/^1 oefening past niet .* daarvoor staat er een eenvoudige oefening/);
+        expect(mk(3).note).toMatch(/^Alle oefeningen passen niet .* daarvoor staan er eenvoudige oefeningen/);
+    });
+
     test('no note when the settings are satisfiable', () => {
         for (const r of run('cijferen-optellen-nat', { maxRange: 1000 })) expect(r.note).toBeNull();
     });
