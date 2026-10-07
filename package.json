@@ -25,6 +25,8 @@
     "matrix": "node scripts/width-matrix.mjs",
     "font:baseline": "node scripts/font-baseline.mjs",
     "font:compare": "node scripts/font-compare.mjs",
+    "trigger:shots": "node scripts/trigger-shots.mjs",
+    "limits:diff": "node scripts/limits-diff.mjs",
     "height:audit": "node scripts/height-audit.mjs",
     "catalogue": "node scripts/catalogue.mjs",
     "bignum:audit": "node scripts/bignum-audit.mjs",
