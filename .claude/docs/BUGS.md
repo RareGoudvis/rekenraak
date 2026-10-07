@@ -235,21 +235,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   - breuken hoeveelheid with maxTotal < minDenominator: total > maxTotal (fractionGenerator.ts:62-63);
   - omtrek at max 1-3: trapezium `cTop + 2` and the circle radius floor 2 exceed the max. 2026-10-07
 
-### WP5 Result caps (rekenvolgorde/, schattend/, controleren/, procenten/)
-
-- [L6] rekenvolgorde: with 3-4 bewerkingen the cap is max × 10, but the label says "Maximum uitkomst:
-  Antwoorden blijven onder dit getal" → "19 + 22 + 6 × 10 = 101" at max 100 (20-90 %; worst 5088 at
-  1000). 1,7 % have a factor above tableLimit ("5 × 5 × 8 × 20"; hidden key). 2026-10-07
-- [L17] schattend: only the operands are capped; owner rule: the RESULT stays ≤ max. Today + reaches
-  2 × max (~50 %), × 9 × max (~75-80 %): "449 + 687" at max 1000. 2026-10-07
-- [L18] controleren: owner rule as schattend, the result stays ≤ max. Today negenproef × is a in
-  [max/10, max] × b in [12, 99] → up to 91 × max ("577 × 65 = 37505" at 1000, 100 %); omgekeerde +
-  up to 1,9 × max (37 %). 2026-10-07
-- [E4a] Short / empty blocks: procenten 1 % at max 100 → 1 of 8, 5 % → 5 of 8, welk-percent [100] → 0;
-  rekenvolgorde ×-only + haakjes MOET → 0, ':'-only → 0-13. 2026-10-07
-- [E5b] schattend silently swaps a selected rounding target ≥ max for the first target (default leaf H
-  at max 100 → T at L1/L2); decimal target 'h' at 2 dp gives 0 exercises. 2026-10-07
-
 ### WP6 Misc generators (herleidingen/, ordenen/, verbanden/, kalender/, geld/, breukenRangschikken)
 
 - [E2] CRASH: herleidingen with units m² + ca, hm² + ha or dam² + a throws "Cannot read properties of

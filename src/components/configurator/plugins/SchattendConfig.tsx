@@ -1,6 +1,6 @@
 import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
-import { targetsFor } from '../../../services/afronden/afrondenGenerator';
+import { targetsFor, usableTargets } from '../../../services/afronden/afrondenGenerator';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import PopupSelect from '../../ui/PopupSelect';
 import { presetLabel } from '../../../config/numberRanges';
@@ -30,7 +30,7 @@ export default function SchattendConfig({ block }: Props) {
         const next = list.includes(v) ? list.filter(x => x !== v) : [...list, v];
         if (next.length) set(key, next);   // keep ≥1
     };
-    const usableTargets = targetsFor(numberType).filter(t => isDecimal || t.weight < maxGetal);
+    const offeredTargets = usableTargets(numberType, maxGetal, c.decimalPlaces ?? 2, targetsFor(numberType).map(t => t.key));
 
     return (
         <div style={styles.container}>
@@ -44,7 +44,7 @@ export default function SchattendConfig({ block }: Props) {
             </div>
 
             {range && <div style={styles.section}>
-                <SettingLabel text="Maximum getal:" info="Het grootste getal in de oefening." />
+                <SettingLabel text="Maximum getal:" info="Het grootste getal in de oefening. Ook de uitkomst en de schatting blijven daaronder." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
@@ -57,7 +57,7 @@ export default function SchattendConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Afronden op:" info="Op welke positie de getallen eerst afgerond worden." />
                 <div style={styles.buttonGroup}>
-                    {usableTargets.map(t => (
+                    {offeredTargets.map(t => (
                         <button key={t.key} onClick={() => toggleIn('roundTargets', roundTargets, t.key)} style={styles.pill(roundTargets.includes(t.key))}>op {t.label}</button>
                     ))}
                 </div>

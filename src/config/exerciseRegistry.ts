@@ -37,12 +37,12 @@ import { generateVergelijkenExercises } from '../services/vergelijken/vergelijke
 import { generateAfrondenExercises } from '../services/afronden/afrondenGenerator';
 import { generateRomeinseExercises } from '../services/romeinse/romeinseGenerator';
 import { generateHerleidingExercises } from '../services/herleidingen/herleidingenGenerator';
-import { generateSchattendExercises } from '../services/schattend/schattendGenerator';
+import { generateSchattendExercises, generateSchattendNoted } from '../services/schattend/schattendGenerator';
 import { generateVerbandExercises, generateVerbandExercisesNoted } from '../services/verbanden/verbandenGenerator';
-import { generateProcentExercises } from '../services/procenten/procentenGenerator';
+import { generateProcentExercises, generateProcentNoted } from '../services/procenten/procentenGenerator';
 import { generateMaateenheidExercises } from '../services/maateenheid/maateenheidGenerator';
 import { generateGeldRekenenExercises } from '../services/geld/geldRekenenGenerator';
-import { generateRekenvolgordeExercises } from '../services/rekenvolgorde/rekenvolgordeGenerator';
+import { generateRekenvolgordeExercises, generateRekenvolgordeNoted } from '../services/rekenvolgorde/rekenvolgordeGenerator';
 import { generateKettingExercises } from '../services/patroon/kettingGenerator';
 import { generateGetalFunctieExercises } from '../services/getalfunctie/getalfunctieGenerator';
 import { generateTijdsduurExercises } from '../services/tijdsduur/tijdsduurGenerator';
@@ -508,16 +508,16 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'herleidingen': row<HerleidingenConstraints>({ exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, defaultConstraints: herleidingenDefaults, defaultCount: 8 }),
 
     // Schattend rekenen (compenseren + tienvoud are hr-std presets, not types).
-    'schattend': row<SchattendConstraints>({ exerciseField: 'schattendExercises', generate: generateSchattendExercises, defaultConstraints: schattendDefaults, defaultCount: 8, maxPresets: schattendMax }),
+    'schattend': row<SchattendConstraints>({ exerciseField: 'schattendExercises', generate: generateSchattendExercises, generateNoted: generateSchattendNoted, defaultConstraints: schattendDefaults, defaultCount: 8, maxPresets: schattendMax }),
 
     // Procenten + verbanden breuk·decimaal·procent.
     'verbanden': row<VerbandenConstraints>({ exerciseField: 'verbandExercises', generate: generateVerbandExercises, generateNoted: generateVerbandExercisesNoted, defaultConstraints: verbandenDefaults, defaultCount: 8 }),
-    'procenten': row<ProcentenConstraints>({ exerciseField: 'procentExercises', generate: generateProcentExercises, defaultConstraints: procentenDefaults, defaultCount: 8, maxPresets: fixedMax(RANGES.procenten) }),
+    'procenten': row<ProcentenConstraints>({ exerciseField: 'procentExercises', generate: generateProcentExercises, generateNoted: generateProcentNoted, defaultConstraints: procentenDefaults, defaultCount: 8, maxPresets: fixedMax(RANGES.procenten) }),
 
     'maateenheid':  row<MaateenheidConstraints>({ exerciseField: 'maateenheidExercises', generate: generateMaateenheidExercises, defaultConstraints: maateenheidDefaults, defaultCount: 8 }),
     'geld-rekenen': row<GeldRekenenConstraints>({ exerciseField: 'geldRekenenExercises', generate: generateGeldRekenenExercises, defaultConstraints: geldRekenenDefaults, defaultCount: 5 }),
 
-    'rekenvolgorde':  row<RekenvolgordeConstraints>({ exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10, maxPresets: fixedMax(RANGES.rekenvolgorde) }),
+    'rekenvolgorde':  row<RekenvolgordeConstraints>({ exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, generateNoted: generateRekenvolgordeNoted, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10, maxPresets: fixedMax(RANGES.rekenvolgorde) }),
 
     // ── Blad-onderdelen (no generated content; constraints only) ────────────
     'layout-sectie':       row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),

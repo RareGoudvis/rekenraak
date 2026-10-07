@@ -10,6 +10,7 @@ import type {
 import type { MixedVariantId } from '../../services/math/constraintTypes';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { GRADE_PRESETS, type Leerjaar } from '../../config/gradePresets';
+import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
 import { effectiveBlockFor } from '../../services/math/mixedGenerator';
 import { ladderFor } from '../../services/herleidingen/herleidingenGenerator';
 import { NIVEAU_MAX } from '../../services/romeinse/romeinseGenerator';
@@ -559,7 +560,15 @@ const schattendSpec: TypeSpec<SchattendExercise> = {
         // Owner rule (L17): the exact result stays within the max, not only the operands.
         const result = applyOp(e.a, e.operator, e.b);
         if (over(result, max)) push('result>max', result, max, ex);
-        if (!((c.roundTargets as string[] | undefined) ?? []).includes(e.targetKey)) push('target-not-selected', e.targetKey, (c.roundTargets as string[] | undefined)?.join(','), ex);
+        // The estimate the key prints (rounded operands) is part of the result: it stays within the max too.
+        const tw = targetsFor(c.numberType === 'decimal' ? 'decimal' : 'natural').find(t => t.key === e.targetKey)?.weight;
+        if (tw) {
+            const ra = roundTo(e.a, tw), rb = e.operator === '+' || e.operator === '-' ? roundTo(e.b, tw) : e.b;
+            const est = applyOp(ra, e.operator, rb);
+            if (over(est, max)) push('estimate>max', est, max, ex);
+        }
+        // A target that cannot round at this max is swapped for the nearest valid one WITH a note: intended.
+        if (!ctx.note && !((c.roundTargets as string[] | undefined) ?? []).includes(e.targetKey)) push('target-not-selected', e.targetKey, (c.roundTargets as string[] | undefined)?.join(','), ex);
         if (!((c.operators as string[] | undefined) ?? []).includes(e.operator)) push('op-not-selected', e.operator, (c.operators as string[] | undefined)?.join(','), ex);
     },
 };
@@ -580,6 +589,35 @@ const controlerenSpec: TypeSpec<ControleExercise> = {
     },
 };
 
+// Largest value met while evaluating: brackets first, then x and : before + and -.
+function peakIntermediate(tokens: (number | string)[]): number | null {
+    let peak = 0;
+    const flat = (ts: (number | string)[]): number => {
+        const t = [...ts];
+        for (let i = 1; i < t.length - 1; i++) {
+            if (t[i] === 'x' || t[i] === ':') {
+                const a = t[i - 1] as number, b = t[i + 1] as number;
+                const v = t[i] === 'x' ? a * b : a / b;
+                peak = Math.max(peak, v);
+                t.splice(i - 1, 3, v); i--;
+            }
+        }
+        let acc = t[0] as number;
+        for (let i = 1; i < t.length - 1; i += 2) { acc = t[i] === '+' ? acc + (t[i + 1] as number) : acc - (t[i + 1] as number); peak = Math.max(peak, acc); }
+        return acc;
+    };
+    const out: (number | string)[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i] === '(') {
+            const close = tokens.indexOf(')', i);
+            out.push(flat(tokens.slice(i + 1, close)));
+            i = close;
+        } else out.push(tokens[i]);
+    }
+    flat(out);
+    return peak;
+}
+
 const rekenvolgordeSpec: TypeSpec<RekenvolgordeExercise> = {
     extract: e => ex4(fin(e.tokens), [e.answer], [e.firstStep]),
     item: (e, ctx, push) => {
@@ -588,6 +626,9 @@ const rekenvolgordeSpec: TypeSpec<RekenvolgordeExercise> = {
         const ex = `${e.tokens.join(' ')} = ${e.answer}`;
         if (over(e.answer, max)) push('answer>max', e.answer, max, ex);
         if (!Number.isInteger(e.answer) || e.answer < 0) push('answer-not-natural', e.answer, 'natural', ex);
+        // Owner rule (L6): every intermediate result stays within the max as well.
+        const peak = peakIntermediate(e.tokens);
+        if (peak !== null && over(peak, max)) push('intermediate>max', peak, max, ex);
         for (let k = 0; k < e.tokens.length; k++) {
             if (e.tokens[k] !== 'x' && e.tokens[k] !== ':') continue;
             for (const nb of [e.tokens[k - 1], e.tokens[k + 1]]) if (typeof nb === 'number' && nb > tl) push('factor>tableLimit', nb, tl, ex);
