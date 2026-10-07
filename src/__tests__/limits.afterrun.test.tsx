@@ -6,6 +6,8 @@ import { makeBlock, generateFor } from './helpers/makeBlock';
 import SchattendViewer from '../components/viewer/SchattendViewer';
 import type { MathBlock } from '../services/math/types';
 import { REGISTRY } from '../config/exerciseRegistry';
+import { generateForBlock } from '../services/generateDispatch';
+import type { CijferExercise } from '../services/math/types';
 
 // Limit after-run 2026-10-08, [P1]-[P5] in BUGS.md: small leftovers of the limit-fix campaign.
 
@@ -49,5 +51,50 @@ describe('P2 breuken-rangschikken shortfall note grammar', () => {
     test('several fractions per exercise stay plural', () => {
         const { note } = noted('breuken-rangschikken', { fractionMode: 'stambreuken', minDenominator: 2, maxDenominator: 4, count: 4 }, 5);
         expect(note).toBe('Bij dit bereik van noemers passen maar 3 breuken per oefening (gevraagd: 4).');
+    });
+});
+
+const dupes = (items: unknown[]) => items.length - new Set(items.map(ex => JSON.stringify({ ...(ex as object), id: undefined }))).size;
+const repeatCount = (note: string | null) => (note?.match(/Kleine reeks/g) ?? []).length;
+
+describe('P3 forced identical fills say so', () => {
+    test('kettingsommen only x at max 20: one chain, repeats noted', () => {
+        const { items, note } = noted('kettingsommen', { ops: ['x'], maxGetal: 20 }, 6);
+        expect(items).toHaveLength(6);
+        expect(dupes(items)).toBe(5);
+        expect(note).toBe('Kleine reeks: 5 oefeningen komen dubbel voor.');
+    });
+    test('cijferen x impossible mask: the fallback varies within the max and stays noted', () => {
+        const max = 100;
+        const { items, note } = noted('cijferen-vermenigvuldigen-nat', { operator: 'x', numberType: 'natural', maxRange: max, operand1Mask: { T: true } }, 8);
+        const exs = items as CijferExercise[];
+        expect(note).toMatch(/^Alle oefeningen passen niet bij de gekozen getalopbouw/);
+        expect(new Set(exs.map(e => e.operands.join('x'))).size).toBeGreaterThan(1);
+        for (const e of exs) {
+            expect(e.answer).toBeLessThanOrEqual(max);
+            expect(e.operands[0] * e.operands[1]).toBe(e.answer);
+        }
+        expect(repeatCount(note)).toBe(dupes(exs) > 0 ? 1 : 0);
+    });
+    test('cijferen x fallback with room for only one exercise notes the repeats', () => {
+        const { items, note } = noted('cijferen-vermenigvuldigen-nat', { operator: 'x', numberType: 'natural', maxRange: 3, operand1Mask: { T: true } }, 4);
+        expect(dupes(items)).toBe(3);
+        expect(note).toMatch(/Kleine reeks: 3 oefeningen komen dubbel voor\.$/);
+    });
+    test('cijferen x decimal fallback varies too', () => {
+        const { items } = noted('cijferen-vermenigvuldigen-dec', { operator: 'x', numberType: 'decimal', maxRange: 20, decimalPlaces: 2, operand1Mask: { HD: true } }, 6);
+        const exs = items as CijferExercise[];
+        expect(new Set(exs.map(e => e.operands.join('x'))).size).toBeGreaterThan(1);
+        for (const e of exs) expect(e.answer).toBeLessThanOrEqual(20);
+    });
+    test('getallenrijen teller max 1: identical rows, both notes', () => {
+        const { items, note } = noted('getallenrijen', { numberType: 'rational', fractionStep: 4, ticks: 6, maxTeller: 1, direction: 'right' }, 5);
+        expect(dupes(items)).toBe(4);
+        expect(note).toBe('Hoogste teller 1 bij noemer 4: 2 vakjes i.p.v. 6. Kleine reeks: 4 oefeningen komen dubbel voor.');
+    });
+    test('dispatch with Geen dubbele oefeningen reports the repeats once', () => {
+        const block = makeBlock('kettingsommen', { constraints: { ops: ['x'], maxGetal: 20 }, block: { numberOfExercises: 6 } });
+        const { note } = seeded(1, () => generateForBlock(block, true));
+        expect(note).toBe('Kleine reeks: 5 oefeningen komen dubbel voor.');
     });
 });

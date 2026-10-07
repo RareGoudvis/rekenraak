@@ -142,9 +142,6 @@ UpdateState). Left over, found while fixing:
   relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
   scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
   Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
-- [P3] Identical fills without a note: kettingsommen only × at max 20 → six identical chains; cijferen ×
-  impossible-mask fallback → four identical "33 × 3"; getallenrij teller max 1 → identical rows. The
-  block carries its own note but not the "Kleine reeks … dubbel" one. 2026-10-08
 - [P4] Met rest N2 with "Maximum per getal" 20 gives an empty block although N1 would fit (the level
   clip ignores operandMax). 2026-10-08
 - [P5] Hoofdrekenen breuken "Kommagetal × Breuk": some "kommagetallen" are whole ("319", "641"), and

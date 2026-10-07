@@ -1,4 +1,4 @@
-import { repeatNote } from './generationNotes';
+import { repeatNote, joinNotes, withoutRepeatNote } from './generationNotes';
 import type { MathBlock } from './math/types';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { NAT_CEILING } from '../config/numberRanges';
@@ -101,18 +101,13 @@ export function generateForBlock(stored: MathBlock, uniqueExercises?: boolean): 
     const { items, note } = def.generateNoted ? def.generateNoted(block) : { items: def.generate(block), note: null };
     if (!uniqueExercises || items.length <= 1) return { items, note };
     const { items: deduped, shortBy } = dedupeWithTopUp(block, def.generate, items, def.exerciseKey ?? defaultExerciseKey);
-    return { items: deduped, note: joinNotes(note, shortNote(shortBy)) };
+    return { items: deduped, note: joinNotes(withoutRepeatNote(note), shortNote(shortBy)) };
 }
 
 // Teacher-facing wording for a pool too small to fill the block — one phrasing for both
 // the first generate and a later count increase.
 function shortNote(shortBy: number): string | null {
     return repeatNote(shortBy);
-}
-
-function joinNotes(a: string | null, b: string | null): string | null {
-    if (a && b && a.includes(b)) return a;   // generator and dedupe pass can report the same repeats
-    return a && b ? `${a} ${b}` : (a ?? b);
 }
 
 /** The block's exercises after its count was raised: `existing` stays, the tail is generated
@@ -131,7 +126,7 @@ export function generateExtra(block: MathBlock, existing: unknown[], want: numbe
         exclude: new Set(existing.map(keyFn)),
         pad: existing,
     });
-    return { items: [...existing, ...fresh], note: joinNotes(note, shortNote(shortBy)) };
+    return { items: [...existing, ...fresh], note: joinNotes(withoutRepeatNote(note), shortNote(shortBy)) };
 }
 
 /** Content key of one exercise, for callers that add to an existing set. */

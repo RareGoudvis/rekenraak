@@ -1,5 +1,6 @@
 import type { MathBlock, PatroonExercise, PatroonStep } from '../math/types';
 import type { KettingConstraints, OpSetting } from '../math/constraintTypes';
+import { joinNotes, repeatNote, repeatsIn } from '../generationNotes';
 
 // Kettingsommen — a chain of DISTINCT operations (5 →+3→ 8 →×2→ 16 → …), printed by
 // the existing PatroonViewer with all operators shown. cycle length = ticks − 1 so
@@ -93,7 +94,8 @@ export function generateKettingExercisesNoted(block: MathBlock): { items: Patroo
     const note = items.length >= n ? null
         : items.length === 0 ? `Geen kettingsom mogelijk met deze bewerkingen tot ${nl(maxGetal)}.`
             : `Slechts ${items.length} ${items.length === 1 ? 'kettingsom' : 'kettingsommen'} mogelijk met deze bewerkingen tot ${nl(maxGetal)}.`;
-    return { items, note };
+    // The smallest-operand fallback holds few chains (only × to 20: just 1·2·2·2·2), so it repeats them.
+    return { items, note: fallback ? joinNotes(note, repeatNote(repeatsIn(items))) : note };
 }
 
 export function generateKettingExercises(block: MathBlock): PatroonExercise[] {

@@ -128,7 +128,8 @@ describe('[L10] rational getallenrijen stay within maxTeller', () => {
     test('notes the shorter row; a row that fits keeps its cells and gets no note', () => {
         seeded(11);
         expect(generateGetallenrijExercisesNoted(block('getallenrijen', { numberType: 'rational', fractionStep: 2, maxTeller: 3, ticks: 6 })).note)
-            .toBe('Hoogste teller 3 bij noemer 2: 4 vakjes i.p.v. 6.');
+            // One possible first number at teller 3, so identical rows also carry the repeat note ([P3]).
+            .toMatch(/^Hoogste teller 3 bij noemer 2: 4 vakjes i\.p\.v\. 6\.( Kleine reeks: \d+ oefening(en)? kom(t|en) dubbel voor\.)?$/);
         const { items, note } = generateGetallenrijExercisesNoted(block('getallenrijen', { numberType: 'rational', fractionStep: 4, maxTeller: 25, ticks: 6 }));
         expect(note).toBeNull();
         expect(items.every(ex => ex.tickCount === 6)).toBe(true);
