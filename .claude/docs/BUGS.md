@@ -203,16 +203,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [E7] cijferen-delen-dec with a decimal-place divisor mask: quotient 0 ("0,5 : 6", 1,4 %) and a
   dividend a hair over max ("1000,18 : 0,09", 0,04 %). Low priority. 2026-10-07
 
-### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
-
-- [L12] omtrek / oppervlakte-berekenen rechthoek: `if (w === h) h = h + 1` (metenGenerator.ts ~95)
-  overshoots when w = h = max → sides 10 × 11 at max 10 (1 % default, 2-4 % at narrow ranges). 2026-10-07
-- [L13] oppervlakte rooster ignores minLength: `h = randInt(2, min(6, maxL))`, vierkant takes min(w,h)
-  → "3 × 2" at "Zijden van 3 tot 4 cm" (32 %). Same branch: shapes ['l-figuur'] at maxLength 3 falls
-  back to a rechthoek (32 %). 2026-10-07
-- [L16] Edge settings (hand-typed values):
-  - omtrek at max 1-3: trapezium `cTop + 2` and the circle radius floor 2 exceed the max. 2026-10-07
-
 ### WP5 Result caps (rekenvolgorde/, schattend/, controleren/, procenten/)
 
 - [L6] rekenvolgorde: with 3-4 bewerkingen the cap is max × 10, but the label says "Maximum uitkomst:
