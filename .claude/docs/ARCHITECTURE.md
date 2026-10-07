@@ -1013,7 +1013,15 @@ src/
 │  (repo root) scripts/font-compare.mjs  # before/after diff (pixelmatch) → report.json/.md + contact-sheet.html; see TESTING.md
 │  (repo root) scripts/catalogue.mjs     # walks every leaf → splices the exercise cards (data-leaf), the domain › leaf sidebar and an ItemList into oefeningen.html between marker comments; white pngs in public/oefeningen/ (npm run catalogue; catalogue.test.ts fails the gate when the page and APP_STRUCTURE differ)
 │  (repo root) scripts/visual-gate.mjs   # commit gate, browser half: staged files → typeIds (viewer/generator imports, shared surface → all) → seeded leaf walk vs scripts/visual-baseline.json; --accept rewrites the baseline (TESTING.md)
-│  (repo root) scripts/lib/leafWalk.mjs, scripts/lib/visualCompare.mjs  # the walk + thresholds shared by visual-gate / font-baseline / font-compare
+│  (repo root) scripts/lib/leafWalk.mjs, scripts/lib/visualCompare.mjs  # the walk + thresholds shared by visual-gate / font-baseline / font-compare / trigger-shots (opt-ins keyFor, prepare, onBrowser, solutionsList)
+│  (repo root) scripts/trigger-shots.mjs # renders the limit-bug repro cases (scripts/limit-trigger-cases.json) in font-baseline shape, so font:compare diffs before/after
+│  (repo root) scripts/limits-diff.mjs   # diffs two limits:audit output dirs (summary, violations, seeded dumps) → report.md/.html; --touched flags collateral changes
+│  (repo root) scripts/limit-trigger-cases.json  # one or more repro cases per open limit-bug id (read by limits.matrix.test.ts and trigger-shots)
+│  (repo root) scripts/fixtures/         # trigger-case sample + a synthetic limits-diff before/after fixture
+│  (repo root) vitest.audit.config.ts    # vitest config for src/__tests__/audit/ only (npm run limits:audit); vitest.config.ts excludes that folder
+│  (repo root) src/__tests__/helpers/limitRules.ts, limitHarness.ts, answerKeys.ts  # the limit rule book (LIMIT_SPECS per typeId), case runner, shared answer-key arithmetic
+│  (repo root) src/__tests__/limits.matrix.test.ts + limits.knownBugs.ts  # gate: every leaf × leerjaar, pairwise, trigger cases vs the rule book; open bugs listed by BUGS id, stale entries fail
+│  (repo root) src/__tests__/audit/limits.audit.test.ts  # the full limit diagnosis behind npm run limits:audit (cartesian / pairwise / random, seeds, dumps)
 │  (repo root) scripts/visual-baseline.json  # committed: per leaf × width × solutions {height, intrinsic px, text hash} at seed 1234 — the gate's reference
 │  (repo root) .githooks/pre-commit      # git hook (core.hooksPath via npm prepare): npm run check + visual-gate --staged; SKIP_GATE / SKIP_VISUAL / --no-verify need a human
 │  (repo root) .claude/hooks/commit-bypass-guard.ps1  # Claude Code PreToolUse: any gate bypass in a shell command → permissionDecision 'ask'
