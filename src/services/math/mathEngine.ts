@@ -319,6 +319,22 @@ function multiStepDenominators(maxD1: number, maxD2: number): [number, number] |
     return [d1, d2];
 }
 
+// 'one_step' noemers: one is a multiple (×2 or more) of the other, each within its own max.
+// Null when no such pair exists (both maxima below 4).
+function oneStepDenominators(maxD1: number, maxD2: number): [number, number] | null {
+    if (maxD2 >= 4) {
+        // d2 = d1 × k must fit under maxD2 as well, so d1 stays within half of either max.
+        let d1 = randInt(2, Math.max(2, Math.min(Math.floor(maxD1 / 2), Math.floor(maxD2 / 2))));
+        let d2 = d1 * randInt(2, Math.max(2, Math.floor(maxD2 / d1)));
+        if (Math.random() > 0.5 && d2 <= maxD1 && d1 <= maxD2) [d1, d2] = [d2, d1];
+        return [d1, d2];
+    }
+    if (maxD1 < 4 || maxD2 < 2) return null;
+    // Only the first noemer has room for a multiple: build it on a small second one.
+    const d2 = randInt(2, Math.min(maxD2, Math.floor(maxD1 / 2)));
+    return [d2 * randInt(2, Math.floor(maxD1 / d2)), d2];
+}
+
 const generateFractionAddition = (block: MathBlock): Equation[] => {
     if (termCountOf(block.constraints as MulDivConstraints) > 2) return generateFractionChain(block, '+');
     const { numberOfExercises } = block;
@@ -341,12 +357,9 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
-            d1 = randInt(2, Math.max(2, Math.floor(maxDenominator1 / 2)));
-            const maxMultiplier = Math.floor(maxDenominator2 / d1);
-            d2 = d1 * randInt(2, Math.max(2, maxMultiplier));
-            if (Math.random() > 0.5 && d2 <= maxDenominator1 && d1 <= maxDenominator2) {
-                const temp = d1; d1 = d2; d2 = temp;
-            }
+            const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) break;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
             const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
@@ -469,12 +482,9 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
-            d1 = randInt(2, Math.max(2, Math.floor(maxDenominator1 / 2)));
-            const multiplier = randInt(2, Math.max(2, Math.floor(maxDenominator2 / d1)));
-            d2 = d1 * multiplier;
-            if (Math.random() > 0.5 && d2 <= maxDenominator1 && d1 <= maxDenominator2) {
-                const temp = d1; d1 = d2; d2 = temp;
-            }
+            const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) break;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
             const pair = multiStepDenominators(maxDenominator1, maxDenominator2);

@@ -72,3 +72,43 @@ describe('[E1] rational +/− multi_step terminates', () => {
         }
     }
 });
+
+describe('[L7] rational +/− one_step keeps both noemers within their max', () => {
+    const cases: Record<string, unknown>[] = [
+        { maxDenominator1: 2, maxDenominator2: 2 },
+        { maxDenominator1: 3, maxDenominator2: 3 },
+        { maxDenominator1: 4, maxDenominator2: 4 },
+        { linkFractions: false, maxDenominator1: 100, maxDenominator2: 10 },
+        { linkFractions: false, maxDenominator1: 10, maxDenominator2: 3 },
+        { linkFractions: false, maxDenominator1: 3, maxDenominator2: 10 },
+    ];
+    for (const typeId of ['hr-std-optellen', 'hr-std-aftrekken']) {
+        for (const c of cases) {
+            test(`${typeId} ${JSON.stringify(c)}`, () => {
+                const constraints = { numberType: 'rational', fractionDifficulty: 'one_step', ...c };
+                for (const items of runSeeded(typeId, constraints)) {
+                    for (const eq of items) {
+                        const [a, b] = eq.operands.map(frac);
+                        expect(a.d).toBeLessThanOrEqual(c.maxDenominator1 as number);
+                        expect(b.d).toBeLessThanOrEqual(c.maxDenominator2 as number);
+                        const [lo, hi] = a.d < b.d ? [a.d, b.d] : [b.d, a.d];
+                        expect(hi % lo === 0 && hi > lo).toBe(true);
+                    }
+                }
+            });
+        }
+    }
+
+    test('both maxima below 4 says why the block is empty', () => {
+        const block = makeBlock('hr-std-aftrekken', { constraints: { numberType: 'rational', fractionDifficulty: 'one_step', maxDenominator1: 3, maxDenominator2: 3 } });
+        const result = REGISTRY['hr-std-aftrekken'].generateNoted!(block);
+        expect(result.items).toHaveLength(0);
+        expect(result.note).toBe('Geen oefeningen mogelijk bij deze instellingen.');
+    });
+
+    test('the unlinked 10 / 3 case still fills the block', () => {
+        for (const items of runSeeded('hr-std-optellen', { numberType: 'rational', fractionDifficulty: 'one_step', linkFractions: false, maxDenominator1: 10, maxDenominator2: 3 })) {
+            expect(items).toHaveLength(20);
+        }
+    });
+});

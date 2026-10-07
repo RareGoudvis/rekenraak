@@ -148,10 +148,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   branches never read maxGetal. Repro: gemengd-nat at Leerjaar 1 (max 20) → "4 × 10 = 40",
   "50 : 5 = 10" (12 %, 76 % with only ×); variants ['x','x:tienvoud'] at max 10 → "9 × 1000".
   Fix: cap table products / dividends / tienvoud answers by maxGetal inside gemengd. 2026-10-07
-- [L7] Rational +/− 'one_step' ("Ongelijknamig (eenvoudig)"): the second noemer exceeds "Max.
-  noemer" because the multiplier floors at 2 (`Math.max(2, floor(maxD2/d1))`, mathEngine.ts:331-333,
-  458-460). Repro: linked max noemer 2 or 3 → "6/2 + 9/4" (100 %); maxD1 100 / maxD2 10 →
-  "6/27 + 9/54". 2026-10-07
 - [L8] Decimal ':' quotient exceeds "Maximum uitkomst" ("Het grootste antwoord"): the no-mask branch
   (~1120-1128) draws the divisor from 0,01 and caps only the dividend. Repro: delen-dec max 10 →
   "7,5 : 0,5 = 15" (5-9 %); gemengd-dec ':' 3-6 %. 2026-10-07
