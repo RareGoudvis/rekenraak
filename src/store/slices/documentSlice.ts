@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { DEFAULT_BASE } from '../../config/baseSettings';
-import { GRADE_PRESETS } from '../../config/gradePresets';
+import { GRADE_PRESETS, NO_GRADE_PRESET } from '../../config/gradePresets';
 import { NAT_CEILING } from '../../config/numberRanges';
 import { floorMaxIntoList } from '../../config/exerciseRegistry';
 import type { MathBlock } from '../../services/math/types';
@@ -66,6 +66,6 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
     // remember the grade so the sidebar can hide later-grade leaves. Not a lock.
     setSelectedGrade: (grade) => set((state) => ({
         selectedGrade: grade,
-        baseSettings: grade == null ? state.baseSettings : { ...state.baseSettings, ...GRADE_PRESETS[grade] },
+        baseSettings: { ...state.baseSettings, ...(grade == null ? NO_GRADE_PRESET : GRADE_PRESETS[grade]) },
     })),
 });

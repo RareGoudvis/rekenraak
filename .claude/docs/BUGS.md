@@ -128,11 +128,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   map (harmless ids, but it grows). Fix: `staleBlocks: {}` in documentSlice.loadWorksheet. 2026-09-27
 - `typeId.startsWith('layout-')` is still used in Inspector.tsx (~443, ~649), blockLayout.ts (~562) and
   blockNumbering.ts (~21); switch to `REGISTRY[t]?.isFurniture`. 2026-09-27
-- Picking L4-L6 and then "Alle leerjaren" keeps the grade's `baseDecimalPlaces: 2` in the base, so new
-  vergelijken / plaatswaarde blocks come out with decimals. Pre-existing. Owner call. 2026-09-27
-  (Full sweep: a FRESH profile does it too — `DEFAULT_BASE.baseDecimalPlaces` is 2 (baseSettings.ts:36)
-  and baseApply copies it over vergelijken's own 0, so vergelijken-getallen / -kiezen and every
-  plaatswaarde leaf show "703,41" at their sidebar defaults.)
 
 ## Limit audit 2026-10-07
 
@@ -260,12 +255,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [L21] Stale Ondergrens: set it to −1000 at max 1000, lower the max to 100 → values reach −1000 at
   "Tot 100" and the slider is pinned. Owner rule: no auto-clamp, show a `sharedPluginStyles.hint` under
   the slider when minGetal < −maxGetal ("valt buiten het bereik — pas aan of genereer opnieuw"). 2026-10-07
-
-### Unassigned (found by WP7)
-
-- [S1] plaatswaarde / vergelijken (getallen, kiezen) seed decimals at every grade: their natural/decimal
-  switch is `decimalPlaces` (default 0), and baseApply writes `baseDecimalPlaces` (2) into every type that
-  owns the key, so a fresh "Tabel invullen" shows "14,07" even at Leerjaar 1 or with no leerjaar. 2026-10-07
 
 ## Tooling
 

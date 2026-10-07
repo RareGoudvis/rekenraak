@@ -10,7 +10,8 @@ import { REGISTRY } from '../config/exerciseRegistry';
 // v2 added optional baseSettings + curriculum (both back-compat: absent → defaults).
 // v3 moved the page grid from 6 to 4 column units, which re-uses the same numbers for
 // different widths — hence a version-gated migration, never a value-based one.
-export const WORKSHEET_FORMAT_VERSION = 3;
+// v4 changed the base's default decimals from 2 to 0 (kommagetallen are leerjaar 4+).
+export const WORKSHEET_FORMAT_VERSION = 4;
 
 const AUTOSAVE_KEY = 'rekenraak_autosave_v1';
 const PRESETS_KEY = 'rekenraak_presets_v1';
@@ -94,7 +95,12 @@ const V2_TO_V3_WIDTH: Record<number, 1 | 2 | 4> = { 6: 4, 3: 2, 2: 2 };
 
 /** Bring an older worksheet file up to the current format. Pure; safe to call twice. */
 export function migrateWorksheetFile(file: WorksheetFile): WorksheetFile {
-    if (file.version >= 3) return file;
+    if (file.version >= WORKSHEET_FORMAT_VERSION) return file;
+    const v3 = file.version >= 3 ? file : migrateGridToV3(file);
+    return { ...v3, version: 4, baseSettings: baseDecimalsToV4(v3) };
+}
+
+function migrateGridToV3(file: WorksheetFile): WorksheetFile {
     const blocks = (file.blocks ?? []).map(b => {
         const w = b.widthUnits as number | undefined;
         if (w === undefined) return b;
@@ -103,6 +109,17 @@ export function migrateWorksheetFile(file: WorksheetFile): WorksheetFile {
         return { ...b, widthUnits: mapped ?? 4 };
     });
     return { ...file, version: 3, blocks };
+}
+
+// A v3 base holding 2 decimals with a non-decimal number type and no leerjaar 4-6 got them from
+// the old default (or a leerjaar 4-6 pick that "Alle leerjaren" never undid): whole numbers now.
+// A decimal base (its Decimalen picker is the only place a teacher sets them) or a leerjaar 4-6
+// sheet keeps its value; so does any 1 or 3, which no default ever wrote. Blocks are untouched.
+function baseDecimalsToV4(file: WorksheetFile): BaseSettings | undefined {
+    const base = file.baseSettings;
+    if (!base || base.baseDecimalPlaces !== 2 || base.baseNumberType === 'decimal') return base;
+    if (file.selectedGrade != null && file.selectedGrade >= 4) return base;
+    return { ...base, baseDecimalPlaces: 0 };
 }
 
 // Filesystem-safe slug from the worksheet title; falls back to 'naamloos'.
