@@ -40,7 +40,8 @@ const STAGED = has('staged');
 const FILES_ARG = arg('files', '');
 const SEED = Number(arg('seed', 1234));
 const WIDTHS = arg('widths', '4,2,1').split(',').map(Number);
-const PORT = Number(arg('port', 5299));
+// Env override so parallel worktrees' pre-commit hooks don't fight over one strictPort.
+const PORT = Number(arg('port', process.env.VISUAL_GATE_PORT || 5299));
 const EXTERNAL_URL = arg('url', '');
 
 // ---------------------------------------------------------------- scope resolution

@@ -175,7 +175,8 @@ npm run visual:baseline -- --all   # accept the current rendering as the new bas
 
 It maps the staged files to exercise types, renders only those leaves and compares the
 numbers to a committed baseline. It starts its own dev server (`vite --port 5299
---strictPort`, killed on every exit path) unless `--url` points it at a running one, and
+--strictPort`, killed on every exit path; `--port` or env `VISUAL_GATE_PORT` moves it, so parallel
+worktrees committing at once each set their own) unless `--url` points it at a running one, and
 reuses `scripts/lib/leafWalk.mjs` — the same leaf walk `font-baseline.mjs` uses, so there is
 one copy of the Playwright choreography, and `scripts/lib/visualCompare.mjs` for the
 thresholds shared with `font-compare.mjs`. Per cell the walk waits for the empty sheet to
