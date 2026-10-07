@@ -43,7 +43,8 @@ describe('the base decimals', () => {
 
     test('a numberType type keeps its own precision when the base has none', () => {
         expect(seedOf('hr-std-optellen-dec', null).decimalPlaces).toBe(2);
-        expect(seedOf('getalbegrip-ordenen-dec', null).decimalPlaces).toBe(1);
+        // ordenen's own default is the 2 the old base always wrote: no visible change there.
+        expect(seedOf('getalbegrip-ordenen-dec', null).decimalPlaces).toBe(2);
         expect(seedOf('getalbegrip-ordenen-dec', 4).decimalPlaces).toBe(2);
         // A teacher's own Decimalen pick still reaches every type.
         const base: BaseSettings = { ...DEFAULT_BASE, baseNumberType: 'decimal', baseDecimalPlaces: 3 };

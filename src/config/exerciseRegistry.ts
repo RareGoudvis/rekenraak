@@ -217,8 +217,9 @@ const mabDefaults = (): MabConstraints => ({
 
 const ordenenDefaults = (): OrdenenConstraints => ({
     numberType: 'natural', count: 3, operatorMode: 'oplopend', maxGetal: 100,
-    // declared so the global base (decimalen / stambreuken / gemengd) can target them
-    decimalPlaces: 1, unitFractionsOnly: false, allowMixed: false,
+    // declared so the global base (decimalen / stambreuken / gemengd) can target them; 2 is what
+    // the old base (decimals 2) always wrote, so a base without decimals changes nothing here
+    decimalPlaces: 2, unitFractionsOnly: false, allowMixed: false,
     answerStyle: 'lijn',
 });
 

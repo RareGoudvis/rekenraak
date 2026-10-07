@@ -44,7 +44,7 @@ describe('(a) the default base changes nothing', () => {
         const legacy: Record<string, unknown> = { ...defaults, ...legacyBaseApply(OLD_DEFAULT_BASE, defaults), ...(leaf ?? {}) };
         // [S1] 2026-10-07: the base's decimals default to 0. Where decimalPlaces is the decimal switch
         // (plaatswaarde, vergelijken) a block starts on whole numbers; where a numberType picks
-        // decimals the type keeps its own precision (2, ordenen 1).
+        // decimals the type keeps its own precision (2).
         if ('decimalPlaces' in defaults && !(leaf && 'decimalPlaces' in leaf)) {
             legacy.decimalPlaces = 'numberType' in defaults ? defaults.decimalPlaces : 0;
         }
