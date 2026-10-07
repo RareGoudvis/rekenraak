@@ -4,6 +4,7 @@ import {
     type CaseResult,
 } from './helpers/limitHarness';
 import { KNOWN_BUGS, KNOWN_SKIPS } from './limits.knownBugs';
+import { LIMIT_SPECS } from './helpers/limitRules';
 
 // ── The limit gate ───────────────────────────────────────────────────────────
 // Every generating type against the rule book in helpers/limitRules.ts: each sidebar leaf
@@ -23,6 +24,11 @@ function unknownLines(r: CaseResult): string[] {
 }
 
 const report = (lines: string[]) => [`${lines.length} violation(s) not covered by limits.knownBugs.ts:`, ...lines.slice(0, MAX_LINES)].join('\n');
+
+test('every generating typeId has a rule book entry', () => {
+    const missing = generatingTypeIds().filter(t => !LIMIT_SPECS[t]);
+    expect(missing, `add these to LIMIT_SPECS in helpers/limitRules.ts: ${missing.join(', ')}`).toEqual([]);
+});
 
 describe.each(generatingTypeIds())('limits: %s', (typeId) => {
     test('sidebar leaves × leerjaar and the pairwise matrix hold their limits', () => {
