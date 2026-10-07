@@ -373,7 +373,10 @@ teacher picked (an impossible mask, a range too small, a span that cannot fit), 
 WITHIN the limits and says so: the row exposes `generateNoted(block) → { items, note }` and the
 Dutch note lands in the Inspector box. Shared wording (singular/plural) lives in
 [generationNotes.ts](../../src/services/generationNotes.ts) (`countOefeningen`, `repeatNote` —
-also used by the dedupe's "Kleine reeks" note) and hr's `relax.shortfallNote`. Never exceed a
+also used by the dedupe's "Kleine reeks" note — plus `repeatsIn` / `joinNotes` /
+`withoutRepeatNote`) and hr's `relax.shortfallNote`. A block forced to repeat exercises says so
+("Kleine reeks: N … dubbel"); with "Geen dubbele oefeningen" on, the dedupe pass owns that count
+(it strips the generator's and adds its own, so the sentence appears once). Never exceed a
 limit to fill a block; fewer exercises + a note is the fallback. A block left EMPTY by a legitimate
 note is drawn by SheetBlock itself: the note on screen (`no-print`), only the title on paper.
 
