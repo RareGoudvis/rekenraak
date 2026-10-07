@@ -104,7 +104,7 @@ describe('generation notes (never silently change what the teacher picked)', () 
     });
     test('breuken-rangschikken: too few noemers for the count is reported', () => {
         const r = noted('breuken-rangschikken', { fractionMode: 'gelijknamig-te-maken', minDenominator: 7, maxDenominator: 7, count: 4 }, 3);
-        expect(r.note).toMatch(/maar 1 breuken/);
+        expect(r.note).toMatch(/past maar 1 breuk per/);
     });
 });
 
