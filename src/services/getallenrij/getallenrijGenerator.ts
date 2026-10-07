@@ -2,6 +2,7 @@ import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
 import { numberMatchesMask, getMaskPlaces } from '../math/mathEngine';
 import type { GetallenrijConstraints } from '../math/constraintTypes';
 import { fitLine } from '../getallenas/getallenasGenerator';
+import { joinNotes, repeatNote, repeatsIn } from '../generationNotes';
 
 // Getallenrijen = number sequences (start ± k·step) shown in a pill, some cells blank.
 // Same value model as getallenas (GetallenasExercise) minus the drawn axis line; adds
@@ -95,6 +96,8 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
     // Anchor builds per start range, and how many rows had to give up on the mask.
     const anchorCache = new Map<string, number[]>();
     let maskMisses = 0;
+    // Set when the settings leave a row only one possible first number, so rows can come out identical.
+    let anchorForced = false;
 
     for (let i = 0; i < n; i++) {
         // arrowLeft = descending L→R: a 'dalend' row subtracts as you read right.
@@ -107,6 +110,7 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
         if (numberType === 'rational') {
             const fracOpts = { mixed: c.allowMixed ?? true, simplify: !(c.gelijknamig ?? false) };
             const span = ticks - 1;
+            if (maxWholeUnits <= span) anchorForced = true;
             const startUnits = arrowLeft
                 ? pick(span, maxWholeUnits)
                 : pick(0, Math.max(0, maxWholeUnits - span));
@@ -123,6 +127,7 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
             const need = Math.ceil((lo + span) / stepN);
             const hiU = Math.floor(hi / stepN);
             const upper = Math.floor((hi - span) / stepN);
+            if (arrowLeft ? hiU <= need : upper <= loU) anchorForced = true;
             // Try to land an anchor (leftmost value) whose place structure matches the mask.
             let attempts = 0;
             do {
@@ -162,7 +167,8 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
         const where = maskMisses >= n ? '' : ` bij ${maskMisses} van de ${n} rijen`;
         maskNote = `De getalopbouw (${keys}) van het eerste getal past niet bij sprong +${nl(fit.step)} ${range} en is${where} genegeerd.`;
     }
-    return { items: results, note: fit.note && maskNote ? `${fit.note} ${maskNote}` : (fit.note ?? maskNote) };
+    const note = joinNotes(fit.note, maskNote);
+    return { items: results, note: anchorForced ? joinNotes(note, repeatNote(repeatsIn(results))) : note };
 }
 
 export function generateGetallenrijExercises(block: MathBlock): GetallenasExercise[] {

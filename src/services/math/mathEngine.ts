@@ -634,8 +634,16 @@ function tienvoudPool(c: MulDivConstraints, maxGetal: number, numberType: string
 function decimalFactor(mask: Record<string, boolean>, maxGetal: number, scale: number): number {
     const maskA = Object.values(mask).some(v => v) ? generateMaskedInt(mask) : null;
     return maskA !== null
-        ? Math.round((maskA / INTERNAL_SCALE) * scale) / scale
-        : randInt(1, maxGetal * scale) / scale;
+        ? withDecimals(Math.round((maskA / INTERNAL_SCALE) * scale), Infinity, scale) / scale
+        : withDecimals(randInt(1, maxGetal * scale), maxGetal * scale, scale) / scale;
+}
+
+// A kommagetal must show decimals: a whole draw (319 → 319,00) moves 1-9 steps of its last
+// decimal, derived from the value instead of a new draw so the rest of the block keeps its seed.
+function withDecimals(units: number, maxUnits: number, scale: number): number {
+    if (scale <= 1 || units % scale !== 0) return units;
+    const step = 1 + ((units / scale) % 9);
+    return units + step <= maxUnits ? units + step : units - step;
 }
 
 
@@ -879,6 +887,8 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 // below N1: any dividend up to the max (a max of 10 leaves N1 no two-digit dividend).
 const metRestCap = (c: MulDivConstraints): number =>
     typeof c.maxGetal === 'number' && c.maxGetal > 0 ? c.maxGetal : Infinity;
+// The real deeltal ceiling: the max, or a lower "Maximum per getal" on the deeltal.
+const metRestDeeltalCap = (c: MulDivConstraints): number => Math.min(metRestCap(c), maxOpFor(c, 0) ?? Infinity);
 const metRestFloor = (level: number): number => (level === 3 ? 100 : level === 0 ? 1 : 10);
 const metRestTop = (level: number, cap: number): number => Math.min(level === 3 ? 999 : 99, cap);
 const metRestRequested = (c: MulDivConstraints): number => {
@@ -905,14 +915,18 @@ function metRestFits(level: number, tables: number[], hi: number): boolean {
 export function metRestLevelFor(c: MulDivConstraints): number | null {
     const requested = metRestRequested(c);
     const cap = metRestCap(c);
-    if (cap >= metRestTop(requested, Infinity)) return requested;
     const tables = c.selectedTables ?? [];
+    // "Maximum per getal" on the deeltal narrows what a level can build, but not the picker's
+    // niveau thresholds: N3 under max 1000 with deeltal ≤ 150 still has 100-150.
+    const opCap = metRestDeeltalCap(c);
+    const levelFits = (level: number) => metRestFloor(level) < opCap && metRestFits(level, tables, metRestTop(level, opCap));
+    if (cap >= metRestTop(requested, Infinity) && (opCap === cap || levelFits(requested))) return requested;
     // SYNC: the niveau thresholds are the picker's (clipMetRestLevel); on top of them the engine
     // checks the picked tables can build a dividend and, below N1, falls back to level 0.
     for (let level = clipMetRestLevel(requested, cap); level >= 1; level--) {
-        if (metRestFloor(level) < cap && metRestFits(level, tables, metRestTop(level, cap))) return level;
+        if (levelFits(level)) return level;
     }
-    return metRestFits(0, tables, cap) ? 0 : null;
+    return metRestFits(0, tables, opCap) ? 0 : null;
 }
 
 /** Teacher-facing note when the picked met-rest level could not be honoured under the max. */
@@ -921,7 +935,7 @@ export function metRestLevelNote(c: MulDivConstraints): string | null {
     const level = metRestLevelFor(c);
     const requested = metRestRequested(c);
     if (level === null || level === requested) return null;
-    const max = metRestCap(c);
+    const max = metRestDeeltalCap(c);
     return level === 0
         ? `Niveau N${requested} past niet onder het maximum ${max}: deeltallen tot ${max}.`
         : `Niveau N${requested} past niet onder het maximum ${max}: oefeningen op niveau N${level}.`;

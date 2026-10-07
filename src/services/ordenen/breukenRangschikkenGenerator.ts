@@ -99,6 +99,7 @@ export function generateBreukenRangschikkenExercisesNoted(block: MathBlock): { i
     }
     // The noemer range can hold fewer distinct fractions than the asked count.
     const fewest = results.reduce((m, r) => Math.min(m, r.values.length), count);
-    const note = fewest < count ? `Bij dit bereik van noemers passen maar ${fewest} breuken per oefening (gevraagd: ${count}).` : null;
+    const fit = fewest === 1 ? 'past maar 1 breuk' : `passen maar ${fewest} breuken`;
+    const note = fewest < count ? `Bij dit bereik van noemers ${fit} per oefening (gevraagd: ${count}).` : null;
     return { items: results, note };
 }

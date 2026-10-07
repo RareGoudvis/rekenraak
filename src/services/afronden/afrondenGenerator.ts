@@ -64,7 +64,7 @@ export function targetHeading(t: RoundTarget): string {
 
 // 1e6 = micro-units: every place weight (≥ 0.001) and every generated number is a whole
 // count of them, and 1e9 × 1e6 still sits below 2^53.
-const ROUND_SCALE = 1e6;
+export const ROUND_SCALE = 1e6;
 
 // Round half up to a place weight (10, 100, 0.1, 0.01, …) in scaled integers: dividing by a
 // decimal weight first turns 97.05 / 0.1 into 970.4999… and rounds it the wrong way.

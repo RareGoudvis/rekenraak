@@ -1,6 +1,7 @@
 import { PLACE_VALUES } from '../math/mathEngine';
 import type { MathBlock } from '../math/types';
 import type { CijferExercise, CijferConstraints, ConstraintType } from '../math/types';
+import { joinNotes, repeatNote, repeatsIn } from '../generationNotes';
 
 const MAX_ATTEMPTS = 500;
 
@@ -143,7 +144,8 @@ export function generateCijferExercisesNoted(block: MathBlock): { items: CijferE
         : fallbacks === 1
             ? '1 oefening past niet bij de gekozen getalopbouw en het maximum; daarvoor staat er een eenvoudige oefening binnen het maximum.'
             : `${fallbacks === count ? 'Alle' : fallbacks} oefeningen passen niet bij de gekozen getalopbouw en het maximum; daarvoor staan er eenvoudige oefeningen binnen het maximum.`;
-    return { items: results, note };
+    // A fallback has few exercises to pick from (+, −, : have one), so the block can repeat itself.
+    return { items: results, note: fallbacks > 0 ? joinNotes(note, repeatNote(repeatsIn(results))) : note };
 }
 
 export function generateCijferExercises(block: MathBlock): CijferExercise[] {
@@ -170,9 +172,11 @@ function generateOne(c: CijferConstraints): { ex: CijferExercise; fellBack: bool
     if (c.operator === '+') return mk([half, quarter], '+', parseFloat((half + quarter).toFixed(dp)));
     if (c.operator === '-') return mk([half, quarter], '-', parseFloat((half - quarter).toFixed(dp)));
     if (c.operator === 'x') {
-        // multiplicand ≤ max/multiplier so the product stays ≤ max
+        // multiplicand ≤ max/multiplier so the product stays ≤ max; drawn from the upper half so
+        // a block of fallbacks is not four times the same "33 × 3"
         const mult = c.maxRange >= 3 ? 3 : 2;
-        const multiplicand = Math.max(1, Math.floor((c.maxRange * s) / mult)) / s;
+        const top = Math.max(1, Math.floor((c.maxRange * s) / mult));
+        const multiplicand = randInt(Math.ceil(top / 2), top) / s;
         return mk([multiplicand, mult], 'x', parseFloat((multiplicand * mult).toFixed(dp)));
     }
     // With a remainder requested, pick the first divisor that leaves one (max % 4 is often 0)
