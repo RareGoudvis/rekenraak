@@ -5,7 +5,7 @@
 // retro-affects existing blocks. Pure data (no React) so the store can import it.
 
 import { NAT_CEILING, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
-import { REGISTRY } from './exerciseRegistry';
+import { REGISTRY, SEED_FIT } from './exerciseRegistry';
 import { LEAF_BY_ID } from './appstructure';
 import type { Leerjaar } from './gradePresets';
 import { PLACE_VALUES } from '../services/math/mathEngine';
@@ -159,5 +159,6 @@ export function seedConstraints({ typeId, base, override: leafOverride, grade, l
             merged[key] = Object.keys(trimmed).length > 0 ? trimmed : defaults[key];
         }
     }
-    return merged;
+    // Same idea for settings that hang on the max (rounding targets, an axis span).
+    return SEED_FIT[typeId]?.(merged) ?? merged;
 }

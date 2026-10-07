@@ -94,6 +94,14 @@ export function clipMetRestLevel(level: number, max: number): number {
     return l;
 }
 
+// Steps a getallenas / getallenrij may fall back to when its span overruns a seeded max: the
+// presets both configs offer. SYNC: STEP_PRESETS / DECIMAL_STEPS in GetallenasConfig.tsx and
+// GetallenrijenConfig.tsx.
+export const AXIS_FALLBACK_STEPS = {
+    natural: [1, 2, 5, 10, 25, 50, 100] as readonly number[],
+    decimal: [0.001, 0.01, 0.1, 0.5, 1] as readonly number[],
+} as const;
+
 // maxEnkel is a free slider (step 10), not a list; the matrix samples min / default / max.
 export const HERLEIDINGEN_ENKEL = { min: 10, max: 1_000, step: 10 } as const;
 

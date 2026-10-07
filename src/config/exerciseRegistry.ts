@@ -34,7 +34,7 @@ import { generateTemperatuurExercises } from '../services/temperatuur/temperatuu
 import { generatePlaatswaardeExercises } from '../services/plaatswaarde/plaatswaardeGenerator';
 import { generateEvenOnevenExercises } from '../services/evenoneven/evenOnevenGenerator';
 import { generateVergelijkenExercises } from '../services/vergelijken/vergelijkenGenerator';
-import { generateAfrondenExercises } from '../services/afronden/afrondenGenerator';
+import { generateAfrondenExercises, targetsFor, usableTargets } from '../services/afronden/afrondenGenerator';
 import { generateRomeinseExercises } from '../services/romeinse/romeinseGenerator';
 import { generateHerleidingExercises } from '../services/herleidingen/herleidingenGenerator';
 import { generateSchattendExercises } from '../services/schattend/schattendGenerator';
@@ -50,7 +50,7 @@ import { generateKalenderExercises } from '../services/kalender/kalenderGenerato
 import { generateControleExercises } from '../services/controleren/controlerenGenerator';
 import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGenerator';
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
-import { RANGES, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
+import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, type MaxPresetsFn, type MaxRange } from './numberRanges';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -558,6 +558,55 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'vormleer-punt-lijn': row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
     'vormleer-hoeken':    row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
     'vormleer-figuren':   row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
+};
+
+// ── Seed-time fit: settings that only make sense under the seeded max ────────
+// A leerjaar seed can lower a block's max under what its default settings assume (H at max
+// 100, a 5-step line of 6 ticks at max 20). seedConstraints runs these on the merged seed so
+// a fresh block never starts on a setting its generator would have to replace with a note.
+
+// Rounding targets that cannot round at this max (usableTargets, the rule both generators
+// use) are dropped; when none is left, the nearest valid target takes over.
+const fitRoundTargets = (c: Record<string, unknown>): Record<string, unknown> => {
+    const selected = c.roundTargets;
+    if (!Array.isArray(selected) || typeof c.maxGetal !== 'number') return c;
+    const nt = numberTypeOf(c);
+    const dp = typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 2;
+    const keep = usableTargets(nt, c.maxGetal, dp, selected as string[]).map(t => t.key);
+    if (keep.length === selected.length) return c;
+    if (keep.length) return { ...c, roundTargets: (selected as string[]).filter(k => keep.includes(k)) };
+    const all = targetsFor(nt);
+    const valid = usableTargets(nt, c.maxGetal, dp, all.map(t => t.key));
+    const wanted = all.filter(t => (selected as string[]).includes(t.key));
+    if (!valid.length || !wanted.length) return c;
+    const ref = Math.max(...wanted.map(t => t.weight));
+    const nearest = valid.reduce((best, t) => (Math.abs(Math.log(t.weight / ref)) < Math.abs(Math.log(best.weight / ref)) ? t : best));
+    return { ...c, roundTargets: [nearest.key] };
+};
+
+// A getallenas / getallenrij spans step × (ticks − 1) from its lower bound: when that overruns
+// the max, fewer ticks first (down to 4, the slider's floor), then a smaller step.
+const fitAxisSpan = (c: Record<string, unknown>): Record<string, unknown> => {
+    const nt = numberTypeOf(c);
+    const { maxGetal: max, step, ticks } = c;
+    if (nt === 'rational' || typeof max !== 'number' || typeof step !== 'number' || typeof ticks !== 'number' || step <= 0) return c;
+    const lo = nt === 'geheel' ? (typeof c.minGetal === 'number' ? c.minGetal : -max) : 0;
+    const room = max - lo;
+    // 1e-9: decimal steps (0.1 × 5) must not miss a fit by a float hair.
+    const fits = (s: number, t: number) => s * (t - 1) <= room + 1e-9;
+    if (fits(step, ticks)) return c;
+    const MIN_TICKS = 4;
+    const t = Math.max(MIN_TICKS, Math.min(ticks, Math.floor(room / step + 1e-9) + 1));
+    if (fits(step, t)) return { ...c, ticks: t };
+    const steps = AXIS_FALLBACK_STEPS[nt === 'decimal' ? 'decimal' : 'natural'].filter(s => s < step && fits(s, t));
+    return steps.length ? { ...c, ticks: t, step: Math.max(...steps) } : { ...c, ticks: t };
+};
+
+export const SEED_FIT: Record<string, (c: Record<string, unknown>) => Record<string, unknown>> = {
+    'afronden': fitRoundTargets,
+    'schattend': fitRoundTargets,
+    'getallenas': fitAxisSpan,
+    'getallenrijen': fitAxisSpan,
 };
 
 // An old save or share link can hold a max its picker no longer lists (the 1e10 leerjaar-6
