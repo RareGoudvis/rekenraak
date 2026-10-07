@@ -118,6 +118,9 @@ export default function GetallenasConfig({ block }: Props) {
                         onChange={(e) => set('minGetal', Number(e.target.value))}
                         style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }}
                     />
+                    {lowerBound < -maxGetal && (
+                        <p style={styles.hint}>{`Ondergrens valt buiten het bereik (−${maxGetal.toLocaleString('nl-BE')} tot ${maxGetal.toLocaleString('nl-BE')}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
+                    )}
                 </div>
             )}
 
