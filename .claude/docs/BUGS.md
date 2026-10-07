@@ -188,6 +188,13 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a
   generation note. 2026-10-07
 
+- [E10] getallenrijen numberMask: after 80 attempts the anchor (first value) silently ignores the mask
+  (MASK_NOT_HONORED_ANCHOR, 1896 combos, e.g. decimal mask T + t, start 840). Fix: honour it or note
+  it. Found by WP2. 2026-10-07
+- [E11] A block whose generator legitimately produced 0 exercises (with a "Geen … mogelijk" note) still
+  shows "(Nog geen oefeningen — klik Genereer)" on the sheet, which contradicts the note. Found by
+
+  WP2. 2026-10-07
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
 - [L5] vergelijken-representaties: a Getalopbouw mask (leftMask/rightMask) offers the top place whose
@@ -254,14 +261,18 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   "Tot 100" and the slider is pinned. Owner rule: no auto-clamp, show a `sharedPluginStyles.hint` under
   the slider when minGetal < −maxGetal ("valt buiten het bereik — pas aan of genereer opnieuw"). 2026-10-07
 
+### Found by the limit harness (limits.matrix.test.ts, repro in scripts/limit-trigger-cases.json)
+
+- [N1] hr-std-aftrekken rational with "Gemengd getal" on Getal 2: when Getal 1 is the smaller value the
+  whole of Getal 2 prints as 0 and the key is wrong ("1/9 − 0 1/3 = 2 7/9"; one_step, teller max 2 / 1:
+  100 %; teller max 5 / 1 at 40 exercises: 48 %); under multi_step Getal 2's noemer also passes its cap
+  ("15/4 − 2/6" at max noemer 4). The other rational keys check out. 2026-10-07
+- [N2] plaatswaarde / vergelijken / afronden: a getalopbouw mask on only the top place (weight = max, e.g.
+  HM at 1e8) admits exactly one number, so the block holds 1 of 6. Same shape as the top-place bridge
+  line under Generators. Fix: hide the top place in the mask row or note it. 2026-10-07
+
 ## Tooling
 
-- [T1] The generator matrix (generators.matrix.test.ts) never checks a number against its limit (only
-  no-throw / count / NaN), and constraintSpace.ts misses the UI options that trigger most limit bugs:
-  cijferen operand0..3Mask, vergelijken left/rightMask, hr maxNumerator2 / maxDenominator2 / operandMax
-  / operandMasks / metRestLevel / divisionLevels, breuken-bewerken targetDen (and min = max), patronen
-  opSettings + masks + 'geheel', getallenas minGetal, kettingsommen opSettings. Fix: limits harness
-  (plan Phase A). 2026-10-07
 - full-sweep "max" rows use the registry defaults, and the 8 cijferen typeIds share `cijferRow()`
   defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
   additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27

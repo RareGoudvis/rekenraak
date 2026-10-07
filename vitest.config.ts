@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // Tests run in `node` by default — generators, the packer and persistence are all pure.
@@ -18,6 +18,8 @@ export default defineConfig({
         pool: 'forks',
         css: false,
         include: ['src/__tests__/**/*.test.{ts,tsx}'],
+        // The limit audit takes minutes; it runs through vitest.audit.config.ts (`npm run limits:audit`).
+        exclude: [...configDefaults.exclude, 'src/__tests__/audit/**'],
         setupFiles: ['src/__tests__/setup.ts'],
         // The generator matrix is thousands of small runs; a per-test timeout that is too
         // tight turns an over-restrictive constraint set into a confusing timeout.
