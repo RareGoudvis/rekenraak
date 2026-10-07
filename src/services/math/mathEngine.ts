@@ -1,6 +1,6 @@
 import type { MathBlock, Equation, Fraction } from './types';
 import type { AddSubConstraints, MulDivConstraints, BridgeMap } from './constraintTypes';
-import { RANGES } from '../../config/numberRanges';
+import { RANGES, clipMetRestLevel } from '../../config/numberRanges';
 import { generateWithRelaxation, relaxationNote } from './relax';
 
 // ============================================================================
@@ -907,7 +907,9 @@ export function metRestLevelFor(c: MulDivConstraints): number | null {
     const cap = metRestCap(c);
     if (cap >= metRestTop(requested, Infinity)) return requested;
     const tables = c.selectedTables ?? [];
-    for (let level = requested; level >= 1; level--) {
+    // SYNC: the niveau thresholds are the picker's (clipMetRestLevel); on top of them the engine
+    // checks the picked tables can build a dividend and, below N1, falls back to level 0.
+    for (let level = clipMetRestLevel(requested, cap); level >= 1; level--) {
         if (metRestFloor(level) < cap && metRestFits(level, tables, metRestTop(level, cap))) return level;
     }
     return metRestFits(0, tables, cap) ? 0 : null;
