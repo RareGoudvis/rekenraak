@@ -175,24 +175,6 @@ export const KNOWN_BUGS: KnownBug[] = [
         },
     },
 
-    // ── WP5 Result caps ──
-    {
-        id: 'L6', typeIds: ['rekenvolgorde'], rules: ['answer>max', 'factor>tableLimit'],
-        match: (_t, c) => num(c.opsCount, 2) >= 3,
-    },
-    { id: 'L17', typeIds: ['schattend'], rules: ['result>max'], match: () => true },
-    { id: 'L18', typeIds: ['controleren'], rules: ['result>max'], match: () => true },
-    {
-        id: 'E4a', typeIds: ['procenten', 'rekenvolgorde'], rules: ['underfill'],
-        match: (t, c) => t === 'rekenvolgorde'
-            ? !((c.operators as string[] | undefined) ?? []).some(o => o === '+' || o === '-')
-            : ((c.percents as number[] | undefined) ?? []).every(p => [1, 5, 100].includes(p)),
-    },
-    {
-        id: 'E5b', typeIds: ['schattend'], rules: ['target-not-selected', 'underfill'],
-        match: () => true,
-    },
-
     // ── WP6 Misc generators ──
     {
         id: 'E2', typeIds: ['herleidingen'], rules: ['threw'],
