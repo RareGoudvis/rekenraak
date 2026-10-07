@@ -32,6 +32,10 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
 
+- CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
+  `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of
+  `var(--text-muted)` (as do the Geld*/Herleidingen placeholders). Found by WP2. 2026-10-07
+
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
 - Blocks taller than one A4 page at their sidebar DEFAULTS, full width (clipped on paper): omtrek,
@@ -170,75 +174,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
   divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
 
-### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
-
-- [L1] getallenas / getallenrijen run past the max whenever step × (ticks−1) > range: the ascending
-  branch anchors at lo and overruns hi (`upper = floor((hi−span)/stepN)`; descending clamps to `need`
-  and goes below lo). Repro: default leaf at Leerjaar 1 (max 20, step 5, 6 ticks) → 0…25; step 50 at
-  max 20 → 0…150. 819/6384 as-combos, 1881/16008 rij-combos, 100 % per combo. Fix: shrink the step or
-  the tick count (with a note) when the span cannot fit. 2026-10-07
-- [L9] getalpatronen: a per-op mask on + / − replaces "Stap (max)" (`buildOperand` mask branch ignores
-  `s.max`). Repro: opSettings['+'].max 50 + mask {H,T} → step 110. 2385 combos. 2026-10-07
-- [L10] getallenrijen rational: `maxTeller ≤ fractionStep` is silently replaced by 5·d (maxTeller 1, d 4
-  → rows up to 5 wholes); `ticks−1 > maxTeller` climbs past it (d 2, maxTeller 3, 6 ticks → 2 1/2);
-  descending with span > maxWholeUnits prints a NEGATIVE noemer ({n:1, d:−4}: maxTeller 5, d 4, ticks
-  9-10, direction links). 2026-10-07
-- [E5a] getalpatronen / kettingsommen fall back to a "+1" ladder (1, 2, 3, …) that ignores the chosen
-  operations: patronen with a lone ×, '−' + an H mask, tiny op max + mask (16 842/77 700 combos);
-  kettingsommen with only × or only : at max 20 (100 %). Fix: a fallback that keeps the ops, or a
-  generation note. 2026-10-07
-
-### WP3 Cijferen (cijferGenerator.ts)
-
-- [L3] cijferen-vermenigvuldigen-nat / -dec: when a "Specifieke getalopbouw" mask can't fit under the
-  max, the 500-attempt fallback (cijferGenerator.ts:155) returns [max/2, 3] → answer 1,5 × max and the
-  masks ignored. Repro: operand1Mask {T}, max 100 → "50 × 3 = 150"; 982/1328 nat and 2004/3057 dec
-  masked combos, 100 % each. All 8 cijferen leaves share the silent fallback (masks and numberOfTerms
-  dropped). Fix: a fallback within max + a generation note. 2026-10-07
-- [L4] cijferen-vermenigvuldigen-dec with a decimal-place mask on Getal 2 (fractional multiplier): the
-  multiplicand bound `maxVal·s/multiplier` lets operand 1 exceed the max ("21,7 × 0,5" at max 20, 13 %)
-  and `toFixed(dp)` rounds the key wrong ("= 10,8", true 10,85; "0,5 × 0,5 = 0,3"; 16 %). 2026-10-07
-- [E3] cijferen-delen-nat with an E mask on the divisor gives divisor 1; with remainder on the key reads
-  "6 : 1 = 6 r 1". 2026-10-07
-- [E7] cijferen-delen-dec with a decimal-place divisor mask: quotient 0 ("0,5 : 6", 1,4 %) and a
-  dividend a hair over max ("1000,18 : 0,09", 0,04 %). Low priority. 2026-10-07
-
-### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
-
-- [L5] vergelijken-representaties: a Getalopbouw mask (leftMask/rightMask) offers the top place whose
-  weight equals the max (T at 10, H at 100, D at 1000); the masked digit is 1-9 with no max check
-  (`buildRepMasked`, vergelijkenGenerator.ts ~50-60). Repro: max 10 + rightMask {T} → value 20 (88 %;
-  {T,E} 100 %); up to 9 × max. 2026-10-07
-- [L11] breuken-bewerken gelijknamig with noemer "van X tot X": `hi = Math.max(lo + 1, maxD)`
-  (breukBewerkGenerator.ts:57) gives noemers X and X+1 ("tot 20" shows 21), 100 %. 2026-10-07
-- [L12] omtrek / oppervlakte-berekenen rechthoek: `if (w === h) h = h + 1` (metenGenerator.ts ~95)
-  overshoots when w = h = max → sides 10 × 11 at max 10 (1 % default, 2-4 % at narrow ranges). 2026-10-07
-- [L13] oppervlakte rooster ignores minLength: `h = randInt(2, min(6, maxL))`, vierkant takes min(w,h)
-  → "3 × 2" at "Zijden van 3 tot 4 cm" (32 %). Same branch: shapes ['l-figuur'] at maxLength 3 falls
-  back to a rechthoek (32 %). 2026-10-07
-- [L16] Edge settings (hand-typed values):
-  - breuken-bewerken gemengd at teller max 1-2 still gives 3/2 (`hi = max(lo, maxNum)`, :19-22);
-  - vereenvoudigen at max noemer 2-3 / teller max 1 falls back to 2/4 ignoring both caps (:100);
-  - gelijknamig "Vaste gemeenschappelijke noemer" with < 2 divisors in range is silently swapped for the
-    KGV (:53-65, e.g. 7 at 2-10 → 14);
-  - breuken hoeveelheid with maxTotal < minDenominator: total > maxTotal (fractionGenerator.ts:62-63);
-  - omtrek at max 1-3: trapezium `cTop + 2` and the circle radius floor 2 exceed the max. 2026-10-07
-
-### WP5 Result caps (rekenvolgorde/, schattend/, controleren/, procenten/)
-
-- [L6] rekenvolgorde: with 3-4 bewerkingen the cap is max × 10, but the label says "Maximum uitkomst:
-  Antwoorden blijven onder dit getal" → "19 + 22 + 6 × 10 = 101" at max 100 (20-90 %; worst 5088 at
-  1000). 1,7 % have a factor above tableLimit ("5 × 5 × 8 × 20"; hidden key). 2026-10-07
-- [L17] schattend: only the operands are capped; owner rule: the RESULT stays ≤ max. Today + reaches
-  2 × max (~50 %), × 9 × max (~75-80 %): "449 + 687" at max 1000. 2026-10-07
-- [L18] controleren: owner rule as schattend, the result stays ≤ max. Today negenproef × is a in
-  [max/10, max] × b in [12, 99] → up to 91 × max ("577 × 65 = 37505" at 1000, 100 %); omgekeerde +
-  up to 1,9 × max (37 %). 2026-10-07
-- [E4a] Short / empty blocks: procenten 1 % at max 100 → 1 of 8, 5 % → 5 of 8, welk-percent [100] → 0;
-  rekenvolgorde ×-only + haakjes MOET → 0, ':'-only → 0-13. 2026-10-07
-- [E5b] schattend silently swaps a selected rounding target ≥ max for the first target (default leaf H
-  at max 100 → T at L1/L2); decimal target 'h' at 2 dp gives 0 exercises. 2026-10-07
-
 ### WP7 Grade lists (numberRanges.ts, exerciseRegistry.ts, baseSettings.ts, NaturalSettings.tsx)
 
 - [L19] (list side) hr-std-delen 'met rest': no max picker and no seeding, so the Leerjaar max never
@@ -247,14 +182,18 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   add 20 only where it makes sense — vergelijken, plaatswaarde, deelbaarheid-kleuren (signed off); the rest
   keep their floor and the gap gets documented in ARCHITECTURE §7. 2026-10-07
 
+### Found by the limit harness (limits.matrix.test.ts, repro in scripts/limit-trigger-cases.json)
+
+- [N1] hr-std-aftrekken rational with "Gemengd getal" on Getal 2: when Getal 1 is the smaller value the
+  whole of Getal 2 prints as 0 and the key is wrong ("1/9 − 0 1/3 = 2 7/9"; one_step, teller max 2 / 1:
+  100 %; teller max 5 / 1 at 40 exercises: 48 %); under multi_step Getal 2's noemer also passes its cap
+  ("15/4 − 2/6" at max noemer 4). The other rational keys check out. 2026-10-07
+- [N2] plaatswaarde / vergelijken / afronden: a getalopbouw mask on only the top place (weight = max, e.g.
+  HM at 1e8) admits exactly one number, so the block holds 1 of 6. Same shape as the top-place bridge
+  line under Generators. Fix: hide the top place in the mask row or note it. 2026-10-07
+
 ## Tooling
 
-- [T1] The generator matrix (generators.matrix.test.ts) never checks a number against its limit (only
-  no-throw / count / NaN), and constraintSpace.ts misses the UI options that trigger most limit bugs:
-  cijferen operand0..3Mask, vergelijken left/rightMask, hr maxNumerator2 / maxDenominator2 / operandMax
-  / operandMasks / metRestLevel / divisionLevels, breuken-bewerken targetDen (and min = max), patronen
-  opSettings + masks + 'geheel', getallenas minGetal, kettingsommen opSettings. Fix: limits harness
-  (plan Phase A). 2026-10-07
 - full-sweep "max" rows use the registry defaults, and the 8 cijferen typeIds share `cijferRow()`
   defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
   additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27

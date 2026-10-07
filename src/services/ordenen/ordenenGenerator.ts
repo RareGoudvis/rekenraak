@@ -77,12 +77,7 @@ export function generateOrdenenExercisesNoted(block: MathBlock): { items: Ordene
         let maskOn = useMask;
         while (values.length < count && attempts < 4000) {
             attempts++;
-            if (maskOn && attempts > 2000) {
-                // Two masked values can still be ordered: keep that short row rather than mixing in unmasked numbers.
-                if (values.length >= 2) break;
-                maskOn = false;
-                relaxed++;
-            }
+            if (maskOn && attempts > 2000) { maskOn = false; relaxed++; }
             const v = genValue(numberType, oc);
             if (maskOn && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
             const key = val(v);

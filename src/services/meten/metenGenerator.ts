@@ -68,11 +68,21 @@ function regularPolygon(nSides: number, s: number): MeetPoint[] {
     });
 }
 
+// The second side of a rechthoek that isn't a square: one step up, else down, else the
+// same value (a single-value range has no other length; keeping the max beats overshooting it).
+function otherSide(w: number, min: number, max: number, precision: string): number {
+    const lo = precision === 'mm' ? Math.max(1, Math.min(min, max)) : Math.ceil(Math.max(1, Math.min(min, max)));
+    const hi = precision === 'mm' ? Math.max(lo, max) : Math.floor(Math.max(lo, max));
+    const steps = precision === 'mm' ? [1, -1, 0.1, -0.1] : [1, -1];
+    for (const d of steps) { const h = round1(w + d); if (h >= lo && h <= hi) return h; }
+    return w;
+}
+
 function buildShape(shape: string, min: number, max: number, precision: string): MeetExercise {
     const L = () => pickLen(min, max, precision);
 
     if (shape === 'cirkel') {
-        const r = pickLen(Math.max(1, Math.ceil(min / 2)), Math.max(2, Math.floor(max / 2)), precision);
+        const r = pickLen(Math.max(1, Math.ceil(min / 2)), Math.max(1, Math.floor(max / 2)), precision);
         return { id: rndId(), kind: 'cirkel', shape, radius: r, perimeter: round1(Math.PI * 2 * r), isManuallyEdited: false };
     }
 
@@ -80,7 +90,7 @@ function buildShape(shape: string, min: number, max: number, precision: string):
     let sides: number[];   // exact intended lengths (so 'hele cm' never drifts to 0,9/1,1)
 
     if (shape === 'vierkant') { const s = L(); pts = [{ x: 0, y: 0 }, { x: s, y: 0 }, { x: s, y: s }, { x: 0, y: s }]; sides = [s, s, s, s]; }
-    else if (shape === 'rechthoek') { const w = L(); let h = L(); if (w === h) h = Math.max(1, h + 1); pts = [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }]; sides = [w, h, w, h]; }
+    else if (shape === 'rechthoek') { const w = L(); let h = L(); if (w === h) h = otherSide(w, min, max, precision); pts = [{ x: 0, y: 0 }, { x: w, y: 0 }, { x: w, y: h }, { x: 0, y: h }]; sides = [w, h, w, h]; }
     else if (shape === 'ruit' || shape === 'parallellogram') {
         const w = L(); const hlen = shape === 'ruit' ? w : L();
         const th = rad(shape === 'ruit' ? 62 : 68); const bx = round1(hlen * Math.cos(th)), by = round1(hlen * Math.sin(th));
@@ -100,7 +110,15 @@ function buildShape(shape: string, min: number, max: number, precision: string):
     else if (shape === 'trapezium') {
         let aBot = L(), cTop = L(), guard = 0;
         while ((aBot <= cTop || (precision !== 'mm' && (aBot - cTop) % 2 !== 0)) && guard++ < 60) { aBot = L(); cTop = L(); }
-        if (aBot <= cTop) { aBot = cTop + 2; }
+        if (aBot <= cTop || (precision !== 'mm' && (aBot - cTop) % 2 !== 0)) {
+            // Deterministic in-range fallback (cTop + 2 overshot the max): widest pair, even
+            // difference preferred so the legs sit on whole cm; a single-value range has no room.
+            const lo = Math.max(1, Math.min(min, max)), hi = Math.max(lo, max);
+            const top = precision === 'mm' ? hi : Math.floor(hi), bot = precision === 'mm' ? lo : Math.ceil(lo);
+            if (top - 2 >= bot) { aBot = top; cTop = top - 2; }
+            else if (top > bot) { aBot = top; cTop = bot; }
+            else { aBot = cTop + 2; }
+        }
         const offset = (aBot - cTop) / 2;
         const leg = pickLen(Math.max(min, Math.ceil(offset + 1)), max, precision);
         const h = round1(Math.sqrt(Math.max(0.25, leg * leg - offset * offset)));
@@ -139,8 +157,14 @@ export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
 
         if (subType === 'rooster') {
             // Whole-cm rectangles or L-figures so counting squares is exact.
-            const w = randInt(Math.max(2, minL), maxL);
-            const h = randInt(2, Math.min(6, maxL));
+            let w = randInt(Math.max(2, minL), maxL);
+            const hLo = Math.max(2, minL);
+            let h = randInt(hLo, Math.max(hLo, Math.min(6, maxL)));
+            // An L needs ≥3 on both sides: redraw instead of silently becoming a rechthoek.
+            if (shape === 'l-figuur' && maxL >= 3 && (w < 3 || h < 3)) {
+                w = randInt(Math.max(3, minL), maxL);
+                h = randInt(Math.max(3, hLo), Math.max(3, hLo, Math.min(6, maxL)));
+            }
             if (shape === 'l-figuur' && w >= 3 && h >= 3) {
                 const cutW = randInt(1, w - 2), cutH = randInt(1, h - 2);
                 const pts: MeetPoint[] = [
@@ -173,6 +197,33 @@ export function generateOppervlakteExercises(block: MathBlock): MeetExercise[] {
     };
 
     return Array.from({ length: n }, make);
+}
+
+// Settings no figure can honour exactly (the output stays as close as possible): say what gave.
+function shapeNote(shapes: string[], min: number, max: number, precision: string, rooster: boolean): string | null {
+    const lo = Math.max(1, Math.min(min, max)), hi = Math.max(lo, max);
+    const room = precision === 'mm' ? hi > lo : Math.floor(hi) - Math.ceil(lo) >= 1;
+    if (rooster) {
+        if (shapes.includes('l-figuur') && max < 3) return 'Een L-figuur heeft zijden van minstens 3 cm: er komen rechthoeken in de plaats.';
+        return shapes.some(s => !['rechthoek', 'vierkant', 'l-figuur'].includes(s)) ? 'Het rooster tekent alleen rechthoeken, vierkanten en L-figuren: andere gekozen vormen worden rechthoeken.' : null;
+    }
+    if (shapes.includes('trapezium') && !room) return 'Een trapezium heeft twee verschillende evenwijdige zijden: bij één lengte is de langste zijde 2 cm langer dan het maximum.';
+    if (shapes.includes('cirkel') && max < 2) return 'Een cirkel met straal 1 cm is breder dan het maximum.';
+    if (shapes.includes('rechthoek') && !room) return 'Van–tot laat maar één lengte toe: de rechthoeken zijn vierkanten.';
+    return null;
+}
+
+export function generateOmtrekExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
+    const c = block.constraints as MetenConstraints;
+    const shapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['driehoek', 'rechthoek', 'vierkant'];
+    return { items: generateOmtrekExercises(block), note: shapeNote(shapes, c.minLength ?? 3, c.maxLength ?? 10, c.precision ?? 'cm', false) };
+}
+
+export function generateOppervlakteExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
+    const c = block.constraints as MetenConstraints;
+    const shapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['rechthoek', 'vierkant'];
+    const rooster = (c.subType ?? 'berekenen') === 'rooster';
+    return { items: generateOppervlakteExercises(block), note: shapeNote(shapes, c.minLength ?? 2, c.maxLength ?? 8, 'cm', rooster) };
 }
 
 export function generateOmtrekExercises(block: MathBlock): MeetExercise[] {

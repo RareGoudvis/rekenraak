@@ -1,5 +1,6 @@
 import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
+import { LEAF_BY_ID } from '../../config/appstructure';
 import { seedConstraints, DEFAULT_BASE, type BaseSettings } from '../../config/baseSettings';
 import type { Leerjaar } from '../../config/gradePresets';
 
@@ -34,7 +35,7 @@ export function makeBlock(typeId: string, opts: MakeBlockOptions = {}): MathBloc
         instructionMode: 'geen',
         layoutPreset: 'inline-short',
         steppedLines: 3,
-        numberOfExercises: def ? def.defaultCount : 10,
+        numberOfExercises: (opts.leafId ? LEAF_BY_ID[opts.leafId]?.defaultCount : undefined) ?? (def ? def.defaultCount : 10),
         totalPoints: 5,
         verticalSpacing: 18,
         constraints: seedConstraints({ typeId, base, override: opts.constraints, grade: opts.grade, leafId: opts.leafId }),

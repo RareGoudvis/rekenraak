@@ -115,7 +115,7 @@ export async function walkLeaves(opts) {
                                 // defaults + base snapshot (inside the store) + this leaf's override.
                                 // asLeaf: the in-page leaf's instruction may be a function, which cannot cross evaluate().
                                 const own = asLeaf ? r.leaves.find((l) => l.id === leaf.id) : null;
-                                r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints, own ? { leafId: own.id, instruction: own.instruction } : undefined);
+                                r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints, own ? { leafId: own.id, instruction: own.instruction } : { leafId: leaf.id });   // leafId always: a leaf can carry its own defaultCount
                                 // Same tick, so the Inspector never mounts: its max picker would floor a
                                 // value outside the list shown before the block is measured.
                                 if (deselect) r.getState().setActiveSelection(null);

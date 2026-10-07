@@ -38,7 +38,7 @@ export default function ControlerenConfig({ block }: Props) {
             )}
 
             {range && <div style={styles.section}>
-                <SettingLabel text="Maximum getal:" info="Grootte van de te controleren bewerking." />
+                <SettingLabel text="Maximum getal:" info="Grootste uitkomst van de te controleren bewerking; de getallen blijven daaronder." />
                 <PopupSelect
                     clampToLowest
                     value={maxGetal}
