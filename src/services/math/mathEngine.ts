@@ -501,7 +501,9 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
 
         // Aftrekregel: Term 1 moet groter zijn. Omruilen indien nodig.
         if (val1 <= val2) {
-            if (attempts > 3000) {
+            // The swapped terms must still fit each other's teller/noemer max, or the swap breaks the limits.
+            const swapFits = n2 <= maxNumerator1 && d2 <= maxDenominator1 && n1 <= maxNumerator2 && d1 <= maxDenominator2;
+            if (attempts > 3000 && swapFits) {
                 const tempW = w1; w1 = w2; w2 = tempW;
                 const tempN = n1; n1 = n2; n2 = tempN;
                 const tempD = d1; d1 = d2; d2 = tempD;

@@ -113,6 +113,30 @@ describe('[L7] rational +/− one_step keeps both noemers within their max', () 
     });
 });
 
+describe('rational aftrekken: the "term 1 must be larger" swap keeps each term within its own max', () => {
+    const cases: Record<string, unknown>[] = [
+        { linkFractions: false, maxNumerator1: 2, maxDenominator2: 3, fractionDifficulty: 'multi_step' },
+        { linkFractions: false, maxNumerator1: 1, maxNumerator2: 50 },
+        { linkFractions: false, maxNumerator1: 2, maxDenominator1: 100, maxDenominator2: 4, fractionDifficulty: 'multi_step' },
+        { linkFractions: false, maxDenominator1: 100, maxDenominator2: 3, termCount: 4, fractionDifficulty: 'one_step' },
+    ];
+    for (const c of cases) {
+        test(JSON.stringify(c), () => {
+            const lim = { maxNumerator1: 10, maxDenominator1: 10, maxNumerator2: 10, maxDenominator2: 10, ...c } as Record<string, number>;
+            for (const items of runSeeded('hr-std-aftrekken', { numberType: 'rational', ...c })) {
+                for (const eq of items) {
+                    if (eq.operands.length !== 2) continue;
+                    const [a, b] = eq.operands.map(frac);
+                    expect(a.n).toBeLessThanOrEqual(lim.maxNumerator1);
+                    expect(a.d).toBeLessThanOrEqual(lim.maxDenominator1);
+                    expect(b.n).toBeLessThanOrEqual(lim.maxNumerator2);
+                    expect(b.d).toBeLessThanOrEqual(lim.maxDenominator2);
+                }
+            }
+        });
+    }
+});
+
 const decimals = (x: number) => (String(x).split('.')[1] ?? '').length;
 
 describe('[L15] rational × / : decimal_fraction draws a real kommagetal', () => {
