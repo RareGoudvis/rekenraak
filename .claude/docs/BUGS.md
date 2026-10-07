@@ -263,7 +263,7 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### Unassigned (found by WP7)
 
-- [E9] plaatswaarde / vergelijken (getallen, kiezen) seed decimals at every grade: their natural/decimal
+- [S1] plaatswaarde / vergelijken (getallen, kiezen) seed decimals at every grade: their natural/decimal
   switch is `decimalPlaces` (default 0), and baseApply writes `baseDecimalPlaces` (2) into every type that
   owns the key, so a fresh "Tabel invullen" shows "14,07" even at Leerjaar 1 or with no leerjaar. 2026-10-07
 
