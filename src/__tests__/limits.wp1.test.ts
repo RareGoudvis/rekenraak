@@ -184,6 +184,54 @@ describe('[L14] "Maximum per getal" (operandMax) is honoured', () => {
     });
 });
 
+describe('[L19] delen met rest keeps the dividend within the max', () => {
+    const levelOf = (eq: Equation) => {
+        const [dividend] = eq.operands as number[];
+        const q = eq.answer as number;
+        return dividend >= 100 ? 3 : q >= 10 ? 2 : dividend >= 10 ? 1 : 0;
+    };
+    // [max, picked level] → the level every exercise must come from
+    const cases: [number, number, number][] = [
+        [1000, 1, 1], [1000, 2, 2], [1000, 3, 3],
+        [100, 1, 1], [100, 2, 2], [100, 3, 2],
+        [20, 1, 1], [20, 2, 1], [20, 3, 1],
+        [10, 1, 0], [10, 3, 0],
+    ];
+    for (const [maxGetal, metRestLevel, want] of cases) {
+        test(`max ${maxGetal}, N${metRestLevel} → ${want ? `N${want}` : 'deeltallen tot de max'}`, () => {
+            const c = { numberType: 'natural', multiplicationMode: 'met_rest', metRestLevel, maxGetal };
+            for (const items of runSeeded('hr-std-delen', c)) {
+                expect(items.length).toBeGreaterThan(0);
+                for (const eq of items) {
+                    const [dividend, divisor] = eq.operands as number[];
+                    expect(dividend).toBeLessThanOrEqual(maxGetal);
+                    expect((eq.answer as number) * divisor + (eq.remainder ?? 0)).toBe(dividend);
+                    expect(eq.remainder).toBeGreaterThanOrEqual(1);
+                    // level 0 = no two-digit floor; its dividends may still reach 10
+                    if (want === 0) expect(levelOf(eq)).toBeLessThanOrEqual(1);
+                    else expect(levelOf(eq)).toBe(want);
+                }
+            }
+        });
+    }
+
+    test('a lowered level says so', () => {
+        const block = makeBlock('hr-std-delen', { constraints: { multiplicationMode: 'met_rest', metRestLevel: 3, maxGetal: 100 } });
+        expect(REGISTRY['hr-std-delen'].generateNoted!(block).note).toBe('Niveau N3 past niet onder het maximum 100: oefeningen op niveau N2.');
+        const tiny = makeBlock('hr-std-delen', { constraints: { multiplicationMode: 'met_rest', metRestLevel: 1, maxGetal: 10 } });
+        expect(REGISTRY['hr-std-delen'].generateNoted!(tiny).note).toMatch(/^Niveau N1 past niet onder het maximum 10: deeltallen tot 10\./);
+    });
+
+    test('gemengd: a met-rest tab obeys the shared max and says so', () => {
+        const c = { numberType: 'natural', maxGetal: 100, variants: [':'], perVariant: { ':': { multiplicationMode: 'met_rest', selectedTables: [7], metRestLevel: 3 } } };
+        for (const items of runSeeded('hr-std-gemengd', c)) {
+            for (const eq of items) expect(eq.operands[0] as number).toBeLessThanOrEqual(100);
+        }
+        const block = makeBlock('hr-std-gemengd', { constraints: c });
+        expect(REGISTRY['hr-std-gemengd'].generateNoted!(block).note).toBe('Niveau N3 past niet onder het maximum 100: oefeningen op niveau N2.');
+    });
+});
+
 describe('[L8] decimal : keeps the quotient within "Maximum uitkomst"', () => {
     const cases: [string, Record<string, unknown>][] = [
         ['hr-std-delen', { numberType: 'decimal', maxGetal: 10 }],

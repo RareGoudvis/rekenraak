@@ -148,10 +148,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   branches never read maxGetal. Repro: gemengd-nat at Leerjaar 1 (max 20) → "4 × 10 = 40",
   "50 : 5 = 10" (12 %, 76 % with only ×); variants ['x','x:tienvoud'] at max 10 → "9 × 1000".
   Fix: cap table products / dividends / tienvoud answers by maxGetal inside gemengd. 2026-10-07
-- [L19] Met rest ignores the Leerjaar/base max: mulDivMax returns null for met_rest, N3 always draws
-  dividends 100-999 (~1005-1053), so Leerjaar 2 ("tot 100") gets "890 : 7". Owner rule: the dividend
-  follows the grade max (100 at L2, 1000 at L3); tafels and andere stay as they are. Generator side
-  here, list/picker side in WP7. 2026-10-07
 
 ### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
 

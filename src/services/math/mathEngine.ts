@@ -1,6 +1,7 @@
 import type { MathBlock, Equation, Fraction } from './types';
 import type { AddSubConstraints, MulDivConstraints, BridgeMap } from './constraintTypes';
 import { RANGES } from '../../config/numberRanges';
+import { generateWithRelaxation, relaxationNote } from './relax';
 
 // ============================================================================
 // 1. CONSTANTEN & GLOBALE INSTELLINGEN
@@ -838,6 +839,58 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 // 7. DELEN (DIVISION)
 // ============================================================================
 
+// Delen met rest: N1/N2 = two-digit dividend (≤ 99), N3 = three-digit (≤ 999). Owner rule: the
+// dividend also stays within the block's max (the Leerjaar max: 100 at L2, 1000 at L3), and a
+// level that cannot fit under it drops to the highest one that does. Level 0 is the last resort
+// below N1: any dividend up to the max (a max of 10 leaves N1 no two-digit dividend).
+const metRestCap = (c: MulDivConstraints): number =>
+    typeof c.maxGetal === 'number' && c.maxGetal > 0 ? c.maxGetal : Infinity;
+const metRestFloor = (level: number): number => (level === 3 ? 100 : level === 0 ? 1 : 10);
+const metRestTop = (level: number, cap: number): number => Math.min(level === 3 ? 999 : 99, cap);
+const metRestRequested = (c: MulDivConstraints): number => {
+    const lvl = c.metRestLevel ?? 1;
+    return lvl === 1 || lvl === 2 ? lvl : 3;
+};
+
+// Can `level` build at least one exercise from these tables with a dividend in its range up to hi?
+function metRestFits(level: number, tables: number[], hi: number): boolean {
+    const lo = metRestFloor(level);
+    for (const d of tables) {
+        if (d <= 1) continue;
+        const qLo = level <= 1 ? 1 : level === 2 ? 10 : Math.ceil(100 / d);
+        const qHi = level <= 1 ? 9 : Math.floor((hi - 1) / d);
+        for (let q = qLo; q <= qHi; q++) {
+            // the smallest and largest remainder bound every dividend this q can make
+            if (q * d + 1 <= hi && q * d + d - 1 >= lo) return true;
+        }
+    }
+    return false;
+}
+
+/** The met-rest level actually generated: the picked one, or lower when the max cuts it off; null when nothing fits. */
+export function metRestLevelFor(c: MulDivConstraints): number | null {
+    const requested = metRestRequested(c);
+    const cap = metRestCap(c);
+    if (cap >= metRestTop(requested, Infinity)) return requested;
+    const tables = c.selectedTables ?? [];
+    for (let level = requested; level >= 1; level--) {
+        if (metRestFloor(level) < cap && metRestFits(level, tables, metRestTop(level, cap))) return level;
+    }
+    return metRestFits(0, tables, cap) ? 0 : null;
+}
+
+/** Teacher-facing note when the picked met-rest level could not be honoured under the max. */
+export function metRestLevelNote(c: MulDivConstraints): string | null {
+    if (c.multiplicationMode !== 'met_rest' || (c.numberType ?? 'natural') !== 'natural') return null;
+    const level = metRestLevelFor(c);
+    const requested = metRestRequested(c);
+    if (level === null || level === requested) return null;
+    const max = metRestCap(c);
+    return level === 0
+        ? `Niveau N${requested} past niet onder het maximum ${max}: deeltallen tot ${max}.`
+        : `Niveau N${requested} past niet onder het maximum ${max}: oefeningen op niveau N${level}.`;
+}
+
 export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     const { numberOfExercises } = block;
     const constraints = block.constraints as MulDivConstraints;
@@ -1025,8 +1078,11 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     }
     // Sub-scenario B1b: Delen met rest
     else if (multiplicationMode === 'met_rest' && numberType === 'natural') {
-        const { metRestLevel = 1 } = constraints;
         if (selectedTables.length === 0) return [];
+        const level = metRestLevelFor(constraints);
+        if (level === null) return [];
+        const lo = metRestFloor(level);
+        const hi = metRestTop(level, metRestCap(constraints));
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
@@ -1036,26 +1092,26 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const remainder = randInt(1, divisor - 1);
             let quotient: number, dividend: number;
 
-            if (metRestLevel === 1) {
+            if (level <= 1) {
                 // TE ≤ 10*y: enkelvoudig quotiënt (1-9)
                 quotient = randInt(1, 9);
                 dividend = quotient * divisor + remainder;
-                if (dividend < 10 || dividend > 99) continue;
-            } else if (metRestLevel === 2) {
+                if (dividend < lo || dividend > hi) continue;
+            } else if (level === 2) {
                 // TE > 10*y: meervoudig quotiënt (≥ 10), deeltal ≤ 99
-                const maxQ = Math.floor(98 / divisor);
+                const maxQ = Math.floor((hi - 1) / divisor);
                 if (maxQ < 10) continue;
                 quotient = randInt(10, maxQ);
                 dividend = quotient * divisor + remainder;
-                if (dividend < 10 || dividend > 99) continue;
+                if (dividend < lo || dividend > hi) continue;
             } else {
                 // Niveau 3: HTE (3-cijferig deeltal, 100-999)
                 const minQ = Math.ceil(100 / divisor);
-                const maxQ = Math.floor(998 / divisor);
+                const maxQ = Math.floor((hi - 1) / divisor);
                 if (minQ > maxQ) continue;
                 quotient = randInt(minQ, maxQ);
                 dividend = quotient * divisor + remainder;
-                if (dividend < 100 || dividend > 999) continue;
+                if (dividend < lo || dividend > hi) continue;
             }
 
             const comboId = `${dividend}:${divisor}r${remainder}`;
@@ -1197,4 +1253,11 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     }
 
     return exercises;
+};
+
+/** generateNoted for hr-std-delen: the relax-ladder note, plus why a met-rest level was lowered. */
+export const generateDivisionExercisesNoted = (block: MathBlock): { items: Equation[]; note: string | null } => {
+    const result = generateWithRelaxation(block, generateDivisionExercises);
+    const notes = [metRestLevelNote(block.constraints as MulDivConstraints), relaxationNote(result)].filter(Boolean);
+    return { items: result.items as Equation[], note: notes.length ? notes.join(' ') : null };
 };

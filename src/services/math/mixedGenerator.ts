@@ -1,9 +1,9 @@
 import type { MathBlock, Equation } from './types';
-import type { MixedConstraints, MixedOp, MixedVariantId } from './constraintTypes';
+import type { MixedConstraints, MixedOp, MixedVariantId, MulDivConstraints } from './constraintTypes';
 import { MIXED_VARIANTS, mixedVariant } from './constraintTypes';
 import {
     generateAdditionExercises, generateSubtractionExercises,
-    generateMultiplicationExercises, generateDivisionExercises,
+    generateMultiplicationExercises, generateDivisionExercises, metRestLevelNote,
 } from './mathEngine';
 import { generateWithRelaxation, relaxationNote, type RelaxStep } from './relax';
 
@@ -134,12 +134,17 @@ export function generateMixedExercisesNoted(block: MathBlock): { items: Equation
         items.push(result.equation);
     }
 
-    const note = relaxationNote({
+    const relaxNote = relaxationNote({
         items,
         relaxed: LADDER_ORDER.filter(step => relaxed.has(step)),
         shortfall: items.length < block.numberOfExercises,
     });
-    return { items, note };
+    // The shared max can push a ':' tab's met-rest level down; say so like the delen block does.
+    const levelNotes = variants
+        .filter(v => mixedVariant(v).op === ':' && !mixedVariant(v).preset)
+        .map(v => metRestLevelNote(effectiveBlockFor(block, v).constraints as MulDivConstraints));
+    const notes = [...levelNotes, relaxNote].filter(Boolean);
+    return { items, note: notes.length ? notes.join(' ') : null };
 }
 
 export function generateMixedExercises(block: MathBlock): Equation[] {
