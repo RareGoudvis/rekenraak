@@ -202,6 +202,9 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   "6 : 1 = 6 r 1". 2026-10-07
 - [E7] cijferen-delen-dec with a decimal-place divisor mask: quotient 0 ("0,5 : 6", 1,4 %) and a
   dividend a hair over max ("1000,18 : 0,09", 0,04 %). Low priority. 2026-10-07
+- [E9] CijferViewer builds the × partial products from `String(Math.round(operands[1]))`, so a
+  fractional multiplier (Getal 2 decimal-place mask on cijferen-vermenigvuldigen-dec) is drawn as a
+  rounded one (0,5 → 1): the ×dec grid and its partial products are wrong. Found by WP3. 2026-10-07
 
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
