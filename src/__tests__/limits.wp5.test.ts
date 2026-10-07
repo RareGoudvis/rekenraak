@@ -27,9 +27,7 @@ describe('rekenvolgorde limits', () => {
                             let r = i + 1; while (r < tk.length && tk[r] === ')') r++;
                             const left = tk[l], right = tk[r];
                             if (!isMD(left) && !isMD(right)) return;
-                            // A dividend opening a chain may be any exact multiple up to max; everything else is a table factor.
-                            const dividend = right === ':' && !isMD(left);
-                            expect(t).toBeLessThanOrEqual(dividend ? maxGetal : tableLimit);
+                            expect(t).toBeLessThanOrEqual(tableLimit);
                         });
                     }
                 }
@@ -41,9 +39,10 @@ describe('rekenvolgorde limits', () => {
         expect(items.every(e => !e.tokens.includes('('))).toBe(true);
         expect(note).toMatch(/Haakjes weggelaten/);
     });
-    it('colon-only fills the block', () => {
-        const { items } = generateRekenvolgordeNoted(mk({ operators: [':'], opsCount: 2, haakjesMode: 'GEEN', maxGetal: 100, tableLimit: 10 }, 8));
-        expect(items.length).toBe(8);
+    it('colon-only is never empty and reports a short block', () => {
+        const { items, note } = generateRekenvolgordeNoted(mk({ operators: [':'], opsCount: 2, haakjesMode: 'GEEN', maxGetal: 100, tableLimit: 10 }, 8));
+        expect(items.length).toBeGreaterThan(0);
+        if (items.length < 8) expect(note).toMatch(/Slechts/);
     });
 });
 

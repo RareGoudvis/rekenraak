@@ -14,14 +14,16 @@ function pick<T>(arr: T[]): T {
 
 type Tok = number | string;
 
-// Evaluate a flat token list with ×/: before +/− (brackets already resolved by caller).
-function evalFlat(tokens: Tok[]): number | null {
+// Evaluate a flat token list with ×/: before +/− (brackets already resolved by caller); every intermediate stays within cap.
+function evalFlat(tokens: Tok[], cap = Infinity): number | null {
     const t = [...tokens];
     for (let i = 1; i < t.length - 1; i++) {
         if (t[i] === 'x' || t[i] === ':') {
             const a = t[i - 1] as number, b = t[i + 1] as number;
             if (t[i] === ':' && (b === 0 || a % b !== 0)) return null;
-            t.splice(i - 1, 3, t[i] === 'x' ? a * b : a / b);
+            const v = t[i] === 'x' ? a * b : a / b;
+            if (v > cap) return null;
+            t.splice(i - 1, 3, v);
             i -= 1;
         }
     }
@@ -29,7 +31,7 @@ function evalFlat(tokens: Tok[]): number | null {
     for (let i = 1; i < t.length - 1; i += 2) {
         const b = t[i + 1] as number;
         acc = t[i] === '+' ? acc + b : acc - b;
-        if (acc < 0) return null;
+        if (acc < 0 || acc > cap) return null;
     }
     return acc;
 }
@@ -83,7 +85,7 @@ export function generateRekenvolgordeNoted(block: MathBlock): { items: Rekenvolg
 
     const out: RekenvolgordeExercise[] = [];
     const seen = new Set<string>();
-    // Phase 2 widens the pool when phase 1 runs dry: no friendly pairs, and a dividend may exceed the table limit (56 : 7).
+    // Phase 2 widens the pool when phase 1 runs dry: drop the friendly-pair bias (factors still stay within the table limit).
     let wide = false;
     let widened = false;
     let attempts = 0;
@@ -109,23 +111,12 @@ export function generateRekenvolgordeNoted(block: MathBlock): { items: Rekenvolg
                 const nextToMul = ops[i] === 'x' || ops[i] === ':' || ops[i - 1] === 'x' || ops[i - 1] === ':';
                 nums.push(nextToMul ? randInt(2, tableLimit) : randInt(1, Math.min(50, maxGetal)));
             }
-            if (wide) {
-                // Start of a ÷ chain: build the dividend as quotient × all chained divisors so it divides exactly (≤ maxGetal).
-                for (let i = 0; i < opsCount; i++) {
-                    if (ops[i] !== ':' || (i > 0 && (ops[i - 1] === 'x' || ops[i - 1] === ':'))) continue;
-                    let prod = 1;
-                    for (let j = i; ops[j] === ':'; j++) prod *= nums[j + 1];
-                    const qMax = Math.min(tableLimit, Math.floor(maxGetal / prod));
-                    if (qMax < 2) { nums.length = 0; break; }
-                    nums[i] = prod * randInt(2, qMax);
-                }
-            }
         }
         if (nums.length !== opsCount + 1) continue;
         const flat: Tok[] = [];
         nums.forEach((n, i) => { flat.push(n); if (i < ops.length) flat.push(ops[i]); });
 
-        const plain = evalFlat(flat);
+        const plain = evalFlat(flat, maxGetal);
         if (plain === null || plain > maxGetal || plain < 0 || !Number.isInteger(plain)) continue;
 
         let tokens: Tok[] = flat;
@@ -138,14 +129,14 @@ export function generateRekenvolgordeNoted(block: MathBlock): { items: Rekenvolg
             // bracket. A placement that leaves the answer untouched teaches nothing → retry.
             const cap = maxGetal;
             const placements: Array<{ tokens: Tok[]; answer: number }> = [];
-            const head = evalFlat(flat.slice(0, 3));
+            const head = evalFlat(flat.slice(0, 3), maxGetal);
             if (head !== null) {
-                const a = evalFlat([head, ...flat.slice(3)]);
+                const a = evalFlat([head, ...flat.slice(3)], maxGetal);
                 if (a !== null) placements.push({ tokens: ['(', ...flat.slice(0, 3), ')', ...flat.slice(3)], answer: a });
             }
-            const tailSub = evalFlat(flat.slice(-3));
+            const tailSub = evalFlat(flat.slice(-3), maxGetal);
             if (tailSub !== null && flat.length > 3) {
-                const a = evalFlat([...flat.slice(0, -3), tailSub]);
+                const a = evalFlat([...flat.slice(0, -3), tailSub], maxGetal);
                 if (a !== null) placements.push({ tokens: [...flat.slice(0, -3), '(', ...flat.slice(-3), ')'], answer: a });
             }
             const usable = placements.filter(p => p.answer !== plain && p.answer >= 0 && p.answer <= cap && Number.isInteger(p.answer));
@@ -163,7 +154,7 @@ export function generateRekenvolgordeNoted(block: MathBlock): { items: Rekenvolg
     const notes: string[] = [];
     if (dropBrackets) notes.push('Haakjes weggelaten: bij alleen × veranderen ze de uitkomst niet.');
     if (out.length < count) notes.push(`Slechts ${out.length} ${out.length === 1 ? 'oefening' : 'oefeningen'} mogelijk bij deze instellingen.`);
-    else if (widened) notes.push('Rekenreeksen uitgebreid: geen vaste vriendelijke paren, deeltallen tot het maximum.');
+    else if (widened) notes.push('Vriendelijke getallenparen losgelaten om genoeg oefeningen te vinden.');
     return { items: out, note: notes.length ? notes.join(' ') : null };
 }
 
