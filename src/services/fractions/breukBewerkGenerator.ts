@@ -39,7 +39,10 @@ function divisorsInRange(target: number, lo: number, hi: number): number[] {
 // gelijknamig: two fractions with different denominators → a common denominator.
 // targetDen (when it has ≥2 divisors in range) fixes the common denominator; else the LCM.
 function makeGelijknamig(minD: number, maxD: number, targetDen: number | null): BreukBewerkExercise {
-    const lo = Math.max(2, minD), hi = Math.max(lo + 1, maxD);
+    // Two different denominators need a range of ≥2 values: when min ≥ max pull lo down
+    // so the cap holds (tot 20 → 19 & 20); only maxD = 2 has no room and must reach 3.
+    const hi = Math.max(maxD, 2) < 3 ? 3 : Math.max(2, maxD);
+    const lo = Math.min(Math.max(2, minD), hi - 1);
 
     let d1: number, d2: number, L: number;
     const divisors = targetDen && targetDen >= 2 ? divisorsInRange(targetDen, lo, hi) : [];
@@ -73,11 +76,20 @@ function coprimeBase(maxNum: number, maxDen: number): Fraction {
     return { n: 1, d: 2 };
 }
 
+const canReduce = (maxNum: number, maxDen: number) => maxNum >= 2 && maxDen >= 4;
+
 // vereenvoudigen: a reducible fraction → its lowest-terms form. tablesOnly keeps the
 // base denominator and the scale factor within the times tables (≤10). allowIrreducible
 // occasionally emits an already-coprime fraction (answer = input) so pupils must judge.
 function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean, allowIrreducible: boolean): BreukBewerkExercise {
     if (allowIrreducible && Math.random() < 0.3) {
+        const f = coprimeBase(maxNum, maxDen);
+        return { id: rndId(), subType: 'vereenvoudigen', inputs: [f], answers: [f], isManuallyEdited: false };
+    }
+
+    // A reducible proper fraction needs at least 2/4: under tighter caps the closest valid
+    // output is an irreducible fraction within the caps (see noteFor).
+    if (!canReduce(maxNum, maxDen)) {
         const f = coprimeBase(maxNum, maxDen);
         return { id: rndId(), subType: 'vereenvoudigen', inputs: [f], answers: [f], isManuallyEdited: false };
     }
@@ -98,6 +110,28 @@ function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean,
     }
     // Fallback: a guaranteed reducible fraction.
     return { id: rndId(), subType: 'vereenvoudigen', inputs: [{ n: 2, d: 4 }], answers: [{ n: 1, d: 2 }], isManuallyEdited: false };
+}
+
+// Settings the generator can't honour exactly: the output stays as close as possible
+// and this says what had to give.
+function limitNote(subType: string, c: BreukBewerkConstraints): string | null {
+    const minD = c.minDenominator ?? 2, maxD = c.maxDenominator ?? 10, maxN = c.maxNumerator ?? 10;
+    if (subType === 'gemengd' && maxN < 3) return 'Een gemengd getal heeft minstens teller 3 (3/2): de teller loopt hier boven het maximum.';
+    if (subType === 'vereenvoudigen' && !canReduce(maxN, maxD)) return 'Bij dit maximum bestaat geen breuk om te vereenvoudigen: de breuken zijn al vereenvoudigd.';
+    if (subType === 'gelijknamig') {
+        const targetDen = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
+        if (Math.max(maxD, 2) < 3) return 'Bij maximum noemer 2 zijn er geen twee verschillende noemers: noemer 3 wordt ook gebruikt.';
+        if (targetDen && targetDen >= 2) {
+            const hi = Math.max(2, maxD), lo = Math.min(Math.max(2, minD), hi - 1);
+            if (divisorsInRange(targetDen, lo, hi).length < 2) return `Noemer ${targetDen} heeft minder dan twee delers in dit bereik: het kleinste gemeenschappelijke veelvoud wordt gebruikt.`;
+        }
+    }
+    return null;
+}
+
+export function generateBreukBewerkExercisesNoted(block: MathBlock): { items: BreukBewerkExercise[]; note: string | null } {
+    const subType: string = (block.constraints as BreukBewerkConstraints).subType ?? 'gemengd';
+    return { items: generateBreukBewerkExercises(block), note: limitNote(subType, block.constraints as BreukBewerkConstraints) };
 }
 
 export function generateBreukBewerkExercises(block: MathBlock): BreukBewerkExercise[] {

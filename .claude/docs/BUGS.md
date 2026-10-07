@@ -205,19 +205,12 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP4 Geometry, fractions, vergelijken (meten/, fractions/, vergelijken/)
 
-- [L11] breuken-bewerken gelijknamig with noemer "van X tot X": `hi = Math.max(lo + 1, maxD)`
-  (breukBewerkGenerator.ts:57) gives noemers X and X+1 ("tot 20" shows 21), 100 %. 2026-10-07
 - [L12] omtrek / oppervlakte-berekenen rechthoek: `if (w === h) h = h + 1` (metenGenerator.ts ~95)
   overshoots when w = h = max → sides 10 × 11 at max 10 (1 % default, 2-4 % at narrow ranges). 2026-10-07
 - [L13] oppervlakte rooster ignores minLength: `h = randInt(2, min(6, maxL))`, vierkant takes min(w,h)
   → "3 × 2" at "Zijden van 3 tot 4 cm" (32 %). Same branch: shapes ['l-figuur'] at maxLength 3 falls
   back to a rechthoek (32 %). 2026-10-07
 - [L16] Edge settings (hand-typed values):
-  - breuken-bewerken gemengd at teller max 1-2 still gives 3/2 (`hi = max(lo, maxNum)`, :19-22);
-  - vereenvoudigen at max noemer 2-3 / teller max 1 falls back to 2/4 ignoring both caps (:100);
-  - gelijknamig "Vaste gemeenschappelijke noemer" with < 2 divisors in range is silently swapped for the
-    KGV (:53-65, e.g. 7 at 2-10 → 14);
-  - breuken hoeveelheid with maxTotal < minDenominator: total > maxTotal (fractionGenerator.ts:62-63);
   - omtrek at max 1-3: trapezium `cTop + 2` and the circle radius floor 2 exceed the max. 2026-10-07
 
 ### WP5 Result caps (rekenvolgorde/, schattend/, controleren/, procenten/)
