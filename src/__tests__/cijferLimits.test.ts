@@ -44,6 +44,11 @@ describe('cijferen limits', () => {
         expect(mk(3).note).toMatch(/^Alle oefeningen passen niet .* daarvoor staan er eenvoudige oefeningen/);
     });
 
+    test('fallback division keeps a remainder when one is requested', () => {
+        for (const r of run('cijferen-delen-nat', { maxRange: 100, withRemainder: true, operand0Mask: { H: true } }))
+            for (const ex of r.items) { expect(ex.remainder).toBeGreaterThan(0); expect(ex.operands[0]).toBe(ex.answer * ex.operands[1] + ex.remainder); }
+    });
+
     test('no note when the settings are satisfiable', () => {
         for (const r of run('cijferen-optellen-nat', { maxRange: 1000 })) expect(r.note).toBeNull();
     });

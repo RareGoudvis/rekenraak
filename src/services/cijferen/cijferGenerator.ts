@@ -175,7 +175,9 @@ function generateOne(c: CijferConstraints): { ex: CijferExercise; fellBack: bool
         const multiplicand = Math.max(1, Math.floor((c.maxRange * s) / mult)) / s;
         return mk([multiplicand, mult], 'x', parseFloat((multiplicand * mult).toFixed(dp)));
     }
-    return mk([c.maxRange, 4], ':', Math.floor(c.maxRange / 4), c.maxRange % 4);
+    // With a remainder requested, pick the first divisor that leaves one (max % 4 is often 0)
+    const divisor = (c.withRemainder && c.numberType !== 'decimal' && [4, 3, 7, 9, 6, 5].find(d => c.maxRange % d !== 0)) || 4;
+    return mk([c.maxRange, divisor], ':', Math.floor(c.maxRange / divisor), c.maxRange % divisor);
 }
 
 function tryGenerate(c: CijferConstraints): CijferExercise | null {
