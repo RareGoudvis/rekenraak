@@ -598,6 +598,16 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
 // 6. VERMENIGVULDIGEN (MULTIPLICATION)
 // ============================================================================
 
+// The kommagetal of 'Kommagetal × / ÷ Breuk'. A mask builds on the INTERNAL_SCALE grid; a free
+// draw is on the display grid (steps of 1/scale up to maxGetal) and must not be divided by
+// INTERNAL_SCALE too, which shrank it to 0 or 0,0x.
+function decimalFactor(mask: Record<string, boolean>, maxGetal: number, scale: number): number {
+    const maskA = Object.values(mask).some(v => v) ? generateMaskedInt(mask) : null;
+    return maskA !== null
+        ? Math.round((maskA / INTERNAL_SCALE) * scale) / scale
+        : randInt(1, maxGetal * scale) / scale;
+}
+
 
 export const generateMultiplicationExercises = (block: MathBlock): Equation[] => {
     const { numberOfExercises } = block;
@@ -648,19 +658,10 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
             } else if (fractionMultMode === 'decimal_fraction') {
                 const scale = Math.pow(10, decimalPlaces);
-                const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal: number;
-                if (useSpecificStructure) {
-                    const maskA = generateMaskedInt(operand1Mask);
-                    intVal = maskA !== null ? maskA : randInt(1, maxGetal * scale);
-                } else {
-                    intVal = randInt(1, maxGetal * scale);
-                }
-
-                const decVal = Math.round((intVal / INTERNAL_SCALE) * scale) / scale;
+                const decVal = decimalFactor(operand1Mask, maxGetal, scale);
                 op1 = decVal;
 
-                const decFractionN = decVal * scale;
+                const decFractionN = Math.round(decVal * scale);
                 const decFractionD = scale;
                 ansN = decFractionN * n2; ansD = decFractionD * d2;
             }
@@ -885,17 +886,9 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             } else if (fractionMultMode === 'decimal_fraction') {
                 // dec ÷ (n2/d2) = (dec*d2) / n2
                 const scale = Math.pow(10, decimalPlaces);
-                const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal: number;
-                if (useSpecificStructure) {
-                    const maskA = generateMaskedInt(operand1Mask);
-                    intVal = maskA !== null ? maskA : randInt(1, maxGetal * scale);
-                } else {
-                    intVal = randInt(1, maxGetal * scale);
-                }
-                const decVal = Math.round((intVal / INTERNAL_SCALE) * scale) / scale;
+                const decVal = decimalFactor(operand1Mask, maxGetal, scale);
                 op1 = decVal;
-                const decFractionN = decVal * scale;
+                const decFractionN = Math.round(decVal * scale);
                 const decFractionD = scale;
                 ansN = decFractionN * d2; ansD = decFractionD * n2;
             }

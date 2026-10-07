@@ -106,9 +106,42 @@ describe('[L7] rational +/− one_step keeps both noemers within their max', () 
         expect(result.note).toBe('Geen oefeningen mogelijk bij deze instellingen.');
     });
 
-    test('the unlinked 10 / 3 case still fills the block', () => {
+    test('the unlinked 10 / 3 case still fills the block (only the first noemer is a multiple)', () => {
         for (const items of runSeeded('hr-std-optellen', { numberType: 'rational', fractionDifficulty: 'one_step', linkFractions: false, maxDenominator1: 10, maxDenominator2: 3 })) {
             expect(items).toHaveLength(20);
         }
     });
+});
+
+const decimals = (x: number) => (String(x).split('.')[1] ?? '').length;
+
+describe('[L15] rational × / : decimal_fraction draws a real kommagetal', () => {
+    for (const typeId of ['hr-std-vermenigvuldigen', 'hr-std-delen']) {
+        for (const decimalPlaces of [1, 2, 3]) {
+            for (const fractionOrderMode of ['AB', 'BA']) {
+                test(`${typeId} dp ${decimalPlaces} ${fractionOrderMode}`, () => {
+                    const constraints = { numberType: 'rational', fractionMultMode: 'decimal_fraction', decimalPlaces, maxGetal: 10, fractionOrderMode };
+                    for (const items of runSeeded(typeId, constraints)) {
+                        expect(items).toHaveLength(20);
+                        let atLeastOne = 0;
+                        for (const eq of items) {
+                            const dec = eq.operands.find(o => typeof o === 'number') as number;
+                            const f = frac(eq.operands.find(o => typeof o === 'object'));
+                            expect(dec).toBeGreaterThan(0);
+                            expect(dec).toBeLessThanOrEqual(10);
+                            expect(decimals(dec)).toBeLessThanOrEqual(decimalPlaces);
+                            if (dec >= 1) atLeastOne++;
+                            const ans = frac(eq.answer);
+                            expect(Number.isInteger(ans.n) && Number.isInteger(ans.d)).toBe(true);
+                            const want = typeId === 'hr-std-vermenigvuldigen' ? dec * f.n / f.d
+                                : fractionOrderMode === 'AB' ? dec * f.d / f.n : f.n / f.d / dec;
+                            expect(ans.n / ans.d).toBeCloseTo(want, 9);
+                        }
+                        // Values spread over (0, 10], not squashed to 0,0x.
+                        expect(atLeastOne).toBeGreaterThan(items.length / 2);
+                    }
+                });
+            }
+        }
+    }
 });

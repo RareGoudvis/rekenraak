@@ -155,9 +155,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   compenseren skips the ceiling check (~516-535: "770 − 399" with [null,30], 80-100 %, also gemengd
   '-:compenseren'); × tafels with 3-4 factors takes the first factor from the tables (~713-716:
   "12 × 4 × 2" with [5,5,5]). 2026-10-07
-- [L15] Rational × / : 'decimal_fraction' ("Kommagetal × Breuk") without a mask: the decimal operand
-  is randInt(1, maxGetal·scale) divided by INTERNAL_SCALE it was never multiplied by (~597-606,
-  ~818-823) → "0,06 × 6/6", "0 × 6/6 = 0/1" (dp 1: 100 % zero). 2026-10-07
 - [L19] Met rest ignores the Leerjaar/base max: mulDivMax returns null for met_rest, N3 always draws
   dividends 100-999 (~1005-1053), so Leerjaar 2 ("tot 100") gets "890 : 7". Owner rule: the dividend
   follows the grade max (100 at L2, 1000 at L3); tafels and andere stay as they are. Generator side
