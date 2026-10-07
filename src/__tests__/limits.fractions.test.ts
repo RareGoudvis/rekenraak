@@ -42,6 +42,11 @@ describe('breuken-bewerken limits', () => {
         }
         expect(generateBreukBewerkExercisesNoted(bew({ subType: 'vereenvoudigen', maxNumerator: 10, maxDenominator: 10 })).note).toBeNull();
     });
+    test('vereenvoudigen fallback keeps tablesOnly (noemer <= 10)', () => {
+        for (const ex of reps(() => generateFor(bew({ subType: 'vereenvoudigen', maxNumerator: 1, maxDenominator: 15, tablesOnly: true })) as BreukBewerkExercise[])) {
+            expect(ex.inputs[0].d).toBeLessThanOrEqual(10);
+        }
+    });
     test('gemengd at teller max 1-2 notes the unavoidable 3/2', () => {
         expect(generateBreukBewerkExercisesNoted(bew({ subType: 'gemengd', maxNumerator: 2 })).note).toMatch(/teller 3/);
         expect(generateBreukBewerkExercisesNoted(bew({ subType: 'gemengd', maxNumerator: 10 })).note).toBeNull();

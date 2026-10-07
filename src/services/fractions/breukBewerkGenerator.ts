@@ -90,7 +90,7 @@ function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean,
     // A reducible proper fraction needs at least 2/4: under tighter caps the closest valid
     // output is an irreducible fraction within the caps (see noteFor).
     if (!canReduce(maxNum, maxDen)) {
-        const f = coprimeBase(maxNum, maxDen);
+        const f = coprimeBase(maxNum, tablesOnly ? Math.min(10, maxDen) : maxDen);
         return { id: rndId(), subType: 'vereenvoudigen', inputs: [f], answers: [f], isManuallyEdited: false };
     }
 
