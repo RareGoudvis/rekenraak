@@ -16,8 +16,8 @@ import { generateAdditionExercises, generateSubtractionExercises, generateMultip
 import { generateWithRelaxation, relaxationNote } from '../services/math/relax';
 import { generateMixedExercises, generateMixedExercisesNoted } from '../services/math/mixedGenerator';
 import { generateClockExercises } from '../services/clock/clockGenerator';
-import { generateFractionExercises } from '../services/fractions/fractionGenerator';
-import { generateBreukBewerkExercises } from '../services/fractions/breukBewerkGenerator';
+import { generateFractionExercises, generateFractionExercisesNoted } from '../services/fractions/fractionGenerator';
+import { generateBreukBewerkExercises, generateBreukBewerkExercisesNoted } from '../services/fractions/breukBewerkGenerator';
 import { generateBreukenRangschikkenExercises } from '../services/ordenen/breukenRangschikkenGenerator';
 import { generateSplitsenExercises } from '../services/splitsen/splitsenGenerator';
 import { generateCijferExercises } from '../services/cijferen/cijferGenerator';
@@ -27,7 +27,7 @@ import { generateOrdenenExercises } from '../services/ordenen/ordenenGenerator';
 import { generateDeelbaarheidExercises } from '../services/deelbaarheid/deelbaarheidGenerator';
 import { generateGetallenasExercises } from '../services/getallenas/getallenasGenerator';
 import { generateGetallenrijExercises } from '../services/getallenrij/getallenrijGenerator';
-import { generateLengteMetenExercises, generateOmtrekExercises, generateOppervlakteExercises } from '../services/meten/metenGenerator';
+import { generateLengteMetenExercises, generateOmtrekExercises, generateOmtrekExercisesNoted, generateOppervlakteExercises, generateOppervlakteExercisesNoted } from '../services/meten/metenGenerator';
 import { generatePatroonExercises } from '../services/patroon/patroonGenerator';
 import { generateDeelbaarheidKleurExercises } from '../services/deelbaarheid/deelbaarheidKleurGenerator';
 import { generateTemperatuurExercises } from '../services/temperatuur/temperatuurGenerator';
@@ -478,7 +478,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'cijferen-delen-dec':            cijferRow(),
 
     'klok-kloklezen': row<ClockConstraints>({ exerciseField: 'clockExercises',    generate: generateClockExercises,    defaultConstraints: clockDefaults,    defaultCount: 10 }),
-    'breuken':        row<FractionConstraints>({ exerciseField: 'fractionExercises', generate: generateFractionExercises, defaultConstraints: fractionDefaults, defaultCount: 6 }),
+    'breuken':        row<FractionConstraints>({ exerciseField: 'fractionExercises', generate: generateFractionExercises, generateNoted: generateFractionExercisesNoted, defaultConstraints: fractionDefaults, defaultCount: 6 }),
     'splitsen':       row<SplitsenConstraints>({ exerciseField: 'splitsenExercises', generate: generateSplitsenExercises, defaultConstraints: splitsenDefaults, defaultCount: 5, maxPresets: splitsenMax }),
 
     'geld-herkennen':  row<GeldConstraints>({ exerciseField: 'geldExercises',           generate: generateGeldExercises,           defaultConstraints: geldDefaults,           defaultCount: 6, maxPresets: fixedMax(RANGES.geld) }),
@@ -490,7 +490,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'mab-tekenen':   row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax }),
 
     'ordenen':      row<OrdenenConstraints>({ exerciseField: 'ordenenExercises',      generate: generateOrdenenExercises,      defaultConstraints: ordenenDefaults,      defaultCount: 6, maxPresets: nonRationalMax(RANGES.ordenen) }),
-    'breuken-bewerken':      row<BreukBewerkConstraints>({ exerciseField: 'breukBewerkExercises', generate: generateBreukBewerkExercises,        defaultConstraints: breukBewerkDefaults,        defaultCount: 8 }),
+    'breuken-bewerken':      row<BreukBewerkConstraints>({ exerciseField: 'breukBewerkExercises', generate: generateBreukBewerkExercises, generateNoted: generateBreukBewerkExercisesNoted,        defaultConstraints: breukBewerkDefaults,        defaultCount: 8 }),
     'breuken-rangschikken':  row<BreukenRangschikkenConstraints>({ exerciseField: 'ordenenExercises',     generate: generateBreukenRangschikkenExercises, defaultConstraints: breukenRangschikkenDefaults, defaultCount: 6 }),
     'deelbaarheid': row<DeelbaarheidConstraints>({ exerciseField: 'deelbaarheidExercises', generate: generateDeelbaarheidExercises, defaultConstraints: deelbaarheidDefaults, defaultCount: 6, maxPresets: deelbaarheidMax }),
     'getalpatronen': row<PatroonConstraints>({ exerciseField: 'patroonExercises', generate: generatePatroonExercises, defaultConstraints: patroonDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.patronen) }),
@@ -498,7 +498,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) }),
     'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenrijen) }),
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises,  defaultConstraints: metenDefaults,        defaultCount: 6 }),
-    'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises,       defaultConstraints: metenDefaults,        defaultCount: 6 }),
+    'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises, generateNoted: generateOmtrekExercisesNoted,       defaultConstraints: metenDefaults,        defaultCount: 6 }),
     'temperatuur':  row<TemperatuurConstraints>({ exerciseField: 'temperatuurExercises',  generate: generateTemperatuurExercises,  defaultConstraints: temperatuurDefaults,  defaultCount: 4 }),
     'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', generate: generatePlaatswaardeExercises, defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) }),
     'even-oneven':  row<EvenOnevenConstraints>({ exerciseField: 'evenOnevenExercises',   generate: generateEvenOnevenExercises,   defaultConstraints: evenOnevenDefaults,   defaultCount: 3, maxPresets: evenOnevenMax }),
@@ -532,7 +532,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'controleren':    row<ControlerenConstraints>({ exerciseField: 'controleExercises',      generate: generateControleExercises,      defaultConstraints: controlerenDefaults,   defaultCount: 4, maxPresets: fixedMax(RANGES.controleren) }),
 
     // Meetkunde + SVG-heavy meten types.
-    'oppervlakte': row<OppervlakteConstraints>({ exerciseField: 'meetExercises',       generate: generateOppervlakteExercises, defaultConstraints: oppervlakteDefaults, defaultCount: 4 }),
+    'oppervlakte': row<OppervlakteConstraints>({ exerciseField: 'meetExercises',       generate: generateOppervlakteExercises, generateNoted: generateOppervlakteExercisesNoted, defaultConstraints: oppervlakteDefaults, defaultCount: 4 }),
     'weegschaal':  row<WeegschaalConstraints>({ exerciseField: 'weegschaalExercises', generate: generateWeegschaalExercises,  defaultConstraints: weegschaalDefaults,  defaultCount: 4 }),
     'vormleer-punt-lijn': row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
     'vormleer-hoeken':    row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
