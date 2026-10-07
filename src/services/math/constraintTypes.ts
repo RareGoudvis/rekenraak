@@ -110,6 +110,9 @@ export type MulDivConstraints = AddSubConstraints & {
     // Rational ×/: — cap the denominator the answer may keep after simplifying.
     simplifyMaxDenominatorChecked?: boolean;
     simplifyMaxDenominator?: number;
+    // Set only by gemengd's effectiveBlockFor (never stored): the shared "Maximum uitkomst" also
+    // caps table products, deeltafel dividends and tienvoud answers, which standalone ignore by design.
+    capToMax?: boolean;
 };
 
 // 'Gemengd' = one block that mixes + - x : in a single list. The block keeps ONE shared

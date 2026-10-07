@@ -145,35 +145,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 `limits.knownBugs.ts` once that exists. Owner triage of the ambiguous findings is folded in; the
 "fine as is" ones are not listed. Grouped per fix package so parallel deletions merge cleanly.
 
-### WP1 Hoofdrekenen engine (mathEngine.ts, mixedGenerator.ts)
-
-- [L2] hr-std-gemengd: × and : ignore the shared "Maximum uitkomst". MULDIV_BASE
-  (mixedGenerator.ts:35) injects tafels [2,3,4,5,10]×10, and the tafels / met_rest / tienvoud
-  branches never read maxGetal. Repro: gemengd-nat at Leerjaar 1 (max 20) → "4 × 10 = 40",
-  "50 : 5 = 10" (12 %, 76 % with only ×); variants ['x','x:tienvoud'] at max 10 → "9 × 1000".
-  Fix: cap table products / dividends / tienvoud answers by maxGetal inside gemengd. 2026-10-07
-- [L7] Rational +/− 'one_step' ("Ongelijknamig (eenvoudig)"): the second noemer exceeds "Max.
-  noemer" because the multiplier floors at 2 (`Math.max(2, floor(maxD2/d1))`, mathEngine.ts:331-333,
-  458-460). Repro: linked max noemer 2 or 3 → "6/2 + 9/4" (100 %); maxD1 100 / maxD2 10 →
-  "6/27 + 9/54". 2026-10-07
-- [L8] Decimal ':' quotient exceeds "Maximum uitkomst" ("Het grootste antwoord"): the no-mask branch
-  (~1120-1128) draws the divisor from 0,01 and caps only the dividend. Repro: delen-dec max 10 →
-  "7,5 : 0,5 = 15" (5-9 %); gemengd-dec ':' 3-6 %. 2026-10-07
-- [L14] "Maximum per getal" (operandMax) silently ignored: aftrekken with operand2Mask or preset
-  compenseren skips the ceiling check (~516-535: "770 − 399" with [null,30], 80-100 %, also gemengd
-  '-:compenseren'); × tafels with 3-4 factors takes the first factor from the tables (~713-716:
-  "12 × 4 × 2" with [5,5,5]). 2026-10-07
-- [L15] Rational × / : 'decimal_fraction' ("Kommagetal × Breuk") without a mask: the decimal operand
-  is randInt(1, maxGetal·scale) divided by INTERNAL_SCALE it was never multiplied by (~597-606,
-  ~818-823) → "0,06 × 6/6", "0 × 6/6 = 0/1" (dp 1: 100 % zero). 2026-10-07
-- [L19] Met rest ignores the Leerjaar/base max: mulDivMax returns null for met_rest, N3 always draws
-  dividends 100-999 (~1005-1053), so Leerjaar 2 ("tot 100") gets "890 : 7". Owner rule: the dividend
-  follows the grade max (100 at L2, 1000 at L3); tafels and andere stay as they are. Generator side
-  here, list/picker side in WP7. 2026-10-07
-- [E1] PAGE FREEZE: rational +/− 2 terms 'multi_step' (also reached when a 3-4 term chain relaxes to 2):
-  the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
-  divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
-
 ### WP7 Grade lists (numberRanges.ts, exerciseRegistry.ts, baseSettings.ts, NaturalSettings.tsx)
 
 - [L19] (list side) hr-std-delen 'met rest': no max picker and no seeding, so the Leerjaar max never
@@ -184,13 +155,14 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### Found by the limit harness (limits.matrix.test.ts, repro in scripts/limit-trigger-cases.json)
 
-- [N1] hr-std-aftrekken rational with "Gemengd getal" on Getal 2: when Getal 1 is the smaller value the
-  whole of Getal 2 prints as 0 and the key is wrong ("1/9 − 0 1/3 = 2 7/9"; one_step, teller max 2 / 1:
-  100 %; teller max 5 / 1 at 40 exercises: 48 %); under multi_step Getal 2's noemer also passes its cap
-  ("15/4 − 2/6" at max noemer 4). The other rational keys check out. 2026-10-07
 - [N2] plaatswaarde / vergelijken / afronden: a getalopbouw mask on only the top place (weight = max, e.g.
   HM at 1e8) admits exactly one number, so the block holds 1 of 6. Same shape as the top-place bridge
   line under Generators. Fix: hide the top place in the mask row or note it. 2026-10-07
+
+- MathBlockRenderer draws the compenseren tussenstap from the block's stored `preset`, so when the
+  relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
+  scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
+  Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
 
 ## Tooling
 

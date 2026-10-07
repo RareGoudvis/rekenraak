@@ -32,57 +32,17 @@ export interface KnownSkip {
     match: (typeId: string, c: C) => boolean;
 }
 
-const HR = ['hr-std-optellen', 'hr-std-aftrekken', 'hr-std-vermenigvuldigen', 'hr-std-delen', 'hr-std-gemengd'];
 const num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
-const str = (v: unknown, fallback: string) => (typeof v === 'string' ? v : fallback);
 
-// Some d1 in [2..D1] for which every d2 in [2..D2] equals, divides or is divisible by it:
-// the multi_step do/while (mathEngine.ts ~351 / ~474) then never finds a d2.
-export function fractionMultiStepHangs(maxD1: number, maxD2: number): boolean {
-    for (let d1 = 2; d1 <= Math.max(2, maxD1); d1++) {
-        let free = false;
-        for (let d2 = 2; d2 <= Math.max(2, maxD2); d2++) if (!(d1 === d2 || d2 % d1 === 0 || d1 % d2 === 0)) { free = true; break; }
-        if (!free) return true;
-    }
-    return false;
-}
-
-export const KNOWN_SKIPS: KnownSkip[] = [
-    {
-        // [E1] PAGE FREEZE: rational +/− 'multi_step' (any difficulty other than same/one_step
-        // reaches the same loop), also when a 3-4 term chain relaxes to 2 terms.
-        id: 'E1', kind: 'hang', typeIds: ['hr-std-optellen', 'hr-std-aftrekken'],
-        match: (_t, c) => c.numberType === 'rational'
-            && !['same', 'one_step'].includes(str(c.fractionDifficulty, 'same'))
-            && fractionMultiStepHangs(num(c.maxDenominator1, 10), num(c.maxDenominator2, 10)),
-    },
-];
+// Empty since E1 (hang) and E2 (crash) were fixed; keep the list for the next one.
+export const KNOWN_SKIPS: KnownSkip[] = [];
 
 export const KNOWN_BUGS: KnownBug[] = [
     // ── WP1 Hoofdrekenen engine ──
     {
-        id: 'L2', typeIds: ['hr-std-gemengd'],
-        rules: ['answer>max@x', 'answer>max@x:tienvoud', 'dividend>max@:', 'answer>max@:tienvoud'],
-        match: () => true,
-    },
-    {
-        id: 'L7', typeIds: ['hr-std-optellen', 'hr-std-aftrekken'], rules: ['denominator>max'],
-        match: (_t, c) => c.numberType === 'rational' && c.fractionDifficulty === 'one_step',
-    },
-    {
-        id: 'L8', typeIds: ['hr-std-delen', 'hr-std-gemengd'], rules: ['quotient>max'],
-        match: (_t, c) => c.numberType === 'decimal',
-    },
-    {
-        id: 'L14', typeIds: HR, rules: ['operand>operandMax'],
-        match: (_t, c) => Array.isArray(c.operandMax) && c.operandMax.some(v => typeof v === 'number'),
-    },
-    {
-        id: 'L15', typeIds: ['hr-std-vermenigvuldigen', 'hr-std-delen'], rules: ['decimal-operand<=0'],
-        match: (_t, c) => c.numberType === 'rational' && c.fractionMultMode === 'decimal_fraction',
-    },
-    {
-        id: 'L19', typeIds: ['hr-std-delen'], rules: ['dividend>max', 'dividend>gradeMax'],
+        // L19 list side (WP7): met rest has no max picker yet, so the Leerjaar max never reaches
+        // the block; the generator already keeps every dividend within the block's own max.
+        id: 'L19', typeIds: ['hr-std-delen'], rules: ['dividend>gradeMax'],
         match: (_t, c) => c.multiplicationMode === 'met_rest',
     },
 
@@ -93,12 +53,6 @@ export const KNOWN_BUGS: KnownBug[] = [
     },
 
     // ── Found by this harness (BUGS.md 'Limit audit 2026-10-07', harness section) ──
-    {
-        // Gemengd getal on Getal 2 with Getal 1 the smaller fraction: the key is wrong.
-        // The same swap also lets Getal 2's noemer past its cap under multi_step.
-        id: 'N1', typeIds: ['hr-std-aftrekken'], rules: ['answer-key', 'denominator>max'],
-        match: (_t, c) => c.numberType === 'rational' && c.mixedNumber2 === true,
-    },
     {
         // A getalopbouw mask on only the top place (weight = max) admits one number.
         // afronden too; the retry loop that hunts for more numbers makes kiezen slow.

@@ -12,7 +12,7 @@ import type {
     WeegschaalConstraints, TijdsduurConstraints, KalenderConstraints, VormleerConstraints,
     LayoutConstraints,
 } from '../services/math/constraintTypes';
-import { generateAdditionExercises, generateSubtractionExercises, generateMultiplicationExercises, generateDivisionExercises } from '../services/math/mathEngine';
+import { generateAdditionExercises, generateSubtractionExercises, generateMultiplicationExercises, generateDivisionExercises, generateDivisionExercisesNoted } from '../services/math/mathEngine';
 import { generateWithRelaxation, relaxationNote } from '../services/math/relax';
 import { generateMixedExercises, generateMixedExercisesNoted } from '../services/math/mixedGenerator';
 import { generateClockExercises } from '../services/clock/clockGenerator';
@@ -463,7 +463,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'hr-std-optellen':         row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateAdditionExercises),       defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax }),
     'hr-std-aftrekken':        row<AddSubConstraints>({ exerciseField: 'exercises', ...relaxing(generateSubtractionExercises),    defaultConstraints: addSubDefaults, defaultCount: 10, maxPresets: addSubMax }),
     'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax }),
-    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises),       defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax }),
+    'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises), generateNoted: generateDivisionExercisesNoted, defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax }),
     // Mixed already relaxes per variant inside its own generator, so it brings its own note.
     'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10, maxPresets: mixedMax }),
 

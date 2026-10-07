@@ -1,6 +1,7 @@
 import type { MathBlock, Equation, Fraction } from './types';
 import type { AddSubConstraints, MulDivConstraints, BridgeMap } from './constraintTypes';
 import { RANGES } from '../../config/numberRanges';
+import { generateWithRelaxation, relaxationNote } from './relax';
 
 // ============================================================================
 // 1. CONSTANTEN & GLOBALE INSTELLINGEN
@@ -94,6 +95,14 @@ const maxOpFor = (c: MulDivConstraints, i: number): number | null => {
     return typeof v === 'number' && v > 0 ? v : null;
 };
 
+// × / : branches that don't draw under "Maximum per getal" (tafels, tienvoud, met rest, free
+// draws) reject a term over it instead. Without an operandMax this never consumes RNG.
+const breaksOperandMax = (c: MulDivConstraints, operands: number[]): boolean =>
+    !!c.operandMax?.length && operands.some((v, i) => {
+        const ceil = maxOpFor(c, i);
+        return ceil !== null && v > ceil + 1e-9;
+    });
+
 const digitAtScaled = (intVal: number, placeWeightScaled: number): number =>
     Math.floor(intVal / placeWeightScaled) % 10;
 
@@ -143,10 +152,14 @@ const compenserenUnit = (maxGetal: number): number =>
     maxGetal > BIG_MAX ? Math.pow(10, String(Math.floor(maxGetal)).length - 2) : (maxGetal > 100 ? 100 : 10);
 
 // Compenseren preset: an operand just under a round number (29 = 30 − 1), scaled units.
-function compenserenOperand(c: MulDivConstraints, maxGetal: number): number {
-    const unit = compenserenUnit(maxGetal);
+// `ceil` = "Maximum per getal" for this term: the round unit steps down (to 10 at least) until
+// 2 × unit − 1 fits under it, and the round number stays ≤ ceil + 1, so 29 = 30 − 1 at a max of 30.
+function compenserenOperand(c: MulDivConstraints, maxGetal: number, ceil: number | null = null): number {
+    let unit = compenserenUnit(maxGetal);
+    if (ceil !== null) while (unit > 10 && 2 * unit - 1 > ceil) unit /= 10;
     const distance = Math.max(1, Math.min(2, c.presetDistance ?? 1));
-    const tens = randInt(2, Math.max(2, Math.floor(maxGetal / unit) - 1)) * unit;
+    const top = Math.floor(maxGetal / unit) - 1;
+    const tens = randInt(2, Math.max(2, ceil !== null ? Math.min(top, Math.floor((ceil + 1) / unit)) : top)) * unit;
     return tens - randInt(1, distance);
 }
 
@@ -306,6 +319,35 @@ const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[
     return exercises;
 };
 
+// 'multi_step' noemers: neither equals, divides nor is a multiple of the other. Null when the
+// drawn d1 has no such partner in [2, maxD2] (max noemer 2, or d1 = 6 at max 3): the
+// rejection draw would never end, so the caller redraws d1 within its bounded attempts.
+function multiStepDenominators(maxD1: number, maxD2: number): [number, number] | null {
+    const d1 = randInt(2, maxD1);
+    let hasPartner = false;
+    for (let d = 2; d <= maxD2 && !hasPartner; d++) hasPartner = d1 !== d && d % d1 !== 0 && d1 % d !== 0;
+    if (!hasPartner) return null;
+    let d2: number;
+    do { d2 = randInt(2, maxD2); } while (d1 === d2 || d2 % d1 === 0 || d1 % d2 === 0);
+    return [d1, d2];
+}
+
+// 'one_step' noemers: one is a multiple (×2 or more) of the other, each within its own max.
+// Null when no such pair exists (both maxima below 4).
+function oneStepDenominators(maxD1: number, maxD2: number): [number, number] | null {
+    if (maxD2 >= 4) {
+        // d2 = d1 × k must fit under maxD2 as well, so d1 stays within half of either max.
+        let d1 = randInt(2, Math.max(2, Math.min(Math.floor(maxD1 / 2), Math.floor(maxD2 / 2))));
+        let d2 = d1 * randInt(2, Math.max(2, Math.floor(maxD2 / d1)));
+        if (Math.random() > 0.5 && d2 <= maxD1 && d1 <= maxD2) [d1, d2] = [d2, d1];
+        return [d1, d2];
+    }
+    if (maxD1 < 4 || maxD2 < 2) return null;
+    // Only the first noemer has room for a multiple: build it on a small second one.
+    const d2 = randInt(2, Math.min(maxD2, Math.floor(maxD1 / 2)));
+    return [d2 * randInt(2, Math.floor(maxD1 / d2)), d2];
+}
+
 const generateFractionAddition = (block: MathBlock): Equation[] => {
     if (termCountOf(block.constraints as MulDivConstraints) > 2) return generateFractionChain(block, '+');
     const { numberOfExercises } = block;
@@ -328,16 +370,14 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
-            d1 = randInt(2, Math.max(2, Math.floor(maxDenominator1 / 2)));
-            const maxMultiplier = Math.floor(maxDenominator2 / d1);
-            d2 = d1 * randInt(2, Math.max(2, maxMultiplier));
-            if (Math.random() > 0.5 && d2 <= maxDenominator1 && d1 <= maxDenominator2) {
-                const temp = d1; d1 = d2; d2 = temp;
-            }
+            const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) break;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
-            d1 = randInt(2, maxDenominator1);
-            do { d2 = randInt(2, maxDenominator2); } while (d1 === d2 || d2 % d1 === 0 || d1 % d2 === 0);
+            const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) continue;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
 
@@ -392,7 +432,7 @@ export const generateAdditionExercises = (block: MathBlock): Equation[] => {
             const ceil = Math.min(remaining - (N - 1 - i) * step, opCeil !== null ? Math.round(opCeil * INTERNAL_SCALE) : Infinity);
             let v: number;
             if (constraints.preset === 'compenseren' && i === 1) {
-                v = Math.round(compenserenOperand(constraints, maxGetal) * INTERNAL_SCALE);
+                v = Math.round(compenserenOperand(constraints, maxGetal, opCeil) * INTERNAL_SCALE);
             } else if (masked !== null) {
                 v = masked;
             } else {
@@ -455,16 +495,14 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
-            d1 = randInt(2, Math.max(2, Math.floor(maxDenominator1 / 2)));
-            const multiplier = randInt(2, Math.max(2, Math.floor(maxDenominator2 / d1)));
-            d2 = d1 * multiplier;
-            if (Math.random() > 0.5 && d2 <= maxDenominator1 && d1 <= maxDenominator2) {
-                const temp = d1; d1 = d2; d2 = temp;
-            }
+            const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) break;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
-            d1 = randInt(2, maxDenominator1);
-            do { d2 = randInt(2, maxDenominator2); } while (d1 === d2 || d2 % d1 === 0 || d1 % d2 === 0);
+            const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) continue;
+            [d1, d2] = pair;
             n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
 
@@ -475,7 +513,11 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
 
         // Aftrekregel: Term 1 moet groter zijn. Omruilen indien nodig.
         if (val1 <= val2) {
-            if (attempts > 3000) {
+            // The swapped terms must still fit each other's teller/noemer max, or the swap breaks the limits;
+            // a whole part only prints on a "Gemengd getal" term, so both sides must share that setting.
+            const swapFits = n2 <= maxNumerator1 && d2 <= maxDenominator1 && n1 <= maxNumerator2 && d1 <= maxDenominator2
+                && mixedNumber1 === mixedNumber2;
+            if (attempts > 3000 && swapFits) {
                 const tempW = w1; w1 = w2; w2 = tempW;
                 const tempN = n1; n1 = n2; n2 = tempN;
                 const tempD = d1; d1 = d2; d2 = tempD;
@@ -533,7 +575,7 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
             const ceil = Math.min(running - step, opCeil !== null ? Math.round(opCeil * INTERNAL_SCALE) : Infinity);
             let v: number;
             if (constraints.preset === 'compenseren' && i === 1) {
-                v = Math.round(compenserenOperand(constraints, maxGetal) * INTERNAL_SCALE);
+                v = Math.round(compenserenOperand(constraints, maxGetal, opCeil) * INTERNAL_SCALE);
             } else if (masked !== null) {
                 v = masked;
             } else {
@@ -541,7 +583,8 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
                 if (hi < 1) { bad = true; break; }
                 v = randInt(1, hi) * step;
             }
-            if (v < step || v >= running) { bad = true; break; }
+            // A masked or compenseren term skips the drawn ceiling, so "Maximum per getal" is checked here.
+            if (v < step || v >= running || (opCeil !== null && v > Math.round(opCeil * INTERNAL_SCALE))) { bad = true; break; }
             ints.push(v);
             running -= v;
         }
@@ -572,6 +615,28 @@ export const generateSubtractionExercises = (block: MathBlock): Equation[] => {
 // ============================================================================
 // 6. VERMENIGVULDIGEN (MULTIPLICATION)
 // ============================================================================
+
+// Tienvoud factors (10/100/1000) and, under gemengd's capToMax, how large a base (× answer, :
+// quotient) each factor leaves room for: in display steps for decimals, whole numbers otherwise.
+// A factor without room for the smallest base (2, or one display step) leaves the pool; an empty
+// pool yields no exercises, so the relax ladder drops the preset and says so.
+function tienvoudPool(c: MulDivConstraints, maxGetal: number, numberType: string, scale: number) {
+    const picked: number[] = (c.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
+    const all = picked.length ? picked : [10, 100, 1000];
+    if (!c.capToMax) return { pool: all, room: null };
+    const room = (f: number) => numberType === 'decimal' ? Math.floor(Math.round(maxGetal * scale) / f) : Math.floor(maxGetal / f);
+    return { pool: all.filter(f => room(f) >= (numberType === 'decimal' ? 1 : 2)), room };
+}
+
+// The kommagetal of 'Kommagetal × / ÷ Breuk'. A mask builds on the INTERNAL_SCALE grid; a free
+// draw is on the display grid (steps of 1/scale up to maxGetal) and must not be divided by
+// INTERNAL_SCALE too, which shrank it to 0 or 0,0x.
+function decimalFactor(mask: Record<string, boolean>, maxGetal: number, scale: number): number {
+    const maskA = Object.values(mask).some(v => v) ? generateMaskedInt(mask) : null;
+    return maskA !== null
+        ? Math.round((maskA / INTERNAL_SCALE) * scale) / scale
+        : randInt(1, maxGetal * scale) / scale;
+}
 
 
 export const generateMultiplicationExercises = (block: MathBlock): Equation[] => {
@@ -623,19 +688,10 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
             } else if (fractionMultMode === 'decimal_fraction') {
                 const scale = Math.pow(10, decimalPlaces);
-                const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal: number;
-                if (useSpecificStructure) {
-                    const maskA = generateMaskedInt(operand1Mask);
-                    intVal = maskA !== null ? maskA : randInt(1, maxGetal * scale);
-                } else {
-                    intVal = randInt(1, maxGetal * scale);
-                }
-
-                const decVal = Math.round((intVal / INTERNAL_SCALE) * scale) / scale;
+                const decVal = decimalFactor(operand1Mask, maxGetal, scale);
                 op1 = decVal;
 
-                const decFractionN = decVal * scale;
+                const decFractionN = Math.round(decVal * scale);
                 const decFractionD = scale;
                 ansN = decFractionN * n2; ansD = decFractionD * d2;
             }
@@ -675,16 +731,16 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 
     // Preset '× met 10/100/1000': base × tienvoud (comma shift). Decimal bases allowed.
     if (constraints.preset === 'tienvoud') {
-        const factors: number[] = (constraints.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
-        const pool = factors.length ? factors : [10, 100, 1000];
         const scale = Math.pow(10, decimalPlaces);
-        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+        const { pool, room } = tienvoudPool(constraints, maxGetal, numberType, scale);
+        while (pool.length && exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
             const factor = pool[randInt(0, pool.length - 1)];
-            const base = numberType === 'decimal'
-                ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
-                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX)));
+            const base =numberType === 'decimal'
+                ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
             const answer = Number((base * factor).toFixed(6));
+            if (breaksOperandMax(constraints, [base, factor])) continue;
             const comboId = `${base}*${factor}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -714,13 +770,17 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
                 const budget = Math.floor(maxGetal / product);
                 const hi = Math.min(opCeil ?? tableLimit, budget);
                 if (hi < 2) { bad = true; break; }
-                const f = fromTables ? selectedTables[randInt(0, selectedTables.length - 1)] : randInt(2, Math.max(2, Math.min(hi, 12)));
+                // "Maximum per getal" also bounds the table the first factor comes from.
+                const tables = opCeil !== null ? selectedTables.filter((t: number) => t <= opCeil) : selectedTables;
+                if (fromTables && !tables.length) { bad = true; break; }
+                const f = fromTables ? tables[randInt(0, tables.length - 1)] : randInt(2, Math.max(2, Math.min(hi, 12)));
                 if (f * product > maxGetal) { bad = true; break; }
                 factors.push(f);
                 product *= f;
             }
             if (bad || factors.length !== N_MUL) continue;
             if (excludeOne && factors.includes(1)) continue;
+            if (breaksOperandMax(constraints, factors)) continue;
             const comboId = factors.join('*');
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -739,17 +799,21 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
     // Sub-scenario B1: Tafels automatiseren
     if (multiplicationMode === 'tafels' && numberType === 'natural') {
         if (selectedTables.length === 0) return [];
+        // capToMax (gemengd): only tables and multipliers whose product fits under the shared max.
+        const tables = constraints.capToMax ? selectedTables.filter((t: number) => t <= maxGetal) : selectedTables;
+        if (tables.length === 0) return [];
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
-            const baseTable = selectedTables[randInt(0, selectedTables.length - 1)];
-            const multiplier = randInt(1, tableLimit);
+            const baseTable = tables[randInt(0, tables.length - 1)];
+            const multiplier = randInt(1, constraints.capToMax && baseTable > 0 ? Math.min(tableLimit, Math.floor(maxGetal / baseTable)) : tableLimit);
 
             let a = baseTable, b = multiplier;
             if (Math.random() > 0.5) { a = multiplier; b = baseTable; }
 
             if (excludeOne && (a === 1 || b === 1)) continue;
 
+            if (breaksOperandMax(constraints, [a, b])) continue;
             const comboId = `${a}*${b}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -788,6 +852,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             if (a * b > maxGetal || a <= 0 || b <= 0) continue;
             if (excludeOne && (a === 1 || b === 1)) continue;
 
+            if (breaksOperandMax(constraints, [a, b])) continue;
             const comboId = `${a}*${b}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -807,6 +872,58 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
 // ============================================================================
 // 7. DELEN (DIVISION)
 // ============================================================================
+
+// Delen met rest: N1/N2 = two-digit dividend (≤ 99), N3 = three-digit (≤ 999). Owner rule: the
+// dividend also stays within the block's max (the Leerjaar max: 100 at L2, 1000 at L3), and a
+// level that cannot fit under it drops to the highest one that does. Level 0 is the last resort
+// below N1: any dividend up to the max (a max of 10 leaves N1 no two-digit dividend).
+const metRestCap = (c: MulDivConstraints): number =>
+    typeof c.maxGetal === 'number' && c.maxGetal > 0 ? c.maxGetal : Infinity;
+const metRestFloor = (level: number): number => (level === 3 ? 100 : level === 0 ? 1 : 10);
+const metRestTop = (level: number, cap: number): number => Math.min(level === 3 ? 999 : 99, cap);
+const metRestRequested = (c: MulDivConstraints): number => {
+    const lvl = c.metRestLevel ?? 1;
+    return lvl === 1 || lvl === 2 ? lvl : 3;
+};
+
+// Can `level` build at least one exercise from these tables with a dividend in its range up to hi?
+function metRestFits(level: number, tables: number[], hi: number): boolean {
+    const lo = metRestFloor(level);
+    for (const d of tables) {
+        if (d <= 1) continue;
+        const qLo = level <= 1 ? 1 : level === 2 ? 10 : Math.ceil(100 / d);
+        const qHi = level <= 1 ? 9 : Math.floor((hi - 1) / d);
+        for (let q = qLo; q <= qHi; q++) {
+            // the smallest and largest remainder bound every dividend this q can make
+            if (q * d + 1 <= hi && q * d + d - 1 >= lo) return true;
+        }
+    }
+    return false;
+}
+
+/** The met-rest level actually generated: the picked one, or lower when the max cuts it off; null when nothing fits. */
+export function metRestLevelFor(c: MulDivConstraints): number | null {
+    const requested = metRestRequested(c);
+    const cap = metRestCap(c);
+    if (cap >= metRestTop(requested, Infinity)) return requested;
+    const tables = c.selectedTables ?? [];
+    for (let level = requested; level >= 1; level--) {
+        if (metRestFloor(level) < cap && metRestFits(level, tables, metRestTop(level, cap))) return level;
+    }
+    return metRestFits(0, tables, cap) ? 0 : null;
+}
+
+/** Teacher-facing note when the picked met-rest level could not be honoured under the max. */
+export function metRestLevelNote(c: MulDivConstraints): string | null {
+    if (c.multiplicationMode !== 'met_rest' || (c.numberType ?? 'natural') !== 'natural') return null;
+    const level = metRestLevelFor(c);
+    const requested = metRestRequested(c);
+    if (level === null || level === requested) return null;
+    const max = metRestCap(c);
+    return level === 0
+        ? `Niveau N${requested} past niet onder het maximum ${max}: deeltallen tot ${max}.`
+        : `Niveau N${requested} past niet onder het maximum ${max}: oefeningen op niveau N${level}.`;
+}
 
 export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     const { numberOfExercises } = block;
@@ -860,17 +977,9 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             } else if (fractionMultMode === 'decimal_fraction') {
                 // dec ÷ (n2/d2) = (dec*d2) / n2
                 const scale = Math.pow(10, decimalPlaces);
-                const useSpecificStructure = Object.values(operand1Mask).some(v => v);
-                let intVal: number;
-                if (useSpecificStructure) {
-                    const maskA = generateMaskedInt(operand1Mask);
-                    intVal = maskA !== null ? maskA : randInt(1, maxGetal * scale);
-                } else {
-                    intVal = randInt(1, maxGetal * scale);
-                }
-                const decVal = Math.round((intVal / INTERNAL_SCALE) * scale) / scale;
+                const decVal = decimalFactor(operand1Mask, maxGetal, scale);
                 op1 = decVal;
-                const decFractionN = decVal * scale;
+                const decFractionN = Math.round(decVal * scale);
                 const decFractionD = scale;
                 ansN = decFractionN * d2; ansD = decFractionD * n2;
             }
@@ -923,16 +1032,16 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     // Preset ': met 10/100/1000' — answer-first so the quotient stays clean; dividends
     // legitimately exceed maxGetal (that's the point of ": 1000").
     if (constraints.preset === 'tienvoud') {
-        const factors: number[] = (constraints.presetFactors ?? [10, 100, 1000]).filter((f: number) => [10, 100, 1000].includes(f));
-        const pool = factors.length ? factors : [10, 100, 1000];
         const scale = Math.pow(10, decimalPlaces);
-        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+        const { pool, room } = tienvoudPool(constraints, maxGetal, numberType, scale);
+        while (pool.length && exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
             const factor = pool[randInt(0, pool.length - 1)];
-            const quotient = numberType === 'decimal'
-                ? Number((randInt(1, Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
-                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX)));
+            const quotient =numberType === 'decimal'
+                ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
             const dividend = Number((quotient * factor).toFixed(6));
+            if (breaksOperandMax(constraints, [dividend, factor])) continue;
             const comboId = `${dividend}:${factor}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -957,8 +1066,12 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const divisors = Array.from({ length: N_DIV - 1 }, (_, i) => {
                 const opCeil = maxOpFor(constraints, i + 1);
                 const hi = Math.min(opCeil ?? tableLimit, 12);
-                return divisorPool ? divisorPool[randInt(0, divisorPool.length - 1)] : randInt(2, Math.max(2, hi));
+                // "Maximum per getal" also bounds the tables a divisor comes from; NaN = none fits.
+                const pool = divisorPool && opCeil !== null ? divisorPool.filter((t: number) => t <= opCeil) : divisorPool;
+                if (opCeil !== null && pool && !pool.length) return NaN;
+                return pool ? pool[randInt(0, pool.length - 1)] : randInt(2, Math.max(2, hi));
             });
+            if (divisors.some(Number.isNaN)) continue;
             const divProduct = divisors.reduce((a, b) => a * b, 1);
             const maxQ = Math.floor(maxGetal / divProduct);
             if (maxQ < 1) continue;
@@ -966,6 +1079,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const dividend = quotient * divProduct;
             if (dividend > maxGetal) continue;
             const operands = [dividend, ...divisors];
+            if (breaksOperandMax(constraints, operands)) continue;
             const comboId = operands.join(':');
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -984,14 +1098,18 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     // Sub-scenario B1: Deeltafels
     if (multiplicationMode === 'tafels' && numberType === 'natural') {
         if (selectedTables.length === 0) return [];
+        // capToMax (gemengd): the dividend (table × quotient) stays under the shared max.
+        const tables = constraints.capToMax ? selectedTables.filter((t: number) => t <= maxGetal) : selectedTables;
+        if (tables.length === 0) return [];
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
-            const divisor = selectedTables[randInt(0, selectedTables.length - 1)];
+            const divisor = tables[randInt(0, tables.length - 1)];
             if (divisor === 0) continue;
-            const quotient = randInt(1, tableLimit);
+            const quotient = randInt(1, constraints.capToMax ? Math.min(tableLimit, Math.floor(maxGetal / divisor)) : tableLimit);
             const dividend = divisor * quotient;
 
+            if (breaksOperandMax(constraints, [dividend, divisor])) continue;
             const comboId = `${dividend}:${divisor}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1003,8 +1121,11 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     }
     // Sub-scenario B1b: Delen met rest
     else if (multiplicationMode === 'met_rest' && numberType === 'natural') {
-        const { metRestLevel = 1 } = constraints;
         if (selectedTables.length === 0) return [];
+        const level = metRestLevelFor(constraints);
+        if (level === null) return [];
+        const lo = metRestFloor(level);
+        const hi = metRestTop(level, metRestCap(constraints));
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
@@ -1014,28 +1135,29 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             const remainder = randInt(1, divisor - 1);
             let quotient: number, dividend: number;
 
-            if (metRestLevel === 1) {
+            if (level <= 1) {
                 // TE ≤ 10*y: enkelvoudig quotiënt (1-9)
                 quotient = randInt(1, 9);
                 dividend = quotient * divisor + remainder;
-                if (dividend < 10 || dividend > 99) continue;
-            } else if (metRestLevel === 2) {
+                if (dividend < lo || dividend > hi) continue;
+            } else if (level === 2) {
                 // TE > 10*y: meervoudig quotiënt (≥ 10), deeltal ≤ 99
-                const maxQ = Math.floor(98 / divisor);
+                const maxQ = Math.floor((hi - 1) / divisor);
                 if (maxQ < 10) continue;
                 quotient = randInt(10, maxQ);
                 dividend = quotient * divisor + remainder;
-                if (dividend < 10 || dividend > 99) continue;
+                if (dividend < lo || dividend > hi) continue;
             } else {
                 // Niveau 3: HTE (3-cijferig deeltal, 100-999)
                 const minQ = Math.ceil(100 / divisor);
-                const maxQ = Math.floor(998 / divisor);
+                const maxQ = Math.floor((hi - 1) / divisor);
                 if (minQ > maxQ) continue;
                 quotient = randInt(minQ, maxQ);
                 dividend = quotient * divisor + remainder;
-                if (dividend < 100 || dividend > 999) continue;
+                if (dividend < lo || dividend > hi) continue;
             }
 
+            if (breaksOperandMax(constraints, [dividend, divisor])) continue;
             const comboId = `${dividend}:${divisor}r${remainder}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1088,6 +1210,8 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                     quotientVal = randInt(10, maxQ);
                     if (quotientVal % 10 === 0) continue; // round quotients zijn N1-achtig
                     dividendVal = quotientVal * divisorVal; // ≤ 99 by construction → geen maxGetal-check
+                    // …except gemengd's shared max, which may sit below 99.
+                    if (constraints.capToMax && dividendVal > maxGetal) continue;
                 } else {
                     // Achterwaarts vanuit quotiëntstructuur
                     if (lvl === 1) {
@@ -1161,6 +1285,10 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 if (dividendVal > maxGetal || dividendVal <= 0) continue;
             }
 
+            // A divisor below 1 (0,48) lifts the quotient over the max that the label promises
+            // ("Maximum uitkomst"); natural quotients never exceed their dividend, so they never trip this.
+            if (quotientVal > maxGetal) continue;
+            if (breaksOperandMax(constraints, [dividendVal, divisorVal])) continue;
             const comboId = `${dividendVal}:${divisorVal}`;
             if (usedCombinations.has(comboId)) continue;
             usedCombinations.add(comboId);
@@ -1172,4 +1300,11 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
     }
 
     return exercises;
+};
+
+/** generateNoted for hr-std-delen: the relax-ladder note, plus why a met-rest level was lowered. */
+export const generateDivisionExercisesNoted = (block: MathBlock): { items: Equation[]; note: string | null } => {
+    const result = generateWithRelaxation(block, generateDivisionExercises);
+    const notes = [metRestLevelNote(block.constraints as MulDivConstraints), relaxationNote(result)].filter(Boolean);
+    return { items: result.items as Equation[], note: notes.length ? notes.join(' ') : null };
 };
