@@ -4,6 +4,7 @@ import { generateSchattendNoted } from '../services/schattend/schattendGenerator
 import { targetsFor, roundTo } from '../services/afronden/afrondenGenerator';
 import { RANGES } from '../config/numberRanges';
 import { generateControleExercises } from '../services/controleren/controlerenGenerator';
+import { generateProcentNoted } from '../services/procenten/procentenGenerator';
 import { generateRekenvolgordeNoted } from '../services/rekenvolgorde/rekenvolgordeGenerator';
 
 const mk = (constraints: object, n: number): MathBlock => ({ constraints, numberOfExercises: n } as unknown as MathBlock);
@@ -97,4 +98,25 @@ describe('controleren limits', () => {
                     }
                 }
             });
+});
+
+describe('procenten short blocks', () => {
+    it('welk-percent [100] is filled, with a note', () => {
+        const { items, note } = generateProcentNoted(mk({ subType: 'welk-percent', percents: [100], maxGetal: 100 }, 8));
+        expect(items.length).toBe(8);
+        expect(note).toBeTruthy();
+    });
+    it('1 % at max 100 has one possible sum and says so', () => {
+        const { items, note } = generateProcentNoted(mk({ subType: 'nemen', percents: [1], maxGetal: 100 }, 8));
+        expect(items.length).toBe(1);
+        expect(note).toBe('Slechts 1 oefening mogelijk bij deze instellingen.');
+    });
+    it('5 % at max 100 reports its 5 sums', () => {
+        const { items, note } = generateProcentNoted(mk({ subType: 'nemen', percents: [5], maxGetal: 100 }, 8));
+        expect(items.length).toBe(5);
+        expect(note).toMatch(/Slechts 5 oefeningen/);
+    });
+    it('valid settings carry no note', () => {
+        expect(generateProcentNoted(mk({ subType: 'nemen', percents: [10, 25, 50], maxGetal: 1000 }, 8)).note).toBeNull();
+    });
 });

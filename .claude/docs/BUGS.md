@@ -224,10 +224,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   - breuken hoeveelheid with maxTotal < minDenominator: total > maxTotal (fractionGenerator.ts:62-63);
   - omtrek at max 1-3: trapezium `cTop + 2` and the circle radius floor 2 exceed the max. 2026-10-07
 
-### WP5 Result caps (rekenvolgorde/, schattend/, controleren/, procenten/)
-
-- [E4a] Short / empty blocks: procenten 1 % at max 100 → 1 of 8, 5 % → 5 of 8, welk-percent [100] → 0. 2026-10-07
-
 ### WP6 Misc generators (herleidingen/, ordenen/, verbanden/, kalender/, geld/, breukenRangschikken)
 
 - [E2] CRASH: herleidingen with units m² + ca, hm² + ha or dam² + a throws "Cannot read properties of

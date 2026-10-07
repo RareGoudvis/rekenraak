@@ -162,7 +162,7 @@ export function generateRekenvolgordeNoted(block: MathBlock): { items: Rekenvolg
     }
     const notes: string[] = [];
     if (dropBrackets) notes.push('Haakjes weggelaten: bij alleen × veranderen ze de uitkomst niet.');
-    if (out.length < count) notes.push(`Slechts ${out.length} oefeningen mogelijk bij deze instellingen.`);
+    if (out.length < count) notes.push(`Slechts ${out.length} ${out.length === 1 ? 'oefening' : 'oefeningen'} mogelijk bij deze instellingen.`);
     else if (widened) notes.push('Rekenreeksen uitgebreid: geen vaste vriendelijke paren, deeltallen tot het maximum.');
     return { items: out, note: notes.length ? notes.join(' ') : null };
 }
