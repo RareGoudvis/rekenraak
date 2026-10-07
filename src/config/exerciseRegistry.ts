@@ -116,6 +116,21 @@ const relaxing = (gen: (b: MathBlock) => unknown[]) => ({
     },
 });
 
+// A digit mask under a low max can leave fewer distinct numbers than the block asks for
+// (mask T at max 20 → only 10 and 20): say so instead of handing back a silently short block.
+export function maskShortfallNote(got: number, want: number): string | null {
+    if (got >= want) return null;
+    if (got === 0) return 'Met deze getalopbouw en dit maximum past geen enkele oefening.';
+    return `Met deze getalopbouw en dit maximum ${got === 1 ? 'past' : 'passen'} maar ${got} van de ${want} oefeningen.`;
+}
+const notingShortfall = (gen: (b: MathBlock) => unknown[]) => ({
+    generate: gen,
+    generateNoted: (b: MathBlock) => {
+        const items = gen(b);
+        return { items, note: maskShortfallNote(items.length, b.numberOfExercises) };
+    },
+});
+
 // ── default-constraint factories (mirror the old addBlockFromType ternary) ───
 
 const addSubDefaults = (): AddSubConstraints => ({
@@ -506,9 +521,9 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises,  defaultConstraints: metenDefaults,        defaultCount: 6 }),
     'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises,       defaultConstraints: metenDefaults,        defaultCount: 6 }),
     'temperatuur':  row<TemperatuurConstraints>({ exerciseField: 'temperatuurExercises',  generate: generateTemperatuurExercises,  defaultConstraints: temperatuurDefaults,  defaultCount: 4 }),
-    'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', generate: generatePlaatswaardeExercises, defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) }),
+    'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', ...notingShortfall(generatePlaatswaardeExercises), defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) }),
     'even-oneven':  row<EvenOnevenConstraints>({ exerciseField: 'evenOnevenExercises',   generate: generateEvenOnevenExercises,   defaultConstraints: evenOnevenDefaults,   defaultCount: 3, maxPresets: evenOnevenMax }),
-    'vergelijken':  row<VergelijkenConstraints>({ exerciseField: 'vergelijkenExercises',  generate: generateVergelijkenExercises,  defaultConstraints: vergelijkenDefaults,  defaultCount: 6, maxPresets: vergelijkenMax }),
+    'vergelijken':  row<VergelijkenConstraints>({ exerciseField: 'vergelijkenExercises',  ...notingShortfall(generateVergelijkenExercises),  defaultConstraints: vergelijkenDefaults,  defaultCount: 6, maxPresets: vergelijkenMax }),
     'afronden':     row<AfrondenConstraints>({ exerciseField: 'afrondenExercises',     generate: generateAfrondenExercises,     defaultConstraints: afrondenDefaults,     defaultCount: 6, maxPresets: afrondenMax }),
     'romeinse-cijfers': row<RomeinseConstraints>({ exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 }),
     'herleidingen': row<HerleidingenConstraints>({ exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, defaultConstraints: herleidingenDefaults, defaultCount: 8 }),

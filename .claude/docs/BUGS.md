@@ -255,17 +255,17 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   0 with no money / an unpayable amount (6,95 with only €500); euros format with a small-coin-only set
   ([5 c]) shows "60", "50055" (12-item cap fallback `finalAmount = drawnCents`). Low priority. 2026-10-07
 
-### WP7 Grade lists (numberRanges.ts, exerciseRegistry.ts, baseSettings.ts, NaturalSettings.tsx)
-
-- [L20] Leerjaar 1 (max 20) floors to 100 on every list that starts at 100 (floorToPreset). Owner rule:
-  add 20 only where it makes sense — vergelijken, plaatswaarde, deelbaarheid-kleuren (signed off); the rest
-  keep their floor and the gap gets documented in ARCHITECTURE §7. 2026-10-07
-
 ### WP8 Config hint (GetallenasConfig, GetallenrijenConfig, OrdenenConfig, PatroonConfig)
 
 - [L21] Stale Ondergrens: set it to −1000 at max 1000, lower the max to 100 → values reach −1000 at
   "Tot 100" and the slider is pinned. Owner rule: no auto-clamp, show a `sharedPluginStyles.hint` under
   the slider when minGetal < −maxGetal ("valt buiten het bereik — pas aan of genereer opnieuw"). 2026-10-07
+
+### Unassigned (found by WP7)
+
+- [E9] plaatswaarde / vergelijken (getallen, kiezen) seed decimals at every grade: their natural/decimal
+  switch is `decimalPlaces` (default 0), and baseApply writes `baseDecimalPlaces` (2) into every type that
+  owns the key, so a fresh "Tabel invullen" shows "14,07" even at Leerjaar 1 or with no leerjaar. 2026-10-07
 
 ## Tooling
 

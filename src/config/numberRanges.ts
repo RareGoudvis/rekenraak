@@ -17,6 +17,8 @@ export type MaxPresetsFn = (c: Record<string, unknown>) => MaxRange | null;
 
 // ── Lists that reach 1e9 (every list the old global 1 000 000 used to cap) ──
 const NAT_TO_1E9_FROM_100: readonly number[] = NAT_STEPS.filter(v => v >= 100);
+// Leerjaar 1 (tot 20) seeds 20 here instead of flooring to 100 (owner sign-off, limit audit L20).
+const NAT_TO_1E9_FROM_20: readonly number[] = NAT_STEPS.filter(v => v >= 20);
 
 // ── Lists that keep their own didactic ceiling ──
 const DECIMAL: readonly number[] = [10, 100, 1_000];
@@ -47,8 +49,9 @@ export const RANGES = {
     // Decimal cijferen never had 1e7 / 1e8: it jumps from 1e6 to the ceiling.
     cijferDecimal: [20, 100, 1_000, 10_000, 100_000, 1_000_000, 1_000_000_000] as readonly number[],
     afrondenNatural: NAT_TO_1E9_FROM_100,
-    plaatswaarde: NAT_TO_1E9_FROM_100,
-    vergelijken: NAT_TO_1E9_FROM_100,
+    plaatswaarde: NAT_TO_1E9_FROM_20,
+    // getallen + kiezen; representaties has its own list below.
+    vergelijken: NAT_TO_1E9_FROM_20,
     vergelijkenRepresentaties: DECIMAL,
     splitsenTabel: NAT_STEPS,
     // positie-benen + positie-math.
@@ -59,7 +62,8 @@ export const RANGES = {
     splitsenHarten: SPLITSEN_HARTEN,
     deelbaarheid: TO_1E5_FROM_100,
     deelbaarheidKleurStrook: [20, 100, 1_000] as readonly number[],
-    deelbaarheidKleurRaster: [100, 1_000] as readonly number[],
+    // The rechthoek raster at 20 is a 2-row grid of 1-20 (the "Aantal getallen" slider caps at the max).
+    deelbaarheidKleurRaster: [20, 100, 1_000] as readonly number[],
     getallenas: TO_1E5_FROM_20,
     getallenrijen: TO_1E5_FROM_20,
     patronen: TO_1E5_FROM_20,

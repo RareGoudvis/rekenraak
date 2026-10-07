@@ -45,8 +45,8 @@ describe('the lists', () => {
         expect(RANGES.hrAndere).toEqual([1000, 10000, 100000, 1000000, ...BIG]);
         expect(RANGES.cijferNatural).toEqual([20, 100, 1000, 10000, 100000, 1000000, ...BIG]);
         expect(RANGES.afrondenNatural).toEqual([100, 1000, 10000, 100000, 1000000, ...BIG]);
-        expect(RANGES.plaatswaarde).toEqual([100, 1000, 10000, 100000, 1000000, ...BIG]);
-        expect(RANGES.vergelijken).toEqual([100, 1000, 10000, 100000, 1000000, ...BIG]);
+        expect(RANGES.plaatswaarde).toEqual([20, 100, 1000, 10000, 100000, 1000000, ...BIG]);
+        expect(RANGES.vergelijken).toEqual([20, 100, 1000, 10000, 100000, 1000000, ...BIG]);
         expect(RANGES.splitsenTabel).toEqual([...LIST, ...BIG]);
         expect(RANGES.splitsenPositie).toEqual([...LIST, ...BIG]);
     });
@@ -63,7 +63,7 @@ describe('the lists', () => {
             ['splitsenHarten', [10, 20, 100]],
             ['deelbaarheid', [100, 1000, 10000, 100000]],
             ['deelbaarheidKleurStrook', [20, 100, 1000]],
-            ['deelbaarheidKleurRaster', [100, 1000]],
+            ['deelbaarheidKleurRaster', [20, 100, 1000]],
             ['getallenas', [20, 100, 1000, 10000, 100000]],
             ['getallenrijen', [20, 100, 1000, 10000, 100000]],
             ['patronen', [20, 100, 1000, 10000, 100000]],
