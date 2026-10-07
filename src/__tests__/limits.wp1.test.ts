@@ -347,6 +347,36 @@ describe('[L14] "Maximum per getal" on every × / : branch', () => {
     }
 });
 
+describe('[N1] rational aftrekken with a gemengd getal on Getal 2 keeps a correct key', () => {
+    const value = (f: Fraction) => (f.whole ?? 0) + f.n / f.d;
+    const cases: Record<string, unknown>[] = [
+        { fractionDifficulty: 'one_step', mixedNumber2: true, maxNumerator1: 2, maxNumerator2: 1 },
+        { fractionDifficulty: 'one_step', mixedNumber2: true, maxNumerator1: 5, maxNumerator2: 1 },
+        { fractionDifficulty: 'multi_step', mixedNumber2: true, maxDenominator1: 10, maxDenominator2: 4, linkFractions: false },
+        { fractionDifficulty: 'same', mixedNumber1: true, maxNumerator1: 1 },
+    ];
+    for (const c of cases) {
+        test(JSON.stringify(c), () => {
+            for (const items of runSeeded('hr-std-aftrekken', { numberType: 'rational', ...c }, 40)) {
+                for (const eq of items) {
+                    const [a, b] = eq.operands.map(frac);
+                    expect(value(frac(eq.answer))).toBeCloseTo(value(a) - value(b), 9);
+                    // a whole part prints only on a gemengd-getal term, never "0 1/3"
+                    if (!c.mixedNumber1) expect(a.whole ?? 0).toBe(0);
+                    if (c.mixedNumber2) expect(b.whole).toBeGreaterThanOrEqual(1);
+                    expect(b.d).toBeLessThanOrEqual((c.maxDenominator2 as number) ?? 10);
+                }
+            }
+        });
+    }
+    test('an impossible ask (Getal 1 always the smaller) says so', () => {
+        const block = makeBlock('hr-std-aftrekken', { constraints: { numberType: 'rational', fractionDifficulty: 'one_step', mixedNumber2: true, maxNumerator1: 2, maxNumerator2: 1 } });
+        const result = REGISTRY['hr-std-aftrekken'].generateNoted!(block);
+        expect(result.items.length).toBeLessThan(10);
+        expect(result.note).toMatch(/oefening/);
+    });
+});
+
 describe('[L8] decimal : keeps the quotient within "Maximum uitkomst"', () => {
     const cases: [string, Record<string, unknown>][] = [
         ['hr-std-delen', { numberType: 'decimal', maxGetal: 10 }],
