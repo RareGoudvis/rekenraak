@@ -46,7 +46,12 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
     // Standard formats use ONE unit per factor (the square — listed before its are-alias in
     // LADDERS), so a compound never shows a unit and its alias together (m² + ca).
     const seenF = new Set<number>();
-    const gridUnits = units.filter(u => seenF.has(u.factor) ? false : (seenF.add(u.factor), true));
+    let gridUnits = units.filter(u => seenF.has(u.factor) ? false : (seenF.add(u.factor), true));
+    // Alias-only picks (m² + ca) collapse to one grid unit; fall back to the whole ladder so pairs exist.
+    if (gridUnits.length < 2) {
+        const seenL = new Set<number>();
+        gridUnits = ladder.filter(u => seenL.has(u.factor) ? false : (seenL.add(u.factor), true));
+    }
 
     // Are-stelsel: ha/a/ca are equal-factor aliases of hm²/dam²/m². Used only by the are formats.
     const areMode: string = c.areMode ?? 'samengesteld';
@@ -161,6 +166,12 @@ export function generateHerleidingExercises(block: MathBlock): HerleidingExercis
         if (seen.has(key)) continue;
         seen.add(key);
         out.push(ex);
+    }
+    // Small unit/number spaces run out of distinct exercises; repeat rather than return a short block.
+    const distinct = out.length;
+    for (let i = 0; distinct > 0 && out.length < count; i++) {
+        const src = out[i % distinct];
+        out.push({ ...src, id: `herl-${Math.random().toString(36).slice(2, 9)}` });
     }
     return out;
 }

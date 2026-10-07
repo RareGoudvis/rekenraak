@@ -241,9 +241,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 
 ### WP6 Misc generators (herleidingen/, ordenen/, verbanden/, kalender/, geld/, breukenRangschikken)
 
-- [E2] CRASH: herleidingen with units m² + ca, hm² + ha or dam² + a throws "Cannot read properties of
-  undefined (reading 'factor')": equal factors leave `gridUnits` with length 1 and `pickPair` reads
-  index 1. The UI lets you tick exactly those pairs. 2026-10-07
 - [E4b] Short / empty blocks: ordenen decimal + mask D at max ≤ 100 → `values: []`;
   breuken-rangschikken "Gelijknamig te maken" with a noemer range outside {2,3,4,5,6,8,10,12} (min = max
   = 7, 9, 11) → empty exercises (468/2280 combos); herleidingen hm + dam at maxEnkel 20 with only
