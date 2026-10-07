@@ -32,6 +32,10 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
 
+- CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
+  `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of
+  `var(--text-muted)` (as do the Geld*/Herleidingen placeholders). Found by WP2. 2026-10-07
+
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
 - Blocks taller than one A4 page at their sidebar DEFAULTS, full width (clipped on paper): omtrek,
@@ -169,12 +173,6 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
 - [E1] PAGE FREEZE: rational +/− 2 terms 'multi_step' (also reached when a 3-4 term chain relaxes to 2):
   the do/while at ~351 / ~474 never ends when some d1 has every d2 in [2..maxD2] equal to, dividing or
   divisible by it. Repro: linked max noemer 2; unlinked maxD1 10 + maxD2 2 or 3 (d1 = 6). 2026-10-07
-
-### WP2 Rows and patterns (getallenas/, getallenrij/, patroon/)
-
-- [E11] A block whose generator legitimately produced 0 exercises (with a "Geen … mogelijk" note) still
-  shows "(Nog geen oefeningen — klik Genereer)" on the sheet, which contradicts the note. Found by
-  WP2. 2026-10-07
 
 ### WP3 Cijferen (cijferGenerator.ts)
 

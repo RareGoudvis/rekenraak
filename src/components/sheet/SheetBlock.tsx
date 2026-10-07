@@ -193,6 +193,11 @@ function SheetBlock({
           // after a crash, so it must also clear a tripped boundary.
           const exerciseField = REGISTRY[block.typeId]?.exerciseField ?? 'exercises';
           const resetKey = (block as unknown as Record<string, unknown>)[exerciseField];
+          // A generate that found nothing explains why in its note; show that (screen only)
+          // instead of the viewer's "klik Genereer" prompt, so the paper stays blank.
+          if (block.generationNote && Array.isArray(resetKey) && resetKey.length === 0) {
+            return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>({block.generationNote})</div>;
+          }
           return (
             <BlockErrorBoundary resetKey={resetKey} label={block.typeId}>
               <Viewer block={block} showSolutions={showSolutions} />
