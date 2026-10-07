@@ -240,6 +240,11 @@ session scratchpad `limit-audit/A1..A6`). Ids `[Lx]` (limit) / `[Ex]` (other) ke
   "Tot 100" and the slider is pinned. Owner rule: no auto-clamp, show a `sharedPluginStyles.hint` under
   the slider when minGetal < −maxGetal ("valt buiten het bereik — pas aan of genereer opnieuw"). 2026-10-07
 
+- MathBlockRenderer draws the compenseren tussenstap from the block's stored `preset`, so when the
+  relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
+  scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
+  Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
+
 ## Tooling
 
 - [T1] The generator matrix (generators.matrix.test.ts) never checks a number against its limit (only
