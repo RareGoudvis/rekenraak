@@ -104,7 +104,7 @@ describe('OefenBuilderModal', () => {
         expect(screen.getAllByText(/^Kans: 50%$/)).toHaveLength(2);
 
         fireEvent.click(footerBtn('Delen'));
-        const link = (screen.getByLabelText('Link voor de leerlingen') as HTMLInputElement).value;
+        const link = screen.getByRole('link').getAttribute('href')!;
         expect(link).toMatch(/\/oefenen\.html#oefen=/);
         const sessie = decodeSessie(link.split('#oefen=')[1]);
         expect(sessie.types.map(t => t.leafId)).toEqual(['procenten-nemen', 'hr-std-optellen-nat']);
@@ -148,7 +148,13 @@ describe('OefenShareModal', () => {
 
     test('shows the link and a QR for a normal session', () => {
         render(<OefenShareModal sessie={small} onClose={() => { }} />);
-        expect((screen.getByLabelText('Link voor de leerlingen') as HTMLInputElement).value).toContain('#oefen=');
+        const a = screen.getByRole('link');
+        expect(a.getAttribute('href')).toContain('#oefen=');
+        expect(a.getAttribute('target')).toBe('_blank');
+        expect(screen.getByText('Klein')).toBeTruthy();
+        expect(screen.queryByRole('textbox')).toBeNull();
+        expect(screen.getByText(/^QR-versie \d+ · \d+×\d+ blokjes$/)).toBeTruthy();
+        expect(screen.queryByText(/Grote QR/)).toBeNull();
         expect(screen.getByRole('img', { name: /QR-code/ })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: /Groot tonen/ }));
         expect(screen.getAllByRole('img', { name: /QR-code/ })).toHaveLength(2);
@@ -156,11 +162,33 @@ describe('OefenShareModal', () => {
         expect(screen.getAllByRole('img', { name: /QR-code/ })).toHaveLength(1);
     });
 
+    test('a QR past version 25 gets the "show it big or share the link" note', () => {
+        // ~1.5 kB of incompressible hex lands around version 33.
+        const noise = Array.from({ length: 3000 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+        render(<OefenShareModal sessie={{ ...small, types: [{ ...small.types[0], constraints: { noise } }] }} onClose={() => { }} />);
+        expect(screen.getByRole('note').textContent).toBe('Grote QR: toon hem groot op het bord of deel de link.');
+    });
+
+    test('Afdrukken (A5) prints only the A5 QR sheet and cleans up afterwards', async () => {
+        const print = vi.spyOn(window, 'print').mockImplementation(() => { });
+        render(<OefenShareModal sessie={small} onClose={() => { }} />);
+        fireEvent.click(screen.getByRole('button', { name: /Afdrukken \(A5\)/ }));
+        const sheet = document.querySelector('.oefen-qr-print')!;
+        expect(sheet.textContent).toContain('Klein');
+        expect(sheet.textContent).toContain('Scan met je toestel');
+        expect(document.getElementById('oefen-qr-print-style')!.textContent).toMatch(/@page \{ size: A5/);
+        await act(() => new Promise(r => setTimeout(r, 50)));
+        expect(print).toHaveBeenCalledTimes(1);
+        act(() => { window.dispatchEvent(new Event('afterprint')); });
+        expect(document.querySelector('.oefen-qr-print')).toBeNull();
+        expect(document.getElementById('oefen-qr-print-style')).toBeNull();
+    });
+
     test('a session too big for a link shows a note instead of a link', () => {
         // Random hex does not compress, so this reliably overshoots the 30 kB link limit.
         const noise = Array.from({ length: 40000 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
         render(<OefenShareModal sessie={{ ...small, types: [{ ...small.types[0], constraints: { noise } }] }} onClose={() => { }} />);
         expect(screen.getByRole('status').textContent).toMatch(/te groot voor een deelbare link/);
-        expect(screen.queryByLabelText('Link voor de leerlingen')).toBeNull();
+        expect(screen.queryByRole('link')).toBeNull();
     });
 });
