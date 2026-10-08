@@ -36,7 +36,8 @@ function usedExtent(inner: HTMLElement): { x: number; w: number } {
         // A parent with its own text ("Een pil weegt ongeveer 500 <blank>.") is measured too,
         // or only its blank would count and the card would crop the sentence off.
         const ownText = [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== '');
-        if (el.children.length > 0 && !ownText && !(el instanceof SVGSVGElement)) return;
+        // A tappable part (Phase C) counts whole: its padding carries the selection ring.
+        if (el.children.length > 0 && !ownText && !(el instanceof SVGSVGElement) && !el.hasAttribute('data-kiosk-key')) return;
         const r = el.getBoundingClientRect();
         if (r.width <= 0 && r.height <= 0) return;
         left = Math.min(left, r.left - outer.left);
