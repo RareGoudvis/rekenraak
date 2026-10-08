@@ -1,6 +1,6 @@
 import type { Instrument } from '../boardTypes';
-import { IC } from './instrumentStyle';
-import { BOARD_CM_PX, EDGE_TOL_PX, GEO, LAT, PASSER, bodyPolygon, passerHinge, polyPoints, round1 } from '../instrumentGeometry';
+import { IC, NO_POINTER } from './instrumentStyle';
+import { BOARD_CM_PX, BOARD_MM_PX, EDGE_TOL_PX, GEO, LAT, PASSER, bodyPolygon, passerHinge, polyPoints, round1 } from '../instrumentGeometry';
 
 // The meetinstrumenten as SVG, each drawn in its own local frame (InstrumentLayer places it
 // with translate + rotate). Translucent "plastic" from tokens: a frosted light body keeps the
@@ -47,9 +47,32 @@ function Body({ kind, selected, passThrough, onGrip, children }: Omit<ShapeProps
     );
 }
 
+// The lat's scale on its measuring edge: a faint tick every mm, longer at every half cm, a
+// numbered tick every cm (0–20), at the board's real cm (BOARD_CM_PX).
+const LAT_TICKS = (() => {
+    const mm: string[] = [], half: string[] = [], cm: string[] = [];
+    for (let i = 0; i <= LAT.cm * 10; i++) {
+        const x = round1(i * BOARD_MM_PX);
+        if (i % 10 === 0) cm.push(`M ${x} 0 V ${round1(0.6 * BOARD_CM_PX)}`);
+        else if (i % 5 === 0) half.push(`M ${x} 0 V ${round1(0.42 * BOARD_CM_PX)}`);
+        else mm.push(`M ${x} 0 V ${round1(0.25 * BOARD_CM_PX)}`);
+    }
+    return { mm: mm.join(' '), half: half.join(' '), cm: cm.join(' ') };
+})();
+
 export function LatShape(p: ShapeProps) {
     return (
         <Body kind="lat" {...p}>
+            <g style={NO_POINTER}>
+                <path d={LAT_TICKS.mm} strokeWidth={1} style={{ stroke: IC.faint }} />
+                <path d={LAT_TICKS.half} strokeWidth={1.4} style={{ stroke: IC.tick }} />
+                <path d={LAT_TICKS.cm} strokeWidth={2} style={{ stroke: IC.tick }} />
+                {Array.from({ length: LAT.cm + 1 }, (_, i) => (
+                    <text key={i} x={round1(i * BOARD_CM_PX)} y={round1(1.18 * BOARD_CM_PX)} textAnchor="middle"
+                        fontSize={18} fontWeight={600} fontFamily="var(--font-ui)" style={{ fill: IC.tick }}>{i}</text>
+                ))}
+                <text x={round1(0.15 * BOARD_CM_PX)} y={round1(2.1 * BOARD_CM_PX)} fontSize={14} fontFamily="var(--font-ui)" style={{ fill: IC.faint }}>cm</text>
+            </g>
             <RotateHandle x={LAT.cm * BOARD_CM_PX - 0.9 * BOARD_CM_PX} y={LAT.h - 0.95 * BOARD_CM_PX} onGrip={p.onGrip} />
         </Body>
     );

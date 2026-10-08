@@ -1,5 +1,5 @@
 import { PX_PER_MM } from '../components/viewer/cijferGrid';
-import type { Instrument, InstrumentKind, Stroke } from './boardTypes';
+import type { Instrument, InstrumentEdge, InstrumentGeometry, InstrumentKind, Stroke, ToolContext } from './boardTypes';
 
 // Pure geometry for the meetinstrumenten (lat, geodriehoek, passer): board units, snapping,
 // local ↔ board transforms. No React, no store — the layer and the ink tool call in here.
@@ -182,4 +182,104 @@ export const EDGE_TOL_PX = 10;
 export function passerHinge(radius: number): [number, number] {
     const half = Math.min(radius, PASSER.maxR) / 2;
     return [half, -Math.sqrt(Math.max(0, PASSER.leg ** 2 - half ** 2))];
+}
+
+// ── Drawing along an edge ────────────────────────────────────────────────────
+// Every straight edge of one instrument in board px. Lat: the measuring edge (zero at the
+// reference point) and the plain back edge.
+export function instrumentEdges(inst: Instrument): InstrumentEdge[] {
+    const c = Math.cos(inst.rotation * RAD), s = Math.sin(inst.rotation * RAD);
+    const edge = (a: [number, number], b: [number, number], z: [number, number], n: [number, number]): InstrumentEdge => {
+        const [ax, ay] = toWorld(inst, a[0], a[1]);
+        const [bx, by] = toWorld(inst, b[0], b[1]);
+        const [zx, zy] = toWorld(inst, z[0], z[1]);
+        return { ax, ay, bx, by, zx, zy, nx: n[0] * c - n[1] * s, ny: n[0] * s + n[1] * c };
+    };
+    if (inst.kind === 'lat') {
+        const x0 = -LAT.pad, x1 = LAT.cm * BOARD_CM_PX + LAT.pad;
+        return [
+            edge([x0, 0], [x1, 0], [0, 0], [0, -1]),
+            edge([x0, LAT.h], [x1, LAT.h], [0, LAT.h], [0, 1]),
+        ];
+    }
+    return [];
+}
+
+export function pageInstrumentGeometry(instruments: Instrument[]): InstrumentGeometry {
+    return {
+        edges: instruments.flatMap(instrumentEdges),
+        protractors: instruments.filter(i => i.kind === 'geodriehoek').map(i => ({ x: i.x, y: i.y, rotation: i.rotation })),
+    };
+}
+
+// Where a point falls along an edge: t = signed distance from the zero along a→b, d = its
+// distance off the edge line, [t0, t1] = the edge's own extent in the same measure.
+function edgeFrame(e: InstrumentEdge, x: number, y: number) {
+    const len = Math.hypot(e.bx - e.ax, e.by - e.ay) || 1;
+    const ux = (e.bx - e.ax) / len, uy = (e.by - e.ay) / len;
+    const t = (x - e.zx) * ux + (y - e.zy) * uy;
+    const d = Math.abs((x - e.zx) * uy - (y - e.zy) * ux);
+    const t0 = (e.ax - e.zx) * ux + (e.ay - e.zy) * uy;
+    const t1 = (e.bx - e.zx) * ux + (e.by - e.zy) * uy;
+    return { ux, uy, t, d, t0, t1 };
+}
+
+// The closest edge within tol whose extent the point is beside (tol of slack at the ends).
+export function nearestEdge(edges: InstrumentEdge[], x: number, y: number, tol = EDGE_TOL_PX): InstrumentEdge | null {
+    let best: { e: InstrumentEdge; d: number } | null = null;
+    for (const e of edges) {
+        const f = edgeFrame(e, x, y);
+        if (f.d > tol || f.t < Math.min(f.t0, f.t1) - tol || f.t > Math.max(f.t0, f.t1) + tol) continue;
+        if (!best || f.d < best.d) best = { e, d: f.d };
+    }
+    return best?.e ?? null;
+}
+
+// A point projected onto the edge, on a whole mm from its zero and inside the edge.
+export function projectOnEdge(e: InstrumentEdge, x: number, y: number): { x: number; y: number; t: number } {
+    const f = edgeFrame(e, x, y);
+    const lo = Math.min(f.t0, f.t1), hi = Math.max(f.t0, f.t1);
+    const t = Math.min(hi, Math.max(lo, Math.round(f.t / BOARD_MM_PX) * BOARD_MM_PX));
+    return { x: e.zx + f.ux * t, y: e.zy + f.uy * t, t };
+}
+
+export const formatCm = (px: number) => `${(Math.abs(px) / BOARD_CM_PX).toFixed(1).replace('.', ',')} cm`;
+
+// Sample points along a straight segment (the eraser hit-tests on these).
+export function segmentPts(ax: number, ay: number, bx: number, by: number, step = 6): number[] {
+    const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / step));
+    const out: number[] = [];
+    for (let i = 0; i <= n; i++) out.push(round1(ax + ((bx - ax) * i) / n), round1(ay + ((by - ay) * i) / n));
+    return out;
+}
+
+// A straight stroke's path; a zero-length one is a dot (like a pen tap), so a tap on the
+// lat's 5 cm mark leaves a point exactly there.
+export function segmentPath(ax: number, ay: number, bx: number, by: number): string {
+    if (Math.hypot(bx - ax, by - ay) < 0.5) return `M ${round1(ax)} ${round1(ay)} l 0.01 0`;
+    return `M ${round1(ax)} ${round1(ay)} L ${round1(bx)} ${round1(by)}`;
+}
+
+export interface GuidedSegment { path: string; pts: number[]; readout: { x: number; y: number; text: string } }
+export interface GuidedLine { to: (x: number, y: number) => GuidedSegment }
+
+// The ink tool's instrument hook: a pen started within tol of an instrument edge draws a
+// perfectly straight stroke on that edge for the whole drag (both ends projected, on whole
+// mm), with the length as readout. Null = draw freehand.
+export function startGuidedLine(ctx: ToolContext, x: number, y: number, tol = EDGE_TOL_PX): GuidedLine | null {
+    const g = ctx.instrument;
+    if (!g) return null;
+    const e = nearestEdge(g.edges, x, y, tol);
+    if (!e) return null;
+    const a = projectOnEdge(e, x, y);
+    return {
+        to: (px, py) => {
+            const b = projectOnEdge(e, px, py);
+            return {
+                path: segmentPath(a.x, a.y, b.x, b.y),
+                pts: segmentPts(a.x, a.y, b.x, b.y),
+                readout: { x: b.x + e.nx * 30, y: b.y + e.ny * 30, text: formatCm(b.t - a.t) },
+            };
+        },
+    };
 }

@@ -99,6 +99,7 @@ export interface InstrumentEdge {
     ax: number; ay: number;
     bx: number; by: number;
     zx: number; zy: number;
+    nx: number; ny: number;    // unit normal pointing away from the body (readouts go there)
 }
 // What an ink tool needs to follow the instruments: their straight edges and every
 // protractor centre (a pen started there draws a ray at a whole-degree angle).

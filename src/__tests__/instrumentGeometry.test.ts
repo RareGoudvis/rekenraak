@@ -1,7 +1,8 @@
 import { describe, test, expect } from 'vitest';
 import {
-    BOARD_CM_PX, BOARD_MM_PX, GEO, LAT, PASSER, bodyPolygon, defaultInstrument, normDeg, passerHinge,
-    pathEndpoints, snapPoint, snapRotation, strokeEndpoints, toLocal, toWorld,
+    BOARD_CM_PX, BOARD_MM_PX, GEO, LAT, PASSER, bodyPolygon, defaultInstrument, formatCm, instrumentEdges, nearestEdge,
+    normDeg, pageInstrumentGeometry, passerHinge, pathEndpoints, projectOnEdge, round1, snapPoint, snapRotation,
+    startGuidedLine, strokeEndpoints, toLocal, toWorld,
 } from '../board/instrumentGeometry';
 import type { Stroke } from '../board/boardTypes';
 
@@ -135,5 +136,80 @@ describe('placement and shapes', () => {
             close(Math.hypot(hx - r, hy), PASSER.leg);
             expect(hy).toBeLessThan(0);
         }
+    });
+});
+
+describe('lat: drawing along an edge', () => {
+    const lat = (x = 100, y = 200, rotation = 0) => ({ id: 'l', kind: 'lat' as const, x, y, rotation });
+    const ctxOf = (...insts: ReturnType<typeof lat>[]) => ({ gridSnap: false, gridSize: 40, instrument: pageInstrumentGeometry(insts) });
+
+    test('two edges: the measuring edge (zero at the reference point) and the back edge', () => {
+        const [top, back] = instrumentEdges(lat());
+        close(top.zx, 100); close(top.zy, 200);
+        close(top.ax, 100 - LAT.pad); close(top.bx, 100 + 20 * BOARD_CM_PX + LAT.pad);
+        expect([top.nx, top.ny].map(Math.round)).toEqual([0, -1]);
+        close(back.zy, 200 + LAT.h);
+        expect(Math.round(back.ny)).toBe(1);
+    });
+
+    test('edges turn with the instrument', () => {
+        const [top] = instrumentEdges(lat(0, 0, 90));
+        close(top.bx, 0, 1e-9); close(top.by, 20 * BOARD_CM_PX + LAT.pad);
+        close(top.nx, 1); close(top.ny, 0, 1e-9);
+    });
+
+    test('nearestEdge: within 10 px of the edge and beside it, closest wins', () => {
+        const edges = instrumentEdges(lat());
+        expect(nearestEdge(edges, 300, 191)).toBe(edges[0]);
+        expect(nearestEdge(edges, 300, 209)).toBe(edges[0]);
+        expect(nearestEdge(edges, 300, 189)).toBeNull();
+        expect(nearestEdge(edges, 300, 200 + LAT.h + 4)).toBe(edges[1]);
+        // past the end of the plastic (+10 px slack) nothing guides
+        expect(nearestEdge(edges, 100 + 20 * BOARD_CM_PX + LAT.pad + 12, 200)).toBeNull();
+        expect(nearestEdge(edges, 100 - LAT.pad - 5, 200)).toBe(edges[0]);
+    });
+
+    test('projectOnEdge: onto the edge, on whole mm from zero, never past the plastic', () => {
+        const [top] = instrumentEdges(lat());
+        const p = projectOnEdge(top, 100 + 5 * BOARD_CM_PX + 1.2, 205);
+        close(p.t, 50 * BOARD_MM_PX); close(p.y, 200); close(p.x, 100 + 50 * BOARD_MM_PX);
+        close(projectOnEdge(top, 5000, 200).x, 100 + 20 * BOARD_CM_PX + LAT.pad);
+        close(projectOnEdge(top, -5000, 200).t, -LAT.pad);
+    });
+
+    test('startGuidedLine: a wobbly drag becomes one straight M…L stroke on the edge with a cm readout', () => {
+        const g = startGuidedLine(ctxOf(lat()), 101, 194)!;
+        expect(g.to(150, 207).path).toMatch(/^M 100 200 L [\d.]+ 200$/);
+        const seg = g.to(100 + 5 * BOARD_CM_PX + 0.8, 196);
+        expect(seg.path).toBe(`M 100 200 L ${round1(100 + 5 * BOARD_CM_PX)} 200`);
+        expect(seg.readout.text).toBe('5,0 cm');
+        expect(seg.readout.y).toBeLessThan(200);
+        expect(pathEndpoints(seg.path)).toEqual([100, 200, round1(100 + 5 * BOARD_CM_PX), 200]);
+        // eraser samples cover the whole segment, both ends included
+        expect(seg.pts.slice(0, 2)).toEqual([100, 200]);
+        expect(seg.pts.slice(-2)).toEqual([round1(100 + 5 * BOARD_CM_PX), 200]);
+        expect(seg.pts.length / 2).toBeGreaterThan(30);
+    });
+
+    test('a tap on the edge leaves a dot on the nearest mm; a rotated lat draws along its angle', () => {
+        const g = startGuidedLine(ctxOf(lat()), 100 + 3 * BOARD_CM_PX + 1, 203)!;
+        expect(g.to(100 + 3 * BOARD_CM_PX + 1, 203).path).toBe(`M ${round1(100 + 3 * BOARD_CM_PX)} 200 l 0.01 0`);
+        const r = startGuidedLine(ctxOf(lat(0, 0, 45)), 2, -1)!;
+        const seg = r.to(150, 160);
+        const e = pathEndpoints(seg.path)!;
+        close(e[2], e[3], 0.11);           // on the 45° line
+        expect(seg.readout.text).toMatch(/^\d+,\d cm$/);
+    });
+
+    test('nothing near an edge (or no instruments) → freehand', () => {
+        expect(startGuidedLine(ctxOf(lat()), 300, 260)).toBeNull();
+        expect(startGuidedLine({ gridSnap: false, gridSize: 40 }, 100, 200)).toBeNull();
+        expect(startGuidedLine(ctxOf(), 100, 200)).toBeNull();
+    });
+
+    test('formatCm: Dutch decimal comma, one decimal', () => {
+        expect(formatCm(5 * BOARD_CM_PX)).toBe('5,0 cm');
+        expect(formatCm(-12.5 * BOARD_CM_PX)).toBe('12,5 cm');
+        expect(formatCm(0)).toBe('0,0 cm');
     });
 });

@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { useBoardStore } from '../useBoardStore';
 import { rndId } from '../boardTypes';
 import type { Stroke } from '../boardTypes';
+import { pageInstrumentGeometry, startGuidedLine, type GuidedLine, type GuidedSegment } from '../instrumentGeometry';
+import { ReadoutLabel } from './InstrumentLayer';
 
 // SVG ink layer. Receives pointer events only while an ink tool is active
 // (BoardPageCanvas flips pointer-events between this and the widget layer).
@@ -31,6 +33,9 @@ export default function InkLayer({ active }: { active: boolean }) {
 
     const drawing = useRef<number[] | null>(null);
     const [draft, setDraft] = useState<Stroke | null>(null);
+    // P4: a pen started on an instrument edge follows it (ToolContext.instrument).
+    const guided = useRef<{ line: GuidedLine; last: GuidedSegment } | null>(null);
+    const [guideReadout, setGuideReadout] = useState<GuidedSegment['readout'] | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
 
     const toLocal = (e: React.PointerEvent) => {
@@ -59,8 +64,20 @@ export default function InkLayer({ active }: { active: boolean }) {
         const [x, y] = toLocal(e);
         if (tool === 'eraser') { erase(x, y); return; }
         if (tool !== 'pen' && tool !== 'marker') return;
-        drawing.current = [x, y];
         const cfg = inkSettings[tool];
+        const board = useBoardStore.getState();
+        const line = startGuidedLine({
+            gridSnap: board.gridSnap, gridSize: board.gridSize,
+            instrument: pageInstrumentGeometry(board.pages[board.activePageIdx].instruments ?? []),
+        }, x, y);
+        if (line) {
+            const seg = line.to(x, y);
+            guided.current = { line, last: seg };
+            setDraft({ id: 'draft', tool, color: cfg.color, width: cfg.width, opacity: tool === 'marker' ? 0.45 : 1, path: seg.path, pts: seg.pts });
+            setGuideReadout(seg.readout);
+            return;
+        }
+        drawing.current = [x, y];
         setDraft({ id: 'draft', tool, color: cfg.color, width: cfg.width, opacity: tool === 'marker' ? 0.45 : 1, path: pathFrom(drawing.current), pts: drawing.current });
     };
 
@@ -68,6 +85,13 @@ export default function InkLayer({ active }: { active: boolean }) {
         if (!active) return;
         const [x, y] = toLocal(e);
         if (tool === 'eraser') { if (e.buttons) erase(x, y); return; }
+        if (guided.current) {
+            const seg = guided.current.line.to(x, y);
+            guided.current.last = seg;
+            setDraft(d => d ? { ...d, path: seg.path, pts: seg.pts } : d);
+            setGuideReadout(seg.readout);
+            return;
+        }
         if (!drawing.current) return;
         drawing.current.push(x, y);
         setDraft(d => d ? { ...d, path: pathFrom(drawing.current!), pts: drawing.current! } : d);
@@ -77,6 +101,13 @@ export default function InkLayer({ active }: { active: boolean }) {
         // Commit from the ref, not the (possibly one-frame-stale) draft state, so a
         // fast tap-release can never race React's render cycle.
         const pts = drawing.current;
+        if (guided.current && (tool === 'pen' || tool === 'marker')) {
+            const cfg = inkSettings[tool];
+            const { path, pts: gp } = guided.current.last;
+            addStroke({ id: rndId(), tool, color: cfg.color, width: cfg.width, opacity: tool === 'marker' ? 0.45 : 1, path, pts: gp });
+        }
+        guided.current = null;
+        setGuideReadout(null);
         if (pts && pts.length >= 2 && (tool === 'pen' || tool === 'marker')) {
             const cfg = inkSettings[tool];
             addStroke({
@@ -114,6 +145,7 @@ export default function InkLayer({ active }: { active: boolean }) {
         >
             {strokes.map(strokeEl)}
             {draft && strokeEl(draft)}
+            {guideReadout && <ReadoutLabel {...guideReadout} />}
         </svg>
     );
 }

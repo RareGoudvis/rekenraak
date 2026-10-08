@@ -3,9 +3,10 @@ import { describe, test, expect, beforeAll, beforeEach, afterEach } from 'vitest
 import { render, cleanup, fireEvent, act, screen } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import { BOARD_FORMAT_VERSION, parseBoardFile } from '../board/boardPersistence';
-import { BOARD_CM_PX, PASSER } from '../board/instrumentGeometry';
+import { BOARD_CM_PX, LAT, PASSER, round1 } from '../board/instrumentGeometry';
 import type { Instrument, Stroke } from '../board/boardTypes';
 import InstrumentLayer from '../board/components/InstrumentLayer';
+import InkLayer from '../board/components/InkLayer';
 import BoardBottomBar from '../board/components/BoardBottomBar';
 import BoardPageCanvas from '../board/components/BoardPageCanvas';
 
@@ -256,6 +257,64 @@ describe('layer: drag, rotate, snap, keyboard', () => {
         act(() => { st().setTool('select'); });
         act(() => { fireEvent.pointerDown(container.querySelector('[data-board-canvas]')!, { clientX: 1500, clientY: 900 }); });
         expect(st().selectedInstrumentId).toBeNull();
+    });
+});
+
+describe('lat: the pen follows its edge', () => {
+    const placeLat = () => {
+        st().toggleInstrument('lat');
+        st().updateInstrument(one('lat').id, { x: 200, y: 200, rotation: 0 });
+    };
+    const inkSvg = (c: HTMLElement) => c.querySelector('svg:not([data-instrument-layer])')!;
+    const end5 = round1(200 + 5 * BOARD_CM_PX);
+
+    test('a wobbly pen drag started on the edge commits one straight stroke, readout while drawing', () => {
+        placeLat();
+        st().setTool('pen');
+        st().setInkSetting('pen', { color: '#123456', width: 6 });
+        const { container } = render(<InkLayer active />);
+        const svg = inkSvg(container);
+        act(() => { fireEvent.pointerDown(svg, { clientX: 200.5, clientY: 195, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 260, clientY: 207, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 200 + 5 * BOARD_CM_PX + 1, clientY: 193, pointerId: 1 }); });
+        expect(container.querySelector('[data-instrument-readout]')!.textContent).toBe('5,0 cm');
+        act(() => { fireEvent.pointerUp(svg, { pointerId: 1 }); });
+        expect(page().strokes).toHaveLength(1);
+        expect(page().strokes[0]).toMatchObject({ tool: 'pen', color: '#123456', width: 6, opacity: 1, path: `M 200 200 L ${end5} 200` });
+        expect(container.querySelector('[data-instrument-readout]')).toBeNull();
+    });
+
+    test('the marker follows the back edge too; away from the lat the pen is freehand', () => {
+        placeLat();
+        st().setTool('marker');
+        const { container } = render(<InkLayer active />);
+        const svg = inkSvg(container);
+        const back = 200 + LAT.h;
+        act(() => { fireEvent.pointerDown(svg, { clientX: 220, clientY: back + 6, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 300, clientY: back - 3, pointerId: 1 }); });
+        act(() => { fireEvent.pointerUp(svg, { pointerId: 1 }); });
+        expect(page().strokes[0]).toMatchObject({ tool: 'marker', opacity: 0.45 });
+        expect(page().strokes[0].path).toMatch(new RegExp(`^M [\\d.]+ ${round1(back)} L [\\d.]+ ${round1(back)}$`));
+        act(() => { fireEvent.pointerDown(svg, { clientX: 300, clientY: 600, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 310, clientY: 610, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 330, clientY: 605, pointerId: 1 }); });
+        act(() => { fireEvent.pointerUp(svg, { pointerId: 1 }); });
+        expect(page().strokes[1].path).toContain(' Q ');
+    });
+
+    test('the eraser removes a ruled line anywhere along it', () => {
+        placeLat();
+        st().setTool('pen');
+        const { container, rerender } = render(<InkLayer active />);
+        const svg = inkSvg(container);
+        act(() => { fireEvent.pointerDown(svg, { clientX: 200, clientY: 198, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 600, clientY: 198, pointerId: 1 }); });
+        act(() => { fireEvent.pointerUp(svg, { pointerId: 1 }); });
+        expect(page().strokes).toHaveLength(1);
+        act(() => { st().setTool('eraser'); });
+        rerender(<InkLayer active />);
+        act(() => { fireEvent.pointerDown(svg, { clientX: 420, clientY: 190, pointerId: 1 }); });
+        expect(page().strokes).toHaveLength(0);
     });
 });
 
