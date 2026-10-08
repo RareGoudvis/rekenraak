@@ -26,6 +26,7 @@ import GeldPalet from './GeldPalet';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
 import InkLayer from './InkLayer';
+import InstrumentLayer from './InstrumentLayer';
 import BoardErrorBoundary from './BoardErrorBoundary';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { BoardWidget } from '../boardTypes';
@@ -76,6 +77,7 @@ export default function BoardPageCanvas() {
                     return;
                 }
                 selectWidget(null);
+                useBoardStore.getState().selectInstrument(null);
             }}
         >
             {/* Widget layer goes inert while an ink tool is active — one routing rule.
@@ -96,6 +98,9 @@ export default function BoardPageCanvas() {
             </div>
             <BoardErrorBoundary label="Inktlaag">
                 <InkLayer active={inkActive} />
+            </BoardErrorBoundary>
+            <BoardErrorBoundary label="Meetinstrumenten">
+                <InstrumentLayer />
             </BoardErrorBoundary>
             {geldPaletOpen && <GeldPalet />}
         </div>

@@ -7,6 +7,7 @@ import { addBasicWidget } from '../addWidgets';
 import { TOOL_CATALOG, runTool, loadFavorites, toggleFavorite, MAX_FAVORITES, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
 import type { BackgroundPattern } from '../boardTypes';
+import { INSTRUMENT_KINDS, INSTRUMENT_LABELS } from '../instrumentGeometry';
 
 interface Props {
     onOpenWiskunde: () => void;
@@ -37,7 +38,9 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
     const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
 
-    const [menu, setMenu] = useState<'add' | 'settings' | 'page' | 'save' | null>(null);
+    const instrumentKinds = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).map(i => i.kind).join(','));
+
+    const [menu, setMenu] = useState<'add' | 'settings' | 'page' | 'save' | 'instruments' | null>(null);
     const [addSub, setAddSub] = useState<ToolCategory | null>(null);
     const [favorites, setFavorites] = useState<string[]>(loadFavorites);
     const [presets, setPresets] = useState<BoardPreset[]>([]);
@@ -113,7 +116,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
         { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (binnenkort)', enabled: false },
         { key: 'shape' as const, icon: Shapes, label: 'Vormen (binnenkort)', enabled: false },
-        { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten (binnenkort)', enabled: false },
+        { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten', enabled: true },
     ];
 
     const favDefs = favorites.map(id => TOOL_CATALOG.find(t => t.id === id)).filter(Boolean) as BoardToolDef[];
@@ -214,7 +217,11 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
 
             {/* ── Tools ── */}
             <div style={S.group}>
-                {tools.map(t => (
+                {tools.map(t => t.key === 'instrument' ? (
+                    // Not a tool mode: the ruler opens the instruments popover; the pen keeps drawing.
+                    <InstrumentMenu key={t.key} open={menu === 'instruments'} placed={instrumentKinds}
+                        onToggle={() => openMenu('instruments')} />
+                ) : (
                     <button
                         key={t.key} type="button"
                         className={t.enabled ? 'ui-hover' : undefined}
@@ -329,6 +336,42 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <button type="button" className="ui-hover" style={S.exitBtn} onClick={() => setView('editor')}>
                 <X size={18} /> Bordmodus verlaten
             </button>
+        </div>
+    );
+}
+
+// "Meetinstrumenten": one toggle per instrument (at most one of each on a page) + hide all.
+function InstrumentMenu({ open, placed, onToggle }: { open: boolean; placed: string; onToggle: () => void }) {
+    const on = placed ? placed.split(',') : [];
+    const toggle = (kind: (typeof INSTRUMENT_KINDS)[number]) => {
+        // A new instrument lands in the middle of the visible board.
+        const r = document.querySelector('[data-board-canvas]')?.getBoundingClientRect();
+        useBoardStore.getState().toggleInstrument(kind, r?.width ?? 0, r?.height ?? 0);
+    };
+    return (
+        <div data-board-menu="instruments" style={{ position: 'relative' }}>
+            <button type="button" className="ui-hover" title="Meetinstrumenten" aria-label="Meetinstrumenten"
+                aria-expanded={open} onClick={onToggle}
+                style={{ ...S.toolBtn, ...(open || on.length ? S.toolActive : {}) }}>
+                <Ruler size={22} weight={on.length ? 'fill' : 'regular'} />
+            </button>
+            {open && (
+                <div style={{ ...S.popup, minWidth: '210px' }}>
+                    <div style={S.popupSection}>Meetinstrumenten</div>
+                    {INSTRUMENT_KINDS.map(kind => (
+                        <button key={kind} type="button" className="ui-hover" aria-pressed={on.includes(kind)}
+                            style={{ ...S.popupItem, ...(on.includes(kind) ? S.popupItemOn : {}) }}
+                            onClick={() => toggle(kind)}>
+                            {INSTRUMENT_LABELS[kind]}{on.includes(kind) ? ': aan' : ''}
+                        </button>
+                    ))}
+                    <div style={S.popupDivider} />
+                    <button type="button" className="ui-hover" style={S.popupItem} disabled={!on.length}
+                        onClick={() => useBoardStore.getState().hideAllInstruments()}>
+                        Alles verbergen
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
