@@ -111,7 +111,7 @@ for (const leaf of leaves) {
             const r = window.__rekenraak;
             r.seed(seed);
             r.clearBlocks();
-            r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints);
+            r.addBlockFromType(leaf.typeId, leaf.label, leaf.defaultConstraints, { leafId: leaf.id });   // leafId so a leaf's own defaultCount applies
             const block = r.getState().blocks[0];
             if (!block) return { error: 'no block produced' };
             r.updateBlockSettings(block.id, { widthUnits: 4 });
