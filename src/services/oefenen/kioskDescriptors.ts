@@ -6,7 +6,7 @@ import type {
     RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
     VormleerExercise, WeegschaalExercise,
 } from '../math/types';
-import type { KioskDescriptor, KioskInput, KioskKey } from './types';
+import { INTERACT_SEP, type KioskDescriptor, type KioskInput, type KioskKey } from './types';
 import { gcd, isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
 import { ROUND_SCALE, roundTo, targetsFor } from '../afronden/afrondenGenerator';
@@ -132,7 +132,7 @@ export const AFRONDEN_KIOSK = descriptor<AfrondenExercise>({
 // ── Vergelijken ──────────────────────────────────────────────────────────────
 
 // getallen / representaties: < = > between a and b (a breuk side compares by its value);
-// kiezen: tap the grootste / kleinste of the row, the buttons being the row's own numbers.
+// kiezen: tap the grootste / kleinste ON the card (Phase C); the viewer's keys are positions.
 const isKiezen = (c: Record<string, unknown>) => c.subType === 'kiezen';
 const showNum = (x: number) => formatMathNumber(plain(x));
 const kiezenAnswer = (ex: VergelijkenExercise) => {
@@ -144,9 +144,20 @@ const sideText = (v: number | undefined, f: Fraction | undefined) => (f ? showVa
 
 export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
     input: 'choice',
+    inputOf: (_ex, c) => (isKiezen(c) ? 'interactive' : 'choice'),
     choices: ['<', '=', '>'],
     choicesOf: (ex, c) => (isKiezen(c) ? (ex.numbers ?? []).map(showNum) : ['<', '=', '>']),
-    kioskInstruction: (ex, c) => (isKiezen(c) ? `Kies het ${(ex.target ?? c.chooseTarget) === 'kleinste' ? 'kleinste' : 'grootste'} getal.` : undefined),
+    kioskInstruction: (ex, c) => (isKiezen(c) ? `Tik op het ${(ex.target ?? c.chooseTarget) === 'kleinste' ? 'kleinste' : 'grootste'} getal.` : undefined),
+    interact: {
+        kind: 'tap',
+        keys: (ex) => (ex.numbers ?? []).map((_, i) => String(i)),
+        answerOf: (ex) => showNum(kiezenAnswer(ex)),
+        // The tapped number's value, so two equal maxima both count and a stats row reads "437".
+        fromState: (st, ex) => {
+            const n = st.selected.length ? ex.numbers?.[Number(st.selected[0])] : undefined;
+            return n === undefined ? '' : showNum(n);
+        },
+    },
     answerOf: (ex, c) => {
         if (isKiezen(c)) return [showNum(kiezenAnswer(ex))];
         const a = ex.a ?? 0, b = ex.b ?? 0;
@@ -200,14 +211,29 @@ export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     supported: (c) => pwSub(c) !== 'tabel',
 });
 
-// Cirkels only: the pupil groups the circles and writes even / oneven.
+// cirkels: the pupil groups the circles and picks even / oneven. rooster: taps every even (or
+// oneven) number ON the card (Phase C); the answer is that set, smallest first.
+const isRooster = (c: Record<string, unknown>) => c.subType !== 'cirkels';
+const roosterTarget = (c: Record<string, unknown>) => ((c.target as string | undefined) ?? 'even');
+const roosterSet = (nums: readonly number[]) => [...nums].sort((a, b) => a - b).map(showNum).join(INTERACT_SEP);
+const roosterAnswer = (ex: EvenOnevenExercise, c: Record<string, unknown>) => {
+    // SYNC: EvenOnevenViewer isTarget.
+    const even = roosterTarget(c) === 'even';
+    return roosterSet((ex.numbers ?? []).filter(n => (n % 2 === 0) === even));
+};
 export const EVEN_ONEVEN_KIOSK = descriptor<EvenOnevenExercise>({
     input: 'choice',
+    inputOf: (_ex, c) => (isRooster(c) ? 'interactive' : 'choice'),
     choices: ['even', 'oneven'],
-    kioskInstruction: 'Tik op even of oneven.',
-    answerOf: (ex) => [(ex.number ?? 0) % 2 === 0 ? 'even' : 'oneven'],
-    display: (ex) => `${ex.number ?? 0} is ?`,
-    supported: (c) => c.subType === 'cirkels',
+    kioskInstruction: (_ex, c) => (isRooster(c) ? `Tik op alle ${roosterTarget(c)} getallen.` : 'Tik op even of oneven.'),
+    interact: {
+        kind: 'tap-multi',
+        keys: (ex) => (ex.numbers ?? []).map((_, i) => String(i)),
+        answerOf: roosterAnswer,
+        fromState: (st, ex) => roosterSet(st.selected.map(k => ex.numbers?.[Number(k)]).filter((n): n is number => n !== undefined)),
+    },
+    answerOf: (ex, c) => [isRooster(c) ? roosterAnswer(ex, c) : (ex.number ?? 0) % 2 === 0 ? 'even' : 'oneven'],
+    display: (ex, c) => (isRooster(c) ? `${roosterTarget(c)} in ${(ex.numbers ?? []).map(showNum).join(' ')}: ?` : `${ex.number ?? 0} is ?`),
 });
 
 // herkennen: Roman → number; schrijven: number → Roman, typed on the device keyboard.

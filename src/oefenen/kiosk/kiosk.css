@@ -231,6 +231,65 @@ html:has(.oefen-body),
 .kiosk-card-inner {
   transform-origin: top left;
   pointer-events: none;
+  /* SYNC: the sheet's inherited size (body 16px). Viewers size some boxes in plain em (the
+     even-oneven rooster columns); inheriting --kiosk-text instead made those device-dependent
+     and pulled the rooster's cells apart. Text the viewer sizes itself is unaffected. */
+  font-size: 16px;
+}
+
+/* Phase C: the pupil answers ON the card. Parts the viewer marks with interactionProps carry
+   data-kiosk-key; picked ones data-kiosk-selected. Sizes are in the card's virtual px (the card
+   scales them 1–3.2×). !important: the viewers draw their sheet look with inline styles. */
+/* The padding keeps a focus ring on an edge part inside the sizer's clip; content-box keeps
+   the viewer's 340 px. */
+.kiosk-card-inner.is-interactive { pointer-events: auto; padding: 4px; box-sizing: content-box; }
+.kiosk-card-inner [data-kiosk-key][role="button"] {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.kiosk-card-inner [data-kiosk-key][role="button"]:focus { outline: none; }
+/* Lifted so a neighbour that overlaps it (the rooster's shared borders) cannot paint over the ring. */
+.kiosk-card-inner [data-kiosk-key][role="button"]:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px dashed var(--accent);
+  outline-offset: 1px;
+}
+.kiosk-card-inner [data-kiosk-selected] {
+  background: var(--accent-soft) !important;
+  box-shadow: inset 0 0 0 2px var(--accent);
+  color: var(--accent-strong) !important;
+}
+/* order: the place in the pupil's sequence, top-right of the part. */
+.kiosk-card-inner [data-kiosk-order] { position: relative; }
+.kiosk-card-inner [data-kiosk-order]::after {
+  content: attr(data-kiosk-order);
+  position: absolute;
+  top: -0.6em;
+  right: -0.4em;
+  min-width: 1.2em;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-on);
+  font: 700 9px/1.2em var(--font-ui);
+  text-align: center;
+}
+/* fill-cells: the viewer's blank as an input (KioskCell). */
+.kiosk-card-inner .kiosk-cell {
+  box-sizing: border-box;
+  min-width: 2.2em;
+  border: 1px solid var(--kiosk-ink);
+  border-radius: 3px;
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font: inherit;
+  text-align: center;
+}
+.kiosk-card-inner .kiosk-cell[data-kiosk-active] {
+  outline: 2px solid var(--accent);
+  background: var(--accent-soft);
 }
 
 .kiosk-card-fallback {

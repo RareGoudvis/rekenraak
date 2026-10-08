@@ -2,6 +2,8 @@
 // device keeps (OefenStats / OefenRun) and the per-type kiosk descriptor the registry holds.
 // Pure types: the kiosk page, the teacher builder and the services all import from here.
 
+import type { InteractionKind, InteractionState } from '../../components/viewer/ViewerInteractionContext';
+
 export const OEFEN_VERSION = 1;
 
 // afwisselen = always another type than the previous one (round-robin);
@@ -51,8 +53,28 @@ export interface OefenSessie {
 // number = one typed answer; number+rest = quotiënt + rest fields; choice = one of `choices`;
 // missing-operand = one typed answer that fills a puntoefening's blank operand;
 // text = a word typed on the device keyboard (Romeinse cijfers, a unit); time = uur + minuten
-// fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair).
-export type KioskInput = 'number' | 'number+rest' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number';
+// fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair);
+// interactive = the pupil answers ON the exercise (Phase C: tap, fill its cells, order), see `interact`.
+export type KioskInput = 'number' | 'number+rest' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
+
+// Separator of the parts in an interactive answer string ('12 · 48 · 7'): never part of a number.
+export const INTERACT_SEP = ' · ';
+
+// The interactive half of a descriptor: the card provides a ViewerInteractionContext of `kind`,
+// the viewer marks its parts with interactionProps / KioskCell, and Controleer compares
+// fromState(the pupil's state) with answerOf. Keys are the viewer's own part ids (a position),
+// the answer strings are values a stats row can show (the tapped number, not its index).
+export interface KioskInteract<E = unknown> {
+    kind: InteractionKind;
+    // The canonical answer. tap-multi / fill-cells / order: parts joined by INTERACT_SEP
+    // (tap-multi compares order-free; fill-cells part by part as numbers, '|' = alternatives).
+    answerOf(ex: E, c: Record<string, unknown>): string;
+    // The pupil's answer from the viewer state, same shape as answerOf; '' = nothing given yet
+    // (Controleer stays off, except tap-multi where an empty set can be the answer).
+    fromState(state: InteractionState, ex: E, c: Record<string, unknown>): string;
+    // Every key the viewer marks for this exercise (tests tap through them).
+    keys?(ex: E, c: Record<string, unknown>): string[];
+}
 
 // Keys the on-screen keypad adds to the digits for this block's settings. Derived from the
 // constraints only, never from the exercise, so the keypad does not hint at the answer.
@@ -83,6 +105,8 @@ export interface KioskDescriptor<E = unknown> {
     kioskInstruction?: string | ((ex: E, c: Record<string, unknown>) => string | undefined);
     // Settings this descriptor can check (afronden: simpel only). Absent = always.
     supported?(c: Record<string, unknown>): boolean;
+    // Required when input / inputOf can be 'interactive'; answerOf then returns [interact.answerOf].
+    interact?: KioskInteract<E>;
 }
 
 // What the pupil handed in: one string, or one string per field (number+rest, time, multi-number).

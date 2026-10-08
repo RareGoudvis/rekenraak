@@ -5,6 +5,7 @@ import { isDone, nextExercise, nextType } from '../services/oefenen/scheduler';
 import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
+import { EMPTY_INTERACTION, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
@@ -37,6 +38,10 @@ interface OefenState {
     lastCorrect: boolean | null;
     // Where closeStats returns to.
     statsFrom: 'exercise' | 'feedback';
+    // Phase C: what the pupil did ON the card (taps, filled cells, order) for an 'interactive'
+    // exercise, and the cell the keypad types into. Reset with every new exercise.
+    interaction: InteractionState;
+    activeCell: string | null;
 
     load(hash: string): void;
     start(): void;
@@ -51,6 +56,8 @@ interface OefenState {
     restart(): void;
     clear(): void;
     tick(now?: number): void;
+    setInteraction(next: InteractionState): void;
+    focusCell(key: string | null): void;
 }
 
 const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
@@ -63,6 +70,8 @@ export interface CurrentInput {
     labels: string[];
     // multi-number: the sign between the fields (ordenen's < or >), from the descriptor.
     separator?: string;
+    // interactive: how the pupil answers on the card (tap, tap-multi, fill-cells, order).
+    interact?: InteractionKind;
 }
 
 const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
@@ -83,7 +92,19 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
         const named = d.labels?.(cur.exercise, cur.constraints) ?? [];
         labels = Array.from({ length: n }, (_, i) => named[i] ?? `${i + 1}`);
     }
-    return { kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints) };
+    return {
+        kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints),
+        ...(kind === 'interactive' && d.interact && { interact: d.interact.kind }),
+    };
+}
+
+/** The interactive answer built from the card state, and whether Controleer may take it. */
+export function interactionAnswer(s: OefenSessie | null, cur: KioskCurrent | null, state: InteractionState): { given: string; ready: boolean } | null {
+    const d = s && cur ? kioskFor(s.types[cur.slot]?.typeId ?? '') : null;
+    if (!d?.interact || !cur || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
+    const given = d.interact.fromState(state, cur.exercise, cur.constraints);
+    // An empty set can be the right answer to "tap every even number" (a row of odd ones).
+    return { given, ready: d.interact.kind === 'tap-multi' || given.trim() !== '' };
 }
 
 const fieldsFor = (info: CurrentInput | null) => (info?.kind === 'choice' ? [''] : (info?.labels ?? ['']).map(() => ''));
@@ -113,6 +134,15 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         set({ run: done, shown: null, phase: 'locked', input: [''], field: 0, lastCorrect: null });
     };
 
+    // fill-cells: a keypad key types into the active cell of the card (the cell owns the value).
+    const pressCell = (key: string, keys: readonly string[]) => {
+        const { interaction, activeCell } = get();
+        if (!activeCell) return;
+        const value = interaction.cells[activeCell] ?? '';
+        const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, keys);
+        set({ interaction: { ...interaction, cells: { ...interaction.cells, [activeCell]: nextValue } } });
+    };
+
     const timeUp = (run: OefenRun, now: number) => run.timerEndsAt !== undefined && now >= run.timerEndsAt;
 
     const newRun = (s: OefenSessie, now: number): OefenRun => {
@@ -133,6 +163,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         field: 0,
         lastCorrect: null,
         statsFrom: 'exercise',
+        interaction: EMPTY_INTERACTION,
+        activeCell: null,
 
         load(hash) {
             // No payload at all is not an error message, just the "open the link" screen.
@@ -144,7 +176,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 set({ sessie: null, run: null, error: e instanceof Error ? e.message : 'Deze oefenlink is ongeldig.' });
                 return;
             }
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null });
             const runs = loadRuns(s.id);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
             if (!last) return;
@@ -179,7 +211,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
             const updated: OefenRun = { ...run, current };
             persist(updated);
-            set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)), field: 0, lastCorrect: null });
+            set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null });
         },
 
         press(key) {
@@ -187,6 +219,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (phase !== 'exercise') return;
             const info = currentInput(sessie, shown);
             if (!info || info.kind === 'choice') return;
+            if (info.kind === 'interactive') { pressCell(key, info.keys); return; }
             const value = input[field] ?? '';
             const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys, info.kind);
             // Two digits of uur typed: the keypad moves on to the minutes, like a digital clock.
@@ -216,12 +249,13 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         answer() {
             const { phase, sessie: s, run, input, shown: cur } = get();
             if (phase !== 'exercise' || !s || !run || !cur) return;
-            if (input.some(v => v.trim() === '')) return;
+            const interactive = interactionAnswer(s, cur, get().interaction);
+            if (interactive ? !interactive.ready : input.some(v => v.trim() === '')) return;
             const type = s.types[cur.slot];
             const d = type && kioskFor(type.typeId);
             if (!d) return;
             const now = Date.now();
-            const given: KioskAnswer = input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
+            const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
             const correct = checkAnswer(d, cur.exercise, cur.constraints, given);
             const stats = recordAnswer(run.stats, cur.slot, type.typeId, cur.exercise, given, correct, Math.max(0, now - cur.shownAt), cur.constraints);
             const updated: OefenRun = { ...run, stats, current: undefined };
@@ -257,6 +291,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         tick(now = Date.now()) {
             const { run } = get();
             if (run && !run.done && timeUp(run, now)) finish(run, now);
+        },
+
+        setInteraction(next) {
+            if (get().phase === 'exercise') set({ interaction: next });
+        },
+
+        focusCell(key) {
+            set({ activeCell: key });
         },
     };
 });

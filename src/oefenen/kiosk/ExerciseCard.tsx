@@ -4,6 +4,9 @@ import { REGISTRY } from '../../config/exerciseRegistry';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { BlockErrorBoundary } from '../../components/viewer/BlockErrorBoundary';
 import { BlockWidthProvider, ScaffoldProvider } from '../../components/viewer/BlockWidthContext';
+import { ViewerInteractionProvider, type ViewerInteraction } from '../../components/viewer/ViewerInteractionContext';
+import { kioskFor, kioskInputOf } from '../../services/oefenen/kiosk';
+import { useOefenStore } from '../useOefenStore';
 
 interface Props {
     typeId: string;
@@ -33,7 +36,8 @@ function usedExtent(inner: HTMLElement): { x: number; w: number } {
         // A parent with its own text ("Een pil weegt ongeveer 500 <blank>.") is measured too,
         // or only its blank would count and the card would crop the sentence off.
         const ownText = [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== '');
-        if (el.children.length > 0 && !ownText && !(el instanceof SVGSVGElement)) return;
+        // A tappable part (Phase C) counts whole: its padding carries the selection ring.
+        if (el.children.length > 0 && !ownText && !(el instanceof SVGSVGElement) && !el.hasAttribute('data-kiosk-key')) return;
         const r = el.getBoundingClientRect();
         if (r.width <= 0 && r.height <= 0) return;
         left = Math.min(left, r.left - outer.left);
@@ -52,6 +56,16 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
     const innerRef = useRef<HTMLDivElement>(null);
     const [fit, setFit] = useState({ k: 1, x: 0, w: VIRTUAL_W, h: 0 });
     const Viewer = EXERCISE_UI[typeId]?.Viewer;
+    const interaction = useOefenStore(s => s.interaction);
+    const activeCell = useOefenStore(s => s.activeCell);
+    const d = kioskFor(typeId);
+    const interactKind = d?.interact && kioskInputOf(d, exercise, constraints) === 'interactive' ? d.interact.kind : null;
+    // Phase C: the pupil answers on the card itself, so the viewer gets the tap/cell context.
+    const ctx = useMemo<ViewerInteraction | null>(() => (interactKind ? {
+        kind: interactKind, state: interaction, activeCell,
+        set: (next) => useOefenStore.getState().setInteraction(next),
+        focusCell: (key) => useOefenStore.getState().focusCell(key),
+    } : null), [interactKind, interaction, activeCell]);
 
     const block = useMemo<MathBlock | null>(() => {
         const def = REGISTRY[typeId];
@@ -87,16 +101,19 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
             <div ref={boxRef} className="kiosk-card-body">
                 <div className="kiosk-card-sizer" style={{ width: fit.w * fit.k, height: fit.h * fit.k }}>
                     {/* inert: the sheet viewers draw operands as editable inputs (teacher edits on the sheet);
-                        here they must not take focus, keys or taps. */}
-                    <div ref={innerRef} className="kiosk-card-inner" inert style={{ width: VIRTUAL_W, transform: `translateX(${-fit.x * fit.k}px) scale(${fit.k})` }}>
+                        here they must not take focus, keys or taps — unless the pupil answers ON the card. */}
+                    <div ref={innerRef} className={`kiosk-card-inner${ctx ? ' is-interactive' : ''}`} inert={!ctx}
+                        style={{ width: VIRTUAL_W, transform: `translateX(${-fit.x * fit.k}px) scale(${fit.k})` }}>
                         <BlockWidthProvider value={VIRTUAL_W}>
                         <ScaffoldProvider value={false}>
+                        <ViewerInteractionProvider value={ctx}>
                             <BlockErrorBoundary resetKey={exerciseKey} label={typeId}
                                 fallback={<p className="kiosk-card-fallback">Deze oefening kan niet getoond worden.</p>}>
                                 {block && Viewer
                                     ? <Viewer block={block} showSolutions={false} />
                                     : <p className="kiosk-card-fallback">Deze oefening kan niet getoond worden.</p>}
                             </BlockErrorBoundary>
+                        </ViewerInteractionProvider>
                         </ScaffoldProvider>
                         </BlockWidthProvider>
                     </div>

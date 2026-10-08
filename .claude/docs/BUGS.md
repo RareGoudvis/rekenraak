@@ -88,6 +88,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   joins groups with a plain space and `EditableNumber`'s span has no `white-space: nowrap`. Seen in
   the Oefenmodus card (340 px = a half-width cell, 390×844 and 844×390); a narrow sheet column can
   hit it too. Fix: nowrap on the number span (or U+202F). 2026-10-08
+- EvenOnevenViewer rooster: the cells do not share borders as the "marginLeft/-Top:-1 collapse
+  shared borders" comment intends; there is a ~5 px gap between columns. The grid's
+  `gridTemplateColumns` uses `em(cellW)` against the container's inherited 16 px, the cells
+  `em(cellW)` against their own `--sheet-size-math * 0.81` (42.5 px tracks, 37.3 px cells at the
+  defaults). Rows do touch. Fix: size the track with the cell's font factor (sheet change: visual
+  baseline). 2026-10-08
 
 ## Config
 

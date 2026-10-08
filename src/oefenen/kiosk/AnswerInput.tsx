@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef } from 'react';
-import { currentInput, useOefenStore } from '../useOefenStore';
+import { currentInput, interactionAnswer, useOefenStore } from '../useOefenStore';
 import Keypad from './Keypad';
 
 // What sits between two fields: the sheet's "r" for delen met rest, ':' between uur and min.
@@ -18,6 +18,7 @@ export default function AnswerInput() {
     const input = useOefenStore(s => s.input);
     const field = useOefenStore(s => s.field);
     const phase = useOefenStore(s => s.phase);
+    const interaction = useOefenStore(s => s.interaction);
     const { press, setField, focusField, choose, answer } = useOefenStore.getState();
     const refs = useRef<(HTMLInputElement | null)[]>([]);
     const info = currentInput(sessie, shown);
@@ -29,6 +30,18 @@ export default function AnswerInput() {
     }, [shown, field, phase]);
 
     if (!info) return null;
+
+    // Phase C: the answer is given ON the card; this panel only checks it (and, for cells, types).
+    if (info.kind === 'interactive') {
+        const ready = interactionAnswer(sessie, shown, interaction)?.ready ?? false;
+        return (
+            <div className="kiosk-answer">
+                {info.interact === 'fill-cells'
+                    ? <Keypad extras={info.keys} onKey={press} onCheck={answer} canCheck={ready} />
+                    : <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!ready}>Controleer</button>}
+            </div>
+        );
+    }
 
     if (info.kind === 'choice') {
         const choiceClass = choiceSizeOf(info.choices);

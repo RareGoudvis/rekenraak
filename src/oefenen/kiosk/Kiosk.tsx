@@ -17,7 +17,8 @@ import StatsScreen from './StatsScreen';
 function useKioskKeys() {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            // Handled already: Enter / Space on a tappable part of the card toggles it (interactionProps).
+            if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
             const st = useOefenStore.getState();
             const target = e.target as HTMLElement | null;
             const inField = target?.tagName === 'INPUT';
