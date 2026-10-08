@@ -78,9 +78,62 @@ export function LatShape(p: ShapeProps) {
     );
 }
 
+// Geodriehoek scales, local frame (origin = hypotenuse midpoint, body below): a cm scale on
+// the hypotenuse from 0 in the middle to 7 both ways, and the protractor: a tick every degree
+// on the arc, longer every 5° and 10°, and two numbered rings (0–180 from the right end
+// outside, from the left end inside), like the Flemish classroom geodriehoek.
+// Protractor arc: inside the legs (5.66 cm from the centre) yet clear of the "5" cm labels.
+const GEO_R = 5.45 * BOARD_CM_PX;
+const GEO_RING_OUT = GEO_R - 0.88 * BOARD_CM_PX;
+const GEO_RING_IN = GEO_R - 1.5 * BOARD_CM_PX;
+const GEO_SCALE = (() => {
+    const mm: string[] = [], cm: string[] = [], deg1: string[] = [], deg5: string[] = [];
+    for (let i = -70; i <= 70; i++) {
+        const x = round1(i * BOARD_MM_PX);
+        if (i % 10 === 0) cm.push(`M ${x} 0 V ${round1(0.5 * BOARD_CM_PX)}`);
+        else mm.push(`M ${x} 0 V ${round1((i % 5 === 0 ? 0.32 : 0.2) * BOARD_CM_PX)}`);
+    }
+    for (let d = 0; d <= 180; d++) {
+        const len = (d % 10 === 0 ? 0.5 : d % 5 === 0 ? 0.32 : 0.17) * BOARD_CM_PX;
+        const c = Math.cos(d * Math.PI / 180), s = Math.sin(d * Math.PI / 180);
+        const seg = `M ${round1(GEO_R * c)} ${round1(GEO_R * s)} L ${round1((GEO_R - len) * c)} ${round1((GEO_R - len) * s)}`;
+        (d % 5 === 0 ? deg5 : deg1).push(seg);
+    }
+    return { mm: mm.join(' '), cm: cm.join(' '), deg1: deg1.join(' '), deg5: deg5.join(' ') };
+})();
+
+// A protractor number at angle d on radius r, its top towards the centre (read from inside).
+function DegLabel({ d, r, label, size }: { d: number; r: number; label: number; size: number }) {
+    const c = Math.cos(d * Math.PI / 180), s = Math.sin(d * Math.PI / 180);
+    return (
+        <text transform={`translate(${round1(r * c)} ${round1(r * s)}) rotate(${d - 90})`} textAnchor="middle" dy="0.35em"
+            fontSize={size} fontWeight={600} fontFamily="var(--font-ui)" style={{ fill: IC.tick }}>{label}</text>
+    );
+}
+
 export function GeodriehoekShape(p: ShapeProps) {
+    const tens = Array.from({ length: 19 }, (_, i) => i * 10);
     return (
         <Body kind="geodriehoek" {...p}>
+            <g style={NO_POINTER}>
+                {/* hypotenuse cm scale */}
+                <path d={GEO_SCALE.mm} strokeWidth={1} style={{ stroke: IC.faint }} />
+                <path d={GEO_SCALE.cm} strokeWidth={2} style={{ stroke: IC.tick }} />
+                {Array.from({ length: 13 }, (_, i) => i - 6).map(c => (
+                    <text key={c} x={round1(c * BOARD_CM_PX)} y={round1(0.92 * BOARD_CM_PX)} textAnchor="middle"
+                        fontSize={15} fontWeight={600} fontFamily="var(--font-ui)" style={{ fill: IC.tick }}>{Math.abs(c)}</text>
+                ))}
+                {/* protractor */}
+                <path d={`M ${round1(GEO_R)} 0 A ${round1(GEO_R)} ${round1(GEO_R)} 0 0 1 ${round1(-GEO_R)} 0`} fill="none" strokeWidth={1.4} style={{ stroke: IC.tick }} />
+                <path d={GEO_SCALE.deg1} strokeWidth={1} style={{ stroke: IC.faint }} />
+                <path d={GEO_SCALE.deg5} strokeWidth={1.6} style={{ stroke: IC.tick }} />
+                {/* 0/10 and 170/180 sit on the cm scale's numbers; their ticks carry them */}
+                {tens.filter(d => d >= 20 && d <= 160).map(d => <DegLabel key={`o${d}`} d={d} r={GEO_RING_OUT} label={d} size={15} />)}
+                {tens.filter(d => d >= 20 && d <= 160).map(d => <DegLabel key={`i${d}`} d={d} r={GEO_RING_IN} label={180 - d} size={12} />)}
+                {/* the 90° line: perpendiculars are drawn from it */}
+                <path d={`M 0 ${round1(0.55 * BOARD_CM_PX)} V ${round1(GEO_RING_IN - 0.4 * BOARD_CM_PX)}`} strokeWidth={1} strokeDasharray="4 4" style={{ stroke: IC.faint }} />
+                <circle r={3.5} style={{ fill: IC.selected }} />
+            </g>
             <RotateHandle x={0} y={GEO.half - 1.55 * BOARD_CM_PX} onGrip={p.onGrip} />
         </Body>
     );

@@ -202,7 +202,24 @@ export function instrumentEdges(inst: Instrument): InstrumentEdge[] {
             edge([x0, LAT.h], [x1, LAT.h], [0, LAT.h], [0, 1]),
         ];
     }
+    if (inst.kind === 'geodriehoek') {
+        // Hypotenuse measured from its midpoint (the Flemish geodriehoek's 0), legs from their corner.
+        const h = GEO.half, n = Math.SQRT1_2;
+        return [
+            edge([-h, 0], [h, 0], [0, 0], [0, -1]),
+            edge([-h, 0], [0, h], [-h, 0], [-n, n]),
+            edge([h, 0], [0, h], [h, 0], [n, n]),
+        ];
+    }
     return [];
+}
+
+// The protractor reading of a board point seen from a geodriehoek's centre, on both scales:
+// `outer` counts from the right end of the hypotenuse, `inner` from the left (0–180 each).
+export function protractorAngle(p: Placed, x: number, y: number): { outer: number; inner: number } {
+    const [lx, ly] = toLocal(p, x, y);
+    const outer = Math.abs((Math.atan2(ly, lx) * 180) / Math.PI);
+    return { outer, inner: 180 - outer };
 }
 
 export function pageInstrumentGeometry(instruments: Instrument[]): InstrumentGeometry {
@@ -263,12 +280,34 @@ export function segmentPath(ax: number, ay: number, bx: number, by: number): str
 export interface GuidedSegment { path: string; pts: number[]; readout: { x: number; y: number; text: string } }
 export interface GuidedLine { to: (x: number, y: number) => GuidedSegment }
 
+// A ray from a protractor centre towards the pointer at a whole-degree angle and a whole-mm
+// length; the readout is the angle on the outer scale (0 at the hypotenuse's right end).
+function protractorRay(p: InstrumentGeometry['protractors'][number]): GuidedLine {
+    return {
+        to: (px, py) => {
+            const [lx, ly] = toLocal(p, px, py);
+            const deg = Math.round((Math.atan2(ly, lx) * 180) / Math.PI);
+            const len = Math.round(Math.hypot(lx, ly) / BOARD_MM_PX) * BOARD_MM_PX;
+            const [bx, by] = toWorld(p, len * Math.cos(deg * RAD), len * Math.sin(deg * RAD));
+            const [ox, oy] = toWorld(p, (len + 40) * Math.cos(deg * RAD), (len + 40) * Math.sin(deg * RAD));
+            return {
+                path: segmentPath(p.x, p.y, bx, by),
+                pts: segmentPts(p.x, p.y, bx, by),
+                readout: { x: ox, y: oy, text: `${Math.abs(deg)}°` },
+            };
+        },
+    };
+}
+
 // The ink tool's instrument hook: a pen started within tol of an instrument edge draws a
 // perfectly straight stroke on that edge for the whole drag (both ends projected, on whole
-// mm), with the length as readout. Null = draw freehand.
+// mm), with the length as readout; started on a geodriehoek's centre it draws a ray at a
+// whole-degree angle (an angle in one stroke). Null = draw freehand.
 export function startGuidedLine(ctx: ToolContext, x: number, y: number, tol = EDGE_TOL_PX): GuidedLine | null {
     const g = ctx.instrument;
     if (!g) return null;
+    const centre = g.protractors.find(p => Math.hypot(p.x - x, p.y - y) <= tol);
+    if (centre) return protractorRay(centre);
     const e = nearestEdge(g.edges, x, y, tol);
     if (!e) return null;
     const a = projectOnEdge(e, x, y);

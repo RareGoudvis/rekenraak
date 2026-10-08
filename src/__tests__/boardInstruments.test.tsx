@@ -318,6 +318,45 @@ describe('lat: the pen follows its edge', () => {
     });
 });
 
+describe('geodriehoek: turned to 45°, the pen follows the hypotenuse; from the centre it draws an angle', () => {
+    test('rotate handle → 45° (snapped) → a pen stroke on the hypotenuse is an exact 45° line', () => {
+        st().toggleInstrument('geodriehoek');
+        st().updateInstrument(one('geodriehoek').id, { x: 500, y: 300, rotation: 0 });
+        const { container } = render(<BoardPageCanvas />);
+        const h = container.querySelector('[data-instrument="geodriehoek"] [data-instrument-grip="rotate"]')!;
+        const a = (46.5 * Math.PI) / 180;
+        act(() => { fireEvent.pointerDown(h, { clientX: 600, clientY: 300, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(h, { clientX: 500 + 100 * Math.cos(a), clientY: 300 + 100 * Math.sin(a), pointerId: 1 }); });
+        act(() => { fireEvent.pointerUp(h, { pointerId: 1 }); });
+        expect(one('geodriehoek').rotation).toBe(45);
+        act(() => { st().setTool('pen'); });
+        const svg = container.querySelector('[data-board-canvas] > svg:not([data-instrument-layer])')!;
+        // 2 cm along the hypotenuse, 5 px off it, then a wobbly drag 4 cm further
+        const d = Math.SQRT1_2;
+        act(() => { fireEvent.pointerDown(svg, { clientX: 500 + 2 * BOARD_CM_PX * d + 4, clientY: 300 + 2 * BOARD_CM_PX * d - 3, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 500 + 6 * BOARD_CM_PX * d - 3, clientY: 300 + 6 * BOARD_CM_PX * d + 5, pointerId: 1 }); });
+        act(() => { fireEvent.pointerUp(svg, { pointerId: 1 }); });
+        const m = /^M ([\d.]+) ([\d.]+) L ([\d.]+) ([\d.]+)$/.exec(page().strokes[0].path)!;
+        const [x0, y0, x1, y1] = m.slice(1).map(Number);
+        expect(Math.abs((x1 - x0) - (y1 - y0))).toBeLessThan(0.25);
+        expect(Math.hypot(x1 - x0, y1 - y0) / BOARD_CM_PX).toBeCloseTo(4, 1);
+    });
+
+    test('a pen on the centre draws a ray with the degree readout', () => {
+        st().toggleInstrument('geodriehoek');
+        st().updateInstrument(one('geodriehoek').id, { x: 500, y: 300, rotation: 0 });
+        st().setTool('pen');
+        const { container } = render(<InkLayer active />);
+        const svg = container.querySelector('svg:not([data-instrument-layer])')!;
+        const a = (120.3 * Math.PI) / 180;
+        act(() => { fireEvent.pointerDown(svg, { clientX: 502, clientY: 299, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 500 + 150 * Math.cos(a), clientY: 300 + 150 * Math.sin(a), pointerId: 1 }); });
+        expect(container.querySelector('[data-instrument-readout]')!.textContent).toBe('120°');
+        act(() => { fireEvent.pointerUp(svg, { pointerId: 1 }); });
+        expect(page().strokes[0].path).toMatch(/^M 500 300 L /);
+    });
+});
+
 describe('bottom bar: Meetinstrumenten popover', () => {
     test('three toggles + Alles verbergen; the pen stays the active tool', () => {
         st().setTool('pen');

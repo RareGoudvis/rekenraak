@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import {
     BOARD_CM_PX, BOARD_MM_PX, GEO, LAT, PASSER, bodyPolygon, defaultInstrument, formatCm, instrumentEdges, nearestEdge,
-    normDeg, pageInstrumentGeometry, passerHinge, pathEndpoints, projectOnEdge, round1, snapPoint, snapRotation,
+    normDeg, pageInstrumentGeometry, passerHinge, pathEndpoints, projectOnEdge, protractorAngle, round1, snapPoint, snapRotation,
     startGuidedLine, strokeEndpoints, toLocal, toWorld,
 } from '../board/instrumentGeometry';
 import type { Stroke } from '../board/boardTypes';
@@ -207,9 +207,84 @@ describe('lat: drawing along an edge', () => {
         expect(startGuidedLine(ctxOf(), 100, 200)).toBeNull();
     });
 
+    test('a lat and a geodriehoek on one page: every edge guides', () => {
+        const geo = { id: 'g', kind: 'geodriehoek' as const, x: 600, y: 600, rotation: 0 };
+        expect(pageInstrumentGeometry([lat(), geo]).edges).toHaveLength(5);
+        expect(pageInstrumentGeometry([lat(), geo]).protractors).toEqual([{ x: 600, y: 600, rotation: 0 }]);
+    });
+
     test('formatCm: Dutch decimal comma, one decimal', () => {
         expect(formatCm(5 * BOARD_CM_PX)).toBe('5,0 cm');
         expect(formatCm(-12.5 * BOARD_CM_PX)).toBe('12,5 cm');
         expect(formatCm(0)).toBe('0,0 cm');
+    });
+});
+
+describe('geodriehoek: edges, protractor, rays', () => {
+    const geo = (x = 500, y = 300, rotation = 0) => ({ id: 'g', kind: 'geodriehoek' as const, x, y, rotation });
+    const ctxOf = (g = geo()) => ({ gridSnap: false, gridSize: 40, instrument: pageInstrumentGeometry([g]) });
+
+    test('three edges: hypotenuse measured from its midpoint, legs at 45° meeting 8 cm below', () => {
+        const [hyp, left, right] = instrumentEdges(geo());
+        close(hyp.zx, 500); close(hyp.ax, 500 - GEO.half); close(hyp.bx, 500 + GEO.half);
+        close(left.bx, 500); close(left.by, 300 + GEO.half);
+        close(right.bx, 500); close(right.by, 300 + GEO.half);
+        // legs are 45° to the hypotenuse and 90° to each other
+        const ang = (e: typeof hyp) => (Math.atan2(e.by - e.ay, e.bx - e.ax) * 180) / Math.PI;
+        close(ang(left), 45); close(ang(right), 135);
+        // outward normals point away from the body
+        expect(hyp.ny).toBeLessThan(0);
+        expect(left.nx).toBeLessThan(0);
+        expect(right.nx).toBeGreaterThan(0);
+    });
+
+    test('protractorAngle reads both scales, follows the rotation', () => {
+        const a = protractorAngle(geo(), 500 + 100 * Math.cos(Math.PI / 3), 300 + 100 * Math.sin(Math.PI / 3));
+        close(a.outer, 60); close(a.inner, 120);
+        close(protractorAngle(geo(), 600, 300).outer, 0);
+        close(protractorAngle(geo(), 400, 300).outer, 180);
+        close(protractorAngle(geo(), 500, 400).outer, 90);
+        // turned 45°: a point straight below the centre now reads 45 on the outer scale
+        close(protractorAngle(geo(500, 300, 45), 500, 400).outer, 45);
+    });
+
+    test('a pen on the centre draws a ray at a whole degree and whole mm, readout in degrees', () => {
+        const g = startGuidedLine(ctxOf(), 503, 302)!;
+        const a = (60.4 * Math.PI) / 180;
+        const seg = g.to(500 + 200 * Math.cos(a), 300 + 200 * Math.sin(a));
+        expect(seg.readout.text).toBe('60°');
+        const e = pathEndpoints(seg.path)!;
+        expect(e.slice(0, 2)).toEqual([500, 300]);
+        close((Math.atan2(e[3] - 300, e[2] - 500) * 180) / Math.PI, 60, 0.05);
+        const len = Math.hypot(e[2] - 500, e[3] - 300);
+        close(len / BOARD_MM_PX, Math.round(len / BOARD_MM_PX), 0.05);
+        // the readout sits past the ray's end
+        expect(Math.hypot(seg.readout.x - 500, seg.readout.y - 300)).toBeGreaterThan(len);
+    });
+
+    test('rays above the hypotenuse read their mirror angle; a rotated geodriehoek turns the ray', () => {
+        const g = startGuidedLine(ctxOf(), 500, 300)!;
+        expect(g.to(500, 200).readout.text).toBe('90°');
+        const r = startGuidedLine(ctxOf(geo(500, 300, 45)), 500, 300)!;
+        const seg = r.to(500, 450);   // straight down = 45° on a geodriehoek turned 45°
+        expect(seg.readout.text).toBe('45°');
+        const e = pathEndpoints(seg.path)!;
+        close(e[2], 500, 0.11);
+    });
+
+    test('the centre wins over the hypotenuse it lies on; elsewhere the hypotenuse guides', () => {
+        expect(startGuidedLine(ctxOf(), 500, 300)!.to(600, 330).readout.text).toMatch(/°$/);
+        const seg = startGuidedLine(ctxOf(), 560, 305)!.to(700, 290);
+        expect(seg.readout.text).toMatch(/ cm$/);
+        expect(pathEndpoints(seg.path)![1]).toBe(300);
+        expect(pathEndpoints(seg.path)![3]).toBe(300);
+    });
+
+    test('a leg guides too: the stroke stays on the 45° leg', () => {
+        const seg = startGuidedLine(ctxOf(), 500 - GEO.half / 2 - 4, 300 + GEO.half / 2 + 1)!.to(500 - 20, 300 + GEO.half - 30);
+        const e = pathEndpoints(seg.path)!;
+        // on the left leg: y - 300 = x - (500 - half)
+        close(e[1] - 300, e[0] - (500 - GEO.half), 0.15);
+        close(e[3] - 300, e[2] - (500 - GEO.half), 0.15);
     });
 });
