@@ -11,6 +11,7 @@ import StappenplanSettings from './StappenplanSettings';
 import GetallenlijnSettings from './GetallenlijnSettings';
 import PositietabelSettings from './PositietabelSettings';
 import HonderdveldSettings from './HonderdveldSettings';
+import BreukvizSettings from './BreukvizSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -32,4 +33,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     getallenlijn: GetallenlijnSettings,
     positietabel: PositietabelSettings,
     honderdveld: HonderdveldSettings,
+    breukviz: BreukvizSettings,
 };

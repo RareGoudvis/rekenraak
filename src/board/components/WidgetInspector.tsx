@@ -1,7 +1,7 @@
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { dobbelProps, ademProps, breukvizProps, widgetTitle } from '../widgetSizing';
+import { dobbelProps, ademProps, widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
 import BaselineSettings from '../settings/BaselineSettings';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
@@ -13,7 +13,7 @@ interface Props {
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
     timer: TimerSettings, dobbelsteen: DobbelSettings, adem: AdemSettings,
-    breukviz: BreukvizSettings, mabmat: MabMatSettings,
+    mabmat: MabMatSettings,
 };
 
 // Settings flyout for non-exercise widgets (same chrome as the exercise inspector): the
@@ -120,40 +120,6 @@ function AdemSettings({ widget }: { widget: BoardWidget }) {
     );
 }
 
-
-function BreukvizSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const b = breukvizProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Vorm</div>
-            <div className="seg-group">
-                {(['cirkel', 'pizza', 'lijn'] as const).map(v => (
-                    <button key={v} type="button" className="seg-btn" aria-pressed={b.shape === v} onClick={() => set({ shape: v })}>{v}</button>
-                ))}
-            </div>
-            <div style={S.row}>
-                <span style={S.rowLabel}>Enkel stambreuken (1/n)</span>
-                <Switch checked={b.stambreuk} onChange={(v) => set({ stambreuk: v, ...(v ? { n: 1 } : {}) })} aria-label="Enkel stambreuken" />
-            </div>
-            <div style={S.sectionLabel}>Noemer ({b.d})</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[2, 3, 4, 5, 6, 8, 10, 12].map(d => (
-                    <button key={d} type="button" className="ui-hover"
-                        style={{ ...S.smallBtn, minWidth: '40px', justifyContent: 'center', ...(b.d === d ? { borderColor: 'var(--accent-purple)', background: 'var(--bg-active)', fontWeight: 700 } : {}) }}
-                        onClick={() => set({ d, n: Math.min(b.n, d) })}>{d}</button>
-                ))}
-            </div>
-            {!b.stambreuk && (
-                <>
-                    <div style={S.sectionLabel}>Teller ({b.n})</div>
-                    <input type="range" min={1} max={b.d} step={1} value={b.n} style={{ width: '100%' }} onChange={(e) => set({ n: Number(e.target.value) })} />
-                </>
-            )}
-        </div>
-    );
-}
 
 function MabMatSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);

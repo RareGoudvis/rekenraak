@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import {
     NATURAL_W, TITLE_DEFAULTS, KINDS_WITH_SETTINGS, naturalWidth, widgetTitle,
     klokProps, weerProps, datumProps, DATUM_COLORS, dobbelProps, ademProps, groepjesProps,
-    checklistItems, breukvizProps, werksymbolenProps, WERKSYMBOLEN,
+    checklistItems, werksymbolenProps, WERKSYMBOLEN,
     loadNames, NAMES_KEY,
 } from '../board/widgetSizing';
 import { staggerPos, addBasicWidget } from '../board/addWidgets';
@@ -240,13 +240,6 @@ describe('prop normalisers', () => {
     test('checklist: default list, trimmed lines', () => {
         expect(checklistItems(w('checklist'))).toEqual(['boek klaar', 'potlood klaar', 'aan de slag!']);
         expect(checklistItems(w('checklist', { items: ' a \n\n b ' }))).toEqual(['a', 'b']);
-    });
-
-    test('breukviz: d 2-12, n within 1..d, stambreuk forces n = 1', () => {
-        expect(breukvizProps(w('breukviz'))).toEqual({ d: 4, n: 1, shape: 'cirkel', stambreuk: false });
-        expect(breukvizProps(w('breukviz', { d: 50, n: 40, shape: 'pizza' }))).toEqual({ d: 12, n: 12, shape: 'pizza', stambreuk: false });
-        expect(breukvizProps(w('breukviz', { d: 1, n: 0, shape: 'lijn' }))).toEqual({ d: 2, n: 1, shape: 'lijn', stambreuk: false });
-        expect(breukvizProps(w('breukviz', { d: 6, n: 5, stambreuk: true })).n).toBe(1);
     });
 
     test('werksymbolen: defaults show every mode', () => {

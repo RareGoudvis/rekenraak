@@ -229,20 +229,6 @@ export function checklistItems(widget: BoardWidget): string[] {
     return t.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-// ── Breukenvisualisatie ──────────────────────────────────────────────────────
-export interface BreukvizProps { n: number; d: number; shape: 'cirkel' | 'pizza' | 'lijn'; stambreuk: boolean; }
-export function breukvizProps(widget: BoardWidget): BreukvizProps {
-    const p = widget.props ?? {};
-    const d = Math.min(12, Math.max(2, Number(p.d ?? 4)));
-    const stambreuk = p.stambreuk === true;
-    return {
-        d,
-        n: stambreuk ? 1 : Math.min(d, Math.max(1, Number(p.n ?? 1))),
-        shape: p.shape === 'pizza' || p.shape === 'lijn' ? p.shape : 'cirkel',
-        stambreuk,
-    };
-}
-
 // ── Werksymbolen widget props ────────────────────────────────────────────────
 export const WERKSYMBOLEN = [
     { key: 'stil', label: 'Stil werken' },

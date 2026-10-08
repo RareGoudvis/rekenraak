@@ -22,6 +22,8 @@ interface Props {
     physicalSize?: boolean;
     // Oefenmodus: set by the kleuren item so the pupil taps the parts to colour; null on the sheet.
     ix?: ViewerInteraction | null;
+    // Bordmodus breukviz: a teacher-picked fill; the sheet never passes it.
+    fillColor?: string;
 }
 
 // 13pt (the --sheet-size-math default) = 17.33px, so writing the shape geometry as em over
@@ -67,7 +69,7 @@ function kioskSquareGrid(d: number, side: number) {
 export default function FractionShapeSVG({
     denominator, shape, coloredIndices,
     gridRows, gridCols, showColored = true, cellSize = 35, style,
-    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false, ix = null,
+    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false, ix = null, fillColor = FILL_COLOR,
 }: Props) {
     // The viewBox always keeps the geometry below in its own units; only the element size
     // switches between physical px and font-relative em.
@@ -83,14 +85,14 @@ export default function FractionShapeSVG({
         return (
             <svg width={size(svgSize)} height={size(svgSize)} viewBox={`0 0 ${svgSize} ${svgSize}`} style={shapeStyle}>
                 {denominator === 1 ? (
-                    <circle {...interactionProps(ix, '0')} cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? FILL_COLOR : 'white'} stroke={STROKE} strokeWidth={1.5} />
+                    <circle {...interactionProps(ix, '0')} cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? fillColor : 'white'} stroke={STROKE} strokeWidth={1.5} />
                 ) : (
                     Array.from({ length: denominator }, (_, i) => (
                         <path
                             key={i}
                             {...interactionProps(ix, String(i))}
                             d={piePath(cx, cy, r, i * sliceDeg, (i + 1) * sliceDeg)}
-                            fill={showColored && coloredIndices.includes(i) ? FILL_COLOR : 'white'}
+                            fill={showColored && coloredIndices.includes(i) ? fillColor : 'white'}
                             stroke={STROKE}
                             strokeWidth={1.5}
                         />
@@ -123,7 +125,7 @@ export default function FractionShapeSVG({
                         y={Math.floor(i / cols) * cellH}
                         width={stripW}
                         height={rows === 1 ? side : cellH}
-                        fill={showColored && coloredIndices.includes(i) ? FILL_COLOR : 'white'}
+                        fill={showColored && coloredIndices.includes(i) ? fillColor : 'white'}
                         stroke={STROKE}
                         strokeWidth={1.5}
                     />
@@ -151,7 +153,7 @@ export default function FractionShapeSVG({
                             y={row * ch}
                             width={cw}
                             height={ch}
-                            fill={showColored && coloredIndices.includes(idx) ? FILL_COLOR : 'white'}
+                            fill={showColored && coloredIndices.includes(idx) ? fillColor : 'white'}
                             stroke={STROKE}
                             strokeWidth={1.5}
                         />
