@@ -102,6 +102,21 @@ export interface KioskCellSpec {
 // constraints only, never from the exercise, so the keypad does not hint at the answer.
 export type KioskKey = ',' | '/' | '-' | ' ';
 
+// A keypad key that acts on the card instead of typing a character (cijferen aftrekken: Lenen).
+// A descriptor lists them per exercise in `extraKeys`; the keypad draws each beside ⌫ and a
+// physical hotkey presses it while a card cell is active. The key looks and acts the same on
+// every exercise it is listed for, so it never hints at the answer.
+export interface KioskExtraKey<E = unknown> {
+    id: string;
+    label: string;
+    // Physical keys that press it while a card cell is active (e.key, e.g. 'l', 'L', '-').
+    hotkeys?: string[];
+    // One short line under the keypad on how to use it (static per key, never per exercise).
+    hint?: string;
+    // The card after the key on the active cell; null = nothing changes.
+    apply(state: InteractionState, activeCell: string | null, ex: E, c: Record<string, unknown>): InteractionState | null;
+}
+
 export interface KioskDescriptor<E = unknown> {
     // The input for a typical exercise of this type; inputOf refines it per exercise.
     input: KioskInput;
@@ -116,6 +131,9 @@ export interface KioskDescriptor<E = unknown> {
     // multi-number: the sign printed between the fields (ordenen: '<' or '>').
     separator?(ex: E, c: Record<string, unknown>): string;
     keys?(c: Record<string, unknown>): KioskKey[];
+    // fill-cells: action keys for this exercise (see KioskExtraKey); from its operator or
+    // settings, never its answer.
+    extraKeys?(ex: E, c: Record<string, unknown>): KioskExtraKey<E>[];
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
     // number+rest: exactly [quotiënt, rest]. time: every accepted 'h:mm' (8:05 and 20:05).
     // multi-number: one entry per field, alternatives within a field joined by '|'.

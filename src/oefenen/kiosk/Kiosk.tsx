@@ -43,6 +43,9 @@ function useKioskKeys() {
             if (st.phase !== 'exercise') return;
             const info = currentInput(st.sessie, st.shown);
             if (!info) return;
+            // An action key's hotkey (L or - for Lenen) also from inside a card cell, before it types there.
+            const extra = cells ? info.extraKeys.find(k => k.hotkeys?.includes(e.key)) : undefined;
+            if (extra) { e.preventDefault(); if (!e.repeat) st.pressExtra(extra.id); return; }
             if (info.kind === 'choice') {
                 if (info.choices.includes(e.key)) { e.preventDefault(); st.choose(e.key); }
                 return;
