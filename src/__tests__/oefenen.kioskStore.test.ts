@@ -175,6 +175,60 @@ describe('input', () => {
         expect(sanitizeAnswer('-7', [])).toBe('7');
     });
 
+    test('a time gets uur + min; two typed digits of uur move on to min', () => {
+        const s = starterSessie({ types: [{ typeId: 'klok-kloklezen', leafId: 'klok-analoog-omzetten', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'omzetten' }, weight: 1 }] });
+        st().load(hashOf(s));
+        st().start();
+        expect(currentInput(st().sessie, st().shown)?.kind).toBe('time');
+        expect(st().input).toEqual(['', '']);
+        st().press('1'); st().press('5');
+        expect(st().field).toBe(1);
+        st().press('3'); st().press('0');
+        expect(st().input).toEqual(['15', '30']);
+    });
+
+    test('a getallenrij gets one field per blank, a word a text field', () => {
+        const rij = starterSessie({ types: [{ typeId: 'getallenrijen', leafId: 'getalbegrip-getallenrijen-nat', label: 'Rij', constraints: { numberType: 'natural' }, weight: 1 }] });
+        st().load(hashOf(rij));
+        st().start();
+        expect(currentInput(st().sessie, st().shown)?.kind).toBe('multi-number');
+        expect(st().input).toHaveLength(onScreen().answer.length);
+        resetKiosk();
+        const romeins = starterSessie({ id: 'kiosktest2', types: [{ typeId: 'romeinse-cijfers', leafId: 'romeinse-schrijven', label: 'Romeins', constraints: { subType: 'schrijven' }, weight: 1 }] });
+        st().load(hashOf(romeins));
+        st().start();
+        expect(currentInput(st().sessie, st().shown)?.kind).toBe('text');
+        st().setField(0, 'xiv!');
+        expect(st().input).toEqual(['xiv']);
+    });
+
+    test('a run over every new input kind: right is juist, wrong is fout, errors are readable', () => {
+        const types = [
+            { typeId: 'klok-kloklezen', leafId: 'klok-analoog-lezen', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'lezen' }, limit: 2, weight: 1 },
+            { typeId: 'getalpatronen', leafId: 'patronen-nat', label: 'Patronen', constraints: { numberType: 'natural' }, limit: 2, weight: 1 },
+            { typeId: 'romeinse-cijfers', leafId: 'romeinse-schrijven', label: 'Romeins', constraints: { subType: 'schrijven' }, limit: 2, weight: 1 },
+            { typeId: 'vergelijken', leafId: 'vergelijken-kiezen', label: 'Kiezen', constraints: { subType: 'kiezen' }, limit: 2, weight: 1 },
+        ];
+        st().load(hashOf(starterSessie({ types })));
+        st().start();
+        const results: boolean[] = [];
+        for (let i = 0; i < 8; i++) {
+            const right = i % 2 === 0;
+            fillAnswer(right);
+            st().answer();
+            results.push(st().lastCorrect!);
+            st().next();
+        }
+        expect(results).toEqual([true, false, true, false, true, false, true, false]);
+        const errors = Object.values(loadRuns('kiosktest')[0].stats.perType).flatMap(t => t.errors);
+        expect(errors).toHaveLength(4);
+        for (const e of errors) {
+            expect(e.exercise).toContain('?');
+            expect(e.expected).not.toBe('');
+            expect(e.given).not.toBe(e.expected);
+        }
+    });
+
     test('the quotiënt / rest exercise gets two fields', () => {
         const s = starterSessie({ types: [{ typeId: 'hr-std-delen', leafId: 'hr-std-delen-nat', label: 'Delen', constraints: { numberType: 'natural', multiplicationMode: 'met_rest' }, weight: 1 }] });
         st().load(hashOf(s));

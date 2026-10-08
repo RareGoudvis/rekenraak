@@ -30,7 +30,8 @@ export function onScreen() {
     const st = useOefenStore.getState();
     const cur = st.shown!;
     const d = kioskFor(st.sessie!.types[cur.slot].typeId)!;
-    return { answer: d.answerOf(cur.exercise, cur.constraints), kind: kioskInputOf(d, cur.exercise, cur.constraints), choices: d.choices ?? [] };
+    const choices = d.choicesOf?.(cur.exercise, cur.constraints) ?? d.choices ?? [];
+    return { answer: d.answerOf(cur.exercise, cur.constraints), kind: kioskInputOf(d, cur.exercise, cur.constraints), choices };
 }
 
 /** Types (right or wrong) into the store the way the keypad / choice buttons do. */
@@ -39,5 +40,9 @@ export function fillAnswer(right: boolean) {
     const { answer, kind, choices } = onScreen();
     if (kind === 'choice') st.choose(right ? answer[0] : choices.find(c => c !== answer[0])!);
     else if (kind === 'number+rest') { st.setField(0, right ? answer[0] : '999'); st.setField(1, right ? answer[1] : '9'); }
+    else if (kind === 'time') { const [h, m] = answer[0].split(':'); st.setField(0, h); st.setField(1, right ? m : String((Number(m) + 1) % 60)); }
+    // One field per blank; a wrong run spoils the last one.
+    else if (kind === 'multi-number') answer.forEach((a, i) => st.setField(i, right || i < answer.length - 1 ? a.split('|')[0] : '99999'));
+    else if (kind === 'text') st.setField(0, right ? answer[0] : 'xyz');
     else st.setField(0, right ? answer[0] : '99999');
 }
