@@ -659,20 +659,33 @@ const isQuestions = (c: Record<string, unknown>) => fracSub(c) === 'herkennen' &
 const deelVan = (ex: FractionExercise) => (ex.subType === 'hoeveelheid-abstract'
     ? parseFloat((parseFloat(((ex.total ?? 0) / ex.denominator).toFixed(4)) * ex.numerator).toFixed(4))
     : Math.round(((ex.total ?? 0) * ex.numerator) / ex.denominator));
+// kleuren: tap n of the d parts ON the figure; the answer is HOW MANY are tapped (any parts count).
+const isKleuren = (c: Record<string, unknown>) => fracSub(c) === 'kleuren';
 export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     input: 'number',
-    inputOf: (_ex, c) => (isQuestions(c) ? 'multi-number' : 'number'),
+    inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isQuestions(c) ? 'multi-number' : 'number'),
+    kioskInstruction: (ex, c) => (isKleuren(c) ? `Tik ${ex.numerator} van de ${ex.denominator} delen aan.` : undefined),
+    interact: {
+        kind: 'tap-multi',
+        // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included).
+        keys: (ex) => Array.from({ length: ex.denominator }, (_, i) => String(i)),
+        answerOf: (ex) => String(ex.numerator),
+        fromState: (st) => (st.selected.length ? String(st.selected.length) : ''),
+    },
     keys: (c) => (fracSub(c) === 'herkennen' && !isQuestions(c) ? ['/'] : fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
     labels: () => ['gelijke delen', 'ingekleurd'],
     answerOf: (ex, c) => {
+        if (isKleuren(c)) return [String(ex.numerator)];
         if (isQuestions(c)) return [String(ex.denominator), String(ex.numerator)];
         if (fracSub(c) === 'herkennen') return [...new Set([`${ex.numerator}/${ex.denominator}`, fracText(reduce({ n: ex.numerator, d: ex.denominator }))])];
         return numberSpellings(deelVan(ex));
     },
-    display: (ex, c) => (fracSub(c) === 'herkennen'
+    display: (ex, c) => (isKleuren(c)
+        ? `kleur ${ex.numerator}/${ex.denominator}: ?`
+        : fracSub(c) === 'herkennen'
         ? `gekleurd deel van ${ex.denominator} delen: ?`
         : `${ex.numerator}/${ex.denominator} van ${ex.total ?? 0} = ?`),
-    supported: (c) => ['herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
+    supported: (c) => ['kleuren', 'herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
 });
 
 // ── Tijd ─────────────────────────────────────────────────────────────────────

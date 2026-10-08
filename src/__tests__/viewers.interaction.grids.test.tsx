@@ -14,6 +14,7 @@ import { useOefenStore } from '../oefenen/useOefenStore';
 import { makeBlock } from './helpers/makeBlock';
 import { hashOf, resetKiosk, starterSessie, tapAnswer } from './helpers/oefenKiosk';
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
+import { kioskFor } from '../services/oefenen/kiosk';
 
 // Phase C1b: the grid / colour families (deelbaarheid tabel + kleuren, breuken kleuren) answer
 // by tapping their own parts on the card.
@@ -54,7 +55,7 @@ function Harness({ block, kind, onState }: { block: MathBlock; kind: Interaction
 }
 
 const parts = (c: Element) => [...c.querySelectorAll<HTMLElement | SVGElement>('[data-kiosk-key]')];
-const picked = (c: Element) => parts(c).filter(p => p.getAttribute('aria-pressed') === 'true').map(p => (p as HTMLElement).dataset.kioskKey);
+const picked = (c: Element) => parts(c).filter(p => p.getAttribute('aria-pressed') === 'true').map(p => p.getAttribute('data-kiosk-key'));
 
 function leafType(leafId: string, extra: Record<string, unknown> = {}): OefenType {
     const leaf = flattenLeaves().find(l => l.id === leafId)!;
@@ -64,17 +65,25 @@ function leafType(leafId: string, extra: Record<string, unknown> = {}): OefenTyp
 
 const controleer = () => screen.getByRole('button', { name: 'Controleer' }) as HTMLButtonElement;
 
-function cardFlow(leafId: string, partCount: number | null) {
+// breuken kleuren answers a COUNT of parts, so its pupil taps the first n keys (or one too many).
+const tapCount = (right: boolean) => {
+    const cur = st().shown!;
+    const n = (cur.exercise as { numerator: number }).numerator;
+    const keys = kioskFor('breuken')!.interact!.keys!(cur.exercise, cur.constraints);
+    st().setInteraction({ ...EMPTY_INTERACTION, selected: keys.slice(0, right ? n : n + 1 > keys.length ? n - 1 : n + 1) });
+};
+
+function cardFlow(leafId: string, partCount: number | null, tap: (right: boolean) => void = tapAnswer) {
     st().load(hashOf(starterSessie({ types: [leafType(leafId)] })));
     st().start();
     const { container } = render(<OefenApp />);
     expect(container.querySelector('.kiosk-card-inner')!.hasAttribute('inert')).toBe(false);
     if (partCount !== null) expect(parts(container)).toHaveLength(partCount);
-    tapAnswer(true);
+    tap(true);
     fireEvent.click(controleer());
     expect(st().lastCorrect).toBe(true);
     st().next();
-    tapAnswer(false);
+    tap(false);
     st().answer();
     expect(st().lastCorrect).toBe(false);
 }
@@ -84,7 +93,7 @@ describe('deelbaarheid tabel', () => {
         const block = oneExercise('deelbaarheid', { layout: 'tabel', divisors: [2, 5, 10] });
         const { container } = render(<Harness block={block} kind="tap-multi" />);
         const ps = parts(container);
-        expect(ps.map(p => (p as HTMLElement).dataset.kioskKey)).toEqual(['0', '1', '2']);
+        expect(ps.map(p => p.getAttribute('data-kiosk-key'))).toEqual(['0', '1', '2']);
         fireEvent.click(ps[0]); fireEvent.click(ps[2]);
         expect(picked(container)).toEqual(['0', '2']);
         expect(ps[0].textContent).toBe('✓');
@@ -94,6 +103,24 @@ describe('deelbaarheid tabel', () => {
     });
 
     test('kiosk flow: juist and fout', () => cardFlow('deelbaarheid-tabel', 3));
+});
+
+describe('breuken kleuren', () => {
+    test.each([['rectangle', 6], ['square', 5], ['circle', 4]])('%s: a part per noemer toggles; the sheet stays plain', (shape, d) => {
+        const block = oneExercise('breuken', { subType: 'kleuren', shapes: [shape], shape, minDenominator: d, maxDenominator: d });
+        const ex = (block.fractionExercises as Array<{ denominator: number }>)[0];
+        const { container } = render(<Harness block={block} kind="tap-multi" />);
+        const ps = parts(container);
+        expect(ps).toHaveLength(ex.denominator);
+        expect(ps.every(p => p.getAttribute('role') === 'button' && p.getAttribute('tabindex') === '0')).toBe(true);
+        fireEvent.click(ps[1]); fireEvent.click(ps[0]);
+        expect(picked(container)).toEqual(['0', '1']);
+        fireEvent.keyDown(ps[1], { key: 'Enter' });
+        expect(picked(container)).toEqual(['0']);
+        expect(ps[0].hasAttribute('data-kiosk-selected')).toBe(true);
+    });
+
+    test('kiosk flow: any n parts are right, juist and fout', () => cardFlow('breuken-kleuren', null, tapCount));
 });
 
 describe('deelbaarheid kleuren', () => {

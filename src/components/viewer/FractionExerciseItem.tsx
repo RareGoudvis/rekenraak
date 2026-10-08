@@ -3,6 +3,7 @@ import FractionShapeSVG from './FractionShapeSVG';
 import VerticalFraction from './VerticalFraction';
 import type { FractionConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { useViewerInteraction } from './ViewerInteractionContext';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
 import { useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 
@@ -45,6 +46,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const c = block.constraints as FractionConstraints;
     const answerFormat: string = c.answerFormat || 'fraction-questions';
     const sheetSizePx = useSheetSizePx('math');
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the parts to colour (kleuren only).
+    const ix = useViewerInteraction();
     // A figure `figureUnits` wide at the 13pt default may only grow until it fills the
     // column; past that the slider would push it off the page instead of enlarging it.
     const figureFont = (figureUnits: number): React.CSSProperties =>
@@ -92,6 +95,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                 gridRows={ex.gridRows ?? 1} gridCols={gridCols}
                 showColored={showColored} cellSize={cappedCell}
                 physicalSize={!!c.staticSize}
+                ix={subType === 'kleuren' ? ix : null}
                 style={c.staticSize ? undefined : figureFont(shapeUnitsW)}
                 {...heightProp}
                 {...staticProps}

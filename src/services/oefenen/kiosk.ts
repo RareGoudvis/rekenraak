@@ -90,6 +90,7 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     // Phase C (interactive on the card)
     'even-oneven-rooster',
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
+    'breuken-kleuren',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [

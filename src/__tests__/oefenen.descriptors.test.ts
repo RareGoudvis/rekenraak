@@ -52,6 +52,7 @@ const EXPECTED_LEAVES = [
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     'even-oneven-rooster',
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
+    'breuken-kleuren',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -72,7 +73,7 @@ function roundHalfUp(n: number, weight: number): number {
 
 // What the pupil must give: a number, [quotiënt, rest], a choice, accepted words, accepted
 // times or one number per field.
-type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] };
+type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] } | { count: number };
 
 // Every cijferen leaf is its own typeId; the answer must also redo the column sum.
 function cijferTruth(ex: CijferExercise): Truth {
@@ -254,6 +255,11 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         return { multi: asked.map(of) };
     },
     breuken: (f: T.FractionExercise, c) => {
+        if (c.subType === 'kleuren') {
+            expect(f.numerator).toBeGreaterThanOrEqual(1);
+            expect(f.numerator).toBeLessThanOrEqual(f.denominator);
+            return { count: f.numerator };
+        }
         if (c.subType === 'herkennen') {
             return (c.answerFormat ?? 'fraction-questions') === 'fraction-questions' ? { multi: [f.denominator, f.numerator] } : f.numerator / f.denominator;
         }
@@ -377,6 +383,8 @@ describe('descriptor answers agree with the generators', () => {
         ['deelbaarheid-tabel', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 10000 }, 'interactive'],
         ['deelbaarheid-kleurraster', { divisors: [3, 7, 11, 12], maxGetal: 1000, rasterCount: 1000 }, 'interactive'],
         ['deelbaarheid-omcirkelen', { divisors: [2], perRow: 5 }, 'interactive'],
+        ['breuken-kleuren', { shapes: ['circle'], maxDenominator: 12 }, 'interactive'],
+        ['breuken-kleuren', { shapes: ['square', 'rectangle'], minDenominator: 2, maxDenominator: 10 }, 'interactive'],
         ['deelbaarheid-rooster', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 1000 }, 'interactive'],
         ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
@@ -427,7 +435,18 @@ function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unk
         return;
     }
     expect(ia.kind, where).toBe('tap-multi');
-    const want = (truth as { set: string[] }).set;
+    if (typeof truth === 'object' && 'count' in truth) {
+        // breuken kleuren: ANY n of the d parts is right; one more or one fewer is wrong.
+        const n = truth.count;
+        expect(ia.answerOf(ex, c), where).toBe(String(n));
+        expect(keys.length, where).toBeGreaterThanOrEqual(n);
+        expect(check(keys.slice(0, n)), where).toBe(true);
+        expect(check(keys.slice(-n)), where).toBe(true);
+        expect(check(keys.slice(0, n - 1)), where).toBe(false);
+        if (keys.length > n) expect(check(keys.slice(0, n + 1)), where).toBe(false);
+        return;
+    }
+    const want =(truth as { set: string[] }).set;
     expect(ia.answerOf(ex, c).split(INTERACT_SEP).filter(Boolean), where).toEqual(want);
     const right = keys.filter(k => want.includes(tap([k])));
     const wrong = keys.filter(k => !right.includes(k));

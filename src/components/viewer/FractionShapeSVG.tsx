@@ -1,4 +1,5 @@
 import React from 'react';
+import { interactionProps, type ViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     numerator: number;
@@ -19,6 +20,8 @@ interface Props {
     // The fixed* sizes above are a teacher's cm request ("een vierkant van 4 cm"), so they
     // must stay physical px; everything else follows the Lettergrootte slider.
     physicalSize?: boolean;
+    // Oefenmodus: set by the kleuren item so the pupil taps the parts to colour; null on the sheet.
+    ix?: ViewerInteraction | null;
 }
 
 // 13pt (the --sheet-size-math default) = 17.33px, so writing the shape geometry as em over
@@ -48,7 +51,7 @@ function piePath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 export default function FractionShapeSVG({
     denominator, shape, coloredIndices,
     gridRows, gridCols, showColored = true, cellSize = 35, style,
-    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false,
+    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false, ix = null,
 }: Props) {
     // The viewBox always keeps the geometry below in its own units; only the element size
     // switches between physical px and font-relative em.
@@ -64,11 +67,12 @@ export default function FractionShapeSVG({
         return (
             <svg width={size(svgSize)} height={size(svgSize)} viewBox={`0 0 ${svgSize} ${svgSize}`} style={shapeStyle}>
                 {denominator === 1 ? (
-                    <circle cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? FILL_COLOR : 'white'} stroke={STROKE} strokeWidth={1.5} />
+                    <circle {...interactionProps(ix, '0')} cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? FILL_COLOR : 'white'} stroke={STROKE} strokeWidth={1.5} />
                 ) : (
                     Array.from({ length: denominator }, (_, i) => (
                         <path
                             key={i}
+                            {...interactionProps(ix, String(i))}
                             d={piePath(cx, cy, r, i * sliceDeg, (i + 1) * sliceDeg)}
                             fill={showColored && coloredIndices.includes(i) ? FILL_COLOR : 'white'}
                             stroke={STROKE}
@@ -90,6 +94,7 @@ export default function FractionShapeSVG({
                 {Array.from({ length: denominator }, (_, i) => (
                     <rect
                         key={i}
+                        {...interactionProps(ix, String(i))}
                         x={i * stripW}
                         y={0}
                         width={stripW}
@@ -117,6 +122,7 @@ export default function FractionShapeSVG({
                     return (
                         <rect
                             key={idx}
+                            {...interactionProps(ix, String(idx))}
                             x={col * cw}
                             y={row * ch}
                             width={cw}
