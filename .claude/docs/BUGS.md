@@ -168,6 +168,10 @@ UpdateState). Left over, found while fixing:
   defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
   additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27
 
+- Kiosk breuken kleuren, square shape with a PRIME noemer ≥ 11 (11, 13): equal parts need one row, so the
+  strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
+  2026-10-08
+
 ## Docs
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`

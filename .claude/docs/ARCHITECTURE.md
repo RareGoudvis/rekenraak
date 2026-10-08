@@ -483,7 +483,7 @@ only.
 | `cijferen-vermenigvuldigen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-delen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above + withRemainder |
 | `klok-kloklezen` | `clockExercises` | `generateClockExercises` | `ClockExerciseItem` | `ClockConfig` | clockType, is24hour, timeTypes, minuteDirection, handChoice — each exercise carries its own `clockType/exerciseMode/is24hour/handChoice` (own-data rule, 2026-09-13) |
-| `breuken` | `BREUKEN_KIOSK` | only kleuren / herkennen / hoeveelheid(-abstract): kleuren **tap** n of the d parts; else a breuk, a count, or the two counting questions |
+| `breuken` | `BREUKEN_KIOSK` | only kleuren / herkennen / hoeveelheid(-abstract): kleuren **tap** n of the d parts (a square of d ≥ 5 is a wider rows × cols grid in the kiosk so every part is ≥ 44 px, `kioskSquareGrid`); else a breuk, a count, or the two counting questions |
 | `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: **fill** the partners, the tree's blank or the positietabel on the card |
 | `geld-herkennen` | `geldExercises` | `generateGeldExercises` | `GeldViewer` | `GeldConfig` | maxGetal, format, allowedDenominations, geldLayout |
 | `geld-tekenen` | `geldExercises` | `generateGeldExercises` | `GeldTekenenViewer` | `GeldConfig` | maxGetal, scaffolding, allowedDenominations |
