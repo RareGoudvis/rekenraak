@@ -160,6 +160,8 @@ UpdateState). Left over, found while fixing:
 
 ## Bordmodus
 
+- BoardBottomBar at 1280 x 800: the bar is wider than the viewport, so "Bordmodus verlaten" is cut off
+  at the right edge (wb-check/wb3/12-six-cards.png). Fix: let the bar shed or wrap like the TopBar. 2026-10-08
 - No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
 - Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
