@@ -221,17 +221,17 @@ const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { leng
 // the new top digits; it exchanges whether or not the column needs it (cijferLenen).
 const LENEN_KEY: KioskExtraKey<CijferExercise> = {
     id: 'lenen', label: 'Lenen', hotkeys: ['l', 'L', '-'],
-    hint: 'Lenen: tik op het vakje onder de eenheden en druk op Lenen.',
     apply: (state, active, ex, c) => cijferLenen(ex, cijferDp(ex, c), state, active),
 };
 
 export interface CijferKioskOptions {
-    // A carry (or exchanged digit) left blank is wrong too; default off: only a WRONG one is.
+    // A real carry or exchanged digit left blank is wrong (default); false = only a WRONG one is (tests only).
+    // Either way a column with no carry / exchange takes blank or 0 (or its untouched top digit).
     strictCarries?: boolean;
 }
 
-// Every answer ruitje is checked digit by digit; carries are the pupil's own help (see options).
-export function cijferKiosk({ strictCarries = false }: CijferKioskOptions = {}): KioskDescriptor {
+// Every answer ruitje is checked digit by digit, and so is every carry / exchange (see options).
+export function cijferKiosk({ strictCarries = true }: CijferKioskOptions = {}): KioskDescriptor {
     const chk = (ex: CijferExercise, c: Record<string, unknown>) => cijferCheck(ex, cijferDp(ex, c), strictCarries);
     const interactAnswer = (ex: CijferExercise, c: Record<string, unknown>) => chk(ex, c).wants.join(INTERACT_SEP);
     return descriptor<CijferExercise>({

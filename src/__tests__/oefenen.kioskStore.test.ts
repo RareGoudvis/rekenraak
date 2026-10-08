@@ -483,11 +483,11 @@ describe('Lenen (cijferen aftrekken)', () => {
     const cells = () => st().interaction.cells;
     const typeDigits = (...ds: string[]) => ds.forEach(d => st().press(d));
 
-    test('the key is on every subtraction, with its hint, and nowhere else', () => {
+    test('the key is on every subtraction, without a hint, and nowhere else', () => {
         pin(52, 17, 'a1');
         const info = currentInput(st().sessie, st().shown)!;
         expect(info.extraKeys.map(k => [k.id, k.label])).toEqual([['lenen', 'Lenen']]);
-        expect(info.extraKeys[0].hint).toBe('Lenen: tik op het vakje onder de eenheden en druk op Lenen.');
+        expect(info.extraKeys[0].hint).toBeUndefined();
         resetKiosk();
         st().load(hashOf(starterSessie({ types: [{ ...aftrekken('natural'), typeId: 'cijferen-optellen-nat', leafId: 'cijferen-optellen-nat', constraints: { operator: '+' } }] })));
         st().start();

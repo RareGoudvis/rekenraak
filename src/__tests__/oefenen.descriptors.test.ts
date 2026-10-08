@@ -579,13 +579,19 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
             const ansDp = (cx.decimalPlaces ?? 0) + (cx.operator === 'x' ? decimals(cx.operands[1]) : 0);
             expect(scaled(Number(digits) / 10 ** ansDp), where).toBe(scaled(truth as number));
         }
-        expect(ok(answer), where).toBe(true);
+        // Strict (the default): every real carry / exchange must be written, so the answer row
+        // alone is juist exactly when nothing needed carrying.
+        const needsScratch = Object.values(scratch).some(v => v !== '');
+        expect(ok(answer), where).toBe(!needsScratch);
         expect(ok({ ...answer, ...scratch }), where).toBe(true);
         if (alt) expect(ok({ ...alt, ...scratch }), `${where} alt ${JSON.stringify(alt)}`).toBe(true);
-        // strictCarries: every carry must be written.
-        const strict = cijferKiosk({ strictCarries: true });
-        expect(ok({ ...answer, ...scratch }, strict), where).toBe(true);
-        expect(ok(answer, strict), where).toBe(!Object.values(scratch).some(v => v !== ''));
+        // A column with no carry takes a written 0 too (never demand writing where nothing happens).
+        const zeros = Object.fromEntries(Object.entries(scratch).filter(([k, v]) => v === '' && k.startsWith('c')).map(([k]) => [k, '0']));
+        expect(ok({ ...answer, ...scratch, ...zeros }), where).toBe(true);
+        // Lenient (tests only): a blank carry is fine, a wrong one still is not.
+        const lenient = cijferKiosk({ strictCarries: false });
+        expect(ok(answer, lenient), where).toBe(true);
+        expect(ok({ ...answer, ...scratch }, lenient), where).toBe(true);
         // A wrong digit in the answer row, a wrong rest, a wrong carry: fout.
         if (cx.operator === ':') {
             expect(ok({ ...answer, r: String(Number(answer.r.replace(',', '.')) + 1) }), where).toBe(false);
@@ -597,9 +603,13 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
             expect(ok({ ...answer, ...scratch, [units]: String((Number(answer[units] || 0) + 1) % 10) }), where).toBe(false);
         }
         const carried = Object.entries(scratch).find(([, v]) => v !== '');
-        if (carried) expect(ok({ ...answer, [carried[0]]: String(Number(carried[1]) + 1) }), where).toBe(false);
+        if (carried) {
+            expect(ok({ ...answer, ...scratch, [carried[0]]: String(Number(carried[1]) + 1) }), where).toBe(false);
+            expect(ok({ ...answer, ...scratch, [carried[0]]: '' }), where).toBe(false);
+            expect(ok({ ...answer, [carried[0]]: String(Number(carried[1]) + 1) }, lenient), where).toBe(false);
+        }
         const noCarry = Object.entries(scratch).find(([k, v]) => v === '' && k.startsWith('c'));
-        if (noCarry) expect(ok({ ...answer, [noCarry[0]]: '1' }), where).toBe(false);
+        if (noCarry) expect(ok({ ...answer, ...scratch, [noCarry[0]]: '1' }), where).toBe(false);
         return;
     }
     // One cell per blank, in key order: each cell holds the generator's value.
