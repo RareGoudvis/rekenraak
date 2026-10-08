@@ -50,6 +50,7 @@ const EXPECTED_LEAVES = [
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     'even-oneven-rooster',
+    'deelbaarheid-tabel',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -203,7 +204,9 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
     kettingsommen: (p: T.PatroonExercise) => patroonTruth(p),
     getallenas: (a: T.GetallenasExercise) => axisTruth(a),
     getallenrijen: (a: T.GetallenasExercise) => axisTruth(a),
-    deelbaarheid: (d: T.DeelbaarheidExercise) => {
+    deelbaarheid: (d: T.DeelbaarheidExercise, c) => {
+        // tabel: the divisor columns the number divides, smallest first (tapped cells).
+        if (c.layout !== 'veelvouden') return { set: (c.divisors as number[]).filter(x => d.number! % x === 0).sort((a, b) => a - b).map(x => formatMathNumber(x)) };
         d.sequence!.forEach((v, k) => expect(v).toBe(d.base! * k));
         return { multi: d.sequence!.slice(d.givenCount ?? 2) };
     },
@@ -360,6 +363,7 @@ describe('descriptor answers agree with the generators', () => {
         ['vergelijken-getallen', { decimalPlaces: 2 }, 'choice'],
         ['vergelijken-kiezen', { chooseTarget: 'kleinste', decimalPlaces: 1 }, 'interactive'],
         ['even-oneven-rooster', { target: 'oneven', maxGetal: 10000, perRow: 12 }, 'interactive'],
+        ['deelbaarheid-tabel', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 10000 }, 'interactive'],
         ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
         ['getalbegrip-functie', { answerMode: 'schrijven' }, 'text'],

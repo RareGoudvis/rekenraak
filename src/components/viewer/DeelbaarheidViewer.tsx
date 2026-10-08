@@ -3,6 +3,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, useShowScaffold, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import type { DeelbaarheidConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
@@ -15,6 +16,8 @@ const SALMON = '#f4cbb8';
 
 export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the cells where the number divides.
+    const ix = useViewerInteraction();
     // The oefenmodus card asks every multiple of the run, so it prints them all (it scales to fit).
     const capTerms = useShowScaffold();
     const exercises = block.deelbaarheidExercises || [];
@@ -109,7 +112,8 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const tickColPx = Math.min(100, Math.floor((A4_CONTENT_PX - numberColPx) / divisors.length));
     const cols = `${numberColCh}ch ${divisors.map(() => `${tickColPx}px`).join(' ')}`;
     const cell: React.CSSProperties = {
-        border: '1px solid #000', height: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
+        // Kiosk: taller cells so a tap target stays >= 44px on a landscape phone (the card scales the sheet px).
+        border: '1px solid #000', height: ix ? `calc(${ANSWER_ROW_H} * 1.4)` : ANSWER_ROW_H, display: 'flex', alignItems: 'center',
         justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)', boxSizing: 'border-box',
     };
 
@@ -130,9 +134,10 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
             {exercises.map((ex) => (
                 <div key={ex.id} className="print-row print-exercise" style={{ display: 'grid', gridTemplateColumns: cols }}>
                     <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{ex.number}</div>
-                    {divisors.map(d => (
-                        <div key={d} style={{ ...cell, ...solutionText }}>
-                            {showSolutions ? ((ex.number ?? 0) % d === 0 ? '✓' : '✗') : ''}
+                    {divisors.map((d, di) => (
+                        // Key = the divisor's column position, as the kiosk descriptor reads it.
+                        <div key={d} {...interactionProps(ix, String(di))} style={{ ...cell, ...solutionText }}>
+                            {showSolutions ? ((ex.number ?? 0) % d === 0 ? '✓' : '✗') : ix?.state.selected.includes(String(di)) ? '✓' : ''}
                         </div>
                     ))}
                 </div>

@@ -508,12 +508,30 @@ export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
     display: (ex) => rowText(ex.values ?? [], ex.blankMask, ' | '),
 });
 
-// The multiples after the given ones; the kiosk card prints the whole run (no "enz." cap).
+// veelvouden: the multiples after the given ones (the kiosk card prints the whole run, no
+// "enz." cap). tabel: tap the divisor cells of one number's row where it divides (Phase C).
+const isTabel = (c: Record<string, unknown>) => (c.layout ?? 'tabel') === 'tabel';
+// SYNC: DeelbaarheidViewer reads the same default divisor columns.
+const divisorsOf = (c: Record<string, unknown>) => (Array.isArray(c.divisors) ? c.divisors as number[] : [2, 5, 10]);
+const numberSet = (ns: readonly number[]) => [...ns].sort((a, b) => a - b).map(showNum).join(INTERACT_SEP);
+const tabelAnswer = (ex: DeelbaarheidExercise, c: Record<string, unknown>) =>
+    numberSet(divisorsOf(c).filter(d => (ex.number ?? 0) % d === 0));
 export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
     input: 'multi-number',
-    answerOf: (ex) => (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String),
-    display: (ex) => (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – '),
-    supported: (c) => c.layout === 'veelvouden',
+    inputOf: (_ex, c) => (isTabel(c) ? 'interactive' : 'multi-number'),
+    kioskInstruction: (ex, c) => (isTabel(c) ? `Tik aan door welke getallen ${showNum(ex.number ?? 0)} deelbaar is.` : undefined),
+    interact: {
+        kind: 'tap-multi',
+        // Key = the divisor column's position.
+        keys: (_ex, c) => divisorsOf(c).map((_, i) => String(i)),
+        answerOf: tabelAnswer,
+        fromState: (st, _ex, c) => numberSet(st.selected.map(k => divisorsOf(c)[Number(k)]).filter((d): d is number => d !== undefined)),
+    },
+    answerOf: (ex, c) => (isTabel(c) ? [tabelAnswer(ex, c)] : (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String)),
+    display: (ex, c) => (isTabel(c)
+        ? `${showNum(ex.number ?? 0)} deelbaar door ${divisorsOf(c).join(', ')}: ?`
+        : (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – ')),
+    supported: (c) => c.layout === 'veelvouden' || isTabel(c),
 });
 
 // Write the shuffled values in order; the < or > sits between the fields as on the sheet.
