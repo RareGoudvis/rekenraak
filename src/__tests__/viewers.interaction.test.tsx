@@ -346,10 +346,17 @@ describe('kiosk flow: answer on the card', () => {
         expect(st().activeCell).toBe('c' + digits[1].slice(1));
         st().press(scratch[st().activeCell!] || '0');
         expect(st().activeCell).toBe(digits[1]);
-        // The rest of the row; the physical keyboard types too.
+        // The rest of the row, each carry written above its column first (the kiosk is strict);
+        // the physical keyboard types too.
         digits.forEach((k, i) => {
             if (i === 0) return;
             expect(st().activeCell).toBe(k);
+            const carry = scratch['c' + k.slice(1)];
+            if (i > 1 && carry) {
+                fireEvent.keyDown(activeInput(container), { key: 'Tab', shiftKey: true });
+                st().press(carry);
+                expect(st().activeCell).toBe(k);
+            }
             if (!answer[k]) return;
             if (i % 2) fireEvent.change(activeInput(container), { target: { value: answer[k] } });
             else st().press(answer[k]);
@@ -369,7 +376,8 @@ describe('kiosk flow: answer on the card', () => {
         st().answer();
         expect(st().lastCorrect).toBe(false);
         const err = st().run!.stats.perType[0].errors[0];
-        expect(err.expected).toBe(String((nxt.exercise as CijferExercise).answer));
+        // Strict carries: the expected line names the carries a pupil must write ("380 (onthouden 1)").
+        expect(err.expected.split(' (onthouden')[0]).toBe(String((nxt.exercise as CijferExercise).answer));
         expect(err.given).not.toBe(err.expected);
     });
 

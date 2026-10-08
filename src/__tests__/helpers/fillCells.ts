@@ -110,8 +110,11 @@ export function cellsFromParts(d: KioskDescriptor, ex: unknown, c: Record<string
     return Object.fromEntries(keys.map((k, i) => [k, (parts[i] ?? '').split('|')[0]]));
 }
 
-/** The right cells for the exercise on a card: cijferen from its numbers, the rest part by part. */
+/** The right cells for the exercise on a card: cijferen from its numbers (carries too: the kiosk is strict), the rest part by part. */
 export function rightCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>): Cells {
-    if (typeId.startsWith('cijferen-')) return cijferFill(ex as CijferExercise, kioskInteractOf(d, c)!.keys!(ex, c)).answer;
+    if (typeId.startsWith('cijferen-')) {
+        const { answer, scratch } = cijferFill(ex as CijferExercise, kioskInteractOf(d, c)!.keys!(ex, c));
+        return { ...answer, ...scratch };
+    }
     return cellsFromParts(d, ex, c);
 }
