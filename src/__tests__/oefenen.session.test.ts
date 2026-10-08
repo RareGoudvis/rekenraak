@@ -130,11 +130,31 @@ describe('codec', () => {
 
 describe('frozen link tables (append only)', () => {
     // Pinned copies: reordering or deleting an entry would re-point every shared link.
+    // The whole table as shared on 2026-10-08 (K1 starters + the K5 families): links made since point here.
     const LEAVES_V1 = [
         'vergelijken-getallen', 'afronden-nat-simpel', 'afronden-dec-simpel', 'procenten-nemen', 'procenten-welk',
         'hr-std-optellen-nat', 'hr-std-optellen-dec', 'hr-std-aftrekken-nat', 'hr-std-aftrekken-dec',
         'hr-std-vermenigvuldigen-nat', 'hr-std-vermenigvuldigen-dec', 'hr-std-delen-nat', 'hr-std-delen-dec',
         'hr-std-optellen-rat', 'hr-std-aftrekken-rat', 'hr-std-vermenigvuldigen-rat', 'hr-std-delen-rat',
+        'hr-std-gemengd-nat', 'hr-std-gemengd-dec', 'cijferen-optellen-nat', 'cijferen-optellen-dec',
+        'cijferen-aftrekken-nat', 'cijferen-aftrekken-dec', 'cijferen-vermenigvuldigen-nat',
+        'cijferen-vermenigvuldigen-dec', 'cijferen-delen-nat', 'cijferen-delen-dec', 'plaatswaarde-waarde',
+        'plaatswaarde-plaats', 'plaatswaarde-omcirkelen', 'vergelijken-kiezen', 'vergelijken-representaties',
+        'even-oneven-cirkels', 'romeinse-herkennen', 'romeinse-schrijven', 'getalbegrip-functie', 'mab-herkennen',
+        'schattend-nat', 'schattend-dec', 'handig-rekenvolgorde', 'controleren-negenproef', 'controleren-omgekeerde',
+        'vormleer-hoeken-herkennen', 'vormleer-vierhoeken', 'temperatuur-aflezen', 'temperatuur-verschil',
+        'massa-weegschaal-aflezen', 'oppervlakte-rooster', 'oppervlakte-berekenen', 'maateenheid-kiezen',
+        'herleidingen-lengte', 'herleidingen-inhoud', 'herleidingen-massa', 'herleidingen-oppervlakte',
+        'geld-herkennen', 'geld-teruggeven', 'geld-rekenen-korting', 'geld-rekenen-intrest', 'lengte-meten',
+        'omtrek', 'splitsen-basis', 'splitsen-boom', 'splitsen-harten', 'splitsen-positietabel',
+        'getalbegrip-ordenen-nat', 'getalbegrip-ordenen-dec', 'getalbegrip-ordenen-rat', 'getalbegrip-ordenen-geh',
+        'getalbegrip-getallenassen-nat', 'getalbegrip-getallenassen-dec', 'getalbegrip-getallenassen-rat',
+        'getalbegrip-getallenassen-geh', 'getalbegrip-getallenrijen-nat', 'getalbegrip-getallenrijen-dec',
+        'getalbegrip-getallenrijen-rat', 'getalbegrip-getallenrijen-geh', 'breuken-rangschikken', 'patronen-nat',
+        'patronen-dec', 'patronen-geh', 'patronen-kettingsommen', 'deelbaarheid-veelvouden', 'breuken-herkennen',
+        'breuken-hoeveelheid', 'breuken-gemengd', 'breuken-gelijknamig', 'breuken-vereenvoudigen', 'verbanden-tabel',
+        'verbanden-paren', 'procenten-verbanden', 'klok-analoog-lezen', 'klok-analoog-omzetten',
+        'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     ];
     const KEYS_V1 = [
         'subType', 'maxGetal', 'numberMask', 'chooseTarget', 'setSize', 'decimalPlaces', 'leftRep', 'rightRep',
@@ -215,6 +235,14 @@ describe('kioskLabel', () => {
         expect(label('afronden-dec-simpel')).toBe('Afronden · decimaal · eenvoudig');
         expect(label('vergelijken-getallen')).toBe('Vergelijken · twee getallen');
         expect(label('procenten-welk')).toBe('Hoeveel procent?');
+    });
+    test('a bare sub-type name gets its subject back on the stats screen', () => {
+        expect(label('geld-teruggeven')).toBe('Geld teruggeven');
+        expect(label('temperatuur-verschil')).toBe('Temperatuurverschil');
+        expect(label('herleidingen-oppervlakte')).toBe('Herleiden · oppervlakte');
+        // No kiosk label is a bare sidebar word that only makes sense under its subdomain heading.
+        const bare = ['Herkennen', 'Teruggeven', 'Korting', 'Intrest', 'Meter aflezen', 'Verschil', 'Lengte', 'Inhoud', 'Massa', 'Oppervlakte'];
+        expect(kioskCapableLeaves().map(kioskLabel).filter(l => bare.includes(l))).toEqual([]);
     });
     test('a leaf shortLabel wins', () => {
         const leaf = { ...flattenLeaves().find(l => l.id === 'procenten-nemen')!, shortLabel: 'Procent nemen' };

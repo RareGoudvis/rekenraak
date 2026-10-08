@@ -37,6 +37,10 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         items: [
             {
                 kind: 'nieuw',
+                text: 'Oefenmodus: kies een paar soorten oefeningen en deel een link of QR-code. Je leerlingen oefenen op hun eigen toestel, en de resultaten blijven op dat toestel.',
+            },
+            {
+                kind: 'nieuw',
                 text: 'Kan een instelling niet, dan zie je onder Genereer een melding. Vroeger kreeg je stilletjes andere oefeningen.',
             },
             {

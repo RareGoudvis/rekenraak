@@ -388,6 +388,16 @@ html:has(.oefen-body),
   font-weight: 700;
   cursor: pointer;
 }
+/* Number choices (the "grootste" row: 437, 123 456 789) on one line, as big as the button
+   width allows: a bold mono digit is ~0.65 em wide (0.7 leaves a margin), --chars is the longest choice (AnswerInput). */
+.kiosk-choices.is-numbers .kiosk-choice {
+  container-type: inline-size;
+  padding: 0;
+  white-space: nowrap;
+}
+.kiosk-choice-num {
+  font-size: min(var(--kiosk-text-xl), calc((100cqi - 2 * var(--sp-2)) / (var(--chars) * 0.7)));
+}
 /* Word choices (even / oneven, honderdtallen) at a size a button can hold. */
 .kiosk-choices.is-words { max-height: none; grid-auto-rows: minmax(var(--kiosk-tap), 1fr); }
 .kiosk-choices.is-words .kiosk-choice {

@@ -8,7 +8,7 @@ Guidance for Claude Code (claude.ai/code) working in this repository. This file 
 
 | Doc | What's in it |
 |---|---|
-| [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) | The deep map: data flow (§2), state table (§3), data model (§4), registry contract (§5), generator contract (§6), per-typeId registry table (§7), viewers (§8), print + page model incl. measurement contract (§9), persistence/sharing (§10), file map (§11), teacher-workflow layer (§13) |
+| [.claude/docs/ARCHITECTURE.md](.claude/docs/ARCHITECTURE.md) | The deep map: data flow (§2), state table (§3), data model (§4), registry contract (§5), generator contract (§6), per-typeId registry table (§7), viewers (§8), print + page model incl. measurement contract (§9), persistence/sharing (§10), file map (§11), teacher-workflow layer (§13), Oefenmodus pupil kiosk (§15) |
 | [.claude/docs/UI-GUIDE.md](.claude/docs/UI-GUIDE.md) | The eight design rules, the tokens (`theme.css`), canonical component styles, the one solution-red |
 | [.claude/docs/TESTING.md](.claude/docs/TESTING.md) | vitest suites (generator matrix, answers, packer, persistence, store, viewer smoke) + the Playwright harnesses (width matrix, height audit, font baseline/compare, drag recipe) |
 | [.claude/docs/BUGS.md](.claude/docs/BUGS.md) | Bugs found but not yet fixed — **append here instead of fixing silently**; delete the line in the commit that fixes it |
@@ -42,6 +42,10 @@ npm run prepare        # after a clone: git config core.hooksPath .githooks
 
 The dev build exposes `window.__rekenraak` (typeIds, leaves, seed, measured, addBlockFromType,
 updateBlockSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses.
+
+`oefenen.html` is an **extra Vite entry** (`vite.config.ts` rollupOptions.input `oefenen`): the
+Oefenmodus pupil kiosk, its own React root under `src/oefenen/`. The dev server serves it at
+`/oefenen.html#oefen=<payload>`; the teacher makes the link in the app (Oefenmodus button).
 
 ---
 
@@ -136,10 +140,16 @@ the per-typeId table is §7.
 9. Regenerate the public catalogue: `npm run catalogue` against a dev server, commit
    `oefeningen.html` + `public/oefeningen/<leafId>.png`. `catalogue.test.ts` fails the gate
    when the page's leaves differ from `APP_STRUCTURE`; the Stop hook nudges earlier.
+10. Optional, Oefenmodus: a `kiosk` descriptor in
+   [kioskDescriptors.ts](src/services/oefenen/kioskDescriptors.ts) on the REGISTRY row, then
+   **append** each leaf it makes capable to `KIOSK_LEAF_TABLE_V1` in
+   [kiosk.ts](src/services/oefenen/kiosk.ts) (append only: shared links index it) and add it to
+   the descriptors test (`EXPECTED_LEAVES`, the typeId's `TRUTH`) and the pinned table copy in
+   `oefenen.session.test.ts`. Contract: ARCHITECTURE §15.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
 **`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **whiteboard mode
-(`src/board/`, branch `whiteboard` only)** → §14.
+(`src/board/`, branch `whiteboard` only)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15.
 
 ---
 

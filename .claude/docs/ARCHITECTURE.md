@@ -270,6 +270,10 @@ keyed by **exact** `typeId` (no substring matching):
   geld-rekenen `maxEuro`, the base seed buttons). `floorMaxIntoList(typeId, c)` lowers a stored
   max onto its list (used by `loadWorksheet`). `isFurniture: true` marks the `layout-*` rows
   (no title, no number, nothing to split) — read it instead of the typeId prefix.
+  `kiosk?: KioskDescriptor` (Oefenmodus, §15) says how a pupil answers ONE exercise of the type
+  on screen: input kind, accepted spellings, plain-text rendering, which settings it can check.
+  The descriptors live in [kioskDescriptors.ts](../../src/services/oefenen/kioskDescriptors.ts)
+  (pure, imported by the registry); absent = the type cannot be practised in the kiosk.
 - [exerciseUI.tsx](../../src/config/exerciseUI.tsx) — **React**: `{ Viewer, Config }`.
   Imported by `components/sheet/SheetBlock.tsx` and `Inspector.tsx`.
 
@@ -287,6 +291,7 @@ The four consumers are now **table lookups, not branches**:
 | Block defaults | [blocksSlice.ts](../../src/store/slices/blocksSlice.ts) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `LEAF_BY_ID[leafId]?.defaultCount ?? .defaultCount` (a leaf may carry its own count; only oppervlakte-rooster does, = 2) |
 | Seed fit | [baseSettings.ts](../../src/config/baseSettings.ts) `seedConstraints` | `SEED_FIT[typeId]` (exerciseRegistry.ts) — runs last, only when the max came from the seed (not pinned by the override): schattend/afronden drop rounding targets that can't round at the seeded max; getallenas/-rijen lower ticks (min 4), then the step, so a default never needs a note |
 | Generation note | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generateNoted?` → `{ items, note }`; the note lands on the block (`generationNote`, Inspector box, §6) |
+| Oefenmodus | [kiosk.ts](../../src/services/oefenen/kiosk.ts) `kioskFor` / `kioskSupports` / `kioskCapableLeaves` | `REGISTRY[typeId].kiosk` (+ `.supported(c)` over the registry defaults): which leaves the builder lists, how the kiosk asks and checks (§15) |
 
 ### Checklist to add a type
 
@@ -313,6 +318,13 @@ The four consumers are now **table lookups, not branches**:
    [limitRules.ts](../../src/__tests__/helpers/limitRules.ts) saying what the config promises (which
    numbers stay ≤ max, noemer caps, sides, …), and the type's options in `constraintSpace.ts`;
    `limits.matrix.test.ts` fails the gate without the entry (TESTING.md "The limit harness").
+8. **Oefenmodus (optional)** — a `kiosk` descriptor in
+   [kioskDescriptors.ts](../../src/services/oefenen/kioskDescriptors.ts) on the REGISTRY row;
+   **append** every leaf it makes capable to `KIOSK_LEAF_TABLE_V1` (and a new constraint key the
+   links should carry compactly to `KIOSK_KEY_TABLE_V1`) in [kiosk.ts](../../src/services/oefenen/kiosk.ts),
+   never reorder; add the leaves to `EXPECTED_LEAVES` and the typeId's generator truth to `TRUTH`
+   in `oefenen.descriptors.test.ts`, and the new table entries to the pinned copies in
+   `oefenen.session.test.ts` (§15).
 
 Do **not** add `if (typeId === …)` branches in dispatch / Inspector / App — that
 pattern is gone. A missing registry row makes the block render/generate nothing
@@ -518,6 +530,49 @@ only.
 > `isHrStd` substring helper for one mental-math-only differentiation control;
 > that's a UI affordance, not type routing.
 
+### Oefenmodus: the rows that carry `kiosk` (§15)
+
+One phrase per descriptor ([kioskDescriptors.ts](../../src/services/oefenen/kioskDescriptors.ts));
+"only X" is its `supported(c)`. 92 sidebar leaves are capable at their defaults
+(`kioskCapableLeaves()`, pinned in `oefenen.descriptors.test.ts`).
+
+| Row(s) | Descriptor | What the pupil gives |
+|---|---|---|
+| `hr-std-optellen` · `-aftrekken` · `-vermenigvuldigen` · `-delen` · `-gemengd` | `HR_KIOSK` | the answer; a puntoefening asks the blank (`missing-operand`), met rest asks quotiënt + rest (`number+rest`); keys follow numberType (`,` / `/` + space / `−`) |
+| `cijferen-*` (8) | `CIJFER_KIOSK` | the final result only (the grid is hidden); delen = quotiënt + rest; decimal leaves get `,` |
+| `procenten` | `PROCENTEN_KIOSK` | only nemen / welk-percent: one number |
+| `verbanden` | `VERBANDEN_KIOSK` | one captioned field per asked representation (breuk / kommagetal / procent without `%`) |
+| `afronden` | `AFRONDEN_KIOSK` | only simpel: the rounded number (a rooster is a table, not one answer) |
+| `vergelijken` | `VERGELIJKEN_KIOSK` | getallen / representaties: `<` `=` `>` buttons; kiezen: the row's own numbers as buttons |
+| `plaatswaarde` | `PLAATSWAARDE_KIOSK` | waarde: a number; plaats / omcirkelen: tap the place; tabel not served |
+| `even-oneven` | `EVEN_ONEVEN_KIOSK` | only cirkels: even / oneven |
+| `romeinse-cijfers` | `ROMEINSE_KIOSK` | herkennen: a number; schrijven: text (device keyboard, case-free) |
+| `getalfunctie` | `GETALFUNCTIE_KIOSK` | aankruisen: tap the functie; schrijven: text |
+| `mab-herkennen` | `MAB_KIOSK` | the number |
+| `schattend` | `SCHATTEND_KIOSK` | the estimate only (the rounded operands are scrap work) |
+| `rekenvolgorde` | `REKENVOLGORDE_KIOSK` | the answer |
+| `controleren` | `CONTROLEREN_KIOSK` | juist / fout |
+| `vormleer-hoeken` · `-figuren` | `VORMLEER_KIOSK` | only herkennen: tap the name; one triangle naming system at a time |
+| `temperatuur` | `TEMPERATUUR_KIOSK` | only aflezen / verschil: a number (`−` key with negatives) |
+| `weegschaal` | `WEEGSCHAAL_KIOSK` | only aflezen: grams, kg with a comma, or kg + g fields |
+| `lengte-meten` · `omtrek` | `LENGTE_KIOSK` · `OMTREK_KIOSK` | only 'gegeven' (labelled sides): juist / fout · the perimeter; not capable at the sidebar defaults |
+| `oppervlakte` | `OPPERVLAKTE_KIOSK` | rooster count or berekende area (+ an omtrek field when asked) |
+| `maateenheid` | `MAATEENHEID_KIOSK` | omcirkelen: tap a chip; schrijven: type the unit (not schatten + schrijven) |
+| `herleidingen` | `HERLEIDINGEN_KIOSK` | only without writeUnits: one field per part (labelled by unit), or tap the unit when the unit is the blank |
+| `geld-herkennen` · `geld-teruggeven` · `geld-rekenen` | `GELD_KIOSK` · `GELD_TERUGGEVEN_KIOSK` · `GELD_REKENEN_KIOSK` | the amount · euro + cent fields (or € x,xx in decimaal) · korting € + nieuwe prijs, or the intrest (only korting / intrest) |
+| `getalpatronen` · `kettingsommen` | `PATROON_KIOSK` | one field per blank, only when every operator is printed |
+| `getallenas` · `getallenrijen` | `GETALLENAS_KIOSK` | one field per blank |
+| `deelbaarheid` | `VEELVOUDEN_KIOSK` | only the veelvouden layout: the multiples after the given ones |
+| `ordenen` · `breuken-rangschikken` | `ORDENEN_KIOSK` | the values in order, `<` / `>` printed between the fields |
+| `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: the partners, the tree's blank, or a digit per place |
+| `breuken-bewerken` | `BREUK_BEWERK_KIOSK` | the asked FORM (gemengd / improper / reduced); gelijknamig = two fields |
+| `breuken` | `BREUKEN_KIOSK` | only herkennen / hoeveelheid(-abstract): a breuk, a count, or the two counting questions |
+| `klok-kloklezen` | `KLOK_KIOSK` | uur + min (analoog lezen / omzetten, digitaal tekenen); 3:15 and 15:15 both count |
+| `tijdsduur` | `TIJDSDUUR_KIOSK` | begin / einde as a time, duur as uur + min |
+
+No descriptor (cannot be practised yet, mostly Phase C in the plan): `geld-tekenen`, `geld-wissel`,
+`mab-tekenen`, `deelbaarheid-kleuren`, `kalender`, `vormleer-punt-lijn`, the `layout-*` furniture.
+
 ---
 
 ## 8. Viewers & the solutions overlay
@@ -615,6 +670,18 @@ getalfunctie still carry the older inline form). Bewerkingen stay left-aligned: 
 space after `=` is the point. Rows whose items must line up across exercises (vergelijken
 kiezen, splitsen plaatswaarden, plaats omcirkelen) use one block-wide column width derived
 from the widest printed value, so place values sit under place values.
+
+**Scaffold context — `useShowScaffold()`** ([BlockWidthContext.tsx](../../src/components/viewer/BlockWidthContext.tsx),
+since the Oefenmodus, §15). A boolean context, default `true` (the sheet, thumbnails, previews:
+unchanged DOM); the kiosk card wraps its viewer in `<ScaffoldProvider value={false}>` because it
+asks only the final answer and nobody can write in the card. Readers today: MathBlockRenderer
+(the met-rest "( ___ )" estimate, the compenseren tussenstap), CijferViewer (no grid / schatting /
+q-r box / omgekeerde controle: the sum alone), DeelbaarheidViewer (veelvouden: every term, no
+"(enz.)"), GetalFunctieViewer (the schrijven sentence instead of the tick table), VormleerViewer
+(no woordbank; the kiosk's buttons replace it). **Rule:** a viewer changes what it draws for the
+kiosk ONLY through such a context, never by sniffing a route, a store flag or the typeId; with
+the default value the sheet must stay byte-identical, which the visual gate proves. Phase C's
+interactive answers (plan: `ViewerInteractionContext`) follow the same rule.
 
 ## 9. Print / PDF export — the page model
 
@@ -998,6 +1065,16 @@ All localStorage; nothing leaves the browser except share links the user copies.
   embeds a `CurriculumLock` (used by the curriculum builder, §13).
 - **File export/import** — `exportWorksheet` (JSON blob,
   `werkbundel-<slug>-<YYYYMMDD>.json`) / `parseWorksheetFile`.
+- **Oefensessies library** (teacher device) — `rekenraak_oefen_sessies_v1`: an array of
+  `{ id, name, savedAt, sessie: OefenSessie }`, `MAX_OEFEN_SESSIES = 50` (oldest dropped);
+  `loadOefenSessies` / `saveOefenSessie` (same `sessie.id` replaces: that is Bewerken → Opslaan;
+  returns `null` on a refused write) / `renameOefenSessie` / `deleteOefenSessie`. Listed under
+  Mijn bladen › Oefensessies.
+- **The oefenlink is NOT a worksheet share.** `#oefen=…` on `/oefenen.html` (not `#share=` on
+  the app) carries only settings, never exercises, in its own codec (positional wire + DEFLATE +
+  base32, [session.ts](../../src/services/oefenen/session.ts), §15); `useBootLoad` never reads
+  it and opening one never touches the autosave or the presets. The pupil's results live on the
+  pupil's device under `rekenraak_oefen_<sessionId>` (§15), outside this file's keys.
 - **Release banner + "Wat is er nieuw"** — [releaseNotes.ts](../../src/config/releaseNotes.ts) is the
   per-version list, newest first (`{ version, date, summary, items: [{ kind: nieuw | gewijzigd |
   opgelost, text, example?: { leafId, constraints, grade, before, after } }] }`); `version.ts`
@@ -1027,6 +1104,21 @@ The per-typeId detail (generator → field → viewer → config) is the §7 tab
 src/
 ├── App.tsx                      # shell: 3-panel layout, packing (packPages + measured), composition of components/sheet/
 ├── main.tsx                     # React entry
+├── oefenen/                     # Oefenmodus pupil kiosk: its own React root behind oefenen.html, never imports App or the worksheet store (§15)
+│   ├── main.tsx                 # entry: decodes location.hash into the store BEFORE the first paint, imports index.css + kiosk/kiosk.css
+│   ├── OefenApp.tsx             # routes on the store: error / StartScreen / Kiosk / locked StatsScreen; follows hashchange
+│   ├── useOefenStore.ts         # the kiosk's own Zustand store: phase, run, shown exercise, input fields, timer tick; currentInput(), sanitizeAnswer()
+│   └── kiosk/
+│       ├── Kiosk.tsx            # running layout (card left, answer panel right; portrait stacks) + physical-keyboard routing + 1 s clock
+│       ├── TopBar.tsx           # title, progress n / total, countdown (red < 1 min), Resultaten (hidden while statsLocked)
+│       ├── ExerciseCard.tsx     # ONE exercise through the registry Viewer at 340 px, scaled to the card; inert; ScaffoldProvider false
+│       ├── AnswerInput.tsx      # fields (number / two / time / multi-number / text) + Keypad, or the choice buttons
+│       ├── Keypad.tsx           # 7-8-9 keypad, ⌫, up to two extra keys from descriptor.keys(c), Controleer
+│       ├── FeedbackOverlay.tsx  # Juist! / Fout + Volgende (never the right answer)
+│       ├── StatsScreen.tsx      # per type gemaakt/juist/fout/%, Foutjes (exercise, given, expected), Opnieuw, two-tap Wissen
+│       ├── StartScreen.tsx      # confirm screen (title, n soorten · n oefeningen · min, type chips), Start (+ fullscreen try)
+│       ├── ErrorScreen.tsx      # bad / truncated / newer link, or no link
+│       └── kiosk.css            # kiosk layer on top of the app tokens (--kiosk-* sizes, 44 px taps, landscape-first grid)
 ├── index.css                    # global + ALL print CSS (@page, @media print)
 ├── assets/theme.css             # tokens (fonts come from @fontsource via index.css; favicons live in public/)
 ├── config/
@@ -1078,13 +1170,23 @@ src/
 │  (repo root) scripts/visual-baseline.json  # committed: per leaf × width × solutions {height, intrinsic px, text hash} at seed 1234 — the gate's reference
 │  (repo root) .githooks/pre-commit      # git hook (core.hooksPath via npm prepare): npm run check + visual-gate --staged; SKIP_GATE / SKIP_VISUAL / --no-verify need a human
 │  (repo root) .claude/hooks/commit-bypass-guard.ps1  # Claude Code PreToolUse: any gate bypass in a shell command → permissionDecision 'ask'
+│  (repo root) oefenen.html              # the pupil kiosk page: an extra Vite entry (vite.config.ts rollupOptions.input `oefenen`), mounts src/oefenen/main.tsx; noindex
 │  (repo root) about.html, faq.html, oefeningen.html + src/site.ts, src/site.css  # static SEO pages built by Vite (vite.config.ts rollupOptions.input) so they reuse the app's real CSS/classes (mac-vibrant, panel-head, seg-group, sidebar-row, Wordmark markup): sidebar = page tabs + anchors / questions / exercise filter, top bar = "Open RekenRaak", no inspector; sitemap/robots stay in public/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
 ├── services/
 │   ├── generationNotes.ts       # shared Dutch note wording (countOefeningen, repeatNote) for generateNoted rows + the dedupe's "Kleine reeks"
 │   ├── generateDispatch.ts      # generateForBlock / generateExtra / regenerateBlock: registry lookup, sheet-wide dedupe (§6) → generic setExercises
-│   ├── persistence.ts           # autosave / presets / share-link / file import-export (§10)
+│   ├── persistence.ts           # autosave / presets / share-link / file import-export / oefensessies library (§10)
+│   ├── qr.ts                    # QR matrix via npm qrcode-generator (level M, base32 tail as an alphanumeric segment) + canvas painter; teacher bundle only (§15)
+│   ├── oefenen/                 # Oefenmodus services, pure (§15)
+│   │   ├── types.ts             # OefenSessie / OefenType / KioskDescriptor / KioskInput / OefenStats / OefenRun
+│   │   ├── kiosk.ts             # kioskFor / kioskSupports / kioskCapableLeaves / kioskLabel + the frozen KIOSK_LEAF_TABLE_V1 / KIOSK_KEY_TABLE_V1
+│   │   ├── kioskDescriptors.ts  # one KioskDescriptor per family (answerOf, inputOf, choicesOf, labels, separator, keys, display, supported)
+│   │   ├── check.ts             # checkAnswer + normaliseNumber / normaliseFraction / normaliseText
+│   │   ├── session.ts           # OefenSessie ↔ wire v1 ↔ DEFLATE (fflate) + base32 ↔ #oefen= link; strict parse with Dutch errors
+│   │   ├── scheduler.ts         # nextType (afwisselen / willekeurig), nextExercise (throwaway block, no exact repeats), isDone, plannedTotal
+│   │   └── stats.ts             # recordAnswer / summary / answerText / expectedText + runs in localStorage (last 5)
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
@@ -1093,6 +1195,7 @@ src/
 │   ├── layout/hrRowLayout.ts    # pure hoofdrekenen row geometry + 1e9 fit ladder (font steps, then wrap), shared by MathBlockRenderer (§7; tested)
 │   ├── layout/kaderMarkup.tsx   # pure renderKaderBody(): **vet** / *cursief* / __onderstreept__ / 1. and - lists for the onthoudkader (§9 furniture; tested)
 │   ├── math/{types.ts,mathEngine.ts,formatters.ts}
+│   ├── math/answerKeys.ts         # from-scratch answer arithmetic (scaled, evaluateChain, evaluateTokens, gcd); the kiosk descriptors and the test harnesses share it (src/__tests__/helpers/answerKeys.ts re-exports)
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
 │   ├── clock/{clockTypes.ts,clockGenerator.ts}
@@ -1148,11 +1251,15 @@ src/
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
     │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay + "Wat is er nieuw" link
     │   ├── ReleaseNotesModal.tsx  # "Wat is er nieuw": releaseNotes items grouped, live example per exercise item (§10)
-    ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx)
+    ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx); Mijn bladen also lists the Oefensessies (Delen / Bewerken / hernoemen / verwijderen)
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
     ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video)
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)
+    ├── curriculum/draftBlock.ts                           # makeDraftBlock(typeId, constraints, id?): the off-sheet block both builders mount Configs on (§13)
+    ├── oefenen/OefenBuilderModal.tsx                      # §15 teacher builder: kiosk-capable leaves, a draft block per row, limit / kans / timer / flags, Opslaan / Delen
+    ├── oefenen/oefenBuild.ts                              # pure: listOefenLeaves, buildSessie (unsupported rows excluded, weights → whole %), rowsFromSessie, LIMIT_STEPS / TIMER_STEPS
+    ├── oefenen/OefenShareModal.tsx                        # §15 link + copy, QR (copy PNG / download), Groot tonen (beamer), Afdrukken (A5)
     ├── shared/{ExercisePreview.tsx,SheetThumbnail.tsx}    # §13 fit-to-card live example; mini sheet preview
     ├── ui/{IconButton,Wordmark,Switch,PopupSelect,InfoTip,Swatch,ModalPortal,ModalShell}.tsx
     ├── configurator/
@@ -1170,7 +1277,7 @@ src/
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components
-        ├── BlockWidthContext.tsx       # printable width of the block's CELL — viewers MUST read this, never a constant
+        ├── BlockWidthContext.tsx       # printable width of the block's CELL — viewers MUST read this, never a constant; also ScaffoldProvider / useShowScaffold (§8)
         ├── VerticalFraction.tsx        # shared stacked-fraction component
         ├── LayoutBlockViewer.tsx       # sheet furniture: sectie / schrijflijnen / raster / kader / lege pagina
         ├── cijferGrid.ts               # the one ruitje-size formula (token × slider multiplier), shared by CijferViewer and the Geavanceerd slider label
@@ -1283,7 +1390,12 @@ to fit the card width. "Alles toevoegen" calls `addBlockFromType` per selected t
 allowed and tune each type's difficulty using the **real config plugin**. To edit
 off-sheet it seeds the store's `draftBlocks` slice (one per type) and mounts
 `EXERCISE_UI[typeId].Config` against the draft; `updateBlockSettings` falls through to
-`draftBlocks` when the id isn't in `blocks`, so the plugins work unchanged. "Deel
+`draftBlocks` when the id isn't in `blocks`, so the plugins work unchanged. The draft itself
+comes from [draftBlock.ts](../../src/components/curriculum/draftBlock.ts)
+`makeDraftBlock(typeId, constraints, id = 'draft-<typeId>')` (registry defaults + the leaf's
+constraints), extracted 2026-10-08 so the Oefenmodus builder (§15) shares it. Draft ids are
+arbitrary: the curriculum builder keeps one per typeId, the oefen builder uses
+`draft-oefen-<rowKey>` so the same type can sit in a session twice. "Deel
 curriculum-link" derives `allowedTypes` (typeId + label + the draft's constraints) and
 shares a **template + `CurriculumLock`** link.
 
@@ -1411,3 +1523,144 @@ eurocatalogus, stijl tekening (GeldViewer-exports) of echt; drag-to-create met p
 capture, geopend via Wiskunde-gereedschap (`geldPaletOpen`, UI-only).
 
 **Weer** heeft nu plaats-zoeken (open-meteo geocoding) + 'huidige locatie'.
+
+---
+
+## 15. Oefenmodus (practice kiosk) — branch `rc-oefenen`
+
+"RekenRaak – Oefenmodus": the teacher picks a few exercise types and their settings, shares a
+link or QR, and a pupil practises on a phone, tablet or Chromebook, one exercise per screen,
+answering on screen. The pupil's device generates the exercises with the same generators and
+draws them with the same viewers; results stay on that device. No backend, no account.
+Plan and owner decisions: `~/.claude/plans/oefen-app-kiosk.md` (K1–K5, Phase C).
+
+### Entry points
+
+- **Teacher:** TopBar **Oefenmodus** button (folds into Meer at shed stage 3; hidden in a locked
+  curriculum) → `OefenBuilderModal`; and **Mijn bladen › Oefensessies** (Nieuwe oefensessie,
+  Delen, Bewerken, hernoemen, verwijderen).
+- **Pupil:** `oefenen.html#oefen=<payload>` — a separate Vite entry with its own React root
+  ([src/oefenen/main.tsx](../../src/oefenen/main.tsx)). It never imports `App`, the worksheet
+  store or autosave, so a kiosk can never overwrite a teacher's sheet; it loads `index.css` (tokens,
+  sheet fonts) plus `kiosk/kiosk.css`. `main.tsx` decodes the hash before the first paint (a valid
+  link never flashes the error screen); `OefenApp` follows `hashchange`.
+
+### Data flow
+
+```
+OefenBuilderModal ── rows: leaf + draft block (store.draftBlocks, real Config) + limit + kans
+   │ buildSessie (oefenBuild.ts): drop rows whose descriptor.supported(c) is false, weights → whole %
+   │ that sum to 100, instruction frozen to text, createdAt floored to the minute
+   ▼
+OefenSessie ── toWire (positional) → JSON → DEFLATE → base32 ── sessieLink → origin/oefenen.html#oefen=…
+   │                                      (Opslaan → rekenraak_oefen_sessies_v1, §10)
+   ▼
+OefenShareModal: link + Kopieer, QR (canvas, Kopieer QR → PNG or download), Groot tonen, Afdrukken (A5)
+   ▼  pupil scans / opens
+decodeSessie → fromWire → parseSessie (strict, Dutch errors, version gate)
+   ▼
+useOefenStore.load → latest stored run? (done → locked stats · timer passed → finish · current → same exercise)
+   ▼ Start
+next(): nextType (scheduler) → nextExercise (generator on a throwaway block) → ExerciseCard + AnswerInput
+   ▼ Controleer
+answer(): checkAnswer(descriptor) → recordAnswer → saveRun → Juist!/Fout (none in testMode) → Volgende
+   ▼ all limits / total reached, or timer 0
+finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; Opnieuw / Wissen
+```
+
+### The kiosk descriptor (`REGISTRY[typeId].kiosk`, [types.ts](../../src/services/oefenen/types.ts))
+
+| Field | Contract |
+|---|---|
+| `input` | the typical input: `number` · `number+rest` (quotiënt + rest, both must match) · `choice` · `missing-operand` (the blank of a puntoefening) · `text` (a word on the device keyboard: Romeins, a unit) · `time` (uur + min) · `multi-number` (one field per blank) |
+| `inputOf(ex, c)?` | per-exercise refinement (a puntoefening or met-rest row in an hr block, a unit-blank herleiding) |
+| `choices?` / `choicesOf(ex, c)?` | the buttons, in order; `choicesOf` for per-exercise buttons (the row's numbers in vergelijken kiezen) |
+| `labels(ex, c)?` | multi-number field names (kg / g, euro / cent); named fields get a caption, numeric ones read left to right |
+| `separator(ex, c)?` | the sign between multi-number fields (ordenen `<` / `>`) |
+| `keys(c)?` | extra keypad keys `,` `/` `-` `' '` — from the SETTINGS only, never the exercise, so the keypad never hints at the answer |
+| `answerOf(ex, c)` | every accepted spelling (`'2,5'`, `'2.5'`); number+rest = exactly `[q, r]`; time = every accepted `h:mm` (8:05 and 20:05); multi-number = one entry per field, alternatives joined by `\|` |
+| `display(ex, c)` | plain text for the stats' error rows ("47 + ? = 85") |
+| `supported(c)?` | settings this descriptor can check (afronden: simpel only); `kioskSupports` evaluates it over the registry defaults + the leaf's; the builder excludes an unsupported row with a hint |
+
+[check.ts](../../src/services/oefenen/check.ts) normalises before comparing: numbers drop
+spaces of any kind, accept `,`/`.`, leading/trailing zeros and the `−`/`–` glyphs; fractions
+normalise `1  3 / 4`; text is case- and space-free; times compare hours and minutes as numbers.
+The store's `currentInput()` turns the descriptor into fields (`FIXED_LABELS` for quotiënt/rest,
+uur/min; for multi-number only the COUNT of `answerOf` is read) and `sanitizeAnswer` keeps what
+a field may hold (12 chars, 24 for words; `.` types as `,`; time fields 2 digits and the keypad
+moves uur → min). Physical keyboard (`useKioskKeys`): digits and the extra keys type, Backspace,
+Enter = Controleer then Volgende (Enter in a multi-field moves to the next empty field), a key
+equal to a choice (`<` `=` `>`) picks it. Number fields use `inputMode="none"` (the keypad is the
+touch input), text fields the device keyboard.
+
+### Slot-keyed state
+
+A session may hold the same typeId, even the same leaf, twice with other settings. Everything per
+type — limits, weights, `perType` stats, history entries — is keyed by **slot** = the index in
+`OefenSessie.types`, stable because a shared session never changes.
+
+### Scheduler ([scheduler.ts](../../src/services/oefenen/scheduler.ts), pure, injected RNG)
+
+- **Pool** = slots under their limit. `plannedTotal` = the sum of the limits when every type has
+  one (capped by `total`), else `total`, else `null` = endless (the timer or the pupil ends it).
+- **afwisselen**: round-robin in session order from the previous slot (never the same type twice
+  while ≥ 2 remain). **willekeurig**: weighted draw (all weights 0 = equal); without
+  `allowRepeatType` a draw equal to the previous slot is re-drawn once while the pool has ≥ 2.
+- **nextExercise** runs `REGISTRY[typeId].generate` on a throwaway block (`blockFor`, SYNC with
+  `addBlockFromType`; constraints through `seedConstraints`), re-drawing up to `MAX_REDRAWS` (20)
+  times to avoid an `exerciseKeyOf` already seen in this run, else accepts the repeat (flagged).
+  Generators call `Math.random` directly, so a seeded RNG is swapped in and restored.
+- **isDone**: `finishedAt` set, the timer passed (`startedAt + timerMin`), or `nextType` = null.
+
+### Stats storage ([stats.ts](../../src/services/oefenen/stats.ts), pupil device)
+
+`rekenraak_oefen_<sessionId>` → `{ v: 1, runs: OefenRun[] }`, the **last 5 runs** by index.
+A run = `{ index, stats: { startedAt, finishedAt?, perType[slot]: { made, correct, wrong,
+errors[{ exercise, given, expected, at }] }, history[{ slot, typeId, exerciseKey, correct, ms }] },
+timerEndsAt?, current?, done }`. `current` (exercise + the constraints it was generated with)
+makes a reload show the same exercise; it is cleared once answered so nothing counts twice.
+`saveRun` replaces by index and, on a full quota, drops the oldest runs first. Opnieuw = a new run
+index (older runs stay stored; the UI shows the newest only); Wissen = `clearRuns` (two taps).
+Never the worksheet autosave.
+
+### Wire format v1 ([session.ts](../../src/services/oefenen/session.ts))
+
+Positional arrays, trailing defaults trimmed, `null` = default in a middle slot:
+`session = [v, id, created, flags, rows, title?, timerMin?, total?]`,
+`row = [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?]`.
+`created` in whole minutes when it falls on one; `flags` bits 0 willekeurig · 1 allowRepeatType ·
+2 testMode · 3 statsLocked. `leaf` = index into **`KIOSK_LEAF_TABLE_V1`**, else the leafId string.
+`diff` = flat `[key, value, …]` of the constraints that differ from the leaf's **seed**
+(`seedConstraints` at `DEFAULT_BASE`, no grade, the leaf's defaults), keys by index into
+**`KIOSK_KEY_TABLE_V1`** else the string; `removed` = seed keys the session lacks. `weight` is left
+out when it equals the equal split, `label` when it equals `kioskLabelOf(leaf)`, `instruction`
+when it equals the leaf's default (`0` = none), `typeId` when it is the leaf's. Both tables
+are **frozen, append-only** (an index in a shared link must keep meaning the same leaf/key);
+`oefenen.session.test.ts` pins full copies. Transport: `JSON` → raw DEFLATE (`fflate`, level 9)
+→ RFC 4648 base32 (A–Z 2–7, no padding, decoded case-insensitively) → `#oefen=`; at most
+`MAX_SESSIE_BYTES` (30 000) or no link. Base32 is upper-case so [qr.ts](../../src/services/qr.ts)
+(`qrcode-generator`, level M) codes the payload as an **alphanumeric segment** (5.5 bits/char)
+after a byte-mode URL head. A 6-type session is a ~260-char link, QR version 10 (57×57).
+Decode errors are Dutch and land on the ErrorScreen: a newer `v` / a type without a descriptor →
+"Werk de app bij", anything else → "Deze oefenlink is ongeldig (…)". Dependencies added:
+`fflate` (kiosk + teacher) and `qrcode-generator` (teacher bundle only).
+
+### The card and the scaffold rule
+
+`ExerciseCard` builds a one-exercise block and renders `EXERCISE_UI[typeId].Viewer` at a virtual
+340 px (a half-width cell) inside `BlockWidthProvider`, then scales the drawn extent to the card
+(`transform: scale`, ≤ 3.2×); the card is `inert` (the sheet's editable operands take no focus)
+and wrapped in `BlockErrorBoundary` keyed per exercise. It sets `<ScaffoldProvider value={false}>`:
+help the sheet draws beside the exercise (met-rest estimate, tussenstap, cijfer grid, woordbank,
+tick table) disappears (§8). **Viewer rule:** no interaction or scaffold change without such a
+context; the sheet path is untouched, which `npm run visual:gate -- --all` proves (768 cells,
+0 flagged on 2026-10-08). Known gaps (scaffold still shown, physical keyboard not auto-advancing
+in time fields, …) are in REVIEW.local.md §F.
+
+### Layout and flow details
+
+Landscape-first: card left, answer panel right; portrait stacks (fallback). Top bar: title,
+`n / total` (or `n`), countdown (red under 1 min), **Resultaten** (hidden while `statsLocked`
+and the run is not done). Start tries `requestFullscreen`. Feedback is juist / fout only, never
+the right answer; `testMode` skips it and goes straight on. Mid-run Resultaten is a peek
+(Verder oefenen); the end screen is locked and survives a reload.

@@ -83,6 +83,11 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 - RekenvolgordeViewer (`CHAR_PX = 11.1`, ~:39) and RomeinseViewer (12.7 px per char, ~:36/38) still size
   text with fixed px that don't follow the Lettergrootte slider; move to `monoTextPx`. 2026-09-27
+- HerleidingenViewer: a long given number on the answer side of a unit-blank row breaks at its
+  thousands spaces ("24 ha = 2 / 400 / 000 / 000 ___", "93 dl = 9 / 300 ___"): `formatMathNumber`
+  joins groups with a plain space and `EditableNumber`'s span has no `white-space: nowrap`. Seen in
+  the Oefenmodus card (340 px = a half-width cell, 390×844 and 844×390); a narrow sheet column can
+  hit it too. Fix: nowrap on the number span (or U+202F). 2026-10-08
 
 ## Config
 

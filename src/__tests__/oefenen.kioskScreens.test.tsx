@@ -4,6 +4,15 @@ import { render, cleanup, screen, fireEvent, act } from '@testing-library/react'
 import OefenApp from '../oefenen/OefenApp';
 import { useOefenStore } from '../oefenen/useOefenStore';
 import { fillAnswer, hashOf, resetKiosk, starterSessie, STARTER_TYPES } from './helpers/oefenKiosk';
+import type { OefenType } from '../services/oefenen/types';
+import { flattenLeaves } from '../config/appstructure';
+import { makeDraftBlock } from '../components/curriculum/draftBlock';
+
+// A session row for a sidebar leaf at its sidebar defaults, as the builder makes it.
+function leafType(leafId: string): OefenType {
+    const leaf = flattenLeaves().find(l => l.id === leafId)!;
+    return { typeId: leaf.typeId, leafId, label: leafId, constraints: makeDraftBlock(leaf.typeId, leaf.defaultConstraints ?? {}).constraints as Record<string, unknown>, limit: 2, weight: 1 };
+}
 
 // Smoke render of every kiosk screen with a session of the four starter leaves: it renders,
 // shows the right controls, and React logs nothing.
@@ -100,6 +109,53 @@ describe('kiosk screens', () => {
         st().start();
         render(<OefenApp />);
         expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
+    });
+
+    test('choice buttons: signs big, numbers in the number size, words in the word size', () => {
+        const kiezen = leafType('vergelijken-kiezen');
+        st().load(hashOf(starterSessie({ types: [kiezen] })));
+        st().start();
+        // Pin three-digit numbers: a random row can be all one- or two-digit (those stay sign-sized).
+        const shown = st().shown!;
+        useOefenStore.setState({ shown: { ...shown, exercise: { ...(shown.exercise as object), numbers: [437, 514, 416] } } });
+        const { container, unmount } = render(<OefenApp />);
+        expect(screen.getAllByRole('radio').map(r => r.textContent)).toEqual(['437', '514', '416']);
+        expect(container.querySelector('.kiosk-choices')?.className).toBe('kiosk-choices is-numbers');
+        unmount();
+
+        resetKiosk();
+        st().load(hashOf(starterSessie({ types: [STARTER_TYPES[3]] })));
+        st().start();
+        const signs = render(<OefenApp />);
+        expect(signs.container.querySelector('.kiosk-choices')?.className).toBe('kiosk-choices');
+        signs.unmount();
+
+        resetKiosk();
+        st().load(hashOf(starterSessie({ types: [leafType('even-oneven-cirkels')] })));
+        st().start();
+        const words = render(<OefenApp />);
+        expect(words.container.querySelector('.kiosk-choices')?.className).toBe('kiosk-choices is-words');
+    });
+
+    test('a captioned field (euro / cent) has no placeholder repeating its caption', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('geld-teruggeven')] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        expect([...container.querySelectorAll('.kiosk-field-cap')].map(c => c.textContent)).toEqual(['euro', 'cent']);
+        for (const f of container.querySelectorAll('input.kiosk-field')) expect(f.getAttribute('placeholder')).toBeNull();
+    });
+
+    test('peeking at the stats keeps the progress on the exercise that waits', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        render(<OefenApp />);
+        expect(screen.getByLabelText('Oefening 1 van 8')).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
+        expect(screen.getByLabelText('Oefening 1 van 8')).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Verder oefenen' }));
+        act(() => { fillAnswer(true); st().answer(); });
+        fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
+        expect(screen.getByLabelText('Oefening 1 van 8')).toBeTruthy();
     });
 
     test('locked end screen: no way back, Opnieuw and a two-tap Wissen', () => {
