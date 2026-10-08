@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Student, Chalkboard } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { SaveState } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
@@ -8,7 +8,6 @@ import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
-import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 import { Info } from '@phosphor-icons/react';
 import { useShedStages } from '../../hooks/useShedStages';
 
@@ -18,9 +17,10 @@ interface Props {
 }
 
 // 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
-// (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the
-// least-used buttons (Toevoegen, Uitleg, Bordmodus) fold into the Meer menu. Each stage strictly
+// (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the two
+// least-used buttons (Toevoegen, Uitleg) fold into the Meer menu. Each stage strictly
 // sheds width relative to the last, which is what lets useShedStages' hysteresis work.
+// Oefenmodus/Bordmodus live in the sidebar foot, not here: in the bar they pushed stage 0 past 1920 px.
 const STAGE_COUNT = 4;
 
 // Autosave refused the write (browser storage full): the only way out is an explicit
@@ -100,7 +100,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
-    const [oefenOpen, setOefenOpen] = useState(false);
 
     const handleExport = () => {
         const st = useWorksheetStore.getState();
@@ -256,14 +255,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
                                             <HelpIcon size={15} /> Uitleg
                                         </button>
-                                        {!locked && (
-                                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setOefenOpen(true); }}>
-                                                <Student size={15} /> Oefenmodus
-                                            </button>
-                                        )}
-                                        <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('whiteboard'); }}>
-                                            <Chalkboard size={15} /> Bordmodus
-                                        </button>
                                         <div style={S.menuDivider} />
                                     </>
                                 )}
@@ -338,15 +329,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                 {!foldedIntoMenu && (
                     <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel={iconOnly ? undefined : 'Uitleg'} onClick={() => onOpenHelp?.()} />
-                )}
-
-                {/* Leerlingen oefenen op hun eigen toestel via link/QR; folds into Meer at stage 3. */}
-                {!foldedIntoMenu && !locked && (
-                    <IconButton icon={Student} label="Oefenmodus: laat leerlingen oefenen via een link of QR-code" visibleLabel={iconOnly ? undefined : 'Oefenmodus'} onClick={() => setOefenOpen(true)} />
-                )}
-                {/* Bordmodus: full-screen whiteboard app (src/board/); folds into Meer at stage 3. */}
-                {!foldedIntoMenu && (
-                    <IconButton icon={Chalkboard} label="Bordmodus: oefeningen en hulpmiddelen op het digibord" visibleLabel={iconOnly ? undefined : 'Bordmodus'} onClick={() => setView('whiteboard')} />
                 )}
 
               </div>
@@ -447,7 +429,6 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
             {baseOpen && <BaseSettingsModal onClose={() => setBaseOpen(false)} />}
             {curriculumOpen && <CurriculumBuilderModal onClose={() => setCurriculumOpen(false)} />}
-            {oefenOpen && <OefenBuilderModal onClose={() => setOefenOpen(false)} />}
         </div>
     );
 }

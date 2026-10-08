@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, MagnifyingGlass } from '@phosphor-icons/react';
+import { Plus, MagnifyingGlass, Student, Chalkboard } from '@phosphor-icons/react';
 import { APP_STRUCTURE, type Domain } from '../../config/appstructure';
 import { useWorksheetStore, type AddBlockOpts } from '../../store/useWorksheetStore';
 import { REGISTRY } from '../../config/exerciseRegistry';
@@ -10,6 +10,7 @@ import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/grad
 import PopupSelect from '../ui/PopupSelect';
 import Wordmark from '../ui/Wordmark';
 import OverzichtPanel from './OverzichtPanel';
+import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 
 // Walk the domain tree keeping only entries whose label matches the search needle.
 // A parent survives when any of its descendants match. Returns the filtered tree.
@@ -85,7 +86,9 @@ export default function Sidebar() {
     const setSelectedGrade = useWorksheetStore((state) => state.setSelectedGrade);
     const baseSettings = useWorksheetStore((state) => state.baseSettings);
     const sidebarPreview = useWorksheetStore((state) => state.sidebarPreview);
+    const setView = useWorksheetStore((state) => state.setView);
     const locked = !!curriculum?.locked;
+    const [oefenOpen, setOefenOpen] = useState(false);
 
     // Hover example: after a short delay over a leaf, show a live preview card anchored
     // to its right (or left if it would overflow). Gated on the sidebarPreview setting.
@@ -350,6 +353,22 @@ export default function Sidebar() {
                 document.body,
             )}
 
+            {/* The two app modes sit at the foot of the list, not in the TopBar: there they
+                pushed stage 0 (all labels) past 1920 px. A locked curriculum hides Oefenmodus
+                (it would offer exercises outside the whitelist) but keeps Bordmodus. */}
+            <div style={S.modeRow}>
+                {!locked && (
+                    <button type="button" className="sidebar-leaf" style={S.modeBtn} onClick={() => setOefenOpen(true)}
+                        title="Oefenmodus: laat leerlingen oefenen via een link of QR-code" aria-label="Oefenmodus: laat leerlingen oefenen via een link of QR-code">
+                        <Student size={16} aria-hidden="true" /><span>Oefenmodus</span>
+                    </button>
+                )}
+                <button type="button" className="sidebar-leaf" style={S.modeBtn} onClick={() => setView('whiteboard')}
+                    title="Bordmodus: oefeningen en hulpmiddelen op het digibord" aria-label="Bordmodus: oefeningen en hulpmiddelen op het digibord">
+                    <Chalkboard size={16} aria-hidden="true" /><span>Bordmodus</span>
+                </button>
+            </div>
+
             {/* The wordmark anchors the sidebar's foot instead of sitting in the toolbar's
                 centre track — that frees the middle of the bar for the sheet's own name.
                 Plain link to the static about page rather than a modal — one page to keep
@@ -363,6 +382,7 @@ export default function Sidebar() {
             >
                 <Wordmark height={22} />
             </a>
+            {oefenOpen && <OefenBuilderModal onClose={() => setOefenOpen(false)} />}
         </aside>
     );
 }
@@ -397,6 +417,15 @@ const S = {
         flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 'var(--sp-3)', border: 'none', borderTop: '1px solid var(--separator)',
         background: 'transparent', cursor: 'pointer', lineHeight: 0,
+    } as React.CSSProperties,
+
+    // SYNC: padding/font match leafBtn so a mode button is exactly one sidebar row tall.
+    modeRow: { flex: 'none', display: 'flex', gap: 'var(--sp-1)', padding: 'var(--sp-1) var(--sp-2)', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
+    modeBtn: {
+        flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
+        background: 'none', border: 'none', borderRadius: 'var(--radius-sm)', padding: '7px 10px',
+        color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontFamily: 'inherit', fontWeight: 500,
+        cursor: 'pointer', whiteSpace: 'nowrap',
     } as React.CSSProperties,
 
     lockedPalette: { flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 } as React.CSSProperties,
