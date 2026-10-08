@@ -67,13 +67,26 @@ export const INTERACT_SEP = ' · ';
 export interface KioskInteract<E = unknown> {
     kind: InteractionKind;
     // The canonical answer. tap-multi / fill-cells / order: parts joined by INTERACT_SEP
-    // (tap-multi compares order-free; fill-cells part by part as numbers, '|' = alternatives).
+    // (tap-multi compares order-free; fill-cells part by part as numbers, '|' = alternatives,
+    // an empty alternative = the cell may stay blank: '|1' is a carry the pupil may skip).
     answerOf(ex: E, c: Record<string, unknown>): string;
     // The pupil's answer from the viewer state, same shape as answerOf; '' = nothing given yet
     // (Controleer stays off, except tap-multi where an empty set can be the answer).
     fromState(state: InteractionState, ex: E, c: Record<string, unknown>): string;
-    // Every key the viewer marks for this exercise (tests tap through them).
+    // Every key the viewer marks for this exercise (tests tap through them). fill-cells: also
+    // the cell order Tab walks and the keypad's first cell.
     keys?(ex: E, c: Record<string, unknown>): string[];
+    // fill-cells: per cell, how many characters it holds (a full cell hands the keypad on to the
+    // next cell) and whether it is scratch (a carry: off the Enter / auto-advance path, tapped).
+    // From the cell's role only, never its value, so the navigation does not hint at the answer.
+    cellOf?(key: string, ex: E, c: Record<string, unknown>): KioskCellSpec;
+    // Stats text of an answer string (fromState or answerOf); absent = the parts, first spelling.
+    show?(answer: string, ex: E, c: Record<string, unknown>): string;
+}
+
+export interface KioskCellSpec {
+    length?: number;
+    scratch?: boolean;
 }
 
 // Keys the on-screen keypad adds to the digits for this block's settings. Derived from the
@@ -107,6 +120,10 @@ export interface KioskDescriptor<E = unknown> {
     supported?(c: Record<string, unknown>): boolean;
     // Required when input / inputOf can be 'interactive'; answerOf then returns [interact.answerOf].
     interact?: KioskInteract<E>;
+    // A type whose settings answer in different ways on the card (plaatswaarde: tap a letter,
+    // fill the tabel) picks per settings; undefined falls back to `interact`. Read both through
+    // kioskInteractOf.
+    interactOf?(c: Record<string, unknown>): KioskInteract<E> | undefined;
 }
 
 // What the pupil handed in: one string, or one string per field (number+rest, time, multi-number).

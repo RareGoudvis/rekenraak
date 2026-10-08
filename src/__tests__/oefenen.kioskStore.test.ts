@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { useOefenStore, currentInput, sanitizeAnswer } from '../oefenen/useOefenStore';
+import { useOefenStore, cellPlanOf, currentInput, sanitizeAnswer } from '../oefenen/useOefenStore';
 import { loadRuns } from '../services/oefenen/stats';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
@@ -191,8 +191,9 @@ describe('input', () => {
         const rij = starterSessie({ types: [{ typeId: 'getallenrijen', leafId: 'getalbegrip-getallenrijen-nat', label: 'Rij', constraints: { numberType: 'natural' }, weight: 1 }] });
         st().load(hashOf(rij));
         st().start();
-        expect(currentInput(st().sessie, st().shown)?.kind).toBe('multi-number');
-        expect(st().input).toHaveLength(onScreen().answer.length);
+        // Phase C2: the blanks are cells on the card, one per blank.
+        expect(currentInput(st().sessie, st().shown)?.kind).toBe('interactive');
+        expect(cellPlanOf(st().sessie, st().shown)!.keys).toHaveLength((st().shown!.exercise as { blankMask: boolean[] }).blankMask.filter(Boolean).length);
         resetKiosk();
         const romeins = starterSessie({ id: 'kiosktest2', types: [{ typeId: 'romeinse-cijfers', leafId: 'romeinse-schrijven', label: 'Romeins', constraints: { subType: 'schrijven' }, weight: 1 }] });
         st().load(hashOf(romeins));

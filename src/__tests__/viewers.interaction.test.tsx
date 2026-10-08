@@ -15,12 +15,14 @@ import type { MathBlock } from '../services/math/types';
 import type { KioskDescriptor } from '../services/oefenen/types';
 import OefenApp from '../oefenen/OefenApp';
 import { useOefenStore } from '../oefenen/useOefenStore';
-import { kioskFor } from '../services/oefenen/kiosk';
+import { kioskFor, kioskInteractOf } from '../services/oefenen/kiosk';
 import { makeBlock } from './helpers/makeBlock';
 import { hashOf, resetKiosk, starterSessie, tapAnswer } from './helpers/oefenKiosk';
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
 import { numValue } from '../services/math/answerKeys';
 import type { OefenType } from '../services/oefenen/types';
+import type { CijferExercise } from '../services/math/types';
+import { cijferFill, rightCells } from './helpers/fillCells';
 
 // Phase C (Oefenmodus): viewers answer taps only inside the kiosk's ViewerInteractionContext.
 // On the sheet the context is null and a viewer must render exactly what it rendered before
@@ -252,6 +254,10 @@ describe('viewer tap flow (jsdom)', () => {
     });
 });
 
+// The cell inputs on the card, by key.
+const cellInputs = (c: HTMLElement) => new Map([...c.querySelectorAll<HTMLInputElement>('input[data-kiosk-cell]')].map(i => [i.dataset.kioskKey!, i]));
+const activeInput = (c: HTMLElement) => cellInputs(c).get(st().activeCell!)!;
+
 // A session row for a sidebar leaf at its sidebar defaults, as the builder makes it.
 function leafType(leafId: string, extra: Record<string, unknown> = {}): OefenType {
     const leaf = flattenLeaves().find(l => l.id === leafId)!;
@@ -315,6 +321,114 @@ describe('kiosk flow: answer on the card', () => {
         expect(st().lastCorrect).toBe(false);
     });
 
+    test('cijferen: the keypad fills the ruitjes right to left, carries are tapped, Enter checks', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-optellen-nat', { scaffolding: 3 })] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        const cur = st().shown!;
+        const ia = kioskFor(cur.constraints.operator === '+' ? 'cijferen-optellen-nat' : '')!.interact!;
+        const keys = ia.keys!(cur.exercise, cur.constraints);
+        const inputs = cellInputs(container);
+        expect([...inputs.keys()].sort()).toEqual([...keys].sort());
+        // Operands stand in the grid even when the teacher's sheet leaves them out (scaffolding 3).
+        expect(container.querySelector('.kiosk-card-inner')!.textContent).toContain(String((cur.exercise as CijferExercise).operands[0] % 10));
+        const digits = keys.filter(k => k.startsWith('a'));
+        expect(st().activeCell).toBe(digits[0]);
+        expect(document.activeElement).toBe(inputs.get(digits[0]));
+        expect(controleer().disabled).toBe(true);
+
+        const { answer, scratch } = cijferFill(cur.exercise as CijferExercise, keys);
+        // A full ruitje hands the keypad on to the next column.
+        st().press(answer[digits[0]]);
+        expect(st().activeCell).toBe(digits[1]);
+        // Shift+Tab steps back onto the carry above that column; the carry hands back to its digit.
+        fireEvent.keyDown(activeInput(container), { key: 'Tab', shiftKey: true });
+        expect(st().activeCell).toBe('c' + digits[1].slice(1));
+        st().press(scratch[st().activeCell!] || '0');
+        expect(st().activeCell).toBe(digits[1]);
+        // The rest of the row; the physical keyboard types too.
+        digits.forEach((k, i) => {
+            if (i === 0) return;
+            expect(st().activeCell).toBe(k);
+            if (!answer[k]) return;
+            if (i % 2) fireEvent.change(activeInput(container), { target: { value: answer[k] } });
+            else st().press(answer[k]);
+        });
+        expect(controleer().disabled).toBe(false);
+        // Enter walks the remaining (blank) digit cells and checks after the last one.
+        for (let i = 0; i < digits.length && st().phase === 'exercise'; i++) fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+        expect(st().phase).toBe('feedback');
+        expect(st().lastCorrect).toBe(true);
+
+        st().next();
+        const nxt = st().shown!;
+        const keys2 = ia.keys!(nxt.exercise, nxt.constraints);
+        const right = cijferFill(nxt.exercise as CijferExercise, keys2).answer;
+        const units = keys2[0];
+        st().setInteraction({ ...EMPTY_INTERACTION, cells: { ...right, [units]: String((Number(right[units]) + 1) % 10) } });
+        st().answer();
+        expect(st().lastCorrect).toBe(false);
+        const err = st().run!.stats.perType[0].errors[0];
+        expect(err.expected).toBe(String((nxt.exercise as CijferExercise).answer));
+        expect(err.given).not.toBe(err.expected);
+    });
+
+    test('cijferen delen: quotient digits left to right, then the rest', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-delen-nat')] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        const cur = st().shown!;
+        const ex = cur.exercise as CijferExercise;
+        const keys = kioskFor('cijferen-delen-nat')!.interact!.keys!(ex, cur.constraints);
+        expect(keys[0]).toBe('q0');
+        expect(keys[keys.length - 1]).toBe('r');
+        // Written from the left like a pupil does: q0, q1, … then Enter to the rest.
+        String(ex.answer).split('').forEach(dg => st().press(dg));
+        while (st().activeCell !== 'r') fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+        expect(controleer().disabled).toBe(true);
+        String(ex.remainder).split('').forEach(dg => st().press(dg));
+        fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    // Phase C2: every fill-in family, typed through the keypad cell by cell, checked with Enter.
+    test.each<[string, Record<string, unknown>]>([
+        ['cijferen-aftrekken-dec', {}], ['cijferen-vermenigvuldigen-nat', {}],
+        ['splitsen-basis', {}], ['splitsen-boom', {}], ['splitsen-harten', {}], ['splitsen-positietabel', {}],
+        ['afronden-nat-rooster', {}], ['afronden-dec-rooster', {}], ['plaatswaarde-tabel', {}], ['plaatswaarde-tabel', { decimalPlaces: 2 }],
+        ['patronen-nat', {}], ['patronen-dec', {}], ['patronen-geh', {}],
+        ['getalbegrip-getallenrijen-nat', {}], ['getalbegrip-getallenrijen-rat', {}], ['getalbegrip-getallenrijen-geh', {}],
+        ['getalbegrip-getallenassen-nat', {}], ['getalbegrip-getallenassen-dec', {}], ['getalbegrip-getallenassen-rat', {}],
+        ['verbanden-tabel', {}], ['verbanden-paren', {}], ['procenten-verbanden', {}],
+        ['patronen-kettingsommen', {}], ['patronen-kettingsommen', { blankMiddle: true, chainLength: 6, ops: ['+', '-', 'x', ':'] }],
+    ])('fill-cells %s %j: keypad into the cells, Enter checks', (leafId, extra) => {
+        st().load(hashOf(starterSessie({ types: [leafType(leafId, extra)] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        for (const right of [true, false]) {
+            const cur = st().shown!;
+            const typeId = st().sessie!.types[0].typeId;
+            const d = kioskFor(typeId)!;
+            const ia = kioskInteractOf(d, cur.constraints)!;
+            const keys = ia.keys!(cur.exercise, cur.constraints);
+            expect([...cellInputs(container).keys()].sort(), leafId).toEqual([...keys].sort());
+            expect(st().activeCell).toBe(keys.find(k => !ia.cellOf?.(k, cur.exercise, cur.constraints)?.scratch));
+            const cells = rightCells(typeId, d, cur.exercise, cur.constraints);
+            const spoil = keys.find(k => cells[k])!;
+            if (!right) cells[spoil] = cells[spoil].replace(/\d(?!.*\d)/, dg => String((Number(dg) + 1) % 10));
+            for (const k of keys) {
+                if (!cells[k]) continue;
+                fireEvent.focus(cellInputs(container).get(k)!);
+                for (const ch of cells[k]) st().press(ch);
+            }
+            for (let i = 0; i <= keys.length && st().phase === 'exercise'; i++) fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+            expect(st().phase, leafId).toBe('feedback');
+            expect(st().lastCorrect, `${leafId} ${JSON.stringify(cells)}`).toBe(right);
+            // act: the next exercise may have another number of cells; the DOM must follow first.
+            act(() => st().next());
+        }
+    });
+
     test('ordenen: Controleer waits for the whole row, then checks the order', () => {
         st().load(hashOf(starterSessie({ types: [leafType('getalbegrip-ordenen-nat')] })));
         st().start();
@@ -352,7 +466,10 @@ describe('kiosk flow: answer on the card', () => {
         const real = def.kiosk;
         const fake: KioskDescriptor = {
             input: 'interactive', keys: () => [','], display: () => '?', answerOf: () => ['12 · 4'],
-            interact: { kind: 'fill-cells', answerOf: () => '12 · 4', fromState: s => (s.cells.a && s.cells.b ? `${s.cells.a} · ${s.cells.b}` : '') },
+            interact: {
+                kind: 'fill-cells', keys: () => ['a', 'b'], answerOf: () => '12 · 4',
+                fromState: s => (s.cells.a && s.cells.b ? `${s.cells.a} · ${s.cells.b}` : ''),
+            },
         };
         def.kiosk = fake;
         try {
@@ -360,9 +477,9 @@ describe('kiosk flow: answer on the card', () => {
             st().start();
             render(<OefenApp />);
             expect(screen.getByRole('group', { name: 'Cijfers' })).toBeTruthy();
-            st().press('1');
-            expect(st().interaction.cells).toEqual({});
-            st().focusCell('a'); st().press('1'); st().press('2');
+            // The keypad starts in the first cell.
+            expect(st().activeCell).toBe('a');
+            st().press('1'); st().press('2');
             st().focusCell('b'); st().press('3'); st().press('back'); st().press('x'); st().press('4');
             expect(st().interaction.cells).toEqual({ a: '12', b: '4' });
             st().answer();

@@ -31,6 +31,10 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   to 2 (owner call). 2026-09-27
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
+- Cijferen optellen with solutions on: the red carries sit above the column that MADE them, one
+  column right of where a pupil writes them (`computeAddCarries` keys by the source column; the
+  AddSubGrid draws at that col). Repro: 525 + 445, Oplossingen aan, scaffolding 1 → the "1" is over
+  the E, not the T. Fix: draw at `col - 1` (the kiosk's cijferCells already reads it so). 2026-10-08
 
 - CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
   `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of

@@ -5,6 +5,7 @@ import { OP_GLYPH as SYM } from '../../services/math/formatters';
 import type { PatroonConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { ANSWER_LINE_H } from './BlockWidthContext';
+import KioskCell from './KioskCell';
 
 interface Props {
     block: MathBlock;
@@ -46,12 +47,14 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
             items={exercises.map(ex => {
                 // Alternating number / connector cells in equal (1fr) columns → all rows align.
                 const cells: React.ReactNode[] = [];
+                // Oefenmodus: a blank's cell is as wide as the row's longest GIVEN value plus one character (never the answer's own width).
+                const cellEm = `${(Math.max(2, ...ex.values.filter((_, i) => !ex.blankMask[i]).map(v => formatMathNumber(v).length)) + 1) * 0.62 + 0.4}em`;
                 ex.values.forEach((v, i) => {
                     cells.push(
                         <div key={`n${i}`} style={{ textAlign: 'center' }}>
                             {ex.blankMask[i]
                                 ? (showSolutions ? <span style={{ ...solutionText }}>{formatMathNumber(v)}</span>
-                                    : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '46px', height: ANSWER_LINE_H }} />)
+                                    : <KioskCell cellKey={`v${i}`} style={{ width: cellEm, height: 'max(32px, 1.7em)' }}><span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '46px', height: ANSWER_LINE_H }} /></KioskCell>)
                                 : formatMathNumber(v)}
                         </div>
                     );

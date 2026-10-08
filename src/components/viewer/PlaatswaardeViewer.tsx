@@ -8,6 +8,7 @@ import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/
 import type { PlaatswaardeConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
+import KioskCell from './KioskCell';
 
 interface Props {
     block: MathBlock;
@@ -128,7 +129,8 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                                     {places.map(p => <div key={p.key} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-math) * 0.75)' }}>{p.key}</div>)}
                                 </div>
                                 <div style={{ display: 'flex' }}>
-                                    {places.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}>{showSolutions ? p.digit : ''}</div>)}
+                                    {/* Oefenmodus: each digit cell is the pupil's (kiosk.css is-box). */}
+                                    {places.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}><KioskCell cellKey={p.key} variant="is-box" style={{ flex: 1, width: 0, alignSelf: 'stretch' }}>{showSolutions ? p.digit : ''}</KioskCell></div>)}
                                 </div>
                             </div>
                         </div>

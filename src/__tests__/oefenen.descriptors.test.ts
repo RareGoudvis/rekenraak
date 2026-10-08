@@ -4,15 +4,17 @@ import type { KioskDescriptor, KioskInput, OefenSessie, OefenType } from '../ser
 import { flattenLeaves, type AppLeaf } from '../config/appstructure';
 import { LEERJAREN, type Leerjaar } from '../config/gradePresets';
 import { seedConstraints } from '../config/baseSettings';
-import { targetsFor } from '../services/afronden/afrondenGenerator';
+import { targetsFor, usableTargets } from '../services/afronden/afrondenGenerator';
 import { formatMathNumber } from '../services/math/formatters';
-import { kioskCapableLeaves, kioskFor, kioskInputOf, kioskSupports } from '../services/oefenen/kiosk';
+import { kioskCapableLeaves, kioskFor, kioskInputOf, kioskInteractOf, kioskSupports } from '../services/oefenen/kiosk';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { checkAnswer, normaliseFraction, normaliseNumber } from '../services/oefenen/check';
 import { INTERACT_SEP } from '../services/oefenen/types';
 import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
+import { cellsFromParts, cijferFill, type Cells } from './helpers/fillCells';
+import { cijferKiosk } from '../services/oefenen/kioskDescriptors';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
 import type * as T from '../services/math/types';
 import { PLACE_VALUES } from '../services/math/mathEngine';
@@ -53,6 +55,7 @@ const EXPECTED_LEAVES = [
     'even-oneven-rooster',
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
     'breuken-kleuren',
+    'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -103,6 +106,13 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         return c.subType === 'welk-percent' ? p.percent : p.answer;
     },
     afronden: (a: AfrondenExercise, c) => {
+        if (c.subType === 'rooster') {
+            // Every number × every rounding column the sheet prints.
+            const dec = c.numberType === 'decimal';
+            const cols = usableTargets(c.numberType as string, Number(c.maxGetal ?? (dec ? 100 : 1000)), Number(c.decimalPlaces ?? 2), c.roundTargets as string[]);
+            const ts = cols.length ? cols : [targetsFor(c.numberType as string)[0]];
+            return { multi: a.numbers!.flatMap(n => ts.map(t => roundHalfUp(n, t.weight))) };
+        }
         const t = targetsFor(c.numberType as string).find(x => x.key === a.targetKey);
         expect(t, `target ${a.targetKey}`).toBeDefined();
         return roundHalfUp(a.number as number, t!.weight);
@@ -117,6 +127,11 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         expect(place, p.placeKey).toBeDefined();
         if (c.subType === 'plaats') return place.label.toLowerCase();
         if (c.subType === 'omcirkelen') return place.key;
+        if (c.subType === 'tabel') {
+            // The digits from the first non-zero one down to the last place the block prints.
+            const dp = Number(c.decimalPlaces ?? 0);
+            return { multi: String(Math.round(p.number * 10 ** dp)).split('').map(Number) };
+        }
         // The digit at that place, on scaled integers (4 decimals at most).
         const digit = Math.floor(Math.round(p.number * 1e4) / Math.round(place.weight * 1e4)) % 10;
         expect(digit, `${p.number} ${p.placeKey}`).toBeGreaterThan(0);
@@ -340,11 +355,12 @@ describe('kiosk-capable leaves', () => {
 
     test('supported() follows the settings, registry defaults filling gaps', () => {
         expect(kioskSupports('afronden', { subType: 'simpel' })).toBe(true);
-        expect(kioskSupports('afronden', {})).toBe(false);
+        expect(kioskSupports('afronden', {})).toBe(true);
+        expect(kioskSupports('afronden', { subType: 'nope' })).toBe(false);
         expect(kioskSupports('vergelijken', {})).toBe(true);
         expect(kioskSupports('vergelijken', { subType: 'kiezen' })).toBe(true);
         expect(kioskSupports('procenten', {})).toBe(true);
-        expect(kioskSupports('plaatswaarde', { subType: 'tabel' })).toBe(false);
+        expect(kioskSupports('plaatswaarde', { subType: 'tabel' })).toBe(true);
         expect(kioskSupports('even-oneven', { subType: 'rooster' })).toBe(true);
         expect(kioskSupports('vormleer-hoeken', { mode: 'tekenen' })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'gelijkbenig'] })).toBe(false);
@@ -408,6 +424,12 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-rekenen-intrest', { halfYear: true }, 'number'],
         ['klok-analoog-lezen', { is24hour: true }, 'time'],
         ['tijdsduur-berekenen', { blanks: ['begin', 'einde'], overMidnight: true }, 'time'],
+        // Phase C2: a middle blank and the result, both cells on the card.
+        ['patronen-kettingsommen', { blankMiddle: true, chainLength: 6, ops: ['+', '-', 'x', ':'] }, 'interactive'],
+        ['splitsen-basis', { decimalPlaces: 1, maxGetal: 100 }, 'interactive'],
+        ['plaatswaarde-tabel', { decimalPlaces: 3, maxGetal: 1000000 }, 'interactive'],
+        ['cijferen-optellen-nat', { numberOfTerms: 4, maxRange: 100000 }, 'interactive'],
+        ['cijferen-vermenigvuldigen-dec', { operand1Mask: { T: true, E: true } }, 'interactive'],
     ])('%s + %j → %s', (leafId, extra, want) => {
         // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
         const leaf = flattenLeaves().find(l => l.id === leafId)!;
@@ -419,8 +441,8 @@ describe('descriptor answers agree with the generators', () => {
 
 // Phase C: tapping the viewer's keys must give the generator's answer. tap = one key, its value
 // the truth; tap-multi = the set of right keys in any order, and one key more or less is wrong.
-function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
-    const ia = d.interact!;
+function checkInteractive(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
+    const ia = kioskInteractOf(d, c)!;
     expect(ia, where).toBeDefined();
     const keys = ia.keys!(ex, c);
     const tap = (selected: string[]) => ia.fromState({ ...EMPTY_INTERACTION, selected }, ex, c);
@@ -428,6 +450,7 @@ function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unk
     expect(new Set(keys).size, where).toBe(keys.length);
     expect(d.answerOf(ex, c), where).toEqual([ia.answerOf(ex, c)]);
     expect(tap([]), where).toBe('');
+    if (ia.kind === 'fill-cells') { checkCells(typeId, d, ex, c, truth, where); return; }
     if (ia.kind === 'tap') {
         expect(ia.answerOf(ex, c), where).toBe(truth);
         const right = keys.filter(k => tap([k]) === truth);
@@ -473,6 +496,68 @@ function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unk
     if (wrong.length) expect(check([...right, wrong[0]]), where).toBe(false);
 }
 
+// Phase C2: typing the right digits into the card's cells is juist; one wrong cell is fout.
+function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
+    const ia = kioskInteractOf(d, c)!;
+    const keys = ia.keys!(ex, c);
+    const fill = (cells: Cells, dd: KioskDescriptor = d) => kioskInteractOf(dd, c)!.fromState({ ...EMPTY_INTERACTION, cells }, ex, c);
+    const ok = (cells: Cells, dd: KioskDescriptor = d) => checkAnswer(dd, ex, c, fill(cells, dd));
+    const keypad = d.keys?.(c) ?? [];
+    const typeable = (cells: Cells) => Object.values(cells).forEach(v =>
+        expect(sanitizeAnswer(v, keypad), `${where} untypeable ${v} keys ${keypad}`).toBe(v));
+    // The Enter path is never empty: the keypad has a first cell to start in.
+    expect(keys.some(k => !ia.cellOf?.(k, ex, c)?.scratch), where).toBe(true);
+    expect(ia.show?.(ia.answerOf(ex, c), ex, c) ?? 'x', where).not.toBe('');
+
+    if (typeId.startsWith('cijferen-')) {
+        const cx = ex as CijferExercise;
+        const { answer, scratch, alt } = cijferFill(cx, keys);
+        typeable(answer); typeable(scratch);
+        // The answer row spells the generator's answer.
+        if (cx.operator !== ':') {
+            const digits = keys.filter(k => k.startsWith('a')).sort((x, y) => Number(x.slice(1)) - Number(y.slice(1))).map(k => answer[k] || '0').join('');
+            // A product has the decimals of both factors (0,3 × 1,2 = 0,36).
+            const decimals = (x: number) => (String(x).split('.')[1] ?? '').length;
+            const ansDp = (cx.decimalPlaces ?? 0) + (cx.operator === 'x' ? decimals(cx.operands[1]) : 0);
+            expect(scaled(Number(digits) / 10 ** ansDp), where).toBe(scaled(truth as number));
+        }
+        expect(ok(answer), where).toBe(true);
+        expect(ok({ ...answer, ...scratch }), where).toBe(true);
+        if (alt) expect(ok({ ...alt, ...scratch }), `${where} alt ${JSON.stringify(alt)}`).toBe(true);
+        // strictCarries: every carry must be written.
+        const strict = cijferKiosk({ strictCarries: true });
+        expect(ok({ ...answer, ...scratch }, strict), where).toBe(true);
+        expect(ok(answer, strict), where).toBe(!Object.values(scratch).some(v => v !== ''));
+        // A wrong digit in the answer row, a wrong rest, a wrong carry: fout.
+        if (cx.operator === ':') {
+            expect(ok({ ...answer, r: String(Number(answer.r.replace(',', '.')) + 1) }), where).toBe(false);
+            const lastQ = keys.filter(k => k.startsWith('q')).pop()!;
+            expect(ok({ ...answer, [lastQ]: String((Number(answer[lastQ] || 0) + 1) % 10) }), where).toBe(false);
+            expect(fill({ ...answer, r: '' }), where).toBe('');
+        } else {
+            const units = keys.filter(k => k.startsWith('a')).sort((x, y) => Number(y.slice(1)) - Number(x.slice(1)))[0];
+            expect(ok({ ...answer, ...scratch, [units]: String((Number(answer[units] || 0) + 1) % 10) }), where).toBe(false);
+        }
+        const carried = Object.entries(scratch).find(([, v]) => v !== '');
+        if (carried) expect(ok({ ...answer, [carried[0]]: String(Number(carried[1]) + 1) }), where).toBe(false);
+        const noCarry = Object.entries(scratch).find(([k, v]) => v === '' && k.startsWith('c'));
+        if (noCarry) expect(ok({ ...answer, [noCarry[0]]: '1' }), where).toBe(false);
+        return;
+    }
+    // One cell per blank, in key order: each cell holds the generator's value.
+    const right = cellsFromParts(d, ex, c);
+    const want = typeof truth === 'number' ? [truth] : (truth as { multi: number[] }).multi;
+    expect(want, `${where}: no fill-cells truth for ${typeId}`).toBeDefined();
+    expect(keys.length, where).toBe(want.length);
+    keys.forEach((k, i) => expect(scaled(valueOf(right[k])), `${where} cell ${k}`).toBe(scaled(want[i])));
+    typeable(right);
+    expect(ok(right), where).toBe(true);
+    const last = keys.length - 1;
+    expect(ok({ ...right, [keys[last]]: wrongNumber(want[last]) }), where).toBe(false);
+    // Controleer waits for every cell.
+    expect(fill({ ...right, [keys[0]]: '' }), where).toBe('');
+}
+
 // Runs the agreement checks for one leaf (+ extra settings) over every grade × SEEDS seeds;
 // returns how often each input kind came up.
 function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map<KioskInput, number> {
@@ -497,7 +582,7 @@ function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map
             const typeable = (a: string) => expect(sanitizeAnswer(a, keys, input).replace(',', '.'), `${where} untypeable ${a} keys ${keys}`).toBe(a.replace(',', '.'));
 
             if (input === 'interactive') {
-                checkInteractive(d, ex, c, truth, where);
+                checkInteractive(leaf.typeId, d, ex, c, truth, where);
             } else if (input === 'number+rest') {
                 const [q, r] = truth as [number, number];
                 expect(accepted.map(Number), where).toEqual([q, r]);

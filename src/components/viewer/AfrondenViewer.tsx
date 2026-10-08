@@ -6,6 +6,7 @@ import { useBlockWidth, useSheetSizePx, fitCols, ANSWER_LINE_H, ANSWER_ROW_H } f
 import { grownColumn, splitColumns } from '../../services/layout/blockLayout';
 import type { AfrondenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import KioskCell from './KioskCell';
 
 interface Props {
     block: MathBlock;
@@ -111,7 +112,10 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                         <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{formatMathNumber(num)}</div>
                         {ts.map(t => (
                             <div key={t.key} style={{ ...cell, ...solutionText }}>
-                                {showSolutions ? formatMathNumber(roundTo(num, t.weight)) : ''}
+                                {/* Oefenmodus: the empty cell is the pupil's (kiosk.css is-box; flex + width 0 keep the column). */}
+                                <KioskCell cellKey={`r${i}_${t.key}`} variant="is-box" style={{ flex: 1, width: 0, alignSelf: 'stretch' }}>
+                                    {showSolutions ? formatMathNumber(roundTo(num, t.weight)) : ''}
+                                </KioskCell>
                             </div>
                         ))}
                     </div>

@@ -1,6 +1,7 @@
 import { INTERACT_SEP, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { encodeSessie } from '../../services/oefenen/session';
-import { kioskFor, kioskInputOf } from '../../services/oefenen/kiosk';
+import { kioskFor, kioskInputOf, kioskInteractOf } from '../../services/oefenen/kiosk';
+import { rightCells } from './fillCells';
 import { useOefenStore } from '../../oefenen/useOefenStore';
 import { EMPTY_INTERACTION } from '../../components/viewer/ViewerInteractionContext';
 import type { OrdenenExercise } from '../../services/math/types';
@@ -41,7 +42,10 @@ export function onScreen() {
 export function fillAnswer(right: boolean) {
     const st = useOefenStore.getState();
     const { answer, kind, choices } = onScreen();
-    if (kind === 'interactive') tapAnswer(right);
+    if (kind === 'interactive') {
+        if (kioskInteractOf(kioskFor(st.sessie!.types[st.shown!.slot].typeId)!, st.shown!.constraints)?.kind === 'fill-cells') fillCellsAnswer(right);
+        else tapAnswer(right);
+    }
     else if (kind === 'choice') st.choose(right ? answer[0] : choices.find(c => c !== answer[0])!);
     else if (kind === 'number+rest') { st.setField(0, right ? answer[0] : '999'); st.setField(1, right ? answer[1] : '9'); }
     else if (kind === 'time') { const [h, m] = answer[0].split(':'); st.setField(0, h); st.setField(1, right ? m : String((Number(m) + 1) % 60)); }
@@ -49,6 +53,17 @@ export function fillAnswer(right: boolean) {
     else if (kind === 'multi-number') answer.forEach((a, i) => st.setField(i, right || i < answer.length - 1 ? a.split('|')[0] : '99999'));
     else if (kind === 'text') st.setField(0, right ? answer[0] : 'xyz');
     else st.setField(0, right ? answer[0] : '99999');
+}
+
+/** Fills the card's cells (Phase C2): the right value in every cell, or one cell spoilt. */
+export function fillCellsAnswer(right: boolean) {
+    const st = useOefenStore.getState();
+    const cur = st.shown!;
+    const typeId = st.sessie!.types[cur.slot].typeId;
+    const cells = rightCells(typeId, kioskFor(typeId)!, cur.exercise, cur.constraints);
+    const spoil = Object.keys(cells).find(k => cells[k])!;
+    if (!right) cells[spoil] = cells[spoil].replace(/\d(?!.*\d)/, d => String((Number(d) + 1) % 10));
+    st.setInteraction({ ...EMPTY_INTERACTION, cells });
 }
 
 /** Taps the card's parts the way a pupil would (Phase C): the right key(s), or a wrong set. */

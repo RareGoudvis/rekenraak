@@ -5,6 +5,14 @@ import { formatMathNumber } from '../../services/math/formatters';
 import type { SplitsenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
+import KioskCell from './KioskCell';
+import { useViewerInteraction } from './ViewerInteractionContext';
+
+// Oefenmodus: a blank box's cell fills the box (kiosk.css is-box); flex + width 0 keep the
+// input from widening the box to its own default width.
+const BOX_CELL: React.CSSProperties = { flex: 1, width: 0, alignSelf: 'stretch' };
+// The basic box's row height on the kiosk card (40px cells after the card's ~1.3× scale).
+const KIOSK_ROW_PX = 36;
 
 // Every printed digit/mono size below is a factor of --sheet-size-math (the empty-state
 // placeholder is screen-only chrome and stays a fixed px).
@@ -26,7 +34,9 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
     // Column counts follow the cell width (¼ stacks 1-up), never a fixed 2/4/5-up grid.
     const availableWidth = useBlockWidth();
     const mathPx = useSheetSizePx('math');
-    const rowHeight: number = c.rowHeight || 28;
+    // Oefenmodus: a fill-in row is a thumb's target; a wide box's 28px rows would scale too flat.
+    const cells = useViewerInteraction()?.kind === 'fill-cells';
+    const rowHeight: number = cells ? Math.max(KIOSK_ROW_PX, c.rowHeight || 28) : c.rowHeight || 28;
 
     if (exercises.length === 0) {
         return (
@@ -126,6 +136,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
                     <HeartItem
                         key={item.uid}
                         pairId={item.uid}
+                        cellKey={`p${item.uid.slice(item.uid.lastIndexOf('-') + 1)}`}
                         total={item.total}
                         given={item.given}
                         answer={item.answer}
@@ -315,7 +326,7 @@ function PositieTabelItem({ ex, showSolutions, availableWidth, mathPx }: { ex: S
                     {cols.map(p => <div key={p.key} style={{ ...cell, backgroundColor: '#f4cbb8', fontWeight: 'bold' }}>{p.key}</div>)}
                 </div>
                 <div style={{ display: 'flex' }}>
-                    {cols.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}>{showSolutions ? p.digit : ''}</div>)}
+                    {cols.map(p => <div key={p.key} style={{ ...cell, ...solutionText }}><KioskCell cellKey={p.key} variant="is-box" style={BOX_CELL}>{showSolutions ? p.digit : ''}</KioskCell></div>)}
                 </div>
             </div>
         </div>
@@ -388,7 +399,7 @@ function BasicBox({ ex, showSolutions, rowHeight }: { ex: SplitsenExercise; show
                 <div key={i} style={{ display: 'flex', borderTop: i > 0 ? '1px solid #000' : undefined, width: '100%' }}>
                     <div style={{ ...cellBase, flex: 1, borderRight: '1px solid #000' }}>{fmt(pair.given)}</div>
                     <div style={{ ...cellBase, flex: 1, ...(showSolutions ? solutionText : { color: 'transparent' }) }}>
-                        {fmt(pair.answer)}
+                        <KioskCell cellKey={`p${i}`} variant="is-box" style={BOX_CELL}>{fmt(pair.answer)}</KioskCell>
                     </div>
                 </div>
             ))}
@@ -410,7 +421,10 @@ function SplitsboomItem({ ex, showSolutions, boxMinWidth }: { ex: SplitsenExerci
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 1.04)', boxSizing: 'border-box', padding: '0 6px',
         }}>
-            {isBlank ? (showSolutions ? <span style={solutionText}>{fmt(value)}</span> : '') : fmt(value)}
+            {isBlank
+                // The cell covers the box's 6px padding too, so the whole box is the target (and is measured whole).
+                ? <KioskCell cellKey="b" variant="is-box" style={{ ...BOX_CELL, margin: '0 -6px' }}>{showSolutions ? <span style={solutionText}>{fmt(value)}</span> : ''}</KioskCell>
+                : fmt(value)}
         </div>
     );
 
@@ -458,8 +472,8 @@ function MathematicRow({ total, given, answer, showSolutions }: {
 
 const HEART_PATH = 'M50 80 C8 55 5 15 27 15 A23 23 0 0 1 50 36 A23 23 0 0 1 73 15 C95 15 92 55 50 80Z';
 
-function HeartItem({ pairId, total, given, answer, showSolutions }: {
-    pairId: string; total: number; given: number; answer: number; showSolutions: boolean;
+function HeartItem({ pairId, cellKey, total, given, answer, showSolutions }: {
+    pairId: string; cellKey: string; total: number; given: number; answer: number; showSolutions: boolean;
 }) {
     const leftId = `hl-${pairId}`;
     const rightId = `hr-${pairId}`;
@@ -494,6 +508,8 @@ function HeartItem({ pairId, total, given, answer, showSolutions }: {
                 }}>
                     <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontWeight: 'normal', fontFamily: "'Azeret Mono', monospace" }}>{fmt(given)}</span>
                 </div>
+                {/* Oefenmodus: the empty right half is the cell. */}
+                {!showSolutions && <KioskCell cellKey={cellKey} style={{ position: 'absolute', top: '43%', right: '14px', width: '36%', height: '30px', transform: 'translateY(-50%)' }} />}
                 {/* Right half number */}
                 {showSolutions && (
                     <div style={{
