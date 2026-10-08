@@ -216,6 +216,14 @@ describe('kioskLabel', () => {
         expect(label('vergelijken-getallen')).toBe('Vergelijken · twee getallen');
         expect(label('procenten-welk')).toBe('Hoeveel procent?');
     });
+    test('a bare sub-type name gets its subject back on the stats screen', () => {
+        expect(label('geld-teruggeven')).toBe('Geld teruggeven');
+        expect(label('temperatuur-verschil')).toBe('Temperatuurverschil');
+        expect(label('herleidingen-oppervlakte')).toBe('Herleiden · oppervlakte');
+        // No kiosk label is a bare sidebar word that only makes sense under its subdomain heading.
+        const bare = ['Herkennen', 'Teruggeven', 'Korting', 'Intrest', 'Meter aflezen', 'Verschil', 'Lengte', 'Inhoud', 'Massa', 'Oppervlakte'];
+        expect(kioskCapableLeaves().map(kioskLabel).filter(l => bare.includes(l))).toEqual([]);
+    });
     test('a leaf shortLabel wins', () => {
         const leaf = { ...flattenLeaves().find(l => l.id === 'procenten-nemen')!, shortLabel: 'Procent nemen' };
         expect(kioskLabel(leaf)).toBe('Procent nemen');
