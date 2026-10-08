@@ -406,7 +406,8 @@ describe('kiosk flow: answer on the card', () => {
         act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'a1' }); });
         const { container } = render(<OefenApp />);
         const lenen = screen.getByRole('button', { name: 'Lenen' });
-        expect(screen.getByText('Lenen: tik op het vakje onder de eenheden en druk op Lenen.')).toBeTruthy();
+        // No hint line: the key never tells the pupil where to exchange.
+        expect(screen.queryByText(/tik op het vakje/)).toBeNull();
         expect(container.querySelectorAll('[data-kiosk-borrowed]')).toHaveLength(0);
         fireEvent.click(lenen);
         expect(cellInputs(container).get('b0')!.value).toBe('4');
