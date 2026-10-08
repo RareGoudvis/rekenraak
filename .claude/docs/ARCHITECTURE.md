@@ -324,7 +324,8 @@ The four consumers are now **table lookups, not branches**:
    links should carry compactly to `KIOSK_KEY_TABLE_V1`) in [kiosk.ts](../../src/services/oefenen/kiosk.ts),
    never reorder; add the leaves to `EXPECTED_LEAVES` and the typeId's generator truth to `TRUTH`
    in `oefenen.descriptors.test.ts`, and the new table entries to the pinned copies in
-   `oefenen.session.test.ts` (§15).
+   `oefenen.session.test.ts` (§15). To answer ON the exercise: `input: 'interactive'` + `interact` and
+   `interactionProps` / `<KioskCell>` in the viewer (§8 interaction context, §15 Phase C).
 
 Do **not** add `if (typeId === …)` branches in dispatch / Inspector / App — that
 pattern is gone. A missing registry row makes the block render/generate nothing
@@ -482,8 +483,8 @@ only.
 | `cijferen-vermenigvuldigen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-delen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above + withRemainder |
 | `klok-kloklezen` | `clockExercises` | `generateClockExercises` | `ClockExerciseItem` | `ClockConfig` | clockType, is24hour, timeTypes, minuteDirection, handChoice — each exercise carries its own `clockType/exerciseMode/is24hour/handChoice` (own-data rule, 2026-09-13) |
-| `breuken` | `fractionExercises` | `generateFractionExercises` | `FractionExerciseItem` | `FractionConfig` | subType, shape, min/maxDenominator, objectShape, maxTotal, level |
-| `splitsen` | `splitsenExercises` | `generateSplitsenExercises` | `SplitsenViewer` | `SplitsenConfig` | maxGetal, operand1/2Mask, fixedTotal, layout (basic/**splitsboom**/verliefde-harten/positie-*), rowsPerBox; `splitsboom` = single split-tree, operand1Mask=top, operand2Mask=sides, `blankPositions[]` (top/left/right, random per item, maxGetal≤1000) |
+| `breuken` | `BREUKEN_KIOSK` | only kleuren / herkennen / hoeveelheid(-abstract): kleuren **tap** n of the d parts; else a breuk, a count, or the two counting questions |
+| `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: **fill** the partners, the tree's blank or the positietabel on the card |
 | `geld-herkennen` | `geldExercises` | `generateGeldExercises` | `GeldViewer` | `GeldConfig` | maxGetal, format, allowedDenominations, geldLayout |
 | `geld-tekenen` | `geldExercises` | `generateGeldExercises` | `GeldTekenenViewer` | `GeldConfig` | maxGetal, scaffolding, allowedDenominations |
 | `geld-wissel` | `geldWisselExercises` | `generateGeldWisselExercises` | `GeldWisselViewer` | `GeldWisselConfig` | exerciseBills, exercisesPerRow |
@@ -496,30 +497,31 @@ only.
 | `getallenrijen` | `getallenasExercises` | `generateGetallenrijExercises` | `GetallenrijenViewer` | `GetallenrijenConfig` | numberType (natural/decimal/rational/geheel — sidebar leaf), maxGetal, step (+custom jump all types), direction (stijgend/dalend/beide), numberMask (anchor; decimal mask dp = step decimals), rational getalopbouw via `FractionMaxField` (noemer=fractionStep, teller=maxTeller), ticks, `showFrame` (Differentiatie toggle, rounded pill on/off); getallenas without the axis line |
 | `lengte-meten` | `meetExercises` | `generateLengteMetenExercises` | `MetenViewer` | `MetenConfig` | measureModel: **meten** (write the length) or **gegeven** = juist/fout (stated `claim` ±, pupil circles juist/fout); precision (cm/mm), min/maxLength, maxCorners (0–4 → polyline segments). Drawn to scale (1cm≈37.8px). Scaffold/answer keys (`perSideScaffold`, `answerMode` single/sum, `answerUnit` cm/plain) live in the Inspector **Differentiatie** card |
 | `omtrek` | `meetExercises` | `generateOmtrekExercises` | `MetenViewer` | `MetenConfig` | measureModel (op-schaal/gegeven), precision, length-per-side, `shapes[]` (driehoek · vierkant/rechthoek/ruit/parallellogram/trapezium/vierhoek · vijf-/zes-/zeven-/achthoek · cirkel met middelpunt) + the Differentiatie scaffold/answer keys. Constructors return exact `sides[]` (hele cm never drifts); perimeter = Σ sides or π·d |
-| `deelbaarheid` | `deelbaarheidExercises` | `generateDeelbaarheidExercises` | `DeelbaarheidViewer` | `DeelbaarheidConfig` | layout (tabel/veelvouden — sidebar leaf only), divisors[], maxGetal, base, terms, givenCount |
+| `deelbaarheid` | `VEELVOUDEN_KIOSK` | veelvouden: the multiples after the given ones (typed); tabel: **tap** every number it is divisible by |
+| `deelbaarheid-kleuren` | `DEELBAARHEID_KLEUR_KIOSK` | rooster / omcirkelen / kleurraster: **tap** every number divisible by the divisor (card shows ≤ 20 numbers) |
 | `getalpatronen` | `patroonExercises` | `generatePatroonExercises` | `PatroonViewer` | `PatroonConfig` | numberType (nat/dec/geheel — leaf), maxGetal, minGetal, ticks, **steps** (1–4 repeating cycle), **ops** (`+ − × :`), **opSettings** per op `{max,mask}` (+/− mask spans the block place range incl. decimals), `maxDecimals` (decimal). Differentiatie (Inspector): `showArrows`, `showOperators`, `operatorsShown`, `operatorStyle` (symbol/full). No frame; `–`/arrow connectors |
 | `deelbaarheid-kleuren` | `deelbaarheidKleurExercises` | `generateDeelbaarheidKleurExercises` | `DeelbaarheidKleurViewer` | `DeelbaarheidKleurConfig` | viewMode (strip/markeren; legacy `raster` still loads and renders as strip+rechthoek), `rasterVorm` (lijn/rechthoek — the old kleurraster is the rechthoek form of the strip, cells in `em` so they follow the font sliders, last row padded to a full rectangle), `divisors[]` (2–12, rotated per row), maxGetal/perRow or rasterCount/rasterCols, `showRest` |
 | `splitsen` (positie-*) | `splitsenExercises` | `generateSplitsenExercises` | `SplitsenViewer` | `SplitsenConfig` | layout positie-tabel/-benen/-math (sidebar leaf), maxGetal(≤1e9), decimalPlaces, operand1Mask, benenVariants[], mathForms[], mathDirection, `mathOrder` (volgorde/gehusseld — the generator shuffles once per exercise into `ex.placeOrder`); columns follow width + maxGetal (benen), positie-math is always 1-up |
 | `getallenas` | `getallenasExercises` | `generateGetallenasExercises` | `GetallenasViewer` | `GetallenasConfig` | numberType (natural/decimal/rational/geheel), maxGetal, minGetal, step, fractionStep, direction(+beide), allowMixed, gelijknamig, hardMode, ticks |
 | `temperatuur` | `temperatuurExercises` | `generateTemperatuurExercises` | `TemperatuurViewer` | `TemperatuurConfig` | variant (kleuren/aflezen/verschil — sidebar leaf), mode1/mode2 (verschil), includeNegatives, perRow |
-| `plaatswaarde` | `plaatswaardeExercises` | `generatePlaatswaardeExercises` | `PlaatswaardeViewer` | `PlaatswaardeConfig` | subType (waarde/plaats/omcirkelen/tabel — sidebar leaf; omcirkelen = underlined digit + the place letters as chips to circle, reuses the plaats generator path), maxGetal, numberMask, decimalPlaces (0–3, kommagetallen) |
-| `even-oneven` | `evenOnevenExercises` | `generateEvenOnevenExercises` | `EvenOnevenViewer` | `EvenOnevenConfig` | subType (rooster/cirkels), maxGetal, target (even/oneven), perRow |
-| `vergelijken` | `vergelijkenExercises` | `generateVergelijkenExercises` | `VergelijkenViewer` | `VergelijkenConfig` | subType (getallen/kiezen/**representaties**), maxGetal, numberMask, chooseTarget, setSize (default 3, min 2; chip row never wraps), decimalPlaces (0–3, kommagetallen); `representaties` = compare two values, `leftRep`/`rightRep` ∈ breuk/kommagetal/plaatswaarde/woorden + per-side getalopbouw (place mask `leftMask`/`rightMask`, OR teller/noemer `FractionMaxField` when that side = breuk → stored as `aFrac`/`bFrac`); config = 2 columns Linkerkant│Rechterkant; `RepValue` + `representations.ts` |
-| `afronden` | `afrondenExercises` | `generateAfrondenExercises` | `AfrondenViewer` | `AfrondenConfig` | subType (rooster/simpel), numberType (natural/decimal — sidebar leaf), maxGetal, decimalPlaces, numberMask (natural), roundTargets[] (T/H/D/TD or E/t/h), roosterSize (rooster = one rooster per exercise, 2-up) |
+| `plaatswaarde` | `PLAATSWAARDE_KIOSK` | waarde: a number; plaats: pick the place; omcirkelen: **tap** the place chip; tabel: **fill** the plaatswaardetabel |
+| `even-oneven` | `EVEN_ONEVEN_KIOSK` | cirkels: even / oneven; rooster: **tap** every even (or oneven) number |
+| `vergelijken` | `VERGELIJKEN_KIOSK` | getallen / representaties: `<` `=` `>` buttons; kiezen: **tap** the grootste / kleinste number on the card |
+| `afronden` | `AFRONDEN_KIOSK` | simpel and rooster: **fill** the rounded number into the card's cells |
 | `romeinse-cijfers` | `romeinseExercises` | `generateRomeinseExercises` | `RomeinseViewer` | `RomeinseConfig` | subType (herkennen/schrijven), niveau (1–4); always-subtractive notation, numberMask |
 | `herleidingen` | `herleidingExercises` | `generateHerleidingExercises` | `HerleidingenViewer` | `HerleidingenConfig` | measure (lengte/inhoud/massa/**oppervlakte** incl. ha·a·ca — sidebar leaf), units[] (ladder subset), **maxEnkel** (def 100, single formats) + **maxSamengesteld** (def 1000, compound formats) — power-of-10 breakpoint sliders, formats[] (4), **compoundMode** (2/volledig), writeUnits, scaffolding (geen/tabel-headers/tabel-blanco) + table options `tablePrompt`/`tableAnswer` (blank/filled/hidden)/`tableCellW`/`tableCellH` — all in the **Differentiatie** card. Integer-exact (safe-int guarded); `HerleidingenViewer` auto single-columns wide blocks, renders a centered enriched table, and allows inline edit of given numbers + a unit **dropdown** (`recomputeHerleiding` + `patchExercise`). |
 
 | `schattend` | `schattendExercises` | `generateSchattendExercises` | `SchattendViewer` | `SchattendConfig` | operators[] (+−×:; ×/: keep one factor ≤9), numberType (leaf), maxGetal, roundTargets[] (afronden keys), scaffolding (tussenstappen/enkel-schatting), `answerLine` (kort/lang); every exercise is one CSS grid with block-wide `ch` tracks so ≈, blanks and operands align; skips items where nothing rounds |
-| `verbanden` | `verbandExercises` | `generateVerbandExercises` | `VerbandenViewer` | `VerbandenConfig` | subType (tabel/paren — leaf), reps[] (breuk/decimaal/procent, ≥2), denominators[] ⊂ {2,4,5,8,10,20,25,100} (terminating only), given (random/rep) |
+| `verbanden` | `VERBANDEN_KIOSK` | **fill** the asked representation cells (breuk / kommagetal / procent without `%`) |
 | `procenten` | `procentExercises` | `generateProcentExercises` | `ProcentenViewer` | `ProcentenConfig` | subType (nemen/welk-percent — leaf), percents[], maxGetal, scaffold (10 %/1 % hulplijn, only when the tussenstap is whole); answer-first → natural results |
-| `maateenheid` | `maateenheidExercises` | `generateMaateenheidExercises` | `MaateenheidViewer` | `MaateenheidConfig` | grootheden[] (lengte/massa/inhoud/tijd/temperatuur), answerMode (omcirkelen/schrijven; omcirkelen needs ≥3 units so temperatuur is schrijven-only), subType (eenheid/schatten = value+unit chips); curated item bank in maateenheidData.ts |
+| `maateenheid` | `MAATEENHEID_KIOSK` | omcirkelen: **tap** a chip; schrijven: type the unit (not schatten + schrijven) |
 | `geld-rekenen` | `geldRekenenExercises` | `generateGeldRekenenExercises` | `GeldRekenenViewer` | `GeldRekenenConfig` | subType (korting/winst/intrest — leaf), percents[] (pool differs per variant), maxEuro, wholeEuros, halfYear (intrest pro rata); cents internal, whole-cent answers guaranteed, `formatEuro` |
 | `rekenvolgorde` | `rekenvolgordeExercises` | `generateRekenvolgordeExercises` | `RekenvolgordeViewer` (reads `useBlockWidth()`; digits at the `*1` math factor, SYNC with MathBlockRenderer) | `RekenvolgordeConfig` + `RekenvolgordeStyleConfig` (Kort / Lang / Stappen → `layoutPreset` inline-short 2-up / inline-long 1-up full-width line / stepped N `steppedLines`, 2-up while two rows keep the writing room, like hoofdrekenen) | operators[] (≥1 ×/: enforced), opsCount (2/3), maxGetal, haakjes (only planted when they change the outcome); tokens rendered verbatim |
 | `kettingsommen` | `patroonExercises` (reused) | `generateKettingExercises` | `PatroonViewer` (reused) | `KettingConfig` | ops[] (no two equal in a row), opSettings per op, chainLength (3–5; cycle length = ticks−1), maxGetal, blankMiddle; defaults force showArrows/showOperators + operatorStyle 'full' |
-| `getalfunctie` | `getalFunctieExercises` | `generateGetalFunctieExercises` | `GetalFunctieViewer` | `GetalFunctieConfig` | functies[] (hoeveelheid/rang/maat/code, ≥2), answerMode (aankruisen = tick-table / schrijven), maxGetal (bounds substituted numbers) |
+| `getalfunctie` | `GETALFUNCTIE_KIOSK` | aankruisen: **tap** the functie; schrijven: text |
 | `tijdsduur` | `tijdsduurExercises` | `generateTijdsduurExercises` | `TijdsduurViewer` | `TijdsduurConfig` | granularity[] (heel-uur/kwartier/vijf-min/een-min), blanks[] (duur/einde/begin, rotates), maxDuurMin (60/240/720), overMidnight (einde prints "(volgende dag)") |
 | `kalender` | `kalenderExercises` | `generateKalenderExercises` | `KalenderViewer` | `KalenderConfig` | subType (maandrooster/datum-rekenen/notatie — leaf), questionTypes[] + questionCount (rooster), month (random/0–11), year (pinned 2026 for stable regeneration); ma-first CSS-grid month |
-| `controleren` | `controleExercises` | `generateControleExercises` | `ControlerenViewer` | `ControlerenConfig` | subType (negenproef/omgekeerde — leaf), operators[] (omgekeerde: +/−), maxGetal, foutAandeel (geen/helft/alles; planted deltas never ≡ 0 mod 9), showKruis (inline SVG cross; rests red in solutions) |
+| `controleren` | `CONTROLEREN_KIOSK` | **tap** juist or fout on the card |
 | `oppervlakte` | `meetExercises` (reused, + `area`) | `generateOppervlakteExercises` | `OppervlakteViewer` | `OppervlakteConfig` | subType (rooster = 1 cm grid count, whole-cm rect/L-figuur / berekenen = l×b, ½·b·h for rechth. driehoek — leaf), shapes[], min/maxLength sliders, scaffoldFormule (`opp = ___ × ___ = ___`), askOmtrek; SYNC cm→px 37.8 with MetenViewer |
 | `weegschaal` | `weegschaalExercises` | `generateWeegschaalExercises` | `WeegschaalViewer` | `WeegschaalConfig` | mode (aflezen = black needle / kleuren = no needle, the pupil shades the dial from 0 to the value, solution paints that wedge in `SOL` — leaf; a legacy `tekenen` loads as kleuren), bereikGram (1000/2000/5000) with dependent stepGram (BEREIK_STEPS), notatie (g/kg-komma/kg-g), exercisesPerRow, boxHeight; values snap to the schaalverdeling; each exercise carries its own `bereikGram/stepGram/notatie/mode` (own-data rule) |
 | `vormleer-punt-lijn` · `-hoeken` · `-figuren` | `vormleerExercises` (shared) | `generateVormleerExercises` | `VormleerViewer` (shared) | `VormleerConfig` (shared) | kind from typeId (registry default), mode (herkennen/tekenen; hoeken also **meten** = one to-scale angle in 5° steps 20–160° on a grid, pupil writes the degrees, `showHulplijn` faint 0–180 line, no frame around the angle — leaf "Meten", floor ½; figuren eigenschappen table sizes its columns from `useBlockWidth()` and splits into stacked mini-tables when they would overflow; figuren: benoemen/eigenschappen), **niveau** 1/2/3 for punt-lijn, ONE scenario builder (`buildScenario`) shared by herkennen and tekenen so both modes read identically (1 = one named element; 2 = two elements in one named relation, "Rechte a snijdt horizontale halfrechte [AB in punt C"; 3 = a three-step chain in one figure) — tekenen = numbered instruction + one empty box, herkennen = the same scenario drawn + blanks; every element always labelled (points uppercase, rechten lowercase, `[AB` / `[AB]`); `allowHorizontaal` / `allowVerticaal` pills (default off) add orientation words and draw those elements unrotated; niveau ≥ 2 floors at ½; hoeken tekenen `nameAngles` (default on) names the requested angle "hoek ABC", vertex in the middle, concepts[] per kind (leaf presets; figuren classify axis driehoeken-hoeken/-zijden/vierhoeken), answerMode (woordbank/schrijven), randomRotation, showBoog (hoeken; square marker at 90°), showMarks (equal-side ticks + right-angle squares), raster + boxHeight (tekenen), exercisesPerRow; `CONCEPT_NAMES` maps keys → leerplan names |
@@ -533,13 +535,14 @@ only.
 ### Oefenmodus: the rows that carry `kiosk` (§15)
 
 One phrase per descriptor ([kioskDescriptors.ts](../../src/services/oefenen/kioskDescriptors.ts));
-"only X" is its `supported(c)`. 92 sidebar leaves are capable at their defaults
-(`kioskCapableLeaves()`, pinned in `oefenen.descriptors.test.ts`).
+"only X" is its `supported(c)`. 101 sidebar leaves are capable at their defaults
+(`kioskCapableLeaves()`, pinned in `oefenen.descriptors.test.ts`); **tap / fill / order** = the pupil answers ON the
+exercise through `interact` (§15 Phase C).
 
 | Row(s) | Descriptor | What the pupil gives |
 |---|---|---|
 | `hr-std-optellen` · `-aftrekken` · `-vermenigvuldigen` · `-delen` · `-gemengd` | `HR_KIOSK` | the answer; a puntoefening asks the blank (`missing-operand`), met rest asks quotiënt + rest (`number+rest`); keys follow numberType (`,` / `/` + space / `−`) |
-| `cijferen-*` (8) | `CIJFER_KIOSK` | the final result only (the grid is hidden); delen = quotiënt + rest; decimal leaves get `,` |
+| `cijferen-*` (8) | `CIJFER_KIOSK` | **fill** the grid's own ruitjes on the card: answer digits, partial products, quotient digits, rest (carries / exchanged digits are optional help; decimal leaves get `,`) |
 | `procenten` | `PROCENTEN_KIOSK` | only nemen / welk-percent: one number |
 | `verbanden` | `VERBANDEN_KIOSK` | one captioned field per asked representation (breuk / kommagetal / procent without `%`) |
 | `afronden` | `AFRONDEN_KIOSK` | only simpel: the rounded number (a rooster is a table, not one answer) |
@@ -560,18 +563,18 @@ One phrase per descriptor ([kioskDescriptors.ts](../../src/services/oefenen/kios
 | `maateenheid` | `MAATEENHEID_KIOSK` | omcirkelen: tap a chip; schrijven: type the unit (not schatten + schrijven) |
 | `herleidingen` | `HERLEIDINGEN_KIOSK` | only without writeUnits: one field per part (labelled by unit), or tap the unit when the unit is the blank |
 | `geld-herkennen` · `geld-teruggeven` · `geld-rekenen` | `GELD_KIOSK` · `GELD_TERUGGEVEN_KIOSK` · `GELD_REKENEN_KIOSK` | the amount · euro + cent fields (or € x,xx in decimaal) · korting € + nieuwe prijs, or the intrest (only korting / intrest) |
-| `getalpatronen` · `kettingsommen` | `PATROON_KIOSK` | one field per blank, only when every operator is printed |
-| `getallenas` · `getallenrijen` | `GETALLENAS_KIOSK` | one field per blank |
+| `getalpatronen` · `kettingsommen` | `PATROON_KIOSK` | **fill** the blanks on the card, only when every operator is printed |
+| `getallenas` · `getallenrijen` | `GETALLENAS_KIOSK` | **fill** the blanks on the card (as / rij) |
 | `deelbaarheid` | `VEELVOUDEN_KIOSK` | only the veelvouden layout: the multiples after the given ones |
-| `ordenen` · `breuken-rangschikken` | `ORDENEN_KIOSK` | the values in order, `<` / `>` printed between the fields |
+| `ordenen` · `breuken-rangschikken` | `ORDENEN_KIOSK` | **tap** the numbers / breuken in order (groot→klein or klein→groot; 1, 2, 3 appear beside them) |
 | `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: the partners, the tree's blank, or a digit per place |
 | `breuken-bewerken` | `BREUK_BEWERK_KIOSK` | the asked FORM (gemengd / improper / reduced); gelijknamig = two fields |
 | `breuken` | `BREUKEN_KIOSK` | only herkennen / hoeveelheid(-abstract): a breuk, a count, or the two counting questions |
 | `klok-kloklezen` | `KLOK_KIOSK` | uur + min (analoog lezen / omzetten, digitaal tekenen); 3:15 and 15:15 both count |
 | `tijdsduur` | `TIJDSDUUR_KIOSK` | begin / einde as a time, duur as uur + min |
 
-No descriptor (cannot be practised yet, mostly Phase C in the plan): `geld-tekenen`, `geld-wissel`,
-`mab-tekenen`, `deelbaarheid-kleuren`, `kalender`, `vormleer-punt-lijn`, the `layout-*` furniture.
+No descriptor (cannot be practised yet): `geld-tekenen`, `geld-wissel`,
+`mab-tekenen`, `kalender`, `vormleer-punt-lijn`, the `layout-*` furniture.
 
 ---
 
@@ -680,8 +683,27 @@ q-r box / omgekeerde controle: the sum alone), DeelbaarheidViewer (veelvouden: e
 "(enz.)"), GetalFunctieViewer (the schrijven sentence instead of the tick table), VormleerViewer
 (no woordbank; the kiosk's buttons replace it). **Rule:** a viewer changes what it draws for the
 kiosk ONLY through such a context, never by sniffing a route, a store flag or the typeId; with
-the default value the sheet must stay byte-identical, which the visual gate proves. Phase C's
-interactive answers (plan: `ViewerInteractionContext`) follow the same rule.
+the default value the sheet must stay byte-identical, which the visual gate proves.
+
+**Interaction context: `useViewerInteraction()`** ([ViewerInteractionContext.tsx](../../src/components/viewer/ViewerInteractionContext.tsx),
+Oefenmodus Phase C, §15). Default `null` (sheet, thumbnails, previews); only the kiosk card provides it:
+`{ kind, state: { selected, cells, order }, set, activeCell?, focusCell?, typeCell? }` with `kind` one of
+`tap` (pick one) · `tap-multi` (toggle any number) · `fill-cells` (type into the viewer's own blanks) ·
+`order` (tap in sequence; tapping an ordered part removes it and every later one). A viewer marks its parts
+through the helpers and adds **nothing** else:
+
+- `interactionProps(ctx, key, part = 'tap' | 'order')` spreads `role="button"`, `tabIndex`, `aria-pressed`,
+  `data-kiosk-key` / `-selected` / `-order` and the click / Enter / Space handlers; a part asked for in a
+  context of another kind stays plain (`'tap'` parts serve tap and tap-multi, `'order'` parts serve order).
+- `cellProps(ctx, key)` and `<KioskCell cellKey variant?>` ([KioskCell.tsx](../../src/components/viewer/KioskCell.tsx))
+  draw an `<input data-kiosk-cell>` bound to `cells[key]` (`inputMode="none"`: the kiosk keypad is the touch input);
+  without a fill-cells context `KioskCell` renders its `children` (the sheet's own blank) untouched.
+
+**Rule:** no attribute, handler or element without the context. With `ctx === null` every helper returns `{}`
+and the viewer's DOM is byte-identical to before; `viewers.interaction.test.tsx` /
+`viewers.interaction.grids.test.tsx` assert exactly that (markup with no provider equals markup before the
+change, a null context equals none) and the visual gate proves the sheet unchanged. Twin viewers (a sheet and
+a kiosk layout) are marked `SYNC` where they must agree (cijfer grid keys, `KIOSK_MAX_NUMBERS`).
 
 ## 9. Print / PDF export — the page model
 
@@ -1114,7 +1136,7 @@ src/
 │       ├── ExerciseCard.tsx     # ONE exercise through the registry Viewer at 340 px, scaled to the card; inert; ScaffoldProvider false
 │       ├── AnswerInput.tsx      # fields (number / two / time / multi-number / text) + Keypad, or the choice buttons
 │       ├── Keypad.tsx           # 7-8-9 keypad, ⌫, up to two extra keys from descriptor.keys(c), Controleer
-│       ├── FeedbackOverlay.tsx  # Juist! / Fout + Volgende (never the right answer)
+│       ├── FeedbackOverlay.tsx  # Juist! / Fout / retry flash (tap or Enter skips), never the right answer; no Volgende button
 │       ├── StatsScreen.tsx      # per type gemaakt/juist/fout/%, Foutjes (exercise, given, expected), Opnieuw, two-tap Wissen
 │       ├── StartScreen.tsx      # confirm screen (title, n soorten · n oefeningen · min, type chips), Start (+ fullscreen try)
 │       ├── ErrorScreen.tsx      # bad / truncated / newer link, or no link
@@ -1164,6 +1186,9 @@ src/
 │  (repo root) scripts/limit-trigger-cases.json  # one or more repro cases per open limit-bug id (read by limits.matrix.test.ts and trigger-shots)
 │  (repo root) scripts/fixtures/         # trigger-case sample + a synthetic limits-diff before/after fixture
 │  (repo root) vitest.audit.config.ts    # vitest config for src/__tests__/audit/ only (npm run limits:audit); vitest.config.ts excludes that folder
+│  (repo root) src/__tests__/viewers.interaction.test.tsx, viewers.interaction.grids.test.tsx  # Phase C: no provider = no kiosk attributes, every interactive leaf taps / fills / orders to a right answer (TESTING.md)
+│  (repo root) src/__tests__/helpers/fillCells.ts, oefenKiosk.ts  # fill-cells answers written from the exercise itself; starter session + tap helpers for the kiosk suites
+│  (repo root) src/__tests__/oefenen.kioskInstruction.test.ts  # every kioskInstruction names a tap / fill, never a pen verb
 │  (repo root) src/__tests__/helpers/limitRules.ts, limitHarness.ts, answerKeys.ts  # the limit rule book (LIMIT_SPECS per typeId), case runner, shared answer-key arithmetic
 │  (repo root) src/__tests__/limits.matrix.test.ts + limits.knownBugs.ts  # gate: every leaf × leerjaar, pairwise, trigger cases vs the rule book; open bugs listed by BUGS id, stale entries fail
 │  (repo root) src/__tests__/audit/limits.audit.test.ts  # the full limit diagnosis behind npm run limits:audit (cartesian / pairwise / random, seeds, dumps)
@@ -1202,6 +1227,8 @@ src/
 │   ├── fractions/{fractionGenerator.ts,breukBewerkGenerator.ts}   # breukBewerk = gemengd/gelijknamig/vereenvoudigen
 │   ├── splitsen/{splitsenGenerator.ts,dutchWords.ts}   # basic/splitsboom/verliefde-harten/positie-*
 │   ├── cijferen/cijferGenerator.ts
+│   ├── cijferen/cijferLayout.ts   # pure column geometry shared by CijferViewer and the kiosk descriptor (cijferDp, getDigitCols, mulLayout, add/sub carries)
+│   ├── cijferen/cijferCells.ts    # the kiosk grid's ruitjes (key a/p/q/c/b/r, roles) + cijferCheck: which cell holds which digit, carries optional unless strictCarries (§15)
 │   ├── geld/{geldGenerator.ts,geldRekenenGenerator.ts}   # herkennen/tekenen, wissel, teruggeven; korting/winst/intrest (formatEuro)
 │   ├── mab/mabGenerator.ts
 │   ├── ordenen/{ordenenGenerator.ts,breukenRangschikkenGenerator.ts}   # rangschikken → OrdenenExercise[] (fractions)
@@ -1277,6 +1304,8 @@ src/
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components
+        ├── ViewerInteractionContext.tsx # Phase C: null on the sheet; tap / tap-multi / fill-cells / order state + interactionProps / cellProps / toggled (§8, §15)
+        ├── KioskCell.tsx               # a fill-cells blank: an <input> in the kiosk, its children (the sheet's blank) elsewhere
         ├── BlockWidthContext.tsx       # printable width of the block's CELL — viewers MUST read this, never a constant; also ScaffoldProvider / useShowScaffold (§8)
         ├── VerticalFraction.tsx        # shared stacked-fraction component
         ├── LayoutBlockViewer.tsx       # sheet furniture: sectie / schrijflijnen / raster / kader / lege pagina
@@ -1563,7 +1592,8 @@ useOefenStore.load → latest stored run? (done → locked stats · timer passed
    ▼ Start
 next(): nextType (scheduler) → nextExercise (generator on a throwaway block) → ExerciseCard + AnswerInput
    ▼ Controleer
-answer(): checkAnswer(descriptor) → recordAnswer → saveRun → Juist!/Fout (none in testMode) → Volgende
+answer(): checkAnswer(descriptor) → recordAnswer → saveRun → Juist!/Fout flash that moves on by itself (none in testMode);
+   a wrong 1st try with 2 kansen → 'retry' flash → the same exercise again (Kans 2 van 2)
    ▼ all limits / total reached, or timer 0
 finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; Opnieuw / Wissen
 ```
@@ -1572,7 +1602,7 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 
 | Field | Contract |
 |---|---|
-| `input` | the typical input: `number` · `number+rest` (quotiënt + rest, both must match) · `choice` · `missing-operand` (the blank of a puntoefening) · `text` (a word on the device keyboard: Romeins, a unit) · `time` (uur + min) · `multi-number` (one field per blank) |
+| `input` | the typical input: `number` · `number+rest` (quotiënt + rest, both must match) · `choice` · `missing-operand` (the blank of a puntoefening) · `text` (a word on the device keyboard: Romeins, a unit) · `time` (uur + min) · `multi-number` (one field per blank) · `interactive` (Phase C: the pupil answers ON the exercise, see `interact`) |
 | `inputOf(ex, c)?` | per-exercise refinement (a puntoefening or met-rest row in an hr block, a unit-blank herleiding) |
 | `choices?` / `choicesOf(ex, c)?` | the buttons, in order; `choicesOf` for per-exercise buttons (the row's numbers in vergelijken kiezen) |
 | `labels(ex, c)?` | multi-number field names (kg / g, euro / cent); named fields get a caption, numeric ones read left to right |
@@ -1580,7 +1610,14 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 | `keys(c)?` | extra keypad keys `,` `/` `-` `' '` — from the SETTINGS only, never the exercise, so the keypad never hints at the answer |
 | `answerOf(ex, c)` | every accepted spelling (`'2,5'`, `'2.5'`); number+rest = exactly `[q, r]`; time = every accepted `h:mm` (8:05 and 20:05); multi-number = one entry per field, alternatives joined by `\|` |
 | `display(ex, c)` | plain text for the stats' error rows ("47 + ? = 85") |
-| `supported(c)?` | settings this descriptor can check (afronden: simpel only); `kioskSupports` evaluates it over the registry defaults + the leaf's; the builder excludes an unsupported row with a hint |
+| `interact.kind` | `tap` (one part) · `tap-multi` (any number of parts; an empty set can be right) · `fill-cells` (type into the viewer's own blanks) · `order` (tap in sequence) |
+| `interact.answerOf` / `fromState` | the canonical answer and the pupil's answer from the viewer state, same shape: parts joined by `INTERACT_SEP` (`' · '`). tap-multi compares order-free; fill-cells part by part as numbers, `\|` = alternatives, an empty alternative = the cell may stay blank (`'\|1'` = a carry the pupil may skip). `fromState` = `''` means nothing given yet (Controleer stays off, except tap-multi) |
+| `interact.keys?` | every key the viewer marks (tests tap through them); fill-cells: also the cell order Tab walks and the keypad's first cell |
+| `interact.cellOf?(key)` | fill-cells: `{ length?, scratch? }` per cell: characters it holds (a full cell hands the keypad on) and whether it is scratch (a carry: off the Enter / auto-advance path, tapped). From the cell's role only, never its value |
+| `interact.show?(answer)` | stats text of an answer string (the tapped number, not its index); absent = the parts |
+| `kioskInstruction?` | the card header when the paper instruction names a pen verb (omcirkel, kleur, vul in) but the kiosk asks a tap or a typed cell; string or `(ex, c) => string \| undefined`. A teacher's own wording wins; the leaf's default gives way to this (`kioskInstructionOf`) |
+| `interact?` / `interactOf(c)?` | required whenever `input` / `inputOf` can be `interactive`: `{ kind, answerOf, fromState, keys?, cellOf?, show? }` (rows below). `interactOf` picks per SETTINGS (plaatswaarde: tap a letter or fill the tabel; undefined falls back to `interact`); read both through `kioskInteractOf(d, c)` |
+| `supported(c)?` | settings this descriptor can check (splitsen: four layouts; breuken: kleuren / herkennen / hoeveelheid); `kioskSupports` evaluates it over the registry defaults + the leaf's; the builder excludes an unsupported row with a hint |
 
 [check.ts](../../src/services/oefenen/check.ts) normalises before comparing: numbers drop
 spaces of any kind, accept `,`/`.`, leading/trailing zeros and the `−`/`–` glyphs; fractions
@@ -1616,7 +1653,7 @@ type — limits, weights, `perType` stats, history entries — is keyed by **slo
 
 `rekenraak_oefen_<sessionId>` → `{ v: 1, runs: OefenRun[] }`, the **last 5 runs** by index.
 A run = `{ index, stats: { startedAt, finishedAt?, perType[slot]: { made, correct, wrong,
-errors[{ exercise, given, expected, at }] }, history[{ slot, typeId, exerciseKey, correct, ms }] },
+secondTry?, errors[{ exercise, given, expected, at, secondTry?, second? }] }, history[{ slot, typeId, exerciseKey, correct, ms, secondTry? }] },
 timerEndsAt?, current?, done }`. `current` (exercise + the constraints it was generated with)
 makes a reload show the same exercise; it is cleared once answered so nothing counts twice.
 `saveRun` replaces by index and, on a full quota, drops the oldest runs first. Opnieuw = a new run
@@ -1626,7 +1663,7 @@ Never the worksheet autosave.
 ### Wire format v1 ([session.ts](../../src/services/oefenen/session.ts))
 
 Positional arrays, trailing defaults trimmed, `null` = default in a middle slot:
-`session = [v, id, created, flags, rows, title?, timerMin?, total?]`,
+`session = [v, id, created, flags, rows, title?, timerMin?, total?, attempts?]` (`attempts` = 2 or omitted, appended last so older links still decode),
 `row = [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?]`.
 `created` in whole minutes when it falls on one; `flags` bits 0 willekeurig · 1 allowRepeatType ·
 2 testMode · 3 statsLocked. `leaf` = index into **`KIOSK_LEAF_TABLE_V1`**, else the leafId string.
@@ -1650,11 +1687,11 @@ Decode errors are Dutch and land on the ErrorScreen: a newer `v` / a type withou
 `ExerciseCard` builds a one-exercise block and renders `EXERCISE_UI[typeId].Viewer` at a virtual
 340 px (a half-width cell) inside `BlockWidthProvider`, then scales the drawn extent to the card
 (`transform: scale`, ≤ 3.2×); the card is `inert` (the sheet's editable operands take no focus)
-and wrapped in `BlockErrorBoundary` keyed per exercise. It sets `<ScaffoldProvider value={false}>`:
+and wrapped in `BlockErrorBoundary` keyed per exercise (`inert` unless the exercise has an `interact`: then it is live, see Phase C below). It sets `<ScaffoldProvider value={false}>`:
 help the sheet draws beside the exercise (met-rest estimate, tussenstap, cijfer grid, woordbank,
 tick table) disappears (§8). **Viewer rule:** no interaction or scaffold change without such a
 context; the sheet path is untouched, which `npm run visual:gate -- --all` proves (768 cells,
-0 flagged on 2026-10-08). Known gaps (scaffold still shown, physical keyboard not auto-advancing
+0 flagged on 2026-10-08, again after Phase C). Known gaps (scaffold still shown, physical keyboard not auto-advancing
 in time fields, …) are in REVIEW.local.md §F.
 
 ### Layout and flow details
@@ -1662,5 +1699,66 @@ in time fields, …) are in REVIEW.local.md §F.
 Landscape-first: card left, answer panel right; portrait stacks (fallback). Top bar: title,
 `n / total` (or `n`), countdown (red under 1 min), **Resultaten** (hidden while `statsLocked`
 and the run is not done). Start tries `requestFullscreen`. Feedback is juist / fout only, never
-the right answer; `testMode` skips it and goes straight on. Mid-run Resultaten is a peek
+the right answer; `testMode` skips it and goes straight on (one try). Mid-run Resultaten is a peek
 (Verder oefenen); the end screen is locked and survives a reload.
+
+### Phase C: answering on the exercise (`interact`)
+
+An `interactive` descriptor lets the pupil tap / fill / order the viewer's own parts instead of
+typing into the answer panel.
+
+- **Context** ([ViewerInteractionContext.tsx](../../src/components/viewer/ViewerInteractionContext.tsx), §8):
+  `ExerciseCard` provides `{ kind, state, set, activeCell, focusCell, typeCell }` from the store
+  (`interaction: { selected, cells, order }`, `activeCell`) when `kioskInteractOf` answers and
+  `kioskInputOf` is `interactive`; otherwise no provider.
+- **Viewer marks** its parts once with `interactionProps(ctx, key, 'tap' | 'order')` and its blanks with
+  `<KioskCell cellKey>`. Keys are positions (`'0'`, `'2'`), never values, so the DOM does not hint at the answer.
+- **Check**: Controleer compares `fromState(state)` with `answerOf` through the same `checkAnswer`;
+  `interactionAnswer()` returns `{ given, ready }` (ready = non-empty, or any tap-multi).
+- **Cell navigation (fill-cells)**: `cellPlanOf()` builds `{ keys, flow, length }` from the descriptor's `keys` +
+  `cellOf` (`flow` = keys minus scratch cells). The keypad types into `activeCell` through `typeCell` /
+  `writeCell`; a full cell (`length`) hands on to the next flow cell. **Enter** (`enterCell`) moves to the next
+  flow cell and after the last checks (nothing to check yet: back to the first cell); **Tab / Shift+Tab**
+  (`moveCell`) walks every key including carries; Enter / Space on a tap part toggles it with
+  `preventDefault`, which keeps Kiosk's window handler from reading it as Controleer. `KioskCell` takes the
+  focus when it becomes active and scrolls into view.
+- **Size**: `ExerciseCard` raises the scale until the smallest `input[data-kiosk-cell]` is **40 px**
+  (`MIN_CELL_PX`; WCAG 2.5.8 + room for the digit); a grid taller than the card then scrolls inside it
+  (`.kiosk-card-body.is-scrolling`, from its top-left) instead of shrinking. A tappable part counts whole in
+  the extent measure (its padding carries the selection ring).
+- **Kiosk-only geometry**: [cijferLayout.ts](../../src/services/cijferen/cijferLayout.ts) holds the column
+  geometry CijferViewer and the descriptor share; [cijferCells.ts](../../src/services/cijferen/cijferCells.ts) the
+  ruitjes (roles digit / carry / borrow / pp / quotient / rest; keys `a` answer digit · `p` partial product ·
+  `q` quotient digit · `c` carry · `b` exchanged top digit · `r` rest; SYNC with CijferViewer's kiosk branch).
+  `cijferKiosk({ strictCarries })`: by default only a WRONG carry / borrow fails (a blank one is fine);
+  `true` fails a blank one too. Deelbaarheid-kleuren shows at most `KIOSK_MAX_NUMBERS` (20) numbers, never
+  fewer than two multiples (`kioskNumbers`).
+
+**Who answers how.** 101 sidebar leaves are capable at their defaults (`kioskCapableLeaves().length`);
+`KIOSK_LEAF_TABLE_V1` has 103 entries (`lengte-meten` and `omtrek` are in it but only capable with labelled sides).
+
+| Way | Leaves |
+|---|---|
+| **tap** | plaatswaarde plaats-omcirkelen (2) · vergelijken kiezen · getalfunctie aankruisen · controleren (2: juist / fout) · maateenheid kiezen |
+| **tap-multi** | even-oneven rooster · deelbaarheid tabel / rooster / omcirkelen / kleurraster · breuken kleuren |
+| **order** | ordenen nat / dec / rat / geh (4) · breuken-rangschikken |
+| **fill-cells** | cijferen × 8 · splitsen × 4 · afronden rooster × 2 · plaatswaarde tabel · patronen × 3 + kettingsommen · getallenassen × 4 · getallenrijen × 4 · verbanden tabel / paren / procenten-verbanden |
+| **typed / choice** (answer panel) | the rest: hoofdrekenen, procenten, schattend, rekenvolgorde, mab, romeinse, breuken-bewerken, breuken herkennen / hoeveelheid, geld, temperatuur, weegschaal, oppervlakte, herleidingen, klok, tijdsduur, deelbaarheid veelvouden (typed) · vergelijken getallen / representaties, vormleer, even-oneven cirkels (choice) |
+
+### Attempts ("kansen") and the juist/fout flash
+
+`OefenSessie.attempts` is 1 | 2 (`attemptsOf(s)`; `testMode` forces 1: without feedback the pupil never
+learns the first try was wrong). Store phases: `start | exercise | feedback | retry | stats | locked`.
+`answer()`: right → `feedback` (Juist!); wrong with a 2nd kans left → `retry` (flash "Fout — probeer nog eens",
+the same exercise with empty input; `shown.wrongFirst` survives a reload; the card says "Kans 2 van 2");
+wrong on the last try → `feedback` (Fout). **There is no Volgende button:** the flash moves on by itself after
+`FLASH_MS = { juist: 700, fout: 1200, retry: 1000 }` (a CSS bar runs out); a tap on it or Enter calls
+`skipFlash()` (feedback → `next()`, retry → the second try; Enter skips even with a button focused).
+Opening Resultaten mid-flash remembers the phase (`statsFrom`); Verder oefenen resumes as if the flash had ended.
+Stats: an exercise counts once; right on the 2nd try is `correct` AND `secondTry` (`OefenTypeStats.secondTry`,
+history `secondTry`); wrong twice is an `OefenError` with the first answer in `given` and the second in
+`second`. StatsScreen adds a "Juist na 2e kans" column when the session has 2 kansen and lists **Vorige keren**
+(earlier runs on this device; tap one for its numbers, read-only). Teacher side: the builder's "Kansen per
+oefening" 1 / 2 control; the per-type limit is a slider **1–50 with ∞ at the right end** (`LIMIT_MAX`); Opnieuw /
+Wissen only on the end screen; rows are named by `kioskLabel` (domain · type · detail) and the library name
+becomes the session title.

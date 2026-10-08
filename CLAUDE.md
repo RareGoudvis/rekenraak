@@ -145,7 +145,12 @@ the per-typeId table is §7.
    **append** each leaf it makes capable to `KIOSK_LEAF_TABLE_V1` in
    [kiosk.ts](src/services/oefenen/kiosk.ts) (append only: shared links index it) and add it to
    the descriptors test (`EXPECTED_LEAVES`, the typeId's `TRUTH`) and the pinned table copy in
-   `oefenen.session.test.ts`. Contract: ARCHITECTURE §15.
+   `oefenen.session.test.ts`. To let the pupil answer ON the exercise (tap / tap-multi /
+   fill-cells / order) give the descriptor `input: 'interactive'` + `interact`
+   (`answerOf` / `fromState` / `keys` / `cellOf`) and mark the viewer's parts with
+   `interactionProps` / `<KioskCell>` from `ViewerInteractionContext`: no attributes or handlers
+   without the context (the sheet stays byte-identical; `viewers.interaction*.test.tsx` + the
+   visual gate prove it). Contract: ARCHITECTURE §8 + §15.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
 **`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **whiteboard mode

@@ -41,6 +41,10 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
+                text: 'Oefenmodus: de leerling antwoordt op de oefening zelf (aantikken, vakjes invullen, in volgorde zetten). Je kiest 1 of 2 kansen.',
+            },
+            {
+                kind: 'nieuw',
                 text: 'Kan een instelling niet, dan zie je onder Genereer een melding. Vroeger kreeg je stilletjes andere oefeningen.',
             },
             {
