@@ -34,26 +34,35 @@ export function expectedText(d: KioskDescriptor, ex: unknown, c: Record<string, 
     return accepted[0] ?? '';
 }
 
-/** A new stats object with this answer counted (and kept as an error row when wrong). */
+// 2 kansen: a missed first try (firstWrong) always leaves an error row, juist na 2e kans too.
+/** A new stats object with this final answer counted (and an error row when it was ever wrong). */
 export function recordAnswer(
     stats: OefenStats, slot: number, typeId: string, exercise: unknown, given: KioskAnswer,
     correct: boolean, ms: number, constraints: Record<string, unknown>, now: number = Date.now(),
+    firstWrong?: KioskAnswer,
 ): OefenStats {
     const prev = stats.perType[slot] ?? emptyType();
     const d = kioskFor(typeId);
-    const errors = correct || !d ? prev.errors : [...prev.errors, {
+    const retried = firstWrong !== undefined;
+    const errors = (correct && !retried) || !d ? prev.errors : [...prev.errors, {
         exercise: d.display(exercise, constraints),
-        given: answerText(d, exercise, constraints, given),
+        given: answerText(d, exercise, constraints, retried ? firstWrong : given),
         expected: expectedText(d, exercise, constraints),
         at: now,
+        ...(retried && { secondTry: correct }),
+        ...(retried && !correct && { second: answerText(d, exercise, constraints, given) }),
     }];
+    const secondTry = (prev.secondTry ?? 0) + (retried && correct ? 1 : 0);
     return {
         ...stats,
         perType: {
             ...stats.perType,
-            [slot]: { made: prev.made + 1, correct: prev.correct + (correct ? 1 : 0), wrong: prev.wrong + (correct ? 0 : 1), errors },
+            [slot]: {
+                made: prev.made + 1, correct: prev.correct + (correct ? 1 : 0), wrong: prev.wrong + (correct ? 0 : 1),
+                ...(secondTry > 0 && { secondTry }), errors,
+            },
         },
-        history: [...stats.history, { slot, typeId, exerciseKey: exerciseKeyOf(typeId, exercise), correct, ms }],
+        history: [...stats.history, { slot, typeId, exerciseKey: exerciseKeyOf(typeId, exercise), correct, ms, ...(retried && { secondTry: true }) }],
     };
 }
 
@@ -63,7 +72,7 @@ export function summary(stats: OefenStats, s: OefenSessie): OefenSummaryRow[] {
         const st = stats.perType[slot] ?? emptyType();
         return {
             slot, typeId: t.typeId, label: t.label,
-            made: st.made, correct: st.correct, wrong: st.wrong,
+            made: st.made, correct: st.correct, wrong: st.wrong, secondTry: st.secondTry ?? 0,
             pct: st.made ? Math.round((st.correct / st.made) * 100) : null,
             errors: st.errors,
         };

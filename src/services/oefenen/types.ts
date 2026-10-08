@@ -46,7 +46,16 @@ export interface OefenSessie {
     statsLocked: boolean;
     // Overall cap on exercises in a run; absent = the sum of the limits, or endless.
     total?: number;
+    // Tries per exercise: 2 = a wrong first answer gets one retry. Absent = 1; testMode forces 1
+    // (no feedback means the pupil never learns the first try was wrong). Read via attemptsOf.
+    attempts?: OefenAttempts;
 }
+
+export type OefenAttempts = 1 | 2;
+
+/** The tries a pupil gets per exercise in this session. */
+export const attemptsOf = (s: Pick<OefenSessie, 'attempts' | 'testMode'>): OefenAttempts =>
+    s.attempts === 2 && !s.testMode ? 2 : 1;
 
 // ── Kiosk descriptor (registry row field `kiosk`) ────────────────────────────
 
@@ -120,12 +129,19 @@ export interface OefenError {
     given: string;
     expected: string;
     at: number;
+    // 2 kansen: the exercise needed a second try; true = juist na 2e kans (counted juist),
+    // false/absent with `second` = wrong twice. `given` is always the FIRST wrong answer.
+    secondTry?: boolean;
+    // The second wrong answer when both tries missed.
+    second?: string;
 }
 
 export interface OefenTypeStats {
     made: number;
     correct: number;
     wrong: number;
+    // Juist on the second try (a subset of correct); absent in runs from before 2 kansen.
+    secondTry?: number;
     errors: OefenError[];
 }
 
@@ -134,8 +150,11 @@ export interface OefenHistoryEntry {
     typeId: string;
     // exerciseKeyOf(typeId, exercise): the no-exact-repeat check reads these back.
     exerciseKey: string;
+    // Right on the final try.
     correct: boolean;
     ms: number;
+    // The final answer came on the second try (2 kansen).
+    secondTry?: boolean;
 }
 
 export interface OefenStats {
@@ -152,6 +171,8 @@ export interface OefenCurrent {
     exercise: unknown;
     exerciseKey: string;
     shownAt: number;
+    // 2 kansen: the first, wrong answer while the pupil is on the second try (a reload keeps it).
+    wrongFirst?: KioskAnswer;
 }
 
 // One attempt at a session; the device keeps the last 5 per session id.
@@ -173,6 +194,8 @@ export interface OefenSummaryRow {
     made: number;
     correct: number;
     wrong: number;
+    // Of correct: juist na 2e kans.
+    secondTry: number;
     // Whole percent correct of made; null when nothing was made.
     pct: number | null;
     errors: OefenError[];

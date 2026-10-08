@@ -1,5 +1,5 @@
 import { deflateSync, inflateSync, strFromU8, strToU8 } from 'fflate';
-import { OEFEN_VERSION, type OefenMode, type OefenSessie, type OefenType } from './types';
+import { OEFEN_VERSION, attemptsOf, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from './types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { DEFAULT_BASE, seedConstraints } from '../../config/baseSettings';
 import { LEAF_BY_ID, flattenLeaves } from '../../config/appstructure';
@@ -29,13 +29,14 @@ export function newSessieId(): string {
 
 // ── OefenWire v1 ─────────────────────────────────────────────────────────────
 // Positional arrays, trailing defaults trimmed, null = "default" in a middle slot:
-//   session: [v, id, created, flags, rows, title?, timerMin?, total?]
+//   session: [v, id, created, flags, rows, title?, timerMin?, total?, attempts?]
 //   row:     [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?]
 // created: whole minutes when createdAt falls on a minute (the builder floors it), else ms.
 // flags:   bit 0 willekeurig · 1 allowRepeatType · 2 testMode · 3 statsLocked.
 // leaf:    index into KIOSK_LEAF_TABLE_V1, else the leafId string.
 // diff:    flat [key, value, key, value…] of the constraints that differ from the leaf's seed
 //          (key = index into KIOSK_KEY_TABLE_V1, else the key string); removed: seed keys absent.
+// attempts: 2 or omitted (= 1); appended last so links made before it still decode.
 // weight:  omitted when it equals the equal split; instruction: omitted when it equals the
 //          leaf's default, 0 when the session has none; typeId: only when it is not the leaf's.
 type WireKey = number | string;
@@ -120,6 +121,7 @@ export function toWire(s: OefenSessie): OefenWire {
         flags,
         s.types.map((t, i) => rowOut(t, i, s.types.length)),
         s.title ?? null, s.timerMin ?? null, s.total ?? null,
+        attemptsOf(s) === 2 ? 2 : null,
     ]);
 }
 
@@ -217,7 +219,7 @@ function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
 
 function fromWire(w: unknown): Record<string, unknown> {
     if (!Array.isArray(w)) return bad('geen sessie');
-    const [v, id, created, flags = 0, rows, title, timerMin, total] = w;
+    const [v, id, created, flags = 0, rows, title, timerMin, total, attempts] = w;
     if (typeof v !== 'number') return bad('versie ontbreekt');
     if (v > OEFEN_VERSION) throw new Error(`Deze oefenlink komt uit een nieuwere versie (v${v}). Werk de app bij om ze te openen.`);
     if (v !== OEFEN_VERSION) return bad(`versie ${v}`);
@@ -235,6 +237,7 @@ function fromWire(w: unknown): Record<string, unknown> {
         ...(title != null && { title }),
         ...(timerMin != null && { timerMin }),
         ...(total != null && { total }),
+        ...(attempts != null && { attempts }),
     };
 }
 
@@ -260,7 +263,7 @@ export function parseSessie(raw: unknown): OefenSessie {
     if (typeof raw.v !== 'number') return bad('versie ontbreekt');
     if (raw.v > OEFEN_VERSION) throw new Error(`Deze oefenlink komt uit een nieuwere versie (v${raw.v}). Werk de app bij om ze te openen.`);
     if (raw.v !== OEFEN_VERSION) return bad(`versie ${raw.v}`);
-    const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total } = raw;
+    const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts } = raw;
     if (typeof id !== 'string' || !ID_RE.test(id)) return bad('id');
     if (title !== undefined && typeof title !== 'string') return bad('titel');
     if (typeof createdAt !== 'number') return bad('datum');
@@ -269,12 +272,15 @@ export function parseSessie(raw: unknown): OefenSessie {
     if (typeof allowRepeatType !== 'boolean' || typeof testMode !== 'boolean' || typeof statsLocked !== 'boolean') return bad('instellingen');
     if (timerMin !== undefined && (typeof timerMin !== 'number' || !(timerMin > 0))) return bad('timer');
     if (total !== undefined && !isPosInt(total)) return bad('totaal');
+    if (attempts !== undefined && attempts !== 1 && attempts !== 2) return bad('kansen');
     return {
         v: OEFEN_VERSION, id, createdAt, mode: mode as OefenMode, allowRepeatType, testMode, statsLocked,
         types: types.map(parseType),
         ...(title !== undefined && { title }),
         ...(timerMin !== undefined && { timerMin }),
         ...(total !== undefined && { total: total as number }),
+        // Only a real second try is kept: 1, absent and testMode all mean one try.
+        ...(attemptsOf({ attempts: attempts as OefenAttempts | undefined, testMode }) === 2 && { attempts: 2 as const }),
     };
 }
 
