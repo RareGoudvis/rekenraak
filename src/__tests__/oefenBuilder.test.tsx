@@ -146,6 +146,20 @@ describe('OefenBuilderModal', () => {
     });
 });
 
+describe('OefenBuilderModal title', () => {
+    test('the library name typed at Opslaan becomes the session title', () => {
+        const spy = vi.spyOn(window, 'prompt').mockReturnValue('Week 6 tafels');
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+        spy.mockRestore();
+        const saved = loadOefenSessies();
+        expect(saved[0].name).toBe('Week 6 tafels');
+        expect(saved[0].sessie.title).toBe('Week 6 tafels');
+        expect((screen.getByLabelText('Titel') as HTMLInputElement).value).toBe('Week 6 tafels');
+    });
+});
+
 describe('OefenShareModal', () => {
     const small: OefenSessie = {
         v: 1, id: 'x', title: 'Klein', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false,

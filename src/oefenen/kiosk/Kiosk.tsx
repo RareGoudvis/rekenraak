@@ -77,7 +77,10 @@ export default function Kiosk() {
         ? resolveInstruction(LEAF_BY_ID[type.leafId]?.instruction, type.typeId, type.label, shown!.constraints as BlockConstraints)
         : '';
     // A teacher's own wording wins; the leaf's paper default gives way to the kiosk wording.
-    const instruction = type && shown && (!type.instruction || type.instruction === leafInstruction)
+    const builderInstruction = type
+        ? resolveInstruction(LEAF_BY_ID[type.leafId]?.instruction, type.typeId, type.label, type.constraints as BlockConstraints)
+        : '';
+    const instruction = type && shown && (!type.instruction || type.instruction === leafInstruction || type.instruction === builderInstruction)
         ? kioskInstructionOf(type.typeId, shown.exercise, shown.constraints as Record<string, unknown>, leafInstruction)
         : type?.instruction ?? '';
 

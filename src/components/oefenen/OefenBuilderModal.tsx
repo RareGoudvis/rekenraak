@@ -99,7 +99,10 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
             if (asked === null) return;
             name = asked;
         }
-        const entry = saveOefenSessie(sessie, name);
+        // The library name doubles as the pupil's title, so the kiosk never falls back on "Oefenen".
+        const titled = title.trim() ? sessie : { ...sessie, title: name.trim().slice(0, 60) };
+        if (!title.trim()) setTitle(titled.title ?? '');
+        const entry = saveOefenSessie(titled, name);
         if (!entry) { window.alert('Opslaan mislukt: de opslag van je browser is vol.'); return; }
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
