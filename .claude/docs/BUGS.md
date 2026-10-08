@@ -164,7 +164,8 @@ UpdateState). Left over, found while fixing:
   check; WB1's headless drag did not reproduce it). Fix: `user-select: none` on the KlokWidget face
   (and the GeldPalet bill/coin drag source). 2026-10-08
 - WidgetInspector › WerksymbolenSettings logs React's "Each child in a list should have a unique
-  key" when its panel opens. Repro: Toevoegen › Klasmanagement › Werksymbolen, ⚙. 2026-10-08
+  key" when its panel opens. Repro: Toevoegen › Klasmanagement › Werksymbolen, ⚙. `test.fails` in
+  boardView.smoke.test.tsx. 2026-10-08
 - Board add panel (BoardAddModal) search matches only the item label and context, not variant
   labels: "klok" finds nothing (the item is "Tijdstip en tijdsduur", variants "Analoge klok · …").
   Fix: also match `variants[].label` and the typeId, like MassAddModal does. 2026-10-08
@@ -175,7 +176,7 @@ UpdateState). Left over, found while fixing:
 - Board Inspector "Aantal oefeningen" changes the count but not the card until Genereer: the
   draftBlocks path in updateBlockSettings skips the sheet's generateExtra top-up. Repro: Hoofdrekenen
   card (6 rows), slider to 2, card still shows 6. Fix: top up / cut in the board's subscription,
-  or route draft count changes through generateExtra. 2026-10-08
+  or route draft count changes through generateExtra. `test.fails` in boardStore.test.tsx. 2026-10-08
 - staggerPos (addWidgets.ts) cycles every 5 widgets, so the 6th card lands exactly on the 1st and
   hides it completely. Fix: offset each cycle, or place at the first free spot. `test.fails` in
   boardSizing.test.tsx. 2026-10-08

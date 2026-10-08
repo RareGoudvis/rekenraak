@@ -55,6 +55,24 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `releaseNotes.test.tsx` | The release-notes list: every example leaf exists and fills its block without a melding, the newest entry drives `RELEASE_VERSION`, every preview renders, banner + Help open the modal, ModalShell focus wrap/return, the seen-key. |
 | `leafDefaultCount.test.ts`, `sheetBlock.emptyNote.test.tsx` | A leaf's own `defaultCount` (oppervlakte-rooster = 2, everything else the row's); an empty block with a note shows the note on screen and nothing on paper. |
 
+## Bordmodus suites (`src/__tests__/board*`)
+
+All jsdom except `boardGroepjes`. Open bugs are pinned as `test.fails` next to a BUGS.md line
+under "Bordmodus" (fixing one flips it to a failure: turn it into a plain `test` in the fix
+commit). `npx vitest run src/__tests__/board` runs them in ~15 s; with `@vitest/coverage-v8`
+installed (`npm i --no-save`), `--coverage --coverage.include='src/board/**'` measures them.
+
+| File | What it guards |
+|---|---|
+| `boardBlocks.test.ts`, `boardGenerate.test.tsx`, `boardInspector.test.tsx`, `boardFrame.test.tsx` | (fold-in) board block == sidebar block per leaf × leerjaar; the sheet's generate path and note; the inspector's StyleConfig / AdvancedConfig; the frame's height cap, stacking contexts and `.no-print`. |
+| `boardPersistence.test.ts` | The strict parser (version gate, partial / garbage / foreign payloads, early strokes without `pts`), a 2-page board with every widget kind through autosave, presets (cap 30, newest first, garbage key), file export and back into the store; quota failure on autosave; page / widget / stroke ids unique after duplicates. |
+| `boardSizing.test.tsx` | Natural widths and titles per kind, every catalogue tool adds at its natural width, the stagger, the frame's zoom per kind, the height cap at several `y`, grip resize (dx only, min 150) and title-bar / hand-tool drag (clamp at 0, grid snap), every prop normaliser's clamps and defaults. |
+| `boardGroepjes.test.ts` | `makeGroups` under seeded `Math.random` (mulberry32, 40 seeds): group counts per mode, must-together pairs and transitive chains, cannot-together, contradictions flagged `ok: false` with every name dealt once, rules naming deleted pupils ignored. |
+| `boardStore.test.tsx` | `useBoardStore`: widget add / update / remove / duplicate / z-order, selection vs inspector, tools, pages (add / duplicate / remove / goto / clear / background), ink undo / redo, the InkLayer pen / marker / eraser, the canvas eye / 🔄 / text tool, the draftBlocks mirror (seed, copy-back, Genereer, teardown leaves sheet blocks and history untouched), debounced autosave, module-init hydration (`vi.resetModules`). |
+| `boardView.smoke.test.tsx` | `WhiteboardView` with every widget kind (catalogue + afbeelding, tekst, geld-item, exercise) on a light and a dark board, the geld dock, every ⚙ panel: no `console.error`, no "undefined"/"NaN", `.no-print`. Weer runs on a stubbed `fetch` and a denied geolocation. |
+| `boardLeaves.test.tsx` | Every sidebar leaf as a board card: `makeBoardBlock` + `regenerateBoardBlock`, mounted through `BoardPageCanvas` with answers off and on: sheet viewer (no `data-kiosk*`), exercises > 0 except layout furniture, no `console.error`, no "undefined"/"NaN". |
+| `boardCatalog.test.ts` | The ★ favourites (cap 6, unknown ids dropped), every background pattern × dark × scale, the board block factory's edges (unknown typeId, locked curriculum drops the leerjaar). |
+
 ## The generator matrix
 
 Five passes over every `typeId` in `REGISTRY`:
