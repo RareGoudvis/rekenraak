@@ -39,6 +39,11 @@ const EXPECTED_LEAVES = [
     'temperatuur-aflezen', 'temperatuur-verschil', 'massa-weegschaal-aflezen', 'oppervlakte-rooster', 'oppervlakte-berekenen',
     'maateenheid-kiezen', 'herleidingen-lengte', 'herleidingen-inhoud', 'herleidingen-massa', 'herleidingen-oppervlakte',
     'geld-herkennen', 'geld-teruggeven', 'geld-rekenen-korting', 'geld-rekenen-intrest',
+    'splitsen-basis', 'splitsen-boom', 'splitsen-harten', 'splitsen-positietabel',
+    'getalbegrip-ordenen-nat', 'getalbegrip-ordenen-dec', 'getalbegrip-ordenen-rat', 'getalbegrip-ordenen-geh',
+    'getalbegrip-getallenassen-nat', 'getalbegrip-getallenassen-dec', 'getalbegrip-getallenassen-rat', 'getalbegrip-getallenassen-geh',
+    'getalbegrip-getallenrijen-nat', 'getalbegrip-getallenrijen-dec', 'getalbegrip-getallenrijen-rat', 'getalbegrip-getallenrijen-geh',
+    'breuken-rangschikken', 'patronen-nat', 'patronen-dec', 'patronen-geh', 'patronen-kettingsommen', 'deelbaarheid-veelvouden',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -183,7 +188,54 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         }
         return g.capitalCents! * g.percent! / 100 * ((g.months ?? 12) / 12) / 100;
     },
+    getalpatronen: (p: T.PatroonExercise) => patroonTruth(p),
+    kettingsommen: (p: T.PatroonExercise) => patroonTruth(p),
+    getallenas: (a: T.GetallenasExercise) => axisTruth(a),
+    getallenrijen: (a: T.GetallenasExercise) => axisTruth(a),
+    deelbaarheid: (d: T.DeelbaarheidExercise) => {
+        d.sequence!.forEach((v, k) => expect(v).toBe(d.base! * k));
+        return { multi: d.sequence!.slice(d.givenCount ?? 2) };
+    },
+    ordenen: (o: T.OrdenenExercise) => ordenTruth(o),
+    'breuken-rangschikken': (o: T.OrdenenExercise) => ordenTruth(o),
+    splitsen: (s: T.SplitsenExercise, c) => {
+        if (c.layout === 'positie-tabel') {
+            const places = s.placeBreakdown!;
+            expect(scaled(places.reduce((t, p) => t + p.digit * p.weight, 0))).toBe(scaled(s.total));
+            return { multi: places.map(p => p.digit) };
+        }
+        for (const p of s.pairs) expect(scaled(p.given + p.answer)).toBe(scaled(s.total));
+        if (c.layout === 'splitsboom') {
+            const pos = s.blankPos ?? 'right';
+            return pos === 'top' ? s.total : pos === 'left' ? s.pairs[0].given : s.pairs[0].answer;
+        }
+        return { multi: s.pairs.map(p => p.answer) };
+    },
 };
+
+// The row follows its own cycle of steps; the blanks are what the pupil fills.
+function patroonTruth(p: T.PatroonExercise): Truth {
+    p.values.slice(1).forEach((v, i) => {
+        const step = p.cycle[i % p.cycle.length];
+        expect(scaled(applyOp(p.values[i], step.op, step.operand)), JSON.stringify(p)).toBe(scaled(v));
+    });
+    return { multi: p.values.filter((_, i) => p.blankMask[i]) };
+}
+
+// Equal steps along the line (fractions by value).
+function axisTruth(a: T.GetallenasExercise): Truth {
+    const vals = (a.values?.length ? a.values : Array.from({ length: a.tickCount }, (_, i) => a.start + (a.direction === 'left' ? -i : i) * a.step)).map(numValue);
+    const d = vals[1] - vals[0];
+    vals.slice(1).forEach((v, i) => expect(scaled(v - vals[i]), JSON.stringify(a)).toBe(scaled(d)));
+    return { multi: vals.filter((_, i) => a.blankMask[i]) };
+}
+
+// The answer row is the shown values sorted by the operator.
+function ordenTruth(o: T.OrdenenExercise): Truth {
+    const want = o.display.map(numValue).sort((x, y) => (o.operator === '<' ? x - y : y - x));
+    expect(o.values.map(v => scaled(numValue(v)))).toEqual(want.map(scaled));
+    return { multi: want };
+}
 
 // Every unit herleidingen uses, in its measure's base unit (m, l, g, m²).
 const UNIT: Record<string, number> = {
@@ -397,6 +449,17 @@ describe('inputs per exercise', () => {
         expect(add.display(eq({ operands: [1200, 3], operator: 'x', answer: 3600 }), {})).toBe('1 200 × 3 = ?');
         expect(kioskFor('procenten')!.display({ id: 'p', percent: 25, base: 80, answer: 20, isManuallyEdited: false }, { subType: 'welk-percent' })).toBe('20 van 80 = ? %');
         expect(kioskFor('afronden')!.display({ id: 'a', number: 3.47, targetKey: 't', isManuallyEdited: false }, { subType: 'simpel', numberType: 'decimal' })).toBe('3,47 ≈ ? (op tiende)');
+    });
+});
+
+describe('fractions as the sheet prints them', () => {
+    test('ordenen takes 6/8 as shown and 3/4 reduced', () => {
+        const d = kioskFor('ordenen')!;
+        const ex: T.OrdenenExercise = { id: 'o', operator: '<', display: [{ n: 6, d: 8 }, { n: 1, d: 8 }], values: [{ n: 1, d: 8 }, { n: 6, d: 8 }], isManuallyEdited: false };
+        expect(checkAnswer(d, ex, { numberType: 'rational' }, ['1/8', '6/8'])).toBe(true);
+        expect(checkAnswer(d, ex, { numberType: 'rational' }, ['1/8', '3/4'])).toBe(true);
+        expect(checkAnswer(d, ex, { numberType: 'rational' }, ['6/8', '1/8'])).toBe(false);
+        expect(d.separator!(ex, {})).toBe('<');
     });
 });
 

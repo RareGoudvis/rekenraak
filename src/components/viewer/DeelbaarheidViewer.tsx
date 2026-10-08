@@ -1,6 +1,6 @@
 import type { MathBlock } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import type { DeelbaarheidConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -15,6 +15,8 @@ const SALMON = '#f4cbb8';
 
 export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
+    // The oefenmodus card asks every multiple of the run, so it prints them all (it scales to fit).
+    const capTerms = useShowScaffold();
     const exercises = block.deelbaarheidExercises || [];
     const c = block.constraints as DeelbaarheidConstraints;
     const layout = c.layout || 'tabel';
@@ -31,7 +33,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
         // how many terms are PRINTED to what the column actually holds (~56px per term
         // including its gap and dash) instead of letting it wrap. "– (enz.)" always closes
         // the row, so trimming reads as "and so on" rather than as a cut-off answer.
-        const maxTerms = Math.max(3, Math.floor((A4_CONTENT_PX - 60) / 56));
+        const maxTerms = capTerms ? Math.max(3, Math.floor((A4_CONTENT_PX - 60) / 56)) : Infinity;
         return (
             <FragmentableGrid
                 cols={1}
@@ -53,7 +55,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
                                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: '40px', height: ANSWER_LINE_H, display: 'inline-block' }} />)}
                                     </span>
                                 ))}
-                                <span>– (enz.)</span>
+                                {capTerms && <span>– (enz.)</span>}
                             </div>
                         </div>
                     );

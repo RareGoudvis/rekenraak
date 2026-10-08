@@ -298,6 +298,8 @@ html:has(.oefen-body),
   flex-direction: column;
   gap: 2px;
 }
+/* In the caption column the field keeps its own height (its row flex: 1 would collapse it). */
+.kiosk-field-wrap .kiosk-field { flex: none; }
 .kiosk-field-cap {
   font-family: var(--font-ui);
   font-size: calc(var(--kiosk-text) * 0.8);

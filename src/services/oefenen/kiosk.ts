@@ -73,6 +73,11 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     'temperatuur-aflezen', 'temperatuur-verschil', 'massa-weegschaal-aflezen', 'oppervlakte-rooster', 'oppervlakte-berekenen',
     'maateenheid-kiezen', 'herleidingen-lengte', 'herleidingen-inhoud', 'herleidingen-massa', 'herleidingen-oppervlakte',
     'geld-herkennen', 'geld-teruggeven', 'geld-rekenen-korting', 'geld-rekenen-intrest', 'lengte-meten', 'omtrek',
+    'splitsen-basis', 'splitsen-boom', 'splitsen-harten', 'splitsen-positietabel',
+    'getalbegrip-ordenen-nat', 'getalbegrip-ordenen-dec', 'getalbegrip-ordenen-rat', 'getalbegrip-ordenen-geh',
+    'getalbegrip-getallenassen-nat', 'getalbegrip-getallenassen-dec', 'getalbegrip-getallenassen-rat', 'getalbegrip-getallenassen-geh',
+    'getalbegrip-getallenrijen-nat', 'getalbegrip-getallenrijen-dec', 'getalbegrip-getallenrijen-rat', 'getalbegrip-getallenrijen-geh',
+    'breuken-rangschikken', 'patronen-nat', 'patronen-dec', 'patronen-geh', 'patronen-kettingsommen', 'deelbaarheid-veelvouden',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [

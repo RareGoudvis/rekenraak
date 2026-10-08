@@ -1,11 +1,12 @@
 import type {
-    AfrondenExercise, CijferExercise, ControleExercise, Equation, EvenOnevenExercise, Fraction, GeldExercise, GeldRekenenExercise,
-    GeldTeruggevenExercise, GetalFunctieExercise, HerleidingExercise, HerleidingPart, MaateenheidExercise, MabExercise, MeetExercise,
-    PlaatswaardeExercise, ProcentExercise, RekenvolgordeExercise, RomeinseExercise, SchattendExercise, TemperatuurExercise,
-    VergelijkenExercise, VormleerExercise, WeegschaalExercise,
+    AfrondenExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, Equation, EvenOnevenExercise, Fraction, GeldExercise,
+    GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, HerleidingPart,
+    MaateenheidExercise, MabExercise, MeetExercise, OrdenenExercise, PatroonExercise, PlaatswaardeExercise, ProcentExercise,
+    RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
+    VormleerExercise, WeegschaalExercise,
 } from '../math/types';
 import type { KioskDescriptor, KioskInput, KioskKey } from './types';
-import { isFraction } from '../math/answerKeys';
+import { gcd, isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
 import { ROUND_SCALE, roundTo, targetsFor } from '../afronden/afrondenGenerator';
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
@@ -429,4 +430,97 @@ export const GELD_REKENEN_KIOSK = descriptor<GeldRekenenExercise>({
         ? `${showEuro(ex.priceCents ?? 0)} − ${ex.percent} %: korting ? nieuwe prijs ?`
         : `${ex.percent} % van ${showEuro(ex.capitalCents ?? 0)} (${ex.months === 6 ? '6 maanden' : '1 jaar'}) = ?`),
     supported: (c) => c.subType === 'korting' || c.subType === 'intrest',
+});
+
+// ── Rijen: one field per blank, left to right ───────────────────────────────
+
+// A value as the sheet prints it AND reduced: an ordenen row can show 6/8, and copying it
+// over is right there (only breuken-bewerken asks for one particular form).
+function shownSpellings(v: number | Fraction): string[] {
+    if (!isFraction(v)) return numberSpellings(v);
+    const g = gcd(v.n, v.d) || 1;
+    return [...new Set([...fractionSpellings(v), ...fractionSpellings({ whole: v.whole, n: v.n / g, d: v.d / g })])];
+}
+// Every blank's value as one multi-number entry (a fraction in all its spellings).
+const blanksOf = (values: readonly (number | Fraction)[], mask: readonly boolean[]) =>
+    values.filter((_, i) => mask[i]).map(v => shownSpellings(v).join('|'));
+const rowText = (values: readonly (number | Fraction)[], mask: readonly boolean[], sep: string) =>
+    values.map((v, i) => (mask[i] ? '?' : showValue(v))).join(sep);
+// The keys a number kind needs: decimals a comma, fractions a slash (+ space for gemengd), gehele a minus.
+const kindKeys = (c: Record<string, unknown>): KioskKey[] => {
+    const nt = numberTypeOf(c);
+    return nt === 'decimal' ? [','] : nt === 'rational' ? ['/', ' '] : nt === 'geheel' ? ['-'] : [];
+};
+
+// An operator blank (arrows on, the sign not printed) is a second kind of answer: those
+// settings stay out. Kettingsommen print every sign by default.
+// SYNC: PatroonViewer `filled` (showOperators && i < operatorsShown).
+const operatorsAllShown = (c: Record<string, unknown>) => {
+    if (!c.showArrows) return true;
+    const ops = typeof c.ticks === 'number' ? c.ticks - 1 : Number(c.chainLength ?? 4);
+    return !!c.showOperators && Number(c.operatorsShown ?? 0) >= ops;
+};
+export const PATROON_KIOSK = descriptor<PatroonExercise>({
+    input: 'multi-number',
+    keys: kindKeys,
+    answerOf: (ex) => blanksOf(ex.values, ex.blankMask),
+    display: (ex) => rowText(ex.values, ex.blankMask, ' – '),
+    supported: operatorsAllShown,
+});
+
+export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
+    input: 'multi-number',
+    keys: kindKeys,
+    // SYNC: GetallenasViewer derives a legacy natural line from start + step.
+    answerOf: (ex) => blanksOf(ex.values?.length ? ex.values : Array.from({ length: ex.tickCount }, (_, i) => ex.start + (ex.direction === 'left' ? -i : i) * ex.step), ex.blankMask),
+    display: (ex) => rowText(ex.values ?? [], ex.blankMask, ' | '),
+});
+
+// The multiples after the given ones; the kiosk card prints the whole run (no "enz." cap).
+export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
+    input: 'multi-number',
+    answerOf: (ex) => (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String),
+    display: (ex) => (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – '),
+    supported: (c) => c.layout === 'veelvouden',
+});
+
+// Write the shuffled values in order; the < or > sits between the fields as on the sheet.
+export const ORDENEN_KIOSK = descriptor<OrdenenExercise>({
+    input: 'multi-number',
+    keys: (c) => (c.fractionMode !== undefined ? ['/'] : kindKeys(c)),
+    separator: (ex) => ex.operator,
+    answerOf: (ex) => ex.values.map(v => shownSpellings(v).join('|')),
+    display: (ex) => `${ex.display.map(showValue).join(', ')} → ${ex.values.map(() => '?').join(` ${ex.operator} `)}`,
+});
+
+// basis / harten: the partner of every given number; boom: the one blank of the tree;
+// positie-tabel: the digit of every place. Benen and the math rows are not served yet.
+const splitsLayout = (c: Record<string, unknown>) => (c.layout as string | undefined) ?? 'basic';
+const pairLabels = (ex: SplitsenExercise) => ex.pairs.map(p => `${showNum(p.given)} en`);
+export const SPLITSEN_KIOSK = descriptor<SplitsenExercise>({
+    input: 'multi-number',
+    inputOf: (_ex, c) => (splitsLayout(c) === 'splitsboom' ? 'number' : 'multi-number'),
+    keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 && splitsLayout(c) === 'basic' ? [','] : []),
+    labels: (ex, c) => (splitsLayout(c) === 'positie-tabel' ? (ex.placeBreakdown ?? []).map(p => p.key) : pairLabels(ex)),
+    answerOf: (ex, c) => {
+        const layout = splitsLayout(c);
+        if (layout === 'positie-tabel') return (ex.placeBreakdown ?? []).map(p => String(p.digit));
+        if (layout === 'splitsboom') {
+            const p = ex.pairs[0];
+            const pos = ex.blankPos ?? 'right';
+            return numberSpellings(pos === 'top' ? ex.total : pos === 'left' ? p.given : p.answer);
+        }
+        return ex.pairs.map(p => numberSpellings(p.answer).join('|'));
+    },
+    display: (ex, c) => {
+        const layout = splitsLayout(c);
+        if (layout === 'positie-tabel') return `${showNum(ex.total)} in de positietabel: ?`;
+        if (layout === 'splitsboom') {
+            const pos = ex.blankPos ?? 'right';
+            const [top, left, right] = [ex.total, ex.pairs[0]?.given ?? 0, ex.pairs[0]?.answer ?? 0].map(showNum);
+            return `${pos === 'top' ? '?' : top} = ${pos === 'left' ? '?' : left} + ${pos === 'right' ? '?' : right}`;
+        }
+        return `${showNum(ex.total)} = ${ex.pairs.map(p => `${showNum(p.given)} + ?`).join(' ; ')}`;
+    },
+    supported: (c) => ['basic', 'splitsboom', 'verliefde-harten', 'positie-tabel'].includes(splitsLayout(c)),
 });
