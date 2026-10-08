@@ -15,6 +15,8 @@ export default defineConfig({
         about: resolve(import.meta.dirname, 'about.html'),
         faq: resolve(import.meta.dirname, 'faq.html'),
         oefeningen: resolve(import.meta.dirname, 'oefeningen.html'),
+        // The pupil kiosk: its own React root, never the worksheet App (see src/oefenen/).
+        oefenen: resolve(import.meta.dirname, 'oefenen.html'),
       },
     },
   },
