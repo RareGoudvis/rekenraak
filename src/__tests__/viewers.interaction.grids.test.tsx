@@ -120,6 +120,31 @@ describe('breuken kleuren', () => {
         expect(ps[0].hasAttribute('data-kiosk-selected')).toBe(true);
     });
 
+    // A kiosk square of d >= 5 is a grid (parts under 44 px as strips); the sheet keeps its strips.
+    test.each([[8, 2], [9, 3], [6, 2], [7, 1]])('square d=%i: kiosk grid has %i rows, same part count', (d, rows) => {
+        const block = oneExercise('breuken', { subType: 'kleuren', shapes: ['square'], shape: 'square', minDenominator: d, maxDenominator: d });
+        const svgOf = (c: Element) => c.querySelector<SVGElement>('svg[viewBox]')!;
+        const rects = (c: Element) => [...svgOf(c).querySelectorAll('rect')];
+        const ys = (c: Element) => new Set(rects(c).map(r => r.getAttribute('y')));
+        const { container } = render(<Harness block={block} kind="tap-multi" />);
+        expect(parts(container)).toHaveLength(d);
+        expect(svgOf(container).getAttribute('data-kiosk-layout')).toBe('grid');
+        expect(ys(container).size).toBe(rows);
+        cleanup();
+        const { Viewer } = EXERCISE_UI[block.typeId];
+        const plain = render(<BlockWidthProvider value={340}><Viewer block={block} showSolutions={false} /></BlockWidthProvider>);
+        expect(rects(plain.container)).toHaveLength(d);
+        expect(svgOf(plain.container).hasAttribute('data-kiosk-layout')).toBe(false);
+        expect(ys(plain.container)).toEqual(new Set(['0']));
+        expect(rects(plain.container).every(r => r.getAttribute('width') === rects(plain.container)[0].getAttribute('width'))).toBe(true);
+    });
+
+    test('square d=4 stays strips in the kiosk', () => {
+        const block = oneExercise('breuken', { subType: 'kleuren', shapes: ['square'], shape: 'square', minDenominator: 4, maxDenominator: 4 });
+        const { container } = render(<Harness block={block} kind="tap-multi" />);
+        expect(container.querySelector('svg[data-kiosk-layout]')).toBeNull();
+    });
+
     test('kiosk flow: any n parts are right, juist and fout', () => cardFlow('breuken-kleuren', null, tapCount));
 });
 
