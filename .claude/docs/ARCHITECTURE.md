@@ -542,7 +542,7 @@ build / drag** = the pupil answers ON the exercise through `interact` (§15 Phas
 | Row(s) | Descriptor | What the pupil gives |
 |---|---|---|
 | `hr-std-optellen` · `-aftrekken` · `-vermenigvuldigen` · `-delen` · `-gemengd` | `HR_KIOSK` | the answer; a puntoefening asks the blank (`missing-operand`), met rest asks quotiënt + rest (`number+rest`); keys follow numberType (`,` / `/` + space / `−`) |
-| `cijferen-*` (8) | `CIJFER_KIOSK` | **fill** the grid's own ruitjes on the card: answer digits, partial products, quotient digits, rest (carries / exchanged digits are optional help; decimal leaves get `,`); aftrekken also gets the **Lenen** key (`extraKeys`: always present, always exchanges, never hints) |
+| `cijferen-*` (8) | `CIJFER_KIOSK` | **fill** the grid's own ruitjes on the card: answer digits, partial products, quotient digits, rest; a NEEDED carry / exchanged digit left blank is fout (owner rule 2026-10-08; columns that need nothing take blank or 0; `strictCarries: false` is for tests only); decimal leaves get `,`; aftrekken also gets the **Lenen** key (`extraKeys`: always present, always exchanges, no hint) |
 | `procenten` | `PROCENTEN_KIOSK` | only nemen / welk-percent: one number |
 | `verbanden` | `VERBANDEN_KIOSK` | one captioned field per asked representation (breuk / kommagetal / procent without `%`) |
 | `afronden` | `AFRONDEN_KIOSK` | only simpel: the rounded number (a rooster is a table, not one answer) |
@@ -1246,7 +1246,7 @@ src/
 │   ├── splitsen/{splitsenGenerator.ts,dutchWords.ts}   # basic/splitsboom/verliefde-harten/positie-*
 │   ├── cijferen/cijferGenerator.ts
 │   ├── cijferen/cijferLayout.ts   # pure column geometry shared by CijferViewer and the kiosk descriptor (cijferDp, getDigitCols, mulLayout, add/sub carries)
-│   ├── cijferen/cijferCells.ts    # the kiosk grid's ruitjes (key a/p/q/c/b/r, roles) + cijferCheck: which cell holds which digit, carries optional unless strictCarries (§15)
+│   ├── cijferen/cijferCells.ts    # the kiosk grid's ruitjes (key a/p/q/c/b/r, roles) + cijferCheck: which cell holds which digit, needed carries must be written (strictCarries default true, §15)
 │   ├── geld/{geldGenerator.ts,geldRekenenGenerator.ts}   # herkennen/tekenen, wissel, teruggeven; korting/winst/intrest (formatEuro)
 │   ├── mab/mabGenerator.ts
 │   ├── ordenen/{ordenenGenerator.ts,breukenRangschikkenGenerator.ts}   # rangschikken → OrdenenExercise[] (fractions)
