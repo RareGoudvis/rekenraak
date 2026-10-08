@@ -185,7 +185,3 @@ UpdateState). Left over, found while fixing:
   overflows: stage 0 starts at ~1900 px and at 1920 px the "Automatisch bewaard" text runs under the
   undo button (wb-check/mode-buttons/topbar-1920.png). Fix: count the centre track in the overflow
   measurement. 2026-10-08
-- Ctrl+Z / Ctrl+Y with the board open undo the WORKSHEET underneath, invisibly: TopBar stays mounted
-  under the overlay and its window keydown listener is not gated on `view` (TopBar.tsx ~176). The board
-  has no ink-undo shortcut of its own. Fix: skip in TopBar when `view === 'whiteboard'`, and bind
-  Ctrl+Z / Ctrl+Y to `undoStroke` / `redoStroke` in the board. 2026-10-09

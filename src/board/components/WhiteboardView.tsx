@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BoardBottomBar from './BoardBottomBar';
 import BoardPageCanvas from './BoardPageCanvas';
 import BoardAddModal from './BoardAddModal';
@@ -16,6 +16,23 @@ export default function WhiteboardView() {
         s.pages[s.activePageIdx].widgets.find(w => w.id === s.selectedWidgetId));
     const inspectorOpen = useBoardStore((s) => s.inspectorOpen);
     const tool = useBoardStore((s) => s.tool);
+
+    // Ink undo/redo only (widget actions have no history). Ignored while typing so a tekst
+    // widget or title field keeps its own text undo.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+            const key = e.key.toLowerCase();
+            if (key !== 'z' && key !== 'y') return;
+            const t = e.target as HTMLElement | null;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            e.preventDefault();
+            const { undoStroke, redoStroke } = useBoardStore.getState();
+            if (key === 'y' || e.shiftKey) redoStroke(); else undoStroke();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     return (
         // no-print: Ctrl+P or the Afdrukken path with the board open must print the sheet
