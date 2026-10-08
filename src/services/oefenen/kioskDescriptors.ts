@@ -954,16 +954,22 @@ export const GELD_TEKENEN_KIOSK = descriptor<GeldExercise>({
 // one, down to a hundredth of it (a €5 note: €2 … 5 cent; €500: €200 … €5), so the note itself
 // is never in it and any make-up of its value is a real exchange.
 const wisselMoney = (bill: number) => ALL_MONEY.filter(v => v < bill && v * 100 >= bill);
-// The kiosk generates one exercise per block, so it is always the first bill.
-// SYNC: generateGeldWisselExercises (exerciseBills[i] ?? last ?? 500).
-const firstBill = (c: Record<string, unknown>) => (Array.isArray(c.exerciseBills) && c.exerciseBills.length ? Number(c.exerciseBills[0]) : 500);
+// The teacher's bills that have smaller money to change into (not a 5 cent).
+// SYNC: generateGeldWisselExercises reads exerciseBills, 500 when empty.
+const wisselBills = (c: Record<string, unknown>) =>
+    (Array.isArray(c.exerciseBills) && c.exerciseBills.length ? c.exerciseBills.map(Number) : [500]).filter(b => wisselMoney(b).length > 0);
 export const GELD_WISSEL_KIOSK = descriptor<GeldWisselExercise>({
     input: 'interactive',
     interact: buildInteract((ex) => wisselMoney(ex.billValueCents).map(moneyPiece), ex => ex.billValueCents, a => showEuro(Number(a))),
     answerOf: (ex) => [String(ex.billValueCents)],
     display: (ex) => `${showEuro(ex.billValueCents)} wisselen: ?`,
     kioskInstruction: 'Wissel: leg hetzelfde bedrag met kleiner geld.',
-    supported: (c) => wisselMoney(firstBill(c)).length > 0,
+    supported: (c) => wisselBills(c).length > 0,
+    // The sheet gives exercise i the i-th bill; a kiosk block holds one exercise, so draw one of them.
+    prepare: (c, rng) => {
+        const bills = wisselBills(c);
+        return bills.length ? { ...c, exerciseBills: [bills[Math.floor(rng() * bills.length)]] } : c;
+    },
 });
 
 // MAB tekenen: lay the number with D / H / T / E blocks. A column holds a digit (at most 9 of a

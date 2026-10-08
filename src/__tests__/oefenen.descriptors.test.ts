@@ -169,7 +169,7 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         if (c.format === 'euros') expect(g.amountCents % 100).toBe(0);
         return { build: g.amountCents, allowed: (c.allowedDenominations as number[]).filter(v => v <= max) };
     },
-    // The first bill the teacher picked (one exercise per kiosk block), laid in smaller money.
+    // The bill the kiosk drew from the teacher's (prepare: one per exercise), laid in smaller money.
     'geld-wissel': (g: T.GeldWisselExercise, c) => {
         expect(g.billValueCents).toBe((c.exerciseBills as number[] | undefined)?.[0] ?? 500);
         return { build: g.billValueCents, allowed: [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5].filter(v => v < g.billValueCents) };
@@ -399,6 +399,7 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('geld-tekenen', { allowedDenominations: [50000], maxGetal: 1000 })).toBe(true);
         expect(kioskSupports('geld-wissel', { exerciseBills: [5] })).toBe(false);
         expect(kioskSupports('geld-wissel', { exerciseBills: [10, 5] })).toBe(true);
+        expect(kioskSupports('geld-wissel', { exerciseBills: [5, 5] })).toBe(false);
         expect(kioskSupports('mab-tekenen', {})).toBe(true);
     });
 });
