@@ -50,7 +50,12 @@ updateBlockSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses
 Dutch (Flemish) primary-school **worksheet generator**. Teachers compose math exercise
 blocks, preview them on virtual A4 pages, and export via the browser print dialog (Save as
 PDF). UI text is Dutch; code and comments are English. Everything is client-side React 19 +
-TypeScript + Vite + one Zustand store — no backend, no account, no tracking.
+TypeScript + Vite + one worksheet Zustand store (Bordmodus has its own) — no backend, no
+account, no tracking.
+
+Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `bord.html` (the same app
+booted straight into Bordmodus via `<html data-boot="bord">` + `src/bootEntry.ts`), and the
+static SEO pages `about.html`, `faq.html`, `oefeningen.html`.
 
 ---
 
@@ -138,8 +143,8 @@ the per-typeId table is §7.
    when the page's leaves differ from `APP_STRUCTURE`; the Stop hook nudges earlier.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
-**`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **whiteboard mode
-(`src/board/`, branch `whiteboard` only)** → §14.
+**`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **Bordmodus /
+whiteboard (`src/board/`, `/bord.html`)** → §14.
 
 ---
 

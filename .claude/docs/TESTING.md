@@ -55,12 +55,15 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `releaseNotes.test.tsx` | The release-notes list: every example leaf exists and fills its block without a melding, the newest entry drives `RELEASE_VERSION`, every preview renders, banner + Help open the modal, ModalShell focus wrap/return, the seen-key. |
 | `leafDefaultCount.test.ts`, `sheetBlock.emptyNote.test.tsx` | A leaf's own `defaultCount` (oppervlakte-rooster = 2, everything else the row's); an empty block with a note shows the note on screen and nothing on paper. |
 
-## Bordmodus suites (`src/__tests__/board*`)
+## Bordmodus suites (`src/__tests__/board*` + `bordEntry`, `clockMath`, `klokWidget`, `wbCosmetics`)
 
-All jsdom except `boardGroepjes`. Open bugs are pinned as `test.fails` next to a BUGS.md line
-under "Bordmodus" (fixing one flips it to a failure: turn it into a plain `test` in the fix
-commit). `npx vitest run src/__tests__/board` runs them in ~15 s; with `@vitest/coverage-v8`
-installed (`npm i --no-save`), `--coverage --coverage.include='src/board/**'` measures them.
+All jsdom except `boardGroepjes` and `clockMath`. An open board bug may be pinned as
+`test.fails` next to its BUGS.md line under "Bordmodus" (fixing it flips the pin to a failure:
+turn it into a plain `test` in the fix commit); none are pinned today, the WB2 pins were all
+flipped by the fold-in fixes. `npx vitest run src/__tests__/board src/__tests__/bordEntry
+src/__tests__/clockMath src/__tests__/klokWidget src/__tests__/wbCosmetics` runs them in ~15 s;
+with `@vitest/coverage-v8` installed (`npm i --no-save`),
+`--coverage --coverage.include='src/board/**'` measures them.
 
 | File | What it guards |
 |---|---|
@@ -72,6 +75,10 @@ installed (`npm i --no-save`), `--coverage --coverage.include='src/board/**'` me
 | `boardView.smoke.test.tsx` | `WhiteboardView` with every widget kind (catalogue + afbeelding, tekst, geld-item, exercise) on a light and a dark board, the geld dock, every ⚙ panel: no `console.error`, no "undefined"/"NaN", `.no-print`. Weer runs on a stubbed `fetch` and a denied geolocation. |
 | `boardLeaves.test.tsx` | Every sidebar leaf as a board card: `makeBoardBlock` + `regenerateBoardBlock`, mounted through `BoardPageCanvas` with answers off and on: sheet viewer (no `data-kiosk*`), exercises > 0 except layout furniture, no `console.error`, no "undefined"/"NaN". |
 | `boardCatalog.test.ts` | The ★ favourites (cap 6, unknown ids dropped), every background pattern × dark × scale, the board block factory's edges (unknown typeId, locked curriculum drops the leerjaar). |
+| `bordEntry.test.ts` | `/bord.html` boot: without `data-boot` the store starts in the editor, with `data-boot="bord"` straight in the board; leaving the board on bord.html calls `location.assign('/')` (mocked), on index.html it only switches the view. |
+| `clockMath.test.ts` | The pure clock maths (`services/clock/clockMath.ts`) against a circular-distance oracle: `minuteFromAngle` (step snapping, wrap of negative / over-full angles), `hourFromAngle` at every 5° × 5 min (the minute offset: at :50 the hand near the 4 is still 3), `carryHour` both ways across 12, 12 / 24 h folding and the voormiddag / namiddag flip of `turnHourTo`, arrow-key `stepMinutes` / `stepHours` (a full turn of minute steps = one hour). |
+| `klokWidget.test.tsx` | The board KlokWidget under simulated pointer drags (jsdom): the minute hand carries the hour forward and back past 12, a full turn advances exactly one hour also across noon, the hour hand snaps to whole hours and keeps the minutes, the geschreven tijd follows the face after a carry past noon. |
+| `wbCosmetics.test.tsx` | The clock-cosmetics fixes: clock face and geld palette do not select text on drag; the add-panel search ("klok" finds the kloklezen variants and the Klok tool; a typeId finds its row; a found tool lands on the board); every bottom-bar popup closes on Escape and an outside press, not an inside one; twelve adds land on twelve spots and a freed spot is reused (`staggerSlot`); Aantal applies at once (tail cut / top-up keeps the rest); the Werksymbolen panel renders without a key warning. |
 
 ## The generator matrix
 
@@ -687,3 +694,32 @@ computed against a stale scroll position points off-screen and the drop silently
 There is no native drag-and-drop left in the app (`dist/assets/*.js` contains no
 `setDragImage`/`dataTransfer` of ours) — an extension that hooks `dragstart` used to hang
 the tab for a whole drag.
+
+## Bordmodus by hand (Playwright recipe)
+
+The board has no `window.__rekenraak` hook of its own; drive it through the UI against a dev
+server (`npm run dev -- --port <p>`, kill it afterwards). Viewport 1920 × 1080 (the bottom bar
+clips at 1280, BUGS.md "Bordmodus"). Real `mouse.move/down/up` for every drag (widget title
+bar, resize grip, clock hands, geld palette) — the board runs on pointer events.
+
+1. **Enter** — either `page.goto('/bord.html')` (boots straight in, no welcome modal) or
+   `/` → TopBar button `getByRole('button', { name: /Bordmodus/ })` (at a narrow width it sits
+   in the Meer menu). The overlay is `[data-whiteboard]`; the page is `[data-board-canvas]`.
+2. **Add widgets** — `getByLabel('Toevoegen aan bord')` → "RekenRaak blok…" opens the add
+   panel: type in `Zoeken…` (e.g. "klok"), click a variant → one exercise card. Klasmanagement /
+   Organisatie / Wiskunde-gereedschap add tool cards; add six or more and check they land on
+   different spots.
+3. **Inspector** — click a card's title bar to select it, then `getByLabel('Widget-instellingen')`
+   (⚙). An exercise card shows Aantal / Witruimte / Tekstgrootte, the type's Config,
+   "Differentiatie" (StyleConfig) and "Geavanceerd" where the family has one. Move the Aantal
+   slider: the card changes at once.
+4. **Note** — pick impossible settings (e.g. a bridge rule the max cannot satisfy) and press
+   "Genereer nieuwe oefeningen": `[data-generation-note]` appears in the inspector, same box as
+   the sheet Inspector.
+5. **Reload** — wait > 1.5 s (debounced autosave), `page.reload()`: the same pages, cards and
+   ink come back (`localStorage.rekenraak_board_autosave_v1`).
+6. **Verlaten** — `getByRole('button', { name: 'Bordmodus verlaten' })`: from `/` it shows the
+   editor with the sheet unchanged; from `/bord.html` it navigates to `/`.
+7. **Print = sheet only** — with the board open, `page.emulateMedia({ media: 'print' })` (or
+   `page.pdf()`): `[data-whiteboard]` is `display: none` (`.no-print`) and the worksheet's
+   `.page-sheet`s are what print.
