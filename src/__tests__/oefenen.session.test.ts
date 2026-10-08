@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import type { OefenSessie, OefenType } from '../services/oefenen/types';
+import { attemptsOf, type OefenSessie, type OefenType } from '../services/oefenen/types';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { LEAF_BY_ID } from '../config/appstructure';
 import { mulberry32 } from './helpers/limitHarness';
@@ -8,7 +8,7 @@ import { flattenLeaves } from '../config/appstructure';
 import { buildSessie, listOefenLeaves, type BuilderRow } from '../components/oefenen/oefenBuild';
 import { qrMatrixOrNull, qrVersionOf } from '../services/qr';
 import {
-    MAX_SESSIE_BYTES, decodeSessie, encodeSessie, newSessieId, packWire, parseSessie, sessieLink,
+    MAX_SESSIE_BYTES, decodeSessie, encodeSessie, newSessieId, packWire, parseSessie, sessieLink, toWire,
 } from '../services/oefenen/session';
 
 const ORIGIN = 'https://www.rekenraak.be';
@@ -256,5 +256,34 @@ describe('kioskLabel', () => {
         const s = sessieOf(4, 0);
         expect(s.types.map(t => t.label)).toEqual(s.types.map(t => label(t.leafId)));
         expect(roundTrip(s).types.map(t => t.label)).toEqual(s.types.map(t => t.label));
+    });
+});
+
+describe('2 kansen (wire slot 8, appended)', () => {
+    test('attempts 2 rides in the last slot and round-trips; 1 leaves the wire as it was', () => {
+        const one = sessieOf(2, 0);
+        const two: OefenSessie = { ...one, attempts: 2 };
+        expect(toWire(one)).toHaveLength(5);
+        expect(toWire(two)).toHaveLength(9);
+        expect(toWire(two)[8]).toBe(2);
+        expect(roundTrip(two)).toEqual(json(two));
+        expect(roundTrip(one).attempts).toBeUndefined();
+        expect(attemptsOf(roundTrip(one))).toBe(1);
+    });
+    test('a link made before the slot existed (8 slots, title / timer / total set) decodes to 1 kans', () => {
+        const old = decodeSessie(packWire([1, 'oud12345', MINUTE_AT / 60_000, 0, [[3]], 'Week 6', 10, 12]));
+        expect(old).toMatchObject({ title: 'Week 6', timerMin: 10, total: 12 });
+        expect(old.attempts).toBeUndefined();
+        expect(attemptsOf(old)).toBe(1);
+    });
+    test('testmodus always ships one try, even when 2 was asked for', () => {
+        const s: OefenSessie = { ...sessieOf(1, 0), testMode: true, attempts: 2 };
+        expect(toWire(s)).toHaveLength(5);
+        expect(attemptsOf(roundTrip(s))).toBe(1);
+        // A hand-made link with both still gives one try.
+        expect(attemptsOf(decodeSessie(packWire([1, 'abc', 1, 4, [[3]], null, null, null, 2])))).toBe(1);
+    });
+    test('a bad attempts value is a Dutch error', () => {
+        expect(() => decodeSessie(packWire([1, 'abc', 1, 0, [[3]], null, null, null, 3]))).toThrow(/ongeldig \(kansen\)/);
     });
 });

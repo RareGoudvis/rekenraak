@@ -1,23 +1,28 @@
-import { useEffect, useRef } from 'react';
-import { CheckCircle, XCircle } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, CheckCircle, XCircle } from '@phosphor-icons/react';
+import { FLASH_MS } from '../useOefenStore';
+
+export type FlashKind = 'juist' | 'fout' | 'retry';
 
 interface Props {
-    correct: boolean;
-    onNext(): void;
+    kind: FlashKind;
+    onSkip(): void;
 }
 
-// Juist / fout only, never the right answer (owner decision): the pupil tries the next one.
-export default function FeedbackOverlay({ correct, onNext }: Props) {
-    const nextRef = useRef<HTMLButtonElement>(null);
-    // Enter on the focused button is "Volgende", so Controleer → Enter → Volgende → Enter.
-    useEffect(() => { nextRef.current?.focus({ preventScroll: true }); }, []);
+const TEXT: Record<FlashKind, string> = { juist: 'Juist!', fout: 'Fout', retry: 'Fout — probeer nog eens' };
+
+// Juist / fout only, never the right answer (owner decision). It flashes over the answer panel
+// and moves on by itself; a tap (or Enter, in Kiosk) skips the wait, the bar shows it running out.
+export default function FeedbackOverlay({ kind, onSkip }: Props) {
+    const ok = kind === 'juist';
     return (
-        <div className={`kiosk-feedback ${correct ? 'is-ok' : 'is-wrong'}`} role="status" aria-live="assertive">
-            <span className="kiosk-feedback-icon" aria-hidden>{correct ? <CheckCircle weight="fill" /> : <XCircle weight="fill" />}</span>
-            <span className="kiosk-feedback-text">{correct ? 'Juist!' : 'Fout'}</span>
-            <button ref={nextRef} type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big" onClick={onNext}>
-                Volgende
-            </button>
+        <div className={`kiosk-feedback ${ok ? 'is-ok' : 'is-wrong'}${kind === 'retry' ? ' is-retry' : ''}`}
+            role="status" aria-live="assertive" onClick={onSkip}
+            style={{ '--flash-ms': `${FLASH_MS[kind]}ms` } as React.CSSProperties}>
+            <span className="kiosk-feedback-icon" aria-hidden>
+                {ok ? <CheckCircle weight="fill" /> : kind === 'retry' ? <ArrowCounterClockwise weight="bold" /> : <XCircle weight="fill" />}
+            </span>
+            <span className="kiosk-feedback-text">{TEXT[kind]}</span>
+            <span className="kiosk-feedback-bar" aria-hidden />
         </div>
     );
 }

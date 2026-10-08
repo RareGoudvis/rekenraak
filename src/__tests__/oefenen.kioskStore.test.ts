@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { useOefenStore, cellPlanOf, currentInput, sanitizeAnswer } from '../oefenen/useOefenStore';
+import { useOefenStore, cellPlanOf, currentInput, sanitizeAnswer, FLASH_MS } from '../oefenen/useOefenStore';
 import { loadRuns } from '../services/oefenen/stats';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
@@ -114,6 +114,196 @@ describe('a run', () => {
         expect(st().run!.index).toBe(1);
         expect(st().run!.stats.history).toHaveLength(0);
         expect(loadRuns('kiosktest').map(r => r.index)).toEqual([0, 1]);
+    });
+});
+
+describe('the juist / fout flash moves on by itself', () => {
+    beforeEach(() => { vi.useFakeTimers(); });
+
+    test('juist flashes FLASH_MS.juist, fout FLASH_MS.fout, then the next exercise follows', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        const first = st().shown!.exerciseKey;
+        fillAnswer(true); st().answer();
+        expect(st().phase).toBe('feedback');
+        vi.advanceTimersByTime(FLASH_MS.juist - 1);
+        expect(st().phase).toBe('feedback');
+        vi.advanceTimersByTime(1);
+        expect(st().phase).toBe('exercise');
+        expect(st().shown!.exerciseKey).not.toBe(first);
+
+        fillAnswer(false); st().answer();
+        vi.advanceTimersByTime(FLASH_MS.fout - 1);
+        expect(st().phase).toBe('feedback');
+        vi.advanceTimersByTime(1);
+        expect(st().phase).toBe('exercise');
+        expect(st().run!.stats.history.map(h => h.correct)).toEqual([true, false]);
+        expect(FLASH_MS.juist).toBeLessThan(FLASH_MS.fout);
+    });
+
+    test('no double submit during the flash; skipping it moves on once', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        fillAnswer(true); st().answer();
+        const input = [...st().input];
+        st().answer(); st().answer();
+        fillAnswer(false);
+        expect(st().input).toEqual(input);
+        expect(st().run!.stats.history).toHaveLength(1);
+        st().skipFlash();
+        expect(st().phase).toBe('exercise');
+        const second = st().shown!.exerciseKey;
+        // The skipped flash's timer must not advance past the exercise that just came up.
+        vi.advanceTimersByTime(FLASH_MS.fout * 2);
+        expect(st().shown!.exerciseKey).toBe(second);
+        expect(st().phase).toBe('exercise');
+    });
+
+    test('testmode: no flash, no timer, straight to the next exercise', () => {
+        st().load(hashOf(starterSessie({ testMode: true, attempts: 2 })));
+        st().start();
+        fillAnswer(false); st().answer();
+        expect(st().phase).toBe('exercise');
+        const key = st().shown!.exerciseKey;
+        vi.advanceTimersByTime(FLASH_MS.fout * 2);
+        expect(st().shown!.exerciseKey).toBe(key);
+        // Testmodus forces one try: the wrong answer is final.
+        expect(st().run!.stats.history).toHaveLength(1);
+    });
+
+    test('Stats during a flash pause it; Verder oefenen ends it', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        const first = st().shown!.exerciseKey;
+        fillAnswer(true); st().answer();
+        st().openStats();
+        vi.advanceTimersByTime(FLASH_MS.fout * 2);
+        expect(st().phase).toBe('stats');
+        st().closeStats();
+        expect(st().phase).toBe('exercise');
+        expect(st().shown!.exerciseKey).not.toBe(first);
+    });
+
+    test('the timer running out during a flash locks the run; the flash does not reopen it', () => {
+        vi.setSystemTime(new Date('2026-10-08T09:00:00'));
+        st().load(hashOf(starterSessie({ timerMin: 1 })));
+        st().start();
+        fillAnswer(true); st().answer();
+        vi.setSystemTime(Date.now() + 61_000);
+        st().tick();
+        expect(st().phase).toBe('locked');
+        vi.advanceTimersByTime(FLASH_MS.fout);
+        expect(st().phase).toBe('locked');
+    });
+});
+
+describe('2 kansen', () => {
+    beforeEach(() => { vi.useFakeTimers(); });
+    const two = () => hashOf(starterSessie({ attempts: 2 }));
+
+    test('wrong, then right: a retry flash, the same exercise cleared, juist na 2e kans', () => {
+        st().load(two());
+        st().start();
+        const key = st().shown!.exerciseKey;
+        fillAnswer(false); st().answer();
+        expect(st().phase).toBe('retry');
+        expect(st().lastCorrect).toBe(false);
+        // Nothing counted yet, and a double tap during the retry flash does nothing.
+        st().answer();
+        expect(st().run!.stats.history).toHaveLength(0);
+        vi.advanceTimersByTime(FLASH_MS.retry - 1);
+        expect(st().phase).toBe('retry');
+        vi.advanceTimersByTime(1);
+        expect(st().phase).toBe('exercise');
+        expect(st().shown!.exerciseKey).toBe(key);
+        expect(st().input.every(v => v === '')).toBe(true);
+        expect(st().shown!.wrongFirst).toBeDefined();
+
+        fillAnswer(true); st().answer();
+        expect(st().phase).toBe('feedback');
+        expect(st().lastCorrect).toBe(true);
+        const h = st().run!.stats.history;
+        expect(h.map(x => [x.correct, x.secondTry])).toEqual([[true, true]]);
+        const t = st().run!.stats.perType[h[0].slot];
+        expect(t).toMatchObject({ made: 1, correct: 1, wrong: 0, secondTry: 1 });
+        expect(t.errors).toHaveLength(1);
+        expect(t.errors[0].secondTry).toBe(true);
+    });
+
+    test('wrong twice is final: fout, both answers kept, no third try', () => {
+        st().load(two());
+        st().start();
+        fillAnswer(false); st().answer();
+        st().skipFlash();
+        expect(st().phase).toBe('exercise');
+        fillAnswer(false); st().answer();
+        expect(st().phase).toBe('feedback');
+        expect(st().lastCorrect).toBe(false);
+        const h = st().run!.stats.history;
+        expect(h.map(x => [x.correct, x.secondTry])).toEqual([[false, true]]);
+        const e = st().run!.stats.perType[h[0].slot].errors[0];
+        expect(e.secondTry).toBe(false);
+        expect(e.second).toBeDefined();
+    });
+
+    test('right at once: juist without a retry or an error row', () => {
+        st().load(two());
+        st().start();
+        fillAnswer(true); st().answer();
+        expect(st().phase).toBe('feedback');
+        const h = st().run!.stats.history;
+        expect(h[0].secondTry).toBeUndefined();
+        expect(st().run!.stats.perType[h[0].slot].errors).toEqual([]);
+    });
+
+    test('a reload during the retry comes back on the second try of the same exercise', () => {
+        const hash = two();
+        st().load(hash);
+        st().start();
+        const key = st().shown!.exerciseKey;
+        fillAnswer(false); st().answer();
+        resetKioskKeepStorage();
+        st().load(hash);
+        expect(st().phase).toBe('exercise');
+        expect(st().shown!.exerciseKey).toBe(key);
+        fillAnswer(false); st().answer();
+        expect(st().phase).toBe('feedback');
+        expect(st().run!.stats.history).toHaveLength(1);
+    });
+
+    test('cijferen grid: the retry clears every cell and the keypad starts in the first cell again', () => {
+        const cijfer = { typeId: 'cijferen-optellen-nat', leafId: 'cijferen-optellen-nat', label: 'Cijferen', constraints: { numberType: 'natural' }, limit: 2, weight: 1 };
+        st().load(hashOf(starterSessie({ types: [cijfer], attempts: 2 })));
+        st().start();
+        const plan = cellPlanOf(st().sessie, st().shown)!;
+        const first = st().activeCell;
+        expect(first).toBe(plan.flow[0] ?? plan.keys[0]);
+        fillAnswer(false);
+        st().focusCell(plan.keys.at(-1)!);
+        st().answer();
+        expect(st().phase).toBe('retry');
+        // Typing during the flash goes nowhere.
+        st().typeCell(plan.keys[0], '7');
+        st().skipFlash();
+        expect(st().phase).toBe('exercise');
+        expect(st().interaction.cells).toEqual({});
+        expect(st().activeCell).toBe(first);
+        fillAnswer(true); st().answer();
+        expect(st().lastCorrect).toBe(true);
+        expect(st().run!.stats.history.map(h => [h.correct, h.secondTry])).toEqual([[true, true]]);
+    });
+
+    test('Stats during the retry flash: Verder oefenen goes to the second try', () => {
+        st().load(two());
+        st().start();
+        const key = st().shown!.exerciseKey;
+        fillAnswer(false); st().answer();
+        st().openStats();
+        expect(st().phase).toBe('stats');
+        st().closeStats();
+        expect(st().phase).toBe('exercise');
+        expect(st().shown!.exerciseKey).toBe(key);
+        expect(st().shown!.wrongFirst).toBeDefined();
     });
 });
 

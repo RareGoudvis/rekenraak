@@ -89,6 +89,12 @@ describe('buildSessie', () => {
         expect(sessie.types.map(t => t.weight)).toEqual([75, 25]);
     });
 
+    test('2 kansen ships attempts 2; 1 kans and testmodus ship nothing (one try)', () => {
+        expect(buildSessie(rows, { ...settings, testMode: false, attempts: 2 }).sessie.attempts).toBe(2);
+        expect('attempts' in buildSessie(rows, { ...settings, testMode: false, attempts: 1 }).sessie).toBe(false);
+        expect('attempts' in buildSessie(rows, { ...settings, testMode: true, attempts: 2 }).sessie).toBe(false);
+    });
+
     test('rowsFromSessie reopens what buildSessie shipped', () => {
         const { sessie } = buildSessie(rows, settings);
         const back = rowsFromSessie(sessie);
@@ -115,6 +121,33 @@ describe('OefenBuilderModal', () => {
         const sessie = decodeSessie(link.split('#oefen=')[1]);
         expect(sessie.types.map(t => t.leafId)).toEqual(['procenten-nemen', 'hr-std-optellen-nat']);
         expect(sessie).toMatchObject({ mode: 'willekeurig', timerMin: 15, testMode: false, statsLocked: false });
+    });
+
+    test('Kansen 1 / 2: 2 goes in the link; testmodus disables it, says why, and ships 1', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        const kansen = within(screen.getByRole('group', { name: 'Kansen per oefening' }));
+        expect(kansen.getByRole('button', { name: '1' }).getAttribute('aria-pressed')).toBe('true');
+        fireEvent.click(kansen.getByRole('button', { name: '2' }));
+        expect(kansen.getByRole('button', { name: '2' }).getAttribute('aria-pressed')).toBe('true');
+        const linkNow = () => {
+            fireEvent.click(footerBtn('Delen'));
+            const href = screen.getByRole('link').getAttribute('href')!;
+            // The share modal's own Sluiten sits on top of the builder's.
+            fireEvent.click(screen.getAllByRole('button', { name: 'Sluiten' }).at(-1)!);
+            return decodeSessie(href.split('#oefen=')[1]);
+        };
+        expect(linkNow().attempts).toBe(2);
+
+        fireEvent.click(screen.getByRole('switch', { name: /Testmodus/ }));
+        expect((kansen.getByRole('button', { name: '2' }) as HTMLButtonElement).disabled).toBe(true);
+        expect(kansen.getByRole('button', { name: '1' }).getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByText(/In testmodus 1 kans/)).toBeTruthy();
+        expect(linkNow().attempts).toBeUndefined();
+
+        // Testmodus off again: the teacher's 2 comes back.
+        fireEvent.click(screen.getByRole('switch', { name: /Testmodus/ }));
+        expect(kansen.getByRole('button', { name: '2' }).getAttribute('aria-pressed')).toBe('true');
     });
 
     test('a row with settings the kiosk cannot check shows a hint and keeps Delen off', () => {

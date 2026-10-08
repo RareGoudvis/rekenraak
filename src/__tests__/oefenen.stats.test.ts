@@ -45,6 +45,22 @@ describe('recordAnswer + summary', () => {
         const rows = summary(s, sessie);
         expect(rows.map(r => [r.label, r.made, r.correct, r.wrong, r.pct])).toEqual([['Delen', 2, 1, 1, 50], ['Vergelijken', 2, 1, 1, 50]]);
     });
+    test('2 kansen: juist na 2e kans counts juist with its first answer kept; wrong twice keeps both', () => {
+        let s = emptyStats(sessie, 0);
+        s = recordAnswer(s, 1, 'vergelijken', cmp, '>', true, 400, sessie.types[1].constraints, 10, '<');
+        s = recordAnswer(s, 1, 'vergelijken', cmp, '=', false, 900, sessie.types[1].constraints, 20, '<');
+        s = recordAnswer(s, 1, 'vergelijken', cmp, '>', true, 300, sessie.types[1].constraints, 30);
+        expect(s.perType[1]).toMatchObject({ made: 3, correct: 2, wrong: 1, secondTry: 1 });
+        expect(s.perType[1].errors).toEqual([
+            { exercise: '1 200 ? 980', given: '<', expected: '>', at: 10, secondTry: true },
+            { exercise: '1 200 ? 980', given: '<', expected: '>', at: 20, secondTry: false, second: '=' },
+        ]);
+        expect(s.history.map(h => [h.correct, h.secondTry])).toEqual([[true, true], [false, true], [true, undefined]]);
+        const row = summary(s, sessie)[1];
+        expect([row.correct, row.secondTry, row.pct]).toEqual([2, 1, 67]);
+        // A run stored before 2 kansen has no secondTry: the summary reads it as 0.
+        expect(summary(emptyStats(sessie, 0), sessie)[0].secondTry).toBe(0);
+    });
     test('nothing made → pct null; the input object is never mutated', () => {
         const s = emptyStats(sessie, 0);
         const frozen = JSON.stringify(s);

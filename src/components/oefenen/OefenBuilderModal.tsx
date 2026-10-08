@@ -3,7 +3,7 @@ import { Check, FloppyDisk, Plus, Share, Trash, Warning } from '@phosphor-icons/
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { saveOefenSessie } from '../../services/persistence';
-import type { OefenSessie } from '../../services/oefenen/types';
+import { attemptsOf, type OefenAttempts, type OefenSessie } from '../../services/oefenen/types';
 import { makeDraftBlock } from '../curriculum/draftBlock';
 import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
@@ -47,6 +47,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const [timerMin, setTimerMin] = useState<number | undefined>(initial?.timerMin);
     const [testMode, setTestMode] = useState(initial?.testMode ?? false);
     const [statsLocked, setStatsLocked] = useState(initial?.statsLocked ?? false);
+    // Kept apart from testMode: switching testmodus off again restores the teacher's choice.
+    const [attempts, setAttempts] = useState<OefenAttempts>(initial ? (initial.attempts ?? 1) : 1);
     const [shareOf, setShareOf] = useState<OefenSessie | null>(null);
     const [saved, setSaved] = useState(false);
     const nextKey = useRef(rows.length);
@@ -84,7 +86,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         const constraints = constraintsOf(r.key);
         return constraints ? [{ ...r, constraints }] : [];
     });
-    const { sessie, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked });
+    const { sessie, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts });
     const percents = normaliseWeights(sessie.types.map(t => t.weight));
     const percentOf = (key: string): number | null => {
         const i = buildable.filter(r => kioskSupports(r.leaf.typeId, r.constraints)).findIndex(r => r.key === key);
@@ -181,6 +183,20 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                     <SwitchRow label="Zelfde soort na elkaar toestaan" checked={allowRepeatType} onChange={setAllowRepeatType} />
                                 )}
                                 <SwitchRow label="Testmodus (geen juist/fout tijdens het oefenen)" checked={testMode} onChange={setTestMode} />
+                                <div style={S.switchRow}>
+                                    <span style={S.switchText}>
+                                        Kansen per oefening
+                                        {testMode && <span style={S.switchNote}>In testmodus 1 kans: zonder juist/fout weet een leerling niet dat het opnieuw moet.</span>}
+                                    </span>
+                                    <div className="seg-group" role="group" aria-label="Kansen per oefening">
+                                        {([1, 2] as const).map(n => (
+                                            <button key={n} className="seg-btn" disabled={testMode} aria-pressed={attemptsOf({ attempts, testMode }) === n}
+                                                onClick={() => setAttempts(n)}>
+                                                {n}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                                 <SwitchRow label="Statistieken pas op het einde" checked={statsLocked} onChange={setStatsLocked} />
                             </div>
                         </section>
@@ -297,7 +313,8 @@ const S = {
     input: { padding: '6px 10px', height: 'var(--control-h)', boxSizing: 'border-box', borderRadius: 'var(--radius-sm)', border: '1px solid var(--separator)', background: 'var(--bg-surface-2)', color: 'var(--text-main)', fontSize: 'var(--text-sm)' } as React.CSSProperties,
     switches: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)', marginTop: 'var(--sp-4)', paddingTop: 'var(--sp-3)', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
     switchRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)', maxWidth: '520px' } as React.CSSProperties,
-    switchText: { fontSize: 'var(--text-sm)', color: 'var(--text-main)' } as React.CSSProperties,
+    switchText: { fontSize: 'var(--text-sm)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '2px' } as React.CSSProperties,
+    switchNote: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)' } as React.CSSProperties,
     empty: { margin: 0, padding: 'var(--sp-6)', textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', border: '2px dashed var(--separator)', borderRadius: 'var(--radius-md)' } as React.CSSProperties,
     rowHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--sp-3)', marginBottom: 'var(--sp-3)' } as React.CSSProperties,
     rowTitle: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0 } as React.CSSProperties,

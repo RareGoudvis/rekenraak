@@ -1,7 +1,7 @@
 import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
-import { OEFEN_VERSION, type OefenMode, type OefenSessie } from '../../services/oefenen/types';
+import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
@@ -58,6 +58,8 @@ export interface BuilderSettings {
     timerMin?: number;
     testMode: boolean;
     statsLocked: boolean;
+    // Kansen per oefening; absent = 1.
+    attempts?: OefenAttempts;
 }
 
 // Slider 0-50; 0 is the left stop and means no cap (limit undefined).
@@ -105,6 +107,8 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
         ...(s.timerMin ? { timerMin: s.timerMin } : {}),
         testMode: s.testMode,
         statsLocked: s.statsLocked,
+        // A retry needs the juist/fout feedback testmodus hides, so testmodus ships one try.
+        ...(s.attempts === 2 && !s.testMode ? { attempts: 2 as const } : {}),
     };
     return { sessie, excluded };
 }
