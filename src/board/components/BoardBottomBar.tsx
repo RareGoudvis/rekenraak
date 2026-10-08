@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
-import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
 import { addBasicWidget } from '../addWidgets';
 import { TOOL_CATALOG, runTool, loadFavorites, toggleFavorite, MAX_FAVORITES, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
-import type { BackgroundPattern, BoardTool } from '../boardTypes';
+import type { BoardTool } from '../boardTypes';
+import BackgroundPicker from './BackgroundPicker';
 
 // Single-letter tool shortcuts (shown in each tooltip). Only the draw tools have one so far.
 const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape' };
@@ -16,12 +16,10 @@ interface Props {
 }
 
 // Bottom toolbar of the whiteboard. Layout (owner design):
-// [+ Toevoegen][★ favorites ≤6][⚙ bordinstellingen] | [cursor][hand][T][pen][marker][gom]…
+// [+ Toevoegen][★ favorites ≤6][⚙ bordinstellingen][achtergrond] | [cursor][hand][T][pen][marker][gom]…
 // Digibord-first: ≥44px touch targets, no hover-only affordances.
 export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const setView = useWorksheetStore((s) => s.setView);
-    const background = useBoardStore((s) => s.pages[s.activePageIdx].background);
-    const setBackground = useBoardStore((s) => s.setBackground);
     const gridSnap = useBoardStore((s) => s.gridSnap);
     const setGridSnap = useBoardStore((s) => s.setGridSnap);
     const gridSize = useBoardStore((s) => s.gridSize);
@@ -40,7 +38,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
     const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
 
-    const [menu, setMenu] = useState<'add' | 'settings' | 'page' | 'save' | null>(null);
+    const [menu, setMenu] = useState<'add' | 'settings' | 'background' | 'page' | 'save' | null>(null);
     const [addSub, setAddSub] = useState<ToolCategory | null>(null);
     const [favorites, setFavorites] = useState<string[]>(loadFavorites);
     const [presets, setPresets] = useState<BoardPreset[]>([]);
@@ -181,7 +179,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                 </div>
             )}
 
-            {/* ── ⚙ Bordinstellingen (achtergrond + raster) ── */}
+            {/* ── ⚙ Bordinstellingen (raster; the background has its own button) ── */}
             <div data-board-menu="settings" style={{ position: 'relative' }}>
                 <button type="button" className="ui-hover" title="Bordinstellingen" aria-label="Bordinstellingen"
                     style={{ ...S.toolBtn, ...(menu === 'settings' ? S.toolActive : {}) }}
@@ -190,27 +188,6 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                 </button>
                 {menu === 'settings' && (
                     <div style={{ ...S.popup, minWidth: '200px', maxHeight: '70vh', overflowY: 'auto' }}>
-                        <div style={S.popupSection}><PaintRoller size={11} style={{ marginRight: '4px' }} />Achtergrond</div>
-                        {(Object.keys(PATTERN_LABELS) as BackgroundPattern[]).map(p => (
-                            <button key={p} type="button" className="ui-hover"
-                                style={{ ...S.popupItem, ...(background.pattern === p ? S.popupItemOn : {}) }}
-                                onClick={() => setBackground({ ...background, pattern: p })}>
-                                {PATTERN_LABELS[p]}
-                            </button>
-                        ))}
-                        <div style={S.popupSection}>Grootte</div>
-                        {BACKGROUND_SCALES.map(sc => (
-                            <button key={sc.value} type="button" className="ui-hover"
-                                style={{ ...S.popupItem, ...((background.scale ?? 1) === sc.value ? S.popupItemOn : {}) }}
-                                onClick={() => setBackground({ ...background, scale: sc.value })}>
-                                {sc.label}
-                            </button>
-                        ))}
-                        <div style={S.popupDivider} />
-                        <button type="button" className="ui-hover" style={S.popupItem}
-                            onClick={() => setBackground({ ...background, dark: !background.dark })}>
-                            {background.dark ? <Sun size={16} /> : <Moon size={16} />} {background.dark ? 'Wit bord' : 'Zwart bord'}
-                        </button>
                         <div style={S.popupSection}><GridFour size={11} style={{ marginRight: '4px' }} />Raster uitlijnen</div>
                         <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(gridSnap ? S.popupItemOn : {}) }}
                             onClick={() => setGridSnap(!gridSnap)}>
@@ -223,6 +200,20 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                                 Raster {px}px
                             </button>
                         ))}
+                    </div>
+                )}
+            </div>
+
+            {/* ── Achtergrond (preview tiles for every pattern, scale and board colour) ── */}
+            <div data-board-menu="background" style={{ position: 'relative' }}>
+                <button type="button" className="ui-hover" title="Achtergrond" aria-label="Achtergrond"
+                    style={{ ...S.toolBtn, ...(menu === 'background' ? S.toolActive : {}) }}
+                    onClick={() => openMenu('background')}>
+                    <PaintRoller size={22} />
+                </button>
+                {menu === 'background' && (
+                    <div style={{ ...S.popup, maxHeight: '75vh', overflowY: 'auto' }}>
+                        <BackgroundPicker />
                     </div>
                 )}
             </div>

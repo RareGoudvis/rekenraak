@@ -69,21 +69,21 @@ describe('bottom bar popups', () => {
         const { getByRole, queryByText, getByText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
         const gear = getByRole('button', { name: 'Bordinstellingen' });
         fireEvent.click(gear);
-        expect(queryByText('Achtergrond')).not.toBeNull();
+        expect(queryByText('Raster uitlijnen')).not.toBeNull();
         fireEvent.keyDown(document, { key: 'Escape' });
-        expect(queryByText('Achtergrond')).toBeNull();
+        expect(queryByText('Raster uitlijnen')).toBeNull();
 
         fireEvent.click(gear);
-        fireEvent.pointerDown(getByText('Achtergrond'));
-        expect(queryByText('Achtergrond')).not.toBeNull();
+        fireEvent.pointerDown(getByText('Raster uitlijnen'));
+        expect(queryByText('Raster uitlijnen')).not.toBeNull();
         fireEvent.pointerDown(document.body);
-        expect(queryByText('Achtergrond')).toBeNull();
+        expect(queryByText('Raster uitlijnen')).toBeNull();
 
         // The ⚙ itself still toggles: a press on it is inside, its click closes.
         fireEvent.click(gear);
         fireEvent.pointerDown(gear);
         fireEvent.click(gear);
-        expect(queryByText('Achtergrond')).toBeNull();
+        expect(queryByText('Raster uitlijnen')).toBeNull();
     });
 
     test('the other popups share the same close rules', () => {
