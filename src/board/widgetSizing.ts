@@ -229,17 +229,6 @@ export function checklistItems(widget: BoardWidget): string[] {
     return t.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-// ── Positietabel (leeg) ──────────────────────────────────────────────────────
-export const POSITIE_KOLOMMEN = [
-    { key: 'D', label: 'D' }, { key: 'H', label: 'H' }, { key: 'T', label: 'T' }, { key: 'E', label: 'E' },
-    { key: 't', label: 't' }, { key: 'h', label: 'h' },
-] as const;
-export function positietabelProps(widget: BoardWidget): { columns: string[]; rows: number } {
-    const p = widget.props ?? {};
-    const cols = Array.isArray(p.columns) ? (p.columns as string[]).filter(c => POSITIE_KOLOMMEN.some(k => k.key === c)) : ['H', 'T', 'E'];
-    return { columns: cols.length ? cols : ['H', 'T', 'E'], rows: Math.min(8, Math.max(1, Number(p.rows ?? 3))) };
-}
-
 // ── Breukenvisualisatie ──────────────────────────────────────────────────────
 export interface BreukvizProps { n: number; d: number; shape: 'cirkel' | 'pizza' | 'lijn'; stambreuk: boolean; }
 export function breukvizProps(widget: BoardWidget): BreukvizProps {

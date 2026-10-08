@@ -1,7 +1,7 @@
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { dobbelProps, ademProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
+import { dobbelProps, ademProps, breukvizProps, widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
 import BaselineSettings from '../settings/BaselineSettings';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
@@ -13,7 +13,7 @@ interface Props {
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
     timer: TimerSettings, dobbelsteen: DobbelSettings, adem: AdemSettings,
-    positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
+    honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings, mabmat: MabMatSettings,
 };
 
@@ -121,30 +121,6 @@ function AdemSettings({ widget }: { widget: BoardWidget }) {
     );
 }
 
-
-function PositietabelSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const p = positietabelProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const toggleCol = (key: string) => {
-        const next = p.columns.includes(key) ? p.columns.filter(c => c !== key) : [...p.columns, key];
-        if (next.length) set({ columns: next });
-    };
-    return (
-        <div>
-            <div style={S.sectionLabel}>Kolommen</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {POSITIE_KOLOMMEN.map(k => (
-                    <button key={k.key} type="button" className="ui-hover"
-                        style={{ ...S.smallBtn, minWidth: '44px', justifyContent: 'center', ...(p.columns.includes(k.key) ? { borderColor: 'var(--accent-purple)', background: 'var(--bg-active)', fontWeight: 700 } : {}) }}
-                        onClick={() => toggleCol(k.key)}>{k.label}</button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Rijen ({p.rows})</div>
-            <input type="range" min={1} max={8} step={1} value={p.rows} style={{ width: '100%' }} onChange={(e) => set({ rows: Number(e.target.value) })} />
-        </div>
-    );
-}
 
 function HonderdveldSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);

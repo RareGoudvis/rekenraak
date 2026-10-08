@@ -10,7 +10,7 @@ export const BOARD_DEFAULTS_KEY = 'rekenraak_board_defaults_v1';
 export const TRANSIENT_PROP_KEYS: readonly string[] = [
     'checked', 'done', 'picked', 'result', 'locked', 'active',
     'hours', 'minutes', 'src', 'marks', 'd', 'h', 't', 'e',
-    'markers', 'jumps', 'hidden',
+    'markers', 'jumps', 'hidden', 'cells',
 ];
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);

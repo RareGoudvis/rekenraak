@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import {
     NATURAL_W, TITLE_DEFAULTS, KINDS_WITH_SETTINGS, naturalWidth, widgetTitle,
     klokProps, weerProps, datumProps, DATUM_COLORS, dobbelProps, ademProps, groepjesProps,
-    checklistItems, positietabelProps, breukvizProps, werksymbolenProps, WERKSYMBOLEN,
+    checklistItems, breukvizProps, werksymbolenProps, WERKSYMBOLEN,
     loadNames, NAMES_KEY,
 } from '../board/widgetSizing';
 import { staggerPos, addBasicWidget } from '../board/addWidgets';
@@ -240,12 +240,6 @@ describe('prop normalisers', () => {
     test('checklist: default list, trimmed lines', () => {
         expect(checklistItems(w('checklist'))).toEqual(['boek klaar', 'potlood klaar', 'aan de slag!']);
         expect(checklistItems(w('checklist', { items: ' a \n\n b ' }))).toEqual(['a', 'b']);
-    });
-
-    test('positietabel: known columns only, rows 1-8, empty → H T E', () => {
-        expect(positietabelProps(w('positietabel'))).toEqual({ columns: ['H', 'T', 'E'], rows: 3 });
-        expect(positietabelProps(w('positietabel', { columns: ['D', 'X', 't'], rows: 0 }))).toEqual({ columns: ['D', 't'], rows: 1 });
-        expect(positietabelProps(w('positietabel', { columns: ['X'], rows: 50 }))).toEqual({ columns: ['H', 'T', 'E'], rows: 8 });
     });
 
     test('breukviz: d 2-12, n within 1..d, stambreuk forces n = 1', () => {
