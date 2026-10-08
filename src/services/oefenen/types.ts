@@ -95,6 +95,20 @@ export interface KioskInteract<E = unknown> {
     // drag: how far each part may lie from answerOf and still count (a number in the part's own
     // unit: minutes for an 'h:mm' part, degrees, grams); absent = 0, the snapped value exactly.
     tolerance?(ex: E, c: Record<string, unknown>): number;
+    // build: the kiosk tray, in display order. From the SETTINGS only (allowed coins, the
+    // positietabel's places), never the exercise's answer, so the tray does not hint at it.
+    pieces?(ex: E, c: Record<string, unknown>): KioskPiece[];
+}
+
+// One kind of piece in the build tray. Its picture comes from EXERCISE_UI[typeId].TrayPiece
+// (the registry here stays free of React); `label` is its spoken name and text fallback.
+export interface KioskPiece {
+    key: string;
+    label: string;
+    // What one piece adds to the built value (cents, units): fromState sums count × value.
+    value: number;
+    // The most of this piece the pupil can lay (MAB: 9 per place, a positietabel digit).
+    max?: number;
 }
 
 export interface KioskCellSpec {
@@ -105,6 +119,21 @@ export interface KioskCellSpec {
 // Keys the on-screen keypad adds to the digits for this block's settings. Derived from the
 // constraints only, never from the exercise, so the keypad does not hint at the answer.
 export type KioskKey = ',' | '/' | '-' | ' ';
+
+// A keypad key that acts on the card instead of typing a character (cijferen aftrekken: Lenen).
+// A descriptor lists them per exercise in `extraKeys`; the keypad draws each beside ⌫ and a
+// physical hotkey presses it while a card cell is active. The key looks and acts the same on
+// every exercise it is listed for, so it never hints at the answer.
+export interface KioskExtraKey<E = unknown> {
+    id: string;
+    label: string;
+    // Physical keys that press it while a card cell is active (e.key, e.g. 'l', 'L', '-').
+    hotkeys?: string[];
+    // One short line under the keypad on how to use it (static per key, never per exercise).
+    hint?: string;
+    // The card after the key on the active cell; null = nothing changes.
+    apply(state: InteractionState, activeCell: string | null, ex: E, c: Record<string, unknown>): InteractionState | null;
+}
 
 export interface KioskDescriptor<E = unknown> {
     // The input for a typical exercise of this type; inputOf refines it per exercise.
@@ -120,6 +149,9 @@ export interface KioskDescriptor<E = unknown> {
     // multi-number: the sign printed between the fields (ordenen: '<' or '>').
     separator?(ex: E, c: Record<string, unknown>): string;
     keys?(c: Record<string, unknown>): KioskKey[];
+    // fill-cells: action keys for this exercise (see KioskExtraKey); from its operator or
+    // settings, never its answer.
+    extraKeys?(ex: E, c: Record<string, unknown>): KioskExtraKey<E>[];
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
     // number+rest: exactly [quotiënt, rest]. time: every accepted 'h:mm' (8:05 and 20:05).
     // multi-number: one entry per field, alternatives within a field joined by '|'.
@@ -131,6 +163,10 @@ export interface KioskDescriptor<E = unknown> {
     kioskInstruction?: string | ((ex: E, c: Record<string, unknown>) => string | undefined);
     // Settings this descriptor can check (afronden: simpel only). Absent = always.
     supported?(c: Record<string, unknown>): boolean;
+    // The kiosk's own constraints for the next exercise, drawn with `rng` (the scheduler's seeded
+    // random): what the sheet spreads over a block, one kiosk exercise picks from (geld-wissel:
+    // one of the teacher's bills). The result is what answerOf / display / check receive.
+    prepare?(c: Record<string, unknown>, rng: () => number): Record<string, unknown>;
     // Required when input / inputOf can be 'interactive'; answerOf then returns [interact.answerOf].
     interact?: KioskInteract<E>;
     // A type whose settings answer in different ways on the card (plaatswaarde: tap a letter,

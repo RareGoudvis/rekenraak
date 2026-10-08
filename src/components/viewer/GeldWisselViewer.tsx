@@ -1,5 +1,6 @@
 import type { MathBlock, GeldWisselExercise } from '../../services/math/types';
-import { Bill } from './GeldViewer';
+import { Bill, LaidMoney } from './GeldViewer';
+import { useViewerInteraction, type BuildEntry } from './ViewerInteractionContext';
 import FragmentableGrid from './FragmentableGrid';
 import type { GeldWisselConstraints } from '../../services/math/constraintTypes';
 import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
@@ -10,7 +11,8 @@ const PX_PER_EM_AT_DEFAULT = 17.33;
 // needs; scaled with the math token since the bill figure itself is `em`-sized (GeldViewer).
 const ITEM_MIN_PX_AT_DEFAULT = 200;
 
-function WisselCell({ ex, boxHeight }: { ex: GeldWisselExercise; boxHeight: number }) {
+// laid = the money a pupil laid from the kiosk tray (Oefenmodus build); null on the sheet.
+function WisselCell({ ex, boxHeight, laid }: { ex: GeldWisselExercise; boxHeight: number; laid: readonly BuildEntry[] | null }) {
     return (
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', boxSizing: 'border-box' }}>
             <div style={{ flexShrink: 0 }}>
@@ -19,7 +21,13 @@ function WisselCell({ ex, boxHeight }: { ex: GeldWisselExercise; boxHeight: numb
             <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1.38)', fontWeight: 'bold', fontFamily: "'Azeret Mono', monospace", flexShrink: 0 }}>
                 =
             </div>
-            <div style={{ flex: 1, height: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px' }} />
+            {laid ? (
+                <div style={{ flex: 1, minHeight: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <LaidMoney build={laid} />
+                </div>
+            ) : (
+                <div style={{ flex: 1, height: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px' }} />
+            )}
         </div>
     );
 }
@@ -29,6 +37,8 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 // showSolutions unused — wissel has no solution overlay (student draws the answer).
 export default function GeldWisselViewer({ block }: Props) {
     const availableWidth = useBlockWidth();
+    const ia = useViewerInteraction();
+    const laid = ia?.kind === 'build' ? ia.state.build : null;
     const exercises: GeldWisselExercise[] = block.geldWisselExercises || [];
     const gap: number = block.verticalSpacing || 14;
     const c = block.constraints as GeldWisselConstraints;
@@ -49,7 +59,7 @@ export default function GeldWisselViewer({ block }: Props) {
             columnGap={gap}
             rowGap={gap}
             items={exercises.map(ex => (
-                <WisselCell key={ex.id} ex={ex} boxHeight={boxHeight} />
+                <WisselCell key={ex.id} ex={ex} boxHeight={boxHeight} laid={laid} />
             ))}
         />
     );

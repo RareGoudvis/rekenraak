@@ -4,6 +4,8 @@ import { useOefenStore, cellPlanOf, currentInput, sanitizeAnswer, FLASH_MS } fro
 import { loadRuns } from '../services/oefenen/stats';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
+import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
+import type { CijferExercise } from '../services/math/types';
 import { fillAnswer, hashOf, onScreen, resetKiosk, starterSessie, STARTER_TYPES } from './helpers/oefenKiosk';
 
 // The pupil kiosk's store: phase transitions, testmode / statsLocked, the timer lock, and
@@ -462,3 +464,123 @@ describe('input', () => {
 function resetKioskKeepStorage() {
     useOefenStore.setState({ sessie: null, error: null, phase: 'start', run: null, shown: null, input: [''], field: 0, lastCorrect: null, statsFrom: 'exercise' });
 }
+
+// Cijferen aftrekken: the Lenen key performs the active column's exchange in the scratch cells.
+describe('Lenen (cijferen aftrekken)', () => {
+    const aftrekken = (numberType: 'natural' | 'decimal') => {
+        const id = `cijferen-aftrekken-${numberType === 'natural' ? 'nat' : 'dec'}`;
+        return { typeId: id, leafId: id, label: 'Aftrekken', constraints: { operator: '-', numberType }, limit: 3, weight: 1 };
+    };
+    // Puts a known subtraction on the card, the keypad in `cell`.
+    const pin = (a: number, b: number, cell: string, dp = 0) => {
+        resetKiosk();
+        st().load(hashOf(starterSessie({ types: [aftrekken(dp ? 'decimal' : 'natural')] })));
+        st().start();
+        const answer = Number((a - b).toFixed(dp));
+        const exercise: CijferExercise = { id: 'x', operands: [a, b], operator: '-', answer, remainder: 0, decimalPlaces: dp, isManuallyEdited: false };
+        useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: cell });
+    };
+    const cells = () => st().interaction.cells;
+    const typeDigits = (...ds: string[]) => ds.forEach(d => st().press(d));
+
+    test('the key is on every subtraction, with its hint, and nowhere else', () => {
+        pin(52, 17, 'a1');
+        const info = currentInput(st().sessie, st().shown)!;
+        expect(info.extraKeys.map(k => [k.id, k.label])).toEqual([['lenen', 'Lenen']]);
+        expect(info.extraKeys[0].hint).toBe('Lenen: tik op het vakje onder de eenheden en druk op Lenen.');
+        resetKiosk();
+        st().load(hashOf(starterSessie({ types: [{ ...aftrekken('natural'), typeId: 'cijferen-optellen-nat', leafId: 'cijferen-optellen-nat', constraints: { operator: '+' } }] })));
+        st().start();
+        expect(currentInput(st().sessie, st().shown)!.extraKeys).toEqual([]);
+        resetKiosk();
+        st().load(hashOf(starterSessie()));
+        st().start();
+        expect(currentInput(st().sessie, st().shown)!.extraKeys).toEqual([]);
+    });
+
+    test('52 − 17: 4 above the 5, 12 above the 2; the units stay active; 5 and 3 are juist', () => {
+        pin(52, 17, 'a1');
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({ b0: '4', b1: '12' });
+        expect(st().interaction.marks).toEqual({ b0: 'lent', b1: 'got' });
+        expect(st().activeCell).toBe('a1');
+        typeDigits('5', '3');
+        st().answer();
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    test('pressing it again on the same column changes nothing', () => {
+        pin(52, 17, 'a1');
+        st().pressExtra('lenen');
+        const once = st().interaction;
+        st().pressExtra('lenen');
+        expect(st().interaction).toBe(once);
+        // From the column's exchange cell too.
+        st().focusCell('b1');
+        st().pressExtra('lenen');
+        expect(st().interaction).toBe(once);
+    });
+
+    test('302 − 17: a 0 on the way lends on (2, 9, 12)', () => {
+        pin(302, 17, 'a2');
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({ b0: '2', b1: '9', b2: '12' });
+        expect(Object.keys(st().interaction.marks!).sort()).toEqual(['b0', 'b1', 'b2']);
+        typeDigits('5', '8', '2');
+        st().answer();
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    test('5,2 − 1,7: the tenths borrow from the units across the comma', () => {
+        pin(5.2, 1.7, 'a1', 1);
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({ b0: '4', b1: '12' });
+        typeDigits('5', '3');
+        st().answer();
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    test('a column that lent can borrow in its turn (432 − 157)', () => {
+        pin(432, 157, 'a2');
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({ b1: '2', b2: '12' });
+        st().press('5');
+        expect(st().activeCell).toBe('a1');
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({ a2: '5', b0: '3', b1: '12', b2: '12' });
+        expect(st().interaction.marks).toEqual({ b0: 'lent', b1: 'got', b2: 'got' });
+        typeDigits('7', '2');
+        st().answer();
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    test('a column that needs no exchange still gets one, and the check judges what is written', () => {
+        // 58 − 17: the units need nothing; Lenen exchanges anyway (the key never tells).
+        pin(58, 17, 'a1');
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({ b0: '4', b1: '18' });
+        // Right answer digits under a wrong exchange: the exchange cells count, so fout.
+        typeDigits('1', '4');
+        st().answer();
+        expect(st().lastCorrect).toBe(false);
+        // The pupil who undoes the exchange by hand is juist.
+        pin(58, 17, 'a1');
+        st().pressExtra('lenen');
+        st().typeCell('b0', '');
+        st().typeCell('b1', '');
+        st().focusCell('a1');
+        typeDigits('1', '4');
+        st().answer();
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    test('nothing happens without a column to lend from, or outside the exercise phase', () => {
+        pin(52, 17, 'a0');
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({});
+        pin(52, 17, 'a1');
+        useOefenStore.setState({ phase: 'feedback' });
+        st().pressExtra('lenen');
+        expect(cells()).toEqual({});
+    });
+});

@@ -6,9 +6,16 @@ import { createContext, useContext, type KeyboardEvent } from 'react';
 // (viewers.interaction.test.tsx + the visual gate prove it). Only the kiosk card provides it.
 
 // tap = pick one part · tap-multi = toggle any number of parts · fill-cells = type into the
-// viewer's own blanks · order = tap parts in sequence (1st, 2nd, …) · drag = move a handle on an
-// SVG figure (a clock hand, the mercury, a needle) with the pointer or the arrow keys (kioskDrag.ts).
-export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order' | 'drag';
+// viewer's own blanks · order = tap parts in sequence (1st, 2nd, …) · build = lay pieces from
+// the kiosk's tray (coins, MAB blocks); the viewer only draws what was laid · drag = move a handle
+// on an SVG figure (a clock hand, the mercury, a needle) with the pointer or the arrow keys (kioskDrag.ts).
+export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order' | 'build' | 'drag';
+
+// build: how many of one tray piece the pupil laid. Entries keep the order they were first laid in.
+export interface BuildEntry {
+    key: string;
+    count: number;
+}
 
 export interface InteractionState {
     // tap / tap-multi: the keys of the picked parts (tap holds at most one).
@@ -17,11 +24,27 @@ export interface InteractionState {
     cells: Record<string, string>;
     // order: keys in the sequence the pupil tapped them.
     order: string[];
+    // build: the pieces laid from the tray (no zero counts).
+    build: BuildEntry[];
+    // fill-cells: marks a keypad action key left on parts of the card, by part key (cijferen
+    // Lenen: 'lent' / 'got' per exchanged column). Absent = none; the answer never reads them.
+    marks?: Record<string, string>;
     // drag: the value each handle stands on (handle key → value); absent = nothing dragged yet.
     drag?: Record<string, number>;
 }
 
-export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [] };
+export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [], build: [] };
+
+/** How many of piece `key` are laid. */
+export const builtCount = (state: InteractionState, key: string): number => state.build.find(b => b.key === key)?.count ?? 0;
+
+/** The state after laying one more (`delta` 1) or taking one back (-1) of piece `key`, never past 0 or `max`. */
+export function built(state: InteractionState, key: string, delta: number, max = Infinity): InteractionState {
+    const count = Math.max(0, Math.min(max, builtCount(state, key) + delta));
+    const has = state.build.some(b => b.key === key);
+    const build = has ? state.build.map(b => (b.key === key ? { key, count } : b)) : [...state.build, { key, count }];
+    return { ...state, build: build.filter(b => b.count > 0) };
+}
 
 export interface ViewerInteraction {
     kind: InteractionKind;
@@ -133,4 +156,9 @@ export function cellProps(ctx: ViewerInteraction | null, key: string): CellDomPr
             : ctx.set({ ...ctx.state, cells: { ...ctx.state.cells, [key]: cellText(e.target.value) } })),
         onFocus: () => ctx.focusCell?.(key),
     };
+}
+
+/** `data-kiosk-borrowed` on a printed digit whose column was exchanged by the kiosk's Lenen key (kiosk.css strikes it); `{}` on the sheet. */
+export function borrowedProps(ctx: ViewerInteraction | null, key: string): { 'data-kiosk-borrowed'?: 'true' } {
+    return ctx?.state.marks?.[key] ? { 'data-kiosk-borrowed': 'true' } : {};
 }

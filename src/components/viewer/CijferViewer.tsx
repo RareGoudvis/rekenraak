@@ -10,7 +10,7 @@ import { monoTextPx } from '../../services/layout/blockLayout';
 import { divideToDecimals } from '../../services/cijferen/cijferGenerator';
 import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
 import { cijferKioskGrid, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
-import { useViewerInteraction } from './ViewerInteractionContext';
+import { borrowedProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
 
 // Printed sheet text (equation header, estimation/controle/QR rows) is a factor of
@@ -143,12 +143,13 @@ function computeExPerRow(exercises: CijferExercise[], c: CijferConstraints, CELL
 
 // ── Digit overlay ─────────────────────────────────────────────────────────────
 
-interface DCProps { col: number; row: number; char: string; CELL: number; rowH?: number; color?: string; small?: boolean; }
+// attrs: kiosk-only data attributes (a struck top digit after Lenen); empty on the sheet.
+interface DCProps { col: number; row: number; char: string; CELL: number; rowH?: number; color?: string; small?: boolean; attrs?: Record<string, string>; }
 
-function DC({ col, row, char, CELL, rowH, color = '#000', small = false }: DCProps) {
+function DC({ col, row, char, CELL, rowH, color = '#000', small = false, attrs }: DCProps) {
     const H = rowH ?? CELL;
     return (
-        <div style={{
+        <div {...attrs} style={{
             position: 'absolute',
             left: col * CELL, top: row * H,
             width: CELL, height: H,
@@ -202,6 +203,7 @@ function GridCell({ cell, CELL, rowH }: { cell: CijferCell; CELL: number; rowH?:
 interface GridProps { ex: CijferExercise; CELL: number; dp: number; scaffolding: number; showSolutions: boolean; extraCols: number; extraRows: number; cells?: boolean; }
 
 function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extraRows, cells }: GridProps) {
+    const ctx = useViewerInteraction();
     const numTerms = ex.operands.length;
     const maxInt = addSubMaxInt(ex);
     const decCols = dp;  // no dedicated comma column
@@ -266,7 +268,8 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
             {scaffolding <= 1 && ex.operands.map((op, opIdx) => {
                 const row = firstOperandRow + opIdx;
                 return getDigitCols(op, dp, maxInt)
-                    .map((d, i) => <DC key={`op${opIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} />);
+                    .map((d, i) => <DC key={`op${opIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL}
+                        attrs={opIdx === 0 ? borrowedProps(ctx, `b${d.col}`) : undefined} />);
             })}
 
             {/* Comma overlay after E col for each operand row (scaffolding=1, decimal) */}

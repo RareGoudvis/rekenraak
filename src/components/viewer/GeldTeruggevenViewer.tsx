@@ -1,5 +1,6 @@
 import type { MathBlock, GeldTeruggevenExercise } from '../../services/math/types';
-import { Bill } from './GeldViewer';
+import { Bill, LaidMoney } from './GeldViewer';
+import { useViewerInteraction, type BuildEntry } from './ViewerInteractionContext';
 import type { GeldTeruggevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -169,7 +170,8 @@ function ScaffoldingArea({ ex, scaffolding, showSolutions, boxHeight }: {
 
 // ── Per-exercise cell ─────────────────────────────────────────────────────────
 
-function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExercise; block: MathBlock; showSolutions: boolean }) {
+// laid = the change a pupil laid from the kiosk tray (Oefenmodus build); null on the sheet.
+function TeruggevenCell({ ex, block, showSolutions, laid }: { ex: GeldTeruggevenExercise; block: MathBlock; showSolutions: boolean; laid: readonly BuildEntry[] | null }) {
     const c = block.constraints as GeldTeruggevenConstraints;
     const scaffolding: string        = c.scaffolding      ?? 'ingevuld';
     const antwoordType: string       = c.antwoordType     ?? 'schrijven';
@@ -197,7 +199,12 @@ function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExerci
 
             {/* Answer */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '2px' }}>
-                {antwoordType === 'tekenen-schrijven' && (
+                {antwoordType === 'tekenen-schrijven' && laid && (
+                    <div style={{ width: '100%', minHeight: `${boxHeight}px`, border: '1px solid #000', boxSizing: 'border-box', borderRadius: '3px', padding: '4px', display: 'flex', alignItems: 'center' }}>
+                        <LaidMoney build={laid} />
+                    </div>
+                )}
+                {antwoordType === 'tekenen-schrijven' && !laid && (
                     <div style={{ width: '100%', height: `${boxHeight}px`, border: '1px solid #000', boxSizing: 'border-box', borderRadius: '3px', padding: '4px' }}>
                         <span style={{ fontSize: FS_LABEL, fontStyle: 'italic', color: '#666' }}>Teken dit bedrag.</span>
                     </div>
@@ -215,6 +222,8 @@ interface Props { block: MathBlock; showSolutions: boolean; }
 export default function GeldTeruggevenViewer({ block, showSolutions }: Props) {
     const exercises: GeldTeruggevenExercise[] = block.geldTeruggevenExercises || [];
     const gap: number = block.verticalSpacing || 14;
+    const ia = useViewerInteraction();
+    const laid = ia?.kind === 'build' ? ia.state.build : null;
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '13px' }}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -223,7 +232,7 @@ export default function GeldTeruggevenViewer({ block, showSolutions }: Props) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: `${gap}px` }}>
             {exercises.map(ex => (
-                <TeruggevenCell key={ex.id} ex={ex} block={block} showSolutions={showSolutions} />
+                <TeruggevenCell key={ex.id} ex={ex} block={block} showSolutions={showSolutions} laid={laid} />
             ))}
         </div>
     );

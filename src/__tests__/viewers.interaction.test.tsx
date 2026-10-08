@@ -391,6 +391,41 @@ describe('kiosk flow: answer on the card', () => {
         expect(st().lastCorrect).toBe(true);
     });
 
+    test('cijferen aftrekken: Lenen exchanges the units, strikes the 5 and 2, then 5 and 3 are juist', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-aftrekken-nat')] })));
+        st().start();
+        const exercise: CijferExercise = { id: 'x', operands: [52, 17], operator: '-', answer: 35, remainder: 0, decimalPlaces: 0, isManuallyEdited: false };
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'a1' }); });
+        const { container } = render(<OefenApp />);
+        const lenen = screen.getByRole('button', { name: 'Lenen' });
+        expect(screen.getByText('Lenen: tik op het vakje onder de eenheden en druk op Lenen.')).toBeTruthy();
+        expect(container.querySelectorAll('[data-kiosk-borrowed]')).toHaveLength(0);
+        fireEvent.click(lenen);
+        expect(cellInputs(container).get('b0')!.value).toBe('4');
+        expect(cellInputs(container).get('b1')!.value).toBe('12');
+        expect([...container.querySelectorAll('[data-kiosk-borrowed]')].map(el => el.textContent)).toEqual(['5', '2']);
+        // The second press, and the L hotkey in the active cell, change nothing more.
+        fireEvent.click(lenen);
+        fireEvent.keyDown(activeInput(container), { key: 'l' });
+        expect(st().interaction.cells).toEqual({ b0: '4', b1: '12' });
+        fireEvent.click(screen.getByRole('button', { name: '5' }));
+        fireEvent.click(screen.getByRole('button', { name: '3' }));
+        fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    test('cijferen aftrekken: the - hotkey in a cell performs Lenen and types nothing', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-aftrekken-nat')] })));
+        st().start();
+        const exercise: CijferExercise = { id: 'x', operands: [302, 17], operator: '-', answer: 285, remainder: 0, decimalPlaces: 0, isManuallyEdited: false };
+        act(() => { useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: 'a2' }); });
+        const { container } = render(<OefenApp />);
+        const ev = fireEvent.keyDown(activeInput(container), { key: '-' });
+        expect(ev).toBe(false);
+        expect(st().interaction.cells).toEqual({ b0: '2', b1: '9', b2: '12' });
+        expect([...container.querySelectorAll('[data-kiosk-borrowed]')].map(el => el.textContent)).toEqual(['3', '0', '2']);
+    });
+
     // Phase C2: every fill-in family, typed through the keypad cell by cell, checked with Enter.
     test.each<[string, Record<string, unknown>]>([
         ['cijferen-aftrekken-dec', {}], ['cijferen-vermenigvuldigen-nat', {}],

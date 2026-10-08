@@ -92,6 +92,8 @@ function sameInteraction(kind: InteractionKind, given: string, want: string, tol
     }
     // A blank cell is right only where an empty alternative allows it (a carry left out).
     if (kind === 'fill-cells') return g.every((x, i) => (x === '' ? w[i].split('|').includes('') : sameValue(x, w[i].split('|'))));
+    // build: the laid value (total cents, the number) as a number; how it was made up does not count.
+    if (kind === 'build') return g.every((x, i) => sameValue(x, [w[i]]));
     return g.every((x, i) => x === w[i]);
 }
 

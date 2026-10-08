@@ -1,11 +1,11 @@
 import { create } from 'zustand';
-import { attemptsOf, type KioskAnswer, type KioskInput, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
+import { attemptsOf, type KioskAnswer, type KioskExtraKey, type KioskInput, type KioskPiece, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
 import { isDone, nextExercise, nextType } from '../services/oefenen/scheduler';
 import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
-import { EMPTY_INTERACTION, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
+import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
@@ -70,6 +70,11 @@ interface OefenState {
     typeCell(key: string, raw: string): void;
     moveCell(step: 1 | -1): void;
     enterCell(): void;
+    // build: lay one more of a tray piece (1) or take one back (-1); clearBuild empties the tray's work (Wissen).
+    lay(key: string, delta: 1 | -1): void;
+    clearBuild(): void;
+    // fill-cells: a descriptor action key (keypad or hotkey) on the active cell, e.g. Lenen.
+    pressExtra(id: string): void;
 }
 
 const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
@@ -82,8 +87,12 @@ export interface CurrentInput {
     labels: string[];
     // multi-number: the sign between the fields (ordenen's < or >), from the descriptor.
     separator?: string;
-    // interactive: how the pupil answers on the card (tap, tap-multi, fill-cells, order).
+    // interactive: how the pupil answers on the card (tap, tap-multi, fill-cells, order, build).
     interact?: InteractionKind;
+    // build: the tray's pieces.
+    pieces?: KioskPiece[];
+    // The descriptor's action keys for this exercise (Lenen), beside the character keys.
+    extraKeys: KioskExtraKey[];
 }
 
 const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
@@ -104,9 +113,12 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
         const named = d.labels?.(cur.exercise, cur.constraints) ?? [];
         labels = Array.from({ length: n }, (_, i) => named[i] ?? `${i + 1}`);
     }
+    const ia = kind === 'interactive' ? kioskInteractOf(d, cur.constraints) : undefined;
     return {
         kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints),
-        ...(kind === 'interactive' && kioskInteractOf(d, cur.constraints) && { interact: kioskInteractOf(d, cur.constraints)!.kind }),
+        extraKeys: d.extraKeys?.(cur.exercise, cur.constraints) ?? [],
+        ...(ia && { interact: ia.kind }),
+        ...(ia?.kind === 'build' && { pieces: ia.pieces?.(cur.exercise, cur.constraints) ?? [] }),
     };
 }
 
@@ -306,6 +318,12 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (phase !== 'exercise') return;
             const info = currentInput(sessie, shown);
             if (!info || info.kind === 'choice') return;
+            // build: Backspace takes back the newest kind of piece laid; digits do nothing.
+            if (info.interact === 'build') {
+                const last = get().interaction.build.at(-1);
+                if (key === 'back' && last) get().lay(last.key, -1);
+                return;
+            }
             if (info.kind === 'interactive') { pressCell(key); return; }
             const value = input[field] ?? '';
             const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys, info.kind);
@@ -426,6 +444,17 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             set({ activeCell: plan.keys[at < 0 ? 0 : (at + step + n) % n] });
         },
 
+        lay(key, delta) {
+            const { phase, sessie, shown, interaction } = get();
+            if (phase !== 'exercise') return;
+            const piece = currentInput(sessie, shown)?.pieces?.find(p => p.key === key);
+            if (piece) set({ interaction: built(interaction, key, delta, piece.max) });
+        },
+
+        clearBuild() {
+            if (get().phase === 'exercise') set({ interaction: { ...get().interaction, build: [] } });
+        },
+
         enterCell() {
             const { sessie: s, shown: cur, activeCell, phase } = get();
             const plan = cellPlanOf(s, cur);
@@ -435,6 +464,15 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // Past the last cell: check, or (nothing to check yet) back to the first cell.
             if (interactionAnswer(s, cur, get().interaction)?.ready) get().answer();
             else set({ activeCell: plan.flow[0] ?? plan.keys[0] ?? null });
+        },
+
+        pressExtra(id) {
+            const { phase, sessie: s, shown: cur, interaction, activeCell } = get();
+            if (phase !== 'exercise' || !cur) return;
+            const key = currentInput(s, cur)?.extraKeys.find(k => k.id === id);
+            const next = key?.apply(interaction, activeCell, cur.exercise, cur.constraints);
+            // The active cell stays: the pupil types this column's digit next.
+            if (next) set({ interaction: next });
         },
     };
 });
