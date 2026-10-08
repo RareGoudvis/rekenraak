@@ -1,4 +1,4 @@
-import type { KioskDescriptor, KioskInput } from './types';
+import type { KioskDescriptor, KioskInput, KioskInteract } from './types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { flattenLeaves, type AppLeaf } from '../../config/appstructure';
 
@@ -10,6 +10,11 @@ export function kioskFor(typeId: string): KioskDescriptor | null {
 
 export function kioskInputOf(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>): KioskInput {
     return d.inputOf?.(ex, c) ?? d.input;
+}
+
+/** The interactive half for these settings: interactOf when it answers, else interact. */
+export function kioskInteractOf(d: KioskDescriptor, c: Record<string, unknown>): KioskInteract | undefined {
+    return d.interactOf?.(c) ?? d.interact;
 }
 
 /** The card header: the descriptor's kiosk wording when it has one, else the paper instruction. */
@@ -89,6 +94,8 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     // Phase C (interactive on the card)
     'even-oneven-rooster',
+    // C2 (cells filled on the card)
+    'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [

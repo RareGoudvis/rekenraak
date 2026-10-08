@@ -5,7 +5,7 @@ import { EXERCISE_UI } from '../../config/exerciseUI';
 import { BlockErrorBoundary } from '../../components/viewer/BlockErrorBoundary';
 import { BlockWidthProvider, ScaffoldProvider } from '../../components/viewer/BlockWidthContext';
 import { ViewerInteractionProvider, type ViewerInteraction } from '../../components/viewer/ViewerInteractionContext';
-import { kioskFor, kioskInputOf } from '../../services/oefenen/kiosk';
+import { kioskFor, kioskInputOf, kioskInteractOf } from '../../services/oefenen/kiosk';
 import { useOefenStore } from '../useOefenStore';
 
 interface Props {
@@ -62,7 +62,8 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
     const interaction = useOefenStore(s => s.interaction);
     const activeCell = useOefenStore(s => s.activeCell);
     const d = kioskFor(typeId);
-    const interactKind = d?.interact && kioskInputOf(d, exercise, constraints) === 'interactive' ? d.interact.kind : null;
+    const ia = d ? kioskInteractOf(d, constraints) : undefined;
+    const interactKind = ia && kioskInputOf(d!, exercise, constraints) === 'interactive' ? ia.kind : null;
     // Phase C: the pupil answers on the card itself, so the viewer gets the tap/cell context.
     const ctx = useMemo<ViewerInteraction | null>(() => (interactKind ? {
         kind: interactKind, state: interaction, activeCell,

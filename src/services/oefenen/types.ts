@@ -120,6 +120,10 @@ export interface KioskDescriptor<E = unknown> {
     supported?(c: Record<string, unknown>): boolean;
     // Required when input / inputOf can be 'interactive'; answerOf then returns [interact.answerOf].
     interact?: KioskInteract<E>;
+    // A type whose settings answer in different ways on the card (plaatswaarde: tap a letter,
+    // fill the tabel) picks per settings; undefined falls back to `interact`. Read both through
+    // kioskInteractOf.
+    interactOf?(c: Record<string, unknown>): KioskInteract<E> | undefined;
 }
 
 // What the pupil handed in: one string, or one string per field (number+rest, time, multi-number).

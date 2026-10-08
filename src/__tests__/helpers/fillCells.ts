@@ -1,5 +1,6 @@
 import type { CijferExercise } from '../../services/math/types';
 import { INTERACT_SEP, type KioskDescriptor } from '../../services/oefenen/types';
+import { kioskInteractOf } from '../../services/oefenen/kiosk';
 
 // Phase C2 (fill-cells): what a pupil types into the card's cells, written from the exercise
 // itself and not from the descriptor's answerOf, so the suites check the descriptor against it.
@@ -103,7 +104,7 @@ export function cijferFill(ex: CijferExercise, keys: string[]): CijferFill {
 
 /** One part per cell in key order (most viewers): the cells are the answer's first spellings. */
 export function cellsFromParts(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>): Cells {
-    const ia = d.interact!;
+    const ia = kioskInteractOf(d, c)!;
     const keys = ia.keys!(ex, c);
     const parts = ia.answerOf(ex, c).split(INTERACT_SEP);
     return Object.fromEntries(keys.map((k, i) => [k, (parts[i] ?? '').split('|')[0]]));
@@ -111,6 +112,6 @@ export function cellsFromParts(d: KioskDescriptor, ex: unknown, c: Record<string
 
 /** The right cells for the exercise on a card: cijferen from its numbers, the rest part by part. */
 export function rightCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>): Cells {
-    if (typeId.startsWith('cijferen-')) return cijferFill(ex as CijferExercise, d.interact!.keys!(ex, c)).answer;
+    if (typeId.startsWith('cijferen-')) return cijferFill(ex as CijferExercise, kioskInteractOf(d, c)!.keys!(ex, c)).answer;
     return cellsFromParts(d, ex, c);
 }

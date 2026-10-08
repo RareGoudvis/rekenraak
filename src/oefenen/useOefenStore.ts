@@ -4,7 +4,7 @@ import { decodeSessie } from '../services/oefenen/session';
 import { isDone, nextExercise, nextType } from '../services/oefenen/scheduler';
 import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
-import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
+import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
@@ -98,17 +98,18 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
     }
     return {
         kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints),
-        ...(kind === 'interactive' && d.interact && { interact: d.interact.kind }),
+        ...(kind === 'interactive' && kioskInteractOf(d, cur.constraints) && { interact: kioskInteractOf(d, cur.constraints)!.kind }),
     };
 }
 
 /** The interactive answer built from the card state, and whether Controleer may take it. */
 export function interactionAnswer(s: OefenSessie | null, cur: KioskCurrent | null, state: InteractionState): { given: string; ready: boolean } | null {
     const d = s && cur ? kioskFor(s.types[cur.slot]?.typeId ?? '') : null;
-    if (!d?.interact || !cur || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
-    const given = d.interact.fromState(state, cur.exercise, cur.constraints);
+    const ia = d && cur ? kioskInteractOf(d, cur.constraints) : undefined;
+    if (!d || !ia || !cur || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
+    const given = ia.fromState(state, cur.exercise, cur.constraints);
     // An empty set can be the right answer to "tap every even number" (a row of odd ones).
-    return { given, ready: d.interact.kind === 'tap-multi' || given.trim() !== '' };
+    return { given, ready: ia.kind === 'tap-multi' || given.trim() !== '' };
 }
 
 export interface CellPlan {
@@ -122,9 +123,10 @@ export interface CellPlan {
 /** The fill-cells navigation for the exercise on the card, from the descriptor's keys and cellOf (never its answer). */
 export function cellPlanOf(s: OefenSessie | null, cur: KioskCurrent | null): CellPlan | null {
     const d = s && cur ? kioskFor(s.types[cur.slot]?.typeId ?? '') : null;
-    if (!d?.interact || !cur || d.interact.kind !== 'fill-cells' || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
-    const keys = d.interact.keys?.(cur.exercise, cur.constraints) ?? [];
-    const spec = (k: string) => d.interact!.cellOf?.(k, cur.exercise, cur.constraints) ?? {};
+    const ia = d && cur ? kioskInteractOf(d, cur.constraints) : undefined;
+    if (!d || !ia || !cur || ia.kind !== 'fill-cells' || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
+    const keys = ia.keys?.(cur.exercise, cur.constraints) ?? [];
+    const spec = (k: string) => ia.cellOf?.(k, cur.exercise, cur.constraints) ?? {};
     return { keys, flow: keys.filter(k => !spec(k).scratch), length: Object.fromEntries(keys.map(k => [k, spec(k).length])) };
 }
 

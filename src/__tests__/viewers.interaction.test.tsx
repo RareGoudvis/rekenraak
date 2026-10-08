@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useState } from 'react';
-import { render, cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, render, cleanup, fireEvent, screen } from '@testing-library/react';
 import { EXERCISE_UI } from '../config/exerciseUI';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { flattenLeaves } from '../config/appstructure';
@@ -15,7 +15,7 @@ import type { MathBlock } from '../services/math/types';
 import type { KioskDescriptor } from '../services/oefenen/types';
 import OefenApp from '../oefenen/OefenApp';
 import { useOefenStore } from '../oefenen/useOefenStore';
-import { kioskFor } from '../services/oefenen/kiosk';
+import { kioskFor, kioskInteractOf } from '../services/oefenen/kiosk';
 import { makeBlock } from './helpers/makeBlock';
 import { hashOf, resetKiosk, starterSessie, tapAnswer } from './helpers/oefenKiosk';
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
@@ -323,6 +323,7 @@ describe('kiosk flow: answer on the card', () => {
     test.each<[string, Record<string, unknown>]>([
         ['cijferen-aftrekken-dec', {}], ['cijferen-vermenigvuldigen-nat', {}],
         ['splitsen-basis', {}], ['splitsen-boom', {}], ['splitsen-harten', {}], ['splitsen-positietabel', {}],
+        ['afronden-nat-rooster', {}], ['afronden-dec-rooster', {}], ['plaatswaarde-tabel', {}], ['plaatswaarde-tabel', { decimalPlaces: 2 }],
     ])('fill-cells %s %j: keypad into the cells, Enter checks', (leafId, extra) => {
         st().load(hashOf(starterSessie({ types: [leafType(leafId, extra)] })));
         st().start();
@@ -331,9 +332,10 @@ describe('kiosk flow: answer on the card', () => {
             const cur = st().shown!;
             const typeId = st().sessie!.types[0].typeId;
             const d = kioskFor(typeId)!;
-            const keys = d.interact!.keys!(cur.exercise, cur.constraints);
+            const ia = kioskInteractOf(d, cur.constraints)!;
+            const keys = ia.keys!(cur.exercise, cur.constraints);
             expect([...cellInputs(container).keys()].sort(), leafId).toEqual([...keys].sort());
-            expect(st().activeCell).toBe(keys.find(k => !d.interact!.cellOf?.(k, cur.exercise, cur.constraints)?.scratch));
+            expect(st().activeCell).toBe(keys.find(k => !ia.cellOf?.(k, cur.exercise, cur.constraints)?.scratch));
             const cells = rightCells(typeId, d, cur.exercise, cur.constraints);
             const spoil = keys.find(k => cells[k])!;
             if (!right) cells[spoil] = cells[spoil].replace(/\d(?!.*\d)/, dg => String((Number(dg) + 1) % 10));
@@ -345,7 +347,8 @@ describe('kiosk flow: answer on the card', () => {
             for (let i = 0; i <= keys.length && st().phase === 'exercise'; i++) fireEvent.keyDown(activeInput(container), { key: 'Enter' });
             expect(st().phase, leafId).toBe('feedback');
             expect(st().lastCorrect, `${leafId} ${JSON.stringify(cells)}`).toBe(right);
-            st().next();
+            // act: the next exercise may have another number of cells; the DOM must follow first.
+            act(() => st().next());
         }
     });
 

@@ -1,5 +1,5 @@
 import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor, type OefenRun, type OefenSessie, type OefenStats, type OefenSummaryRow, type OefenTypeStats } from './types';
-import { kioskFor, kioskInputOf } from './kiosk';
+import { kioskFor, kioskInputOf, kioskInteractOf } from './kiosk';
 import { exerciseKeyOf } from '../generateDispatch';
 
 // The pupil's results: accumulated per slot during a run, kept in this device's localStorage
@@ -21,7 +21,8 @@ export function answerText(d: KioskDescriptor, ex: unknown, c: Record<string, un
     if (input === 'number+rest') return `${parts[0] ?? ''} r ${parts[1] ?? ''}`;
     if (input === 'time') return `${parts[0] ?? ''}:${(parts[1] ?? '').padStart(2, '0')}`;
     if (input === 'multi-number') return parts.join(' ; ');
-    if (input === 'interactive' && d.interact?.show) return d.interact.show(parts.join(' '), ex, c);
+    const ia = input === 'interactive' ? kioskInteractOf(d, c) : undefined;
+    if (ia?.show) return ia.show(parts.join(' '), ex, c);
     return parts.join(' ');
 }
 
@@ -32,11 +33,12 @@ export function expectedText(d: KioskDescriptor, ex: unknown, c: Record<string, 
     if (input === 'number+rest') return answerText(d, ex, c, accepted);
     // One field each, its first spelling.
     if (input === 'multi-number') return accepted.map(a => a.split('|')[0]).join(' ; ');
-    if (input === 'interactive' && d.interact) {
-        const want = d.interact.answerOf(ex, c);
-        if (d.interact.show) return d.interact.show(want, ex, c);
+    const ia = input === 'interactive' ? kioskInteractOf(d, c) : undefined;
+    if (ia) {
+        const want = ia.answerOf(ex, c);
+        if (ia.show) return ia.show(want, ex, c);
         // fill-cells: each cell's first spelling ('|1', a carry that may stay blank, shows blank).
-        if (d.interact.kind === 'fill-cells') return want.split(INTERACT_SEP).map(p => p.split('|')[0]).join(INTERACT_SEP);
+        if (ia.kind === 'fill-cells') return want.split(INTERACT_SEP).map(p => p.split('|')[0]).join(INTERACT_SEP);
     }
     return accepted[0] ?? '';
 }

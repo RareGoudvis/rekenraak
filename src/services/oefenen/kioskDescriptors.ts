@@ -11,7 +11,7 @@ import { cijferCheck, cijferGiven, cijferKioskGrid, type CijferCheck } from '../
 import { cijferDp } from '../cijferen/cijferLayout';
 import { gcd, isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
-import { ROUND_SCALE, roundTo, targetsFor } from '../afronden/afrondenGenerator';
+import { ROUND_SCALE, roundTo, targetsFor, usableTargets } from '../afronden/afrondenGenerator';
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 
@@ -54,6 +54,22 @@ const showValue = (v: number | Fraction): string => {
     const n = `${v.n}/${v.d}`;
     return v.whole ? `${v.whole} ${n}` : n;
 };
+
+// Phase C2: the pupil fills the blanks ON the card. Every cell is required; the answer is
+// the cells in key order, each with its accepted spellings.
+function cellsInteract<E>(keysOf: (ex: E, c: Record<string, unknown>) => string[], wantsOf: (ex: E, c: Record<string, unknown>) => string[],
+    cellOf?: (key: string, ex: E, c: Record<string, unknown>) => KioskCellSpec): KioskInteract<E> {
+    return {
+        kind: 'fill-cells',
+        keys: keysOf,
+        cellOf,
+        answerOf: (ex, c) => wantsOf(ex, c).join(INTERACT_SEP),
+        fromState: (st, ex, c) => {
+            const v = keysOf(ex, c).map(k => (st.cells[k] ?? '').trim());
+            return v.some(x => x === '') ? '' : v.join(INTERACT_SEP);
+        },
+    };
+}
 
 // ── Hoofdrekenen (+ − × :) ───────────────────────────────────────────────────
 
@@ -115,20 +131,37 @@ export const PROCENTEN_KIOSK = descriptor<ProcentExercise>({
     supported: (c) => (c.subType ?? 'nemen') === 'nemen' || isWelk(c),
 });
 
-// ── Afronden (simpel only; a rooster is a whole table, not one answer) ───────
+// ── Afronden (simpel: one field; rooster: every cell of the table ON the card) ─
 
 const afrondenTarget = (ex: AfrondenExercise, c: Record<string, unknown>) => {
     const all = targetsFor(numberTypeOf(c));
     // SYNC: AfrondenViewer falls back to the first target the same way.
     return all.find(t => t.key === ex.targetKey) ?? all[0];
 };
+const isAfrondenRooster = (c: Record<string, unknown>) => (c.subType ?? 'rooster') === 'rooster';
+// SYNC: AfrondenViewer rooster columns (usableTargets with its defaults; the first target when none is usable).
+function roosterTargets(c: Record<string, unknown>) {
+    const nt = numberTypeOf(c);
+    const dec = nt === 'decimal';
+    const cols = usableTargets(nt, Number(c.maxGetal ?? (dec ? 100 : 1000)), Number(c.decimalPlaces ?? 2), (c.roundTargets as string[] | undefined) ?? (dec ? ['E', 't'] : ['T', 'H']));
+    return cols.length ? cols : [targetsFor(nt)[0]];
+}
+// SYNC: AfrondenViewer rooster KioskCell keys: r<row>_<target key>, row by row.
+const afrondenInteract = cellsInteract<AfrondenExercise>(
+    (ex, c) => (ex.numbers ?? []).flatMap((_, i) => roosterTargets(c).map(t => `r${i}_${t.key}`)),
+    (ex, c) => (ex.numbers ?? []).flatMap(n => roosterTargets(c).map(t => numberSpellings(roundTo(n, t.weight)).join('|'))),
+);
 
 export const AFRONDEN_KIOSK = descriptor<AfrondenExercise>({
     input: 'number',
+    inputOf: (_ex, c) => (isAfrondenRooster(c) ? 'interactive' : 'number'),
     keys: (c) => (numberTypeOf(c) === 'decimal' ? [','] : []),
-    answerOf: (ex, c) => numberSpellings(roundTo(ex.number ?? 0, afrondenTarget(ex, c).weight)),
-    display: (ex, c) => `${formatMathNumber(plain(ex.number ?? 0))} ≈ ? (op ${afrondenTarget(ex, c).label})`,
-    supported: (c) => (c.subType ?? 'rooster') === 'simpel',
+    interact: afrondenInteract,
+    answerOf: (ex, c) => (isAfrondenRooster(c) ? [afrondenInteract.answerOf(ex, c)] : numberSpellings(roundTo(ex.number ?? 0, afrondenTarget(ex, c).weight))),
+    display: (ex, c) => (isAfrondenRooster(c)
+        ? `${(ex.numbers ?? []).map(showNum).join(' · ')} afronden op ${roosterTargets(c).map(t => t.key).join(', ')}: ?`
+        : `${formatMathNumber(plain(ex.number ?? 0))} ≈ ? (op ${afrondenTarget(ex, c).label})`),
+    supported: (c) => ['simpel', 'rooster'].includes((c.subType as string | undefined) ?? 'rooster'),
 });
 
 // ── Vergelijken ──────────────────────────────────────────────────────────────
@@ -240,23 +273,41 @@ function plaatsenOf(ex: PlaatswaardeExercise, c: Record<string, unknown>) {
 }
 const plaatsOf = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => plaatsenOf(ex, c).find(p => p.key === ex.placeKey);
 const pwSub = (c: Record<string, unknown>) => (c.subType as string | undefined) ?? 'waarde';
+const isPwTabel = (c: Record<string, unknown>) => pwSub(c) === 'tabel';
+// SYNC: PlaatswaardeViewer tabel placesOf — the block's max and decimals, from the first non-zero place.
+function tabelPlaces(ex: PlaatswaardeExercise, c: Record<string, unknown>) {
+    const dp = Number(c.decimalPlaces ?? 0);
+    const all = getMaskPlaces(Number(c.maxGetal ?? 1000), dp > 0 ? 'decimal' : 'natural', dp);
+    const start = all.findIndex(p => digitAtPlace(ex.number, p.weight) !== 0);
+    return (start < 0 ? all.slice(-1) : all.slice(start)).map(p => ({ key: p.key, digit: digitAtPlace(ex.number, p.weight) }));
+}
+// tabel: the digit under every place, keyed by the place (one-digit cells hand the keypad on).
+const pwTabelInteract = cellsInteract<PlaatswaardeExercise>(
+    (ex, c) => tabelPlaces(ex, c).map(p => p.key),
+    (ex, c) => tabelPlaces(ex, c).map(p => String(p.digit)),
+    () => ({ length: 1 }),
+);
 
 // waarde: type the digit's value (300, 0,05); plaats: tap the place name; omcirkelen: tap
 // its letter (H, t) among the number's own places, like the sheet's chips.
 export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     input: 'number',
-    inputOf: (_ex, c) => (pwSub(c) === 'waarde' ? 'number' : 'choice'),
-    keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 ? [','] : []),
+    inputOf: (_ex, c) => (pwSub(c) === 'waarde' ? 'number' : isPwTabel(c) ? 'interactive' : 'choice'),
+    // The tabel's cells take one digit each.
+    keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 && !isPwTabel(c) ? [','] : []),
+    interactOf: (c) => (isPwTabel(c) ? pwTabelInteract : undefined),
     kioskInstruction: (_ex, c) => (pwSub(c) === 'omcirkelen' ? 'Kies de plaats van het onderstreepte cijfer.' : undefined),
     choicesOf: (ex, c) => plaatsenOf(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
     answerOf: (ex, c) => {
+        if (isPwTabel(c)) return [pwTabelInteract.answerOf(ex, c)];
         const p = plaatsOf(ex, c);
         if (!p) return [];
         if (pwSub(c) === 'waarde') return numberSpellings(Number((p.digit * p.weight).toFixed(4)));
         return [pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key];
     },
-    display: (ex, c) => `${showNum(ex.number)}: ${pwSub(c) === 'waarde' ? 'waarde' : 'plaats'} van het cijfer op ${plaatsOf(ex, c)?.key ?? '?'} = ?`,
-    supported: (c) => pwSub(c) !== 'tabel',
+    display: (ex, c) => (isPwTabel(c)
+        ? `${showNum(ex.number)} in de plaatswaardetabel: ?`
+        : `${showNum(ex.number)}: ${pwSub(c) === 'waarde' ? 'waarde' : 'plaats'} van het cijfer op ${plaatsOf(ex, c)?.key ?? '?'} = ?`),
 });
 
 // cirkels: the pupil groups the circles and picks even / oneven. rooster: taps every even (or
@@ -572,22 +623,6 @@ export const ORDENEN_KIOSK = descriptor<OrdenenExercise>({
     answerOf: (ex) => ex.values.map(v => shownSpellings(v).join('|')),
     display: (ex) => `${ex.display.map(showValue).join(', ')} → ${ex.values.map(() => '?').join(` ${ex.operator} `)}`,
 });
-
-// Phase C2: the pupil fills the blanks ON the card. Every cell is required; the answer is
-// the cells in key order, each with its accepted spellings.
-function cellsInteract<E>(keysOf: (ex: E, c: Record<string, unknown>) => string[], wantsOf: (ex: E, c: Record<string, unknown>) => string[],
-    cellOf?: (key: string, ex: E, c: Record<string, unknown>) => KioskCellSpec): KioskInteract<E> {
-    return {
-        kind: 'fill-cells',
-        keys: keysOf,
-        cellOf,
-        answerOf: (ex, c) => wantsOf(ex, c).join(INTERACT_SEP),
-        fromState: (st, ex, c) => {
-            const v = keysOf(ex, c).map(k => (st.cells[k] ?? '').trim());
-            return v.some(x => x === '') ? '' : v.join(INTERACT_SEP);
-        },
-    };
-}
 
 // basis / harten: the partner of every given number (cell per pair); boom: the one blank box;
 // positie-tabel: the digit under every place (one-digit cells). Benen and the math rows are not served yet.

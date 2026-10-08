@@ -1,6 +1,6 @@
 import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor } from './types';
 import type { InteractionKind } from '../../components/viewer/ViewerInteractionContext';
-import { kioskInputOf } from './kiosk';
+import { kioskInputOf, kioskInteractOf } from './kiosk';
 
 // Is the pupil's answer right? Typed answers are normalised (spaces, comma/dot, leading and
 // trailing zeros, minus glyphs) and compared with every spelling the descriptor accepts.
@@ -77,9 +77,10 @@ function sameInteraction(kind: InteractionKind, given: string, want: string): bo
 export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, given: KioskAnswer): boolean {
     const input = kioskInputOf(d, ex, c);
     if (input === 'interactive') {
-        if (!d.interact) return false;
+        const ia = kioskInteractOf(d, c);
+        if (!ia) return false;
         const one = Array.isArray(given) ? given.join(INTERACT_SEP) : given;
-        return sameInteraction(d.interact.kind, one, d.interact.answerOf(ex, c));
+        return sameInteraction(ia.kind, one, ia.answerOf(ex, c));
     }
     const accepted = d.answerOf(ex, c);
     if (input === 'number+rest') {

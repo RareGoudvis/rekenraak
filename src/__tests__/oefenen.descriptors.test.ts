@@ -4,9 +4,9 @@ import type { KioskDescriptor, KioskInput, OefenSessie, OefenType } from '../ser
 import { flattenLeaves, type AppLeaf } from '../config/appstructure';
 import { LEERJAREN, type Leerjaar } from '../config/gradePresets';
 import { seedConstraints } from '../config/baseSettings';
-import { targetsFor } from '../services/afronden/afrondenGenerator';
+import { targetsFor, usableTargets } from '../services/afronden/afrondenGenerator';
 import { formatMathNumber } from '../services/math/formatters';
-import { kioskCapableLeaves, kioskFor, kioskInputOf, kioskSupports } from '../services/oefenen/kiosk';
+import { kioskCapableLeaves, kioskFor, kioskInputOf, kioskInteractOf, kioskSupports } from '../services/oefenen/kiosk';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { checkAnswer, normaliseFraction, normaliseNumber } from '../services/oefenen/check';
 import { INTERACT_SEP } from '../services/oefenen/types';
@@ -52,6 +52,7 @@ const EXPECTED_LEAVES = [
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     'even-oneven-rooster',
+    'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -102,6 +103,13 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         return c.subType === 'welk-percent' ? p.percent : p.answer;
     },
     afronden: (a: AfrondenExercise, c) => {
+        if (c.subType === 'rooster') {
+            // Every number × every rounding column the sheet prints.
+            const dec = c.numberType === 'decimal';
+            const cols = usableTargets(c.numberType as string, Number(c.maxGetal ?? (dec ? 100 : 1000)), Number(c.decimalPlaces ?? 2), c.roundTargets as string[]);
+            const ts = cols.length ? cols : [targetsFor(c.numberType as string)[0]];
+            return { multi: a.numbers!.flatMap(n => ts.map(t => roundHalfUp(n, t.weight))) };
+        }
         const t = targetsFor(c.numberType as string).find(x => x.key === a.targetKey);
         expect(t, `target ${a.targetKey}`).toBeDefined();
         return roundHalfUp(a.number as number, t!.weight);
@@ -116,6 +124,11 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         expect(place, p.placeKey).toBeDefined();
         if (c.subType === 'plaats') return place.label.toLowerCase();
         if (c.subType === 'omcirkelen') return place.key;
+        if (c.subType === 'tabel') {
+            // The digits from the first non-zero one down to the last place the block prints.
+            const dp = Number(c.decimalPlaces ?? 0);
+            return { multi: String(Math.round(p.number * 10 ** dp)).split('').map(Number) };
+        }
         // The digit at that place, on scaled integers (4 decimals at most).
         const digit = Math.floor(Math.round(p.number * 1e4) / Math.round(place.weight * 1e4)) % 10;
         expect(digit, `${p.number} ${p.placeKey}`).toBeGreaterThan(0);
@@ -322,11 +335,12 @@ describe('kiosk-capable leaves', () => {
 
     test('supported() follows the settings, registry defaults filling gaps', () => {
         expect(kioskSupports('afronden', { subType: 'simpel' })).toBe(true);
-        expect(kioskSupports('afronden', {})).toBe(false);
+        expect(kioskSupports('afronden', {})).toBe(true);
+        expect(kioskSupports('afronden', { subType: 'nope' })).toBe(false);
         expect(kioskSupports('vergelijken', {})).toBe(true);
         expect(kioskSupports('vergelijken', { subType: 'kiezen' })).toBe(true);
         expect(kioskSupports('procenten', {})).toBe(true);
-        expect(kioskSupports('plaatswaarde', { subType: 'tabel' })).toBe(false);
+        expect(kioskSupports('plaatswaarde', { subType: 'tabel' })).toBe(true);
         expect(kioskSupports('even-oneven', { subType: 'rooster' })).toBe(true);
         expect(kioskSupports('vormleer-hoeken', { mode: 'tekenen' })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'gelijkbenig'] })).toBe(false);
@@ -394,7 +408,7 @@ describe('descriptor answers agree with the generators', () => {
 // Phase C: tapping the viewer's keys must give the generator's answer. tap = one key, its value
 // the truth; tap-multi = the set of right keys in any order, and one key more or less is wrong.
 function checkInteractive(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
-    const ia = d.interact!;
+    const ia = kioskInteractOf(d, c)!;
     expect(ia, where).toBeDefined();
     const keys = ia.keys!(ex, c);
     const tap = (selected: string[]) => ia.fromState({ ...EMPTY_INTERACTION, selected }, ex, c);
@@ -424,9 +438,9 @@ function checkInteractive(typeId: string, d: KioskDescriptor, ex: unknown, c: Re
 
 // Phase C2: typing the right digits into the card's cells is juist; one wrong cell is fout.
 function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
-    const ia = d.interact!;
+    const ia = kioskInteractOf(d, c)!;
     const keys = ia.keys!(ex, c);
-    const fill = (cells: Cells, dd: KioskDescriptor = d) => dd.interact!.fromState({ ...EMPTY_INTERACTION, cells }, ex, c);
+    const fill = (cells: Cells, dd: KioskDescriptor = d) => kioskInteractOf(dd, c)!.fromState({ ...EMPTY_INTERACTION, cells }, ex, c);
     const ok = (cells: Cells, dd: KioskDescriptor = d) => checkAnswer(dd, ex, c, fill(cells, dd));
     const keypad = d.keys?.(c) ?? [];
     const typeable = (cells: Cells) => Object.values(cells).forEach(v =>
