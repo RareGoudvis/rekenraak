@@ -1,14 +1,14 @@
-import { APP_STRUCTURE, type InstructionFn } from '../../config/appstructure';
+import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type OefenMode, type OefenSessie } from '../../services/oefenen/types';
-import { kioskCapableLeaves, kioskSupports } from '../../services/oefenen/kiosk';
+import { kioskCapableLeaves, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
 export interface OefenLeaf {
     id: string;
     typeId: string;
-    label: string;            // full label shown in the session and on the stats screen
+    label: string;            // kioskLabel: the builder's name and the pupil's stats row
     context: string;          // subdomain label
     domainId: string;
     domainLabel: string;
@@ -19,24 +19,16 @@ export interface OefenLeaf {
 
 export function listOefenLeaves(): OefenLeaf[] {
     const capable = new Set(kioskCapableLeaves().map(l => l.id));
-    // "Natuurlijke getallen — Rooster" exists under several subdomains; only those get the
-    // subdomain (e.g. "Afronden") in front so a pupil's stats row says what was practised.
-    const pathCount = new Map<string, number>();
-    for (const dom of APP_STRUCTURE) for (const sub of dom.subdomains) for (const t of sub.types) {
-        for (const leaf of t.children ?? [t]) {
-            const k = t.children ? `${t.label} — ${leaf.label}` : leaf.label;
-            pathCount.set(k, (pathCount.get(k) ?? 0) + 1);
-        }
-    }
+    const appLeaf = new Map(flattenLeaves().map(l => [l.id, l]));
     const out: OefenLeaf[] = [];
     for (const dom of APP_STRUCTURE) for (const sub of dom.subdomains) for (const t of sub.types) {
         for (const leaf of t.children ?? [t]) {
-            if (!leaf.typeId || !capable.has(leaf.id)) continue;
-            const path = t.children ? `${t.label} — ${leaf.label}` : leaf.label;
+            const flat = appLeaf.get(leaf.id);
+            if (!leaf.typeId || !flat || !capable.has(leaf.id)) continue;
             out.push({
                 id: leaf.id,
                 typeId: leaf.typeId,
-                label: (pathCount.get(path) ?? 0) > 1 ? `${sub.label} — ${path}` : path,
+                label: kioskLabel(flat),
                 context: sub.label,
                 domainId: dom.id,
                 domainLabel: dom.label,
@@ -101,7 +93,7 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
             leafId: r.leaf.id,
             label: r.leaf.label,
             // Frozen to plain text now: a function-valued instruction cannot ride in the link.
-            instruction: resolveInstruction(r.leaf.instruction, r.leaf.typeId, r.leaf.label, r.constraints as BlockConstraints),
+            instruction: resolveInstruction(r.leaf.instruction, r.leaf.typeId, LEAF_BY_ID[r.leaf.id]?.label ?? r.leaf.label, r.constraints as BlockConstraints),
             constraints: r.constraints,
             ...(r.limit ? { limit: r.limit } : {}),
             weight: weights[i],

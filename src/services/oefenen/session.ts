@@ -5,7 +5,7 @@ import { DEFAULT_BASE, seedConstraints } from '../../config/baseSettings';
 import { LEAF_BY_ID, flattenLeaves } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../math/constraintTypes';
-import { KIOSK_KEY_TABLE_V1, KIOSK_LEAF_TABLE_V1 } from './kiosk';
+import { KIOSK_KEY_TABLE_V1, KIOSK_LEAF_TABLE_V1, kioskLabelOf } from './kiosk';
 
 // Oefensessie ↔ URL hash (#oefen=…): the share-link trick of persistence.ts. Only settings
 // travel; the pupil's device generates the exercises. The link is also a classroom QR, so the
@@ -57,11 +57,14 @@ function seedOf(typeId: string, leafId: string): Record<string, unknown> {
     return JSON.parse(JSON.stringify(seedConstraints({ typeId, leafId, base: DEFAULT_BASE, grade: null, override }))) as Record<string, unknown>;
 }
 
-const defaultLabelOf = (leafId: string): string | undefined => LEAF_BY_ID[leafId]?.label;
+// The builder names a row by kioskLabel, so a label only travels when the teacher renamed it.
+const defaultLabelOf = kioskLabelOf;
 
+// What a sidebar click would title the block (the sidebar label feeds the fallback, not the
+// short kiosk label); an unknown leaf falls back on the row's own label.
 function defaultInstructionOf(typeId: string, leafId: string, label: string, constraints: Record<string, unknown>): string {
-    const leaf = LEAF_BY_ID[leafId];
-    return resolveInstruction(leaf?.typeId === typeId ? leaf.instruction : undefined, typeId, label, constraints as BlockConstraints);
+    const leaf = LEAF_BY_ID[leafId]?.typeId === typeId ? LEAF_BY_ID[leafId] : undefined;
+    return resolveInstruction(leaf?.instruction, typeId, leaf?.label ?? label, constraints as BlockConstraints);
 }
 
 // Largest-remainder equal split, like normaliseWeights on equal sliders: the first slots get the +1s.

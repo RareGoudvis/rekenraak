@@ -3,7 +3,8 @@ import type { OefenSessie, OefenType } from '../services/oefenen/types';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { LEAF_BY_ID } from '../config/appstructure';
 import { mulberry32 } from './helpers/limitHarness';
-import { KIOSK_KEY_TABLE_V1, KIOSK_LEAF_TABLE_V1, kioskCapableLeaves } from '../services/oefenen/kiosk';
+import { KIOSK_KEY_TABLE_V1, KIOSK_LEAF_TABLE_V1, kioskCapableLeaves, kioskLabel } from '../services/oefenen/kiosk';
+import { flattenLeaves } from '../config/appstructure';
 import { buildSessie, listOefenLeaves, type BuilderRow } from '../components/oefenen/oefenBuild';
 import { qrMatrixOrNull, qrVersionOf } from '../services/qr';
 import {
@@ -202,5 +203,30 @@ describe('strict decode', () => {
     test('unknown extra fields are dropped', () => {
         const s = { ...sessieOf(1, 0), extra: 1 };
         expect(parseSessie(s)).not.toHaveProperty('extra');
+    });
+});
+
+describe('kioskLabel', () => {
+    const label = (id: string) => kioskLabel(flattenLeaves().find(l => l.id === id)!);
+    test('drops the parent clutter: name · number kind · detail', () => {
+        expect(label('hr-std-optellen-nat')).toBe('Optellen · natuurlijk');
+        expect(label('hr-std-delen-dec')).toBe('Delen · decimaal');
+        expect(label('hr-std-vermenigvuldigen-rat')).toBe('Vermenigvuldigen · breuken');
+        expect(label('afronden-dec-simpel')).toBe('Afronden · decimaal · eenvoudig');
+        expect(label('vergelijken-getallen')).toBe('Vergelijken · twee getallen');
+        expect(label('procenten-welk')).toBe('Hoeveel procent?');
+    });
+    test('a leaf shortLabel wins', () => {
+        const leaf = { ...flattenLeaves().find(l => l.id === 'procenten-nemen')!, shortLabel: 'Procent nemen' };
+        expect(kioskLabel(leaf)).toBe('Procent nemen');
+    });
+    test('unique over the kiosk-capable leaves (else give one a shortLabel)', () => {
+        const labels = kioskCapableLeaves().map(kioskLabel);
+        expect(new Set(labels).size).toBe(labels.length);
+    });
+    test('a builder session ships no labels: they come back from the leaf', () => {
+        const s = sessieOf(4, 0);
+        expect(s.types.map(t => t.label)).toEqual(s.types.map(t => label(t.leafId)));
+        expect(roundTrip(s).types.map(t => t.label)).toEqual(s.types.map(t => t.label));
     });
 });
