@@ -261,11 +261,21 @@ const functiesOf = (c: Record<string, unknown>) => {
     return f?.length ? f : ['hoeveelheid', 'rang', 'maat', 'code'];
 };
 const isSchrijf = (c: Record<string, unknown>) => c.answerMode === 'schrijven';
+// aankruisen: tick the column ON the card (Phase C); keys are column positions
+// (SYNC: GetalFunctieViewer cols), the answer the column's name.
 export const GETALFUNCTIE_KIOSK = descriptor<GetalFunctieExercise>({
-    input: 'choice',
-    inputOf: (_ex, c) => (isSchrijf(c) ? 'text' : 'choice'),
-    choicesOf: (_ex, c) => functiesOf(c).map(f => FUNCTIE_LABEL[f] ?? f),
-    kioskInstruction: (_ex, c) => (isSchrijf(c) ? undefined : 'Wat betekent het getal? Tik het juiste antwoord aan.'),
+    input: 'interactive',
+    inputOf: (_ex, c) => (isSchrijf(c) ? 'text' : 'interactive'),
+    kioskInstruction: (_ex, c) => (isSchrijf(c) ? undefined : 'Wat betekent het getal? Tik het juiste vakje aan.'),
+    interact: {
+        kind: 'tap',
+        keys: (_ex, c) => functiesOf(c).map((_, i) => String(i)),
+        answerOf: (ex) => FUNCTIE_LABEL[ex.functie],
+        fromState: (st, _ex, c) => {
+            const f = st.selected.length ? functiesOf(c)[Number(st.selected[0])] : undefined;
+            return f ? FUNCTIE_LABEL[f] ?? f : '';
+        },
+    },
     // Schrijven takes the full word and the short column name alike.
     answerOf: (ex, c) => (isSchrijf(c) ? [FUNCTIE_FULL[ex.functie], FUNCTIE_LABEL[ex.functie]] : [FUNCTIE_LABEL[ex.functie]]),
     display: (ex) => `${ex.sentence.replace('___', ex.number)} → ${ex.number} is een ?`,

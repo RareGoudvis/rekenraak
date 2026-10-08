@@ -155,6 +155,8 @@ describe('viewer tap flow (jsdom)', () => {
     // a tap picks exactly that part and the right part answers the descriptor's answer.
     test.each<[string, string, Record<string, unknown>]>([
         ['plaatswaarde omcirkelen', 'plaatswaarde', { subType: 'omcirkelen', maxGetal: 100000 }],
+        ['getalfunctie aankruisen', 'getalfunctie', {}],
+        ['getalfunctie aankruisen, two columns', 'getalfunctie', { functies: ['maat', 'code'] }],
     ])('%s: tap one part, the right one answers', (_name, typeId, constraints) => {
         const block = blockFor(typeId, constraints);
         const field = REGISTRY[typeId].exerciseField;

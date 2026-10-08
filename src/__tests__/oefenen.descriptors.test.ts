@@ -364,6 +364,7 @@ describe('descriptor answers agree with the generators', () => {
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
         ['plaatswaarde-omcirkelen', { decimalPlaces: 2, maxGetal: 1000000 }, 'interactive'],
         ['getalbegrip-functie', { answerMode: 'schrijven' }, 'text'],
+        ['getalbegrip-functie', { functies: ['rang', 'code'] }, 'interactive'],
         ['controleren-negenproef', { foutAandeel: 'alles' }, 'choice'],
         ['temperatuur-aflezen', { includeNegatives: true }, 'number'],
         ['massa-weegschaal-aflezen', { notatie: 'kg-g', bereikGram: 5000, stepGram: 250 }, 'multi-number'],
