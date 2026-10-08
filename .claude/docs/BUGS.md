@@ -177,7 +177,8 @@ UpdateState). Left over, found while fixing:
   card (6 rows), slider to 2, card still shows 6. Fix: top up / cut in the board's subscription,
   or route draft count changes through generateExtra. 2026-10-08
 - staggerPos (addWidgets.ts) cycles every 5 widgets, so the 6th card lands exactly on the 1st and
-  hides it completely. Fix: offset each cycle, or place at the first free spot. 2026-10-08
+  hides it completely. Fix: offset each cycle, or place at the first free spot. `test.fails` in
+  boardSizing.test.tsx. 2026-10-08
 - Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
   Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
   instead of the sheet (checked with a print-to-PDF). 2026-10-08
@@ -186,3 +187,13 @@ UpdateState). Left over, found while fixing:
   "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
   Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
   measurement. 2026-10-08
+- saveBoardPreset (boardPersistence.ts) has no quota guard, unlike the autosave: a board with a big
+  image fills localStorage, the throw escapes BoardBottomBar's click handler, nothing is saved and
+  the teacher sees no message. Pinned by a `test.fails` in boardPersistence.test.ts. 2026-10-08
+- parseBoardFile checks pages only: a file whose `widgets` holds `null` (hand-edited or foreign)
+  loads, BoardPageCanvas reads `.id` of it outside the per-widget boundary and the app goes blank;
+  the 1.5 s autosave then persists the junk. Fix: validate each widget (object, id, kind, numeric
+  x/y/w/z) and each stroke. `test.fails` in boardPersistence.test.ts. 2026-10-08
+- duplicatePage copies exercise widgets with their block id unchanged, while duplicateWidget gives
+  the copy a fresh `bw-` id because the draft mirror keys on it. Low impact today (the mirror only
+  looks at the active page). `test.fails` in boardPersistence.test.ts. 2026-10-08
