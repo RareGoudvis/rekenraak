@@ -496,6 +496,21 @@ html:has(.oefen-body),
 .kiosk-math { font-family: var(--font-sheet-math); }
 .kiosk-errors td.is-given { color: var(--danger); }
 
+.kiosk-runs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.kiosk-run {
+  width: 100%;
+  justify-content: space-between;
+  text-align: left;
+}
+.kiosk-run-score { font-weight: 400; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
 .kiosk-stats-actions {
   display: flex;
   flex-wrap: wrap;

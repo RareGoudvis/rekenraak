@@ -146,6 +146,7 @@ export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
     input: 'choice',
     choices: ['<', '=', '>'],
     choicesOf: (ex, c) => (isKiezen(c) ? (ex.numbers ?? []).map(showNum) : ['<', '=', '>']),
+    kioskInstruction: (ex, c) => (isKiezen(c) ? `Kies het ${(ex.target ?? c.chooseTarget) === 'kleinste' ? 'kleinste' : 'grootste'} getal.` : undefined),
     answerOf: (ex, c) => {
         if (isKiezen(c)) return [showNum(kiezenAnswer(ex))];
         const a = ex.a ?? 0, b = ex.b ?? 0;
@@ -187,6 +188,7 @@ export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     input: 'number',
     inputOf: (_ex, c) => (pwSub(c) === 'waarde' ? 'number' : 'choice'),
     keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 ? [','] : []),
+    kioskInstruction: (_ex, c) => (pwSub(c) === 'omcirkelen' ? 'Kies de plaats van het onderstreepte cijfer.' : undefined),
     choicesOf: (ex, c) => plaatsenOf(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
     answerOf: (ex, c) => {
         const p = plaatsOf(ex, c);
@@ -202,6 +204,7 @@ export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
 export const EVEN_ONEVEN_KIOSK = descriptor<EvenOnevenExercise>({
     input: 'choice',
     choices: ['even', 'oneven'],
+    kioskInstruction: 'Tik op even of oneven.',
     answerOf: (ex) => [(ex.number ?? 0) % 2 === 0 ? 'even' : 'oneven'],
     display: (ex) => `${ex.number ?? 0} is ?`,
     supported: (c) => c.subType === 'cirkels',
@@ -228,6 +231,7 @@ export const GETALFUNCTIE_KIOSK = descriptor<GetalFunctieExercise>({
     input: 'choice',
     inputOf: (_ex, c) => (isSchrijf(c) ? 'text' : 'choice'),
     choicesOf: (_ex, c) => functiesOf(c).map(f => FUNCTIE_LABEL[f] ?? f),
+    kioskInstruction: (_ex, c) => (isSchrijf(c) ? undefined : 'Wat betekent het getal? Tik het juiste antwoord aan.'),
     // Schrijven takes the full word and the short column name alike.
     answerOf: (ex, c) => (isSchrijf(c) ? [FUNCTIE_FULL[ex.functie], FUNCTIE_LABEL[ex.functie]] : [FUNCTIE_LABEL[ex.functie]]),
     display: (ex) => `${ex.sentence.replace('___', ex.number)} → ${ex.number} is een ?`,
@@ -362,6 +366,7 @@ export const MAATEENHEID_KIOSK = descriptor<MaateenheidExercise>({
     input: 'choice',
     inputOf: (ex) => (ex.choices ? 'choice' : 'text'),
     choicesOf: (ex, c) => (ex.choices ?? []).map(u => chipText(ex, c, u)),
+    kioskInstruction: (ex) => (ex.choices ? 'Kies de passende maateenheid.' : undefined),
     answerOf: (ex, c) => (ex.choices ? [chipText(ex, c, ex.unit)] : [...new Set([ex.unit, ex.unit.replace('°', '')])]),
     display: (ex) => ex.sentence.replace('___', '?'),
     // Schatten written out is a number and a unit in one line: not one word to check.

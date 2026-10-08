@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { LEAF_BY_ID } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
+import { kioskInstructionOf } from '../../services/oefenen/kiosk';
 import { currentInput, useOefenStore } from '../useOefenStore';
 import TopBar from './TopBar';
 import ExerciseCard from './ExerciseCard';
@@ -72,9 +73,16 @@ export default function Kiosk() {
     if (!sessie || !run) return null;
 
     const type = shown ? sessie.types[shown.slot] : undefined;
-    const instruction = type
-        ? type.instruction || resolveInstruction(LEAF_BY_ID[type.leafId]?.instruction, type.typeId, type.label, shown!.constraints as BlockConstraints)
+    const leafInstruction = type
+        ? resolveInstruction(LEAF_BY_ID[type.leafId]?.instruction, type.typeId, type.label, shown!.constraints as BlockConstraints)
         : '';
+    // A teacher's own wording wins; the leaf's paper default gives way to the kiosk wording.
+    const builderInstruction = type
+        ? resolveInstruction(LEAF_BY_ID[type.leafId]?.instruction, type.typeId, type.label, type.constraints as BlockConstraints)
+        : '';
+    const instruction = type && shown && (!type.instruction || type.instruction === leafInstruction || type.instruction === builderInstruction)
+        ? kioskInstructionOf(type.typeId, shown.exercise, shown.constraints as Record<string, unknown>, leafInstruction)
+        : type?.instruction ?? '';
 
     return (
         <div className="oefen-app">

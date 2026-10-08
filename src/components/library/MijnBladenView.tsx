@@ -196,7 +196,7 @@ export default function MijnBladenView() {
                                 </div>
                                 <button style={S.iconBtn} title="Hernoemen" onClick={() => handleOefenRename(e)}><PencilSimple size={15} /></button>
                                 <button style={S.ghostBtn} onClick={() => setOefenShare(e.sessie)}><Share size={15} /> Delen</button>
-                                <button style={S.ghostBtn} onClick={() => setOefenEdit(e.sessie)}><PencilSimple size={15} /> Bewerken</button>
+                                <button style={S.ghostBtn} onClick={() => setOefenEdit(e.sessie.title ? e.sessie : { ...e.sessie, title: e.name.slice(0, 60) })}><PencilSimple size={15} /> Bewerken</button>
                                 <button style={{ ...S.iconBtn, color: 'var(--danger)' }} title="Verwijderen" aria-label="Verwijderen" onClick={() => handleOefenDelete(e)}><Trash size={15} /></button>
                             </div>
                         ))}

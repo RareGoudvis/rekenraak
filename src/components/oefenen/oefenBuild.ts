@@ -60,7 +60,8 @@ export interface BuilderSettings {
     statsLocked: boolean;
 }
 
-export const LIMIT_STEPS: (number | undefined)[] = [undefined, 5, 10, 15, 20, 30];
+// Slider 0-50; 0 is the left stop and means no cap (limit undefined).
+export const LIMIT_MAX = 50;
 export const TIMER_STEPS: (number | undefined)[] = [undefined, 5, 10, 15, 20, 30];
 
 export const draftIdOf = (rowKey: string) => `draft-oefen-${rowKey}`;

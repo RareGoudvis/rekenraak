@@ -78,6 +78,9 @@ export interface KioskDescriptor<E = unknown> {
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
     display(ex: E, c: Record<string, unknown>): string;
+    // The card header when the paper instruction names a pen verb (omcirkel, kleur ...) but the
+    // kiosk input is a button or field; undefined = keep the leaf's instruction.
+    kioskInstruction?: string | ((ex: E, c: Record<string, unknown>) => string | undefined);
     // Settings this descriptor can check (afronden: simpel only). Absent = always.
     supported?(c: Record<string, unknown>): boolean;
 }

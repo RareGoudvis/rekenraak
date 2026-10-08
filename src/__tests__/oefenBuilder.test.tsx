@@ -146,6 +146,44 @@ describe('OefenBuilderModal', () => {
     });
 });
 
+describe('OefenBuilderModal title', () => {
+    test('the library name typed at Opslaan becomes the session title', () => {
+        const spy = vi.spyOn(window, 'prompt').mockReturnValue('Week 6 tafels');
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+        spy.mockRestore();
+        const saved = loadOefenSessies();
+        expect(saved[0].name).toBe('Week 6 tafels');
+        expect(saved[0].sessie.title).toBe('Week 6 tafels');
+        expect((screen.getByLabelText('Titel') as HTMLInputElement).value).toBe('Week 6 tafels');
+    });
+});
+
+describe('OefenBuilderModal limit slider', () => {
+    test('0 means unlimited, other values become the session limit', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        const slider = screen.getByLabelText(/^Aantal:/) as HTMLInputElement;
+        expect(slider.type).toBe('range');
+        expect(slider.max).toBe('50');
+        expect(screen.getByText('Aantal: ∞')).toBeTruthy();
+        fireEvent.change(slider, { target: { value: '12' } });
+        expect(screen.getByText('Aantal: 12')).toBeTruthy();
+        fireEvent.click(footerBtn('Delen'));
+        const link = screen.getByRole('link').getAttribute('href')!;
+        expect(decodeSessie(link.split('#oefen=')[1]).types[0].limit).toBe(12);
+        cleanup();
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '7' } });
+        fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '0' } });
+        expect(screen.getByText('Aantal: ∞')).toBeTruthy();
+        fireEvent.click(footerBtn('Delen'));
+        expect(decodeSessie(screen.getByRole('link').getAttribute('href')!.split('#oefen=')[1]).types[0].limit).toBeUndefined();
+    });
+});
+
 describe('OefenShareModal', () => {
     const small: OefenSessie = {
         v: 1, id: 'x', title: 'Klein', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false,
