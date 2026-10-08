@@ -10,6 +10,7 @@ import TopBar from './components/layout/TopBar';
 import { answerSpaceVar } from './components/viewer/BlockWidthContext';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
+import WhiteboardView from './board/components/WhiteboardView';
 import HelpModal from './components/layout/HelpModal';
 import ReleaseNotesModal from './components/layout/ReleaseNotesModal';
 import PrintHintModal from './components/layout/PrintHintModal';
@@ -28,6 +29,7 @@ import SheetBanners from './components/sheet/SheetBanners';
 import { useSheetZoom } from './hooks/useSheetZoom';
 import { useBootLoad } from './hooks/useBootLoad';
 import { useOnboarding } from './hooks/useOnboarding';
+import { isBordPage } from './bootEntry';
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
@@ -51,6 +53,8 @@ export default function App() {
 
   // Browser tab title follows the worksheet title.
   useEffect(() => {
+    // bord.html keeps its own tab title (the board, not a worksheet, is what is open there).
+    if (isBordPage()) return;
     const t = headerData?.titel?.trim();
     document.title = t ? `${t} — Rekenraak` : 'Rekenraak';
   }, [headerData?.titel]);
@@ -216,6 +220,8 @@ export default function App() {
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
     {view === 'mijn-bladen' && <MijnBladenView />}
     {view === 'bibliotheek' && <BibliotheekView />}
+    {/* Bordmodus — the whiteboard app; ALL its code lives under src/board/. */}
+    {view === 'whiteboard' && <WhiteboardView />}
     </>
   );
 }
