@@ -325,7 +325,7 @@ The four consumers are now **table lookups, not branches**:
    never reorder; add the leaves to `EXPECTED_LEAVES` and the typeId's generator truth to `TRUTH`
    in `oefenen.descriptors.test.ts`, and the new table entries to the pinned copies in
    `oefenen.session.test.ts` (§15). To answer ON the exercise: `input: 'interactive'` + `interact` and
-   `interactionProps` / `<KioskCell>` in the viewer (§8 interaction context, §15 Phase C).
+   `interactionProps` / `<KioskCell>` in the viewer (§8 interaction context, §15 Phase C); a `build` kind adds `interact.pieces` + `EXERCISE_UI[typeId].TrayPiece`, a `drag` kind `kioskDrag.ts` helpers and a `tolerance`; `prepare(c, rng)` and `extraKeys` are optional descriptor fields.
 
 Do **not** add `if (typeId === …)` branches in dispatch / Inspector / App — that
 pattern is gone. A missing registry row makes the block render/generate nothing
@@ -535,14 +535,14 @@ only.
 ### Oefenmodus: the rows that carry `kiosk` (§15)
 
 One phrase per descriptor ([kioskDescriptors.ts](../../src/services/oefenen/kioskDescriptors.ts));
-"only X" is its `supported(c)`. 101 sidebar leaves are capable at their defaults
-(`kioskCapableLeaves()`, pinned in `oefenen.descriptors.test.ts`); **tap / fill / order** = the pupil answers ON the
-exercise through `interact` (§15 Phase C).
+"only X" is its `supported(c)`. 108 sidebar leaves are capable at their defaults
+(`kioskCapableLeaves()`, pinned in `oefenen.descriptors.test.ts`; `KIOSK_LEAF_TABLE_V1` has 110 entries); **tap / fill / order /
+build / drag** = the pupil answers ON the exercise through `interact` (§15 Phase C).
 
 | Row(s) | Descriptor | What the pupil gives |
 |---|---|---|
 | `hr-std-optellen` · `-aftrekken` · `-vermenigvuldigen` · `-delen` · `-gemengd` | `HR_KIOSK` | the answer; a puntoefening asks the blank (`missing-operand`), met rest asks quotiënt + rest (`number+rest`); keys follow numberType (`,` / `/` + space / `−`) |
-| `cijferen-*` (8) | `CIJFER_KIOSK` | **fill** the grid's own ruitjes on the card: answer digits, partial products, quotient digits, rest (carries / exchanged digits are optional help; decimal leaves get `,`) |
+| `cijferen-*` (8) | `CIJFER_KIOSK` | **fill** the grid's own ruitjes on the card: answer digits, partial products, quotient digits, rest (carries / exchanged digits are optional help; decimal leaves get `,`); aftrekken also gets the **Lenen** key (`extraKeys`: always present, always exchanges, never hints) |
 | `procenten` | `PROCENTEN_KIOSK` | only nemen / welk-percent: one number |
 | `verbanden` | `VERBANDEN_KIOSK` | one captioned field per asked representation (breuk / kommagetal / procent without `%`) |
 | `afronden` | `AFRONDEN_KIOSK` | only simpel: the rounded number (a rooster is a table, not one answer) |
@@ -551,18 +551,19 @@ exercise through `interact` (§15 Phase C).
 | `even-oneven` | `EVEN_ONEVEN_KIOSK` | only cirkels: even / oneven |
 | `romeinse-cijfers` | `ROMEINSE_KIOSK` | herkennen: a number; schrijven: text (device keyboard, case-free) |
 | `getalfunctie` | `GETALFUNCTIE_KIOSK` | aankruisen: tap the functie; schrijven: text |
-| `mab-herkennen` | `MAB_KIOSK` | the number |
+| `mab-herkennen` · `mab-tekenen` | `MAB_KIOSK` · `MAB_TEKENEN_KIOSK` | the number · **build**: lay it from a D / H / T / E tray (at most 9 per place) |
 | `schattend` | `SCHATTEND_KIOSK` | the estimate only (the rounded operands are scrap work) |
 | `rekenvolgorde` | `REKENVOLGORDE_KIOSK` | the answer |
 | `controleren` | `CONTROLEREN_KIOSK` | juist / fout |
-| `vormleer-hoeken` · `-figuren` | `VORMLEER_KIOSK` | only herkennen: tap the name; one triangle naming system at a time |
-| `temperatuur` | `TEMPERATUUR_KIOSK` | only aflezen / verschil: a number (`−` key with negatives) |
-| `weegschaal` | `WEEGSCHAAL_KIOSK` | only aflezen: grams, kg with a comma, or kg + g fields |
+| `vormleer-hoeken` · `-figuren` | `VORMLEER_KIOSK` | herkennen: tap the name (one triangle naming system at a time); hoek tekenen: **drag** the free been to the asked class (5° snap, right within the class range) |
+| `temperatuur` | `TEMPERATUUR_KIOSK` | aflezen / verschil: a number (`−` key with negatives); kleuren: **drag** the kwik to the asked degree (1° a step) |
+| `weegschaal` | `WEEGSCHAAL_KIOSK` | aflezen: grams, kg with a comma, or kg + g fields; kleuren: **drag** the needle to the asked weight (within half a dial step) |
 | `lengte-meten` · `omtrek` | `LENGTE_KIOSK` · `OMTREK_KIOSK` | only 'gegeven' (labelled sides): juist / fout · the perimeter; not capable at the sidebar defaults |
 | `oppervlakte` | `OPPERVLAKTE_KIOSK` | rooster count or berekende area (+ an omtrek field when asked) |
 | `maateenheid` | `MAATEENHEID_KIOSK` | omcirkelen: tap a chip; schrijven: type the unit (not schatten + schrijven) |
 | `herleidingen` | `HERLEIDINGEN_KIOSK` | only without writeUnits: one field per part (labelled by unit), or tap the unit when the unit is the blank |
-| `geld-herkennen` · `geld-teruggeven` · `geld-rekenen` | `GELD_KIOSK` · `GELD_TERUGGEVEN_KIOSK` · `GELD_REKENEN_KIOSK` | the amount · euro + cent fields (or € x,xx in decimaal) · korting € + nieuwe prijs, or the intrest (only korting / intrest) |
+| `geld-herkennen` · `geld-teruggeven` · `geld-rekenen` | `GELD_KIOSK` · `GELD_TERUGGEVEN_LAY_KIOSK` (wraps `GELD_TERUGGEVEN_KIOSK`) · `GELD_REKENEN_KIOSK` | the amount · euro + cent fields (or € x,xx in decimaal), or with a draw box (tekenen-schrijven) **build** the change from a tray · korting € + nieuwe prijs, or the intrest (only korting / intrest) |
+| `geld-tekenen` · `geld-wissel` | `GELD_TEKENEN_KIOSK` · `GELD_WISSEL_KIOSK` | **build**: lay the amount from the ticked coins and bills (none above the top amount) · lay the same value in smaller money (the note itself is not in the tray; `prepare` draws one of the teacher's bills per exercise) |
 | `getalpatronen` · `kettingsommen` | `PATROON_KIOSK` | **fill** the blanks on the card, only when every operator is printed |
 | `getallenas` · `getallenrijen` | `GETALLENAS_KIOSK` | **fill** the blanks on the card (as / rij) |
 | `deelbaarheid` | `VEELVOUDEN_KIOSK` | only the veelvouden layout: the multiples after the given ones |
@@ -570,11 +571,10 @@ exercise through `interact` (§15 Phase C).
 | `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: the partners, the tree's blank, or a digit per place |
 | `breuken-bewerken` | `BREUK_BEWERK_KIOSK` | the asked FORM (gemengd / improper / reduced); gelijknamig = two fields |
 | `breuken` | `BREUKEN_KIOSK` | only herkennen / hoeveelheid(-abstract): a breuk, a count, or the two counting questions |
-| `klok-kloklezen` | `KLOK_KIOSK` | uur + min (analoog lezen / omzetten, digitaal tekenen); 3:15 and 15:15 both count |
+| `klok-kloklezen` | `KLOK_KIOSK` | uur + min (analoog lezen / omzetten, digitaal tekenen); 3:15 and 15:15 both count; analoog tekenen: **drag** the wijzer(s) the pupil would draw (`handChoice`), 5-minute steps unless nauwkeurig |
 | `tijdsduur` | `TIJDSDUUR_KIOSK` | begin / einde as a time, duur as uur + min |
 
-No descriptor (cannot be practised yet): `geld-tekenen`, `geld-wissel`,
-`mab-tekenen`, `kalender`, `vormleer-punt-lijn`, the `layout-*` furniture.
+No descriptor (cannot be practised yet): `kalender`, `vormleer-punt-lijn`, the `layout-*` furniture.
 
 ---
 
@@ -687,9 +687,12 @@ the default value the sheet must stay byte-identical, which the visual gate prov
 
 **Interaction context: `useViewerInteraction()`** ([ViewerInteractionContext.tsx](../../src/components/viewer/ViewerInteractionContext.tsx),
 Oefenmodus Phase C, §15). Default `null` (sheet, thumbnails, previews); only the kiosk card provides it:
-`{ kind, state: { selected, cells, order }, set, activeCell?, focusCell?, typeCell? }` with `kind` one of
+`{ kind, state: { selected, cells, order, build, marks?, drag? }, set, activeCell?, focusCell?, typeCell? }` with `kind` one of
 `tap` (pick one) · `tap-multi` (toggle any number) · `fill-cells` (type into the viewer's own blanks) ·
-`order` (tap in sequence; tapping an ordered part removes it and every later one). A viewer marks its parts
+`order` (tap in sequence; tapping an ordered part removes it and every later one) · `build` (pieces laid from the
+kiosk tray; `state.build` = `{ key, count }[]`, helpers `built` / `builtCount`) · `drag` (move a handle on an SVG
+figure; `state.drag` = handle key → value). `state.marks` is a fill-cells side channel (part key → mark) that a
+descriptor action key writes (cijferen Lenen) and the answer never reads. A viewer marks its parts
 through the helpers and adds **nothing** else:
 
 - `interactionProps(ctx, key, part = 'tap' | 'order')` spreads `role="button"`, `tabIndex`, `aria-pressed`,
@@ -698,6 +701,18 @@ through the helpers and adds **nothing** else:
 - `cellProps(ctx, key)` and `<KioskCell cellKey variant?>` ([KioskCell.tsx](../../src/components/viewer/KioskCell.tsx))
   draw an `<input data-kiosk-cell>` bound to `cells[key]` (`inputMode="none"`: the kiosk keypad is the touch input);
   without a fill-cells context `KioskCell` renders its `children` (the sheet's own blank) untouched.
+- `borrowedProps(ctx, key)` spreads `data-kiosk-borrowed` on a printed digit whose column the Lenen key exchanged
+  (`marks[key]` set); kiosk.css strikes it. CijferViewer reads it in its kiosk branch only.
+- **drag** ([kioskDrag.ts](../../src/components/viewer/kioskDrag.ts)): `dragSurfaceProps(ctx, surface)` spreads the
+  pointer handlers and `data-kiosk-drag` on the SVG (`surface` = viewBox size + `pick(point, drag)` + `move(key, point, drag)`;
+  pointer capture, and one gesture per surface so a fast move continues from what the gesture wrote, not stale state);
+  `dragHandleProps(ctx, key, spec)` makes each handle a focusable `role="slider"` (`data-kiosk-handle`, aria value text,
+  arrow keys step ±1) as the keyboard alternative. `clockAngle` / `snap` / `clamp` are the shared maths. `touch-action: none`
+  lives in kiosk.css on `[data-kiosk-drag]`, i.e. under the context only. [AnalogClockSVG](../../src/components/viewer/AnalogClockSVG.tsx)
+  takes optional kiosk props (`hourAngleDeg`, `surfaceProps`, `children` = the handles); the sheet never passes them.
+- **build** has no per-part helper: the kiosk's `Tray` lays pieces into `state.build` and the viewer only **draws the
+  built state** (coins, MAB blocks) under the context; without it the viewer draws its sheet picture (blank draw box).
+  The same holds for drag: the viewer draws the dragged state (hands, kwik, needle, been) only under the context.
 
 **Rule:** no attribute, handler or element without the context. With `ctx === null` every helper returns `{}`
 and the viewer's DOM is byte-identical to before; `viewers.interaction.test.tsx` /
@@ -1135,7 +1150,8 @@ src/
 │       ├── TopBar.tsx           # title, progress n / total, countdown (red < 1 min), Resultaten (hidden while statsLocked)
 │       ├── ExerciseCard.tsx     # ONE exercise through the registry Viewer at 340 px, scaled to the card; inert; ScaffoldProvider false
 │       ├── AnswerInput.tsx      # fields (number / two / time / multi-number / text) + Keypad, or the choice buttons
-│       ├── Keypad.tsx           # 7-8-9 keypad, ⌫, up to two extra keys from descriptor.keys(c), Controleer
+│       ├── Keypad.tsx           # 7-8-9 keypad, ⌫, up to two extra keys from descriptor.keys(c), the descriptor's action keys (Lenen) and Controleer
+│       ├── Tray.tsx             # build kind: one tile per KioskPiece (picture from EXERCISE_UI[typeId].TrayPiece), tap lays one, the count badge takes one back; never shows the running total
 │       ├── FeedbackOverlay.tsx  # Juist! / Fout / retry flash (tap or Enter skips), never the right answer; no Volgende button
 │       ├── StatsScreen.tsx      # per type gemaakt/juist/fout/%, Foutjes (exercise, given, expected), Opnieuw, two-tap Wissen
 │       ├── StartScreen.tsx      # confirm screen (title, n soorten · n oefeningen · min, type chips), Start (+ fullscreen try)
@@ -1187,7 +1203,8 @@ src/
 │  (repo root) scripts/fixtures/         # trigger-case sample + a synthetic limits-diff before/after fixture
 │  (repo root) vitest.audit.config.ts    # vitest config for src/__tests__/audit/ only (npm run limits:audit); vitest.config.ts excludes that folder
 │  (repo root) src/__tests__/viewers.interaction.test.tsx, viewers.interaction.grids.test.tsx  # Phase C: no provider = no kiosk attributes, every interactive leaf taps / fills / orders to a right answer (TESTING.md)
-│  (repo root) src/__tests__/helpers/fillCells.ts, oefenKiosk.ts  # fill-cells answers written from the exercise itself; starter session + tap helpers for the kiosk suites
+│  (repo root) src/__tests__/viewers.interaction.build.test.tsx, viewers.interaction.drag.test.tsx  # Phase C3/C4: build + drag leaves reach a right answer through the tray / pointer + arrow keys; no provider = no kiosk attributes (TESTING.md)
+│  (repo root) src/__tests__/helpers/fillCells.ts, oefenKiosk.ts, dragCheck.ts  # fill-cells answers written from the exercise itself; starter session + tap helpers for the kiosk suites; dragCheck = right / wrong drag values per family from the generator's truth
 │  (repo root) src/__tests__/oefenen.kioskInstruction.test.ts  # every kioskInstruction names a tap / fill, never a pen verb
 │  (repo root) src/__tests__/helpers/limitRules.ts, limitHarness.ts, answerKeys.ts  # the limit rule book (LIMIT_SPECS per typeId), case runner, shared answer-key arithmetic
 │  (repo root) src/__tests__/limits.matrix.test.ts + limits.knownBugs.ts  # gate: every leaf × leerjaar, pairwise, trigger cases vs the rule book; open bugs listed by BUGS id, stale entries fail
@@ -1208,7 +1225,7 @@ src/
 │   │   ├── types.ts             # OefenSessie / OefenType / KioskDescriptor / KioskInput / OefenStats / OefenRun
 │   │   ├── kiosk.ts             # kioskFor / kioskSupports / kioskCapableLeaves / kioskLabel + the frozen KIOSK_LEAF_TABLE_V1 / KIOSK_KEY_TABLE_V1
 │   │   ├── kioskDescriptors.ts  # one KioskDescriptor per family (answerOf, inputOf, choicesOf, labels, separator, keys, display, supported)
-│   │   ├── check.ts             # checkAnswer + normaliseNumber / normaliseFraction / normaliseText
+│   │   ├── check.ts             # checkAnswer + normaliseNumber / normaliseFraction / normaliseText; drag compares within `tolerance` (12-hour face minutes), build compares the laid value
 │   │   ├── session.ts           # OefenSessie ↔ wire v1 ↔ DEFLATE (fflate) + base32 ↔ #oefen= link; strict parse with Dutch errors
 │   │   ├── scheduler.ts         # nextType (afwisselen / willekeurig), nextExercise (throwaway block, no exact repeats), isDone, plannedTotal
 │   │   └── stats.ts             # recordAnswer / summary / answerText / expectedText + runs in localStorage (last 5)
@@ -1224,6 +1241,7 @@ src/
 │   ├── math/relax.ts              # hoofdrekenen relaxation ladder (preset→masks→bridges→termCount); strict first, settings untouched
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
 │   ├── clock/{clockTypes.ts,clockGenerator.ts}
+│   ├── clock/clockDrag.ts         # Oefenmodus: which hands the pupil moves (handChoice), minute step, face maths (klokMinuteTo / klokHourTo / klokStep), klokGiven; shared by ClockDragFace and KLOK_KIOSK
 │   ├── fractions/{fractionGenerator.ts,breukBewerkGenerator.ts}   # breukBewerk = gemengd/gelijknamig/vereenvoudigen
 │   ├── splitsen/{splitsenGenerator.ts,dutchWords.ts}   # basic/splitsboom/verliefde-harten/positie-*
 │   ├── cijferen/cijferGenerator.ts
@@ -1255,6 +1273,7 @@ src/
 │   ├── kalender/kalenderGenerator.ts           # month grid / date arithmetic / notatie (nl-BE names)
 │   ├── controleren/controlerenGenerator.ts     # negenproef + omgekeerde bewerking (negenrest)
 │   ├── weegschaal/weegschaalGenerator.ts       # dial values on the schaalverdeling (BEREIK_STEPS, formatGewicht)
+│   ├── vormleer/hoekDrag.ts                    # Oefenmodus: hoek class as centre ± tolerance over 5° snaps (hoekTarget), hoekFromPoint, hoekStep; shared by HoekDragSVG and VORMLEER_KIOSK
 │   ├── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES + buildScenario (one niveau scenario for both modes)
 │   └── vormleer/scenarioLayout.ts              # layoutScenario(): viewBox geometry + collision-free label placement for punt-lijn figures (asserted by vormleer.test.ts)
 └── components/
@@ -1304,7 +1323,10 @@ src/
     │   └── plugins/*Config.tsx # one per family (+ addition/ & multiplication/ sub-settings; FractionMaxField = shared getalopbouw widget)
     └── viewer/
         ├── *Viewer.tsx + *SVG.tsx      # one renderer per family; ClockViewer/FractionViewer wrap item components
-        ├── ViewerInteractionContext.tsx # Phase C: null on the sheet; tap / tap-multi / fill-cells / order state + interactionProps / cellProps / toggled (§8, §15)
+        ├── ViewerInteractionContext.tsx # Phase C: null on the sheet; tap / tap-multi / fill-cells / order / build / drag state + interactionProps / cellProps / borrowedProps / toggled / built (§8, §15)
+        ├── kioskDrag.ts                # Phase C4: dragSurfaceProps / dragHandleProps (pointer + slider keys), clockAngle / snap / clamp; {} without a drag context
+        ├── ClockDragFace.tsx           # analoge klok with draggable wijzers (AnalogClockSVG + handles); ClockExerciseItem renders it only under the drag context
+        ├── HoekDragSVG.tsx             # angle with a draggable free been (vormleer hoek tekenen); VormleerViewer renders it only under the drag context
         ├── KioskCell.tsx               # a fill-cells blank: an <input> in the kiosk, its children (the sheet's blank) elsewhere
         ├── BlockWidthContext.tsx       # printable width of the block's CELL — viewers MUST read this, never a constant; also ScaffoldProvider / useShowScaffold (§8)
         ├── VerticalFraction.tsx        # shared stacked-fraction component
@@ -1610,11 +1632,15 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 | `keys(c)?` | extra keypad keys `,` `/` `-` `' '` — from the SETTINGS only, never the exercise, so the keypad never hints at the answer |
 | `answerOf(ex, c)` | every accepted spelling (`'2,5'`, `'2.5'`); number+rest = exactly `[q, r]`; time = every accepted `h:mm` (8:05 and 20:05); multi-number = one entry per field, alternatives joined by `\|` |
 | `display(ex, c)` | plain text for the stats' error rows ("47 + ? = 85") |
-| `interact.kind` | `tap` (one part) · `tap-multi` (any number of parts; an empty set can be right) · `fill-cells` (type into the viewer's own blanks) · `order` (tap in sequence) |
+| `interact.kind` | `tap` (one part) · `tap-multi` (any number of parts; an empty set can be right) · `fill-cells` (type into the viewer's own blanks) · `order` (tap in sequence) · `build` (lay pieces from the tray; the laid VALUE counts, not the make-up) · `drag` (move a handle; compared part by part within `tolerance`) |
 | `interact.answerOf` / `fromState` | the canonical answer and the pupil's answer from the viewer state, same shape: parts joined by `INTERACT_SEP` (`' · '`). tap-multi compares order-free; fill-cells part by part as numbers, `\|` = alternatives, an empty alternative = the cell may stay blank (`'\|1'` = a carry the pupil may skip). `fromState` = `''` means nothing given yet (Controleer stays off, except tap-multi) |
 | `interact.keys?` | every key the viewer marks (tests tap through them); fill-cells: also the cell order Tab walks and the keypad's first cell |
 | `interact.cellOf?(key)` | fill-cells: `{ length?, scratch? }` per cell: characters it holds (a full cell hands the keypad on) and whether it is scratch (a carry: off the Enter / auto-advance path, tapped). From the cell's role only, never its value |
+| `interact.pieces?(ex, c)` / `KioskPiece` | build: the tray in display order, `{ key, label, value, max? }` (value = what one piece adds: cents or units; `max` = most the pupil can lay, MAB 9 per place). From the SETTINGS (or the shown note), never the answer. The picture comes from `EXERCISE_UI[typeId].TrayPiece` (the registry stays free of React); absent = the label |
+| `interact.tolerance?(ex, c)` | drag: how far a part may lie from `answerOf` and still be right, in the part's own unit (minutes for an `h:mm` part on a 12-hour face, degrees, grams); absent = 0. check.ts `nearPart` |
 | `interact.show?(answer)` | stats text of an answer string (the tapped number, not its index); absent = the parts |
+| `prepare?(c, rng)` | the kiosk-adjusted constraints for ONE exercise, drawn with the scheduler's RNG; `nextExercise` calls it per draw and generates from the result, which is also what `answerOf` / `display` / check receive and what `current` stores. geld-wissel uses it to pick one of the teacher's `exerciseBills` (the sheet gives exercise i the i-th bill) |
+| `extraKeys?(ex, c)` / `KioskExtraKey` | fill-cells action keys beside the character keys: `{ id, label, hotkeys?, hint?, apply(state, activeCell, ex, c) }`; `apply` returns the new card state or `null` (no change). The Keypad draws each, `Kiosk` maps the hotkeys while a card cell is active, `pressExtra(id)` runs it. From the operator / settings, never the answer. Cijferen aftrekken: Lenen |
 | `kioskInstruction?` | the card header when the paper instruction names a pen verb (omcirkel, kleur, vul in) but the kiosk asks a tap or a typed cell; string or `(ex, c) => string \| undefined`. A teacher's own wording wins; the leaf's default gives way to this (`kioskInstructionOf`) |
 | `interact?` / `interactOf(c)?` | required whenever `input` / `inputOf` can be `interactive`: `{ kind, answerOf, fromState, keys?, cellOf?, show? }` (rows below). `interactOf` picks per SETTINGS (plaatswaarde: tap a letter or fill the tabel; undefined falls back to `interact`); read both through `kioskInteractOf(d, c)` |
 | `supported(c)?` | settings this descriptor can check (splitsen: four layouts; breuken: kleuren / herkennen / hoeveelheid); `kioskSupports` evaluates it over the registry defaults + the leaf's; the builder excludes an unsupported row with a hint |
@@ -1709,7 +1735,7 @@ typing into the answer panel.
 
 - **Context** ([ViewerInteractionContext.tsx](../../src/components/viewer/ViewerInteractionContext.tsx), §8):
   `ExerciseCard` provides `{ kind, state, set, activeCell, focusCell, typeCell }` from the store
-  (`interaction: { selected, cells, order }`, `activeCell`) when `kioskInteractOf` answers and
+  (`interaction: { selected, cells, order, build, marks?, drag? }`, `activeCell`) when `kioskInteractOf` answers and
   `kioskInputOf` is `interactive`; otherwise no provider.
 - **Viewer marks** its parts once with `interactionProps(ctx, key, 'tap' | 'order')` and its blanks with
   `<KioskCell cellKey>`. Keys are positions (`'0'`, `'2'`), never values, so the DOM does not hint at the answer.
@@ -1734,14 +1760,39 @@ typing into the answer panel.
   `true` fails a blank one too. Deelbaarheid-kleuren shows at most `KIOSK_MAX_NUMBERS` (20) numbers, never
   fewer than two multiples (`kioskNumbers`).
 
-**Who answers how.** 101 sidebar leaves are capable at their defaults (`kioskCapableLeaves().length`);
-`KIOSK_LEAF_TABLE_V1` has 103 entries (`lengte-meten` and `omtrek` are in it but only capable with labelled sides).
+- **Build (C3)**: the answer panel shows [Tray.tsx](../../src/oefenen/kiosk/Tray.tsx) instead of the keypad
+  (`currentInput().pieces`); store actions `lay(key, ±1)` (capped by the piece's `max`, only in phase `exercise`),
+  `clearBuild()` (the panel's Wissen) and Backspace = take back the newest kind laid. `fromState` sums
+  `count × value` (total cents, the number): `'` until something is laid; the tray never shows the running total,
+  because adding up IS the exercise. Geld-tekenen offers the ticked coins up to the top amount, geld-wissel
+  everything below the shown note down to a hundredth of it (the note itself is not in it), geld-teruggeven
+  (tekenen-schrijven) everything below the note paid with, mab-tekenen D / H / T / E up to `maxNumber`.
+- **Drag (C4)**: handles on the viewer's own SVG via `kioskDrag.ts` (§8); values are snapped in the viewer's pure
+  helpers ([clockDrag.ts](../../src/services/clock/clockDrag.ts), [hoekDrag.ts](../../src/services/vormleer/hoekDrag.ts)),
+  the descriptor's `fromState` turns them into the answer string and `tolerance` decides what counts. A hand
+  the pupil does not set stays printed and fixed (`handChoice`); `fromState` is `'` until every hand they set
+  is placed. Klok: grote wijzer in 5-minute steps (1 with nauwkeurig) and the kleine wijzer travels with it;
+  3:15 and 15:15 are one face position. Thermometer: 1 °C steps, exact. Weegschaal: snapped to the dial step,
+  within half a step. Hoek: 5° steps, right anywhere inside the class (scherp 5–85°, recht 90°, stomp 95–175°,
+  gestrekt 180°). Keyboard alternative: each handle is a slider, arrows step it.
+- **Lenen (cijferen aftrekken)**: the key is always present for a subtraction, **always exchanges when pressed (needed
+  or not) and never hints** (`cijferLenen`, [cijferCells.ts](../../src/services/cijferen/cijferCells.ts)): on the
+  active column the column to its left gives one (a 0 on the way becomes 9) and this column gets ten more, written in
+  the exchange cells `b<i>`; `marks` (`got` / `lent`) make the card strike the old printed digits
+  (`borrowedProps` → `data-kiosk-borrowed`). `null` (no change) for another operator, no column cell, a column that
+  already got ten, or nothing left of it to lend. Hotkeys `l`, `L`, `-`; the active cell stays so the pupil types the
+  column's digit next. The answer check never reads `marks`.
+
+**Who answers how.** 108 sidebar leaves are capable at their defaults (`kioskCapableLeaves().length`);
+`KIOSK_LEAF_TABLE_V1` has 110 entries (`lengte-meten` and `omtrek` are in it but only capable with labelled sides).
 
 | Way | Leaves |
 |---|---|
 | **tap** | plaatswaarde plaats-omcirkelen (2) · vergelijken kiezen · getalfunctie aankruisen · controleren (2: juist / fout) · maateenheid kiezen |
 | **tap-multi** | even-oneven rooster · deelbaarheid tabel / rooster / omcirkelen / kleurraster · breuken kleuren |
 | **order** | ordenen nat / dec / rat / geh (4) · breuken-rangschikken |
+| **build** | geld-tekenen · geld-wissel · geld-teruggeven when antwoordType = tekenen-schrijven · mab-tekenen |
+| **drag** | klok-analoog-tekenen (wijzers) · vormleer-hoeken-tekenen (the been) · temperatuur-kleuren (kwik) · massa-weegschaal-tekenen (wijzer) |
 | **fill-cells** | cijferen × 8 · splitsen × 4 · afronden rooster × 2 · plaatswaarde tabel · patronen × 3 + kettingsommen · getallenassen × 4 · getallenrijen × 4 · verbanden tabel / paren / procenten-verbanden |
 | **typed / choice** (answer panel) | the rest: hoofdrekenen, procenten, schattend, rekenvolgorde, mab, romeinse, breuken-bewerken, breuken herkennen / hoeveelheid, geld, temperatuur, weegschaal, oppervlakte, herleidingen, klok, tijdsduur, deelbaarheid veelvouden (typed) · vergelijken getallen / representaties, vormleer, even-oneven cirkels (choice) |
 
