@@ -27,7 +27,9 @@ export default function AnswerInput() {
     if (info.kind === 'choice') {
         // Signs (< = >) stay big; words (even, honderdtallen) get a size that fits a button.
         const words = info.choices.some(c => c.length > 2);
-        const cols = info.choices.length === 2 || info.choices.length === 4 ? 2 : 3;
+        // A long word (honderdtallen, parallellogram) needs half the panel, never a mid-word break.
+        const longWord = info.choices.some(c => c.length > 9);
+        const cols = info.choices.length === 2 || info.choices.length === 4 || longWord ? 2 : 3;
         return (
             <div className="kiosk-answer">
                 <div className={`kiosk-choices${words ? ' is-words' : ''}`} role="radiogroup" aria-label="Kies het antwoord"
@@ -46,12 +48,18 @@ export default function AnswerInput() {
 
     const text = info.kind === 'text';
     const many = info.labels.length > 2;
+    const sep = SEPARATOR[info.kind] ?? info.separator;
+    // Named fields (kg / g, korting / nieuwe prijs) keep their name visible once typed in;
+    // numbered ones (a getallenrij's blanks) read left to right without one.
+    const captions = info.kind === 'multi-number' && info.labels.some(l => !/^\d+$/.test(l));
     return (
         <div className="kiosk-answer">
             <div className={`kiosk-fields${many ? ' is-many' : ''}`}>
                 {info.labels.map((label, i) => (
                     <Fragment key={`${label}-${i}`}>
-                        {i > 0 && SEPARATOR[info.kind] && <span className="kiosk-field-sep" aria-hidden>{SEPARATOR[info.kind]}</span>}
+                        {i > 0 && sep && <span className="kiosk-field-sep" aria-hidden>{sep}</span>}
+                        <label className={captions ? 'kiosk-field-wrap' : 'kiosk-field-bare'}>
+                        {captions && <span className="kiosk-field-cap">{label}</span>}
                         <input
                             aria-label={label}
                             placeholder={label}
@@ -67,6 +75,7 @@ export default function AnswerInput() {
                             onChange={e => setField(i, e.target.value)}
                             onFocus={() => focusField(i)}
                         />
+                        </label>
                     </Fragment>
                 ))}
             </div>

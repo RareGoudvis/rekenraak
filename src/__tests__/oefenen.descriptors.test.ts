@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import type { AfrondenExercise, CijferExercise, Equation, Fraction, ProcentExercise, VergelijkenExercise } from '../services/math/types';
 import type { KioskDescriptor, KioskInput, OefenSessie, OefenType } from '../services/oefenen/types';
-import type { AppLeaf } from '../config/appstructure';
+import { flattenLeaves, type AppLeaf } from '../config/appstructure';
 import { LEERJAREN, type Leerjaar } from '../config/gradePresets';
 import { seedConstraints } from '../config/baseSettings';
 import { targetsFor } from '../services/afronden/afrondenGenerator';
@@ -36,6 +36,9 @@ const EXPECTED_LEAVES = [
     'even-oneven-cirkels', 'romeinse-herkennen', 'romeinse-schrijven', 'getalbegrip-functie', 'mab-herkennen',
     'schattend-nat', 'schattend-dec', 'handig-rekenvolgorde', 'controleren-negenproef', 'controleren-omgekeerde',
     'vormleer-hoeken-herkennen', 'vormleer-vierhoeken',
+    'temperatuur-aflezen', 'temperatuur-verschil', 'massa-weegschaal-aflezen', 'oppervlakte-rooster', 'oppervlakte-berekenen',
+    'maateenheid-kiezen', 'herleidingen-lengte', 'herleidingen-inhoud', 'herleidingen-massa', 'herleidingen-oppervlakte',
+    'geld-herkennen', 'geld-teruggeven', 'geld-rekenen-korting', 'geld-rekenen-intrest',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -132,6 +135,62 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
     },
     'vormleer-hoeken': (v: T.VormleerExercise) => CONCEPT_NAMES[v.concept],
     'vormleer-figuren': (v: T.VormleerExercise) => CONCEPT_NAMES[v.concept],
+    temperatuur: (t: T.TemperatuurExercise, c) => (c.variant === 'verschil' ? Math.abs(t.celsius - t.celsius2!) : t.celsius),
+    weegschaal: (w: T.WeegschaalExercise, c) => {
+        const n = w.notatie ?? c.notatie;
+        if (n === 'kg-g') return { multi: [Math.floor(w.grams / 1000), w.grams % 1000] };
+        return n === 'kg-komma' ? w.grams / 1000 : w.grams;
+    },
+    'lengte-meten': (m: T.MeetExercise) => {
+        const len = (m.points ?? []).slice(1).reduce((s, p, i) => s + Math.hypot(p.x - m.points![i].x, p.y - m.points![i].y), 0);
+        expect(Math.abs(len - m.perimeter)).toBeLessThan(0.05);
+        return m.claimCorrect ? 'juist' : 'fout';
+    },
+    omtrek: (m: T.MeetExercise) => {
+        const p = m.kind === 'cirkel' ? 2 * Math.PI * m.radius! : m.sides!.reduce((a, b) => a + b, 0);
+        expect(Math.abs(p - m.perimeter)).toBeLessThan(0.05);
+        return Math.round(m.perimeter * 10) / 10;
+    },
+    oppervlakte: (m: T.MeetExercise, c) => {
+        if (m.shape === 'rechthoek' || m.shape === 'vierkant') expect(m.area).toBe(m.sides![0] * m.sides![1]);
+        const area = Math.round(m.area! * 10) / 10;
+        return c.askOmtrek && c.subType !== 'rooster' ? { multi: [area, Math.round(m.perimeter * 10) / 10] } : area;
+    },
+    maateenheid: (m: T.MaateenheidExercise, c) => {
+        const chip = c.subType === 'schatten' ? `${formatMathNumber(m.value)} ${m.unit}` : m.unit;
+        return m.choices ? chip : { text: [m.unit] };
+    },
+    herleidingen: (h: T.HerleidingExercise) => {
+        // Both sides are the same quantity in base units (m, l, g, m²).
+        const base = (ps: T.HerleidingPart[]) => ps.reduce((s, p) => s + p.value * UNIT[p.key], 0);
+        expect(scaled(base(h.toParts)), JSON.stringify(h)).toBe(scaled(base(h.fromParts)));
+        if (h.blank === 'unit') return h.toParts[0].key;
+        return h.toParts.length > 1 ? { multi: h.toParts.map(p => p.value) } : h.toParts[0].value;
+    },
+    'geld-herkennen': (g: T.GeldExercise) => {
+        expect(g.denominations.reduce((s, d) => s + d.valueCents * d.count, 0)).toBe(g.amountCents);
+        return g.amountCents / 100;
+    },
+    'geld-teruggeven': (g: T.GeldTeruggevenExercise, c) => {
+        const change = g.payWithCents - g.priceCents;
+        expect(g.changeCents).toBe(change);
+        return c.antwoordFormat === 'decimaal' ? change / 100 : { multi: [Math.floor(change / 100), change % 100] };
+    },
+    'geld-rekenen': (g: T.GeldRekenenExercise) => {
+        if (g.subType === 'korting') {
+            const korting = g.priceCents! * g.percent! / 100;
+            return { multi: [korting / 100, (g.priceCents! - korting) / 100] };
+        }
+        return g.capitalCents! * g.percent! / 100 * ((g.months ?? 12) / 12) / 100;
+    },
+};
+
+// Every unit herleidingen uses, in its measure's base unit (m, l, g, m²).
+const UNIT: Record<string, number> = {
+    km: 1000, hm: 100, dam: 10, m: 1, dm: 0.1, cm: 0.01, mm: 0.001,
+    kl: 1000, hl: 100, dal: 10, l: 1, dl: 0.1, cl: 0.01, ml: 0.001,
+    ton: 1e6, kg: 1000, hg: 100, dag: 10, g: 1, dg: 0.1, cg: 0.01, mg: 0.001,
+    'km²': 1e6, 'hm²': 1e4, 'dam²': 100, 'm²': 1, 'dm²': 0.01, 'cm²': 1e-4, 'mm²': 1e-6, ha: 1e4, a: 100, ca: 1,
 };
 
 // Written from scratch: subtractive Roman numerals (IV, XC, CM).
@@ -196,8 +255,29 @@ describe('descriptor answers agree with the generators', () => {
         ['afronden-dec-simpel', { decimalPlaces: 3, roundTargets: ['E', 't', 'h'] }, 'number'],
         ['procenten-welk', { percents: [1, 5, 10, 20, 25, 50, 75] }, 'number'],
         ['vergelijken-getallen', { decimalPlaces: 2 }, 'choice'],
+        ['vergelijken-kiezen', { chooseTarget: 'kleinste', decimalPlaces: 1 }, 'choice'],
+        ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
+        ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
+        ['getalbegrip-functie', { answerMode: 'schrijven' }, 'text'],
+        ['controleren-negenproef', { foutAandeel: 'alles' }, 'choice'],
+        ['temperatuur-aflezen', { includeNegatives: true }, 'number'],
+        ['massa-weegschaal-aflezen', { notatie: 'kg-g', bereikGram: 5000, stepGram: 250 }, 'multi-number'],
+        ['massa-weegschaal-aflezen', { notatie: 'kg-komma', bereikGram: 5000, stepGram: 250 }, 'number'],
+        ['lengte-meten', { measureModel: 'gegeven' }, 'choice'],
+        ['omtrek', { measureModel: 'gegeven', precision: 'mm', shapes: ['cirkel', 'trapezium', 'ruit'] }, 'number'],
+        ['oppervlakte-berekenen', { askOmtrek: true, shapes: ['rechthoek', 'driehoek'] }, 'multi-number'],
+        ['maateenheid-kiezen', { answerMode: 'schrijven', grootheden: ['temperatuur', 'tijd'] }, 'text'],
+        ['maateenheid-kiezen', { subType: 'schatten' }, 'choice'],
+        ['herleidingen-massa', { formats: ['enkel-samengesteld'], compoundMode: 'volledig' }, 'multi-number'],
+        ['herleidingen-lengte', { formats: ['enkel-eenheid'] }, 'choice'],
+        ['geld-herkennen', { format: 'decimaal' }, 'number'],
+        ['geld-teruggeven', { antwoordFormat: 'decimaal' }, 'number'],
+        ['geld-rekenen-korting', { wholeEuros: false }, 'multi-number'],
+        ['geld-rekenen-intrest', { halfYear: true }, 'number'],
     ])('%s + %j → %s', (leafId, extra, want) => {
-        const leaf = kioskCapableLeaves().find(l => l.id === leafId)!;
+        // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
+        const leaf = flattenLeaves().find(l => l.id === leafId)!;
+        expect(kioskSupports(leaf.typeId, { ...leaf.defaultConstraints, ...extra })).toBe(true);
         const inputs = agreeOverSeeds(leaf, extra);
         expect(inputs.get(want as KioskInput) ?? 0, JSON.stringify([...inputs])).toBeGreaterThan(0);
     });
@@ -344,7 +424,8 @@ describe('text, time and multi-number checks', () => {
         expect(checkAnswer(d, {}, {}, ['12', '3/2'])).toBe(false);
     });
     test('sanitize: a text field keeps letters, a time field two digits', () => {
-        expect(sanitizeAnswer('MM3x IV!', [], 'text')).toBe('MMx IV');
+        expect(sanitizeAnswer('MM3x IV!', [], 'text')).toBe('MM3x IV');
+        expect(sanitizeAnswer('°C;', [], 'text')).toBe('°C');
         expect(sanitizeAnswer('1234', [], 'time')).toBe('12');
         expect(sanitizeAnswer('1:2', [':'], 'time')).toBe('12');
     });

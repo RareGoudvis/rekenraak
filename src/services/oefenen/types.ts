@@ -69,6 +69,8 @@ export interface KioskDescriptor<E = unknown> {
     choicesOf?(ex: E, c: Record<string, unknown>): string[];
     // multi-number: one placeholder per field, e.g. ['1ste', '2de']; absent = numbered.
     labels?(ex: E, c: Record<string, unknown>): string[];
+    // multi-number: the sign printed between the fields (ordenen: '<' or '>').
+    separator?(ex: E, c: Record<string, unknown>): string;
     keys?(c: Record<string, unknown>): KioskKey[];
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
     // number+rest: exactly [quotiënt, rest]. time: every accepted 'h:mm' (8:05 and 20:05).

@@ -289,6 +289,25 @@ html:has(.oefen-body),
 .kiosk-field:focus { outline: none; border-color: var(--accent); }
 /* A word (MMXIV, cm) is read in the UI face, not the sheet's digits. */
 .kiosk-field.is-text { font-family: var(--font-ui); }
+/* A field keeps the flex slot itself unless it carries a caption above it. */
+.kiosk-field-bare { display: contents; }
+.kiosk-field-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.kiosk-field-cap {
+  font-family: var(--font-ui);
+  font-size: calc(var(--kiosk-text) * 0.8);
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 /* Three or more blanks (a getallenrij): smaller digits so every field fits one row. */
 .kiosk-fields.is-many { gap: var(--sp-1); }
 .kiosk-fields.is-many .kiosk-field {
@@ -374,7 +393,8 @@ html:has(.oefen-body),
   font-family: var(--font-ui);
   font-size: var(--kiosk-text);
   font-weight: 600;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .kiosk-choice.is-picked {
   border-color: var(--accent);

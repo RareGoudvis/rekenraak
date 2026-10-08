@@ -70,6 +70,9 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     'even-oneven-cirkels', 'romeinse-herkennen', 'romeinse-schrijven', 'getalbegrip-functie', 'mab-herkennen',
     'schattend-nat', 'schattend-dec', 'handig-rekenvolgorde', 'controleren-negenproef', 'controleren-omgekeerde',
     'vormleer-hoeken-herkennen', 'vormleer-vierhoeken',
+    'temperatuur-aflezen', 'temperatuur-verschil', 'massa-weegschaal-aflezen', 'oppervlakte-rooster', 'oppervlakte-berekenen',
+    'maateenheid-kiezen', 'herleidingen-lengte', 'herleidingen-inhoud', 'herleidingen-massa', 'herleidingen-oppervlakte',
+    'geld-herkennen', 'geld-teruggeven', 'geld-rekenen-korting', 'geld-rekenen-intrest', 'lengte-meten', 'omtrek',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [

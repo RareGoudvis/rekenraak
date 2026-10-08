@@ -1,7 +1,7 @@
 import type { MathBlock, VormleerExercise, MeetPoint } from '../../services/math/types';
 import { CONCEPT_NAMES, elementName } from '../../services/vormleer/vormleerGenerator';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useShowScaffold, useSheetSizePx } from './BlockWidthContext';
 import type { VormleerConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { layoutScenario } from '../../services/vormleer/scenarioLayout';
@@ -424,6 +424,8 @@ function HoekMetenSVG({ ex, raster, hulplijn }: { ex: VormleerExercise; raster: 
 
 export default function VormleerViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // The oefenmodus card offers the bank as its own buttons.
+    const scaffold = useShowScaffold();
     const sheetPx = useSheetSizePx('math');
     const exercises: VormleerExercise[] = block.vormleerExercises || [];
     const c = block.constraints as VormleerConstraints;
@@ -479,7 +481,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     const bankWords = isScenario ? scenarioBank()
         : isRelationMode ? [...new Set(exercises.flatMap(ex => (ex.relations ?? []).flatMap(r => RELATION_WORDS[r.kind] ?? [])))]
         : concepts.map(k => CONCEPT_NAMES[k] ?? k);
-    const woordbank = answerMode === 'woordbank' && (mode === 'herkennen' || mode === 'benoemen') && bankWords.length > 0 && (
+    const woordbank = scaffold && answerMode === 'woordbank' && (mode === 'herkennen' || mode === 'benoemen') && bankWords.length > 0 && (
         <div key="bank" className="print-exercise" style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', marginBottom: '6px' }}>
             <strong>Kies uit: </strong>{bankWords.join(' · ')}
         </div>

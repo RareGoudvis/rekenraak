@@ -30,7 +30,10 @@ function usedExtent(inner: HTMLElement): { x: number; w: number } {
     const scale = inner.offsetWidth ? outer.width / inner.offsetWidth : 0;
     let left = Infinity, right = -Infinity;
     inner.querySelectorAll<HTMLElement | SVGElement>('*').forEach((el) => {
-        if (el.children.length > 0 && !(el instanceof SVGSVGElement)) return;
+        // A parent with its own text ("Een pil weegt ongeveer 500 <blank>.") is measured too,
+        // or only its blank would count and the card would crop the sentence off.
+        const ownText = [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== '');
+        if (el.children.length > 0 && !ownText && !(el instanceof SVGSVGElement)) return;
         const r = el.getBoundingClientRect();
         if (r.width <= 0 && r.height <= 0) return;
         left = Math.min(left, r.left - outer.left);
@@ -39,7 +42,9 @@ function usedExtent(inner: HTMLElement): { x: number; w: number } {
     if (!(scale > 0) || right <= left) return { x: 0, w: VIRTUAL_W };
     // 4 px slack each side: italic glyphs and blank lines can draw past their box.
     const x = Math.max(0, Math.floor(left / scale) - 4);
-    return { x, w: Math.min(VIRTUAL_W, Math.ceil(right / scale) + 4) - x };
+    // Not capped at VIRTUAL_W: a fixed-width table (getalfunctie's tick columns) overflows the
+    // 340 px box, and the card scales it down whole instead of cutting its last columns off.
+    return { x, w: Math.ceil(right / scale) + 4 - x };
 }
 
 export default function ExerciseCard({ typeId, exercise, constraints, instruction, exerciseKey }: Props) {

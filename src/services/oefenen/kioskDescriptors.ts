@@ -1,6 +1,8 @@
 import type {
-    AfrondenExercise, CijferExercise, ControleExercise, Equation, EvenOnevenExercise, Fraction, GetalFunctieExercise, MabExercise,
-    PlaatswaardeExercise, ProcentExercise, RekenvolgordeExercise, RomeinseExercise, SchattendExercise, VergelijkenExercise, VormleerExercise,
+    AfrondenExercise, CijferExercise, ControleExercise, Equation, EvenOnevenExercise, Fraction, GeldExercise, GeldRekenenExercise,
+    GeldTeruggevenExercise, GetalFunctieExercise, HerleidingExercise, HerleidingPart, MaateenheidExercise, MabExercise, MeetExercise,
+    PlaatswaardeExercise, ProcentExercise, RekenvolgordeExercise, RomeinseExercise, SchattendExercise, TemperatuurExercise,
+    VergelijkenExercise, VormleerExercise, WeegschaalExercise,
 } from '../math/types';
 import type { KioskDescriptor, KioskInput, KioskKey } from './types';
 import { isFraction } from '../math/answerKeys';
@@ -288,4 +290,143 @@ export const VORMLEER_KIOSK = descriptor<VormleerExercise>({
         const ks = conceptsOf(c);
         return ks.length >= 2 && !(ks.some(k => BY_ANGLE.includes(k)) && ks.some(k => BY_SIDE.includes(k)));
     },
+});
+
+// ── Meten ────────────────────────────────────────────────────────────────────
+
+// aflezen: read the thermometer; verschil: the difference (never negative). Kleuren is drawing.
+export const TEMPERATUUR_KIOSK = descriptor<TemperatuurExercise>({
+    input: 'number',
+    keys: (c) => (c.includeNegatives && c.variant === 'aflezen' ? ['-'] : []),
+    answerOf: (ex) => numberSpellings(ex.variant === 'verschil' ? Math.abs(ex.celsius - (ex.celsius2 ?? 0)) : ex.celsius),
+    display: (ex) => (ex.variant === 'verschil' ? `verschil ${ex.celsius} °C en ${ex.celsius2 ?? 0} °C = ? °C` : 'thermometer: ? °C'),
+    supported: (c) => c.variant === 'aflezen' || c.variant === 'verschil',
+});
+
+// The dial reads in the block's notatie: grams, kilograms with a comma, or kg + g (two fields).
+const gewichtNotatie = (ex: WeegschaalExercise, c: Record<string, unknown>) => ex.notatie ?? (c.notatie as string | undefined) ?? 'g';
+export const WEEGSCHAAL_KIOSK = descriptor<WeegschaalExercise>({
+    input: 'number',
+    inputOf: (ex, c) => (gewichtNotatie(ex, c) === 'kg-g' ? 'multi-number' : 'number'),
+    keys: (c) => (c.notatie === 'kg-komma' ? [','] : []),
+    labels: () => ['kg', 'g'],
+    answerOf: (ex, c) => {
+        const n = gewichtNotatie(ex, c);
+        if (n === 'kg-g') return [String(Math.floor(ex.grams / 1000)), String(ex.grams % 1000)];
+        return numberSpellings(n === 'kg-komma' ? ex.grams / 1000 : ex.grams);
+    },
+    display: (ex, c) => `weegschaal: ? ${gewichtNotatie(ex, c) === 'kg-komma' ? 'kg' : gewichtNotatie(ex, c) === 'kg-g' ? 'kg ? g' : 'g'}`,
+    supported: (c) => (c.mode ?? 'aflezen') === 'aflezen',
+});
+
+// Labelled sides only ('gegeven'): measuring with a ruler on a scaled card is not to size.
+// lengte-meten asks juist / fout about the stated length; omtrek the perimeter (round1, cm).
+const round1 = (v: number) => Math.round(v * 10) / 10;   // SYNC: MetenViewer round1
+const isGegeven = (c: Record<string, unknown>) => c.measureModel === 'gegeven';
+export const LENGTE_KIOSK = descriptor<MeetExercise>({
+    input: 'choice',
+    choices: ['juist', 'fout'],
+    answerOf: (ex) => [ex.claimCorrect ? 'juist' : 'fout'],
+    display: (ex) => `lengte = ${showNum(round1(ex.claim ?? 0))} cm: juist of fout?`,
+    supported: isGegeven,
+});
+export const OMTREK_KIOSK = descriptor<MeetExercise>({
+    input: 'number',
+    keys: (c) => (c.precision === 'mm' || (c.shapes as string[] | undefined)?.includes('cirkel') ? [','] : []),
+    answerOf: (ex) => numberSpellings(round1(ex.perimeter)),
+    display: (ex) => `omtrek ${ex.shape ?? ex.kind} = ? cm`,
+    supported: isGegeven,
+});
+
+// Rooster: count the squares; berekenen: the area (+ the omtrek as a second field when asked).
+const asksOmtrek = (c: Record<string, unknown>) => !!c.askOmtrek && c.subType !== 'rooster';
+export const OPPERVLAKTE_KIOSK = descriptor<MeetExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (asksOmtrek(c) ? 'multi-number' : 'number'),
+    keys: (c) => (c.subType === 'rooster' ? [] : [',']),
+    labels: () => ['opp. cm²', 'omtrek cm'],
+    answerOf: (ex, c) => {
+        const area = numberSpellings(round1(ex.area ?? 0));
+        return asksOmtrek(c) ? [area.join('|'), numberSpellings(round1(ex.perimeter)).join('|')] : area;
+    },
+    display: (ex) => `oppervlakte ${ex.shape ?? ''} = ? cm²`,
+});
+
+// omcirkelen: tap one of the sheet's chips; schrijven: type the unit ('°C' also as 'C').
+// SYNC: MaateenheidViewer chipText (schatten shows value + unit).
+const chipText = (ex: MaateenheidExercise, c: Record<string, unknown>, u: string) =>
+    (c.subType === 'schatten' ? `${showNum(ex.value)} ${u}` : u);
+export const MAATEENHEID_KIOSK = descriptor<MaateenheidExercise>({
+    input: 'choice',
+    inputOf: (ex) => (ex.choices ? 'choice' : 'text'),
+    choicesOf: (ex, c) => (ex.choices ?? []).map(u => chipText(ex, c, u)),
+    answerOf: (ex, c) => (ex.choices ? [chipText(ex, c, ex.unit)] : [...new Set([ex.unit, ex.unit.replace('°', '')])]),
+    display: (ex) => ex.sentence.replace('___', '?'),
+    // Schatten written out is a number and a unit in one line: not one word to check.
+    supported: (c) => !(c.answerMode === 'schrijven' && c.subType === 'schatten'),
+});
+
+// number blank: one field per part (2 m 35 cm → two fields, labelled with the units); unit
+// blank: tap the unit. Units the pupil writes next to a number (writeUnits) are not asked.
+const herleidUnits = (ex: HerleidingExercise, c: Record<string, unknown>) =>
+    [...new Set([...((c.units as string[] | undefined) ?? []), ...ex.fromParts.map(p => p.key), ...ex.toParts.map(p => p.key)])];
+const partsText = (ps: HerleidingPart[]) => ps.map(p => `${showNum(p.value)} ${p.key}`).join(' ');
+export const HERLEIDINGEN_KIOSK = descriptor<HerleidingExercise>({
+    input: 'number',
+    inputOf: (ex) => (ex.blank === 'unit' ? 'choice' : ex.toParts.length > 1 ? 'multi-number' : 'number'),
+    choicesOf: herleidUnits,
+    labels: (ex) => ex.toParts.map(p => p.key),
+    answerOf: (ex) => {
+        if (ex.blank === 'unit') return [ex.toParts[0].key];
+        return ex.toParts.length > 1 ? ex.toParts.map(p => String(p.value)) : numberSpellings(ex.toParts[0].value);
+    },
+    display: (ex) => (ex.blank === 'unit'
+        ? `${partsText(ex.fromParts)} = ${showNum(ex.toParts[0].value)} ?`
+        : `${partsText(ex.fromParts)} = ${ex.toParts.map(p => `? ${p.key}`).join(' ')}`),
+    supported: (c) => !c.writeUnits,
+});
+
+// ── Geld ─────────────────────────────────────────────────────────────────────
+
+const euros = (cents: number) => numberSpellings(cents / 100);
+// Whole euros bare (€ 10), else always two cent digits (€ 1,70), like the sheet.
+const showEuro = (cents: number) => `€ ${cents % 100 === 0 ? showNum(cents / 100) : formatMathNumber((cents / 100).toFixed(2))}`;
+
+// The amount in euros; the decimaal format needs the comma.
+export const GELD_KIOSK = descriptor<GeldExercise>({
+    input: 'number',
+    keys: (c) => (c.format === 'decimaal' ? [','] : []),
+    answerOf: (ex) => euros(ex.amountCents),
+    display: (ex) => `${ex.denominations.filter(d => d.count > 0).map(d => `${d.count} × ${showEuro(d.valueCents)}`).join(' + ')} = € ?`,
+});
+
+// euro-cent (the default, and 'beide'): "__ euro en __ cent" as two fields; decimaal: € 3,75.
+const teruggevenDecimaal = (c: Record<string, unknown>) => c.antwoordFormat === 'decimaal';
+export const GELD_TERUGGEVEN_KIOSK = descriptor<GeldTeruggevenExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (teruggevenDecimaal(c) ? 'number' : 'multi-number'),
+    keys: (c) => (teruggevenDecimaal(c) ? [','] : []),
+    labels: () => ['euro', 'cent'],
+    answerOf: (ex, c) => (teruggevenDecimaal(c)
+        ? euros(ex.changeCents)
+        : [String(Math.floor(ex.changeCents / 100)), String(ex.changeCents % 100)]),
+    display: (ex) => `${showEuro(ex.priceCents)} betalen met ${showEuro(ex.payWithCents)}: terug ?`,
+});
+
+// korting: korting in € + nieuwe prijs (two fields); intrest: the interest. Winst asks a word too.
+// SYNC: GeldRekenenViewer rows.
+const kortingCents = (ex: GeldRekenenExercise) => ((ex.priceCents ?? 0) * (ex.percent ?? 0)) / 100;
+const intrestCents = (ex: GeldRekenenExercise) => ((ex.capitalCents ?? 0) * (ex.percent ?? 0)) / 100 * ((ex.months ?? 12) / 12);
+export const GELD_REKENEN_KIOSK = descriptor<GeldRekenenExercise>({
+    input: 'number',
+    inputOf: (ex) => (ex.subType === 'korting' ? 'multi-number' : 'number'),
+    keys: () => [','],
+    labels: () => ['korting €', 'nieuwe prijs €'],
+    answerOf: (ex) => (ex.subType === 'korting'
+        ? [euros(kortingCents(ex)).join('|'), euros((ex.priceCents ?? 0) - kortingCents(ex)).join('|')]
+        : euros(intrestCents(ex))),
+    display: (ex) => (ex.subType === 'korting'
+        ? `${showEuro(ex.priceCents ?? 0)} − ${ex.percent} %: korting ? nieuwe prijs ?`
+        : `${ex.percent} % van ${showEuro(ex.capitalCents ?? 0)} (${ex.months === 6 ? '6 maanden' : '1 jaar'}) = ?`),
+    supported: (c) => c.subType === 'korting' || c.subType === 'intrest',
 });

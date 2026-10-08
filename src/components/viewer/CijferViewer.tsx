@@ -627,7 +627,8 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                     }
                 </div>
             )}
-            {isDivision
+            {/* The oefenmodus card shows the sum alone: the grid is paper the pupil cannot write on there. */}
+            {!scaffold ? null : isDivision
                 ? <DivisionGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
                 : isMultiplication
                 ? <MultiplicationGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
@@ -649,7 +650,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                         : <div style={{ flex: 1, borderBottom: '1px solid #aaa', height: '13px', marginLeft: '2px' }} />}
                 </div>
             )}
-            {isDivision && (c.showQR !== false) && (
+            {isDivision && scaffold && (c.showQR !== false) && (
                 <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (
                         <>

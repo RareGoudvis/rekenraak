@@ -20,6 +20,8 @@ export type KioskCurrent = OefenCurrent & { constraints: Record<string, unknown>
 // Typed answers stay short: no answer the starter types ask for is longer, and a longer
 // string would overflow the answer field on a phone.
 const MAX_CHARS = 12;
+// The longest word answer is 'hoeveelheidsgetal' (17); the text field is a full row wide.
+const MAX_WORD_CHARS = 24;
 
 interface OefenState {
     sessie: OefenSessie | null;
@@ -59,6 +61,8 @@ export interface CurrentInput {
     choices: string[];
     // One placeholder per answer field (its count is the field count).
     labels: string[];
+    // multi-number: the sign between the fields (ordenen's < or >), from the descriptor.
+    separator?: string;
 }
 
 const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
@@ -79,15 +83,15 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
         const named = d.labels?.(cur.exercise, cur.constraints) ?? [];
         labels = Array.from({ length: n }, (_, i) => named[i] ?? `${i + 1}`);
     }
-    return { kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels };
+    return { kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints) };
 }
 
 const fieldsFor = (info: CurrentInput | null) => (info?.kind === 'choice' ? [''] : (info?.labels ?? ['']).map(() => ''));
 
 // Keeps what the field may hold: digits plus this type's extra keys; '.' types as ','.
-// A text field takes letters and spaces; a time field two digits.
+// A text field takes letters, digits, spaces and ° (°C, m²); a time field two digits.
 export function sanitizeAnswer(raw: string, keys: readonly string[], kind: KioskInput = 'number'): string {
-    if (kind === 'text') return raw.replace(/[^\p{L}\s]/gu, '').slice(0, MAX_CHARS + 4);
+    if (kind === 'text') return raw.replace(/[^\p{L}\p{N}\s°]/gu, '').slice(0, MAX_WORD_CHARS);
     let out = '';
     for (const ch0 of raw) {
         const ch = ch0 === '.' && keys.includes(',') ? ',' : ch0;
