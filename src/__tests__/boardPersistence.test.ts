@@ -3,7 +3,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
     BOARD_AUTOSAVE_KEY, BOARD_FORMAT_VERSION, BOARD_PRESETS_KEY, MAX_BOARD_PRESETS,
     parseBoardFile, saveBoardAutosave, loadBoardAutosave, clearBoardAutosave,
-    loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, emptyBoard,
+    loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, emptyBoard, type BoardPreset,
 } from '../board/boardPersistence';
 import { NATURAL_W } from '../board/widgetSizing';
 import { makeBoardBlock } from '../board/boardBlocks';
@@ -72,7 +72,8 @@ describe('parseBoardFile: strict on read', () => {
         ['a page without background', validFile([{ id: 'p', widgets: [], strokes: [] }])],
         ['widgets as an object', validFile([{ id: 'p', widgets: {}, strokes: [], background: {} }])],
         ['one good page and one partial page', validFile([...emptyBoard(), { id: 'p2', widgets: [] }])],
-        ['a null stroke', validFile([{ id: 'p', widgets: [], strokes: [null], background: {} }])],
+        ['a page without an id', validFile([{ widgets: [], strokes: [], background: {} }])],
+        ['a null background', validFile([{ id: 'p', widgets: [], strokes: [], background: null }])],
     ])('rejects %s', (_label, json) => {
         expect(parseBoardFile(json)).toBeNull();
     });
@@ -87,10 +88,27 @@ describe('parseBoardFile: strict on read', () => {
         expect(parseBoardFile(JSON.stringify({ version: 4, blocks: [], title: 'Blad' }))).toBeNull();
     });
 
-    // A hand-edited or foreign file passes the page-level check with junk inside; loading it
-    // crashes BoardPageCanvas (reads .id of a null widget) outside any error boundary.
-    test.fails('rejects a page whose widgets list holds a non-object', () => {
-        expect(parseBoardFile(validFile([{ id: 'p', widgets: [null], strokes: [], background: { pattern: 'blanco', dark: false } }]))).toBeNull();
+    // Junk inside a sound page (hand-edited or foreign file) used to load and crash BoardPageCanvas
+    // outside any error boundary; it is dropped, the good widgets and strokes survive.
+    test('drops junk widgets and strokes, keeps the sound ones', () => {
+        const good = { id: 'w', kind: 'klok', x: 1, y: 2, w: 300, z: 1 };
+        const stroke = { id: 's', tool: 'pen', color: '#000', width: 4, path: 'M 0 0', pts: [0, 0] };
+        const widgets = [
+            null, 7, 'x', [], good,
+            { ...good, id: 1 }, { ...good, kind: 'onbekend' }, { ...good, x: '1' }, { ...good, z: null },
+            { ...good, w: Infinity }, { ...good, kind: 'exercise' }, { ...good, kind: 'exercise', block: null },
+        ];
+        const f = parseBoardFile(validFile([{ id: 'p', widgets, strokes: [null, 3, { id: 's2' }, stroke], background: { pattern: 'blanco', dark: false } }]))!;
+        expect(f).not.toBeNull();
+        expect(f.pages[0].widgets).toEqual([good]);
+        expect(f.pages[0].strokes).toEqual([stroke]);
+    });
+
+    test.each([
+        [undefined, 0], [0, 0], [1, 1], [9, 1], [-1, 0], [1.5, 0], ['1', 0], [null, 0],
+    ])('activePageIdx %s on a 2-page file is read as %s', (idx, expected) => {
+        const json = JSON.stringify({ version: BOARD_FORMAT_VERSION, exportedAt: 'x', pages: [...emptyBoard(), ...emptyBoard()], activePageIdx: idx });
+        expect(parseBoardFile(json)!.activePageIdx).toBe(expected);
     });
 });
 
@@ -153,7 +171,7 @@ describe('presets (Mijn borden)', () => {
     test('save, list newest first, delete', () => {
         const st = buildFullBoard();
         saveBoardPreset('  Les 1  ', st.pages, 1);
-        const list = saveBoardPreset('', emptyBoard(), 0);
+        const list = saveBoardPreset('', emptyBoard(), 0) as BoardPreset[];
         expect(list.map((p) => p.name)).toEqual(['Naamloos bord', 'Les 1']);
         expect(list[1].pageCount).toBe(2);
         expect(list[1].payload.pages).toEqual(st.pages);
@@ -181,11 +199,17 @@ describe('presets (Mijn borden)', () => {
         expect(loadBoardPresets()).toEqual([]);
     });
 
-    // BoardBottomBar calls saveBoardPreset straight from a click handler: a board with a big
-    // image fills the quota, the throw escapes, nothing is saved and the teacher gets no message.
-    test.fails('a quota failure on preset save does not throw', () => {
+    // A board with a big image fills the quota: the save reports false (BoardBottomBar alerts)
+    // instead of throwing out of the click handler, and the stored list is untouched.
+    test('a quota failure on preset save returns false and keeps the list', () => {
+        saveBoardPreset('Klein', emptyBoard(), 0);
+        const before = localStorage.getItem(BOARD_PRESETS_KEY);
         vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
-        expect(() => saveBoardPreset('Groot', emptyBoard(), 0)).not.toThrow();
+        let result: ReturnType<typeof saveBoardPreset> = [];
+        expect(() => { result = saveBoardPreset('Groot', emptyBoard(), 0); }).not.toThrow();
+        expect(result).toBe(false);
+        vi.restoreAllMocks();
+        expect(localStorage.getItem(BOARD_PRESETS_KEY)).toBe(before);
     });
 });
 
@@ -244,13 +268,37 @@ describe('ids', () => {
         expect(unique(allIds(useBoardStore.getState().pages).blocks)).toBe(true);
     });
 
-    // duplicateWidget refreshes block.id ("the inspector's draft mirror keys on it"), but
-    // duplicatePage copies exercise blocks with the same id, so two widgets share one.
-    test.fails('duplicating a page gives its exercise blocks fresh ids', () => {
+    // The draftBlocks mirror and patchExercise key on block and exercise ids, so a page copy
+    // must share none of them with its source (duplicateWidget already gave fresh block ids).
+    const exerciseIds = (p: BoardPage) => p.widgets.flatMap((w) => {
+        if (!w.block) return [];
+        const items = (w.block as unknown as Record<string, { id?: string }[]>)[REGISTRY[w.block.typeId].exerciseField] ?? [];
+        return items.map((it) => it.id).filter((id): id is string => typeof id === 'string');
+    });
+
+    test('duplicating a page shares no id with the source page', () => {
         buildFullBoard();
         const exPage = useBoardStore.getState().pages.findIndex((p) => p.widgets.some((w) => w.kind === 'exercise'));
         useBoardStore.getState().gotoPage(exPage);
         useBoardStore.getState().duplicatePage();
-        expect(unique(allIds(useBoardStore.getState().pages).blocks)).toBe(true);
+        const pages = useBoardStore.getState().pages;
+        const [src, copy] = [pages[exPage], pages[exPage + 1]];
+        const idsOf = (p: BoardPage) => [p.id, ...allIds([p]).widgets, ...allIds([p]).strokes, ...allIds([p]).blocks, ...exerciseIds(p)];
+        expect(exerciseIds(src).length).toBeGreaterThan(0);
+        expect(idsOf(copy)).toHaveLength(idsOf(src).length);
+        expect(idsOf(copy).filter((id) => idsOf(src).includes(id))).toEqual([]);
+        expect(unique(allIds(pages).blocks)).toBe(true);
+    });
+
+    test('duplicating an exercise widget gives its exercises fresh ids too', () => {
+        buildFullBoard();
+        const exPage = useBoardStore.getState().pages.findIndex((p) => p.widgets.some((w) => w.kind === 'exercise'));
+        useBoardStore.getState().gotoPage(exPage);
+        const before = exerciseIds(useBoardStore.getState().pages[exPage]);
+        const ex = useBoardStore.getState().pages[exPage].widgets.find((w) => w.kind === 'exercise')!;
+        useBoardStore.getState().duplicateWidget(ex.id);
+        const after = exerciseIds(useBoardStore.getState().pages[exPage]);
+        expect(after).toHaveLength(before.length * 2);
+        expect(unique(after)).toBe(true);
     });
 });

@@ -1,5 +1,6 @@
-import type { BoardPage } from './boardTypes';
+import type { BoardPage, BoardWidget, Stroke } from './boardTypes';
 import { emptyPage } from './boardTypes';
+import { NATURAL_W } from './widgetSizing';
 
 // Board persistence — mirrors the worksheet persistence patterns (strict version
 // check, debounced autosave, capped preset list) but fully separate keys/format.
@@ -28,16 +29,38 @@ function makeFile(pages: BoardPage[], activePageIdx: number): BoardFile {
     return { version: BOARD_FORMAT_VERSION, exportedAt: new Date().toISOString(), pages, activePageIdx };
 }
 
-// Strict on read: wrong/missing version or malformed pages → null, never half-load.
+const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+// The frame reads id/kind/x/y/w/z outside the per-widget error boundary, so those must be sound.
+function isWidget(w: unknown): w is BoardWidget {
+    if (!isObj(w) || typeof w.id !== 'string' || typeof w.kind !== 'string' || !(w.kind in NATURAL_W)) return false;
+    if (!isNum(w.x) || !isNum(w.y) || !isNum(w.w) || !isNum(w.z)) return false;
+    return w.kind !== 'exercise' || isObj(w.block);
+}
+
+const isStroke = (s: unknown): s is Stroke => isObj(s) && typeof s.id === 'string' && typeof s.path === 'string';
+
+const isPage = (p: unknown): p is BoardPage =>
+    isObj(p) && typeof p.id === 'string' && Array.isArray(p.widgets) && Array.isArray(p.strokes) && isObj(p.background);
+
+// Strict on read: wrong/missing version, no pages or a malformed page → null. Inside a sound
+// page a junk widget or stroke (hand-edited/foreign file) is dropped rather than losing the
+// whole lesson; the index is clamped so the store never opens pages[-1].
 export function parseBoardFile(json: string): BoardFile | null {
     try {
-        const data = JSON.parse(json) as BoardFile;
-        if (data.version !== BOARD_FORMAT_VERSION) return null;
-        if (!Array.isArray(data.pages) || data.pages.length === 0) return null;
-        if (!data.pages.every(p => p && Array.isArray(p.widgets) && Array.isArray(p.strokes) && p.background)) return null;
-        // Normalize: strokes saved by early builds may lack sample points.
-        for (const p of data.pages) for (const s of p.strokes) if (!Array.isArray(s.pts)) s.pts = [];
-        return data;
+        const data: unknown = JSON.parse(json);
+        if (!isObj(data) || data.version !== BOARD_FORMAT_VERSION) return null;
+        if (!Array.isArray(data.pages) || data.pages.length === 0 || !data.pages.every(isPage)) return null;
+        const pages: BoardPage[] = data.pages.map(p => ({
+            ...p,
+            widgets: p.widgets.filter(isWidget),
+            // Strokes saved by early builds may lack sample points.
+            strokes: p.strokes.filter(isStroke).map(s => (Array.isArray(s.pts) ? s : { ...s, pts: [] })),
+        }));
+        const idx = data.activePageIdx;
+        const activePageIdx = Number.isInteger(idx) ? Math.max(0, Math.min(pages.length - 1, idx as number)) : 0;
+        return { version: BOARD_FORMAT_VERSION, exportedAt: String(data.exportedAt ?? ''), pages, activePageIdx };
     } catch {
         return null;
     }
@@ -72,7 +95,9 @@ export function loadBoardPresets(): BoardPreset[] {
     }
 }
 
-export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number): BoardPreset[] {
+// Returns false when the write is refused (quota full: a board with big images), so the
+// caller can tell the teacher instead of the throw escaping a click handler.
+export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number): BoardPreset[] | false {
     const list = loadBoardPresets();
     const preset: BoardPreset = {
         id: Math.random().toString(36).substring(2, 9),
@@ -82,7 +107,11 @@ export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx:
         payload: makeFile(pages, activePageIdx),
     };
     const next = [preset, ...list].slice(0, MAX_BOARD_PRESETS);
-    localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(next));
+    try {
+        localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(next));
+    } catch {
+        return false;
+    }
     return next;
 }
 

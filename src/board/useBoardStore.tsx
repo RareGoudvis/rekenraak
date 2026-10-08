@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { BoardPage, BoardWidget, BoardTool, BoardBackground, Stroke, StrokeTool } from './boardTypes';
 import { emptyPage, rndId } from './boardTypes';
 import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
+import { withFreshIds } from './boardBlocks';
 
 export interface InkSettings { color: string; width: number; }
 
@@ -104,9 +105,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         copy.id = rndId();
         copy.x += 28; copy.y += 28;
         copy.z = Math.max(...page.widgets.map(w => w.z)) + 1;
-        // Exercise copies need a fresh block id — the inspector's draft mirror and
-        // future edits key on it.
-        if (copy.block) copy.block = { ...copy.block, id: `bw-${rndId()}` };
+        if (copy.block) copy.block = withFreshIds(copy.block);
         return {
             ...withActivePage(state, (p) => ({ ...p, widgets: [...p.widgets, copy] })),
             selectedWidgetId: copy.id,
@@ -138,7 +137,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         // Deep copy incl. fresh ids so edits on the copy never alias the original.
         const copy: BoardPage = JSON.parse(JSON.stringify(src));
         copy.id = rndId();
-        copy.widgets.forEach(w => { w.id = rndId(); });
+        copy.widgets.forEach(w => { w.id = rndId(); if (w.block) w.block = withFreshIds(w.block); });
         copy.strokes.forEach(s => { s.id = rndId(); });
         const pages = [...state.pages];
         pages.splice(state.activePageIdx + 1, 0, copy);

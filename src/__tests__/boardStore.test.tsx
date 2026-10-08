@@ -93,14 +93,17 @@ describe('widgets', () => {
         expect(st().pages).toBe(before);
     });
 
-    test('duplicate of an exercise widget copies showAnswer and gives the block a fresh id, same exercises', () => {
+    test('duplicate of an exercise widget copies showAnswer and gives the block and exercises fresh ids, same content', () => {
         const a = st().addWidget({ kind: 'exercise', x: 0, y: 0, w: 660, block: cijferBlock(), showAnswer: true });
         st().duplicateWidget(a);
         const copy = page().widgets[1];
         expect(copy.block!.id).toMatch(/^bw-/);
         expect(copy.block!.id).not.toBe(find(a).block!.id);
         expect(copy.showAnswer).toBe(true);
-        expect(exercisesOf(copy.block!)).toEqual(exercisesOf(find(a).block!));
+        const withoutId = (b: MathBlock) => (exercisesOf(b) as { id?: string }[]).map((e) => ({ ...e, id: undefined }));
+        expect(withoutId(copy.block!)).toEqual(withoutId(find(a).block!));
+        const ids = (b: MathBlock) => (exercisesOf(b) as { id?: string }[]).map((e) => e.id);
+        expect(ids(copy.block!).filter((id) => ids(find(a).block!).includes(id))).toEqual([]);
     });
 
     test('bring to front puts a card above every other, repeatedly', () => {
@@ -502,9 +505,8 @@ describe('autosave and hydration', () => {
         expect(s.pages[0].widgets).toEqual([]);
     });
 
-    // loadBoard clamps at 0, the module-init hydration does not: pages[-1] is undefined and
-    // every selector on the active page throws (BUGS.md › Bordmodus, parseBoardFile line).
-    test.fails('a negative autosaved index lands on page 0', async () => {
+    // pages[-1] is undefined and every selector on the active page would throw; the parser clamps.
+    test('a negative autosaved index lands on page 0', async () => {
         expect((await hydrate(-1)).s.activePageIdx).toBe(0);
     });
 });

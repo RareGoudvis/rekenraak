@@ -63,7 +63,10 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         const name = window.prompt('Naam voor dit bord:', 'Mijn bord');
         if (name === null) return;
         const st = useBoardStore.getState();
-        setPresets(saveBoardPreset(name, st.pages, st.activePageIdx));
+        const saved = saveBoardPreset(name, st.pages, st.activePageIdx);
+        // Same wording as the sheet's TopBar save error; Exporteren still works when storage is full.
+        if (!saved) { window.alert('Kon het bord niet bewaren (opslag vol?) — bewaar het als bestand via Exporteren.'); return; }
+        setPresets(saved);
     };
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
