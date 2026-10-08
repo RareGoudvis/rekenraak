@@ -158,6 +158,17 @@ describe('kiosk screens', () => {
         expect(screen.getByLabelText('Oefening 1 van 8')).toBeTruthy();
     });
 
+    test('mid-run peek shows only Verder oefenen, no Opnieuw or Wissen', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        render(<OefenApp />);
+        fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
+        expect(st().phase).toBe('stats');
+        expect(screen.getByRole('button', { name: 'Verder oefenen' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Opnieuw' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Wissen' })).toBeNull();
+    });
+
     test('locked end screen: no way back, Opnieuw and a two-tap Wissen', () => {
         st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 1 }] })));
         st().start();
@@ -165,6 +176,7 @@ describe('kiosk screens', () => {
         render(<OefenApp />);
         expect(screen.getByRole('heading', { name: 'Klaar!' })).toBeTruthy();
         expect(screen.queryByRole('button', { name: 'Verder oefenen' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Opnieuw' })).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'Wissen' }));
         fireEvent.click(screen.getByRole('button', { name: 'Ja, alles wissen' }));
         expect(st().phase).toBe('start');

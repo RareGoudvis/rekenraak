@@ -68,17 +68,20 @@ export default function StatsScreen() {
                 </>
             )}
 
-            <div className="kiosk-stats-actions">
-                <button type="button" className="kiosk-btn" onClick={restart}>Opnieuw</button>
-                {confirmClear ? (
-                    <>
-                        <button type="button" className="kiosk-btn kiosk-btn-danger is-armed" onClick={clear}>Ja, alles wissen</button>
-                        <button type="button" className="kiosk-btn kiosk-btn-quiet" onClick={() => setConfirmClear(false)}>Annuleer</button>
-                    </>
-                ) : (
-                    <button type="button" className="kiosk-btn kiosk-btn-danger" onClick={() => setConfirmClear(true)}>Wissen</button>
-                )}
-            </div>
+            {/* Mid-run peek: Opnieuw / Wissen would let a pupil wipe the run, so they only exist on the locked screen */}
+            {locked && (
+                <div className="kiosk-stats-actions">
+                    <button type="button" className="kiosk-btn" onClick={restart}>Opnieuw</button>
+                    {confirmClear ? (
+                        <>
+                            <button type="button" className="kiosk-btn kiosk-btn-danger is-armed" onClick={clear}>Ja, alles wissen</button>
+                            <button type="button" className="kiosk-btn kiosk-btn-quiet" onClick={() => setConfirmClear(false)}>Annuleer</button>
+                        </>
+                    ) : (
+                        <button type="button" className="kiosk-btn kiosk-btn-danger" onClick={() => setConfirmClear(true)}>Wissen</button>
+                    )}
+                </div>
+            )}
         </section>
     );
 }
