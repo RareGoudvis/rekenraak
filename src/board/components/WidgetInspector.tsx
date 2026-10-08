@@ -13,7 +13,6 @@ interface Props {
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
     timer: TimerSettings, dobbelsteen: DobbelSettings, adem: AdemSettings,
-    honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings, mabmat: MabMatSettings,
 };
 
@@ -121,27 +120,6 @@ function AdemSettings({ widget }: { widget: BoardWidget }) {
     );
 }
 
-
-function HonderdveldSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const start = Number(widget.props?.start ?? 1);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Startgetal</div>
-            <div className="seg-group">
-                <button type="button" className="seg-btn" aria-pressed={start === 1} onClick={() => set({ start: 1 })}>1 – 100</button>
-                <button type="button" className="seg-btn" aria-pressed={start === 0} onClick={() => set({ start: 0 })}>0 – 99</button>
-            </div>
-            <div style={{ ...S.rowLabel, padding: '8px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
-                Tik op een vakje om te kleuren (geel → groen → blauw → rood → weg).
-            </div>
-            <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ marks: {} })}>
-                Wis alle markeringen
-            </button>
-        </div>
-    );
-}
 
 function BreukvizSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);

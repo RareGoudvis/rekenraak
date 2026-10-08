@@ -10,6 +10,7 @@ import ChecklistSettings from './ChecklistSettings';
 import StappenplanSettings from './StappenplanSettings';
 import GetallenlijnSettings from './GetallenlijnSettings';
 import PositietabelSettings from './PositietabelSettings';
+import HonderdveldSettings from './HonderdveldSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -30,4 +31,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     stappenplan: StappenplanSettings,
     getallenlijn: GetallenlijnSettings,
     positietabel: PositietabelSettings,
+    honderdveld: HonderdveldSettings,
 };
