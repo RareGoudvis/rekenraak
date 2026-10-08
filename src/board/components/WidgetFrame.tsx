@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Trash, ArrowCounterClockwise, Eye, EyeSlash, GearSix, CopySimple } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
 import { naturalWidth, widgetTitle, KINDS_WITH_SETTINGS } from '../widgetSizing';
+import { SELF_SCALED_FONT, fontScale, widgetAccent } from '../settings/baseProps';
 import type { BoardWidget } from '../boardTypes';
 
 interface Props {
@@ -66,7 +67,10 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     // handled by border-box + padding 0; borders are ON the card).
     const innerW = widget.w - 2;   // 1px card border each side
     const frameZoom = innerW / naturalWidth(widget.kind);
-    const textScale = widget.scale ?? 1;   // extra content zoom (exercise tekstgrootte)
+    // Extra content zoom: exercise tekstgrootte × the baseline font size (kinds that scale their
+    // own type sizes skip the zoom, so their fixed-size faces never clip).
+    const textScale = (widget.scale ?? 1) * (SELF_SCALED_FONT.has(widget.kind) ? 1 : fontScale(widget));
+    const accent = widgetAccent(widget);
     const handMode = tool === 'hand';
     const showHeader = widget.props?.showHeader !== false;
     const hasSettings = KINDS_WITH_SETTINGS.includes(widget.kind);
@@ -110,7 +114,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                     onPointerUp={handMode ? undefined : endDrag}
                     onPointerCancel={handMode ? undefined : endDrag}
                 >
-                    <span style={S.dot} />
+                    <span style={accent ? { ...S.dot, background: accent } : S.dot} />
                     {editingTitle ? (
                         <input
                             autoFocus defaultValue={widgetTitle(widget)}
