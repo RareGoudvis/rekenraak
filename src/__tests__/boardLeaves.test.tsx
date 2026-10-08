@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { flattenLeaves } from '../config/appstructure';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { DEFAULT_BASE } from '../config/baseSettings';
@@ -59,10 +61,23 @@ describe.each(leaves.map((l) => [l.id, l] as const))('%s', (_id, leaf) => {
             expect(card.textContent).not.toMatch(/Widget \(exercise\)/);
             const kiosk = [...card.querySelectorAll('*')].flatMap((el) => [...el.attributes].map((a) => a.name)).filter((n) => n.startsWith('data-kiosk'));
             expect(kiosk).toEqual([]);
+            // KioskCell only draws its input under a fill-cells interaction context.
+            expect(card.querySelectorAll('input.kiosk-cell')).toHaveLength(0);
             if (!furniture) expect(card.textContent!.trim().length).toBeGreaterThan(0);
             expect(card.textContent).not.toMatch(/undefined|NaN/);
             unmount();
         }
         expect(errorSpy.mock.calls.map((c) => c.map(String).join(' '))).toEqual([]);
     });
+});
+
+// The board is a sheet surface: the kiosk's interaction context and its scaffold switch-off
+// must never be provided anywhere in its tree (the oefenmodus card is the only provider).
+test('the board tree provides neither the interaction nor the scaffold context', () => {
+    const files = (dir: string): string[] => readdirSync(dir, { withFileTypes: true })
+        .flatMap((e) => e.isDirectory() ? files(join(dir, e.name)) : /\.tsx?$/.test(e.name) ? [join(dir, e.name)] : []);
+    const boardFiles = files(join(__dirname, '../board'));
+    expect(boardFiles.length).toBeGreaterThan(10);
+    const offenders = boardFiles.filter((f) => /ViewerInteractionProvider|ScaffoldProvider|ViewerInteractionContext\.Provider|from '[./]*oefenen\//.test(readFileSync(f, 'utf8')));
+    expect(offenders).toEqual([]);
 });
