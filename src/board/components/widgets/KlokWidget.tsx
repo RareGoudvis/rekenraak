@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import AnalogClockSVG from '../../../components/viewer/AnalogClockSVG';
 import { formatTimeText, formatDigitalTime } from '../../../services/clock/clockTypes';
+import { minuteFromAngle, hourFromAngle, carryHour, turnHourTo } from '../../../services/clock/clockMath';
 import { useBoardStore } from '../../useBoardStore';
 import { klokProps, type KlokProps } from '../../widgetSizing';
 import type { BoardWidget } from '../../boardTypes';
@@ -13,8 +14,13 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
     const faceRef = useRef<HTMLDivElement>(null);
     const dragging = useRef<'uur' | 'minuut' | null>(null);
 
+    // Several pointermoves can land before a re-render; the carry must compare against the stored time, not the rendered one.
+    const live = () => {
+        const s = useBoardStore.getState();
+        return s.pages[s.activePageIdx]?.widgets.find(w => w.id === widget.id) ?? widget;
+    };
     const setProps = (patch: Partial<KlokProps>) =>
-        updateWidget(widget.id, { props: { ...widget.props, ...patch } });
+        updateWidget(widget.id, { props: { ...live().props, ...patch } });
 
     const angleAt = (e: React.PointerEvent) => {
         const r = faceRef.current!.getBoundingClientRect();
@@ -26,14 +32,15 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
 
     const applyDrag = (e: React.PointerEvent) => {
         const { angle } = angleAt(e);
+        const now = klokProps(live());
         if (dragging.current === 'minuut') {
-            const m = Math.round(angle / 6) % 60;
-            setProps({ minutes: m });
+            // Like a real clock: the kleine wijzer travels with the minutes and carries past 12.
+            const m = minuteFromAngle(angle);
+            if (m !== now.minutes) setProps({ minutes: m, hours: carryHour(now.minutes, m, now.hours, 24) });
         } else if (dragging.current === 'uur') {
-            // Hour hand sets whole hours (the minute part stays what the minute hand says).
-            const h = Math.round(angle / 30) % 12;
-            const wasPM = k.hours >= 12;
-            setProps({ hours: (h === 0 ? 12 : h) % 12 + (wasPM ? 12 : 0) });
+            // The kleine wijzer snaps to whole hours; the minutes stay what the grote wijzer says.
+            const h = turnHourTo(hourFromAngle(angle, now.minutes), now.hours, 24);
+            if (h !== now.hours) setProps({ hours: h });
         }
     };
 
@@ -56,7 +63,7 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '10px' }}>
             {k.showAnalog && (
                 <div
-                    ref={faceRef}
+                    ref={faceRef} data-klok-face
                     style={{ background: '#fff', borderRadius: '50%', padding: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', cursor: 'grab', touchAction: 'none' }}
                     onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
                 >
@@ -73,7 +80,8 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
             )}
             {k.showText && (
                 <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: '20px', color: textColor }}>
-                    {k.textStyle === 'tekst' ? formatTimeText(k.hours, k.minutes, false) : formatDigitalTime(k.hours, k.minutes)}
+                    {/* The carry runs the hours 0-23; the written time reads the 1-12 of the face ("kwart over 1", not "13"). */}
+                    {k.textStyle === 'tekst' ? formatTimeText(k.hours % 12 || 12, k.minutes, false) : formatDigitalTime(k.hours, k.minutes)}
                 </div>
             )}
         </div>
