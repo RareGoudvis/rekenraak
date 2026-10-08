@@ -68,6 +68,7 @@ describe('built / builtCount', () => {
 describe('viewers draw the laid pieces only under a build context', () => {
     const LAID: Record<string, BuildEntry[]> = {
         'geld-tekenen': [{ key: '200', count: 2 }, { key: '50', count: 1 }, { key: '1000', count: 1 }],
+        'geld-wissel': [{ key: '200', count: 2 }, { key: '100', count: 1 }],
     };
     test.each(Object.keys(LAID))('%s', (typeId) => {
         const block = oneExercise(typeId);
@@ -122,7 +123,7 @@ const wissen = () => screen.getByRole('button', { name: 'Wissen' }) as HTMLButto
 const cardSvgs = (c: HTMLElement) => c.querySelectorAll('.kiosk-card-inner svg').length;
 
 describe('kiosk flow: lay the answer from the tray', () => {
-    test.each(['geld-tekenen'])('%s: tap tiles, take back, Wissen, juist / fout', (leafId) => {
+    test.each(['geld-tekenen', 'geld-wissel'])('%s: tap tiles, take back, Wissen, juist / fout', (leafId) => {
         st().load(hashOf(starterSessie({ types: [leafType(leafId)], attempts: 2 })));
         st().start();
         const { container } = render(<OefenApp />);
@@ -182,5 +183,13 @@ describe('kiosk flow: lay the answer from the tray', () => {
         // Stats show money as money (€ 7,05), MAB as the number.
         expect(err.expected).toBe(ia.show ? ia.show(String(want), nxt.exercise, nxt.constraints) : String(want));
         expect(err.given).not.toBe(err.expected);
+    });
+
+    test('geld-wissel: the shown note is not in the tray', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('geld-wissel', { exerciseBills: [1000] })] })));
+        st().start();
+        render(<OefenApp />);
+        expect(tile('1000')).toBeNull();
+        expect([...document.querySelectorAll<HTMLElement>('[data-tray-key]')].map(t => t.dataset.trayKey)).toEqual(['500', '200', '100', '50', '20', '10']);
     });
 });

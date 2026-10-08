@@ -150,7 +150,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
 
     'geld-herkennen':  { Viewer: GeldViewer,           Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
     'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig, TrayPiece: GeldTrayPiece },
-    'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig, AdvancedConfig: GeldAdvancedConfig },
+    'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig, AdvancedConfig: GeldAdvancedConfig, TrayPiece: GeldTrayPiece },
     // No AdvancedConfig: geld-teruggeven has no Geavanceerd settings, and the accordion
     // only appears for rows that register one.
     'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig },

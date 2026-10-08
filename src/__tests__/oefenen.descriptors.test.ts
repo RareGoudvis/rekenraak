@@ -56,7 +56,7 @@ const EXPECTED_LEAVES = [
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
     'breuken-kleuren',
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
-    'geld-tekenen',
+    'geld-tekenen', 'geld-wissel',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -162,6 +162,11 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         expect(g.amountCents).toBeLessThanOrEqual(max);
         if (c.format === 'euros') expect(g.amountCents % 100).toBe(0);
         return { build: g.amountCents, allowed: (c.allowedDenominations as number[]).filter(v => v <= max) };
+    },
+    // The first bill the teacher picked (one exercise per kiosk block), laid in smaller money.
+    'geld-wissel': (g: T.GeldWisselExercise, c) => {
+        expect(g.billValueCents).toBe((c.exerciseBills as number[] | undefined)?.[0] ?? 500);
+        return { build: g.billValueCents, allowed: [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5].filter(v => v < g.billValueCents) };
     },
     'mab-herkennen': (m: T.MabExercise) => {
         expect(m.thousands * 1000 + m.hundreds * 100 + m.tens * 10 + m.units).toBe(m.value);
@@ -380,10 +385,12 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('klok-kloklezen', { clockType: 'digitaal', exerciseMode: 'lezen' })).toBe(false);
         expect(kioskSupports('klok-kloklezen', { clockType: 'analoog', exerciseMode: 'tekenen' })).toBe(false);
         expect(kioskSupports('nope', {})).toBe(false);
-        // build: an empty tray (nothing ticked, only notes above the top amount) is not served.
+        // build: an empty tray (nothing ticked, only notes above the top amount, a 5 cent to change) is not served.
         expect(kioskSupports('geld-tekenen', { allowedDenominations: [] })).toBe(false);
         expect(kioskSupports('geld-tekenen', { allowedDenominations: [50000], maxGetal: 10 })).toBe(false);
         expect(kioskSupports('geld-tekenen', { allowedDenominations: [50000], maxGetal: 1000 })).toBe(true);
+        expect(kioskSupports('geld-wissel', { exerciseBills: [5] })).toBe(false);
+        expect(kioskSupports('geld-wissel', { exerciseBills: [10, 5] })).toBe(true);
     });
 });
 
@@ -450,6 +457,9 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-tekenen', { allowedDenominations: [200, 100, 50, 20, 10, 5], scaffolding: 'verdeeld' }, 'interactive'],
         ['geld-tekenen', { allowedDenominations: [5], format: 'decimaal' }, 'interactive'],
         ['geld-tekenen', { maxGetal: 1000 }, 'interactive'],
+        ['geld-wissel', { exerciseBills: [50000] }, 'interactive'],
+        ['geld-wissel', { exerciseBills: [10] }, 'interactive'],
+        ['geld-wissel', { exerciseBills: [200, 5000] }, 'interactive'],
     ])('%s + %j → %s', (leafId, extra, want) => {
         // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
         const leaf = flattenLeaves().find(l => l.id === leafId)!;

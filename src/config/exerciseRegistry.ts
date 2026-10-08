@@ -31,7 +31,7 @@ import { generateLengteMetenExercises, generateOmtrekExercises, generateOmtrekEx
 import { generatePatroonExercises, generatePatroonExercisesNoted } from '../services/patroon/patroonGenerator';
 import { generateDeelbaarheidKleurExercises } from '../services/deelbaarheid/deelbaarheidKleurGenerator';
 import { DEELBAARHEID_KLEUR_KIOSK } from '../services/oefenen/kioskDescriptors';
-import { GELD_TEKENEN_KIOSK } from '../services/oefenen/kioskDescriptors';
+import { GELD_TEKENEN_KIOSK, GELD_WISSEL_KIOSK } from '../services/oefenen/kioskDescriptors';
 import { generateTemperatuurExercises } from '../services/temperatuur/temperatuurGenerator';
 import { generatePlaatswaardeExercises } from '../services/plaatswaarde/plaatswaardeGenerator';
 import { generateEvenOnevenExercises } from '../services/evenoneven/evenOnevenGenerator';
@@ -512,7 +512,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
 
     'geld-herkennen':  row<GeldConstraints>({ exerciseField: 'geldExercises',           generate: generateGeldExercises, generateNoted: generateGeldExercisesNoted,           defaultConstraints: geldDefaults,           defaultCount: 6, maxPresets: fixedMax(RANGES.geld) , kiosk: GELD_KIOSK }),
     'geld-tekenen':    row<GeldConstraints>({ exerciseField: 'geldExercises',           generate: generateGeldExercises, generateNoted: generateGeldExercisesNoted,           defaultConstraints: geldDefaults,           defaultCount: 6, maxPresets: fixedMax(RANGES.geld), kiosk: GELD_TEKENEN_KIOSK }),
-    'geld-wissel':     row<GeldWisselConstraints>({ exerciseField: 'geldWisselExercises',     generate: generateGeldWisselExercises,     defaultConstraints: geldWisselDefaults,     defaultCount: 4 }),
+    'geld-wissel':     row<GeldWisselConstraints>({ exerciseField: 'geldWisselExercises',     generate: generateGeldWisselExercises,     defaultConstraints: geldWisselDefaults,     defaultCount: 4, kiosk: GELD_WISSEL_KIOSK }),
     'geld-teruggeven': row<GeldTeruggevenConstraints>({ exerciseField: 'geldTeruggevenExercises', generate: generateGeldTeruggevenExercises, generateNoted: generateGeldTeruggevenExercisesNoted, defaultConstraints: geldTeruggevenDefaults, defaultCount: 4 , kiosk: GELD_TERUGGEVEN_KIOSK }),
 
     'mab-herkennen': row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax , kiosk: MAB_KIOSK }),
