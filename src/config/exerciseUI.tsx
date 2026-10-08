@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import type { MathBlock } from '../services/math/types';
+import type { KioskPiece } from '../services/oefenen/types';
 
 // Viewers (one per family). All take a uniform {block, showSolutions}.
 import MathBlockRenderer from '../components/viewer/MathBlockRenderer';
@@ -7,7 +8,7 @@ import CijferViewer from '../components/viewer/CijferViewer';
 import ClockViewer from '../components/viewer/ClockViewer';
 import FractionViewer from '../components/viewer/FractionViewer';
 import SplitsenViewer from '../components/viewer/SplitsenViewer';
-import GeldViewer from '../components/viewer/GeldViewer';
+import GeldViewer, { GeldTrayPiece } from '../components/viewer/GeldViewer';
 import GeldTekenenViewer from '../components/viewer/GeldTekenenViewer';
 import GeldWisselViewer from '../components/viewer/GeldWisselViewer';
 import GeldTeruggevenViewer from '../components/viewer/GeldTeruggevenViewer';
@@ -121,6 +122,8 @@ export interface ExerciseUIDef {
     AdvancedConfig?: ConfigComponent;
     /** Optional extra test: the accordion is only worth opening when this returns true. */
     advancedApplies?: (block: MathBlock) => boolean;
+    /** Oefenmodus build tray: the picture of one piece (a coin, a MAB block); absent = its label. */
+    TrayPiece?: FC<{ piece: KioskPiece; constraints: Record<string, unknown> }>;
 }
 
 export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
@@ -146,7 +149,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'splitsen':       { Viewer: SplitsenViewer, Config: SplitsenConfig, AdvancedConfig: SplitsenAdvancedConfig },
 
     'geld-herkennen':  { Viewer: GeldViewer,           Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
-    'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig },
+    'geld-tekenen':    { Viewer: GeldTekenenViewer,    Config: GeldConfig, StyleConfig: GeldStyleConfig, AdvancedConfig: GeldAdvancedConfig, TrayPiece: GeldTrayPiece },
     'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig, AdvancedConfig: GeldAdvancedConfig },
     // No AdvancedConfig: geld-teruggeven has no Geavanceerd settings, and the accordion
     // only appears for rows that register one.

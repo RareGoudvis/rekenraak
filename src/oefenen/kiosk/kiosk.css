@@ -523,6 +523,84 @@ html:has(.oefen-body),
   cursor: pointer;
 }
 
+/* ── Build tray (Phase C3: lay coins / MAB blocks on the card) ─────────────── */
+.kiosk-tray {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  /* auto-fit: a short tray (MAB's three places) widens its tiles instead of leaving gaps. */
+  grid-template-columns: repeat(auto-fit, minmax(clamp(76px, 12vmin, 112px), 1fr));
+  /* Tiles never under a thumb's target; on a Chromebook they grow, up to a comfortable coin. */
+  grid-auto-rows: minmax(var(--kiosk-tap), clamp(72px, 14vmin, 120px));
+  align-content: center;
+  gap: var(--sp-2);
+  /* Room for the count badges that sit over the tiles' top edge. */
+  padding-top: var(--sp-2);
+}
+.kiosk-tray-slot { position: relative; min-width: 0; display: flex; }
+.kiosk-tray-piece {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--kiosk-tap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-1);
+  border: 2px solid var(--separator);
+  border-radius: var(--radius-md);
+  background: var(--kiosk-paper);
+  box-shadow: var(--shadow-1);
+  color: var(--kiosk-ink);
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text);
+  cursor: pointer;
+  overflow: hidden;
+  /* size, not inline-size: the grid sizes the tile from the panel, the figure follows the tile. */
+  container-type: size;
+}
+.kiosk-tray-piece:active { background: var(--bg-active); }
+.kiosk-tray-piece.is-laid { border-color: var(--accent); }
+.kiosk-tray-piece:disabled { opacity: 0.45; cursor: default; }
+/* The sheet's coin / block figures are em of --sheet-size-math: a bill (56 px at 13pt) fills
+   about 80% of the tile's width and a coin (2.65 em) 80% of its height, capped so a
+   Chromebook's big tiles do not draw 150 px coins. */
+.kiosk-tray-figure {
+  --sheet-size-math: min(22px, 25cqi, 30cqh);
+  display: inline-flex;
+  font-size: var(--sheet-size-math);
+  pointer-events: none;
+}
+.kiosk-tray-count {
+  position: absolute;
+  top: calc(-1 * var(--sp-2));
+  right: calc(-1 * var(--sp-1));
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-on);
+  font: 700 var(--kiosk-text)/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+/* The badge draws at 32 px; its tap target reaches 44 px (WCAG 2.5.5). */
+.kiosk-tray-count::after { content: ''; position: absolute; inset: -6px; }
+.kiosk-tray-count:active { background: var(--accent-strong); }
+.kiosk-tray-minus { font-weight: 400; }
+.kiosk-tray-actions {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--sp-2);
+}
+.kiosk-tray-actions .kiosk-btn { min-height: max(var(--kiosk-tap), 56px); padding: 0 var(--sp-2); }
+.kiosk-tray-actions .kiosk-btn:disabled { opacity: 0.45; cursor: default; }
+
 /* ── Feedback (covers the answer panel; the exercise stays visible) ───────── */
 /* A flash: it ends by itself after --flash-ms (FLASH_MS in useOefenStore); a tap skips it. */
 .kiosk-feedback {

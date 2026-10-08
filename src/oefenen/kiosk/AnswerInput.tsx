@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef } from 'react';
 import { currentInput, interactionAnswer, useOefenStore } from '../useOefenStore';
 import Keypad from './Keypad';
+import Tray from './Tray';
 
 // What sits between two fields: the sheet's "r" for delen met rest, ':' between uur and min.
 const SEPARATOR: Record<string, string> = { 'number+rest': 'r', time: ':' };
@@ -19,7 +20,7 @@ export default function AnswerInput() {
     const field = useOefenStore(s => s.field);
     const phase = useOefenStore(s => s.phase);
     const interaction = useOefenStore(s => s.interaction);
-    const { press, setField, focusField, choose, answer } = useOefenStore.getState();
+    const { press, setField, focusField, choose, answer, clearBuild } = useOefenStore.getState();
     const refs = useRef<(HTMLInputElement | null)[]>([]);
     const info = currentInput(sessie, shown);
     const canCheck = input.every(v => v.trim() !== '');
@@ -34,6 +35,18 @@ export default function AnswerInput() {
     // Phase C: the answer is given ON the card; this panel only checks it (and, for cells, types).
     if (info.kind === 'interactive') {
         const ready = interactionAnswer(sessie, shown, interaction)?.ready ?? false;
+        // build: the tray of pieces replaces the keypad; what is laid shows on the card.
+        if (info.interact === 'build' && shown) {
+            return (
+                <div className="kiosk-answer">
+                    <Tray typeId={sessie!.types[shown.slot].typeId} constraints={shown.constraints} pieces={info.pieces ?? []} />
+                    <div className="kiosk-tray-actions">
+                        <button type="button" className="kiosk-btn" onClick={clearBuild} disabled={interaction.build.length === 0}>Wissen</button>
+                        <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!ready}>Controleer</button>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div className="kiosk-answer">
                 {info.interact === 'fill-cells'

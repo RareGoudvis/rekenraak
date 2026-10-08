@@ -15,6 +15,8 @@ import { ROUND_SCALE, roundTo, targetsFor, usableTargets } from '../afronden/afr
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
+import type { KioskPiece } from './types';
+import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -897,3 +899,43 @@ export const TIJDSDUUR_KIOSK = descriptor<TijdsduurExercise>({
         return `begin ${cell('begin', clock24(ex.startMin))} · einde ${cell('einde', clock24(ex.endMin))} · duur ${cell('duur', `${ex.endMin - ex.startMin} min`)}`;
     },
 });
+
+// ── Phase C3: build from the tray ────────────────────────────────────────────
+
+// The pupil lays pieces from the kiosk tray; the answer is what they are worth together
+// (total cents, the number), so any make-up of the right value counts. '' = nothing laid yet.
+function buildInteract<E>(piecesOf: (ex: E, c: Record<string, unknown>) => KioskPiece[], answerOf: (ex: E) => number,
+    show?: (answer: string) => string): KioskInteract<E> {
+    return {
+        kind: 'build',
+        pieces: piecesOf,
+        keys: (ex, c) => piecesOf(ex, c).map(p => p.key),
+        answerOf: (ex) => String(answerOf(ex)),
+        fromState: (st, ex, c) => {
+            if (!st.build.length) return '';
+            const value = new Map(piecesOf(ex, c).map(p => [p.key, p.value]));
+            return String(st.build.reduce((sum, b) => sum + (value.get(b.key) ?? 0) * b.count, 0));
+        },
+        ...(show && { show: (a: string) => show(a) }),
+    };
+}
+
+const ALL_MONEY = DENOMINATION_CATALOGUE.map(d => d.valueCents);
+const moneyPiece = (cents: number): KioskPiece => ({ key: String(cents), label: cents >= 100 ? `€ ${cents / 100}` : `${cents} cent`, value: cents });
+
+// Teken het bedrag: the ticked coins and bills, largest first, none above the block's top amount.
+// SYNC: generateGeldExercisesNoted draws amounts up to maxGetal euros from the same ticked set.
+const tekenenMoney = (c: Record<string, unknown>) => {
+    const allowed = Array.isArray(c.allowedDenominations) ? c.allowedDenominations as number[] : ALL_MONEY;
+    const max = Number(c.maxGetal ?? 10) * 100;
+    return ALL_MONEY.filter(v => allowed.includes(v) && v <= max);
+};
+export const GELD_TEKENEN_KIOSK = descriptor<GeldExercise>({
+    input: 'interactive',
+    interact: buildInteract((_ex, c) => tekenenMoney(c).map(moneyPiece), ex => ex.amountCents, a => showEuro(Number(a))),
+    answerOf: (ex) => [String(ex.amountCents)],
+    display: (ex) => `${showEuro(ex.amountCents)} leggen: ?`,
+    kioskInstruction: 'Leg het bedrag.',
+    supported: (c) => tekenenMoney(c).length > 0,
+});
+

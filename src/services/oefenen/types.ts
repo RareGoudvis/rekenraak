@@ -91,6 +91,20 @@ export interface KioskInteract<E = unknown> {
     cellOf?(key: string, ex: E, c: Record<string, unknown>): KioskCellSpec;
     // Stats text of an answer string (fromState or answerOf); absent = the parts, first spelling.
     show?(answer: string, ex: E, c: Record<string, unknown>): string;
+    // build: the kiosk tray, in display order. From the SETTINGS only (allowed coins, the
+    // positietabel's places), never the exercise's answer, so the tray does not hint at it.
+    pieces?(ex: E, c: Record<string, unknown>): KioskPiece[];
+}
+
+// One kind of piece in the build tray. Its picture comes from EXERCISE_UI[typeId].TrayPiece
+// (the registry here stays free of React); `label` is its spoken name and text fallback.
+export interface KioskPiece {
+    key: string;
+    label: string;
+    // What one piece adds to the built value (cents, units): fromState sums count × value.
+    value: number;
+    // The most of this piece the pupil can lay (MAB: 9 per place, a positietabel digit).
+    max?: number;
 }
 
 export interface KioskCellSpec {
