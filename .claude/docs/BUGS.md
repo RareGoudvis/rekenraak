@@ -160,8 +160,6 @@ UpdateState). Left over, found while fixing:
 
 ## Bordmodus
 
-- WidgetInspector › WerksymbolenSettings logs React's "Each child in a list should have a unique
-  key" when its panel opens. Repro: Toevoegen › Klasmanagement › Werksymbolen, ⚙. 2026-10-08
 - Board add panel (BoardAddModal) search matches only the item label and context, not variant
   labels: "klok" finds nothing (the item is "Tijdstip en tijdsduur", variants "Analoge klok · …").
   Fix: also match `variants[].label` and the typeId, like MassAddModal does. 2026-10-08
