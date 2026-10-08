@@ -23,6 +23,9 @@ interface Props {
 const VIRTUAL_W = 340;
 // 3.2 × 13 pt ≈ 55 px digits: readable a metre away on a Chromebook, never comically large.
 const MAX_ZOOM = 3.2;
+// fill-cells: a cell never draws under a thumb's target (WCAG 2.5.8 + room for the digit); a
+// grid too tall for that at the card's size scrolls inside the card instead of shrinking.
+const MIN_CELL_PX = 40;
 
 // Horizontal extent of the drawn content (leaf elements), in layout px, so a short sum is
 // centred and scaled to the card instead of a 340 px box it fills only partly (a viewer may
@@ -54,7 +57,7 @@ function usedExtent(inner: HTMLElement): { x: number; w: number } {
 export default function ExerciseCard({ typeId, exercise, constraints, instruction, exerciseKey }: Props) {
     const boxRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
-    const [fit, setFit] = useState({ k: 1, x: 0, w: VIRTUAL_W, h: 0 });
+    const [fit, setFit] = useState({ k: 1, x: 0, w: VIRTUAL_W, h: 0, scroll: false });
     const Viewer = EXERCISE_UI[typeId]?.Viewer;
     const interaction = useOefenStore(s => s.interaction);
     const activeCell = useOefenStore(s => s.activeCell);
@@ -65,6 +68,7 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
         kind: interactKind, state: interaction, activeCell,
         set: (next) => useOefenStore.getState().setInteraction(next),
         focusCell: (key) => useOefenStore.getState().focusCell(key),
+        typeCell: (key, raw) => useOefenStore.getState().typeCell(key, raw),
     } : null), [interactKind, interaction, activeCell]);
 
     const block = useMemo<MathBlock | null>(() => {
@@ -85,8 +89,12 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
             const { x, w } = usedExtent(inner);
             const h = inner.offsetHeight;
             if (!boxW || !boxH || !h) return;
-            const k = Math.max(0.5, Math.min(MAX_ZOOM, boxW / w, boxH / h));
-            setFit(f => (f.k === k && f.x === x && f.w === w && f.h === h ? f : { k, x, w, h }));
+            let k = Math.max(0.5, Math.min(MAX_ZOOM, boxW / w, boxH / h));
+            const cellH = Math.min(...[...inner.querySelectorAll<HTMLElement>('input[data-kiosk-cell]')].map(el => el.offsetHeight).filter(x => x > 0));
+            if (cellH * k < MIN_CELL_PX) k = Math.min(MAX_ZOOM, MIN_CELL_PX / cellH);
+            // Raised to MIN_CELL_PX, the grid outgrows the card: it scrolls from its top-left.
+            const scroll = w * k > boxW + 1 || h * k > boxH + 1;
+            setFit(f => (f.k === k && f.x === x && f.w === w && f.h === h && f.scroll === scroll ? f : { k, x, w, h, scroll }));
         };
         measure();
         const ro = new ResizeObserver(measure);
@@ -98,7 +106,7 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
     return (
         <div className="kiosk-card">
             <p className="kiosk-instruction">{instruction}</p>
-            <div ref={boxRef} className="kiosk-card-body">
+            <div ref={boxRef} className={`kiosk-card-body${fit.scroll ? ' is-scrolling' : ''}`}>
                 <div className="kiosk-card-sizer" style={{ width: fit.w * fit.k, height: fit.h * fit.k }}>
                     {/* inert: the sheet viewers draw operands as editable inputs (teacher edits on the sheet);
                         here they must not take focus, keys or taps — unless the pupil answers ON the card. */}

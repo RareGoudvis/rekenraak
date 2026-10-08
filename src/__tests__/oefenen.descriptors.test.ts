@@ -13,6 +13,8 @@ import { INTERACT_SEP } from '../services/oefenen/types';
 import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
+import { cijferFill, type Cells } from './helpers/fillCells';
+import { cijferKiosk } from '../services/oefenen/kioskDescriptors';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
 import type * as T from '../services/math/types';
 import { PLACE_VALUES } from '../services/math/mathEngine';
@@ -391,7 +393,7 @@ describe('descriptor answers agree with the generators', () => {
 
 // Phase C: tapping the viewer's keys must give the generator's answer. tap = one key, its value
 // the truth; tap-multi = the set of right keys in any order, and one key more or less is wrong.
-function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
+function checkInteractive(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
     const ia = d.interact!;
     expect(ia, where).toBeDefined();
     const keys = ia.keys!(ex, c);
@@ -400,6 +402,7 @@ function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unk
     expect(new Set(keys).size, where).toBe(keys.length);
     expect(d.answerOf(ex, c), where).toEqual([ia.answerOf(ex, c)]);
     expect(tap([]), where).toBe('');
+    if (ia.kind === 'fill-cells') { checkCells(typeId, d, ex, c, truth, where); return; }
     if (ia.kind === 'tap') {
         expect(ia.answerOf(ex, c), where).toBe(truth);
         const right = keys.filter(k => tap([k]) === truth);
@@ -417,6 +420,57 @@ function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unk
     expect(check([...right].reverse()), where).toBe(true);
     if (right.length) expect(check(right.slice(1)), where).toBe(false);
     if (wrong.length) expect(check([...right, wrong[0]]), where).toBe(false);
+}
+
+// Phase C2: typing the right digits into the card's cells is juist; one wrong cell is fout.
+function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
+    const ia = d.interact!;
+    const keys = ia.keys!(ex, c);
+    const fill = (cells: Cells, dd: KioskDescriptor = d) => dd.interact!.fromState({ ...EMPTY_INTERACTION, cells }, ex, c);
+    const ok = (cells: Cells, dd: KioskDescriptor = d) => checkAnswer(dd, ex, c, fill(cells, dd));
+    const keypad = d.keys?.(c) ?? [];
+    const typeable = (cells: Cells) => Object.values(cells).forEach(v =>
+        expect(sanitizeAnswer(v, keypad), `${where} untypeable ${v} keys ${keypad}`).toBe(v));
+    // The Enter path is never empty: the keypad has a first cell to start in.
+    expect(keys.some(k => !ia.cellOf?.(k, ex, c)?.scratch), where).toBe(true);
+    expect(ia.show?.(ia.answerOf(ex, c), ex, c) ?? 'x', where).not.toBe('');
+
+    if (typeId.startsWith('cijferen-')) {
+        const cx = ex as CijferExercise;
+        const { answer, scratch, alt } = cijferFill(cx, keys);
+        typeable(answer); typeable(scratch);
+        // The answer row spells the generator's answer.
+        if (cx.operator !== ':') {
+            const digits = keys.filter(k => k.startsWith('a')).sort((x, y) => Number(x.slice(1)) - Number(y.slice(1))).map(k => answer[k] || '0').join('');
+            // A product has the decimals of both factors (0,3 × 1,2 = 0,36).
+            const decimals = (x: number) => (String(x).split('.')[1] ?? '').length;
+            const ansDp = (cx.decimalPlaces ?? 0) + (cx.operator === 'x' ? decimals(cx.operands[1]) : 0);
+            expect(scaled(Number(digits) / 10 ** ansDp), where).toBe(scaled(truth as number));
+        }
+        expect(ok(answer), where).toBe(true);
+        expect(ok({ ...answer, ...scratch }), where).toBe(true);
+        if (alt) expect(ok({ ...alt, ...scratch }), `${where} alt ${JSON.stringify(alt)}`).toBe(true);
+        // strictCarries: every carry must be written.
+        const strict = cijferKiosk({ strictCarries: true });
+        expect(ok({ ...answer, ...scratch }, strict), where).toBe(true);
+        expect(ok(answer, strict), where).toBe(!Object.values(scratch).some(v => v !== ''));
+        // A wrong digit in the answer row, a wrong rest, a wrong carry: fout.
+        if (cx.operator === ':') {
+            expect(ok({ ...answer, r: String(Number(answer.r.replace(',', '.')) + 1) }), where).toBe(false);
+            const lastQ = keys.filter(k => k.startsWith('q')).pop()!;
+            expect(ok({ ...answer, [lastQ]: String((Number(answer[lastQ] || 0) + 1) % 10) }), where).toBe(false);
+            expect(fill({ ...answer, r: '' }), where).toBe('');
+        } else {
+            const units = keys.filter(k => k.startsWith('a')).sort((x, y) => Number(y.slice(1)) - Number(x.slice(1)))[0];
+            expect(ok({ ...answer, ...scratch, [units]: String((Number(answer[units] || 0) + 1) % 10) }), where).toBe(false);
+        }
+        const carried = Object.entries(scratch).find(([, v]) => v !== '');
+        if (carried) expect(ok({ ...answer, [carried[0]]: String(Number(carried[1]) + 1) }), where).toBe(false);
+        const noCarry = Object.entries(scratch).find(([k, v]) => v === '' && k.startsWith('c'));
+        if (noCarry) expect(ok({ ...answer, [noCarry[0]]: '1' }), where).toBe(false);
+        return;
+    }
+    expect.fail(`${where}: no fill-cells truth for ${typeId}`);
 }
 
 // Runs the agreement checks for one leaf (+ extra settings) over every grade × SEEDS seeds;
@@ -443,7 +497,7 @@ function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map
             const typeable = (a: string) => expect(sanitizeAnswer(a, keys, input).replace(',', '.'), `${where} untypeable ${a} keys ${keys}`).toBe(a.replace(',', '.'));
 
             if (input === 'interactive') {
-                checkInteractive(d, ex, c, truth, where);
+                checkInteractive(leaf.typeId, d, ex, c, truth, where);
             } else if (input === 'number+rest') {
                 const [q, r] = truth as [number, number];
                 expect(accepted.map(Number), where).toEqual([q, r]);

@@ -57,6 +57,7 @@ function sameTime(given: readonly string[], accepted: readonly string[]): boolea
     });
 }
 
+// An empty middle part stays ('5 ·  · 3' = three cells, the second blank).
 const partsOf = (s: string) => (s.trim() === '' ? [] : s.split(INTERACT_SEP.trim()).map(p => p.trim()));
 
 /** An interactive answer (fromState) against the descriptor's canonical one, by its kind. */
@@ -68,7 +69,8 @@ function sameInteraction(kind: InteractionKind, given: string, want: string): bo
         const ws = [...w].sort();
         return [...g].sort().every((x, i) => x === ws[i]);
     }
-    if (kind === 'fill-cells') return g.every((x, i) => sameValue(x, w[i].split('|')));
+    // A blank cell is right only where an empty alternative allows it (a carry left out).
+    if (kind === 'fill-cells') return g.every((x, i) => (x === '' ? w[i].split('|').includes('') : sameValue(x, w[i].split('|'))));
     return g.every((x, i) => x === w[i]);
 }
 

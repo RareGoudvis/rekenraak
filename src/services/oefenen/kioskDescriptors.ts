@@ -6,7 +6,9 @@ import type {
     RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
     VormleerExercise, WeegschaalExercise,
 } from '../math/types';
-import { INTERACT_SEP, type KioskDescriptor, type KioskInput, type KioskKey } from './types';
+import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskInput, type KioskKey } from './types';
+import { cijferCheck, cijferGiven, cijferKioskGrid, type CijferCheck } from '../cijferen/cijferCells';
+import { cijferDp } from '../cijferen/cijferLayout';
 import { gcd, isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
 import { ROUND_SCALE, roundTo, targetsFor } from '../afronden/afrondenGenerator';
@@ -168,16 +170,62 @@ export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
         : `${sideText(ex.a, ex.aFrac)} ? ${sideText(ex.b, ex.bFrac)}`,
 });
 
-// ── Cijferen (the grid is scrap paper; the pupil types the final result) ─────
+// ── Cijferen (Phase C2: the pupil fills the grid itself on the card) ─────────
 
-// Delen asks quotiënt + rest like the sheet's q / r box; the decimal leaves need a comma.
-export const CIJFER_KIOSK = descriptor<CijferExercise>({
-    input: 'number',
-    inputOf: (ex) => (ex.operator === ':' ? 'number+rest' : 'number'),
-    keys: (c) => (numberTypeOf(c) === 'decimal' ? [','] : []),
-    answerOf: (ex) => (ex.operator === ':' ? [plain(ex.answer), plain(ex.remainder ?? 0)] : numberSpellings(ex.answer)),
-    display: (ex) => `${ex.operands.map(showValue).join(` ${opGlyph(ex.operator)} `)} = ${ex.operator === ':' ? '? r ?' : '?'}`,
-});
+// SYNC: cijferCells.ts keys: a = answer digit, p = partial product, q = quotient digit (one digit
+// each, a full ruitje hands on); c = carry, b = exchanged top digit (scratch, tapped); r = rest.
+const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { length: 1 }, q: { length: 1 }, c: { length: 1, scratch: true }, b: { length: 2, scratch: true }, r: {} };
+
+export interface CijferKioskOptions {
+    // A carry (or exchanged digit) left blank is wrong too; default off: only a WRONG one is.
+    strictCarries?: boolean;
+}
+
+// Every answer ruitje is checked digit by digit; carries are the pupil's own help (see options).
+export function cijferKiosk({ strictCarries = false }: CijferKioskOptions = {}): KioskDescriptor {
+    const chk = (ex: CijferExercise, c: Record<string, unknown>) => cijferCheck(ex, cijferDp(ex, c), strictCarries);
+    const interactAnswer = (ex: CijferExercise, c: Record<string, unknown>) => chk(ex, c).wants.join(INTERACT_SEP);
+    return descriptor<CijferExercise>({
+        input: 'interactive',
+        // The grid takes digits only; a decimal rest (0,03) needs the comma.
+        keys: (c) => (numberTypeOf(c) === 'decimal' && c.operator === ':' ? [','] : []),
+        interact: {
+            kind: 'fill-cells',
+            keys: (ex, c) => cijferKioskGrid(ex, cijferDp(ex, c)).cells.map(k => k.key),
+            cellOf: (key) => CIJFER_CELL[key[0]] ?? {},
+            answerOf: interactAnswer,
+            fromState: (st, ex, c) => cijferGiven(chk(ex, c), st.cells)?.join(INTERACT_SEP) ?? '',
+            show: (answer, ex, c) => cijferShow(chk(ex, c), answer),
+        },
+        answerOf: (ex, c) => [interactAnswer(ex, c)],
+        display: (ex) => `${ex.operands.map(showValue).join(` ${opGlyph(ex.operator)} `)} = ${ex.operator === ':' ? '? r ?' : '?'}`,
+    });
+}
+export const CIJFER_KIOSK = cijferKiosk();
+
+// The stats line of a cijfer answer: the answer row as a number, the partial products before
+// it, and the carries the pupil wrote ("1245 (onthouden 1 1)").
+function cijferShow(chk: CijferCheck, answer: string): string {
+    const parts = answer.split(INTERACT_SEP.trim()).map(p => p.trim().split('|')[0]);
+    const byCell = new Map<string, string>();
+    const pps: string[] = [];
+    const scratch: string[] = [];
+    let quotient = '', rest = '';
+    chk.parts.forEach((p, i) => {
+        const v = parts[i] ?? '';
+        if ('rest' in p) rest = v;
+        else if ('kind' in p) { if (p.kind === 'pp') pps.push(v); else quotient = v; }
+        else if (/^[cb]/.test(p.cell)) { if (v) scratch.push(v); }
+        else byCell.set(p.cell, v);
+    });
+    if (chk.parts.some(p => 'rest' in p)) return `${quotient.replace('.', ',')} r ${rest.replace('.', ',')}`;
+    const digits = chk.answerCells.map(k => byCell.get(k) || '_');
+    const int = digits.slice(0, chk.answerInt).join('').replace(/^_+/, '') || '0';
+    const dec = digits.slice(chk.answerInt).join('').replace(/_+$/, '');
+    const row = dec ? `${int},${dec}` : int;
+    const sum = pps.length ? `${pps.join(' + ')} = ${row}` : row;
+    return scratch.length ? `${sum} (onthouden ${scratch.join(' ')})` : sum;
+}
 
 // ── Getalbegrip ──────────────────────────────────────────────────────────────
 

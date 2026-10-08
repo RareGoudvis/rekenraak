@@ -58,6 +58,10 @@ interface OefenState {
     tick(now?: number): void;
     setInteraction(next: InteractionState): void;
     focusCell(key: string | null): void;
+    // fill-cells: a physical keyboard typed into a cell; Tab / Shift+Tab; Enter (next cell, or Controleer on the last).
+    typeCell(key: string, raw: string): void;
+    moveCell(step: 1 | -1): void;
+    enterCell(): void;
 }
 
 const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
@@ -107,6 +111,29 @@ export function interactionAnswer(s: OefenSessie | null, cur: KioskCurrent | nul
     return { given, ready: d.interact.kind === 'tap-multi' || given.trim() !== '' };
 }
 
+export interface CellPlan {
+    // Every cell in the descriptor's key order (Tab walks it).
+    keys: string[];
+    // The cells Enter and a full cell move through: the keys minus the scratch cells (carries).
+    flow: string[];
+    length: Record<string, number | undefined>;
+}
+
+/** The fill-cells navigation for the exercise on the card, from the descriptor's keys and cellOf (never its answer). */
+export function cellPlanOf(s: OefenSessie | null, cur: KioskCurrent | null): CellPlan | null {
+    const d = s && cur ? kioskFor(s.types[cur.slot]?.typeId ?? '') : null;
+    if (!d?.interact || !cur || d.interact.kind !== 'fill-cells' || kioskInputOf(d, cur.exercise, cur.constraints) !== 'interactive') return null;
+    const keys = d.interact.keys?.(cur.exercise, cur.constraints) ?? [];
+    const spec = (k: string) => d.interact!.cellOf?.(k, cur.exercise, cur.constraints) ?? {};
+    return { keys, flow: keys.filter(k => !spec(k).scratch), length: Object.fromEntries(keys.map(k => [k, spec(k).length])) };
+}
+
+// The first flow cell after `key` in key order (a carry hands on to the digit below it).
+const flowAfter = (plan: CellPlan, key: string | null): string | null => {
+    const at = key === null ? -1 : plan.keys.indexOf(key);
+    return plan.keys.slice(at + 1).find(k => plan.flow.includes(k)) ?? null;
+};
+
 const fieldsFor = (info: CurrentInput | null) => (info?.kind === 'choice' ? [''] : (info?.labels ?? ['']).map(() => ''));
 
 // Keeps what the field may hold: digits plus this type's extra keys; '.' types as ','.
@@ -134,13 +161,34 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         set({ run: done, shown: null, phase: 'locked', input: [''], field: 0, lastCorrect: null });
     };
 
+    // fill-cells: `raw` becomes the cell's text. A cell of fixed length takes the newest
+    // characters (typing over a ruitje replaces its digit) and, once full, hands the keypad on.
+    const writeCell = (cell: string, raw: string, grew: boolean) => {
+        const { interaction, sessie, shown } = get();
+        const plan = cellPlanOf(sessie, shown);
+        const info = currentInput(sessie, shown);
+        if (!plan || !info || !plan.keys.includes(cell)) return;
+        const len = plan.length[cell];
+        let value = sanitizeAnswer(raw, info.keys);
+        if (len !== undefined && value.length > len) value = value.slice(-len);
+        const full = grew && len !== undefined && value.length >= len;
+        const next = full ? flowAfter(plan, cell) : null;
+        set({ interaction: { ...interaction, cells: { ...interaction.cells, [cell]: value } }, ...(next && { activeCell: next }) });
+    };
+
     // fill-cells: a keypad key types into the active cell of the card (the cell owns the value).
-    const pressCell = (key: string, keys: readonly string[]) => {
+    const pressCell = (key: string) => {
         const { interaction, activeCell } = get();
         if (!activeCell) return;
         const value = interaction.cells[activeCell] ?? '';
-        const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, keys);
-        set({ interaction: { ...interaction, cells: { ...interaction.cells, [activeCell]: nextValue } } });
+        if (key === 'back') writeCell(activeCell, value.slice(0, -1), false);
+        else writeCell(activeCell, value + key, true);
+    };
+
+    // The cell the keypad starts in: the first one on the Enter path.
+    const firstCell = (s: OefenSessie, cur: KioskCurrent) => {
+        const plan = cellPlanOf(s, cur);
+        return plan ? (plan.flow[0] ?? plan.keys[0] ?? null) : null;
     };
 
     const timeUp = (run: OefenRun, now: number) => run.timerEndsAt !== undefined && now >= run.timerEndsAt;
@@ -186,7 +234,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (timeUp(last, now)) { set({ run: last }); finish(last, now); return; }
             set({ run: last });
             const cur = currentOf(last);
-            if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)), field: 0 });
+            if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)), field: 0, activeCell: firstCell(s, cur) });
             else get().next();
         },
 
@@ -211,7 +259,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
             const updated: OefenRun = { ...run, current };
             persist(updated);
-            set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null });
+            set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: firstCell(s, current) });
         },
 
         press(key) {
@@ -219,7 +267,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (phase !== 'exercise') return;
             const info = currentInput(sessie, shown);
             if (!info || info.kind === 'choice') return;
-            if (info.kind === 'interactive') { pressCell(key, info.keys); return; }
+            if (info.kind === 'interactive') { pressCell(key); return; }
             const value = input[field] ?? '';
             const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys, info.kind);
             // Two digits of uur typed: the keypad moves on to the minutes, like a digital clock.
@@ -299,6 +347,32 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         focusCell(key) {
             set({ activeCell: key });
+        },
+
+        typeCell(key, raw) {
+            if (get().phase !== 'exercise') return;
+            const before = get().interaction.cells[key] ?? '';
+            set({ activeCell: key });
+            writeCell(key, raw, raw.length > before.length);
+        },
+
+        moveCell(step) {
+            const plan = cellPlanOf(get().sessie, get().shown);
+            if (!plan?.keys.length) return;
+            const at = plan.keys.indexOf(get().activeCell ?? '');
+            const n = plan.keys.length;
+            set({ activeCell: plan.keys[at < 0 ? 0 : (at + step + n) % n] });
+        },
+
+        enterCell() {
+            const { sessie: s, shown: cur, activeCell, phase } = get();
+            const plan = cellPlanOf(s, cur);
+            if (!plan || phase !== 'exercise') return;
+            const next = flowAfter(plan, activeCell);
+            if (next) { set({ activeCell: next }); return; }
+            // Past the last cell: check, or (nothing to check yet) back to the first cell.
+            if (interactionAnswer(s, cur, get().interaction)?.ready) get().answer();
+            else set({ activeCell: plan.flow[0] ?? plan.keys[0] ?? null });
         },
     };
 });
