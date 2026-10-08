@@ -248,11 +248,11 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
 
             {/* ── Ink undo/redo + pagina leegmaken ── */}
             <div style={S.group}>
-                <button type="button" className="ui-hover" title="Ongedaan maken (inkt)" aria-label="Ongedaan maken"
+                <button type="button" className="ui-hover" title="Ongedaan maken (Ctrl+Z): alleen getekende inkt, widgets niet" aria-label="Ongedaan maken"
                     disabled={!canUndoInk} style={{ ...S.toolBtn, ...(!canUndoInk ? S.toolDisabled : {}) }} onClick={undoStroke}>
                     <ArrowUUpLeft size={22} />
                 </button>
-                <button type="button" className="ui-hover" title="Opnieuw (inkt)" aria-label="Opnieuw"
+                <button type="button" className="ui-hover" title="Opnieuw (Ctrl+Y): alleen getekende inkt" aria-label="Opnieuw"
                     disabled={!canRedoInk} style={{ ...S.toolBtn, ...(!canRedoInk ? S.toolDisabled : {}) }} onClick={redoStroke}>
                     <ArrowUUpRight size={22} />
                 </button>
