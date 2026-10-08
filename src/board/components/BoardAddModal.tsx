@@ -3,7 +3,8 @@ import { Plus, X } from '@phosphor-icons/react';
 import ExercisePreview from '../../components/shared/ExercisePreview';
 import { buildCatalog, catalogDomains, type CatalogItem, type CatalogVariant } from '../../config/exerciseCatalog';
 import { useBoardStore } from '../useBoardStore';
-import { makeBoardBlock } from '../boardBlocks';
+import { makeBoardBlock, sheetSeedContext } from '../boardBlocks';
+import { seedConstraints } from '../../config/baseSettings';
 import { staggerPos } from '../addWidgets';
 
 interface Props {
@@ -41,8 +42,14 @@ export default function BoardAddModal({ onClose }: Props) {
             (!needle || it.label.toLowerCase().includes(needle) || it.context.toLowerCase().includes(needle)));
     }, [catalog, domain, search]);
 
+    // Resolve the preview the way handleAdd seeds the block, so the card shows what a tap adds.
+    const previewConstraints = (item: CatalogItem) => {
+        const v = item.variants[0];
+        return seedConstraints({ typeId: item.typeId, override: v.constraints, leafId: v.key, ...sheetSeedContext() });
+    };
+
     const handleAdd = (item: CatalogItem, variant: CatalogVariant) => {
-        const block = makeBoardBlock(item.typeId, variant.constraints);
+        const block = makeBoardBlock(item.typeId, { override: variant.constraints, leafId: variant.key, ...sheetSeedContext() });
         if (!block) return;
         // 660px ≈ a full exercise row (625px viewer budget + card padding), so every
         // type shows complete rows out of the box; the corner grip scales from there.
@@ -87,7 +94,7 @@ export default function BoardAddModal({ onClose }: Props) {
                         </div>
                         {/* NOT centered — width:100% viewers collapse when centered. */}
                         <div style={S.preview}>
-                            <ExercisePreview typeId={item.typeId} constraints={item.variants[0].constraints} height={110} />
+                            <ExercisePreview typeId={item.typeId} constraints={previewConstraints(item)} height={110} />
                         </div>
                         <div style={S.cardFoot}>
                             {item.variants.length === 1 ? (
