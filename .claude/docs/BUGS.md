@@ -166,8 +166,6 @@ UpdateState). Left over, found while fixing:
   draftBlocks path in updateBlockSettings skips the sheet's generateExtra top-up. Repro: Hoofdrekenen
   card (6 rows), slider to 2, card still shows 6. Fix: top up / cut in the board's subscription,
   or route draft count changes through generateExtra. 2026-10-08
-- staggerPos (addWidgets.ts) cycles every 5 widgets, so the 6th card lands exactly on the 1st and
-  hides it completely. Fix: offset each cycle, or place at the first free spot. 2026-10-08
 - Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
   Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
   instead of the sheet (checked with a print-to-PDF). 2026-10-08

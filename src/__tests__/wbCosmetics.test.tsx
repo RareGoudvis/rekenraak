@@ -7,6 +7,7 @@ import GeldPalet from '../board/components/GeldPalet';
 import WidgetInspector from '../board/components/WidgetInspector';
 import BoardAddModal from '../board/components/BoardAddModal';
 import BoardBottomBar from '../board/components/BoardBottomBar';
+import { addBasicWidget } from '../board/addWidgets';
 import type { BoardWidget } from '../board/boardTypes';
 
 // Bordmodus cosmetics from BUGS.md: each test failed before its fix.
@@ -90,6 +91,30 @@ describe('bottom bar popups', () => {
         expect(queryByText('Bord bewaren als…')).not.toBeNull();
         fireEvent.pointerDown(document.body);
         expect(queryByText('Bord bewaren als…')).toBeNull();
+    });
+});
+
+describe('new card placement', () => {
+    const positions = () => {
+        const s = useBoardStore.getState();
+        return s.pages[s.activePageIdx].widgets.map(w => `${w.x},${w.y}`);
+    };
+
+    test('twelve adds land on twelve different spots; the 6th no longer covers the 1st', () => {
+        for (let i = 0; i < 12; i++) addBasicWidget('tekst', {}, 300);
+        const p = positions();
+        expect(p[5]).not.toBe(p[0]);
+        expect(new Set(p).size).toBe(12);
+    });
+
+    test('a spot freed by moving a card away is the next one used', () => {
+        for (let i = 0; i < 3; i++) addBasicWidget('tekst', {}, 300);
+        const s = useBoardStore.getState();
+        const second = s.pages[s.activePageIdx].widgets[1];
+        const freed = `${second.x},${second.y}`;
+        s.updateWidget(second.id, { x: 900, y: 500 });
+        addBasicWidget('tekst', {}, 300);
+        expect(positions()[3]).toBe(freed);
     });
 });
 
