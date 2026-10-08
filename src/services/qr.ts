@@ -7,10 +7,20 @@ import qrcode from 'qrcode-generator';
 // Quiet zone of 4 modules is what the QR spec asks for; scanners get flaky below it.
 export const QR_QUIET = 4;
 
-// Byte mode, error level M, smallest version (1-40) that fits. Throws when the text is too long.
+// QR alphanumeric charset (5.5 bits/char instead of byte mode's 8).
+const ALNUM_TAIL = /[0-9A-Z $%*+\-./:]*$/;
+// Below this a mode switch (4-bit mode + length header) costs more than it saves.
+const MIN_ALNUM_TAIL = 24;
+
+// Error level M, smallest version (1-40) that fits. Throws when the text is too long. An
+// upper-case tail (the oefenlink's base32 payload) goes in its own alphanumeric segment.
 export function qrMatrix(text: string): boolean[][] {
     const qr = qrcode(0, 'M');
-    qr.addData(text, 'Byte');
+    const tail = ALNUM_TAIL.exec(text)?.[0] ?? '';
+    if (tail.length >= MIN_ALNUM_TAIL) {
+        if (tail.length < text.length) qr.addData(text.slice(0, text.length - tail.length), 'Byte');
+        qr.addData(tail, 'Alphanumeric');
+    } else qr.addData(text, 'Byte');
     qr.make();
     const n = qr.getModuleCount();
     return Array.from({ length: n }, (_, r) => Array.from({ length: n }, (_, c) => qr.isDark(r, c)));

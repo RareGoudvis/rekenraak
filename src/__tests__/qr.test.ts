@@ -34,4 +34,10 @@ describe('qr', () => {
         expect(v('a'.repeat(200))).toBeGreaterThan(v('a'.repeat(20)));
         expect(qrMatrixOrNull('a'.repeat(3000))).toBeNull();
     });
+
+    it('codes an upper-case tail in alphanumeric mode: smaller than the same length in lower case', () => {
+        const v = (s: string) => qrVersionOf(qrMatrix(s));
+        const payload = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.repeat(12);
+        expect(v(`https://x.be/o.html#oefen=${payload}`)).toBeLessThan(v(`https://x.be/o.html#oefen=${payload.toLowerCase()}`));
+    });
 });

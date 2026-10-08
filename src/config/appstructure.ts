@@ -20,6 +20,8 @@ export interface LeafExercise {
     // Exercises per new block when this leaf wants another count than its type's registry
     // default (rooster figures are tall: 2 fill a page). Read via LEAF_BY_ID.
     defaultCount?: number;
+    // Oefenmodus name when kioskLabel()'s derived one ("Optellen · natuurlijk") does not fit.
+    shortLabel?: string;
 }
 
 export interface ExerciseType {
@@ -36,6 +38,8 @@ export interface ExerciseType {
     // The pinned max is only the no-leerjaar default: with a leerjaar picked, the grade's
     // floored max wins (afronden / positie-splitsen grow with the grade; basis 10 does not).
     gradeSetsMax?: true;
+    // Oefenmodus name when kioskLabel()'s derived one ("Optellen · natuurlijk") does not fit.
+    shortLabel?: string;
 }
 
 export interface Subdomain {
@@ -644,6 +648,7 @@ export interface AppLeaf {
     instruction?: string | InstructionFn;
     gradeSetsMax?: true;
     defaultCount?: number;
+    shortLabel?: string;
 }
 
 export function flattenLeaves(): AppLeaf[] {
@@ -663,6 +668,7 @@ export function flattenLeaves(): AppLeaf[] {
                         defaultConstraints: type.defaultConstraints,
                         instruction: type.instruction,
                         gradeSetsMax: type.gradeSetsMax,
+                        shortLabel: type.shortLabel,
                     });
                 } else {
                     for (const leaf of type.children ?? []) {
@@ -676,6 +682,7 @@ export function flattenLeaves(): AppLeaf[] {
                             instruction: leaf.instruction,
                             gradeSetsMax: leaf.gradeSetsMax,
                             defaultCount: leaf.defaultCount,
+                            shortLabel: leaf.shortLabel,
                         });
                     }
                 }
