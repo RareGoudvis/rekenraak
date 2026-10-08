@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X, ArrowCounterClockwise } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
@@ -45,9 +45,16 @@ export default function BoardInspector({ widget }: Props) {
         return () => { unsub(); useWorksheetStore.getState().clearDraftBlocks(); };
     }, [widgetId, blockId]);
 
+    const [advancedOpen, setAdvancedOpen] = useState(false);
+
     const block = draft ?? widget.block;
     if (!block) return null;
-    const Config = EXERCISE_UI[block.typeId]?.Config;
+    // Same registry lookup as the sheet Inspector: the family says which sections it owns.
+    const ui = EXERCISE_UI[block.typeId];
+    const Config = ui?.Config;
+    const StyleConfig = ui?.StyleConfig;
+    const AdvancedConfig = ui?.AdvancedConfig;
+    const showAdvanced = !!AdvancedConfig && (!ui?.advancedApplies || ui.advancedApplies(block));
 
     const regenerate = () => {
         const fresh = regenerateBoardBlock(block);
@@ -100,6 +107,23 @@ export default function BoardInspector({ widget }: Props) {
 
                 {/* The type's real config plugin, edits the draft mirror. */}
                 {Config && <div style={S.section}><Config block={block} /></div>}
+
+                {/* The family's Differentiatie body (cijferen scaffolding, breuken style, …). */}
+                {StyleConfig && (
+                    <div style={S.section}>
+                        <span style={S.sectionTitle}>Differentiatie</span>
+                        <StyleConfig block={block} />
+                    </div>
+                )}
+
+                {showAdvanced && AdvancedConfig && (
+                    <div style={S.section}>
+                        <button type="button" style={S.disclosure} aria-expanded={advancedOpen} onClick={() => setAdvancedOpen(!advancedOpen)}>
+                            Geavanceerd <span style={{ fontSize: '10px' }}>{advancedOpen ? '▾' : '▸'}</span>
+                        </button>
+                        {advancedOpen && <AdvancedConfig block={block} />}
+                    </div>
+                )}
             </div>
 
             <button type="button" className="ui-hover" style={S.genBtn} onClick={regenerate}>
@@ -127,6 +151,11 @@ const S = {
     } as React.CSSProperties,
     scroll: { flex: 1, overflowY: 'auto', padding: '12px 14px', minHeight: 0 } as React.CSSProperties,
     section: { marginBottom: '16px' } as React.CSSProperties,
+    sectionTitle: { display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '4px' } as React.CSSProperties,
+    disclosure: {
+        display: 'flex', alignItems: 'center', gap: '4px', background: 'none', border: 'none', padding: 0,
+        cursor: 'pointer', fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'inherit',
+    } as React.CSSProperties,
     label: { display: 'block', fontSize: '12px', color: 'var(--text-muted)', margin: '10px 0 4px' } as React.CSSProperties,
     slider: { width: '100%' } as React.CSSProperties,
     genBtn: {
