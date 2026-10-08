@@ -145,7 +145,6 @@ UpdateState). Left over, found while fixing:
 - [P5] Hoofdrekenen breuken "Kommagetal × Breuk": the key prints as an improper fraction ("19412/25");
   rational mixed numbers can show "3 10/2" or "1 2/2" (not simplified). Key format is an owner call.
   (Whole "kommagetallen" fixed 2026-10-08.) 2026-10-08
-- [P6] verbanden-tabel default repeats values (9/10 and 1/2 twice). 2026-10-08
 - [P7] schattend-dec target 't': a whole estimate prints without its decimal ("≈ 86", "59" instead of
   "86,0") — same family as the afronden-dec-rooster "56" line under Generators. 2026-10-08
 

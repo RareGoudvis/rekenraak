@@ -575,6 +575,17 @@ const verbandenSpec: TypeSpec<VerbandExercise> = {
         if (e.target && !reps.includes(e.target)) push('target-not-in-reps', e.target, reps.join(','), ex);
         if (e.fraction.n < 1 || e.fraction.n >= e.fraction.d) push('numerator-range', e.fraction.n, `1..${e.fraction.d - 1}`, ex);
     },
+    // One value once per block (9/10 as breuk and as procent is the same row); a repeat is intended only WITH the repeat note.
+    block: (items, ctx, push) => {
+        if (/kom(?:t|en) dubbel voor/.test(ctx.note ?? '')) return;
+        const seen = new Set<string>();
+        for (const e of items) {
+            const g = gcd(e.fraction.n, e.fraction.d);
+            const k = `${e.fraction.n / g}/${e.fraction.d / g}`;
+            if (seen.has(k)) push('value-repeated', k, 'each value once', `${fmtF(e.fraction)} given ${e.given}${e.target ? ` → ${e.target}` : ''}`);
+            seen.add(k);
+        }
+    },
 };
 
 // ── Bewerkingen (rest) ───────────────────────────────────────────────────────
