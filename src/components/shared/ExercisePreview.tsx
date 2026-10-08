@@ -9,6 +9,7 @@ interface Props {
     constraints: Record<string, unknown>;   // fully resolved constraints (defaults + base + variant + edits)
     nonce?: number;                          // bump to force a fresh random generation
     height?: number;                         // clip-box height; default 150
+    count?: number;                          // exercises to generate; default 1
 }
 
 // A preview never needs huge numbers, and a generator fed an out-of-range max (e.g. the
@@ -26,7 +27,7 @@ function clampForPreview(constraints: Record<string, unknown>): Record<string, u
 
 // Build a throwaway block and call the generator DIRECTLY — never touches the
 // store / setExercises. Caller passes the already-resolved constraints.
-function buildPreviewBlock(typeId: string, rawConstraints: Record<string, unknown>): MathBlock | null {
+function buildPreviewBlock(typeId: string, rawConstraints: Record<string, unknown>, count: number): MathBlock | null {
     const def = REGISTRY[typeId];
     if (!def) return null;
     const constraints = clampForPreview(rawConstraints);
@@ -37,7 +38,7 @@ function buildPreviewBlock(typeId: string, rawConstraints: Record<string, unknow
         instructionMode: 'geen',
         layoutPreset: 'inline-short',
         steppedLines: 3,
-        numberOfExercises: 1,
+        numberOfExercises: count,
         totalPoints: 0,
         verticalSpacing: 14,
         constraints,
@@ -64,7 +65,7 @@ function useInView<T extends HTMLElement>() {
     return { ref, inView };
 }
 
-export default function ExercisePreview({ typeId, constraints, nonce = 0, height = 150 }: Props) {
+export default function ExercisePreview({ typeId, constraints, nonce = 0, height = 150, count = 1 }: Props) {
     const { ref: boxRef, inView } = useInView<HTMLDivElement>();
     const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
@@ -73,13 +74,13 @@ export default function ExercisePreview({ typeId, constraints, nonce = 0, height
     const block = useMemo(() => {
         if (!inView) return null;
         try {
-            return buildPreviewBlock(typeId, constraints);
+            return buildPreviewBlock(typeId, constraints, count);
         } catch {
             return null;
         }
         // constraints captured via stable JSON key
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [typeId, constraintsKey, nonce, inView]);
+    }, [typeId, constraintsKey, nonce, inView, count]);
 
     const Viewer = EXERCISE_UI[typeId]?.Viewer;
 

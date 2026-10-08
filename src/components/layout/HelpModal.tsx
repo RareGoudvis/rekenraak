@@ -5,6 +5,7 @@ interface Props {
     onClose: () => void;
     onStartTour?: () => void;
     onShowVideo?: () => void;
+    onShowReleaseNotes?: () => void;
 }
 
 type Tab = 'maken' | 'opslaan' | 'delen';
@@ -12,7 +13,7 @@ type Tab = 'maken' | 'opslaan' | 'delen';
 // Step-by-step usage guide in three levels: build a worksheet, save/load worksheets,
 // share worksheets. Kept in sync with the current chrome (topbar "Meer" menu,
 // Oefeningen/Overzicht tabs, Bibliotheek presets). Reuses theme CSS variables.
-export default function HelpModal({ onClose, onStartTour, onShowVideo }: Props) {
+export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowReleaseNotes }: Props) {
     const [tab, setTab] = useState<Tab>('maken');
 
     return (
@@ -37,12 +38,15 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo }: Props) 
                         {onShowVideo && (
                             <button
                                 onClick={onShowVideo}
-                                style={{
-                                    padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                                    fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
-                                    border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
-                                }}
+                                style={secondaryBtnStyle}
                             >Bekijk de video</button>
+                        )}
+                        {/* The way back to the release notes once the banner is dismissed. */}
+                        {onShowReleaseNotes && (
+                            <button
+                                onClick={onShowReleaseNotes}
+                                style={secondaryBtnStyle}
+                            >Wat is er nieuw</button>
                         )}
                     </div>
                 </div>
@@ -121,6 +125,11 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo }: Props) 
     );
 }
 
+const secondaryBtnStyle: React.CSSProperties = {
+    padding: '10px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+    fontSize: '14px', fontWeight: 700, fontFamily: 'inherit',
+    border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
+};
 const linkStyle: React.CSSProperties = { color: 'var(--accent-purple)', textDecoration: 'underline' };
 
 function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
