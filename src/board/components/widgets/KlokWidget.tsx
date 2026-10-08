@@ -64,7 +64,7 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
             {k.showAnalog && (
                 <div
                     ref={faceRef} data-klok-face
-                    style={{ background: '#fff', borderRadius: '50%', padding: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', cursor: 'grab', touchAction: 'none' }}
+                    style={{ background: '#fff', borderRadius: '50%', padding: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', cursor: 'grab', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
                     onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
                 >
                     <AnalogClockSVG hours={k.hours} minutes={k.minutes} showHourHand={k.showHourHand} showMinuteHand={k.showMinuteHand} is24hour={false} size={size} />

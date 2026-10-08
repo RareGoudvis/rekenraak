@@ -71,7 +71,7 @@ export default function GeldPalet() {
                 {PALET.map(item => (
                     <div
                         key={item.denom + item.type}
-                        style={S.item}
+                        style={S.item} data-geld-palet-item
                         title="Sleep naar het bord"
                         onPointerDown={(e) => startDrag(e, item)}
                         onPointerMove={onMove}
@@ -105,5 +105,7 @@ const S = {
     item: {
         cursor: 'grab', touchAction: 'none', borderRadius: '10px', padding: '4px',
         border: '1px solid transparent',
+        // A drag out of the palette must not select the bill/coin labels on its way.
+        userSelect: 'none', WebkitUserSelect: 'none',
     } as React.CSSProperties,
 };

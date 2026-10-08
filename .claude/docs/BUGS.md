@@ -160,9 +160,6 @@ UpdateState). Left over, found while fixing:
 
 ## Bordmodus
 
-- Klok widget: dragging a hand can text-select the face numerals (seen in the 2026-10-08 read-only
-  check; WB1's headless drag did not reproduce it). Fix: `user-select: none` on the KlokWidget face
-  (and the GeldPalet bill/coin drag source). 2026-10-08
 - WidgetInspector › WerksymbolenSettings logs React's "Each child in a list should have a unique
   key" when its panel opens. Repro: Toevoegen › Klasmanagement › Werksymbolen, ⚙. 2026-10-08
 - Board add panel (BoardAddModal) search matches only the item label and context, not variant
