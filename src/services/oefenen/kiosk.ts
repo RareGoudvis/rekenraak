@@ -12,6 +12,12 @@ export function kioskInputOf(d: KioskDescriptor, ex: unknown, c: Record<string, 
     return d.inputOf?.(ex, c) ?? d.input;
 }
 
+/** The card header: the descriptor's kiosk wording when it has one, else the paper instruction. */
+export function kioskInstructionOf(typeId: string, ex: unknown, c: Record<string, unknown>, paper: string): string {
+    const ki = kioskFor(typeId)?.kioskInstruction;
+    return (typeof ki === 'function' ? ki(ex, c) : ki) ?? paper;
+}
+
 /** The type has a descriptor and it can check these settings (registry defaults fill gaps). */
 export function kioskSupports(typeId: string, constraints: Record<string, unknown> = {}): boolean {
     const def = REGISTRY[typeId];
