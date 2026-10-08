@@ -47,3 +47,25 @@ export function generateDeelbaarheidKleurExercises(block: MathBlock): Deelbaarhe
         return { id: rndId(), divisor, numbers: stripNumbers(perRow, maxGetal, divisor), isManuallyEdited: false };
     });
 }
+
+// Oefenmodus: a thumb-sized card cannot hold a 100-cell kleurraster, so the card shows at most
+// this many numbers. SYNC: DeelbaarheidKleurViewer and the kiosk descriptor both read the same list.
+export const KIOSK_MAX_NUMBERS = 20;
+
+// The numbers the card shows: the first KIOSK_MAX_NUMBERS, but never fewer than two multiples
+// when the full list has them (a long list with few multiples would otherwise often cut them all).
+export function kioskNumbers(numbers: readonly number[], divisor: number): number[] {
+    if (numbers.length <= KIOSK_MAX_NUMBERS) return [...numbers];
+    const isMul = (n: number) => n % divisor === 0;
+    const shown = numbers.slice(0, KIOSK_MAX_NUMBERS);
+    const need = 2 - shown.filter(isMul).length;
+    if (need <= 0) return shown;
+    const extra = numbers.slice(KIOSK_MAX_NUMBERS).filter(isMul).slice(0, need);
+    // Spread the swapped-in multiples over the list, onto non-multiples only.
+    extra.forEach((m, k) => {
+        let p = Math.floor(((k + 1) * KIOSK_MAX_NUMBERS) / (extra.length + 1));
+        while (isMul(shown[p])) p = (p + 1) % KIOSK_MAX_NUMBERS;
+        shown[p] = m;
+    });
+    return shown;
+}

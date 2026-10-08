@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import type { MaateenheidConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { ANSWER_LINE_H } from './BlockWidthContext';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
@@ -13,6 +14,8 @@ interface Props {
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
 
 export default function MaateenheidViewer({ block, showSolutions }: Props) {
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the unit chip (omcirkelen).
+    const ix = useViewerInteraction();
     const exercises: MaateenheidExercise[] = block.maateenheidExercises || [];
     const c = block.constraints as MaateenheidConstraints;
     const subType: string = c.subType ?? 'eenheid';
@@ -48,10 +51,11 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                         </span>
                         {ex.choices && (
                             <span style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6em', paddingLeft: '24px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
-                                {ex.choices.map(u => (
+                                {ex.choices.map((u, i) => (
                                     // Solutions circle the right chip in red (print-safe ring).
-                                    <span key={u} style={{
-                                        padding: '1px 8px', borderRadius: '10px',
+                                    <span key={u} {...interactionProps(ix, String(i))} style={{
+                                        // Kiosk: a taller chip so a unit scales to a ≥ 44 px tap target on a phone.
+                                        padding: ix ? '8px 12px' : '1px 8px', borderRadius: '10px',
                                         border: showSolutions && u === ex.unit ? `2px solid ${SOL}` : '1px solid transparent',
                                         color: showSolutions && u === ex.unit ? SOL : undefined,
                                     }}>{chipText(u)}</span>

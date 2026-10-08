@@ -7,6 +7,7 @@ import { OP_GLYPH as GLYPH } from '../../services/math/formatters';
 import type { ControlerenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { ANSWER_LINE_H } from './BlockWidthContext';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
@@ -51,6 +52,8 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
 }
 
 export default function ControlerenViewer({ block, showSolutions }: Props) {
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the juist / fout pill.
+    const ix = useViewerInteraction();
     const exercises: ControleExercise[] = block.controleExercises || [];
     const c = block.constraints as ControlerenConstraints;
     const subType: string = c.subType ?? 'negenproef';
@@ -63,14 +66,16 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
 
     const juistFout = (ex: ControleExercise) => {
         const correct = ex.shownAnswer === ex.correctAnswer;
-        const mark = (label: string, hit: boolean) => (
-            <span style={{
-                padding: '1px 10px', borderRadius: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.65)',
+        // Keys: 0 = juist, 1 = fout (SYNC: CONTROLEREN_KIOSK).
+        const mark = (label: string, hit: boolean, key: string) => (
+            <span {...interactionProps(ix, key)} style={{
+                // Kiosk: a taller pill so it scales to a ≥ 44 px tap target on a phone.
+                padding: ix ? '9px 14px' : '1px 10px', borderRadius: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.65)',
                 border: showSolutions && hit ? `2px solid ${SOL}` : '1px solid #999',
                 color: showSolutions && hit ? SOL : undefined,
             }}>{label}</span>
         );
-        return <span style={{ display: 'inline-flex', gap: '8px' }}>{mark('juist', correct)}{mark('fout', !correct)}</span>;
+        return <span style={{ display: 'inline-flex', gap: '8px' }}>{mark('juist', correct, '0')}{mark('fout', !correct, '1')}</span>;
     };
 
     // ── NEGENPROEF: worked × + kruis + juist/fout ──────────────────────────────

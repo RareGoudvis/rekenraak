@@ -40,7 +40,7 @@ export function useViewerInteraction(): ViewerInteraction | null {
     return useContext(ViewerInteractionContext);
 }
 
-/** The state after tapping `key`: tap replaces, tap-multi toggles, order appends (a second tap takes it out again). */
+/** The state after tapping `key`: tap replaces, tap-multi toggles, order appends (tapping an ordered part takes it and every later one out). */
 export function toggled(kind: InteractionKind, state: InteractionState, key: string): InteractionState {
     if (kind === 'tap') return { ...state, selected: state.selected[0] === key ? [] : [key] };
     if (kind === 'tap-multi') {
@@ -48,8 +48,9 @@ export function toggled(kind: InteractionKind, state: InteractionState, key: str
         return { ...state, selected: on ? state.selected.filter(k => k !== key) : [...state.selected, key] };
     }
     if (kind === 'order') {
-        const on = state.order.includes(key);
-        return { ...state, order: on ? state.order.filter(k => k !== key) : [...state.order, key] };
+        // The parts after it were placed relative to it, so they go too: the pupil redoes the tail.
+        const at = state.order.indexOf(key);
+        return { ...state, order: at >= 0 ? state.order.slice(0, at) : [...state.order, key] };
     }
     return state;
 }

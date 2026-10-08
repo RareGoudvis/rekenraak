@@ -19,7 +19,8 @@ import { sanitizeAnswer } from '../oefenen/useOefenStore';
 import type * as T from '../services/math/types';
 import { PLACE_VALUES } from '../services/math/mathEngine';
 import { CONCEPT_NAMES } from '../services/vormleer/vormleerGenerator';
-import { applyOp, evaluateChain, evaluateTokens, isFraction, numValue, scaled } from './helpers/answerKeys';
+import { KIOSK_MAX_NUMBERS, kioskNumbers } from '../services/deelbaarheid/deelbaarheidKleurGenerator';
+import { applyOp,evaluateChain, evaluateTokens, isFraction, numValue, scaled } from './helpers/answerKeys';
 
 // Every kiosk-capable leaf × every leerjaar seed × 50 seeds: the descriptor's answer must be
 // the generator's own answer field, and checkAnswer must take it (in every spelling) and
@@ -52,6 +53,8 @@ const EXPECTED_LEAVES = [
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     'even-oneven-rooster',
+    'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
+    'breuken-kleuren',
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
 ];
 
@@ -73,7 +76,7 @@ function roundHalfUp(n: number, weight: number): number {
 
 // What the pupil must give: a number, [quotiënt, rest], a choice, accepted words, accepted
 // times or one number per field.
-type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] };
+type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] } | { count: number };
 
 // Every cijferen leaf is its own typeId; the answer must also redo the column sum.
 function cijferTruth(ex: CijferExercise): Truth {
@@ -218,9 +221,21 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
     kettingsommen: (p: T.PatroonExercise) => patroonTruth(p),
     getallenas: (a: T.GetallenasExercise) => axisTruth(a),
     getallenrijen: (a: T.GetallenasExercise) => axisTruth(a),
-    deelbaarheid: (d: T.DeelbaarheidExercise) => {
+    deelbaarheid: (d: T.DeelbaarheidExercise, c) => {
+        // tabel: the divisor columns the number divides, smallest first (tapped cells).
+        if (c.layout !== 'veelvouden') return { set: (c.divisors as number[]).filter(x => d.number! % x === 0).sort((a, b) => a - b).map(x => formatMathNumber(x)) };
         d.sequence!.forEach((v, k) => expect(v).toBe(d.base! * k));
         return { multi: d.sequence!.slice(d.givenCount ?? 2) };
+    },
+    'deelbaarheid-kleuren': (k: T.DeelbaarheidKleurExercise) => {
+        // The card shows a capped sub-list of the generated numbers; the multiples in it are the answer.
+        const shown = kioskNumbers(k.numbers, k.divisor);
+        expect(shown.length).toBe(Math.min(k.numbers.length, KIOSK_MAX_NUMBERS));
+        shown.forEach(n => expect(k.numbers).toContain(n));
+        expect(new Set(shown).size).toBe(shown.length);
+        const all = k.numbers.filter(n => n % k.divisor === 0).length;
+        expect(shown.filter(n => n % k.divisor === 0).length).toBeGreaterThanOrEqual(Math.min(2, all));
+        return { set: shown.filter(n => n % k.divisor === 0).sort((a, b) => a - b).map(n => formatMathNumber(n)) };
     },
     ordenen: (o: T.OrdenenExercise) => ordenTruth(o),
     'breuken-rangschikken': (o: T.OrdenenExercise) => ordenTruth(o),
@@ -255,6 +270,11 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         return { multi: asked.map(of) };
     },
     breuken: (f: T.FractionExercise, c) => {
+        if (c.subType === 'kleuren') {
+            expect(f.numerator).toBeGreaterThanOrEqual(1);
+            expect(f.numerator).toBeLessThanOrEqual(f.denominator);
+            return { count: f.numerator };
+        }
         if (c.subType === 'herkennen') {
             return (c.answerFormat ?? 'fraction-questions') === 'fraction-questions' ? { multi: [f.denominator, f.numerator] } : f.numerator / f.denominator;
         }
@@ -376,10 +396,18 @@ describe('descriptor answers agree with the generators', () => {
         ['vergelijken-getallen', { decimalPlaces: 2 }, 'choice'],
         ['vergelijken-kiezen', { chooseTarget: 'kleinste', decimalPlaces: 1 }, 'interactive'],
         ['even-oneven-rooster', { target: 'oneven', maxGetal: 10000, perRow: 12 }, 'interactive'],
+        ['deelbaarheid-tabel', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 10000 }, 'interactive'],
+        ['deelbaarheid-kleurraster', { divisors: [3, 7, 11, 12], maxGetal: 1000, rasterCount: 1000 }, 'interactive'],
+        ['deelbaarheid-omcirkelen', { divisors: [2], perRow: 5 }, 'interactive'],
+        ['breuken-kleuren', { shapes: ['circle'], maxDenominator: 12 }, 'interactive'],
+        ['breuken-kleuren', { shapes: ['square', 'rectangle'], minDenominator: 2, maxDenominator: 10 }, 'interactive'],
+        ['deelbaarheid-rooster', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 1000 }, 'interactive'],
         ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
+        ['plaatswaarde-omcirkelen', { decimalPlaces: 2, maxGetal: 1000000 }, 'interactive'],
         ['getalbegrip-functie', { answerMode: 'schrijven' }, 'text'],
-        ['controleren-negenproef', { foutAandeel: 'alles' }, 'choice'],
+        ['getalbegrip-functie', { functies: ['rang', 'code'] }, 'interactive'],
+        ['controleren-negenproef', { foutAandeel: 'alles' }, 'interactive'],
         ['temperatuur-aflezen', { includeNegatives: true }, 'number'],
         ['massa-weegschaal-aflezen', { notatie: 'kg-g', bereikGram: 5000, stepGram: 250 }, 'multi-number'],
         ['massa-weegschaal-aflezen', { notatie: 'kg-komma', bereikGram: 5000, stepGram: 250 }, 'number'],
@@ -387,7 +415,7 @@ describe('descriptor answers agree with the generators', () => {
         ['omtrek', { measureModel: 'gegeven', precision: 'mm', shapes: ['cirkel', 'trapezium', 'ruit'] }, 'number'],
         ['oppervlakte-berekenen', { askOmtrek: true, shapes: ['rechthoek', 'driehoek'] }, 'multi-number'],
         ['maateenheid-kiezen', { answerMode: 'schrijven', grootheden: ['temperatuur', 'tijd'] }, 'text'],
-        ['maateenheid-kiezen', { subType: 'schatten' }, 'choice'],
+        ['maateenheid-kiezen', { subType: 'schatten' }, 'interactive'],
         ['herleidingen-massa', { formats: ['enkel-samengesteld'], compoundMode: 'volledig' }, 'multi-number'],
         ['herleidingen-lengte', { formats: ['enkel-eenheid'] }, 'choice'],
         ['geld-herkennen', { format: 'decimaal' }, 'number'],
@@ -431,8 +459,34 @@ function checkInteractive(typeId: string, d: KioskDescriptor, ex: unknown, c: Re
         expect(check([]), where).toBe(false);
         return;
     }
+    if (ia.kind === 'order') {
+        // The generator's values, smallest (or largest) first; tapping the display in that
+        // order is right, the reverse is wrong, and a half row is no answer yet.
+        const want = (truth as { multi: number[] }).multi;
+        const o = ex as T.OrdenenExercise;
+        const parse = (s: string) => (s.includes('/') ? valueOf(s.replace('−', '-')) : Number(s.replace('−', '-').replace(/\s/g, '').replace(',', '.')));
+        expect(ia.answerOf(ex, c).split(INTERACT_SEP).map(s => scaled(parse(s))), where).toEqual(want.map(scaled));
+        const order = (seq: string[]) => ia.fromState({ ...EMPTY_INTERACTION, order: seq }, ex, c);
+        const right = [...keys].sort((a, b) => (numValue(o.display[Number(a)]) - numValue(o.display[Number(b)])) * (o.operator === '<' ? 1 : -1));
+        expect(checkAnswer(d, ex, c, order(right)), where).toBe(true);
+        expect(order(right.slice(0, -1)), where).toBe('');
+        const back = [...right].reverse();
+        if (scaled(want[0]) !== scaled(want[want.length - 1])) expect(checkAnswer(d, ex, c, order(back)), where).toBe(false);
+        return;
+    }
     expect(ia.kind, where).toBe('tap-multi');
-    const want = (truth as { set: string[] }).set;
+    if (typeof truth === 'object' && 'count' in truth) {
+        // breuken kleuren: ANY n of the d parts is right; one more or one fewer is wrong.
+        const n = truth.count;
+        expect(ia.answerOf(ex, c), where).toBe(String(n));
+        expect(keys.length, where).toBeGreaterThanOrEqual(n);
+        expect(check(keys.slice(0, n)), where).toBe(true);
+        expect(check(keys.slice(-n)), where).toBe(true);
+        expect(check(keys.slice(0, n - 1)), where).toBe(false);
+        if (keys.length > n) expect(check(keys.slice(0, n + 1)), where).toBe(false);
+        return;
+    }
+    const want =(truth as { set: string[] }).set;
     expect(ia.answerOf(ex, c).split(INTERACT_SEP).filter(Boolean), where).toEqual(want);
     const right = keys.filter(k => want.includes(tap([k])));
     const wrong = keys.filter(k => !right.includes(k));
@@ -652,13 +706,16 @@ describe('breuken-bewerken: the form is the exercise', () => {
 });
 
 describe('fractions as the sheet prints them', () => {
-    test('ordenen takes 6/8 as shown and 3/4 reduced', () => {
+    test('ordenen: 6/8 and 3/4 are one value, tapped in either order', () => {
         const d = kioskFor('ordenen')!;
-        const ex: T.OrdenenExercise = { id: 'o', operator: '<', display: [{ n: 6, d: 8 }, { n: 1, d: 8 }], values: [{ n: 1, d: 8 }, { n: 6, d: 8 }], isManuallyEdited: false };
-        expect(checkAnswer(d, ex, { numberType: 'rational' }, ['1/8', '6/8'])).toBe(true);
-        expect(checkAnswer(d, ex, { numberType: 'rational' }, ['1/8', '3/4'])).toBe(true);
-        expect(checkAnswer(d, ex, { numberType: 'rational' }, ['6/8', '1/8'])).toBe(false);
-        expect(d.separator!(ex, {})).toBe('<');
+        const ia = d.interact!;
+        const ex: T.OrdenenExercise = { id: 'o', operator: '<', display: [{ n: 6, d: 8 }, { n: 1, d: 8 }, { n: 3, d: 4 }], values: [{ n: 1, d: 8 }, { n: 6, d: 8 }, { n: 3, d: 4 }], isManuallyEdited: false };
+        const c = { numberType: 'rational' };
+        const tapped = (order: string[]) => checkAnswer(d, ex, c, ia.fromState({ ...EMPTY_INTERACTION, order }, ex, c));
+        expect(tapped(['1', '0', '2'])).toBe(true);
+        expect(tapped(['1', '2', '0'])).toBe(true);
+        expect(tapped(['0', '1', '2'])).toBe(false);
+        expect(ia.fromState({ ...EMPTY_INTERACTION, order: ['1', '0'] }, ex, c)).toBe('');
     });
 });
 

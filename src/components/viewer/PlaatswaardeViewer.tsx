@@ -7,6 +7,7 @@ import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWi
 import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
 import type { PlaatswaardeConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
 
 interface Props {
@@ -44,6 +45,8 @@ function printedChars(places: Place[]): number {
 export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const mathPx = useSheetSizePx('math');
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the place letter (omcirkelen).
+    const ix = useViewerInteraction();
     // Below 200px (a quarter-width cell is 163px) the fixed 120px number column, the 16px
     // gaps and the 40px table cells together are wider than the cell. Everything that was
     // sized for alignment across a wide row tightens to what the digits actually need.
@@ -183,11 +186,12 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                             <span style={chipsWrap
                                 ? { display: 'inline-grid', gridTemplateColumns: `repeat(${chipCols}, auto)`, gap: '2px 6px' }
                                 : { display: 'inline-flex', gap: tight ? '2px' : '6px' }}>
-                                {places.map(p => {
+                                {places.map((p, i) => {
                                     const isAns = showSolutions && p.key === ex.placeKey;
                                     return (
-                                        <span key={p.key} style={{
-                                            padding: '2px 8px',
+                                        <span key={p.key} {...interactionProps(ix, String(i))} style={{
+                                            // Kiosk: a taller chip so the letters scale to a ≥ 44 px tap target on a phone.
+                                            padding: ix ? '8px 10px' : '2px 8px',
                                             border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
                                             borderRadius: '50%',
                                             color: isAns ? SOL : 'inherit',

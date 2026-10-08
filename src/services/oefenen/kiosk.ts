@@ -94,6 +94,8 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     // Phase C (interactive on the card)
     'even-oneven-rooster',
+    'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
+    'breuken-kleuren',
     // C2 (cells filled on the card)
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
 ];

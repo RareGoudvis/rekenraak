@@ -4,6 +4,8 @@ import { kioskFor, kioskInputOf, kioskInteractOf } from '../../services/oefenen/
 import { rightCells } from './fillCells';
 import { useOefenStore } from '../../oefenen/useOefenStore';
 import { EMPTY_INTERACTION } from '../../components/viewer/ViewerInteractionContext';
+import type { OrdenenExercise } from '../../services/math/types';
+import { numValue } from '../../services/math/answerKeys';
 
 // Shared by the kiosk store and screen suites: a session of the four starter leaves, its
 // hash, and a pupil that answers the exercise on screen right or wrong.
@@ -71,6 +73,13 @@ export function tapAnswer(right: boolean) {
     const ia = kioskFor(st.sessie!.types[cur.slot].typeId)!.interact!;
     const want = ia.answerOf(cur.exercise, cur.constraints);
     const keys = ia.keys!(cur.exercise, cur.constraints);
+    if (ia.kind === 'order') {
+        // The only order kind is ordenen: its display values sorted by the operator; wrong = reversed.
+        const o = cur.exercise as OrdenenExercise;
+        const sorted = [...keys].sort((a, b) => (numValue(o.display[Number(a)]) - numValue(o.display[Number(b)])) * (o.operator === '<' ? 1 : -1));
+        st.setInteraction({ ...EMPTY_INTERACTION, order: right ? sorted : [...sorted].reverse() });
+        return;
+    }
     const valueOf = (k: string) => ia.fromState({ ...EMPTY_INTERACTION, selected: [k] }, cur.exercise, cur.constraints);
     let selected: string[];
     if (ia.kind === 'tap') selected = [keys.find(k => (valueOf(k) === want) === right)!];
