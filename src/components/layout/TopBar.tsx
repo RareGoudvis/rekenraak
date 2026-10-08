@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Chalkboard } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { SaveState } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
@@ -17,8 +17,8 @@ interface Props {
 }
 
 // 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
-// (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the two
-// least-used buttons (Toevoegen, Uitleg) fold into the Meer menu. Each stage strictly
+// (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the
+// least-used buttons (Toevoegen, Uitleg, Bordmodus) fold into the Meer menu. Each stage strictly
 // sheds width relative to the last, which is what lets useShedStages' hysteresis work.
 const STAGE_COUNT = 4;
 
@@ -254,6 +254,9 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
                                             <HelpIcon size={15} /> Uitleg
                                         </button>
+                                        <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('whiteboard'); }}>
+                                            <Chalkboard size={15} /> Bordmodus
+                                        </button>
                                         <div style={S.menuDivider} />
                                     </>
                                 )}
@@ -328,6 +331,11 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                 {!foldedIntoMenu && (
                     <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel={iconOnly ? undefined : 'Uitleg'} onClick={() => onOpenHelp?.()} />
+                )}
+
+                {/* Bordmodus: full-screen whiteboard app (src/board/); folds into Meer at stage 3. */}
+                {!foldedIntoMenu && (
+                    <IconButton icon={Chalkboard} label="Bordmodus: oefeningen en hulpmiddelen op het digibord" visibleLabel={iconOnly ? undefined : 'Bordmodus'} onClick={() => setView('whiteboard')} />
                 )}
 
               </div>

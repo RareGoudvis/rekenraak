@@ -93,8 +93,8 @@ export interface DocSettings {
 }
 
 // Which full-screen view is active. 'editor' = normal 3-panel editor; the others are
-// full-screen library overlays. UI-only — never persisted/serialised.
-export type WorksheetView = 'editor' | 'mijn-bladen' | 'bibliotheek';
+// full-screen overlays (libraries + whiteboard/bordmodus). UI-only — never persisted/serialised.
+export type WorksheetView = 'editor' | 'mijn-bladen' | 'bibliotheek' | 'whiteboard';
 // Autosave status surfaced in the top bar. UI-only.
 // 'error' = the last write was refused (quota full / storage unavailable): the sheet is
 // only in memory, so the top bar must stop claiming it is safe.

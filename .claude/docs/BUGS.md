@@ -157,3 +157,32 @@ UpdateState). Left over, found while fixing:
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
   (2026-09-12). Known; the heading says so.
+
+## Bordmodus
+
+- Klok widget: dragging a hand can text-select the face numerals (seen in the 2026-10-08 read-only
+  check; WB1's headless drag did not reproduce it). Fix: `user-select: none` on the KlokWidget face
+  (and the GeldPalet bill/coin drag source). 2026-10-08
+- WidgetInspector › WerksymbolenSettings logs React's "Each child in a list should have a unique
+  key" when its panel opens. Repro: Toevoegen › Klasmanagement › Werksymbolen, ⚙. 2026-10-08
+- Board add panel (BoardAddModal) search matches only the item label and context, not variant
+  labels: "klok" finds nothing (the item is "Tijdstip en tijdsduur", variants "Analoge klok · …").
+  Fix: also match `variants[].label` and the typeId, like MassAddModal does. 2026-10-08
+- Board settings popup (⚙ Bordinstellingen in BoardBottomBar) ignores Escape; only a second click on
+  ⚙ closes it (the other bottom-bar popups share the `menu` state; likely the same). 2026-10-08
+- No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
+  Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
+- Board Inspector "Aantal oefeningen" changes the count but not the card until Genereer: the
+  draftBlocks path in updateBlockSettings skips the sheet's generateExtra top-up. Repro: Hoofdrekenen
+  card (6 rows), slider to 2, card still shows 6. Fix: top up / cut in the board's subscription,
+  or route draft count changes through generateExtra. 2026-10-08
+- staggerPos (addWidgets.ts) cycles every 5 widgets, so the 6th card lands exactly on the 1st and
+  hides it completely. Fix: offset each cycle, or place at the first free spot. 2026-10-08
+- Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
+  Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
+  instead of the sheet (checked with a print-to-PDF). 2026-10-08
+- TopBar (seen during the fold-in, predates it): just above a shed threshold useShedStages keeps
+  stage 0 while the centre track already overflows: on pre-whiteboard rc at 1920 px the
+  "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
+  Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
+  measurement. 2026-10-08

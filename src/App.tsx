@@ -10,6 +10,7 @@ import TopBar from './components/layout/TopBar';
 import { answerSpaceVar } from './components/viewer/BlockWidthContext';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
+import WhiteboardView from './board/components/WhiteboardView';
 import HelpModal from './components/layout/HelpModal';
 import ReleaseNotesModal from './components/layout/ReleaseNotesModal';
 import PrintHintModal from './components/layout/PrintHintModal';
@@ -216,6 +217,8 @@ export default function App() {
     {/* Full-screen library overlays — editor stays mounted underneath (preserves scroll). */}
     {view === 'mijn-bladen' && <MijnBladenView />}
     {view === 'bibliotheek' && <BibliotheekView />}
+    {/* Bordmodus — the whiteboard app; ALL its code lives under src/board/. */}
+    {view === 'whiteboard' && <WhiteboardView />}
     </>
   );
 }
