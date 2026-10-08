@@ -78,6 +78,8 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     'getalbegrip-getallenassen-nat', 'getalbegrip-getallenassen-dec', 'getalbegrip-getallenassen-rat', 'getalbegrip-getallenassen-geh',
     'getalbegrip-getallenrijen-nat', 'getalbegrip-getallenrijen-dec', 'getalbegrip-getallenrijen-rat', 'getalbegrip-getallenrijen-geh',
     'breuken-rangschikken', 'patronen-nat', 'patronen-dec', 'patronen-geh', 'patronen-kettingsommen', 'deelbaarheid-veelvouden',
+    'breuken-herkennen', 'breuken-hoeveelheid', 'breuken-gemengd', 'breuken-gelijknamig', 'breuken-vereenvoudigen',
+    'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [

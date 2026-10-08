@@ -44,6 +44,8 @@ const EXPECTED_LEAVES = [
     'getalbegrip-getallenassen-nat', 'getalbegrip-getallenassen-dec', 'getalbegrip-getallenassen-rat', 'getalbegrip-getallenassen-geh',
     'getalbegrip-getallenrijen-nat', 'getalbegrip-getallenrijen-dec', 'getalbegrip-getallenrijen-rat', 'getalbegrip-getallenrijen-geh',
     'breuken-rangschikken', 'patronen-nat', 'patronen-dec', 'patronen-geh', 'patronen-kettingsommen', 'deelbaarheid-veelvouden',
+    'breuken-herkennen', 'breuken-hoeveelheid', 'breuken-gemengd', 'breuken-gelijknamig', 'breuken-vereenvoudigen',
+    'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -210,6 +212,32 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
             return pos === 'top' ? s.total : pos === 'left' ? s.pairs[0].given : s.pairs[0].answer;
         }
         return { multi: s.pairs.map(p => p.answer) };
+    },
+    'breuken-bewerken': (b: T.BreukBewerkExercise) => {
+        const val = (f: Fraction) => (f.whole ?? 0) + f.n / f.d;
+        if (b.subType === 'gelijknamig') {
+            b.inputs.forEach((f, i) => expect(scaled(val(b.answers[i]))).toBe(scaled(val(f))));
+            expect(b.answers[0].d).toBe(b.answers[1].d);
+            return { multi: b.answers.map(val) };
+        }
+        expect(scaled(val(b.answers[0]))).toBe(scaled(val(b.inputs[0])));
+        return val(b.answers[0]);
+    },
+    verbanden: (v: T.VerbandExercise, c) => {
+        const { n, d } = v.fraction;
+        const of = (rep: string) => (rep === 'breuk' ? n / d : rep === 'decimaal' ? Math.round((n / d) * 1000) / 1000 : Math.round((n / d) * 1000) / 10);
+        const asked = c.subType === 'paren' ? [v.target!] : ((c.reps as string[] | undefined) ?? ['breuk', 'decimaal', 'procent']).filter(r => r !== v.given);
+        expect(asked).not.toContain(v.given);
+        return { multi: asked.map(of) };
+    },
+    breuken: (f: T.FractionExercise, c) => {
+        if (c.subType === 'herkennen') {
+            return (c.answerFormat ?? 'fraction-questions') === 'fraction-questions' ? { multi: [f.denominator, f.numerator] } : f.numerator / f.denominator;
+        }
+        if (c.subType === 'hoeveelheid-abstract') return Math.round((f.total! / f.denominator) * f.numerator * 1e4) / 1e4;
+        // Concreet objects: n/d of the total is a whole number of them.
+        expect(Number.isInteger((f.total! * f.numerator) / f.denominator), JSON.stringify(f)).toBe(true);
+        return (f.total! * f.numerator) / f.denominator;
     },
 };
 
@@ -449,6 +477,34 @@ describe('inputs per exercise', () => {
         expect(add.display(eq({ operands: [1200, 3], operator: 'x', answer: 3600 }), {})).toBe('1 200 × 3 = ?');
         expect(kioskFor('procenten')!.display({ id: 'p', percent: 25, base: 80, answer: 20, isManuallyEdited: false }, { subType: 'welk-percent' })).toBe('20 van 80 = ? %');
         expect(kioskFor('afronden')!.display({ id: 'a', number: 3.47, targetKey: 't', isManuallyEdited: false }, { subType: 'simpel', numberType: 'decimal' })).toBe('3,47 ≈ ? (op tiende)');
+    });
+});
+
+describe('breuken-bewerken: the form is the exercise', () => {
+    const d = kioskFor('breuken-bewerken')!;
+    const ex = (over: Partial<T.BreukBewerkExercise>): T.BreukBewerkExercise =>
+        ({ id: 'b', subType: 'gemengd', direction: 'naar-gemengd', inputs: [{ n: 14, d: 8 }], answers: [{ whole: 1, n: 6, d: 8 }], isManuallyEdited: false, ...over });
+    test('naar-gemengd: a gemengd getal, simplified or not; never the breuk itself', () => {
+        expect(checkAnswer(d, ex({}), {}, '1 6/8')).toBe(true);
+        expect(checkAnswer(d, ex({}), {}, '1 3/4')).toBe(true);
+        expect(checkAnswer(d, ex({}), {}, '14/8')).toBe(false);
+        expect(checkAnswer(d, ex({}), {}, '7/4')).toBe(false);
+    });
+    test('naar-breuk: an improper fraction', () => {
+        const e = ex({ direction: 'naar-breuk', inputs: [{ whole: 1, n: 6, d: 8 }], answers: [{ n: 14, d: 8 }] });
+        expect(checkAnswer(d, e, {}, '14/8')).toBe(true);
+        expect(checkAnswer(d, e, {}, '7/4')).toBe(true);
+        expect(checkAnswer(d, e, {}, '1 6/8')).toBe(false);
+    });
+    test('vereenvoudigen: lowest terms only', () => {
+        const e = ex({ subType: 'vereenvoudigen', direction: undefined, inputs: [{ n: 6, d: 8 }], answers: [{ n: 3, d: 4 }] });
+        expect(checkAnswer(d, e, {}, '3/4')).toBe(true);
+        expect(checkAnswer(d, e, {}, '6/8')).toBe(false);
+    });
+    test('gelijknamig: both over the common noemer', () => {
+        const e = ex({ subType: 'gelijknamig', direction: undefined, inputs: [{ n: 1, d: 2 }, { n: 1, d: 3 }], answers: [{ n: 3, d: 6 }, { n: 2, d: 6 }] });
+        expect(checkAnswer(d, e, {}, ['3/6', '2/6'])).toBe(true);
+        expect(checkAnswer(d, e, {}, ['1/2', '2/6'])).toBe(false);
     });
 });
 

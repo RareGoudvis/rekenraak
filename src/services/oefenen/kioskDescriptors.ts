@@ -1,5 +1,6 @@
 import type {
-    AfrondenExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, Equation, EvenOnevenExercise, Fraction, GeldExercise,
+    AfrondenExercise, BreukBewerkExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, Equation, EvenOnevenExercise,
+    Fraction, FractionExercise, GeldExercise, VerbandExercise,
     GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, HerleidingPart,
     MaateenheidExercise, MabExercise, MeetExercise, OrdenenExercise, PatroonExercise, PlaatswaardeExercise, ProcentExercise,
     RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
@@ -523,4 +524,82 @@ export const SPLITSEN_KIOSK = descriptor<SplitsenExercise>({
         return `${showNum(ex.total)} = ${ex.pairs.map(p => `${showNum(p.given)} + ?`).join(' ; ')}`;
     },
     supported: (c) => ['basic', 'splitsboom', 'verliefde-harten', 'positie-tabel'].includes(splitsLayout(c)),
+});
+
+// ── Breuken ──────────────────────────────────────────────────────────────────
+
+const fracText = (f: Fraction) => (f.whole ? `${f.whole} ${f.n}/${f.d}` : `${f.n}/${f.d}`);
+const reduce = (f: Fraction): Fraction => {
+    const g = gcd(f.n, f.d) || 1;
+    return { whole: f.whole, n: f.n / g, d: f.d / g };
+};
+
+// The FORM is the exercise here, so only that form counts: naar-gemengd a gemengd getal
+// (the fraction part simplified or not), naar-breuk an improper fraction (idem),
+// vereenvoudigen the lowest terms, gelijknamig the two fractions over the common noemer.
+function bewerkSpellings(ex: BreukBewerkExercise, f: Fraction): string[] {
+    if (ex.subType === 'gelijknamig' || ex.subType === 'vereenvoudigen') return [fracText(f)];
+    const whole = (f.whole ?? 0) + Math.floor(f.n / f.d);
+    const n = f.n % f.d;
+    if (ex.direction === 'naar-breuk') {
+        const top = whole * f.d + n;
+        return [...new Set([`${top}/${f.d}`, fracText(reduce({ n: top, d: f.d }))])];
+    }
+    if (n === 0) return [String(whole)];
+    return [...new Set([`${whole} ${n}/${f.d}`, fracText(reduce({ whole, n, d: f.d }))])];
+}
+export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
+    input: 'number',
+    inputOf: (ex) => (ex.subType === 'gelijknamig' ? 'multi-number' : 'number'),
+    keys: (c) => (c.subType === 'gemengd' ? ['/', ' '] : ['/']),
+    labels: () => ['1ste breuk', '2de breuk'],
+    answerOf: (ex) => (ex.subType === 'gelijknamig'
+        ? ex.answers.map(a => bewerkSpellings(ex, a).join('|'))
+        : bewerkSpellings(ex, ex.answers[0])),
+    display: (ex) => `${ex.inputs.map(fracText).join(' en ')} → ${ex.answers.map(() => '?').join(' en ')}`,
+});
+
+// SYNC: VerbandenViewer derives kommagetal (3 places) and procent (1 place) from n/d.
+const REP_LABEL: Record<string, string> = { breuk: 'breuk', decimaal: 'kommagetal', procent: 'procent %' };
+const verbandAnswer = (f: Fraction, rep: string): string[] => {
+    if (rep === 'decimaal') return numberSpellings(Number((f.n / f.d).toFixed(3)));
+    if (rep === 'procent') return numberSpellings(Number(((f.n / f.d) * 100).toFixed(1)));
+    return [...new Set([fracText(f), fracText(reduce(f))])];
+};
+const verbandFields = (ex: VerbandExercise, c: Record<string, unknown>): string[] => {
+    if (c.subType === 'paren') return [ex.target ?? 'decimaal'];
+    const reps = (c.reps as string[] | undefined) ?? ['breuk', 'decimaal', 'procent'];
+    return reps.filter(r => r !== ex.given);
+};
+// Every asked representation is a field, captioned; a percent is typed without the % sign.
+export const VERBANDEN_KIOSK = descriptor<VerbandExercise>({
+    input: 'multi-number',
+    keys: () => [',', '/'],
+    labels: (ex, c) => verbandFields(ex, c).map(r => REP_LABEL[r] ?? r),
+    answerOf: (ex, c) => verbandFields(ex, c).map(r => verbandAnswer(ex.fraction, r).join('|')),
+    display: (ex, c) => `${verbandAnswer(ex.fraction, ex.given)[0]}${ex.given === 'procent' ? ' %' : ''} = ${verbandFields(ex, c).map(r => `? (${REP_LABEL[r]})`).join(' = ')}`,
+});
+
+// herkennen: the coloured part as a breuk (or the two counting questions); hoeveelheid: how
+// many objects n/d of the total is. The shapes to colour or a line to divide are drawing.
+const fracSub = (c: Record<string, unknown>) => (c.subType as string | undefined) ?? 'kleuren';
+const isQuestions = (c: Record<string, unknown>) => fracSub(c) === 'herkennen' && (c.answerFormat ?? 'fraction-questions') === 'fraction-questions';
+// SYNC: FractionExerciseItem coloredCount (concreet: rounded; abstract: 4 places).
+const deelVan = (ex: FractionExercise) => (ex.subType === 'hoeveelheid-abstract'
+    ? parseFloat((parseFloat(((ex.total ?? 0) / ex.denominator).toFixed(4)) * ex.numerator).toFixed(4))
+    : Math.round(((ex.total ?? 0) * ex.numerator) / ex.denominator));
+export const BREUKEN_KIOSK = descriptor<FractionExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (isQuestions(c) ? 'multi-number' : 'number'),
+    keys: (c) => (fracSub(c) === 'herkennen' && !isQuestions(c) ? ['/'] : fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
+    labels: () => ['gelijke delen', 'ingekleurd'],
+    answerOf: (ex, c) => {
+        if (isQuestions(c)) return [String(ex.denominator), String(ex.numerator)];
+        if (fracSub(c) === 'herkennen') return [...new Set([`${ex.numerator}/${ex.denominator}`, fracText(reduce({ n: ex.numerator, d: ex.denominator }))])];
+        return numberSpellings(deelVan(ex));
+    },
+    display: (ex, c) => (fracSub(c) === 'herkennen'
+        ? `gekleurd deel van ${ex.denominator} delen: ?`
+        : `${ex.numerator}/${ex.denominator} van ${ex.total ?? 0} = ?`),
+    supported: (c) => ['herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
 });
