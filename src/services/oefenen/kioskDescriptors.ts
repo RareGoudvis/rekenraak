@@ -315,11 +315,20 @@ export const REKENVOLGORDE_KIOSK = descriptor<RekenvolgordeExercise>({
     display: (ex) => `${ex.tokens.map(t => (typeof t === 'number' ? showNum(t) : opGlyph(t))).join(' ').replace(/\( /g, '(').replace(/ \)/g, ')')} = ?`,
 });
 
-// Negenproef and omgekeerde bewerking both end in the sheet's juist / fout circle.
+// Negenproef and omgekeerde bewerking both end in the sheet's juist / fout pills: the pupil
+// taps one ON the card (Phase C). Keys: 0 = juist, 1 = fout (SYNC: ControlerenViewer mark).
+const JUIST_FOUT = ['juist', 'fout'];
+const controleAnswer = (ex: ControleExercise) => (ex.shownAnswer === ex.correctAnswer ? 'juist' : 'fout');
 export const CONTROLEREN_KIOSK = descriptor<ControleExercise>({
-    input: 'choice',
-    choices: ['juist', 'fout'],
-    answerOf: (ex) => [ex.shownAnswer === ex.correctAnswer ? 'juist' : 'fout'],
+    input: 'interactive',
+    kioskInstruction: (_ex, c) => `Controleer met de ${c.subType === 'omgekeerde' ? 'omgekeerde bewerking' : 'negenproef'}: tik op juist of fout.`,
+    interact: {
+        kind: 'tap',
+        keys: () => ['0', '1'],
+        answerOf: controleAnswer,
+        fromState: (st) => (st.selected.length ? JUIST_FOUT[Number(st.selected[0])] ?? '' : ''),
+    },
+    answerOf: (ex) => [controleAnswer(ex)],
     display: (ex) => `${showNum(ex.a)} ${opGlyph(ex.operator)} ${showNum(ex.b)} = ${showNum(ex.shownAnswer)}: juist of fout?`,
 });
 
