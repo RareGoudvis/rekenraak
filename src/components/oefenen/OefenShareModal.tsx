@@ -3,6 +3,7 @@ import { Check, Copy, CornersOut, ImageSquare } from '@phosphor-icons/react';
 import type { OefenSessie } from '../../services/oefenen/types';
 import { drawQr, qrMatrixOrNull } from '../../services/qr';
 import ModalShell from '../ui/ModalShell';
+import ModalPortal from '../ui/ModalPortal';
 import { sessieLink } from '../../services/oefenen/session';
 
 interface Props {
@@ -122,12 +123,15 @@ function BigQr({ matrix, title, onClose }: { matrix: boolean[][]; title?: string
         return () => window.removeEventListener('keydown', onKey, true);
     }, [onClose]);
 
+    // Portalled: the TopBar's backdrop-filter would otherwise make `fixed` relative to the bar.
     return (
+        <ModalPortal>
         <div className="no-print" style={S.bigScrim} role="dialog" aria-modal="true" aria-label="QR-code groot" onClick={onClose}>
             {title && <div style={S.bigTitle}>{title}</div>}
             <QrCanvas matrix={matrix} modulePx={EXPORT_MODULE_PX} label="QR-code van de oefenlink" style={S.bigQr} />
             <div style={S.bigHint}>Scan met de camera · Escape of klik om te sluiten</div>
         </div>
+        </ModalPortal>
     );
 }
 
