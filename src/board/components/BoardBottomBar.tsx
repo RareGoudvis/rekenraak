@@ -6,7 +6,10 @@ import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
 import { addBasicWidget } from '../addWidgets';
 import { TOOL_CATALOG, runTool, loadFavorites, toggleFavorite, MAX_FAVORITES, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
-import type { BackgroundPattern } from '../boardTypes';
+import type { BackgroundPattern, BoardTool } from '../boardTypes';
+
+// Single-letter tool shortcuts (shown in each tooltip). Only the draw tools have one so far.
+const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape' };
 
 interface Props {
     onOpenWiskunde: () => void;
@@ -63,6 +66,20 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         };
     }, [menu]);
 
+    // Ignored while typing (tekst widget, titles, inspector fields) and with a modifier held,
+    // so Ctrl+L and friends keep their browser meaning.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+            const t = e.target as HTMLElement | null;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            const next = TOOL_KEYS[e.key.toLowerCase()];
+            if (next) setTool(next);
+        };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [setTool]);
+
     const handleTool = (def: BoardToolDef) => {
         if (!runTool(def)) { imageRef.current?.click(); return; }
         setMenu(null); setAddSub(null);
@@ -111,8 +128,8 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         { key: 'pen' as const, icon: PenNib, label: 'Pen', enabled: true },
         { key: 'marker' as const, icon: Highlighter, label: 'Markeerstift', enabled: true },
         { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
-        { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (binnenkort)', enabled: false },
-        { key: 'shape' as const, icon: Shapes, label: 'Vormen (binnenkort)', enabled: false },
+        { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (L) — Shift: 45°-stappen', enabled: true },
+        { key: 'shape' as const, icon: Shapes, label: 'Vormen (V) — Shift: vierkant / cirkel', enabled: true },
         { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten (binnenkort)', enabled: false },
     ];
 

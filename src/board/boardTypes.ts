@@ -28,7 +28,9 @@ export interface BoardWidget {
 }
 
 // ── Ink (P2+; typed now so the v1 board format already reserves the field) ──
-export type StrokeTool = 'pen' | 'marker';
+// 'line' / 'shape' (P3) are drawn by a ToolEngine and stored as ordinary strokes, so undo,
+// eraser and persistence need no special case.
+export type StrokeTool = 'pen' | 'marker' | 'line' | 'shape';
 export interface Stroke {
     id: string;
     tool: StrokeTool;
@@ -39,6 +41,20 @@ export interface Stroke {
     // Flattened sample points [x0,y0,x1,y1,…] — kept alongside the path for the
     // per-stroke eraser hit-test (and later instrument snapping re-projection).
     pts: number[];
+    // P3 line/shape extras, all optional so pre-P3 strokes stay valid as they are.
+    fill?: string;             // closed subpaths (arrowheads, filled shapes); absent = no fill
+    fillOpacity?: number;      // soft shape fill ≈ 0.18; arrowheads are solid
+    dash?: boolean;            // dashed: only the FIRST subpath (the line itself), heads stay solid
+}
+
+// Line / shape tool options (UI state, not persisted; the emitted stroke carries the result).
+export type ArrowHeads = 'none' | 'end' | 'both';
+export type ShapeKind = 'rect' | 'ellipse' | 'triangle';
+export interface DrawOptions {
+    arrow: ArrowHeads;
+    dashed: boolean;
+    shape: ShapeKind;
+    fill: boolean;             // soft fill in the stroke colour
 }
 
 // 'select' = normal cursor (select + edit); 'hand' = drag/drop everything, select
@@ -51,12 +67,16 @@ export type BoardTool = 'select' | 'hand' | 'text' | 'pen' | 'marker' | 'eraser'
 export interface ToolContext {
     gridSnap: boolean;
     gridSize: number;
+    shift?: boolean;           // P3: Shift held → line snaps to 45° steps, rect/ellipse to square/circle
     // P4: instrument?: InstrumentGeometry (edges/needle point/angle origin)
 }
 export interface ToolEngine {
     onPointerDown(x: number, y: number, ctx: ToolContext): void;
     onPointerMove(x: number, y: number, ctx: ToolContext): void;
     onPointerUp(x: number, y: number, ctx: ToolContext): Stroke | null;
+    // P3: the in-progress geometry for the live preview, and Escape → drop the drag.
+    preview?(): Stroke | null;
+    cancel?(): void;
 }
 
 // ── Background / pages ───────────────────────────────────────────────────────
