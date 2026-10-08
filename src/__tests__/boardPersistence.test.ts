@@ -268,13 +268,37 @@ describe('ids', () => {
         expect(unique(allIds(useBoardStore.getState().pages).blocks)).toBe(true);
     });
 
-    // duplicateWidget refreshes block.id ("the inspector's draft mirror keys on it"), but
-    // duplicatePage copies exercise blocks with the same id, so two widgets share one.
-    test.fails('duplicating a page gives its exercise blocks fresh ids', () => {
+    // The draftBlocks mirror and patchExercise key on block and exercise ids, so a page copy
+    // must share none of them with its source (duplicateWidget already gave fresh block ids).
+    const exerciseIds = (p: BoardPage) => p.widgets.flatMap((w) => {
+        if (!w.block) return [];
+        const items = (w.block as unknown as Record<string, { id?: string }[]>)[REGISTRY[w.block.typeId].exerciseField] ?? [];
+        return items.map((it) => it.id).filter((id): id is string => typeof id === 'string');
+    });
+
+    test('duplicating a page shares no id with the source page', () => {
         buildFullBoard();
         const exPage = useBoardStore.getState().pages.findIndex((p) => p.widgets.some((w) => w.kind === 'exercise'));
         useBoardStore.getState().gotoPage(exPage);
         useBoardStore.getState().duplicatePage();
-        expect(unique(allIds(useBoardStore.getState().pages).blocks)).toBe(true);
+        const pages = useBoardStore.getState().pages;
+        const [src, copy] = [pages[exPage], pages[exPage + 1]];
+        const idsOf = (p: BoardPage) => [p.id, ...allIds([p]).widgets, ...allIds([p]).strokes, ...allIds([p]).blocks, ...exerciseIds(p)];
+        expect(exerciseIds(src).length).toBeGreaterThan(0);
+        expect(idsOf(copy)).toHaveLength(idsOf(src).length);
+        expect(idsOf(copy).filter((id) => idsOf(src).includes(id))).toEqual([]);
+        expect(unique(allIds(pages).blocks)).toBe(true);
+    });
+
+    test('duplicating an exercise widget gives its exercises fresh ids too', () => {
+        buildFullBoard();
+        const exPage = useBoardStore.getState().pages.findIndex((p) => p.widgets.some((w) => w.kind === 'exercise'));
+        useBoardStore.getState().gotoPage(exPage);
+        const before = exerciseIds(useBoardStore.getState().pages[exPage]);
+        const ex = useBoardStore.getState().pages[exPage].widgets.find((w) => w.kind === 'exercise')!;
+        useBoardStore.getState().duplicateWidget(ex.id);
+        const after = exerciseIds(useBoardStore.getState().pages[exPage]);
+        expect(after).toHaveLength(before.length * 2);
+        expect(unique(after)).toBe(true);
     });
 });

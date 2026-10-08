@@ -188,6 +188,3 @@ UpdateState). Left over, found while fixing:
   "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
   Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
   measurement. 2026-10-08
-- duplicatePage copies exercise widgets with their block id unchanged, while duplicateWidget gives
-  the copy a fresh `bw-` id because the draft mirror keys on it. Low impact today (the mirror only
-  looks at the active page). `test.fails` in boardPersistence.test.ts. 2026-10-08

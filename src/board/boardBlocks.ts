@@ -44,6 +44,19 @@ export function makeBoardBlock(typeId: string, seed: BoardSeed): MathBlock | nul
     return regenerateBoardBlock(block);
 }
 
+// A copied exercise widget gets a new block id and new exercise ids: the inspector's
+// draftBlocks mirror and patchExercise key on them, so a shared id would edit both copies.
+export function withFreshIds(block: MathBlock): MathBlock {
+    const field = REGISTRY[block.typeId]?.exerciseField;
+    const copy: MathBlock = { ...block, id: `bw-${rndId()}` };
+    const items = field ? (block as unknown as Record<string, unknown>)[field] : undefined;
+    if (field && Array.isArray(items)) {
+        (copy as unknown as Record<string, unknown>)[field] = items.map((it) =>
+            it && typeof it === 'object' && 'id' in it ? { ...it, id: rndId() } : it);
+    }
+    return copy;
+}
+
 // Board blocks never live in the worksheet store, so the exercise field and the note are
 // written here; the generate itself is the sheet's (ceiling clamp, dedupe, failure note).
 // Always deduped: the sheet's "Geen dubbele oefeningen" default, and a board shows few.
