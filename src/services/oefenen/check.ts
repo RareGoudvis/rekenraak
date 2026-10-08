@@ -1,4 +1,5 @@
-import type { KioskAnswer, KioskDescriptor } from './types';
+import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor } from './types';
+import type { InteractionKind } from '../../components/viewer/ViewerInteractionContext';
 import { kioskInputOf } from './kiosk';
 
 // Is the pupil's answer right? Typed answers are normalised (spaces, comma/dot, leading and
@@ -56,9 +57,29 @@ function sameTime(given: readonly string[], accepted: readonly string[]): boolea
     });
 }
 
+const partsOf = (s: string) => (s.trim() === '' ? [] : s.split(INTERACT_SEP.trim()).map(p => p.trim()));
+
+/** An interactive answer (fromState) against the descriptor's canonical one, by its kind. */
+function sameInteraction(kind: InteractionKind, given: string, want: string): boolean {
+    const g = partsOf(given), w = partsOf(want);
+    if (g.length !== w.length) return false;
+    // tap-multi is a set of taps: the order the pupil tapped them in does not count.
+    if (kind === 'tap-multi') {
+        const ws = [...w].sort();
+        return [...g].sort().every((x, i) => x === ws[i]);
+    }
+    if (kind === 'fill-cells') return g.every((x, i) => sameValue(x, w[i].split('|')));
+    return g.every((x, i) => x === w[i]);
+}
+
 export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, given: KioskAnswer): boolean {
-    const accepted = d.answerOf(ex, c);
     const input = kioskInputOf(d, ex, c);
+    if (input === 'interactive') {
+        if (!d.interact) return false;
+        const one = Array.isArray(given) ? given.join(INTERACT_SEP) : given;
+        return sameInteraction(d.interact.kind, one, d.interact.answerOf(ex, c));
+    }
+    const accepted = d.answerOf(ex, c);
     if (input === 'number+rest') {
         // Quotiënt and rest are separate fields and both must match.
         if (!Array.isArray(given) || given.length !== 2 || accepted.length !== 2) return false;
