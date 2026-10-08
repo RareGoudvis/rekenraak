@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
-import { useBlockWidth, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
 import { PLACE_VALUES } from '../../services/math/mathEngine';
@@ -560,6 +560,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
     const updateCijferExercise = useWorksheetStore((s) => s.updateCijferExercise);
     const [editing, setEditing] = useState(false);
     const [editValues, setEditValues] = useState<string[]>([]);
+    const scaffold = useShowScaffold();
 
     const dp = dpOf(ex, c);
     const scaffolding = c.scaffolding || 3;
@@ -617,7 +618,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                     {headerText}
                 </div>
             )}
-            {c.withEstimation && (
+            {c.withEstimation && scaffold && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span>≈</span>
                     {showSolutions
@@ -626,14 +627,15 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                     }
                 </div>
             )}
-            {isDivision
+            {/* The oefenmodus card shows the sum alone: the grid is paper the pupil cannot write on there. */}
+            {!scaffold ? null : isDivision
                 ? <DivisionGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
                 : isMultiplication
                 ? <MultiplicationGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
                 : <AddSubGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
             }
             {/* Controle via de omgekeerde bewerking (add/sub only): write-line under the sum. */}
-            {!isDivision && !isMultiplication && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
+            {!isDivision && !isMultiplication && scaffold && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span style={{ flexShrink: 0 }}>controle:</span>
                     {showSolutions
@@ -648,7 +650,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                         : <div style={{ flex: 1, borderBottom: '1px solid #aaa', height: '13px', marginLeft: '2px' }} />}
                 </div>
             )}
-            {isDivision && (c.showQR !== false) && (
+            {isDivision && scaffold && (c.showQR !== false) && (
                 <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (
                         <>

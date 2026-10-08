@@ -2,7 +2,7 @@ import type { MathBlock, GetalFunctieExercise, GetalFunctie } from '../../servic
 import FragmentableGrid from './FragmentableGrid';
 import type { GetalFunctieConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
-import { ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import { ANSWER_LINE_H, ANSWER_ROW_H, useShowScaffold } from './BlockWidthContext';
 
 interface Props {
     block: MathBlock;
@@ -24,7 +24,8 @@ export default function GetalFunctieViewer({ block, showSolutions }: Props) {
     const exercises: GetalFunctieExercise[] = block.getalFunctieExercises || [];
     const c = block.constraints as GetalFunctieConstraints;
     const functies: GetalFunctie[] = c.functies ?? ['hoeveelheid', 'rang', 'maat', 'code'];
-    const answerMode: string = c.answerMode ?? 'aankruisen';
+    // The oefenmodus card has its own buttons: the sentence alone reads larger than the tick table.
+    const answerMode: string = useShowScaffold() ? (c.answerMode ?? 'aankruisen') : 'schrijven';
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {

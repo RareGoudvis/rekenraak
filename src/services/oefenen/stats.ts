@@ -14,16 +14,24 @@ export function emptyStats(s: OefenSessie, now: number = Date.now()): OefenStats
     return { startedAt: now, perType: Object.fromEntries(s.types.map((_, i) => [i, emptyType()])), history: [] };
 }
 
-/** The answer as one line: '7 r 3' for quotiënt + rest. */
+/** The answer as one line: '7 r 3' for quotiënt + rest, '8:05' for a time, '12 ; 15' for fields. */
 export function answerText(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, answer: KioskAnswer): string {
     const parts = Array.isArray(answer) ? answer.map(a => a.trim()) : [answer.trim()];
-    return kioskInputOf(d, ex, c) === 'number+rest' ? `${parts[0] ?? ''} r ${parts[1] ?? ''}` : parts.join(' ');
+    const input = kioskInputOf(d, ex, c);
+    if (input === 'number+rest') return `${parts[0] ?? ''} r ${parts[1] ?? ''}`;
+    if (input === 'time') return `${parts[0] ?? ''}:${(parts[1] ?? '').padStart(2, '0')}`;
+    if (input === 'multi-number') return parts.join(' ; ');
+    return parts.join(' ');
 }
 
 /** The expected answer as the stats screen shows it: the first accepted spelling. */
 export function expectedText(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>): string {
     const accepted = d.answerOf(ex, c);
-    return kioskInputOf(d, ex, c) === 'number+rest' ? answerText(d, ex, c, accepted) : (accepted[0] ?? '');
+    const input = kioskInputOf(d, ex, c);
+    if (input === 'number+rest') return answerText(d, ex, c, accepted);
+    // One field each, its first spelling.
+    if (input === 'multi-number') return accepted.map(a => a.split('|')[0]).join(' ; ');
+    return accepted[0] ?? '';
 }
 
 /** A new stats object with this answer counted (and kept as an error row when wrong). */

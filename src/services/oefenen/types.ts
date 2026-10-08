@@ -49,8 +49,10 @@ export interface OefenSessie {
 // ── Kiosk descriptor (registry row field `kiosk`) ────────────────────────────
 
 // number = one typed answer; number+rest = quotiënt + rest fields; choice = one of `choices`;
-// missing-operand = one typed answer that fills a puntoefening's blank operand.
-export type KioskInput = 'number' | 'number+rest' | 'choice' | 'missing-operand';
+// missing-operand = one typed answer that fills a puntoefening's blank operand;
+// text = a word typed on the device keyboard (Romeinse cijfers, a unit); time = uur + minuten
+// fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair).
+export type KioskInput = 'number' | 'number+rest' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number';
 
 // Keys the on-screen keypad adds to the digits for this block's settings. Derived from the
 // constraints only, never from the exercise, so the keypad does not hint at the answer.
@@ -63,9 +65,16 @@ export interface KioskDescriptor<E = unknown> {
     inputOf?(ex: E, c: Record<string, unknown>): KioskInput;
     // The buttons for input 'choice', in display order.
     choices?: string[];
+    // Per-exercise buttons (the numbers of a "grootste" row); absent = `choices`.
+    choicesOf?(ex: E, c: Record<string, unknown>): string[];
+    // multi-number: one placeholder per field, e.g. ['1ste', '2de']; absent = numbered.
+    labels?(ex: E, c: Record<string, unknown>): string[];
+    // multi-number: the sign printed between the fields (ordenen: '<' or '>').
+    separator?(ex: E, c: Record<string, unknown>): string;
     keys?(c: Record<string, unknown>): KioskKey[];
-    // number / missing-operand / choice: every accepted spelling ('2,5' and '2.5').
-    // number+rest: exactly [quotiënt, rest].
+    // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
+    // number+rest: exactly [quotiënt, rest]. time: every accepted 'h:mm' (8:05 and 20:05).
+    // multi-number: one entry per field, alternatives within a field joined by '|'.
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
     display(ex: E, c: Record<string, unknown>): string;
@@ -73,7 +82,7 @@ export interface KioskDescriptor<E = unknown> {
     supported?(c: Record<string, unknown>): boolean;
 }
 
-// What the pupil handed in: one string, or [quotiënt, rest] for 'number+rest'.
+// What the pupil handed in: one string, or one string per field (number+rest, time, multi-number).
 export type KioskAnswer = string | string[];
 
 // ── Stats (pupil device, localStorage) ───────────────────────────────────────

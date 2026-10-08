@@ -22,6 +22,17 @@ export function useBlockWidth(): number {
 
 export const BlockWidthProvider = BlockWidthContext.Provider;
 
+// Help a viewer draws beside the exercise itself (the met-rest "( ___ )" estimate, the
+// compenseren tussenstap). The sheet always shows it; the oefenmodus card asks only for
+// the final answer, so it turns this off rather than show blanks nobody can fill.
+const ScaffoldContext = createContext<boolean>(true);
+
+export function useShowScaffold(): boolean {
+    return useContext(ScaffoldContext);
+}
+
+export const ScaffoldProvider = ScaffoldContext.Provider;
+
 // Printable width of a grid cell that spans `units` of the 4-unit page grid, given the
 // grid's column gap. A spanning cell also swallows the gaps it covers, which is why this
 // is not simply units x unit. One definition, used by the sheet and by the tests.
