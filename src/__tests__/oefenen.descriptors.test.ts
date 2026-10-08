@@ -230,6 +230,8 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
     'geld-teruggeven': (g: T.GeldTeruggevenExercise, c) => {
         const change = g.payWithCents - g.priceCents;
         expect(g.changeCents).toBe(change);
+        // With a draw box the change is laid from the coins and bills below the note paid with.
+        if (c.antwoordType === 'tekenen-schrijven') return { build: change, allowed: [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5].filter(v => v < g.payWithCents) };
         return c.antwoordFormat === 'decimaal' ? change / 100 : { multi: [Math.floor(change / 100), change % 100] };
     },
     'geld-rekenen': (g: T.GeldRekenenExercise) => {
@@ -469,6 +471,8 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-wissel', { exerciseBills: [200, 5000] }, 'interactive'],
         ['mab-tekenen', { maxNumber: 1000, mabStyle: 'mab-color', operand1Mask: { H: true, E: true } }, 'interactive'],
         ['mab-tekenen', { maxNumber: 10 }, 'interactive'],
+        ['geld-teruggeven', { antwoordType: 'tekenen-schrijven' }, 'interactive'],
+        ['geld-teruggeven', { antwoordType: 'tekenen-schrijven', payWithOptions: [5000, 10000, 20000, 50000], maxPriceEuros: 999, centenDeel: 'vijf' }, 'interactive'],
     ])('%s + %j → %s', (leafId, extra, want) => {
         // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
         const leaf = flattenLeaves().find(l => l.id === leafId)!;

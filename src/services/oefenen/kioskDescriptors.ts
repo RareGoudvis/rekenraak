@@ -16,6 +16,7 @@ import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
 import type { GeldWisselExercise } from '../math/types';
+import type { KioskDescriptor as AnyKioskDescriptor } from './types';
 import type { KioskPiece } from './types';
 import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 
@@ -973,4 +974,17 @@ export const MAB_TEKENEN_KIOSK = descriptor<MabExercise>({
     answerOf: (ex) => [String(ex.value)],
     display: (ex) => `${formatMathNumber(String(ex.value))} met MAB: ?`,
     kioskInstruction: 'Leg het getal met MAB-materiaal.',
+});
+
+// Teruggeven with a draw box (antwoordType tekenen-schrijven): the change is laid from a tray of
+// every coin and bill below the note paid with, instead of typed; the other settings stay typed.
+const teruggevenLays = (c: Record<string, unknown>) => c.antwoordType === 'tekenen-schrijven';
+const teruggevenBuild = buildInteract<GeldTeruggevenExercise>((ex) => ALL_MONEY.filter(v => v < ex.payWithCents).map(moneyPiece), ex => ex.changeCents, a => showEuro(Number(a)));
+const typedTeruggeven = GELD_TERUGGEVEN_KIOSK as AnyKioskDescriptor<GeldTeruggevenExercise>;
+export const GELD_TERUGGEVEN_LAY_KIOSK = descriptor<GeldTeruggevenExercise>({
+    ...typedTeruggeven,
+    inputOf: (ex, c) => (teruggevenLays(c) ? 'interactive' : typedTeruggeven.inputOf!(ex, c)),
+    interactOf: (c) => (teruggevenLays(c) ? teruggevenBuild : undefined),
+    answerOf: (ex, c) => (teruggevenLays(c) ? [teruggevenBuild.answerOf(ex, c)] : typedTeruggeven.answerOf(ex, c)),
+    kioskInstruction: (_ex, c) => (teruggevenLays(c) ? 'Hoeveel krijg je terug? Leg het wisselgeld.' : undefined),
 });

@@ -70,9 +70,12 @@ describe('viewers draw the laid pieces only under a build context', () => {
         'geld-tekenen': [{ key: '200', count: 2 }, { key: '50', count: 1 }, { key: '1000', count: 1 }],
         'geld-wissel': [{ key: '200', count: 2 }, { key: '100', count: 1 }],
         'mab-tekenen': [{ key: 'T', count: 3 }, { key: 'E', count: 4 }],
+        'geld-teruggeven': [{ key: '1000', count: 1 }, { key: '20', count: 2 }],
     };
+    // geld-teruggeven only lays the change when the sheet has a draw box for it.
+    const SETTINGS: Record<string, Record<string, unknown>> = { 'geld-teruggeven': { antwoordType: 'tekenen-schrijven' } };
     test.each(Object.keys(LAID))('%s', (typeId) => {
-        const block = oneExercise(typeId);
+        const block = oneExercise(typeId, SETTINGS[typeId]);
         const sheet = render340(block, null);
         const sheetHtml = sheet.container.innerHTML;
         const sheetSvgs = sheet.container.querySelectorAll('svg').length;
@@ -124,8 +127,10 @@ const wissen = () => screen.getByRole('button', { name: 'Wissen' }) as HTMLButto
 const cardSvgs = (c: HTMLElement) => c.querySelectorAll('.kiosk-card-inner svg').length;
 
 describe('kiosk flow: lay the answer from the tray', () => {
-    test.each(['geld-tekenen', 'geld-wissel', 'mab-tekenen'])('%s: tap tiles, take back, Wissen, juist / fout', (leafId) => {
-        st().load(hashOf(starterSessie({ types: [leafType(leafId)], attempts: 2 })));
+    test.each<[string, Record<string, unknown>]>([
+        ['geld-tekenen', {}], ['geld-wissel', {}], ['mab-tekenen', {}], ['geld-teruggeven', { antwoordType: 'tekenen-schrijven' }],
+    ])('%s %j: tap tiles, take back, Wissen, juist / fout', (leafId, extra) => {
+        st().load(hashOf(starterSessie({ types: [leafType(leafId, extra)], attempts: 2 })));
         st().start();
         const { container } = render(<OefenApp />);
         const cur = st().shown!;
@@ -165,19 +170,25 @@ describe('kiosk flow: lay the answer from the tray', () => {
         expect(st().lastCorrect).toBe(true);
         expect(st().run!.stats.perType[0].correct).toBe(1);
 
-        // Next exercise: an empty tray; one piece too many is fout, the retry starts empty again.
+        // Next exercise: an empty tray; one piece too many (or, at a full place, too few) is fout,
+        // the retry starts empty again. The tray can differ per exercise (the note paid with).
         act(() => st().next());
         expect(st().interaction).toEqual(EMPTY_INTERACTION);
         const nxt = st().shown!;
         const want = Number(ia.answerOf(nxt.exercise, nxt.constraints));
-        const smallest = [...pieces].sort((a, b) => a.value - b.value)[0].key;
-        for (const b of greedy(want, pieces)) for (let i = 0; i < b.count; i++) fireEvent.click(tile(b.key));
-        fireEvent.click(tile(smallest));
+        const nextPieces = ia.pieces!(nxt.exercise, nxt.constraints);
+        const smallest = [...nextPieces].sort((a, b) => a.value - b.value)[0].key;
+        const layWrong = () => {
+            for (const b of greedy(want, nextPieces)) for (let i = 0; i < b.count; i++) fireEvent.click(tile(b.key));
+            if (tile(smallest).disabled) fireEvent.click(screen.getAllByRole('button', { name: /terugnemen$/ })[0]);
+            else fireEvent.click(tile(smallest));
+        };
+        layWrong();
         fireEvent.click(controleer());
         expect(st().phase).toBe('retry');
         act(() => st().skipFlash());
         expect(st().interaction.build).toEqual([]);
-        fireEvent.click(tile(smallest));
+        layWrong();
         fireEvent.click(controleer());
         expect(st().lastCorrect).toBe(false);
         const err = st().run!.stats.perType[0].errors[0];
@@ -201,5 +212,16 @@ describe('kiosk flow: lay the answer from the tray', () => {
         render(<OefenApp />);
         expect(tile('1000')).toBeNull();
         expect([...document.querySelectorAll<HTMLElement>('[data-tray-key]')].map(t => t.dataset.trayKey)).toEqual(['500', '200', '100', '50', '20', '10']);
+    });
+});
+
+describe('geld-teruggeven stays typed without a draw box', () => {
+    test('euro + cent fields and the keypad, no tray', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('geld-teruggeven')] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        expect(currentInput(st().sessie, st().shown)!.kind).toBe('multi-number');
+        expect(container.querySelector('[data-tray-key]')).toBeNull();
+        expect(screen.getByRole('group', { name: 'Cijfers' })).toBeTruthy();
     });
 });

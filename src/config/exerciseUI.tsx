@@ -153,7 +153,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'geld-wissel':     { Viewer: GeldWisselViewer,     Config: GeldWisselConfig, AdvancedConfig: GeldAdvancedConfig, TrayPiece: GeldTrayPiece },
     // No AdvancedConfig: geld-teruggeven has no Geavanceerd settings, and the accordion
     // only appears for rows that register one.
-    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig },
+    'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig, TrayPiece: GeldTrayPiece },
 
     'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
     'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig, TrayPiece: MabTrayPiece },
