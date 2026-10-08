@@ -306,6 +306,14 @@ html:has(.oefen-body),
   font-family: 'Azeret Mono', monospace;
   line-height: 1;
 }
+/* A viewer's blank box (splitsen, positietabel) as a cell: the box's own border stays the frame. */
+.kiosk-card-inner .kiosk-cell.is-box {
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
 .kiosk-card-inner .kiosk-cell.is-scratch { background: color-mix(in srgb, var(--accent) 3%, transparent); }
 .kiosk-card-inner .kiosk-cell.is-rest { border: 1px solid var(--kiosk-ink); border-radius: 2px; }
 .kiosk-card-inner .kiosk-cell[data-kiosk-active] {

@@ -13,7 +13,7 @@ import { INTERACT_SEP } from '../services/oefenen/types';
 import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
-import { cijferFill, type Cells } from './helpers/fillCells';
+import { cellsFromParts, cijferFill, type Cells } from './helpers/fillCells';
 import { cijferKiosk } from '../services/oefenen/kioskDescriptors';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
 import type * as T from '../services/math/types';
@@ -470,7 +470,18 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
         if (noCarry) expect(ok({ ...answer, [noCarry[0]]: '1' }), where).toBe(false);
         return;
     }
-    expect.fail(`${where}: no fill-cells truth for ${typeId}`);
+    // One cell per blank, in key order: each cell holds the generator's value.
+    const right = cellsFromParts(d, ex, c);
+    const want = typeof truth === 'number' ? [truth] : (truth as { multi: number[] }).multi;
+    expect(want, `${where}: no fill-cells truth for ${typeId}`).toBeDefined();
+    expect(keys.length, where).toBe(want.length);
+    keys.forEach((k, i) => expect(scaled(valueOf(right[k])), `${where} cell ${k}`).toBe(scaled(want[i])));
+    typeable(right);
+    expect(ok(right), where).toBe(true);
+    const last = keys.length - 1;
+    expect(ok({ ...right, [keys[last]]: wrongNumber(want[last]) }), where).toBe(false);
+    // Controleer waits for every cell.
+    expect(fill({ ...right, [keys[0]]: '' }), where).toBe('');
 }
 
 // Runs the agreement checks for one leaf (+ extra settings) over every grade × SEEDS seeds;

@@ -6,7 +6,7 @@ import type {
     RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
     VormleerExercise, WeegschaalExercise,
 } from '../math/types';
-import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskInput, type KioskKey } from './types';
+import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskInput, type KioskInteract, type KioskKey } from './types';
 import { cijferCheck, cijferGiven, cijferKioskGrid, type CijferCheck } from '../cijferen/cijferCells';
 import { cijferDp } from '../cijferen/cijferLayout';
 import { gcd, isFraction } from '../math/answerKeys';
@@ -573,25 +573,50 @@ export const ORDENEN_KIOSK = descriptor<OrdenenExercise>({
     display: (ex) => `${ex.display.map(showValue).join(', ')} → ${ex.values.map(() => '?').join(` ${ex.operator} `)}`,
 });
 
-// basis / harten: the partner of every given number; boom: the one blank of the tree;
-// positie-tabel: the digit of every place. Benen and the math rows are not served yet.
+// Phase C2: the pupil fills the blanks ON the card. Every cell is required; the answer is
+// the cells in key order, each with its accepted spellings.
+function cellsInteract<E>(keysOf: (ex: E, c: Record<string, unknown>) => string[], wantsOf: (ex: E, c: Record<string, unknown>) => string[],
+    cellOf?: (key: string, ex: E, c: Record<string, unknown>) => KioskCellSpec): KioskInteract<E> {
+    return {
+        kind: 'fill-cells',
+        keys: keysOf,
+        cellOf,
+        answerOf: (ex, c) => wantsOf(ex, c).join(INTERACT_SEP),
+        fromState: (st, ex, c) => {
+            const v = keysOf(ex, c).map(k => (st.cells[k] ?? '').trim());
+            return v.some(x => x === '') ? '' : v.join(INTERACT_SEP);
+        },
+    };
+}
+
+// basis / harten: the partner of every given number (cell per pair); boom: the one blank box;
+// positie-tabel: the digit under every place (one-digit cells). Benen and the math rows are not served yet.
 const splitsLayout = (c: Record<string, unknown>) => (c.layout as string | undefined) ?? 'basic';
-const pairLabels = (ex: SplitsenExercise) => ex.pairs.map(p => `${showNum(p.given)} en`);
+const isPlaceTable = (c: Record<string, unknown>) => splitsLayout(c) === 'positie-tabel';
+const splitsWants = (ex: SplitsenExercise, c: Record<string, unknown>): string[] => {
+    const layout = splitsLayout(c);
+    if (layout === 'positie-tabel') return (ex.placeBreakdown ?? []).map(p => String(p.digit));
+    if (layout === 'splitsboom') {
+        const p = ex.pairs[0];
+        const pos = ex.blankPos ?? 'right';
+        return [numberSpellings(pos === 'top' ? ex.total : pos === 'left' ? p.given : p.answer).join('|')];
+    }
+    return ex.pairs.map(p => numberSpellings(p.answer).join('|'));
+};
+// SYNC: SplitsenViewer KioskCell keys (p<i> per pair, b = the boom's blank, the place key in the table).
+const splitsKeys = (ex: SplitsenExercise, c: Record<string, unknown>): string[] => {
+    const layout = splitsLayout(c);
+    if (layout === 'positie-tabel') return (ex.placeBreakdown ?? []).map(p => p.key);
+    if (layout === 'splitsboom') return ['b'];
+    return ex.pairs.map((_, i) => `p${i}`);
+};
+const splitsInteract = cellsInteract<SplitsenExercise>(splitsKeys, splitsWants, (_k, _ex, c) => (isPlaceTable(c) ? { length: 1 } : {}));
 export const SPLITSEN_KIOSK = descriptor<SplitsenExercise>({
-    input: 'multi-number',
-    inputOf: (_ex, c) => (splitsLayout(c) === 'splitsboom' ? 'number' : 'multi-number'),
+    input: 'interactive',
     keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 && splitsLayout(c) === 'basic' ? [','] : []),
-    labels: (ex, c) => (splitsLayout(c) === 'positie-tabel' ? (ex.placeBreakdown ?? []).map(p => p.key) : pairLabels(ex)),
-    answerOf: (ex, c) => {
-        const layout = splitsLayout(c);
-        if (layout === 'positie-tabel') return (ex.placeBreakdown ?? []).map(p => String(p.digit));
-        if (layout === 'splitsboom') {
-            const p = ex.pairs[0];
-            const pos = ex.blankPos ?? 'right';
-            return numberSpellings(pos === 'top' ? ex.total : pos === 'left' ? p.given : p.answer);
-        }
-        return ex.pairs.map(p => numberSpellings(p.answer).join('|'));
-    },
+    kioskInstruction: (_ex, c) => (isPlaceTable(c) ? 'Vul de positietabel in.' : undefined),
+    interact: splitsInteract,
+    answerOf: (ex, c) => [splitsInteract.answerOf(ex, c)],
     display: (ex, c) => {
         const layout = splitsLayout(c);
         if (layout === 'positie-tabel') return `${showNum(ex.total)} in de positietabel: ?`;

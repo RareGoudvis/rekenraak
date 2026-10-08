@@ -21,7 +21,7 @@ import { hashOf, resetKiosk, starterSessie, tapAnswer } from './helpers/oefenKio
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
 import type { OefenType } from '../services/oefenen/types';
 import type { CijferExercise } from '../services/math/types';
-import { cijferFill } from './helpers/fillCells';
+import { cijferFill, rightCells } from './helpers/fillCells';
 
 // Phase C (Oefenmodus): viewers answer taps only inside the kiosk's ViewerInteractionContext.
 // On the sheet the context is null and a viewer must render exactly what it rendered before
@@ -317,6 +317,36 @@ describe('kiosk flow: answer on the card', () => {
         String(ex.remainder).split('').forEach(dg => st().press(dg));
         fireEvent.keyDown(activeInput(container), { key: 'Enter' });
         expect(st().lastCorrect).toBe(true);
+    });
+
+    // Phase C2: every fill-in family, typed through the keypad cell by cell, checked with Enter.
+    test.each<[string, Record<string, unknown>]>([
+        ['cijferen-aftrekken-dec', {}], ['cijferen-vermenigvuldigen-nat', {}],
+        ['splitsen-basis', {}], ['splitsen-boom', {}], ['splitsen-harten', {}], ['splitsen-positietabel', {}],
+    ])('fill-cells %s %j: keypad into the cells, Enter checks', (leafId, extra) => {
+        st().load(hashOf(starterSessie({ types: [leafType(leafId, extra)] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        for (const right of [true, false]) {
+            const cur = st().shown!;
+            const typeId = st().sessie!.types[0].typeId;
+            const d = kioskFor(typeId)!;
+            const keys = d.interact!.keys!(cur.exercise, cur.constraints);
+            expect([...cellInputs(container).keys()].sort(), leafId).toEqual([...keys].sort());
+            expect(st().activeCell).toBe(keys.find(k => !d.interact!.cellOf?.(k, cur.exercise, cur.constraints)?.scratch));
+            const cells = rightCells(typeId, d, cur.exercise, cur.constraints);
+            const spoil = keys.find(k => cells[k])!;
+            if (!right) cells[spoil] = cells[spoil].replace(/\d(?!.*\d)/, dg => String((Number(dg) + 1) % 10));
+            for (const k of keys) {
+                if (!cells[k]) continue;
+                fireEvent.focus(cellInputs(container).get(k)!);
+                for (const ch of cells[k]) st().press(ch);
+            }
+            for (let i = 0; i <= keys.length && st().phase === 'exercise'; i++) fireEvent.keyDown(activeInput(container), { key: 'Enter' });
+            expect(st().phase, leafId).toBe('feedback');
+            expect(st().lastCorrect, `${leafId} ${JSON.stringify(cells)}`).toBe(right);
+            st().next();
+        }
     });
 
     test('a non-interactive card stays inert and has no tappable parts', () => {
