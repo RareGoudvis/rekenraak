@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, FloppyDisk, Minus, Plus, Share, Trash, Warning } from '@phosphor-icons/react';
+import { Check, FloppyDisk, Plus, Share, Trash, Warning } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { saveOefenSessie } from '../../services/persistence';
@@ -12,7 +12,7 @@ import OefenShareModal from './OefenShareModal';
 import { newSessieId } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import {
-    LIMIT_STEPS, TIMER_STEPS, buildSessie, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
+    LIMIT_MAX, TIMER_STEPS, buildSessie, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -223,15 +223,12 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                                 {constraints && <ExercisePreview typeId={r.leaf.typeId} constraints={constraints} count={2} height={130} />}
                                             </div>
                                             <div style={S.field}>
-                                                <span style={S.label}>Aantal</span>
-                                                <Stepper
-                                                    steps={LIMIT_STEPS}
-                                                    value={r.limit}
-                                                    format={v => (v === undefined ? '∞' : String(v))}
-                                                    label="Aantal oefeningen van deze soort"
-                                                    onChange={limit => patchRow(r.key, { limit })}
-                                                />
-                                            </div>
+                                                <label style={S.label} htmlFor={`n-${r.key}`}>Aantal: {r.limit ?? '∞'}</label>
+                                <input
+                                    id={`n-${r.key}`} type="range" min={0} max={LIMIT_MAX} step={1} value={r.limit ?? 0}
+                                    style={S.range} onChange={e => patchRow(r.key, { limit: Number(e.target.value) || undefined })}
+                                />
+                            </div>
                                             {mode === 'willekeurig' && (
                                                 <div style={S.field}>
                                                     <label style={S.label} htmlFor={`w-${r.key}`}>Kans: {pct === null ? '–' : `${pct}%`}</label>
@@ -278,20 +275,6 @@ function SwitchRow({ label, checked, onChange }: { label: string; checked: boole
     );
 }
 
-// Steps through a fixed list with − / + (an undefined step = no cap).
-function Stepper<T extends number | undefined>({ steps, value, format, label, onChange }: {
-    steps: T[]; value: T; format: (v: T) => string; label: string; onChange: (v: T) => void;
-}) {
-    const i = Math.max(0, steps.indexOf(value));
-    return (
-        <div style={S.stepper} role="group" aria-label={label}>
-            <button className="ui-hover" style={S.stepBtn} aria-label="Minder" disabled={i === 0} onClick={() => onChange(steps[i - 1])}><Minus size={14} /></button>
-            <span style={S.stepValue}>{format(steps[i])}</span>
-            <button className="ui-hover" style={S.stepBtn} aria-label="Meer" disabled={i === steps.length - 1} onClick={() => onChange(steps[i + 1])}><Plus size={14} /></button>
-        </div>
-    );
-}
-
 const S = {
     header: { padding: 'var(--sp-4) 56px var(--sp-3) var(--sp-5)', borderBottom: '1px solid var(--separator)', flexShrink: 0 } as React.CSSProperties,
     title: { margin: 0, fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-main)' } as React.CSSProperties,
@@ -327,9 +310,6 @@ const S = {
     previewWrap: { borderRadius: 'var(--radius-xs)', border: '1px solid var(--separator)', background: '#fff' } as React.CSSProperties,
     muted: { margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontStyle: 'italic' } as React.CSSProperties,
     range: { width: '100%', accentColor: 'var(--accent)' } as React.CSSProperties,
-    stepper: { display: 'inline-flex', alignItems: 'center', alignSelf: 'flex-start', border: '1px solid var(--separator)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface-2)' } as React.CSSProperties,
-    stepBtn: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: 'var(--control-h)', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer' } as React.CSSProperties,
-    stepValue: { minWidth: '40px', textAlign: 'center', fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-main)' } as React.CSSProperties,
     footer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-5)', borderTop: '1px solid var(--separator)', flexShrink: 0 } as React.CSSProperties,
     footerCount: { fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 600 } as React.CSSProperties,
     footerBtns: { display: 'flex', gap: 'var(--sp-2)' } as React.CSSProperties,
