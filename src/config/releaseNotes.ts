@@ -97,6 +97,14 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'opgelost',
+                text: 'Verbanden (breuk · kommagetal · procent): eenzelfde waarde komt niet meer twee keer voor in één tabel.',
+                example: {
+                    leafId: 'verbanden-tabel', grade: 5, count: 4, height: 180,
+                    before: '90 % én 0,9 in dezelfde tabel', after: 'elke waarde één keer',
+                },
+            },
+            {
+                kind: 'opgelost',
                 text: 'Breuken optellen en aftrekken bleef bij een kleine noemer soms hangen.',
                 example: { leafId: 'hr-std-optellen-rat', grade: 4, count: 4 },
             },
