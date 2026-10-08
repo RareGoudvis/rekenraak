@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isBordPage } from '../bootEntry';
 
 const TOUR_SEEN_KEY = 'rekenraak_tour_seen_v1';
 
@@ -11,6 +12,8 @@ export function useOnboarding() {
   // First-run welcome (tour / demo video / skip) replaces auto-opening the tour. Shown once;
   // the tour itself stays replayable from Help regardless.
   const [welcomeOpen, setWelcomeOpen] = useState<boolean>(() => {
+    // The welcome tours the editor, which bord.html never shows; it waits for the first visit to /.
+    if (isBordPage()) return false;
     try { return !localStorage.getItem(TOUR_SEEN_KEY); } catch { return false; }
   });
   const markTourSeen = () => {

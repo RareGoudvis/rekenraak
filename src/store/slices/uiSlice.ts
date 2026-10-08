@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { UiSlice, WorksheetState } from '../types';
+import { initialView, isBordPage, leaveBordPage } from '../../bootEntry';
 
 // Sidebar hover-preview toggle persists across sessions (default on).
 // Absent/unavailable → true.
@@ -15,7 +16,7 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
     inspectorTab: 'oefening',
     bladSection: 'koptekst',
     showSolutions: false,
-    view: 'editor',
+    view: initialView(),
     sidebarPreview: INITIAL_SIDEBAR_PREVIEW,
     saveState: 'idle',
     lastSavedAt: null,
@@ -34,7 +35,11 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
     setInspectorTab: (t) => set({ inspectorTab: t }),
     setBladSection: (s) => set({ bladSection: s }),
     setShowSolutions: (show) => set({ showSolutions: show }),
-    setView: (view) => set({ view }),
+    setView: (view) => {
+        // On bord.html the board IS the page, so leaving it leaves the page too.
+        if (view !== 'whiteboard' && isBordPage()) { leaveBordPage(); return; }
+        set({ view });
+    },
     setBlockPages: (pages) => set({ blockPages: pages }),
     setIgnoreMinWidth: (on) => set({ debugIgnoreMinWidth: on }),
     setSidebarPreview: (on) => {

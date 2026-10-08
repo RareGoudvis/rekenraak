@@ -29,6 +29,7 @@ import SheetBanners from './components/sheet/SheetBanners';
 import { useSheetZoom } from './hooks/useSheetZoom';
 import { useBootLoad } from './hooks/useBootLoad';
 import { useOnboarding } from './hooks/useOnboarding';
+import { isBordPage } from './bootEntry';
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
@@ -52,6 +53,8 @@ export default function App() {
 
   // Browser tab title follows the worksheet title.
   useEffect(() => {
+    // bord.html keeps its own tab title (the board, not a worksheet, is what is open there).
+    if (isBordPage()) return;
     const t = headerData?.titel?.trim();
     document.title = t ? `${t} — Rekenraak` : 'Rekenraak';
   }, [headerData?.titel]);
