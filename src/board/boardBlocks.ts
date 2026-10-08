@@ -2,7 +2,7 @@ import { REGISTRY } from '../config/exerciseRegistry';
 import { seedConstraints, type BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
 import type { MathBlock } from '../services/math/types';
-import { generateForBlock, GENERATION_FAILED } from '../services/generateDispatch';
+import { generateForBlock, generateExtra, GENERATION_FAILED } from '../services/generateDispatch';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { rndId } from './boardTypes';
 
@@ -55,6 +55,25 @@ export function withFreshIds(block: MathBlock): MathBlock {
             it && typeof it === 'object' && 'id' in it ? { ...it, id: rndId() } : it);
     }
     return copy;
+}
+
+// The "Aantal" change, applied at once like the sheet's updateBlockSettings top-up: fewer cuts
+// the tail, more keeps what is there and generates the rest (generateExtra, deduped).
+export function resizeBoardBlock(block: MathBlock, want: number): MathBlock {
+    const def = REGISTRY[block.typeId];
+    const sized = { ...block, numberOfExercises: want };
+    if (!def) return sized;
+    const current = (block[def.exerciseField as keyof MathBlock] as unknown as unknown[] | undefined) ?? [];
+    // Nothing to keep (a failed or never-run generate): a board card has no other generate path.
+    if (current.length === 0) return regenerateBoardBlock(sized);
+    if (want === current.length) return sized;
+    try {
+        const { items, note } = generateExtra(sized, current, want, true);
+        return { ...sized, [def.exerciseField]: items, generationNote: want < current.length ? block.generationNote : note };
+    } catch (err) {
+        console.warn(`[rekenraak] board top-up for ${block.typeId} threw`, err);
+        return sized;
+    }
 }
 
 // Board blocks never live in the worksheet store, so the exercise field and the note are

@@ -104,8 +104,8 @@ describe('stagger', () => {
         expect(staggerPos()).toEqual({ x: 60, y: 40 });
     });
 
-    // BUGS.md › Bordmodus: the stagger cycles every 5, so the 6th card lands exactly on the 1st.
-    test.fails('the 6th widget does not land exactly on the 1st', () => {
+    // Fixed 2026-10-08 (WB3): a new card takes the first free stagger slot.
+    test('the 6th widget does not land exactly on the 1st', () => {
         for (let i = 0; i < 6; i++) addBasicWidget('tekst');
         const ws = useBoardStore.getState().pages[0].widgets;
         expect({ x: ws[5].x, y: ws[5].y }).not.toEqual({ x: ws[0].x, y: ws[0].y });

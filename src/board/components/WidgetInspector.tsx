@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
@@ -216,7 +216,7 @@ function WerksymbolenSettings({ widget }: { widget: BoardWidget }) {
             {row('Verticaal', p.vertical, (v) => set({ vertical: v }))}
             {row('Enkel icoon', p.iconOnly, (v) => set({ iconOnly: v }))}
             <div style={S.sectionLabel}>Zichtbare symbolen</div>
-            {WERKSYMBOLEN.map(m => row(m.label, p.enabled.includes(m.key), () => toggleMode(m.key)))}
+            {WERKSYMBOLEN.map(m => <Fragment key={m.key}>{row(m.label, p.enabled.includes(m.key), () => toggleMode(m.key))}</Fragment>)}
         </div>
     );
 }

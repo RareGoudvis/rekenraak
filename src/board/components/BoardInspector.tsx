@@ -4,7 +4,7 @@ import Switch from '../../components/ui/Switch';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { useBoardStore } from '../useBoardStore';
-import { regenerateBoardBlock } from '../boardBlocks';
+import { regenerateBoardBlock, resizeBoardBlock } from '../boardBlocks';
 import GenerationNote from '../../components/configurator/GenerationNote';
 import type { BoardWidget } from '../boardTypes';
 
@@ -83,7 +83,7 @@ export default function BoardInspector({ widget }: Props) {
                     <label style={S.label}>Aantal oefeningen ({block.numberOfExercises})</label>
                     <input type="range" min={1} max={12} step={1} value={block.numberOfExercises}
                         style={S.slider}
-                        onChange={(e) => patchBlock({ numberOfExercises: Number(e.target.value) })} />
+                        onChange={(e) => patchBlock(resizeBoardBlock(block, Number(e.target.value)))} />
 
                     <label style={S.label}>Witruimte ({block.verticalSpacing}px)</label>
                     <input type="range" min={4} max={40} step={2} value={block.verticalSpacing}

@@ -451,8 +451,8 @@ describe('the draftBlocks mirror', () => {
         expect(st().selectedWidgetId).toBeNull();
     });
 
-    // BUGS.md › Bordmodus: "Aantal oefeningen" changes the count but not the card until Genereer.
-    test.fails('the Aantal slider changes the number of exercises on the card', () => {
+    // Fixed 2026-10-08 (WB3): "Aantal" applies at once through resizeBoardBlock.
+    test('the Aantal slider changes the number of exercises on the card', () => {
         const { id, container } = openInspector();
         const count = container.querySelector('input[type="range"]')!;
         act(() => { fireEvent.change(count, { target: { value: '2' } }); });

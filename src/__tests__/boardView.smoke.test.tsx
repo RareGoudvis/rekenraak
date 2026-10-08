@@ -119,7 +119,7 @@ describe('the full board', () => {
 });
 
 describe('every settings panel', () => {
-    // Werksymbolen's panel logs React's missing-key warning (BUGS.md › Bordmodus).
+    // Fixed 2026-10-08 (WB3): Werksymbolen rows have React keys.
     const panels = KINDS_WITH_SETTINGS.filter((k) => k !== 'werksymbolen');
 
     test.each(panels)('%s: the ⚙ panel opens clean', async (kind) => {
@@ -133,7 +133,7 @@ describe('every settings panel', () => {
         expect(errors()).toEqual([]);
     });
 
-    test.fails('werksymbolen: the ⚙ panel opens clean', async () => {
+    test('werksymbolen: the ⚙ panel opens clean', async () => {
         fillBoard();
         const w = st().pages[0].widgets.find((x) => x.kind === 'werksymbolen')!;
         st().selectWidget(w.id);

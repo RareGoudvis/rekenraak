@@ -6,6 +6,7 @@ import { useBoardStore } from '../useBoardStore';
 import { makeBoardBlock, sheetSeedContext } from '../boardBlocks';
 import { seedConstraints } from '../../config/baseSettings';
 import { staggerPos } from '../addWidgets';
+import { TOOL_CATALOG, runTool } from '../toolCatalog';
 
 interface Props {
     onClose: () => void;
@@ -25,6 +26,20 @@ function variantLabel(item: CatalogItem, v: CatalogVariant): string {
     return v.label;
 }
 
+// A search hits the row, its subdomain, any variant (as listed on the sheet or renamed for the
+// board), the typeId and the leaf ids, so "klok" finds the klok-kloklezen variants.
+function boardItemMatches(item: CatalogItem, needle: string): boolean {
+    if (!needle) return true;
+    const hay = [item.label, item.context, item.typeId, ...item.variants.flatMap(v => [v.label, variantLabel(item, v), v.key])];
+    return hay.some(t => t.toLowerCase().includes(needle));
+}
+
+// The board tools a search also offers (the image picker needs the bottom bar's file input).
+function boardToolMatches(needle: string) {
+    if (!needle) return [];
+    return TOOL_CATALOG.filter(t => t.kind !== 'afbeelding-picker' && (t.label.toLowerCase().includes(needle) || t.id.includes(needle)));
+}
+
 // Single-add exercise picker for the board's Wiskunde category (mass-add card
 // style, but one tap = one widget on the board + modal closes; no multi-select).
 export default function BoardAddModal({ onClose }: Props) {
@@ -35,12 +50,11 @@ export default function BoardAddModal({ onClose }: Props) {
     const [domain, setDomain] = useState<string | null>(null);
     const [search, setSearch] = useState('');
 
-    const visible = useMemo(() => {
-        const needle = search.trim().toLowerCase();
-        return catalog.filter(it =>
-            (!domain || it.domainId === domain) &&
-            (!needle || it.label.toLowerCase().includes(needle) || it.context.toLowerCase().includes(needle)));
-    }, [catalog, domain, search]);
+    const needle = search.trim().toLowerCase();
+    const visible = useMemo(
+        () => catalog.filter(it => (!domain || it.domainId === domain) && boardItemMatches(it, needle)),
+        [catalog, domain, needle]);
+    const tools = boardToolMatches(needle);
 
     // Resolve the preview the way handleAdd seeds the block, so the card shows what a tap adds.
     const previewConstraints = (item: CatalogItem) => {
@@ -85,6 +99,16 @@ export default function BoardAddModal({ onClose }: Props) {
                 ))}
             </div>
 
+            {tools.length > 0 && (
+                <div style={S.tools} aria-label="Hulpmiddelen">
+                    {tools.map(t => (
+                        <button key={t.id} type="button" className="ui-hover" style={S.variantBtn} onClick={() => { runTool(t); onClose(); }}>
+                            <t.icon size={14} /> {t.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             <div style={S.grid}>
                 {visible.map(item => (
                     <div key={item.typeId} style={S.card}>
@@ -111,7 +135,7 @@ export default function BoardAddModal({ onClose }: Props) {
                         </div>
                     </div>
                 ))}
-                {visible.length === 0 && <div style={S.empty}>Geen oefeningen gevonden.</div>}
+                {visible.length === 0 && tools.length === 0 && <div style={S.empty}>Geen oefeningen gevonden.</div>}
             </div>
         </div>
     );
@@ -135,6 +159,7 @@ const S = {
         border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
         fontSize: '13px', outline: 'none',
     } as React.CSSProperties,
+    tools: { display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '0 4px 12px' } as React.CSSProperties,
     chips: { display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '0 4px 12px' } as React.CSSProperties,
     chip: {
         height: '34px', padding: '0 14px', borderRadius: '17px', cursor: 'pointer',
