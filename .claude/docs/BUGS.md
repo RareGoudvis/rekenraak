@@ -160,9 +160,6 @@ UpdateState). Left over, found while fixing:
 
 ## Bordmodus
 
-- Board add panel (BoardAddModal) search matches only the item label and context, not variant
-  labels: "klok" finds nothing (the item is "Tijdstip en tijdsduur", variants "Analoge klok · …").
-  Fix: also match `variants[].label` and the typeId, like MassAddModal does. 2026-10-08
 - Board settings popup (⚙ Bordinstellingen in BoardBottomBar) ignores Escape; only a second click on
   ⚙ closes it (the other bottom-bar popups share the `menu` state; likely the same). 2026-10-08
 - No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.

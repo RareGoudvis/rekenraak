@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
-import { describe, test, expect, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
+import { render, cleanup, fireEvent } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import KlokWidget from '../board/components/widgets/KlokWidget';
 import GeldPalet from '../board/components/GeldPalet';
 import WidgetInspector from '../board/components/WidgetInspector';
+import BoardAddModal from '../board/components/BoardAddModal';
 import type { BoardWidget } from '../board/boardTypes';
 
 // Bordmodus cosmetics from BUGS.md: each test failed before its fix.
@@ -25,6 +26,34 @@ describe('drag surfaces do not select text', () => {
         const items = [...container.querySelectorAll<HTMLElement>('[data-geld-palet-item]')];
         expect(items.length).toBeGreaterThan(10);
         for (const el of items) expect(el.style.userSelect).toBe('none');
+    });
+});
+
+describe('add panel search', () => {
+    // The card previews mount lazily on intersection; jsdom has no observer, and the search needs none.
+    beforeEach(() => { vi.stubGlobal('IntersectionObserver', class { observe() {} unobserve() {} disconnect() {} }); });
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    test('"klok" finds the klok exercise variants and the clock tool', () => {
+        const { getByPlaceholderText, getAllByRole, queryByText } = render(<BoardAddModal onClose={() => {}} />);
+        fireEvent.change(getByPlaceholderText('Zoeken…'), { target: { value: 'klok' } });
+        expect(queryByText('Geen oefeningen gevonden.')).toBeNull();
+        const labels = getAllByRole('button').map(b => b.textContent?.trim());
+        expect(labels).toContain('Klok');
+        expect(labels).toContain('Analoge klok · Lezen');
+        expect(labels).toContain('Digitale klok · Tekenen');
+    });
+
+    test('a typeId finds its row and adding a found tool puts it on the board', () => {
+        const onClose = vi.fn();
+        const { getByPlaceholderText, getByRole, queryByText } = render(<BoardAddModal onClose={onClose} />);
+        fireEvent.change(getByPlaceholderText('Zoeken…'), { target: { value: 'kloklezen' } });
+        expect(queryByText('Geen oefeningen gevonden.')).toBeNull();
+        fireEvent.change(getByPlaceholderText('Zoeken…'), { target: { value: 'klok' } });
+        fireEvent.click(getByRole('button', { name: 'Klok' }));
+        const s = useBoardStore.getState();
+        expect(s.pages[s.activePageIdx].widgets.map(w => w.kind)).toEqual(['klok']);
+        expect(onClose).toHaveBeenCalled();
     });
 });
 
