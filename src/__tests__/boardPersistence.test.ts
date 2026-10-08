@@ -72,7 +72,8 @@ describe('parseBoardFile: strict on read', () => {
         ['a page without background', validFile([{ id: 'p', widgets: [], strokes: [] }])],
         ['widgets as an object', validFile([{ id: 'p', widgets: {}, strokes: [], background: {} }])],
         ['one good page and one partial page', validFile([...emptyBoard(), { id: 'p2', widgets: [] }])],
-        ['a null stroke', validFile([{ id: 'p', widgets: [], strokes: [null], background: {} }])],
+        ['a page without an id', validFile([{ widgets: [], strokes: [], background: {} }])],
+        ['a null background', validFile([{ id: 'p', widgets: [], strokes: [], background: null }])],
     ])('rejects %s', (_label, json) => {
         expect(parseBoardFile(json)).toBeNull();
     });
@@ -87,10 +88,27 @@ describe('parseBoardFile: strict on read', () => {
         expect(parseBoardFile(JSON.stringify({ version: 4, blocks: [], title: 'Blad' }))).toBeNull();
     });
 
-    // A hand-edited or foreign file passes the page-level check with junk inside; loading it
-    // crashes BoardPageCanvas (reads .id of a null widget) outside any error boundary.
-    test.fails('rejects a page whose widgets list holds a non-object', () => {
-        expect(parseBoardFile(validFile([{ id: 'p', widgets: [null], strokes: [], background: { pattern: 'blanco', dark: false } }]))).toBeNull();
+    // Junk inside a sound page (hand-edited or foreign file) used to load and crash BoardPageCanvas
+    // outside any error boundary; it is dropped, the good widgets and strokes survive.
+    test('drops junk widgets and strokes, keeps the sound ones', () => {
+        const good = { id: 'w', kind: 'klok', x: 1, y: 2, w: 300, z: 1 };
+        const stroke = { id: 's', tool: 'pen', color: '#000', width: 4, path: 'M 0 0', pts: [0, 0] };
+        const widgets = [
+            null, 7, 'x', [], good,
+            { ...good, id: 1 }, { ...good, kind: 'onbekend' }, { ...good, x: '1' }, { ...good, z: null },
+            { ...good, w: Infinity }, { ...good, kind: 'exercise' }, { ...good, kind: 'exercise', block: null },
+        ];
+        const f = parseBoardFile(validFile([{ id: 'p', widgets, strokes: [null, 3, { id: 's2' }, stroke], background: { pattern: 'blanco', dark: false } }]))!;
+        expect(f).not.toBeNull();
+        expect(f.pages[0].widgets).toEqual([good]);
+        expect(f.pages[0].strokes).toEqual([stroke]);
+    });
+
+    test.each([
+        [undefined, 0], [0, 0], [1, 1], [9, 1], [-1, 0], [1.5, 0], ['1', 0], [null, 0],
+    ])('activePageIdx %s on a 2-page file is read as %s', (idx, expected) => {
+        const json = JSON.stringify({ version: BOARD_FORMAT_VERSION, exportedAt: 'x', pages: [...emptyBoard(), ...emptyBoard()], activePageIdx: idx });
+        expect(parseBoardFile(json)!.activePageIdx).toBe(expected);
     });
 });
 

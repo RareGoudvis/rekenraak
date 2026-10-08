@@ -188,12 +188,6 @@ UpdateState). Left over, found while fixing:
   "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
   Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
   measurement. 2026-10-08
-- parseBoardFile checks pages only: a file whose `widgets` holds `null` (hand-edited or foreign)
-  loads, BoardPageCanvas reads `.id` of it outside the per-widget boundary and the app goes blank;
-  the 1.5 s autosave then persists the junk. Fix: validate each widget (object, id, kind, numeric
-  x/y/w/z) and each stroke. Same gap for `activePageIdx`: the module-init hydration in
-  useBoardStore clamps it to the last page but not to 0, so an autosave with -1 opens on
-  `pages[-1]`. `test.fails` in boardPersistence.test.ts and boardStore.test.tsx. 2026-10-08
 - duplicatePage copies exercise widgets with their block id unchanged, while duplicateWidget gives
   the copy a fresh `bw-` id because the draft mirror keys on it. Low impact today (the mirror only
   looks at the active page). `test.fails` in boardPersistence.test.ts. 2026-10-08

@@ -502,9 +502,8 @@ describe('autosave and hydration', () => {
         expect(s.pages[0].widgets).toEqual([]);
     });
 
-    // loadBoard clamps at 0, the module-init hydration does not: pages[-1] is undefined and
-    // every selector on the active page throws (BUGS.md › Bordmodus, parseBoardFile line).
-    test.fails('a negative autosaved index lands on page 0', async () => {
+    // pages[-1] is undefined and every selector on the active page would throw; the parser clamps.
+    test('a negative autosaved index lands on page 0', async () => {
         expect((await hydrate(-1)).s.activePageIdx).toBe(0);
     });
 });
