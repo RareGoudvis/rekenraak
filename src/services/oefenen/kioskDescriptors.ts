@@ -713,17 +713,21 @@ const verbandAnswer = (f: Fraction, rep: string): string[] => {
     if (rep === 'procent') return numberSpellings(Number(((f.n / f.d) * 100).toFixed(1)));
     return [...new Set([fracText(f), fracText(reduce(f))])];
 };
+// SYNC: VerbandenViewer — paren asks ex.target (else the first other rep), the tabel every rep
+// but the given one; its KioskCells are keyed by the rep name.
 const verbandFields = (ex: VerbandExercise, c: Record<string, unknown>): string[] => {
-    if (c.subType === 'paren') return [ex.target ?? 'decimaal'];
     const reps = (c.reps as string[] | undefined) ?? ['breuk', 'decimaal', 'procent'];
+    if (c.subType === 'paren') return [ex.target ?? reps.find(r => r !== ex.given) ?? 'decimaal'];
     return reps.filter(r => r !== ex.given);
 };
-// Every asked representation is a field, captioned; a percent is typed without the % sign.
+// Phase C2: every asked representation is a cell ON the card; a breuk is typed with '/', a
+// percent without the % sign.
+const verbandInteract = cellsInteract<VerbandExercise>(verbandFields, (ex, c) => verbandFields(ex, c).map(r => verbandAnswer(ex.fraction, r).join('|')));
 export const VERBANDEN_KIOSK = descriptor<VerbandExercise>({
-    input: 'multi-number',
+    input: 'interactive',
     keys: () => [',', '/'],
-    labels: (ex, c) => verbandFields(ex, c).map(r => REP_LABEL[r] ?? r),
-    answerOf: (ex, c) => verbandFields(ex, c).map(r => verbandAnswer(ex.fraction, r).join('|')),
+    interact: verbandInteract,
+    answerOf: (ex, c) => [verbandInteract.answerOf(ex, c)],
     display: (ex, c) => `${verbandAnswer(ex.fraction, ex.given)[0]}${ex.given === 'procent' ? ' %' : ''} = ${verbandFields(ex, c).map(r => `? (${REP_LABEL[r]})`).join(' = ')}`,
 });
 
