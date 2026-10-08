@@ -998,10 +998,15 @@ All localStorage; nothing leaves the browser except share links the user copies.
   embeds a `CurriculumLock` (used by the curriculum builder, §13).
 - **File export/import** — `exportWorksheet` (JSON blob,
   `werkbundel-<slug>-<YYYYMMDD>.json`) / `parseWorksheetFile`.
-- **Release banner** — [version.ts](../../src/config/version.ts) `RELEASE_VERSION` +
-  `RELEASE_SUMMARY`; shown until the user dismisses the current version
-  (`rekenraak_release_seen_v1`). Details live in
-  [HelpModal.tsx](../../src/components/layout/HelpModal.tsx).
+- **Release banner + "Wat is er nieuw"** — [releaseNotes.ts](../../src/config/releaseNotes.ts) is the
+  per-version list, newest first (`{ version, date, summary, items: [{ kind: nieuw | gewijzigd |
+  opgelost, text, example?: { leafId, constraints, grade, before, after } }] }`); `version.ts`
+  derives `RELEASE_VERSION` / `RELEASE_SUMMARY` from entry 0. The banner ("Nieuw: … Meer info",
+  SheetBanners) shows until the user dismisses that version (`rekenraak_release_seen_v1`); clicking
+  it opens [ReleaseNotesModal.tsx](../../src/components/layout/ReleaseNotesModal.tsx) (items grouped,
+  an exercise item renders a live `ExercisePreview` of its leaf via `seedLeafConstraints` plus an
+  "Eerst → Nu" line). HelpModal links to it; `useOnboarding` holds the open state. **Every release
+  prepends an entry** (short, teacher language, an example per exercise change).
 - **First-run tutorial** — [TourOverlay.tsx](../../src/components/onboarding/TourOverlay.tsx),
   an interactive spotlight tour (add → settings → generate → print → WIP/feedback finale).
   On a first visit [WelcomeModal.tsx](../../src/components/onboarding/WelcomeModal.tsx) comes
@@ -1036,7 +1041,8 @@ src/
 │   ├── printPalette.ts          # curated print-safe swatches + STYLE_BOUNDS clamps (style builder)
 │   ├── rekenmethodes.ts         # rekenmethode metadata (bibliotheek)
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
-│   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner
+│   ├── releaseNotes.ts          # per-version "Wat is er nieuw" list (newest first) behind the banner (§10)
+│   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner, derived from releaseNotes[0]
 ├── store/
 │   ├── useWorksheetStore.tsx    # public entry: composes the slices into ONE Zustand store + installs autosave
 │   ├── types.ts                 # state/action interfaces + exported sheet types (HeaderData, DocSettings, …)
@@ -1140,7 +1146,8 @@ src/
     │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈1900px of viewport because the bar spans only the centre column.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
-    │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay
+    │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay + "Wat is er nieuw" link
+    │   ├── ReleaseNotesModal.tsx  # "Wat is er nieuw": releaseNotes items grouped, live example per exercise item (§10)
     ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx)
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
     ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video)

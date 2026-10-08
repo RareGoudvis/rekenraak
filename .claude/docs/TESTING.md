@@ -52,6 +52,7 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `viewers.stale.test.tsx` | Every viewer renders exercises that were generated under DIFFERENT settings — the window between a setting change and the next Genereer. See below. |
 | `limits.wp1.test.ts` … `limits.wp5.test.ts`, `limits.{vergelijken,fractions,meten}.test.ts`, `limitsWp6.test.tsx`, `cijferLimits.test.ts` | The 2026-10-07/08 limit-fix campaign, one suite per fix package: each repro from BUGS.md (L/E/N ids) over several seeds stays within its limit, impossible settings give the documented Dutch note (singular/plural), valid settings keep their output. Every test was shown to fail on the pre-fix code. |
 | `metRest.test.tsx`, `gradeLists.test.ts`, `seedFit.test.ts`, `baseDecimals.test.ts` | Met rest's max list + level clipping, the Leerjaar 1 = 20 lists and grade switches, the seed-time fit (rounding targets, axis span), base decimals 0 / Leerjaar 4-6 = 2 and the v3 → v4 save migration. |
+| `releaseNotes.test.tsx` | The release-notes list: every example leaf exists and fills its block without a melding, the newest entry drives `RELEASE_VERSION`, every preview renders, banner + Help open the modal, ModalShell focus wrap/return, the seen-key. |
 | `leafDefaultCount.test.ts`, `sheetBlock.emptyNote.test.tsx` | A leaf's own `defaultCount` (oppervlakte-rooster = 2, everything else the row's); an empty block with a note shows the note on screen and nothing on paper. |
 
 ## The generator matrix

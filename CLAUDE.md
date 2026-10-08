@@ -78,6 +78,12 @@ TypeScript + Vite + one Zustand store — no backend, no account, no tracking.
   or font sizes** in viewers (read `useBlockWidth()`, use the `--sheet-size-*` tokens).
 - Comments explain **why**, one line, in English (rules below).
 
+## Release notes
+
+Every release prepends an entry to [releaseNotes.ts](src/config/releaseNotes.ts) (it drives the
+"Nieuw" banner and the "Wat is er nieuw" modal): short teacher-language items (nieuw / gewijzigd /
+opgelost), and an `example` (leaf + settings, optional "Eerst → Nu") for every exercise change.
+
 ## Session tracking
 
 At the end of every conversation where changes were made, prepend a new entry to
