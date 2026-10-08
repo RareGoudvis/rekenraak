@@ -396,6 +396,12 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-rekenen-intrest', { halfYear: true }, 'number'],
         ['klok-analoog-lezen', { is24hour: true }, 'time'],
         ['tijdsduur-berekenen', { blanks: ['begin', 'einde'], overMidnight: true }, 'time'],
+        // Phase C2: a middle blank and the result, both cells on the card.
+        ['patronen-kettingsommen', { blankMiddle: true, chainLength: 6, ops: ['+', '-', 'x', ':'] }, 'interactive'],
+        ['splitsen-basis', { decimalPlaces: 1, maxGetal: 100 }, 'interactive'],
+        ['plaatswaarde-tabel', { decimalPlaces: 3, maxGetal: 1000000 }, 'interactive'],
+        ['cijferen-optellen-nat', { numberOfTerms: 4, maxRange: 100000 }, 'interactive'],
+        ['cijferen-vermenigvuldigen-dec', { operand1Mask: { T: true, E: true } }, 'interactive'],
     ])('%s + %j → %s', (leafId, extra, want) => {
         // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
         const leaf = flattenLeaves().find(l => l.id === leafId)!;

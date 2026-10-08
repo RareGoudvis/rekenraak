@@ -328,6 +328,7 @@ describe('kiosk flow: answer on the card', () => {
         ['getalbegrip-getallenrijen-nat', {}], ['getalbegrip-getallenrijen-rat', {}], ['getalbegrip-getallenrijen-geh', {}],
         ['getalbegrip-getallenassen-nat', {}], ['getalbegrip-getallenassen-dec', {}], ['getalbegrip-getallenassen-rat', {}],
         ['verbanden-tabel', {}], ['verbanden-paren', {}], ['procenten-verbanden', {}],
+        ['patronen-kettingsommen', {}], ['patronen-kettingsommen', { blankMiddle: true, chainLength: 6, ops: ['+', '-', 'x', ':'] }],
     ])('fill-cells %s %j: keypad into the cells, Enter checks', (leafId, extra) => {
         st().load(hashOf(starterSessie({ types: [leafType(leafId, extra)] })));
         st().start();
