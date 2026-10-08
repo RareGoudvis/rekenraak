@@ -1,5 +1,5 @@
 import type {
-    AfrondenExercise, BreukBewerkExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, Equation, EvenOnevenExercise,
+    AfrondenExercise, BreukBewerkExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, DeelbaarheidKleurExercise, Equation, EvenOnevenExercise,
     ClockExercise, Fraction, FractionExercise, GeldExercise, TijdsduurExercise, VerbandExercise,
     GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, HerleidingPart,
     MaateenheidExercise, MabExercise, MeetExercise, OrdenenExercise, PatroonExercise, PlaatswaardeExercise, ProcentExercise,
@@ -12,6 +12,7 @@ import { formatMathNumber, opGlyph } from '../math/formatters';
 import { ROUND_SCALE, roundTo, targetsFor } from '../afronden/afrondenGenerator';
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
+import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -532,6 +533,27 @@ export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
         ? `${showNum(ex.number ?? 0)} deelbaar door ${divisorsOf(c).join(', ')}: ?`
         : (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – ')),
     supported: (c) => c.layout === 'veelvouden' || isTabel(c),
+});
+
+// Kleuren / omcirkelen / kleurraster: tap every multiple of the divisor. Each row has ONE
+// divisor (a leaf with several just draws one per row), so every setting is served except
+// the rest line, which asks for a typed remainder per number.
+// SYNC: DeelbaarheidKleurViewer shows kioskNumbers(); a key is the position in that list.
+const kleurShown = (ex: DeelbaarheidKleurExercise) => kioskNumbers(ex.numbers, ex.divisor);
+const kleurMultiples = (ex: DeelbaarheidKleurExercise, nums: readonly number[]) => numberSet(nums.filter(n => n % ex.divisor === 0));
+export const DEELBAARHEID_KLEUR_KIOSK = descriptor<DeelbaarheidKleurExercise>({
+    input: 'interactive',
+    kioskInstruction: (ex) => `Tik op elk getal dat deelbaar is door ${ex.divisor}.`,
+    interact: {
+        kind: 'tap-multi',
+        keys: (ex) => kleurShown(ex).map((_, i) => String(i)),
+        answerOf: (ex) => kleurMultiples(ex, kleurShown(ex)),
+        fromState: (st, ex) => numberSet(st.selected.map(k => kleurShown(ex)[Number(k)]).filter((n): n is number => n !== undefined)),
+    },
+    answerOf: (ex) => [kleurMultiples(ex, kleurShown(ex))],
+    display: (ex) => `veelvouden van ${ex.divisor} in ${kleurShown(ex).map(showNum).join(' ')}: ?`,
+    // viewMode 'raster' is the legacy spelling of strip + rechthoek (no rest line there either).
+    supported: (c) => !(c.showRest && c.viewMode !== 'raster' && c.rasterVorm !== 'rechthoek'),
 });
 
 // Write the shuffled values in order; the < or > sits between the fields as on the sheet.

@@ -95,3 +95,24 @@ describe('deelbaarheid tabel', () => {
 
     test('kiosk flow: juist and fout', () => cardFlow('deelbaarheid-tabel', 3));
 });
+
+describe('deelbaarheid kleuren', () => {
+    test.each([
+        ['rooster', { viewMode: 'strip', divisors: [5], perRow: 10 }, 10],
+        ['omcirkelen', { viewMode: 'markeren', divisors: [5], perRow: 10 }, 10],
+        // 100 generated numbers, the card shows 20 in rows of 5.
+        ['kleurraster', { viewMode: 'strip', rasterVorm: 'rechthoek', divisors: [5], maxGetal: 100, rasterCount: 100, rasterCols: 10 }, 20],
+    ])('%s: every number toggles', (_name, constraints, count) => {
+        const block = oneExercise('deelbaarheid-kleuren', constraints);
+        const { container } = render(<Harness block={block} kind="tap-multi" />);
+        const ps = parts(container);
+        expect(ps).toHaveLength(count);
+        fireEvent.click(ps[0]); fireEvent.click(ps[3]);
+        expect(picked(container)).toEqual(['0', '3']);
+        fireEvent.click(ps[0]);
+        expect(picked(container)).toEqual(['3']);
+        expect(ps[3].hasAttribute('data-kiosk-selected')).toBe(true);
+    });
+
+    test.each(['deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster'])('%s: kiosk flow, juist and fout', leaf => cardFlow(leaf, null));
+});

@@ -17,7 +17,8 @@ import { sanitizeAnswer } from '../oefenen/useOefenStore';
 import type * as T from '../services/math/types';
 import { PLACE_VALUES } from '../services/math/mathEngine';
 import { CONCEPT_NAMES } from '../services/vormleer/vormleerGenerator';
-import { applyOp, evaluateChain, evaluateTokens, isFraction, numValue, scaled } from './helpers/answerKeys';
+import { KIOSK_MAX_NUMBERS, kioskNumbers } from '../services/deelbaarheid/deelbaarheidKleurGenerator';
+import { applyOp,evaluateChain, evaluateTokens, isFraction, numValue, scaled } from './helpers/answerKeys';
 
 // Every kiosk-capable leaf × every leerjaar seed × 50 seeds: the descriptor's answer must be
 // the generator's own answer field, and checkAnswer must take it (in every spelling) and
@@ -50,7 +51,7 @@ const EXPECTED_LEAVES = [
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
     'even-oneven-rooster',
-    'deelbaarheid-tabel',
+    'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -210,6 +211,16 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         d.sequence!.forEach((v, k) => expect(v).toBe(d.base! * k));
         return { multi: d.sequence!.slice(d.givenCount ?? 2) };
     },
+    'deelbaarheid-kleuren': (k: T.DeelbaarheidKleurExercise) => {
+        // The card shows a capped sub-list of the generated numbers; the multiples in it are the answer.
+        const shown = kioskNumbers(k.numbers, k.divisor);
+        expect(shown.length).toBe(Math.min(k.numbers.length, KIOSK_MAX_NUMBERS));
+        shown.forEach(n => expect(k.numbers).toContain(n));
+        expect(new Set(shown).size).toBe(shown.length);
+        const all = k.numbers.filter(n => n % k.divisor === 0).length;
+        expect(shown.filter(n => n % k.divisor === 0).length).toBeGreaterThanOrEqual(Math.min(2, all));
+        return { set: shown.filter(n => n % k.divisor === 0).sort((a, b) => a - b).map(n => formatMathNumber(n)) };
+    },
     ordenen: (o: T.OrdenenExercise) => ordenTruth(o),
     'breuken-rangschikken': (o: T.OrdenenExercise) => ordenTruth(o),
     splitsen: (s: T.SplitsenExercise, c) => {
@@ -364,6 +375,9 @@ describe('descriptor answers agree with the generators', () => {
         ['vergelijken-kiezen', { chooseTarget: 'kleinste', decimalPlaces: 1 }, 'interactive'],
         ['even-oneven-rooster', { target: 'oneven', maxGetal: 10000, perRow: 12 }, 'interactive'],
         ['deelbaarheid-tabel', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 10000 }, 'interactive'],
+        ['deelbaarheid-kleurraster', { divisors: [3, 7, 11, 12], maxGetal: 1000, rasterCount: 1000 }, 'interactive'],
+        ['deelbaarheid-omcirkelen', { divisors: [2], perRow: 5 }, 'interactive'],
+        ['deelbaarheid-rooster', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 1000 }, 'interactive'],
         ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
         ['getalbegrip-functie', { answerMode: 'schrijven' }, 'text'],
