@@ -53,6 +53,10 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
+                text: 'Bordmodus (bèta): zet oefeningen, een klok, timer, getallenlijn en meer op het digibord. Via de knop Bordmodus of op rekenraak.be/bord.html.',
+            },
+            {
+                kind: 'nieuw',
                 text: 'Kan een instelling niet, dan zie je onder Genereer een melding. Vroeger kreeg je stilletjes andere oefeningen.',
             },
             {

@@ -54,7 +54,12 @@ Oefenmodus pupil kiosk, its own React root under `src/oefenen/`. The dev server 
 Dutch (Flemish) primary-school **worksheet generator**. Teachers compose math exercise
 blocks, preview them on virtual A4 pages, and export via the browser print dialog (Save as
 PDF). UI text is Dutch; code and comments are English. Everything is client-side React 19 +
-TypeScript + Vite + one Zustand store — no backend, no account, no tracking.
+TypeScript + Vite + one worksheet Zustand store (Bordmodus has its own) — no backend, no
+account, no tracking.
+
+Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `bord.html` (the same app
+booted straight into Bordmodus via `<html data-boot="bord">` + `src/bootEntry.ts`), and the
+static SEO pages `about.html`, `faq.html`, `oefeningen.html`.
 
 ---
 
@@ -155,8 +160,8 @@ the per-typeId table is §7.
    leaves use `kioskDrag.ts`. Contract: ARCHITECTURE §8 + §15.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
-**`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **whiteboard mode
-(`src/board/`, branch `whiteboard` only)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15.
+**`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **Bordmodus /
+whiteboard (`src/board/`, `/bord.html`)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15.
 
 ---
 

@@ -67,8 +67,8 @@ via registry), [sidebar.tsx](../../src/components/layout/sidebar.tsx) (leaf →
 
 ## 3. State — the Zustand store
 
-Single store: [useWorksheetStore.tsx](../../src/store/useWorksheetStore.tsx) — still the only
-import path. All state lives in memory. Its body is split into four slices composed into ONE
+One worksheet store: [useWorksheetStore.tsx](../../src/store/useWorksheetStore.tsx) — still the only
+import path for sheet state (Bordmodus has its own second store, see "The board store" below). All state lives in memory. Its body is split into four slices composed into ONE
 `create()` (one store on purpose: `addBlockFromType` sets blocks + activeBlockId + inspectorTab in a
 single `set`): [blocksSlice](../../src/store/slices/blocksSlice.ts) (block CRUD, reorder/swap/split,
 exercises, generate), [documentSlice](../../src/store/slices/documentSlice.ts) (header/footer/
@@ -91,7 +91,8 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point (base max L1 20 · L2 100 · L3 1 000 · L4 10 000 · L5 1 000 000 · L6 1 000 000 000, floored per type — §13): seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
 | `curriculum` | `CurriculumLock \| null` | Non-null + `locked` = restricted parent mode (whitelisted sidebar + frozen difficulty) — see §13 |
-| `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks the curriculum builder edits via the real config plugins; not rendered/autosaved/historied — see §13 |
+| `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks edited via the real config plugins: by the curriculum builder (§13) and by the Bordmodus inspector, which mirrors the selected board card here (§14); not rendered/autosaved/historied |
+| `view` | `WorksheetView` = `'editor' \| 'mijn-bladen' \| 'bibliotheek' \| 'whiteboard'` | Which full-screen view is active. UI-only. Starts at `initialView()` ([bootEntry.ts](../../src/bootEntry.ts): `'whiteboard'` on bord.html); `setView` to a non-board view on bord.html navigates to `/` instead (§14) |
 | `sidebarTab` | `'oefeningen' \| 'overzicht'` | Which sidebar tab is open. The strip renders in the TopBar (above the sidebar column), the panel renders the content — see §9 "Shell" |
 | `inspectorTab` | `'blad' \| 'weergave' \| 'oefening'` | Which inspector tab is open. Labels read Oefeningen / Opmaak / Blad (content first); default `oefening` |
 | `bladSection` | `'koptekst' \| 'opdrachten' \| 'voettekst'` | Which Blad sub-tab shows. Set by its own tab strip AND by clicking the header/footer **on the sheet**, so both routes land in the same place |
@@ -195,6 +196,16 @@ grid for callers that never passed a versioned payload (§10).
 localStorage (payload also carries `curriculum`, so a locked sheet stays locked
 across refresh). UI-only state (activeBlockId, showSolutions, bladSection, history,
 draftBlocks) is excluded. Empty fresh-tab state never overwrites a populated autosave.
+
+**The board store** — Bordmodus runs on a second, separate Zustand store,
+[useBoardStore.tsx](../../src/board/useBoardStore.tsx) (pages, widgets, strokes, tool, ink
+settings; own debounced autosave to `rekenraak_board_autosave_v1`; ink-only undo). Separate on
+purpose: neither app can corrupt the other's state, and board edits never enter the sheet's
+history. The one bridge is the **draftBlocks mirror**: while an exercise card's inspector is
+open, `BoardInspector` seeds `draftBlocks = [widget.block]`, the real config plugins edit it
+through `updateBlockSettings` (draft ids route to `draftBlocks`: no history, no lock), a
+subscription copies each edit back into the board widget, and closing clears the drafts.
+Sheet `blocks` and `_history` stay untouched (`boardStore.test.tsx`). Detail in §14.
 
 ---
 
@@ -1017,7 +1028,9 @@ both `onCellMeasure` and the tail measurement it depends on.
   jumps whole). This shared component lays items out as a **block stack of per-row grids**,
   each row `break-inside: avoid` (`.print-row`), so exercises flow across page breaks.
 - **Print CSS** lives in [index.css](../../src/index.css) (`@page` + `@media print`):
-  - `.no-print` — hidden (sidebar, topbar, modals, block controls, overflow warnings).
+  - `.no-print` — hidden (sidebar, topbar, modals, block controls, overflow warnings, and the
+    Bordmodus overlay: `WhiteboardView` is `.no-print`, so a print with the board open prints
+    the sheet underneath; the board has no print path, §14).
   - `.print-root` / `.print-main` — collapse the 3-panel flex shell to block flow.
   - `.page-sheet` — `break-after: page`.
   - `.print-block` — block; `.page-break-before` forces a fresh page (per-block toggle).
@@ -1140,7 +1153,8 @@ The per-typeId detail (generator → field → viewer → config) is the §7 tab
 ```
 src/
 ├── App.tsx                      # shell: 3-panel layout, packing (packPages + measured), composition of components/sheet/
-├── main.tsx                     # React entry
+├── main.tsx                     # React entry (index.html and bord.html both load it)
+├── bootEntry.ts                 # isBordPage() (<html data-boot="bord">), initialView(), leaveBordPage() → '/' (§14)
 ├── oefenen/                     # Oefenmodus pupil kiosk: its own React root behind oefenen.html, never imports App or the worksheet store (§15)
 │   ├── main.tsx                 # entry: decodes location.hash into the store BEFORE the first paint, imports index.css + kiosk/kiosk.css
 │   ├── OefenApp.tsx             # routes on the store: error / StartScreen / Kiosk / locked StatsScreen; follows hashchange
@@ -1213,6 +1227,8 @@ src/
 │  (repo root) .githooks/pre-commit      # git hook (core.hooksPath via npm prepare): npm run check + visual-gate --staged; SKIP_GATE / SKIP_VISUAL / --no-verify need a human
 │  (repo root) .claude/hooks/commit-bypass-guard.ps1  # Claude Code PreToolUse: any gate bypass in a shell command → permissionDecision 'ask'
 │  (repo root) oefenen.html              # the pupil kiosk page: an extra Vite entry (vite.config.ts rollupOptions.input `oefenen`), mounts src/oefenen/main.tsx; noindex
+│  (repo root) bord.html                 # the app booted straight into Bordmodus: <html data-boot="bord">, own title/meta/canonical, Vite input `bord` (§14)
+│  (repo root) src/__tests__/board*.test.ts(x), bordEntry, clockMath, klokWidget, wbCosmetics  # the Bordmodus suites (TESTING.md "Bordmodus suites")
 │  (repo root) about.html, faq.html, oefeningen.html + src/site.ts, src/site.css  # static SEO pages built by Vite (vite.config.ts rollupOptions.input) so they reuse the app's real CSS/classes (mac-vibrant, panel-head, seg-group, sidebar-row, Wordmark markup): sidebar = page tabs + anchors / questions / exercise filter, top bar = "Open RekenRaak", no inspector; sitemap/robots stay in public/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
@@ -1242,6 +1258,7 @@ src/
 │   ├── math/constraintTypes.ts    # per-family XConstraints (43) + BlockConstraints/CrossCutting/ConstraintsByType
 │   ├── clock/{clockTypes.ts,clockGenerator.ts}
 │   ├── clock/clockDrag.ts         # Oefenmodus: which hands the pupil moves (handChoice), minute step, face maths (klokMinuteTo / klokHourTo / klokStep), klokGiven; shared by ClockDragFace and KLOK_KIOSK
+│   ├── clock/clockMath.ts       # pure analogue-clock maths (angle → minute/hour, carry across 12, 12/24 h cycle, arrow steps) for draggable faces (board KlokWidget)
 │   ├── fractions/{fractionGenerator.ts,breukBewerkGenerator.ts}   # breukBewerk = gemengd/gelijknamig/vereenvoudigen
 │   ├── splitsen/{splitsenGenerator.ts,dutchWords.ts}   # basic/splitsboom/verliefde-harten/positie-*
 │   ├── cijferen/cijferGenerator.ts
@@ -1276,6 +1293,28 @@ src/
 │   ├── vormleer/hoekDrag.ts                    # Oefenmodus: hoek class as centre ± tolerance over 5° snaps (hoekTarget), hoekFromPoint, hoekStep; shared by HoekDragSVG and VORMLEER_KIOSK
 │   ├── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES + buildScenario (one niveau scenario for both modes)
 │   └── vormleer/scenarioLayout.ts              # layoutScenario(): viewBox geometry + collision-free label placement for punt-lijn figures (asserted by vormleer.test.ts)
+├── board/                       # Bordmodus, the whiteboard app (§14); outside it only the four §14 touchpoints
+│   ├── boardTypes.ts            # BoardWidget / WidgetKind (22) / Stroke / BoardTool / BoardPage / BoardBackground, ToolEngine contract (P4), rndId, emptyPage
+│   ├── useBoardStore.tsx        # the second Zustand store: pages, widgets, ink, tools, selection/inspector; module-init hydration + 1.5 s autosave (§3, §14)
+│   ├── boardBlocks.ts           # exercise cards: makeBoardBlock (seedConstraints) + sheetSeedContext, regenerateBoardBlock (generateForBlock), resizeBoardBlock (generateExtra), withFreshIds
+│   ├── boardPersistence.ts      # BOARD_FORMAT_VERSION 1, strict parseBoardFile, autosave, "Mijn borden" presets (cap 30, false on quota), file export
+│   ├── widgetSizing.ts          # NATURAL_W / titles / KINDS_WITH_SETTINGS per kind + every prop normaliser (klok, weer, datum, groepjes + makeGroups, …), class-list key
+│   ├── addWidgets.ts            # staggerSlot / staggerPos (first free slot) + addBasicWidget
+│   ├── toolCatalog.ts           # TOOL_CATALOG (Wiskunde-gereedschap / Klasmanagement / Organisatie tiles), runTool, ★ favorites (max 6)
+│   ├── backgrounds.ts           # page backgrounds: pattern × white/black × size, pure CSS gradients
+│   └── components/
+│       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'
+│       ├── BoardPageCanvas.tsx  # one page: background, isolated widget layer, ink layer, geld dock; text-tool placement, 🔄 / 👁 wiring
+│       ├── WidgetFrame.tsx      # window-card chrome: title bar drag, actions, resize grip, zoom = w / NATURAL_W, height cap
+│       ├── BoardBottomBar.tsx   # Toevoegen + favorites, board settings, tools, ink undo/redo, pages, save/presets/import, Bordmodus verlaten; popups close on Escape/outside
+│       ├── BoardAddModal.tsx    # "RekenRaak blok…" single-add picker: exerciseCatalog + ExercisePreview, search over variants/typeIds/tools
+│       ├── BoardInspector.tsx   # exercise card flyout: draftBlocks mirror, Config + StyleConfig + AdvancedConfig, Aantal/Witruimte/Tekstgrootte, GenerationNote
+│       ├── WidgetInspector.tsx  # ⚙ panels for every non-exercise kind
+│       ├── InkLayer.tsx         # SVG strokes (pen/marker), per-stroke eraser hit-test
+│       ├── InkSettingsBar.tsx   # pen/marker colours (defaults + saved in rekenraak_board_colors_v1) and widths
+│       ├── GeldPalet.tsx        # euro dock (Tekening / Echt), drag-to-create geld-item widgets
+│       ├── BoardErrorBoundary.tsx # per-widget + ink-layer crash guard with a local reset
+│       └── widgets/             # one component per WidgetKind (ExerciseWidget mounts EXERCISE_UI Viewer; KlokWidget on clockMath; …)
 └── components/
     ├── sheet/                  # the A4 sheet surface, split out of App.tsx (R1)
     │   ├── SheetPages.tsx      # PageSheet loop: cell width/left, tail + split wiring, fit/widen handlers
@@ -1292,7 +1331,7 @@ src/
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
     │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = hovered id (`components/sheet/hoveredBlock.ts` external store) ?? activeBlockId, resolved in SheetControlsRail, not CSS :hover
     │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, wordmark foot
-    │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈1900px of viewport because the bar spans only the centre column.
+    │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg/Bordmodus fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈2040px of viewport (≈1900 before the Bordmodus button) because the bar spans only the centre column.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
     │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay + "Wat is er nieuw" link
@@ -1310,6 +1349,7 @@ src/
     ├── ui/{IconButton,Wordmark,Switch,PopupSelect,InfoTip,Swatch,ModalPortal,ModalShell}.tsx
     ├── configurator/
     │   ├── Inspector.tsx       # mounts EXERCISE_UI[typeId].Config; locked-mode gating
+    │   ├── GenerationNote.tsx  # the "versoepeld / slechts N / kon geen oefeningen maken" callout under Genereer, shared by the sheet Inspector and BoardInspector
     │   ├── RegionStyleFields.tsx  # per-region look-and-feel (size/bold/colour/fill/padding) + ResetAllStylesButton
     │   ├── BridgeControl.tsx   # carry-arrow ('bruggetje') diagram: per-place geen/mag/moet via tappable gap arrows
     │   ├── useMaxPresets.ts  # the block's max list = REGISTRY.maxPresets over the constraints the plugin sees (gemengd tabs → variant row) (§5)
@@ -1476,104 +1516,186 @@ count + page-break + width. The lock is enforced in the store, so it holds regar
 
 ---
 
-## 14. Whiteboard mode (only on git branch `whiteboard`; not on dev/main)
+## 14. Bordmodus — the whiteboard app (`src/board/`, on `rc` since 2026-10-08)
 
-A second, deliberately isolated app for digibord teaching. ALL code lives under
-`src/board/`; touchpoints outside are exactly three: the `WorksheetView` union gains
-`'whiteboard'`, App.tsx mounts `<WhiteboardView/>` as a full-screen overlay (like the
-library views — the editor stays mounted underneath), and TopBar gets the Chalkboard
-button. Merges into dev only when the layout-bugfix track and the whiteboard track are
-both done (no mid-development syncs — owner decision).
+A second, deliberately isolated app for digibord teaching, folded into `rc` on 2026-10-08
+(revert points: tags `pre-whiteboard-rc`, `pre-whiteboard-rc-oefenen`). ALL board code lives
+under `src/board/`. Touchpoints with the main app are exactly four:
 
-**Store** — [useBoardStore.tsx](../../src/board/useBoardStore.tsx), separate Zustand store:
-`pages: BoardPage[]` (each `{ widgets, strokes, background }`), `activePageIdx`,
-`selectedWidgetId`, `tool` (`select | hand | pen | marker | eraser | line | shape |
-instrument` — last three P3/P4), `inkSettings` per stroke-tool, grid snap state. The
-`hand` tool drags widgets without selecting; `select` is the full-edit cursor.
-Hydrates from autosave at module init; a debounced (1.5s) subscription writes
-`rekenraak_board_autosave_v1`.
+1. **View union** — `WorksheetView` ([store/types.ts](../../src/store/types.ts)) gains
+   `'whiteboard'`; `uiSlice` starts at `initialView()` and routes `setView` (below).
+2. **App mount** — [App.tsx](../../src/App.tsx) renders `<WhiteboardView/>` as a full-screen
+   overlay when `view === 'whiteboard'` (like the library views: the editor stays mounted
+   underneath, so switching back loses nothing).
+3. **TopBar button** — "Bordmodus" (Chalkboard icon) after Uitleg; at shed stage 3 it folds
+   into the Meer menu with Toevoegen and Uitleg ([TopBar.tsx](../../src/components/layout/TopBar.tsx)).
+4. **GeldViewer exports** — `EuroCoin` / `CentCoin` are exported (`Bill` already was) so the
+   board's geld palette and geld-item widgets draw the same money as the sheet.
 
-**Widgets** — `BoardWidget { id, kind, x, y, w, z, scale?, block?, showAnswer?, props? }`.
-Sizing is CSS-`zoom`-based: frame zoom = `w / NATURAL_W[kind]`
-([widgetSizing.ts](../../src/board/widgetSizing.ts)), so corner-drag = uniform zoom AND layout
-height follows (transform:scale did not). Exercise `scale` = extra inner text zoom at
-constant frame width. Kinds: `exercise`, `tekst`, `datum`, `klok` (drag hands: outer
-face = minute, inner = hour; analog/digital/geschreven-tijd toggles), `afbeelding`
-(dataURL), `namen` (random picker; class list app-wide in `rekenraak_board_names_v1`),
-`weer` (open-meteo, geolocation w/ Brussels fallback, toggleable parts), `geluid`
-(getUserMedia RMS → 5 levels).
+Shared code the board reuses (not touchpoints, plain imports): the registry
+(`REGISTRY`, `EXERCISE_UI`), `seedConstraints`, `generateForBlock` / `generateExtra`,
+[GenerationNote.tsx](../../src/components/configurator/GenerationNote.tsx), the worksheet
+store's `draftBlocks`, `exerciseCatalog` + `ExercisePreview`, `AnalogClockSVG` and
+[clockMath.ts](../../src/services/clock/clockMath.ts).
 
-**Exercise widgets = the registry payoff.** Widget holds a full `MathBlock`
-([boardBlocks.ts](../../src/board/boardBlocks.ts): registry defaults, `instructionMode:'geen'`,
-`totalPoints:0`, ≤6 exercises). Viewer = `EXERCISE_UI[typeId].Viewer` with per-widget
-`showAnswer`; config = the REAL plugin via the **draftBlocks mirror** (§13 pattern):
-[BoardInspector.tsx](../../src/board/components/BoardInspector.tsx) seeds
-`worksheetStore.draftBlocks = [widget.block]` on select, a subscription copies plugin
-edits back into the widget, teardown on deselect. Genereer calls
-`REGISTRY[typeId].generate` directly and writes the exercise field itself (board blocks
-never enter the worksheet store). Board policy: geen opdracht-titel, geen score; the
-inspector's blok-section is aantal + witruimte + tekstgrootte only. Adding goes through
-the bottom-bar **Toevoegen menu** (Wiskunde → single-add side panel
-[BoardAddModal.tsx](../../src/board/components/BoardAddModal.tsx) with exerciseCatalog +
-ExercisePreview cards; Klasmanagement; Organisatie; Tekst/Afbeelding direct).
+### Entry and exit
 
-**Ink** — [InkLayer.tsx](../../src/board/components/InkLayer.tsx): strokes are SVG paths with
-quadratic-midpoint smoothing; `Stroke.pts` keeps flattened samples for the per-stroke
-eraser hit-test. Marker = wide + 0.45 opacity + multiply blend. Pointer routing: ink tool
-active → widget layer `pointer-events:none`, else reverse — one rule. Ink undo/redo =
-stroke stack per page (redo clears on new stroke/erase/page switch). Colors: defaults +
-teacher-saved (`rekenraak_board_colors_v1`). The `ToolEngine` contract in
-[boardTypes.ts](../../src/board/boardTypes.ts) reserves the P4 instrument-snapping design:
-tools receive instrument geometry in ctx, so meetlat/geodriehoek/passer emit exact
-SVG geometry (owner requirement: real snapping, not display-only overlays).
+- **`/bord.html`** — [bord.html](../../bord.html) is the same app (`src/main.tsx`) with
+  `<html data-boot="bord">`, its own title/meta/canonical, and a Vite `rollupOptions.input`
+  entry. [bootEntry.ts](../../src/bootEntry.ts): `isBordPage()` reads the attribute (it exists
+  before any module runs, so the store can read it at creation); `initialView()` →
+  `'whiteboard'` there, `'editor'` elsewhere; `leaveBordPage()` → `location.assign('/')`.
+  On bord.html App keeps the page's own tab title and `useOnboarding` skips the welcome modal
+  (it tours the editor). about/faq/oefeningen link to it (`.site-btn-secondary` in site.css);
+  sitemap.xml lists it.
+- **From the editor** — the TopBar / Meer "Bordmodus" button calls `setView('whiteboard')`.
+- **Leaving** — the bottom bar's "Bordmodus verlaten" calls `setView('editor')`. `setView`
+  with any non-board view on bord.html navigates to `/` instead (there is no editor
+  underneath to fall back to); on index.html it just switches the view.
 
-**Persistence** — [boardPersistence.ts](../../src/board/boardPersistence.ts):
-`BOARD_FORMAT_VERSION 1`, strict parser (wrong version/malformed → null). Autosave +
-"mijn borden" presets (`rekenraak_board_presets_v1`, max 30) + file export/import.
-No share-link (payloads exceed URL limits). Backgrounds
-([backgrounds.ts](../../src/board/backgrounds.ts)): blanco/raster/lijnen/schrijflijnen(2- en
-4-lijns met lichtblauwe x-hoogteband)/cornell × wit/zwart × grootte (0.75/1/1.5), pure
-CSS gradients, per page.
+### Store — [useBoardStore.tsx](../../src/board/useBoardStore.tsx)
 
-**Not in the print flow** — WhiteboardView never mounts in the print tree; worksheet
-printing is untouched.
+A second Zustand store, separate from `useWorksheetStore` so neither can corrupt the other
+(§3). `pages: BoardPage[]` (each `{ id, widgets, strokes, background }`), `activePageIdx`,
+`selectedWidgetId`, `inspectorOpen` (the ⚙ opens it, selection alone does not),
+`geldPaletOpen` (UI-only), `tool`, `gridSnap` / `gridSize`, `inkSettings` per stroke tool,
+`_redoStrokes`. `BoardTool` = `select | hand | text | pen | marker | eraser` (+ reserved
+`line | shape | instrument` for P3/P4); `hand` drags widgets without selecting, `text` places a
+tekst widget at the tap point and hops back to `select`. Hydrates from autosave at module
+init; a debounced (1.5 s) subscription on `pages` / `activePageIdx` writes
+`rekenraak_board_autosave_v1` (tool state is not persisted).
 
-**Roadmap** — P3: lijn/pijl-tool, vormen (vlakke figuren + ruimtefiguren-stempels),
-meer dagritme-widgets. P4: snapping instruments (ToolEngine ctx), pdf.js-achtergronden,
-meer klasmanagement.
+**Undo is ink-only.** The bottom bar's undo/redo walk the active page's stroke stack (redo
+clears on a new stroke, an erase or a page switch). Widget actions (add, move, delete,
+settings) have no undo.
 
-### §14b — Iteratie 2 (owner-feedbackronde, zelfde dag)
+**Fresh ids on copy.** `duplicateWidget` and `duplicatePage` deep-copy and give every widget,
+page and stroke a new id, and run exercise blocks through `withFreshIds` (new block id + new
+exercise ids): the inspector's draftBlocks mirror and `patchExercise` key on them, so a shared
+id would edit both copies.
 
-**Widget-chroom** = window-card ([WidgetFrame.tsx](../../src/board/components/WidgetFrame.tsx)):
-typbare titelbalk (klik op titel; `props.title`, defaults in widgetSizing) = drag handle,
-acties 🔄/👁 (exercise), ⚙ (opent inspector — selectie alléén opent hem niet meer;
-`inspectorOpen` in de store), ⧉ dupliceer (`duplicateWidget`, verse block-id), 🗑;
-resize-grip rechtsonder. Body-zoom mikt op de binnenbreedte (w−2) zodat alle vier de
-randen zichtbaar blijven. `showHeader:false` (toggle in elk settings-paneel) → kale
-kaart die overal sleepbaar is. `BoardErrorBoundary` om elke widget + de inktlaag.
+### Widgets
 
-**Toevoegen-menu** = categorieën (RekenRaak blok · Wiskunde-gereedschap ·
-Klasmanagement · Organisatie) met tegel-zijpanelen uit
-[toolCatalog.ts](../../src/board/toolCatalog.ts); elke tegel heeft een ★ → favorieten
-(max 6, `rekenraak_board_favorites_v1`) als icoonknoppen naast Toevoegen. ⚙-bord-
-instellingen bundelt achtergrond/grootte/zwart-wit/raster. Tekst = T-tool op de balk
-(tool `'text'`: tik op bord plaatst tekstwidget). Extra tool `'hand'` (slepen zonder
-selecteren) bestond al; `BoardTool` is nu select/hand/text/pen/marker/eraser (+P3/P4).
+`BoardWidget { id, kind, x, y, w, z, scale?, rotation?, block?, showAnswer?, props? }`
+([boardTypes.ts](../../src/board/boardTypes.ts)). 22 kinds: `exercise`, `tekst`, `datum`,
+`klok`, `afbeelding` (dataURL), `namen`, `weer`, `geluid`, `werksymbolen`, `timer`,
+`stopwatch`, `dobbelsteen`, `adem`, `groepjes`, `checklist`, `stappenplan`, `getallenlijn`,
+`positietabel`, `honderdveld`, `breukviz`, `mabmat`, `geld-item`. Per-kind natural widths,
+default titles, which kinds have a ⚙ panel and every prop normaliser (`klokProps`,
+`groepjesProps` + `makeGroups`, …) live in [widgetSizing.ts](../../src/board/widgetSizing.ts);
+the ⚙ panels for every non-exercise kind are [WidgetInspector.tsx](../../src/board/components/WidgetInspector.tsx).
 
-**Widget-lijst** (kinds; allemaal in WidgetInspector tenzij vermeld): exercise, tekst,
-datum (weekdag/datum/live-tijd/kleur), klok, afbeelding, namen, geluid (niveau-poster
-0–4, tap-selector), werksymbolen (tegelkiezer, verticaal/icoon-only), timer (taart-
-countdown), stopwatch (geen settings), dobbelsteen (6/N/eigen lijst ×1-3), adem
-(fase-seconden + presets), groepjes (aantal↔grootte, moet-samen/mag-niet-samen via
-union-find + shuffle-repair, klaslijst gedeeld met namen), checklist, stappenplan
-(#/##-parsing), getallenlijn (leeg), positietabel (leeg, kommakolom), honderdveld
-(tap-kleurcyclus), breukviz (cirkel/pizza/lijn, stambreuken), mabmat (los Dienes-
-materiaal per plaats, MabPlaceColumn), geld-item (gedropte munt/biljet, titelloos).
-**GeldPalet** ([GeldPalet.tsx](../../src/board/components/GeldPalet.tsx)): dock met de volledige
-eurocatalogus, stijl tekening (GeldViewer-exports) of echt; drag-to-create met pointer
-capture, geopend via Wiskunde-gereedschap (`geldPaletOpen`, UI-only).
+- **Sizing** is CSS-`zoom`-based: frame zoom = `w / NATURAL_W[kind]`, so a corner drag is a
+  uniform zoom and the layout height follows. Exercise `scale` = extra inner text zoom at
+  constant frame width.
+- **Chrome** ([WidgetFrame.tsx](../../src/board/components/WidgetFrame.tsx)) = a window card:
+  editable title bar (`props.title`) as drag handle, actions 🔄 / 👁 (exercise), ⚙, ⧉ duplicate,
+  🗑, resize grip bottom-right. `showHeader: false` → a bare card draggable from anywhere.
+  `BoardErrorBoundary` wraps every widget and the ink layer.
+- **Height cap** — a card is never taller than the board below its top edge:
+  `maxHeight: max(140px, 100% − y − 8px)`; the body scrolls inside (tall omtrek / cijferen
+  delen cards keep their resize grip on the board).
+- **Stacking** — the canvas and the widget layer are each their own stacking context
+  (`isolation: isolate`): a card's `z` grows with every bring-to-front, but stays inside the
+  widget layer, so ink (z 10) always draws above the cards and the geld dock (45), inspectors
+  and bottom-bar popups stay above the whole board.
+- **Placement** — `staggerSlot(k)` ([addWidgets.ts](../../src/board/addWidgets.ts)) is a
+  diagonal run of 5 slots 40 px apart, runs 240 px apart, a 20 px lap shift after 4 runs;
+  `staggerPos()` takes the first slot no widget still sits on (the old `count % 5` put the 6th
+  card on the 1st).
+- **Klok** ([KlokWidget.tsx](../../src/board/components/widgets/KlokWidget.tsx)) — drag hands
+  (outer ring = minute, inner = hour) on the shared pure `clockMath.ts` helpers, on a **24-hour
+  cycle**: the minute hand carries the hour across 12 both ways, the hour hand snaps to whole
+  hours and passing 12 flips voormiddag/namiddag, so the geschreven tijd stays right.
+- Others in one line: namen (random picker; class list app-wide in `rekenraak_board_names_v1`,
+  shared with groepjes), weer (open-meteo + geocoding search, geolocation with Brussels
+  fallback), geluid (getUserMedia RMS → 5 levels), groepjes (size ↔ count, must / cannot be
+  together via union-find + shuffle repair), honderdveld (tap colour cycle), mabmat
+  (`MabPlaceColumn`), geld-item (a dropped coin/bill, titleless). **GeldPalet**
+  ([GeldPalet.tsx](../../src/board/components/GeldPalet.tsx)) is a dock with the full euro
+  catalogue, Tekening (GeldViewer exports) or Echt style, drag-to-create with pointer capture.
 
-**Weer** heeft nu plaats-zoeken (open-meteo geocoding) + 'huidige locatie'.
+### Exercise widgets = the registry payoff
+
+An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
+([boardBlocks.ts](../../src/board/boardBlocks.ts)):
+
+- **Seed** — `makeBoardBlock(typeId, { override, leafId, base, grade })` runs
+  `seedConstraints` with the catalog variant's leaf constraints and leaf id;
+  `sheetSeedContext()` supplies the worksheet's `baseSettings` and leerjaar (none under a
+  locked curriculum), so a board card starts from the same numbers as the sheet block the
+  teacher knows. Board policy on top: `instructionMode: 'geen'`, `totalPoints: 0`,
+  `numberOfExercises ≤ 6`.
+- **Generate** — `regenerateBoardBlock` calls the sheet's `generateForBlock(block, true)`
+  (ceiling clamp, always deduped, failure note) and writes the exercise field and
+  `generationNote` itself: board blocks never enter the worksheet store. The note shows in the
+  board inspector through the shared `GenerationNote` component (same box as the sheet).
+- **Aantal** — `resizeBoardBlock(block, n)` applies at once like the sheet's count top-up:
+  fewer cuts the tail, more keeps what is there and `generateExtra` tops up (deduped); an
+  empty block regenerates.
+- **Viewer** = `EXERCISE_UI[typeId].Viewer` ([ExerciseWidget.tsx](../../src/board/components/widgets/ExerciseWidget.tsx))
+  on a white paper card, with per-widget `showAnswer` (👁).
+- **Inspector** ([BoardInspector.tsx](../../src/board/components/BoardInspector.tsx)) — the
+  **draftBlocks mirror** (§13 pattern): on open it seeds `worksheetStore.draftBlocks =
+  [widget.block]`, a subscription copies every draft edit back into the widget (reference
+  check, no write loops), teardown clears the drafts. It mounts the type's real `Config`,
+  `StyleConfig` (as "Differentiatie") and `AdvancedConfig` (behind "Geavanceerd", when
+  `advancedApplies`), plus a slim board section: Aantal (1–12), Witruimte, Tekstgrootte,
+  Titelbalk tonen. No opdracht-titel, no score.
+- **Adding** — bottom bar **Toevoegen** → "RekenRaak blok…" opens
+  [BoardAddModal.tsx](../../src/board/components/BoardAddModal.tsx) (exerciseCatalog +
+  ExercisePreview cards, domain chips, one tap = one card). Its **search** matches the row,
+  subdomain, every variant label (sheet and board wording), variant keys and the typeId, and
+  also offers matching board tools by label or id ("klok" finds the kloklezen variants and the
+  Klok tool).
+
+### Bottom bar — [BoardBottomBar.tsx](../../src/board/components/BoardBottomBar.tsx)
+
+`[+ Toevoegen][★ favorites ≤ 6][⚙ board settings] | [select][hand][T][pen][marker][eraser]
+[ink undo][ink redo][page clear] | [◀][page options][▶][+ page] | [save] | [Bordmodus verlaten]`. Toevoegen = RekenRaak blok · Wiskunde-
+gereedschap · Klasmanagement · Organisatie, the last three as tile panels from
+[toolCatalog.ts](../../src/board/toolCatalog.ts) with a ★ per tile (favorites in
+`rekenraak_board_favorites_v1`). Board settings = background pattern / size / white-black + "Uitlijnen" grid snap and size. Every popup (add, settings, page, save) closes on **Escape** and on a press outside it
+(capture-phase `pointerdown`, since widgets stop propagation). Pen/marker show
+[InkSettingsBar.tsx](../../src/board/components/InkSettingsBar.tsx) (default + saved colours,
+three widths).
+
+### Ink — [InkLayer.tsx](../../src/board/components/InkLayer.tsx)
+
+Strokes are SVG paths with quadratic-midpoint smoothing; `Stroke.pts` keeps flattened samples
+for the per-stroke eraser hit-test. Marker = wide + 0.45 opacity + multiply blend. Pointer
+routing: ink tool active → widget layer `pointer-events: none`, else reverse — one rule.
+The `ToolEngine` contract in boardTypes.ts reserves the P4 instrument design: tools receive
+instrument geometry in ctx, so meetlat / geodriehoek / passer emit exact SVG geometry (owner
+requirement: real snapping, not display-only overlays).
+
+### Persistence — [boardPersistence.ts](../../src/board/boardPersistence.ts)
+
+`BOARD_FORMAT_VERSION 1`. **`parseBoardFile` is strict at the top and forgiving inside**:
+wrong/missing version, no pages or a malformed page → `null`; inside a sound page a widget
+with an unknown kind, non-finite x/y/w/z or an exercise without a block is dropped, a stroke
+without id/path is dropped (strokes from early builds get `pts: []`), and `activePageIdx` is
+clamped. Autosave skips silently on quota. "Mijn borden" presets (`rekenraak_board_presets_v1`,
+max 30, newest first): `saveBoardPreset` returns `false` when the write is refused and the
+bottom bar shows a Dutch alert ("Kon het bord niet bewaren (opslag vol?) — bewaar het als
+bestand via Exporteren."). File export/import (`rekenraak-bord.json`). No share link (stroke
+and image payloads exceed URL limits). Backgrounds ([backgrounds.ts](../../src/board/backgrounds.ts)):
+blanco / raster / lijnen / schrijflijnen (2- and 4-line with a light-blue x-height band) /
+cornell × white/black × size (0.75 / 1 / 1.5), pure CSS gradients, per page.
+
+**localStorage keys** — all `rekenraak_board_*`: `autosave_v1`, `presets_v1`,
+`favorites_v1`, `names_v1`, `colors_v1` (teacher-saved ink colours).
+
+### Not in the print flow
+
+[WhiteboardView.tsx](../../src/board/components/WhiteboardView.tsx) is `.no-print` (fixed
+overlay, z 200): Ctrl+P or Afdrukken with the board open prints the worksheet underneath,
+never the board (§9). The board itself has no print path.
+
+### Roadmap
+
+P3: line/arrow tool, shapes (plane figures + solid-figure stamps), more dagritme widgets.
+P4: snapping instruments (ToolEngine ctx), pdf.js backgrounds, more klasmanagement.
 
 ---
 
