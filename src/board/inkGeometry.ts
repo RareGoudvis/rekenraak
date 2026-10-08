@@ -1,4 +1,4 @@
-import type { ArrowHeads, Stroke } from './boardTypes';
+import type { ArrowHeads, ShapeKind, Stroke } from './boardTypes';
 
 // Pure ink geometry: grid / angle snapping, the exact SVG paths the line and shape tools
 // emit, and the per-stroke hit-test the eraser uses. No React, no store.
@@ -50,6 +50,43 @@ export function linePath(x0: number, y0: number, x1: number, y1: number, width: 
         heads = `${start.path} ${end.path}`;
     }
     return `M ${r1(sx)} ${r1(sy)} L ${r1(end.baseX)} ${r1(end.baseY)} ${heads}`;
+}
+
+// Normalised box from two drag corners; Shift makes it square (side = the larger extent,
+// growing in the drag direction).
+export function dragBox(x0: number, y0: number, x1: number, y1: number, square: boolean) {
+    let w = x1 - x0, h = y1 - y0;
+    if (square) {
+        const side = Math.max(Math.abs(w), Math.abs(h));
+        w = Math.sign(w || 1) * side;
+        h = Math.sign(h || 1) * side;
+    }
+    return { x: Math.min(x0, x0 + w), y: Math.min(y0, y0 + h), w: Math.abs(w), h: Math.abs(h) };
+}
+
+// Exact outline per shape: straight edges as L, ellipses as two half-arcs (A). Returns the
+// path plus the outline as a closed polyline for the hit-test (ellipse: 48 chords, < 0.3%
+// off the true curve at board sizes).
+export function shapeGeometry(kind: ShapeKind, box: { x: number; y: number; w: number; h: number }): { path: string; pts: number[] } {
+    const { x, y, w, h } = box;
+    if (kind === 'ellipse') {
+        const rx = w / 2, ry = h / 2, cx = x + rx, cy = y + ry;
+        const path = `M ${r1(x)} ${r1(cy)} A ${r1(rx)} ${r1(ry)} 0 1 0 ${r1(x + w)} ${r1(cy)} A ${r1(rx)} ${r1(ry)} 0 1 0 ${r1(x)} ${r1(cy)} Z`;
+        const pts: number[] = [];
+        for (let i = 0; i <= 48; i++) {
+            const t = (i / 48) * Math.PI * 2;
+            pts.push(r1(cx + rx * Math.cos(t)), r1(cy + ry * Math.sin(t)));
+        }
+        return { path, pts };
+    }
+    const corners = kind === 'triangle'
+        // Isosceles, apex up — the triangle a pupil draws first.
+        ? [x + w / 2, y, x + w, y + h, x, y + h]
+        : [x, y, x + w, y, x + w, y + h, x, y + h];
+    const c = corners.map(r1);
+    let path = `M ${c[0]} ${c[1]}`;
+    for (let i = 2; i < c.length; i += 2) path += ` L ${c[i]} ${c[i + 1]}`;
+    return { path: `${path} Z`, pts: [...c, c[0], c[1]] };
 }
 
 // Squared distance from (x, y) to segment (ax, ay)–(bx, by).

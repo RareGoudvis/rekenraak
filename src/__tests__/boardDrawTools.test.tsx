@@ -5,8 +5,10 @@ import { useBoardStore } from '../board/useBoardStore';
 import InkLayer from '../board/components/InkLayer';
 import InkSettingsBar from '../board/components/InkSettingsBar';
 import BoardBottomBar from '../board/components/BoardBottomBar';
-import { createLineTool } from '../board/drawTools';
-import { headLength, linePath, snapAngle, snapToGrid, splitSubpaths, strokeHit } from '../board/inkGeometry';
+import { createLineTool, createShapeTool, SOFT_FILL_OPACITY } from '../board/drawTools';
+import { dragBox, headLength, linePath, shapeGeometry, snapAngle, snapToGrid, splitSubpaths, strokeHit } from '../board/inkGeometry';
+import { BOARD_FORMAT_VERSION, loadBoardAutosave, parseBoardFile, saveBoardAutosave } from '../board/boardPersistence';
+import { emptyPage } from '../board/boardTypes';
 import type { Stroke, ToolContext } from '../board/boardTypes';
 
 // The P3 drag-to-draw tools: pure geometry, the ToolEngine handlers, and the InkLayer
@@ -29,9 +31,10 @@ beforeEach(() => {
         drawOptions: { arrow: 'none', dashed: false, shape: 'rect', fill: false },
     });
     st().setInkSetting('line', { color: '#111827', width: 4 });
+    st().setInkSetting('shape', { color: '#1d4ed8', width: 4 });
 });
 
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); localStorage.clear(); });
 
 function drag(svg: Element, from: [number, number], to: [number, number], opts: { shiftKey?: boolean } = {}) {
     act(() => { fireEvent.pointerDown(svg, { clientX: from[0], clientY: from[1], pointerId: 1, ...opts }); });
@@ -256,5 +259,157 @@ describe('line options and shortcut', () => {
         act(() => { fireEvent.keyDown(document.body, { key: 'L' }); });
         expect(st().tool).toBe('line');
         input.remove();
+    });
+});
+
+const shapeOpts = { color: '#1d4ed8', width: 4, kind: 'rect' as const, fill: false };
+
+describe('shape geometry', () => {
+    test('the drag box normalises any drag direction; Shift squares it toward the drag', () => {
+        expect(dragBox(110, 80, 10, 20, false)).toEqual({ x: 10, y: 20, w: 100, h: 60 });
+        expect(dragBox(10, 20, 110, 80, true)).toEqual({ x: 10, y: 20, w: 100, h: 100 });
+        expect(dragBox(110, 80, 10, 50, true)).toEqual({ x: 10, y: -20, w: 100, h: 100 });
+    });
+
+    test('rect and triangle are exact L outlines, closed, with the closed outline as pts', () => {
+        const r = shapeGeometry('rect', { x: 10, y: 20, w: 100, h: 60 });
+        expect(r.path).toBe('M 10 20 L 110 20 L 110 80 L 10 80 Z');
+        expect(r.pts).toEqual([10, 20, 110, 20, 110, 80, 10, 80, 10, 20]);
+        const t = shapeGeometry('triangle', { x: 0, y: 0, w: 100, h: 80 });
+        expect(t.path).toBe('M 50 0 L 100 80 L 0 80 Z');
+        expect(t.pts).toEqual([50, 0, 100, 80, 0, 80, 50, 0]);
+    });
+
+    test('an ellipse is two A half-arcs; its pts lie on the curve', () => {
+        const e = shapeGeometry('ellipse', { x: 0, y: 0, w: 200, h: 100 });
+        expect(e.path).toBe('M 0 50 A 100 50 0 1 0 200 50 A 100 50 0 1 0 0 50 Z');
+        expect(e.pts).toHaveLength(98);
+        for (let i = 0; i < e.pts.length; i += 2) {
+            const u = (e.pts[i] - 100) / 100, v = (e.pts[i + 1] - 50) / 50;
+            expect(Math.abs(u * u + v * v - 1)).toBeLessThan(0.01);
+        }
+    });
+
+    test('the hit-test is on the outline, not inside', () => {
+        const mk = (kind: 'rect' | 'ellipse' | 'triangle'): Stroke => ({ id: kind, tool: 'shape', color: '#000', width: 4, ...shapeGeometry(kind, { x: 0, y: 0, w: 400, h: 200 }) });
+        expect(strokeHit(mk('rect'), 200, 5, 14)).toBe(true);
+        expect(strokeHit(mk('rect'), 0, 100, 14)).toBe(true);
+        expect(strokeHit(mk('rect'), 200, 100, 14)).toBe(false);
+        expect(strokeHit(mk('ellipse'), 200, 198, 14)).toBe(true);
+        expect(strokeHit(mk('ellipse'), 3, 100, 14)).toBe(true);
+        expect(strokeHit(mk('ellipse'), 200, 100, 14)).toBe(false);
+        // The bounding-box corner lies outside the curve.
+        expect(strokeHit(mk('ellipse'), 10, 10, 14)).toBe(false);
+        expect(strokeHit(mk('triangle'), 100, 100, 14)).toBe(true);
+        expect(strokeHit(mk('triangle'), 200, 150, 14)).toBe(false);
+    });
+});
+
+describe('the shape ToolEngine', () => {
+    test('a corner-to-corner drag emits the exact rect; a reversed drag gives the same box', () => {
+        const t = createShapeTool(shapeOpts);
+        t.onPointerDown(110, 80, free);
+        t.onPointerMove(50, 50, free);
+        const s = t.onPointerUp(10, 20, free)!;
+        expect(s).toMatchObject({ tool: 'shape', color: '#1d4ed8', width: 4, path: 'M 10 20 L 110 20 L 110 80 L 10 80 Z' });
+        expect(s.fill).toBeUndefined();
+    });
+
+    test('Shift: square, circle, equilateral triangle', () => {
+        const shift = { ...free, shift: true };
+        const sq = createShapeTool(shapeOpts);
+        sq.onPointerDown(0, 0, shift);
+        expect(sq.onPointerUp(100, 40, shift)!.path).toBe('M 0 0 L 100 0 L 100 100 L 0 100 Z');
+        const ci = createShapeTool({ ...shapeOpts, kind: 'ellipse' });
+        ci.onPointerDown(0, 0, shift);
+        expect(ci.onPointerUp(60, 100, shift)!.path).toBe('M 0 50 A 50 50 0 1 0 100 50 A 50 50 0 1 0 0 50 Z');
+        const tr = createShapeTool({ ...shapeOpts, kind: 'triangle' });
+        tr.onPointerDown(0, 0, shift);
+        // h = 100·√3/2 ≈ 86.6: all three sides 100.
+        expect(tr.onPointerUp(100, 30, shift)!.path).toBe('M 50 0 L 100 86.6 L 0 86.6 Z');
+    });
+
+    test('soft fill = the stroke colour at low alpha', () => {
+        const t = createShapeTool({ ...shapeOpts, fill: true });
+        t.onPointerDown(0, 0, free);
+        expect(t.onPointerUp(80, 80, free)).toMatchObject({ fill: '#1d4ed8', fillOpacity: SOFT_FILL_OPACITY });
+        expect(SOFT_FILL_OPACITY).toBeLessThanOrEqual(0.25);
+    });
+
+    test('grid on: the corners snap; a box that collapses on the grid, or a tap, emits nothing', () => {
+        const t = createShapeTool(shapeOpts);
+        t.onPointerDown(43, 38, grid);
+        expect(t.onPointerUp(158, 117, grid)!.pts).toEqual([40, 40, 160, 40, 160, 120, 40, 120, 40, 40]);
+        t.onPointerDown(43, 38, grid);
+        expect(t.onPointerUp(158, 50, grid)).toBeNull();
+        t.onPointerDown(10, 10, free);
+        expect(t.onPointerUp(12, 13, free)).toBeNull();
+    });
+});
+
+describe('the ink layer with the shape tool', () => {
+    test('preview while dragging, one filled stroke on release, Escape cancels, erased on the outline only', () => {
+        act(() => { st().setTool('shape'); st().setDrawOptions({ shape: 'ellipse', fill: true }); });
+        const { container } = render(<InkLayer active />);
+        const svg = container.querySelector('svg')!;
+        act(() => { fireEvent.pointerDown(svg, { clientX: 100, clientY: 100, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(svg, { clientX: 300, clientY: 200, pointerId: 1 }); });
+        expect(svg.querySelector('[data-ink-preview]')!.getAttribute('d')).toMatch(/^M 100 150 A 100 50 /);
+        act(() => { fireEvent.keyDown(document, { key: 'Escape' }); });
+        act(() => { fireEvent.pointerUp(svg, { clientX: 300, clientY: 200, pointerId: 1 }); });
+        expect(strokes()).toHaveLength(0);
+        drag(svg, [100, 100], [300, 200]);
+        expect(strokes()).toHaveLength(1);
+        const el = svg.querySelector('path')!;
+        expect(el.getAttribute('fill')).toBe('#1d4ed8');
+        expect(el.getAttribute('fill-opacity')).toBe(String(SOFT_FILL_OPACITY));
+        act(() => st().setTool('eraser'));
+        act(() => { fireEvent.pointerDown(svg, { clientX: 200, clientY: 150, pointerId: 1 }); });
+        expect(strokes()).toHaveLength(1);
+        act(() => { fireEvent.pointerDown(svg, { clientX: 200, clientY: 202, pointerId: 1 }); });
+        expect(strokes()).toHaveLength(0);
+    });
+
+    test('the settings bar picks the shape and the soft fill; V picks the tool', () => {
+        const { getByLabelText, queryByLabelText } = render(<InkSettingsBar tool="shape" />);
+        expect(queryByLabelText('Stippellijn')).toBeNull();
+        fireEvent.click(getByLabelText('Driehoek (Shift: gelijkzijdig)'));
+        fireEvent.click(getByLabelText('Zachte vulling'));
+        expect(st().drawOptions).toMatchObject({ shape: 'triangle', fill: true });
+        cleanup();
+        const bar = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        expect((bar.getByLabelText(/^Vormen \(V\)/) as HTMLButtonElement).disabled).toBe(false);
+        act(() => { fireEvent.keyDown(document.body, { key: 'v' }); });
+        expect(st().tool).toBe('shape');
+    });
+});
+
+describe('persistence', () => {
+    test('a pre-P3 board (pen strokes only) loads exactly as saved', () => {
+        const page = { ...emptyPage(), strokes: [{ id: 'a', tool: 'pen' as const, color: '#000', width: 4, opacity: 1, path: 'M 0 0 L 5 5', pts: [0, 0, 5, 5] }] };
+        const json = JSON.stringify({ version: BOARD_FORMAT_VERSION, exportedAt: 'x', pages: [page], activePageIdx: 0 });
+        expect(parseBoardFile(json)!.pages[0]).toEqual(page);
+    });
+
+    test('50 shapes and arrows save, load and hit-test fast', () => {
+        const page = emptyPage();
+        for (let i = 0; i < 50; i++) {
+            const kind = (['rect', 'ellipse', 'triangle'] as const)[i % 3];
+            const t = i % 5 === 4
+                ? createLineTool({ ...lineOpts, arrow: 'both', dashed: true })
+                : createShapeTool({ ...shapeOpts, kind, fill: i % 2 === 0 });
+            t.onPointerDown(20 * i, 10 * i, free);
+            page.strokes.push(t.onPointerUp(20 * i + 300, 10 * i + 200, free)!);
+        }
+        saveBoardAutosave([page], 0);
+        const t0 = performance.now();
+        const loaded = loadBoardAutosave()!;
+        expect(loaded.pages[0].strokes).toEqual(page.strokes);
+        let hits = 0;
+        for (let y = 0; y < 1000; y += 25) for (let x = 0; x < 1300; x += 25) for (const s of loaded.pages[0].strokes) if (strokeHit(s, x, y, 14)) hits++;
+        const ms = performance.now() - t0;
+        expect(hits).toBeGreaterThan(0);
+        // 2080 eraser positions × 50 strokes take a few ms locally; the bound only catches a blow-up.
+        expect(ms).toBeLessThan(1500);
     });
 });

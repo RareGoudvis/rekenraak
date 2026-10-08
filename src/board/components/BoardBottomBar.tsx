@@ -9,7 +9,7 @@ import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, 
 import type { BackgroundPattern, BoardTool } from '../boardTypes';
 
 // Single-letter tool shortcuts (shown in each tooltip). Only the draw tools have one so far.
-const TOOL_KEYS: Record<string, BoardTool> = { l: 'line' };
+const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape' };
 
 interface Props {
     onOpenWiskunde: () => void;
@@ -129,7 +129,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         { key: 'marker' as const, icon: Highlighter, label: 'Markeerstift', enabled: true },
         { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
         { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (L) — Shift: 45°-stappen', enabled: true },
-        { key: 'shape' as const, icon: Shapes, label: 'Vormen (binnenkort)', enabled: false },
+        { key: 'shape' as const, icon: Shapes, label: 'Vormen (V) — Shift: vierkant / cirkel', enabled: true },
         { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten (binnenkort)', enabled: false },
     ];
 

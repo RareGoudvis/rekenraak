@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
-import type { ArrowHeads, StrokeTool } from '../boardTypes';
+import type { ArrowHeads, ShapeKind, StrokeTool } from '../boardTypes';
 
 const SAVED_COLORS_KEY = 'rekenraak_board_colors_v1';
 const DEFAULT_COLORS = ['#111827', '#1d4ed8', '#dc2626', '#16a34a', '#ea580c', '#7c3aed', '#fde047', '#ffffff'];
@@ -14,8 +14,8 @@ function loadSavedColors(): string[] {
 }
 
 // Floating settings strip for the active ink tool: color swatches (defaults +
-// teacher-saved), custom color picker with save, three stroke widths, and for the
-// lijn tool its arrowheads + dashed toggle.
+// teacher-saved), custom color picker with save, three stroke widths, and the
+// lijn tool's arrowheads + dashed toggle or the vormen tool's shape + soft fill.
 export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
     const cfg = useBoardStore((s) => s.inkSettings[tool]);
     const setInkSetting = useBoardStore((s) => s.setInkSetting);
@@ -90,7 +90,49 @@ export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
                     </button>
                 </>
             )}
+
+            {tool === 'shape' && (
+                <>
+                    <div style={S.sep} />
+                    {SHAPE_OPTIONS.map(o => (
+                        <button
+                            key={o.value} type="button" className="ui-hover" title={o.label} aria-label={o.label}
+                            aria-pressed={drawOptions.shape === o.value}
+                            onClick={() => setDrawOptions({ shape: o.value })}
+                            style={{ ...S.widthBtn, ...(drawOptions.shape === o.value ? S.optOn : {}) }}
+                        >
+                            <ShapeIcon kind={o.value} fill={drawOptions.fill} />
+                        </button>
+                    ))}
+                    <button
+                        type="button" className="ui-hover" title="Zachte vulling" aria-label="Zachte vulling"
+                        aria-pressed={drawOptions.fill}
+                        onClick={() => setDrawOptions({ fill: !drawOptions.fill })}
+                        style={{ ...S.widthBtn, ...(drawOptions.fill ? S.optOn : {}) }}
+                    >
+                        <ShapeIcon kind="rect" fill />
+                    </button>
+                </>
+            )}
         </div>
+    );
+}
+
+const SHAPE_OPTIONS: { value: ShapeKind; label: string }[] = [
+    { value: 'rect', label: 'Rechthoek (Shift: vierkant)' },
+    { value: 'ellipse', label: 'Ellips (Shift: cirkel)' },
+    { value: 'triangle', label: 'Driehoek (Shift: gelijkzijdig)' },
+];
+
+// Mini preview of each shape option, outline in the text colour, soft fill when that is on.
+function ShapeIcon({ kind, fill }: { kind: ShapeKind; fill: boolean }) {
+    const look = { stroke: 'currentColor', strokeWidth: 2.2, strokeLinejoin: 'round' as const, fill: fill ? 'currentColor' : 'none', fillOpacity: fill ? 0.25 : undefined };
+    return (
+        <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true" style={{ color: 'var(--text-main)' }}>
+            {kind === 'rect' && <rect x="4" y="6" width="18" height="14" {...look} />}
+            {kind === 'ellipse' && <ellipse cx="13" cy="13" rx="9.5" ry="7.5" {...look} />}
+            {kind === 'triangle' && <path d="M 13 4.5 L 22.5 21 L 3.5 21 Z" {...look} />}
+        </svg>
     );
 }
 

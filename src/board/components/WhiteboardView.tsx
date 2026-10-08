@@ -27,7 +27,7 @@ export default function WhiteboardView() {
                 {inspectorOpen && selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {inspectorOpen && selectedWidget && selectedWidget.kind !== 'exercise' && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {/* Ink tool settings strip (colors + widths, + line options) while an ink tool is active. */}
-                {(tool === 'pen' || tool === 'marker' || tool === 'line') && <InkSettingsBar tool={tool} />}
+                {(tool === 'pen' || tool === 'marker' || tool === 'line' || tool === 'shape') && <InkSettingsBar tool={tool} />}
             </div>
             <BoardBottomBar onOpenWiskunde={() => setAddOpen(true)} />
             {addOpen && <BoardAddModal onClose={() => setAddOpen(false)} />}

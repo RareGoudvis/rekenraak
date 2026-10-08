@@ -40,7 +40,7 @@ export default function BoardPageCanvas() {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const tool = useBoardStore((s) => s.tool);
     const geldPaletOpen = useBoardStore((s) => s.geldPaletOpen);
-    const inkActive = tool === 'pen' || tool === 'marker' || tool === 'eraser' || tool === 'line';
+    const inkActive = tool === 'pen' || tool === 'marker' || tool === 'eraser' || tool === 'line' || tool === 'shape';
 
     // Quick 🔄 on the widget frame: reroll exercises without opening the inspector.
     // Keep the inspector's draft mirror in sync when it's open for this block.

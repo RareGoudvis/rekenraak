@@ -3,7 +3,7 @@ import { useBoardStore } from '../useBoardStore';
 import { rndId } from '../boardTypes';
 import type { BoardTool, Stroke, ToolContext, ToolEngine } from '../boardTypes';
 import { splitSubpaths, strokeHit } from '../inkGeometry';
-import { createLineTool } from '../drawTools';
+import { createLineTool, createShapeTool } from '../drawTools';
 
 // SVG ink layer. Receives pointer events only while an ink tool is active
 // (BoardPageCanvas flips pointer-events between this and the widget layer).
@@ -28,6 +28,7 @@ function pathFrom(pts: number[]): string {
 function engineFor(tool: BoardTool): ToolEngine | null {
     const { inkSettings, drawOptions } = useBoardStore.getState();
     if (tool === 'line') return createLineTool({ ...inkSettings.line, arrow: drawOptions.arrow, dashed: drawOptions.dashed });
+    if (tool === 'shape') return createShapeTool({ ...inkSettings.shape, kind: drawOptions.shape, fill: drawOptions.fill });
     return null;
 }
 

@@ -1,12 +1,15 @@
 import { rndId } from './boardTypes';
-import type { ArrowHeads, Stroke, ToolContext, ToolEngine } from './boardTypes';
-import { linePath, snapAngle, snapToGrid } from './inkGeometry';
+import type { ArrowHeads, ShapeKind, Stroke, ToolContext, ToolEngine } from './boardTypes';
+import { dragBox, linePath, shapeGeometry, snapAngle, snapToGrid } from './inkGeometry';
 
 // ToolEngines for the drag-to-draw tools (P3): pointer stream in board px → one finished
 // Stroke with exact geometry. The InkLayer feeds them and draws preview() while dragging.
 
 // A press that moves less than this is a tap, not a drawing: nothing is emitted.
 export const MIN_DRAG_PX = 4;
+
+// Soft shape fill: the stroke colour at this alpha keeps the outline and anything under it readable.
+export const SOFT_FILL_OPACITY = 0.18;
 
 interface DragState { x0: number; y0: number; x: number; y: number }
 
@@ -47,6 +50,25 @@ export function createLineTool(o: LineOptions): ToolEngine {
             pts: [x0, y0, x1, y1],
             ...(o.arrow !== 'none' ? { fill: o.color } : {}),
             ...(o.dashed ? { dash: true } : {}),
+        };
+    });
+}
+
+export interface ShapeOptions { color: string; width: number; kind: ShapeKind; fill: boolean }
+
+export function createShapeTool(o: ShapeOptions): ToolEngine {
+    return dragEngine((d, ctx, id) => {
+        const x0 = snapToGrid(d.x0, ctx.gridSnap, ctx.gridSize), y0 = snapToGrid(d.y0, ctx.gridSnap, ctx.gridSize);
+        const x1 = snapToGrid(d.x, ctx.gridSnap, ctx.gridSize);
+        let y1 = snapToGrid(d.y, ctx.gridSnap, ctx.gridSize);
+        // Shift on a triangle = equilateral: the height follows the width (h = w·√3/2).
+        if (ctx.shift && o.kind === 'triangle') y1 = y0 + Math.sign(y1 - y0 || 1) * Math.abs(x1 - x0) * Math.sqrt(3) / 2;
+        const box = dragBox(x0, y0, x1, y1, !!ctx.shift && o.kind !== 'triangle');
+        if (box.w === 0 || box.h === 0) return null;
+        const { path, pts } = shapeGeometry(o.kind, box);
+        return {
+            id, tool: 'shape', color: o.color, width: o.width, opacity: 1, path, pts,
+            ...(o.fill ? { fill: o.color, fillOpacity: SOFT_FILL_OPACITY } : {}),
         };
     });
 }
