@@ -54,6 +54,15 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `metRest.test.tsx`, `gradeLists.test.ts`, `seedFit.test.ts`, `baseDecimals.test.ts` | Met rest's max list + level clipping, the Leerjaar 1 = 20 lists and grade switches, the seed-time fit (rounding targets, axis span), base decimals 0 / Leerjaar 4-6 = 2 and the v3 → v4 save migration. |
 | `releaseNotes.test.tsx` | The release-notes list: every example leaf exists and fills its block without a melding, the newest entry drives `RELEASE_VERSION`, every preview renders, banner + Help open the modal, ModalShell focus wrap/return, the seen-key. |
 | `leafDefaultCount.test.ts`, `sheetBlock.emptyNote.test.tsx` | A leaf's own `defaultCount` (oppervlakte-rooster = 2, everything else the row's); an empty block with a note shows the note on screen and nothing on paper. |
+| `oefenen.descriptors.test.ts` | Oefenmodus answers: exactly the expected kiosk-capable leaves (`EXPECTED_LEAVES`); every capable leaf × every leerjaar seed × 50 seeds, the descriptor's `answerOf` equals the generator's own answer field re-derived in the test (`TRUTH` per typeId, from-scratch arithmetic: half-up rounding, Roman numerals, unit ladders), `checkAnswer` takes every spelling and refuses a wrong one, every accepted answer is typeable with the offered keys; `supported()` per setting; input kinds per exercise; breuken-bewerken accepts only the asked form. |
+| `oefenen.session.test.ts` | The share-link codec: lossless round-trip for every kiosk leaf at defaults and with every setting changed, removed / unknown / null settings, custom labels / instructions / weights, the same leaf twice; base32 upper-case and case-insensitive; QR budget (4 types ≤ v10, 20 ≤ v20, 20 customised ≤ v40); too large → null; the **frozen** `KIOSK_LEAF_TABLE_V1` / `KIOSK_KEY_TABLE_V1` pinned in full (append only); strict decode with Dutch errors (newer version, unknown type → "Werk de app bij"); `kioskLabel` names and uniqueness. |
+| `oefenen.scheduler.test.ts` | Limits reached exactly, `total` caps, afwisselen never repeats while ≥ 2 remain (round-robin), willekeurig weights ≈ distribution over 10 000 draws, all-zero = equal, `!allowRepeatType` re-draws; `nextExercise` never repeats exactly in 200 draws, flags a forced repeat, is seed-deterministic and restores `Math.random`; `isDone` on limits / timer / `finishedAt`. |
+| `oefenen.stats.test.ts` | `recordAnswer` + `summary` per slot with readable error rows; runs saved / replaced by index / last 5 kept / per session id; a full quota drops the oldest runs first; no storage → `[]` / `false`. |
+| `oefenen.kioskStore.test.ts` | The kiosk store (jsdom): start → answer → feedback → next, Controleer needs every field, the run ends locked, testMode skips feedback, statsLocked, the timer lock, Wissen, Opnieuw keeps the old run; reload mid-exercise / after an answer / after the end / with an expired timer; typing rules per input kind; a run over every input kind; every accepted answer typeable. |
+| `oefenen.kioskScreens.test.tsx` | Every kiosk screen renders without a React error: error / start / each starter type / keypad + Controleer + Volgende / Enter twice / stats mid-run and hidden under statsLocked / the locked end screen with a two-tap Wissen; choice sizes (signs, numbers, words); a captioned field has no placeholder; the progress number while peeking at the stats. |
+| `oefenBuilder.test.tsx` | Teacher side (jsdom): `normaliseWeights` sums to 100, `buildSessie` (weights, limits, flags, frozen instruction, unsupported rows excluded), `rowsFromSessie` round-trip; the builder adds rows, sets willekeurig + timer and shares a link that decodes to that session; an unsupported setting shows a hint; Opslaan → library under its title, reopening keeps the id; the share modal shows link + QR, the big-QR note past version 25, the A5 print layer and its cleanup, the "too big" note. |
+| `oefenLibrary.test.ts` | `rekenraak_oefen_sessies_v1`: save / list / rename / delete, same id replaces and keeps the name, the 50 cap drops the oldest, a full quota returns `null`, garbage reads as empty. |
+| `qr.test.ts` | `qrMatrix`: finder patterns, timing pattern and dark module, version grows with the payload and gives `null` past v40, an upper-case tail is coded alphanumeric (smaller than the same text in lower case). |
 
 ## The generator matrix
 
@@ -669,3 +678,39 @@ computed against a stale scroll position points off-screen and the drop silently
 There is no native drag-and-drop left in the app (`dist/assets/*.js` contains no
 `setDragImage`/`dataTransfer` of ours) — an extension that hooks `dragstart` used to hang
 the tab for a whole drag.
+
+## Oefenmodus end-to-end (Playwright, by hand)
+
+Not in the gate; the jsdom suites above cover the logic. Run it after a kiosk / builder change,
+with a dev server (`npx vite --port <p> --strictPort`, kill it after) and scripts in a scratch
+folder (`~/Downloads/<task>-check/`), never in the repo. The 2026-10-08 run (K4) used these steps:
+
+1. **Teacher** at 1440×900, fresh context: Overslaan → `getByRole('button', { name: /^Oefenmodus/ })`
+   → add leaves with `button[title="Toevoegen aan de sessie"]` (filter by exact text), change
+   settings in each row's `section[aria-label="<label>"]` (its real Config), the row's `Meer`
+   stepper (limits: ∞, 5, 10 …), `input[type=range][id^="w-"]` for the kans (willekeurig only),
+   timer `getByRole('button', { name: '5 min', exact: true })`, the two switches by aria-label.
+   Opslaan (no title → a `window.prompt`), then `Delen` (exact) → read
+   `a[href*="oefenen.html#oefen="]`; Kopieer link → `navigator.clipboard.readText()` (grant
+   clipboard permissions). Groot tonen → screenshot → Escape closes only that layer.
+   A5: stub `window.print` first (else the print layer unmounts), click Afdrukken (A5), then
+   `emulateMedia({ media: 'print' })` + `page.pdf({ preferCSSPageSize: true })` → one A5 page.
+2. **Pupil** in a new context per viewport — 844×390 (touch: tap the keypad keys / choices),
+   1280×800 (keyboard only: Start has focus → Enter; `keyboard.type` + Enter per field; a choice
+   = its key for `< = >`, else focus the radio + Space, Tab to Controleer + Enter), 390×844.
+   The right answer comes from the page itself: `await import('/src/oefenen/useOefenStore.ts')`
+   and `/src/services/oefenen/kiosk.ts` inside `page.evaluate` resolve to the SAME module
+   instances the kiosk runs, so `kioskFor(typeId).answerOf(shown.exercise, shown.constraints)`
+   is the expected answer. Mix right and wrong, check `.kiosk-feedback-text`, open Resultaten
+   mid-run, finish, compare `.kiosk-errors` rows with the wrong answers, reload (stays locked),
+   Opnieuw, Resultaten → Wissen → Ja → start screen and no `rekenraak_oefen_*` key left.
+3. **Variants**: build variant links in-page through `session.ts` (`decodeSessie` the teacher's
+   link, patch `testMode` / `statsLocked` / `timerMin` / drop the limits, `sessieLink`); the timer
+   with `page.clock.install()` + `clock.runFor()`; broken links (a changed char, truncated,
+   `packWire([2, …])`, an unknown leaf) must land on the ErrorScreen; library: Mijn bladen ›
+   Oefensessies › Delen and › Bewerken → Delen give the same link as the builder.
+4. **Sweep**: one session with every `kioskCapableLeaves()` leaf at its defaults (limit 1,
+   afwisselen) answered right through the UI at 844×390 / 1024×768 / 390×844 — every card must
+   say Juist!, no element scrolls horizontally, no `.kiosk-card-fallback`; review the cards as
+   contact sheets.
+5. `npm run visual:gate -- --all` stays at 0 flagged (the kiosk never changes the sheet).
