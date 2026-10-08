@@ -324,6 +324,9 @@ describe('kiosk flow: answer on the card', () => {
         ['cijferen-aftrekken-dec', {}], ['cijferen-vermenigvuldigen-nat', {}],
         ['splitsen-basis', {}], ['splitsen-boom', {}], ['splitsen-harten', {}], ['splitsen-positietabel', {}],
         ['afronden-nat-rooster', {}], ['afronden-dec-rooster', {}], ['plaatswaarde-tabel', {}], ['plaatswaarde-tabel', { decimalPlaces: 2 }],
+        ['patronen-nat', {}], ['patronen-dec', {}], ['patronen-geh', {}],
+        ['getalbegrip-getallenrijen-nat', {}], ['getalbegrip-getallenrijen-rat', {}], ['getalbegrip-getallenrijen-geh', {}],
+        ['getalbegrip-getallenassen-nat', {}], ['getalbegrip-getallenassen-dec', {}], ['getalbegrip-getallenassen-rat', {}],
     ])('fill-cells %s %j: keypad into the cells, Enter checks', (leafId, extra) => {
         st().load(hashOf(starterSessie({ types: [leafType(leafId, extra)] })));
         st().start();

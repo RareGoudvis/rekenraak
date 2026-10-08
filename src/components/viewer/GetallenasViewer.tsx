@@ -5,6 +5,12 @@ import VerticalFraction from './VerticalFraction';
 import { useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import { SOL } from './solutionStyle';
 import { monoTextPx } from '../../services/layout/blockLayout';
+import KioskCell from './KioskCell';
+import { useViewerInteraction } from './ViewerInteractionContext';
+
+// Oefenmodus: a blank's cell under its tick. Tall enough to stay a 40px target at the card's
+// ~1.4x scale; the line grows by the extra height so nothing hangs below it.
+const KIOSK_CELL_H = 32;
 
 interface Props {
     block: MathBlock;
@@ -52,7 +58,8 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
 
     const W = pad * 2 + gap * (tickCount - 1);
     const axisY = 30;
-    const H = hasFrac ? 88 : 70;
+    const cells = useViewerInteraction()?.kind === 'fill-cells';
+    const H = (hasFrac ? 88 : 70) + (cells ? 10 : 0);
     const tickX = (i: number) => pad + i * gap;
 
     return (
@@ -73,7 +80,11 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
                 return (
                     <div key={i} style={{ position: 'absolute', left: tickX(i), top: axisY + 12, transform: 'translateX(-50%)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
                         {blank
-                            ? (showSolutions ? label(v, fontSize, scale, SOL) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: ANSWER_LINE_H }} />)
+                            ? (showSolutions ? label(v, fontSize, scale, SOL) : (
+                                <KioskCell cellKey={`v${i}`} style={{ width: gap - 6, height: KIOSK_CELL_H, fontSize: `${fontSize}px` }}>
+                                    <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${Math.min(32, gap - 10)}px`, height: ANSWER_LINE_H }} />
+                                </KioskCell>
+                            ))
                             : label(v, fontSize, scale)}
                     </div>
                 );

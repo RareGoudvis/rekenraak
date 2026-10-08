@@ -591,19 +591,27 @@ const operatorsAllShown = (c: Record<string, unknown>) => {
     const ops = typeof c.ticks === 'number' ? c.ticks - 1 : Number(c.chainLength ?? 4);
     return !!c.showOperators && Number(c.operatorsShown ?? 0) >= ops;
 };
+// Phase C2: every blank of the row is a cell ON the card, keyed v<index> (SYNC: PatroonViewer,
+// GetallenrijenViewer, GetallenasViewer KioskCell keys).
+const blankKeys = (mask: readonly boolean[]) => mask.flatMap((b, i) => (b ? [`v${i}`] : []));
+const patroonInteract = cellsInteract<PatroonExercise>((ex) => blankKeys(ex.blankMask), (ex) => blanksOf(ex.values, ex.blankMask));
 export const PATROON_KIOSK = descriptor<PatroonExercise>({
-    input: 'multi-number',
+    input: 'interactive',
     keys: kindKeys,
-    answerOf: (ex) => blanksOf(ex.values, ex.blankMask),
+    interact: patroonInteract,
+    answerOf: (ex, c) => [patroonInteract.answerOf(ex, c)],
     display: (ex) => rowText(ex.values, ex.blankMask, ' – '),
     supported: operatorsAllShown,
 });
 
+// SYNC: GetallenasViewer derives a legacy natural line from start + step.
+const axisValues = (ex: GetallenasExercise) => (ex.values?.length ? ex.values : Array.from({ length: ex.tickCount }, (_, i) => ex.start + (ex.direction === 'left' ? -i : i) * ex.step));
+const axisInteract = cellsInteract<GetallenasExercise>((ex) => blankKeys(ex.blankMask), (ex) => blanksOf(axisValues(ex), ex.blankMask));
 export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
-    input: 'multi-number',
+    input: 'interactive',
     keys: kindKeys,
-    // SYNC: GetallenasViewer derives a legacy natural line from start + step.
-    answerOf: (ex) => blanksOf(ex.values?.length ? ex.values : Array.from({ length: ex.tickCount }, (_, i) => ex.start + (ex.direction === 'left' ? -i : i) * ex.step), ex.blankMask),
+    interact: axisInteract,
+    answerOf: (ex, c) => [axisInteract.answerOf(ex, c)],
     display: (ex) => rowText(ex.values ?? [], ex.blankMask, ' | '),
 });
 
