@@ -70,7 +70,9 @@ export default function InkLayer({ active }: { active: boolean }) {
         if (tool === 'eraser') { if (e.buttons) erase(x, y); return; }
         if (!drawing.current) return;
         drawing.current.push(x, y);
-        setDraft(d => d ? { ...d, path: pathFrom(drawing.current!), pts: drawing.current! } : d);
+        // Snapshot now: React may run this updater after a pointerup already nulled the ref.
+        const pts = [...drawing.current];
+        setDraft(d => d ? { ...d, path: pathFrom(pts), pts } : d);
     };
 
     const onPointerUp = () => {

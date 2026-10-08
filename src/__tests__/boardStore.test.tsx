@@ -312,6 +312,23 @@ describe('the ink layer', () => {
         expect(svg.querySelectorAll('path')).toHaveLength(1);
     });
 
+    test('a move queued behind the pointerup does not crash on the nulled drawing ref', () => {
+        // Owner saw "Inktlaag crashte: Cannot read properties of null (reading 'length')":
+        // React ran a pointermove's setDraft updater after pointerup had nulled the ref.
+        st().setTool('pen');
+        const { container } = render(<InkLayer active />);
+        const svg = container.querySelector('svg')!;
+        act(() => {
+            fireEvent.pointerDown(svg, { clientX: 10, clientY: 10, pointerId: 1 });
+            fireEvent.pointerMove(svg, { clientX: 20, clientY: 15, pointerId: 1 });
+            fireEvent.pointerMove(svg, { clientX: 30, clientY: 25, pointerId: 1 });
+            fireEvent.pointerUp(svg, { pointerId: 1 });   // same act(): the updaters flush after the ref is null
+        });
+        expect(page().strokes).toHaveLength(1);
+        expect(page().strokes[0].pts).toEqual([10, 10, 20, 15, 30, 25]);
+        expect(svg.querySelectorAll('path')).toHaveLength(1);
+    });
+
     test('a marker tap leaves a dot at 0.45 opacity', () => {
         st().setTool('marker');
         const { container } = render(<InkLayer active />);
