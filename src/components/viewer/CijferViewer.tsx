@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { MathBlock, CijferExercise, CijferConstraints } from '../../services/math/types';
-import { useBlockWidth, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, useSheetSizePx, FULL_BLOCK_WIDTH_PX } from './BlockWidthContext';
 import { cellPxOf } from './cijferGrid';
 import { opGlyph } from '../../services/math/formatters';
 import { PLACE_VALUES } from '../../services/math/mathEngine';
@@ -560,6 +560,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
     const updateCijferExercise = useWorksheetStore((s) => s.updateCijferExercise);
     const [editing, setEditing] = useState(false);
     const [editValues, setEditValues] = useState<string[]>([]);
+    const scaffold = useShowScaffold();
 
     const dp = dpOf(ex, c);
     const scaffolding = c.scaffolding || 3;
@@ -617,7 +618,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                     {headerText}
                 </div>
             )}
-            {c.withEstimation && (
+            {c.withEstimation && scaffold && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span>≈</span>
                     {showSolutions
@@ -633,7 +634,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                 : <AddSubGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} />
             }
             {/* Controle via de omgekeerde bewerking (add/sub only): write-line under the sum. */}
-            {!isDivision && !isMultiplication && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
+            {!isDivision && !isMultiplication && scaffold && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span style={{ flexShrink: 0 }}>controle:</span>
                     {showSolutions

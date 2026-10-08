@@ -40,6 +40,22 @@ const sameValue = (given: string, accepted: readonly string[]) => {
     return g !== null && accepted.some(a => canonical(a) === g);
 };
 
+/** Canonical text of a typed word: case and spacing do not count ('mmxiv ' = 'MMXIV'). */
+export const normaliseText = (raw: string) => raw.trim().replace(SPACES, ' ').toLowerCase();
+
+// Hours and minutes as typed ('08', '5'): whole numbers only.
+const clockPart = (raw: string) => (/^\s*\d{1,2}\s*$/.test(raw) ? Number(raw) : null);
+
+/** A typed time [uur, minuten] matches one of the accepted 'h:mm' spellings. */
+function sameTime(given: readonly string[], accepted: readonly string[]): boolean {
+    const h = clockPart(given[0] ?? ''), m = clockPart(given[1] ?? '');
+    if (h === null || m === null) return false;
+    return accepted.some(a => {
+        const [ah, am] = a.split(':').map(Number);
+        return ah === h && am === m;
+    });
+}
+
 export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, given: KioskAnswer): boolean {
     const accepted = d.answerOf(ex, c);
     const input = kioskInputOf(d, ex, c);
@@ -48,8 +64,15 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
         if (!Array.isArray(given) || given.length !== 2 || accepted.length !== 2) return false;
         return sameValue(given[0], [accepted[0]]) && sameValue(given[1], [accepted[1]]);
     }
+    if (input === 'time') return Array.isArray(given) && given.length === 2 && sameTime(given, accepted);
+    if (input === 'multi-number') {
+        // Every field must hold its own blank's value, in order.
+        const parts = Array.isArray(given) ? given : [given];
+        return parts.length === accepted.length && parts.every((g, i) => sameValue(g, accepted[i].split('|')));
+    }
     const one = Array.isArray(given) ? (given.length === 1 ? given[0] : null) : given;
     if (one === null) return false;
     if (input === 'choice') return accepted.includes(one.trim());
+    if (input === 'text') return one.trim() !== '' && accepted.some(a => normaliseText(a) === normaliseText(one));
     return sameValue(one, accepted);
 }

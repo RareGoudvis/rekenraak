@@ -3,7 +3,7 @@ import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { BlockErrorBoundary } from '../../components/viewer/BlockErrorBoundary';
-import { BlockWidthProvider } from '../../components/viewer/BlockWidthContext';
+import { BlockWidthProvider, ScaffoldProvider } from '../../components/viewer/BlockWidthContext';
 
 interface Props {
     typeId: string;
@@ -85,12 +85,14 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
                         here they must not take focus, keys or taps. */}
                     <div ref={innerRef} className="kiosk-card-inner" inert style={{ width: VIRTUAL_W, transform: `translateX(${-fit.x * fit.k}px) scale(${fit.k})` }}>
                         <BlockWidthProvider value={VIRTUAL_W}>
+                        <ScaffoldProvider value={false}>
                             <BlockErrorBoundary resetKey={exerciseKey} label={typeId}
                                 fallback={<p className="kiosk-card-fallback">Deze oefening kan niet getoond worden.</p>}>
                                 {block && Viewer
                                     ? <Viewer block={block} showSolutions={false} />
                                     : <p className="kiosk-card-fallback">Deze oefening kan niet getoond worden.</p>}
                             </BlockErrorBoundary>
+                        </ScaffoldProvider>
                         </BlockWidthProvider>
                     </div>
                 </div>

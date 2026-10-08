@@ -6,7 +6,7 @@ import { formatMathNumber, opGlyph as printedOp } from '../../services/math/form
 import type { MathBlock, Fraction } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
-import { useBlockWidth, useSheetSizePx, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, useSheetSizePx, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../services/math/constraintTypes';
 import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
@@ -128,6 +128,7 @@ function OperatorSwitch({ blockId, exerciseId, glyph, current, options }: {
 
 export default function MathBlockRenderer({ block, showSolutions }: Props) {
     const blockPx = useBlockWidth();
+    const scaffold = useShowScaffold();
     // The math token in px, so the column widths follow the Lettergrootte slider.
     const sheetPx = useSheetSizePx('math');
     const updateExercise = useWorksheetStore((state) => state.updateExercise);
@@ -150,7 +151,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         ? MIXED_VARIANTS.filter(v => mixedC.variants.includes(v.id))
         : null;
 
-    const compScaffoldOn = c.preset === 'compenseren'
+    const compScaffoldOn = scaffold && c.preset === 'compenseren'
         && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
     const {
         tight, fontScale, wrapChain, labelPx, labelColPx, termBoxPx, answerLinePx,
@@ -255,7 +256,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                             {/* The "( ___ )" estimate blank is help, not the exercise: in a quarter-width
                                 cell it is the first thing to go, so the division itself still fits.
                                 It gets its OWN fixed column so the dividends below it still line up. */}
-                            {!tight && (
+                            {!tight && scaffold && (
                                 <div style={{ display: 'flex', alignItems: 'center', width: `${HELP_COL_PX}px`, flexShrink: 0, marginRight: `${ANSWER_GAP}px` }}>
                                     <span>(</span>
                                     <div style={{ borderBottom: '1.5px dotted #000', width: `${HELP_BLANK_PX}px`, height: ANSWER_LINE_H, display: 'inline-block', margin: '0 2px' }} />
@@ -292,8 +293,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
                 // Compenseren-preset tussenstap: "= a + ___ − ___" fill-in under the sum
                 // (30 − 1 for 29). Only for plain 2-term numeric +/− with the scaffold on.
-                const compScaffold = c.preset === 'compenseren'
-                    && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap'
+                const compScaffold = compScaffoldOn
                     && !anyMissing && ex.operands.length === 2
                     && typeof ex.operands[0] === 'number' && typeof ex.operands[1] === 'number';
                 let compParts: { tienvoud: number; delta: number } | null = null;

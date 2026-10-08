@@ -1,4 +1,4 @@
-import type { AfrondenExercise, Equation, Fraction, ProcentExercise, VergelijkenExercise } from '../math/types';
+import type { AfrondenExercise, CijferExercise, Equation, Fraction, ProcentExercise, VergelijkenExercise } from '../math/types';
 import type { KioskDescriptor, KioskInput, KioskKey } from './types';
 import { isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
@@ -131,4 +131,15 @@ export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
     },
     display: (ex) => `${formatMathNumber(plain(ex.a ?? 0))} ? ${formatMathNumber(plain(ex.b ?? 0))}`,
     supported: (c) => (c.subType ?? 'getallen') === 'getallen',
+});
+
+// ── Cijferen (the grid is scrap paper; the pupil types the final result) ─────
+
+// Delen asks quotiënt + rest like the sheet's q / r box; the decimal leaves need a comma.
+export const CIJFER_KIOSK = descriptor<CijferExercise>({
+    input: 'number',
+    inputOf: (ex) => (ex.operator === ':' ? 'number+rest' : 'number'),
+    keys: (c) => (numberTypeOf(c) === 'decimal' ? [','] : []),
+    answerOf: (ex) => (ex.operator === ':' ? [plain(ex.answer), plain(ex.remainder ?? 0)] : numberSpellings(ex.answer)),
+    display: (ex) => `${ex.operands.map(showValue).join(` ${opGlyph(ex.operator)} `)} = ${ex.operator === ':' ? '? r ?' : '?'}`,
 });

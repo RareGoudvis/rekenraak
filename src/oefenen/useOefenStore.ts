@@ -53,24 +53,47 @@ interface OefenState {
 
 const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
 
-/** The input kind, extra keypad keys and choices for the exercise on the card. */
-export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): { kind: KioskInput; keys: string[]; choices: string[] } | null {
+export interface CurrentInput {
+    kind: KioskInput;
+    keys: string[];
+    choices: string[];
+    // One placeholder per answer field (its count is the field count).
+    labels: string[];
+}
+
+const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
+    'number+rest': ['quotiënt', 'rest'], time: ['uur', 'min'], 'missing-operand': ['Wat ontbreekt?'], text: ['Antwoord'],
+};
+
+/** The input kind, extra keypad keys, choices and field labels for the exercise on the card. */
+export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): CurrentInput | null {
     if (!s || !cur) return null;
     const d = kioskFor(s.types[cur.slot]?.typeId ?? '');
     if (!d) return null;
-    return { kind: kioskInputOf(d, cur.exercise, cur.constraints), keys: d.keys?.(cur.constraints) ?? [], choices: d.choices ?? [] };
+    const kind = kioskInputOf(d, cur.exercise, cur.constraints);
+    const choices = d.choicesOf?.(cur.exercise, cur.constraints) ?? d.choices ?? [];
+    let labels = FIXED_LABELS[kind] ?? ['Antwoord'];
+    if (kind === 'multi-number') {
+        // Only the field COUNT is read from the answer, never a value.
+        const n = d.answerOf(cur.exercise, cur.constraints).length;
+        const named = d.labels?.(cur.exercise, cur.constraints) ?? [];
+        labels = Array.from({ length: n }, (_, i) => named[i] ?? `${i + 1}`);
+    }
+    return { kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels };
 }
 
-const fieldsFor = (kind: KioskInput | undefined) => (kind === 'number+rest' ? ['', ''] : ['']);
+const fieldsFor = (info: CurrentInput | null) => (info?.kind === 'choice' ? [''] : (info?.labels ?? ['']).map(() => ''));
 
 // Keeps what the field may hold: digits plus this type's extra keys; '.' types as ','.
-export function sanitizeAnswer(raw: string, keys: readonly string[]): string {
+// A text field takes letters and spaces; a time field two digits.
+export function sanitizeAnswer(raw: string, keys: readonly string[], kind: KioskInput = 'number'): string {
+    if (kind === 'text') return raw.replace(/[^\p{L}\s]/gu, '').slice(0, MAX_CHARS + 4);
     let out = '';
     for (const ch0 of raw) {
         const ch = ch0 === '.' && keys.includes(',') ? ',' : ch0;
-        if ((ch >= '0' && ch <= '9') || keys.includes(ch)) out += ch;
+        if ((ch >= '0' && ch <= '9') || (kind !== 'time' && keys.includes(ch))) out += ch;
     }
-    return out.slice(0, MAX_CHARS);
+    return out.slice(0, kind === 'time' ? 2 : MAX_CHARS);
 }
 
 export const useOefenStore = create<OefenState>()((set, get) => {
@@ -127,7 +150,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (timeUp(last, now)) { set({ run: last }); finish(last, now); return; }
             set({ run: last });
             const cur = currentOf(last);
-            if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)?.kind), field: 0 });
+            if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)), field: 0 });
             else get().next();
         },
 
@@ -152,7 +175,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
             const updated: OefenRun = { ...run, current };
             persist(updated);
-            set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)?.kind), field: 0, lastCorrect: null });
+            set({ run: updated, shown: current, phase: 'exercise', input: fieldsFor(currentInput(s, current)), field: 0, lastCorrect: null });
         },
 
         press(key) {
@@ -161,8 +184,10 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const info = currentInput(sessie, shown);
             if (!info || info.kind === 'choice') return;
             const value = input[field] ?? '';
-            const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys);
-            set({ input: input.map((v, i) => (i === field ? nextValue : v)) });
+            const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys, info.kind);
+            // Two digits of uur typed: the keypad moves on to the minutes, like a digital clock.
+            const advance = info.kind === 'time' && key !== 'back' && field === 0 && nextValue.length === 2;
+            set({ input: input.map((v, i) => (i === field ? nextValue : v)), ...(advance && { field: 1 }) });
         },
 
         setField(i, raw) {
@@ -170,7 +195,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (phase !== 'exercise') return;
             const info = currentInput(sessie, shown);
             if (!info) return;
-            set({ input: input.map((v, j) => (j === i ? sanitizeAnswer(raw, info.keys) : v)), field: i });
+            set({ input: input.map((v, j) => (j === i ? sanitizeAnswer(raw, info.keys, info.kind) : v)), field: i });
         },
 
         focusField(i) {

@@ -52,7 +52,7 @@ import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGe
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
 import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import type { KioskDescriptor } from '../services/oefenen/types';
-import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK } from '../services/oefenen/kioskDescriptors';
+import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK } from '../services/oefenen/kioskDescriptors';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -482,7 +482,7 @@ const schattendMax: MaxPresetsFn = (c) =>
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
 const cijferRow = (): ExerciseTypeDef => row<CijferConstraints>({
     exerciseField: 'cijferExercises', generate: generateCijferExercises, generateNoted: generateCijferExercisesNoted,
-    defaultConstraints: cijferDefaults, defaultCount: 4, maxPresets: cijferMax,
+    defaultConstraints: cijferDefaults, defaultCount: 4, maxPresets: cijferMax, kiosk: CIJFER_KIOSK,
 });
 
 export const REGISTRY: Record<string, ExerciseTypeDef> = {
@@ -492,7 +492,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'hr-std-vermenigvuldigen': row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateMultiplicationExercises), defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: mulDivMax, kiosk: HR_KIOSK }),
     'hr-std-delen':            row<MulDivConstraints>({ exerciseField: 'exercises', ...relaxing(generateDivisionExercises), generateNoted: generateDivisionExercisesNoted, defaultConstraints: mulDivDefaults, defaultCount: 10, maxPresets: divMax, kiosk: HR_KIOSK }),
     // Mixed already relaxes per variant inside its own generator, so it brings its own note.
-    'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10, maxPresets: mixedMax }),
+    'hr-std-gemengd':          row<MixedConstraints>({ exerciseField: 'exercises', generate: generateMixedExercises, generateNoted: generateMixedExercisesNoted, defaultConstraints: mixedDefaults, defaultCount: 10, maxPresets: mixedMax, kiosk: HR_KIOSK }),
 
     // Cijferen (column arithmetic) — natural + decimal per operation.
     'cijferen-optellen-nat':         cijferRow(),

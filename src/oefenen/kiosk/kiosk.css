@@ -287,6 +287,14 @@ html:has(.oefen-body),
   color: var(--text-muted);
 }
 .kiosk-field:focus { outline: none; border-color: var(--accent); }
+/* A word (MMXIV, cm) is read in the UI face, not the sheet's digits. */
+.kiosk-field.is-text { font-family: var(--font-ui); }
+/* Three or more blanks (a getallenrij): smaller digits so every field fits one row. */
+.kiosk-fields.is-many { gap: var(--sp-1); }
+.kiosk-fields.is-many .kiosk-field {
+  padding: 0 2px;
+  font-size: var(--kiosk-text-lg);
+}
 .kiosk-field-sep {
   font-family: var(--font-sheet-math);
   font-size: var(--kiosk-text-xl);
@@ -358,6 +366,15 @@ html:has(.oefen-body),
   font-size: calc(var(--kiosk-text-xl) * 1.3);
   font-weight: 700;
   cursor: pointer;
+}
+/* Word choices (even / oneven, honderdtallen) at a size a button can hold. */
+.kiosk-choices.is-words { max-height: none; grid-auto-rows: minmax(var(--kiosk-tap), 1fr); }
+.kiosk-choices.is-words .kiosk-choice {
+  padding: 0 var(--sp-1);
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text);
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .kiosk-choice.is-picked {
   border-color: var(--accent);

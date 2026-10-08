@@ -2,9 +2,10 @@ import { Fragment, useEffect, useRef } from 'react';
 import { currentInput, useOefenStore } from '../useOefenStore';
 import Keypad from './Keypad';
 
-const FIELD_LABEL = { number: ['Antwoord'], 'missing-operand': ['Wat ontbreekt?'], 'number+rest': ['quotiënt', 'rest'] } as const;
+// What sits between two fields: the sheet's "r" for delen met rest, ':' between uur and min.
+const SEPARATOR: Record<string, string> = { 'number+rest': 'r', time: ':' };
 
-// The answer side of the kiosk: typed field(s) + keypad, or the choice buttons.
+// The answer side of the kiosk: typed field(s) + keypad, the choice buttons, or a word field.
 export default function AnswerInput() {
     const sessie = useOefenStore(s => s.sessie);
     const shown = useOefenStore(s => s.shown);
@@ -24,9 +25,13 @@ export default function AnswerInput() {
     if (!info) return null;
 
     if (info.kind === 'choice') {
+        // Signs (< = >) stay big; words (even, honderdtallen) get a size that fits a button.
+        const words = info.choices.some(c => c.length > 2);
+        const cols = info.choices.length === 2 || info.choices.length === 4 ? 2 : 3;
         return (
             <div className="kiosk-answer">
-                <div className="kiosk-choices" role="radiogroup" aria-label="Kies het juiste teken">
+                <div className={`kiosk-choices${words ? ' is-words' : ''}`} role="radiogroup" aria-label="Kies het antwoord"
+                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
                     {info.choices.map(c => (
                         <button key={c} type="button" role="radio" aria-checked={input[0] === c}
                             className={`kiosk-choice${input[0] === c ? ' is-picked' : ''}`} onClick={() => choose(c)}>
@@ -39,22 +44,23 @@ export default function AnswerInput() {
         );
     }
 
-    const labels = FIELD_LABEL[info.kind];
+    const text = info.kind === 'text';
+    const many = info.labels.length > 2;
     return (
         <div className="kiosk-answer">
-            <div className="kiosk-fields">
-                {labels.map((label, i) => (
-                    <Fragment key={label}>
-                        {/* "= q r rest", the sheet's own notation for delen met rest. */}
-                        {i > 0 && <span className="kiosk-field-sep" aria-hidden>r</span>}
+            <div className={`kiosk-fields${many ? ' is-many' : ''}`}>
+                {info.labels.map((label, i) => (
+                    <Fragment key={`${label}-${i}`}>
+                        {i > 0 && SEPARATOR[info.kind] && <span className="kiosk-field-sep" aria-hidden>{SEPARATOR[info.kind]}</span>}
                         <input
                             aria-label={label}
                             placeholder={label}
                             ref={el => { refs.current[i] = el; }}
-                            className={`kiosk-field${field === i && input.length > 1 ? ' is-active' : ''}`}
-                            // No on-screen OS keyboard: the keypad is the touch input, a physical
-                            // keyboard still types here.
-                            inputMode="none"
+                            className={`kiosk-field${field === i && input.length > 1 ? ' is-active' : ''}${text ? ' is-text' : ''}`}
+                            // No on-screen OS keyboard for numbers: the keypad is the touch input, a
+                            // physical keyboard still types here. A word needs the device keyboard.
+                            inputMode={text ? 'text' : 'none'}
+                            autoCapitalize="off"
                             autoComplete="off"
                             spellCheck={false}
                             value={input[i] ?? ''}
@@ -64,7 +70,9 @@ export default function AnswerInput() {
                     </Fragment>
                 ))}
             </div>
-            <Keypad extras={info.keys} onKey={press} onCheck={answer} canCheck={canCheck} />
+            {text
+                ? <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!canCheck}>Controleer</button>
+                : <Keypad extras={info.keys} onKey={press} onCheck={answer} canCheck={canCheck} />}
         </div>
     );
 }
