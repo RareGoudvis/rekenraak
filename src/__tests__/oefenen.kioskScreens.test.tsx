@@ -5,6 +5,7 @@ import OefenApp from '../oefenen/OefenApp';
 import { useOefenStore } from '../oefenen/useOefenStore';
 import { fillAnswer, hashOf, resetKiosk, starterSessie, STARTER_TYPES } from './helpers/oefenKiosk';
 import type { OefenType } from '../services/oefenen/types';
+import { emptyStats, saveRun } from '../services/oefenen/stats';
 import { flattenLeaves } from '../config/appstructure';
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
 
@@ -180,5 +181,31 @@ describe('kiosk screens', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Wissen' }));
         fireEvent.click(screen.getByRole('button', { name: 'Ja, alles wissen' }));
         expect(st().phase).toBe('start');
+    });
+
+    test('locked screen lists the earlier runs under Vorige keren; tapping one shows its numbers read-only', () => {
+        const sessie = starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 1 }] });
+        const run = (index: number, correct: number, wrong: number) => {
+            const stats = emptyStats(sessie, Date.UTC(2026, 8, 1 + index, 10, 0));
+            stats.perType[0] = { made: correct + wrong, correct, wrong, errors: [] };
+            stats.finishedAt = stats.startedAt + 5 * 60_000;
+            saveRun(sessie.id, { index, stats, done: true });
+        };
+        run(0, 3, 1); run(1, 2, 2); run(2, 4, 0);
+        st().load(hashOf(sessie));
+        render(<OefenApp />);
+        expect(screen.getByRole('heading', { name: 'Klaar!' })).toBeTruthy();
+        expect(screen.getByRole('heading', { name: 'Vorige keren' })).toBeTruthy();
+        const rows = screen.getAllByRole('button', { name: /juist · 5 min/ });
+        expect(rows).toHaveLength(2);
+        // Newest earlier run first.
+        expect(rows[0].textContent).toContain('2 van 4 juist');
+        expect(rows[1].textContent).toContain('3 van 4 juist');
+        fireEvent.click(rows[1]);
+        expect(screen.getByText('3 van 4 juist')).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Opnieuw' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Wissen' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
+        expect(screen.getByRole('heading', { name: 'Klaar!' })).toBeTruthy();
     });
 });
