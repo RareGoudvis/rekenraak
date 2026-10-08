@@ -176,3 +176,18 @@ UpdateState). Left over, found while fixing:
 
 - ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
   (2026-09-12). Known; the heading says so.
+
+## Bordmodus
+
+- BoardBottomBar at 1280 x 800: the bar is wider than the viewport, so "Bordmodus verlaten" is cut off
+  at the right edge (wb-check/wb3/12-six-cards.png). Fix: let the bar shed or wrap like the TopBar. 2026-10-08
+- No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
+  Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
+- Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
+  Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
+  instead of the sheet (checked with a print-to-PDF). 2026-10-08
+- TopBar (seen during the fold-in, predates it): just above a shed threshold useShedStages keeps
+  stage 0 while the centre track already overflows: on pre-whiteboard rc at 1920 px the
+  "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
+  Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
+  measurement. 2026-10-08

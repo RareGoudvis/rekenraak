@@ -12,6 +12,8 @@ export default defineConfig({
       // instead of a hand-copied stylesheet. See src/site.ts.
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
+        // The same app booted straight into Bordmodus (data-boot="bord", src/bootEntry.ts).
+        bord: resolve(import.meta.dirname, 'bord.html'),
         about: resolve(import.meta.dirname, 'about.html'),
         faq: resolve(import.meta.dirname, 'faq.html'),
         oefeningen: resolve(import.meta.dirname, 'oefeningen.html'),
