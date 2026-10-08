@@ -3,6 +3,8 @@ import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import type { DeelbaarheidKleurConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
+import { kioskNumbers } from '../../services/deelbaarheid/deelbaarheidKleurGenerator';
 
 interface Props {
     block: MathBlock;
@@ -18,6 +20,8 @@ const PX_PER_EM_AT_DEFAULT = 17.33;
 const em = (px: number) => `${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)}em`;
 
 export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props) {
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps every multiple.
+    const ix = useViewerInteraction();
     const exercises: DeelbaarheidKleurExercise[] = block.deelbaarheidKleurExercises || [];
     const c = block.constraints as DeelbaarheidKleurConstraints;
     const viewModeRaw: string = c.viewMode ?? 'strip';
@@ -51,20 +55,23 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
             justifyItems={isRechthoek ? 'center' : undefined}
             items={exercises.map(ex => {
                 const isMul = (n: number) => n % ex.divisor === 0;
+                // Kiosk: a capped list; the key of a number is its position in it.
+                const numbers = ix ? kioskNumbers(ex.numbers, ex.divisor) : ex.numbers;
 
                 // ── STRIP / RECHTHOEK: consecutive grid, colour all multiples ──
                 // (formerly the standalone 'raster' viewMode; merged into 'strip' as the
                 // 'rechthoek' shape — same rendering, `em`-sized instead of fixed px so it
                 // follows the Lettergrootte slider.)
                 if (isRechthoek) {
-                    const cols = ex.cols ?? 10;
+                    // Kiosk: rows of at most 5 so the cells scale up to thumb size on the card.
+                    const cols = ix ? Math.min(ex.cols ?? 10, 5) : (ex.cols ?? 10);
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
                             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${em(42)})`, width: 'fit-content' }}>
-                                {ex.numbers.map((num, i) => (
-                                    <div key={i} style={{
-                                        width: em(42), height: em(28), display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                {numbers.map((num, i) => (
+                                    <div key={i} {...interactionProps(ix, String(i))} style={{
+                                        width: em(42), height: em(ix ? 40 : 28), display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.7)',
                                         marginLeft: i % cols === 0 ? 0 : -1, marginTop: i >= cols ? -1 : 0,
                                         backgroundColor: showSolutions && isMul(num) ? FILL : 'white',
@@ -87,11 +94,11 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                                naturally wraps fewer per line once it doesn't — nowrap only survives
                                when the whole row actually fits. */}
                             <div style={{ display: 'flex', flexWrap: 'wrap', rowGap: '0.6em', columnGap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)' }}>
-                                {ex.numbers.map((num, i) => {
+                                {numbers.map((num, i) => {
                                     const ring = showSolutions && isMul(num);
                                     return (
                                         <span key={i} style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', flex: `0 0 calc(100% / ${perRow})` }}>
-                                            <span style={{ padding: '2px 8px', borderRadius: '50%', border: ring ? `2px solid ${SOL}` : '2px solid transparent', color: ring ? SOL : 'inherit' }}>{formatMathNumber(num)}</span>
+                                            <span {...interactionProps(ix, String(i))} style={{ padding: ix ? '8px 12px' : '2px 8px', borderRadius: '50%', border: ring ? `2px solid ${SOL}` : '2px solid transparent', color: ring ? SOL : 'inherit' }}>{formatMathNumber(num)}</span>
                                             {showRest && restLine(num, ex.divisor)}
                                         </span>
                                     );
@@ -106,10 +113,10 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: showRest ? '4px' : '0', alignItems: 'flex-start' }}>
-                            {ex.numbers.map((num, i) => (
+                            {numbers.map((num, i) => (
                                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: showRest || i === 0 ? 0 : -1 }}>
-                                    <div style={{
-                                        width: em(46), height: em(34), display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    <div {...interactionProps(ix, String(i))} style={{
+                                        width: em(46), height: em(ix ? 44 : 34), display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)',
                                         backgroundColor: showSolutions && isMul(num) ? FILL : 'white',
                                     }}>{formatMathNumber(num)}</div>

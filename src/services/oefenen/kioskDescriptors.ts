@@ -1,5 +1,5 @@
 import type {
-    AfrondenExercise, BreukBewerkExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, Equation, EvenOnevenExercise,
+    AfrondenExercise, BreukBewerkExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, DeelbaarheidKleurExercise, Equation, EvenOnevenExercise,
     ClockExercise, Fraction, FractionExercise, GeldExercise, TijdsduurExercise, VerbandExercise,
     GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, HerleidingPart,
     MaateenheidExercise, MabExercise, MeetExercise, OrdenenExercise, PatroonExercise, PlaatswaardeExercise, ProcentExercise,
@@ -12,6 +12,7 @@ import { formatMathNumber, opGlyph } from '../math/formatters';
 import { ROUND_SCALE, roundTo, targetsFor } from '../afronden/afrondenGenerator';
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
+import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -508,12 +509,51 @@ export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
     display: (ex) => rowText(ex.values ?? [], ex.blankMask, ' | '),
 });
 
-// The multiples after the given ones; the kiosk card prints the whole run (no "enz." cap).
+// veelvouden: the multiples after the given ones (the kiosk card prints the whole run, no
+// "enz." cap). tabel: tap the divisor cells of one number's row where it divides (Phase C).
+const isTabel = (c: Record<string, unknown>) => (c.layout ?? 'tabel') === 'tabel';
+// SYNC: DeelbaarheidViewer reads the same default divisor columns.
+const divisorsOf = (c: Record<string, unknown>) => (Array.isArray(c.divisors) ? c.divisors as number[] : [2, 5, 10]);
+const numberSet = (ns: readonly number[]) => [...ns].sort((a, b) => a - b).map(showNum).join(INTERACT_SEP);
+const tabelAnswer = (ex: DeelbaarheidExercise, c: Record<string, unknown>) =>
+    numberSet(divisorsOf(c).filter(d => (ex.number ?? 0) % d === 0));
 export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
     input: 'multi-number',
-    answerOf: (ex) => (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String),
-    display: (ex) => (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – '),
-    supported: (c) => c.layout === 'veelvouden',
+    inputOf: (_ex, c) => (isTabel(c) ? 'interactive' : 'multi-number'),
+    kioskInstruction: (ex, c) => (isTabel(c) ? `Tik aan door welke getallen ${showNum(ex.number ?? 0)} deelbaar is.` : undefined),
+    interact: {
+        kind: 'tap-multi',
+        // Key = the divisor column's position.
+        keys: (_ex, c) => divisorsOf(c).map((_, i) => String(i)),
+        answerOf: tabelAnswer,
+        fromState: (st, _ex, c) => numberSet(st.selected.map(k => divisorsOf(c)[Number(k)]).filter((d): d is number => d !== undefined)),
+    },
+    answerOf: (ex, c) => (isTabel(c) ? [tabelAnswer(ex, c)] : (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String)),
+    display: (ex, c) => (isTabel(c)
+        ? `${showNum(ex.number ?? 0)} deelbaar door ${divisorsOf(c).join(', ')}: ?`
+        : (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – ')),
+    supported: (c) => c.layout === 'veelvouden' || isTabel(c),
+});
+
+// Kleuren / omcirkelen / kleurraster: tap every multiple of the divisor. Each row has ONE
+// divisor (a leaf with several just draws one per row), so every setting is served except
+// the rest line, which asks for a typed remainder per number.
+// SYNC: DeelbaarheidKleurViewer shows kioskNumbers(); a key is the position in that list.
+const kleurShown = (ex: DeelbaarheidKleurExercise) => kioskNumbers(ex.numbers, ex.divisor);
+const kleurMultiples = (ex: DeelbaarheidKleurExercise, nums: readonly number[]) => numberSet(nums.filter(n => n % ex.divisor === 0));
+export const DEELBAARHEID_KLEUR_KIOSK = descriptor<DeelbaarheidKleurExercise>({
+    input: 'interactive',
+    kioskInstruction: (ex) => `Tik op elk getal dat deelbaar is door ${ex.divisor}.`,
+    interact: {
+        kind: 'tap-multi',
+        keys: (ex) => kleurShown(ex).map((_, i) => String(i)),
+        answerOf: (ex) => kleurMultiples(ex, kleurShown(ex)),
+        fromState: (st, ex) => numberSet(st.selected.map(k => kleurShown(ex)[Number(k)]).filter((n): n is number => n !== undefined)),
+    },
+    answerOf: (ex) => [kleurMultiples(ex, kleurShown(ex))],
+    display: (ex) => `veelvouden van ${ex.divisor} in ${kleurShown(ex).map(showNum).join(' ')}: ?`,
+    // viewMode 'raster' is the legacy spelling of strip + rechthoek (no rest line there either).
+    supported: (c) => !(c.showRest && c.viewMode !== 'raster' && c.rasterVorm !== 'rechthoek'),
 });
 
 // Write the shuffled values in order; the < or > sits between the fields as on the sheet.
@@ -619,20 +659,33 @@ const isQuestions = (c: Record<string, unknown>) => fracSub(c) === 'herkennen' &
 const deelVan = (ex: FractionExercise) => (ex.subType === 'hoeveelheid-abstract'
     ? parseFloat((parseFloat(((ex.total ?? 0) / ex.denominator).toFixed(4)) * ex.numerator).toFixed(4))
     : Math.round(((ex.total ?? 0) * ex.numerator) / ex.denominator));
+// kleuren: tap n of the d parts ON the figure; the answer is HOW MANY are tapped (any parts count).
+const isKleuren = (c: Record<string, unknown>) => fracSub(c) === 'kleuren';
 export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     input: 'number',
-    inputOf: (_ex, c) => (isQuestions(c) ? 'multi-number' : 'number'),
+    inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isQuestions(c) ? 'multi-number' : 'number'),
+    kioskInstruction: (ex, c) => (isKleuren(c) ? `Tik ${ex.numerator} van de ${ex.denominator} delen aan.` : undefined),
+    interact: {
+        kind: 'tap-multi',
+        // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included).
+        keys: (ex) => Array.from({ length: ex.denominator }, (_, i) => String(i)),
+        answerOf: (ex) => String(ex.numerator),
+        fromState: (st) => (st.selected.length ? String(st.selected.length) : ''),
+    },
     keys: (c) => (fracSub(c) === 'herkennen' && !isQuestions(c) ? ['/'] : fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
     labels: () => ['gelijke delen', 'ingekleurd'],
     answerOf: (ex, c) => {
+        if (isKleuren(c)) return [String(ex.numerator)];
         if (isQuestions(c)) return [String(ex.denominator), String(ex.numerator)];
         if (fracSub(c) === 'herkennen') return [...new Set([`${ex.numerator}/${ex.denominator}`, fracText(reduce({ n: ex.numerator, d: ex.denominator }))])];
         return numberSpellings(deelVan(ex));
     },
-    display: (ex, c) => (fracSub(c) === 'herkennen'
+    display: (ex, c) => (isKleuren(c)
+        ? `kleur ${ex.numerator}/${ex.denominator}: ?`
+        : fracSub(c) === 'herkennen'
         ? `gekleurd deel van ${ex.denominator} delen: ?`
         : `${ex.numerator}/${ex.denominator} van ${ex.total ?? 0} = ?`),
-    supported: (c) => ['herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
+    supported: (c) => ['kleuren', 'herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
 });
 
 // ── Tijd ─────────────────────────────────────────────────────────────────────
