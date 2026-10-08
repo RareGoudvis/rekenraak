@@ -20,7 +20,7 @@ export default function AnswerInput() {
     const field = useOefenStore(s => s.field);
     const phase = useOefenStore(s => s.phase);
     const interaction = useOefenStore(s => s.interaction);
-    const { press, setField, focusField, choose, answer, clearBuild } = useOefenStore.getState();
+    const { press, pressExtra, setField, focusField, choose, answer, clearBuild } = useOefenStore.getState();
     const refs = useRef<(HTMLInputElement | null)[]>([]);
     const info = currentInput(sessie, shown);
     const canCheck = input.every(v => v.trim() !== '');
@@ -47,11 +47,13 @@ export default function AnswerInput() {
                 </div>
             );
         }
+        const hints = info.extraKeys.flatMap(k => (k.hint ? [k.hint] : []));
         return (
             <div className="kiosk-answer">
                 {info.interact === 'fill-cells'
-                    ? <Keypad extras={info.keys} onKey={press} onCheck={answer} canCheck={ready} />
+                    ? <Keypad extras={info.keys} actions={info.extraKeys} onAction={pressExtra} onKey={press} onCheck={answer} canCheck={ready} />
                     : <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!ready}>Controleer</button>}
+                {hints.map(h => <p key={h} className="kiosk-keypad-hint">{h}</p>)}
             </div>
         );
     }

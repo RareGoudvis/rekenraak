@@ -330,6 +330,13 @@ html:has(.oefen-body),
 .kiosk-card-inner .kiosk-cell:focus-visible { box-shadow: none; }
 /* Inside a ruitje the ring stays within its lines. */
 .kiosk-card-inner .kiosk-cell.is-grid[data-kiosk-active] { outline-offset: -2px; }
+/* Lenen: the top digit of an exchanged column is struck, as a pupil crosses it out on paper
+   (its new value stands in the exchange cell above it). */
+.kiosk-card-inner [data-kiosk-borrowed] {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--accent);
+}
 
 .kiosk-card-fallback {
   margin: 0;
@@ -465,6 +472,15 @@ html:has(.oefen-body),
 .kiosk-key-check:active { background: var(--accent-strong); }
 .kiosk-key-check:disabled,
 .kiosk-check-wide:disabled { opacity: 0.45; cursor: default; }
+/* A static how-to line for an action key (Lenen) under the keypad. */
+.kiosk-keypad-hint {
+  flex: none;
+  margin: 0;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: calc(var(--kiosk-text) * 0.8);
+  text-align: center;
+}
 
 .kiosk-choices {
   flex: 1;
