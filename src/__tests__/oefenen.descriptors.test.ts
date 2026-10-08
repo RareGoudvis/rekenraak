@@ -9,6 +9,8 @@ import { formatMathNumber } from '../services/math/formatters';
 import { kioskCapableLeaves, kioskFor, kioskInputOf, kioskSupports } from '../services/oefenen/kiosk';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { checkAnswer, normaliseFraction, normaliseNumber } from '../services/oefenen/check';
+import { INTERACT_SEP } from '../services/oefenen/types';
+import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
@@ -47,6 +49,7 @@ const EXPECTED_LEAVES = [
     'breuken-herkennen', 'breuken-hoeveelheid', 'breuken-gemengd', 'breuken-gelijknamig', 'breuken-vereenvoudigen',
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
+    'even-oneven-rooster',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -67,7 +70,7 @@ function roundHalfUp(n: number, weight: number): number {
 
 // What the pupil must give: a number, [quotiënt, rest], a choice, accepted words, accepted
 // times or one number per field.
-type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] };
+type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] };
 
 // Every cijferen leaf is its own typeId; the answer must also redo the column sum.
 function cijferTruth(ex: CijferExercise): Truth {
@@ -116,7 +119,12 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         expect(digit, `${p.number} ${p.placeKey}`).toBeGreaterThan(0);
         return digit * place.weight;
     },
-    'even-oneven': (e: T.EvenOnevenExercise) => (e.number! % 2 === 0 ? 'even' : 'oneven'),
+    'even-oneven': (e: T.EvenOnevenExercise, c) => {
+        if (c.subType === 'cirkels') return e.number! % 2 === 0 ? 'even' : 'oneven';
+        // rooster: every number of the asked parity, smallest first, as the card's answer string.
+        const want = c.target === 'oneven' ? 1 : 0;
+        return { set: e.numbers!.filter(n => n % 2 === want).sort((a, b) => a - b).map(n => formatMathNumber(n)) };
+    },
     'romeinse-cijfers': (r: T.RomeinseExercise, c) => {
         expect(fromRoman(r.roman)).toBe(r.value);
         return c.subType === 'schrijven' ? { text: [r.roman] } : r.value;
@@ -317,7 +325,7 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('vergelijken', { subType: 'kiezen' })).toBe(true);
         expect(kioskSupports('procenten', {})).toBe(true);
         expect(kioskSupports('plaatswaarde', { subType: 'tabel' })).toBe(false);
-        expect(kioskSupports('even-oneven', { subType: 'rooster' })).toBe(false);
+        expect(kioskSupports('even-oneven', { subType: 'rooster' })).toBe(true);
         expect(kioskSupports('vormleer-hoeken', { mode: 'tekenen' })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'gelijkbenig'] })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'stomphoekig'] })).toBe(true);
@@ -350,7 +358,8 @@ describe('descriptor answers agree with the generators', () => {
         ['afronden-dec-simpel', { decimalPlaces: 3, roundTargets: ['E', 't', 'h'] }, 'number'],
         ['procenten-welk', { percents: [1, 5, 10, 20, 25, 50, 75] }, 'number'],
         ['vergelijken-getallen', { decimalPlaces: 2 }, 'choice'],
-        ['vergelijken-kiezen', { chooseTarget: 'kleinste', decimalPlaces: 1 }, 'choice'],
+        ['vergelijken-kiezen', { chooseTarget: 'kleinste', decimalPlaces: 1 }, 'interactive'],
+        ['even-oneven-rooster', { target: 'oneven', maxGetal: 10000, perRow: 12 }, 'interactive'],
         ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
         ['getalbegrip-functie', { answerMode: 'schrijven' }, 'text'],
@@ -380,6 +389,36 @@ describe('descriptor answers agree with the generators', () => {
     });
 });
 
+// Phase C: tapping the viewer's keys must give the generator's answer. tap = one key, its value
+// the truth; tap-multi = the set of right keys in any order, and one key more or less is wrong.
+function checkInteractive(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: Truth, where: string) {
+    const ia = d.interact!;
+    expect(ia, where).toBeDefined();
+    const keys = ia.keys!(ex, c);
+    const tap = (selected: string[]) => ia.fromState({ ...EMPTY_INTERACTION, selected }, ex, c);
+    const check = (selected: string[]) => checkAnswer(d, ex, c, tap(selected));
+    expect(new Set(keys).size, where).toBe(keys.length);
+    expect(d.answerOf(ex, c), where).toEqual([ia.answerOf(ex, c)]);
+    expect(tap([]), where).toBe('');
+    if (ia.kind === 'tap') {
+        expect(ia.answerOf(ex, c), where).toBe(truth);
+        const right = keys.filter(k => tap([k]) === truth);
+        expect(right.length, where).toBeGreaterThan(0);
+        for (const k of keys) expect(check([k]), `${where} key ${k}`).toBe(right.includes(k));
+        expect(check([]), where).toBe(false);
+        return;
+    }
+    expect(ia.kind, where).toBe('tap-multi');
+    const want = (truth as { set: string[] }).set;
+    expect(ia.answerOf(ex, c).split(INTERACT_SEP).filter(Boolean), where).toEqual(want);
+    const right = keys.filter(k => want.includes(tap([k])));
+    const wrong = keys.filter(k => !right.includes(k));
+    expect(right.length, where).toBe(want.length);
+    expect(check([...right].reverse()), where).toBe(true);
+    if (right.length) expect(check(right.slice(1)), where).toBe(false);
+    if (wrong.length) expect(check([...right, wrong[0]]), where).toBe(false);
+}
+
 // Runs the agreement checks for one leaf (+ extra settings) over every grade × SEEDS seeds;
 // returns how often each input kind came up.
 function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map<KioskInput, number> {
@@ -403,7 +442,9 @@ function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map
             // The pupil can type every field's first spelling with the keys on offer.
             const typeable = (a: string) => expect(sanitizeAnswer(a, keys, input).replace(',', '.'), `${where} untypeable ${a} keys ${keys}`).toBe(a.replace(',', '.'));
 
-            if (input === 'number+rest') {
+            if (input === 'interactive') {
+                checkInteractive(d, ex, c, truth, where);
+            } else if (input === 'number+rest') {
                 const [q, r] = truth as [number, number];
                 expect(accepted.map(Number), where).toEqual([q, r]);
                 accepted.forEach(typeable);
@@ -533,6 +574,41 @@ describe('fractions as the sheet prints them', () => {
         expect(checkAnswer(d, ex, { numberType: 'rational' }, ['1/8', '3/4'])).toBe(true);
         expect(checkAnswer(d, ex, { numberType: 'rational' }, ['6/8', '1/8'])).toBe(false);
         expect(d.separator!(ex, {})).toBe('<');
+    });
+});
+
+describe('interactive checks (Phase C)', () => {
+    const fake = (kind: 'tap' | 'tap-multi' | 'fill-cells' | 'order', want: string): KioskDescriptor => ({
+        input: 'interactive', answerOf: () => [want], display: () => '?',
+        interact: { kind, answerOf: () => want, fromState: () => '' },
+    });
+    const S = INTERACT_SEP;
+    test('tap: the exact value', () => {
+        expect(checkAnswer(fake('tap', '437'), {}, {}, '437')).toBe(true);
+        expect(checkAnswer(fake('tap', '437'), {}, {}, '43')).toBe(false);
+        expect(checkAnswer(fake('tap', '437'), {}, {}, '')).toBe(false);
+    });
+    test('tap-multi: a set, order-free; an empty set when nothing is asked', () => {
+        const d = fake('tap-multi', ['4', '12', '30'].join(S));
+        expect(checkAnswer(d, {}, {}, ['30', '4', '12'].join(S))).toBe(true);
+        expect(checkAnswer(d, {}, {}, ['4', '12'].join(S))).toBe(false);
+        expect(checkAnswer(d, {}, {}, ['4', '12', '30', '7'].join(S))).toBe(false);
+        expect(checkAnswer(fake('tap-multi', ''), {}, {}, '')).toBe(true);
+        expect(checkAnswer(fake('tap-multi', ''), {}, {}, '3')).toBe(false);
+    });
+    test('order: the sequence counts', () => {
+        const d = fake('order', ['1', '2', '3'].join(S));
+        expect(checkAnswer(d, {}, {}, ['1', '2', '3'].join(S))).toBe(true);
+        expect(checkAnswer(d, {}, {}, ['2', '1', '3'].join(S))).toBe(false);
+    });
+    test('fill-cells: each cell as a number, alternatives per cell', () => {
+        const d = fake('fill-cells', ['12', '2,5|2.5'].join(S));
+        expect(checkAnswer(d, {}, {}, ['012', '2.50'].join(S))).toBe(true);
+        expect(checkAnswer(d, {}, {}, ['12', '3'].join(S))).toBe(false);
+        expect(checkAnswer(d, {}, {}, '12')).toBe(false);
+    });
+    test('no interact half: never correct', () => {
+        expect(checkAnswer({ input: 'interactive', answerOf: () => ['1'], display: () => '?' }, {}, {}, '1')).toBe(false);
     });
 });
 

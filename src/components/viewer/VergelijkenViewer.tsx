@@ -7,6 +7,7 @@ import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
 import type { VergelijkenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
@@ -20,6 +21,8 @@ const mono = "'Azeret Mono', monospace";
 export default function VergelijkenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const mathPx = useSheetSizePx('math');
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the number (kiezen).
+    const ix = useViewerInteraction();
     const exercises: VergelijkenExercise[] = block.vergelijkenExercises || [];
     const c = block.constraints as VergelijkenConstraints;
     const subType: string = c.subType ?? 'getallen';
@@ -73,8 +76,9 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                                 // under place value), not on their right edge.
                                 const [int, frac] = formatMathNumber(n).split(',');
                                 return (
-                                    <span key={i} style={{
-                                        padding: '2px 8px',
+                                    <span key={i} {...interactionProps(ix, String(i))} style={{
+                                        // Kiosk: a taller chip so a wide set still scales to a ≥ 44 px tap target on a phone.
+                                        padding: ix ? '7px 8px' : '2px 8px',
                                         display: 'inline-grid', gridTemplateColumns: `${intChars}ch ${fracChars > 0 ? `${fracChars + 1}ch` : ''}`,
                                         border: isAns ? `2px solid ${SOL}` : '2px solid transparent',
                                         borderRadius: '50%',

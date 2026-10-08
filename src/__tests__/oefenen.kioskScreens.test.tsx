@@ -111,7 +111,7 @@ describe('kiosk screens', () => {
         expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
     });
 
-    test('choice buttons: signs big, numbers in the number size, words in the word size', () => {
+    test('choice buttons: signs big, words in the word size; kiezen is tapped on the card', () => {
         const kiezen = leafType('vergelijken-kiezen');
         st().load(hashOf(starterSessie({ types: [kiezen] })));
         st().start();
@@ -119,8 +119,9 @@ describe('kiosk screens', () => {
         const shown = st().shown!;
         useOefenStore.setState({ shown: { ...shown, exercise: { ...(shown.exercise as object), numbers: [437, 514, 416] } } });
         const { container, unmount } = render(<OefenApp />);
-        expect(screen.getAllByRole('radio').map(r => r.textContent)).toEqual(['437', '514', '416']);
-        expect(container.querySelector('.kiosk-choices')?.className).toBe('kiosk-choices is-numbers');
+        // Phase C: no answer buttons, the row's own numbers are the buttons.
+        expect(screen.queryAllByRole('radio')).toHaveLength(0);
+        expect([...container.querySelectorAll('.kiosk-card-inner [data-kiosk-key]')].map(r => r.textContent)).toEqual(['437', '514', '416']);
         unmount();
 
         resetKiosk();

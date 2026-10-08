@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { EvenOnevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
@@ -16,12 +17,15 @@ const FILL = '#93c5fd';
 // SYNC: same convention as GetallenasViewer / ClockViewer / MabViewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
 const em = (px: number) => `${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)}em`;
+const KIOSK_COLS = 5;
 
 export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     // Called unconditionally (used by the rooster branch only) so a subType switch never
     // changes how many hooks this component calls.
     const mathScale = useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT;
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the rooster's numbers.
+    const ix = useViewerInteraction();
     const exercises: EvenOnevenExercise[] = block.evenOnevenExercises || [];
     const c = block.constraints as EvenOnevenConstraints;
     const subType: string = c.subType ?? 'rooster';
@@ -84,7 +88,9 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
     // cells so they follow the Lettergrootte slider; marginLeft/-Top:-1 collapse shared borders.
     const cellW = 46, cellH = 34;
     const cellWPx = cellW * mathScale;
-    const cols = Math.max(1, Math.min(perRow, Math.floor((availableWidth + 1) / (cellWPx + 1))));
+    // Kiosk (tap context): rows of at most 5, so the card scales the cells up to thumb size
+    // (≥ 44 px on a landscape phone); a 10-wide row would keep them ~38 px tall.
+    const cols = Math.max(1, Math.min(perRow, ix ? KIOSK_COLS : perRow, Math.floor((availableWidth + 1) / (cellWPx + 1))));
     return (
         <FragmentableGrid
             cols={1}
@@ -104,7 +110,7 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
                     display: 'grid', gridTemplateColumns: `repeat(${cols}, ${em(cellW)})`, width: 'fit-content',
                 }}>
                     {(ex.numbers || []).map((num, i) => (
-                        <div key={i} style={{
+                        <div key={i} {...interactionProps(ix, String(i))} style={{
                             width: em(cellW), height: em(cellH), display: 'flex', alignItems: 'center', justifyContent: 'center',
                             border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)',
                             // collapse with left neighbour (same row) and the row above

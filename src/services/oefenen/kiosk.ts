@@ -81,6 +81,8 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     'breuken-herkennen', 'breuken-hoeveelheid', 'breuken-gemengd', 'breuken-gelijknamig', 'breuken-vereenvoudigen',
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
     'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
+    // Phase C (interactive on the card)
+    'even-oneven-rooster',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [
