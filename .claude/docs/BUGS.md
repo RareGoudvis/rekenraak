@@ -142,7 +142,6 @@ UpdateState). Left over, found while fixing:
   relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
   scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
   Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
-- [P6] verbanden-tabel default repeats values (9/10 and 1/2 twice). 2026-10-08
 
 ## Tooling
 

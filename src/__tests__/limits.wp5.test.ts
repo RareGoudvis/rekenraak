@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { MathBlock } from '../services/math/types';
+import { generateVerbandExercisesNoted } from '../services/verbanden/verbandenGenerator';
 import { generateSchattendNoted } from '../services/schattend/schattendGenerator';
 import { targetsFor, roundTo } from '../services/afronden/afrondenGenerator';
 import { RANGES } from '../config/numberRanges';
@@ -127,5 +128,30 @@ describe('controleren negenproef first factor', () => {
             expect(items.length).toBe(8);
             for (const ex of items) expect(ex.a % 10).not.toBe(0);
         }
+    });
+});
+
+describe('verbanden: a value appears once per block', () => {
+    const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+    const vkey = (e: { fraction: { n: number; d: number } }) => { const g = gcd(e.fraction.n, e.fraction.d); return `${e.fraction.n / g}/${e.fraction.d / g}`; };
+    const all = ['breuk', 'decimaal', 'procent'];
+    for (const subType of ['tabel', 'paren'])
+        it(`default ${subType} over 300 seeds has no repeated value`, () => {
+            for (let i = 0; i < 300; i++) {
+                const { items, note } = generateVerbandExercisesNoted(mk({ subType, reps: all, denominators: [2, 4, 5, 10, 100], given: 'random' }, 8));
+                expect(items).toHaveLength(8);
+                expect(new Set(items.map(vkey)).size).toBe(8);
+                expect(note).toBeNull();
+            }
+        });
+    it('a pool too small for the count widens, still without repeats', () => {
+        const { items } = generateVerbandExercisesNoted(mk({ subType: 'tabel', reps: all, denominators: [2], given: 'random' }, 8));
+        expect(items).toHaveLength(8);
+        expect(new Set(items.map(vkey)).size).toBe(8);
+    });
+    it('more exercises than distinct values pads with repeats and says so', () => {
+        const { items, note } = generateVerbandExercisesNoted(mk({ subType: 'tabel', reps: all, denominators: [2], given: 'random' }, 400));
+        expect(new Set(items.map(vkey)).size).toBeLessThan(items.length);
+        expect(note).toMatch(/dubbel voor/);
     });
 });
