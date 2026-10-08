@@ -189,5 +189,7 @@ UpdateState). Left over, found while fixing:
 - TopBar (seen during the fold-in, predates it): just above a shed threshold useShedStages keeps
   stage 0 while the centre track already overflows: on pre-whiteboard rc at 1920 px the
   "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
-  Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
+  Bordmodus in the bar the threshold moved to ~2040 px; with Oefenmodus beside it (rc-oefenen merge)
+  stage 0 starts at ~2175 px and at 2200 px the beta chip covers the end of the labelled Bordmodus
+  button (wb-check/oefenen-merge/topbar-2200.png). Fix: count the centre track in the overflow
   measurement. 2026-10-08
