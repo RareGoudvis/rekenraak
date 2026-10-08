@@ -24,3 +24,23 @@ export function kioskSupports(typeId: string, constraints: Record<string, unknow
 export function kioskCapableLeaves(): AppLeaf[] {
     return flattenLeaves().filter(l => kioskSupports(l.typeId, l.defaultConstraints ?? {}));
 }
+
+// ── Share-link tables (OefenWire v1) ─────────────────────────────────────────
+// A link names a leaf and a constraint key by its index here, so these lists are frozen:
+// APPEND ONLY, never reorder or delete (old links would decode to another leaf / setting).
+// oefenen.session.test.ts pins both; a new kiosk-capable leaf or key goes at the end.
+
+export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
+    'vergelijken-getallen', 'afronden-nat-simpel', 'afronden-dec-simpel', 'procenten-nemen', 'procenten-welk',
+    'hr-std-optellen-nat', 'hr-std-optellen-dec', 'hr-std-aftrekken-nat', 'hr-std-aftrekken-dec',
+    'hr-std-vermenigvuldigen-nat', 'hr-std-vermenigvuldigen-dec', 'hr-std-delen-nat', 'hr-std-delen-dec',
+    'hr-std-optellen-rat', 'hr-std-aftrekken-rat', 'hr-std-vermenigvuldigen-rat', 'hr-std-delen-rat',
+];
+
+export const KIOSK_KEY_TABLE_V1: readonly string[] = [
+    'subType', 'maxGetal', 'numberMask', 'chooseTarget', 'setSize', 'decimalPlaces', 'leftRep', 'rightRep',
+    'leftMask', 'rightMask', 'leftFracN', 'leftFracD', 'rightFracN', 'rightFracD', 'numberType', 'roundTargets',
+    'roosterSize', 'percents', 'scaffold', 'bridges', 'operand1Mask', 'operand2Mask', 'fractionDifficulty',
+    'mixedNumber1', 'mixedNumber2', 'maxNumerator1', 'maxDenominator1', 'maxNumerator2', 'maxDenominator2',
+    'linkFractions', 'multiplicationMode', 'selectedTables', 'tableLimit',
+];

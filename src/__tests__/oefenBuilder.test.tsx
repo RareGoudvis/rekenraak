@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, screen, within, act } from '@testing-library/react';
-import { decompressFromEncodedURIComponent } from 'lz-string';
 import OefenBuilderModal from '../components/oefenen/OefenBuilderModal';
 import OefenShareModal from '../components/oefenen/OefenShareModal';
 import { buildSessie, listOefenLeaves, normaliseWeights, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
 import { loadOefenSessies } from '../services/persistence';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import type { OefenSessie } from '../services/oefenen/types';
+import { decodeSessie } from '../services/oefenen/session';
 
 // The previews lazy-mount on scroll and measure with ResizeObserver; jsdom has neither.
 class VisibleObserver {
@@ -106,7 +106,7 @@ describe('OefenBuilderModal', () => {
         fireEvent.click(footerBtn('Delen'));
         const link = (screen.getByLabelText('Link voor de leerlingen') as HTMLInputElement).value;
         expect(link).toMatch(/\/oefenen\.html#oefen=/);
-        const sessie = JSON.parse(decompressFromEncodedURIComponent(link.split('#oefen=')[1])!) as OefenSessie;
+        const sessie = decodeSessie(link.split('#oefen=')[1]);
         expect(sessie.types.map(t => t.leafId)).toEqual(['procenten-nemen', 'hr-std-optellen-nat']);
         expect(sessie).toMatchObject({ mode: 'willekeurig', timerMin: 15, testMode: false, statsLocked: false });
     });
