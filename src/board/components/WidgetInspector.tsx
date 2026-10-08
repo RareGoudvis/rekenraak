@@ -1,7 +1,7 @@
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { dobbelProps, ademProps, getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
+import { dobbelProps, ademProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
 import BaselineSettings from '../settings/BaselineSettings';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
@@ -13,7 +13,7 @@ interface Props {
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
     timer: TimerSettings, dobbelsteen: DobbelSettings, adem: AdemSettings,
-    getallenlijn: GetallenlijnSettings, positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
+    positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings, mabmat: MabMatSettings,
 };
 
@@ -121,34 +121,6 @@ function AdemSettings({ widget }: { widget: BoardWidget }) {
     );
 }
 
-
-function GetallenlijnSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const g = getallenlijnProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const numInput = (label: string, value: number, key: string) => (
-        <div style={S.row}>
-            <span style={S.rowLabel}>{label}</span>
-            <input type="number" value={value} onChange={(e) => set({ [key]: Number(e.target.value) })}
-                style={{ ...S.textInput, flex: 'none', width: '90px' }} />
-        </div>
-    );
-    return (
-        <div>
-            <div style={S.sectionLabel}>Bereik</div>
-            {numInput('Van', g.min, 'min')}
-            {numInput('Tot', g.max, 'max')}
-            <div style={S.sectionLabel}>Aantal tekens ({g.ticks})</div>
-            <input type="range" min={2} max={21} step={1} value={g.ticks} style={{ width: '100%' }} onChange={(e) => set({ ticks: Number(e.target.value) })} />
-            <div style={S.sectionLabel}>Labels</div>
-            <div className="seg-group">
-                {(['alles', 'uiteinden', 'geen'] as const).map(l => (
-                    <button key={l} type="button" className="seg-btn" aria-pressed={g.labels === l} onClick={() => set({ labels: l })}>{l}</button>
-                ))}
-            </div>
-        </div>
-    );
-}
 
 function PositietabelSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);

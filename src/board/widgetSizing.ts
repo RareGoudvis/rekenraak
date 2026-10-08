@@ -229,18 +229,6 @@ export function checklistItems(widget: BoardWidget): string[] {
     return t.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-// ── Getallenlijn (leeg, wiskunde-gereedschap) ────────────────────────────────
-export interface GetallenlijnProps { min: number; max: number; ticks: number; labels: 'alles' | 'uiteinden' | 'geen'; }
-export function getallenlijnProps(widget: BoardWidget): GetallenlijnProps {
-    const p = widget.props ?? {};
-    return {
-        min: Number(p.min ?? 0),
-        max: Number(p.max ?? 100),
-        ticks: Math.min(21, Math.max(2, Number(p.ticks ?? 11))),
-        labels: p.labels === 'uiteinden' || p.labels === 'geen' ? p.labels : 'alles',
-    };
-}
-
 // ── Positietabel (leeg) ──────────────────────────────────────────────────────
 export const POSITIE_KOLOMMEN = [
     { key: 'D', label: 'D' }, { key: 'H', label: 'H' }, { key: 'T', label: 'T' }, { key: 'E', label: 'E' },

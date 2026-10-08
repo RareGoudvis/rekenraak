@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import {
     NATURAL_W, TITLE_DEFAULTS, KINDS_WITH_SETTINGS, naturalWidth, widgetTitle,
     klokProps, weerProps, datumProps, DATUM_COLORS, dobbelProps, ademProps, groepjesProps,
-    checklistItems, getallenlijnProps, positietabelProps, breukvizProps, werksymbolenProps, WERKSYMBOLEN,
+    checklistItems, positietabelProps, breukvizProps, werksymbolenProps, WERKSYMBOLEN,
     loadNames, NAMES_KEY,
 } from '../board/widgetSizing';
 import { staggerPos, addBasicWidget } from '../board/addWidgets';
@@ -240,12 +240,6 @@ describe('prop normalisers', () => {
     test('checklist: default list, trimmed lines', () => {
         expect(checklistItems(w('checklist'))).toEqual(['boek klaar', 'potlood klaar', 'aan de slag!']);
         expect(checklistItems(w('checklist', { items: ' a \n\n b ' }))).toEqual(['a', 'b']);
-    });
-
-    test('getallenlijn: ticks 2-21, labels whitelist', () => {
-        expect(getallenlijnProps(w('getallenlijn'))).toEqual({ min: 0, max: 100, ticks: 11, labels: 'alles' });
-        expect(getallenlijnProps(w('getallenlijn', { ticks: 1, labels: 'uiteinden' }))).toMatchObject({ ticks: 2, labels: 'uiteinden' });
-        expect(getallenlijnProps(w('getallenlijn', { ticks: 99, labels: 'raar' }))).toMatchObject({ ticks: 21, labels: 'alles' });
     });
 
     test('positietabel: known columns only, rows 1-8, empty → H T E', () => {

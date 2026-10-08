@@ -8,6 +8,7 @@ import WerksymbolenSettings from './WerksymbolenSettings';
 import GroepjesSettings from './GroepjesSettings';
 import ChecklistSettings from './ChecklistSettings';
 import StappenplanSettings from './StappenplanSettings';
+import GetallenlijnSettings from './GetallenlijnSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -26,4 +27,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     groepjes: GroepjesSettings,
     checklist: ChecklistSettings,
     stappenplan: StappenplanSettings,
+    getallenlijn: GetallenlijnSettings,
 };
