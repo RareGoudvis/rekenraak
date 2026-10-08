@@ -188,9 +188,6 @@ UpdateState). Left over, found while fixing:
   "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
   Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
   measurement. 2026-10-08
-- saveBoardPreset (boardPersistence.ts) has no quota guard, unlike the autosave: a board with a big
-  image fills localStorage, the throw escapes BoardBottomBar's click handler, nothing is saved and
-  the teacher sees no message. Pinned by a `test.fails` in boardPersistence.test.ts. 2026-10-08
 - parseBoardFile checks pages only: a file whose `widgets` holds `null` (hand-edited or foreign)
   loads, BoardPageCanvas reads `.id` of it outside the per-widget boundary and the app goes blank;
   the 1.5 s autosave then persists the junk. Fix: validate each widget (object, id, kind, numeric

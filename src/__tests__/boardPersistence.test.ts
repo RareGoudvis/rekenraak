@@ -3,7 +3,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
     BOARD_AUTOSAVE_KEY, BOARD_FORMAT_VERSION, BOARD_PRESETS_KEY, MAX_BOARD_PRESETS,
     parseBoardFile, saveBoardAutosave, loadBoardAutosave, clearBoardAutosave,
-    loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, emptyBoard,
+    loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, emptyBoard, type BoardPreset,
 } from '../board/boardPersistence';
 import { NATURAL_W } from '../board/widgetSizing';
 import { makeBoardBlock } from '../board/boardBlocks';
@@ -153,7 +153,7 @@ describe('presets (Mijn borden)', () => {
     test('save, list newest first, delete', () => {
         const st = buildFullBoard();
         saveBoardPreset('  Les 1  ', st.pages, 1);
-        const list = saveBoardPreset('', emptyBoard(), 0);
+        const list = saveBoardPreset('', emptyBoard(), 0) as BoardPreset[];
         expect(list.map((p) => p.name)).toEqual(['Naamloos bord', 'Les 1']);
         expect(list[1].pageCount).toBe(2);
         expect(list[1].payload.pages).toEqual(st.pages);
@@ -181,11 +181,17 @@ describe('presets (Mijn borden)', () => {
         expect(loadBoardPresets()).toEqual([]);
     });
 
-    // BoardBottomBar calls saveBoardPreset straight from a click handler: a board with a big
-    // image fills the quota, the throw escapes, nothing is saved and the teacher gets no message.
-    test.fails('a quota failure on preset save does not throw', () => {
+    // A board with a big image fills the quota: the save reports false (BoardBottomBar alerts)
+    // instead of throwing out of the click handler, and the stored list is untouched.
+    test('a quota failure on preset save returns false and keeps the list', () => {
+        saveBoardPreset('Klein', emptyBoard(), 0);
+        const before = localStorage.getItem(BOARD_PRESETS_KEY);
         vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
-        expect(() => saveBoardPreset('Groot', emptyBoard(), 0)).not.toThrow();
+        let result: ReturnType<typeof saveBoardPreset> = [];
+        expect(() => { result = saveBoardPreset('Groot', emptyBoard(), 0); }).not.toThrow();
+        expect(result).toBe(false);
+        vi.restoreAllMocks();
+        expect(localStorage.getItem(BOARD_PRESETS_KEY)).toBe(before);
     });
 });
 

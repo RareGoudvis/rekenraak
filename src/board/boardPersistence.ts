@@ -72,7 +72,9 @@ export function loadBoardPresets(): BoardPreset[] {
     }
 }
 
-export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number): BoardPreset[] {
+// Returns false when the write is refused (quota full: a board with big images), so the
+// caller can tell the teacher instead of the throw escaping a click handler.
+export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number): BoardPreset[] | false {
     const list = loadBoardPresets();
     const preset: BoardPreset = {
         id: Math.random().toString(36).substring(2, 9),
@@ -82,7 +84,11 @@ export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx:
         payload: makeFile(pages, activePageIdx),
     };
     const next = [preset, ...list].slice(0, MAX_BOARD_PRESETS);
-    localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(next));
+    try {
+        localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(next));
+    } catch {
+        return false;
+    }
     return next;
 }
 
