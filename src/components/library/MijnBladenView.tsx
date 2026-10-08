@@ -1,13 +1,17 @@
 import { useMemo, useRef, useState } from 'react';
-import { X, UploadSimple, FloppyDisk, PencilSimple, Copy, DownloadSimple, Trash, Plus, ArrowRight } from '@phosphor-icons/react';
+import { X, UploadSimple, FloppyDisk, PencilSimple, Copy, DownloadSimple, Trash, Plus, ArrowRight, Share } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import Wordmark from '../ui/Wordmark';
 import SheetThumbnail from '../shared/SheetThumbnail';
 import {
     loadPresets, savePreset, renamePreset, deletePreset, duplicatePreset,
     exportWorksheetFile, savePresetFromFile, parseWorksheetFile, clearAutosave,
-    type Preset,
+    loadOefenSessies, deleteOefenSessie, renameOefenSessie,
+    type Preset, type OefenSessieEntry,
 } from '../../services/persistence';
+import OefenBuilderModal from '../oefenen/OefenBuilderModal';
+import OefenShareModal from '../oefenen/OefenShareModal';
+import type { OefenSessie } from '../../services/oefenen/types';
 
 type SortKey = 'recent' | 'name';
 
@@ -27,10 +31,16 @@ export default function MijnBladenView() {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState<SortKey>('recent');
     const fileRef = useRef<HTMLInputElement>(null);
+    // null = closed; 'new' = empty builder; a session = editing it. Remount via key so drafts reseed.
+    const [oefenEdit, setOefenEdit] = useState<OefenSessie | 'new' | null>(null);
+    const [oefenShare, setOefenShare] = useState<OefenSessie | null>(null);
     const bump = () => setRefresh((n) => n + 1);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `refresh` is the explicit re-read trigger after a mutation
     const presets = useMemo(() => loadPresets(), [refresh]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- same explicit re-read trigger
+    const oefenSessies = useMemo(() => loadOefenSessies().sort((a, b) => b.savedAt.localeCompare(a.savedAt)), [refresh]);
 
     const visible = useMemo(() => {
         const needle = search.trim().toLowerCase();
@@ -70,6 +80,17 @@ export default function MijnBladenView() {
 
     const handleDelete = (p: Preset) => {
         if (window.confirm(`"${p.name}" verwijderen?`)) { deletePreset(p.id); bump(); }
+    };
+
+    const handleOefenRename = (e: OefenSessieEntry) => {
+        const name = window.prompt('Nieuwe naam:', e.name);
+        if (name === null) return;
+        renameOefenSessie(e.id, name);
+        bump();
+    };
+
+    const handleOefenDelete = (e: OefenSessieEntry) => {
+        if (window.confirm(`"${e.name}" verwijderen?`)) { deleteOefenSessie(e.id); bump(); }
     };
 
     const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +173,45 @@ export default function MijnBladenView() {
                 {presets.length === 0 && (
                     <div style={S.emptyNote}>Nog geen bewaarde bladen. Maak een blad in de editor en klik “Huidig blad bewaren”.</div>
                 )}
+
+                <div style={{ ...S.subhead, marginTop: 'var(--sp-8)' }}>
+                    <div>
+                        <h2 style={S.h2}>Oefensessies</h2>
+                        <span style={S.subMeta}>{oefenSessies.length} bewaard · voor de oefenmodus op het toestel van de leerlingen</span>
+                    </div>
+                    <button style={S.ghostBtn} onClick={() => setOefenEdit('new')}><Plus size={15} /> Nieuwe oefensessie</button>
+                </div>
+                {oefenSessies.length === 0 ? (
+                    <div style={S.emptyNote}>Nog geen oefensessies. Klik “Nieuwe oefensessie” en bewaar ze hier om morgen opnieuw te delen.</div>
+                ) : (
+                    <div style={S.oefenList}>
+                        {oefenSessies.map((e) => (
+                            <div key={e.id} style={S.oefenRow}>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={S.cardTitle} title={e.name}>{e.name}</div>
+                                    <div style={S.cardMeta}>
+                                        {e.sessie.types.length} {e.sessie.types.length === 1 ? 'soort' : 'soorten'}
+                                        {e.sessie.timerMin ? ` · ${e.sessie.timerMin} min` : ''} · bewaard {formatDate(e.savedAt)}
+                                    </div>
+                                </div>
+                                <button style={S.iconBtn} title="Hernoemen" onClick={() => handleOefenRename(e)}><PencilSimple size={15} /></button>
+                                <button style={S.ghostBtn} onClick={() => setOefenShare(e.sessie)}><Share size={15} /> Delen</button>
+                                <button style={S.ghostBtn} onClick={() => setOefenEdit(e.sessie)}><PencilSimple size={15} /> Bewerken</button>
+                                <button style={{ ...S.iconBtn, color: 'var(--danger)' }} title="Verwijderen" aria-label="Verwijderen" onClick={() => handleOefenDelete(e)}><Trash size={15} /></button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
+
+            {oefenEdit && (
+                <OefenBuilderModal
+                    key={oefenEdit === 'new' ? 'new' : oefenEdit.id}
+                    initial={oefenEdit === 'new' ? undefined : oefenEdit}
+                    onClose={() => { setOefenEdit(null); bump(); }}
+                />
+            )}
+            {oefenShare && <OefenShareModal sessie={oefenShare} onClose={() => setOefenShare(null)} />}
         </div>
     );
 }
@@ -168,6 +227,9 @@ const S = {
     body: { flex: 1, overflowY: 'auto', padding: 'var(--sp-5) var(--sp-6)' } as React.CSSProperties,
     subhead: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 'var(--sp-4)', marginBottom: 'var(--sp-5)', flexWrap: 'wrap' } as React.CSSProperties,
     h1: { margin: 0, fontSize: 'var(--text-2xl)', color: 'var(--text-main)' } as React.CSSProperties,
+    h2: { margin: 0, fontSize: 'var(--text-xl)', color: 'var(--text-main)' } as React.CSSProperties,
+    oefenList: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' } as React.CSSProperties,
+    oefenRow: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', background: 'var(--bg-surface)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
     subMeta: { fontSize: 'var(--text-sm)', color: 'var(--text-muted)' } as React.CSSProperties,
     controls: { display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' } as React.CSSProperties,
     search: { padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', background: 'var(--bg-surface)', color: 'var(--text-main)', fontSize: 'var(--text-sm)', minWidth: '240px' } as React.CSSProperties,

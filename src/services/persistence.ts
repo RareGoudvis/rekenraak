@@ -4,6 +4,7 @@ import type { DocSettings } from '../store/useWorksheetStore';
 import type { BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
 import { REGISTRY } from '../config/exerciseRegistry';
+import type { OefenSessie } from './oefenen/types';
 
 // Bump this when the JSON schema gains/loses required fields so older files
 // fail loudly instead of half-loading. Keep the parser strict on read.
@@ -18,6 +19,8 @@ const PRESETS_KEY = 'rekenraak_presets_v1';
 export const RELEASE_SEEN_KEY = 'rekenraak_release_seen_v1';
 export const TRYOUT_SEEN_KEY = 'rekenraak_tryout_seen_v1';
 export const MAX_PRESETS = 50;
+const OEFEN_SESSIES_KEY = 'rekenraak_oefen_sessies_v1';
+export const MAX_OEFEN_SESSIES = 50;
 // Measured against the LZ-compressed, URL-safe payload (not raw JSON). 30 KB of
 // such text stays under mainstream browser URL limits incl. mobile, and — since
 // worksheet JSON compresses ~8× — covers ~100+ blocks before this backstop trips.
@@ -329,6 +332,50 @@ export function savePresetFromFile(file: WorksheetFile, name: string): Preset {
     };
     persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS));
     return entry;
+}
+
+// ── Oefenmodus sessions (teacher library, keyed by OefenSessie.id) ────────────
+
+export interface OefenSessieEntry {
+    id: string;
+    name: string;
+    savedAt: string;
+    sessie: OefenSessie;
+}
+
+export function loadOefenSessies(): OefenSessieEntry[] {
+    try {
+        const raw = localStorage.getItem(OEFEN_SESSIES_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.filter(e => e && typeof e.id === 'string' && Array.isArray(e.sessie?.types));
+    } catch { return []; }
+}
+
+// false when the browser refuses the write (quota / private mode): the caller tells the teacher.
+function persistOefenSessies(list: OefenSessieEntry[]): boolean {
+    try { localStorage.setItem(OEFEN_SESSIES_KEY, JSON.stringify(list)); return true; } catch { return false; }
+}
+
+// Saving a session whose id is already in the library replaces it (that is "Bewerken" → "Opslaan").
+export function saveOefenSessie(sessie: OefenSessie, name?: string): OefenSessieEntry | null {
+    const list = loadOefenSessies();
+    const prev = list.find(e => e.id === sessie.id);
+    const trimmed = (name ?? prev?.name ?? sessie.title ?? '').trim().slice(0, 80) || 'Oefensessie';
+    const entry: OefenSessieEntry = { id: sessie.id, name: trimmed, savedAt: new Date().toISOString(), sessie };
+    const next = [...list.filter(e => e.id !== sessie.id), entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt));
+    // Drop the oldest beyond the cap so the most recent ones survive.
+    return persistOefenSessies(next.slice(-MAX_OEFEN_SESSIES)) ? entry : null;
+}
+
+export function deleteOefenSessie(id: string): void {
+    persistOefenSessies(loadOefenSessies().filter(e => e.id !== id));
+}
+
+export function renameOefenSessie(id: string, name: string): void {
+    const trimmed = (name || '').trim().slice(0, 80) || 'Oefensessie';
+    persistOefenSessies(loadOefenSessies().map(e => e.id === id ? { ...e, name: trimmed } : e));
 }
 
 // ── Share via URL hash (base64 in fragment, not query — never leaves browser) ─

@@ -2,35 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, Eye, EyeSlash as EyeOff } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { buildCatalog, catalogDomains, type CatalogItem } from '../../config/exerciseCatalog';
-import { REGISTRY } from '../../config/exerciseRegistry';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { resolveInstruction } from '../../config/instructionPresets';
 import { encodeShareLink } from '../../services/persistence';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
-import type { MathBlock } from '../../services/math/types';
 import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
+import { makeDraftBlock } from './draftBlock';
 
 interface Props {
     onClose: () => void;
-}
-
-function makeDraftBlock(typeId: string, variantConstraints: Record<string, unknown>): MathBlock {
-    const def = REGISTRY[typeId];
-    const defaults = def.defaultConstraints(typeId);
-    return {
-        id: `draft-${typeId}`,
-        typeId,
-        instructionText: '',
-        instructionMode: 'geen',
-        layoutPreset: 'inline-short',
-        steppedLines: 3,
-        numberOfExercises: def.defaultCount,
-        totalPoints: 0,
-        verticalSpacing: 14,
-        constraints: { ...defaults, ...variantConstraints },
-        exercises: [],
-    };
 }
 
 // Authoring UI: pick which exercise types a curriculum allows, fine-tune each via
