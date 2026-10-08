@@ -161,12 +161,14 @@ describe('OefenBuilderModal title', () => {
 });
 
 describe('OefenBuilderModal limit slider', () => {
-    test('0 means unlimited, other values become the session limit', () => {
+    test('the right end past 50 means unlimited, other values become the session limit', () => {
         render(<OefenBuilderModal onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
         const slider = screen.getByLabelText(/^Aantal:/) as HTMLInputElement;
         expect(slider.type).toBe('range');
-        expect(slider.max).toBe('50');
+        expect(slider.min).toBe('1');
+        expect(slider.max).toBe('51');
+        expect(slider.value).toBe('51');
         expect(screen.getByText('Aantal: ∞')).toBeTruthy();
         fireEvent.change(slider, { target: { value: '12' } });
         expect(screen.getByText('Aantal: 12')).toBeTruthy();
@@ -177,7 +179,7 @@ describe('OefenBuilderModal limit slider', () => {
         render(<OefenBuilderModal onClose={() => { }} />);
         fireEvent.click(addBtn('procenten-nemen'));
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '7' } });
-        fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '0' } });
+        fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '51' } });
         expect(screen.getByText('Aantal: ∞')).toBeTruthy();
         fireEvent.click(footerBtn('Delen'));
         expect(decodeSessie(screen.getByRole('link').getAttribute('href')!.split('#oefen=')[1]).types[0].limit).toBeUndefined();

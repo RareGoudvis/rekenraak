@@ -225,8 +225,9 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                             <div style={S.field}>
                                                 <label style={S.label} htmlFor={`n-${r.key}`}>Aantal: {r.limit ?? '∞'}</label>
                                 <input
-                                    id={`n-${r.key}`} type="range" min={0} max={LIMIT_MAX} step={1} value={r.limit ?? 0}
-                                    style={S.range} onChange={e => patchRow(r.key, { limit: Number(e.target.value) || undefined })}
+                                    // ∞ sits past 50 at the right end: a "0 = unlimited" left end read as "none" to teachers.
+                                    id={`n-${r.key}`} type="range" min={1} max={LIMIT_MAX + 1} step={1} value={r.limit ?? LIMIT_MAX + 1}
+                                    style={S.range} onChange={e => { const v = Number(e.target.value); patchRow(r.key, { limit: v > LIMIT_MAX ? undefined : v }); }}
                                 />
                             </div>
                                             {mode === 'willekeurig' && (
