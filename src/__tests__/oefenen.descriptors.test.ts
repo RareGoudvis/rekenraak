@@ -57,7 +57,7 @@ const EXPECTED_LEAVES = [
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
     'breuken-kleuren',
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
-    'klok-analoog-tekenen', 'vormleer-hoeken-tekenen',
+    'klok-analoog-tekenen', 'vormleer-hoeken-tekenen', 'temperatuur-kleuren', 'massa-weegschaal-tekenen',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -432,6 +432,9 @@ describe('descriptor answers agree with the generators', () => {
         ['klok-analoog-tekenen', { handChoice: 'minuut', timeTypes: ['nauwkeurig_5'] }, 'interactive'],
         ['klok-analoog-tekenen', { handChoice: 'uur' }, 'interactive'],
         ['vormleer-hoeken-tekenen', { concepts: ['scherp', 'recht', 'stomp', 'gestrekt'], nameAngles: false }, 'interactive'],
+        ['temperatuur-kleuren', { includeNegatives: true }, 'interactive'],
+        ['massa-weegschaal-tekenen', { notatie: 'kg-g', bereikGram: 5000, stepGram: 250 }, 'interactive'],
+        ['massa-weegschaal-tekenen', { notatie: 'kg-komma', bereikGram: 2000, stepGram: 50 }, 'interactive'],
         ['tijdsduur-berekenen', { blanks: ['begin', 'einde'], overMidnight: true }, 'time'],
         // Phase C2: a middle blank and the result, both cells on the card.
         ['patronen-kettingsommen', { blankMiddle: true, chainLength: 6, ops: ['+', '-', 'x', ':'] }, 'interactive'],

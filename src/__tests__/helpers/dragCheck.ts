@@ -56,6 +56,21 @@ function hoekCase(v: T.VormleerExercise, _c: Record<string, unknown>, truth: unk
 const CASES: Record<string, (ex: never, c: Record<string, unknown>, truth: unknown, where: string) => DragCase> = {
     'klok-kloklezen': klokCase,
     'vormleer-hoeken': hoekCase,
+    // One degree a step: that degree, never the one beside it.
+    temperatuur: (t: T.TemperatuurExercise, _c, truth) => {
+        expect(t.celsius).toBe(truth);
+        return { right: [{ t: t.celsius }], wrong: [{ t: t.celsius + 1 }, { t: t.celsius - 1 }, { t: -t.celsius || 1 }] };
+    },
+    // The dial's own step: the grams, not one step off (whatever notatie the truth reads in).
+    weegschaal: (w: T.WeegschaalExercise, c, truth, where) => {
+        const step = w.stepGram ?? (c.stepGram as number);
+        const t = truth as number | { multi: number[] };
+        const kgKomma = (w.notatie ?? c.notatie) === 'kg-komma';
+        const grams = typeof t === 'number' ? Math.round(t * (kgKomma ? 1000 : 1)) : t.multi[0] * 1000 + t.multi[1];
+        expect(grams, where).toBe(w.grams);
+        expect(w.grams % step, where).toBe(0);
+        return { right: [{ g: w.grams }], wrong: [{ g: w.grams + step }, { g: w.grams - step }, { g: 0 }] };
+    },
 };
 
 export function checkDrag(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: unknown, where: string) {

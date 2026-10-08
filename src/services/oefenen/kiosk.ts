@@ -99,7 +99,7 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     // C2 (cells filled on the card)
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
     // C4 (dragged on the card)
-    'klok-analoog-tekenen', 'vormleer-hoeken-tekenen',
+    'klok-analoog-tekenen', 'vormleer-hoeken-tekenen', 'temperatuur-kleuren', 'massa-weegschaal-tekenen',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [

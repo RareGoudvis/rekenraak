@@ -13,12 +13,13 @@ interface Props {
     size: number;
 }
 
-// Hand lengths as AnalogClockSVG draws them (fractions of the face radius).
-// SYNC: AnalogClockSVG hourEnd (0.58) / minuteEnd (0.82) and r = size / 2 − 4.
-const HAND_LEN: Record<KlokHand, number> = { h: 0.58, m: 0.82 };
+// Fractions of the face radius. SYNC: AnalogClockSVG r = size / 2 − 4, hourEnd 0.58, minuteEnd 0.82.
+// Where the knobs sit: the hour knob on its hand's tip (inside the numerals at 0.74), the
+// minute knob just past its tip on the minute ticks, so it never covers the numeral aimed at.
+const KNOB_AT: Record<KlokHand, number> = { h: 0.58, m: 0.92 };
 const HAND_NAME: Record<KlokHand, string> = { h: 'kleine wijzer (uren)', m: 'grote wijzer (minuten)' };
 
-const INNER_RING = (HAND_LEN.h + HAND_LEN.m) / 2;
+const INNER_RING = (KNOB_AT.h + KNOB_AT.m) / 2;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /** The kiosk's analoge klok for "zet de wijzers": the pupil drags the hands they would draw on paper. */
@@ -48,7 +49,7 @@ export default function ClockDragFace({ ex, c, ctx, is24hour, size }: Props) {
             showHourHand={!hands.includes('h') || drag.h !== undefined} showMinuteHand={!hands.includes('m') || drag.m !== undefined}
             surfaceProps={surface}>
             {hands.map(k => {
-                const len = r * HAND_LEN[k];
+                const len = r * KNOB_AT[k];
                 const placed = drag[k] !== undefined;
                 const x = cx + Math.sin(rad(angleOf[k])) * len, y = cy - Math.cos(rad(angleOf[k])) * len;
                 return (

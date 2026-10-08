@@ -17,6 +17,7 @@ import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
+import { formatGewicht } from '../weegschaal/weegschaalGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -473,29 +474,58 @@ export const VORMLEER_KIOSK = descriptor<VormleerExercise>({
 
 // ── Meten ────────────────────────────────────────────────────────────────────
 
-// aflezen: read the thermometer; verschil: the difference (never negative). Kleuren is drawing.
+// aflezen: read the thermometer; verschil: the difference (never negative); kleuren (Phase C4):
+// drag the mercury to the asked degree (1° a step, so exactly that degree).
+const tempDrag: KioskInteract<TemperatuurExercise> = {
+    kind: 'drag',
+    keys: () => ['t'],
+    answerOf: (ex) => String(ex.celsius),
+    fromState: (st) => (st.drag?.t === undefined ? '' : String(st.drag.t)),
+    show: (answer) => `${answer.replace('-', '−')} °C`,
+};
 export const TEMPERATUUR_KIOSK = descriptor<TemperatuurExercise>({
     input: 'number',
+    inputOf: (ex) => (ex.variant === 'kleuren' ? 'interactive' : 'number'),
+    interact: tempDrag,
     keys: (c) => (c.includeNegatives && c.variant === 'aflezen' ? ['-'] : []),
-    answerOf: (ex) => numberSpellings(ex.variant === 'verschil' ? Math.abs(ex.celsius - (ex.celsius2 ?? 0)) : ex.celsius),
-    display: (ex) => (ex.variant === 'verschil' ? `verschil ${ex.celsius} °C en ${ex.celsius2 ?? 0} °C = ? °C` : 'thermometer: ? °C'),
-    supported: (c) => c.variant === 'aflezen' || c.variant === 'verschil',
+    answerOf: (ex, c) => (ex.variant === 'kleuren' ? [tempDrag.answerOf(ex, c)]
+        : numberSpellings(ex.variant === 'verschil' ? Math.abs(ex.celsius - (ex.celsius2 ?? 0)) : ex.celsius)),
+    display: (ex) => (ex.variant === 'verschil' ? `verschil ${ex.celsius} °C en ${ex.celsius2 ?? 0} °C = ? °C`
+        : ex.variant === 'kleuren' ? `thermometer tot ${ex.celsius} °C: ?` : 'thermometer: ? °C'),
+    kioskInstruction: (ex) => (ex.variant === 'kleuren' ? 'Sleep het kwik tot de juiste temperatuur.' : undefined),
+    supported: (c) => c.variant === 'aflezen' || c.variant === 'verschil' || c.variant === 'kleuren',
 });
 
 // The dial reads in the block's notatie: grams, kilograms with a comma, or kg + g (two fields).
 const gewichtNotatie = (ex: WeegschaalExercise, c: Record<string, unknown>) => ex.notatie ?? (c.notatie as string | undefined) ?? 'g';
+// kleuren (Phase C4): drag a needle round to the asked weight, snapped to the dial's step.
+// Legacy saves may still say 'tekenen' (renamed to 'kleuren').
+const isWeegKleuren = (mode: unknown) => mode === 'kleuren' || mode === 'tekenen';
+const weegMode = (ex: WeegschaalExercise, c: Record<string, unknown>) => ex.mode ?? (c.mode as string | undefined) ?? 'aflezen';
+const weegDrag: KioskInteract<WeegschaalExercise> = {
+    kind: 'drag',
+    keys: () => ['g'],
+    answerOf: (ex) => String(ex.grams),
+    fromState: (st) => (st.drag?.g === undefined ? '' : String(st.drag.g)),
+    tolerance: (ex, c) => (ex.stepGram ?? (c.stepGram as number | undefined) ?? 50) / 2,
+    show: (answer, ex, c) => formatGewicht(Number(answer), gewichtNotatie(ex, c)),
+};
 export const WEEGSCHAAL_KIOSK = descriptor<WeegschaalExercise>({
     input: 'number',
-    inputOf: (ex, c) => (gewichtNotatie(ex, c) === 'kg-g' ? 'multi-number' : 'number'),
+    inputOf: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? 'interactive' : gewichtNotatie(ex, c) === 'kg-g' ? 'multi-number' : 'number'),
+    interactOf: (c) => (isWeegKleuren(c.mode) ? weegDrag : undefined),
     keys: (c) => (c.notatie === 'kg-komma' ? [','] : []),
     labels: () => ['kg', 'g'],
     answerOf: (ex, c) => {
+        if (isWeegKleuren(weegMode(ex, c))) return [weegDrag.answerOf(ex, c)];
         const n = gewichtNotatie(ex, c);
         if (n === 'kg-g') return [String(Math.floor(ex.grams / 1000)), String(ex.grams % 1000)];
         return numberSpellings(n === 'kg-komma' ? ex.grams / 1000 : ex.grams);
     },
-    display: (ex, c) => `weegschaal: ? ${gewichtNotatie(ex, c) === 'kg-komma' ? 'kg' : gewichtNotatie(ex, c) === 'kg-g' ? 'kg ? g' : 'g'}`,
-    supported: (c) => (c.mode ?? 'aflezen') === 'aflezen',
+    display: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? `weegschaal tot ${formatGewicht(ex.grams, gewichtNotatie(ex, c))}: ?`
+        : `weegschaal: ? ${gewichtNotatie(ex, c) === 'kg-komma' ? 'kg' : gewichtNotatie(ex, c) === 'kg-g' ? 'kg ? g' : 'g'}`),
+    kioskInstruction: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? 'Sleep de wijzer tot het juiste gewicht.' : undefined),
+    supported: (c) => (c.mode ?? 'aflezen') === 'aflezen' || isWeegKleuren(c.mode),
 });
 
 // Labelled sides only ('gegeven'): measuring with a ruler on a scaled card is not to size.

@@ -192,3 +192,68 @@ describe('vormleer hoeken tekenen: drag the been open', () => {
         expect(m.state().drag).toEqual({ a: 180 });
     });
 });
+
+// SYNC: TemperatuurViewer Thermometer (top tick 25° at y 16, 4 viewBox units per degree).
+const degreeY = (t: number) => 16 + (25 - t) * 4;
+
+describe('temperatuur kleuren: drag the mercury', () => {
+    test('the top of the mercury follows the pointer per degree, kept on the scale', () => {
+        const { block, ex } = oneExercise('temperatuur', { variant: 'kleuren', includeNegatives: true }, { celsius: -7 });
+        const m = mount(block, 2);
+        expect(m.view.container.textContent).not.toContain('Kleur');
+        expect(m.svg.querySelectorAll('.kiosk-knob.is-unset')).toHaveLength(1);
+        m.drag([30, degreeY(20)], [30, degreeY(3)], [30, degreeY(-6.8)]);
+        expect(answerOf('temperatuur', block, ex, m.state())).toMatchObject({ given: '-7', ok: true });
+        // Past the top or into the bulb: the ends of the scale.
+        m.drag([30, degreeY(0)], [30, 2]);
+        expect(m.state().drag).toEqual({ t: 25 });
+        m.drag([30, degreeY(0)], [30, m.h - 2]);
+        expect(m.state().drag).toEqual({ t: -15 });
+        expect(answerOf('temperatuur', block, ex, m.state()).ok).toBe(false);
+    });
+
+    test('keyboard: the first arrow places the mercury at the bottom, then 1° a step', () => {
+        const { block, ex } = oneExercise('temperatuur', { variant: 'kleuren' }, { celsius: 3 });
+        const m = mount(block);
+        const h = m.handle('t');
+        fireEvent.keyDown(h, { key: 'ArrowUp' });
+        expect(m.state().drag).toEqual({ t: 0 });
+        for (let i = 0; i < 3; i++) fireEvent.keyDown(h, { key: 'ArrowUp' });
+        expect(answerOf('temperatuur', block, ex, m.state())).toMatchObject({ given: '3', ok: true });
+        fireEvent.keyDown(h, { key: 'ArrowDown' });
+        expect(answerOf('temperatuur', block, ex, m.state()).ok).toBe(false);
+    });
+});
+
+// SYNC: WeegschaalViewer Dial at the default boxHeight (170: centre 85, 85).
+const onDial = (frac: number, radius = 50): [number, number] => [85 + Math.sin(frac * 2 * Math.PI) * radius, 85 - Math.cos(frac * 2 * Math.PI) * radius];
+
+describe('weegschaal kleuren: drag the needle round', () => {
+    test('snaps to the dial step; the wedge follows', () => {
+        const { block, ex } = oneExercise('weegschaal', { mode: 'kleuren', bereikGram: 1000, stepGram: 50 }, { grams: 750, bereikGram: 1000, stepGram: 50 });
+        const m = mount(block, 2);
+        expect(m.view.container.textContent).not.toContain('Kleur');
+        expect(m.svg.querySelector('.kiosk-drag-fill')).toBeNull();
+        m.drag(onDial(0.01), onDial(0.3), onDial(0.6), onDial(0.743));
+        expect(m.state().drag).toEqual({ g: 750 });
+        expect(m.svg.querySelector('.kiosk-drag-fill')).not.toBeNull();
+        expect(answerOf('weegschaal', block, ex, m.state())).toMatchObject({ given: '750', ok: true });
+        m.drag(onDial(0.77));
+        expect(answerOf('weegschaal', block, ex, m.state())).toMatchObject({ given: '750', ok: true });
+        m.drag(onDial(0.78));
+        expect(answerOf('weegschaal', block, ex, m.state())).toMatchObject({ given: '800', ok: false });
+    });
+
+    test('keyboard: one step of the dial per arrow, from 0 up to the last tick', () => {
+        const { block, ex } = oneExercise('weegschaal', { mode: 'kleuren', bereikGram: 5000, stepGram: 250, notatie: 'kg-g' }, { grams: 1250, bereikGram: 5000, stepGram: 250, notatie: 'kg-g' });
+        const m = mount(block);
+        const h = m.handle('g');
+        expect(h.getAttribute('aria-valuemax')).toBe('4750');
+        fireEvent.keyDown(h, { key: 'ArrowRight' });
+        expect(m.state().drag).toEqual({ g: 0 });
+        for (let i = 0; i < 5; i++) fireEvent.keyDown(h, { key: 'ArrowRight' });
+        expect(answerOf('weegschaal', block, ex, m.state())).toMatchObject({ given: '1250', ok: true });
+        for (let i = 0; i < 40; i++) fireEvent.keyDown(h, { key: 'ArrowUp' });
+        expect(m.state().drag).toEqual({ g: 4750 });
+    });
+});
