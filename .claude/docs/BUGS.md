@@ -153,11 +153,6 @@ UpdateState). Left over, found while fixing:
   defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
   additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27
 
-## Docs
-
-- ARCHITECTURE §14 links 13 `src/board/*` files that exist only on branch `whiteboard`
-  (2026-09-12). Known; the heading says so.
-
 ## Bordmodus
 
 - BoardBottomBar at 1280 x 800: the bar is wider than the viewport, so "Bordmodus verlaten" is cut off
@@ -172,3 +167,5 @@ UpdateState). Left over, found while fixing:
   "Automatisch bewaard" text runs under the undo button (wb-check/wb1/topbar-1920-rc.png). With
   Bordmodus in the bar the threshold moved to ~2040 px. Fix: count the centre track in the overflow
   measurement. 2026-10-08
+- Owner call: the TopBar "Bordmodus" button pushes stage 0 (all labels) from 1920 → ~2040 px, so a
+  1920 px screen now opens at stage 1 (icon-only). Alternative: Bordmodus in the Meer menu only. 2026-10-08
