@@ -162,10 +162,6 @@ UpdateState). Left over, found while fixing:
 
 - No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
-- Board Inspector "Aantal oefeningen" changes the count but not the card until Genereer: the
-  draftBlocks path in updateBlockSettings skips the sheet's generateExtra top-up. Repro: Hoofdrekenen
-  card (6 rows), slider to 2, card still shows 6. Fix: top up / cut in the board's subscription,
-  or route draft count changes through generateExtra. 2026-10-08
 - Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
   Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
   instead of the sheet (checked with a print-to-PDF). 2026-10-08

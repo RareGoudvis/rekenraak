@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/react';
+import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import KlokWidget from '../board/components/widgets/KlokWidget';
 import GeldPalet from '../board/components/GeldPalet';
@@ -8,6 +8,11 @@ import WidgetInspector from '../board/components/WidgetInspector';
 import BoardAddModal from '../board/components/BoardAddModal';
 import BoardBottomBar from '../board/components/BoardBottomBar';
 import { addBasicWidget } from '../board/addWidgets';
+import { makeBoardBlock } from '../board/boardBlocks';
+import WhiteboardView from '../board/components/WhiteboardView';
+import { useWorksheetStore } from '../store/useWorksheetStore';
+import { DEFAULT_BASE } from '../config/baseSettings';
+import { REGISTRY } from '../config/exerciseRegistry';
 import type { BoardWidget } from '../board/boardTypes';
 
 // Bordmodus cosmetics from BUGS.md: each test failed before its fix.
@@ -115,6 +120,34 @@ describe('new card placement', () => {
         s.updateWidget(second.id, { x: 900, y: 500 });
         addBasicWidget('tekst', {}, 300);
         expect(positions()[3]).toBe(freed);
+    });
+});
+
+describe('board Aantal', () => {
+    afterEach(() => { useWorksheetStore.getState().clearDraftBlocks(); });
+
+    test('the count applies to the card at once: fewer cuts the tail, more keeps the rest and tops up', () => {
+        const block = makeBoardBlock('cijferen-optellen-nat', { override: { operator: '+', numberType: 'natural' }, leafId: 'cijferen-optellen-nat', base: DEFAULT_BASE, grade: null })!;
+        const board = useBoardStore.getState();
+        const id = board.addWidget({ kind: 'exercise', x: 0, y: 0, w: 660, block, showAnswer: false });
+        board.selectWidget(id);
+        board.setInspectorOpen(true);
+        const { container } = render(<WhiteboardView />);
+        const exercises = () => {
+            const b = useBoardStore.getState().pages[0].widgets.find(w => w.id === id)!.block!;
+            return b[REGISTRY[b.typeId].exerciseField as keyof typeof b] as unknown as Array<{ id: string }>;
+        };
+        const first = exercises().map(e => e.id);
+        expect(first.length).toBe(block.numberOfExercises);
+        expect(first.length).toBeGreaterThan(2);
+
+        const slider = container.querySelector('input[type="range"]') as HTMLInputElement;
+        act(() => { fireEvent.change(slider, { target: { value: '2' } }); });
+        expect(exercises().map(e => e.id)).toEqual(first.slice(0, 2));
+
+        act(() => { fireEvent.change(slider, { target: { value: '9' } }); });
+        expect(exercises().length).toBe(9);
+        expect(exercises().slice(0, 2).map(e => e.id)).toEqual(first.slice(0, 2));
     });
 });
 
