@@ -6,8 +6,8 @@
 
 import { NAT_CEILING, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import { REGISTRY, SEED_FIT } from './exerciseRegistry';
-import { LEAF_BY_ID } from './appstructure';
-import type { Leerjaar } from './gradePresets';
+import { LEAF_BY_ID, flattenLeaves } from './appstructure';
+import { GRADE_PRESETS, type Leerjaar } from './gradePresets';
 import { PLACE_VALUES } from '../services/math/mathEngine';
 
 export type BaseNumberType = 'natural' | 'decimal' | 'rational' | 'geheel';
@@ -170,4 +170,15 @@ export function seedConstraints({ typeId, base, override: leafOverride, grade, l
     // note then explains what it had to change.
     const maxPinned = !!override && MAX_KEYS.some(k => k in override);
     return (!maxPinned && SEED_FIT[typeId]?.(merged)) || merged;
+}
+
+// A leaf as a sidebar click at `grade` would seed it on an untouched base, plus `extra` on top
+// of the leaf's own defaults: the same block for every viewer, whatever their own base says.
+// Null for an unknown leaf. Used by the release-notes examples.
+export function seedLeafConstraints(leafId: string, grade: Leerjaar | null, extra?: Record<string, unknown>): { typeId: string; constraints: Record<string, unknown> } | null {
+    const leaf = flattenLeaves().find(l => l.id === leafId);
+    if (!leaf) return null;
+    const base: BaseSettings = grade == null ? DEFAULT_BASE : { ...DEFAULT_BASE, ...GRADE_PRESETS[grade] };
+    const override = { ...(leaf.defaultConstraints ?? {}), ...(extra ?? {}) };
+    return { typeId: leaf.typeId, constraints: seedConstraints({ typeId: leaf.typeId, base, override, grade, leafId }) };
 }
