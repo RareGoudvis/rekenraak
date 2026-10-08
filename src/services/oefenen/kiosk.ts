@@ -99,7 +99,7 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     // C2 (cells filled on the card)
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
     // C3 (pieces laid from the build tray)
-    'geld-tekenen', 'geld-wissel',
+    'geld-tekenen', 'geld-wissel', 'mab-tekenen',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [

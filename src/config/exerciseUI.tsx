@@ -12,7 +12,7 @@ import GeldViewer, { GeldTrayPiece } from '../components/viewer/GeldViewer';
 import GeldTekenenViewer from '../components/viewer/GeldTekenenViewer';
 import GeldWisselViewer from '../components/viewer/GeldWisselViewer';
 import GeldTeruggevenViewer from '../components/viewer/GeldTeruggevenViewer';
-import MabViewer from '../components/viewer/MabViewer';
+import MabViewer, { MabTrayPiece } from '../components/viewer/MabViewer';
 import OrdenenViewer from '../components/viewer/OrdenenViewer';
 import BreukBewerkViewer from '../components/viewer/BreukBewerkViewer';
 import DeelbaarheidViewer from '../components/viewer/DeelbaarheidViewer';
@@ -156,7 +156,7 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig },
 
     'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
-    'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
+    'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig, TrayPiece: MabTrayPiece },
 
     'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig, StyleConfig: OrdenenStyleConfig },
     'breuken-bewerken':     { Viewer: BreukBewerkViewer, Config: BreukBewerkConfig },

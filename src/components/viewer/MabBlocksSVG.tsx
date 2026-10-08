@@ -73,6 +73,11 @@ export function MabPlaceColumn({ count, place, style, color = '#000' }: ColumnPr
     );
 }
 
+/** One block of a place, as the columns draw it (the kiosk's build tray). */
+export function MabGlyph({ place, style }: { place: MabPlace; style: MabStyle }) {
+    return <Glyph place={place} style={style} color="#000" />;
+}
+
 function PatternedGrid({ count, maxRows, place, style, color }: {
     count: number; maxRows: number; place: MabPlace; style: MabStyle; color: string;
 }) {

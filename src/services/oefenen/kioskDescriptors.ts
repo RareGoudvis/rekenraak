@@ -956,3 +956,21 @@ export const GELD_WISSEL_KIOSK = descriptor<GeldWisselExercise>({
     supported: (c) => wisselMoney(firstBill(c)).length > 0,
 });
 
+// MAB tekenen: lay the number with D / H / T / E blocks. A column holds a digit (at most 9 of a
+// block: ten units ARE a ten), so the laid number has one make-up, the positietabel's.
+// SYNC: MabViewer's columns (D from maxNumber 1000, H from 100, T from 10; E always).
+const MAB_PIECES: Array<KioskPiece & { from: number }> = [
+    { key: 'D', label: 'duizendtal', value: 1000, max: 9, from: 1000 },
+    { key: 'H', label: 'honderdtal', value: 100, max: 9, from: 100 },
+    { key: 'T', label: 'tiental', value: 10, max: 9, from: 10 },
+    { key: 'E', label: 'eenheid', value: 1, max: 9, from: 0 },
+];
+const mabPieces = (c: Record<string, unknown>): KioskPiece[] =>
+    MAB_PIECES.filter(p => Number(c.maxNumber || 100) >= p.from).map(p => ({ key: p.key, label: p.label, value: p.value, max: p.max }));
+export const MAB_TEKENEN_KIOSK = descriptor<MabExercise>({
+    input: 'interactive',
+    interact: buildInteract((_ex, c) => mabPieces(c), ex => ex.value),
+    answerOf: (ex) => [String(ex.value)],
+    display: (ex) => `${formatMathNumber(String(ex.value))} met MAB: ?`,
+    kioskInstruction: 'Leg het getal met MAB-materiaal.',
+});

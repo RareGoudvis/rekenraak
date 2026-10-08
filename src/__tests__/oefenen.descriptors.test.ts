@@ -56,7 +56,7 @@ const EXPECTED_LEAVES = [
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
     'breuken-kleuren',
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
-    'geld-tekenen', 'geld-wissel',
+    'geld-tekenen', 'geld-wissel', 'mab-tekenen',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -155,6 +155,12 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         const short = { hoeveelheid: 'hoeveelheid', rang: 'rangorde', maat: 'maat', code: 'code' }[g.functie];
         const full = { hoeveelheid: 'hoeveelheidsgetal', rang: 'rangordegetal', maat: 'maatgetal', code: 'codegetal' }[g.functie];
         return c.answerMode === 'schrijven' ? { text: [full, short] } : short;
+    },
+    // A positietabel column holds a digit: the blocks to lay are the number's own digits.
+    'mab-tekenen': (m: T.MabExercise) => {
+        const digits = { D: Math.floor(m.value / 1000), H: Math.floor(m.value / 100) % 10, T: Math.floor(m.value / 10) % 10, E: m.value % 10 };
+        expect([m.thousands, m.hundreds, m.tens, m.units]).toEqual([digits.D, digits.H, digits.T, digits.E]);
+        return { build: m.value, digits };
     },
     // Any coins and bills the teacher ticked, none above the block's top amount.
     'geld-tekenen': (g: T.GeldExercise, c) => {
@@ -391,6 +397,7 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('geld-tekenen', { allowedDenominations: [50000], maxGetal: 1000 })).toBe(true);
         expect(kioskSupports('geld-wissel', { exerciseBills: [5] })).toBe(false);
         expect(kioskSupports('geld-wissel', { exerciseBills: [10, 5] })).toBe(true);
+        expect(kioskSupports('mab-tekenen', {})).toBe(true);
     });
 });
 
@@ -460,6 +467,8 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-wissel', { exerciseBills: [50000] }, 'interactive'],
         ['geld-wissel', { exerciseBills: [10] }, 'interactive'],
         ['geld-wissel', { exerciseBills: [200, 5000] }, 'interactive'],
+        ['mab-tekenen', { maxNumber: 1000, mabStyle: 'mab-color', operand1Mask: { H: true, E: true } }, 'interactive'],
+        ['mab-tekenen', { maxNumber: 10 }, 'interactive'],
     ])('%s + %j → %s', (leafId, extra, want) => {
         // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
         const leaf = flattenLeaves().find(l => l.id === leafId)!;
