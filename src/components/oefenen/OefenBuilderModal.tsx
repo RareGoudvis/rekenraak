@@ -50,7 +50,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const [shareOf, setShareOf] = useState<OefenSessie | null>(null);
     const [saved, setSaved] = useState(false);
     const nextKey = useRef(rows.length);
-    const [meta] = useState(() => ({ id: initial?.id ?? newSessieId(), createdAt: initial?.createdAt ?? Date.now() }));
+    // Whole minutes: the share link then carries createdAt as a 8-digit minute count.
+    const [meta] = useState(() => ({ id: initial?.id ?? newSessieId(), createdAt: initial?.createdAt ?? Math.floor(Date.now() / 60_000) * 60_000 }));
 
     // Seed drafts for a reopened session; always tear them down on close (they are off-sheet).
     useEffect(() => {

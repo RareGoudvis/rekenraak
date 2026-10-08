@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Copy, CornersOut, ImageSquare } from '@phosphor-icons/react';
+import { Check, Copy, CornersOut, ImageSquare, Printer } from '@phosphor-icons/react';
 import type { OefenSessie } from '../../services/oefenen/types';
-import { drawQr, qrMatrixOrNull } from '../../services/qr';
+import { QR_QUIET, drawQr, qrMatrixOrNull, qrVersionOf } from '../../services/qr';
 import ModalShell from '../ui/ModalShell';
 import ModalPortal from '../ui/ModalPortal';
 import { sessieLink } from '../../services/oefenen/session';
@@ -15,6 +15,9 @@ interface Props {
 const MODULE_PX = 5;
 // Clipboard / download PNG is rendered bigger so it stays sharp when pasted into a slide.
 const EXPORT_MODULE_PX = 12;
+// Past this version the modules get small enough that a phone at the back of the class struggles.
+const BIG_QR_VERSION = 25;
+const PRINT_STYLE_ID = 'oefen-qr-print-style';
 
 function QrCanvas({ matrix, modulePx, style, label }: { matrix: boolean[][]; modulePx: number; style?: React.CSSProperties; label: string }) {
     const ref = useRef<HTMLCanvasElement>(null);
@@ -25,10 +28,12 @@ function QrCanvas({ matrix, modulePx, style, label }: { matrix: boolean[][]; mod
 export default function OefenShareModal({ sessie, onClose }: Props) {
     const link = useMemo(() => sessieLink(sessie, window.location.origin), [sessie]);
     const matrix = useMemo(() => (link ? qrMatrixOrNull(link) : null), [link]);
+    const version = matrix ? qrVersionOf(matrix) : null;
     const [linkFlash, setLinkFlash] = useState(false);
     const [qrFlash, setQrFlash] = useState<'copied' | 'downloaded' | null>(null);
     const [big, setBig] = useState(false);
-    const fieldRef = useRef<HTMLInputElement>(null);
+    const [printing, setPrinting] = useState(false);
+    const name = sessie.title || 'Oefensessie';
 
     const copyLink = async () => {
         if (!link) return;
@@ -67,7 +72,7 @@ export default function OefenShareModal({ sessie, onClose }: Props) {
             <ModalShell onClose={() => { if (!big) onClose(); }} ariaLabel="Oefenmodus delen" maxWidth={560}>
                 <div style={S.header}>
                     <h2 style={S.title}>Oefenmodus delen</h2>
-                    <p style={S.subtitle}>{sessie.title ? `${sessie.title} · ` : ''}{sessie.types.length} {sessie.types.length === 1 ? 'soort' : 'soorten'}{sessie.timerMin ? ` · ${sessie.timerMin} min` : ''}</p>
+                    <p style={S.subtitle}>{sessie.types.length} {sessie.types.length === 1 ? 'soort' : 'soorten'}{sessie.timerMin ? ` · ${sessie.timerMin} min` : ''}</p>
                 </div>
 
                 <div style={S.body}>
@@ -75,14 +80,15 @@ export default function OefenShareModal({ sessie, onClose }: Props) {
                         <p style={S.note} role="status">Deze sessie is te groot voor een deelbare link. Haal een soort weg of kies minder uitgebreide instellingen.</p>
                     ) : (
                         <>
-                            <div style={S.field}>
-                                <label style={S.label} htmlFor="oefen-link">Link voor de leerlingen</label>
-                                <div style={S.linkRow}>
-                                    <input id="oefen-link" ref={fieldRef} style={S.input} readOnly value={link} onFocus={e => e.currentTarget.select()} />
-                                    <button className="ui-hover" style={S.btn} onClick={copyLink}>
-                                        {linkFlash ? <><Check size={15} /> Gekopieerd</> : <><Copy size={15} /> Kopieer link</>}
-                                    </button>
+                            {/* Nobody types the URL: a clickable link to try it, and a copy button to paste it. */}
+                            <div style={S.linkRow}>
+                                <div style={S.linkText}>
+                                    <span style={S.sessName}>{name}</span>
+                                    <a href={link} target="_blank" rel="noopener noreferrer" style={S.link} title={link}>{link.replace(/^https?:\/\//, '')}</a>
                                 </div>
+                                <button className="ui-hover" style={S.btn} onClick={copyLink}>
+                                    {linkFlash ? <><Check size={15} /> Gekopieerd</> : <><Copy size={15} /> Kopieer link</>}
+                                </button>
                             </div>
 
                             {matrix ? (
@@ -95,7 +101,14 @@ export default function OefenShareModal({ sessie, onClose }: Props) {
                                         <button className="ui-hover" style={S.btn} onClick={() => setBig(true)}>
                                             <CornersOut size={15} /> Groot tonen
                                         </button>
+                                        <button className="ui-hover" style={S.btn} onClick={() => setPrinting(true)}>
+                                            <Printer size={15} /> Afdrukken (A5)
+                                        </button>
                                         <p style={S.hint}>Toon de QR op het bord: leerlingen scannen hem met de camera van hun toestel.</p>
+                                        <p style={S.size}>QR-versie {version} · {matrix.length}×{matrix.length} blokjes</p>
+                                        {version !== null && version > BIG_QR_VERSION && (
+                                            <p style={S.warn} role="note">Grote QR: toon hem groot op het bord of deel de link.</p>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -106,6 +119,7 @@ export default function OefenShareModal({ sessie, onClose }: Props) {
                 </div>
             </ModalShell>
             {big && matrix && <BigQr matrix={matrix} title={sessie.title} onClose={() => setBig(false)} />}
+            {printing && matrix && <PrintQr matrix={matrix} title={name} onDone={() => setPrinting(false)} />}
         </>
     );
 }
@@ -135,24 +149,84 @@ function BigQr({ matrix, title, onClose }: { matrix: boolean[][]; title?: string
     );
 }
 
+// Crisp at any print size, unlike the canvas: one path of 1×1 squares in module units.
+function QrSvg({ matrix, style }: { matrix: boolean[][]; style?: React.CSSProperties }) {
+    const n = matrix.length;
+    const size = n + QR_QUIET * 2;
+    let d = '';
+    matrix.forEach((row, r) => row.forEach((dark, c) => { if (dark) d += `M${c + QR_QUIET},${r + QR_QUIET}h1v1h-1z`; }));
+    return (
+        <svg viewBox={`0 0 ${size} ${size}`} style={style} shapeRendering="crispEdges" role="img" aria-label="QR-code om af te drukken">
+            <rect width={size} height={size} fill="#fff" />
+            <path d={d} fill="#000" />
+        </svg>
+    );
+}
+
+// A5 hand-out: the usePrint recipe (inject a print style, print after two frames, clean up on
+// afterprint), but with its own @page and everything except this sheet hidden from paper.
+function PrintQr({ matrix, title, onDone }: { matrix: boolean[][]; title: string; onDone: () => void }) {
+    // Latest onDone without re-running the effect: a re-render must never open a second dialog.
+    const doneRef = useRef(onDone);
+    useEffect(() => { doneRef.current = onDone; });
+    useEffect(() => {
+        const done = () => doneRef.current();
+        const style = document.createElement('style');
+        style.id = PRINT_STYLE_ID;
+        // Appended after index.css, so this @page (A5) beats the sheet's A4 for this print only.
+        style.textContent = `
+            .oefen-qr-print { display: none; }
+            @page { size: A5 portrait; margin: 0; }
+            @media print {
+                body > *:not(.oefen-qr-print) { display: none !important; }
+                .oefen-qr-print { display: flex !important; }
+            }`;
+        document.head.appendChild(style);
+        window.addEventListener('afterprint', done, { once: true });
+        let frame = requestAnimationFrame(() => { frame = requestAnimationFrame(() => window.print()); });
+        return () => {
+            cancelAnimationFrame(frame);
+            window.removeEventListener('afterprint', done);
+            style.remove();
+        };
+    }, []);
+
+    return (
+        <ModalPortal>
+            <div className="oefen-qr-print" style={S.printPage}>
+                <div style={S.printTitle}>{title}</div>
+                <QrSvg matrix={matrix} style={S.printQr} />
+                <div style={S.printLine}>Scan met je toestel</div>
+            </div>
+        </ModalPortal>
+    );
+}
+
 const S = {
     header: { padding: 'var(--sp-4) 56px var(--sp-3) var(--sp-5)', borderBottom: '1px solid var(--separator)' } as React.CSSProperties,
     title: { margin: 0, fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-main)' } as React.CSSProperties,
     subtitle: { margin: 'var(--sp-1) 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' } as React.CSSProperties,
     body: { padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)', overflowY: 'auto' } as React.CSSProperties,
-    field: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-1)' } as React.CSSProperties,
-    label: { fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-muted)' } as React.CSSProperties,
-    linkRow: { display: 'flex', gap: 'var(--sp-2)' } as React.CSSProperties,
-    input: { flex: 1, minWidth: 0, height: 'var(--control-h)', boxSizing: 'border-box', padding: '0 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--separator)', background: 'var(--bg-surface-2)', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'monospace' } as React.CSSProperties,
+    linkRow: { display: 'flex', gap: 'var(--sp-3)', alignItems: 'center' } as React.CSSProperties,
+    linkText: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' } as React.CSSProperties,
+    sessName: { fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as React.CSSProperties,
+    link: { fontSize: 'var(--text-sm)', color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } as React.CSSProperties,
     btn: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: 'var(--control-h)', padding: '0 var(--sp-4)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--separator)', background: 'var(--bg-surface)', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' } as React.CSSProperties,
     qrBlock: { display: 'flex', gap: 'var(--sp-5)', alignItems: 'flex-start', flexWrap: 'wrap' } as React.CSSProperties,
     qr: { width: '240px', height: '240px', flexShrink: 0, border: '1px solid var(--separator)', borderRadius: 'var(--radius-xs)' } as React.CSSProperties,
     qrActions: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)', alignItems: 'flex-start', flex: 1, minWidth: '180px' } as React.CSSProperties,
     hint: { margin: 'var(--sp-2) 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' } as React.CSSProperties,
+    size: { margin: 0, fontSize: 'var(--text-xs)', color: 'var(--text-muted)' } as React.CSSProperties,
+    warn: { margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-main)', fontWeight: 600 } as React.CSSProperties,
     note: { margin: 0, padding: 'var(--sp-3)', borderRadius: 'var(--radius-xs)', background: 'var(--danger-soft)', color: 'var(--danger)', fontSize: 'var(--text-sm)' } as React.CSSProperties,
     // Beamer layer: opaque white so the code keeps its contrast on any projector.
     bigScrim: { position: 'fixed', inset: 0, zIndex: 3000, background: '#fff', color: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-5)', cursor: 'pointer', padding: 'var(--sp-5)' } as React.CSSProperties,
     bigTitle: { fontSize: 'var(--text-2xl)', fontWeight: 700, textAlign: 'center' } as React.CSSProperties,
     bigQr: { width: 'min(78vh, 90vw)', height: 'min(78vh, 90vw)' } as React.CSSProperties,
     bigHint: { fontSize: 'var(--text-sm)', color: 'var(--text-muted)' } as React.CSSProperties,
+    // A5 = 148 × 210 mm; the code fills ~80 % of the width so a phone reads it from arm's length.
+    printPage: { width: '148mm', height: '210mm', boxSizing: 'border-box', padding: '14mm', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8mm', background: '#fff', color: '#000', fontFamily: 'var(--font-ui)' } as React.CSSProperties,
+    printTitle: { fontSize: 'var(--text-2xl)', fontWeight: 700, textAlign: 'center' } as React.CSSProperties,
+    printQr: { width: '118mm', height: '118mm' } as React.CSSProperties,
+    printLine: { fontSize: 'var(--text-lg)' } as React.CSSProperties,
 };
