@@ -1,8 +1,10 @@
 import type { ClockExercise } from '../math/types';
+import { carryHour, hourFromAngle, minuteFromAngle, stepHours, stepMinutes } from './clockMath';
 
 // Oefenmodus: "zet de wijzers" on an analoge klok. The pupil's face is two values, `h` (the
 // hour the kleine wijzer stands on, 0-11) and `m` (the minutes of the grote wijzer, 0-59).
-// Shared by ClockDragFace (drawing + pointer maths) and KLOK_KIOSK (the answer).
+// Shared by ClockDragFace (drawing + pointer maths) and KLOK_KIOSK (the answer); the angle and
+// carry maths are clockMath's, the same the board's KlokWidget turns.
 
 export type KlokHand = 'h' | 'm';
 type DragValues = Record<string, number>;
@@ -49,27 +51,22 @@ function withMinutes(ex: ClockExercise, c: Record<string, unknown>, drag: DragVa
     const { h, m: was } = klokFace(ex, c, drag);
     // A kleine wijzer not placed yet has nothing to carry.
     if (drag.h === undefined) return { ...drag, m };
-    // The shortest way round: 55 → 0 went forward over the 12, 0 → 55 back.
-    const d = m - was;
-    const hour = d < -30 ? (h + 1) % 12 : d > 30 ? (h + 11) % 12 : h;
-    return { ...drag, h: hour, m };
+    return { ...drag, h: carryHour(was, m, h), m };
 }
 
 /** The values after the grote wijzer is pointed at `angle` (degrees clockwise from 12). */
 export function klokMinuteTo(ex: ClockExercise, c: Record<string, unknown>, drag: DragValues, angle: number): DragValues {
-    const step = klokMinuteStep(ex, c);
-    return withMinutes(ex, c, drag, (Math.round(angle / 6 / step) * step) % 60);
+    return withMinutes(ex, c, drag, minuteFromAngle(angle, klokMinuteStep(ex, c)));
 }
 
 /** The values after the kleine wijzer is pointed at `angle`: the whole hour whose position (with these minutes) lies nearest. */
 export function klokHourTo(ex: ClockExercise, c: Record<string, unknown>, drag: DragValues, angle: number): DragValues {
-    const { m } = klokFace(ex, c, drag);
-    return { ...drag, h: ((Math.round((angle - m / 2) / 30) % 12) + 12) % 12 };
+    return { ...drag, h: hourFromAngle(angle, klokFace(ex, c, drag).m) };
 }
 
 /** One arrow-key step: the hour by 1, the minutes by the leaf's step (carrying the hour). */
 export function klokStep(ex: ClockExercise, c: Record<string, unknown>, drag: DragValues, hand: KlokHand, dir: 1 | -1): DragValues {
     const { h, m } = klokFace(ex, c, drag);
-    if (hand === 'h') return { ...drag, h: (h + dir + 12) % 12 };
-    return withMinutes(ex, c, drag, (m + dir * klokMinuteStep(ex, c) + 60) % 60);
+    if (hand === 'h') return { ...drag, h: stepHours(h, dir) };
+    return withMinutes(ex, c, drag, stepMinutes(h, m, dir, klokMinuteStep(ex, c)).minutes);
 }
