@@ -6,6 +6,7 @@ import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
 import { SOL, centerWhenSingle } from './solutionStyle';
 import { ordenenRowPx } from '../../services/layout/blockLayout';
+import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
@@ -83,6 +84,8 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
     const patchExercise = useWorksheetStore((s) => s.patchExercise);
     const gap = block.verticalSpacing || 14;
     const availableWidth = useBlockWidth();
+    // Oefenmodus: null on the sheet; in the kiosk the pupil taps the numbers in order.
+    const ix = useViewerInteraction();
     const c = (block.constraints ?? {}) as Record<string, unknown>;
     const answerStyle = (c.answerStyle as 'lijn' | 'vak' | undefined) ?? 'lijn';
 
@@ -129,20 +132,39 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                         {/* shuffled prompt numbers (click to edit) */}
                         {ex.display.map((v, i) => (
                             <div key={`p${i}`} style={{ gridRow: 1, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', fontWeight: 'normal', whiteSpace: 'nowrap' }}>
-                                <EditableValue value={v} onCommit={(nv) => editAt(ex.id, ex.display, ex.operator, i, nv)} />
+                                {/* Kiosk: a tap target (≥ 44 px on a phone) that takes its place in the pupil's order. */}
+                                {ix
+                                    ? <span {...interactionProps(ix, String(i), 'order')} style={{ padding: '9px 7px', borderRadius: '8px' }}>{renderVal(v)}</span>
+                                    : <EditableValue value={v} onCommit={(nv) => editAt(ex.id, ex.display, ex.operator, i, nv)} />}
                                 {i < n - 1 && <span>,</span>}
                             </div>
                         ))}
                         {/* ordered blanks/boxes, aligned to the same columns */}
-                        {ex.values.map((v, i) => (
-                            <div key={`a${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
-                                {showSolutions
-                                    ? renderVal(v, SOL)
-                                    : answerStyle === 'vak'
-                                        ? <span style={{ border: '1.5px solid #000', borderRadius: '4px', width: blankWidthCh, height: '26px', display: 'inline-block' }} />
-                                        : <span style={{ borderBottom: '1.5px solid #000', width: blankWidthCh, height: ANSWER_LINE_H, display: 'inline-block' }} />}
-                            </div>
-                        ))}
+                        {ex.values.map((v, i) => {
+                            const blank = answerStyle === 'vak'
+                                ? <span style={{ border: '1.5px solid #000', borderRadius: '4px', width: blankWidthCh, height: '26px', display: 'inline-block' }} />
+                                : <span style={{ borderBottom: '1.5px solid #000', width: blankWidthCh, height: ANSWER_LINE_H, display: 'inline-block' }} />;
+                            const tapped = ix?.state.order[i];
+                            return (
+                                <div key={`a${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
+                                    {showSolutions
+                                        ? renderVal(v, SOL)
+                                        : ix
+                                            // Kiosk: the tapped value lands on its line (or in its box). A hidden copy of a
+                                            // value keeps the slot's size from the start, so the card does not rescale mid-order.
+                                            ? <span style={{
+                                                display: 'inline-grid', justifyItems: 'center', alignItems: 'end', minWidth: blankWidthCh,
+                                                ...(answerStyle === 'vak'
+                                                    ? { border: '1.5px solid #000', borderRadius: '4px', minHeight: '26px' }
+                                                    : { borderBottom: '1.5px solid #000', minHeight: ANSWER_LINE_H }),
+                                            }}>
+                                                <span style={{ gridArea: '1 / 1', visibility: 'hidden' }} aria-hidden>{renderVal(v)}</span>
+                                                {tapped !== undefined && <span style={{ gridArea: '1 / 1' }}>{renderVal(ex.display[Number(tapped)])}</span>}
+                                            </span>
+                                            : blank}
+                                </div>
+                            );
+                        })}
                         {/* operator glyph between consecutive answers, in the separator column */}
                         {ex.values.slice(1).map((_, i) => (
                             <div key={`o${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 2, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', fontWeight: 'normal' }}>
