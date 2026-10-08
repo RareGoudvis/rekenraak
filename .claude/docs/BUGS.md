@@ -160,8 +160,6 @@ UpdateState). Left over, found while fixing:
 
 ## Bordmodus
 
-- Board settings popup (⚙ Bordinstellingen in BoardBottomBar) ignores Escape; only a second click on
-  ⚙ closes it (the other bottom-bar popups share the `menu` state; likely the same). 2026-10-08
 - No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
 - Board Inspector "Aantal oefeningen" changes the count but not the card until Genereer: the

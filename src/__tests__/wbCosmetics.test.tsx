@@ -6,6 +6,7 @@ import KlokWidget from '../board/components/widgets/KlokWidget';
 import GeldPalet from '../board/components/GeldPalet';
 import WidgetInspector from '../board/components/WidgetInspector';
 import BoardAddModal from '../board/components/BoardAddModal';
+import BoardBottomBar from '../board/components/BoardBottomBar';
 import type { BoardWidget } from '../board/boardTypes';
 
 // Bordmodus cosmetics from BUGS.md: each test failed before its fix.
@@ -54,6 +55,41 @@ describe('add panel search', () => {
         const s = useBoardStore.getState();
         expect(s.pages[s.activePageIdx].widgets.map(w => w.kind)).toEqual(['klok']);
         expect(onClose).toHaveBeenCalled();
+    });
+});
+
+describe('bottom bar popups', () => {
+    test('the board settings popup closes on Escape and on a press outside, not on one inside', () => {
+        const { getByRole, queryByText, getByText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        const gear = getByRole('button', { name: 'Bordinstellingen' });
+        fireEvent.click(gear);
+        expect(queryByText('Achtergrond')).not.toBeNull();
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(queryByText('Achtergrond')).toBeNull();
+
+        fireEvent.click(gear);
+        fireEvent.pointerDown(getByText('Achtergrond'));
+        expect(queryByText('Achtergrond')).not.toBeNull();
+        fireEvent.pointerDown(document.body);
+        expect(queryByText('Achtergrond')).toBeNull();
+
+        // The ⚙ itself still toggles: a press on it is inside, its click closes.
+        fireEvent.click(gear);
+        fireEvent.pointerDown(gear);
+        fireEvent.click(gear);
+        expect(queryByText('Achtergrond')).toBeNull();
+    });
+
+    test('the other popups share the same close rules', () => {
+        const { getByRole, queryByText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        fireEvent.click(getByRole('button', { name: 'Toevoegen aan bord' }));
+        expect(queryByText('Categorieën')).not.toBeNull();
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(queryByText('Categorieën')).toBeNull();
+        fireEvent.click(getByRole('button', { name: 'Bewaren' }));
+        expect(queryByText('Bord bewaren als…')).not.toBeNull();
+        fireEvent.pointerDown(document.body);
+        expect(queryByText('Bord bewaren als…')).toBeNull();
     });
 });
 

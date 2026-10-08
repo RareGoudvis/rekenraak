@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
@@ -45,6 +45,23 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const imageRef = useRef<HTMLInputElement>(null);
 
     const openMenu = (m: typeof menu) => { setMenu(menu === m ? null : m); setAddSub(null); };
+
+    // Escape or a press outside the open popup (and its button) closes it. Capture phase:
+    // widgets stop their pointerdown from bubbling past the board.
+    useEffect(() => {
+        if (!menu) return;
+        const close = () => { setMenu(null); setAddSub(null); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+        const onDown = (e: PointerEvent) => {
+            if (!(e.target instanceof Element && e.target.closest(`[data-board-menu="${menu}"]`))) close();
+        };
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('pointerdown', onDown, true);
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('pointerdown', onDown, true);
+        };
+    }, [menu]);
 
     const handleTool = (def: BoardToolDef) => {
         if (!runTool(def)) { imageRef.current?.click(); return; }
@@ -104,7 +121,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <input ref={importRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleImportFile} />
 
             {/* ── Toevoegen (categorieën) ── */}
-            <div style={{ position: 'relative' }}>
+            <div data-board-menu="add" style={{ position: 'relative' }}>
                 <button type="button" className="ui-hover" style={S.addBtn} aria-label="Toevoegen aan bord"
                     onClick={() => openMenu('add')}>
                     <Plus size={18} /> Toevoegen
@@ -145,7 +162,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             )}
 
             {/* ── ⚙ Bordinstellingen (achtergrond + raster) ── */}
-            <div style={{ position: 'relative' }}>
+            <div data-board-menu="settings" style={{ position: 'relative' }}>
                 <button type="button" className="ui-hover" title="Bordinstellingen" aria-label="Bordinstellingen"
                     style={{ ...S.toolBtn, ...(menu === 'settings' ? S.toolActive : {}) }}
                     onClick={() => openMenu('settings')}>
@@ -235,7 +252,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                     onClick={() => gotoPage(activePageIdx - 1)}>
                     <CaretLeft size={22} />
                 </button>
-                <div style={{ position: 'relative' }}>
+                <div data-board-menu="page" style={{ position: 'relative' }}>
                     <button type="button" className="ui-hover" title="Pagina-opties" aria-label="Pagina-opties" style={{ ...S.toolBtn, width: 'auto', padding: '0 8px' }}
                         onClick={() => openMenu('page')}>
                         <span style={S.pageLabel}>{activePageIdx + 1} / {pageCount}</span>
@@ -264,7 +281,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <div style={S.sep} />
 
             {/* ── Save / boards ── */}
-            <div style={{ position: 'relative' }}>
+            <div data-board-menu="save" style={{ position: 'relative' }}>
                 <button type="button" className="ui-hover" title="Bewaren / mijn borden" aria-label="Bewaren"
                     style={{ ...S.toolBtn, ...(menu === 'save' ? S.toolActive : {}) }}
                     onClick={() => { setPresets(loadBoardPresets()); openMenu('save'); }}>
