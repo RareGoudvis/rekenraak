@@ -64,7 +64,7 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): {
 const fieldsFor = (kind: KioskInput | undefined) => (kind === 'number+rest' ? ['', ''] : ['']);
 
 // Keeps what the field may hold: digits plus this type's extra keys; '.' types as ','.
-function sanitize(raw: string, keys: string[]): string {
+export function sanitizeAnswer(raw: string, keys: readonly string[]): string {
     let out = '';
     for (const ch0 of raw) {
         const ch = ch0 === '.' && keys.includes(',') ? ',' : ch0;
@@ -161,7 +161,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const info = currentInput(sessie, shown);
             if (!info || info.kind === 'choice') return;
             const value = input[field] ?? '';
-            const nextValue = key === 'back' ? value.slice(0, -1) : sanitize(value + key, info.keys);
+            const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys);
             set({ input: input.map((v, i) => (i === field ? nextValue : v)) });
         },
 
@@ -170,7 +170,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (phase !== 'exercise') return;
             const info = currentInput(sessie, shown);
             if (!info) return;
-            set({ input: input.map((v, j) => (j === i ? sanitize(raw, info.keys) : v)), field: i });
+            set({ input: input.map((v, j) => (j === i ? sanitizeAnswer(raw, info.keys) : v)), field: i });
         },
 
         focusField(i) {
