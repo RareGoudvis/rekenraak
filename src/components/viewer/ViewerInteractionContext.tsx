@@ -16,6 +16,9 @@ export interface InteractionState {
     cells: Record<string, string>;
     // order: keys in the sequence the pupil tapped them.
     order: string[];
+    // fill-cells: marks a keypad action key left on parts of the card, by part key (cijferen
+    // Lenen: 'lent' / 'got' per exchanged column). Absent = none; the answer never reads them.
+    marks?: Record<string, string>;
 }
 
 export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [] };
@@ -130,4 +133,9 @@ export function cellProps(ctx: ViewerInteraction | null, key: string): CellDomPr
             : ctx.set({ ...ctx.state, cells: { ...ctx.state.cells, [key]: cellText(e.target.value) } })),
         onFocus: () => ctx.focusCell?.(key),
     };
+}
+
+/** `data-kiosk-borrowed` on a printed digit whose column was exchanged by the kiosk's Lenen key (kiosk.css strikes it); `{}` on the sheet. */
+export function borrowedProps(ctx: ViewerInteraction | null, key: string): { 'data-kiosk-borrowed'?: 'true' } {
+    return ctx?.state.marks?.[key] ? { 'data-kiosk-borrowed': 'true' } : {};
 }

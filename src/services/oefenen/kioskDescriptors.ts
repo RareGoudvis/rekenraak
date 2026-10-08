@@ -6,8 +6,8 @@ import type {
     RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
     VormleerExercise, WeegschaalExercise,
 } from '../math/types';
-import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskInput, type KioskInteract, type KioskKey } from './types';
-import { cijferCheck, cijferGiven, cijferKioskGrid, type CijferCheck } from '../cijferen/cijferCells';
+import { INTERACT_SEP, type KioskCellSpec, type KioskDescriptor, type KioskExtraKey, type KioskInput, type KioskInteract, type KioskKey } from './types';
+import { cijferCheck, cijferGiven, cijferKioskGrid, cijferLenen, type CijferCheck } from '../cijferen/cijferCells';
 import { cijferDp } from '../cijferen/cijferLayout';
 import { gcd, isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
@@ -210,6 +210,14 @@ export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
 // each, a full ruitje hands on); c = carry, b = exchanged top digit (scratch, tapped); r = rest.
 const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { length: 1 }, q: { length: 1 }, c: { length: 1, scratch: true }, b: { length: 2, scratch: true }, r: {} };
 
+// Aftrekken: the pupil can let the kiosk do a column's exchange (inwisselen) instead of typing
+// the new top digits; it exchanges whether or not the column needs it (cijferLenen).
+const LENEN_KEY: KioskExtraKey<CijferExercise> = {
+    id: 'lenen', label: 'Lenen', hotkeys: ['l', 'L', '-'],
+    hint: 'Lenen: tik op het vakje onder de eenheden en druk op Lenen.',
+    apply: (state, active, ex, c) => cijferLenen(ex, cijferDp(ex, c), state, active),
+};
+
 export interface CijferKioskOptions {
     // A carry (or exchanged digit) left blank is wrong too; default off: only a WRONG one is.
     strictCarries?: boolean;
@@ -223,6 +231,7 @@ export function cijferKiosk({ strictCarries = false }: CijferKioskOptions = {}):
         input: 'interactive',
         // The grid takes digits only; a decimal rest (0,03) needs the comma.
         keys: (c) => (numberTypeOf(c) === 'decimal' && c.operator === ':' ? [','] : []),
+        extraKeys: (ex) => (ex.operator === '-' ? [LENEN_KEY] : []),
         interact: {
             kind: 'fill-cells',
             keys: (ex, c) => cijferKioskGrid(ex, cijferDp(ex, c)).cells.map(k => k.key),

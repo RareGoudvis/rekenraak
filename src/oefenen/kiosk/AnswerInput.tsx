@@ -19,7 +19,7 @@ export default function AnswerInput() {
     const field = useOefenStore(s => s.field);
     const phase = useOefenStore(s => s.phase);
     const interaction = useOefenStore(s => s.interaction);
-    const { press, setField, focusField, choose, answer } = useOefenStore.getState();
+    const { press, pressExtra, setField, focusField, choose, answer } = useOefenStore.getState();
     const refs = useRef<(HTMLInputElement | null)[]>([]);
     const info = currentInput(sessie, shown);
     const canCheck = input.every(v => v.trim() !== '');
@@ -34,11 +34,13 @@ export default function AnswerInput() {
     // Phase C: the answer is given ON the card; this panel only checks it (and, for cells, types).
     if (info.kind === 'interactive') {
         const ready = interactionAnswer(sessie, shown, interaction)?.ready ?? false;
+        const hints = info.extraKeys.flatMap(k => (k.hint ? [k.hint] : []));
         return (
             <div className="kiosk-answer">
                 {info.interact === 'fill-cells'
-                    ? <Keypad extras={info.keys} onKey={press} onCheck={answer} canCheck={ready} />
+                    ? <Keypad extras={info.keys} actions={info.extraKeys} onAction={pressExtra} onKey={press} onCheck={answer} canCheck={ready} />
                     : <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!ready}>Controleer</button>}
+                {hints.map(h => <p key={h} className="kiosk-keypad-hint">{h}</p>)}
             </div>
         );
     }

@@ -1,4 +1,5 @@
 import type { CijferExercise } from '../math/types';
+import type { InteractionState } from '../../components/viewer/ViewerInteractionContext';
 import { addSubMaxInt, computeAddCarries, getDigitCols, intLen, mulLayout } from './cijferLayout';
 
 // Oefenmodus (Phase C2): the ruitjes of a cijfer grid the pupil fills on the kiosk card.
@@ -95,12 +96,14 @@ function digitWants(value: number, dp: number, intCols: number): string[] {
     return wants;
 }
 
+// The digits of a subtraction operand, one per grid column (left-padded with 0).
+const columnDigits = (x: number, dp: number, D: number) => String(Math.round(Math.abs(x) * 10 ** dp)).padStart(D, '0').split('').map(Number);
+
 // Subtraction by exchanging ('inwisselen'): the value every top digit ends at after the pupil
 // exchanged a ten from the left. Untouched columns keep their digit (null).
 function exchanged(ex: CijferExercise, dp: number, D: number): Array<number | null> {
-    const digits = (x: number) => String(Math.round(Math.abs(x) * 10 ** dp)).padStart(D, '0').split('').map(Number);
-    const top = digits(ex.operands[0]);
-    const bottom = digits(ex.operands[1]);
+    const top = columnDigits(ex.operands[0], dp, D);
+    const bottom = columnDigits(ex.operands[1], dp, D);
     const after: Array<number | null> = top.map(() => null);
     const value = (i: number) => after[i] ?? top[i];
     for (let i = D - 1; i >= 0; i--) {
@@ -114,6 +117,35 @@ function exchanged(ex: CijferExercise, dp: number, D: number): Array<number | nu
         after[i] = value(i) + 10;
     }
     return after;
+}
+
+/** The kiosk's Lenen key on the active cell's column (its answer digit or exchange cell): the
+ *  column left of it gives one (a 0 on the way becomes 9) and this column gets ten more, written
+ *  in the exchange cells and marked so the card strikes the old digits. It always exchanges, needed
+ *  or not, so the key never tells the pupil whether a column needs it. null = nothing changes:
+ *  no subtraction, no column cell, this column was already given ten, or nothing left of it to lend. */
+export function cijferLenen(ex: CijferExercise, dp: number, state: InteractionState, activeCell: string | null): InteractionState | null {
+    const m = ex.operator === '-' && activeCell ? /^[ab](\d+)$/.exec(activeCell) : null;
+    if (!m) return null;
+    const k = Number(m[1]);
+    const D = addSubMaxInt(ex) + dp;
+    const marks = state.marks ?? {};
+    if (k >= D || marks[`b${k}`] === 'got') return null;
+    const top = columnDigits(ex.operands[0], dp, D);
+    // A column's value now: what the pupil (or an earlier Lenen) wrote above it, else its top digit.
+    const now = (i: number) => {
+        const w = (state.cells[`b${i}`] ?? '').trim();
+        return /^\d+$/.test(w) ? Number(w) : top[i];
+    };
+    let j = k - 1;
+    while (j >= 0 && now(j) === 0) j--;
+    if (j < 0) return null;
+    const cells = { ...state.cells, [`b${j}`]: String(now(j) - 1), [`b${k}`]: String(now(k) + 10) };
+    const next = { ...marks, [`b${k}`]: 'got' };
+    // A column that already got ten keeps that mark when it lends on.
+    if (next[`b${j}`] !== 'got') next[`b${j}`] = 'lent';
+    for (let i = j + 1; i < k; i++) { cells[`b${i}`] = '9'; next[`b${i}`] = 'got'; }
+    return { ...state, cells, marks: next };
 }
 
 // A carry the pupil may leave blank ('|1'), or must write when strict; no carry = blank or 0.
