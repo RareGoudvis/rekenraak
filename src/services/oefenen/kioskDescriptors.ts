@@ -16,6 +16,7 @@ import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
+import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -441,14 +442,31 @@ export const CONTROLEREN_KIOSK = descriptor<ControleExercise>({
 const BY_ANGLE = ['scherphoekig', 'rechthoekig', 'stomphoekig'];
 const BY_SIDE = ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'];
 const conceptsOf = (c: Record<string, unknown>) => (c.concepts as string[] | undefined) ?? [];
+// Phase C4: hoeken tekenen = drag the free been open to the asked class (hoekDrag.ts: snapped
+// to 5°, right within the class's range). A drawn figuur or punt-lijn has no single value.
+const isHoekDrag = (c: Record<string, unknown>) => c.mode === 'tekenen' && c.kind === 'hoek';
+const hoekName = (ex: VormleerExercise) => CONCEPT_NAMES[ex.concept] ?? ex.concept;
+const hoekDrag: KioskInteract<VormleerExercise> = {
+    kind: 'drag',
+    keys: () => ['a'],
+    answerOf: (ex) => String(hoekTarget(ex.concept).centre),
+    fromState: (st) => (st.drag?.a === undefined ? '' : String(st.drag.a)),
+    tolerance: (ex) => hoekTarget(ex.concept).tolerance,
+    // The canonical answer is the class's centre: the stats name the class instead.
+    show: (answer, ex) => (answer === String(hoekTarget(ex.concept).centre) ? hoekName(ex) : `${answer}°`),
+};
 export const VORMLEER_KIOSK = descriptor<VormleerExercise>({
     input: 'choice',
+    inputOf: (_ex, c) => (isHoekDrag(c) ? 'interactive' : 'choice'),
+    interactOf: (c) => (isHoekDrag(c) ? hoekDrag : undefined),
     choicesOf: (_ex, c) => conceptsOf(c).map(k => CONCEPT_NAMES[k] ?? k),
-    answerOf: (ex) => [CONCEPT_NAMES[ex.concept] ?? ex.concept],
-    display: () => 'Welke soort? ?',
+    answerOf: (ex, c) => (isHoekDrag(c) ? [hoekDrag.answerOf(ex, c)] : [hoekName(ex)]),
+    display: (ex, c) => (isHoekDrag(c) ? `teken een ${hoekName(ex)}: ?°` : 'Welke soort? ?'),
+    kioskInstruction: (ex, c) => (isHoekDrag(c) ? `Sleep het been tot je een ${hoekName(ex)} hebt.` : undefined),
     supported: (c) => {
-        if ((c.mode ?? 'herkennen') !== 'herkennen' || (c.kind !== 'hoek' && c.kind !== 'figuur')) return false;
         const ks = conceptsOf(c);
+        if (isHoekDrag(c)) return ks.length >= 1 && ks.every(k => HOEK_DRAG_CONCEPTS.includes(k));
+        if ((c.mode ?? 'herkennen') !== 'herkennen' || (c.kind !== 'hoek' && c.kind !== 'figuur')) return false;
         return ks.length >= 2 && !(ks.some(k => BY_ANGLE.includes(k)) && ks.some(k => BY_SIDE.includes(k)));
     },
 });

@@ -40,8 +40,22 @@ function klokCase(k: T.ClockExercise, c: Record<string, unknown>, truth: unknown
     return { right: [exact, byPointer, byKeys], wrong };
 }
 
+// Snapped angles of each class, independent of hoekDrag.ts: scherp 0 < a < 90, recht 90,
+// stomp 90 < a < 180, gestrekt 180; the generator's own angle must be one of its class.
+const ANGLES = Array.from({ length: 37 }, (_, i) => i * 5);
+const IN_CLASS: Record<string, (a: number) => boolean> = {
+    'scherpe hoek': a => a > 0 && a < 90, 'rechte hoek': a => a === 90, 'stompe hoek': a => a > 90 && a < 180, 'gestrekte hoek': a => a === 180,
+};
+function hoekCase(v: T.VormleerExercise, _c: Record<string, unknown>, truth: unknown, where: string): DragCase {
+    const inClass = IN_CLASS[truth as string];
+    expect(inClass, `${where}: no class ${truth}`).toBeDefined();
+    expect(inClass(v.angleDeg!), `${where}: generator angle ${v.angleDeg}`).toBe(true);
+    return { right: ANGLES.filter(inClass).map(a => ({ a })), wrong: ANGLES.filter(a => !inClass(a)).map(a => ({ a })) };
+}
+
 const CASES: Record<string, (ex: never, c: Record<string, unknown>, truth: unknown, where: string) => DragCase> = {
     'klok-kloklezen': klokCase,
+    'vormleer-hoeken': hoekCase,
 };
 
 export function checkDrag(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: unknown, where: string) {

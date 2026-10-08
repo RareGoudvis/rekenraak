@@ -5,6 +5,8 @@ import { fitCols, useBlockWidth, useShowScaffold, useSheetSizePx } from './Block
 import type { VormleerConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { layoutScenario } from '../../services/vormleer/scenarioLayout';
+import { useViewerInteraction } from './ViewerInteractionContext';
+import HoekDragSVG from './HoekDragSVG';
 
 interface Props {
     block: MathBlock;
@@ -427,6 +429,8 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
     // The oefenmodus card offers the bank as its own buttons.
     const scaffold = useShowScaffold();
     const sheetPx = useSheetSizePx('math');
+    // Oefenmodus: a hoek to draw is opened by dragging on the card (kiosk only; null on the sheet).
+    const ctx = useViewerInteraction();
     const exercises: VormleerExercise[] = block.vormleerExercises || [];
     const c = block.constraints as VormleerConstraints;
     const kind: string = c.kind ?? 'punt-lijn';
@@ -609,7 +613,9 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
         // A hoek gets its three-letter name in the instruction when the generator wrote one.
         const hoekLine = (ex: VormleerExercise) => {
             const names = (ex.labels ?? []).length === 3 ? hoekNaam(ex.labels!) : null;
-            return <span>Teken: <strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong>{names ? <> <strong>{names}</strong></> : null}</span>;
+            // On the kiosk card the header already says what to do ("Sleep het been …"): no pen verb here.
+            const verb = ctx?.kind === 'drag' ? null : 'Teken: ';
+            return <span>{verb}<strong>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</strong>{names ? <> <strong>{names}</strong></> : null}</span>;
         };
         return (
             <FragmentableGrid
@@ -639,7 +645,7 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                             ))
                             : <>
                                 {hoekLine(ex)}
-                                {drawBox(ex)}
+                                {ctx?.kind === 'drag' && ex.kind === 'hoek' ? <HoekDragSVG ex={ex} ctx={ctx} /> : drawBox(ex)}
                             </>}
                     </div>
                 ))}

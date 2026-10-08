@@ -57,7 +57,7 @@ const EXPECTED_LEAVES = [
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
     'breuken-kleuren',
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
-    'klok-analoog-tekenen',
+    'klok-analoog-tekenen', 'vormleer-hoeken-tekenen',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -364,7 +364,10 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('procenten', {})).toBe(true);
         expect(kioskSupports('plaatswaarde', { subType: 'tabel' })).toBe(true);
         expect(kioskSupports('even-oneven', { subType: 'rooster' })).toBe(true);
-        expect(kioskSupports('vormleer-hoeken', { mode: 'tekenen' })).toBe(false);
+        expect(kioskSupports('vormleer-hoeken', { mode: 'tekenen' })).toBe(true);
+        expect(kioskSupports('vormleer-hoeken', { mode: 'meten' })).toBe(false);
+        expect(kioskSupports('vormleer-punt-lijn', { mode: 'tekenen' })).toBe(false);
+        expect(kioskSupports('vormleer-figuren', { mode: 'tekenen' })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'gelijkbenig'] })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'stomphoekig'] })).toBe(true);
         expect(kioskSupports('klok-kloklezen', {})).toBe(true);
@@ -428,6 +431,7 @@ describe('descriptor answers agree with the generators', () => {
         ['klok-analoog-tekenen', { is24hour: true, timeTypes: ['nauwkeurig_1', 'uren'] }, 'interactive'],
         ['klok-analoog-tekenen', { handChoice: 'minuut', timeTypes: ['nauwkeurig_5'] }, 'interactive'],
         ['klok-analoog-tekenen', { handChoice: 'uur' }, 'interactive'],
+        ['vormleer-hoeken-tekenen', { concepts: ['scherp', 'recht', 'stomp', 'gestrekt'], nameAngles: false }, 'interactive'],
         ['tijdsduur-berekenen', { blanks: ['begin', 'einde'], overMidnight: true }, 'time'],
         // Phase C2: a middle blank and the result, both cells on the card.
         ['patronen-kettingsommen', { blankMiddle: true, chainLength: 6, ops: ['+', '-', 'x', ':'] }, 'interactive'],

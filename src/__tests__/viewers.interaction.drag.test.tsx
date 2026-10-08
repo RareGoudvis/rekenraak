@@ -153,3 +153,42 @@ describe('klok tekenen: drag the hands', () => {
         expect(answerOf('klok-kloklezen', block, ex as unknown as ClockExercise, m.state())).toMatchObject({ given: '3:45', ok: true });
     });
 });
+
+// SYNC: HoekDragSVG geometry (hoekpunt at 100, 98 in a 200 × 120 viewBox).
+const onLeg = (deg: number, len = 60): [number, number] => [100 + Math.cos((deg * Math.PI) / 180) * len, 98 - Math.sin((deg * Math.PI) / 180) * len];
+
+describe('vormleer hoeken tekenen: drag the been open', () => {
+    const constraints = { kind: 'hoek', mode: 'tekenen', concepts: ['scherp', 'recht', 'stomp', 'gestrekt'] };
+
+    test.each<[string, number[], boolean[]]>([
+        ['scherp', [3, 62, 88, 91], [true, true, false, false]],
+        ['recht', [87, 92, 60], [false, true, false]],
+        ['stomp', [93, 134, 178, 179], [true, true, false, false]],
+        ['gestrekt', [176, 200, 340, 10], [false, true, false, false]],
+    ])('%s: the angle snaps to 5° and its class is right', (concept, angles, oks) => {
+        const { block, ex } = oneExercise('vormleer-hoeken', constraints, { concept });
+        const m = mount(block, 2.5);
+        expect(m.svg.querySelectorAll('.kiosk-knob.is-unset')).toHaveLength(1);
+        expect(answerOf('vormleer-hoeken', block, ex, m.state()).given).toBe('');
+        angles.forEach((deg, i) => {
+            m.drag(onLeg(0), onLeg(deg / 2), onLeg(deg));
+            const a = answerOf('vormleer-hoeken', block, ex, m.state());
+            expect(Number(a.given) % 5, `${deg}°`).toBe(0);
+            expect(a.ok, `${concept} at ${deg}° → ${a.given}`).toBe(oks[i]);
+        });
+        expect(m.svg.querySelectorAll('.kiosk-knob.is-unset')).toHaveLength(0);
+    });
+
+    test('keyboard: 5° per arrow, kept to 0°–180°', () => {
+        const { block, ex } = oneExercise('vormleer-hoeken', constraints, { concept: 'recht' });
+        const m = mount(block);
+        const h = m.handle('a');
+        expect(h.getAttribute('aria-valuemax')).toBe('180');
+        fireEvent.keyDown(h, { key: 'ArrowLeft' });
+        expect(m.state().drag).toEqual({ a: 0 });
+        for (let i = 0; i < 18; i++) fireEvent.keyDown(h, { key: 'ArrowUp' });
+        expect(answerOf('vormleer-hoeken', block, ex, m.state())).toMatchObject({ given: '90', ok: true });
+        for (let i = 0; i < 30; i++) fireEvent.keyDown(h, { key: 'ArrowRight' });
+        expect(m.state().drag).toEqual({ a: 180 });
+    });
+});
