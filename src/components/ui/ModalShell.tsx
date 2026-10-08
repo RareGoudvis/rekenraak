@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { X } from '@phosphor-icons/react';
 import ModalPortal from './ModalPortal';
 import IconButton from './IconButton';
@@ -17,11 +17,34 @@ interface Props {
 // and a standard close button. Replaces the overlay/close/escape blocks that were copy-pasted
 // (and had drifted) across every modal. The scrim is a single lighter 0.4 — macOS dims gently.
 export default function ModalShell({ onClose, children, ariaLabel, variant = 'dialog', maxWidth = 640, hideClose = false }: Props) {
+    const cardRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [onClose]);
+
+    // Focus moves into the dialog on open and back to whatever opened it on close. Runs before
+    // the owning modal's own effects, so a modal that focuses its primary button still wins.
+    useEffect(() => {
+        const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        const card = cardRef.current;
+        if (card && !card.contains(document.activeElement)) card.focus({ preventScroll: true });
+        return () => { if (opener && opener.isConnected) opener.focus({ preventScroll: true }); };
+    }, []);
+
+    // Tab cycles inside the card. Focus that sits outside it (a PopupSelect list portalled to
+    // <body>) is left alone, so a dropdown inside a modal still works from the keyboard.
+    const trapTab = (e: KeyboardEvent<HTMLDivElement>) => {
+        const card = cardRef.current;
+        if (e.key !== 'Tab' || !card) return;
+        const items = [...card.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(el => !el.hasAttribute('disabled'));
+        const active = document.activeElement;
+        if (items.length === 0) { e.preventDefault(); return; }
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && (active === first || active === card)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
+    };
 
     const isSheet = variant === 'sheet';
     return (
@@ -39,12 +62,15 @@ export default function ModalShell({ onClose, children, ariaLabel, variant = 'di
                 }}
             >
                 <div
+                    ref={cardRef}
                     role="dialog"
                     aria-modal="true"
                     aria-label={ariaLabel}
+                    tabIndex={-1}
+                    onKeyDown={trapTab}
                     className={`modal-card${isSheet ? ' modal-sheet' : ''}`}
                     style={{
-                        position: 'relative',
+                        position: 'relative', outline: 'none',
                         backgroundColor: 'var(--bg-panel)', border: '1px solid var(--separator)',
                         borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-3)',
                         maxWidth, width: '100%', maxHeight: '85vh',
@@ -62,3 +88,5 @@ export default function ModalShell({ onClose, children, ariaLabel, variant = 'di
         </ModalPortal>
     );
 }
+
+const FOCUSABLE = 'a[href], button, input, select, textarea, video[controls], [tabindex]:not([tabindex="-1"])';

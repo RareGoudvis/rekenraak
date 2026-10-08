@@ -11,6 +11,7 @@ import { answerSpaceVar } from './components/viewer/BlockWidthContext';
 import MijnBladenView from './components/library/MijnBladenView';
 import BibliotheekView from './components/library/BibliotheekView';
 import HelpModal from './components/layout/HelpModal';
+import ReleaseNotesModal from './components/layout/ReleaseNotesModal';
 import PrintHintModal from './components/layout/PrintHintModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import WelcomeModal from './components/onboarding/WelcomeModal';
@@ -160,7 +161,7 @@ export default function App() {
             The tag is absolutely positioned, so this changes nothing the packer measures. */}
         <div ref={scrollRef} className="print-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 48px 48px' }}>
 
-        <SheetBanners releaseVisible={releaseBannerVisible} onDismissRelease={dismissReleaseBanner} onOpenHelp={onboarding.openHelp} />
+        <SheetBanners releaseVisible={releaseBannerVisible} onDismissRelease={dismissReleaseBanner} onOpenReleaseNotes={onboarding.openReleaseNotes} />
 
         <div
           ref={a4Ref}
@@ -203,7 +204,8 @@ export default function App() {
     {/* Screen-only strip explaining the three drop thirds, for the duration of a drag. */}
     {dnd.fromId !== null && <SheetDragHint />}
     {printHint && <PrintHintModal onClose={() => setPrintHint(null)} onContinue={() => { const go = printHint; setPrintHint(null); go(); }} />}
-    {onboarding.helpOpen && <HelpModal onClose={onboarding.closeHelp} onStartTour={onboarding.startTourFromHelp} onShowVideo={onboarding.showVideoFromHelp} />}
+    {onboarding.helpOpen && <HelpModal onClose={onboarding.closeHelp} onStartTour={onboarding.startTourFromHelp} onShowVideo={onboarding.showVideoFromHelp} onShowReleaseNotes={onboarding.showReleaseNotesFromHelp} />}
+    {onboarding.releaseNotesOpen && <ReleaseNotesModal onClose={onboarding.closeReleaseNotes} />}
     {onboarding.helpVideoOpen && (
       <WelcomeModal
         mode="video"

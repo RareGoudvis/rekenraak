@@ -1,8 +1,10 @@
-// Bump RELEASE_VERSION on every ship that should re-show the "Nieuw" banner.
-// RELEASE_SUMMARY is the single line shown inside the banner; full details live in
-// HelpModal so teachers can read more there.
-export const RELEASE_VERSION = 'v0.5-2026-05-31';
-export const RELEASE_SUMMARY = 'snel meerdere oefeningen toevoegen, basisinstellingen, curriculum samenstellen (vergrendelde links), temperatuur (incl. verschil) en meer ordenen/getallenas-opties';
+import { RELEASE_NOTES } from './releaseNotes';
+
+// The banner follows the newest release-notes entry: a new entry (new version) re-shows the
+// "Nieuw" banner for everyone, and its summary is the banner's one line. Full notes live in
+// ReleaseNotesModal ("Wat is er nieuw").
+export const RELEASE_VERSION = RELEASE_NOTES[0].version;
+export const RELEASE_SUMMARY = RELEASE_NOTES[0].summary;
 
 // Exercise types added in the July 2026 batch that haven't had a full owner review on
 // paper yet. Drives the "nog in proef" banner, which only appears while one of these is

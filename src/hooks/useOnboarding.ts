@@ -2,9 +2,11 @@ import { useState } from 'react';
 
 const TOUR_SEEN_KEY = 'rekenraak_tour_seen_v1';
 
-// Welcome modal, interactive tour, Help modal and the demo video opened from Help.
+// Welcome modal, interactive tour, Help modal, the demo video opened from Help and the
+// "Wat is er nieuw" notes (from the release banner or from Help).
 export function useOnboarding() {
   const [helpOpen, setHelpOpen] = useState(false);
+  const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
   const [helpVideoOpen, setHelpVideoOpen] = useState(false);
   // First-run welcome (tour / demo video / skip) replaces auto-opening the tour. Shown once;
   // the tour itself stays replayable from Help regardless.
@@ -38,5 +40,7 @@ export function useOnboarding() {
     showVideoFromHelp: () => { setHelpOpen(false); setHelpVideoOpen(true); },
     helpVideoOpen, closeHelpVideo: () => setHelpVideoOpen(false),
     startTourFromVideo: () => { setHelpVideoOpen(false); setTourOpen(true); },
+    releaseNotesOpen, openReleaseNotes: () => setReleaseNotesOpen(true), closeReleaseNotes: () => setReleaseNotesOpen(false),
+    showReleaseNotesFromHelp: () => { setHelpOpen(false); setReleaseNotesOpen(true); },
   };
 }
