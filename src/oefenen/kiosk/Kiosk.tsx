@@ -11,7 +11,7 @@ import FeedbackOverlay from './FeedbackOverlay';
 import StatsScreen from './StatsScreen';
 
 // Physical keyboard (Chromebook / tablet keyboard): digits and the type's extra keys type,
-// Backspace deletes, Enter is Controleer and then Volgende, < = > pick for vergelijken.
+// Backspace deletes, Enter is Controleer (and skips a juist/fout flash), < = > pick for vergelijken.
 // A focused answer field types natively (its onChange), so only keys that reach the page
 // outside a field are routed here; a focused button handles its own Enter.
 function useKioskKeys() {
@@ -24,9 +24,10 @@ function useKioskKeys() {
             const inField = target?.tagName === 'INPUT';
             const onButton = target?.tagName === 'BUTTON';
             if (e.key === 'Enter') {
-                if (onButton || e.repeat) return;
-                if (st.phase === 'feedback') { e.preventDefault(); st.next(); return; }
-                if (st.phase !== 'exercise') return;
+                if (e.repeat) return;
+                // During a flash Enter only skips it, also on a focused button (Controleer must not fire).
+                if (st.phase === 'feedback' || st.phase === 'retry') { e.preventDefault(); st.skipFlash(); return; }
+                if (onButton || st.phase !== 'exercise') return;
                 e.preventDefault();
                 // quotiënt typed, rest still empty: Enter moves on to the rest field.
                 if (st.input.length > 1 && st.field < st.input.length - 1 && st.input[st.field + 1] === '') st.focusField(st.field + 1);
@@ -68,7 +69,7 @@ export default function Kiosk() {
     const shown = useOefenStore(s => s.shown);
     const phase = useOefenStore(s => s.phase);
     const lastCorrect = useOefenStore(s => s.lastCorrect);
-    const next = useOefenStore(s => s.next);
+    const skipFlash = useOefenStore(s => s.skipFlash);
     const now = useClock(run?.timerEndsAt !== undefined && !run.done);
     useKioskKeys();
     if (!sessie || !run) return null;
@@ -99,8 +100,12 @@ export default function Kiosk() {
                         )}
                     </section>
                     <section className="kiosk-panel" aria-label="Antwoord">
+                        {shown?.wrongFirst !== undefined && <p className="kiosk-attempt">Kans 2 van 2</p>}
                         <AnswerInput />
-                        {phase === 'feedback' && lastCorrect !== null && <FeedbackOverlay correct={lastCorrect} onNext={next} />}
+                        {phase === 'feedback' && lastCorrect !== null && (
+                            <FeedbackOverlay kind={lastCorrect ? 'juist' : 'fout'} onSkip={skipFlash} />
+                        )}
+                        {phase === 'retry' && <FeedbackOverlay kind="retry" onSkip={skipFlash} />}
                     </section>
                 </main>
             )}

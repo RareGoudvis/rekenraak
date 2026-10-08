@@ -491,9 +491,14 @@ html:has(.oefen-body),
 }
 
 /* ── Feedback (covers the answer panel; the exercise stays visible) ───────── */
+/* A flash: it ends by itself after --flash-ms (FLASH_MS in useOefenStore); a tap skips it. */
 .kiosk-feedback {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  cursor: pointer;
+  padding: var(--sp-3);
+  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -508,6 +513,35 @@ html:has(.oefen-body),
 .kiosk-feedback.is-wrong { background: color-mix(in srgb, var(--danger) 10%, var(--bg-surface)); color: var(--danger); }
 .kiosk-feedback-icon svg { width: clamp(48px, 14vmin, 96px); height: clamp(48px, 14vmin, 96px); }
 .kiosk-feedback-text { font-size: var(--kiosk-text-xl); font-weight: 700; }
+/* The answer under a flash is hidden, not just covered: its focus ring and corners would peek
+   around the overlay, and the keypad would ghost through the pop-in. */
+.kiosk-panel:has(> .kiosk-feedback) > :not(.kiosk-feedback) { visibility: hidden; }
+/* "Fout — probeer nog eens" is a sentence, not a word: one step down so it fits two lines. */
+.kiosk-feedback.is-retry .kiosk-feedback-text { font-size: var(--kiosk-text-lg); }
+/* The wait running out, so a pupil sees the kiosk will move on without a button. */
+.kiosk-feedback-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  background: currentColor;
+  opacity: .35;
+  transform-origin: left;
+  animation: kiosk-drain var(--flash-ms, 1s) linear forwards;
+}
+@keyframes kiosk-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .kiosk-feedback-bar { animation: none; } }
+
+/* 2 kansen: a quiet note above the answer while the pupil is on the second try. */
+.kiosk-attempt {
+  flex: none;
+  margin: 0 0 var(--sp-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
 @keyframes kiosk-pop { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
 
 /* ── Stats ─────────────────────────────────────────────────────────────────── */

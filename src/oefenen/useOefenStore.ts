@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { KioskAnswer, KioskInput, OefenCurrent, OefenRun, OefenSessie } from '../services/oefenen/types';
+import { attemptsOf, type KioskAnswer, type KioskInput, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
 import { isDone, nextExercise, nextType } from '../services/oefenen/scheduler';
 import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
@@ -10,9 +10,14 @@ import { EMPTY_INTERACTION, type InteractionKind, type InteractionState } from '
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
 
-// start = confirm screen · exercise = answering · feedback = juist/fout shown ·
-// stats = Stats opened mid-run · locked = the run ended (timer or done), stats as end screen.
-export type OefenPhase = 'start' | 'exercise' | 'feedback' | 'stats' | 'locked';
+// start = confirm screen · exercise = answering · feedback = juist/fout flashes, then the next
+// exercise follows by itself · retry = "fout, probeer nog eens" flashes (2 kansen), then the same
+// exercise again · stats = Stats opened mid-run · locked = the run ended (timer or done).
+export type OefenPhase = 'start' | 'exercise' | 'feedback' | 'retry' | 'stats' | 'locked';
+
+// How long each flash stays before the kiosk moves on by itself (Enter or a tap skips it):
+// juist is a glance, fout and the retry get time to sink in.
+export const FLASH_MS = { juist: 700, fout: 1200, retry: 1000 } as const;
 
 // The exercise on screen plus the constraints it was generated with: answerOf / display /
 // checkAnswer must get exactly those, and a reload must too, so they travel in the run.
@@ -36,8 +41,8 @@ interface OefenState {
     input: string[];
     field: number;
     lastCorrect: boolean | null;
-    // Where closeStats returns to.
-    statsFrom: 'exercise' | 'feedback';
+    // Where closeStats returns to; a flash interrupted by Stats resumes as if it had ended.
+    statsFrom: 'exercise' | 'feedback' | 'retry';
     // Phase C: what the pupil did ON the card (taps, filled cells, order) for an 'interactive'
     // exercise, and the cell the keypad types into. Reset with every new exercise.
     interaction: InteractionState;
@@ -45,7 +50,10 @@ interface OefenState {
 
     load(hash: string): void;
     start(): void;
+    // The next exercise (or the end screen): what a feedback flash does when it ends.
     next(): void;
+    // Ends the flash on screen now (Enter, a tap): feedback → next, retry → the second try.
+    skipFlash(): void;
     press(key: string): void;
     setField(i: number, raw: string): void;
     focusField(i: number): void;
@@ -122,6 +130,28 @@ export function sanitizeAnswer(raw: string, keys: readonly string[], kind: Kiosk
 }
 
 export const useOefenStore = create<OefenState>()((set, get) => {
+    // The pending end of a flash; one at a time, cleared by every move that leaves the flash.
+    let flashTimer: ReturnType<typeof setTimeout> | null = null;
+    const clearFlash = () => {
+        if (flashTimer !== null) clearTimeout(flashTimer);
+        flashTimer = null;
+    };
+    const scheduleFlash = (ms: number) => {
+        clearFlash();
+        const shownThen = get().shown;
+        // Only the flash it was set for: a reload, restart or test reset since then has moved on.
+        flashTimer = setTimeout(() => {
+            flashTimer = null;
+            if (get().shown === shownThen) get().skipFlash();
+        }, ms);
+    };
+
+    // 2 kansen: the second try at the same exercise, fields and taps cleared.
+    const secondTry = () => {
+        const { sessie: s, shown } = get();
+        set({ phase: 'exercise', input: fieldsFor(currentInput(s, shown)), field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null });
+    };
+
     const persist = (run: OefenRun) => {
         const s = get().sessie;
         if (s) saveRun(s.id, run);
@@ -129,6 +159,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
     // Ends the run: the timer ran out or every exercise is made. The end screen is the stats.
     const finish = (run: OefenRun, now = Date.now()) => {
+        clearFlash();
         const done: OefenRun = { ...run, done: true, current: undefined, stats: { ...run.stats, finishedAt: run.stats.finishedAt ?? now } };
         persist(done);
         set({ run: done, shown: null, phase: 'locked', input: [''], field: 0, lastCorrect: null });
@@ -176,6 +207,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 set({ sessie: null, run: null, error: e instanceof Error ? e.message : 'Deze oefenlink is ongeldig.' });
                 return;
             }
+            clearFlash();
             set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null });
             const runs = loadRuns(s.id);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
@@ -186,6 +218,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (timeUp(last, now)) { set({ run: last }); finish(last, now); return; }
             set({ run: last });
             const cur = currentOf(last);
+            // A reload mid-retry comes back on the second try (cur.wrongFirst is kept).
             if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)), field: 0 });
             else get().next();
         },
@@ -200,6 +233,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         },
 
         next() {
+            clearFlash();
             const { sessie: s, run } = get();
             if (!s || !run) return;
             const now = Date.now();
@@ -246,8 +280,15 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (info?.kind === 'choice' && info.choices.includes(choice)) set({ input: [choice] });
         },
 
+        skipFlash() {
+            const { phase } = get();
+            if (phase === 'feedback') get().next();
+            else if (phase === 'retry') { clearFlash(); secondTry(); }
+        },
+
         answer() {
             const { phase, sessie: s, run, input, shown: cur } = get();
+            // Not while a flash is on screen: a double tap on Controleer must not answer twice.
             if (phase !== 'exercise' || !s || !run || !cur) return;
             const interactive = interactionAnswer(s, cur, get().interaction);
             if (interactive ? !interactive.ready : input.some(v => v.trim() === '')) return;
@@ -257,24 +298,39 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const now = Date.now();
             const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
             const correct = checkAnswer(d, cur.exercise, cur.constraints, given);
-            const stats = recordAnswer(run.stats, cur.slot, type.typeId, cur.exercise, given, correct, Math.max(0, now - cur.shownAt), cur.constraints);
+            // First try missed with 2 kansen: nothing is counted yet, the same exercise comes back.
+            if (!correct && attemptsOf(s) === 2 && cur.wrongFirst === undefined) {
+                const retry: KioskCurrent = { ...cur, wrongFirst: given };
+                const updated: OefenRun = { ...run, current: retry };
+                persist(updated);
+                set({ run: updated, shown: retry, lastCorrect: false, phase: 'retry' });
+                scheduleFlash(FLASH_MS.retry);
+                return;
+            }
+            const stats = recordAnswer(run.stats, cur.slot, type.typeId, cur.exercise, given, correct, Math.max(0, now - cur.shownAt), cur.constraints, now, cur.wrongFirst);
             const updated: OefenRun = { ...run, stats, current: undefined };
             persist(updated);
             set({ run: updated, lastCorrect: correct });
             // Testmodus: no juist/fout per exercise, straight on to the next one.
-            if (s.testMode) get().next();
-            else set({ phase: 'feedback' });
+            if (s.testMode) { get().next(); return; }
+            set({ phase: 'feedback' });
+            scheduleFlash(correct ? FLASH_MS.juist : FLASH_MS.fout);
         },
 
         openStats() {
             const { phase, sessie: s, run } = get();
-            if (!s || !run || (phase !== 'exercise' && phase !== 'feedback')) return;
+            if (!s || !run || (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry')) return;
             if (s.statsLocked && !run.done) return;
+            // The flash waits behind the stats; closing them ends it.
+            clearFlash();
             set({ phase: 'stats', statsFrom: phase });
         },
 
         closeStats() {
-            if (get().phase === 'stats') set({ phase: get().statsFrom });
+            const { phase, statsFrom } = get();
+            if (phase !== 'stats') return;
+            set({ phase: statsFrom });
+            if (statsFrom !== 'exercise') get().skipFlash();
         },
 
         restart() {
@@ -284,6 +340,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         clear() {
             const s = get().sessie;
             if (!s) return;
+            clearFlash();
             clearRuns(s.id);
             set({ run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null });
         },

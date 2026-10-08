@@ -2,7 +2,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, screen, fireEvent, act } from '@testing-library/react';
 import OefenApp from '../oefenen/OefenApp';
-import { useOefenStore } from '../oefenen/useOefenStore';
+import { FLASH_MS, useOefenStore } from '../oefenen/useOefenStore';
 import { fillAnswer, hashOf, resetKiosk, starterSessie, STARTER_TYPES } from './helpers/oefenKiosk';
 import type { OefenType } from '../services/oefenen/types';
 import { emptyStats, saveRun } from '../services/oefenen/stats';
@@ -30,6 +30,7 @@ afterEach(() => {
     cleanup();
     expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
+    vi.useRealTimers();
 });
 
 describe('kiosk screens', () => {
@@ -66,7 +67,8 @@ describe('kiosk screens', () => {
         }
     });
 
-    test('keypad types, Controleer shows juist / fout, Volgende moves on', () => {
+    test('keypad types, Controleer flashes juist / fout and moves on by itself (no Volgende)', () => {
+        vi.useFakeTimers();
         st().load(hashOf(starterSessie({ types: [STARTER_TYPES[0]] })));
         st().start();
         render(<OefenApp />);
@@ -75,15 +77,16 @@ describe('kiosk screens', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Laatste teken wissen' }));
         act(() => fillAnswer(false));
         fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
-        expect(screen.getByRole('status').textContent).toMatch(/Fout/);
         // Juist / fout only: the right answer never shows on the kiosk mid-run.
-        fireEvent.click(screen.getByRole('button', { name: 'Volgende' }));
+        expect(screen.getByRole('status').textContent).toBe('Fout');
+        expect(screen.queryByRole('button', { name: 'Volgende' })).toBeNull();
+        act(() => { vi.advanceTimersByTime(FLASH_MS.fout); });
         expect(st().phase).toBe('exercise');
         expect(screen.queryByRole('status')).toBeNull();
     });
 
-    test('Enter is Controleer, then Volgende', () => {
-        st().load(hashOf(starterSessie({ types: [STARTER_TYPES[0]] })));
+    test('Enter is Controleer, and Enter (or a tap) during the flash skips it', () => {
+        st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 5 }] })));
         st().start();
         render(<OefenApp />);
         act(() => fillAnswer(true));
@@ -91,6 +94,53 @@ describe('kiosk screens', () => {
         expect(screen.getByRole('status').textContent).toMatch(/Juist/);
         fireEvent.keyDown(document.body, { key: 'Enter' });
         expect(st().phase).toBe('exercise');
+        expect(st().run!.stats.history).toHaveLength(1);
+        act(() => fillAnswer(false));
+        // Focus on Controleer: Enter during the flash skips it and does not answer again.
+        fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
+        fireEvent.keyDown(screen.getByRole('button', { name: 'Controleer' }), { key: 'Enter' });
+        expect(st().phase).toBe('exercise');
+        expect(st().run!.stats.history).toHaveLength(2);
+        act(() => fillAnswer(true));
+        fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
+        fireEvent.click(screen.getByRole('status'));
+        expect(st().phase).toBe('exercise');
+    });
+
+    test('2 kansen: "probeer nog eens", then Kans 2 van 2 on the same exercise', () => {
+        vi.useFakeTimers();
+        st().load(hashOf(starterSessie({ types: [STARTER_TYPES[0]], attempts: 2 })));
+        st().start();
+        render(<OefenApp />);
+        expect(screen.queryByText('Kans 2 van 2')).toBeNull();
+        act(() => fillAnswer(false));
+        fireEvent.click(screen.getByRole('button', { name: 'Controleer' }));
+        expect(screen.getByRole('status').textContent).toBe('Fout — probeer nog eens');
+        act(() => { vi.advanceTimersByTime(FLASH_MS.retry); });
+        expect(screen.queryByRole('status')).toBeNull();
+        expect(screen.getByText('Kans 2 van 2')).toBeTruthy();
+        expect((screen.getByRole('textbox', { name: 'Antwoord' }) as HTMLInputElement).value).toBe('');
+        expect(screen.getByLabelText('Oefening 1 van 2')).toBeTruthy();
+    });
+
+    test('the stats table gets a "Juist na 2e kans" column with 2 kansen, and the first try in Foutjes', () => {
+        st().load(hashOf(starterSessie({ types: [STARTER_TYPES[0]], attempts: 2 })));
+        st().start();
+        act(() => { fillAnswer(false); st().answer(); st().skipFlash(); fillAnswer(true); st().answer(); });
+        render(<OefenApp />);
+        fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
+        expect(screen.getByRole('columnheader', { name: 'Juist na 2e kans' })).toBeTruthy();
+        const row = screen.getByRole('row', { name: /Optellen/ });
+        expect([...row.querySelectorAll('td')].map(td => td.textContent)).toEqual(['1', '1', '1', '0', '100 %']);
+        expect(screen.getByText('99999, dan juist')).toBeTruthy();
+    });
+
+    test('one kans: no "Juist na 2e kans" column', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        render(<OefenApp />);
+        fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
+        expect(screen.queryByRole('columnheader', { name: 'Juist na 2e kans' })).toBeNull();
     });
 
     test('stats mid-run, and the button hidden while statsLocked', () => {

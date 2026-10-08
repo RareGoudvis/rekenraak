@@ -16,15 +16,14 @@ export default function TopBar({ now }: Props) {
     const sessie = useOefenStore(s => s.sessie);
     const run = useOefenStore(s => s.run);
     const phase = useOefenStore(s => s.phase);
-    const statsFrom = useOefenStore(s => s.statsFrom);
     const openStats = useOefenStore(s => s.openStats);
     if (!sessie || !run) return null;
 
     const made = run.stats.history.length;
     const total = plannedTotal(sessie);
-    // The number of the exercise on screen; after Controleer it is the one just made.
-    // A peek at the stats from an unanswered exercise still counts that one.
-    const at = phase === 'exercise' || (phase === 'stats' && statsFrom === 'exercise') ? made + 1 : made;
+    // The number of the exercise on screen; after Controleer it is the one just made. An
+    // unanswered exercise (also on its second try, or behind a stats peek) is run.current.
+    const at = run.current ? made + 1 : made;
     const shownAt = total !== null ? Math.min(at, total) : at;
     const left = run.timerEndsAt !== undefined ? run.timerEndsAt - now : null;
     const lastMinute = left !== null && left < 60_000;

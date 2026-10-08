@@ -1,24 +1,38 @@
 import { useState } from 'react';
 import { useOefenStore } from '../useOefenStore';
 import { loadRuns, summary } from '../../services/oefenen/stats';
-import type { OefenRun, OefenSessie } from '../../services/oefenen/types';
+import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
+
+// The pupil's answer(s) in a Foutjes row: the first try, and what came of the second one.
+function givenText(e: OefenError): string {
+    if (e.secondTry) return `${e.given}, dan juist`;
+    return e.second !== undefined ? `${e.given}, dan ${e.second}` : e.given;
+}
 
 // Per type gemaakt / juist / fout / %, then every mistake with the pupil's answer and the
-// right one: one run, read-only.
+// right one: one run, read-only. With 2 kansen, "Juist na 2e kans" splits off the juist ones
+// that needed the retry (they still count as juist).
 function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
     const rows = summary(run.stats, sessie);
     const errors = rows.flatMap(r => r.errors.map(e => ({ ...e, label: r.label })));
+    const retries = attemptsOf(sessie) === 2 || rows.some(r => r.secondTry > 0);
     return (
         <>
             <table className="kiosk-table">
                 <thead>
-                    <tr><th scope="col">Oefening</th><th scope="col">Gemaakt</th><th scope="col">Juist</th><th scope="col">Fout</th><th scope="col">%</th></tr>
+                    <tr>
+                        <th scope="col">Oefening</th><th scope="col">Gemaakt</th><th scope="col">Juist</th>
+                        {retries && <th scope="col">Juist na 2e kans</th>}
+                        <th scope="col">Fout</th><th scope="col">%</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {rows.map(r => (
                         <tr key={r.slot}>
                             <th scope="row">{r.label}</th>
-                            <td>{r.made}</td><td>{r.correct}</td><td>{r.wrong}</td>
+                            <td>{r.made}</td><td>{r.correct}</td>
+                            {retries && <td>{r.secondTry}</td>}
+                            <td>{r.wrong}</td>
                             <td>{r.pct === null ? '–' : `${r.pct} %`}</td>
                         </tr>
                     ))}
@@ -36,7 +50,7 @@ function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
                             {errors.map((e, i) => (
                                 <tr key={i}>
                                     <td className="kiosk-math">{e.exercise}</td>
-                                    <td className="kiosk-math is-given">{e.given}</td>
+                                    <td className={`kiosk-math${e.secondTry ? '' : ' is-given'}`}>{givenText(e)}</td>
                                     <td className="kiosk-math">{e.expected}</td>
                                 </tr>
                             ))}
