@@ -18,7 +18,9 @@ export default function WhiteboardView() {
     const tool = useBoardStore((s) => s.tool);
 
     return (
-        <div style={S.overlay}>
+        // no-print: Ctrl+P or the Afdrukken path with the board open must print the sheet
+        // underneath, not this fixed overlay on top of every page.
+        <div className="no-print" data-whiteboard style={S.overlay}>
             <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex' }}>
                 <BoardPageCanvas />
                 {/* Inspector flyouts — opened via the ⚙ in the widget's title bar. */}

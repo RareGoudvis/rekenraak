@@ -4,6 +4,7 @@ import { render, cleanup } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import WidgetFrame from '../board/components/WidgetFrame';
 import BoardPageCanvas from '../board/components/BoardPageCanvas';
+import WhiteboardView from '../board/components/WhiteboardView';
 import type { BoardWidget } from '../board/boardTypes';
 
 // jsdom has no layout, so these pin the CSS contract the Playwright pass verified on screen:
@@ -35,5 +36,12 @@ describe('stacking', () => {
         const layer = container.querySelector('[data-widget-layer]') as HTMLElement;
         expect(canvas.style.isolation).toBe('isolate');
         expect(layer.style.isolation).toBe('isolate');
+    });
+});
+
+describe('print', () => {
+    test('the board overlay is out of the print tree, so printing with it open prints the sheet', () => {
+        const { container } = render(<WhiteboardView />);
+        expect((container.firstElementChild as HTMLElement).classList.contains('no-print')).toBe(true);
     });
 });
