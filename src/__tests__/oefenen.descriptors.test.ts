@@ -14,6 +14,7 @@ import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
 import { cellsFromParts, cijferFill, type Cells } from './helpers/fillCells';
+import { checkDrag } from './helpers/dragCheck';
 import { cijferKiosk } from '../services/oefenen/kioskDescriptors';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
 import type * as T from '../services/math/types';
@@ -56,6 +57,7 @@ const EXPECTED_LEAVES = [
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
     'breuken-kleuren',
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
+    'klok-analoog-tekenen',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -367,7 +369,7 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'stomphoekig'] })).toBe(true);
         expect(kioskSupports('klok-kloklezen', {})).toBe(true);
         expect(kioskSupports('klok-kloklezen', { clockType: 'digitaal', exerciseMode: 'lezen' })).toBe(false);
-        expect(kioskSupports('klok-kloklezen', { clockType: 'analoog', exerciseMode: 'tekenen' })).toBe(false);
+        expect(kioskSupports('klok-kloklezen', { clockType: 'analoog', exerciseMode: 'tekenen' })).toBe(true);
         expect(kioskSupports('nope', {})).toBe(false);
     });
 });
@@ -423,6 +425,9 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-rekenen-korting', { wholeEuros: false }, 'multi-number'],
         ['geld-rekenen-intrest', { halfYear: true }, 'number'],
         ['klok-analoog-lezen', { is24hour: true }, 'time'],
+        ['klok-analoog-tekenen', { is24hour: true, timeTypes: ['nauwkeurig_1', 'uren'] }, 'interactive'],
+        ['klok-analoog-tekenen', { handChoice: 'minuut', timeTypes: ['nauwkeurig_5'] }, 'interactive'],
+        ['klok-analoog-tekenen', { handChoice: 'uur' }, 'interactive'],
         ['tijdsduur-berekenen', { blanks: ['begin', 'einde'], overMidnight: true }, 'time'],
         // Phase C2: a middle blank and the result, both cells on the card.
         ['patronen-kettingsommen', { blankMiddle: true, chainLength: 6, ops: ['+', '-', 'x', ':'] }, 'interactive'],
@@ -451,6 +456,7 @@ function checkInteractive(typeId: string, d: KioskDescriptor, ex: unknown, c: Re
     expect(d.answerOf(ex, c), where).toEqual([ia.answerOf(ex, c)]);
     expect(tap([]), where).toBe('');
     if (ia.kind === 'fill-cells') { checkCells(typeId, d, ex, c, truth, where); return; }
+    if (ia.kind === 'drag') { checkDrag(typeId, d, ex, c, truth, where); return; }
     if (ia.kind === 'tap') {
         expect(ia.answerOf(ex, c), where).toBe(truth);
         const right = keys.filter(k => tap([k]) === truth);

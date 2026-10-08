@@ -15,6 +15,7 @@ import { ROUND_SCALE, roundTo, targetsFor, usableTargets } from '../afronden/afr
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
+import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -865,17 +866,31 @@ const hm = (h: number, m: number) => `${h}:${String(m).padStart(2, '0')}`;
 // Reading a digitale klok asks the time in words: not served.
 const klokMode = (ex: ClockExercise, c: Record<string, unknown>) => ex.exerciseMode ?? (c.exerciseMode as string | undefined) ?? 'lezen';
 const klokType = (ex: ClockExercise, c: Record<string, unknown>) => ex.clockType ?? (c.clockType as string | undefined) ?? 'analoog';
+// Phase C4: an analoge klok to draw = drag the hands the pupil would draw (klokDragHands);
+// the answer is the face as 'h:mm', 3:15 and 15:15 one position (check.ts drag).
+const isKlokDrag = (ex: ClockExercise, c: Record<string, unknown>) => klokMode(ex, c) === 'tekenen' && klokType(ex, c) === 'analoog';
+const KLOK_HAND_WORDS: Record<string, string> = { m: 'de grote wijzer', h: 'de kleine wijzer', hm: 'de wijzers' };
+const klokDrag: KioskInteract<ClockExercise> = {
+    kind: 'drag',
+    keys: klokDragHands,
+    answerOf: (ex) => klokText(ex.hours, ex.minutes),
+    fromState: (st, ex, c) => klokGiven(ex, c, st.drag ?? {}),
+};
 export const KLOK_KIOSK = descriptor<ClockExercise>({
     input: 'time',
-    answerOf: (ex) => {
+    inputOf: (ex, c) => (isKlokDrag(ex, c) ? 'interactive' : 'time'),
+    interact: klokDrag,
+    answerOf: (ex, c) => {
+        if (isKlokDrag(ex, c)) return [klokDrag.answerOf(ex, c)];
         const h12 = ex.hours % 12;
         return (h12 === 0 ? [0, 12] : [h12, h12 + 12]).map(h => hm(h, ex.minutes));
     },
-    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??` : `${ex.timeText} = ? : ??`),
+    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??`
+        : isKlokDrag(ex, c) ? `${ex.timeText}: wijzers op ?` : `${ex.timeText} = ? : ??`),
+    kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.` : undefined),
     supported: (c) => {
-        const mode = (c.exerciseMode as string | undefined) ?? 'lezen';
         const type = (c.clockType as string | undefined) ?? 'analoog';
-        return type === 'analoog' ? mode !== 'tekenen' : mode === 'tekenen';
+        return type === 'analoog' || ((c.exerciseMode as string | undefined) ?? 'lezen') === 'tekenen';
     },
 });
 

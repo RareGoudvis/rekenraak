@@ -77,7 +77,8 @@ export interface KioskInteract<E = unknown> {
     kind: InteractionKind;
     // The canonical answer. tap-multi / fill-cells / order: parts joined by INTERACT_SEP
     // (tap-multi compares order-free; fill-cells part by part as numbers, '|' = alternatives,
-    // an empty alternative = the cell may stay blank: '|1' is a carry the pupil may skip).
+    // an empty alternative = the cell may stay blank: '|1' is a carry the pupil may skip;
+    // drag part by part as numbers or 'h:mm' times on a 12-hour face, within `tolerance`).
     answerOf(ex: E, c: Record<string, unknown>): string;
     // The pupil's answer from the viewer state, same shape as answerOf; '' = nothing given yet
     // (Controleer stays off, except tap-multi where an empty set can be the answer).
@@ -91,6 +92,9 @@ export interface KioskInteract<E = unknown> {
     cellOf?(key: string, ex: E, c: Record<string, unknown>): KioskCellSpec;
     // Stats text of an answer string (fromState or answerOf); absent = the parts, first spelling.
     show?(answer: string, ex: E, c: Record<string, unknown>): string;
+    // drag: how far each part may lie from answerOf and still count (a number in the part's own
+    // unit: minutes for an 'h:mm' part, degrees, grams); absent = 0, the snapped value exactly.
+    tolerance?(ex: E, c: Record<string, unknown>): number;
 }
 
 export interface KioskCellSpec {

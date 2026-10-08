@@ -6,8 +6,9 @@ import { createContext, useContext, type KeyboardEvent } from 'react';
 // (viewers.interaction.test.tsx + the visual gate prove it). Only the kiosk card provides it.
 
 // tap = pick one part · tap-multi = toggle any number of parts · fill-cells = type into the
-// viewer's own blanks · order = tap parts in sequence (1st, 2nd, …).
-export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order';
+// viewer's own blanks · order = tap parts in sequence (1st, 2nd, …) · drag = move a handle on an
+// SVG figure (a clock hand, the mercury, a needle) with the pointer or the arrow keys (kioskDrag.ts).
+export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order' | 'drag';
 
 export interface InteractionState {
     // tap / tap-multi: the keys of the picked parts (tap holds at most one).
@@ -16,6 +17,8 @@ export interface InteractionState {
     cells: Record<string, string>;
     // order: keys in the sequence the pupil tapped them.
     order: string[];
+    // drag: the value each handle stands on (handle key → value); absent = nothing dragged yet.
+    drag?: Record<string, number>;
 }
 
 export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [] };
