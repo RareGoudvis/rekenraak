@@ -5,6 +5,12 @@ import Keypad from './Keypad';
 // What sits between two fields: the sheet's "r" for delen met rest, ':' between uur and min.
 const SEPARATOR: Record<string, string> = { 'number+rest': 'r', time: ':' };
 
+/** Size class for the choice buttons: signs and units (< = >, dl) big, numbers (437) one step down, words (even, honderdtallen) at a size a button holds. */
+function choiceSizeOf(choices: readonly string[]): '' | ' is-numbers' | ' is-words' {
+    if (choices.every(c => c.length <= 2)) return '';
+    return choices.some(c => /\p{L}/u.test(c)) ? ' is-words' : ' is-numbers';
+}
+
 // The answer side of the kiosk: typed field(s) + keypad, the choice buttons, or a word field.
 export default function AnswerInput() {
     const sessie = useOefenStore(s => s.sessie);
@@ -25,19 +31,19 @@ export default function AnswerInput() {
     if (!info) return null;
 
     if (info.kind === 'choice') {
-        // Signs (< = >) stay big; words (even, honderdtallen) get a size that fits a button.
-        const words = info.choices.some(c => c.length > 2);
-        // A long word (honderdtallen, parallellogram) needs half the panel, never a mid-word break.
-        const longWord = info.choices.some(c => c.length > 9);
+        const choiceClass = choiceSizeOf(info.choices);
+        // A long word (honderdtallen, parallellogram) or number (12 345,67) needs half the panel.
+        const longWord = info.choices.some(c => c.length > (choiceClass === ' is-numbers' ? 6 : 9));
         const cols = info.choices.length === 2 || info.choices.length === 4 || longWord ? 2 : 3;
         return (
             <div className="kiosk-answer">
-                <div className={`kiosk-choices${words ? ' is-words' : ''}`} role="radiogroup" aria-label="Kies het antwoord"
-                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                <div className={`kiosk-choices${choiceClass}`} role="radiogroup" aria-label="Kies het antwoord"
+                    // --chars: the longest choice, so the number size fits every button alike (kiosk.css).
+                    style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, '--chars': Math.max(...info.choices.map(c => c.length)) } as React.CSSProperties}>
                     {info.choices.map(c => (
                         <button key={c} type="button" role="radio" aria-checked={input[0] === c}
                             className={`kiosk-choice${input[0] === c ? ' is-picked' : ''}`} onClick={() => choose(c)}>
-                            {c}
+                            {choiceClass === ' is-numbers' ? <span className="kiosk-choice-num">{c}</span> : c}
                         </button>
                     ))}
                 </div>
@@ -62,7 +68,8 @@ export default function AnswerInput() {
                         {captions && <span className="kiosk-field-cap">{label}</span>}
                         <input
                             aria-label={label}
-                            placeholder={label}
+                            // A caption above already names the field; the same word inside it again is noise.
+                            placeholder={captions ? undefined : label}
                             ref={el => { refs.current[i] = el; }}
                             className={`kiosk-field${field === i && input.length > 1 ? ' is-active' : ''}${text ? ' is-text' : ''}`}
                             // No on-screen OS keyboard for numbers: the keypad is the touch input, a
