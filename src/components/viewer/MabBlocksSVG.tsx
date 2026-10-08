@@ -23,6 +23,8 @@ interface ColumnProps {
     place: MabPlace;
     style: MabStyle;
     color?: string;
+    // Bordmodus MAB-mat: a teacher-picked fill per place; strokes stay `color`. The sheet never passes it.
+    fill?: string;
 }
 
 // 'mab-color' palette per place (fill). Strokes stay black for readability.
@@ -41,17 +43,17 @@ function resolveFill(style: MabStyle, place: MabPlace, color: string): string {
     return 'white';
 }
 
-export function MabPlaceColumn({ count, place, style, color = '#000' }: ColumnProps) {
+export function MabPlaceColumn({ count, place, style, color = '#000', fill }: ColumnProps) {
     if (count === 0) return null;
 
     // Units: column-first 2-row "domino" pattern (1, 2, 3, 4…) for subitizing.
     if (place === 'units') {
-        return <PatternedGrid count={count} maxRows={2} place="units" style={style} color={color} />;
+        return <PatternedGrid count={count} maxRows={2} place="units" style={style} color={color} fill={fill} />;
     }
 
     // Hundreds: 3-column × 3-row grid (column-first top-down) — up to 9 fit in the cell.
     if (place === 'hundreds') {
-        return <PatternedGrid count={count} maxRows={3} place="hundreds" style={style} color={color} />;
+        return <PatternedGrid count={count} maxRows={3} place="hundreds" style={style} color={color} fill={fill} />;
     }
 
     // Tens / thousands: one glyph per row stacked bottom-up so column width stays fixed.
@@ -67,7 +69,7 @@ export function MabPlaceColumn({ count, place, style, color = '#000' }: ColumnPr
             height: '100%',
         }}>
             {Array.from({ length: count }, (_, i) => (
-                <Glyph key={i} place={place} style={style} color={color} />
+                <Glyph key={i} place={place} style={style} color={color} fill={fill} />
             ))}
         </div>
     );
@@ -78,8 +80,8 @@ export function MabGlyph({ place, style }: { place: MabPlace; style: MabStyle })
     return <Glyph place={place} style={style} color="#000" />;
 }
 
-function PatternedGrid({ count, maxRows, place, style, color }: {
-    count: number; maxRows: number; place: MabPlace; style: MabStyle; color: string;
+function PatternedGrid({ count, maxRows, place, style, color, fill }: {
+    count: number; maxRows: number; place: MabPlace; style: MabStyle; color: string; fill?: string;
 }) {
     const cols = Math.ceil(count / maxRows);
     const cells: React.ReactNode[] = [];
@@ -90,7 +92,7 @@ function PatternedGrid({ count, maxRows, place, style, color }: {
             if (idx >= count) break;
             cells.push(
                 <div key={`${k}-${r}`} style={{ gridColumn: k + 1, gridRow: r + 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Glyph place={place} style={style} color={color} />
+                    <Glyph place={place} style={style} color={color} fill={fill} />
                 </div>
             );
         }
@@ -111,14 +113,16 @@ function PatternedGrid({ count, maxRows, place, style, color }: {
     );
 }
 
-function Glyph({ place, style, color }: { place: MabPlace; style: MabStyle; color: string }) {
+function Glyph({ place, style, color, fill: fillOverride }: { place: MabPlace; style: MabStyle; color: string; fill?: string }) {
     if (style === 'symbolic') {
-        if (place === 'thousands') return <SymbolicThousands color={color} />;
-        if (place === 'hundreds')  return <SymbolicHundreds color={color} />;
-        if (place === 'tens')      return <SymbolicTens color={color} />;
-        return <SymbolicUnits color={color} />;
+        // Symbolic glyphs are single-colour marks, so a picked fill recolours the whole mark.
+        const mark = fillOverride ?? color;
+        if (place === 'thousands') return <SymbolicThousands color={mark} />;
+        if (place === 'hundreds')  return <SymbolicHundreds color={mark} />;
+        if (place === 'tens')      return <SymbolicTens color={mark} />;
+        return <SymbolicUnits color={mark} />;
     }
-    const fill = resolveFill(style, place, color);
+    const fill = fillOverride ?? resolveFill(style, place, color);
     if (place === 'thousands') return <RealisticThousands stroke={color} fill={fill} />;
     if (place === 'hundreds')  return <RealisticHundreds stroke={color} fill={fill} />;
     if (place === 'tens')      return <RealisticTens stroke={color} fill={fill} />;

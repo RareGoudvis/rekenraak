@@ -12,6 +12,7 @@ import GetallenlijnSettings from './GetallenlijnSettings';
 import PositietabelSettings from './PositietabelSettings';
 import HonderdveldSettings from './HonderdveldSettings';
 import BreukvizSettings from './BreukvizSettings';
+import MabMatSettings from './MabMatSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -34,4 +35,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     positietabel: PositietabelSettings,
     honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings,
+    mabmat: MabMatSettings,
 };

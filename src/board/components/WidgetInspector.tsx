@@ -1,5 +1,4 @@
 import { X } from '@phosphor-icons/react';
-import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
 import { dobbelProps, ademProps, widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
@@ -13,7 +12,6 @@ interface Props {
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
     timer: TimerSettings, dobbelsteen: DobbelSettings, adem: AdemSettings,
-    mabmat: MabMatSettings,
 };
 
 // Settings flyout for non-exercise widgets (same chrome as the exercise inspector): the
@@ -120,30 +118,6 @@ function AdemSettings({ widget }: { widget: BoardWidget }) {
     );
 }
 
-
-function MabMatSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const style = String(widget.props?.mabStyle ?? 'mab-color');
-    const showTotal = widget.props?.showTotal === true;
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Stijl</div>
-            <div className="seg-group">
-                <button type="button" className="seg-btn" aria-pressed={style === 'mab-color'} onClick={() => set({ mabStyle: 'mab-color' })}>Realistisch</button>
-                <button type="button" className="seg-btn" aria-pressed={style === 'mab-bw'} onClick={() => set({ mabStyle: 'mab-bw' })}>Zwart-wit</button>
-                <button type="button" className="seg-btn" aria-pressed={style === 'symbolic'} onClick={() => set({ mabStyle: 'symbolic' })}>Symbolisch</button>
-            </div>
-            <div style={S.row}>
-                <span style={S.rowLabel}>Toon totaal</span>
-                <Switch checked={showTotal} onChange={(v) => set({ showTotal: v })} aria-label="Toon totaal" />
-            </div>
-            <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ d: 0, h: 0, t: 0, e: 0 })}>
-                Alles wissen
-            </button>
-        </div>
-    );
-}
 
 const S = {
     panel: {
