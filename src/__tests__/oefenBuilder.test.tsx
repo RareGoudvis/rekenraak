@@ -37,7 +37,13 @@ const leaf = (id: string) => {
 // The left-hand button for a leaf: its label plus the "1×" counter once added.
 // The footer button is the last "Delen": a hr-std leaf is called Delen too.
 const footerBtn = (name: string) => screen.getAllByRole('button', { name }).at(-1) as HTMLButtonElement;
-const addBtn = (id: string) => screen.getByRole('button', { name: (name: string) => name.replace(/\d+×$/, '') === leaf(id).label });
+// Several leaves share a label ("Natuurlijke getallen" under hoofdrekenen and cijferen):
+// the buttons follow the list order, so the leaf's rank among its namesakes picks its button.
+const addBtn = (id: string) => {
+    const { label } = leaf(id);
+    const rank = listOefenLeaves().filter(l => l.label === label).findIndex(l => l.id === id);
+    return screen.getAllByRole('button', { name: (name: string) => name.replace(/\d+×$/, '') === label })[rank];
+};
 const settings: BuilderSettings = { id: 'sess1', createdAt: 1, title: ' Tafels ', mode: 'willekeurig', allowRepeatType: true, timerMin: 15, testMode: true, statsLocked: true };
 
 describe('normaliseWeights', () => {

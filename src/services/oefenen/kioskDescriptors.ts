@@ -1,8 +1,13 @@
-import type { AfrondenExercise, CijferExercise, Equation, Fraction, ProcentExercise, VergelijkenExercise } from '../math/types';
+import type {
+    AfrondenExercise, CijferExercise, ControleExercise, Equation, EvenOnevenExercise, Fraction, GetalFunctieExercise, MabExercise,
+    PlaatswaardeExercise, ProcentExercise, RekenvolgordeExercise, RomeinseExercise, SchattendExercise, VergelijkenExercise, VormleerExercise,
+} from '../math/types';
 import type { KioskDescriptor, KioskInput, KioskKey } from './types';
 import { isFraction } from '../math/answerKeys';
 import { formatMathNumber, opGlyph } from '../math/formatters';
-import { roundTo, targetsFor } from '../afronden/afrondenGenerator';
+import { ROUND_SCALE, roundTo, targetsFor } from '../afronden/afrondenGenerator';
+import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
+import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -120,17 +125,31 @@ export const AFRONDEN_KIOSK = descriptor<AfrondenExercise>({
     supported: (c) => (c.subType ?? 'rooster') === 'simpel',
 });
 
-// ── Vergelijken (getallen only) ──────────────────────────────────────────────
+// ── Vergelijken ──────────────────────────────────────────────────────────────
+
+// getallen / representaties: < = > between a and b (a breuk side compares by its value);
+// kiezen: tap the grootste / kleinste of the row, the buttons being the row's own numbers.
+const isKiezen = (c: Record<string, unknown>) => c.subType === 'kiezen';
+const showNum = (x: number) => formatMathNumber(plain(x));
+const kiezenAnswer = (ex: VergelijkenExercise) => {
+    const nums = ex.numbers ?? [];
+    // SYNC: VergelijkenViewer circles Math.min / Math.max by ex.target.
+    return (ex.target ?? 'grootste') === 'kleinste' ? Math.min(...nums) : Math.max(...nums);
+};
+const sideText = (v: number | undefined, f: Fraction | undefined) => (f ? showValue(f) : showNum(v ?? 0));
 
 export const VERGELIJKEN_KIOSK = descriptor<VergelijkenExercise>({
     input: 'choice',
     choices: ['<', '=', '>'],
-    answerOf: (ex) => {
+    choicesOf: (ex, c) => (isKiezen(c) ? (ex.numbers ?? []).map(showNum) : ['<', '=', '>']),
+    answerOf: (ex, c) => {
+        if (isKiezen(c)) return [showNum(kiezenAnswer(ex))];
         const a = ex.a ?? 0, b = ex.b ?? 0;
         return [a < b ? '<' : a > b ? '>' : '='];
     },
-    display: (ex) => `${formatMathNumber(plain(ex.a ?? 0))} ? ${formatMathNumber(plain(ex.b ?? 0))}`,
-    supported: (c) => (c.subType ?? 'getallen') === 'getallen',
+    display: (ex, c) => isKiezen(c)
+        ? `${ex.target ?? 'grootste'} van ${(ex.numbers ?? []).map(showNum).join(' · ')}: ?`
+        : `${sideText(ex.a, ex.aFrac)} ? ${sideText(ex.b, ex.bFrac)}`,
 });
 
 // ── Cijferen (the grid is scrap paper; the pupil types the final result) ─────
@@ -142,4 +161,131 @@ export const CIJFER_KIOSK = descriptor<CijferExercise>({
     keys: (c) => (numberTypeOf(c) === 'decimal' ? [','] : []),
     answerOf: (ex) => (ex.operator === ':' ? [plain(ex.answer), plain(ex.remainder ?? 0)] : numberSpellings(ex.answer)),
     display: (ex) => `${ex.operands.map(showValue).join(` ${opGlyph(ex.operator)} `)} = ${ex.operator === ':' ? '? r ?' : '?'}`,
+});
+
+// ── Getalbegrip ──────────────────────────────────────────────────────────────
+
+// Digits of `n` from its highest non-zero place down to E (or 10^-dp), as the sheet prints them.
+// SYNC: PlaatswaardeViewer placesOf / placesFor.
+function plaatsenOf(ex: PlaatswaardeExercise, c: Record<string, unknown>) {
+    const own = (String(ex.number).split('.')[1] ?? '').length;
+    const dp = Math.max(Number(c.decimalPlaces ?? 0), own);
+    const all = getMaskPlaces(Math.max(Number(c.maxGetal ?? 1000), ex.number), dp > 0 ? 'decimal' : 'natural', dp);
+    const start = all.findIndex(p => digitAtPlace(ex.number, p.weight) !== 0);
+    return (start < 0 ? all.slice(-1) : all.slice(start)).map(p => ({ ...p, digit: digitAtPlace(ex.number, p.weight) }));
+}
+const plaatsOf = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => plaatsenOf(ex, c).find(p => p.key === ex.placeKey);
+const pwSub = (c: Record<string, unknown>) => (c.subType as string | undefined) ?? 'waarde';
+
+// waarde: type the digit's value (300, 0,05); plaats: tap the place name; omcirkelen: tap
+// its letter (H, t) among the number's own places, like the sheet's chips.
+export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (pwSub(c) === 'waarde' ? 'number' : 'choice'),
+    keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 ? [','] : []),
+    choicesOf: (ex, c) => plaatsenOf(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
+    answerOf: (ex, c) => {
+        const p = plaatsOf(ex, c);
+        if (!p) return [];
+        if (pwSub(c) === 'waarde') return numberSpellings(Number((p.digit * p.weight).toFixed(4)));
+        return [pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key];
+    },
+    display: (ex, c) => `${showNum(ex.number)}: ${pwSub(c) === 'waarde' ? 'waarde' : 'plaats'} van het cijfer op ${plaatsOf(ex, c)?.key ?? '?'} = ?`,
+    supported: (c) => pwSub(c) !== 'tabel',
+});
+
+// Cirkels only: the pupil groups the circles and writes even / oneven.
+export const EVEN_ONEVEN_KIOSK = descriptor<EvenOnevenExercise>({
+    input: 'choice',
+    choices: ['even', 'oneven'],
+    answerOf: (ex) => [(ex.number ?? 0) % 2 === 0 ? 'even' : 'oneven'],
+    display: (ex) => `${ex.number ?? 0} is ?`,
+    supported: (c) => c.subType === 'cirkels',
+});
+
+// herkennen: Roman → number; schrijven: number → Roman, typed on the device keyboard.
+const isSchrijven = (c: Record<string, unknown>) => c.subType === 'schrijven';
+export const ROMEINSE_KIOSK = descriptor<RomeinseExercise>({
+    input: 'number',
+    inputOf: (_ex, c) => (isSchrijven(c) ? 'text' : 'number'),
+    answerOf: (ex, c) => (isSchrijven(c) ? [ex.roman] : numberSpellings(ex.value)),
+    display: (ex, c) => (isSchrijven(c) ? `${ex.value} = ? (Romeins)` : `${ex.roman} = ?`),
+});
+
+// SYNC: GetalFunctieViewer FUNCTIE_LABEL (aankruisen columns) / FUNCTIE_FULL (schrijven).
+const FUNCTIE_LABEL: Record<string, string> = { hoeveelheid: 'hoeveelheid', rang: 'rangorde', maat: 'maat', code: 'code' };
+const FUNCTIE_FULL: Record<string, string> = { hoeveelheid: 'hoeveelheidsgetal', rang: 'rangordegetal', maat: 'maatgetal', code: 'codegetal' };
+const functiesOf = (c: Record<string, unknown>) => {
+    const f = c.functies as string[] | undefined;
+    return f?.length ? f : ['hoeveelheid', 'rang', 'maat', 'code'];
+};
+const isSchrijf = (c: Record<string, unknown>) => c.answerMode === 'schrijven';
+export const GETALFUNCTIE_KIOSK = descriptor<GetalFunctieExercise>({
+    input: 'choice',
+    inputOf: (_ex, c) => (isSchrijf(c) ? 'text' : 'choice'),
+    choicesOf: (_ex, c) => functiesOf(c).map(f => FUNCTIE_LABEL[f] ?? f),
+    // Schrijven takes the full word and the short column name alike.
+    answerOf: (ex, c) => (isSchrijf(c) ? [FUNCTIE_FULL[ex.functie], FUNCTIE_LABEL[ex.functie]] : [FUNCTIE_LABEL[ex.functie]]),
+    display: (ex) => `${ex.sentence.replace('___', ex.number)} → ${ex.number} is een ?`,
+});
+
+export const MAB_KIOSK = descriptor<MabExercise>({
+    input: 'number',
+    answerOf: (ex) => numberSpellings(ex.value),
+    display: (ex) => `MAB ${([[ex.thousands, 'D'], [ex.hundreds, 'H'], [ex.tens, 'T'], [ex.units, 'E']] as const).filter(([n]) => n).map(([n, k]) => `${n}${k}`).join(' ')} = ?`,
+});
+
+// ── Schattend, rekenvolgorde, controleren ───────────────────────────────────
+
+// Only the estimate is asked; the rounded operands are the pupil's own scrap work.
+// SYNC: SchattendViewer rows (round both for + −, only a for × :).
+function schatting(ex: SchattendExercise, c: Record<string, unknown>): number {
+    const all = targetsFor(numberTypeOf(c));
+    const t = all.find(x => x.key === ex.targetKey) ?? all[0];
+    const ra = roundTo(ex.a, t.weight);
+    const rb = ex.operator === '+' || ex.operator === '-' ? roundTo(ex.b, t.weight) : ex.b;
+    const units = (n: number) => Math.round(n * ROUND_SCALE);
+    if (ex.operator === '+') return (units(ra) + units(rb)) / ROUND_SCALE;
+    if (ex.operator === '-') return (units(ra) - units(rb)) / ROUND_SCALE;
+    return ex.operator === 'x' ? Number((ra * rb).toFixed(6)) : Number((ra / rb).toFixed(6));
+}
+export const SCHATTEND_KIOSK = descriptor<SchattendExercise>({
+    input: 'number',
+    keys: (c) => (numberTypeOf(c) === 'decimal' ? [','] : []),
+    answerOf: (ex, c) => numberSpellings(schatting(ex, c)),
+    display: (ex) => `${showNum(ex.a)} ${opGlyph(ex.operator)} ${showNum(ex.b)} ≈ ? (op ${ex.targetKey})`,
+});
+
+export const REKENVOLGORDE_KIOSK = descriptor<RekenvolgordeExercise>({
+    input: 'number',
+    answerOf: (ex) => numberSpellings(ex.answer),
+    // SYNC: RekenvolgordeViewer renderTokens (tight brackets).
+    display: (ex) => `${ex.tokens.map(t => (typeof t === 'number' ? showNum(t) : opGlyph(t))).join(' ').replace(/\( /g, '(').replace(/ \)/g, ')')} = ?`,
+});
+
+// Negenproef and omgekeerde bewerking both end in the sheet's juist / fout circle.
+export const CONTROLEREN_KIOSK = descriptor<ControleExercise>({
+    input: 'choice',
+    choices: ['juist', 'fout'],
+    answerOf: (ex) => [ex.shownAnswer === ex.correctAnswer ? 'juist' : 'fout'],
+    display: (ex) => `${showNum(ex.a)} ${opGlyph(ex.operator)} ${showNum(ex.b)} = ${showNum(ex.shownAnswer)}: juist of fout?`,
+});
+
+// ── Vormleer (herkennen: name the hoek / vierhoek) ──────────────────────────
+
+// Triangles have two naming systems (by angle and by side): a rechthoekige driehoek can also
+// be gelijkbenig, so a set mixing both would have two right buttons. One system at a time.
+const BY_ANGLE = ['scherphoekig', 'rechthoekig', 'stomphoekig'];
+const BY_SIDE = ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'];
+const conceptsOf = (c: Record<string, unknown>) => (c.concepts as string[] | undefined) ?? [];
+export const VORMLEER_KIOSK = descriptor<VormleerExercise>({
+    input: 'choice',
+    choicesOf: (_ex, c) => conceptsOf(c).map(k => CONCEPT_NAMES[k] ?? k),
+    answerOf: (ex) => [CONCEPT_NAMES[ex.concept] ?? ex.concept],
+    display: () => 'Welke soort? ?',
+    supported: (c) => {
+        if ((c.mode ?? 'herkennen') !== 'herkennen' || (c.kind !== 'hoek' && c.kind !== 'figuur')) return false;
+        const ks = conceptsOf(c);
+        return ks.length >= 2 && !(ks.some(k => BY_ANGLE.includes(k)) && ks.some(k => BY_SIDE.includes(k)));
+    },
 });

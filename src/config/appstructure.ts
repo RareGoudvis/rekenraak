@@ -244,7 +244,7 @@ export const APP_STRUCTURE: Domain[] = [
                 label: 'Even en oneven',
                 types: [
                     { id: 'even-oneven-rooster', label: 'Rooster kleuren', typeId: 'even-oneven', defaultConstraints: { subType: 'rooster' }, instruction: (c) => c.target === 'oneven' ? 'Kleur de oneven getallen.' : 'Kleur de even getallen.' },
-                    { id: 'even-oneven-cirkels', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' }, instruction: 'Maak groepjes van twee. Even of oneven?' },
+                    { id: 'even-oneven-cirkels', shortLabel: 'Even of oneven', label: 'Cirkels groeperen', typeId: 'even-oneven', defaultConstraints: { subType: 'cirkels' }, instruction: 'Maak groepjes van twee. Even of oneven?' },
                 ],
             },
             {
@@ -278,8 +278,8 @@ export const APP_STRUCTURE: Domain[] = [
                 id: 'romeinse-cijfers',
                 label: 'Romeinse cijfers',
                 types: [
-                    { id: 'romeinse-herkennen', label: 'Herkennen (→ getal)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'herkennen' }, instruction: 'Welk getal is dit?' },
-                    { id: 'romeinse-schrijven', label: 'Schrijven (→ Romeins)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'schrijven' }, instruction: 'Schrijf in Romeinse cijfers.' },
+                    { id: 'romeinse-herkennen', shortLabel: 'Romeinse cijfers lezen', label: 'Herkennen (→ getal)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'herkennen' }, instruction: 'Welk getal is dit?' },
+                    { id: 'romeinse-schrijven', shortLabel: 'Romeinse cijfers schrijven', label: 'Schrijven (→ Romeins)', typeId: 'romeinse-cijfers', defaultConstraints: { subType: 'schrijven' }, instruction: 'Schrijf in Romeinse cijfers.' },
                 ],
             },
         ],
@@ -354,32 +354,32 @@ export const APP_STRUCTURE: Domain[] = [
                         id: 'cijferen-optellen',
                         label: 'Optellen',
                         children: [
-                            { id: 'cijferen-optellen-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-optellen-nat', defaultConstraints: { operator: '+', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-optellen-dec', label: 'Kommagetallen', typeId: 'cijferen-optellen-dec', defaultConstraints: { operator: '+', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-optellen-nat', shortLabel: 'Cijferen optellen · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-optellen-nat', defaultConstraints: { operator: '+', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-optellen-dec', shortLabel: 'Cijferen optellen · decimaal', label: 'Kommagetallen', typeId: 'cijferen-optellen-dec', defaultConstraints: { operator: '+', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     {
                         id: 'cijferen-aftrekken',
                         label: 'Aftrekken',
                         children: [
-                            { id: 'cijferen-aftrekken-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-aftrekken-nat', defaultConstraints: { operator: '-', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-aftrekken-dec', label: 'Kommagetallen', typeId: 'cijferen-aftrekken-dec', defaultConstraints: { operator: '-', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-aftrekken-nat', shortLabel: 'Cijferen aftrekken · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-aftrekken-nat', defaultConstraints: { operator: '-', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-aftrekken-dec', shortLabel: 'Cijferen aftrekken · decimaal', label: 'Kommagetallen', typeId: 'cijferen-aftrekken-dec', defaultConstraints: { operator: '-', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     {
                         id: 'cijferen-vermenigvuldigen',
                         label: 'Vermenigvuldigen',
                         children: [
-                            { id: 'cijferen-vermenigvuldigen-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-vermenigvuldigen-nat', defaultConstraints: { operator: 'x', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-vermenigvuldigen-dec', label: 'Kommagetallen', typeId: 'cijferen-vermenigvuldigen-dec', defaultConstraints: { operator: 'x', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-vermenigvuldigen-nat', shortLabel: 'Cijferen vermenigvuldigen · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-vermenigvuldigen-nat', defaultConstraints: { operator: 'x', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-vermenigvuldigen-dec', shortLabel: 'Cijferen vermenigvuldigen · decimaal', label: 'Kommagetallen', typeId: 'cijferen-vermenigvuldigen-dec', defaultConstraints: { operator: 'x', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     {
                         id: 'cijferen-delen',
                         label: 'Delen',
                         children: [
-                            { id: 'cijferen-delen-nat', label: 'Natuurlijke getallen', typeId: 'cijferen-delen-nat', defaultConstraints: { operator: ':', numberType: 'natural' }, instruction: 'Cijfer uit.' },
-                            { id: 'cijferen-delen-dec', label: 'Kommagetallen', typeId: 'cijferen-delen-dec', defaultConstraints: { operator: ':', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-delen-nat', shortLabel: 'Cijferen delen · natuurlijk', label: 'Natuurlijke getallen', typeId: 'cijferen-delen-nat', defaultConstraints: { operator: ':', numberType: 'natural' }, instruction: 'Cijfer uit.' },
+                            { id: 'cijferen-delen-dec', shortLabel: 'Cijferen delen · decimaal', label: 'Kommagetallen', typeId: 'cijferen-delen-dec', defaultConstraints: { operator: ':', numberType: 'decimal' }, instruction: 'Cijfer uit.' },
                         ],
                     },
                     // Negenproef checks a worked cijfer-multiplication — it belongs with cijferen.

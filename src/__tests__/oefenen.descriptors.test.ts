@@ -12,7 +12,10 @@ import { checkAnswer, normaliseFraction, normaliseNumber } from '../services/oef
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
-import { evaluateChain, isFraction, numValue, scaled } from './helpers/answerKeys';
+import type * as T from '../services/math/types';
+import { PLACE_VALUES } from '../services/math/mathEngine';
+import { CONCEPT_NAMES } from '../services/vormleer/vormleerGenerator';
+import { applyOp, evaluateChain, evaluateTokens, isFraction, numValue, scaled } from './helpers/answerKeys';
 
 // Every kiosk-capable leaf × every leerjaar seed × 50 seeds: the descriptor's answer must be
 // the generator's own answer field, and checkAnswer must take it (in every spelling) and
@@ -29,6 +32,10 @@ const EXPECTED_LEAVES = [
     'hr-std-gemengd-nat', 'hr-std-gemengd-dec',
     'cijferen-optellen-nat', 'cijferen-optellen-dec', 'cijferen-aftrekken-nat', 'cijferen-aftrekken-dec',
     'cijferen-vermenigvuldigen-nat', 'cijferen-vermenigvuldigen-dec', 'cijferen-delen-nat', 'cijferen-delen-dec',
+    'plaatswaarde-waarde', 'plaatswaarde-plaats', 'plaatswaarde-omcirkelen', 'vergelijken-kiezen', 'vergelijken-representaties',
+    'even-oneven-cirkels', 'romeinse-herkennen', 'romeinse-schrijven', 'getalbegrip-functie', 'mab-herkennen',
+    'schattend-nat', 'schattend-dec', 'handig-rekenvolgorde', 'controleren-negenproef', 'controleren-omgekeerde',
+    'vormleer-hoeken-herkennen', 'vormleer-vierhoeken',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -83,8 +90,57 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         expect(t, `target ${a.targetKey}`).toBeDefined();
         return roundHalfUp(a.number as number, t!.weight);
     },
-    vergelijken: (v: VergelijkenExercise) => (v.a! < v.b! ? '<' : v.a! > v.b! ? '>' : '='),
+    vergelijken: (v: VergelijkenExercise, c) => {
+        if (c.subType !== 'kiezen') return v.a! < v.b! ? '<' : v.a! > v.b! ? '>' : '=';
+        const nums = v.numbers!;
+        return formatMathNumber(v.target === 'kleinste' ? Math.min(...nums) : Math.max(...nums));
+    },
+    plaatswaarde: (p: T.PlaatswaardeExercise, c) => {
+        const place = PLACE_VALUES.find(x => x.key === p.placeKey)!;
+        expect(place, p.placeKey).toBeDefined();
+        if (c.subType === 'plaats') return place.label.toLowerCase();
+        if (c.subType === 'omcirkelen') return place.key;
+        // The digit at that place, on scaled integers (4 decimals at most).
+        const digit = Math.floor(Math.round(p.number * 1e4) / Math.round(place.weight * 1e4)) % 10;
+        expect(digit, `${p.number} ${p.placeKey}`).toBeGreaterThan(0);
+        return digit * place.weight;
+    },
+    'even-oneven': (e: T.EvenOnevenExercise) => (e.number! % 2 === 0 ? 'even' : 'oneven'),
+    'romeinse-cijfers': (r: T.RomeinseExercise, c) => {
+        expect(fromRoman(r.roman)).toBe(r.value);
+        return c.subType === 'schrijven' ? { text: [r.roman] } : r.value;
+    },
+    getalfunctie: (g: T.GetalFunctieExercise, c) => {
+        const short = { hoeveelheid: 'hoeveelheid', rang: 'rangorde', maat: 'maat', code: 'code' }[g.functie];
+        const full = { hoeveelheid: 'hoeveelheidsgetal', rang: 'rangordegetal', maat: 'maatgetal', code: 'codegetal' }[g.functie];
+        return c.answerMode === 'schrijven' ? { text: [full, short] } : short;
+    },
+    'mab-herkennen': (m: T.MabExercise) => {
+        expect(m.thousands * 1000 + m.hundreds * 100 + m.tens * 10 + m.units).toBe(m.value);
+        return m.value;
+    },
+    rekenvolgorde: (r: T.RekenvolgordeExercise) => {
+        expect(scaled(evaluateTokens(r.tokens))).toBe(scaled(r.answer));
+        return r.answer;
+    },
+    controleren: (k: T.ControleExercise) => (k.shownAnswer === applyOp(k.a, k.operator, k.b) ? 'juist' : 'fout'),
+    schattend: (s: T.SchattendExercise, c) => {
+        const w = targetsFor(c.numberType as string).find(x => x.key === s.targetKey)!.weight;
+        const ra = roundHalfUp(s.a, w);
+        const rb = s.operator === '+' || s.operator === '-' ? roundHalfUp(s.b, w) : s.b;
+        return applyOp(ra, s.operator, rb);
+    },
+    'vormleer-hoeken': (v: T.VormleerExercise) => CONCEPT_NAMES[v.concept],
+    'vormleer-figuren': (v: T.VormleerExercise) => CONCEPT_NAMES[v.concept],
 };
+
+// Written from scratch: subtractive Roman numerals (IV, XC, CM).
+function fromRoman(s: string): number {
+    const v: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+    let total = 0;
+    for (let i = 0; i < s.length; i++) total += v[s[i]] < (v[s[i + 1]] ?? 0) ? -v[s[i]] : v[s[i]];
+    return total;
+}
 
 function generatorAnswer(typeId: string, ex: unknown, c: Record<string, unknown>): Truth {
     if (typeId.startsWith('hr-std-')) return hrTruth(ex as Equation);
@@ -106,8 +162,13 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('afronden', { subType: 'simpel' })).toBe(true);
         expect(kioskSupports('afronden', {})).toBe(false);
         expect(kioskSupports('vergelijken', {})).toBe(true);
-        expect(kioskSupports('vergelijken', { subType: 'kiezen' })).toBe(false);
+        expect(kioskSupports('vergelijken', { subType: 'kiezen' })).toBe(true);
         expect(kioskSupports('procenten', {})).toBe(true);
+        expect(kioskSupports('plaatswaarde', { subType: 'tabel' })).toBe(false);
+        expect(kioskSupports('even-oneven', { subType: 'rooster' })).toBe(false);
+        expect(kioskSupports('vormleer-hoeken', { mode: 'tekenen' })).toBe(false);
+        expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'gelijkbenig'] })).toBe(false);
+        expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'stomphoekig'] })).toBe(true);
         expect(kioskSupports('klok-kloklezen', {})).toBe(false);
         expect(kioskSupports('nope', {})).toBe(false);
     });

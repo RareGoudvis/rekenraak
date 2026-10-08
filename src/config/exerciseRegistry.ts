@@ -52,7 +52,7 @@ import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGe
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
 import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import type { KioskDescriptor } from '../services/oefenen/types';
-import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK } from '../services/oefenen/kioskDescriptors';
+import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK, PLAATSWAARDE_KIOSK, EVEN_ONEVEN_KIOSK, ROMEINSE_KIOSK, GETALFUNCTIE_KIOSK, MAB_KIOSK, SCHATTEND_KIOSK, REKENVOLGORDE_KIOSK, CONTROLEREN_KIOSK, VORMLEER_KIOSK } from '../services/oefenen/kioskDescriptors';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -513,7 +513,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'geld-wissel':     row<GeldWisselConstraints>({ exerciseField: 'geldWisselExercises',     generate: generateGeldWisselExercises,     defaultConstraints: geldWisselDefaults,     defaultCount: 4 }),
     'geld-teruggeven': row<GeldTeruggevenConstraints>({ exerciseField: 'geldTeruggevenExercises', generate: generateGeldTeruggevenExercises, generateNoted: generateGeldTeruggevenExercisesNoted, defaultConstraints: geldTeruggevenDefaults, defaultCount: 4 }),
 
-    'mab-herkennen': row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax }),
+    'mab-herkennen': row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax , kiosk: MAB_KIOSK }),
     'mab-tekenen':   row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax }),
 
     'ordenen':      row<OrdenenConstraints>({ exerciseField: 'ordenenExercises',      generate: generateOrdenenExercises, generateNoted: generateOrdenenExercisesNoted, defaultConstraints: ordenenDefaults,      defaultCount: 6, maxPresets: nonRationalMax(RANGES.ordenen) }),
@@ -527,15 +527,15 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises,  defaultConstraints: metenDefaults,        defaultCount: 6 }),
     'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises, generateNoted: generateOmtrekExercisesNoted,       defaultConstraints: metenDefaults,        defaultCount: 6 }),
     'temperatuur':  row<TemperatuurConstraints>({ exerciseField: 'temperatuurExercises',  generate: generateTemperatuurExercises,  defaultConstraints: temperatuurDefaults,  defaultCount: 4 }),
-    'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', ...notingShortfall(generatePlaatswaardeExercises), defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) }),
-    'even-oneven':  row<EvenOnevenConstraints>({ exerciseField: 'evenOnevenExercises',   generate: generateEvenOnevenExercises,   defaultConstraints: evenOnevenDefaults,   defaultCount: 3, maxPresets: evenOnevenMax }),
+    'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', ...notingShortfall(generatePlaatswaardeExercises), defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) , kiosk: PLAATSWAARDE_KIOSK }),
+    'even-oneven':  row<EvenOnevenConstraints>({ exerciseField: 'evenOnevenExercises',   generate: generateEvenOnevenExercises,   defaultConstraints: evenOnevenDefaults,   defaultCount: 3, maxPresets: evenOnevenMax , kiosk: EVEN_ONEVEN_KIOSK }),
     'vergelijken':  row<VergelijkenConstraints>({ exerciseField: 'vergelijkenExercises',  ...notingShortfall(generateVergelijkenExercises),  defaultConstraints: vergelijkenDefaults,  defaultCount: 6, maxPresets: vergelijkenMax, kiosk: VERGELIJKEN_KIOSK }),
     'afronden':     row<AfrondenConstraints>({ exerciseField: 'afrondenExercises',     ...notingShortfall(generateAfrondenExercises),     defaultConstraints: afrondenDefaults,     defaultCount: 6, maxPresets: afrondenMax, kiosk: AFRONDEN_KIOSK }),
-    'romeinse-cijfers': row<RomeinseConstraints>({ exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 }),
+    'romeinse-cijfers': row<RomeinseConstraints>({ exerciseField: 'romeinseExercises', generate: generateRomeinseExercises, defaultConstraints: romeinseDefaults, defaultCount: 8 , kiosk: ROMEINSE_KIOSK }),
     'herleidingen': row<HerleidingenConstraints>({ exerciseField: 'herleidingExercises', generate: generateHerleidingExercises, generateNoted: generateHerleidingExercisesNoted, defaultConstraints: herleidingenDefaults, defaultCount: 8 }),
 
     // Schattend rekenen (compenseren + tienvoud are hr-std presets, not types).
-    'schattend': row<SchattendConstraints>({ exerciseField: 'schattendExercises', generate: generateSchattendExercises, generateNoted: generateSchattendNoted, defaultConstraints: schattendDefaults, defaultCount: 8, maxPresets: schattendMax }),
+    'schattend': row<SchattendConstraints>({ exerciseField: 'schattendExercises', generate: generateSchattendExercises, generateNoted: generateSchattendNoted, defaultConstraints: schattendDefaults, defaultCount: 8, maxPresets: schattendMax , kiosk: SCHATTEND_KIOSK }),
 
     // Procenten + verbanden breuk·decimaal·procent.
     'verbanden': row<VerbandenConstraints>({ exerciseField: 'verbandExercises', generate: generateVerbandExercises, generateNoted: generateVerbandExercisesNoted, defaultConstraints: verbandenDefaults, defaultCount: 8 }),
@@ -544,7 +544,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'maateenheid':  row<MaateenheidConstraints>({ exerciseField: 'maateenheidExercises', generate: generateMaateenheidExercises, generateNoted: generateMaateenheidExercisesNoted, defaultConstraints: maateenheidDefaults, defaultCount: 8 }),
     'geld-rekenen': row<GeldRekenenConstraints>({ exerciseField: 'geldRekenenExercises', generate: generateGeldRekenenExercises, defaultConstraints: geldRekenenDefaults, defaultCount: 5 }),
 
-    'rekenvolgorde':  row<RekenvolgordeConstraints>({ exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, generateNoted: generateRekenvolgordeNoted, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10, maxPresets: fixedMax(RANGES.rekenvolgorde) }),
+    'rekenvolgorde':  row<RekenvolgordeConstraints>({ exerciseField: 'rekenvolgordeExercises', generate: generateRekenvolgordeExercises, generateNoted: generateRekenvolgordeNoted, defaultConstraints: rekenvolgordeDefaults, defaultCount: 10, maxPresets: fixedMax(RANGES.rekenvolgorde) , kiosk: REKENVOLGORDE_KIOSK }),
 
     // ── Blad-onderdelen (no generated content; constraints only) ────────────
     'layout-sectie':       row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
@@ -553,17 +553,17 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'layout-kader':        row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
     'layout-lege-pagina':  row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
     'kettingsommen':  row<KettingConstraints>({ exerciseField: 'patroonExercises',       generate: generateKettingExercises,       generateNoted: generateKettingExercisesNoted, defaultConstraints: kettingDefaults,       defaultCount: 6, maxPresets: fixedMax(RANGES.ketting) }),
-    'getalfunctie':   row<GetalFunctieConstraints>({ exerciseField: 'getalFunctieExercises',  generate: generateGetalFunctieExercises,  defaultConstraints: getalfunctieDefaults,  defaultCount: 6 }),
+    'getalfunctie':   row<GetalFunctieConstraints>({ exerciseField: 'getalFunctieExercises',  generate: generateGetalFunctieExercises,  defaultConstraints: getalfunctieDefaults,  defaultCount: 6 , kiosk: GETALFUNCTIE_KIOSK }),
     'tijdsduur':      row<TijdsduurConstraints>({ exerciseField: 'tijdsduurExercises',     generate: generateTijdsduurExercises,     defaultConstraints: tijdsduurDefaults,     defaultCount: 6 }),
     'kalender':       row<KalenderConstraints>({ exerciseField: 'kalenderExercises',      generate: generateKalenderExercises, generateNoted: generateKalenderExercisesNoted,      defaultConstraints: kalenderDefaults,      defaultCount: 1 }),
-    'controleren':    row<ControlerenConstraints>({ exerciseField: 'controleExercises',      generate: generateControleExercises,      defaultConstraints: controlerenDefaults,   defaultCount: 4, maxPresets: fixedMax(RANGES.controleren) }),
+    'controleren':    row<ControlerenConstraints>({ exerciseField: 'controleExercises',      generate: generateControleExercises,      defaultConstraints: controlerenDefaults,   defaultCount: 4, maxPresets: fixedMax(RANGES.controleren) , kiosk: CONTROLEREN_KIOSK }),
 
     // Meetkunde + SVG-heavy meten types.
     'oppervlakte': row<OppervlakteConstraints>({ exerciseField: 'meetExercises',       generate: generateOppervlakteExercises, generateNoted: generateOppervlakteExercisesNoted, defaultConstraints: oppervlakteDefaults, defaultCount: 4 }),
     'weegschaal':  row<WeegschaalConstraints>({ exerciseField: 'weegschaalExercises', generate: generateWeegschaalExercises,  defaultConstraints: weegschaalDefaults,  defaultCount: 4 }),
     'vormleer-punt-lijn': row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
-    'vormleer-hoeken':    row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
-    'vormleer-figuren':   row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
+    'vormleer-hoeken':    row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 , kiosk: VORMLEER_KIOSK }),
+    'vormleer-figuren':   row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 , kiosk: VORMLEER_KIOSK }),
 };
 
 // ── Seed-time fit: settings that only make sense under the seeded max ────────
