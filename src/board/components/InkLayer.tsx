@@ -1,7 +1,9 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBoardStore } from '../useBoardStore';
 import { rndId } from '../boardTypes';
-import type { Stroke } from '../boardTypes';
+import type { BoardTool, Stroke, ToolContext, ToolEngine } from '../boardTypes';
+import { splitSubpaths, strokeHit } from '../inkGeometry';
+import { createLineTool } from '../drawTools';
 
 // SVG ink layer. Receives pointer events only while an ink tool is active
 // (BoardPageCanvas flips pointer-events between this and the widget layer).
@@ -22,6 +24,18 @@ function pathFrom(pts: number[]): string {
     return d;
 }
 
+// Drag-to-draw tools (P3) run through a ToolEngine; pen / marker keep the freehand path above.
+function engineFor(tool: BoardTool): ToolEngine | null {
+    const { inkSettings, drawOptions } = useBoardStore.getState();
+    if (tool === 'line') return createLineTool({ ...inkSettings.line, arrow: drawOptions.arrow, dashed: drawOptions.dashed });
+    return null;
+}
+
+const toolCtx = (shift: boolean): ToolContext => {
+    const { gridSnap, gridSize } = useBoardStore.getState();
+    return { gridSnap, gridSize, shift };
+};
+
 export default function InkLayer({ active }: { active: boolean }) {
     const strokes = useBoardStore((s) => s.pages[s.activePageIdx].strokes);
     const tool = useBoardStore((s) => s.tool);
@@ -32,6 +46,36 @@ export default function InkLayer({ active }: { active: boolean }) {
     const drawing = useRef<number[] | null>(null);
     const [draft, setDraft] = useState<Stroke | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
+    const engine = useRef<ToolEngine | null>(null);
+    const lastPos = useRef<[number, number]>([0, 0]);
+    // Live preview of a line/shape drag: a temporary element, never a stroke in the store.
+    const [preview, setPreview] = useState<Stroke | null>(null);
+    const [dragging, setDragging] = useState(false);
+
+    // While a line/shape drag runs: Escape drops it, and pressing / releasing Shift re-shapes
+    // the preview at once instead of waiting for the next pointer move.
+    useEffect(() => {
+        if (!dragging) return;
+        const onKey = (e: KeyboardEvent) => {
+            const eng = engine.current;
+            if (!eng) return;
+            if (e.key === 'Escape' && e.type === 'keydown') {
+                eng.cancel?.();
+                engine.current = null;
+                setPreview(null);
+                setDragging(false);
+            } else if (e.key === 'Shift') {
+                eng.onPointerMove(lastPos.current[0], lastPos.current[1], toolCtx(e.type === 'keydown'));
+                setPreview(eng.preview?.() ?? null);
+            }
+        };
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('keyup', onKey);
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('keyup', onKey);
+        };
+    }, [dragging]);
 
     const toLocal = (e: React.PointerEvent) => {
         const r = svgRef.current!.getBoundingClientRect();
@@ -39,17 +83,7 @@ export default function InkLayer({ active }: { active: boolean }) {
     };
 
     const erase = (x: number, y: number) => {
-        const hitR = 14;
-        const ids: string[] = [];
-        for (const s of strokes) {
-            // Old autosaves (pre-pts) may carry strokes without sample points.
-            const pts = s.pts ?? [];
-            const reach = (s.width / 2 + hitR) ** 2;
-            for (let i = 0; i < pts.length; i += 2) {
-                const dx = pts[i] - x, dy = pts[i + 1] - y;
-                if (dx * dx + dy * dy <= reach) { ids.push(s.id); break; }
-            }
-        }
+        const ids = strokes.filter(s => strokeHit(s, x, y, 14)).map(s => s.id);
         if (ids.length) removeStrokes(ids);
     };
 
@@ -58,6 +92,15 @@ export default function InkLayer({ active }: { active: boolean }) {
         (e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId);
         const [x, y] = toLocal(e);
         if (tool === 'eraser') { erase(x, y); return; }
+        const eng = engineFor(tool);
+        if (eng) {
+            engine.current = eng;
+            lastPos.current = [x, y];
+            eng.onPointerDown(x, y, toolCtx(e.shiftKey));
+            setPreview(null);
+            setDragging(true);
+            return;
+        }
         if (tool !== 'pen' && tool !== 'marker') return;
         drawing.current = [x, y];
         const cfg = inkSettings[tool];
@@ -68,12 +111,30 @@ export default function InkLayer({ active }: { active: boolean }) {
         if (!active) return;
         const [x, y] = toLocal(e);
         if (tool === 'eraser') { if (e.buttons) erase(x, y); return; }
+        if (engine.current) {
+            lastPos.current = [x, y];
+            engine.current.onPointerMove(x, y, toolCtx(e.shiftKey));
+            setPreview(engine.current.preview?.() ?? null);
+            return;
+        }
         if (!drawing.current) return;
         drawing.current.push(x, y);
         setDraft(d => d ? { ...d, path: pathFrom(drawing.current!), pts: drawing.current! } : d);
     };
 
-    const onPointerUp = () => {
+    const onPointerUp = (e: React.PointerEvent) => {
+        const eng = engine.current;
+        if (eng) {
+            engine.current = null;
+            setPreview(null);
+            setDragging(false);
+            // A cancelled pointer (palm, lost capture) drops the drag like Escape does.
+            if (e.type === 'pointercancel') { eng.cancel?.(); return; }
+            const [x, y] = toLocal(e);
+            const done = eng.onPointerUp(x, y, toolCtx(e.shiftKey));
+            if (done) addStroke(done);
+            return;
+        }
         // Commit from the ref, not the (possibly one-frame-stale) draft state, so a
         // fast tap-release can never race React's render cycle.
         const pts = drawing.current;
@@ -89,14 +150,27 @@ export default function InkLayer({ active }: { active: boolean }) {
         setDraft(null);
     };
 
-    const strokeEl = (s: Stroke) => (
-        <path
-            key={s.id} d={s.path} fill="none"
-            stroke={s.color} strokeWidth={s.width} strokeLinecap="round" strokeLinejoin="round"
-            opacity={s.opacity ?? 1}
-            style={s.tool === 'marker' ? { mixBlendMode: 'multiply' } : undefined}
-        />
-    );
+    const strokeEl = (s: Stroke, extra?: React.SVGProps<SVGPathElement & SVGGElement>) => {
+        const look = { stroke: s.color, strokeWidth: s.width, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
+        if (s.dash) {
+            // Dash only the line itself (first subpath); arrowheads after it stay solid.
+            const [shaft, ...heads] = splitSubpaths(s.path);
+            return (
+                <g key={s.id} opacity={s.opacity ?? 1} {...extra}>
+                    <path d={shaft} fill="none" strokeDasharray={`${s.width * 2} ${s.width * 2.5}`} {...look} />
+                    {heads.length > 0 && <path d={heads.join(' ')} fill={s.fill ?? 'none'} fillOpacity={s.fillOpacity} {...look} />}
+                </g>
+            );
+        }
+        return (
+            <path
+                key={s.id} d={s.path} fill={s.fill ?? 'none'} fillOpacity={s.fillOpacity} {...look}
+                opacity={s.opacity ?? 1}
+                style={s.tool === 'marker' ? { mixBlendMode: 'multiply' } : undefined}
+                {...extra}
+            />
+        );
+    };
 
     return (
         <svg
@@ -112,8 +186,9 @@ export default function InkLayer({ active }: { active: boolean }) {
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
         >
-            {strokes.map(strokeEl)}
+            {strokes.map(s => strokeEl(s))}
             {draft && strokeEl(draft)}
+            {preview && strokeEl(preview, { 'data-ink-preview': '', pointerEvents: 'none' } as React.SVGProps<SVGPathElement & SVGGElement>)}
         </svg>
     );
 }

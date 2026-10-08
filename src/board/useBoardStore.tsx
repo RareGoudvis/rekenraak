@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { BoardPage, BoardWidget, BoardTool, BoardBackground, Stroke, StrokeTool } from './boardTypes';
+import type { BoardPage, BoardWidget, BoardTool, BoardBackground, DrawOptions, Stroke, StrokeTool } from './boardTypes';
 import { emptyPage, rndId } from './boardTypes';
 import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
@@ -45,6 +45,9 @@ interface BoardState {
     setGridSize: (px: number) => void;
     inkSettings: Record<StrokeTool, InkSettings>;
     setInkSetting: (tool: StrokeTool, patch: Partial<InkSettings>) => void;
+    // Lijn / vormen options (arrowheads, dashed, shape kind, soft fill); UI-only.
+    drawOptions: DrawOptions;
+    setDrawOptions: (patch: Partial<DrawOptions>) => void;
 
     // ink (always the active page)
     addStroke: (s: Stroke) => void;
@@ -173,10 +176,14 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     inkSettings: {
         pen: { color: '#111827', width: 4 },
         marker: { color: '#fde047', width: 18 },
+        line: { color: '#111827', width: 4 },
+        shape: { color: '#1d4ed8', width: 4 },
     },
     setInkSetting: (tool, patch) => set((state) => ({
         inkSettings: { ...state.inkSettings, [tool]: { ...state.inkSettings[tool], ...patch } },
     })),
+    drawOptions: { arrow: 'none', dashed: false, shape: 'rect', fill: false },
+    setDrawOptions: (patch) => set((state) => ({ drawOptions: { ...state.drawOptions, ...patch } })),
 
     _redoStrokes: [],
     addStroke: (s) => set((state) => ({

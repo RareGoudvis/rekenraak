@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
-import type { StrokeTool } from '../boardTypes';
+import type { ArrowHeads, StrokeTool } from '../boardTypes';
 
 const SAVED_COLORS_KEY = 'rekenraak_board_colors_v1';
 const DEFAULT_COLORS = ['#111827', '#1d4ed8', '#dc2626', '#16a34a', '#ea580c', '#7c3aed', '#fde047', '#ffffff'];
@@ -14,10 +14,13 @@ function loadSavedColors(): string[] {
 }
 
 // Floating settings strip for the active ink tool: color swatches (defaults +
-// teacher-saved), custom color picker with save, and three stroke widths.
+// teacher-saved), custom color picker with save, three stroke widths, and for the
+// lijn tool its arrowheads + dashed toggle.
 export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
     const cfg = useBoardStore((s) => s.inkSettings[tool]);
     const setInkSetting = useBoardStore((s) => s.setInkSetting);
+    const drawOptions = useBoardStore((s) => s.drawOptions);
+    const setDrawOptions = useBoardStore((s) => s.setDrawOptions);
     const [saved, setSaved] = useState<string[]>(loadSavedColors);
 
     const saveCustom = () => {
@@ -63,7 +66,48 @@ export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
                     <span style={{ width: Math.min(w + 6, 28), height: Math.min(w + 6, 28), borderRadius: '50%', background: cfg.color, display: 'block', border: cfg.color === '#ffffff' ? '1px solid rgba(0,0,0,0.25)' : 'none' }} />
                 </button>
             ))}
+
+            {tool === 'line' && (
+                <>
+                    <div style={S.sep} />
+                    {ARROW_OPTIONS.map(o => (
+                        <button
+                            key={o.value} type="button" className="ui-hover" title={o.label} aria-label={o.label}
+                            aria-pressed={drawOptions.arrow === o.value}
+                            onClick={() => setDrawOptions({ arrow: o.value })}
+                            style={{ ...S.widthBtn, ...(drawOptions.arrow === o.value ? S.optOn : {}) }}
+                        >
+                            <LineIcon arrow={o.value} dashed={drawOptions.dashed} />
+                        </button>
+                    ))}
+                    <button
+                        type="button" className="ui-hover" title="Stippellijn" aria-label="Stippellijn"
+                        aria-pressed={drawOptions.dashed}
+                        onClick={() => setDrawOptions({ dashed: !drawOptions.dashed })}
+                        style={{ ...S.widthBtn, ...(drawOptions.dashed ? S.optOn : {}) }}
+                    >
+                        <LineIcon arrow="none" dashed />
+                    </button>
+                </>
+            )}
         </div>
+    );
+}
+
+const ARROW_OPTIONS: { value: ArrowHeads; label: string }[] = [
+    { value: 'none', label: 'Lijn zonder pijlpunt' },
+    { value: 'end', label: 'Pijl (punt aan het einde)' },
+    { value: 'both', label: 'Dubbele pijl' },
+];
+
+// Mini preview of the line style on each option button, drawn in the text colour.
+function LineIcon({ arrow, dashed }: { arrow: ArrowHeads; dashed: boolean }) {
+    return (
+        <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true" style={{ color: 'var(--text-main)' }}>
+            <path d="M 5 21 L 21 5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeDasharray={dashed ? '3.5 4' : undefined} />
+            {arrow !== 'none' && <path d="M 21 5 L 13.5 7.5 L 18.5 12.5 Z" fill="currentColor" />}
+            {arrow === 'both' && <path d="M 5 21 L 7.5 13.5 L 12.5 18.5 Z" fill="currentColor" />}
+        </svg>
     );
 }
 
@@ -84,6 +128,7 @@ const S = {
         border: '1px dashed var(--border-color)', background: 'transparent', color: 'var(--text-main)',
     } as React.CSSProperties,
     sep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--border-color)' } as React.CSSProperties,
+    optOn: { outline: '3px solid var(--accent-purple)', background: 'var(--bg-active)' } as React.CSSProperties,
     widthBtn: {
         width: '40px', height: '40px', borderRadius: '10px', cursor: 'pointer', padding: 0,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
