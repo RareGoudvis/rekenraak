@@ -6,6 +6,7 @@ import { useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { GetallenrijConstraints } from '../../services/math/constraintTypes';
 import { SOL } from './solutionStyle';
 import { monoTextPx } from '../../services/layout/blockLayout';
+import KioskCell from './KioskCell';
 
 interface Props {
     block: MathBlock;
@@ -17,7 +18,7 @@ const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 // SYNC: same convention as GetallenasViewer / ClockViewer / MabViewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
 
-function Cell({ value, blank, showSolutions, fontSize, scale }: { value: number | Fraction; blank: boolean; showSolutions: boolean; fontSize: number; scale: number }) {
+function Cell({ value, blank, showSolutions, fontSize, scale, cellKey }: { value: number | Fraction; blank: boolean; showSolutions: boolean; fontSize: number; scale: number; cellKey: string }) {
     const color = blank && showSolutions ? SOL : undefined;
     const content = isFrac(value)
         ? <VerticalFraction value={value} color={color} fontSize={Math.min(15 * scale, fontSize)} mono />
@@ -27,7 +28,12 @@ function Cell({ value, blank, showSolutions, fontSize, scale }: { value: number 
     return (
         <span style={{ flex: 1, minWidth: '44px', display: 'inline-flex', alignItems: 'flex-end', justifyContent: 'center' }}>
             {blank
-                ? (showSolutions ? content : <span style={{ borderBottom: '2px dotted #000', display: 'inline-block', minWidth: '42px', height: '1.15em' }} />)
+                ? (showSolutions ? content : (
+                    // Oefenmodus: the blank's cell fills the slot (width 0 + flex keeps the row's even split).
+                    <KioskCell cellKey={cellKey} style={{ flex: 1, width: 0, height: 'max(32px, 1.85em)' }}>
+                        <span style={{ borderBottom: '2px dotted #000', display: 'inline-block', minWidth: '42px', height: '1.15em' }} />
+                    </KioskCell>
+                ))
                 : content}
         </span>
     );
@@ -70,7 +76,7 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0, gap: '14px', fontFamily: mono, fontSize: `${fontSize}px`,
                     }}>
                         {vals.map((v, i) => (
-                            <Cell key={i} value={v} blank={ex.blankMask[i]} showSolutions={showSolutions} fontSize={fontSize} scale={scale} />
+                            <Cell key={i} value={v} blank={ex.blankMask[i]} showSolutions={showSolutions} fontSize={fontSize} scale={scale} cellKey={`v${i}`} />
                         ))}
                     </div>
                 );

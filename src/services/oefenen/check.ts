@@ -1,6 +1,6 @@
 import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor } from './types';
 import type { InteractionKind } from '../../components/viewer/ViewerInteractionContext';
-import { kioskInputOf } from './kiosk';
+import { kioskInputOf, kioskInteractOf } from './kiosk';
 
 // Is the pupil's answer right? Typed answers are normalised (spaces, comma/dot, leading and
 // trailing zeros, minus glyphs) and compared with every spelling the descriptor accepts.
@@ -57,6 +57,7 @@ function sameTime(given: readonly string[], accepted: readonly string[]): boolea
     });
 }
 
+// An empty middle part stays ('5 ·  · 3' = three cells, the second blank).
 const partsOf = (s: string) => (s.trim() === '' ? [] : s.split(INTERACT_SEP.trim()).map(p => p.trim()));
 
 /** An interactive answer (fromState) against the descriptor's canonical one, by its kind. */
@@ -68,16 +69,18 @@ function sameInteraction(kind: InteractionKind, given: string, want: string): bo
         const ws = [...w].sort();
         return [...g].sort().every((x, i) => x === ws[i]);
     }
-    if (kind === 'fill-cells') return g.every((x, i) => sameValue(x, w[i].split('|')));
+    // A blank cell is right only where an empty alternative allows it (a carry left out).
+    if (kind === 'fill-cells') return g.every((x, i) => (x === '' ? w[i].split('|').includes('') : sameValue(x, w[i].split('|'))));
     return g.every((x, i) => x === w[i]);
 }
 
 export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, given: KioskAnswer): boolean {
     const input = kioskInputOf(d, ex, c);
     if (input === 'interactive') {
-        if (!d.interact) return false;
+        const ia = kioskInteractOf(d, c);
+        if (!ia) return false;
         const one = Array.isArray(given) ? given.join(INTERACT_SEP) : given;
-        return sameInteraction(d.interact.kind, one, d.interact.answerOf(ex, c));
+        return sameInteraction(ia.kind, one, ia.answerOf(ex, c));
     }
     const accepted = d.answerOf(ex, c);
     if (input === 'number+rest') {

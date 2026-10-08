@@ -27,6 +27,9 @@ export interface ViewerInteraction {
     // fill-cells: the cell the keypad types into, and how a tap on a cell makes it active.
     activeCell?: string | null;
     focusCell?(key: string): void;
+    // fill-cells: what a physical keyboard typed into a cell (the kiosk sanitises it and may move
+    // on to the next cell); absent = the raw text goes straight into the state.
+    typeCell?(key: string, raw: string): void;
 }
 
 const ViewerInteractionContext = createContext<ViewerInteraction | null>(null);
@@ -107,8 +110,8 @@ export interface CellDomProps {
     onFocus(): void;
 }
 
-// Keeps what a cell may hold: digits, one comma (a '.' types as ','), a leading minus.
-const cellText = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,\-−]/g, '').slice(0, 12);
+// Keeps what a cell may hold: digits, a comma (a '.' types as ','), a minus, a fraction slash.
+const cellText = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,\-−/]/g, '').slice(0, 12);
 
 /** Props for the `<input>` a viewer draws in place of a blank in the kiosk; `{}` on the sheet. */
 export function cellProps(ctx: ViewerInteraction | null, key: string): CellDomProps | Record<string, never> {
@@ -122,7 +125,9 @@ export function cellProps(ctx: ViewerInteraction | null, key: string): CellDomPr
         'data-kiosk-key': key,
         'data-kiosk-cell': 'true',
         ...(ctx.activeCell === key && { 'data-kiosk-active': 'true' as const }),
-        onChange: (e) => ctx.set({ ...ctx.state, cells: { ...ctx.state.cells, [key]: cellText(e.target.value) } }),
+        onChange: (e) => (ctx.typeCell
+            ? ctx.typeCell(key, e.target.value)
+            : ctx.set({ ...ctx.state, cells: { ...ctx.state.cells, [key]: cellText(e.target.value) } })),
         onFocus: () => ctx.focusCell?.(key),
     };
 }

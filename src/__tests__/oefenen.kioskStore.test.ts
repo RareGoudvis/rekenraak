@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { useOefenStore, currentInput, sanitizeAnswer, FLASH_MS } from '../oefenen/useOefenStore';
+import { useOefenStore, cellPlanOf, currentInput, sanitizeAnswer, FLASH_MS } from '../oefenen/useOefenStore';
 import { loadRuns } from '../services/oefenen/stats';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
@@ -271,6 +271,28 @@ describe('2 kansen', () => {
         expect(st().run!.stats.history).toHaveLength(1);
     });
 
+    test('cijferen grid: the retry clears every cell and the keypad starts in the first cell again', () => {
+        const cijfer = { typeId: 'cijferen-optellen-nat', leafId: 'cijferen-optellen-nat', label: 'Cijferen', constraints: { numberType: 'natural' }, limit: 2, weight: 1 };
+        st().load(hashOf(starterSessie({ types: [cijfer], attempts: 2 })));
+        st().start();
+        const plan = cellPlanOf(st().sessie, st().shown)!;
+        const first = st().activeCell;
+        expect(first).toBe(plan.flow[0] ?? plan.keys[0]);
+        fillAnswer(false);
+        st().focusCell(plan.keys.at(-1)!);
+        st().answer();
+        expect(st().phase).toBe('retry');
+        // Typing during the flash goes nowhere.
+        st().typeCell(plan.keys[0], '7');
+        st().skipFlash();
+        expect(st().phase).toBe('exercise');
+        expect(st().interaction.cells).toEqual({});
+        expect(st().activeCell).toBe(first);
+        fillAnswer(true); st().answer();
+        expect(st().lastCorrect).toBe(true);
+        expect(st().run!.stats.history.map(h => [h.correct, h.secondTry])).toEqual([[true, true]]);
+    });
+
     test('Stats during the retry flash: Verder oefenen goes to the second try', () => {
         st().load(two());
         st().start();
@@ -359,8 +381,9 @@ describe('input', () => {
         const rij = starterSessie({ types: [{ typeId: 'getallenrijen', leafId: 'getalbegrip-getallenrijen-nat', label: 'Rij', constraints: { numberType: 'natural' }, weight: 1 }] });
         st().load(hashOf(rij));
         st().start();
-        expect(currentInput(st().sessie, st().shown)?.kind).toBe('multi-number');
-        expect(st().input).toHaveLength(onScreen().answer.length);
+        // Phase C2: the blanks are cells on the card, one per blank.
+        expect(currentInput(st().sessie, st().shown)?.kind).toBe('interactive');
+        expect(cellPlanOf(st().sessie, st().shown)!.keys).toHaveLength((st().shown!.exercise as { blankMask: boolean[] }).blankMask.filter(Boolean).length);
         resetKiosk();
         const romeins = starterSessie({ id: 'kiosktest2', types: [{ typeId: 'romeinse-cijfers', leafId: 'romeinse-schrijven', label: 'Romeins', constraints: { subType: 'schrijven' }, weight: 1 }] });
         st().load(hashOf(romeins));

@@ -222,6 +222,14 @@ html:has(.oefen-body),
   overflow: hidden;
 }
 
+/* A fill-in grid kept at its minimum cell size outgrows the card: scroll it from the top-left
+   (centring would put its top out of reach). */
+.kiosk-card-body.is-scrolling {
+  overflow: auto;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
 /* Holds the scaled viewer at its scaled size; the inner keeps its 340 px layout width so
    width-100% viewers never collapse (the ExercisePreview lesson). */
 .kiosk-card-sizer {
@@ -293,10 +301,35 @@ html:has(.oefen-body),
   font: inherit;
   text-align: center;
 }
+/* A ruitje of a cijfer grid (CijferViewer places and sizes it): the grid lines are its border,
+   a light tint marks it as one to fill; a carry row cell sits a shade lighter. */
+.kiosk-card-inner .kiosk-cell.is-grid {
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  font-family: 'Azeret Mono', monospace;
+  line-height: 1;
+}
+/* A viewer's blank box (splitsen, positietabel) as a cell: the box's own border stays the frame. */
+.kiosk-card-inner .kiosk-cell.is-box {
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.kiosk-card-inner .kiosk-cell.is-scratch { background: color-mix(in srgb, var(--accent) 3%, transparent); }
+.kiosk-card-inner .kiosk-cell.is-rest { border: 1px solid var(--kiosk-ink); border-radius: 2px; }
 .kiosk-card-inner .kiosk-cell[data-kiosk-active] {
   outline: 2px solid var(--accent);
   background: var(--accent-soft);
 }
+/* The active ring marks the focused cell; the app's generic focus glow would double it. */
+.kiosk-card-inner .kiosk-cell:focus-visible { box-shadow: none; }
+/* Inside a ruitje the ring stays within its lines. */
+.kiosk-card-inner .kiosk-cell.is-grid[data-kiosk-active] { outline-offset: -2px; }
 
 .kiosk-card-fallback {
   margin: 0;

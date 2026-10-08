@@ -81,8 +81,8 @@ describe('buildSessie', () => {
     });
 
     test('a row the kiosk cannot check is excluded and does not take weight', () => {
-        // Starts as a supported 'simpel' leaf; the teacher then flips it to the rooster the kiosk cannot check.
-        const rooster: BuilderRow = { key: 'c', leaf: leaf('afronden-nat-simpel'), constraints: { subType: 'rooster' }, weight: 80 };
+        // Starts as a supported 'aflezen' leaf; the teacher then flips it to drawing the kiosk cannot check.
+        const rooster: BuilderRow = { key: 'c', leaf: leaf('massa-weegschaal-aflezen'), constraints: { mode: 'tekenen' }, weight: 80 };
         const { sessie, excluded } = buildSessie([...rows, rooster], settings);
         expect(excluded.map(r => r.key)).toEqual(['c']);
         expect(sessie.types).toHaveLength(2);
@@ -152,11 +152,11 @@ describe('OefenBuilderModal', () => {
 
     test('a row with settings the kiosk cannot check shows a hint and keeps Delen off', () => {
         render(<OefenBuilderModal onClose={() => { }} />);
-        fireEvent.click(addBtn('afronden-nat-simpel'));
+        fireEvent.click(addBtn('massa-weegschaal-aflezen'));
         expect(screen.queryByRole('status')).toBeNull();
         act(() => {
             const draft = useWorksheetStore.getState().draftBlocks[0];
-            useWorksheetStore.getState().updateBlockSettings(draft.id, { constraints: { ...draft.constraints, subType: 'rooster' } });
+            useWorksheetStore.getState().updateBlockSettings(draft.id, { constraints: { ...draft.constraints, mode: 'tekenen' } });
         });
         expect(screen.getByRole('status').textContent).toMatch(/komt niet in de link/);
         expect(footerBtn('Delen').disabled).toBe(true);
