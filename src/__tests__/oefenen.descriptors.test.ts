@@ -373,7 +373,7 @@ describe('descriptor answers agree with the generators', () => {
         ['omtrek', { measureModel: 'gegeven', precision: 'mm', shapes: ['cirkel', 'trapezium', 'ruit'] }, 'number'],
         ['oppervlakte-berekenen', { askOmtrek: true, shapes: ['rechthoek', 'driehoek'] }, 'multi-number'],
         ['maateenheid-kiezen', { answerMode: 'schrijven', grootheden: ['temperatuur', 'tijd'] }, 'text'],
-        ['maateenheid-kiezen', { subType: 'schatten' }, 'choice'],
+        ['maateenheid-kiezen', { subType: 'schatten' }, 'interactive'],
         ['herleidingen-massa', { formats: ['enkel-samengesteld'], compoundMode: 'volledig' }, 'multi-number'],
         ['herleidingen-lengte', { formats: ['enkel-eenheid'] }, 'choice'],
         ['geld-herkennen', { format: 'decimaal' }, 'number'],

@@ -157,6 +157,8 @@ describe('viewer tap flow (jsdom)', () => {
         ['plaatswaarde omcirkelen', 'plaatswaarde', { subType: 'omcirkelen', maxGetal: 100000 }],
         ['getalfunctie aankruisen', 'getalfunctie', {}],
         ['getalfunctie aankruisen, two columns', 'getalfunctie', { functies: ['maat', 'code'] }],
+        ['maateenheid omcirkelen', 'maateenheid', {}],
+        ['maateenheid schatten', 'maateenheid', { subType: 'schatten' }],
     ])('%s: tap one part, the right one answers', (_name, typeId, constraints) => {
         const block = blockFor(typeId, constraints);
         const field = REGISTRY[typeId].exerciseField;

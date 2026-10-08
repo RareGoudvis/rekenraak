@@ -402,15 +402,24 @@ export const OPPERVLAKTE_KIOSK = descriptor<MeetExercise>({
     display: (ex) => `oppervlakte ${ex.shape ?? ''} = ? cm²`,
 });
 
-// omcirkelen: tap one of the sheet's chips; schrijven: type the unit ('°C' also as 'C').
-// SYNC: MaateenheidViewer chipText (schatten shows value + unit).
+// omcirkelen: tap one of the sheet's chips ON the card (Phase C); schrijven: type the unit
+// ('°C' also as 'C'). SYNC: MaateenheidViewer chipText (schatten shows value + unit).
 const chipText = (ex: MaateenheidExercise, c: Record<string, unknown>, u: string) =>
     (c.subType === 'schatten' ? `${showNum(ex.value)} ${u}` : u);
 export const MAATEENHEID_KIOSK = descriptor<MaateenheidExercise>({
-    input: 'choice',
-    inputOf: (ex) => (ex.choices ? 'choice' : 'text'),
-    choicesOf: (ex, c) => (ex.choices ?? []).map(u => chipText(ex, c, u)),
-    kioskInstruction: (ex) => (ex.choices ? 'Kies de passende maateenheid.' : undefined),
+    input: 'interactive',
+    inputOf: (ex) => (ex.choices ? 'interactive' : 'text'),
+    kioskInstruction: (ex) => (ex.choices ? 'Tik op de passende maateenheid.' : undefined),
+    // Keys are chip positions; the answer is the chip's text.
+    interact: {
+        kind: 'tap',
+        keys: (ex) => (ex.choices ?? []).map((_, i) => String(i)),
+        answerOf: (ex, c) => chipText(ex, c, ex.unit),
+        fromState: (st, ex, c) => {
+            const u = st.selected.length ? ex.choices?.[Number(st.selected[0])] : undefined;
+            return u === undefined ? '' : chipText(ex, c, u);
+        },
+    },
     answerOf: (ex, c) => (ex.choices ? [chipText(ex, c, ex.unit)] : [...new Set([ex.unit, ex.unit.replace('°', '')])]),
     display: (ex) => ex.sentence.replace('___', '?'),
     // Schatten written out is a number and a unit in one line: not one word to check.
