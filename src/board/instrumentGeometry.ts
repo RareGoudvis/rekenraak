@@ -178,10 +178,59 @@ export const polyPoints = (p: number[]) => p.reduce((acc, v, i) => acc + (i % 2 
 export const EDGE_TOL_PX = 10;
 
 // Passer hinge in the passer's local frame (needle at the origin, pencil at (r, 0)): legs of
-// PASSER.leg meet above the chord's midpoint.
-export function passerHinge(radius: number): [number, number] {
+// PASSER.leg meet beside the chord's midpoint, on the side that is up on screen at this
+// rotation, so the passer stands upright like one held in the hand instead of hanging upside
+// down once the pencil passes below the needle.
+export function passerHinge(radius: number, rotation = 0): [number, number] {
     const half = Math.min(radius, PASSER.maxR) / 2;
-    return [half, -Math.sqrt(Math.max(0, PASSER.leg ** 2 - half ** 2))];
+    const h = Math.sqrt(Math.max(0, PASSER.leg ** 2 - half ** 2));
+    return [half, Math.cos(rotation * RAD) >= -1e-9 ? -h : h];
+}
+
+// ── Passer: opening and arcs ─────────────────────────────────────────────────
+// Dragging the pencil leg: the tip follows the pointer, the opening on whole mm within the
+// passer's range; rotation = the needle → pencil direction.
+export function openPasser(needle: { x: number; y: number }, px: number, py: number): { radius: number; rotation: number } {
+    const raw = Math.hypot(px - needle.x, py - needle.y);
+    const radius = Math.min(PASSER.maxR, Math.max(PASSER.minR, Math.round(raw / BOARD_MM_PX) * BOARD_MM_PX));
+    return { radius, rotation: round1(normDeg((Math.atan2(py - needle.y, px - needle.x) * 180) / Math.PI)) };
+}
+
+// The change of a pointer angle around the needle, folded into (-π, π] so a pass through
+// ±180° keeps counting instead of jumping a full turn.
+export function unwrapDelta(prev: number, next: number): number {
+    let d = next - prev;
+    while (d > Math.PI) d -= 2 * Math.PI;
+    while (d <= -Math.PI) d += 2 * Math.PI;
+    return d;
+}
+
+// Within this much of a full turn the passer closes the circle (nobody stops on exactly 360°).
+export const FULL_TURN_SLACK = (3 * Math.PI) / 180;
+
+// The exact arc a passer leaves: centre, radius, start angle and signed sweep (radians,
+// clockwise on screen positive). One SVG A command; a full turn is two half arcs (a single
+// A cannot start and end on the same point).
+export function arcPath(cx: number, cy: number, r: number, start: number, sweep: number): string {
+    const pt = (a: number) => `${round1(cx + r * Math.cos(a))} ${round1(cy + r * Math.sin(a))}`;
+    const R = round1(r);
+    const flag = sweep >= 0 ? 1 : 0;
+    if (Math.abs(sweep) >= 2 * Math.PI - FULL_TURN_SLACK) {
+        return `M ${pt(start)} A ${R} ${R} 0 1 ${flag} ${pt(start + Math.sign(sweep || 1) * Math.PI)} A ${R} ${R} 0 1 ${flag} ${pt(start)}`;
+    }
+    return `M ${pt(start)} A ${R} ${R} 0 ${Math.abs(sweep) > Math.PI ? 1 : 0} ${flag} ${pt(start + sweep)}`;
+}
+
+// Sample points along the arc for the eraser (a full turn is sampled all the way round).
+export function arcPts(cx: number, cy: number, r: number, start: number, sweep: number, step = 6): number[] {
+    const s = Math.abs(sweep) >= 2 * Math.PI - FULL_TURN_SLACK ? Math.sign(sweep || 1) * 2 * Math.PI : sweep;
+    const n = Math.max(1, Math.ceil((Math.abs(s) * r) / step));
+    const out: number[] = [];
+    for (let i = 0; i <= n; i++) {
+        const a = start + (s * i) / n;
+        out.push(round1(cx + r * Math.cos(a)), round1(cy + r * Math.sin(a)));
+    }
+    return out;
 }
 
 // ── Drawing along an edge ────────────────────────────────────────────────────

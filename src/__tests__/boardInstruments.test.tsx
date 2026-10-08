@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
-import { describe, test, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, act, screen } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import { BOARD_FORMAT_VERSION, parseBoardFile } from '../board/boardPersistence';
-import { BOARD_CM_PX, LAT, PASSER, round1 } from '../board/instrumentGeometry';
+import { BOARD_CM_PX, LAT, PASSER, pathEndpoints, round1 } from '../board/instrumentGeometry';
 import type { Instrument, Stroke } from '../board/boardTypes';
 import InstrumentLayer from '../board/components/InstrumentLayer';
 import InkLayer from '../board/components/InkLayer';
 import BoardBottomBar from '../board/components/BoardBottomBar';
 import BoardPageCanvas from '../board/components/BoardPageCanvas';
+import WhiteboardView from '../board/components/WhiteboardView';
 
 // The meetinstrumenten mechanism (ARCHITECTURE §14): the per-page instruments in the store,
 // format v2 in the strict parser, and the layer's drag / rotate / snap / keyboard under
@@ -31,6 +32,7 @@ beforeEach(() => {
 
 afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     localStorage.clear();
 });
 
@@ -354,6 +356,120 @@ describe('geodriehoek: turned to 45°, the pen follows the hypotenuse; from the 
         expect(container.querySelector('[data-instrument-readout]')!.textContent).toBe('120°');
         act(() => { fireEvent.pointerUp(svg, { pointerId: 1 }); });
         expect(page().strokes[0].path).toMatch(/^M 500 300 L /);
+    });
+});
+
+describe('passer: open, place, draw an arc', () => {
+    const R5 = 5 * BOARD_CM_PX;
+    const placePasser = (patch: Partial<Instrument> = {}) => {
+        st().toggleInstrument('passer');
+        st().updateInstrument(one('passer').id, { x: 400, y: 400, rotation: 0, radius: 3 * BOARD_CM_PX, ...patch });
+    };
+    const grip = (c: HTMLElement, g: string) => c.querySelector(`[data-instrument="passer"] [data-instrument-grip="${g}"]`)!;
+    const circle = (c: HTMLElement, from: number, to: number, r: number, steps = 24) => {
+        const el = grip(c, 'draw');
+        act(() => { fireEvent.pointerDown(el, { clientX: 400 + r * Math.cos(from), clientY: 400 + r * Math.sin(from), pointerId: 1 }); });
+        for (let i = 1; i <= steps; i++) {
+            const a = from + ((to - from) * i) / steps;
+            act(() => { fireEvent.pointerMove(el, { clientX: 400 + r * Math.cos(a), clientY: 400 + r * Math.sin(a), pointerId: 1 }); });
+        }
+        act(() => { fireEvent.pointerUp(el, { pointerId: 1 }); });
+    };
+
+    test('dragging the pencil leg sets the opening on whole mm, with a cm readout and label; no ink', () => {
+        placePasser();
+        const { container } = render(<InstrumentLayer />);
+        const leg = grip(container, 'open');
+        act(() => { fireEvent.pointerDown(leg, { clientX: 450, clientY: 300, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(leg, { clientX: 400 + R5 + 1.2, clientY: 400, pointerId: 1 }); });
+        expect(one('passer').radius).toBeCloseTo(R5, 5);
+        expect(one('passer').rotation).toBe(0);
+        expect(container.querySelector('[data-instrument-readout]')!.textContent).toBe('5,0 cm');
+        act(() => { fireEvent.pointerUp(leg, { pointerId: 1 }); });
+        expect(container.querySelector('[data-passer-radius]')!.textContent).toBe('5,0 cm');
+        expect(page().strokes).toHaveLength(0);
+    });
+
+    test('the needle snaps to a stroke endpoint when the passer is dragged', () => {
+        st().addStroke(stroke('l', 'M 600 500 L 700 500'));
+        placePasser();
+        const { container } = render(<InstrumentLayer />);
+        const hinge = container.querySelectorAll('[data-instrument="passer"] [data-instrument-grip="body"]')[1];
+        act(() => { fireEvent.pointerDown(hinge, { clientX: 450, clientY: 100, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(hinge, { clientX: 450 + 203, clientY: 100 + 96, pointerId: 1 }); });
+        expect(one('passer')).toMatchObject({ x: 600, y: 500 });
+    });
+
+    test('the pencil tip drawn half way round leaves one exact A arc in the pen colour', () => {
+        placePasser({ radius: R5 });
+        st().setTool('pen');
+        st().setInkSetting('pen', { color: '#0000ff', width: 5 });
+        const { container } = render(<InstrumentLayer />);
+        circle(container, 0, Math.PI, R5 + 7);   // the hand wobbles off the radius; the arc does not
+        expect(page().strokes).toHaveLength(1);
+        const s = page().strokes[0];
+        expect(s).toMatchObject({ tool: 'pen', color: '#0000ff', width: 5, opacity: 1 });
+        const r = round1(R5);
+        expect(s.path).toBe(`M ${round1(400 + R5)} 400 A ${r} ${r} 0 0 1 ${round1(400 - R5)} 400`);
+        expect(s.pts.length).toBeGreaterThan(20);
+        // the pencil follows the hand
+        expect(one('passer').rotation).toBe(180);
+    });
+
+    test('a full turn closes the circle; the marker draws a marker circle', () => {
+        placePasser();
+        st().setTool('marker');
+        const { container } = render(<InstrumentLayer />);
+        circle(container, 0, -2 * Math.PI - 0.3, 3 * BOARD_CM_PX, 48);
+        const s = page().strokes[0];
+        expect(s).toMatchObject({ tool: 'marker', opacity: 0.45 });
+        expect(s.path.match(/A /g)).toHaveLength(2);
+        const e = pathEndpoints(s.path)!;
+        expect([e[0], e[1]]).toEqual([e[2], e[3]]);
+    });
+
+    test('a tap on the pencil tip draws nothing; the draft arc only lives while drawing', () => {
+        placePasser();
+        st().setTool('pen');
+        const { container } = render(<InstrumentLayer />);
+        const el = grip(container, 'draw');
+        act(() => { fireEvent.pointerDown(el, { clientX: 400 + 3 * BOARD_CM_PX, clientY: 400, pointerId: 1 }); });
+        act(() => { fireEvent.pointerMove(el, { clientX: 400 + 3 * BOARD_CM_PX, clientY: 401, pointerId: 1 }); });
+        expect(container.querySelector('[data-arc-draft]')).not.toBeNull();
+        act(() => { fireEvent.pointerUp(el, { pointerId: 1 }); });
+        expect(page().strokes).toHaveLength(0);
+        expect(container.querySelector('[data-arc-draft]')).toBeNull();
+    });
+
+    test('the eraser removes an arc; undo / redo walk it like any stroke', () => {
+        placePasser({ radius: R5 });
+        st().setTool('pen');
+        const { container } = render(<InstrumentLayer />);
+        circle(container, 0, Math.PI / 2, R5);
+        expect(page().strokes).toHaveLength(1);
+        st().undoStroke();
+        expect(page().strokes).toHaveLength(0);
+        st().redoStroke();
+        cleanup();
+        act(() => { st().setTool('eraser'); });
+        const ink = render(<InkLayer active />).container.querySelector('svg')!;
+        const a = Math.PI / 4;
+        act(() => { fireEvent.pointerDown(ink, { clientX: 400 + R5 * Math.cos(a), clientY: 400 + R5 * Math.sin(a), pointerId: 1 }); });
+        expect(page().strokes).toHaveLength(0);
+    });
+});
+
+describe('smoke', () => {
+    test.each([false, true])('all three on a %s board at odd angles: no console.error, no NaN', (dark) => {
+        const err = vi.spyOn(console, 'error');
+        st().setBackground({ pattern: 'raster', dark });
+        for (const k of ['lat', 'geodriehoek', 'passer'] as const) st().toggleInstrument(k, 1920, 1000);
+        st().updateInstrument(one('lat').id, { rotation: 33.3 });
+        st().updateInstrument(one('passer').id, { rotation: 200, radius: PASSER.maxR });
+        const { container } = render(<WhiteboardView />);
+        expect(container.querySelectorAll('[data-instrument]')).toHaveLength(3);
+        expect(container.innerHTML).not.toMatch(/NaN|undefined/);
+        expect(err).not.toHaveBeenCalled();
     });
 });
 

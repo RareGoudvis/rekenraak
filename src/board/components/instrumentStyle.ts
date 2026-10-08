@@ -11,6 +11,7 @@ export const IC = {
     faint: 'var(--text-muted)',
     handle: 'var(--accent)',
     handleOn: 'var(--accent-on)',
+    label: 'var(--bg-surface)',
 } as const;
 
 // Scale marks and labels never take pointers (the grip polygon under them does).

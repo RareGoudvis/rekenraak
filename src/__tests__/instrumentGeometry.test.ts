@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import {
-    BOARD_CM_PX, BOARD_MM_PX, GEO, LAT, PASSER, bodyPolygon, defaultInstrument, formatCm, instrumentEdges, nearestEdge,
+    BOARD_CM_PX, BOARD_MM_PX, GEO, LAT, PASSER, arcPath, arcPts, bodyPolygon, defaultInstrument, formatCm,
+    instrumentEdges, nearestEdge, openPasser, unwrapDelta,
     normDeg, pageInstrumentGeometry, passerHinge, pathEndpoints, projectOnEdge, protractorAngle, round1, snapPoint, snapRotation,
     startGuidedLine, strokeEndpoints, toLocal, toWorld,
 } from '../board/instrumentGeometry';
@@ -217,6 +218,60 @@ describe('lat: drawing along an edge', () => {
         expect(formatCm(5 * BOARD_CM_PX)).toBe('5,0 cm');
         expect(formatCm(-12.5 * BOARD_CM_PX)).toBe('12,5 cm');
         expect(formatCm(0)).toBe('0,0 cm');
+    });
+});
+
+describe('passer: opening and exact arcs', () => {
+    test('openPasser: radius on whole mm, clamped to 0.5 cm … max, rotation = needle → pointer', () => {
+        const o = openPasser({ x: 100, y: 100 }, 100 + 5 * BOARD_CM_PX + 1.1, 100);
+        close(o.radius, 50 * BOARD_MM_PX); expect(o.rotation).toBe(0);
+        expect(openPasser({ x: 0, y: 0 }, 0, 2).radius).toBe(PASSER.minR);
+        expect(openPasser({ x: 0, y: 0 }, 5000, 0).radius).toBe(PASSER.maxR);
+        expect(openPasser({ x: 0, y: 0 }, 0, 100).rotation).toBe(90);
+        expect(openPasser({ x: 0, y: 0 }, 0, -100).rotation).toBe(270);
+    });
+
+    test('unwrapDelta crosses ±180° without a jump', () => {
+        close(unwrapDelta(Math.PI - 0.1, -Math.PI + 0.1), 0.2);
+        close(unwrapDelta(-Math.PI + 0.1, Math.PI - 0.1), -0.2);
+        close(unwrapDelta(0, 1), 1);
+    });
+
+    test('arcPath: one A command; flags follow the sweep', () => {
+        // a clockwise (on screen) half circle from 0° to 180° around (100,100), r 50
+        expect(arcPath(100, 100, 50, 0, Math.PI)).toBe('M 150 100 A 50 50 0 0 1 50 100');
+        expect(arcPath(100, 100, 50, 0, -Math.PI / 2)).toBe('M 150 100 A 50 50 0 0 0 100 50');
+        expect(arcPath(100, 100, 50, 0, (3 * Math.PI) / 2)).toBe('M 150 100 A 50 50 0 1 1 100 50');
+        expect(pathEndpoints(arcPath(100, 100, 50, Math.PI / 2, Math.PI / 2))).toEqual([100, 150, 50, 100]);
+    });
+
+    test('a full turn (or within 3° of it) is a closed circle of two half arcs, both ways', () => {
+        const full = arcPath(100, 100, 50, 0, 2 * Math.PI);
+        expect(full).toBe('M 150 100 A 50 50 0 1 1 50 100 A 50 50 0 1 1 150 100');
+        expect(arcPath(100, 100, 50, 0, 2 * Math.PI - (2 * Math.PI) / 180)).toBe(full);
+        expect(arcPath(100, 100, 50, 0, -2 * Math.PI)).toBe('M 150 100 A 50 50 0 1 0 50 100 A 50 50 0 1 0 150 100');
+        expect(arcPath(100, 100, 50, 0, 2 * Math.PI - (5 * Math.PI) / 180)).not.toBe(full);
+    });
+
+    test('arcPts lie on the circle from start to end, a full turn all the way round', () => {
+        const pts = arcPts(0, 0, 80, 0, Math.PI / 2);
+        for (let i = 0; i < pts.length; i += 2) close(Math.hypot(pts[i], pts[i + 1]), 80, 0.15);
+        expect(pts.slice(0, 2)).toEqual([80, 0]);
+        expect(pts.slice(-2)).toEqual([0, 80]);
+        const ring = arcPts(0, 0, 80, 0, -2 * Math.PI + 0.01);
+        expect(ring.slice(-2)).toEqual([80, 0]);
+        expect(ring.length / 2).toBeGreaterThan(80);
+    });
+
+    test('the hinge stays on the upper side whatever the pencil direction', () => {
+        expect(passerHinge(100, 0)[1]).toBeLessThan(0);
+        expect(passerHinge(100, 180)[1]).toBeGreaterThan(0);
+        for (const rot of [0, 60, 89, 91, 180, 269, 271, 359]) {
+            const [hx, hy] = passerHinge(100, rot);
+            const at = { x: 0, y: 0, rotation: rot };
+            // the hinge is above the chord's midpoint on screen
+            expect(toWorld(at, hx, hy)[1]).toBeLessThan(toWorld(at, 50, 0)[1]);
+        }
     });
 });
 

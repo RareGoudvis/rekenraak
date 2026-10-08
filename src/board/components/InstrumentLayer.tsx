@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBoardStore } from '../useBoardStore';
-import type { Instrument } from '../boardTypes';
-import { round1, snapPoint, snapRotation, strokeEndpoints } from '../instrumentGeometry';
+import type { Instrument, Stroke } from '../boardTypes';
+import { rndId } from '../boardTypes';
+import { arcPath, arcPts, formatCm, openPasser, round1, snapPoint, snapRotation, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
 import { GeodriehoekShape, LatShape, PasserShape, type Grip } from './InstrumentShapes';
 import { IC, NO_POINTER } from './instrumentStyle';
 
@@ -9,12 +10,16 @@ import { IC, NO_POINTER } from './instrumentStyle';
 // pointers; each instrument's grips do. Drag the body to move (the reference point snaps to
 // grid points and stroke endpoints), drag the round handle to rotate (snaps to 45°, 15° with
 // the grid on), keyboard on the selected one: arrows nudge, [ ] rotate, R resets, Esc deselects.
+// The passer: its pencil leg sets the opening, its pencil tip drawn round the needle leaves an
+// exact arc stroke (a full circle on a full turn) in the pen's (or marker's) colour.
 
 const EMPTY: Instrument[] = [];
 
 type Drag =
     | { grip: 'body'; id: string; startX: number; startY: number; origX: number; origY: number; targets: number[] }
-    | { grip: 'rotate'; id: string; pivotX: number; pivotY: number; startAngle: number; origRotation: number };
+    | { grip: 'rotate'; id: string; pivotX: number; pivotY: number; startAngle: number; origRotation: number }
+    | { grip: 'open'; id: string; cx: number; cy: number }
+    | { grip: 'draw'; id: string; cx: number; cy: number; r: number; start: number; last: number; sweep: number };
 
 interface Readout { x: number; y: number; text: string }
 
@@ -26,6 +31,7 @@ export default function InstrumentLayer() {
     const drag = useRef<Drag | null>(null);
     const [snapDot, setSnapDot] = useState<{ x: number; y: number } | null>(null);
     const [readout, setReadout] = useState<Readout | null>(null);
+    const [arcDraft, setArcDraft] = useState<Stroke | null>(null);
     const passThrough = tool === 'pen' || tool === 'marker' || tool === 'eraser';
 
     const toBoard = (e: React.PointerEvent): [number, number] => {
@@ -45,6 +51,12 @@ export default function InstrumentLayer() {
         const [x, y] = toBoard(e);
         if (grip === 'rotate') {
             drag.current = { grip, id: inst.id, pivotX: inst.x, pivotY: inst.y, startAngle: Math.atan2(y - inst.y, x - inst.x), origRotation: inst.rotation };
+        } else if (grip === 'open') {
+            drag.current = { grip, id: inst.id, cx: inst.x, cy: inst.y };
+        } else if (grip === 'draw') {
+            // The arc starts where the pencil is, not where the finger landed on its grip.
+            const a = (inst.rotation * Math.PI) / 180;
+            drag.current = { grip, id: inst.id, cx: inst.x, cy: inst.y, r: inst.radius ?? 0, start: a, last: a, sweep: 0 };
         } else {
             const strokes = st.pages[st.activePageIdx].strokes;
             drag.current = { grip, id: inst.id, startX: x, startY: y, origX: inst.x, origY: inst.y, targets: strokeEndpoints(strokes) };
@@ -62,6 +74,18 @@ export default function InstrumentLayer() {
             });
             st.updateInstrument(d.id, { x: round1(s.x), y: round1(s.y) });
             setSnapDot(s.snapped ? { x: s.x, y: s.y } : null);
+        } else if (d.grip === 'open') {
+            const o = openPasser({ x: d.cx, y: d.cy }, x, y);
+            st.updateInstrument(d.id, o);
+            setReadout({ x, y: y - 44, text: formatCm(o.radius) });
+        } else if (d.grip === 'draw') {
+            const a = Math.atan2(y - d.cy, x - d.cx);
+            d.sweep = Math.max(-2 * Math.PI, Math.min(2 * Math.PI, d.sweep + unwrapDelta(d.last, a)));
+            d.last = a;
+            st.updateInstrument(d.id, { rotation: round1((((a * 180) / Math.PI) % 360 + 360) % 360) });
+            const ink = inkFor(st.tool, st.inkSettings);
+            setArcDraft({ id: 'arc-draft', ...ink, path: arcPath(d.cx, d.cy, d.r, d.start, d.sweep), pts: [] });
+            setReadout({ x: d.cx, y: d.cy - 30, text: `${Math.round(Math.abs(d.sweep) * 180 / Math.PI)}°` });
         } else {
             const turned = d.origRotation + ((Math.atan2(y - d.pivotY, x - d.pivotX) - d.startAngle) * 180) / Math.PI;
             const r = snapRotation(turned, st.gridSnap);
@@ -72,6 +96,16 @@ export default function InstrumentLayer() {
     };
 
     const end = () => {
+        const d = drag.current;
+        // Less than a degree is a tap on the pencil, not an arc.
+        if (d?.grip === 'draw' && Math.abs(d.sweep) >= Math.PI / 180) {
+            const st = useBoardStore.getState();
+            st.addStroke({
+                id: rndId(), ...inkFor(st.tool, st.inkSettings),
+                path: arcPath(d.cx, d.cy, d.r, d.start, d.sweep), pts: arcPts(d.cx, d.cy, d.r, d.start, d.sweep),
+            });
+        }
+        setArcDraft(null);
         drag.current = null;
         setSnapDot(null);
         setReadout(null);
@@ -114,6 +148,10 @@ export default function InstrumentLayer() {
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 12, touchAction: 'none' }}
             onPointerMove={onPointerMove} onPointerUp={end} onPointerCancel={end}
         >
+            {arcDraft && (
+                <path data-arc-draft d={arcDraft.path} fill="none" stroke={arcDraft.color} strokeWidth={arcDraft.width}
+                    strokeLinecap="round" opacity={arcDraft.opacity} style={NO_POINTER} />
+            )}
             {instruments.map((inst) => {
                 const props = { inst, selected: inst.id === selectedId, passThrough, onGrip: (e: React.PointerEvent, g: Grip) => begin(e, inst.id, g) };
                 return (
@@ -125,8 +163,10 @@ export default function InstrumentLayer() {
                 );
             })}
             {snapDot && (
-                <circle data-snap-dot cx={snapDot.x} cy={snapDot.y} r={6} strokeWidth={2}
-                    style={{ fill: IC.handle, stroke: IC.handleOn, ...NO_POINTER }} />
+                <g style={NO_POINTER}>
+                    <circle cx={snapDot.x} cy={snapDot.y} r={14} strokeWidth={2} style={{ fill: IC.tint, stroke: IC.handle }} />
+                    <circle data-snap-dot cx={snapDot.x} cy={snapDot.y} r={6} strokeWidth={2} style={{ fill: IC.handle, stroke: IC.handleOn }} />
+                </g>
             )}
             {readout && <ReadoutLabel {...readout} />}
         </svg>
@@ -134,6 +174,12 @@ export default function InstrumentLayer() {
 }
 
 const formatDeg = (d: number) => String(Math.round(d) % 360);
+
+// The passer draws with the marker when the marker is the active tool, else with the pen.
+function inkFor(tool: string, settings: ReturnType<typeof useBoardStore.getState>['inkSettings']): Pick<Stroke, 'tool' | 'color' | 'width' | 'opacity'> {
+    const t = tool === 'marker' ? 'marker' : 'pen';
+    return { tool: t, color: settings[t].color, width: settings[t].width, opacity: t === 'marker' ? 0.45 : 1 };
+}
 
 // A pill with the live value (degrees, cm) next to what is being dragged.
 export function ReadoutLabel({ x, y, text }: Readout) {

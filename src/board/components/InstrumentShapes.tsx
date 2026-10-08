@@ -1,12 +1,13 @@
 import type { Instrument } from '../boardTypes';
 import { IC, NO_POINTER } from './instrumentStyle';
-import { BOARD_CM_PX, BOARD_MM_PX, EDGE_TOL_PX, GEO, LAT, PASSER, bodyPolygon, passerHinge, polyPoints, round1 } from '../instrumentGeometry';
+import { BOARD_CM_PX, BOARD_MM_PX, EDGE_TOL_PX, GEO, LAT, PASSER, bodyPolygon, formatCm, passerHinge, polyPoints, round1 } from '../instrumentGeometry';
 
 // The meetinstrumenten as SVG, each drawn in its own local frame (InstrumentLayer places it
 // with translate + rotate). Translucent "plastic" from tokens: a frosted light body keeps the
 // black scale legible on a white and on a black board alike.
 
-export type Grip = 'body' | 'rotate';
+// body = move, rotate = turn about the reference point; passer: open = set the opening, draw = arc.
+export type Grip = 'body' | 'rotate' | 'open' | 'draw';
 export interface ShapeProps {
     inst: Instrument;
     selected: boolean;
@@ -139,16 +140,20 @@ export function GeodriehoekShape(p: ShapeProps) {
     );
 }
 
-// Passer in its local frame: needle at the origin, pencil tip at (radius, 0), the hinge above
-// the chord. Needle leg and hinge move the passer.
+// Passer in its local frame: needle at the origin, pencil tip at (radius, 0), the hinge on the
+// chord's upper side. Needle leg and hinge move the passer, the pencil leg opens it, the pencil tip draws.
 export function PasserShape({ inst, selected, onGrip }: ShapeProps) {
     const r = inst.radius ?? 5 * BOARD_CM_PX;
-    const [hx, hy] = passerHinge(r);
+    const [hx, hy] = passerHinge(r, inst.rotation);
     const legW = 11;
     const metal = selected ? IC.selected : IC.edge;
     // The pin's top: 0.8 cm up the needle leg (the leg is PASSER.leg long, needle at the origin).
     const pin = (0.8 * BOARD_CM_PX) / PASSER.leg;
     const pinX = hx * pin, pinY = hy * pin;
+    // The pencil: the leg's last 1.2 cm is a cone to the lead; n = the leg's unit normal.
+    const cone = (1.2 * BOARD_CM_PX) / PASSER.leg;
+    const coneX = r + (hx - r) * cone, coneY = hy * cone;
+    const nx = -hy / PASSER.leg, ny = (hx - r) / PASSER.leg;
     return (
         <>
             {/* needle leg: the plastic leg ends in a metal pin of 0.8 cm */}
@@ -156,11 +161,35 @@ export function PasserShape({ inst, selected, onGrip }: ShapeProps) {
                 <line x1={hx} y1={hy} x2={0} y2={0} strokeWidth={legW + 16} stroke="transparent" />
                 <line x1={hx} y1={hy} x2={pinX} y2={pinY} strokeWidth={legW} strokeLinecap="round" style={{ stroke: IC.body }} />
                 <line x1={hx} y1={hy} x2={pinX} y2={pinY} strokeWidth={legW} strokeLinecap="round" opacity={0.55} style={{ stroke: metal }} />
+                {/* light halo under the dark pin: the needle stays visible on a black board */}
+                <line x1={pinX} y1={pinY} x2={0} y2={0} strokeWidth={5.5} strokeLinecap="round" style={{ stroke: IC.label }} />
                 <line x1={pinX} y1={pinY} x2={0} y2={0} strokeWidth={2.5} strokeLinecap="round" style={{ stroke: IC.tick }} />
-                <circle r={4} style={{ fill: IC.tick }} />
+                <circle r={4} strokeWidth={2} style={{ fill: IC.tick, stroke: IC.label }} />
             </g>
-            {/* pencil leg */}
-            <line x1={hx} y1={hy} x2={r} y2={0} strokeWidth={legW} strokeLinecap="round" opacity={0.55} style={{ stroke: metal, pointerEvents: 'none' }} />
+            {/* the opening: a dashed radius with its length, always upright */}
+            <g style={NO_POINTER}>
+                <line x1={0} y1={0} x2={r} y2={0} strokeWidth={4} opacity={0.7} style={{ stroke: IC.label }} />
+                <line x1={0} y1={0} x2={r} y2={0} strokeWidth={1.5} strokeDasharray="6 5" style={{ stroke: IC.edge }} />
+                <g data-passer-radius transform={`translate(${round1(r / 2)} ${hy < 0 ? 26 : -26}) rotate(${-inst.rotation})`}>
+                    <rect x={-40} y={-14} width={80} height={28} rx={14} strokeWidth={1.5} style={{ fill: IC.label, stroke: IC.edge }} />
+                    <text textAnchor="middle" dy="0.35em" fontSize={16} fontWeight={700} fontFamily="var(--font-ui)" style={{ fill: IC.edge }}>{formatCm(r)}</text>
+                </g>
+            </g>
+            {/* pencil leg: dragging it sets the opening (no ink) */}
+            <g data-instrument-grip="open" style={{ pointerEvents: 'all', cursor: 'ew-resize' }} onPointerDown={(e) => onGrip(e, 'open')}>
+                <title>Passer openen</title>
+                <line x1={hx} y1={hy} x2={coneX} y2={coneY} strokeWidth={legW + 16} stroke="transparent" />
+                <line x1={hx} y1={hy} x2={coneX} y2={coneY} strokeWidth={legW} strokeLinecap="round" style={{ stroke: IC.body }} />
+                <line x1={hx} y1={hy} x2={coneX} y2={coneY} strokeWidth={legW} strokeLinecap="round" opacity={0.55} style={{ stroke: metal }} />
+                <path d={`M ${round1(coneX - nx * 7)} ${round1(coneY - ny * 7)} L ${round1(r)} 0 L ${round1(coneX + nx * 7)} ${round1(coneY + ny * 7)} Z`}
+                    style={{ fill: IC.faint }} />
+            </g>
+            {/* pencil tip: dragging it round the needle draws the arc */}
+            <g data-instrument-grip="draw" transform={`translate(${round1(r)} 0)`} style={{ pointerEvents: 'all', cursor: 'crosshair' }} onPointerDown={(e) => onGrip(e, 'draw')}>
+                <title>Cirkelboog tekenen</title>
+                <circle r={20} strokeWidth={2.5} style={{ fill: IC.tint, stroke: IC.handle }} />
+                <circle r={3.5} style={{ fill: IC.tick }} />
+            </g>
             {/* hinge + handle */}
             <g data-instrument-grip="body" style={{ pointerEvents: 'all', cursor: 'move' }} onPointerDown={(e) => onGrip(e, 'body')}>
                 <circle cx={hx} cy={hy} r={14} style={{ fill: IC.handle }} />
