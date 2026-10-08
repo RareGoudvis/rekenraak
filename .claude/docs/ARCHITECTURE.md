@@ -1330,7 +1330,7 @@ src/
     │   ├── SheetDropZones.tsx  # the three labelled drop thirds over every candidate block during a drag + SheetDragHint strip (screen only)
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
     │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = hovered id (`components/sheet/hoveredBlock.ts` external store) ?? activeBlockId, resolved in SheetControlsRail, not CSS :hover
-    │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, wordmark foot
+    │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, mode row (Oefenmodus / Bordmodus), wordmark foot
     │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg/Bordmodus fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈2040px of viewport (≈1900 before the Bordmodus button) because the bar spans only the centre column.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
@@ -1527,8 +1527,9 @@ under `src/board/`. Touchpoints with the main app are exactly four:
 2. **App mount** — [App.tsx](../../src/App.tsx) renders `<WhiteboardView/>` as a full-screen
    overlay when `view === 'whiteboard'` (like the library views: the editor stays mounted
    underneath, so switching back loses nothing).
-3. **TopBar button** — "Bordmodus" (Chalkboard icon) after Uitleg; at shed stage 3 it folds
-   into the Meer menu with Toevoegen and Uitleg ([TopBar.tsx](../../src/components/layout/TopBar.tsx)).
+3. **Sidebar-foot button** — "Bordmodus" (Chalkboard icon) in the mode row directly above the
+   wordmark ([sidebar.tsx](../../src/components/layout/sidebar.tsx)), beside Oefenmodus; nothing in
+   the TopBar, so its fold stages are the pre-whiteboard ones.
 4. **GeldViewer exports** — `EuroCoin` / `CentCoin` are exported (`Bill` already was) so the
    board's geld palette and geld-item widgets draw the same money as the sheet.
 
@@ -1548,7 +1549,7 @@ store's `draftBlocks`, `exerciseCatalog` + `ExercisePreview`, `AnalogClockSVG` a
   On bord.html App keeps the page's own tab title and `useOnboarding` skips the welcome modal
   (it tours the editor). about/faq/oefeningen link to it (`.site-btn-secondary` in site.css);
   sitemap.xml lists it.
-- **From the editor** — the TopBar / Meer "Bordmodus" button calls `setView('whiteboard')`.
+- **From the editor** — the sidebar-foot "Bordmodus" button calls `setView('whiteboard')`.
 - **Leaving** — the bottom bar's "Bordmodus verlaten" calls `setView('editor')`. `setView`
   with any non-board view on bord.html navigates to `/` instead (there is no editor
   underneath to fall back to); on index.html it just switches the view.
@@ -1709,7 +1710,7 @@ Plan and owner decisions: `~/.claude/plans/oefen-app-kiosk.md` (K1–K5, Phase C
 
 ### Entry points
 
-- **Teacher:** TopBar **Oefenmodus** button (folds into Meer at shed stage 3; hidden in a locked
+- **Teacher:** sidebar-foot **Oefenmodus** button (the row above the wordmark; hidden in a locked
   curriculum) → `OefenBuilderModal`; and **Mijn bladen › Oefensessies** (Nieuwe oefensessie,
   Delen, Bewerken, hernoemen, verwijderen).
 - **Pupil:** `oefenen.html#oefen=<payload>` — a separate Vite entry with its own React root
