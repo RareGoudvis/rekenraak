@@ -1,6 +1,6 @@
 import type {
     AfrondenExercise, BreukBewerkExercise, CijferExercise, ControleExercise, DeelbaarheidExercise, Equation, EvenOnevenExercise,
-    Fraction, FractionExercise, GeldExercise, VerbandExercise,
+    ClockExercise, Fraction, FractionExercise, GeldExercise, TijdsduurExercise, VerbandExercise,
     GeldRekenenExercise, GeldTeruggevenExercise, GetalFunctieExercise, GetallenasExercise, HerleidingExercise, HerleidingPart,
     MaateenheidExercise, MabExercise, MeetExercise, OrdenenExercise, PatroonExercise, PlaatswaardeExercise, ProcentExercise,
     RekenvolgordeExercise, RomeinseExercise, SchattendExercise, SplitsenExercise, TemperatuurExercise, VergelijkenExercise,
@@ -602,4 +602,46 @@ export const BREUKEN_KIOSK = descriptor<FractionExercise>({
         ? `gekleurd deel van ${ex.denominator} delen: ?`
         : `${ex.numerator}/${ex.denominator} van ${ex.total ?? 0} = ?`),
     supported: (c) => ['herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
+});
+
+// ── Tijd ─────────────────────────────────────────────────────────────────────
+
+const hm = (h: number, m: number) => `${h}:${String(m).padStart(2, '0')}`;
+
+// Read an analoge klok, or write a spoken time ("kwart over 3") digitally. A clock face has
+// no ochtend / avond, so 3:15 and 15:15 both count (and 0:00 / 12:00 for twaalf uur).
+// Reading a digitale klok asks the time in words: not served.
+const klokMode = (ex: ClockExercise, c: Record<string, unknown>) => ex.exerciseMode ?? (c.exerciseMode as string | undefined) ?? 'lezen';
+const klokType = (ex: ClockExercise, c: Record<string, unknown>) => ex.clockType ?? (c.clockType as string | undefined) ?? 'analoog';
+export const KLOK_KIOSK = descriptor<ClockExercise>({
+    input: 'time',
+    answerOf: (ex) => {
+        const h12 = ex.hours % 12;
+        return (h12 === 0 ? [0, 12] : [h12, h12 + 12]).map(h => hm(h, ex.minutes));
+    },
+    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??` : `${ex.timeText} = ? : ??`),
+    supported: (c) => {
+        const mode = (c.exerciseMode as string | undefined) ?? 'lezen';
+        const type = (c.clockType as string | undefined) ?? 'analoog';
+        return type === 'analoog' ? mode !== 'tekenen' : mode === 'tekenen';
+    },
+});
+
+// begin / einde: a 24-hour time as the row prints it (past midnight wraps); duur: uur + min.
+const clock24 = (min: number) => hm(Math.floor(min / 60) % 24, min % 60);
+export const TIJDSDUUR_KIOSK = descriptor<TijdsduurExercise>({
+    input: 'time',
+    inputOf: (ex) => (ex.blank === 'duur' ? 'multi-number' : 'time'),
+    labels: () => ['uur', 'min'],
+    answerOf: (ex) => {
+        if (ex.blank === 'duur') {
+            const d = ex.endMin - ex.startMin;
+            return [String(Math.floor(d / 60)), String(d % 60)];
+        }
+        return [clock24(ex.blank === 'begin' ? ex.startMin : ex.endMin)];
+    },
+    display: (ex) => {
+        const cell = (k: 'begin' | 'einde' | 'duur', v: string) => (ex.blank === k ? '?' : v);
+        return `begin ${cell('begin', clock24(ex.startMin))} · einde ${cell('einde', clock24(ex.endMin))} · duur ${cell('duur', `${ex.endMin - ex.startMin} min`)}`;
+    },
 });

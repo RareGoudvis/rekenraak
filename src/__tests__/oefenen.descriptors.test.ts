@@ -46,6 +46,7 @@ const EXPECTED_LEAVES = [
     'breuken-rangschikken', 'patronen-nat', 'patronen-dec', 'patronen-geh', 'patronen-kettingsommen', 'deelbaarheid-veelvouden',
     'breuken-herkennen', 'breuken-hoeveelheid', 'breuken-gemengd', 'breuken-gelijknamig', 'breuken-vereenvoudigen',
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
+    'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -239,6 +240,18 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         expect(Number.isInteger((f.total! * f.numerator) / f.denominator), JSON.stringify(f)).toBe(true);
         return (f.total! * f.numerator) / f.denominator;
     },
+    'klok-kloklezen': (k: T.ClockExercise) => {
+        expect(k.digitalText).toBe(`${String(k.hours).padStart(2, '0')}:${String(k.minutes).padStart(2, '0')}`);
+        // Both halves of the day: a clock face (and "kwart over 3") does not say which.
+        const h = k.hours % 12;
+        return { time: [[h === 0 ? 12 : h, k.minutes], [h === 0 ? 0 : h + 12, k.minutes]] };
+    },
+    tijdsduur: (t: T.TijdsduurExercise) => {
+        expect(t.endMin).toBeGreaterThan(t.startMin);
+        if (t.blank === 'duur') return { multi: [Math.floor((t.endMin - t.startMin) / 60), (t.endMin - t.startMin) % 60] };
+        const min = t.blank === 'begin' ? t.startMin : t.endMin;
+        return { time: [[Math.floor(min / 60) % 24, min % 60]] };
+    },
 };
 
 // The row follows its own cycle of steps; the blanks are what the pupil fills.
@@ -308,7 +321,9 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('vormleer-hoeken', { mode: 'tekenen' })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'gelijkbenig'] })).toBe(false);
         expect(kioskSupports('vormleer-figuren', { concepts: ['rechthoekig', 'stomphoekig'] })).toBe(true);
-        expect(kioskSupports('klok-kloklezen', {})).toBe(false);
+        expect(kioskSupports('klok-kloklezen', {})).toBe(true);
+        expect(kioskSupports('klok-kloklezen', { clockType: 'digitaal', exerciseMode: 'lezen' })).toBe(false);
+        expect(kioskSupports('klok-kloklezen', { clockType: 'analoog', exerciseMode: 'tekenen' })).toBe(false);
         expect(kioskSupports('nope', {})).toBe(false);
     });
 });
@@ -354,6 +369,8 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-teruggeven', { antwoordFormat: 'decimaal' }, 'number'],
         ['geld-rekenen-korting', { wholeEuros: false }, 'multi-number'],
         ['geld-rekenen-intrest', { halfYear: true }, 'number'],
+        ['klok-analoog-lezen', { is24hour: true }, 'time'],
+        ['tijdsduur-berekenen', { blanks: ['begin', 'einde'], overMidnight: true }, 'time'],
     ])('%s + %j → %s', (leafId, extra, want) => {
         // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
         const leaf = flattenLeaves().find(l => l.id === leafId)!;

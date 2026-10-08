@@ -52,7 +52,7 @@ import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGe
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
 import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import type { KioskDescriptor } from '../services/oefenen/types';
-import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK, PLAATSWAARDE_KIOSK, EVEN_ONEVEN_KIOSK, ROMEINSE_KIOSK, GETALFUNCTIE_KIOSK, MAB_KIOSK, SCHATTEND_KIOSK, REKENVOLGORDE_KIOSK, CONTROLEREN_KIOSK, VORMLEER_KIOSK, TEMPERATUUR_KIOSK, WEEGSCHAAL_KIOSK, LENGTE_KIOSK, OMTREK_KIOSK, OPPERVLAKTE_KIOSK, MAATEENHEID_KIOSK, HERLEIDINGEN_KIOSK, GELD_KIOSK, GELD_TERUGGEVEN_KIOSK, GELD_REKENEN_KIOSK, PATROON_KIOSK, GETALLENAS_KIOSK, VEELVOUDEN_KIOSK, ORDENEN_KIOSK, SPLITSEN_KIOSK, BREUK_BEWERK_KIOSK, VERBANDEN_KIOSK, BREUKEN_KIOSK } from '../services/oefenen/kioskDescriptors';
+import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK, PLAATSWAARDE_KIOSK, EVEN_ONEVEN_KIOSK, ROMEINSE_KIOSK, GETALFUNCTIE_KIOSK, MAB_KIOSK, SCHATTEND_KIOSK, REKENVOLGORDE_KIOSK, CONTROLEREN_KIOSK, VORMLEER_KIOSK, TEMPERATUUR_KIOSK, WEEGSCHAAL_KIOSK, LENGTE_KIOSK, OMTREK_KIOSK, OPPERVLAKTE_KIOSK, MAATEENHEID_KIOSK, HERLEIDINGEN_KIOSK, GELD_KIOSK, GELD_TERUGGEVEN_KIOSK, GELD_REKENEN_KIOSK, PATROON_KIOSK, GETALLENAS_KIOSK, VEELVOUDEN_KIOSK, ORDENEN_KIOSK, SPLITSEN_KIOSK, BREUK_BEWERK_KIOSK, VERBANDEN_KIOSK, BREUKEN_KIOSK, KLOK_KIOSK, TIJDSDUUR_KIOSK } from '../services/oefenen/kioskDescriptors';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -504,7 +504,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'cijferen-delen-nat':            cijferRow(),
     'cijferen-delen-dec':            cijferRow(),
 
-    'klok-kloklezen': row<ClockConstraints>({ exerciseField: 'clockExercises',    generate: generateClockExercises,    defaultConstraints: clockDefaults,    defaultCount: 10 }),
+    'klok-kloklezen': row<ClockConstraints>({ exerciseField: 'clockExercises',    generate: generateClockExercises,    defaultConstraints: clockDefaults,    defaultCount: 10 , kiosk: KLOK_KIOSK }),
     'breuken':        row<FractionConstraints>({ exerciseField: 'fractionExercises', generate: generateFractionExercises, generateNoted: generateFractionExercisesNoted, defaultConstraints: fractionDefaults, defaultCount: 6 , kiosk: BREUKEN_KIOSK }),
     'splitsen':       row<SplitsenConstraints>({ exerciseField: 'splitsenExercises', generate: generateSplitsenExercises, defaultConstraints: splitsenDefaults, defaultCount: 5, maxPresets: splitsenMax , kiosk: SPLITSEN_KIOSK }),
 
@@ -554,7 +554,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'layout-lege-pagina':  row<LayoutConstraints>({ exerciseField: 'exercises', generate: noGenerate, defaultConstraints: layoutDefaults, defaultCount: 0, isFurniture: true }),
     'kettingsommen':  row<KettingConstraints>({ exerciseField: 'patroonExercises',       generate: generateKettingExercises,       generateNoted: generateKettingExercisesNoted, defaultConstraints: kettingDefaults,       defaultCount: 6, maxPresets: fixedMax(RANGES.ketting) , kiosk: PATROON_KIOSK }),
     'getalfunctie':   row<GetalFunctieConstraints>({ exerciseField: 'getalFunctieExercises',  generate: generateGetalFunctieExercises,  defaultConstraints: getalfunctieDefaults,  defaultCount: 6 , kiosk: GETALFUNCTIE_KIOSK }),
-    'tijdsduur':      row<TijdsduurConstraints>({ exerciseField: 'tijdsduurExercises',     generate: generateTijdsduurExercises,     defaultConstraints: tijdsduurDefaults,     defaultCount: 6 }),
+    'tijdsduur':      row<TijdsduurConstraints>({ exerciseField: 'tijdsduurExercises',     generate: generateTijdsduurExercises,     defaultConstraints: tijdsduurDefaults,     defaultCount: 6 , kiosk: TIJDSDUUR_KIOSK }),
     'kalender':       row<KalenderConstraints>({ exerciseField: 'kalenderExercises',      generate: generateKalenderExercises, generateNoted: generateKalenderExercisesNoted,      defaultConstraints: kalenderDefaults,      defaultCount: 1 }),
     'controleren':    row<ControlerenConstraints>({ exerciseField: 'controleExercises',      generate: generateControleExercises,      defaultConstraints: controlerenDefaults,   defaultCount: 4, maxPresets: fixedMax(RANGES.controleren) , kiosk: CONTROLEREN_KIOSK }),
 

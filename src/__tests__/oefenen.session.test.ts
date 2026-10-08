@@ -181,7 +181,7 @@ describe('strict decode', () => {
         expect(() => decodeSessie(hash)).toThrow(/oefenlink is ongeldig/);
     });
     test('a type without a kiosk descriptor is refused (ask to update)', () => {
-        expect(() => decodeSessie(wire(w => { w[4] = [['klok-analoog-lezen']]; }))).toThrow(/niet kent \(.+\).*Werk de app bij/);
+        expect(() => decodeSessie(wire(w => { w[4] = [['kalender-maandrooster']]; }))).toThrow(/niet kent \(.+\).*Werk de app bij/);
     });
     test.each<[string, (s: Record<string, unknown>) => void]>([
         ['no version', s => { delete s.v; }],

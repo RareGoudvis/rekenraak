@@ -80,6 +80,7 @@ export const KIOSK_LEAF_TABLE_V1: readonly string[] = [
     'breuken-rangschikken', 'patronen-nat', 'patronen-dec', 'patronen-geh', 'patronen-kettingsommen', 'deelbaarheid-veelvouden',
     'breuken-herkennen', 'breuken-hoeveelheid', 'breuken-gemengd', 'breuken-gelijknamig', 'breuken-vereenvoudigen',
     'verbanden-tabel', 'verbanden-paren', 'procenten-verbanden',
+    'klok-analoog-lezen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen', 'tijdsduur-berekenen',
 ];
 
 export const KIOSK_KEY_TABLE_V1: readonly string[] = [
