@@ -151,6 +151,36 @@ describe('viewer tap flow (jsdom)', () => {
         expect(picked(container)).toEqual(['0', '7']);
     });
 
+    // Phase C1: one exercise per family, every key the descriptor names is a part on the card,
+    // a tap picks exactly that part and the right part answers the descriptor's answer.
+    test.each<[string, string, Record<string, unknown>]>([
+        ['plaatswaarde omcirkelen', 'plaatswaarde', { subType: 'omcirkelen', maxGetal: 100000 }],
+    ])('%s: tap one part, the right one answers', (_name, typeId, constraints) => {
+        const block = blockFor(typeId, constraints);
+        const field = REGISTRY[typeId].exerciseField;
+        const list = (block as unknown as Record<string, unknown[]>)[field];
+        list.splice(1);
+        const ex = list[0];
+        const c = block.constraints as Record<string, unknown>;
+        const d = kioskFor(typeId)!;
+        const ia = d.interact!;
+        expect(ia.kind).toBe('tap');
+        let last: InteractionState = EMPTY_INTERACTION;
+        const { container } = render(<Harness block={block} kind="tap" onState={s => { last = s; }} />);
+        const ps = parts(container);
+        expect(ps.map(p => p.dataset.kioskKey)).toEqual(ia.keys!(ex, c));
+        const want = ia.answerOf(ex, c);
+        const right = ps.filter(p => ia.fromState({ ...EMPTY_INTERACTION, selected: [p.dataset.kioskKey!] }, ex, c) === want);
+        expect(right.length).toBeGreaterThan(0);
+        for (const p of ps) {
+            fireEvent.click(p);
+            expect(picked(container)).toEqual([p.dataset.kioskKey]);
+        }
+        // The loop may have ended on the right part: a second tap would take it out again.
+        if (picked(container)[0] !== right[0].dataset.kioskKey) fireEvent.click(right[0]);
+        expect(ia.fromState(last, ex, c)).toBe(want);
+    });
+
     test('an opted-in viewer under another kind stays plain', () => {
         const block = blockFor('vergelijken', { subType: 'kiezen' });
         const { container } = render(<Harness block={block} kind="fill-cells" />);

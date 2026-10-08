@@ -362,6 +362,7 @@ describe('descriptor answers agree with the generators', () => {
         ['even-oneven-rooster', { target: 'oneven', maxGetal: 10000, perRow: 12 }, 'interactive'],
         ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
+        ['plaatswaarde-omcirkelen', { decimalPlaces: 2, maxGetal: 1000000 }, 'interactive'],
         ['getalbegrip-functie', { answerMode: 'schrijven' }, 'text'],
         ['controleren-negenproef', { foutAandeel: 'alles' }, 'choice'],
         ['temperatuur-aflezen', { includeNegatives: true }, 'number'],

@@ -194,13 +194,21 @@ const plaatsOf = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => plaat
 const pwSub = (c: Record<string, unknown>) => (c.subType as string | undefined) ?? 'waarde';
 
 // waarde: type the digit's value (300, 0,05); plaats: tap the place name; omcirkelen: tap
-// its letter (H, t) among the number's own places, like the sheet's chips.
+// its letter (H, t) ON the card (Phase C), among the number's own place chips like the sheet's.
+const isOmcirkelen = (c: Record<string, unknown>) => pwSub(c) === 'omcirkelen';
 export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     input: 'number',
-    inputOf: (_ex, c) => (pwSub(c) === 'waarde' ? 'number' : 'choice'),
+    inputOf: (_ex, c) => (pwSub(c) === 'waarde' ? 'number' : isOmcirkelen(c) ? 'interactive' : 'choice'),
     keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 ? [','] : []),
-    kioskInstruction: (_ex, c) => (pwSub(c) === 'omcirkelen' ? 'Kies de plaats van het onderstreepte cijfer.' : undefined),
+    kioskInstruction: (_ex, c) => (isOmcirkelen(c) ? 'Tik op de plaats van het onderstreepte cijfer.' : undefined),
     choicesOf: (ex, c) => plaatsenOf(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
+    // Keys are chip positions (SYNC: PlaatswaardeViewer omcirkelen chips); the answer is the letter.
+    interact: {
+        kind: 'tap',
+        keys: (ex, c) => plaatsenOf(ex, c).map((_, i) => String(i)),
+        answerOf: (ex, c) => plaatsOf(ex, c)?.key ?? '',
+        fromState: (st, ex, c) => (st.selected.length ? plaatsenOf(ex, c)[Number(st.selected[0])]?.key ?? '' : ''),
+    },
     answerOf: (ex, c) => {
         const p = plaatsOf(ex, c);
         if (!p) return [];
