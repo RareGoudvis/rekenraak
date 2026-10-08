@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText, Student } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { SaveState } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
@@ -8,6 +8,7 @@ import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
+import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 import { Info } from '@phosphor-icons/react';
 import { useShedStages } from '../../hooks/useShedStages';
 
@@ -99,6 +100,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
+    const [oefenOpen, setOefenOpen] = useState(false);
 
     const handleExport = () => {
         const st = useWorksheetStore.getState();
@@ -254,6 +256,11 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
                                             <HelpIcon size={15} /> Uitleg
                                         </button>
+                                        {!locked && (
+                                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setOefenOpen(true); }}>
+                                                <Student size={15} /> Oefenmodus
+                                            </button>
+                                        )}
                                         <div style={S.menuDivider} />
                                     </>
                                 )}
@@ -328,6 +335,11 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                 {!foldedIntoMenu && (
                     <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel={iconOnly ? undefined : 'Uitleg'} onClick={() => onOpenHelp?.()} />
+                )}
+
+                {/* Leerlingen oefenen op hun eigen toestel via link/QR; folds into Meer at stage 3. */}
+                {!foldedIntoMenu && !locked && (
+                    <IconButton icon={Student} label="Oefenmodus: laat leerlingen oefenen via een link of QR-code" visibleLabel={iconOnly ? undefined : 'Oefenmodus'} onClick={() => setOefenOpen(true)} />
                 )}
 
               </div>
@@ -428,6 +440,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
             {baseOpen && <BaseSettingsModal onClose={() => setBaseOpen(false)} />}
             {curriculumOpen && <CurriculumBuilderModal onClose={() => setCurriculumOpen(false)} />}
+            {oefenOpen && <OefenBuilderModal onClose={() => setOefenOpen(false)} />}
         </div>
     );
 }
