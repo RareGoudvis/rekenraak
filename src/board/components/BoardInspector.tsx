@@ -5,6 +5,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { useBoardStore } from '../useBoardStore';
 import { regenerateBoardBlock } from '../boardBlocks';
+import GenerationNote from '../../components/configurator/GenerationNote';
 import type { BoardWidget } from '../boardTypes';
 
 interface Props {
@@ -93,6 +94,9 @@ export default function BoardInspector({ widget }: Props) {
                             onChange={(v) => updateWidget(widgetId, { props: { ...widget.props, showHeader: v } })} />
                     </div>
                 </div>
+
+                {/* Same note box as the sheet Inspector: what the last generate had to relax. */}
+                <GenerationNote note={block.generationNote} />
 
                 {/* The type's real config plugin, edits the draft mirror. */}
                 {Config && <div style={S.section}><Config block={block} /></div>}

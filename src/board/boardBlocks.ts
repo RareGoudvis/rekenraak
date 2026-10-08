@@ -2,6 +2,7 @@ import { REGISTRY } from '../config/exerciseRegistry';
 import { seedConstraints, type BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
 import type { MathBlock } from '../services/math/types';
+import { generateForBlock, GENERATION_FAILED } from '../services/generateDispatch';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { rndId } from './boardTypes';
 
@@ -43,11 +44,17 @@ export function makeBoardBlock(typeId: string, seed: BoardSeed): MathBlock | nul
     return regenerateBoardBlock(block);
 }
 
-// Generate directly against the registry — board blocks never live in the
-// worksheet store, so we write the exercise field ourselves instead of going
-// through setExercises.
+// Board blocks never live in the worksheet store, so the exercise field and the note are
+// written here; the generate itself is the sheet's (ceiling clamp, dedupe, failure note).
+// Always deduped: the sheet's "Geen dubbele oefeningen" default, and a board shows few.
 export function regenerateBoardBlock(block: MathBlock): MathBlock {
     const def = REGISTRY[block.typeId];
     if (!def) return block;
-    return { ...block, [def.exerciseField]: def.generate(block) };
+    try {
+        const { items, note } = generateForBlock(block, true);
+        return { ...block, [def.exerciseField]: items, generationNote: note };
+    } catch (err) {
+        console.warn(`[rekenraak] board generator for ${block.typeId} threw`, err);
+        return { ...block, generationNote: `${GENERATION_FAILED} ${err instanceof Error ? err.message : String(err)}` };
+    }
 }

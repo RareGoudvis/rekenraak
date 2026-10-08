@@ -4,13 +4,14 @@ import { numberBlocks } from '../../services/layout/blockNumbering';
 import { useIntrinsicWidth, useIntrinsicEntries } from '../../hooks/useMeasuredHeights';
 import type { FooterSlot } from '../../services/math/types';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
-import { ArrowUp, ArrowDown, Sparkle as Sparkles, WarningCircle, Info } from '@phosphor-icons/react';
+import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { DOMAIN_BY_TYPE } from '../../config/appstructure';
 import { buildCatalog } from '../../config/exerciseCatalog';
-import { regenerateBlock, GENERATION_FAILED } from '../../services/generateDispatch';
+import { regenerateBlock } from '../../services/generateDispatch';
+import GenerationNote from './GenerationNote';
 import { suggestionsFor } from '../../config/instructionPresets';
 import { BODY_FONT_PX } from '../../config/printPalette';
 import RegionStyleFields, { ResetAllStylesButton } from './RegionStyleFields';
@@ -720,33 +721,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         De instellingen zijn gewijzigd. Klik Genereer om de oefeningen bij te werken.
                     </p>
                 )}
-                {/* What the last generate had to do with these settings: which constraints
-                    it relaxed, how many were possible, or that the generator failed outright
-                    (that last one is a fault, so it reads as one). */}
-                {activeBlock.generationNote && (() => {
-                    const note = activeBlock.generationNote;
-                    const failed = note.startsWith(GENERATION_FAILED);
-                    // Bold only the lead sentence ("Instellingen versoepeld: ...") so the
-                    // reason that follows the ':' or '—' still reads as plain explanation.
-                    const sepIdx = (() => {
-                        const candidates = [note.indexOf(':'), note.indexOf('—')].filter(i => i >= 0);
-                        return candidates.length ? Math.min(...candidates) : -1;
-                    })();
-                    const lead = sepIdx >= 0 ? note.slice(0, sepIdx) : note;
-                    const rest = sepIdx >= 0 ? note.slice(sepIdx) : '';
-                    const NoteIcon = failed ? WarningCircle : Info;
-                    return (
-                        <div style={{
-                            display: 'flex', gap: 'var(--sp-2)', alignItems: 'flex-start',
-                            padding: '8px', border: `1px solid ${failed ? 'var(--danger)' : 'var(--accent)'}`,
-                            borderRadius: 'var(--radius-sm)', background: failed ? 'var(--danger-soft)' : 'var(--accent-soft)',
-                            color: 'var(--text-main)', fontSize: 'var(--text-xs)', margin: '0 0 var(--sp-2)',
-                        }}>
-                            <NoteIcon size={16} weight="fill" style={{ flexShrink: 0, marginTop: '1px', color: failed ? 'var(--danger)' : 'var(--accent)' }} />
-                            <span><strong>{lead}</strong>{rest}</span>
-                        </div>
-                    );
-                })()}
+                <GenerationNote note={activeBlock.generationNote} />
                 <div style={S.engineBody}>
                     {locked ? (
                         <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', margin: 0 }}>
