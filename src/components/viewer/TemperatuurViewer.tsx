@@ -3,6 +3,8 @@ import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { TemperatuurConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import { useViewerInteraction, type ViewerInteraction } from './ViewerInteractionContext';
+import { clamp, dragHandleProps, dragSurfaceProps, dragValuesOf } from './kioskDrag';
 
 interface Props {
     block: MathBlock;
@@ -25,7 +27,8 @@ const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_
 // Glass thermometer: rounded tube with a subtle glass gradient, bulb, major (5°) +
 // minor (1°) ticks. `fillTo` = temp the mercury rises to (null = empty tube). `uid`
 // keeps gradient ids unique when several render on one sheet.
-function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | null; uid: string }) {
+// `ctx` (Oefenmodus "kleur tot", kiosk only): the pupil drags the top of the mercury, 1° a step.
+function Thermometer({ minT, fillTo, uid, ctx }: { minT: number; fillTo: number | null; uid: string; ctx?: ViewerInteraction }) {
     const DEG = 4;
     const top = 16;
     const tubeBottom = top + (MAX_T - minT) * DEG;
@@ -42,11 +45,14 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
     const filled = fillTo !== null;
     const ticks: number[] = [];
     for (let t = minT; t <= MAX_T; t++) ticks.push(t);
+    // The degree at height y, kept on the scale (a press on the bulb is the lowest degree).
+    const tAt = (py: number) => clamp(Math.round(MAX_T - (py - top) / DEG), minT, MAX_T);
+    const surface = ctx ? dragSurfaceProps(ctx, { width: W, height: H, pick: () => 't', move: (_k, p, from) => ({ ...from, t: tAt(p.y) }) }) : {};
 
     return (
         // Tube, bulb and ticks stay viewBox units; only the rendered box follows the token,
         // so the whole thermometer scales as one with the Lettergrootte slider.
-        <svg width={mathPx(W)} height={mathPx(H)} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', fontFamily: mono }}>
+        <svg width={mathPx(W)} height={mathPx(H)} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block', fontFamily: mono }} {...surface}>
             <defs>
                 <linearGradient id={glass} x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0" stopColor="#dfe7ec" />
@@ -81,6 +87,15 @@ function Thermometer({ minT, fillTo, uid }: { minT: number; fillTo: number | nul
                     </g>
                 );
             })}
+            {ctx && (
+                <g {...dragHandleProps(ctx, 't', {
+                    label: 'kwik', valueText: filled ? `${fillTo} graden` : 'leeg', value: fillTo ?? minT, min: minT, max: MAX_T,
+                    step: (dir, from) => ({ ...from, t: clamp((from.t ?? minT - dir) + dir, minT, MAX_T) }),
+                })}>
+                    {/* Empty tube: the knob waits hollow at the bottom of the scale. */}
+                    <circle cx={cx} cy={y(fillTo ?? minT)} r={6} className={`kiosk-knob${filled ? '' : ' is-unset'}`} />
+                </g>
+            )}
         </svg>
     );
 }
@@ -110,6 +125,7 @@ function VerschilThermo({ minT, temp, mode, showSolutions, uid }: { minT: number
 export default function TemperatuurViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const sheetPx = useSheetSizePx('math');
+    const ctx = useViewerInteraction();
     const exercises = block.temperatuurExercises || [];
     const c = block.constraints as TemperatuurConstraints;
     const includeNegatives = !!c.includeNegatives;
@@ -147,11 +163,14 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                     );
                 }
                 const isKleuren = ex.variant === 'kleuren';
-                const fillTo = isKleuren ? (showSolutions ? ex.celsius : null) : ex.celsius;
+                // Oefenmodus: "kleur tot" is set by dragging the mercury on the card.
+                const dragged = isKleuren && ctx?.kind === 'drag' ? ctx : undefined;
+                const fillTo = dragged ? (dragValuesOf(dragged).t ?? null) : isKleuren ? (showSolutions ? ex.celsius : null) : ex.celsius;
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
-                        {isKleuren && <div>Kleur tot {ex.celsius} °C</div>}
-                        <Thermometer minT={minT} fillTo={fillTo} uid={ex.id} />
+                        {/* The kiosk header carries the verb ("Sleep het kwik …"): the card keeps the target only. */}
+                        {isKleuren && <div>{dragged ? null : 'Kleur tot '}{ex.celsius} °C</div>}
+                        <Thermometer minT={minT} fillTo={fillTo} uid={ex.id} ctx={dragged} />
                         {!isKleuren && (
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                                 {showSolutions

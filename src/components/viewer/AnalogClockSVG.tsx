@@ -8,6 +8,12 @@ interface Props {
     is24hour: boolean;
     size?: number;
     style?: React.CSSProperties;
+    // Oefenmodus drag (ClockDragFace only; the sheet never passes these): the kleine wijzer's
+    // own angle when it is printed for another time than `minutes`, pointer handlers on the
+    // face, and the drag handles drawn over the hands.
+    hourAngleDeg?: number;
+    surfaceProps?: React.SVGProps<SVGSVGElement>;
+    children?: React.ReactNode;
 }
 
 // 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` em
@@ -15,7 +21,7 @@ interface Props {
 // then follows the teacher's Lettergrootte slider. SYNC: same divisor in every viewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
 
-export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinuteHand, is24hour, size = 130, style }: Props) {
+export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinuteHand, is24hour, size = 130, style, hourAngleDeg, surfaceProps, children }: Props) {
     // In 24h mode the SVG canvas grows by 24px so the outer 13-24 ring fits without shrinking the clock circle.
     const svgSize = is24hour ? size + 24 : size;
     const cx = svgSize / 2;
@@ -30,7 +36,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
     });
 
     // Both 12h and 24h use the same hand angle (dual-ring 24h clock is still 12h-speed)
-    const hourAngle = ((hours % 12) * 360 / 12) + (minutes * 360 / (12 * 60));
+    const hourAngle = hourAngleDeg ?? (((hours % 12) * 360 / 12) + (minutes * 360 / (12 * 60)));
     const minuteAngle = minutes * 6;
 
     const hourEnd = pointAt(hourAngle, r * 0.58);
@@ -42,7 +48,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
     return (
         // `size` stays the internal viewBox geometry; only the rendered box follows the token,
         // so numerals, ticks and hand widths scale with it without any further arithmetic.
-        <svg width={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} height={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} viewBox={`0 0 ${svgSize} ${svgSize}`} style={style}>
+        <svg width={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} height={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} viewBox={`0 0 ${svgSize} ${svgSize}`} style={style} {...surfaceProps}>
             <circle cx={cx} cy={cy} r={r} fill="white" stroke="#000" strokeWidth="2" />
 
             {is24hour ? (
@@ -130,7 +136,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
                 />
             )}
             <circle cx={cx} cy={cy} r={Math.max(2.5, size * 0.022)} fill="#000" />
-
+            {children}
         </svg>
     );
 }

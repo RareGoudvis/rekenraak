@@ -60,10 +60,31 @@ function sameTime(given: readonly string[], accepted: readonly string[]): boolea
 // An empty middle part stays ('5 ·  · 3' = three cells, the second blank).
 const partsOf = (s: string) => (s.trim() === '' ? [] : s.split(INTERACT_SEP.trim()).map(p => p.trim()));
 
+// A 12-hour clock face: '3:15' and '15:15' are one position, as minutes past 12:00.
+const FACE_MIN = 12 * 60;
+const faceMinutes = (s: string) => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(s);
+    return m ? (Number(m[1]) * 60 + Number(m[2])) % FACE_MIN : null;
+};
+
+/** One dragged part ('h:mm' or a number) within `tol` of the wanted one. */
+function nearPart(given: string, want: string, tol: number): boolean {
+    const gt = faceMinutes(given), wt = faceMinutes(want);
+    if (gt !== null || wt !== null) {
+        if (gt === null || wt === null) return false;
+        const d = Math.abs(gt - wt);
+        return Math.min(d, FACE_MIN - d) <= tol;
+    }
+    const g = normaliseNumber(given), w = normaliseNumber(want);
+    // The float slack keeps a snapped 0,1-step value on its edge inside.
+    return g !== null && w !== null && Math.abs(Number(g) - Number(w)) <= tol + 1e-9;
+}
+
 /** An interactive answer (fromState) against the descriptor's canonical one, by its kind. */
-function sameInteraction(kind: InteractionKind, given: string, want: string): boolean {
+function sameInteraction(kind: InteractionKind, given: string, want: string, tol = 0): boolean {
     const g = partsOf(given), w = partsOf(want);
     if (g.length !== w.length) return false;
+    if (kind === 'drag') return g.length > 0 && g.every((x, i) => nearPart(x, w[i], tol));
     // tap-multi is a set of taps: the order the pupil tapped them in does not count.
     if (kind === 'tap-multi') {
         const ws = [...w].sort();
@@ -82,7 +103,7 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
         const ia = kioskInteractOf(d, c);
         if (!ia) return false;
         const one = Array.isArray(given) ? given.join(INTERACT_SEP) : given;
-        return sameInteraction(ia.kind, one, ia.answerOf(ex, c));
+        return sameInteraction(ia.kind, one, ia.answerOf(ex, c), ia.tolerance?.(ex, c) ?? 0);
     }
     const accepted = d.answerOf(ex, c);
     if (input === 'number+rest') {

@@ -4,6 +4,8 @@ import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { WeegschaalConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { useViewerInteraction, type ViewerInteraction } from './ViewerInteractionContext';
+import { clamp, clockAngle, dragHandleProps, dragSurfaceProps, dragValuesOf } from './kioskDrag';
 
 interface Props {
     block: MathBlock;
@@ -22,11 +24,13 @@ const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_
 
 // Dial geometry mirrors AnalogClockSVG's polar math: ticks around the rim,
 // labels at the majors, a red needle from the centre.
-function Dial({ grams, bereik, step, needleColor, arcColor, size }: {
+function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
     grams: number; bereik: number; step: number;
     needleColor?: string;   // aflezen: draws the needle at `grams` in this colour
     arcColor?: string;      // kleuren solutions: fills a wedge from 0 to `grams` in this colour
     size: number;
+    // Oefenmodus "kleur tot" (kiosk only): the pupil drags a needle round; `grams` is ignored.
+    ctx?: ViewerInteraction;
 }) {
     const cx = size / 2, cy = size / 2;
     const rOuter = size / 2 - 6;
@@ -54,8 +58,19 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size }: {
             );
         }
     }
-    const needleAng = angleOf(grams);
+    // The kiosk dial shows the pupil's own weight (nothing until the needle is first placed).
+    const set = ctx ? dragValuesOf(ctx).g : undefined;
+    const needleAt = ctx ? (set ?? 0) : grams;
+    const needleAng = angleOf(needleAt);
     const rn = rOuter - 16;
+    // The kiosk needle reaches the tick ring, so its knob sits past the labels, not on them.
+    const rk = rOuter - 7;
+    // A press anywhere on the dial points the needle there, snapped to the dial's step; once
+    // round past 0 it starts over (the bereik itself is never asked).
+    const surface = ctx ? dragSurfaceProps(ctx, {
+        width: size, height: size, pick: () => 'g',
+        move: (_k, p, from) => ({ ...from, g: (Math.round((clockAngle(p, cx, cy) / 360) * (bereik / step)) * step) % bereik }),
+    }) : {};
 
     // Solution wedge for 'kleuren': a filled pie slice from 0 up to `grams`, drawn
     // under the ticks so the scale markings stay legible through the shading.
@@ -69,11 +84,17 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size }: {
         const ex = cx + rArc * Math.cos(endAng), ey = cy + rArc * Math.sin(endAng);
         wedge = <path d={`M ${cx} ${cy} L ${sx} ${sy} A ${rArc} ${rArc} 0 ${largeArc} 1 ${ex} ${ey} Z`} fill={arcColor} fillOpacity={0.35} />;
     }
+    if (ctx && needleAt > 0) {
+        // The pupil's wedge in the state accent (kiosk.css), never the solution red.
+        const rArc = rOuter - 6;
+        const s0 = angleOf(0), s1 = angleOf(needleAt);
+        wedge = <path className="kiosk-drag-fill" d={`M ${cx} ${cy} L ${cx + rArc * Math.cos(s0)} ${cy + rArc * Math.sin(s0)} A ${rArc} ${rArc} 0 ${s1 - s0 > Math.PI ? 1 : 0} 1 ${cx + rArc * Math.cos(s1)} ${cy + rArc * Math.sin(s1)} Z`} />;
+    }
 
     return (
         // `size` stays the viewBox geometry (ticks, labels, needle/wedge are all in those
         // units); only the rendered box follows the token, so the dial scales as one.
-        <svg width={mathPx(size)} height={mathPx(size)} viewBox={`0 0 ${size} ${size}`}>
+        <svg width={mathPx(size)} height={mathPx(size)} viewBox={`0 0 ${size} ${size}`} {...surface}>
             <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="#000" strokeWidth={2} />
             {wedge}
             {ticks}
@@ -85,6 +106,16 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size }: {
                 <line x1={cx} y1={cy} x2={cx + rn * Math.cos(needleAng)} y2={cy + rn * Math.sin(needleAng)}
                     stroke={needleColor} strokeWidth={2.5} strokeLinecap="round" />
             )}
+            {ctx && <>
+                {set !== undefined && <line className="kiosk-drag-line" x1={cx} y1={cy} x2={cx + rk * Math.cos(needleAng)} y2={cy + rk * Math.sin(needleAng)} strokeWidth={2.5} strokeLinecap="round" />}
+                <g {...dragHandleProps(ctx, 'g', {
+                    label: 'wijzer', valueText: `${needleAt} gram`, value: needleAt, min: 0, max: bereik - step,
+                    step: (dir, from) => ({ ...from, g: clamp((from.g ?? -dir * step) + dir * step, 0, bereik - step) }),
+                })}>
+                    {/* Not placed yet: the knob waits hollow at 0. */}
+                    <circle cx={cx + rk * Math.cos(needleAng)} cy={cy + rk * Math.sin(needleAng)} r={6} className={`kiosk-knob${set === undefined ? ' is-unset' : ''}`} />
+                </g>
+            </>}
             <circle cx={cx} cy={cy} r={4} fill="#000" />
         </svg>
     );
@@ -93,6 +124,7 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size }: {
 export default function WeegschaalViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const sheetPx = useSheetSizePx('math');
+    const ctx = useViewerInteraction();
     const exercises: WeegschaalExercise[] = block.weegschaalExercises || [];
     const c = block.constraints as WeegschaalConstraints;
     // exercisesPerRow/boxHeight are layout-only and always follow the live constraints;
@@ -130,7 +162,8 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                         // aflezen: needle printed black, pupil writes the weight.
                         ? <Dial grams={ex.grams} bereik={bereik} step={step} needleColor="#000" size={size} />
                         // kleuren: no needle at all — pupil colours the dial, red wedge only in solutions.
-                        : <Dial grams={ex.grams} bereik={bereik} step={step} arcColor={showSolutions ? SOL : undefined} size={size} />}
+                        // Oefenmodus: the pupil drags a needle round instead (kiosk only).
+                        : <Dial grams={ex.grams} bereik={bereik} step={step} arcColor={showSolutions ? SOL : undefined} size={size} ctx={ctx?.kind === 'drag' ? ctx : undefined} />}
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
                         {mode === 'aflezen'
                             ? showSolutions
@@ -139,7 +172,8 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                                     <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: mathPx(70), height: ANSWER_LINE_H }} />
                                     <span>{notatie === 'g' ? 'g' : notatie === 'kg-komma' ? 'kg' : ''}</span>
                                 </>
-                            : <span>Kleur tot {formatGewicht(ex.grams, notatie)}</span>}
+                            // The kiosk header carries the verb ("Sleep de wijzer …"): the card keeps the target only.
+                            : <span>{ctx?.kind === 'drag' ? null : 'Kleur tot '}{formatGewicht(ex.grams, notatie)}</span>}
                     </div>
                 </div>
                 );

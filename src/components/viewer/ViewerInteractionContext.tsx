@@ -7,8 +7,9 @@ import { createContext, useContext, type KeyboardEvent } from 'react';
 
 // tap = pick one part · tap-multi = toggle any number of parts · fill-cells = type into the
 // viewer's own blanks · order = tap parts in sequence (1st, 2nd, …) · build = lay pieces from
-// the kiosk's tray (coins, MAB blocks); the viewer only draws what was laid.
-export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order' | 'build';
+// the kiosk's tray (coins, MAB blocks); the viewer only draws what was laid · drag = move a handle
+// on an SVG figure (a clock hand, the mercury, a needle) with the pointer or the arrow keys (kioskDrag.ts).
+export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order' | 'build' | 'drag';
 
 // build: how many of one tray piece the pupil laid. Entries keep the order they were first laid in.
 export interface BuildEntry {
@@ -28,6 +29,8 @@ export interface InteractionState {
     // fill-cells: marks a keypad action key left on parts of the card, by part key (cijferen
     // Lenen: 'lent' / 'got' per exchanged column). Absent = none; the answer never reads them.
     marks?: Record<string, string>;
+    // drag: the value each handle stands on (handle key → value); absent = nothing dragged yet.
+    drag?: Record<string, number>;
 }
 
 export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [], build: [] };

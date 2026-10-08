@@ -4,6 +4,8 @@ import AnalogClockSVG from './AnalogClockSVG';
 import type { ClockConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { ANSWER_LINE_H } from './BlockWidthContext';
+import { useViewerInteraction } from './ViewerInteractionContext';
+import ClockDragFace from './ClockDragFace';
 
 interface Props {
     ex: ClockExercise;
@@ -17,6 +19,8 @@ interface Props {
 // fixed pixel geometry into a token factor that reproduces it exactly at the default slider.
 // SYNC: same divisor in every viewer that scales an SVG figure.
 const PX_PER_EM_AT_DEFAULT = 17.33;
+// The face's viewBox size on the sheet and on the kiosk card alike.
+const CLOCK_SIZE = 110;
 const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)})`;
 
 export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
@@ -27,9 +31,11 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     const exerciseMode = (ex.exerciseMode ?? c.exerciseMode ?? 'lezen') as ExerciseMode;
     const is24hour = ex.is24hour ?? c.is24hour ?? false;
     const handChoice = (ex.handChoice ?? c.handChoice ?? 'beide') as HandChoice;
+    // Oefenmodus: the pupil sets the hands on the card (kiosk only; null on the sheet).
+    const ctx = useViewerInteraction();
 
     const clock = (showH: boolean, showM: boolean) => (
-        <AnalogClockSVG hours={ex.hours} minutes={ex.minutes} showHourHand={showH} showMinuteHand={showM} is24hour={is24hour} size={110} />
+        <AnalogClockSVG hours={ex.hours} minutes={ex.minutes} showHourHand={showH} showMinuteHand={showM} is24hour={is24hour} size={CLOCK_SIZE} />
     );
 
     const digitalBox = (
@@ -66,6 +72,8 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
             // time in words as the prompt and an EMPTY digital box to complete (was showing
             // the filled answer box + an analog clock — that's the omzetten exercise).
             inner = <>{timeLabel}{emptyDigitalBox}</>;
+        } else if (ctx?.kind === 'drag') {
+            inner = <>{timeLabel}<ClockDragFace ex={ex} c={block.constraints as Record<string, unknown>} ctx={ctx} is24hour={is24hour} size={CLOCK_SIZE} /></>;
         } else {
             let showH = showSolutions, showM = showSolutions;
             if (!showSolutions) {

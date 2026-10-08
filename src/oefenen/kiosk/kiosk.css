@@ -338,6 +338,34 @@ html:has(.oefen-body),
   text-decoration-color: var(--accent);
 }
 
+/* Phase C4 drag: the SVG the pupil drags on (data-kiosk-drag) takes every touch itself (no
+   scroll / zoom gesture), the knobs mark what moves; a focused handle (arrow keys) rings its knob. */
+.kiosk-card-inner [data-kiosk-drag] {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.kiosk-card-inner [data-kiosk-drag]:active { cursor: grabbing; }
+.kiosk-card-inner .kiosk-knob {
+  fill: var(--accent);
+  stroke: var(--accent-on);
+  stroke-width: 1.2;
+}
+.kiosk-card-inner .kiosk-knob.is-h { fill: var(--accent-strong); }
+/* Not placed yet: a hollow knob waiting at 12. */
+.kiosk-card-inner .kiosk-knob.is-unset { fill: var(--accent-on); stroke: var(--accent); stroke-width: 1.5; }
+.kiosk-card-inner [data-kiosk-handle]:focus { outline: none; }
+.kiosk-card-inner [data-kiosk-handle]:focus-visible .kiosk-knob {
+  stroke: var(--accent-strong);
+  stroke-width: 2.5;
+  stroke-dasharray: 2 1.5;
+}
+/* What the pupil set (mercury, weegschaal wedge, the angle's ray): the state accent, never the solution red. */
+.kiosk-card-inner .kiosk-drag-fill { fill: var(--accent); fill-opacity: 0.35; }
+.kiosk-card-inner .kiosk-drag-line { stroke: var(--accent-strong); }
+
 .kiosk-card-fallback {
   margin: 0;
   color: var(--text-muted);

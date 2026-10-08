@@ -19,6 +19,9 @@ import type { GeldWisselExercise } from '../math/types';
 import type { KioskDescriptor as AnyKioskDescriptor } from './types';
 import type { KioskPiece } from './types';
 import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
+import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
+import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
+import { formatGewicht } from '../weegschaal/weegschaalGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -453,43 +456,89 @@ export const CONTROLEREN_KIOSK = descriptor<ControleExercise>({
 const BY_ANGLE = ['scherphoekig', 'rechthoekig', 'stomphoekig'];
 const BY_SIDE = ['gelijkzijdig', 'gelijkbenig', 'ongelijkzijdig'];
 const conceptsOf = (c: Record<string, unknown>) => (c.concepts as string[] | undefined) ?? [];
+// Phase C4: hoeken tekenen = drag the free been open to the asked class (hoekDrag.ts: snapped
+// to 5°, right within the class's range). A drawn figuur or punt-lijn has no single value.
+const isHoekDrag = (c: Record<string, unknown>) => c.mode === 'tekenen' && c.kind === 'hoek';
+const hoekName = (ex: VormleerExercise) => CONCEPT_NAMES[ex.concept] ?? ex.concept;
+const hoekDrag: KioskInteract<VormleerExercise> = {
+    kind: 'drag',
+    keys: () => ['a'],
+    answerOf: (ex) => String(hoekTarget(ex.concept).centre),
+    fromState: (st) => (st.drag?.a === undefined ? '' : String(st.drag.a)),
+    tolerance: (ex) => hoekTarget(ex.concept).tolerance,
+    // The canonical answer is the class's centre: the stats name the class instead.
+    show: (answer, ex) => (answer === String(hoekTarget(ex.concept).centre) ? hoekName(ex) : `${answer}°`),
+};
 export const VORMLEER_KIOSK = descriptor<VormleerExercise>({
     input: 'choice',
+    inputOf: (_ex, c) => (isHoekDrag(c) ? 'interactive' : 'choice'),
+    interactOf: (c) => (isHoekDrag(c) ? hoekDrag : undefined),
     choicesOf: (_ex, c) => conceptsOf(c).map(k => CONCEPT_NAMES[k] ?? k),
-    answerOf: (ex) => [CONCEPT_NAMES[ex.concept] ?? ex.concept],
-    display: () => 'Welke soort? ?',
+    answerOf: (ex, c) => (isHoekDrag(c) ? [hoekDrag.answerOf(ex, c)] : [hoekName(ex)]),
+    display: (ex, c) => (isHoekDrag(c) ? `teken een ${hoekName(ex)}: ?°` : 'Welke soort? ?'),
+    kioskInstruction: (ex, c) => (isHoekDrag(c) ? `Sleep het been tot je een ${hoekName(ex)} hebt.` : undefined),
     supported: (c) => {
-        if ((c.mode ?? 'herkennen') !== 'herkennen' || (c.kind !== 'hoek' && c.kind !== 'figuur')) return false;
         const ks = conceptsOf(c);
+        if (isHoekDrag(c)) return ks.length >= 1 && ks.every(k => HOEK_DRAG_CONCEPTS.includes(k));
+        if ((c.mode ?? 'herkennen') !== 'herkennen' || (c.kind !== 'hoek' && c.kind !== 'figuur')) return false;
         return ks.length >= 2 && !(ks.some(k => BY_ANGLE.includes(k)) && ks.some(k => BY_SIDE.includes(k)));
     },
 });
 
 // ── Meten ────────────────────────────────────────────────────────────────────
 
-// aflezen: read the thermometer; verschil: the difference (never negative). Kleuren is drawing.
+// aflezen: read the thermometer; verschil: the difference (never negative); kleuren (Phase C4):
+// drag the mercury to the asked degree (1° a step, so exactly that degree).
+const tempDrag: KioskInteract<TemperatuurExercise> = {
+    kind: 'drag',
+    keys: () => ['t'],
+    answerOf: (ex) => String(ex.celsius),
+    fromState: (st) => (st.drag?.t === undefined ? '' : String(st.drag.t)),
+    show: (answer) => `${answer.replace('-', '−')} °C`,
+};
 export const TEMPERATUUR_KIOSK = descriptor<TemperatuurExercise>({
     input: 'number',
+    inputOf: (ex) => (ex.variant === 'kleuren' ? 'interactive' : 'number'),
+    interact: tempDrag,
     keys: (c) => (c.includeNegatives && c.variant === 'aflezen' ? ['-'] : []),
-    answerOf: (ex) => numberSpellings(ex.variant === 'verschil' ? Math.abs(ex.celsius - (ex.celsius2 ?? 0)) : ex.celsius),
-    display: (ex) => (ex.variant === 'verschil' ? `verschil ${ex.celsius} °C en ${ex.celsius2 ?? 0} °C = ? °C` : 'thermometer: ? °C'),
-    supported: (c) => c.variant === 'aflezen' || c.variant === 'verschil',
+    answerOf: (ex, c) => (ex.variant === 'kleuren' ? [tempDrag.answerOf(ex, c)]
+        : numberSpellings(ex.variant === 'verschil' ? Math.abs(ex.celsius - (ex.celsius2 ?? 0)) : ex.celsius)),
+    display: (ex) => (ex.variant === 'verschil' ? `verschil ${ex.celsius} °C en ${ex.celsius2 ?? 0} °C = ? °C`
+        : ex.variant === 'kleuren' ? `thermometer tot ${ex.celsius} °C: ?` : 'thermometer: ? °C'),
+    kioskInstruction: (ex) => (ex.variant === 'kleuren' ? 'Sleep het kwik tot de juiste temperatuur.' : undefined),
+    supported: (c) => c.variant === 'aflezen' || c.variant === 'verschil' || c.variant === 'kleuren',
 });
 
 // The dial reads in the block's notatie: grams, kilograms with a comma, or kg + g (two fields).
 const gewichtNotatie = (ex: WeegschaalExercise, c: Record<string, unknown>) => ex.notatie ?? (c.notatie as string | undefined) ?? 'g';
+// kleuren (Phase C4): drag a needle round to the asked weight, snapped to the dial's step.
+// Legacy saves may still say 'tekenen' (renamed to 'kleuren').
+const isWeegKleuren = (mode: unknown) => mode === 'kleuren' || mode === 'tekenen';
+const weegMode = (ex: WeegschaalExercise, c: Record<string, unknown>) => ex.mode ?? (c.mode as string | undefined) ?? 'aflezen';
+const weegDrag: KioskInteract<WeegschaalExercise> = {
+    kind: 'drag',
+    keys: () => ['g'],
+    answerOf: (ex) => String(ex.grams),
+    fromState: (st) => (st.drag?.g === undefined ? '' : String(st.drag.g)),
+    tolerance: (ex, c) => (ex.stepGram ?? (c.stepGram as number | undefined) ?? 50) / 2,
+    show: (answer, ex, c) => formatGewicht(Number(answer), gewichtNotatie(ex, c)),
+};
 export const WEEGSCHAAL_KIOSK = descriptor<WeegschaalExercise>({
     input: 'number',
-    inputOf: (ex, c) => (gewichtNotatie(ex, c) === 'kg-g' ? 'multi-number' : 'number'),
+    inputOf: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? 'interactive' : gewichtNotatie(ex, c) === 'kg-g' ? 'multi-number' : 'number'),
+    interactOf: (c) => (isWeegKleuren(c.mode) ? weegDrag : undefined),
     keys: (c) => (c.notatie === 'kg-komma' ? [','] : []),
     labels: () => ['kg', 'g'],
     answerOf: (ex, c) => {
+        if (isWeegKleuren(weegMode(ex, c))) return [weegDrag.answerOf(ex, c)];
         const n = gewichtNotatie(ex, c);
         if (n === 'kg-g') return [String(Math.floor(ex.grams / 1000)), String(ex.grams % 1000)];
         return numberSpellings(n === 'kg-komma' ? ex.grams / 1000 : ex.grams);
     },
-    display: (ex, c) => `weegschaal: ? ${gewichtNotatie(ex, c) === 'kg-komma' ? 'kg' : gewichtNotatie(ex, c) === 'kg-g' ? 'kg ? g' : 'g'}`,
-    supported: (c) => (c.mode ?? 'aflezen') === 'aflezen',
+    display: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? `weegschaal tot ${formatGewicht(ex.grams, gewichtNotatie(ex, c))}: ?`
+        : `weegschaal: ? ${gewichtNotatie(ex, c) === 'kg-komma' ? 'kg' : gewichtNotatie(ex, c) === 'kg-g' ? 'kg ? g' : 'g'}`),
+    kioskInstruction: (ex, c) => (isWeegKleuren(weegMode(ex, c)) ? 'Sleep de wijzer tot het juiste gewicht.' : undefined),
+    supported: (c) => (c.mode ?? 'aflezen') === 'aflezen' || isWeegKleuren(c.mode),
 });
 
 // Labelled sides only ('gegeven'): measuring with a ruler on a scaled card is not to size.
@@ -878,17 +927,31 @@ const hm = (h: number, m: number) => `${h}:${String(m).padStart(2, '0')}`;
 // Reading a digitale klok asks the time in words: not served.
 const klokMode = (ex: ClockExercise, c: Record<string, unknown>) => ex.exerciseMode ?? (c.exerciseMode as string | undefined) ?? 'lezen';
 const klokType = (ex: ClockExercise, c: Record<string, unknown>) => ex.clockType ?? (c.clockType as string | undefined) ?? 'analoog';
+// Phase C4: an analoge klok to draw = drag the hands the pupil would draw (klokDragHands);
+// the answer is the face as 'h:mm', 3:15 and 15:15 one position (check.ts drag).
+const isKlokDrag = (ex: ClockExercise, c: Record<string, unknown>) => klokMode(ex, c) === 'tekenen' && klokType(ex, c) === 'analoog';
+const KLOK_HAND_WORDS: Record<string, string> = { m: 'de grote wijzer', h: 'de kleine wijzer', hm: 'de wijzers' };
+const klokDrag: KioskInteract<ClockExercise> = {
+    kind: 'drag',
+    keys: klokDragHands,
+    answerOf: (ex) => klokText(ex.hours, ex.minutes),
+    fromState: (st, ex, c) => klokGiven(ex, c, st.drag ?? {}),
+};
 export const KLOK_KIOSK = descriptor<ClockExercise>({
     input: 'time',
-    answerOf: (ex) => {
+    inputOf: (ex, c) => (isKlokDrag(ex, c) ? 'interactive' : 'time'),
+    interact: klokDrag,
+    answerOf: (ex, c) => {
+        if (isKlokDrag(ex, c)) return [klokDrag.answerOf(ex, c)];
         const h12 = ex.hours % 12;
         return (h12 === 0 ? [0, 12] : [h12, h12 + 12]).map(h => hm(h, ex.minutes));
     },
-    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??` : `${ex.timeText} = ? : ??`),
+    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??`
+        : isKlokDrag(ex, c) ? `${ex.timeText}: wijzers op ?` : `${ex.timeText} = ? : ??`),
+    kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.` : undefined),
     supported: (c) => {
-        const mode = (c.exerciseMode as string | undefined) ?? 'lezen';
         const type = (c.clockType as string | undefined) ?? 'analoog';
-        return type === 'analoog' ? mode !== 'tekenen' : mode === 'tekenen';
+        return type === 'analoog' || ((c.exerciseMode as string | undefined) ?? 'lezen') === 'tekenen';
     },
 });
 
