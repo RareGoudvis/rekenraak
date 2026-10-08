@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useState } from 'react';
-import { render, cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, render, cleanup, fireEvent, screen } from '@testing-library/react';
 import { EXERCISE_UI } from '../config/exerciseUI';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { flattenLeaves } from '../config/appstructure';
@@ -19,6 +19,7 @@ import { kioskFor } from '../services/oefenen/kiosk';
 import { makeBlock } from './helpers/makeBlock';
 import { hashOf, resetKiosk, starterSessie, tapAnswer } from './helpers/oefenKiosk';
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
+import { numValue } from '../services/math/answerKeys';
 import type { OefenType } from '../services/oefenen/types';
 
 // Phase C (Oefenmodus): viewers answer taps only inside the kiosk's ViewerInteractionContext.
@@ -89,13 +90,17 @@ describe('helpers', () => {
         expect(cellProps(ctx('tap'), 'a')).toEqual({});
     });
 
-    test('toggled: tap replaces, tap-multi toggles, order appends and removes', () => {
+    test('toggled: tap replaces, tap-multi toggles, order appends and cuts from a re-tapped part', () => {
         const s0 = EMPTY_INTERACTION;
         expect(toggled('tap', toggled('tap', s0, '1'), '2').selected).toEqual(['2']);
         expect(toggled('tap', toggled('tap', s0, '1'), '1').selected).toEqual([]);
         expect(toggled('tap-multi', toggled('tap-multi', s0, '1'), '2').selected).toEqual(['1', '2']);
         expect(toggled('tap-multi', toggled('tap-multi', s0, '1'), '1').selected).toEqual([]);
-        expect(toggled('order', toggled('order', toggled('order', s0, 'b'), 'a'), 'b').order).toEqual(['a']);
+        const bac = toggled('order', toggled('order', toggled('order', s0, 'b'), 'a'), 'c');
+        expect(bac.order).toEqual(['b', 'a', 'c']);
+        expect(toggled('order', bac, 'c').order).toEqual(['b', 'a']);
+        expect(toggled('order', bac, 'a').order).toEqual(['b']);
+        expect(toggled('order', bac, 'b').order).toEqual([]);
     });
 });
 
@@ -187,6 +192,37 @@ describe('viewer tap flow (jsdom)', () => {
         expect(ia.fromState(last, ex, c)).toBe(want);
     });
 
+    test.each<[string, Record<string, unknown>]>([
+        ['ordenen', { numberType: 'natural', count: 4 }],
+        ['breuken-rangschikken', { count: 4 }],
+    ])('%s: tap the values in order, a badge per place, a re-tap cuts the tail', (typeId, constraints) => {
+        const block = blockFor(typeId, constraints);
+        (block.ordenenExercises as unknown[]).splice(1);
+        const ex = block.ordenenExercises![0];
+        const c = block.constraints as Record<string, unknown>;
+        const ia = kioskFor(typeId)!.interact!;
+        expect(ia.kind).toBe('order');
+        let last: InteractionState = EMPTY_INTERACTION;
+        const { container } = render(<Harness block={block} kind="order" onState={s => { last = s; }} />);
+        const ps = parts(container);
+        expect(ps.map(p => p.dataset.kioskKey)).toEqual(ia.keys!(ex, c));
+        expect(ps.every(p => p.getAttribute('role') === 'button')).toBe(true);
+        // No sheet editor in the kiosk: a tap orders, it never opens the value's text field.
+        fireEvent.click(ps[2]); fireEvent.click(ps[0]);
+        expect(last.order).toEqual(['2', '0']);
+        expect(ps[2].dataset.kioskOrder).toBe('1');
+        expect(ps[0].dataset.kioskOrder).toBe('2');
+        expect(ps[1].hasAttribute('data-kiosk-order')).toBe(false);
+        expect(container.querySelector('input')).toBeNull();
+        expect(ia.fromState(last, ex, c)).toBe('');
+        fireEvent.click(ps[2]);
+        expect(last.order).toEqual([]);
+        expect(ps.some(p => p.hasAttribute('data-kiosk-order'))).toBe(false);
+        const sorted = [...ps].sort((a, b) => (numValue(ex.display[Number(a.dataset.kioskKey)]) - numValue(ex.display[Number(b.dataset.kioskKey)])) * (ex.operator === '<' ? 1 : -1));
+        sorted.forEach(p => fireEvent.click(p));
+        expect(ia.fromState(last, ex, c)).toBe(ia.answerOf(ex, c));
+    });
+
     test('an opted-in viewer under another kind stays plain', () => {
         const block = blockFor('vergelijken', { subType: 'kiezen' });
         const { container } = render(<Harness block={block} kind="fill-cells" />);
@@ -271,6 +307,29 @@ describe('kiosk flow: answer on the card', () => {
         expect(controleer().disabled).toBe(false);
         tapAnswer(true);
         st().setInteraction({ ...st().interaction, selected: [...st().interaction.selected].reverse() });
+        fireEvent.click(controleer());
+        expect(st().lastCorrect).toBe(true);
+        st().next();
+        tapAnswer(false);
+        st().answer();
+        expect(st().lastCorrect).toBe(false);
+    });
+
+    test('ordenen: Controleer waits for the whole row, then checks the order', () => {
+        st().load(hashOf(starterSessie({ types: [leafType('getalbegrip-ordenen-nat')] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        const n = parts(container).length;
+        expect(n).toBeGreaterThan(1);
+        expect(controleer().disabled).toBe(true);
+        // Store writes outside a React event: act() lets the card re-render before the asserts.
+        act(() => {
+            tapAnswer(true);
+            st().setInteraction({ ...st().interaction, order: st().interaction.order.slice(0, -1) });
+        });
+        expect(controleer().disabled).toBe(true);
+        act(() => tapAnswer(true));
+        expect(controleer().disabled).toBe(false);
         fireEvent.click(controleer());
         expect(st().lastCorrect).toBe(true);
         st().next();

@@ -552,12 +552,23 @@ export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
     supported: (c) => c.layout === 'veelvouden',
 });
 
-// Write the shuffled values in order; the < or > sits between the fields as on the sheet.
+// Tap the shuffled values ON the card in order (Phase C 'order'); keys are display positions.
+// A value reads in one canonical spelling (a breuk reduced), so two equal values (6/8 and
+// 3/4) may come in either order and the answer string still matches.
+const orderText = (v: number | Fraction) => (isFraction(v) ? fractionSpellings(reduce(v))[0] : showValue(v));
 export const ORDENEN_KIOSK = descriptor<OrdenenExercise>({
-    input: 'multi-number',
-    keys: (c) => (c.fractionMode !== undefined ? ['/'] : kindKeys(c)),
-    separator: (ex) => ex.operator,
-    answerOf: (ex) => ex.values.map(v => shownSpellings(v).join('|')),
+    input: 'interactive',
+    kioskInstruction: (ex, c) => `Tik de ${c.fractionMode !== undefined ? 'breuken' : 'getallen'} aan van ${ex.operator === '>' ? 'groot naar klein' : 'klein naar groot'}.`,
+    interact: {
+        kind: 'order',
+        keys: (ex) => ex.display.map((_, i) => String(i)),
+        answerOf: (ex) => ex.values.map(orderText).join(INTERACT_SEP),
+        // '' until every value has its place, so Controleer waits for the whole row.
+        fromState: (st, ex) => (st.order.length === ex.display.length
+            ? st.order.map(k => orderText(ex.display[Number(k)])).join(INTERACT_SEP)
+            : ''),
+    },
+    answerOf: (ex) => [ex.values.map(orderText).join(INTERACT_SEP)],
     display: (ex) => `${ex.display.map(showValue).join(', ')} → ${ex.values.map(() => '?').join(` ${ex.operator} `)}`,
 });
 
