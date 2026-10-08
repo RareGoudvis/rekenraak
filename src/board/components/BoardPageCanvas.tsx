@@ -56,7 +56,9 @@ export default function BoardPageCanvas() {
         <div
             data-board-canvas
             style={{
-                position: 'relative', flex: 1, overflow: 'hidden',
+                // isolation: everything on the board (cards, ink at 10, geld dock at 45) stays below
+                // the inspectors and the bottom bar's popups, whatever z a card has climbed to.
+                position: 'relative', flex: 1, overflow: 'hidden', isolation: 'isolate',
                 ...backgroundStyle(page.background),
                 touchAction: 'none',
             }}
@@ -76,8 +78,10 @@ export default function BoardPageCanvas() {
                 selectWidget(null);
             }}
         >
-            {/* Widget layer goes inert while an ink tool is active — one routing rule. */}
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: inkActive ? 'none' : 'auto' }}>
+            {/* Widget layer goes inert while an ink tool is active — one routing rule.
+                isolation: card z grows with every bring-to-front; contained here, ink always
+                draws over the cards instead of under any card brought forward ten times. */}
+            <div data-widget-layer style={{ position: 'absolute', inset: 0, isolation: 'isolate', pointerEvents: inkActive ? 'none' : 'auto' }}>
                 {page.widgets.map((w) => (
                     <WidgetFrame
                         key={w.id} widget={w} selected={w.id === selectedWidgetId}

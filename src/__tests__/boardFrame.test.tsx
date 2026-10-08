@@ -3,10 +3,11 @@ import { describe, test, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import WidgetFrame from '../board/components/WidgetFrame';
+import BoardPageCanvas from '../board/components/BoardPageCanvas';
 import type { BoardWidget } from '../board/boardTypes';
 
 // jsdom has no layout, so these pin the CSS contract the Playwright pass verified on screen:
-// a card never runs past the board's bottom edge.
+// a card never runs past the board's bottom edge, and board content never climbs over popups.
 afterEach(() => {
     cleanup();
     useBoardStore.getState().resetBoard();
@@ -24,5 +25,15 @@ describe('tall cards', () => {
         expect(body.style.minHeight).toBe('0px');
         // The grip stays a direct child of the capped frame, so it is always inside it.
         expect(frame.querySelector(':scope > [aria-label="Grootte aanpassen"]')).not.toBeNull();
+    });
+});
+
+describe('stacking', () => {
+    test('the board and its widget layer are their own stacking contexts', () => {
+        const { container } = render(<BoardPageCanvas />);
+        const canvas = container.querySelector('[data-board-canvas]') as HTMLElement;
+        const layer = container.querySelector('[data-widget-layer]') as HTMLElement;
+        expect(canvas.style.isolation).toBe('isolate');
+        expect(layer.style.isolation).toBe('isolate');
     });
 });
