@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import type { KioskAnswer, KioskInput, OefenCurrent, OefenRun, OefenSessie } from '../services/oefenen/types';
-import {
-    checkAnswer, clearRuns, decodeSessie, emptyStats, isDone, kioskFor, kioskInputOf, loadRuns,
-    nextExercise, nextType, recordAnswer, saveRun,
-} from './k1Stubs';
+import { decodeSessie } from '../services/oefenen/session';
+import { isDone, nextExercise, nextType } from '../services/oefenen/scheduler';
+import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
+import { checkAnswer } from '../services/oefenen/check';
+import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
@@ -88,11 +89,9 @@ export const useOefenStore = create<OefenState>()((set, get) => {
     const timeUp = (run: OefenRun, now: number) => run.timerEndsAt !== undefined && now >= run.timerEndsAt;
 
     const newRun = (s: OefenSessie, now: number): OefenRun => {
-        const runs = loadRuns(s.id);
-        const index = runs.length ? Math.max(...runs.map(r => r.index)) + 1 : 0;
         return {
-            index, done: false,
-            stats: { ...emptyStats(s), startedAt: now },
+            index: nextRunIndex(loadRuns(s.id)), done: false,
+            stats: emptyStats(s, now),
             ...(s.timerMin ? { timerEndsAt: now + s.timerMin * 60_000 } : {}),
         };
     };
@@ -109,6 +108,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         statsFrom: 'exercise',
 
         load(hash) {
+            // No payload at all is not an error message, just the "open the link" screen.
+            if (!/^#?oefen=/.test(hash)) { set({ sessie: null, run: null, shown: null, error: null }); return; }
             let s: OefenSessie;
             try {
                 s = decodeSessie(hash);
@@ -146,7 +147,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (run.done) { set({ phase: 'locked' }); return; }
             if (timeUp(run, now) || isDone(s, run.stats, now)) { finish(run, now); return; }
             const pick = nextType(s, run.stats.history);
-            const made = pick && nextExercise(s, pick.type, run.stats.history.map(h => h.exerciseKey));
+            const made = pick && nextExercise(s, pick.type, new Set(run.stats.history.map(h => h.exerciseKey)));
             if (!pick || !made) { finish(run, now); return; }
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
             const updated: OefenRun = { ...run, current };

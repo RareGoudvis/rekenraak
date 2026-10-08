@@ -1,11 +1,21 @@
-/* Pupil kiosk (oefenen.html). Theme tokens from theme.css; the kiosk's own size tokens
-   below are larger than the teacher UI's because a pupil reads at arm's length and taps
-   with a thumb. */
+/* Pupil kiosk (oefenen.html). Theme tokens from theme.css; the kiosk's own tokens below are
+   larger than the teacher UI's because a pupil reads at arm's length and taps with a thumb.
+   Landscape-first (phone on its side, tablet, Chromebook); portrait stacks as a fallback. */
 .oefen-body {
-  --kiosk-text: clamp(18px, 2.2vmin + 10px, 22px);
-  --kiosk-text-lg: clamp(22px, 3vmin + 12px, 30px);
-  --kiosk-text-xl: clamp(28px, 5vmin + 12px, 44px);
+  --kiosk-text: clamp(18px, 1.6vmin + 12px, 22px);
+  --kiosk-text-lg: clamp(22px, 2.4vmin + 14px, 30px);
+  --kiosk-text-xl: clamp(28px, 4vmin + 14px, 44px);
+  /* WCAG 2.5.5 target size; keys grow above it when the panel has room. */
   --kiosk-tap: 44px;
+  --kiosk-bar-h: clamp(48px, 7vmin, 60px);
+  --kiosk-field-h: clamp(48px, 9vmin, 72px);
+  /* The exercise card is paper with sheet ink, like .page-sheet (UI-GUIDE §3 ink). */
+  --kiosk-paper: #fff;
+  --kiosk-ink: #000;
+  /* Juist needs a hue of its own: --accent is state and the domain greens are identity
+     (UI-GUIDE rule 6). Always shown with an icon and the word (rule 7). */
+  --kiosk-ok: #1E7B3A;
+  --kiosk-ok-soft: color-mix(in srgb, var(--kiosk-ok) 12%, var(--bg-surface));
 }
 
 /* theme.css pins html/body/#root to 100vh, which on phones includes the hidden URL bar. */
@@ -23,21 +33,26 @@ html:has(.oefen-body),
   font-size: var(--kiosk-text);
   color: var(--text-main);
   background: var(--bg-base);
-  /* No double-tap zoom delay on the keypad; pinch-zoom stays (a11y). */
+  /* No double-tap zoom on the keypad; pinch-zoom stays available (a11y). */
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+/* ── Start / error ─────────────────────────────────────────────────────────── */
 .oefen-center {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--sp-4);
-  padding: var(--sp-6);
+  /* safe: a tall start screen on a landscape phone scrolls instead of clipping its top. */
+  justify-content: safe center;
+  gap: var(--sp-3);
+  padding: var(--sp-6) var(--sp-4);
   text-align: center;
 }
 
@@ -45,10 +60,418 @@ html:has(.oefen-body),
   margin: 0;
   font-size: var(--kiosk-text-xl);
   font-weight: 700;
+  line-height: 1.15;
 }
 
 .oefen-lead {
   margin: 0;
   font-size: var(--kiosk-text-lg);
   color: var(--text-muted);
+}
+
+.kiosk-start-brand {
+  margin: 0;
+  font-size: var(--kiosk-text);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.kiosk-start-types {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.kiosk-start-types li {
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  border: 1px solid var(--separator);
+}
+
+.kiosk-start-note {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.kiosk-start .kiosk-btn-big { margin-top: var(--sp-2); }
+
+.kiosk-error-icon {
+  width: 56px;
+  height: 56px;
+  color: var(--danger);
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.kiosk-btn {
+  min-height: var(--kiosk-tap);
+  padding: 0 var(--sp-4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--separator);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.kiosk-btn:active { background: var(--bg-active); }
+.kiosk-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+.kiosk-btn-primary:active { background: var(--accent-strong); }
+.kiosk-btn-quiet { background: transparent; border-color: transparent; }
+.kiosk-btn-quiet:active { background: var(--bg-hover); }
+.kiosk-btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+.kiosk-btn-danger.is-armed,
+.kiosk-btn-danger:active { background: var(--danger); color: var(--accent-on); }
+.kiosk-btn-big {
+  min-height: 56px;
+  padding: 0 var(--sp-8);
+  font-size: var(--kiosk-text-lg);
+}
+
+/* ── Top bar ───────────────────────────────────────────────────────────────── */
+.kiosk-topbar {
+  flex: none;
+  height: var(--kiosk-bar-h);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-3);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--separator);
+}
+.kiosk-topbar-title {
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.kiosk-progress {
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 700;
+}
+.kiosk-topbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+.kiosk-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 600;
+}
+.kiosk-timer.is-low { color: var(--danger); }
+
+/* ── Exercise + answer ─────────────────────────────────────────────────────── */
+.kiosk-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+}
+
+.kiosk-card-col {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+}
+
+.kiosk-card {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.kiosk-instruction {
+  margin: 0;
+  font-family: var(--font-sheet-text);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 500;
+}
+
+.kiosk-card-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Holds the scaled viewer at its scaled size; the inner keeps its 340 px layout width so
+   width-100% viewers never collapse (the ExercisePreview lesson). */
+.kiosk-card-sizer {
+  flex: none;
+  overflow: hidden;
+}
+.kiosk-card-inner {
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.kiosk-card-fallback {
+  margin: 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.kiosk-panel {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kiosk-answer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.kiosk-fields {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.kiosk-field {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: var(--kiosk-field-h);
+  padding: 0 var(--sp-2);
+  border: 2px solid var(--separator);
+  border-radius: var(--radius-sm);
+  background: var(--kiosk-paper);
+  color: var(--kiosk-ink);
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 600;
+  text-align: center;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.kiosk-field::placeholder {
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.kiosk-field:focus { outline: none; border-color: var(--accent); }
+.kiosk-field-sep {
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 600;
+}
+
+.kiosk-keypad {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Keys stop growing at a comfortable thumb size; a Chromebook does not get 150 px keys. */
+  grid-template-rows: repeat(4, minmax(var(--kiosk-tap), 88px));
+  align-content: center;
+  gap: var(--sp-2);
+}
+
+.kiosk-key {
+  min-height: var(--kiosk-tap);
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text-main);
+  font-family: var(--font-sheet-math);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 600;
+  cursor: pointer;
+}
+.kiosk-key:active { background: var(--bg-active); }
+/* A word key ('spatie') in the UI face so it fits a one-wide key on a landscape phone. */
+.kiosk-key-word { font-family: var(--font-ui); font-size: var(--kiosk-text); font-weight: 500; }
+.kiosk-key-back,
+.kiosk-key-extra { grid-column: 4; }
+.kiosk-key-zero { grid-row: 4; grid-column: 1 / span 2; }
+.kiosk-key-check {
+  grid-row: 4;
+  grid-column: 3 / span 2;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-on);
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text);
+}
+.kiosk-key-check:active { background: var(--accent-strong); }
+.kiosk-key-check:disabled,
+.kiosk-check-wide:disabled { opacity: 0.45; cursor: default; }
+
+.kiosk-choices {
+  flex: 1;
+  min-height: 0;
+  max-height: 200px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+.kiosk-choice {
+  min-height: var(--kiosk-tap);
+  border: 2px solid var(--separator);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text-main);
+  font-family: var(--font-sheet-math);
+  font-size: calc(var(--kiosk-text-xl) * 1.3);
+  font-weight: 700;
+  cursor: pointer;
+}
+.kiosk-choice.is-picked {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.kiosk-check-wide {
+  flex: none;
+  min-height: max(var(--kiosk-tap), 56px);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-on);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── Feedback (covers the answer panel; the exercise stays visible) ───────── */
+.kiosk-feedback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  border-radius: var(--radius-md);
+  border: 2px solid currentColor;
+  animation: kiosk-pop var(--dur) var(--ease-out);
+}
+.kiosk-feedback.is-ok { background: var(--kiosk-ok-soft); color: var(--kiosk-ok); }
+/* Opaque (--danger-soft is a see-through tint): the keypad must not show through. */
+.kiosk-feedback.is-wrong { background: color-mix(in srgb, var(--danger) 10%, var(--bg-surface)); color: var(--danger); }
+.kiosk-feedback-icon svg { width: clamp(48px, 14vmin, 96px); height: clamp(48px, 14vmin, 96px); }
+.kiosk-feedback-text { font-size: var(--kiosk-text-xl); font-weight: 700; }
+@keyframes kiosk-pop { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+
+/* ── Stats ─────────────────────────────────────────────────────────────────── */
+.kiosk-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  user-select: text;
+  -webkit-user-select: text;
+}
+.kiosk-stats {
+  max-width: 920px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.kiosk-stats-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.kiosk-stats-title { margin: 0; font-size: var(--kiosk-text-xl); font-weight: 700; }
+.kiosk-stats-total { margin: 0; font-size: var(--kiosk-text-lg); color: var(--text-muted); }
+.kiosk-stats-sub { margin: 0; font-size: var(--kiosk-text-lg); font-weight: 700; }
+
+.kiosk-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.kiosk-table th,
+.kiosk-table td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--separator);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.kiosk-table th:first-child,
+.kiosk-table td:first-child { text-align: left; white-space: normal; }
+.kiosk-table td { white-space: nowrap; }
+.kiosk-table thead th { font-weight: 600; color: var(--text-muted); }
+.kiosk-table tbody tr:last-child > * { border-bottom: none; }
+.kiosk-table tbody th { font-weight: 600; }
+.kiosk-math { font-family: var(--font-sheet-math); }
+.kiosk-errors td.is-given { color: var(--danger); }
+
+.kiosk-stats-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-4);
+}
+
+/* ── Portrait fallback: card above, answer panel below ────────────────────── */
+@media (orientation: portrait) {
+  .kiosk-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .kiosk-panel { height: min(58dvh, 420px); }
+}
+
+/* Narrow phones: the title gives way to progress, timer and the Stats button. */
+@media (max-width: 520px) {
+  .kiosk-topbar-title { display: none; }
+  .kiosk-topbar { grid-template-columns: auto minmax(0, 1fr); }
+  .kiosk-table { font-size: var(--text-lg); }
+  .kiosk-table th,
+  .kiosk-table td { padding: var(--sp-2) var(--sp-1); }
+  .kiosk-table th:first-child,
+  .kiosk-table td:first-child { padding-left: var(--sp-2); }
+  .kiosk-table th:last-child,
+  .kiosk-table td:last-child { padding-right: var(--sp-2); }
 }
