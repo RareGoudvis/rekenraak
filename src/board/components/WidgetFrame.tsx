@@ -88,6 +88,11 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                 touchAction: 'none',
                 cursor: handMode ? 'grab' : undefined,
                 overflow: 'hidden',
+                // Never taller than the board below its top edge: a tall exercise (omtrek, cijferen
+                // delen) scrolls inside the card instead of running off-board with its resize grip.
+                // 100% = the widget layer, which spans the board; 140px keeps title bar + grip.
+                display: 'flex', flexDirection: 'column',
+                maxHeight: `max(${WIDGET_MIN_VISIBLE_PX}px, calc(100% - ${widget.y + BOARD_EDGE_GAP_PX}px))`,
             }}
             // Hand tool drags without selecting; headerless widgets (geld-items, kale
             // kaarten) drag from anywhere since they have no title-bar handle.
@@ -153,12 +158,14 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                 </div>
             )}
 
-            {/* ── Body (zoomed content) ── */}
-            <div style={{ zoom: frameZoom, width: naturalWidth(widget.kind) }}>
-                {/* Inner text zoom keeps the layout width constant: content reflows at
-                    naturalW/textScale and zooms back up, so bigger text = same frame. */}
-                <div style={{ zoom: textScale, width: naturalWidth(widget.kind) / textScale, pointerEvents: handMode ? 'none' : undefined }}>
-                    {children}
+            {/* ── Body (zoomed content), scrolling when the card hits the board's bottom edge ── */}
+            <div data-widget-body style={S.body}>
+                <div style={{ zoom: frameZoom, width: naturalWidth(widget.kind) }}>
+                    {/* Inner text zoom keeps the layout width constant: content reflows at
+                        naturalW/textScale and zooms back up, so bigger text = same frame. */}
+                    <div style={{ zoom: textScale, width: naturalWidth(widget.kind) / textScale, pointerEvents: handMode ? 'none' : undefined }}>
+                        {children}
+                    </div>
                 </div>
             </div>
 
@@ -178,11 +185,18 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     );
 }
 
+// Room left under a capped card so its grip never sits on the board's very last pixel.
+const BOARD_EDGE_GAP_PX = 8;
+// A card pushed low on the board still shows its title bar, a strip of content and the grip.
+const WIDGET_MIN_VISIBLE_PX = 140;
+
 const S = {
+    // pan-y: a finger on a capped card scrolls it (the frame itself stays touch-action:none).
+    body: { flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden', touchAction: 'pan-y' } as React.CSSProperties,
     header: {
         display: 'flex', alignItems: 'center', gap: '8px',
         padding: '8px 10px', borderBottom: '1px solid rgba(0,0,0,0.10)',
-        cursor: 'grab', userSelect: 'none', background: 'rgba(0,0,0,0.02)',
+        cursor: 'grab', userSelect: 'none', background: 'rgba(0,0,0,0.02)', flexShrink: 0,
     } as React.CSSProperties,
     dot: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-purple)', flexShrink: 0 } as React.CSSProperties,
     title: {
