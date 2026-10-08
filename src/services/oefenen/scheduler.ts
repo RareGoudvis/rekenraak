@@ -111,12 +111,14 @@ export function nextExercise(_s: OefenSessie, type: OefenType, seenKeys: Readonl
     try {
         let last: OefenExercise | null = null;
         for (let attempt = 0; attempt <= MAX_REDRAWS; attempt++) {
+            // A descriptor may adjust the settings per kiosk exercise (a random bill); the sheet's generator is untouched.
+            const c = def.kiosk?.prepare?.(constraints, Math.random) ?? constraints;
             let items: unknown[];
-            try { items = generateForBlock(block).items; } catch { items = []; }
+            try { items = generateForBlock(c === constraints ? block : { ...block, constraints: c } as MathBlock).items; } catch { items = []; }
             const exercise = items[0];
             if (exercise === undefined) continue;
             const key = exerciseKeyOf(type.typeId, exercise);
-            last = { exercise, key, constraints, repeat: seenKeys.has(key) };
+            last = { exercise, key, constraints: c, repeat: seenKeys.has(key) };
             if (!last.repeat) return last;
         }
         return last;

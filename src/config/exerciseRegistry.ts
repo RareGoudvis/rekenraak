@@ -31,6 +31,7 @@ import { generateLengteMetenExercises, generateOmtrekExercises, generateOmtrekEx
 import { generatePatroonExercises, generatePatroonExercisesNoted } from '../services/patroon/patroonGenerator';
 import { generateDeelbaarheidKleurExercises } from '../services/deelbaarheid/deelbaarheidKleurGenerator';
 import { DEELBAARHEID_KLEUR_KIOSK } from '../services/oefenen/kioskDescriptors';
+import { GELD_TEKENEN_KIOSK, GELD_TERUGGEVEN_LAY_KIOSK, GELD_WISSEL_KIOSK, MAB_TEKENEN_KIOSK } from '../services/oefenen/kioskDescriptors';
 import { generateTemperatuurExercises } from '../services/temperatuur/temperatuurGenerator';
 import { generatePlaatswaardeExercises } from '../services/plaatswaarde/plaatswaardeGenerator';
 import { generateEvenOnevenExercises } from '../services/evenoneven/evenOnevenGenerator';
@@ -53,7 +54,7 @@ import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGe
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
 import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import type { KioskDescriptor } from '../services/oefenen/types';
-import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK, PLAATSWAARDE_KIOSK, EVEN_ONEVEN_KIOSK, ROMEINSE_KIOSK, GETALFUNCTIE_KIOSK, MAB_KIOSK, SCHATTEND_KIOSK, REKENVOLGORDE_KIOSK, CONTROLEREN_KIOSK, VORMLEER_KIOSK, TEMPERATUUR_KIOSK, WEEGSCHAAL_KIOSK, LENGTE_KIOSK, OMTREK_KIOSK, OPPERVLAKTE_KIOSK, MAATEENHEID_KIOSK, HERLEIDINGEN_KIOSK, GELD_KIOSK, GELD_TERUGGEVEN_KIOSK, GELD_REKENEN_KIOSK, PATROON_KIOSK, GETALLENAS_KIOSK, VEELVOUDEN_KIOSK, ORDENEN_KIOSK, SPLITSEN_KIOSK, BREUK_BEWERK_KIOSK, VERBANDEN_KIOSK, BREUKEN_KIOSK, KLOK_KIOSK, TIJDSDUUR_KIOSK } from '../services/oefenen/kioskDescriptors';
+import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK, PLAATSWAARDE_KIOSK, EVEN_ONEVEN_KIOSK, ROMEINSE_KIOSK, GETALFUNCTIE_KIOSK, MAB_KIOSK, SCHATTEND_KIOSK, REKENVOLGORDE_KIOSK, CONTROLEREN_KIOSK, VORMLEER_KIOSK, TEMPERATUUR_KIOSK, WEEGSCHAAL_KIOSK, LENGTE_KIOSK, OMTREK_KIOSK, OPPERVLAKTE_KIOSK, MAATEENHEID_KIOSK, HERLEIDINGEN_KIOSK, GELD_KIOSK, GELD_REKENEN_KIOSK, PATROON_KIOSK, GETALLENAS_KIOSK, VEELVOUDEN_KIOSK, ORDENEN_KIOSK, SPLITSEN_KIOSK, BREUK_BEWERK_KIOSK, VERBANDEN_KIOSK, BREUKEN_KIOSK, KLOK_KIOSK, TIJDSDUUR_KIOSK } from '../services/oefenen/kioskDescriptors';
 
 // ── Single source of truth for exercise types ───────────────────────────────
 // Every typeId maps to one row here. Adding a type = add a generator + a row
@@ -510,12 +511,12 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'splitsen':       row<SplitsenConstraints>({ exerciseField: 'splitsenExercises', generate: generateSplitsenExercises, defaultConstraints: splitsenDefaults, defaultCount: 5, maxPresets: splitsenMax , kiosk: SPLITSEN_KIOSK }),
 
     'geld-herkennen':  row<GeldConstraints>({ exerciseField: 'geldExercises',           generate: generateGeldExercises, generateNoted: generateGeldExercisesNoted,           defaultConstraints: geldDefaults,           defaultCount: 6, maxPresets: fixedMax(RANGES.geld) , kiosk: GELD_KIOSK }),
-    'geld-tekenen':    row<GeldConstraints>({ exerciseField: 'geldExercises',           generate: generateGeldExercises, generateNoted: generateGeldExercisesNoted,           defaultConstraints: geldDefaults,           defaultCount: 6, maxPresets: fixedMax(RANGES.geld) }),
-    'geld-wissel':     row<GeldWisselConstraints>({ exerciseField: 'geldWisselExercises',     generate: generateGeldWisselExercises,     defaultConstraints: geldWisselDefaults,     defaultCount: 4 }),
-    'geld-teruggeven': row<GeldTeruggevenConstraints>({ exerciseField: 'geldTeruggevenExercises', generate: generateGeldTeruggevenExercises, generateNoted: generateGeldTeruggevenExercisesNoted, defaultConstraints: geldTeruggevenDefaults, defaultCount: 4 , kiosk: GELD_TERUGGEVEN_KIOSK }),
+    'geld-tekenen':    row<GeldConstraints>({ exerciseField: 'geldExercises',           generate: generateGeldExercises, generateNoted: generateGeldExercisesNoted,           defaultConstraints: geldDefaults,           defaultCount: 6, maxPresets: fixedMax(RANGES.geld), kiosk: GELD_TEKENEN_KIOSK }),
+    'geld-wissel':     row<GeldWisselConstraints>({ exerciseField: 'geldWisselExercises',     generate: generateGeldWisselExercises,     defaultConstraints: geldWisselDefaults,     defaultCount: 4, kiosk: GELD_WISSEL_KIOSK }),
+    'geld-teruggeven': row<GeldTeruggevenConstraints>({ exerciseField: 'geldTeruggevenExercises', generate: generateGeldTeruggevenExercises, generateNoted: generateGeldTeruggevenExercisesNoted, defaultConstraints: geldTeruggevenDefaults, defaultCount: 4, kiosk: GELD_TERUGGEVEN_LAY_KIOSK }),
 
     'mab-herkennen': row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax , kiosk: MAB_KIOSK }),
-    'mab-tekenen':   row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax }),
+    'mab-tekenen':   row<MabConstraints>({ exerciseField: 'mabExercises', generate: generateMabExercises, defaultConstraints: mabDefaults, defaultCount: 6, maxPresets: mabMax, kiosk: MAB_TEKENEN_KIOSK }),
 
     'ordenen':      row<OrdenenConstraints>({ exerciseField: 'ordenenExercises',      generate: generateOrdenenExercises, generateNoted: generateOrdenenExercisesNoted, defaultConstraints: ordenenDefaults,      defaultCount: 6, maxPresets: nonRationalMax(RANGES.ordenen) , kiosk: ORDENEN_KIOSK }),
     'breuken-bewerken':      row<BreukBewerkConstraints>({ exerciseField: 'breukBewerkExercises', generate: generateBreukBewerkExercises, generateNoted: generateBreukBewerkExercisesNoted,        defaultConstraints: breukBewerkDefaults,        defaultCount: 8 , kiosk: BREUK_BEWERK_KIOSK }),

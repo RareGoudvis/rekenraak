@@ -1,5 +1,7 @@
 import type { MathBlock, MabExercise, MabStyle, MabScaffolding } from '../../services/math/types';
-import { MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
+import { MabGlyph, MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
+import { builtCount, useViewerInteraction, type InteractionState } from './ViewerInteractionContext';
+import type { KioskPiece } from '../../services/oefenen/types';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import type { MabConstraints } from '../../services/math/constraintTypes';
@@ -43,6 +45,9 @@ function mabColWidth(cols: Array<{ key: string }>): number {
 
 export default function MabViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const ia = useViewerInteraction();
+    // Oefenmodus build: the blocks the pupil laid from the kiosk tray, keyed by column (D H T E).
+    const laid = ia?.kind === 'build' ? ia.state : null;
     // herkennen = read drawn blocks → write number; tekenen = reverse (draw blocks).
     const mode: 'herkennen' | 'tekenen' = block.typeId === 'mab-tekenen' ? 'tekenen' : 'herkennen';
     // mab-tekenen has no glyph/numeral pairing to keep legible (unlike herkennen, which
@@ -112,6 +117,7 @@ export default function MabViewer({ block, showSolutions }: Props) {
                     figureFontPx={figureFontPx(cols)}
                     showSolutions={showSolutions}
                     mode={mode}
+                    laid={laid}
                 />
             ))}
         />
@@ -128,15 +134,17 @@ interface ItemProps {
     figureFontPx: number;
     showSolutions: boolean;
     mode: 'herkennen' | 'tekenen';
+    laid: InteractionState | null;
 }
 
-function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figureFontPx, showSolutions, mode }: ItemProps) {
+function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figureFontPx, showSolutions, mode, laid }: ItemProps) {
     const digits: Record<MabPlace, number> = {
         thousands: ex.thousands,
         hundreds: ex.hundreds,
         tens: ex.tens,
         units: ex.units,
     };
+    const countOf = (col: ColDef) => (laid ? builtCount(laid, col.key) : digits[col.place]);
     // The Dienes glyphs are fixed-size on purpose (a tens rod IS ten unit cubes wide), so
     // plain 1fr columns squeeze them the moment the block is narrower than full width and
     // the place-value reading breaks. Each column therefore gets an explicit minimum equal
@@ -151,7 +159,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
     const hasHeader = scaffolding === 'positietabel';
     const hasDividers = scaffolding === 'positietabel';
     // In tekenen mode the student draws — only render glyphs when showing solutions.
-    const showGlyphs = mode === 'herkennen' || showSolutions;
+    const showGlyphs = mode === 'herkennen' || showSolutions || laid !== null;
     // In tekenen mode the number is printed on the answer line by default; in
     // herkennen mode the line stays empty unless solutions are shown.
     const showNumberOnLine = mode === 'tekenen' || showSolutions;
@@ -194,7 +202,8 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                     gridTemplateColumns: gridCols,
                     // em, not px: the drawing area has to grow with the glyphs it holds,
                     // otherwise a bigger font clips them against `overflow: hidden`.
-                    height: em(boxHeight),
+                    // Kiosk build: nine laid rods outgrow the sheet's box, so it grows instead.
+                    ...(laid ? { minHeight: em(boxHeight) } : { height: em(boxHeight) }),
                 }}>
                     {cols.map((col, i) => (
                         <div key={col.key} style={{
@@ -207,7 +216,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                             boxSizing: 'border-box',
                         }}>
                             <MabPlaceColumn
-                                count={showGlyphs ? digits[col.place] : 0}
+                                count={showGlyphs ? countOf(col) : 0}
                                 place={col.place}
                                 style={style}
                                 color={mode === 'tekenen' && showSolutions ? SOL : '#000'}
@@ -233,5 +242,31 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                 }
             </div>
         </div>
+    );
+}
+
+// Kiosk tray: each place's block at a size that shows the places' relative size (a unit small,
+// a thousand cube big) and still fits a tile. Target px at the 13pt em base.
+const TRAY_GLYPH_PX: Record<string, { place: MabPlace; px: number; glyph: Record<'symbolic' | 'real', number> }> = {
+    D: { place: 'thousands', px: 34, glyph: { symbolic: 22, real: THOUSAND_GLYPH_PX } },
+    H: { place: 'hundreds', px: 26, glyph: { symbolic: 10, real: 14 } },
+    T: { place: 'tens', px: 52, glyph: { symbolic: 22, real: HUNDRED_GLYPH_PX } },
+    E: { place: 'units', px: 14, glyph: { symbolic: 5, real: 6 } },
+};
+
+/** A tray tile's picture (EXERCISE_UI TrayPiece): the place letter over one block of that place. */
+export function MabTrayPiece({ piece, constraints }: { piece: KioskPiece; constraints: Record<string, unknown> }) {
+    const row = TRAY_GLYPH_PX[piece.key];
+    if (!row) return <>{piece.key}</>;
+    const c = constraints as Partial<MabConstraints>;
+    const style: MabStyle = (c.mabStyle === 'realistic' ? 'mab-bw' : c.mabStyle) || 'symbolic';
+    const glyphPx = row.glyph[style === 'symbolic' ? 'symbolic' : 'real'];
+    return (
+        <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '0.15em' }}>
+            <span style={{ fontWeight: 700, lineHeight: 1, fontSize: 'calc(var(--sheet-size-math) * 1.2)' }}>{piece.key}</span>
+            <span style={{ display: 'inline-flex', fontSize: `calc(var(--sheet-size-math) * ${(row.px / glyphPx).toFixed(3)})` }}>
+                <MabGlyph place={row.place} style={style} />
+            </span>
+        </span>
     );
 }

@@ -6,8 +6,15 @@ import { createContext, useContext, type KeyboardEvent } from 'react';
 // (viewers.interaction.test.tsx + the visual gate prove it). Only the kiosk card provides it.
 
 // tap = pick one part · tap-multi = toggle any number of parts · fill-cells = type into the
-// viewer's own blanks · order = tap parts in sequence (1st, 2nd, …).
-export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order';
+// viewer's own blanks · order = tap parts in sequence (1st, 2nd, …) · build = lay pieces from
+// the kiosk's tray (coins, MAB blocks); the viewer only draws what was laid.
+export type InteractionKind = 'tap' | 'tap-multi' | 'fill-cells' | 'order' | 'build';
+
+// build: how many of one tray piece the pupil laid. Entries keep the order they were first laid in.
+export interface BuildEntry {
+    key: string;
+    count: number;
+}
 
 export interface InteractionState {
     // tap / tap-multi: the keys of the picked parts (tap holds at most one).
@@ -16,12 +23,25 @@ export interface InteractionState {
     cells: Record<string, string>;
     // order: keys in the sequence the pupil tapped them.
     order: string[];
+    // build: the pieces laid from the tray (no zero counts).
+    build: BuildEntry[];
     // fill-cells: marks a keypad action key left on parts of the card, by part key (cijferen
     // Lenen: 'lent' / 'got' per exchanged column). Absent = none; the answer never reads them.
     marks?: Record<string, string>;
 }
 
-export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [] };
+export const EMPTY_INTERACTION: InteractionState = { selected: [], cells: {}, order: [], build: [] };
+
+/** How many of piece `key` are laid. */
+export const builtCount = (state: InteractionState, key: string): number => state.build.find(b => b.key === key)?.count ?? 0;
+
+/** The state after laying one more (`delta` 1) or taking one back (-1) of piece `key`, never past 0 or `max`. */
+export function built(state: InteractionState, key: string, delta: number, max = Infinity): InteractionState {
+    const count = Math.max(0, Math.min(max, builtCount(state, key) + delta));
+    const has = state.build.some(b => b.key === key);
+    const build = has ? state.build.map(b => (b.key === key ? { key, count } : b)) : [...state.build, { key, count }];
+    return { ...state, build: build.filter(b => b.count > 0) };
+}
 
 export interface ViewerInteraction {
     kind: InteractionKind;

@@ -15,6 +15,10 @@ import { ROUND_SCALE, roundTo, targetsFor, usableTargets } from '../afronden/afr
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
+import type { GeldWisselExercise } from '../math/types';
+import type { KioskDescriptor as AnyKioskDescriptor } from './types';
+import type { KioskPiece } from './types';
+import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -905,4 +909,97 @@ export const TIJDSDUUR_KIOSK = descriptor<TijdsduurExercise>({
         const cell = (k: 'begin' | 'einde' | 'duur', v: string) => (ex.blank === k ? '?' : v);
         return `begin ${cell('begin', clock24(ex.startMin))} · einde ${cell('einde', clock24(ex.endMin))} · duur ${cell('duur', `${ex.endMin - ex.startMin} min`)}`;
     },
+});
+
+// ── Phase C3: build from the tray ────────────────────────────────────────────
+
+// The pupil lays pieces from the kiosk tray; the answer is what they are worth together
+// (total cents, the number), so any make-up of the right value counts. '' = nothing laid yet.
+function buildInteract<E>(piecesOf: (ex: E, c: Record<string, unknown>) => KioskPiece[], answerOf: (ex: E) => number,
+    show?: (answer: string) => string): KioskInteract<E> {
+    return {
+        kind: 'build',
+        pieces: piecesOf,
+        keys: (ex, c) => piecesOf(ex, c).map(p => p.key),
+        answerOf: (ex) => String(answerOf(ex)),
+        fromState: (st, ex, c) => {
+            if (!st.build.length) return '';
+            const value = new Map(piecesOf(ex, c).map(p => [p.key, p.value]));
+            return String(st.build.reduce((sum, b) => sum + (value.get(b.key) ?? 0) * b.count, 0));
+        },
+        ...(show && { show: (a: string) => show(a) }),
+    };
+}
+
+const ALL_MONEY = DENOMINATION_CATALOGUE.map(d => d.valueCents);
+const moneyPiece = (cents: number): KioskPiece => ({ key: String(cents), label: cents >= 100 ? `€ ${cents / 100}` : `${cents} cent`, value: cents });
+
+// Teken het bedrag: the ticked coins and bills, largest first, none above the block's top amount.
+// SYNC: generateGeldExercisesNoted draws amounts up to maxGetal euros from the same ticked set.
+const tekenenMoney = (c: Record<string, unknown>) => {
+    const allowed = Array.isArray(c.allowedDenominations) ? c.allowedDenominations as number[] : ALL_MONEY;
+    const max = Number(c.maxGetal ?? 10) * 100;
+    return ALL_MONEY.filter(v => allowed.includes(v) && v <= max);
+};
+export const GELD_TEKENEN_KIOSK = descriptor<GeldExercise>({
+    input: 'interactive',
+    interact: buildInteract((_ex, c) => tekenenMoney(c).map(moneyPiece), ex => ex.amountCents, a => showEuro(Number(a))),
+    answerOf: (ex) => [String(ex.amountCents)],
+    display: (ex) => `${showEuro(ex.amountCents)} leggen: ?`,
+    kioskInstruction: 'Leg het bedrag.',
+    supported: (c) => tekenenMoney(c).length > 0,
+});
+
+// Wissel: the same amount in smaller money. The tray holds the coins and bills below the shown
+// one, down to a hundredth of it (a €5 note: €2 … 5 cent; €500: €200 … €5), so the note itself
+// is never in it and any make-up of its value is a real exchange.
+const wisselMoney = (bill: number) => ALL_MONEY.filter(v => v < bill && v * 100 >= bill);
+// The teacher's bills that have smaller money to change into (not a 5 cent).
+// SYNC: generateGeldWisselExercises reads exerciseBills, 500 when empty.
+const wisselBills = (c: Record<string, unknown>) =>
+    (Array.isArray(c.exerciseBills) && c.exerciseBills.length ? c.exerciseBills.map(Number) : [500]).filter(b => wisselMoney(b).length > 0);
+export const GELD_WISSEL_KIOSK = descriptor<GeldWisselExercise>({
+    input: 'interactive',
+    interact: buildInteract((ex) => wisselMoney(ex.billValueCents).map(moneyPiece), ex => ex.billValueCents, a => showEuro(Number(a))),
+    answerOf: (ex) => [String(ex.billValueCents)],
+    display: (ex) => `${showEuro(ex.billValueCents)} wisselen: ?`,
+    kioskInstruction: 'Wissel: leg hetzelfde bedrag met kleiner geld.',
+    supported: (c) => wisselBills(c).length > 0,
+    // The sheet gives exercise i the i-th bill; a kiosk block holds one exercise, so draw one of them.
+    prepare: (c, rng) => {
+        const bills = wisselBills(c);
+        return bills.length ? { ...c, exerciseBills: [bills[Math.floor(rng() * bills.length)]] } : c;
+    },
+});
+
+// MAB tekenen: lay the number with D / H / T / E blocks. A column holds a digit (at most 9 of a
+// block: ten units ARE a ten), so the laid number has one make-up, the positietabel's.
+// SYNC: MabViewer's columns (D from maxNumber 1000, H from 100, T from 10; E always).
+const MAB_PIECES: Array<KioskPiece & { from: number }> = [
+    { key: 'D', label: 'duizendtal', value: 1000, max: 9, from: 1000 },
+    { key: 'H', label: 'honderdtal', value: 100, max: 9, from: 100 },
+    { key: 'T', label: 'tiental', value: 10, max: 9, from: 10 },
+    { key: 'E', label: 'eenheid', value: 1, max: 9, from: 0 },
+];
+const mabPieces = (c: Record<string, unknown>): KioskPiece[] =>
+    MAB_PIECES.filter(p => Number(c.maxNumber || 100) >= p.from).map(p => ({ key: p.key, label: p.label, value: p.value, max: p.max }));
+export const MAB_TEKENEN_KIOSK = descriptor<MabExercise>({
+    input: 'interactive',
+    interact: buildInteract((_ex, c) => mabPieces(c), ex => ex.value),
+    answerOf: (ex) => [String(ex.value)],
+    display: (ex) => `${formatMathNumber(String(ex.value))} met MAB: ?`,
+    kioskInstruction: 'Leg het getal met MAB-materiaal.',
+});
+
+// Teruggeven with a draw box (antwoordType tekenen-schrijven): the change is laid from a tray of
+// every coin and bill below the note paid with, instead of typed; the other settings stay typed.
+const teruggevenLays = (c: Record<string, unknown>) => c.antwoordType === 'tekenen-schrijven';
+const teruggevenBuild = buildInteract<GeldTeruggevenExercise>((ex) => ALL_MONEY.filter(v => v < ex.payWithCents).map(moneyPiece), ex => ex.changeCents, a => showEuro(Number(a)));
+const typedTeruggeven = GELD_TERUGGEVEN_KIOSK as AnyKioskDescriptor<GeldTeruggevenExercise>;
+export const GELD_TERUGGEVEN_LAY_KIOSK = descriptor<GeldTeruggevenExercise>({
+    ...typedTeruggeven,
+    inputOf: (ex, c) => (teruggevenLays(c) ? 'interactive' : typedTeruggeven.inputOf!(ex, c)),
+    interactOf: (c) => (teruggevenLays(c) ? teruggevenBuild : undefined),
+    answerOf: (ex, c) => (teruggevenLays(c) ? [teruggevenBuild.answerOf(ex, c)] : typedTeruggeven.answerOf(ex, c)),
+    kioskInstruction: (_ex, c) => (teruggevenLays(c) ? 'Hoeveel krijg je terug? Leg het wisselgeld.' : undefined),
 });

@@ -4,6 +4,8 @@ import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import type { BuildEntry } from './ViewerInteractionContext';
+import type { KioskPiece } from '../../services/oefenen/types';
 
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px
 
@@ -71,6 +73,34 @@ function DenomItem({ denom }: { denom: GeldDenomination }) {
         return <CentCoin key={i} valueCents={denom.valueCents} />;
     });
     return <>{items}</>;
+}
+
+// ── Oefenmodus build (kiosk only) ─────────────────────────────────────────────
+
+/** One coin or bill by value, drawn as the sheet draws it (the kiosk tray and the laid money). */
+export function MoneyFigure({ valueCents }: { valueCents: number }) {
+    const type = DENOMINATION_CATALOGUE.find(d => d.valueCents === valueCents)?.type ?? 'cent-coin';
+    return <DenomItem denom={{ valueCents, type, count: 1 }} />;
+}
+
+/** The money a pupil laid from the kiosk tray (a build context), largest first, wrapping in its box. */
+export function LaidMoney({ build }: { build: readonly BuildEntry[] }) {
+    const sorted = [...build].sort((a, b) => Number(b.key) - Number(a.key));
+    return (
+        // Full width: the kiosk card measures its drawn extent from leaf elements, and the box around this is not one.
+        <div style={{ ...FIGURE_FONT, width: '100%', boxSizing: 'border-box', display: 'flex', flexWrap: 'wrap', gap: em(4), justifyContent: 'center', alignItems: 'center', alignContent: 'center', padding: em(4) }}>
+            {sorted.flatMap(b => Array.from({ length: b.count }, (_, i) => <MoneyFigure key={`${b.key}-${i}`} valueCents={Number(b.key)} />))}
+        </div>
+    );
+}
+
+/** A tray tile's picture (EXERCISE_UI TrayPiece): the coin or bill whose value is the piece key. */
+export function GeldTrayPiece({ piece }: { piece: KioskPiece }) {
+    const valueCents = Number(piece.key);
+    const type = DENOMINATION_CATALOGUE.find(d => d.valueCents === valueCents)?.type ?? 'cent-coin';
+    // Coins drawn nearly as wide as a note: in a tray legibility beats true proportion.
+    if (type === 'bill') return <Bill valueCents={valueCents} />;
+    return type === 'euro-coin' ? <EuroCoin valueCents={valueCents} size={46} /> : <CentCoin valueCents={valueCents} size={42} />;
 }
 
 // ── Voorbeelden bar ───────────────────────────────────────────────────────────

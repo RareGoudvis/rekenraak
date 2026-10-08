@@ -137,6 +137,25 @@ describe('nextExercise', () => {
     });
 });
 
+describe('descriptor prepare (kiosk-only settings per exercise)', () => {
+    test('geld-wissel draws every one of the teacher bills, never one without smaller money', () => {
+        const bills = [500, 1000, 2000, 5000, 10000];
+        const t = type({ typeId: 'geld-wissel', leafId: 'geld-wissel', constraints: { exerciseBills: [...bills, 5] } });
+        const seen = new Map<number, number>();
+        const rng = mulberry32(11);
+        for (let i = 0; i < 200; i++) {
+            const got = nextExercise(sessie([t]), t, new Set(), rng)!;
+            const bill = (got.exercise as { billValueCents: number }).billValueCents;
+            // answerOf / display / check get the drawn bill as the only one.
+            expect(got.constraints.exerciseBills).toEqual([bill]);
+            seen.set(bill, (seen.get(bill) ?? 0) + 1);
+        }
+        expect([...seen.keys()].sort((a, b) => a - b)).toEqual(bills);
+        // The row's own settings are left alone.
+        expect(t.constraints.exerciseBills).toEqual([...bills, 5]);
+    });
+});
+
 describe('isDone', () => {
     const t = type();
     test('limits reached', () => {

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import type { AfrondenExercise, CijferExercise, Equation, Fraction, ProcentExercise, VergelijkenExercise } from '../services/math/types';
-import type { KioskDescriptor, KioskInput, OefenSessie, OefenType } from '../services/oefenen/types';
+import type { KioskDescriptor, KioskInput, KioskPiece, OefenSessie, OefenType } from '../services/oefenen/types';
 import { flattenLeaves, type AppLeaf } from '../config/appstructure';
 import { LEERJAREN, type Leerjaar } from '../config/gradePresets';
 import { seedConstraints } from '../config/baseSettings';
@@ -10,7 +10,7 @@ import { kioskCapableLeaves, kioskFor, kioskInputOf, kioskInteractOf, kioskSuppo
 import { nextExercise } from '../services/oefenen/scheduler';
 import { checkAnswer, normaliseFraction, normaliseNumber } from '../services/oefenen/check';
 import { INTERACT_SEP } from '../services/oefenen/types';
-import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
+import { EMPTY_INTERACTION, type BuildEntry } from '../components/viewer/ViewerInteractionContext';
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
 import { cellsFromParts, cijferFill, type Cells } from './helpers/fillCells';
@@ -56,6 +56,7 @@ const EXPECTED_LEAVES = [
     'deelbaarheid-tabel', 'deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster',
     'breuken-kleuren',
     'afronden-nat-rooster', 'afronden-dec-rooster', 'plaatswaarde-tabel',
+    'geld-tekenen', 'geld-wissel', 'mab-tekenen',
 ];
 
 // Parses an accepted spelling back to a value, independently of check.ts.
@@ -76,7 +77,10 @@ function roundHalfUp(n: number, weight: number): number {
 
 // What the pupil must give: a number, [quotiënt, rest], a choice, accepted words, accepted
 // times or one number per field.
-type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] } | { count: number };
+type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] } | { count: number }
+    // build: the value to lay, and the coins / blocks the tray may hold (absent = any).
+    | BuildTruth;
+type BuildTruth = { build: number; allowed?: number[]; digits?: Record<string, number> };
 
 // Every cijferen leaf is its own typeId; the answer must also redo the column sum.
 function cijferTruth(ex: CijferExercise): Truth {
@@ -152,6 +156,24 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         const full = { hoeveelheid: 'hoeveelheidsgetal', rang: 'rangordegetal', maat: 'maatgetal', code: 'codegetal' }[g.functie];
         return c.answerMode === 'schrijven' ? { text: [full, short] } : short;
     },
+    // A positietabel column holds a digit: the blocks to lay are the number's own digits.
+    'mab-tekenen': (m: T.MabExercise) => {
+        const digits = { D: Math.floor(m.value / 1000), H: Math.floor(m.value / 100) % 10, T: Math.floor(m.value / 10) % 10, E: m.value % 10 };
+        expect([m.thousands, m.hundreds, m.tens, m.units]).toEqual([digits.D, digits.H, digits.T, digits.E]);
+        return { build: m.value, digits };
+    },
+    // Any coins and bills the teacher ticked, none above the block's top amount.
+    'geld-tekenen': (g: T.GeldExercise, c) => {
+        const max = Number(c.maxGetal) * 100;
+        expect(g.amountCents).toBeLessThanOrEqual(max);
+        if (c.format === 'euros') expect(g.amountCents % 100).toBe(0);
+        return { build: g.amountCents, allowed: (c.allowedDenominations as number[]).filter(v => v <= max) };
+    },
+    // The bill the kiosk drew from the teacher's (prepare: one per exercise), laid in smaller money.
+    'geld-wissel': (g: T.GeldWisselExercise, c) => {
+        expect(g.billValueCents).toBe((c.exerciseBills as number[] | undefined)?.[0] ?? 500);
+        return { build: g.billValueCents, allowed: [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5].filter(v => v < g.billValueCents) };
+    },
     'mab-herkennen': (m: T.MabExercise) => {
         expect(m.thousands * 1000 + m.hundreds * 100 + m.tens * 10 + m.units).toBe(m.value);
         return m.value;
@@ -208,6 +230,8 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
     'geld-teruggeven': (g: T.GeldTeruggevenExercise, c) => {
         const change = g.payWithCents - g.priceCents;
         expect(g.changeCents).toBe(change);
+        // With a draw box the change is laid from the coins and bills below the note paid with.
+        if (c.antwoordType === 'tekenen-schrijven') return { build: change, allowed: [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5].filter(v => v < g.payWithCents) };
         return c.antwoordFormat === 'decimaal' ? change / 100 : { multi: [Math.floor(change / 100), change % 100] };
     },
     'geld-rekenen': (g: T.GeldRekenenExercise) => {
@@ -369,6 +393,14 @@ describe('kiosk-capable leaves', () => {
         expect(kioskSupports('klok-kloklezen', { clockType: 'digitaal', exerciseMode: 'lezen' })).toBe(false);
         expect(kioskSupports('klok-kloklezen', { clockType: 'analoog', exerciseMode: 'tekenen' })).toBe(false);
         expect(kioskSupports('nope', {})).toBe(false);
+        // build: an empty tray (nothing ticked, only notes above the top amount, a 5 cent to change) is not served.
+        expect(kioskSupports('geld-tekenen', { allowedDenominations: [] })).toBe(false);
+        expect(kioskSupports('geld-tekenen', { allowedDenominations: [50000], maxGetal: 10 })).toBe(false);
+        expect(kioskSupports('geld-tekenen', { allowedDenominations: [50000], maxGetal: 1000 })).toBe(true);
+        expect(kioskSupports('geld-wissel', { exerciseBills: [5] })).toBe(false);
+        expect(kioskSupports('geld-wissel', { exerciseBills: [10, 5] })).toBe(true);
+        expect(kioskSupports('geld-wissel', { exerciseBills: [5, 5] })).toBe(false);
+        expect(kioskSupports('mab-tekenen', {})).toBe(true);
     });
 });
 
@@ -430,6 +462,18 @@ describe('descriptor answers agree with the generators', () => {
         ['plaatswaarde-tabel', { decimalPlaces: 3, maxGetal: 1000000 }, 'interactive'],
         ['cijferen-optellen-nat', { numberOfTerms: 4, maxRange: 100000 }, 'interactive'],
         ['cijferen-vermenigvuldigen-dec', { operand1Mask: { T: true, E: true } }, 'interactive'],
+        // Phase C3: laid from the tray.
+        ['geld-tekenen', { format: 'decimaal', maxGetal: 100 }, 'interactive'],
+        ['geld-tekenen', { allowedDenominations: [200, 100, 50, 20, 10, 5], scaffolding: 'verdeeld' }, 'interactive'],
+        ['geld-tekenen', { allowedDenominations: [5], format: 'decimaal' }, 'interactive'],
+        ['geld-tekenen', { maxGetal: 1000 }, 'interactive'],
+        ['geld-wissel', { exerciseBills: [50000] }, 'interactive'],
+        ['geld-wissel', { exerciseBills: [10] }, 'interactive'],
+        ['geld-wissel', { exerciseBills: [200, 5000] }, 'interactive'],
+        ['mab-tekenen', { maxNumber: 1000, mabStyle: 'mab-color', operand1Mask: { H: true, E: true } }, 'interactive'],
+        ['mab-tekenen', { maxNumber: 10 }, 'interactive'],
+        ['geld-teruggeven', { antwoordType: 'tekenen-schrijven' }, 'interactive'],
+        ['geld-teruggeven', { antwoordType: 'tekenen-schrijven', payWithOptions: [5000, 10000, 20000, 50000], maxPriceEuros: 999, centenDeel: 'vijf' }, 'interactive'],
     ])('%s + %j → %s', (leafId, extra, want) => {
         // From the whole sidebar: a setting can make a leaf kiosk-capable (lengte-meten 'gegeven').
         const leaf = flattenLeaves().find(l => l.id === leafId)!;
@@ -451,6 +495,7 @@ function checkInteractive(typeId: string, d: KioskDescriptor, ex: unknown, c: Re
     expect(d.answerOf(ex, c), where).toEqual([ia.answerOf(ex, c)]);
     expect(tap([]), where).toBe('');
     if (ia.kind === 'fill-cells') { checkCells(typeId, d, ex, c, truth, where); return; }
+    if (ia.kind === 'build') { checkBuild(d, ex, c, truth as BuildTruth, where); return; }
     if (ia.kind === 'tap') {
         expect(ia.answerOf(ex, c), where).toBe(truth);
         const right = keys.filter(k => tap([k]) === truth);
@@ -556,6 +601,73 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
     expect(ok({ ...right, [keys[last]]: wrongNumber(want[last]) }), where).toBe(false);
     // Controleer waits for every cell.
     expect(fill({ ...right, [keys[0]]: '' }), where).toBe('');
+}
+
+const gcdOf = (a: number, b: number): number => (b ? gcdOf(b, a % b) : a);
+
+// Fewest pieces worth exactly `target` within each piece's max (bounded change-making, written
+// from scratch), or null when the tray cannot make it.
+function makeUp(target: number, pieces: KioskPiece[]): BuildEntry[] | null {
+    const unit = pieces.reduce((g, p) => gcdOf(g, p.value), 0) || 1;
+    if (target % unit) return null;
+    const n = target / unit;
+    // best[v] = fewest pieces for v units; via[v] = the piece laid last, from[v] = the value before it.
+    const best = new Array<number>(n + 1).fill(Infinity);
+    const via = new Array<number>(n + 1).fill(-1);
+    const from = new Array<number>(n + 1).fill(-1);
+    best[0] = 0;
+    pieces.forEach((p, i) => {
+        const step = p.value / unit;
+        const relax = (v: number) => {
+            if (best[v - step] + 1 < best[v]) { best[v] = best[v - step] + 1; via[v] = i; from[v] = v - step; }
+        };
+        // Unbounded: one forward pass; bounded: one backward (0/1) pass per copy.
+        if (p.max === undefined) for (let v = step; v <= n; v++) relax(v);
+        else for (let k = 0; k < p.max; k++) for (let v = n; v >= step; v--) relax(v);
+    });
+    if (best[n] === Infinity) return null;
+    const counts = new Map<string, number>();
+    for (let v = n; v > 0; v = from[v]) counts.set(pieces[via[v]].key, (counts.get(pieces[via[v]].key) ?? 0) + 1);
+    return [...counts].map(([key, count]) => ({ key, count }));
+}
+
+const addPieces = (a: BuildEntry[], b: BuildEntry[]) => {
+    const out = a.map(e => ({ ...e }));
+    for (const e of b) {
+        const at = out.find(x => x.key === e.key);
+        if (at) at.count += e.count; else out.push({ ...e });
+    }
+    return out.filter(e => e.count > 0);
+};
+
+// Phase C3: laying the right value from the tray is juist (any make-up), one piece more or less is fout.
+function checkBuild(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, truth: BuildTruth, where: string) {
+    const ia = kioskInteractOf(d, c)!;
+    const pieces = ia.pieces!(ex, c);
+    const valueOfKey = (k: string) => pieces.find(p => p.key === k)!.value;
+    const lay = (build: BuildEntry[]) => ia.fromState({ ...EMPTY_INTERACTION, build }, ex, c);
+    const ok = (build: BuildEntry[]) => checkAnswer(d, ex, c, lay(build));
+    expect(pieces.map(p => p.key), where).toEqual(ia.keys!(ex, c));
+    expect(ia.answerOf(ex, c), where).toBe(String(truth.build));
+    expect(pieces.length, where).toBeGreaterThan(0);
+    if (truth.allowed) for (const p of pieces) expect(truth.allowed, `${where} piece ${p.key}`).toContain(p.value);
+    const laid = makeUp(truth.build, pieces);
+    expect(laid, `${where}: the tray ${pieces.map(p => p.key)} cannot make ${truth.build}`).not.toBeNull();
+    if (truth.digits) {
+        // Nine at most per place: the only make-up is the number's digits.
+        for (const p of pieces) expect(laid!.find(b => b.key === p.key)?.count ?? 0, `${where} ${p.key}`).toBe(truth.digits[p.key]);
+    }
+    expect(ok(laid!), where).toBe(true);
+    expect(ok([...laid!].reverse()), where).toBe(true);
+    const smallest = [...pieces].sort((a, b) => a.value - b.value)[0];
+    expect(ok(addPieces(laid!, [{ key: smallest.key, count: 1 }])), where).toBe(false);
+    const fewer = addPieces(laid!, [{ key: laid![0].key, count: -1 }]);
+    if (fewer.length) expect(ok(fewer), where).toBe(false);
+    // Another make-up of the same value counts too: the biggest piece changed into smaller ones.
+    const big = [...laid!].sort((a, b) => valueOfKey(b.key) - valueOfKey(a.key))[0];
+    const split = makeUp(valueOfKey(big.key), pieces.filter(p => p.value < valueOfKey(big.key)).map(p => ({ ...p, max: undefined })));
+    if (split && !truth.digits) expect(ok(addPieces(addPieces(laid!, [{ key: big.key, count: -1 }]), split)), `${where} split ${big.key}`).toBe(true);
+    expect(lay([]), where).toBe('');
 }
 
 // Runs the agreement checks for one leaf (+ extra settings) over every grade × SEEDS seeds;
