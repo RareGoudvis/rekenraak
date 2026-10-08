@@ -45,6 +45,14 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
+                text: 'Oefenmodus: de leerling legt geld en MAB-blokjes uit een bakje en sleept klokwijzers, kwik, weegschaalwijzer en hoekbeen.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Oefenmodus: bij cijferen aftrekken heeft het toetsenbord een Lenen-knop die de kolom voor de leerling inwisselt.',
+            },
+            {
+                kind: 'nieuw',
                 text: 'Kan een instelling niet, dan zie je onder Genereer een melding. Vroeger kreeg je stilletjes andere oefeningen.',
             },
             {
