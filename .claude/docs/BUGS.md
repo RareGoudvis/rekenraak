@@ -162,6 +162,13 @@ UpdateState). Left over, found while fixing:
   scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
   Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
 
+## Oefenmodus (first classroom test, 2026-10-09)
+
+- Kiosk MAB (mab-herkennen / mab-tekenen): the duizendtal block is hard to read at kiosk scale —
+  pupils could not tell it from the honderdtal; and adding / taking away pieces in the tray needs
+  more UI help (which piece, how many laid, a clear +/−). Owner note from the first test with
+  real kids. 2026-10-09
+
 ## Tooling
 
 - A leaf's own `defaultCount` (oppervlakte-rooster = 2) is not seen by `scripts/height-audit.mjs:81`
