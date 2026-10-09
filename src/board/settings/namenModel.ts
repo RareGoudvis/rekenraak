@@ -5,11 +5,10 @@ import type { BoardWidget } from '../boardTypes';
 // ── The class list (app-wide, rekenraak_board_names_v1), shared by namenkiezer + groepjesmaker ──
 // Writes go through saveClassList so every widget showing the list re-renders at once.
 const listeners = new Set<() => void>();
-let snapshot: string[] | null = null;
+let snapshot: { raw: string; list: string[] } | null = null;
 
 export function saveClassList(names: string[]): void {
     try { localStorage.setItem(NAMES_KEY, names.join('\n')); } catch { /* quota: the list stays as it was */ }
-    snapshot = null;
     listeners.forEach(l => l());
 }
 
@@ -19,13 +18,12 @@ function subscribe(l: () => void) {
 }
 
 // Raw lines (an empty row being typed stays put); readers that draw names run cleanNames.
-// Cached so useSyncExternalStore sees a stable array between writes.
+// Re-reads the key every time (a write from elsewhere is never missed); the array only
+// changes identity when the stored text did.
 function getSnapshot(): string[] {
-    if (!snapshot) {
-        const raw = localStorage.getItem(NAMES_KEY) ?? '';
-        snapshot = raw ? raw.split('\n') : [];
-    }
-    return snapshot;
+    const raw = localStorage.getItem(NAMES_KEY) ?? '';
+    if (snapshot?.raw !== raw) snapshot = { raw, list: raw ? raw.split('\n') : [] };
+    return snapshot.list;
 }
 
 export function useClassList(): string[] {
