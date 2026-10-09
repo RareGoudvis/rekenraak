@@ -222,13 +222,6 @@ grouped per work package so parallel deletions merge cleanly.
   `nextExercise` returns null and `next()` finishes the whole run ("Klaar! Nog geen oefeningen
   gemaakt") even when other types still have exercises. Fix: at runtime retire the dead type,
   continue with the rest; start screen counts viable types. 2026-10-09
-- **O10** Builder-reachable zero-output settings: `timeTypes=[]` on klok-analoog-lezen / -tekenen /
-  -omzetten and klok-digitaal-tekenen; `selectedTables=[]` on hr-std-vermenigvuldigen-nat and
-  hr-std-delen-nat (NaturalSettings has no keep-one guard); `payWithOptions=[]` on geld-teruggeven.
-  Pairwise, reachability unchecked: vergelijken-kiezen breuk both sides + HM mask; kettingsommen
-  `[":"]` chain 6; hr-std-delen-dec / -vermenigvuldigen-dec combos; handig-rekenvolgorde `:`-only +
-  haakjes MOET + 4 ops + max 100; schattend-nat max 10 with T/H rounding; hr-std-aftrekken-rat
-  compenseren puntoefening. 2026-10-09
 - **O11** Start screen pluralises "1 soort · 1 oefeningen". 2026-10-09
 
 ### WP-E keyboard / a11y

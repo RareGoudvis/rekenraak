@@ -38,6 +38,7 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
     const out: VergelijkenExercise[] = [];
     const seen = new Set<string>();
     let attempts = 0;
+    let setMisses = 0;
 
     // Representaties: two tienden/honderdsten values, each side rendered in a
     // teacher-chosen representation (breuk / kommagetal / plaatswaarde / woorden).
@@ -91,7 +92,12 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
             const nums = new Set<number>();
             let g = 0;
             while (nums.size < setSize && g++ < setSize * 40) nums.add(buildNumber(maxGetal, numberMask, decimalPlaces));
-            if (nums.size < setSize) continue;
+            if (nums.size < setSize) {
+                // A mask with fewer numbers than setSize (top place at the max: only 1 000 000) never fills a set; stop, don't spin 20 000 times.
+                if (++setMisses >= 50) break;
+                continue;
+            }
+            setMisses = 0;
             const numbers = [...nums];
             const key = numbers.join(',');
             if (seen.has(key)) continue;
