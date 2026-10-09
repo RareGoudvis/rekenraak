@@ -6,14 +6,26 @@ import { LEAF_BY_ID, flattenLeaves } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../math/constraintTypes';
 import { KIOSK_KEY_TABLE_V1, KIOSK_LEAF_TABLE_V1, kioskLabelOf } from './kiosk';
+import { kioskDefaultV1, type KioskDefault } from './kioskDefaults';
 
 // Oefensessie ↔ URL hash (#oefen=…): the share-link trick of persistence.ts. Only settings
 // travel; the pupil's device generates the exercises. The link is also a classroom QR, so the
 // payload is the compact OefenWire below, not the session object: everything the kiosk can
 // re-derive (seeded constraints, leaf label, default opdracht, equal weights) is left out.
 
-// SYNC: persistence.ts MAX_SHARE_BYTES — long URLs break in chat apps and QR scanners.
-export const MAX_SESSIE_BYTES = 30000;
+// Bounds a link must stay within both ways (O15): decode checks them before the work they cap,
+// so a hostile link costs neither time nor memory; encode refuses what decode would refuse.
+// Payload chars: the largest real link (20 types, every setting changed) is ~770, a v40 QR
+// holds 4296; 4096 gives it 5× headroom and caps the inflate input at 2.5 kB.
+export const MAX_SESSIE_BYTES = 4096;
+// Inflated JSON bytes: that largest link inflates to ~2.1 kB.
+export const MAX_SESSIE_JSON = 64 * 1024;
+// The builder's title field takes 60.
+export const MAX_TITLE = 80;
+export const MAX_TYPES = 20;
+const MAX_LABEL = 80, MAX_INSTRUCTION = 200, MAX_ID = 60;
+// Far above the builder's sliders (limit 50, timer 30 min); only absurd values are refused.
+const MAX_LIMIT = 1000, MAX_TOTAL = 10_000, MAX_TIMER_MIN = 24 * 60;
 export const OEFEN_HASH_PREFIX = '#oefen=';
 export const OEFEN_PAGE = '/oefenen.html';
 
@@ -30,15 +42,20 @@ export function newSessieId(): string {
 // ── OefenWire v1 ─────────────────────────────────────────────────────────────
 // Positional arrays, trailing defaults trimmed, null = "default" in a middle slot:
 //   session: [v, id, created, flags, rows, title?, timerMin?, total?, attempts?]
-//   row:     [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?]
+//   row:     [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?, exact?]
 // created: whole minutes when createdAt falls on a minute (the builder floors it), else ms.
 // flags:   bit 0 willekeurig · 1 allowRepeatType · 2 testMode · 3 statsLocked.
 // leaf:    index into KIOSK_LEAF_TABLE_V1, else the leafId string.
 // diff:    flat [key, value, key, value…] of the constraints that differ from the leaf's seed
 //          (key = index into KIOSK_KEY_TABLE_V1, else the key string); removed: seed keys absent.
+//          The seed, the default label and instruction come from the frozen KIOSK_DEFAULTS_V1
+//          (kioskDefaults.ts), the live registry only for a row the snapshot lacks.
 // attempts: 2 or omitted (= 1); appended last so links made before it still decode.
 // weight:  omitted when it equals the equal split; instruction: omitted when it equals the
 //          leaf's default, 0 when the session has none; typeId: only when it is not the leaf's.
+//          A settings-dependent instruction on changed settings always travels (frozenInstructionOf).
+// exact:   1 / 0 = the teacher set exactForm true / false; omitted = the descriptor's default.
+//          Appended last so rows made before it still decode.
 type WireKey = number | string;
 type WireRow = unknown[];
 type OefenWire = unknown[];
@@ -51,21 +68,49 @@ const MINUTES_BELOW = 1e10;
 const LEAF_DEFAULTS: Record<string, Record<string, unknown> | undefined> =
     Object.fromEntries(flattenLeaves().map(l => [l.id, l.defaultConstraints]));
 
-// What a sidebar click on this leaf seeds on an untouched base: the baseline the diff is against.
+// What a sidebar click on this leaf seeds on an untouched base TODAY. Only a row outside
+// KIOSK_DEFAULTS_V1 (a leaf it predates, another typeId) still diffs against this live seed.
 function seedOf(typeId: string, leafId: string): Record<string, unknown> {
     const override = LEAF_BY_ID[leafId]?.typeId === typeId ? LEAF_DEFAULTS[leafId] : undefined;
     // Cloned: the overlay below must never write into a registry default's nested object.
     return JSON.parse(JSON.stringify(seedConstraints({ typeId, leafId, base: DEFAULT_BASE, grade: null, override }))) as Record<string, unknown>;
 }
 
-// The builder names a row by kioskLabel, so a label only travels when the teacher renamed it.
-const defaultLabelOf = kioskLabelOf;
+// The frozen defaults a row's settings, label and instruction are diffed against (O14): later
+// changes to the registry, the leaf defaults or the wording must not re-point an old link.
+interface Baseline {
+    frozen?: KioskDefault;      // the row's leaf in KIOSK_DEFAULTS_V1, when its typeId matches
+    leafTypeId?: string;
+    label?: string;
+    seed: Record<string, unknown>;
+}
+
+function baselineOf(typeId: string | undefined, leafId: string): Baseline {
+    const d = kioskDefaultV1(leafId);
+    const leafTypeId = d?.typeId ?? LEAF_BY_ID[leafId]?.typeId;
+    const tId = typeId ?? leafTypeId;
+    const frozen = d && d.typeId === tId ? d : undefined;
+    return {
+        frozen, leafTypeId,
+        // The builder names a row by kioskLabel, so a label only travels when the teacher renamed it.
+        label: d?.label ?? kioskLabelOf(leafId),
+        seed: frozen?.constraints ?? (tId ? seedOf(tId, leafId) : {}),
+    };
+}
 
 // What a sidebar click would title the block (the sidebar label feeds the fallback, not the
 // short kiosk label); an unknown leaf falls back on the row's own label.
-function defaultInstructionOf(typeId: string, leafId: string, label: string, constraints: Record<string, unknown>): string {
+function liveInstructionOf(typeId: string, leafId: string, label: string, constraints: Record<string, unknown>): string {
     const leaf = LEAF_BY_ID[leafId]?.typeId === typeId ? LEAF_BY_ID[leafId] : undefined;
     return resolveInstruction(leaf?.instruction, typeId, leaf?.label ?? label, constraints as BlockConstraints);
+}
+
+// The instruction an omitted slot stands for: the frozen one, unless the leaf's instruction
+// depends on settings the row changed. Links made before the snapshot resolved those live, so
+// that stays undefined here (resolved live on decode) and rowOut ships the text instead.
+function frozenInstructionOf(b: Baseline, changed: boolean): string | undefined {
+    if (!b.frozen || (b.frozen.dynInstruction && changed)) return undefined;
+    return b.frozen.instruction;
 }
 
 // Largest-remainder equal split, like normaliseWeights on equal sliders: the first slots get the +1s.
@@ -86,8 +131,8 @@ const trim = (a: unknown[]) => { while (a.length > 0 && a[a.length - 1] === null
 
 function rowOut(t: OefenType, slot: number, n: number): WireRow {
     const leafIdx = KIOSK_LEAF_TABLE_V1.indexOf(t.leafId);
-    const leafTypeId = LEAF_BY_ID[t.leafId]?.typeId;
-    const seed = seedOf(t.typeId, t.leafId);
+    const b = baselineOf(t.typeId, t.leafId);
+    const seed = b.seed;
     const diff: unknown[] = [];
     const removed: WireKey[] = [];
     for (const [k, v] of Object.entries(t.constraints)) {
@@ -96,18 +141,19 @@ function rowOut(t: OefenType, slot: number, n: number): WireRow {
     for (const k of Object.keys(seed)) {
         if (seed[k] !== undefined && t.constraints[k] === undefined) removed.push(keyOut(k));
     }
-    const label = defaultLabelOf(t.leafId);
-    const instruction = t.instruction === undefined ? 0
-        : t.instruction === defaultInstructionOf(t.typeId, t.leafId, t.label, t.constraints) ? null : t.instruction;
+    const omitted = b.frozen ? frozenInstructionOf(b, diff.length + removed.length > 0)
+        : liveInstructionOf(t.typeId, t.leafId, t.label, t.constraints);
+    const instruction = t.instruction === undefined ? 0 : t.instruction === omitted ? null : t.instruction;
     return trim([
         leafIdx >= 0 ? leafIdx : t.leafId,
         diff.length ? diff : null,
         t.weight === equalWeight(n, slot) ? null : t.weight,
         t.limit ?? null,
-        t.label === label ? null : t.label,
+        t.label === b.label ? null : t.label,
         instruction,
         removed.length ? removed : null,
-        t.typeId === leafTypeId ? null : t.typeId,
+        t.typeId === b.leafTypeId ? null : t.typeId,
+        t.exactForm === undefined ? null : t.exactForm ? 1 : 0,
     ]);
 }
 
@@ -156,15 +202,23 @@ function fromBase32(text: string): Uint8Array | null {
     return Uint8Array.from(out);
 }
 
-/** Any JSON value → the link payload (deflate + base32); encodeSessie and the tests use it. */
-export function packWire(wire: unknown): string {
-    return toBase32(deflateSync(strToU8(JSON.stringify(wire)), { level: 9 }));
+/** Any text → the link payload (deflate + base32); the bound tests pack bombs with it. */
+export function packText(text: string): string {
+    return toBase32(deflateSync(strToU8(text), { level: 9 }));
 }
 
-/** The compact payload, or null when it would exceed MAX_SESSIE_BYTES. */
+/** Any JSON value → the link payload; encodeSessie and the tests use it. */
+export function packWire(wire: unknown): string {
+    return packText(JSON.stringify(wire));
+}
+
+/** The compact payload, or null when the link would break a bound decodeSessie enforces. */
 export function encodeSessie(s: OefenSessie): string | null {
     try {
-        const data = packWire(toWire(s));
+        parseSessie(JSON.parse(JSON.stringify(s)));
+        const json = JSON.stringify(toWire(s));
+        if (strToU8(json).length > MAX_SESSIE_JSON) return null;
+        const data = packText(json);
         return data.length > MAX_SESSIE_BYTES ? null : data;
     } catch { return null; }
 }
@@ -190,13 +244,15 @@ const opt = <T>(v: unknown): T | undefined => (v === null || v === undefined ? u
 function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
     const what = `oefening ${slot + 1}`;
     if (!Array.isArray(raw)) return bad(what);
-    const [leaf, diff, weight, limit, label, instruction, removed, typeId] = raw;
+    const [leaf, diff, weight, limit, label, instruction, removed, typeId, exact] = raw;
     const leafId = typeof leaf === 'number' ? KIOSK_LEAF_TABLE_V1[leaf] : leaf;
-    if (typeof leafId !== 'string') return bad(what);
-    const tId = opt<unknown>(typeId) ?? LEAF_BY_ID[leafId]?.typeId;
+    if (typeof leafId !== 'string' || leafId.length > MAX_ID) return bad(what);
+    if (typeId != null && (typeof typeId !== 'string' || typeId.length > MAX_ID)) return bad(what);
+    const b = baselineOf(opt<string>(typeId), leafId);
+    const tId = opt<string>(typeId) ?? b.leafTypeId;
     if (typeof tId !== 'string') return bad(what);
     if (!REGISTRY[tId]?.kiosk) throw new Error(`Deze oefenlink bevat een oefening die deze versie niet kent (${tId}). Werk de app bij.`);
-    const constraints = seedOf(tId, leafId);
+    const constraints = b.seed;
     if (removed != null) {
         if (!Array.isArray(removed)) return bad(`instellingen van ${what}`);
         for (const k of removed) delete constraints[keyIn(k, `instellingen van ${what}`)];
@@ -205,15 +261,18 @@ function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
         if (!Array.isArray(diff) || diff.length % 2 !== 0) return bad(`instellingen van ${what}`);
         for (let i = 0; i < diff.length; i += 2) constraints[keyIn(diff[i], `instellingen van ${what}`)] = diff[i + 1];
     }
-    const lbl = opt<unknown>(label) ?? defaultLabelOf(leafId);
+    const lbl = opt<unknown>(label) ?? b.label;
     if (typeof lbl !== 'string') return bad(what);
+    const changed = (Array.isArray(diff) && diff.length > 0) || (Array.isArray(removed) && removed.length > 0);
     return {
         typeId: tId, leafId, label: lbl, constraints,
         weight: opt<unknown>(weight) ?? equalWeight(n, slot),
         ...(instruction !== 0 && {
-            instruction: opt<unknown>(instruction) ?? defaultInstructionOf(tId, leafId, lbl, constraints),
+            instruction: opt<unknown>(instruction) ?? frozenInstructionOf(b, changed) ?? liveInstructionOf(tId, leafId, lbl, constraints),
         }),
         ...(limit != null && { limit }),
+        // Anything but 1 / 0 passes through for parseType to refuse.
+        ...(exact != null && { exactForm: exact === 1 ? true : exact === 0 ? false : exact }),
     };
 }
 
@@ -226,6 +285,8 @@ function fromWire(w: unknown): Record<string, unknown> {
     if (typeof created !== 'number') return bad('datum');
     if (typeof flags !== 'number' || !Number.isInteger(flags)) return bad('instellingen');
     if (!Array.isArray(rows) || rows.length === 0) return bad('geen oefeningen');
+    // Before rowIn: each row costs a seed and a registry lookup.
+    if (rows.length > MAX_TYPES) return bad('te veel oefeningen');
     return {
         v, id,
         createdAt: created < MINUTES_BELOW ? created * MINUTE : created,
@@ -243,17 +304,20 @@ function fromWire(w: unknown): Record<string, unknown> {
 
 function parseType(raw: unknown, i: number): OefenType {
     if (!isObj(raw)) return bad(`oefening ${i + 1}`);
-    const { typeId, leafId, label, instruction, constraints, limit, weight } = raw;
+    const { typeId, leafId, label, instruction, constraints, limit, weight, exactForm } = raw;
     if (typeof typeId !== 'string' || typeof leafId !== 'string' || typeof label !== 'string') return bad(`oefening ${i + 1}`);
+    if (typeId.length > MAX_ID || leafId.length > MAX_ID || label.length > MAX_LABEL) return bad(`oefening ${i + 1}`);
     if (!REGISTRY[typeId]?.kiosk) throw new Error(`Deze oefenlink bevat een oefening die deze versie niet kent (${typeId}). Werk de app bij.`);
-    if (instruction !== undefined && typeof instruction !== 'string') return bad(`opdracht van oefening ${i + 1}`);
+    if (instruction !== undefined && (typeof instruction !== 'string' || instruction.length > MAX_INSTRUCTION)) return bad(`opdracht van oefening ${i + 1}`);
     if (!isObj(constraints)) return bad(`instellingen van oefening ${i + 1}`);
-    if (limit !== undefined && !isPosInt(limit)) return bad(`limiet van oefening ${i + 1}`);
+    if (limit !== undefined && !(isPosInt(limit) && (limit as number) <= MAX_LIMIT)) return bad(`limiet van oefening ${i + 1}`);
     if (typeof weight !== 'number' || !Number.isFinite(weight) || weight < 0) return bad(`kans van oefening ${i + 1}`);
+    if (exactForm !== undefined && typeof exactForm !== 'boolean') return bad(`vorm van oefening ${i + 1}`);
     return {
         typeId, leafId, label, constraints, weight,
         ...(instruction !== undefined && { instruction }),
         ...(limit !== undefined && { limit: limit as number }),
+        ...(exactForm !== undefined && { exactForm }),
     };
 }
 
@@ -266,12 +330,14 @@ export function parseSessie(raw: unknown): OefenSessie {
     const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts } = raw;
     if (typeof id !== 'string' || !ID_RE.test(id)) return bad('id');
     if (title !== undefined && typeof title !== 'string') return bad('titel');
+    if (typeof title === 'string' && title.length > MAX_TITLE) return bad('titel te lang');
     if (typeof createdAt !== 'number') return bad('datum');
     if (!Array.isArray(types) || types.length === 0) return bad('geen oefeningen');
+    if (types.length > MAX_TYPES) return bad('te veel oefeningen');
     if (!MODES.includes(mode as OefenMode)) return bad('volgorde');
     if (typeof allowRepeatType !== 'boolean' || typeof testMode !== 'boolean' || typeof statsLocked !== 'boolean') return bad('instellingen');
-    if (timerMin !== undefined && (typeof timerMin !== 'number' || !(timerMin > 0))) return bad('timer');
-    if (total !== undefined && !isPosInt(total)) return bad('totaal');
+    if (timerMin !== undefined && (typeof timerMin !== 'number' || !(timerMin > 0 && timerMin <= MAX_TIMER_MIN))) return bad('timer');
+    if (total !== undefined && !(isPosInt(total) && (total as number) <= MAX_TOTAL)) return bad('totaal');
     if (attempts !== undefined && attempts !== 1 && attempts !== 2) return bad('kansen');
     return {
         v: OEFEN_VERSION, id, createdAt, mode: mode as OefenMode, allowRepeatType, testMode, statsLocked,
@@ -288,9 +354,14 @@ export function parseSessie(raw: unknown): OefenSessie {
 export function decodeSessie(hash: string): OefenSessie {
     const data = hash.startsWith(OEFEN_HASH_PREFIX) ? hash.slice(OEFEN_HASH_PREFIX.length) : hash.replace(/^#/, '');
     if (!data) return bad('leeg');
+    if (data.length > MAX_SESSIE_BYTES) return bad('te lang');
     const bytes = fromBase32(data);
-    let json: string | null = null;
-    if (bytes && bytes.length > 0) { try { json = strFromU8(inflateSync(bytes)); } catch { json = null; } }
+    let inflated: Uint8Array | null = null;
+    // Into a fixed buffer one byte over the cap: fflate never grows a given buffer, so a deflate
+    // bomb fills it and stops costing memory; a full buffer means the link was too big.
+    if (bytes && bytes.length > 0) { try { inflated = inflateSync(bytes, { out: new Uint8Array(MAX_SESSIE_JSON + 1) }); } catch { inflated = null; } }
+    if (inflated && inflated.length > MAX_SESSIE_JSON) return bad('te groot');
+    const json = inflated ? strFromU8(inflated) : null;
     if (!json) return bad('kan niet gelezen worden');
     let parsed: unknown;
     try { parsed = JSON.parse(json); } catch { return bad('geen geldige JSON'); }

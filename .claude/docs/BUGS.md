@@ -210,17 +210,10 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-F session format
 
-- **O14** D4: a shared link stores only the diff from the CURRENT defaults (`seedOf` / `rowOut` /
-  `rowIn`, session.ts): changing a registry or leaf default, `DEFAULT_BASE`, `SEED_FIT`, a leaf
-  label (`kioskLabelOf`) or a leaf instruction silently changes what an old link decodes to
-  (verified: numberType, bridges, operand2Mask rewritten). Fix: a frozen `KIOSK_DEFAULTS_V1`
-  snapshot per leaf + a fixture-link test. 2026-10-09
-- **O15** D11: `decodeSessie` has no bound on payload length, inflated size, title length or type
-  count (a 50 MB title loads in 4.7 s / 71 MB heap and renders as an off-screen h1). Fix: bounds →
-  ErrorScreen. 2026-10-09
-- **O16** D12 (note, no fix): every answer copies the history and stringifies the whole run,
-  `saveRun` reloads all runs, `next` rebuilds the seen-keys set: 0.06 → 0.48 ms per answer at
-  #1000, quadratic per run but 0.55 s for 1000 answers. Pin with a perf test. 2026-10-09
+- **O16** D12 (note, no fix, pinned by `oefenen.perf.test.ts`): every answer copies the history and
+  stringifies the whole run, `saveRun` reloads all runs, `next` rebuilds the seen-keys set:
+  quadratic per run, ~0.5 ms per answer and ~170 kB stored at #1000 (test: < 5 ms, < 300 kB). Only
+  an endless run far past 1000 answers would feel it. 2026-10-09
 
 ### WP-G teacher UX
 
