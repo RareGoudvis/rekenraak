@@ -9,6 +9,7 @@ import ExerciseCard from './ExerciseCard';
 import AnswerInput from './AnswerInput';
 import FeedbackOverlay from './FeedbackOverlay';
 import StatsScreen from './StatsScreen';
+import StorageBanner from './StorageBanner';
 
 // Physical keyboard (Chromebook / tablet keyboard): digits and the type's extra keys type,
 // Backspace deletes, Enter is Controleer (and skips a juist/fout flash), < = > pick for vergelijken.
@@ -98,6 +99,7 @@ export default function Kiosk() {
     return (
         <div className="oefen-app">
             <TopBar now={now} />
+            <StorageBanner />
             {phase === 'stats' ? (
                 <main className="kiosk-scroll"><StatsScreen /></main>
             ) : (

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useOefenStore } from '../useOefenStore';
+import StorageBanner from './StorageBanner';
 import { loadRuns, summary } from '../../services/oefenen/stats';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
 
@@ -113,6 +114,8 @@ export default function StatsScreen() {
 
     return (
         <section className="kiosk-stats" aria-labelledby="kiosk-stats-title">
+            {/* Mid-run the kiosk shows the banner above the stats already. */}
+            {locked && <StorageBanner />}
             <div className="kiosk-stats-head">
                 <div>
                     <h1 id="kiosk-stats-title" className="kiosk-stats-title">{title}</h1>

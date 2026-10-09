@@ -126,6 +126,18 @@ describe('a run', () => {
         expect(loadRuns('kiosktest')[0].stats.history).toHaveLength(0);
     });
 
+    test('storage that refuses the run sets storageFailed; a load starts clean', () => {
+        st().load(hashOf(starterSessie()));
+        expect(st().storageFailed).toBe(false);
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+        try {
+            st().start();
+            expect(st().storageFailed).toBe(true);
+        } finally { spy.mockRestore(); }
+        st().load(hashOf(starterSessie()));
+        expect(st().storageFailed).toBe(false);
+    });
+
     test('Wissen clears this device and returns to the start screen', () => {
         st().load(hashOf(starterSessie()));
         st().start();

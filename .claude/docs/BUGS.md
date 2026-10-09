@@ -184,8 +184,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-B store / stats
 
-- **O5** D5: when localStorage throws, `persist` ignores `saveRun === false` (useOefenStore.ts:199-202):
-  no warning, the run is gone after a reload. Fix: store flag → kiosk banner. 2026-10-09
 - **O6** Stats headline: a right second try counts as juist (stats.ts:70) so "3 van 3 juist · 100 %"
   hides a first-try 2/3; a timed/limited run shows "7 van 8 juist" and never the planned total
   (StatsScreen.tsx:119). Owner wording: "7 van 8 juist (8 van 10 gemaakt)" + column "Juist in één

@@ -47,6 +47,8 @@ interface OefenState {
     // exercise, and the cell the keypad types into. Reset with every new exercise.
     interaction: InteractionState;
     activeCell: string | null;
+    // The last save of the run was refused (quota, private mode): a reload would lose it, so the kiosk says so.
+    storageFailed: boolean;
 
     load(hash: string): void;
     start(): void;
@@ -201,7 +203,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
     const persist = (run: OefenRun) => {
         const s = get().sessie;
-        if (s) saveRun(s.id, run);
+        if (s) set({ storageFailed: !saveRun(s.id, run) });
     };
 
     // Ends the run: the timer ran out or every exercise is made. The end screen is the stats.
@@ -264,6 +266,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         statsFrom: 'exercise',
         interaction: EMPTY_INTERACTION,
         activeCell: null,
+        storageFailed: false,
 
         load(hash) {
             // No payload at all is not an error message, just the "open the link" screen.
@@ -276,7 +279,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 return;
             }
             clearFlash();
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
             const runs = loadRuns(s.id);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
             if (!last) return;

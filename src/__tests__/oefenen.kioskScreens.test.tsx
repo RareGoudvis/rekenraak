@@ -178,6 +178,28 @@ describe('kiosk screens', () => {
         expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
     });
 
+    test('storage refusing the run shows a banner while practising and on the end screen', () => {
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+        try {
+            st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 1 }] })));
+            st().start();
+            const { unmount } = render(<OefenApp />);
+            expect(screen.getByRole('alert').textContent).toBe('Dit toestel kan je resultaten niet bewaren.');
+            unmount();
+            act(() => { fillAnswer(true); st().answer(); st().next(); });
+            expect(st().phase).toBe('locked');
+            render(<OefenApp />);
+            expect(screen.getByRole('alert').textContent).toBe('Dit toestel kan je resultaten niet bewaren.');
+        } finally { spy.mockRestore(); }
+    });
+
+    test('no banner while storage works', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        render(<OefenApp />);
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+
     test('choice buttons: signs big, words in the word size; kiezen is tapped on the card', () => {
         const kiezen = leafType('vergelijken-kiezen');
         st().load(hashOf(starterSessie({ types: [kiezen] })));

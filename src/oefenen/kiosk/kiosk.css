@@ -176,6 +176,23 @@ html:has(.oefen-body),
 }
 .kiosk-timer.is-low { color: var(--danger); }
 
+/* Slim and permanent: the run is not being saved on this device. */
+.kiosk-storage-banner {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 600;
+}
+.kiosk-stats .kiosk-storage-banner {
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-3);
+}
+
 /* ── Exercise + answer ─────────────────────────────────────────────────────── */
 .kiosk-main {
   flex: 1;
