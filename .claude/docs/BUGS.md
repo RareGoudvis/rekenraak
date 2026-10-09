@@ -171,10 +171,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Tooling
 
-- A leaf's own `defaultCount` (oppervlakte-rooster = 2) is not seen by `scripts/height-audit.mjs:81`
-  and `scripts/width-matrix.mjs:82` (they add blocks without `leafId`); worksheetTemplates.ts
-  `buildBlock` and the curriculum draft use the row count on purpose. 2026-10-08
-
 - full-sweep "max" rows use the registry defaults, and the 8 cijferen typeIds share `cijferRow()`
   defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
   additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27

@@ -369,6 +369,9 @@ between runs — two matrices only diff at all because of this. It defaults to 1
 committed result JSONs record the seed they were taken at.
 
 Every registry type × width {4, 2, 1} × count {default, 1} = 354 cells, about 4 minutes.
+Each type is added through its first sidebar leaf the way the catalogue does (leaf label,
+`defaultConstraints`, `leafId`), so "default" is the count a teacher gets from that leaf
+(oppervlakte-rooster = 2, not the registry's 10); rows and the summary carry the `leafId`.
 Each row also carries `rowCount` (the number of `.print-row` elements, i.e. the rendered
 grid rows), which is where `perRowFull` and `rowUnits` come from — counted, not inferred
 from the height ratio.
@@ -390,7 +393,8 @@ against a production build.
 The vertical twin of the width matrix, and the answer to "the tail hint says the next block
 does not fit, but it visibly does". It places ten mixed blocks at mixed widths, lets the
 measure→pack→remeasure chain settle, waits out any breaker cooldown, forces one more
-measure pass, and then prints per cell:
+measure pass, and then prints per cell (each block is added through its typeId's first
+sidebar leaf, as the catalogue adds it, so a leaf's own `defaultCount` applies):
 
 | column | what it is |
 |---|---|

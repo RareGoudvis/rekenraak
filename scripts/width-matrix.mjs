@@ -66,12 +66,18 @@ await page.waitForFunction(() => !!window.__rekenraak);
 await page.evaluate(() => window.__rekenraak.setIgnoreMinWidth(true));
 
 const typeIds = (await page.evaluate(() => window.__rekenraak.typeIds)).filter(t => ONLY.length === 0 || ONLY.includes(t));
+// Each typeId is measured through its first sidebar leaf, added the way the catalogue does:
+// a bare typeId missed the leaf's own defaultCount (oppervlakte-rooster = 2, not 10).
+const leafOf = new Map();
+for (const l of await page.evaluate(() => window.__rekenraak.leaves.map(({ id, typeId, label, defaultConstraints }) => ({ id, typeId, label, defaultConstraints })))) {
+    if (!leafOf.has(l.typeId)) leafOf.set(l.typeId, l);
+}
 const rows = [];
 
 for (const typeId of typeIds) {
     for (const width of WIDTHS) {
         for (const mode of ['default', 'single']) {
-            const measured = await page.evaluate(async ({ typeId, width, mode, seed }) => {
+            const measured = await page.evaluate(async ({ typeId, leaf, width, mode, seed }) => {
                 const r = window.__rekenraak;
                 r.clearBlocks();
                 r.seed(seed);
@@ -79,7 +85,8 @@ for (const typeId of typeIds) {
                 // `${label}:`, and passing the typeId made 'hr-std-vermenigvuldigen:' a
                 // 176px unbreakable token in a 163px quarter — the harness was measuring
                 // its own probe string and reporting it as the viewer overflowing.
-                r.addBlockFromType(typeId, 'Oefening');
+                if (leaf) r.addBlockFromType(typeId, leaf.label, leaf.defaultConstraints, { leafId: leaf.id });
+                else r.addBlockFromType(typeId, 'Oefening');
                 const block = r.getState().blocks[0];
                 if (!block) return null;
                 const defaultCount = block.numberOfExercises;
@@ -115,7 +122,7 @@ for (const typeId of typeIds) {
                     // .print-row per rendered row, so the row count is simply there.
                     rowCount: cell.querySelectorAll('.print-row').length,
                 };
-            }, { typeId, width, mode, seed: SEED });
+            }, { typeId, leaf: leafOf.get(typeId) ?? null, width, mode, seed: SEED });
 
             if (!measured) { console.log(`! ${typeId} produced no block`); continue; }
             const name = `${typeId}-w${width}-n${mode === 'single' ? 1 : measured.defaultCount}`;
@@ -123,7 +130,7 @@ for (const typeId of typeIds) {
             try { await cell.screenshot({ path: join(SHOTS, `${name}.png`) }); } catch { /* off-screen */ }
 
             rows.push({
-                typeId, width, mode,
+                typeId, leafId: leafOf.get(typeId)?.id ?? null, width, mode,
                 count: measured.count ?? null,
                 overflow: Number((measured.overflow ?? 0).toFixed(4)),
                 zoom: Number((measured.zoom ?? 1).toFixed(4)),
@@ -160,14 +167,14 @@ for (const typeId of typeIds) {
     const perRowFull = rowsFull ? Number((n / rowsFull).toFixed(2)) : null;
     const rowUnits = rowsFull && rowsFull > 1 ? Number(((hDefault - hSingle) / (rowsFull - 1) / 24).toFixed(2))
         : (n > 1 ? Number(((hDefault - hSingle) / (n - 1) / 24).toFixed(2)) : null);
-    summary[typeId] = { minWidth, minWidthSingle: minSingle < minWidth ? minSingle : undefined, rows: rowsFull, perRowFull, rowUnits, count: n, hDefault, hSingle };
+    summary[typeId] = { leafId: leafOf.get(typeId)?.id, minWidth, minWidthSingle: minSingle < minWidth ? minSingle : undefined, rows: rowsFull, perRowFull, rowUnits, count: n, hDefault, hSingle };
 }
 
 writeFileSync(join(HERE, `width-matrix.result${SUFFIX}.json`), JSON.stringify({ viewport: VIEWPORT_W, seed: SEED, rule: 'overflow <= 1.005 && zoom === 1', summary, rows }, null, 2));
 writeFileSync(
     join(HERE, `width-matrix.result${SUFFIX}.csv`),
-    ['typeId,width,mode,count,overflow,zoom,scrollWidth,clientWidth,cellHeight,rowCount']
-        .concat(rows.map(r => [r.typeId, r.width, r.mode, r.count, r.overflow, r.zoom, r.scrollWidth, r.clientWidth, r.cellHeight, r.rowCount].join(',')))
+    ['typeId,leafId,width,mode,count,overflow,zoom,scrollWidth,clientWidth,cellHeight,rowCount']
+        .concat(rows.map(r => [r.typeId, r.leafId ?? '', r.width, r.mode, r.count, r.overflow, r.zoom, r.scrollWidth, r.clientWidth, r.cellHeight, r.rowCount].join(',')))
         .join('\n'),
 );
 console.log(`\n${rows.length} cells measured; screenshots in ${SHOTS}`);
