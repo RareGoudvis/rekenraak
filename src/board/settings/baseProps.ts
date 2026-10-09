@@ -1,5 +1,6 @@
 import { useBoardStore } from '../useBoardStore';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
+import { naturalWidth } from '../widgetSizing';
 
 // The baseline every widget kind gets (rendered by WidgetInspector under the kind's own
 // panel): props.title, props.fontSize, props.accent, props.showHeader. Readers here are the
@@ -22,6 +23,14 @@ export function fontSizeKey(widget: BoardWidget): FontSizeKey {
 export function fontScale(widget: BoardWidget): number {
     const key = fontSizeKey(widget);
     return FONT_SIZES.find(f => f.key === key)!.scale;
+}
+
+// Horizontal padding around the viewer inside an exercise card (ExerciseWidget).
+export const EXERCISE_PAD_X = 16;
+
+// A viewer's column budget on a card (it assumed the sheet's 688px): body = naturalW / text zoom.
+export function exerciseViewerWidth(widget: BoardWidget): number {
+    return Math.floor(naturalWidth('exercise') / ((widget.scale ?? 1) * fontScale(widget)) - 2 * EXERCISE_PAD_X);
 }
 
 // Kinds that multiply their own type sizes by fontScale(); every other kind gets the font
