@@ -26,6 +26,9 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Even-oneven rooster at its 1e4 top, width ½ / ¼: four-digit numbers wrap inside the 46 px cells
   and the lines overlap. Fix: size cells from the character count (46 px floor). 2026-09-27
   (Full sweep: they wrap ("9 / 029") at full width too; only ½ / ¼ trip the overlap check.)
+- TopBar below a ~915 px window: stage 3 is the last stage, so the Meer button and the right group
+  overlap (2 px at 915, ~90 px at 840; Chromium, 2026-10-09). Fix: a stage 4 (Genereer alles into
+  Meer) or a min-width on the app shell. 2026-10-09
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
