@@ -105,8 +105,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   DEFAULT; "288/1") and big numerators without spaces ("36000004/5"); an {M, E} operand mask at max
   1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
 - Empty keys: breuken-kleuren ignores Oplossingen (FractionExerciseItem.tsx ~65: showColored only for
-  herkennen); breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
-  geld-wissel draws no model exchange. 2026-09-27
+  herkennen); breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on. 2026-09-27
 - Degenerate defaults: deelbaarheid-veelvouden is six copies of "veelvouden van 9" ("Kleine reeks: 5
   oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
@@ -193,7 +192,7 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Bordmodus
 
-- No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
+- No answer overlay on the board for breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
 - Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
   Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
