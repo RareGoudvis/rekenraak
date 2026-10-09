@@ -498,6 +498,47 @@ describe('OefenShareModal summary (O19)', () => {
     });
 });
 
+describe('exactForm control (O8 builder half)', () => {
+    const SAME = 'Gelijkwaardig goedrekenen';
+    const EXACT = 'Enkel de gevraagde vorm';
+    const rowOf = (id: string) => within(screen.getByRole('region', { name: leaf(id).label }));
+    // The button reads "Opgeslagen" for 2 s after a save.
+    const saved = () => { fireEvent.click(screen.getByRole('button', { name: /Opslaan|Opgeslagen/ })); return loadOefenSessies()[0].sessie; };
+
+    test('preselected from the descriptor default; only a change is written to the row', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Breuken' } });
+        fireEvent.click(addBtn('breuken-vereenvoudigen'));
+        fireEvent.click(addBtn('procenten-nemen'));
+        // A leaf without a breuk answer (no exactFormDefault) gets no control.
+        expect(rowOf('procenten-nemen').queryByRole('group', { name: 'Antwoord' })).toBeNull();
+        const group = within(rowOf('breuken-vereenvoudigen').getByRole('group', { name: 'Antwoord' }));
+        expect(group.getByRole('button', { name: EXACT }).getAttribute('aria-pressed')).toBe('true');
+        expect(group.getByRole('button', { name: SAME }).getAttribute('aria-pressed')).toBe('false');
+        expect('exactForm' in saved().types[0]).toBe(false);
+
+        fireEvent.click(group.getByRole('button', { name: SAME }));
+        expect(group.getByRole('button', { name: SAME }).getAttribute('aria-pressed')).toBe('true');
+        expect(saved().types[0].exactForm).toBe(false);
+        expect('exactForm' in saved().types[1]).toBe(false);
+
+        // Back to the default: the row stores nothing again, so the link stays as short as before.
+        fireEvent.click(group.getByRole('button', { name: EXACT }));
+        expect('exactForm' in saved().types[0]).toBe(false);
+    });
+
+    test('buildSessie ships a row exactForm only where the descriptor has a default; rowsFromSessie reads it back', () => {
+        const rows: BuilderRow[] = [
+            { key: 'a', leaf: leaf('breuken-vereenvoudigen'), constraints: { ...leaf('breuken-vereenvoudigen').constraints }, weight: 50, exactForm: false },
+            { key: 'b', leaf: leaf('procenten-nemen'), constraints: { subType: 'nemen' }, weight: 50, exactForm: true },
+        ];
+        const { sessie } = buildSessie(rows, settings);
+        expect(sessie.types[0].exactForm).toBe(false);
+        expect('exactForm' in sessie.types[1]).toBe(false);
+        expect(rowsFromSessie(sessie)[0].exactForm).toBe(false);
+    });
+});
+
 describe('klok description says what the kiosk asks (O21)', () => {
     // ClockConfig serves the sheet too, where lezen IS written in words: both answers are named.
     test('analoge klok lezen: uu:mm typen in de oefenmodus; tekenen: wijzers slepen', () => {

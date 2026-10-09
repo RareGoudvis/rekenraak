@@ -2,7 +2,7 @@ import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '..
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
-import { kioskCapableLeaves, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
+import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 import { nextExercise, type Rng } from '../../services/oefenen/scheduler';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 
@@ -62,7 +62,12 @@ export interface BuilderRow {
     constraints: Record<string, unknown>;     // the draft block's current constraints
     limit?: number;
     weight: number;                           // raw slider value 1-100, normalised on build
+    exactForm?: boolean;                      // the teacher's "Antwoord" pick; absent = the descriptor default
 }
+
+/** The row's breuk-answer default (exactFormDefault), or undefined where the row asks no breuk. */
+export const exactFormDefaultOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): boolean | undefined =>
+    kioskFor(row.leaf.typeId)?.exactFormDefault?.(row.constraints);
 
 export interface BuilderSettings {
     id: string;
@@ -115,6 +120,8 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
             constraints: r.constraints,
             ...(r.limit ? { limit: r.limit } : {}),
             weight: weights[i],
+            // Only where the check reads it (exactFormOf ignores it without a default): keeps the link short.
+            ...(r.exactForm !== undefined && exactFormDefaultOf(r) !== undefined ? { exactForm: r.exactForm } : {}),
         })),
         mode: s.mode,
         // Afwisselen never repeats a type by definition; only willekeurig can allow it.
@@ -135,7 +142,7 @@ export function rowsFromSessie(sessie: OefenSessie): BuilderRow[] {
     sessie.types.forEach((t, i) => {
         const leaf = leaves.get(t.leafId);
         if (!leaf) return;
-        rows.push({ key: `r${i}`, leaf, constraints: t.constraints, limit: t.limit, weight: Math.max(1, t.weight) });
+        rows.push({ key: `r${i}`, leaf, constraints: t.constraints, limit: t.limit, weight: Math.max(1, t.weight), ...(t.exactForm !== undefined ? { exactForm: t.exactForm } : {}) });
     });
     return rows;
 }

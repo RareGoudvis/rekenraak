@@ -14,7 +14,7 @@ import { newSessieId } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
-    LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
+    LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -37,7 +37,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const clearDraftBlocks = useWorksheetStore((s) => s.clearDraftBlocks);
     const draftBlocks = useWorksheetStore((s) => s.draftBlocks);
 
-    const [rows, setRows] = useState<Row[]>(() => (initial ? rowsFromSessie(initial).map(r => ({ key: r.key, leaf: r.leaf, limit: r.limit, weight: r.weight })) : []));
+    const [rows, setRows] = useState<Row[]>(() => (initial ? rowsFromSessie(initial).map(({ constraints: _c, ...row }) => row) : []));
     const [title, setTitle] = useState(initial?.title ?? '');
     const [mode, setMode] = useState(initial?.mode ?? 'afwisselen');
     const [allowRepeatType, setAllowRepeatType] = useState(initial?.allowRepeatType ?? false);
@@ -196,6 +196,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             const supported = !constraints || kioskSupports(r.leaf.typeId, constraints);
                             const isDead = dead.has(r.key);
                             const pct = percentOf(r.key);
+                            const formDefault = constraints ? exactFormDefaultOf({ leaf: r.leaf, constraints }) : undefined;
                             return (
                                 <section key={r.key} style={isDead ? { ...S.card, border: '1px solid var(--danger)' } : S.card} aria-label={r.leaf.label}>
                                     <div style={S.rowHead}>
@@ -233,6 +234,20 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                     style={S.range} onChange={e => { const v = Number(e.target.value); patchRow(r.key, { limit: v > LIMIT_MAX ? undefined : v }); }}
                                 />
                             </div>
+                                            {formDefault !== undefined && (
+                                                <div style={S.field}>
+                                                    <span style={S.label}>Antwoord</span>
+                                                    <div className="seg-group" role="group" aria-label="Antwoord" style={S.formGroup}>
+                                                        {([false, true] as const).map(exact => (
+                                                            // Picking the default stores nothing, so the row follows the leaf default in the link.
+                                                            <button key={String(exact)} className="seg-btn" style={S.formBtn} aria-pressed={(r.exactForm ?? formDefault) === exact}
+                                                                onClick={() => patchRow(r.key, { exactForm: exact === formDefault ? undefined : exact })}>
+                                                                {exact ? 'Enkel de gevraagde vorm' : 'Gelijkwaardig goedrekenen'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                             {mode === 'willekeurig' && (
                                                 <div style={S.field}>
                                                     <label style={S.label} htmlFor={`w-${r.key}`}>Kans: {pct === null ? '–' : `${pct}%`}</label>
@@ -330,6 +345,10 @@ const S = {
     previewWrap: { borderRadius: 'var(--radius-xs)', border: '1px solid var(--separator)', background: '#fff' } as React.CSSProperties,
     muted: { margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontStyle: 'italic' } as React.CSSProperties,
     range: { width: '100%', accentColor: 'var(--accent)' } as React.CSSProperties,
+    // Two long labels in a ~280 px column: stack them instead of squeezing one line.
+    formGroup: { flexDirection: 'column', alignItems: 'stretch' } as React.CSSProperties,
+    // .seg-btn's flex: 1 would collapse its height to 0-basis in a column.
+    formBtn: { flex: 'none' } as React.CSSProperties,
     footer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-5)', borderTop: '1px solid var(--separator)', flexShrink: 0 } as React.CSSProperties,
     footerCount: { fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 600 } as React.CSSProperties,
     footerBtns: { display: 'flex', gap: 'var(--sp-2)' } as React.CSSProperties,
