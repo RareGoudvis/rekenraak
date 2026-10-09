@@ -52,6 +52,14 @@ describe('kiosk screens', () => {
         expect(st().phase).toBe('exercise');
     });
 
+    test('start screen leaves a type that generates nothing out of the count and the total', () => {
+        const dead: OefenType = { typeId: 'klok-kloklezen', leafId: 'klok-analoog-lezen', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'lezen', timeTypes: [] }, limit: 5, weight: 1 };
+        st().load(hashOf(starterSessie({ types: [dead, STARTER_TYPES[0]] })));
+        render(<OefenApp />);
+        expect(screen.getByText(/^1 soort · 2 oefening/)).toBeTruthy();
+        expect(screen.queryByText('Klok')).toBeNull();
+    });
+
     test('every starter type renders its exercise and answer panel', () => {
         for (const type of STARTER_TYPES) {
             resetKiosk();

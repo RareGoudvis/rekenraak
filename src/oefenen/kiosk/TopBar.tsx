@@ -1,6 +1,6 @@
 import { ChartBar, Timer } from '@phosphor-icons/react';
 import { resultsHidden, useOefenStore } from '../useOefenStore';
-import { plannedTotal } from '../../services/oefenen/scheduler';
+import { viablePlannedTotal } from '../../services/oefenen/stats';
 
 interface Props {
     now: number;
@@ -20,7 +20,7 @@ export default function TopBar({ now }: Props) {
     if (!sessie || !run) return null;
 
     const made = run.stats.history.length;
-    const total = plannedTotal(sessie);
+    const total = viablePlannedTotal(sessie);
     // The number of the exercise on screen; after Controleer it is the one just made. An
     // unanswered exercise (also on its second try, or behind a stats peek) is run.current.
     const at = run.current ? made + 1 : made;

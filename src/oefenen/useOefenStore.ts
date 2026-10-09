@@ -307,8 +307,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const now = Date.now();
             if (run.done) { set({ phase: 'locked' }); return; }
             if (timeUp(run, now) || isDone(s, run.stats, now)) { finish(run, now); return; }
-            const pick = nextType(s, run.stats.history);
-            const made = pick && nextExercise(s, pick.type, new Set(run.stats.history.map(h => h.exerciseKey)));
+            const seen = new Set(run.stats.history.map(h => h.exerciseKey));
+            let pick = nextType(s, run.stats.history);
+            let made = pick && nextExercise(s, pick.type, seen);
+            // A type that yields nothing is retired by the scheduler: draw again from the rest (bounded by the slot count).
+            for (let tries = 0; pick && !made && tries < s.types.length; tries++) {
+                pick = nextType(s, run.stats.history);
+                made = pick && nextExercise(s, pick.type, seen);
+            }
             if (!pick || !made) { finish(run, now); return; }
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
             const updated: OefenRun = { ...run, current };

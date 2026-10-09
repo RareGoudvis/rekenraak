@@ -205,7 +205,7 @@ grouped per work package so parallel deletions merge cleanly.
 
 - **O9** C4: a row whose settings generate 0 exercises (klok with every tijdstype unticked) ships
   without a builder warning (`kioskSupports` ignores `timeTypes`). Fix: pre-flight each row at Delen
-  (0 → red row, Delen blocked); start screen counts viable types (`deadSlots`, scheduler.ts). 2026-10-09
+  (0 → red row, Delen blocked). 2026-10-09
 - **O10** Builder-reachable zero-output settings: `timeTypes=[]` on klok-analoog-lezen / -tekenen /
   -omzetten and klok-digitaal-tekenen; `selectedTables=[]` on hr-std-vermenigvuldigen-nat and
   hr-std-delen-nat (NaturalSettings has no keep-one guard); `payWithOptions=[]` on geld-teruggeven.

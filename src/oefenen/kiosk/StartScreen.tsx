@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Play } from '@phosphor-icons/react';
 import { useOefenStore } from '../useOefenStore';
-import { plannedTotal } from '../../services/oefenen/scheduler';
+import { viablePlannedTotal, viableTypes } from '../../services/oefenen/stats';
 
 // Fullscreen hides the browser chrome on a tablet; refused or unsupported is fine.
 function tryFullscreen() {
@@ -19,8 +19,10 @@ export default function StartScreen() {
     useEffect(() => { startRef.current?.focus({ preventScroll: true }); }, []);
     if (!sessie) return null;
 
-    const n = sessie.types.length;
-    const total = plannedTotal(sessie);
+    // A type whose settings generate nothing never comes, so it is neither counted nor listed.
+    const types = viableTypes(sessie);
+    const n = types.length;
+    const total = viablePlannedTotal(sessie);
     const facts = [
         `${n} ${n === 1 ? 'soort' : 'soorten'}`,
         ...(total !== null ? [`${total} oefeningen`] : []),
@@ -33,7 +35,7 @@ export default function StartScreen() {
             <h1 className="oefen-title">{sessie.title || 'Oefenen'}</h1>
             <p className="oefen-lead">{facts.join(' · ')}</p>
             <ul className="kiosk-start-types">
-                {sessie.types.map((t, i) => <li key={i}>{t.label}</li>)}
+                {types.map((t, i) => <li key={i}>{t.label}</li>)}
             </ul>
             {sessie.testMode && <p className="kiosk-start-note">Toets: je ziet pas op het einde wat juist was.</p>}
             <button ref={startRef} type="button" className="kiosk-btn kiosk-btn-primary kiosk-btn-big"
