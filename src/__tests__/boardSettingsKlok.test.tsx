@@ -17,7 +17,7 @@ const live = (id: string) => st().pages[st().activePageIdx].widgets.find(w => w.
 
 function Board({ id }: { id: string }) {
     const w = useBoardStore((s) => s.pages[s.activePageIdx].widgets.find(x => x.id === id));
-    return w ? <><div data-testid="k"><KlokWidget widget={w} dark={false} /></div><WidgetInspector widget={w} /></> : null;
+    return w ? <><div data-testid="k"><KlokWidget widget={w} /></div><WidgetInspector widget={w} /></> : null;
 }
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] }); vi.setSystemTime(new Date(2026, 9, 9, 14, 5, 30)); });

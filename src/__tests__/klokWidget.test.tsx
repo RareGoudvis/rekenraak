@@ -34,7 +34,7 @@ const HOUR = 30;     // inner 45 % grabs the kleine wijzer
 
 function Live() {
     const w = useBoardStore((s) => s.pages[s.activePageIdx].widgets[0]);
-    return w ? <KlokWidget widget={w} dark={false} /> : null;
+    return w ? <KlokWidget widget={w} /> : null;
 }
 
 function mount(hours: number, minutes: number) {

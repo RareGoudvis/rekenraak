@@ -1,4 +1,6 @@
 import { EXERCISE_UI } from '../../../config/exerciseUI';
+import { BlockWidthProvider } from '../../../components/viewer/BlockWidthContext';
+import { exerciseViewerWidth, EXERCISE_PAD_X } from '../../settings/baseProps';
 import type { BoardWidget } from '../../boardTypes';
 
 // A Rekenraak exercise block as a board widget: mounts the registry Viewer
@@ -10,10 +12,11 @@ export default function ExerciseWidget({ widget }: { widget: BoardWidget }) {
     if (!block || !Viewer) {
         return <div style={{ padding: '16px', background: '#fff', borderRadius: '8px' }}>Onbekend oefeningtype</div>;
     }
-    // The WidgetFrame card provides border/shadow/background — just pad the viewer.
     return (
-        <div style={{ padding: '12px 16px' }}>
-            <Viewer block={block} showSolutions={!!widget.showAnswer} />
+        <div style={{ padding: `12px ${EXERCISE_PAD_X}px` }}>
+            <BlockWidthProvider value={exerciseViewerWidth(widget)}>
+                <Viewer block={block} showSolutions={!!widget.showAnswer} />
+            </BlockWidthProvider>
         </div>
     );
 }

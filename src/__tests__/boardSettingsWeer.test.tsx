@@ -23,7 +23,7 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 function Board({ id }: { id: string }) {
     const w = useBoardStore((s) => s.pages[s.activePageIdx].widgets.find(x => x.id === id));
-    return w ? <><div data-testid="weer"><WeerWidget widget={w} dark={false} /></div><WidgetInspector widget={w} /></> : null;
+    return w ? <><div data-testid="weer"><WeerWidget widget={w} /></div><WidgetInspector widget={w} /></> : null;
 }
 
 const settle = () => act(async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); });

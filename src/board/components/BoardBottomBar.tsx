@@ -10,6 +10,22 @@ import { INSTRUMENT_KINDS, INSTRUMENT_LABELS, snapOf } from '../instrumentGeomet
 import type { InstrumentKind, InstrumentSnap } from '../boardTypes';
 import BackgroundPicker from './BackgroundPicker';
 
+// Below 1600 px the full bar (~1450 px) does not fit: the exit button drops its label, and the
+// bar wraps rather than clip (favourites can widen it further).
+const COMPACT_QUERY = '(max-width: 1599px)';
+
+function useCompactBar(): boolean {
+    const [compact, setCompact] = useState(() => window.matchMedia?.(COMPACT_QUERY).matches ?? false);
+    useEffect(() => {
+        const mq = window.matchMedia?.(COMPACT_QUERY);
+        if (!mq) return;
+        const on = () => setCompact(mq.matches);
+        mq.addEventListener('change', on);
+        return () => mq.removeEventListener('change', on);
+    }, []);
+    return compact;
+}
+
 // Single-letter tool shortcuts (shown in each tooltip). Only the draw tools have one so far.
 const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape' };
 
@@ -40,6 +56,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
     const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
 
+    const compact = useCompactBar();
     const instrumentKinds = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).map(i => i.kind).join(','));
 
     const [menu, setMenu] = useState<'add' | 'settings' | 'background' | 'page' | 'save' | 'instruments' | null>(null);
@@ -138,7 +155,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const favDefs = favorites.map(id => TOOL_CATALOG.find(t => t.id === id)).filter(Boolean) as BoardToolDef[];
 
     return (
-        <div className="mac-vibrant" style={S.bar}>
+        <div className="mac-vibrant" style={compact ? { ...S.bar, columnGap: '6px' } : S.bar}>
             <input ref={imageRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageWidget} />
             <input ref={importRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleImportFile} />
 
@@ -173,7 +190,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
 
             {/* ── Favorieten (★, max 6) ── */}
             {favDefs.length > 0 && (
-                <div style={S.group}>
+                <div style={compact ? { ...S.group, gap: '2px' } : S.group}>
                     {favDefs.slice(0, MAX_FAVORITES).map(t => (
                         <button key={t.id} type="button" className="ui-hover" title={t.label} aria-label={`Favoriet: ${t.label}`}
                             style={S.toolBtn} onClick={() => handleTool(t)}>
@@ -225,7 +242,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <div style={S.sep} />
 
             {/* ── Tools ── */}
-            <div style={S.group}>
+            <div style={compact ? { ...S.group, gap: '2px' } : S.group}>
                 {tools.map(t => t.key === 'instrument' ? (
                     // Not a tool mode: the ruler opens the instruments popover; the pen keeps drawing.
                     <InstrumentMenu key={t.key} open={menu === 'instruments'} placed={instrumentKinds}
@@ -246,7 +263,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <div style={S.sep} />
 
             {/* ── Ink undo/redo + pagina leegmaken ── */}
-            <div style={S.group}>
+            <div style={compact ? { ...S.group, gap: '2px' } : S.group}>
                 <button type="button" className="ui-hover" title="Ongedaan maken (Ctrl+Z): alleen getekende inkt, widgets niet" aria-label="Ongedaan maken"
                     disabled={!canUndoInk} style={{ ...S.toolBtn, ...(!canUndoInk ? S.toolDisabled : {}) }} onClick={undoStroke}>
                     <ArrowUUpLeft size={22} />
@@ -265,7 +282,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <div style={{ flex: 1 }} />
 
             {/* ── Pagination ── */}
-            <div style={S.group}>
+            <div style={compact ? { ...S.group, gap: '2px' } : S.group}>
                 <button type="button" className="ui-hover" title="Vorige pagina" aria-label="Vorige pagina"
                     disabled={activePageIdx === 0} style={{ ...S.toolBtn, ...(activePageIdx === 0 ? S.toolDisabled : {}) }}
                     onClick={() => gotoPage(activePageIdx - 1)}>
@@ -342,8 +359,9 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <div style={S.sep} />
 
             {/* ── Exit ── */}
-            <button type="button" className="ui-hover" style={S.exitBtn} onClick={() => setView('editor')}>
-                <X size={18} /> Bordmodus verlaten
+            <button type="button" className="ui-hover" style={compact ? { ...S.exitBtn, padding: 0, width: '44px', justifyContent: 'center' } : S.exitBtn}
+                aria-label="Bordmodus verlaten" title="Bordmodus verlaten" onClick={() => setView('editor')}>
+                <X size={18} />{!compact && ' Bordmodus verlaten'}
             </button>
         </div>
     );
@@ -463,8 +481,11 @@ function CategoryPanel({ cat, favorites, onTool, onStar }: {
 
 const S = {
     bar: {
-        display: 'flex', alignItems: 'center', gap: '10px',
+        display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', rowGap: '6px',
         padding: '8px 14px',
+        // Above the ink strip (40) and the inspectors (50): their boxes reach down to the bar,
+        // and the bar's popups open up over them.
+        position: 'relative', zIndex: 70,
         borderTop: '1px solid var(--border-color)',
         background: 'var(--bg-panel)',
         flexShrink: 0,
@@ -489,7 +510,7 @@ const S = {
         display: 'inline-flex', alignItems: 'center', gap: '8px',
         height: '44px', padding: '0 16px', borderRadius: '10px',
         border: '1px solid var(--border-color)', background: 'transparent',
-        color: 'var(--text-main)', cursor: 'pointer',
+        color: 'var(--text-main)', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
         fontSize: '13px', fontFamily: "'Azeret Mono', monospace",
     } as React.CSSProperties,
     addBtn: {

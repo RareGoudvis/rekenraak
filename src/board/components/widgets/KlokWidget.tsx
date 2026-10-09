@@ -11,7 +11,7 @@ import type { BoardWidget } from '../../boardTypes';
 // Settable clock: drag the hands directly on the face (outer zone = minute hand,
 // inner zone = hour hand), with optional digital display and written time. Face style,
 // size, rings, seconds hand and live time come from the ⚙ panel.
-export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
+export default function KlokWidget({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const k = klokModel(widget);
     const fs = fontScale(widget);
@@ -74,7 +74,6 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
     const onPointerMove = (e: React.PointerEvent) => { if (dragging.current) applyDrag(e); };
     const endDrag = () => { dragging.current = null; };
 
-    const textColor = dark ? '#fff' : '#111';
     // Fixed design size per face size; the frame's zoom (w / naturalW) handles the rest.
     // An outer number ring widens the canvas (BoardClockFace); 264 overall fits the 300 natural width.
     const size = Math.min(FACE_SIZES[k.faceSize], k.minuteNumbers ? 234 : k.ring24 ? 240 : 264);
@@ -93,14 +92,14 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
             )}
             {k.showDigital && (
                 <div style={{
-                    fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: `${34 * fs}px`, color: textColor,
-                    background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderRadius: '10px', padding: '4px 16px',
+                    fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: `${34 * fs}px`, color: '#111',
+                    background: 'rgba(0,0,0,0.05)', borderRadius: '10px', padding: '4px 16px',
                 }}>
                     {digitalTime(hours, minutes, seconds, k.clock24)}
                 </div>
             )}
             {k.showText && (
-                <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: `${20 * fs}px`, color: textColor }}>
+                <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: `${20 * fs}px`, color: '#111' }}>
                     {/* The carry runs the hours 0-23; the written time reads the 1-12 of the face ("kwart over 1", not "13"). */}
                     {k.textStyle === 'tekst' ? formatTimeText(hours % 12 || 12, minutes, false) : digitalTime(hours, minutes, null, k.clock24)}
                 </div>

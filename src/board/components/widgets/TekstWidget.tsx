@@ -7,17 +7,18 @@ import type { BoardWidget } from '../../boardTypes';
 // Free text card. Editing happens directly in the textarea (tap to focus); dragging uses the
 // frame's drag handle, so the two never fight. In bullet mode the card shows a rendered list
 // and swaps to the raw textarea while it has focus.
-export default function TekstWidget({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
+export default function TekstWidget({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const m = tekstProps(widget);
-    const [editing, setEditing] = useState(false);
+    // A note just placed with the T tool (empty and selected) opens ready to type.
+    const [editing, setEditing] = useState(() => m.text === '' && useBoardStore.getState().selectedWidgetId === widget.id);
     const linePx = m.textPx * TEKST_LINE_HEIGHT;
 
     const box: React.CSSProperties = {
         width: '100%', boxSizing: 'border-box', minHeight: '80px', margin: 0,
         padding: `${m.padding}px`, border: 'none', outline: 'none',
         background: m.bg || 'transparent',
-        color: widgetAccent(widget) ?? (dark ? '#fff' : '#111'),
+        color: widgetAccent(widget) ?? '#111',
         fontSize: `${m.textPx}px`, lineHeight: TEKST_LINE_HEIGHT,
         fontFamily: TEKST_FONTS[m.font],
         fontWeight: m.bold ? 700 : undefined, fontStyle: m.italic ? 'italic' : undefined,

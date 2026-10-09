@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach } from 'vitest';
-import { render, cleanup, fireEvent, within } from '@testing-library/react';
+import { render, cleanup, fireEvent, within, screen } from '@testing-library/react';
+import BoardBottomBar from '../board/components/BoardBottomBar';
 import { useBoardStore } from '../board/useBoardStore';
 import WidgetFrame from '../board/components/WidgetFrame';
 import BoardPageCanvas from '../board/components/BoardPageCanvas';
@@ -116,5 +117,48 @@ describe('headerless cards', () => {
         expect(pill(container)).toBeNull();
         expect(within(container).getByLabelText('Verwijderen')).toBeTruthy();
         expect(within(container).getByText('Getallenlijn')).toBeTruthy();
+    });
+});
+
+describe('a dark board', () => {
+    // The cards stay white paper on a black board, so their text must stay dark: white ink
+    // (the pre-card look) made notes, names and the weather vanish.
+    test('card text stays dark ink on a dark board', () => {
+        const st = useBoardStore.getState();
+        st.setBackground({ pattern: 'raster', dark: true });
+        st.addWidget({ kind: 'tekst', x: 0, y: 0, w: 360, props: { text: 'hoi' } });
+        st.addWidget({ kind: 'klok', x: 0, y: 0, w: 300, props: { showDigital: true } });
+        st.addWidget({ kind: 'namen', x: 0, y: 0, w: 340, props: {} });
+        const { container } = render(<BoardPageCanvas />);
+        const bodies = [...container.querySelectorAll<HTMLElement>('[data-widget-body] *')];
+        expect(bodies.length).toBeGreaterThan(0);
+        const white = bodies.filter(el => /^(#fff|#ffffff|rgb(255, 255, 255))$/i.test(el.style.color));
+        expect(white).toEqual([]);
+        expect(container.querySelector('textarea')!.style.color).toBe('rgb(17, 17, 17)');
+    });
+});
+
+describe('bottom bar on a narrow board', () => {
+    // At 1280 px the exit button was cut off the right edge (BUGS 2026-10-08).
+    test('below 1600 px the exit is an icon button and the bar wraps instead of clipping', () => {
+        const real = window.matchMedia;
+        window.matchMedia = ((q: string) => ({ ...real(q), matches: q.includes('1599px') })) as typeof window.matchMedia;
+        try {
+            const { container } = render(<BoardBottomBar onOpenWiskunde={() => { }} />);
+            const exit = screen.getByRole('button', { name: 'Bordmodus verlaten' });
+            expect(exit.textContent).toBe('');
+            expect((container.firstElementChild as HTMLElement).style.flexWrap).toBe('wrap');
+        } finally { window.matchMedia = real; }
+    });
+    test('the bar and its popups sit above the ink strip and the inspectors', () => {
+        const { container } = render(<BoardBottomBar onOpenWiskunde={() => { }} />);
+        const bar = container.firstElementChild as HTMLElement;
+        expect(bar.style.position).toBe('relative');
+        // InkSettingsBar 40, BoardInspector / WidgetInspector 50
+        expect(Number(bar.style.zIndex)).toBeGreaterThan(50);
+    });
+    test('a wide board keeps the labelled exit', () => {
+        render(<BoardBottomBar onOpenWiskunde={() => { }} />);
+        expect(screen.getByRole('button', { name: 'Bordmodus verlaten' }).textContent).toContain('Bordmodus verlaten');
     });
 });

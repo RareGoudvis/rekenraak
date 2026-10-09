@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach } from 'vitest';
-import { cleanup, act, fireEvent } from '@testing-library/react';
+import { cleanup, act, fireEvent, render } from '@testing-library/react';
 import { tekstProps } from '../board/settings/tekstModel';
 import TekstWidget from '../board/components/widgets/TekstWidget';
+import BoardPageCanvas from '../board/components/BoardPageCanvas';
 import { st, w, liveW, mountWidget, openPanel, click, slide, expectRoundTrip } from './helpers/boardWidgetHarness';
 
 // Note settings: defaults = the old 26px mono textarea; style, bullets, notebook lines, the panel.
@@ -22,15 +23,28 @@ describe('tekst model', () => {
 });
 
 describe('tekst widget', () => {
-    test('the default is the old textarea; white ink on a dark board', () => {
-        const { container } = mountWidget('tekst', { text: 'hoi' }, (p) => <TekstWidget widget={p.widget} dark />);
+    test('a note placed with the T tool takes the typing at once; one reloaded later does not', () => {
+        st().setTool('text');
+        const { container, unmount } = render(<BoardPageCanvas />);
+        act(() => { fireEvent.pointerDown(container.querySelector('[data-board-canvas]')!, { clientX: 200, clientY: 150 }); });
+        const ta = container.querySelector('textarea')!;
+        expect(document.activeElement).toBe(ta);
+        expect(st().tool).toBe('select');
+        unmount();
+        act(() => { st().selectWidget(null); });
+        const again = render(<BoardPageCanvas />);
+        expect(document.activeElement).not.toBe(again.container.querySelector('textarea'));
+    });
+
+    test('the default is the old textarea; dark ink on the white card', () => {
+        const { container } = mountWidget('tekst', { text: 'hoi' }, (p) => <TekstWidget widget={p.widget} />);
         const ta = container.querySelector('textarea')!;
         expect(ta.style.fontSize).toBe('26px');
-        expect(ta.style.color).toBe('rgb(255, 255, 255)');
+        expect(ta.style.color).toBe('rgb(17, 17, 17)');
     });
 
     test('bullets render a list and a tap swaps to the textarea; style options apply', () => {
-        const { container } = mountWidget('tekst', { text: 'een\ntwee', bullets: 'nummers', bold: true, align: 'center', textPx: 40, lines: true }, (p) => <TekstWidget widget={p.widget} dark={false} />);
+        const { container } = mountWidget('tekst', { text: 'een\ntwee', bullets: 'nummers', bold: true, align: 'center', textPx: 40, lines: true }, (p) => <TekstWidget widget={p.widget} />);
         expect(container.querySelectorAll('ol li')).toHaveLength(2);
         const view = container.querySelector('[data-tekst-view]') as HTMLElement;
         expect(view.style.fontWeight).toBe('700');
@@ -41,7 +55,7 @@ describe('tekst widget', () => {
     });
 
     test('the accent colours the text', () => {
-        const { container } = mountWidget('tekst', { text: 'hoi', accent: '#b91c1c' }, (p) => <TekstWidget widget={p.widget} dark />);
+        const { container } = mountWidget('tekst', { text: 'hoi', accent: '#b91c1c' }, (p) => <TekstWidget widget={p.widget} />);
         expect(container.querySelector('textarea')!.style.color).toBe('rgb(185, 28, 28)');
     });
 });

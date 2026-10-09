@@ -11,6 +11,7 @@ import { staggerPos, addBasicWidget } from '../board/addWidgets';
 import { TOOL_CATALOG, runTool } from '../board/toolCatalog';
 import { useBoardStore } from '../board/useBoardStore';
 import WidgetFrame from '../board/components/WidgetFrame';
+import { exerciseViewerWidth } from '../board/settings/baseProps';
 import type { BoardWidget, WidgetKind } from '../board/boardTypes';
 
 // Widget sizing is a uniform zoom (frame zoom = inner width / natural width), so the maths
@@ -83,6 +84,18 @@ describe('initial size per widget kind', () => {
     test('addBasicWidget defaults to 320 px wide', () => {
         addBasicWidget('tekst');
         expect(useBoardStore.getState().pages[0].widgets[0].w).toBe(320);
+    });
+});
+
+describe('exercise viewer width', () => {
+    // The viewer lays its columns out in the card body, not in the sheet's 688px (rows ran off the card).
+    test('the card body minus padding, shrinking with the text zoom', () => {
+        const ex = (scale?: number, fontSize?: string): BoardWidget => ({ id: 'e', kind: 'exercise', x: 0, y: 0, w: 660, z: 1, scale, props: fontSize ? { fontSize } : {} });
+        expect(exerciseViewerWidth(ex())).toBe(628);
+        expect(exerciseViewerWidth(ex(2))).toBe(298);
+        expect(exerciseViewerWidth(ex(0.6))).toBe(1068);
+        expect(exerciseViewerWidth(ex(1, 'groot'))).toBe(496);
+        expect(exerciseViewerWidth(ex())).toBeLessThan(688);
     });
 });
 

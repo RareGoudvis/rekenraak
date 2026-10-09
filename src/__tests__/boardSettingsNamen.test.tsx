@@ -17,7 +17,7 @@ const live = (id: string) => st().pages[st().activePageIdx].widgets.find(w => w.
 
 function Board({ id }: { id: string }) {
     const w = useBoardStore((s) => s.pages[s.activePageIdx].widgets.find(x => x.id === id));
-    return w ? <><div data-testid="namen"><NamenWidget widget={w} dark={false} /></div><WidgetInspector widget={w} /></> : null;
+    return w ? <><div data-testid="namen"><NamenWidget widget={w} /></div><WidgetInspector widget={w} /></> : null;
 }
 
 beforeEach(() => saveClassList(['Ana', 'Bert', 'Cas']));

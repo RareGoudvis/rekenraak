@@ -2,6 +2,7 @@
 import { describe, test, expect, afterEach } from 'vitest';
 import { bool, color, custom, num, numList, oneOf, readProps, cleanProps, strList, text, boolList } from '../board/settings/propSchema';
 import { resetProps, TRANSIENT_PROP_KEYS } from '../board/settings/widgetDefaults';
+import type { WidgetKind } from '../board/boardTypes';
 
 // The typed props schema behind the widget settings: every field reads its default when the
 // stored value is missing or junk, and the load-time clean-up drops junk without touching
@@ -53,6 +54,27 @@ describe('cleanProps', () => {
 describe('Standaard herstellen keeps the card content', () => {
     test('an image survives a reset; settings go back to the factory look', () => {
         expect(resetProps('afbeelding', { src: 'data:x', title: 'T' })).toEqual({ src: 'data:x' });
+    });
+
+    test('what is on the card survives a reset for every kind; the settings around it do not', () => {
+        const cases: Array<[WidgetKind, Record<string, unknown>]> = [
+            ['getallenlijn', { markers: [{ value: 30, color: '#dc2626' }], jumps: [{ from: 10, to: 40, color: '#2563eb' }], hidden: [50] }],
+            ['positietabel', { cells: { '0:H': '3', '1:E': '7' } }],
+            ['honderdveld', { marks: { '7': '#fde047' }, hidden: [50] }],
+            ['breukviz', { fractions: [{ n: 3, d: 8 }, { n: 1, d: 2 }] }],
+            ['mabmat', { d: 1, h: 2, t: 3, e: 4 }],
+            ['checklist', { list: [{ text: 'een', color: null }, { text: 'twee', color: '#1e40af' }], checked: [1] }],
+            ['stappenplan', { list: [{ text: '# Titel', color: null }, { text: 'stap', color: null }], done: [1] }],
+            ['klok', { hours: 14, minutes: 35 }],
+            ['namen', { picked: ['An'], current: 'An' }],
+            ['groepjes', { result: [['An', 'Bo'], ['Cas']] }],
+            ['werksymbolen', { active: ['stil'] }],
+            ['tekst', { text: 'notitie' }],
+            ['stopwatch', { laps: [1200] }],
+        ];
+        for (const [kind, content] of cases) {
+            expect(resetProps(kind, { ...content, title: 'T', accent: '#111111', fontSize: 'xl', showHeader: false }), kind).toEqual(content);
+        }
     });
 
     test('per-instance state never becomes a saved standaard', () => {

@@ -12,7 +12,7 @@ const SPIN_MS = 2600;
 // Random name picker: flash one or more names, or spin a wheel. The class list is app-wide
 // (shared with the groepjesmaker); a card can also keep its own list. Picked names are
 // skipped until everyone had a turn, and the pick + who had a turn survive a reload.
-export default function NamenWidget({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
+export default function NamenWidget({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const p = namenProps(widget);
     const classList = useClassList();
@@ -58,13 +58,12 @@ export default function NamenWidget({ widget, dark }: { widget: BoardWidget; dar
 
     const restart = () => updateWidget(widget.id, { props: { ...widget.props, picked: [], current: [] } });
 
-    const textColor = dark ? '#fff' : '#111';
     const shown = flash ? [flash] : p.current;
     return (
         <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '16px',
-            background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(30,64,175,0.06)',
-            border: `1px solid ${dark ? 'rgba(255,255,255,0.2)' : 'rgba(30,64,175,0.25)'}`, borderRadius: '10px',
+            background: 'rgba(30,64,175,0.06)',
+            border: '1px solid rgba(30,64,175,0.25)', borderRadius: '10px',
         }}>
             {p.mode === 'rad' && all.length > 0 && (
                 <Wheel names={all} out={all.filter(n => !pool.includes(n))} rot={rot} animate={p.animate} accent={accent} fs={fs} />
@@ -72,7 +71,7 @@ export default function NamenWidget({ widget, dark }: { widget: BoardWidget; dar
             <div style={{
                 minHeight: `${52 * fs}px`, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '4px 18px', textAlign: 'center',
                 fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: `${(shown.length > 1 ? 26 : 34) * fs}px`,
-                color: accent && !dark ? accent : textColor,
+                color: accent ?? '#111',
                 opacity: spinning && p.mode === 'een' ? 0.55 : 1,
             }}>
                 {!all.length ? 'Voeg namen toe via ⚙' : spinning && p.mode === 'rad' ? '…' : shown.length ? shown.map((n, i) => <span key={i}>{n}</span>) : '…'}
@@ -92,7 +91,7 @@ export default function NamenWidget({ widget, dark }: { widget: BoardWidget; dar
             {p.showPicked && p.picked.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }} aria-label="Al gekozen">
                     {p.picked.map((n, i) => (
-                        <span key={i} style={{ fontFamily: "'Azeret Mono', monospace", fontSize: `${13 * fs}px`, color: textColor, opacity: 0.6, textDecoration: 'line-through' }}>{n}</span>
+                        <span key={i} style={{ fontFamily: "'Azeret Mono', monospace", fontSize: `${13 * fs}px`, color: '#111', opacity: 0.6, textDecoration: 'line-through' }}>{n}</span>
                     ))}
                 </div>
             )}
