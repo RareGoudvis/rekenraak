@@ -25,7 +25,7 @@ export default function StartScreen() {
     const total = viablePlannedTotal(sessie);
     const facts = [
         `${n} ${n === 1 ? 'soort' : 'soorten'}`,
-        ...(total !== null ? [`${total} oefeningen`] : []),
+        ...(total !== null ? [`${total} ${total === 1 ? 'oefening' : 'oefeningen'}`] : []),
         ...(sessie.timerMin ? [`${sessie.timerMin} min`] : []),
     ];
 

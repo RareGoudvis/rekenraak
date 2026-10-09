@@ -201,7 +201,6 @@ grouped per work package so parallel deletions merge cleanly.
   `[":"]` chain 6; hr-std-delen-dec / -vermenigvuldigen-dec combos; handig-rekenvolgorde `:`-only +
   haakjes MOET + 4 ops + max 100; schattend-nat max 10 with T/H rounding; hr-std-aftrekken-rat
   compenseren puntoefening. 2026-10-09
-- **O11** Start screen pluralises "1 soort · 1 oefeningen". 2026-10-09
 
 ### WP-E keyboard / a11y
 

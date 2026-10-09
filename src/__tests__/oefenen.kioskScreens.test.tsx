@@ -52,6 +52,12 @@ describe('kiosk screens', () => {
         expect(st().phase).toBe('exercise');
     });
 
+    test('start screen says 1 soort · 1 oefening in the singular', () => {
+        st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 1 }] })));
+        render(<OefenApp />);
+        expect(screen.getByText('1 soort · 1 oefening')).toBeTruthy();
+    });
+
     test('start screen leaves a type that generates nothing out of the count and the total', () => {
         const dead: OefenType = { typeId: 'klok-kloklezen', leafId: 'klok-analoog-lezen', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'lezen', timeTypes: [] }, limit: 5, weight: 1 };
         st().load(hashOf(starterSessie({ types: [dead, STARTER_TYPES[0]] })));
