@@ -139,15 +139,15 @@ export interface CellDomProps {
 // Keeps what a cell may hold: digits, a comma (a '.' types as ','), a minus, a fraction slash.
 const cellText = (raw: string) => raw.replace(/\./g, ',').replace(/[^\d,\-−/]/g, '').slice(0, 12);
 
-/** Props for the `<input>` a viewer draws in place of a blank in the kiosk; `{}` on the sheet. */
-export function cellProps(ctx: ViewerInteraction | null, key: string): CellDomProps | Record<string, never> {
+/** Props for the `<input>` a viewer draws in place of a blank in the kiosk; `{}` on the sheet. `label` names the cell for a screen reader. */
+export function cellProps(ctx: ViewerInteraction | null, key: string, label = 'Vul in'): CellDomProps | Record<string, never> {
     if (!ctx || ctx.kind !== 'fill-cells') return {};
     return {
         value: ctx.state.cells[key] ?? '',
         // The kiosk keypad is the touch input (like its own number fields); a physical keyboard still types.
         inputMode: 'none',
         autoComplete: 'off',
-        'aria-label': 'Vul in',
+        'aria-label': label,
         'data-kiosk-key': key,
         'data-kiosk-cell': 'true',
         ...(ctx.activeCell === key && { 'data-kiosk-active': 'true' as const }),

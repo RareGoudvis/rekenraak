@@ -144,3 +144,57 @@ describe('every fill-cells leaf draws its cells in key order', () => {
         }
     });
 });
+
+// O13: a screen reader tells the cells apart by role and column.
+describe('cijfer cells have a name per role and column', () => {
+    const labelsOf = (leafId: string, exercise: CijferExercise) => {
+        resetKiosk();
+        const leaf = flattenLeaves().find(l => l.id === leafId)!;
+        const type: OefenType = { typeId: leaf.typeId, leafId, label: leafId, constraints: makeDraftBlock(leaf.typeId, leaf.defaultConstraints ?? {}).constraints as Record<string, unknown>, limit: 2, weight: 1 };
+        st().load(hashOf(starterSessie({ types: [type] })));
+        st().start();
+        useOefenStore.setState({ shown: { ...st().shown!, exercise }, interaction: EMPTY_INTERACTION, activeCell: null });
+        const { container, unmount } = render(<OefenApp />);
+        const labels = [...container.querySelectorAll('[data-kiosk-cell]')].map(el => el.getAttribute('aria-label'));
+        unmount();
+        expect(labels).not.toContain('Vul in');
+        expect(new Set(labels).size).toBe(labels.length);
+        return labels;
+    };
+    const ex = (operator: CijferExercise['operator'], operands: number[], answer: number, remainder = 0, decimalPlaces = 0): CijferExercise =>
+        ({ id: 'n', operands, operator, answer, remainder, decimalPlaces, isManuallyEdited: false });
+
+    test('optellen: answer and carry per column', () => {
+        expect(labelsOf('cijferen-optellen-nat', SUM)).toEqual([
+            'Antwoord eenheden', 'Onthouden tientallen', 'Antwoord tientallen', 'Onthouden honderdtallen', 'Antwoord honderdtallen',
+        ]);
+    });
+
+    test('optellen with decimals names the decimal columns', () => {
+        expect(labelsOf('cijferen-optellen-dec', ex('+', [2.5, 1.25], 3.75, 0, 2))).toEqual([
+            'Antwoord honderdsten', 'Onthouden tienden', 'Antwoord tienden', 'Onthouden eenheden', 'Antwoord eenheden',
+        ]);
+    });
+
+    test('aftrekken: the exchange cell above each column, then its answer', () => {
+        expect(labelsOf('cijferen-aftrekken-nat', ex('-', [52, 17], 35))).toEqual([
+            'Lenen eenheden', 'Antwoord eenheden', 'Lenen tientallen', 'Antwoord tientallen',
+        ]);
+    });
+
+    test('vermenigvuldigen: one-digit multiplier carries, multi-digit partial products', () => {
+        expect(labelsOf('cijferen-vermenigvuldigen-nat', ex('x', [123, 4], 492))).toEqual([
+            'Antwoord eenheden', 'Onthouden tientallen', 'Antwoord tientallen', 'Onthouden honderdtallen', 'Antwoord honderdtallen',
+        ]);
+        const many = labelsOf('cijferen-vermenigvuldigen-nat', ex('x', [123, 45], 5535));
+        expect(many).toContain('Deelproduct 1 eenheden');
+        expect(many).toContain('Deelproduct 2 duizendtallen');
+        expect(many.at(-1)).toBe('Antwoord duizendtallen');
+    });
+
+    test('delen: quotient columns, then the rest', () => {
+        expect(labelsOf('cijferen-delen-nat', ex(':', [845, 5], 169))).toEqual([
+            'Quotiënt honderdtallen', 'Quotiënt tientallen', 'Quotiënt eenheden', 'Rest',
+        ]);
+    });
+});

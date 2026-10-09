@@ -204,9 +204,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-E keyboard / a11y
 
-- **O13** Every kiosk cell input has `aria-label="Vul in"` (hardcoded in `cellProps()`,
-  ViewerInteractionContext.tsx): answer, carry, borrow, partial-product, quotient and rest cells are
-  indistinguishable to a screen reader. Fix: per-role labels with the column name. 2026-10-09
 
 ### WP-F session format
 

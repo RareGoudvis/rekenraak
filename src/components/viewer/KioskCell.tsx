@@ -7,10 +7,12 @@ interface Props {
     style?: CSSProperties;
     // Kiosk look of this cell (kiosk.css), e.g. 'is-grid' for a cijfer ruitje, 'is-scratch' for a carry.
     variant?: string;
+    // The cell's accessible name in the kiosk ("Antwoord tientallen"); absent = "Vul in".
+    label?: string;
 }
 
 /** A fill-cells blank: the kiosk draws an input bound to `cells[cellKey]`, the sheet keeps `children` (its own blank) untouched. */
-export default function KioskCell({ cellKey, children, style, variant }: Props) {
+export default function KioskCell({ cellKey, children, style, variant, label }: Props) {
     const ctx = useViewerInteraction();
     const ref = useRef<HTMLInputElement>(null);
     const active = !!ctx && ctx.kind === 'fill-cells' && ctx.activeCell === cellKey;
@@ -22,5 +24,5 @@ export default function KioskCell({ cellKey, children, style, variant }: Props) 
         ref.current.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     }, [active]);
     if (!ctx || ctx.kind !== 'fill-cells') return <>{children}</>;
-    return <input ref={ref} className={variant ? `kiosk-cell ${variant}` : 'kiosk-cell'} style={style} {...cellProps(ctx, cellKey)} />;
+    return <input ref={ref} className={variant ? `kiosk-cell ${variant}` : 'kiosk-cell'} style={style} {...cellProps(ctx, cellKey, label)} />;
 }
