@@ -1,4 +1,6 @@
 import { Bill, EuroCoin, CentCoin } from '../../../components/viewer/GeldViewer';
+import { formatAmount } from '../../../services/geld/geldGenerator';
+import { geldItemProps } from '../../mathTools/geld';
 import type { BoardWidget } from '../../boardTypes';
 
 // Realistic euro tints per denomination (bills) — close to the real notes.
@@ -49,19 +51,23 @@ function RealCoin({ denom }: { denom: number }) {
     );
 }
 
-// One dropped coin/bill from the geld-palet (headerless, drag anywhere).
+// One dropped coin/bill from the geld-palet (headerless, drag anywhere); optional amount caption.
 export default function GeldItemWidget({ widget }: { widget: BoardWidget }) {
-    const denom = Number(widget.props?.denom ?? 100);
-    const type = String(widget.props?.type ?? 'euro-coin');
-    const real = widget.props?.geldStyle === 'realistisch';
+    const g = geldItemProps(widget);
+    const real = g.style === 'realistisch';
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
             {real
-                ? (type === 'bill' ? <RealBill denom={denom} /> : <RealCoin denom={denom} />)
-                : type === 'bill' ? <Bill valueCents={denom} width={96} height={52} />
-                : type === 'euro-coin' ? <EuroCoin valueCents={denom} size={60} />
-                : <CentCoin valueCents={denom} size={52} />}
+                ? (g.type === 'bill' ? <RealBill denom={g.denom} /> : <RealCoin denom={g.denom} />)
+                : g.type === 'bill' ? <Bill valueCents={g.denom} width={96} height={52} />
+                : g.type === 'euro-coin' ? <EuroCoin valueCents={g.denom} size={60} />
+                : <CentCoin valueCents={g.denom} size={52} />}
+            {g.showLabel && (
+                <span data-geld-label style={{ marginTop: '4px', fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: '15px', color: '#111' }}>
+                    {formatAmount(g.denom, 'euros')}
+                </span>
+            )}
         </div>
     );
 }

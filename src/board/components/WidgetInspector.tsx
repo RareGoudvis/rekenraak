@@ -1,7 +1,6 @@
 import { X } from '@phosphor-icons/react';
-import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
+import { widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
 import BaselineSettings from '../settings/BaselineSettings';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
@@ -10,11 +9,8 @@ interface Props {
     widget: BoardWidget;   // selected non-exercise widget (klok, weer, …)
 }
 
-// Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
-const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
-    getallenlijn: GetallenlijnSettings, positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
-    breukviz: BreukvizSettings, mabmat: MabMatSettings,
-};
+// Panels not yet moved to src/board/settings/: none left (groups A, B and C are all in the registry).
+const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {};
 
 // Settings flyout for non-exercise widgets (same chrome as the exercise inspector): the
 // kind's own panel from the settings registry, then the baseline every kind shares.
@@ -37,136 +33,6 @@ export default function WidgetInspector({ widget }: Props) {
         </div>
     );
 }
-function GetallenlijnSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const g = getallenlijnProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const numInput = (label: string, value: number, key: string) => (
-        <div style={S.row}>
-            <span style={S.rowLabel}>{label}</span>
-            <input type="number" value={value} onChange={(e) => set({ [key]: Number(e.target.value) })}
-                style={{ ...S.textInput, flex: 'none', width: '90px' }} />
-        </div>
-    );
-    return (
-        <div>
-            <div style={S.sectionLabel}>Bereik</div>
-            {numInput('Van', g.min, 'min')}
-            {numInput('Tot', g.max, 'max')}
-            <div style={S.sectionLabel}>Aantal tekens ({g.ticks})</div>
-            <input type="range" min={2} max={21} step={1} value={g.ticks} style={{ width: '100%' }} onChange={(e) => set({ ticks: Number(e.target.value) })} />
-            <div style={S.sectionLabel}>Labels</div>
-            <div className="seg-group">
-                {(['alles', 'uiteinden', 'geen'] as const).map(l => (
-                    <button key={l} type="button" className="seg-btn" aria-pressed={g.labels === l} onClick={() => set({ labels: l })}>{l}</button>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function PositietabelSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const p = positietabelProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const toggleCol = (key: string) => {
-        const next = p.columns.includes(key) ? p.columns.filter(c => c !== key) : [...p.columns, key];
-        if (next.length) set({ columns: next });
-    };
-    return (
-        <div>
-            <div style={S.sectionLabel}>Kolommen</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {POSITIE_KOLOMMEN.map(k => (
-                    <button key={k.key} type="button" className="ui-hover"
-                        style={{ ...S.smallBtn, minWidth: '44px', justifyContent: 'center', ...(p.columns.includes(k.key) ? { borderColor: 'var(--accent-purple)', background: 'var(--bg-active)', fontWeight: 700 } : {}) }}
-                        onClick={() => toggleCol(k.key)}>{k.label}</button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Rijen ({p.rows})</div>
-            <input type="range" min={1} max={8} step={1} value={p.rows} style={{ width: '100%' }} onChange={(e) => set({ rows: Number(e.target.value) })} />
-        </div>
-    );
-}
-
-function HonderdveldSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const start = Number(widget.props?.start ?? 1);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Startgetal</div>
-            <div className="seg-group">
-                <button type="button" className="seg-btn" aria-pressed={start === 1} onClick={() => set({ start: 1 })}>1 – 100</button>
-                <button type="button" className="seg-btn" aria-pressed={start === 0} onClick={() => set({ start: 0 })}>0 – 99</button>
-            </div>
-            <div style={{ ...S.rowLabel, padding: '8px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
-                Tik op een vakje om te kleuren (geel → groen → blauw → rood → weg).
-            </div>
-            <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ marks: {} })}>
-                Wis alle markeringen
-            </button>
-        </div>
-    );
-}
-
-function BreukvizSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const b = breukvizProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Vorm</div>
-            <div className="seg-group">
-                {(['cirkel', 'pizza', 'lijn'] as const).map(v => (
-                    <button key={v} type="button" className="seg-btn" aria-pressed={b.shape === v} onClick={() => set({ shape: v })}>{v}</button>
-                ))}
-            </div>
-            <div style={S.row}>
-                <span style={S.rowLabel}>Enkel stambreuken (1/n)</span>
-                <Switch checked={b.stambreuk} onChange={(v) => set({ stambreuk: v, ...(v ? { n: 1 } : {}) })} aria-label="Enkel stambreuken" />
-            </div>
-            <div style={S.sectionLabel}>Noemer ({b.d})</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[2, 3, 4, 5, 6, 8, 10, 12].map(d => (
-                    <button key={d} type="button" className="ui-hover"
-                        style={{ ...S.smallBtn, minWidth: '40px', justifyContent: 'center', ...(b.d === d ? { borderColor: 'var(--accent-purple)', background: 'var(--bg-active)', fontWeight: 700 } : {}) }}
-                        onClick={() => set({ d, n: Math.min(b.n, d) })}>{d}</button>
-                ))}
-            </div>
-            {!b.stambreuk && (
-                <>
-                    <div style={S.sectionLabel}>Teller ({b.n})</div>
-                    <input type="range" min={1} max={b.d} step={1} value={b.n} style={{ width: '100%' }} onChange={(e) => set({ n: Number(e.target.value) })} />
-                </>
-            )}
-        </div>
-    );
-}
-
-function MabMatSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const style = String(widget.props?.mabStyle ?? 'mab-color');
-    const showTotal = widget.props?.showTotal === true;
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Stijl</div>
-            <div className="seg-group">
-                <button type="button" className="seg-btn" aria-pressed={style === 'mab-color'} onClick={() => set({ mabStyle: 'mab-color' })}>Realistisch</button>
-                <button type="button" className="seg-btn" aria-pressed={style === 'mab-bw'} onClick={() => set({ mabStyle: 'mab-bw' })}>Zwart-wit</button>
-                <button type="button" className="seg-btn" aria-pressed={style === 'symbolic'} onClick={() => set({ mabStyle: 'symbolic' })}>Symbolisch</button>
-            </div>
-            <div style={S.row}>
-                <span style={S.rowLabel}>Toon totaal</span>
-                <Switch checked={showTotal} onChange={(v) => set({ showTotal: v })} aria-label="Toon totaal" />
-            </div>
-            <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ d: 0, h: 0, t: 0, e: 0 })}>
-                Alles wissen
-            </button>
-        </div>
-    );
-}
 
 const S = {
     panel: {
@@ -185,20 +51,4 @@ const S = {
         border: 'none', borderRadius: '8px', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer',
     } as React.CSSProperties,
     scroll: { flex: 1, overflowY: 'auto', padding: '12px 14px', minHeight: 0 } as React.CSSProperties,
-    sectionLabel: {
-        padding: '10px 0 4px', fontSize: '10px', letterSpacing: '0.8px', textTransform: 'uppercase',
-        color: 'var(--text-muted)', fontFamily: "'Azeret Mono', monospace",
-    } as React.CSSProperties,
-    row: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' } as React.CSSProperties,
-    rowLabel: { fontSize: '13px', color: 'var(--text-main)' } as React.CSSProperties,
-    textInput: {
-        flex: 1, minWidth: 0, height: '36px', padding: '0 10px', borderRadius: '8px',
-        border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',
-        fontSize: '13px', outline: 'none',
-    } as React.CSSProperties,
-    smallBtn: {
-        display: 'inline-flex', alignItems: 'center', gap: '6px', height: '36px', padding: '0 12px',
-        borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent',
-        color: 'var(--text-main)', fontSize: '12px', cursor: 'pointer',
-    } as React.CSSProperties,
 };

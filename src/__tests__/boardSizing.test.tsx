@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import {
     NATURAL_W, TITLE_DEFAULTS, KINDS_WITH_SETTINGS, naturalWidth, widgetTitle,
     klokProps, weerProps, datumProps, DATUM_COLORS, dobbelProps, ademProps, groepjesProps,
-    checklistItems, getallenlijnProps, positietabelProps, breukvizProps, werksymbolenProps, WERKSYMBOLEN,
+    checklistItems, werksymbolenProps, WERKSYMBOLEN,
     loadNames, NAMES_KEY,
 } from '../board/widgetSizing';
 import { staggerPos, addBasicWidget } from '../board/addWidgets';
@@ -240,25 +240,6 @@ describe('prop normalisers', () => {
     test('checklist: default list, trimmed lines', () => {
         expect(checklistItems(w('checklist'))).toEqual(['boek klaar', 'potlood klaar', 'aan de slag!']);
         expect(checklistItems(w('checklist', { items: ' a \n\n b ' }))).toEqual(['a', 'b']);
-    });
-
-    test('getallenlijn: ticks 2-21, labels whitelist', () => {
-        expect(getallenlijnProps(w('getallenlijn'))).toEqual({ min: 0, max: 100, ticks: 11, labels: 'alles' });
-        expect(getallenlijnProps(w('getallenlijn', { ticks: 1, labels: 'uiteinden' }))).toMatchObject({ ticks: 2, labels: 'uiteinden' });
-        expect(getallenlijnProps(w('getallenlijn', { ticks: 99, labels: 'raar' }))).toMatchObject({ ticks: 21, labels: 'alles' });
-    });
-
-    test('positietabel: known columns only, rows 1-8, empty → H T E', () => {
-        expect(positietabelProps(w('positietabel'))).toEqual({ columns: ['H', 'T', 'E'], rows: 3 });
-        expect(positietabelProps(w('positietabel', { columns: ['D', 'X', 't'], rows: 0 }))).toEqual({ columns: ['D', 't'], rows: 1 });
-        expect(positietabelProps(w('positietabel', { columns: ['X'], rows: 50 }))).toEqual({ columns: ['H', 'T', 'E'], rows: 8 });
-    });
-
-    test('breukviz: d 2-12, n within 1..d, stambreuk forces n = 1', () => {
-        expect(breukvizProps(w('breukviz'))).toEqual({ d: 4, n: 1, shape: 'cirkel', stambreuk: false });
-        expect(breukvizProps(w('breukviz', { d: 50, n: 40, shape: 'pizza' }))).toEqual({ d: 12, n: 12, shape: 'pizza', stambreuk: false });
-        expect(breukvizProps(w('breukviz', { d: 1, n: 0, shape: 'lijn' }))).toEqual({ d: 2, n: 1, shape: 'lijn', stambreuk: false });
-        expect(breukvizProps(w('breukviz', { d: 6, n: 5, stambreuk: true })).n).toBe(1);
     });
 
     test('werksymbolen: defaults show every mode', () => {

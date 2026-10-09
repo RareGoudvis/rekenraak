@@ -12,6 +12,7 @@ export const TRANSIENT_PROP_KEYS: readonly string[] = [
     'checked', 'done', 'picked', 'current', 'result', 'locked', 'active',
     'hours', 'minutes', 'src', 'marks', 'd', 'h', 't', 'e',
     'laps', 'values', 'history', 'level', 'calibrateAt',
+    'markers', 'jumps', 'hidden', 'cells',
 ];
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);

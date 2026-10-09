@@ -15,6 +15,11 @@ import GeluidSettings from './GeluidSettings';
 import DobbelsteenSettings from './DobbelsteenSettings';
 import AfbeeldingSettings from './AfbeeldingSettings';
 import TekstSettings from './TekstSettings';
+import GetallenlijnSettings from './GetallenlijnSettings';
+import PositietabelSettings from './PositietabelSettings';
+import HonderdveldSettings from './HonderdveldSettings';
+import BreukvizSettings from './BreukvizSettings';
+import MabMatSettings from './MabMatSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -40,4 +45,9 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     dobbelsteen: DobbelsteenSettings,
     afbeelding: AfbeeldingSettings,
     tekst: TekstSettings,
+    getallenlijn: GetallenlijnSettings,
+    positietabel: PositietabelSettings,
+    honderdveld: HonderdveldSettings,
+    breukviz: BreukvizSettings,
+    mabmat: MabMatSettings,
 };

@@ -1,42 +1,53 @@
-import { useBoardStore } from '../../useBoardStore';
+import { useSetProps, widgetAccent } from '../../settings/baseProps';
+import { honderdveldProps, highlightColor, LEGACY_MARK_CYCLE } from '../../mathTools/honderdveld';
 import type { BoardWidget } from '../../boardTypes';
 
-// Tap a cell to cycle its highlight color — for multiples, patterns, counting.
-const MARK_CYCLE = ['', '#fde047', '#86efac', '#93c5fd', '#fca5a5'];
-
-// 10×10 hundred chart (1-100 or 0-99).
+// Hundred chart (any start, length and row width). A tap paints the cell in the chosen colour
+// ('cyclus' steps through the palette like the original), or hides its number for invullen.
 export default function HonderdveldWidget({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const start = Number(widget.props?.start ?? 1);
-    const marks: Record<string, number> = (widget.props?.marks as Record<string, number>) ?? {};
+    const set = useSetProps(widget);
+    const p = honderdveldProps(widget);
+    // Accentkleur inks the numbers; none = the black of before.
+    const ink = widgetAccent(widget) ?? '#111';
 
-    const cycle = (n: number) => {
-        const cur = marks[String(n)] ?? 0;
-        const next = (cur + 1) % MARK_CYCLE.length;
-        const nm = { ...marks };
-        if (next === 0) delete nm[String(n)];
-        else nm[String(n)] = next;
-        updateWidget(widget.id, { props: { ...widget.props, marks: nm } });
+    const tap = (n: number) => {
+        const key = String(n);
+        if (p.tapMode === 'verbergen') {
+            set({ hidden: p.hidden.includes(n) ? p.hidden.filter(h => h !== n) : [...p.hidden, n] });
+            return;
+        }
+        const cur = p.marks[key];
+        const marks = { ...p.marks };
+        let next: string | undefined;
+        if (p.paint === 'cyclus') {
+            const i = LEGACY_MARK_CYCLE.indexOf(cur ?? '');
+            next = LEGACY_MARK_CYCLE[(Math.max(0, i) + 1) % LEGACY_MARK_CYCLE.length] || undefined;
+        } else {
+            next = cur === p.paint ? undefined : p.paint;
+        }
+        if (next) marks[key] = next; else delete marks[key];
+        set({ marks });
     };
 
     return (
         <div style={{ padding: '12px 14px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', border: '2px solid #000' }}>
-                {Array.from({ length: 100 }, (_, i) => {
-                    const n = start + i;
-                    const mark = marks[String(n)] ?? 0;
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${p.cols}, 1fr)`, border: '2px solid #000' }}>
+                {Array.from({ length: p.count }, (_, i) => {
+                    const n = p.start + i;
+                    const hidden = p.hidden.includes(n);
                     return (
                         <button
-                            key={n} type="button"
+                            key={n} type="button" data-cell={n}
+                            aria-label={hidden ? `Verborgen vakje ${i + 1}` : String(n)}
                             onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => cycle(n)}
+                            onClick={() => tap(n)}
                             style={{
                                 aspectRatio: '1', border: '0.5px solid rgba(0,0,0,0.35)', cursor: 'pointer',
-                                background: MARK_CYCLE[mark] || '#fff',
-                                fontFamily: "'Azeret Mono', monospace", fontSize: '14px', color: '#111', padding: 0,
+                                background: p.marks[String(n)] ?? highlightColor(n, p.highlights) ?? '#fff',
+                                fontFamily: "'Azeret Mono', monospace", fontSize: '14px', color: ink, padding: 0,
                             }}
                         >
-                            {n}
+                            {hidden ? '' : String(n).replace('-', '−')}
                         </button>
                     );
                 })}

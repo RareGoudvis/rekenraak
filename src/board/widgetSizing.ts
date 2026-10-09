@@ -207,43 +207,6 @@ export function checklistItems(widget: BoardWidget): string[] {
     return t.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-// ── Getallenlijn (leeg, wiskunde-gereedschap) ────────────────────────────────
-export interface GetallenlijnProps { min: number; max: number; ticks: number; labels: 'alles' | 'uiteinden' | 'geen'; }
-export function getallenlijnProps(widget: BoardWidget): GetallenlijnProps {
-    const p = widget.props ?? {};
-    return {
-        min: Number(p.min ?? 0),
-        max: Number(p.max ?? 100),
-        ticks: Math.min(21, Math.max(2, Number(p.ticks ?? 11))),
-        labels: p.labels === 'uiteinden' || p.labels === 'geen' ? p.labels : 'alles',
-    };
-}
-
-// ── Positietabel (leeg) ──────────────────────────────────────────────────────
-export const POSITIE_KOLOMMEN = [
-    { key: 'D', label: 'D' }, { key: 'H', label: 'H' }, { key: 'T', label: 'T' }, { key: 'E', label: 'E' },
-    { key: 't', label: 't' }, { key: 'h', label: 'h' },
-] as const;
-export function positietabelProps(widget: BoardWidget): { columns: string[]; rows: number } {
-    const p = widget.props ?? {};
-    const cols = Array.isArray(p.columns) ? (p.columns as string[]).filter(c => POSITIE_KOLOMMEN.some(k => k.key === c)) : ['H', 'T', 'E'];
-    return { columns: cols.length ? cols : ['H', 'T', 'E'], rows: Math.min(8, Math.max(1, Number(p.rows ?? 3))) };
-}
-
-// ── Breukenvisualisatie ──────────────────────────────────────────────────────
-export interface BreukvizProps { n: number; d: number; shape: 'cirkel' | 'pizza' | 'lijn'; stambreuk: boolean; }
-export function breukvizProps(widget: BoardWidget): BreukvizProps {
-    const p = widget.props ?? {};
-    const d = Math.min(12, Math.max(2, Number(p.d ?? 4)));
-    const stambreuk = p.stambreuk === true;
-    return {
-        d,
-        n: stambreuk ? 1 : Math.min(d, Math.max(1, Number(p.n ?? 1))),
-        shape: p.shape === 'pizza' || p.shape === 'lijn' ? p.shape : 'cirkel',
-        stambreuk,
-    };
-}
-
 // ── Werksymbolen widget props ────────────────────────────────────────────────
 export const WERKSYMBOLEN = [
     { key: 'stil', label: 'Stil werken' },
