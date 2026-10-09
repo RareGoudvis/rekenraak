@@ -12,6 +12,7 @@ import { checkAnswer, normaliseFraction, normaliseNumber } from '../services/oef
 import { INTERACT_SEP } from '../services/oefenen/types';
 import { EMPTY_INTERACTION, type BuildEntry } from '../components/viewer/ViewerInteractionContext';
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
+import { answerText, expectedText } from '../services/oefenen/stats';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
 import { cellsFromParts, cijferFill, type Cells } from './helpers/fillCells';
 import { checkDrag } from './helpers/dragCheck';
@@ -984,5 +985,23 @@ describe('O26: a getallenrij / getallenas keypad has a komma when the step has d
     ])('%j → keys %j', (c, keys) => {
         expect(d.keys?.(c)).toEqual(keys);
         expect(kioskFor('getallenas')!.keys?.(c)).toEqual(keys);
+    });
+});
+
+describe('O27: a deelbaarheidstabel row with no divisor says "geen" in Resultaten', () => {
+    const d = kioskFor('deelbaarheid')!;
+    const c = { layout: 'tabel', divisors: [2, 5, 10] };
+    const fill = (ex: T.DeelbaarheidExercise, selected: string[]) => kioskInteractOf(d, c)!.fromState({ ...EMPTY_INTERACTION, selected }, ex, c);
+    test('291: none of 2, 5, 10 → Juist antwoord "geen", tapping nothing is juist', () => {
+        const ex: T.DeelbaarheidExercise = { id: 'o27', number: 291, isManuallyEdited: false };
+        expect(expectedText(d, ex, c)).toBe('geen');
+        expect(checkAnswer(d, ex, c, fill(ex, []))).toBe(true);
+        expect(answerText(d, ex, c, fill(ex, []))).toBe('geen');
+        expect(checkAnswer(d, ex, c, fill(ex, ['0']))).toBe(false);
+        expect(answerText(d, ex, c, fill(ex, ['0']))).toBe('2');
+    });
+    test('40: the divisors as before', () => {
+        const ex: T.DeelbaarheidExercise = { id: 'o27b', number: 40, isManuallyEdited: false };
+        expect(expectedText(d, ex, c)).toBe(['2', '5', '10'].join(INTERACT_SEP));
     });
 });

@@ -204,9 +204,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ### WP-H test infra
 
-- **O27** (proposed, pinned) deelbaarheid tabel (and veelvouden in tabel layout) "Tik aan door welke getallen
-  693 deelbaar is" with none of the divisors right: a wrong tap gives a Resultaten row with an empty
-  Juist cell (`expectedText` of an empty tap-multi answer is ''). Fix: a `show` that says "geen". 2026-10-09
 
 - CijferViewer DivisionGrid (sheet at scaffolding ≤ 1, and every kiosk card) draws a decimal divisor
   through `getDigitCols(divisor, 0, …)` (~CijferViewer.tsx:487), which rounds it: 0,7 shows as "1", 0,3 and

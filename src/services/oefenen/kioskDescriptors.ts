@@ -747,6 +747,8 @@ export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
         keys: (_ex, c) => divisorsOf(c).map((_, i) => String(i)),
         answerOf: tabelAnswer,
         fromState: (st, _ex, c) => numberSet(st.selected.map(k => divisorsOf(c)[Number(k)]).filter((d): d is number => d !== undefined)),
+        // O27: a number no column divides is answered by tapping nothing; Resultaten says so instead of an empty cell.
+        show: (answer) => answer.trim() || 'geen',
     },
     answerOf: (ex, c) => (isTabel(c) ? [tabelAnswer(ex, c)] : (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String)),
     display: (ex, c) => (isTabel(c)
