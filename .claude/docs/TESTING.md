@@ -524,9 +524,12 @@ npm run sweep -- --print                                   # the print pass (bel
 **Settings** per typeId: every sidebar leaf at its defaults (added exactly as a sidebar click
 adds it, `leafId` and instruction included), every pairwise row of `constraintSpaceFor(typeId)`
 over the registry defaults (the matrix's pass (c): the same `pairwise()` helper and cap, loaded
-in the page from `src/` through Vite, so the rows cannot drift), and the registry defaults with
-the max key at the top of `maxPresetsFor()`. Each × widths {4, 2, 1} × solutions × seeds
-{1234, 7}. 1 937 settings → 23 244 cells; ~4 cells/s per process, so the whole run is split per
+in the page from `src/` through Vite, so the rows cannot drift), and every sidebar leaf at its
+defaults with the max key at the top of `maxPresetsFor()` for those settings, added as the
+sidebar adds it (per leaf, not per typeId: the 8 cijferen typeIds share one registry default,
+so a type-level max row drew additions for all of them; 62 max rows where there were 31). Each
+× widths {4, 2, 1} × solutions × seeds {1234, 7}. 1 937 settings → 23 244 cells (2026-09-27, before
+the per-leaf max rows added 31 settings); ~4 cells/s per process, so the whole run is split per
 domain into three parallel processes (`--domain bewerkingen` / `getallen,meetkunde,blad` /
 `meten en`) and merged — about an hour wall-clock (2026-09-27: Bewerkingen 11 700 cells in 57 min at
 3.4 cells/s, the other two in 24 and 7 min alongside). `--resume` skips every cell already in the out

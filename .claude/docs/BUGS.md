@@ -171,10 +171,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Tooling
 
-- full-sweep "max" rows use the registry defaults, and the 8 cijferen typeIds share `cijferRow()`
-  defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
-  additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27
-
 - Kiosk breuken kleuren, square shape with a PRIME noemer ≥ 11 (11, 13): equal parts need one row, so the
   strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
   2026-10-08

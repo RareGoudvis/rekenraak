@@ -15,8 +15,8 @@
 //
 // Settings per typeId: each sidebar leaf at its defaults (as a sidebar click adds it), every
 // pairwise row of constraintSpaceFor(typeId) over the registry defaults (the matrix's pass c,
-// same helper, same cap), and the registry defaults with the max key at the top of
-// maxPresetsFor(). Each × widths {4,2,1} × solutions {0,1} × seeds {1234,7}; min-width clamp
+// same helper, same cap), and every sidebar leaf at its defaults with the max key at the top of
+// maxPresetsFor() for those settings. Each × widths {4,2,1} × solutions {0,1} × seeds {1234,7}; min-width clamp
 // ON (teacher view), selection cleared in the add's tick so the Inspector never touches the
 // block before it is measured. Cell checks are bignum-audit's (scripts/lib/cellProbe.mjs).
 //
@@ -130,7 +130,7 @@ async function openApp(browser, url) {
 
 // ---------------------------------------------------------------- the plan
 
-// The leaves, and per typeId its pairwise rows and max top — built in the page from the
+// The leaves with their max top, and per typeId its pairwise rows — built in the page from the
 // app's own modules (Vite serves src/ as-is), so the rows are the matrix's rows exactly.
 async function buildPlan(url) {
     const browser = await chromium.launch();
@@ -145,15 +145,19 @@ async function buildPlan(url) {
             ]);
             const types = {};
             for (const [typeId, def] of Object.entries(REGISTRY)) {
-                const top = r.maxPresetsFor(typeId, {});
                 types[typeId] = {
                     exerciseField: def.exerciseField,
                     furniture: !!def.isFurniture,
                     pairwise: def.isFurniture ? [] : pairwise(constraintSpaceFor(typeId), cap),
-                    max: top && top.presets.length ? { key: top.key, top: Math.max(...top.presets) } : null,
                 };
             }
-            const leaves = r.leaves.map(l => ({ id: l.id, typeId: l.typeId, label: l.label, path: l.path, defaultConstraints: l.defaultConstraints ?? {} }));
+            // Per leaf, not per typeId: the 8 cijferen typeIds share one set of registry
+            // defaults (operator '+'), so a type-level max row drew additions for all of them.
+            const maxOf = (l) => {
+                const top = r.maxPresetsFor(l.typeId, l.defaultConstraints ?? {});
+                return top && top.presets.length ? { key: top.key, top: Math.max(...top.presets) } : null;
+            };
+            const leaves = r.leaves.map(l => ({ id: l.id, typeId: l.typeId, label: l.label, path: l.path, defaultConstraints: l.defaultConstraints ?? {}, max: maxOf(l) }));
             return { leaves, types };
         }, PAIRWISE_CAP);
     } finally {
@@ -163,8 +167,9 @@ async function buildPlan(url) {
 
 const domainOf = (leaf) => leaf.path.split(' › ')[0];
 
-// One "setting" = one row of a contact sheet: a leaf at its defaults, or a type-level case
-// (pairwise row / max top) hung on the type's first leaf so leafWalk can walk it.
+// One "setting" = one row of a contact sheet: a leaf at its defaults, the leaf at its max top
+// (merged over its defaults, added as the sidebar adds it), or a pairwise row hung on the
+// type's first leaf so leafWalk can walk it.
 function settingsOf(plan) {
     const settings = [];
     const ownerDone = new Set();
@@ -172,10 +177,10 @@ function settingsOf(plan) {
         const t = plan.types[leaf.typeId];
         const common = { leafId: leaf.id, typeId: leaf.typeId, domain: domainOf(leaf), furniture: !!t?.furniture, exerciseField: t?.exerciseField };
         settings.push({ ...common, kind: 'leaf', tag: 'default', constraints: {} });
+        if (leaf.max) settings.push({ ...common, kind: 'max', tag: 'max', constraints: { [leaf.max.key]: leaf.max.top } });
         if (!t || ownerDone.has(leaf.typeId)) continue;
         ownerDone.add(leaf.typeId);
         t.pairwise.forEach((row, i) => settings.push({ ...common, kind: 'pair', tag: `pw${String(i + 1).padStart(3, '0')}`, constraints: row, replace: true }));
-        if (t.max) settings.push({ ...common, kind: 'max', tag: 'max', constraints: { [t.max.key]: t.max.top }, replace: true });
     }
     const orphans = Object.keys(plan.types).filter(t => !ownerDone.has(t) && !plan.types[t].furniture);
     return { settings, orphans };
@@ -347,7 +352,7 @@ const pngSize = (file) => {
         return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
     } catch { return null; }
 };
-const settingLabel = (r) => r.kind === 'leaf' ? `${r.leafId} (defaults)` : r.kind === 'max' ? `${r.typeId} max ${JSON.stringify(r.setting)}` : `${r.typeId} ${r.tag}`;
+const settingLabel = (r) => r.kind === 'leaf' ? `${r.leafId} (defaults)` : r.kind === 'max' ? `${r.leafId} max ${JSON.stringify(r.setting)}` : `${r.typeId} ${r.tag}`;
 const COLS = WIDTHS.flatMap(w => [0, 1].map(s => ({ w, s })));
 
 function writeOutputs(elapsedS) {
@@ -520,7 +525,7 @@ async function printPass(url, plan) {
             const leaves = plan.leaves.filter(l => domainOf(l) === domain);
             const step = Math.max(1, Math.floor(leaves.length / perDomain));
             const picked = leaves.filter((_, i) => i % step === 0).slice(0, perDomain);
-            const maxLeaf = leaves.find(l => plan.types[l.typeId]?.max);
+            const maxLeaf = leaves.find(l => l.max);
             const specs = picked.map(l => ({ leafId: l.id, typeId: l.typeId, label: l.label, constraints: l.defaultConstraints, top: false }));
             if (maxLeaf) specs.push({ leafId: maxLeaf.id, typeId: maxLeaf.typeId, label: maxLeaf.label, constraints: maxLeaf.defaultConstraints, top: true });
             const layout = (media) => page.evaluate(() => [...document.querySelectorAll('.page-sheet')].map(ps => {
