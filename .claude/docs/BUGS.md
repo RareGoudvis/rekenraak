@@ -104,8 +104,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Hoofdrekenen breuken keys print whole numbers as n/1 ("4/3 : 2/9 = 6/1" at the hr-std-delen-rat
   DEFAULT; "288/1") and big numerators without spaces ("36000004/5"); an {M, E} operand mask at max
   1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
-- Empty keys: breuken-kleuren ignores Oplossingen (FractionExerciseItem.tsx ~65: showColored only for
-  herkennen); breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
+- Empty keys: breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
   geld-wissel draws no model exchange. 2026-09-27
 - Degenerate defaults: deelbaarheid-veelvouden is six copies of "veelvouden van 9" ("Kleine reeks: 5
   oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /

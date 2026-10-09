@@ -4,7 +4,8 @@ import { render, cleanup } from '@testing-library/react';
 import { makeBlock } from './helpers/makeBlock';
 import MathBlockRenderer from '../components/viewer/MathBlockRenderer';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
-import type { Equation, MathBlock } from '../services/math/types';
+import FractionViewer from '../components/viewer/FractionViewer';
+import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 
 // Clean sweep S2: sheet-renderer fixes, each one a repro from BUGS.md.
 
@@ -50,5 +51,29 @@ describe('compenseren tussenstap follows the exercise, not the stored preset', (
         const b = block([eq('a', 385, 29, '-')]);
         const c = renderHr({ ...b, constraints: { ...b.constraints, compenserenScaffold: 'geen' } }, true);
         expect(tussenstappen(c)).toEqual([]);
+    });
+});
+
+describe('breuken-kleuren answer key colours the parts', () => {
+    const ex: FractionExercise = {
+        id: 'k1', subType: 'kleuren', numerator: 3, denominator: 5, shape: 'rectangle',
+        coloredIndices: [0, 2, 4], gridRows: 1, gridCols: 5, isManuallyEdited: false,
+    };
+    const block: MathBlock = {
+        ...makeBlock('breuken', { id: 'kl', constraints: { subType: 'kleuren' } }),
+        fractionExercises: [ex],
+    };
+    const filled = (container: HTMLElement) =>
+        Array.from(container.querySelectorAll('rect')).filter(r => !['white', 'none', null].includes(r.getAttribute('fill'))).length;
+    const renderKl = (showSolutions: boolean) => render(
+        <BlockWidthProvider value={FULL_BLOCK_WIDTH_PX}>
+            <FractionViewer block={block} showSolutions={showSolutions} />
+        </BlockWidthProvider>,
+    ).container;
+
+    test('Oplossingen aan: the numerator parts are filled; uit: none', () => {
+        expect(filled(renderKl(true))).toBe(3);
+        cleanup();
+        expect(filled(renderKl(false))).toBe(0);
     });
 });
