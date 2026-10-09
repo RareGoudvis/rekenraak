@@ -5,6 +5,7 @@ import OefenBuilderModal from '../components/oefenen/OefenBuilderModal';
 import OefenShareModal from '../components/oefenen/OefenShareModal';
 import { buildSessie, listOefenLeaves, normaliseWeights, rowYields, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
 import { kioskSupports } from '../services/oefenen/kiosk';
+import { denominationLabel } from '../services/geld/geldGenerator';
 import { loadOefenSessies } from '../services/persistence';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import type { OefenSessie } from '../services/oefenen/types';
@@ -315,6 +316,45 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
         fireEvent.click(boxes()[0]);
         expect(screen.queryByText(DEAD)).toBeNull();
         expect(footerBtn('Delen').disabled).toBe(false);
+    });
+
+    // The draft block's constraints, read back from the store after each click.
+    const draftKey = <T,>(key: string) => useWorksheetStore.getState().draftBlocks[0].constraints[key as never] as T;
+    // The tafel buttons come after the term-count row (also 2 / 3 / 4) in the hr config.
+    const tableBtn = (id: string, t: number) => rowOf(id).getAllByRole('button', { name: String(t) }).at(-1)!;
+
+    test.each(['hr-std-vermenigvuldigen-nat', 'hr-std-delen-nat'])('%s: the last tafel cannot be unticked', (id) => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn(id));
+        for (const t of [...draftKey<number[]>('selectedTables')]) fireEvent.click(tableBtn(id, t));
+        expect(draftKey<number[]>('selectedTables')).toHaveLength(1);
+        expect(screen.queryByText(DEAD)).toBeNull();
+    });
+
+    test('hr-std-delen-nat: 0 alone is no deeltafel, so the last other deler stays', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('hr-std-delen-nat'));
+        fireEvent.click(tableBtn('hr-std-delen-nat', 0));
+        for (const t of draftKey<number[]>('selectedTables').filter(t => t !== 0)) fireEvent.click(tableBtn('hr-std-delen-nat', t));
+        expect(draftKey<number[]>('selectedTables').filter(t => t !== 0)).toHaveLength(1);
+        expect(screen.queryByText(DEAD)).toBeNull();
+    });
+
+    test('hr-std-delen-nat met rest: the last visible deler cannot be unticked', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('hr-std-delen-nat'));
+        fireEvent.click(rowOf('hr-std-delen-nat').getByRole('button', { name: 'Met rest' }));
+        for (const t of [...draftKey<number[]>('selectedTables')]) fireEvent.click(tableBtn('hr-std-delen-nat', t));
+        expect(draftKey<number[]>('selectedTables')).toHaveLength(1);
+        expect(screen.queryByText(DEAD)).toBeNull();
+    });
+
+    test('geld-teruggeven: the last "betalen met" biljet cannot be unticked', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('geld-teruggeven'));
+        for (const v of [...draftKey<number[]>('payWithOptions')]) fireEvent.click(rowOf('geld-teruggeven').getByText(denominationLabel(v)));
+        expect(draftKey<number[]>('payWithOptions')).toHaveLength(1);
+        expect(screen.queryByText(DEAD)).toBeNull();
     });
 
     test('kioskSupports refuses a klok without tijdstypes; rowYields pre-flights one row', () => {

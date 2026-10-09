@@ -45,7 +45,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
         const next = payWithOptions.includes(valueCents)
             ? payWithOptions.filter(v => v !== valueCents)
             : [...payWithOptions, valueCents];
-        set('payWithOptions', next);
+        if (next.length) set('payWithOptions', next);   // keep ≥1: no biljet = no exercise to make
     };
 
     return (
