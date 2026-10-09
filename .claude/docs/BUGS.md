@@ -137,9 +137,6 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- hr-std-delen-nat "Met rest" keeps the tafels picked in tafels mode hidden, so a session can go dead
-  with tafels [1] without the teacher seeing why (pre-flight flags it). 2026-10-09
-
 ## Oefenmodus beta audit 2026-10-09
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
