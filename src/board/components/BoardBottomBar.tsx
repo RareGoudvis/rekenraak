@@ -6,6 +6,8 @@ import { addBasicWidget } from '../addWidgets';
 import { TOOL_CATALOG, runTool, loadFavorites, toggleFavorite, MAX_FAVORITES, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
 import type { BoardTool } from '../boardTypes';
+import { INSTRUMENT_KINDS, INSTRUMENT_LABELS, snapOf } from '../instrumentGeometry';
+import type { InstrumentKind, InstrumentSnap } from '../boardTypes';
 import BackgroundPicker from './BackgroundPicker';
 
 // Single-letter tool shortcuts (shown in each tooltip). Only the draw tools have one so far.
@@ -38,7 +40,9 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
     const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
 
-    const [menu, setMenu] = useState<'add' | 'settings' | 'background' | 'page' | 'save' | null>(null);
+    const instrumentKinds = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).map(i => i.kind).join(','));
+
+    const [menu, setMenu] = useState<'add' | 'settings' | 'background' | 'page' | 'save' | 'instruments' | null>(null);
     const [addSub, setAddSub] = useState<ToolCategory | null>(null);
     const [favorites, setFavorites] = useState<string[]>(loadFavorites);
     const [presets, setPresets] = useState<BoardPreset[]>([]);
@@ -128,7 +132,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
         { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (L) — Shift: 45°-stappen', enabled: true },
         { key: 'shape' as const, icon: Shapes, label: 'Vormen (V) — Shift: vierkant / cirkel', enabled: true },
-        { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten (binnenkort)', enabled: false },
+        { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten', enabled: true },
     ];
 
     const favDefs = favorites.map(id => TOOL_CATALOG.find(t => t.id === id)).filter(Boolean) as BoardToolDef[];
@@ -222,7 +226,11 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
 
             {/* ── Tools ── */}
             <div style={S.group}>
-                {tools.map(t => (
+                {tools.map(t => t.key === 'instrument' ? (
+                    // Not a tool mode: the ruler opens the instruments popover; the pen keeps drawing.
+                    <InstrumentMenu key={t.key} open={menu === 'instruments'} placed={instrumentKinds}
+                        onToggle={() => openMenu('instruments')} />
+                ) : (
                     <button
                         key={t.key} type="button"
                         className={t.enabled ? 'ui-hover' : undefined}
@@ -341,6 +349,90 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     );
 }
 
+// "Meetinstrumenten": one toggle per instrument (at most one of each on a page) + hide all.
+function InstrumentMenu({ open, placed, onToggle }: { open: boolean; placed: string; onToggle: () => void }) {
+    const on = placed ? placed.split(',') : [];
+    return (
+        <div data-board-menu="instruments" style={{ position: 'relative' }}>
+            <button type="button" className="ui-hover" title="Meetinstrumenten" aria-label="Meetinstrumenten"
+                aria-expanded={open} onClick={onToggle}
+                style={{ ...S.toolBtn, ...(open || on.length ? S.toolActive : {}) }}>
+                <Ruler size={22} weight={on.length ? 'fill' : 'regular'} />
+            </button>
+            {open && <InstrumentPopup on={on} />}
+        </div>
+    );
+}
+
+// The popover body; mounted only while open, so every opening starts with the ⚙ panels shut.
+function InstrumentPopup({ on }: { on: string[] }) {
+    const [snapOpen, setSnapOpen] = useState<InstrumentKind | null>(null);
+    const toggle = (kind: InstrumentKind) => {
+        // A new instrument lands in the middle of the visible board.
+        const r = document.querySelector('[data-board-canvas]')?.getBoundingClientRect();
+        useBoardStore.getState().toggleInstrument(kind, r?.width ?? 0, r?.height ?? 0);
+    };
+    return (
+        <div style={{ ...S.popup, minWidth: '210px' }}>
+            <div style={S.popupSection}>Meetinstrumenten</div>
+            {INSTRUMENT_KINDS.map(kind => (
+                <div key={kind}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button type="button" className="ui-hover" aria-pressed={on.includes(kind)}
+                            style={{ ...S.popupItem, flex: 1, ...(on.includes(kind) ? S.popupItemOn : {}) }}
+                            onClick={() => toggle(kind)}>
+                            {INSTRUMENT_LABELS[kind]}{on.includes(kind) ? ': aan' : ''}
+                        </button>
+                        {/* Vastklikken lives on the placed instrument, so the ⚙ needs one on the page */}
+                        <button type="button" className="ui-hover" title={`Vastklikken: ${INSTRUMENT_LABELS[kind]}`}
+                            aria-label={`Vastklikken ${INSTRUMENT_LABELS[kind]}`} aria-expanded={snapOpen === kind}
+                            disabled={!on.includes(kind)}
+                            style={{ ...S.popupItem, padding: '0 10px', ...(snapOpen === kind ? S.popupItemOn : {}), ...(!on.includes(kind) ? S.toolDisabled : {}) }}
+                            onClick={() => setSnapOpen(snapOpen === kind ? null : kind)}>
+                            <GearSix size={16} />
+                        </button>
+                    </div>
+                    {snapOpen === kind && on.includes(kind) && <SnapSettings kind={kind} />}
+                </div>
+            ))}
+            <div style={S.popupDivider} />
+            <button type="button" className="ui-hover" style={S.popupItem} disabled={!on.length}
+                onClick={() => useBoardStore.getState().hideAllInstruments()}>
+                Alles verbergen
+            </button>
+        </div>
+    );
+}
+
+const SNAP_LABELS: [keyof Omit<InstrumentSnap, 'on'>, string][] = [
+    ['angles45', 'Hoeken (0/45/90°)'],
+    ['angles15', 'Hoeken (per 15°, met raster)'],
+    ['grid', 'Rasterpunten'],
+    ['endpoints', 'Lijneinden'],
+];
+
+// One instrument's "Vastklikken": a master switch and the four snap kinds (greyed while off).
+function SnapSettings({ kind }: { kind: InstrumentKind }) {
+    const inst = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).find(i => i.kind === kind));
+    if (!inst) return null;
+    const snap = snapOf(inst);
+    const set = (patch: Partial<InstrumentSnap>) => useBoardStore.getState().updateInstrument(inst.id, { snap: { ...snap, ...patch } });
+    return (
+        <div data-snap-settings={kind} style={S.snapBox}>
+            <label style={{ ...S.snapRow, fontWeight: 600 }}>
+                <input type="checkbox" checked={snap.on} onChange={(e) => set({ on: e.target.checked })} />
+                Vastklikken {snap.on ? 'aan' : 'uit'}
+            </label>
+            {SNAP_LABELS.map(([k, label]) => (
+                <label key={k} style={{ ...S.snapRow, paddingLeft: '22px', opacity: snap.on ? 1 : 0.45 }}>
+                    <input type="checkbox" checked={snap[k]} disabled={!snap.on} onChange={(e) => set({ [k]: e.target.checked })} />
+                    {label}
+                </label>
+            ))}
+        </div>
+    );
+}
+
 // Category tool tiles (side panel next to the add menu) with ★-favorite toggles.
 function CategoryPanel({ cat, favorites, onTool, onStar }: {
     cat: ToolCategory; favorites: string[];
@@ -444,6 +536,14 @@ const S = {
         display: 'flex', alignItems: 'center',
         padding: '8px 12px 2px', fontSize: '10px', letterSpacing: '0.8px', textTransform: 'uppercase',
         color: 'var(--text-muted)', fontFamily: "'Azeret Mono', monospace", userSelect: 'none',
+    } as React.CSSProperties,
+    snapBox: {
+        display: 'flex', flexDirection: 'column', gap: '2px', margin: '2px 6px 6px', padding: '6px 8px',
+        borderRadius: '8px', background: 'var(--bg-surface-2)',
+    } as React.CSSProperties,
+    snapRow: {
+        display: 'flex', alignItems: 'center', gap: '8px', minHeight: '32px',
+        fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer',
     } as React.CSSProperties,
     popupDivider: { height: '1px', background: 'var(--border-color)', margin: '4px 6px' } as React.CSSProperties,
 };

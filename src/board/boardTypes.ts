@@ -68,7 +68,8 @@ export interface ToolContext {
     gridSnap: boolean;
     gridSize: number;
     shift?: boolean;           // P3: Shift held → line snaps to 45° steps, rect/ellipse to square/circle
-    // P4: instrument?: InstrumentGeometry (edges/needle point/angle origin)
+    // P4: the page's instrument geometry; a pen started on an edge or a protractor origin follows it.
+    instrument?: InstrumentGeometry;
 }
 export interface ToolEngine {
     onPointerDown(x: number, y: number, ctx: ToolContext): void;
@@ -92,6 +93,50 @@ export interface BoardPage {
     widgets: BoardWidget[];
     strokes: Stroke[];
     background: BoardBackground;
+    // Absent on boards saved before the instruments (format v1) = none placed.
+    instruments?: Instrument[];
+}
+
+// ── Meetinstrumenten (P4) ────────────────────────────────────────────────────
+// Not widgets, not strokes: a per-page layer above the ink, at most one of each kind.
+export type InstrumentKind = 'lat' | 'geodriehoek' | 'passer';
+export interface Instrument {
+    id: string;
+    kind: InstrumentKind;
+    // The reference point in board px — the one that snaps: lat = its zero mark on the
+    // measuring edge, geodriehoek = the protractor centre (hypotenuse midpoint), passer = needle.
+    x: number;
+    y: number;
+    // Degrees clockwise on screen. Passer: the direction needle → pencil tip.
+    rotation: number;
+    scale?: number;            // reserved (no size toggle in v1); absent = 1
+    radius?: number;           // passer only: the opening in board px
+    snap?: InstrumentSnap;     // absent = everything on (the default behaviour)
+}
+
+// Per-instrument "Vastklikken". on = master switch: off → nothing snaps and rotation runs
+// free in whole degrees. angles15 and grid only act while the board grid is on.
+export interface InstrumentSnap {
+    on: boolean;
+    angles45: boolean;         // rotation to 0/45/90° multiples
+    angles15: boolean;         // rotation to 15° multiples (grid on)
+    grid: boolean;             // reference point to grid points (grid on)
+    endpoints: boolean;        // reference point to stroke endpoints
+}
+
+// One straight instrument edge in board px: a→b, with the scale's zero at z (mm snapping
+// and the length readout measure from z).
+export interface InstrumentEdge {
+    ax: number; ay: number;
+    bx: number; by: number;
+    zx: number; zy: number;
+    nx: number; ny: number;    // unit normal pointing away from the body (readouts go there)
+}
+// What an ink tool needs to follow the instruments: their straight edges and every
+// protractor centre (a pen started there draws a ray at a whole-degree angle).
+export interface InstrumentGeometry {
+    edges: InstrumentEdge[];
+    protractors: { x: number; y: number; rotation: number }[];
 }
 
 export const DEFAULT_BACKGROUND: BoardBackground = { pattern: 'blanco', dark: false };

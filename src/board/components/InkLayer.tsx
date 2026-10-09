@@ -4,6 +4,8 @@ import { rndId } from '../boardTypes';
 import type { BoardTool, Stroke, ToolContext, ToolEngine } from '../boardTypes';
 import { splitSubpaths, strokeHit } from '../inkGeometry';
 import { createLineTool, createShapeTool } from '../drawTools';
+import { pageInstrumentGeometry, startGuidedLine, type GuidedLine, type GuidedSegment } from '../instrumentGeometry';
+import { ReadoutLabel } from './InstrumentLayer';
 
 // SVG ink layer. Receives pointer events only while an ink tool is active
 // (BoardPageCanvas flips pointer-events between this and the widget layer).
@@ -46,6 +48,9 @@ export default function InkLayer({ active }: { active: boolean }) {
 
     const drawing = useRef<number[] | null>(null);
     const [draft, setDraft] = useState<Stroke | null>(null);
+    // P4: a pen started on an instrument edge follows it (ToolContext.instrument).
+    const guided = useRef<{ line: GuidedLine; last: GuidedSegment } | null>(null);
+    const [guideReadout, setGuideReadout] = useState<GuidedSegment['readout'] | null>(null);
     const svgRef = useRef<SVGSVGElement>(null);
     const engine = useRef<ToolEngine | null>(null);
     const lastPos = useRef<[number, number]>([0, 0]);
@@ -103,8 +108,20 @@ export default function InkLayer({ active }: { active: boolean }) {
             return;
         }
         if (tool !== 'pen' && tool !== 'marker') return;
-        drawing.current = [x, y];
         const cfg = inkSettings[tool];
+        const board = useBoardStore.getState();
+        const line = startGuidedLine({
+            gridSnap: board.gridSnap, gridSize: board.gridSize,
+            instrument: pageInstrumentGeometry(board.pages[board.activePageIdx].instruments ?? []),
+        }, x, y);
+        if (line) {
+            const seg = line.to(x, y);
+            guided.current = { line, last: seg };
+            setDraft({ id: 'draft', tool, color: cfg.color, width: cfg.width, opacity: tool === 'marker' ? 0.45 : 1, path: seg.path, pts: seg.pts });
+            setGuideReadout(seg.readout);
+            return;
+        }
+        drawing.current = [x, y];
         setDraft({ id: 'draft', tool, color: cfg.color, width: cfg.width, opacity: tool === 'marker' ? 0.45 : 1, path: pathFrom(drawing.current), pts: drawing.current });
     };
 
@@ -116,6 +133,13 @@ export default function InkLayer({ active }: { active: boolean }) {
             lastPos.current = [x, y];
             engine.current.onPointerMove(x, y, toolCtx(e.shiftKey));
             setPreview(engine.current.preview?.() ?? null);
+            return;
+        }
+        if (guided.current) {
+            const seg = guided.current.line.to(x, y);
+            guided.current.last = seg;
+            setDraft(d => d ? { ...d, path: seg.path, pts: seg.pts } : d);
+            setGuideReadout(seg.readout);
             return;
         }
         if (!drawing.current) return;
@@ -141,6 +165,13 @@ export default function InkLayer({ active }: { active: boolean }) {
         // Commit from the ref, not the (possibly one-frame-stale) draft state, so a
         // fast tap-release can never race React's render cycle.
         const pts = drawing.current;
+        if (guided.current && (tool === 'pen' || tool === 'marker')) {
+            const cfg = inkSettings[tool];
+            const { path, pts: gp } = guided.current.last;
+            addStroke({ id: rndId(), tool, color: cfg.color, width: cfg.width, opacity: tool === 'marker' ? 0.45 : 1, path, pts: gp });
+        }
+        guided.current = null;
+        setGuideReadout(null);
         if (pts && pts.length >= 2 && (tool === 'pen' || tool === 'marker')) {
             const cfg = inkSettings[tool];
             addStroke({
@@ -192,6 +223,7 @@ export default function InkLayer({ active }: { active: boolean }) {
             {strokes.map(s => strokeEl(s))}
             {draft && strokeEl(draft)}
             {preview && strokeEl(preview, { 'data-ink-preview': '', pointerEvents: 'none' } as React.SVGProps<SVGPathElement & SVGGElement>)}
+            {guideReadout && <ReadoutLabel {...guideReadout} />}
         </svg>
     );
 }
