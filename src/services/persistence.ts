@@ -5,6 +5,7 @@ import type { BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
 import { REGISTRY } from '../config/exerciseRegistry';
 import type { OefenSessie } from './oefenen/types';
+import { newSessieId } from './oefenen/session';
 
 // Bump this when the JSON schema gains/loses required fields so older files
 // fail loudly instead of half-loading. Keep the parser strict on read.
@@ -371,6 +372,16 @@ export function saveOefenSessie(sessie: OefenSessie, name?: string): OefenSessie
 
 export function deleteOefenSessie(id: string): void {
     persistOefenSessies(loadOefenSessies().filter(e => e.id !== id));
+}
+
+// A copy ships under a new id, so pupils' stored runs of the original never mix into it.
+export function duplicateOefenSessie(id: string): OefenSessieEntry | null {
+    const src = loadOefenSessies().find(e => e.id === id);
+    if (!src) return null;
+    const copyId = newSessieId();
+    // The pupil's title is capped at 60 (builder field): cut the name, never the "(kopie)".
+    const sessie: OefenSessie = { ...src.sessie, id: copyId, ...(src.sessie.title ? { title: `${src.sessie.title.slice(0, 52)} (kopie)` } : {}) };
+    return saveOefenSessie(sessie, `${src.name.slice(0, 72)} (kopie)`);
 }
 
 export function renameOefenSessie(id: string, name: string): void {

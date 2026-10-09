@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import {
-    loadOefenSessies, saveOefenSessie, deleteOefenSessie, renameOefenSessie, MAX_OEFEN_SESSIES,
+    loadOefenSessies, saveOefenSessie, deleteOefenSessie, renameOefenSessie, duplicateOefenSessie, MAX_OEFEN_SESSIES,
 } from '../services/persistence';
 import type { OefenSessie } from '../services/oefenen/types';
 
@@ -45,6 +45,25 @@ describe('oefensessie library', () => {
         const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
         expect(saveOefenSessie(sessie('a'))).toBeNull();
         spy.mockRestore();
+    });
+
+    test('duplicate: a new id (fresh pupil stats), " (kopie)" on name and title, same content; the original stays', () => {
+        saveOefenSessie({ ...sessie('a'), timerMin: 10 }, 'Mijn tafels');
+        const copy = duplicateOefenSessie('a')!;
+        expect(copy.id).not.toBe('a');
+        expect(copy.sessie.id).toBe(copy.id);
+        expect(copy.name).toBe('Mijn tafels (kopie)');
+        expect(copy.sessie.title).toBe('Tafels (kopie)');
+        const { id: _a, title: _b, ...rest } = copy.sessie;
+        const { id: _c, title: _d, ...orig } = { ...sessie('a'), timerMin: 10 };
+        expect(rest).toEqual(orig);
+        expect(loadOefenSessies().map(e => e.id).sort()).toEqual(['a', copy.id].sort());
+        expect(duplicateOefenSessie('nope')).toBeNull();
+    });
+
+    test('duplicate keeps the title within the 60-character pupil title', () => {
+        saveOefenSessie(sessie('a', 'x'.repeat(60)));
+        expect(duplicateOefenSessie('a')!.sessie.title!.length).toBeLessThanOrEqual(60);
     });
 
     test('garbage in storage reads as an empty library', () => {

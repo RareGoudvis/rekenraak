@@ -217,8 +217,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-G teacher UX
 
-- **O20** Mijn bladen › Oefensessies has no Dupliceren (MijnBladenView.tsx:197-200; worksheet presets
-  have it at :163). 2026-10-09
 - **O21** Builder description for analoge klok lezen reads "Klok zien → tijd in woorden schrijven"
   (ClockConfig.tsx:49) while the kiosk takes uu:mm (pairs with the classroom-test line above). 2026-10-09
 - **O22** Breuken kleuren card says "Tik 3 van de 6 delen aan." (`kioskInstruction`, BREUKEN_KIOSK)
