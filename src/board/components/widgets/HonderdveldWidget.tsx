@@ -31,7 +31,9 @@ export default function HonderdveldWidget({ widget }: { widget: BoardWidget }) {
 
     return (
         <div style={{ padding: '12px 14px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${p.cols}, 1fr)`, border: '2px solid #000' }}>
+            {/* min-content: with many columns the cells outgrow the card; the outline must wrap them
+                (the frame then shrinks the whole grid to fit) instead of stopping at the card width. */}
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${p.cols}, 1fr)`, border: '2px solid #000', minWidth: 'min-content' }}>
                 {Array.from({ length: p.count }, (_, i) => {
                     const n = p.start + i;
                     const hidden = p.hidden.includes(n);

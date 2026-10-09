@@ -3,6 +3,7 @@ import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import WidgetFrame from '../board/components/WidgetFrame';
+import PositietabelWidget from '../board/components/widgets/PositietabelWidget';
 import { cardFitZoom } from '../board/widgetSizing';
 import type { BoardWidget } from '../board/boardTypes';
 
@@ -56,5 +57,42 @@ describe('cards shrink overflowing content', () => {
         expect(fitOf(container)).toBeLessThan(1);
         rerender(<WidgetFrame widget={card('positietabel')} selected={false}><div data-test-w="300" /></WidgetFrame>);
         expect(fitOf(container)).toBe(1);
+    });
+});
+
+describe('the fit settles', () => {
+    test('a pixel of glyph rounding under the zoom (618 / 619 px) does not flip the fit forever', () => {
+        let n = 0;
+        spies[1].mockImplementation(function (this: HTMLElement) {
+            if (!this.querySelector('[data-test-w]')) return BODY_W;
+            return this.style.zoom ? 618 + (n++ % 2) : 590;
+        });
+        const err = vi.spyOn(console, 'error').mockImplementation(() => { });
+        const { container } = render(<WidgetFrame widget={card('honderdveld', { props: { fontSize: 'xl' } })} selected={false}><div data-test-w="1" /></WidgetFrame>);
+        expect(err).not.toHaveBeenCalled();
+        err.mockRestore();
+        expect(fitOf(container)).toBeGreaterThan(0.48);
+        expect(fitOf(container)).toBeLessThan(0.53);
+    });
+});
+
+describe('positietabel sizes its type to the width it really gets', () => {
+    // At XL the frame lays the card out at 480 / 1.5 px, not 480: thirteen columns sized for 452 px
+    // clipped their labels and digits. Header type is min(20, column × 0.42).
+    const ALL = ['Mrd', 'HM', 'TM', 'M', 'HD', 'TD', 'D', 'H', 'T', 'E', 't', 'h', 'd'];
+    const labelPx = (fontSize: string) => {
+        const w = card('positietabel', { w: 480, props: { fontSize, columns: ALL, digitSize: 40, header: 'afkorting' } });
+        const { getByText } = render(<PositietabelWidget widget={w} />);
+        const px = parseFloat(getByText('Mrd').style.fontSize);
+        cleanup();
+        return px;
+    };
+
+    test('normaal keeps the 452 px budget', () => {
+        expect(labelPx('normaal')).toBeCloseTo(((452 - 18) / 13) * 0.42, 2);
+    });
+
+    test('XL budgets 480 / 1.5 − 28 px', () => {
+        expect(labelPx('xl')).toBeCloseTo(((480 / 1.5 - 28 - 18) / 13) * 0.42, 2);
     });
 });

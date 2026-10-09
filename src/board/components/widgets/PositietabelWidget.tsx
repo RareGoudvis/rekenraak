@@ -1,10 +1,8 @@
 import { positietabelProps, POSITIE_PLAATSEN, SALMON, digitAt, type PlaceColumn, type PlaceGroup } from '../../mathTools/positietabel';
-import { useSetProps, widgetAccent } from '../../settings/baseProps';
+import { cardLayoutWidth, useSetProps, widgetAccent } from '../../settings/baseProps';
 import type { BoardWidget } from '../../boardTypes';
 
 const MONO = "'Azeret Mono', monospace";
-// Content width of the 480-wide card minus its 14px side padding.
-const BUDGET = 452;
 // Soft hyphens after the prefixes so long names wrap inside a narrow column (honderd-duizend).
 const breakable = (name: string) => name.replace(/^(honderd|tien|duizend)(?=\w)/, '$1­');
 
@@ -22,7 +20,9 @@ export default function PositietabelWidget({ widget }: { widget: BoardWidget }) 
     const headerFill = (k: PlaceColumn) =>
         p.colorMode === 'groepen' ? p.groupColors[k.group] : p.colorMode === 'zalm' ? SALMON : '#fff';
     // Many columns share the same card width, so type shrinks to its column (3 columns = as before).
-    const colW = (BUDGET - (hasComma ? 18 : 0)) / Math.max(1, ordered.length);
+    // The width the frame really lays the card out at (less at a bigger text size), minus the 14px side padding.
+    const budget = cardLayoutWidth(widget) - 28;
+    const colW = (budget - (hasComma ? 18 : 0)) / Math.max(1, ordered.length);
     const digit = Math.min(p.digitSize, colW * 0.7);
     const cell: React.CSSProperties = {
         border: '1.5px solid #000', minHeight: `${Math.max(52, p.digitSize * 1.9)}px`, display: 'flex',

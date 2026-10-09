@@ -189,6 +189,9 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 - Flaky under full-suite load: `oefenBuilder.test.tsx` › OefenShareModal › "Afdrukken (A5) prints only
   the A5 QR sheet" failed once in the pre-commit gate ("expected bound to be called 1 times, got 0")
   and passes alone. Likely a timer/print wait too short when 99 workers share the CPU. 2026-10-09
+- Flaky: `oefenen.zeroOutput.test.ts` failed once in the gate on `hr-std-delen-dec {"maxGetal":1e9,
+  "operandMax":[20,20,20,20]}: pre-flight must flag it` (the unseeded `rowYields` found an exercise that
+  run); passes alone. The dead/alive verdict depends on Math.random. 2026-10-09
 
 ## Bordmodus
 
@@ -198,8 +201,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
   numbers of each row sit across the oval's left / right outline ("8|35", "86|0"); the viewer, not the card. 2026-10-09
 - The board's "Wiskunde toevoegen" panel (BoardAddModal) does not close on Escape or an outside
   press, unlike every bottom-bar popup; only its ✕ closes it. 2026-10-09
-- Positietabel with every place column at "Heel groot" clips on the right of the card instead of
-  shrinking (wb-check/full-test/03-widgets/_walk-03.png). 2026-10-09
 - Instrument handles can leave the board: the passer hinge after a wide opening, and a lat rotated to
   45° at 1280 px puts its rotate handle off-board (wb-check/full-test/05-instruments). Fix: clamp the
   handle positions / keep a grab point on-board. 2026-10-09

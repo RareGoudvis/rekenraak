@@ -2,8 +2,10 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { Trash, ArrowCounterClockwise, Eye, EyeSlash, GearSix, CopySimple } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
 import { cardFitZoom, naturalWidth, widgetTitle, KINDS_WITH_SETTINGS } from '../widgetSizing';
-import { SELF_SCALED_FONT, fontScale, widgetAccent } from '../settings/baseProps';
+import { cardLayoutWidth, cardTextScale, widgetAccent } from '../settings/baseProps';
 import type { BoardWidget } from '../boardTypes';
+
+const FIT_DEADBAND = 0.01;
 
 interface Props {
     widget: BoardWidget;
@@ -72,19 +74,23 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     const frameZoom = innerW / naturalWidth(widget.kind);
     // Extra content zoom: exercise tekstgrootte × the baseline font size (kinds that scale their
     // own type sizes skip the zoom, so their fixed-size faces never clip).
-    const textScale = (widget.scale ?? 1) * (SELF_SCALED_FONT.has(widget.kind) ? 1 : fontScale(widget));
+    const textScale = cardTextScale(widget);
     const accent = widgetAccent(widget);
     const handMode = tool === 'hand';
-    const layoutW = naturalWidth(widget.kind) / textScale;
+    const layoutW = cardLayoutWidth(widget);
 
     // Content wider than the body (a 200 % exercise card, a 20-column honderdveld at XL) is
     // shrunk to fit instead of cut off by the body's overflow-x: hidden. The fit box keeps its
-    // own-unit width, so the zoom never reflows the content and the ratio cannot feed back.
+    // own-unit width, so the zoom does not reflow the content.
     const fitRef = useRef<HTMLDivElement>(null);
     const [fit, setFit] = useState(1);
     const measureFit = () => {
         const el = fitRef.current;
-        if (el) setFit(cardFitZoom(el.scrollWidth, el.clientWidth));
+        if (!el) return;
+        const next = cardFitZoom(el.scrollWidth, el.clientWidth);
+        // Dead-band: glyph rounding under a zoom moves the content a pixel (618 ↔ 619 px for a
+        // 20-column honderdveld), which would otherwise flip the fit back and forth forever.
+        setFit(prev => (Math.abs(next - prev) < FIT_DEADBAND ? prev : next));
     };
     // Every render: a regenerated block, a new setting or a text zoom can change the width.
     useLayoutEffect(measureFit);
