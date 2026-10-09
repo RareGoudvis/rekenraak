@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBoardStore } from '../useBoardStore';
 import type { Instrument, Stroke } from '../boardTypes';
 import { rndId } from '../boardTypes';
-import { arcPath, arcPts, formatCm, openPasser, round1, snapPoint, snapRotation, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
+import { arcPath, arcPts, formatCm, openPasser, round1, snapInstrumentPoint, snapInstrumentRotation, snapOf, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
 import { GeodriehoekShape, LatShape, PasserShape, type Grip } from './InstrumentShapes';
 import { IC, NO_POINTER } from './instrumentStyle';
 
@@ -71,10 +71,12 @@ export default function InstrumentLayer() {
         if (!d) return;
         const [x, y] = toBoard(e);
         const st = useBoardStore.getState();
+        const inst = (st.pages[st.activePageIdx].instruments ?? []).find(i => i.id === d.id);
+        if (!inst) return;
+        const snap = snapOf(inst);
         if (d.grip === 'body') {
-            const s = snapPoint(d.origX + x - d.startX, d.origY + y - d.startY, {
-                gridSize: st.gridSnap ? st.gridSize : null, points: d.targets,
-            });
+            const s = snapInstrumentPoint(d.origX + x - d.startX, d.origY + y - d.startY,
+                { gridOn: st.gridSnap, gridSize: st.gridSize, points: d.targets }, snap);
             st.updateInstrument(d.id, { x: round1(s.x), y: round1(s.y) });
             setSnapDot(s.snapped ? { x: s.x, y: s.y } : null);
         } else if (d.grip === 'open') {
@@ -91,7 +93,7 @@ export default function InstrumentLayer() {
             setReadout({ x: d.cx, y: d.cy - 30, text: `${Math.round(Math.abs(d.sweep) * 180 / Math.PI)}°` });
         } else {
             const turned = d.origRotation + ((Math.atan2(y - d.pivotY, x - d.pivotX) - d.startAngle) * 180) / Math.PI;
-            const r = snapRotation(turned, st.gridSnap);
+            const r = snapInstrumentRotation(turned, st.gridSnap, snap);
             st.updateInstrument(d.id, { rotation: round1(r.deg) });
             setSnapDot(r.snapped ? { x: d.pivotX, y: d.pivotY } : null);
             setReadout({ x: d.pivotX, y: d.pivotY - 30, text: `${formatDeg(r.deg)}°` });

@@ -130,6 +130,28 @@ describe('persistence (format v2)', () => {
         expect(parseBoardFile(file([{ ...bare, instruments: 'x' }]))!.pages[0].instruments).toEqual([]);
     });
 
+    test('Vastklikken round-trips; junk flags read as on, absent stays absent (= all on)', () => {
+        const snap = { on: false, angles45: true, angles15: false, grid: true, endpoints: false };
+        const instruments = [
+            { id: 'a', kind: 'lat', x: 1, y: 2, rotation: 0, snap },
+            { id: 'b', kind: 'geodriehoek', x: 1, y: 2, rotation: 0, snap: { on: 'yes', grid: false } },
+            { id: 'c', kind: 'passer', x: 1, y: 2, rotation: 0, radius: 100, snap: 'x' },
+        ];
+        const got = parseBoardFile(file([{ ...bare, instruments }]))!.pages[0].instruments!;
+        expect(got[0].snap).toEqual(snap);
+        expect(got[1].snap).toEqual({ on: true, angles45: true, angles15: true, grid: false, endpoints: true });
+        expect('snap' in got[2]).toBe(false);
+        expect(BOARD_FORMAT_VERSION).toBe(2);
+    });
+
+    test('store → autosave → parser keeps the snap settings', () => {
+        st().toggleInstrument('geodriehoek');
+        const snap = { on: true, angles45: false, angles15: false, grid: false, endpoints: true };
+        st().updateInstrument(one('geodriehoek').id, { snap });
+        const f = parseBoardFile(JSON.stringify({ version: BOARD_FORMAT_VERSION, exportedAt: 'x', pages: st().pages }))!;
+        expect(f.pages[0].instruments![0].snap).toEqual(snap);
+    });
+
     test('a newer format is still refused', () => {
         expect(parseBoardFile(file([bare], 3))).toBeNull();
     });
@@ -207,6 +229,40 @@ describe('layer: drag, rotate, snap, keyboard', () => {
         });
         dragOn(h, [300, 200], [200 + 100 * Math.cos(a), 200 + 100 * Math.sin(a)]);
         expect(one('geodriehoek').rotation).toBe(30);
+    });
+
+    test('Vastklikken off: no point snap, no snap dot, rotation free in whole degrees', () => {
+        useBoardStore.setState({ gridSnap: true, gridSize: 40 });
+        place('geodriehoek', { snap: { on: false, angles45: true, angles15: true, grid: true, endpoints: true } });
+        const { container } = render(<InstrumentLayer />);
+        dragOn(grip(container, 'geodriehoek', 'body'), [200, 250], [245, 286]);
+        expect(one('geodriehoek')).toMatchObject({ x: 245, y: 236 });
+        expect(container.querySelector('[data-snap-dot]')).toBeNull();
+        act(() => { fireEvent.pointerUp(grip(container, 'geodriehoek', 'body'), { pointerId: 1 }); });
+        act(() => { st().updateInstrument(one('geodriehoek').id, { x: 200, y: 200 }); });
+        const a = (43.3 * Math.PI) / 180;
+        dragOn(grip(container, 'geodriehoek', 'rotate'), [300, 200], [200 + 100 * Math.cos(a), 200 + 100 * Math.sin(a)]);
+        expect(one('geodriehoek').rotation).toBe(43);
+        expect(container.querySelector('[data-snap-dot]')).toBeNull();
+    });
+
+    test('only Lijneinden: jumps to a line end, ignores the grid, rotates freely', () => {
+        useBoardStore.setState({ gridSnap: true, gridSize: 40 });
+        st().addStroke(stroke('l', 'M 500 300 L 700 300'));
+        place('lat', { snap: { on: true, angles45: false, angles15: false, grid: false, endpoints: true } });
+        const { container } = render(<InstrumentLayer />);
+        const body = grip(container, 'lat', 'body');
+        dragOn(body, [300, 230], [343, 267]);      // raw 243,237: next to grid 240,240 — ignored
+        expect(one('lat')).toMatchObject({ x: 243, y: 237 });
+        act(() => { fireEvent.pointerUp(body, { pointerId: 1 }); });
+        dragOn(body, [300, 230], [554, 297]);      // raw 497,304 → the line's start
+        expect(one('lat')).toMatchObject({ x: 500, y: 300 });
+        expect(container.querySelector('[data-snap-dot]')).not.toBeNull();
+        act(() => { fireEvent.pointerUp(body, { pointerId: 1 }); });
+        const a = (44 * Math.PI) / 180;
+        dragOn(grip(container, 'lat', 'rotate'), [600, 300], [500 + 100 * Math.cos(a), 300 + 100 * Math.sin(a)]);
+        expect(one('lat').rotation).toBeCloseTo(44, 0);
+        expect(one('lat').rotation).not.toBe(45);
     });
 
     test('keyboard on the selected instrument: arrows, Shift, [ ], R, Escape', () => {
@@ -502,6 +558,25 @@ describe('bottom bar: Meetinstrumenten popover', () => {
         act(() => { fireEvent.click(screen.getByRole('button', { name: 'Alles verbergen' })); });
         expect(insts()).toEqual([]);
         expect(st().tool).toBe('pen');
+    });
+
+    test('Vastklikken ⚙ per placed instrument: master + four checkboxes write the instrument', () => {
+        render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        act(() => { fireEvent.click(screen.getByLabelText('Meetinstrumenten')); });
+        expect((screen.getByLabelText('Vastklikken Geodriehoek') as HTMLButtonElement).disabled).toBe(true);
+        act(() => { fireEvent.click(screen.getByRole('button', { name: 'Geodriehoek' })); });
+        act(() => { fireEvent.click(screen.getByLabelText('Vastklikken Geodriehoek')); });
+        const box = (name: string | RegExp) => screen.getByRole('checkbox', { name }) as HTMLInputElement;
+        for (const n of ['Vastklikken aan', 'Hoeken (0/45/90°)', 'Hoeken (per 15°, met raster)', 'Rasterpunten', 'Lijneinden']) expect(box(n).checked).toBe(true);
+        act(() => { fireEvent.click(box('Rasterpunten')); });
+        expect(one('geodriehoek').snap).toEqual({ on: true, angles45: true, angles15: true, grid: false, endpoints: true });
+        act(() => { fireEvent.click(box('Vastklikken aan')); });
+        expect(one('geodriehoek').snap!.on).toBe(false);
+        expect(box('Vastklikken uit').checked).toBe(false);
+        expect(box('Lijneinden').disabled).toBe(true);
+        // the other instruments keep their own settings
+        act(() => { fireEvent.click(screen.getByRole('button', { name: 'Lat' })); });
+        expect(one('lat').snap).toBeUndefined();
     });
 
     test('Escape closes the popover', () => {

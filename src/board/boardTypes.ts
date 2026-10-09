@@ -111,6 +111,17 @@ export interface Instrument {
     rotation: number;
     scale?: number;            // reserved (no size toggle in v1); absent = 1
     radius?: number;           // passer only: the opening in board px
+    snap?: InstrumentSnap;     // absent = everything on (the default behaviour)
+}
+
+// Per-instrument "Vastklikken". on = master switch: off → nothing snaps and rotation runs
+// free in whole degrees. angles15 and grid only act while the board grid is on.
+export interface InstrumentSnap {
+    on: boolean;
+    angles45: boolean;         // rotation to 0/45/90° multiples
+    angles15: boolean;         // rotation to 15° multiples (grid on)
+    grid: boolean;             // reference point to grid points (grid on)
+    endpoints: boolean;        // reference point to stroke endpoints
 }
 
 // One straight instrument edge in board px: a→b, with the scale's zero at z (mm snapping

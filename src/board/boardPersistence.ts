@@ -51,6 +51,12 @@ function toInstrument(v: unknown): Instrument | null {
     if (!isNum(v.x) || !isNum(v.y) || !isNum(v.rotation)) return null;
     const inst: Instrument = { id: v.id, kind: v.kind as Instrument['kind'], x: v.x, y: v.y, rotation: v.rotation };
     if (isNum(v.scale) && v.scale > 0) inst.scale = v.scale;
+    // Vastklikken: each flag that is not a boolean reads as on (the default behaviour).
+    if (isObj(v.snap)) {
+        const sn = v.snap;
+        const flag = (k: string) => (typeof sn[k] === 'boolean' ? sn[k] as boolean : true);
+        inst.snap = { on: flag('on'), angles45: flag('angles45'), angles15: flag('angles15'), grid: flag('grid'), endpoints: flag('endpoints') };
+    }
     if (inst.kind === 'passer') {
         inst.radius = isNum(v.radius) ? Math.min(PASSER.maxR, Math.max(PASSER.minR, v.radius)) : 5 * BOARD_CM_PX;
     }

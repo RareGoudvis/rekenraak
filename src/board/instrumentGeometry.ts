@@ -1,5 +1,5 @@
 import { PX_PER_MM } from '../components/viewer/cijferGrid';
-import type { Instrument, InstrumentEdge, InstrumentGeometry, InstrumentKind, Stroke, ToolContext } from './boardTypes';
+import type { Instrument, InstrumentEdge, InstrumentGeometry, InstrumentKind, InstrumentSnap, Stroke, ToolContext } from './boardTypes';
 
 // Pure geometry for the meetinstrumenten (lat, geodriehoek, passer): board units, snapping,
 // local ↔ board transforms. No React, no store — the layer and the ink tool call in here.
@@ -58,9 +58,13 @@ export const round1 = (v: number) => Math.round(v * 10) / 10;
 
 // ── Snapping ─────────────────────────────────────────────────────────────────
 export function snapRotation(deg: number, gridOn: boolean, tol = ROTATION_SNAP_DEG): { deg: number; snapped: boolean } {
+    return snapToSteps(deg, gridOn ? [45, 15] : [45], tol);
+}
+
+function snapToSteps(deg: number, steps: number[], tol: number): { deg: number; snapped: boolean } {
     const d = normDeg(deg);
     let best: number | null = null;
-    for (const step of gridOn ? [45, 15] : [45]) {
+    for (const step of steps) {
         const target = Math.round(d / step) * step;
         if (Math.abs(target - d) <= tol && (best === null || Math.abs(target - d) < Math.abs(best - d))) best = target;
     }
@@ -87,6 +91,30 @@ export function snapPoint(
         if (d <= tol && (!best || d < best.d)) best = { x: gx, y: gy, d, kind: 'grid' };
     }
     return best ? { x: best.x, y: best.y, snapped: best.kind } : { x, y, snapped: null };
+}
+
+// ── Per-instrument "Vastklikken" ─────────────────────────────────────────────
+export const DEFAULT_SNAP: InstrumentSnap = { on: true, angles45: true, angles15: true, grid: true, endpoints: true };
+export const snapOf = (inst: Pick<Instrument, 'snap'>): InstrumentSnap => ({ ...DEFAULT_SNAP, ...inst.snap });
+
+// Rotation under an instrument's snap settings: master off → free, on whole degrees.
+export function snapInstrumentRotation(deg: number, gridOn: boolean, snap: InstrumentSnap): { deg: number; snapped: boolean } {
+    if (!snap.on) return { deg: normDeg(Math.round(deg)), snapped: false };
+    const steps = [...(snap.angles45 ? [45] : []), ...(snap.angles15 && gridOn ? [15] : [])];
+    return snapToSteps(deg, steps, ROTATION_SNAP_DEG);
+}
+
+// The reference point under an instrument's snap settings (grid points only with the grid on).
+export function snapInstrumentPoint(
+    x: number, y: number,
+    board: { gridOn: boolean; gridSize: number; points: number[] },
+    snap: InstrumentSnap,
+): { x: number; y: number; snapped: SnapKind | null } {
+    if (!snap.on) return { x, y, snapped: null };
+    return snapPoint(x, y, {
+        gridSize: snap.grid && board.gridOn ? board.gridSize : null,
+        points: snap.endpoints ? board.points : [],
+    });
 }
 
 // SVG path args per command; a repeated command reuses the same count (implicit repeats).

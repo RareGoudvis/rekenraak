@@ -3,9 +3,9 @@ import {
     BOARD_CM_PX, BOARD_MM_PX, GEO, LAT, PASSER, arcPath, arcPts, bodyPolygon, defaultInstrument, formatCm,
     instrumentEdges, nearestEdge, openPasser, unwrapDelta,
     normDeg, pageInstrumentGeometry, passerHinge, pathEndpoints, projectOnEdge, protractorAngle, round1, snapPoint, snapRotation,
-    startGuidedLine, strokeEndpoints, toLocal, toWorld,
+    startGuidedLine, strokeEndpoints, toLocal, toWorld, DEFAULT_SNAP, snapOf, snapInstrumentPoint, snapInstrumentRotation,
 } from '../board/instrumentGeometry';
-import type { Stroke } from '../board/boardTypes';
+import type { InstrumentSnap, Stroke } from '../board/boardTypes';
 
 // The meetinstrumenten's pure geometry (ARCHITECTURE §14): board units, transforms, the
 // owner's snapping rules, endpoint extraction from stroke path data, placement.
@@ -70,6 +70,46 @@ describe('snapPoint (8 px)', () => {
     });
     test('a tie goes to the endpoint', () => {
         expect(snapPoint(42, 40, { gridSize: 40, points: [44, 40] }).snapped).toBe('endpoint');
+    });
+});
+
+describe('per-instrument Vastklikken', () => {
+    const only = (patch: Partial<InstrumentSnap>): InstrumentSnap =>
+        ({ on: true, angles45: false, angles15: false, grid: false, endpoints: false, ...patch });
+    const board = { gridOn: true, gridSize: 40, points: [105, 100] };
+
+    test('absent settings = everything on (the default behaviour)', () => {
+        expect(snapOf({})).toEqual(DEFAULT_SNAP);
+        expect(DEFAULT_SNAP).toEqual({ on: true, angles45: true, angles15: true, grid: true, endpoints: true });
+        expect(snapOf({ snap: only({}) }).angles45).toBe(false);
+    });
+
+    test('each rotation flag alone', () => {
+        expect(snapInstrumentRotation(43.4, true, only({ angles45: true }))).toEqual({ deg: 45, snapped: true });
+        expect(snapInstrumentRotation(31.2, true, only({ angles45: true })).snapped).toBe(false);
+        expect(snapInstrumentRotation(31.2, true, only({ angles15: true }))).toEqual({ deg: 30, snapped: true });
+        // 15° steps act only while the board grid is on
+        expect(snapInstrumentRotation(31.2, false, only({ angles15: true })).snapped).toBe(false);
+        const free = snapInstrumentRotation(43.4, true, only({ grid: true, endpoints: true }));
+        close(free.deg, 43.4); expect(free.snapped).toBe(false);
+    });
+
+    test('each point flag alone', () => {
+        expect(snapInstrumentPoint(43, 37, board, only({ grid: true }))).toEqual({ x: 40, y: 40, snapped: 'grid' });
+        expect(snapInstrumentPoint(43, 37, { ...board, gridOn: false }, only({ grid: true })).snapped).toBeNull();
+        expect(snapInstrumentPoint(43, 37, board, only({ endpoints: true })).snapped).toBeNull();
+        expect(snapInstrumentPoint(102, 103, board, only({ endpoints: true }))).toEqual({ x: 105, y: 100, snapped: 'endpoint' });
+        expect(snapInstrumentPoint(102, 103, board, only({ grid: true })).snapped).toBeNull();
+        expect(snapInstrumentPoint(102, 103, board, only({ angles45: true, angles15: true })).snapped).toBeNull();
+    });
+
+    test('master off: raw point, rotation free in whole degrees, nothing snapped', () => {
+        const off = { ...DEFAULT_SNAP, on: false };
+        expect(snapInstrumentRotation(44.6, true, off)).toEqual({ deg: 45, snapped: false });
+        expect(snapInstrumentRotation(43.4, true, off)).toEqual({ deg: 43, snapped: false });
+        expect(snapInstrumentRotation(-1.2, true, off)).toEqual({ deg: 359, snapped: false });
+        expect(snapInstrumentPoint(102, 103, board, off)).toEqual({ x: 102, y: 103, snapped: null });
+        expect(snapInstrumentPoint(43, 37, board, off)).toEqual({ x: 43, y: 37, snapped: null });
     });
 });
 
