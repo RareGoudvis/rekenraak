@@ -78,7 +78,11 @@ await page.evaluate(async ({ plan, seed, answerSpace }) => {
     r.seed(seed);
     if (answerSpace != null) r.getState().updateDocSettings({ answerSpace });
     for (const p of plan) {
-        r.addBlockFromType(p.typeId, 'Oefening');
+        // Through the typeId's first sidebar leaf, as the catalogue adds it: a bare typeId
+        // missed the leaf's own defaultCount (oppervlakte-rooster = 2, not 10).
+        const leaf = r.leaves.find((l) => l.typeId === p.typeId);
+        if (leaf) r.addBlockFromType(p.typeId, leaf.label, leaf.defaultConstraints, { leafId: leaf.id });
+        else r.addBlockFromType(p.typeId, 'Oefening');
         const blocks = r.getState().blocks;
         r.updateBlockSettings(blocks[blocks.length - 1].id, { widthUnits: p.width });
     }

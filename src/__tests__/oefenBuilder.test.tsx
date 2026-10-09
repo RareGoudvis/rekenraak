@@ -318,14 +318,18 @@ describe('OefenShareModal', () => {
     });
 
     test('Afdrukken (A5) prints only the A5 QR sheet and cleans up afterwards', async () => {
-        const print = vi.spyOn(window, 'print').mockImplementation(() => { });
+        let printed!: () => void;
+        const printCalled = new Promise<void>((res) => { printed = res; });
+        const print = vi.spyOn(window, 'print').mockImplementation(() => printed());
         render(<OefenShareModal sessie={small} onClose={() => { }} />);
         fireEvent.click(screen.getByRole('button', { name: /Afdrukken \(A5\)/ }));
         const sheet = document.querySelector('.oefen-qr-print')!;
         expect(sheet.textContent).toContain('Klein');
         expect(sheet.textContent).toContain('Scan met je toestel');
         expect(document.getElementById('oefen-qr-print-style')!.textContent).toMatch(/@page \{ size: A5/);
-        await act(() => new Promise(r => setTimeout(r, 50)));
+        // Await the print call itself: it lands two animation frames in, and a fixed 50 ms
+        // sleep lost that race under full-suite load.
+        await act(() => printCalled);
         expect(print).toHaveBeenCalledTimes(1);
         act(() => { window.dispatchEvent(new Event('afterprint')); });
         expect(document.querySelector('.oefen-qr-print')).toBeNull();

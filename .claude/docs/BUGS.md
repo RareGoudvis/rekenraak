@@ -26,6 +26,9 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Even-oneven rooster at its 1e4 top, width ½ / ¼: four-digit numbers wrap inside the 46 px cells
   and the lines overlap. Fix: size cells from the character count (46 px floor). 2026-09-27
   (Full sweep: they wrap ("9 / 029") at full width too; only ½ / ¼ trip the overlap check.)
+- TopBar below a ~915 px window: stage 3 is the last stage, so the Meer button and the right group
+  overlap (2 px at 915, ~90 px at 840; Chromium, 2026-10-09). Fix: a stage 4 (Genereer alles into
+  Meer) or a min-width on the app shell. 2026-10-09
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -171,25 +174,9 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Tooling
 
-- `constraintSpace` lists kettingsommen `chainLength` [2,4,6] while KettingConfig offers 3-5, so the
-  matrix/zero-output sweep tests values the UI cannot reach and skips the ones it can. 2026-10-09
-
-
-- A leaf's own `defaultCount` (oppervlakte-rooster = 2) is not seen by `scripts/height-audit.mjs:81`
-  and `scripts/width-matrix.mjs:82` (they add blocks without `leafId`); worksheetTemplates.ts
-  `buildBlock` and the curriculum draft use the row count on purpose. 2026-10-08
-
-- full-sweep "max" rows use the registry defaults, and the 8 cijferen typeIds share `cijferRow()`
-  defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
-  additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27
-
 - Kiosk breuken kleuren, square shape with a PRIME noemer ≥ 11 (11, 13): equal parts need one row, so the
   strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
   2026-10-08
-
-- Flaky under full-suite load: `oefenBuilder.test.tsx` › OefenShareModal › "Afdrukken (A5) prints only
-  the A5 QR sheet" failed once in the pre-commit gate ("expected bound to be called 1 times, got 0")
-  and passes alone. Likely a timer/print wait too short when 99 workers share the CPU. 2026-10-09
 
 ## Bordmodus
 

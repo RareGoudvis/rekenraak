@@ -443,7 +443,8 @@ const S = {
         // the button row, which the fixed three-column headers elsewhere don't grow with —
         // an accepted trade-off at the narrow widths where that stage fires.
         minHeight: 'var(--bar-h)',
-        padding: '0 var(--sp-5)',
+        // 12 px a side, not 20: at 20 the full labels fell 16 px short of a 1920 px window.
+        padding: '0 var(--sp-3)',
         /* Full-width header: background from .mac-vibrant (frosted), separated by a bottom hairline.
            position+zIndex so the dropdown menus paint ABOVE the panel body below (which is a
            later, opaque sibling — without this the menus open hidden behind it). */
