@@ -20,7 +20,8 @@ export function kioskInteractOf(d: KioskDescriptor, c: Record<string, unknown>):
 /** The card header: the descriptor's kiosk wording when it has one, else the paper instruction. */
 export function kioskInstructionOf(typeId: string, ex: unknown, c: Record<string, unknown>, paper: string): string {
     const ki = kioskFor(typeId)?.kioskInstruction;
-    return (typeof ki === 'function' ? ki(ex, c) : ki) ?? paper;
+    // Owner call 2: the pupil types on the card, so the paper's "Schrijf …" reads "Typ …".
+    return (typeof ki === 'function' ? ki(ex, c) : ki) ?? paper.replace(/\bSchrijf\b/g, 'Typ').replace(/\bschrijf\b/g, 'typ');
 }
 
 /** The type has a descriptor and it can check these settings (registry defaults fill gaps). */
