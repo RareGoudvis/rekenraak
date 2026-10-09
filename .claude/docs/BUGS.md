@@ -214,9 +214,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-F session format
 
-- **O15** D11: `decodeSessie` has no bound on payload length, inflated size, title length or type
-  count (a 50 MB title loads in 4.7 s / 71 MB heap and renders as an off-screen h1). Fix: bounds →
-  ErrorScreen. 2026-10-09
 - **O16** D12 (note, no fix): every answer copies the history and stringifies the whole run,
   `saveRun` reloads all runs, `next` rebuilds the seen-keys set: 0.06 → 0.48 ms per answer at
   #1000, quadratic per run but 0.55 s for 1000 answers. Pin with a perf test. 2026-10-09

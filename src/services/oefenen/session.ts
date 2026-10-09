@@ -13,8 +13,19 @@ import { kioskDefaultV1, type KioskDefault } from './kioskDefaults';
 // payload is the compact OefenWire below, not the session object: everything the kiosk can
 // re-derive (seeded constraints, leaf label, default opdracht, equal weights) is left out.
 
-// SYNC: persistence.ts MAX_SHARE_BYTES — long URLs break in chat apps and QR scanners.
-export const MAX_SESSIE_BYTES = 30000;
+// Bounds a link must stay within both ways (O15): decode checks them before the work they cap,
+// so a hostile link costs neither time nor memory; encode refuses what decode would refuse.
+// Payload chars: the largest real link (20 types, every setting changed) is ~770, a v40 QR
+// holds 4296; 4096 gives it 5× headroom and caps the inflate input at 2.5 kB.
+export const MAX_SESSIE_BYTES = 4096;
+// Inflated JSON bytes: that largest link inflates to ~2.1 kB.
+export const MAX_SESSIE_JSON = 64 * 1024;
+// The builder's title field takes 60.
+export const MAX_TITLE = 80;
+export const MAX_TYPES = 20;
+const MAX_LABEL = 80, MAX_INSTRUCTION = 200, MAX_ID = 60;
+// Far above the builder's sliders (limit 50, timer 30 min); only absurd values are refused.
+const MAX_LIMIT = 1000, MAX_TOTAL = 10_000, MAX_TIMER_MIN = 24 * 60;
 export const OEFEN_HASH_PREFIX = '#oefen=';
 export const OEFEN_PAGE = '/oefenen.html';
 
@@ -191,15 +202,23 @@ function fromBase32(text: string): Uint8Array | null {
     return Uint8Array.from(out);
 }
 
-/** Any JSON value → the link payload (deflate + base32); encodeSessie and the tests use it. */
-export function packWire(wire: unknown): string {
-    return toBase32(deflateSync(strToU8(JSON.stringify(wire)), { level: 9 }));
+/** Any text → the link payload (deflate + base32); the bound tests pack bombs with it. */
+export function packText(text: string): string {
+    return toBase32(deflateSync(strToU8(text), { level: 9 }));
 }
 
-/** The compact payload, or null when it would exceed MAX_SESSIE_BYTES. */
+/** Any JSON value → the link payload; encodeSessie and the tests use it. */
+export function packWire(wire: unknown): string {
+    return packText(JSON.stringify(wire));
+}
+
+/** The compact payload, or null when the link would break a bound decodeSessie enforces. */
 export function encodeSessie(s: OefenSessie): string | null {
     try {
-        const data = packWire(toWire(s));
+        parseSessie(JSON.parse(JSON.stringify(s)));
+        const json = JSON.stringify(toWire(s));
+        if (strToU8(json).length > MAX_SESSIE_JSON) return null;
+        const data = packText(json);
         return data.length > MAX_SESSIE_BYTES ? null : data;
     } catch { return null; }
 }
@@ -227,8 +246,8 @@ function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
     if (!Array.isArray(raw)) return bad(what);
     const [leaf, diff, weight, limit, label, instruction, removed, typeId, exact] = raw;
     const leafId = typeof leaf === 'number' ? KIOSK_LEAF_TABLE_V1[leaf] : leaf;
-    if (typeof leafId !== 'string') return bad(what);
-    if (typeId != null && typeof typeId !== 'string') return bad(what);
+    if (typeof leafId !== 'string' || leafId.length > MAX_ID) return bad(what);
+    if (typeId != null && (typeof typeId !== 'string' || typeId.length > MAX_ID)) return bad(what);
     const b = baselineOf(opt<string>(typeId), leafId);
     const tId = opt<string>(typeId) ?? b.leafTypeId;
     if (typeof tId !== 'string') return bad(what);
@@ -266,6 +285,8 @@ function fromWire(w: unknown): Record<string, unknown> {
     if (typeof created !== 'number') return bad('datum');
     if (typeof flags !== 'number' || !Number.isInteger(flags)) return bad('instellingen');
     if (!Array.isArray(rows) || rows.length === 0) return bad('geen oefeningen');
+    // Before rowIn: each row costs a seed and a registry lookup.
+    if (rows.length > MAX_TYPES) return bad('te veel oefeningen');
     return {
         v, id,
         createdAt: created < MINUTES_BELOW ? created * MINUTE : created,
@@ -285,10 +306,11 @@ function parseType(raw: unknown, i: number): OefenType {
     if (!isObj(raw)) return bad(`oefening ${i + 1}`);
     const { typeId, leafId, label, instruction, constraints, limit, weight, exactForm } = raw;
     if (typeof typeId !== 'string' || typeof leafId !== 'string' || typeof label !== 'string') return bad(`oefening ${i + 1}`);
+    if (typeId.length > MAX_ID || leafId.length > MAX_ID || label.length > MAX_LABEL) return bad(`oefening ${i + 1}`);
     if (!REGISTRY[typeId]?.kiosk) throw new Error(`Deze oefenlink bevat een oefening die deze versie niet kent (${typeId}). Werk de app bij.`);
-    if (instruction !== undefined && typeof instruction !== 'string') return bad(`opdracht van oefening ${i + 1}`);
+    if (instruction !== undefined && (typeof instruction !== 'string' || instruction.length > MAX_INSTRUCTION)) return bad(`opdracht van oefening ${i + 1}`);
     if (!isObj(constraints)) return bad(`instellingen van oefening ${i + 1}`);
-    if (limit !== undefined && !isPosInt(limit)) return bad(`limiet van oefening ${i + 1}`);
+    if (limit !== undefined && !(isPosInt(limit) && (limit as number) <= MAX_LIMIT)) return bad(`limiet van oefening ${i + 1}`);
     if (typeof weight !== 'number' || !Number.isFinite(weight) || weight < 0) return bad(`kans van oefening ${i + 1}`);
     if (exactForm !== undefined && typeof exactForm !== 'boolean') return bad(`vorm van oefening ${i + 1}`);
     return {
@@ -308,12 +330,14 @@ export function parseSessie(raw: unknown): OefenSessie {
     const { id, title, createdAt, types, mode, allowRepeatType, timerMin, testMode, statsLocked, total, attempts } = raw;
     if (typeof id !== 'string' || !ID_RE.test(id)) return bad('id');
     if (title !== undefined && typeof title !== 'string') return bad('titel');
+    if (typeof title === 'string' && title.length > MAX_TITLE) return bad('titel te lang');
     if (typeof createdAt !== 'number') return bad('datum');
     if (!Array.isArray(types) || types.length === 0) return bad('geen oefeningen');
+    if (types.length > MAX_TYPES) return bad('te veel oefeningen');
     if (!MODES.includes(mode as OefenMode)) return bad('volgorde');
     if (typeof allowRepeatType !== 'boolean' || typeof testMode !== 'boolean' || typeof statsLocked !== 'boolean') return bad('instellingen');
-    if (timerMin !== undefined && (typeof timerMin !== 'number' || !(timerMin > 0))) return bad('timer');
-    if (total !== undefined && !isPosInt(total)) return bad('totaal');
+    if (timerMin !== undefined && (typeof timerMin !== 'number' || !(timerMin > 0 && timerMin <= MAX_TIMER_MIN))) return bad('timer');
+    if (total !== undefined && !(isPosInt(total) && (total as number) <= MAX_TOTAL)) return bad('totaal');
     if (attempts !== undefined && attempts !== 1 && attempts !== 2) return bad('kansen');
     return {
         v: OEFEN_VERSION, id, createdAt, mode: mode as OefenMode, allowRepeatType, testMode, statsLocked,
@@ -330,9 +354,14 @@ export function parseSessie(raw: unknown): OefenSessie {
 export function decodeSessie(hash: string): OefenSessie {
     const data = hash.startsWith(OEFEN_HASH_PREFIX) ? hash.slice(OEFEN_HASH_PREFIX.length) : hash.replace(/^#/, '');
     if (!data) return bad('leeg');
+    if (data.length > MAX_SESSIE_BYTES) return bad('te lang');
     const bytes = fromBase32(data);
-    let json: string | null = null;
-    if (bytes && bytes.length > 0) { try { json = strFromU8(inflateSync(bytes)); } catch { json = null; } }
+    let inflated: Uint8Array | null = null;
+    // Into a fixed buffer one byte over the cap: fflate never grows a given buffer, so a deflate
+    // bomb fills it and stops costing memory; a full buffer means the link was too big.
+    if (bytes && bytes.length > 0) { try { inflated = inflateSync(bytes, { out: new Uint8Array(MAX_SESSIE_JSON + 1) }); } catch { inflated = null; } }
+    if (inflated && inflated.length > MAX_SESSIE_JSON) return bad('te groot');
+    const json = inflated ? strFromU8(inflated) : null;
     if (!json) return bad('kan niet gelezen worden');
     let parsed: unknown;
     try { parsed = JSON.parse(json); } catch { return bad('geen geldige JSON'); }

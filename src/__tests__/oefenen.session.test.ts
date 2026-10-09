@@ -8,7 +8,7 @@ import { flattenLeaves } from '../config/appstructure';
 import { buildSessie, listOefenLeaves, type BuilderRow } from '../components/oefenen/oefenBuild';
 import { qrMatrixOrNull, qrVersionOf } from '../services/qr';
 import {
-    MAX_SESSIE_BYTES, decodeSessie, encodeSessie, newSessieId, packWire, parseSessie, sessieLink, toWire,
+    MAX_SESSIE_BYTES, MAX_SESSIE_JSON, MAX_TITLE, MAX_TYPES, decodeSessie, encodeSessie, newSessieId, packText, packWire, parseSessie, sessieLink, toWire,
 } from '../services/oefenen/session';
 
 const ORIGIN = 'https://www.rekenraak.be';
@@ -70,8 +70,12 @@ describe('codec', () => {
         }
     });
     test('round-trip is lossless for every kiosk leaf with every setting changed (masks, arrays)', () => {
-        const s = sessieOf(kioskCapableLeaves().length, Infinity, true);
-        expect(roundTrip(s)).toEqual(json(s));
+        const all = sessieOf(kioskCapableLeaves().length, Infinity, true);
+        // MAX_TYPES rows per link: walk the leaves in slices.
+        for (let i = 0; i < all.types.length; i += MAX_TYPES) {
+            const s = { ...all, types: all.types.slice(i, i + MAX_TYPES) };
+            expect(roundTrip(s)).toEqual(json(s));
+        }
     });
     test('removed, unknown, undefined and null settings survive', () => {
         const s = sessieOf(2, 1);
@@ -107,7 +111,7 @@ describe('codec', () => {
         expect(qrVersion(sessieOf(20, 0))).toBeLessThanOrEqual(20);
         expect(qrVersion(sessieOf(20, 1))).toBeLessThanOrEqual(20);
         expect(qrVersion(sessieOf(20, Infinity, true))).toBeLessThanOrEqual(40);
-        expect(encodeSessie(sessieOf(20, Infinity, true))!.length).toBeLessThan(MAX_SESSIE_BYTES / 20);
+        expect(encodeSessie(sessieOf(20, Infinity, true))!.length).toBeLessThan(MAX_SESSIE_BYTES / 4);
     });
     test('too large → null, no link', () => {
         const s = sessieOf(1, 0);
@@ -285,6 +289,63 @@ describe('2 kansen (wire slot 8, appended)', () => {
     });
     test('a bad attempts value is a Dutch error', () => {
         expect(() => decodeSessie(packWire([1, 'abc', 1, 0, [[3]], null, null, null, 3]))).toThrow(/ongeldig \(kansen\)/);
+    });
+});
+
+describe('bounds (O15): a hostile link is refused before it costs time or memory', () => {
+    const wire = (over: (w: unknown[]) => void) => {
+        const w: unknown[] = [1, 'abc', 1, 0, [[3]]];
+        over(w);
+        return packWire(w);
+    };
+    const fast = (hash: string) => {
+        const t0 = performance.now();
+        expect(() => decodeSessie(hash)).toThrow(/oefenlink is ongeldig/);
+        return performance.now() - t0;
+    };
+    test('the largest real link (20 types, every setting changed) has 4× headroom and decodes', () => {
+        const s = sessieOf(20, Infinity, true);
+        expect(encodeSessie(s)!.length * 4).toBeLessThanOrEqual(MAX_SESSIE_BYTES);
+        expect(JSON.stringify(toWire(s)).length * 16).toBeLessThanOrEqual(MAX_SESSIE_JSON);
+        expect(roundTrip(s)).toEqual(json(s));
+    });
+    test('a payload over the cap is refused before it is decoded', () => {
+        expect(fast('A'.repeat(MAX_SESSIE_BYTES + 1))).toBeLessThan(100);
+    });
+    test('a deflate bomb (1 MB title, 1 MB of spaces) is refused while inflating', () => {
+        const title = packWire([1, 'bomb1', 1, 0, [[5]], 'A'.repeat(1 << 20)]);
+        const spaces = packText(' '.repeat(1 << 20) + JSON.stringify([1, 'bomb2', 1, 0, [[5]]]));
+        expect(title.length).toBeLessThanOrEqual(MAX_SESSIE_BYTES);
+        expect(spaces.length).toBeLessThanOrEqual(MAX_SESSIE_BYTES);
+        expect(fast(title)).toBeLessThan(100);
+        expect(fast(spaces)).toBeLessThan(100);
+        expect(() => decodeSessie(title)).toThrow(/ongeldig \(te groot\)/);
+        expect(() => decodeSessie(spaces)).toThrow(/ongeldig \(te groot\)/);
+    });
+    test(`title ≤ ${MAX_TITLE} chars, ≤ ${MAX_TYPES} types; a link that would not decode does not encode`, () => {
+        expect(decodeSessie(wire(w => { w[5] = 'T'.repeat(MAX_TITLE); })).title).toHaveLength(MAX_TITLE);
+        expect(() => decodeSessie(wire(w => { w[5] = 'T'.repeat(MAX_TITLE + 1); }))).toThrow(/ongeldig \(titel/);
+        expect(decodeSessie(wire(w => { w[4] = Array.from({ length: MAX_TYPES }, () => [3]); })).types).toHaveLength(MAX_TYPES);
+        expect(() => decodeSessie(wire(w => { w[4] = Array.from({ length: MAX_TYPES + 1 }, () => [3]); }))).toThrow(/ongeldig \(te veel/);
+        expect(encodeSessie({ ...sessieOf(1, 0), title: 'T'.repeat(MAX_TITLE + 1) })).toBeNull();
+        expect(encodeSessie(sessieOf(MAX_TYPES + 1, 0))).toBeNull();
+        expect(encodeSessie(sessieOf(MAX_TYPES, 0))).not.toBeNull();
+    });
+    test.each<[string, (w: unknown[]) => void]>([
+        ['label too long', w => { w[4] = [[3, null, null, null, 'L'.repeat(81)]]; }],
+        ['label not a string', w => { w[4] = [[3, null, null, null, 7]]; }],
+        ['instruction too long', w => { w[4] = [[3, null, null, null, null, 'I'.repeat(201)]]; }],
+        ['instruction not a string', w => { w[4] = [[3, null, null, null, null, { a: 1 }]]; }],
+        ['leaf id too long', w => { w[4] = [['x'.repeat(61)]]; }],
+        ['limit not an integer', w => { w[4] = [[3, null, null, 2.5]]; }],
+        ['limit absurd', w => { w[4] = [[3, null, null, 1e9]]; }],
+        ['weight not a number', w => { w[4] = [[3, null, 'veel']]; }],
+        ['diff not a list', w => { w[4] = [[3, { a: 1 }]]; }],
+        ['timer absurd', w => { w[6] = 1e9; }],
+        ['total absurd', w => { w[7] = 1e9; }],
+        ['title not a string', w => { w[5] = 42; }],
+    ])('%s → Dutch error', (_name, over) => {
+        expect(() => decodeSessie(wire(over))).toThrow(/oefenlink is ongeldig/);
     });
 });
 
