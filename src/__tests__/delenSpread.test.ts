@@ -2,6 +2,7 @@ import { describe, test, expect, afterEach } from 'vitest';
 import type { Equation } from '../services/math/types';
 import { makeBlock } from './helpers/makeBlock';
 import { REGISTRY } from '../config/exerciseRegistry';
+import { seedLeafConstraints } from '../config/baseSettings';
 
 // Hoofdrekenen delen 'andere' at every max: a divisor drawn uniformly up to the max made most
 // quotients 1, and a masked dividend over such a divisor was rarely exact, so the block relaxed.
@@ -74,5 +75,24 @@ describe("hr delen 'andere', natural", () => {
 describe("hr delen 'andere', decimal", () => {
     test.each([10, 100, 1_000])('no mask at %i: exact, full, quotients not dominated by 1', (max) => {
         check({ numberType: 'decimal', decimalPlaces: 2 }, max, 2, 0.15);
+    });
+});
+
+// The sidebar click itself (leaf defaults, its own count): the 2026-09-27 sweep saw 5-8 of 10
+// "702,71 : 702,71 = 1" rows on hr-std-delen-dec, and stray "x : x = 1" rows in gemengd.
+describe('leaf defaults: "x : x = 1" stays rare', () => {
+    test.each(['hr-std-delen-dec', 'hr-std-gemengd-dec', 'hr-std-gemengd-nat'])('%s over 20 seeds', (leafId) => {
+        const seeded = seedLeafConstraints(leafId, null)!;
+        const quotients: number[] = [];
+        for (let seed = 1; seed <= 20; seed++) {
+            Math.random = mulberry32(seed);
+            const block = makeBlock(seeded.typeId, { leafId, constraints: seeded.constraints });
+            const items = REGISTRY[seeded.typeId].generate(block) as Equation[];
+            expect(items.length).toBe(block.numberOfExercises);
+            for (const eq of items) if (eq.operator === ':') quotients.push(eq.answer as number);
+        }
+        expect(quotients.length).toBeGreaterThan(0);
+        const ones = quotients.filter(q => q === 1).length / quotients.length;
+        expect(ones, `share of quotient 1: ${ones}`).toBeLessThanOrEqual(0.15);
     });
 });

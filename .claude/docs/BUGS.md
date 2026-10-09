@@ -98,9 +98,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Dutch clock text (clockTypes.ts ~45-50 `formatTimeText`): no "voor half / over half": 01:25 → "25 over
   1" (should be "5 voor half 2"), 20:31 → "29 voor 21", 00:05 → "5 over 0". Reachable with the 5-minute /
   1-minute timeTypes (pw004, pw007), not at the leaf defaults. 2026-09-27
-- hr-std-delen-dec DEFAULT: 5-8 of 10 exercises are "702,71 : 702,71 = 1" (both seeds), with no note;
-  hr-std-gemengd-dec / -nat defaults also carry "x : x = 1" rows. gemengd-dec '×' rows multiply two
-  2-decimal numbers ("28,05 × 34,91 = 979,2255") in a mental-arithmetic block (owner call). 2026-09-27
+- hr-std-gemengd-dec DEFAULT: its '×' rows multiply two 2-decimal numbers ("4,89 × 100,12 = 489,5868")
+  in a mental-arithmetic block (owner call). 2026-09-27
 - Hoofdrekenen breuken keys print whole numbers as n/1 ("4/3 : 2/9 = 6/1" at the hr-std-delen-rat
   DEFAULT; "288/1") and big numerators without spaces ("36000004/5"); an {M, E} operand mask at max
   1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
