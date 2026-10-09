@@ -217,8 +217,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-G teacher UX
 
-- **O21** Builder description for analoge klok lezen reads "Klok zien → tijd in woorden schrijven"
-  (ClockConfig.tsx:49) while the kiosk takes uu:mm (pairs with the classroom-test line above). 2026-10-09
 - **O22** Breuken kleuren card says "Tik 3 van de 6 delen aan." (`kioskInstruction`, BREUKEN_KIOSK)
   which gives the count away. Owner: "Kleur 3/6 in." only. 2026-10-09
 

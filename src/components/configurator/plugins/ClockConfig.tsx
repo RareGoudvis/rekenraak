@@ -46,8 +46,9 @@ export default function ClockConfig({ block }: Props) {
         <div style={styles.container}>
             {/* Activity + clock type come from the sidebar leaf; show the current mode as a hint. */}
             <div style={{ ...styles.section, fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                {clockType === 'analoog' && exerciseMode === 'lezen' && 'Analoog · Klok zien → tijd in woorden schrijven'}
-                {clockType === 'analoog' && exerciseMode === 'tekenen' && 'Analoog · Tijd in woorden → wijzers tekenen op klok'}
+                {/* Also the Oefenmodus builder's hint, where the pupil types / drags instead of writing / drawing. */}
+                {clockType === 'analoog' && exerciseMode === 'lezen' && 'Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd typen als uu:mm)'}
+                {clockType === 'analoog' && exerciseMode === 'tekenen' && 'Analoog · Tijd in woorden → wijzers tekenen op klok (oefenmodus: wijzers slepen)'}
                 {clockType === 'analoog' && exerciseMode === 'omzetten' && 'Analoog · Klok zien → digitale tijd invullen'}
                 {clockType === 'digitaal' && exerciseMode === 'lezen' && 'Digitaal · Digitale tijd zien → tijd in woorden schrijven'}
                 {clockType === 'digitaal' && exerciseMode === 'tekenen' && 'Digitaal · Tijd in woorden → digitale klok invullen'}

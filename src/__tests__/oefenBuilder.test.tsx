@@ -498,6 +498,17 @@ describe('OefenShareModal summary (O19)', () => {
     });
 });
 
+describe('klok description says what the kiosk asks (O21)', () => {
+    // ClockConfig serves the sheet too, where lezen IS written in words: both answers are named.
+    test('analoge klok lezen: uu:mm typen in de oefenmodus; tekenen: wijzers slepen', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('klok-analoog-lezen'));
+        fireEvent.click(addBtn('klok-analoog-tekenen'));
+        expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd typen als uu:mm)')).toBeTruthy();
+        expect(screen.getByText('Analoog · Tijd in woorden → wijzers tekenen op klok (oefenmodus: wijzers slepen)')).toBeTruthy();
+    });
+});
+
 describe('OefenBuilderModal endless-session hint (O18)', () => {
     const ENDLESS = 'Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.';
 
