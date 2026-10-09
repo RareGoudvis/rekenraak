@@ -114,7 +114,7 @@ function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean })
         case 'datum': return <DatumWidget widget={widget} />;
         case 'klok': return <KlokWidget widget={widget} dark={dark} />;
         case 'afbeelding': return <AfbeeldingWidget widget={widget} />;
-        case 'namen': return <NamenWidget dark={dark} />;
+        case 'namen': return <NamenWidget widget={widget} dark={dark} />;
         case 'weer': return <WeerWidget widget={widget} dark={dark} />;
         case 'geluid': return <GeluidWidget widget={widget} />;
         case 'werksymbolen': return <WerksymbolenWidget widget={widget} />;

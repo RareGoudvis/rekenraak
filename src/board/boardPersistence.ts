@@ -87,7 +87,9 @@ export function parseBoardFile(json: string): BoardFile | null {
         if (!Array.isArray(data.pages) || data.pages.length === 0 || !data.pages.every(isPage)) return null;
         const pages: BoardPage[] = data.pages.map(p => ({
             ...p,
-            widgets: p.widgets.filter(isWidget),
+            // Every widget reader defaults a missing prop key, so junk props (not an object)
+            // drop to none: the widget loads with its default look instead of throwing.
+            widgets: p.widgets.filter(isWidget).map(w => (w.props === undefined || isObj(w.props) ? w : { ...w, props: {} })),
             // Strokes saved by early builds may lack sample points.
             strokes: p.strokes.filter(isStroke).map(s => (Array.isArray(s.pts) ? s : { ...s, pts: [] })),
             // Only a page that carries the field gets it back, so a v1 page round-trips unchanged.

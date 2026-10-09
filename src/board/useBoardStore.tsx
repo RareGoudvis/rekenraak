@@ -4,6 +4,7 @@ import { emptyPage, rndId } from './boardTypes';
 import { defaultInstrument } from './instrumentGeometry';
 import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
+import { loadWidgetDefaults } from './settings/widgetDefaults';
 
 export interface InkSettings { color: string; width: number; }
 
@@ -93,8 +94,11 @@ export const useBoardStore = create<BoardState>((set, get) => ({
             const page = state.pages[state.activePageIdx];
             // New widget always lands on top of the current stack.
             const z = page.widgets.length ? Math.max(...page.widgets.map(x => x.z)) + 1 : 1;
+            // The teacher's "Bewaar als mijn standaard" for this kind; the caller's props win.
+            const mine = w.kind === 'exercise' ? null : loadWidgetDefaults(w.kind);
+            const added = mine ? { ...w, props: { ...mine, ...w.props } } : w;
             return {
-                ...withActivePage(state, (p) => ({ ...p, widgets: [...p.widgets, { ...w, id, z }] })),
+                ...withActivePage(state, (p) => ({ ...p, widgets: [...p.widgets, { ...added, id, z }] })),
                 selectedWidgetId: id,
             };
         });

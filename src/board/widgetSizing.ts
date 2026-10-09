@@ -44,12 +44,9 @@ export const TITLE_DEFAULTS: Record<WidgetKind, string> = {
     mabmat: 'MAB-materiaal', 'geld-item': 'Geld',
 };
 
-// Kinds whose title bar shows the ⚙ (they have an inspector panel).
-export const KINDS_WITH_SETTINGS: WidgetKind[] = [
-    'exercise', 'klok', 'weer', 'namen', 'datum', 'werksymbolen',
-    'timer', 'dobbelsteen', 'adem', 'groepjes', 'checklist', 'stappenplan',
-    'getallenlijn', 'positietabel', 'honderdveld', 'breukviz', 'mabmat',
-];
+// Kinds whose title bar shows the ⚙: every kind, since every kind has the baseline panel
+// (titel, tekstgrootte, accentkleur, standaard); see settings/registry.ts.
+export const KINDS_WITH_SETTINGS: WidgetKind[] = Object.keys(NATURAL_W) as WidgetKind[];
 
 export function widgetTitle(widget: BoardWidget): string {
     const t = widget.props?.title;
