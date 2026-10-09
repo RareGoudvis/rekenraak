@@ -168,6 +168,11 @@ UpdateState). Left over, found while fixing:
   pupils could not tell it from the honderdtal; and adding / taking away pieces in the tray needs
   more UI help (which piece, how many laid, a clear +/−). Owner note from the first test with
   real kids. 2026-10-09
+- Kiosk analoge klok "lezen": the card keeps the paper instruction ("… in woorden") while the kiosk
+  only takes a typed time (uu:mm), so pupils are told to answer in words and cannot. Fix: a
+  `kioskInstruction` for the non-drag klok modes ("Lees de klok en typ de tijd (uu:mm).") and add
+  "in woorden" to the banned verbs in oefenen.kioskInstruction.test.ts; sweep the other leaves for
+  the same mismatch. Owner: log only, not fixing now. 2026-10-09
 
 ## Tooling
 
