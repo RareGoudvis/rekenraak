@@ -970,7 +970,9 @@ export const KLOK_KIOSK = descriptor<ClockExercise>({
     },
     display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??`
         : isKlokDrag(ex, c) ? `${ex.timeText}: wijzers op ?` : `${ex.timeText} = ? : ??`),
-    kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.` : undefined),
+    // Owner call 13: the paper's lezen asks the time in words (a writing line under the clock); the card takes uu:mm only.
+    kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.`
+        : klokMode(ex, c) === 'lezen' && klokType(ex, c) === 'analoog' ? 'Lees de klok en typ de tijd (uu:mm).' : undefined),
     supported: (c) => {
         const type = (c.clockType as string | undefined) ?? 'analoog';
         // No tijdstype ticked: the generator has no minutes to draw from (clockGenerator returns []).

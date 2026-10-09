@@ -8,9 +8,10 @@ import { kioskCapableLeaves, kioskInstructionOf } from '../services/oefenen/kios
 import { nextExercise } from '../services/oefenen/scheduler';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
 
-// Pen verbs: the pupil taps or types, so the card must not tell them to draw on it.
-// Word boundaries keep descriptive "onderstreepte cijfer" / "gekleurd" legal.
-const PEN_VERB = /\b(omcirkel|kleur|teken|onderstreep|zet een kruisje|kruis aan)\b/i;
+// Pen verbs: the pupil taps or types, so the card must not tell them to draw on it, nor to
+// answer "in woorden" (the kiosk only takes typed digits). Word boundaries keep descriptive
+// "onderstreepte cijfer" / "gekleurd" legal.
+const PEN_VERB = /\b(omcirkel|kleur|teken|onderstreep|zet een kruisje|kruis aan|in woorden)\b/i;
 // Owner call (O22): breuken kleuren says "Kleur 3/6 in.": a tapped part does turn coloured on the card.
 const KLEUR_BREUK = /^Kleur \d+\/\d+ in\.$/;
 
@@ -38,6 +39,12 @@ const ALL = headers();
 describe('kiosk instruction wording', () => {
     test('no kiosk-capable leaf shows a pen verb in the card header (bar the owner\'s "Kleur 3/6 in.")', () => {
         for (const h of ALL) if (!KLEUR_BREUK.test(h.shown)) expect(h.shown, `${h.leafId} L${h.grade}`).not.toMatch(PEN_VERB);
+    });
+
+    test('klok analoog lezen asks for a typed time, the only answer the card takes', () => {
+        const lezen = ALL.filter(h => h.leafId === 'klok-analoog-lezen');
+        expect(lezen.length).toBeGreaterThan(0);
+        for (const h of lezen) expect(h.shown, `L${h.grade}`).toBe('Lees de klok en typ de tijd (uu:mm).');
     });
 
     test('breuken kleuren names only the fraction, never how many parts to tap (O22)', () => {
