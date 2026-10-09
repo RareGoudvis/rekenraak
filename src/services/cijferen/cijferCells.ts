@@ -52,11 +52,20 @@ export interface CijferKioskGrid {
     answerRow: number;
 }
 
-// Division: the quotient spans the dividend's integer columns plus dp, right of the bar.
+// Decimals the divisor really has (0,7 → 1); generators keep floats, so 9 places strip the tail.
+const decimalsOf = (x: number) => (String(Number(x.toFixed(9))).split('.')[1] ?? '').length;
+
+/** Whole places the quotient may need: a decimal divisor is worked after the komma shift
+ *  (742,4 : 0,7 = 7424 : 7), so they are the SHIFTED dividend's (1060,57 needs four, not three). */
+// SYNC: CijferViewer DivisionGrid quotientIntCols and divGridCols size the quotient row from this.
+export function divQuotientInt(ex: CijferExercise): number {
+    return intLen(Number((ex.operands[0] * 10 ** decimalsOf(ex.operands[1])).toFixed(9)));
+}
+
+// Division: the quotient spans divQuotientInt + dp columns, right of the bar.
 function divGeometry(ex: CijferExercise, dp: number) {
-    const dividendIntCols = intLen(ex.operands[0]);
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
-    return { qInt: dividendIntCols, leftCols: dividendIntCols + workingDecCols };
+    return { qInt: divQuotientInt(ex), leftCols: intLen(ex.operands[0]) + workingDecCols };
 }
 
 /** Every fillable ruitje of the kiosk grid, in key order (Tab order; the keypad starts at the first digit). */

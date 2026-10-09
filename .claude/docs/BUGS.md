@@ -204,11 +204,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ### WP-H test infra
 
-- **O25** (proposed, found by `oefenen.e2e.matrix.test.ts`, pinned `test.fails`) cijferen-delen-dec with a
-  decimal divisor (Cijferen config mask on the 2nd getal, e.g. tienden): the komma shift makes the quotient
-  longer than the card's quotient cells: 742,4 : 0,7 = 1060,57 needs six `q` cells, the card has five, so the
-  pupil can never enter it (935,6 : 0,8 = 1169,5 too). Fix: size the quotient row from the shifted
-  dividend (cijferCells / CIJFER_KIOSK keys). 2026-10-09
 - **O26** (proposed, pinned) getallenrijen natuurlijk / geheel with an "Eigen sprong" of 0,5 or 0,1
   (GetallenrijenConfig offers it for every non-rational type): the row has kommagetallen but the kiosk keypad
   has no komma (GETALLENAS_KIOSK keys follow numberType only), so the blanks cannot be typed. Fix: keys
@@ -216,6 +211,14 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 - **O27** (proposed, pinned) deelbaarheid tabel (and veelvouden in tabel layout) "Tik aan door welke getallen
   693 deelbaar is" with none of the divisors right: a wrong tap gives a Resultaten row with an empty
   Juist cell (`expectedText` of an empty tap-multi answer is ''). Fix: a `show` that says "geen". 2026-10-09
+
+- CijferViewer DivisionGrid (sheet at scaffolding ≤ 1, and every kiosk card) draws a decimal divisor
+  through `getDigitCols(divisor, 0, …)` (~CijferViewer.tsx:487), which rounds it: 0,7 shows as "1", 0,3 and
+  0,1 as "0"; the dividend's whole digits round the same way (~:474, 336,6 shows as "337,60"). The card
+  hides the header, so the pupil sees a wrong sum. Fix: whole digits from `Math.floor`, the divisor with its
+  decimals and a comma. Also the quotient row still sizes from the dividend (~:103, ~:425): mirror
+  `divQuotientInt` (cijferCells.ts, O25) so the sixth `q` cell sits inside the grid and the comma after
+  the shifted whole places. 2026-10-09
 
 ## Tooling
 
