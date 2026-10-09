@@ -365,6 +365,24 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
         expect(footerBtn('Delen').disabled).toBe(false);
     });
 
+    test('a dead row: the preview says so (no "klik Genereer"), Opslaan says it saves anyway and does', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('patronen-kettingsommen'));
+        // × five times under 20 (1·2^5 = 32): a setting KettingConfig offers that generates nothing.
+        act(() => {
+            const st = useWorksheetStore.getState();
+            st.setDraftBlocks(st.draftBlocks.map(b => ({ ...b, constraints: { ...b.constraints, ops: ['x'], chainLength: 5, maxGetal: 20 } })));
+        });
+        expect(rowOf('patronen-kettingsommen').getByText(DEAD)).toBeTruthy();
+        expect(rowOf('patronen-kettingsommen').getByText('Geen oefeningen met deze instellingen')).toBeTruthy();
+        expect(screen.queryByText(/klik Genereer/)).toBeNull();
+        // Honest, not blocking: the footer says Opslaan keeps it but Delen waits.
+        expect(screen.getByRole('note', { name: 'Opslaan zonder delen' }).textContent).toMatch(/opslaan.*delen/i);
+        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Klok' } });
+        fireEvent.click(footerBtn('Opslaan'));
+        expect(loadOefenSessies()).toHaveLength(1);
+    });
+
     // The draft block's constraints, read back from the store after each click.
     const draftKey = <T,>(key: string) => useWorksheetStore.getState().draftBlocks[0].constraints[key as never] as T;
     // The tafel buttons come after the term-count row (also 2 / 3 / 4) in the hr config.

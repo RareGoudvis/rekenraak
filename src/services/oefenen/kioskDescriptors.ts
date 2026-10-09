@@ -713,9 +713,16 @@ export const PATROON_KIOSK = descriptor<PatroonExercise>({
 // SYNC: GetallenasViewer derives a legacy natural line from start + step.
 const axisValues = (ex: GetallenasExercise) => (ex.values?.length ? ex.values : Array.from({ length: ex.tickCount }, (_, i) => ex.start + (ex.direction === 'left' ? -i : i) * ex.step));
 const axisInteract = cellsInteract<GetallenasExercise>((ex) => blankKeys(ex.blankMask), (ex) => blanksOf(axisValues(ex), ex.blankMask));
+// O26: an "Eigen sprong" of 0,5 on a natural / gehele rij makes kommagetallen. Read from the
+// step SETTING, never the exercise, so the keypad stays the same from one rij to the next.
+const axisKeys = (c: Record<string, unknown>): KioskKey[] => {
+    const keys = kindKeys(c);
+    const decimalStep = typeof c.step === 'number' && !Number.isInteger(c.step);
+    return decimalStep && !keys.includes(',') && numberTypeOf(c) !== 'rational' ? [...keys, ','] : keys;
+};
 export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
     input: 'interactive',
-    keys: kindKeys,
+    keys: axisKeys,
     exactFormDefault: valueWhenRational,
     interact: axisInteract,
     answerOf: (ex, c) => [axisInteract.answerOf(ex, c)],
@@ -740,6 +747,8 @@ export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
         keys: (_ex, c) => divisorsOf(c).map((_, i) => String(i)),
         answerOf: tabelAnswer,
         fromState: (st, _ex, c) => numberSet(st.selected.map(k => divisorsOf(c)[Number(k)]).filter((d): d is number => d !== undefined)),
+        // O27: a number no column divides is answered by tapping nothing; Resultaten says so instead of an empty cell.
+        show: (answer) => answer.trim() || 'geen',
     },
     answerOf: (ex, c) => (isTabel(c) ? [tabelAnswer(ex, c)] : (ex.sequence ?? []).slice(ex.givenCount ?? 2).map(String)),
     display: (ex, c) => (isTabel(c)
@@ -961,7 +970,9 @@ export const KLOK_KIOSK = descriptor<ClockExercise>({
     },
     display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??`
         : isKlokDrag(ex, c) ? `${ex.timeText}: wijzers op ?` : `${ex.timeText} = ? : ??`),
-    kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.` : undefined),
+    // Owner call 13: the paper's lezen asks the time in words (a writing line under the clock); the card takes uu:mm only.
+    kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.`
+        : klokMode(ex, c) === 'lezen' && klokType(ex, c) === 'analoog' ? 'Lees de klok en typ de tijd (uu:mm).' : undefined),
     supported: (c) => {
         const type = (c.clockType as string | undefined) ?? 'analoog';
         // No tijdstype ticked: the generator has no minutes to draw from (clockGenerator returns []).

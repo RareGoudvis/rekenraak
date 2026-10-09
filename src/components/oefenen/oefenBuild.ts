@@ -168,3 +168,9 @@ export function rowYields(row: Pick<BuilderRow, 'leaf' | 'constraints'>, rng?: R
 
 /** Rows whose settings generate nothing: the kiosk would end a pupil's run on them, so Delen waits. */
 export const deadRows = (rows: BuilderRow[]): BuilderRow[] => rows.filter(r => !rowYields(r));
+
+/** A saved session's dead rows, so Delen outside the builder (Mijn bladen) runs the same pre-flight. */
+export const deadRowsOf = (sessie: OefenSessie): BuilderRow[] => deadRows(rowsFromSessie(sessie));
+
+// The builder's preview of a dead row: the viewers' own empty text asks for a Genereer button the builder has not.
+export const EMPTY_PREVIEW = 'Geen oefeningen met deze instellingen';

@@ -14,7 +14,7 @@ import { MAX_TITLE, MAX_TYPES, newSessieId } from '../../services/oefenen/sessio
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
-    LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
+    EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -225,7 +225,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                         </div>
                                         <div style={S.sideCol}>
                                             <div style={S.previewWrap}>
-                                                {constraints && <ExercisePreview typeId={r.leaf.typeId} constraints={constraints} count={2} height={130} />}
+                                                {constraints && <ExercisePreview typeId={r.leaf.typeId} constraints={constraints} count={2} height={130} emptyText={EMPTY_PREVIEW} />}
                                             </div>
                                             <div style={S.field}>
                                                 <label style={S.label} htmlFor={`n-${r.key}`}>Aantal: {r.limit ?? 'onbeperkt'}</label>
@@ -272,11 +272,19 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                 </div>
 
                 <div style={S.footer}>
-                    <span style={S.footerCount}>
-                        {sessie.types.length} {sessie.types.length === 1 ? 'soort' : 'soorten'} in de sessie
-                        {unsupportedOnly > 0 && ` · ${unsupportedOnly} niet ondersteund`}
-                        {dead.size > 0 && ` · ${dead.size} zonder oefeningen`}
-                    </span>
+                    <div style={S.footerInfo}>
+                        <span style={S.footerCount}>
+                            {sessie.types.length} {sessie.types.length === 1 ? 'soort' : 'soorten'} in de sessie
+                            {unsupportedOnly > 0 && ` · ${unsupportedOnly} niet ondersteund`}
+                            {dead.size > 0 && ` · ${dead.size} zonder oefeningen`}
+                        </span>
+                        {/* Honest, not blocking: a teacher may keep a half-finished session, but it cannot reach a pupil yet. */}
+                        {dead.size > 0 && canShip && (
+                            <span style={S.footerDead} role="note" aria-label="Opslaan zonder delen">
+                                <Warning size={14} /> {dead.size === 1 ? 'Een soort levert' : `${dead.size} soorten leveren`} geen oefeningen op: je kan opslaan, delen kan pas als je dat aanpast.
+                            </span>
+                        )}
+                    </div>
                     <div style={S.footerBtns}>
                         <button className="ui-hover" style={S.btn(canShip)} disabled={!canShip} onClick={handleSave}>
                             {saved ? <><Check size={15} /> Opgeslagen</> : <><FloppyDisk size={15} /> Opslaan</>}
@@ -351,7 +359,9 @@ const S = {
     // .seg-btn's flex: 1 would collapse its height to 0-basis in a column.
     formBtn: { flex: 'none' } as React.CSSProperties,
     footer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-5)', borderTop: '1px solid var(--separator)', flexShrink: 0 } as React.CSSProperties,
+    footerInfo: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } as React.CSSProperties,
     footerCount: { fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 600 } as React.CSSProperties,
+    footerDead: { display: 'flex', alignItems: 'center', gap: 'var(--sp-1)', fontSize: 'var(--text-sm)', color: 'var(--danger)', fontWeight: 600 } as React.CSSProperties,
     footerBtns: { display: 'flex', gap: 'var(--sp-2)' } as React.CSSProperties,
     btn: (enabled: boolean): React.CSSProperties => ({ display: 'inline-flex', alignItems: 'center', gap: '6px', height: 'var(--control-h)', padding: '0 var(--sp-4)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--separator)', background: 'var(--bg-surface)', color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontWeight: 600, cursor: enabled ? 'pointer' : 'not-allowed', opacity: enabled ? 1 : 0.5 }),
 };
