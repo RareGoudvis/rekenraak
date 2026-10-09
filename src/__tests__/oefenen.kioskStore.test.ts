@@ -6,6 +6,9 @@ import { nextExercise } from '../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
 import type { CijferExercise } from '../services/math/types';
+import type { OefenType } from '../services/oefenen/types';
+import { flattenLeaves } from '../config/appstructure';
+import { makeDraftBlock } from '../components/curriculum/draftBlock';
 import { fillAnswer, hashOf, onScreen, resetKiosk, starterSessie, STARTER_TYPES } from './helpers/oefenKiosk';
 
 // The pupil kiosk's store: phase transitions, testmode / statsLocked, the timer lock, and
@@ -591,5 +594,34 @@ describe('Lenen (cijferen aftrekken)', () => {
         useOefenStore.setState({ phase: 'feedback' });
         st().pressExtra('lenen');
         expect(cells()).toEqual({});
+    });
+});
+
+describe("the row's exactForm reaches the check", () => {
+    // An unreduced spelling of the value on screen: '3 1/4' → '26/8', '3' → '6/2'.
+    const unreduced = (answer: string) => {
+        const m = /^(?:(\d+) )?(\d+)\/(\d+)$/.exec(answer.trim());
+        if (!m) return `${2 * Number(answer)}/2`;
+        const d = Number(m[3]);
+        return `${2 * (Number(m[1] ?? 0) * d + Number(m[2]))}/${2 * d}`;
+    };
+    const leaf = flattenLeaves().find(l => l.id === 'hr-std-optellen-rat')!;
+    const row = (exactForm: boolean): OefenType => ({
+        typeId: leaf.typeId, leafId: leaf.id, label: 'Breuken', exactForm, weight: 1,
+        constraints: makeDraftBlock(leaf.typeId, leaf.defaultConstraints ?? {}).constraints as Record<string, unknown>,
+    });
+
+    test('exactForm true rejects an unreduced breuk, false accepts it', () => {
+        for (const exact of [true, false]) {
+            resetKiosk();
+            st().load(hashOf(starterSessie({ types: [row(exact)] })));
+            // Set on the decoded session: this pins the store → check wiring, whatever the link carries.
+            useOefenStore.setState({ sessie: starterSessie({ types: [row(exact)] }) });
+            st().start();
+            const given = unreduced(onScreen().answer[0].split('|')[0]);
+            useOefenStore.setState({ input: [given] });
+            st().answer();
+            expect(st().lastCorrect, `exactForm ${exact}: ${given}`).toBe(!exact);
+        }
     });
 });

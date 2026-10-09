@@ -377,7 +377,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (!d) return;
             const now = Date.now();
             const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
-            const correct = checkAnswer(d, cur.exercise, cur.constraints, given);
+            const correct = checkAnswer(d, cur.exercise, cur.constraints, given, type.exactForm);
             // First try missed with 2 kansen: nothing is counted yet, the same exercise comes back.
             if (!correct && attemptsOf(s) === 2 && cur.wrongFirst === undefined) {
                 const retry: KioskCurrent = { ...cur, wrongFirst: given };
