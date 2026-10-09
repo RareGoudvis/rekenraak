@@ -2,6 +2,7 @@
 import { describe, test, expect, afterEach, vi } from 'vitest';
 import { render, cleanup, fireEvent } from '@testing-library/react';
 import { PaletteRow } from '../board/settings/mathControls';
+import { ColorSwatches } from '../board/settings/controls';
 
 // The ⚙ panels' colour controls (BUGS.md "Bordmodus" cosmetics and a11y).
 afterEach(cleanup);
@@ -32,5 +33,19 @@ describe('PaletteRow custom colour', () => {
         const { getByLabelText } = render(<PaletteRow label="Tikkleur" value="cyclus" palette={PALETTE} onChange={onChange} extra={CYCLE} />);
         fireEvent.change(getByLabelText('Tikkleur: eigen kleur'), { target: { value: '#ff0000' } });
         expect(onChange).toHaveBeenCalledWith('#ff0000');
+    });
+});
+
+describe('ColorSwatches custom-colour fields', () => {
+    test('each field names its row, so two colour rows in one panel stay apart', () => {
+        const { getByLabelText, getAllByLabelText } = render(<>
+            <ColorSwatches label="Accentkleur" value={null} onChange={() => { }} />
+            <ColorSwatches label="Lijnkleur" value="#2563eb" onChange={() => { }} />
+        </>);
+        expect(getByLabelText('Accentkleur — eigen kleur (hex)')).toBeTruthy();
+        expect(getByLabelText('Lijnkleur — eigen kleur (hex)')).toBeTruthy();
+        expect(getByLabelText('Accentkleur — eigen kleur kiezen')).toBeTruthy();
+        expect(getByLabelText('Lijnkleur — eigen kleur kiezen')).toBeTruthy();
+        expect(getAllByLabelText(/eigen kleur/i)).toHaveLength(4);
     });
 });

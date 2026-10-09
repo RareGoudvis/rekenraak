@@ -63,7 +63,7 @@ describe('baseline', () => {
         act(() => { fireEvent.click(screen.getByRole('button', { name: 'Rood' })); });
         expect(live(id).props).toMatchObject({ text: 'hoi', title: 'Huiswerk', showHeader: false, fontSize: 'xl', accent: '#b91c1c' });
         // A typed hex counts; a junk one is ignored.
-        const hex = screen.getByLabelText('Eigen kleur (hex)');
+        const hex = screen.getByLabelText('Accentkleur — eigen kleur (hex)');
         act(() => { fireEvent.change(hex, { target: { value: 'zz' } }); fireEvent.blur(hex); });
         expect(live(id).props!.accent).toBe('#b91c1c');
         act(() => { fireEvent.change(hex, { target: { value: '0f766e' } }); fireEvent.blur(hex); });

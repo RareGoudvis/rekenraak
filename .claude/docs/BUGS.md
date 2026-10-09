@@ -194,9 +194,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 - No answer overlay on the board for breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
-- Settings kit a11y: every `ColorSwatches` custom-colour field has the same accessible name
-  "Eigen kleur (hex)" (controls.tsx), so a panel with several colour rows (accent + a kind's own
-  colours) has indistinguishable inputs for a screen reader. Fix: include the row's label. 2026-10-09
 - BreukBewerkViewer gelijknamig ignores `useBlockWidth()`: its 2-up rows run past a 628 px board card
   (the last "en ____" is cut, wb-check/full-test/probe/cards-width-after.png). 2026-10-09
 - Board cards at Tekstgrootte 200 % (viewer width 298 px) still overflow for afronden-dec-simpel,

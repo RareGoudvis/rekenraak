@@ -148,10 +148,10 @@ export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard',
                 ))}
                 {!compact && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        <input type="color" aria-label="Eigen kleur kiezen" value={value ?? '#1e40af'}
+                        <input type="color" aria-label={`${label} — eigen kleur kiezen`} value={value ?? '#1e40af'}
                             onChange={(e) => { setHex(e.target.value); onChange(e.target.value); }}
                             style={{ width: size + 6, height: size + 4, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }} />
-                        <input aria-label="Eigen kleur (hex)" value={hex} placeholder="#hex" maxLength={7}
+                        <input aria-label={`${label} — eigen kleur (hex)`} value={hex} placeholder="#hex" maxLength={7}
                             onChange={(e) => setHex(e.target.value)}
                             onBlur={(e) => commitHex(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') commitHex((e.target as HTMLInputElement).value); }}
