@@ -70,7 +70,8 @@ interface OefenState {
     focusCell(key: string | null): void;
     // fill-cells: a physical keyboard typed into a cell; Tab / Shift+Tab; Enter (next cell, or Controleer on the last).
     typeCell(key: string, raw: string): void;
-    moveCell(step: 1 | -1): void;
+    // false = the active cell is the first / last one: Tab may leave the grid.
+    moveCell(step: 1 | -1): boolean;
     enterCell(): void;
     // build: lay one more of a tray piece (1) or take one back (-1); clearBuild empties the tray's work (Wissen).
     lay(key: string, delta: 1 | -1): void;
@@ -452,10 +453,12 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
         moveCell(step) {
             const plan = cellPlanOf(get().sessie, get().shown);
-            if (!plan?.keys.length) return;
+            if (!plan?.keys.length) return false;
             const at = plan.keys.indexOf(get().activeCell ?? '');
-            const n = plan.keys.length;
-            set({ activeCell: plan.keys[at < 0 ? 0 : (at + step + n) % n] });
+            const to = at < 0 ? (step > 0 ? 0 : plan.keys.length - 1) : at + step;
+            if (to < 0 || to >= plan.keys.length) return false;
+            set({ activeCell: plan.keys[to] });
+            return true;
         },
 
         lay(key, delta) {

@@ -1,6 +1,7 @@
 import type { CijferExercise } from '../math/types';
 import type { InteractionState } from '../../components/viewer/ViewerInteractionContext';
 import { addSubMaxInt, computeAddCarries, getDigitCols, intLen, mulLayout } from './cijferLayout';
+import { PLACE_VALUES } from '../math/mathEngine';
 
 // Oefenmodus (Phase C2): the ruitjes of a cijfer grid the pupil fills on the kiosk card.
 // CijferViewer draws a KioskCell at every cell's (row, col); the kiosk descriptor checks them.
@@ -17,6 +18,18 @@ export interface CijferCell {
     // Grid row and column (column 0 holds the operator; digits start at 1). Unused for 'rest'.
     row: number;
     col: number;
+    // What a screen reader calls the cell: role + column, e.g. "Onthouden tientallen".
+    label: string;
+}
+
+const ROLE_NAME: Record<CijferCellRole, string> = { digit: 'Antwoord', carry: 'Onthouden', borrow: 'Lenen', pp: 'Deelproduct', quotient: 'Quotiënt', rest: 'Rest' };
+const UNITS_AT = PLACE_VALUES.findIndex(p => p.key === 'E');
+
+// place = power of ten of the column (0 = eenheden, -1 = tienden); pp = the partial product's row.
+function cellLabel(role: CijferCellRole, place: number, pp?: number): string {
+    if (role === 'rest') return ROLE_NAME.rest;
+    const column = PLACE_VALUES[UNITS_AT - place]?.label.toLowerCase() ?? `kolom ${place}`;
+    return [ROLE_NAME[role], pp === undefined ? '' : String(pp + 1), column].filter(Boolean).join(' ');
 }
 
 // SYNC: CijferViewer draws these rows in its kiosk branch.
@@ -49,35 +62,39 @@ function divGeometry(ex: CijferExercise, dp: number) {
 /** Every fillable ruitje of the kiosk grid, in key order (Tab order; the keypad starts at the first digit). */
 export function cijferKioskGrid(ex: CijferExercise, dp: number): CijferKioskGrid {
     const cells: CijferCell[] = [];
-    const add = (key: string, role: CijferCellRole, row: number, col: number) => cells.push({ key, role, row, col });
+    // unitsCol: the grid column of the eenheden, so a cell's place is unitsCol - col.
+    const add = (key: string, role: CijferCellRole, row: number, col: number, unitsCol: number, pp?: number) =>
+        cells.push({ key, role, row, col, label: cellLabel(role, unitsCol - col, pp) });
     if (ex.operator === ':') {
         // A staartdeling is written left to right, so the quotient is too.
         const { qInt, leftCols } = divGeometry(ex, dp);
-        for (let i = 0; i < qInt + dp; i++) add(`q${i}`, 'quotient', KIOSK_QUOTIENT_ROW, leftCols + i);
-        add('r', 'rest', 0, 0);
+        for (let i = 0; i < qInt + dp; i++) add(`q${i}`, 'quotient', KIOSK_QUOTIENT_ROW, leftCols + i, leftCols + qInt - 1);
+        add('r', 'rest', 0, 0, 0);
         return { cells, answerRow: KIOSK_QUOTIENT_ROW };
     }
     if (ex.operator === 'x') {
-        const { digitCols, n, scaledMultiplicand } = mulLayout(ex, dp);
+        const { digitCols, tdp, n, scaledMultiplicand } = mulLayout(ex, dp);
+        const unitsCol = digitCols - tdp;
         const { ppStart, ppRows: pp, answer: answerRow } = kioskMulRows(n);
         const mcLen = String(scaledMultiplicand).length;
         // One-digit multiplier: a carry above every multiplicand digit but the units.
         const carryAt = (col: number) => n === 1 && digitCols - 1 - col >= 1 && digitCols - 1 - col < mcLen;
-        for (let r = 0; r < pp; r++) for (let col = digitCols - 1; col >= 0; col--) add(`p${r}_${col}`, 'pp', ppStart + r, col + 1);
+        for (let r = 0; r < pp; r++) for (let col = digitCols - 1; col >= 0; col--) add(`p${r}_${col}`, 'pp', ppStart + r, col + 1, unitsCol, r);
         for (let col = digitCols - 1; col >= 0; col--) {
-            add(`a${col}`, 'digit', answerRow, col + 1);
-            if (col > 0 && carryAt(col - 1)) add(`c${col - 1}`, 'carry', KIOSK_CARRY_ROW, col);
+            add(`a${col}`, 'digit', answerRow, col + 1, unitsCol);
+            if (col > 0 && carryAt(col - 1)) add(`c${col - 1}`, 'carry', KIOSK_CARRY_ROW, col, unitsCol);
         }
         return { cells, answerRow };
     }
-    const D = addSubMaxInt(ex) + dp;
+    const unitsCol = addSubMaxInt(ex);
+    const D = unitsCol + dp;
     const answerRow = KIOSK_FIRST_OPERAND_ROW + ex.operands.length;
     // Right to left as the pupil works: a subtraction exchanges above a column before its digit,
     // an addition carries into the next column after it.
     for (let col = D - 1; col >= 0; col--) {
-        if (ex.operator === '-') add(`b${col}`, 'borrow', KIOSK_CARRY_ROW, col + 1);
-        add(`a${col}`, 'digit', answerRow, col + 1);
-        if (ex.operator === '+' && col > 0) add(`c${col - 1}`, 'carry', KIOSK_CARRY_ROW, col);
+        if (ex.operator === '-') add(`b${col}`, 'borrow', KIOSK_CARRY_ROW, col + 1, unitsCol);
+        add(`a${col}`, 'digit', answerRow, col + 1, unitsCol);
+        if (ex.operator === '+' && col > 0) add(`c${col - 1}`, 'carry', KIOSK_CARRY_ROW, col, unitsCol);
     }
     return { cells, answerRow };
 }

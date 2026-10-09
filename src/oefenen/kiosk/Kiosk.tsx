@@ -13,7 +13,8 @@ import StorageBanner from './StorageBanner';
 
 // Physical keyboard (Chromebook / tablet keyboard): digits and the type's extra keys type,
 // Backspace deletes, Enter is Controleer (and skips a juist/fout flash), < = > pick for vergelijken.
-// Cells on the card (fill-cells): Enter goes to the next cell and checks after the last, Tab cycles.
+// Cells on the card (fill-cells): Enter goes to the next cell and checks after the last; Tab /
+// Shift+Tab step through every cell and leave the grid at either end; Escape jumps to the keypad.
 // A focused answer field types natively (its onChange), so only keys that reach the page
 // outside a field are routed here; a focused button handles its own Enter.
 function useKioskKeys() {
@@ -26,8 +27,22 @@ function useKioskKeys() {
             const inField = target?.tagName === 'INPUT';
             const onButton = target?.tagName === 'BUTTON';
             const cells = st.phase === 'exercise' && cellPlanOf(st.sessie, st.shown) !== null;
-            // Cells on the card: Tab walks them all (carries too), not the page's buttons.
-            if (e.key === 'Tab' && cells) { e.preventDefault(); st.moveCell(e.shiftKey ? -1 : 1); return; }
+            const inCell = cells && inField && target?.dataset.kioskCell === 'true';
+            // In the grid Tab walks every cell (carries too) in key order; past either end the browser
+            // moves on (keypad, Resultaten) so the keyboard is never trapped. That relies on viewers
+            // drawing cells in key order (oefenen.keyboard.test.tsx). Outside a cell Tab is native.
+            if (e.key === 'Tab' && inCell) {
+                if (target.dataset.kioskKey) st.focusCell(target.dataset.kioskKey);
+                if (st.moveCell(e.shiftKey ? -1 : 1)) e.preventDefault();
+                return;
+            }
+            // From anywhere on the card (a cell, a tappable part, a drag handle) back to the answer panel.
+            if (e.key === 'Escape' && st.phase === 'exercise' && target?.closest('.kiosk-card-col')) {
+                // The answer panel's first live button: the keypad's first key (Controleer on a card without one).
+                const to = document.querySelector<HTMLElement>('.kiosk-panel button:not(:disabled)');
+                if (to) { e.preventDefault(); to.focus(); }
+                return;
+            }
             if (e.key === 'Enter') {
                 if (e.repeat) return;
                 // During a flash Enter only skips it, also on a focused button (Controleer must not fire).

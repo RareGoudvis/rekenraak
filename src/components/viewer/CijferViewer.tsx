@@ -189,7 +189,7 @@ function GridCell({ cell, CELL, rowH }: { cell: CijferCell; CELL: number; rowH?:
     const H = rowH ?? CELL;
     const scratch = cell.role === 'carry' || cell.role === 'borrow';
     return (
-        <KioskCell cellKey={cell.key} variant={scratch ? 'is-grid is-scratch' : 'is-grid'} style={{
+        <KioskCell cellKey={cell.key} label={cell.label} variant={scratch ? 'is-grid is-scratch' : 'is-grid'} style={{
             position: 'absolute', left: cell.col * CELL, top: cell.row * H, width: CELL, height: H,
             // SYNC: DC's digit and small sizes.
             fontSize: scratch ? CELL * 0.48 : CELL * 0.68,
@@ -592,7 +592,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
             {isDivision && cells && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: CELL * 0.3, marginTop: CELL * 0.3, fontFamily: 'Azeret Mono, monospace', fontSize: CELL * 0.68 }}>
                     <span>r</span>
-                    <KioskCell cellKey="r" variant="is-grid is-rest" style={{ position: 'relative', width: CELL * 3, height: CELL, fontSize: CELL * 0.68 }} />
+                    <KioskCell cellKey="r" label="Rest" variant="is-grid is-rest" style={{ position: 'relative', width: CELL * 3, height: CELL, fontSize: CELL * 0.68 }} />
                 </div>
             )}
             {/* Controle via de omgekeerde bewerking (add/sub only): write-line under the sum. */}
