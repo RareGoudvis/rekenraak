@@ -217,8 +217,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-G teacher UX
 
-- **O22** Breuken kleuren card says "Tik 3 van de 6 delen aan." (`kioskInstruction`, BREUKEN_KIOSK)
-  which gives the count away. Owner: "Kleur 3/6 in." only. 2026-10-09
 
 ### WP-H test infra
 

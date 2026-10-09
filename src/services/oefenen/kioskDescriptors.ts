@@ -904,7 +904,8 @@ const isKleuren = (c: Record<string, unknown>) => fracSub(c) === 'kleuren';
 export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     input: 'number',
     inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isQuestions(c) ? 'multi-number' : 'number'),
-    kioskInstruction: (ex, c) => (isKleuren(c) ? `Tik ${ex.numerator} van de ${ex.denominator} delen aan.` : undefined),
+    // The fraction only: "tik 3 van de 6 delen" gave the answer away (owner, O22).
+    kioskInstruction: (ex, c) => (isKleuren(c) ? `Kleur ${ex.numerator}/${ex.denominator} in.` : undefined),
     interact: {
         kind: 'tap-multi',
         // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included).
