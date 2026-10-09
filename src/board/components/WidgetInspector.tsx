@@ -12,7 +12,7 @@ interface Props {
 
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
-    timer: TimerSettings, dobbelsteen: DobbelSettings, adem: AdemSettings,
+    dobbelsteen: DobbelSettings, adem: AdemSettings,
     getallenlijn: GetallenlijnSettings, positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings, mabmat: MabMatSettings,
 };
@@ -38,35 +38,6 @@ export default function WidgetInspector({ widget }: Props) {
         </div>
     );
 }
-function TimerSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const dur = Math.max(5, Number(widget.props?.durationSec ?? 300));
-    const color = String(widget.props?.color ?? '#16a34a');
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const COLORS = ['#16a34a', '#1d4ed8', '#dc2626', '#ea580c', '#7c3aed'];
-    return (
-        <div>
-            <div style={S.sectionLabel}>Duur ({Math.floor(dur / 60)}:{String(dur % 60).padStart(2, '0')})</div>
-            <input type="range" min={30} max={3600} step={30} value={dur} style={{ width: '100%' }}
-                onChange={(e) => set({ durationSec: Number(e.target.value) })} />
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '4px 0' }}>
-                {[60, 120, 300, 600, 900].map(s => (
-                    <button key={s} type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ durationSec: s })}>
-                        {s / 60} min
-                    </button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Kleur</div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-                {COLORS.map(c => (
-                    <button key={c} type="button" aria-label={`Kleur ${c}`} onClick={() => set({ color: c })}
-                        style={{ width: '34px', height: '34px', borderRadius: '50%', background: c, cursor: 'pointer', border: '2px solid var(--bg-panel)', outline: color === c ? '3px solid var(--accent-purple)' : 'none' }} />
-                ))}
-            </div>
-        </div>
-    );
-}
-
 function DobbelSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const p = dobbelProps(widget);
