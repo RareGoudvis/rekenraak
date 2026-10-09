@@ -26,6 +26,9 @@ export interface OefenType {
     limit?: number;
     // Relative chance in 'willekeurig' mode (normalised over the remaining pool).
     weight: number;
+    // true = a breuk answer must be in the asked form, false = any equal value; absent = the
+    // descriptor's exactFormDefault. Read via exactFormOf (check.ts).
+    exactForm?: boolean;
 }
 
 export interface OefenSessie {
@@ -161,6 +164,10 @@ export interface KioskDescriptor<E = unknown> {
     // The card header when the paper instruction names a pen verb (omcirkel, kleur ...) but the
     // kiosk input is a button or field; undefined = keep the leaf's instruction.
     kioskInstruction?: string | ((ex: E, c: Record<string, unknown>) => string | undefined);
+    // Whether a breuk answer must be in the asked spelling when the row does not say: true where
+    // the form IS the exercise (vereenvoudigen, gelijknamig), false where any equal value counts
+    // (Reken uit.). undefined = these settings never answer with a breuk (no row option).
+    exactFormDefault?(c: Record<string, unknown>): boolean | undefined;
     // Settings this descriptor can check (afronden: simpel only). Absent = always.
     supported?(c: Record<string, unknown>): boolean;
     // The kiosk's own constraints for the next exercise, drawn with `rng` (the scheduler's seeded

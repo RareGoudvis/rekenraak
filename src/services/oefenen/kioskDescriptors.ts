@@ -57,6 +57,10 @@ export function fractionSpellings(f: Fraction): string[] {
 
 const valueSpellings = (v: number | Fraction) => (isFraction(v) ? fractionSpellings(v) : numberSpellings(v));
 
+// O8: a breuk-kind row that asks to compute (Reken uit., a rij of breuken) takes any equal value
+// (26/8 for 3 1/4); other number kinds never answer with a breuk, so the row has no option.
+const valueWhenRational = (c: Record<string, unknown>) => (numberTypeOf(c) === 'rational' ? false : undefined);
+
 const showValue = (v: number | Fraction): string => {
     if (!isFraction(v)) return formatMathNumber(plain(v)).replace('-', '−');
     const n = `${v.n}/${v.d}`;
@@ -110,6 +114,7 @@ export const HR_KIOSK = descriptor<Equation>({
     input: 'number',
     inputOf: hrInput,
     keys: hrKeys,
+    exactFormDefault: valueWhenRational,
     answerOf: (eq) => {
         if (hasRest(eq)) return [plain(eq.answer as number), String(eq.remainder ?? 0)];
         const idx = missingIndexOf(eq);
@@ -698,6 +703,7 @@ const patroonInteract = cellsInteract<PatroonExercise>((ex) => blankKeys(ex.blan
 export const PATROON_KIOSK = descriptor<PatroonExercise>({
     input: 'interactive',
     keys: kindKeys,
+    exactFormDefault: valueWhenRational,
     interact: patroonInteract,
     answerOf: (ex, c) => [patroonInteract.answerOf(ex, c)],
     display: (ex) => rowText(ex.values, ex.blankMask, ' – '),
@@ -710,6 +716,7 @@ const axisInteract = cellsInteract<GetallenasExercise>((ex) => blankKeys(ex.blan
 export const GETALLENAS_KIOSK = descriptor<GetallenasExercise>({
     input: 'interactive',
     keys: kindKeys,
+    exactFormDefault: valueWhenRational,
     interact: axisInteract,
     answerOf: (ex, c) => [axisInteract.answerOf(ex, c)],
     display: (ex) => rowText(ex.values ?? [], ex.blankMask, ' | '),
@@ -849,6 +856,7 @@ export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
     input: 'number',
     inputOf: (ex) => (ex.subType === 'gelijknamig' ? 'multi-number' : 'number'),
     keys: (c) => (c.subType === 'gemengd' ? ['/', ' '] : ['/']),
+    exactFormDefault: () => true,
     labels: () => ['1ste breuk', '2de breuk'],
     answerOf: (ex) => (ex.subType === 'gelijknamig'
         ? ex.answers.map(a => bewerkSpellings(ex, a).join('|'))
@@ -876,6 +884,8 @@ const verbandInteract = cellsInteract<VerbandExercise>(verbandFields, (ex, c) =>
 export const VERBANDEN_KIOSK = descriptor<VerbandExercise>({
     input: 'interactive',
     keys: () => [',', '/'],
+    // The breuk cell takes any equal breuk; the cell's kind (breuk, kommagetal, %) still counts.
+    exactFormDefault: () => false,
     interact: verbandInteract,
     answerOf: (ex, c) => [verbandInteract.answerOf(ex, c)],
     display: (ex, c) => `${verbandAnswer(ex.fraction, ex.given)[0]}${ex.given === 'procent' ? ' %' : ''} = ${verbandFields(ex, c).map(r => `? (${REP_LABEL[r]})`).join(' = ')}`,
@@ -903,6 +913,8 @@ export const BREUKEN_KIOSK = descriptor<FractionExercise>({
         fromState: (st) => (st.selected.length ? String(st.selected.length) : ''),
     },
     keys: (c) => (fracSub(c) === 'herkennen' && !isQuestions(c) ? ['/'] : fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
+    // herkennen as a breuk: any equal breuk names the coloured part (2/4 for 1/2).
+    exactFormDefault: (c) => (fracSub(c) === 'herkennen' && !isQuestions(c) ? false : undefined),
     labels: () => ['gelijke delen', 'ingekleurd'],
     answerOf: (ex, c) => {
         if (isKleuren(c)) return [String(ex.numerator)];
