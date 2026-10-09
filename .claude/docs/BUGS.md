@@ -182,11 +182,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-A scheduler
 
-- **O1** C6: willekeurig with "Zelfde soort na elkaar toestaan" off still repeats a type ≈25 % of the
-  time while another type has capacity (one weighted redraw, scheduler.ts:69; the ≈25 % is pinned by
-  oefenen.scheduler.test.ts:87-94). Fix: exclude the previous type from the pool whenever another
-  type still has capacity; repeat only when forced (flagged). 2026-10-09
-
 ### WP-B store / stats
 
 - **O2** C1: testMode + statsLocked off → "Resultaten" mid-run shows juist/fout and the right answer
@@ -219,10 +214,8 @@ grouped per work package so parallel deletions merge cleanly.
 ### WP-D generation guard
 
 - **O9** C4: a row whose settings generate 0 exercises (klok with every tijdstype unticked) ships
-  without a builder warning (`kioskSupports` ignores `timeTypes`); at runtime `nextExercise` returns
-  null and `next()` finishes the whole run ("Klaar! Nog geen oefeningen gemaakt") even when other
-  types still have exercises. Fix: pre-flight each row at Delen (0 → red row, Delen blocked); at
-  runtime retire the dead type, continue with the rest; start screen counts viable types. 2026-10-09
+  without a builder warning (`kioskSupports` ignores `timeTypes`). Fix: pre-flight each row at Delen
+  (0 → red row, Delen blocked); start screen counts viable types (`deadSlots`, scheduler.ts). 2026-10-09
 - **O10** Builder-reachable zero-output settings: `timeTypes=[]` on klok-analoog-lezen / -tekenen /
   -omzetten and klok-digitaal-tekenen; `selectedTables=[]` on hr-std-vermenigvuldigen-nat and
   hr-std-delen-nat (NaturalSettings has no keep-one guard); `payWithOptions=[]` on geld-teruggeven.

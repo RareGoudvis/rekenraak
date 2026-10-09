@@ -22,10 +22,42 @@ export function madePerSlot(s: OefenSessie, history: readonly OefenHistoryEntry[
     return made;
 }
 
-/** Slots whose limit is not reached yet. */
+// Per session object: slot → false once its settings proved to generate nothing (a klok with every
+// tijdstype unticked). A shared session never changes, so the verdict holds for the whole run.
+const viability = new WeakMap<OefenSessie, Map<number, boolean>>();
+
+function verdicts(s: OefenSessie): Map<number, boolean> {
+    let m = viability.get(s);
+    if (!m) viability.set(s, (m = new Map()));
+    return m;
+}
+
+// Fixed-seed probe RNG: nextExercise swaps it in, so the caller's Math.random sequence is untouched.
+function probeRng(): Rng {
+    let a = 0x9e3779b9;
+    return () => {
+        a = (a + 0x6d2b79f5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+function isDead(s: OefenSessie, slot: number): boolean {
+    const m = verdicts(s);
+    if (!m.has(slot)) m.set(slot, nextExercise(s, s.types[slot], new Set(), probeRng()) !== null);
+    return m.get(slot) === false;
+}
+
+/** Slots whose settings generate no exercise at all: retired for the whole run (the kiosk may count the rest). */
+export function deadSlots(s: OefenSessie): ReadonlySet<number> {
+    return new Set(s.types.map((_, i) => i).filter(i => isDead(s, i)));
+}
+
+/** Slots that can still serve: under their limit and not dead. */
 export function poolOf(s: OefenSessie, history: readonly OefenHistoryEntry[]): number[] {
     const made = madePerSlot(s, history);
-    return s.types.map((_, i) => i).filter(i => s.types[i].limit === undefined || made[i] < (s.types[i].limit as number));
+    return s.types.map((_, i) => i).filter(i => (s.types[i].limit === undefined || made[i] < (s.types[i].limit as number)) && !isDead(s, i));
 }
 
 /** The run's length when it has one: `total`, else the sum of the limits when every type has one. */
@@ -65,8 +97,9 @@ export function nextType(s: OefenSessie, history: readonly OefenHistoryEntry[], 
             if (pool.includes(cand)) { slot = cand; break; }
         }
     } else {
-        slot = weightedDraw(s, pool, rng);
-        if (!s.allowRepeatType && slot === prev && pool.length >= 2) slot = weightedDraw(s, pool, rng);
+        const others = pool.filter(i => i !== prev);
+        // Without repeats the previous type sits out whenever another can serve; the weights renormalise over the rest.
+        slot = weightedDraw(s, !s.allowRepeatType && others.length > 0 ? others : pool, rng);
     }
     return { slot, type: s.types[slot] };
 }
@@ -99,8 +132,15 @@ export interface OefenExercise {
     repeat: boolean;
 }
 
-/** One fresh exercise of this type, avoiding `seenKeys`; null when the generator yields nothing. */
-export function nextExercise(_s: OefenSessie, type: OefenType, seenKeys: ReadonlySet<string>, rng?: Rng): OefenExercise | null {
+/** One fresh exercise of this type, avoiding `seenKeys`; null when the generator yields nothing (the type is then retired). */
+export function nextExercise(s: OefenSessie, type: OefenType, seenKeys: ReadonlySet<string>, rng?: Rng): OefenExercise | null {
+    const made = generateOne(type, seenKeys, rng);
+    const slot = s.types.indexOf(type);
+    if (!made && slot >= 0) verdicts(s).set(slot, false);
+    return made;
+}
+
+function generateOne(type: OefenType, seenKeys: ReadonlySet<string>, rng?: Rng): OefenExercise | null {
     const def = REGISTRY[type.typeId];
     if (!def) return null;
     const block = blockFor(type);

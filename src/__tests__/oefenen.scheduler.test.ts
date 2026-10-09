@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import type { OefenHistoryEntry, OefenSessie, OefenStats, OefenType } from '../services/oefenen/types';
-import { isDone, nextExercise, nextType, plannedTotal, poolOf } from '../services/oefenen/scheduler';
+import { deadSlots, isDone, nextExercise, nextType, plannedTotal, poolOf } from '../services/oefenen/scheduler';
 import { mulberry32 } from './helpers/limitHarness';
 
 const type = (over: Partial<OefenType> = {}): OefenType => ({
@@ -84,16 +84,48 @@ describe('willekeurig', () => {
         const slots = drain(sessie([type({ weight: 0 }), type({ weight: 0 })], { mode: 'willekeurig', allowRepeatType: true }), 4000, mulberry32(3));
         expect(Math.abs(slots.filter(x => x === 0).length / 4000 - 0.5)).toBeLessThanOrEqual(0.03);
     });
-    test('!allowRepeatType re-draws once: far fewer repeats than with it', () => {
-        const repeats = (allowRepeatType: boolean) => {
-            const slots = drain(sessie([type({ weight: 1 }), type({ weight: 1 })], { mode: 'willekeurig', allowRepeatType }), 4000, mulberry32(9));
-            return slots.filter((x, i) => i > 0 && x === slots[i - 1]).length / 4000;
-        };
-        // One re-draw at 50/50: a repeat needs two equal draws, ≈ 25 % instead of ≈ 50 %.
-        expect(repeats(true)).toBeGreaterThan(0.45);
-        expect(repeats(false)).toBeLessThan(0.3);
+    test('allowRepeatType: a type may follow itself (≈ 50 % at 50/50)', () => {
+        const slots = drain(sessie([type({ weight: 1 }), type({ weight: 1 })], { mode: 'willekeurig', allowRepeatType: true }), 4000, mulberry32(9));
+        expect(slots.filter((x, i) => i > 0 && x === slots[i - 1]).length / 4000).toBeGreaterThan(0.45);
+    });
+    test('!allowRepeatType: zero repeats in 10 000 draws while another type has capacity', () => {
+        for (const weights of [[1, 1], [50, 30, 20], [90, 10], [1, 0], [0, 0, 0]]) {
+            const s = sessie(weights.map(weight => type({ weight })), { mode: 'willekeurig' });
+            const slots = drain(s, 10_000, mulberry32(9));
+            expect(slots).toHaveLength(10_000);
+            expect(repeatsWithCapacity(s, slots), `weights ${weights}`).toBe(0);
+        }
+    });
+    test('!allowRepeatType: the draw after a type is renormalised over the others', () => {
+        const s = sessie([50, 30, 20].map(weight => type({ weight })), { mode: 'willekeurig' });
+        const slots = drain(s, 10_000, mulberry32(42));
+        const after0 = slots.filter((_, i) => i > 0 && slots[i - 1] === 0);
+        // 30 : 20 over the two left = 60 % / 40 %.
+        expect(Math.abs(after0.filter(x => x === 1).length / after0.length - 0.6)).toBeLessThanOrEqual(0.03);
+    });
+    test('!allowRepeatType: the last type with capacity left does repeat', () => {
+        const s = sessie([type({ limit: 1 }), type({ limit: 4 })], { mode: 'willekeurig' });
+        for (let seed = 0; seed < 50; seed++) {
+            const slots = drain(s, 100, mulberry32(seed));
+            expect(slots).toHaveLength(5);
+            expect(slots.filter(x => x === 1)).toHaveLength(4);
+            expect(repeatsWithCapacity(s, slots), `seed ${seed}: ${slots}`).toBe(0);
+            expect(slots.at(-1)).toBe(slots.at(-2));
+        }
+        expect(drain(sessie([type()], { mode: 'willekeurig' }), 20)).toEqual(Array(20).fill(0));
     });
 });
+
+// Consecutive repeats at moments another slot was still under its limit.
+function repeatsWithCapacity(s: OefenSessie, slots: number[]): number {
+    const made = s.types.map(() => 0);
+    let n = 0;
+    slots.forEach((x, i) => {
+        if (i > 0 && x === slots[i - 1] && s.types.some((t, j) => j !== x && (t.limit === undefined || made[j] < t.limit))) n++;
+        made[x]++;
+    });
+    return n;
+}
 
 describe('nextExercise', () => {
     test('no exact repeat in 200 draws', () => {
@@ -134,6 +166,45 @@ describe('nextExercise', () => {
         const got = nextExercise(sessie([t]), t, new Set(), mulberry32(1))!;
         expect(got.constraints.maxGetal).toBe(100);
         expect(got.constraints.bridges).toBeDefined();
+    });
+});
+
+describe('a type whose settings generate nothing is retired', () => {
+    // Every tijdstype unticked: the clock generator returns [].
+    const dead = () => type({ typeId: 'klok-kloklezen', leafId: 'klok-analoog-lezen', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'lezen', timeTypes: [] } });
+    const live = () => type({ limit: 1 });
+
+    // The kiosk store's next() loop: isDone → nextType → nextExercise, the run ends on the first null.
+    function serve(s: OefenSessie, rng = mulberry32(4)): number[] {
+        const history: OefenHistoryEntry[] = [];
+        for (let i = 0; i < 50; i++) {
+            if (isDone(s, { startedAt: 0, perType: {}, history })) break;
+            const pick = nextType(s, history, rng);
+            const made = pick && nextExercise(s, pick.type, new Set(history.map(h => h.exerciseKey)), rng);
+            if (!pick || !made) break;
+            history.push({ slot: pick.slot, typeId: pick.type.typeId, exerciseKey: made.key, correct: true, ms: 1 });
+        }
+        return history.map(h => h.slot);
+    }
+
+    test('the live type is served, then the run is done', () => {
+        for (const mode of ['afwisselen', 'willekeurig'] as const) {
+            expect(serve(sessie([dead(), live()], { mode })), `${mode} dead first`).toEqual([1]);
+            expect(serve(sessie([live(), dead()], { mode })), `${mode} dead last`).toEqual([0]);
+            expect(serve(sessie([dead(), live(), dead(), type({ limit: 2 })], { mode })).sort(), `${mode} mixed`).toEqual([1, 3, 3]);
+        }
+    });
+    test('an endless live type keeps going; the dead slot is reported', () => {
+        const s = sessie([dead(), type()], { mode: 'willekeurig' });
+        expect(drain(s, 30)).toEqual(Array(30).fill(1));
+        expect([...deadSlots(s)]).toEqual([0]);
+        expect(poolOf(s, [])).toEqual([1]);
+    });
+    test('every type dead: nothing to serve, the run is done', () => {
+        const s = sessie([dead(), dead()]);
+        expect(nextType(s, [])).toBeNull();
+        expect(isDone(s, emptyStats(s, 0))).toBe(true);
+        expect([...deadSlots(s)]).toEqual([0, 1]);
     });
 });
 
