@@ -61,6 +61,14 @@ Entry pages (Vite `rollupOptions.input`): `index.html` (the editor), `bord.html`
 booted straight into Bordmodus via `<html data-boot="bord">` + `src/bootEntry.ts`), and the
 static SEO pages `about.html`, `faq.html`, `oefeningen.html`.
 
+Bordmodus widgets get their options through the settings registry
+([src/board/settings/registry.ts](src/board/settings/registry.ts)), never a `kind` switch: a new
+widget's options = a model (`<kind>Model.ts` or `mathTools/`) + a `<Kind>Settings.tsx` panel on
+the `controls.tsx` kit + one `WIDGET_SETTINGS` line + (schema'd kinds) one `PROP_SCHEMAS` row;
+per-card state keys go into `TRANSIENT_PROP_KEYS`. Ink tools are `ToolEngine`s
+(`drawTools.ts`), instruments live in `instrumentGeometry.ts` + `InstrumentLayer.tsx`
+(board format v2). Detail: ARCHITECTURE §14.
+
 ---
 
 ## Working rules (humans and agents)
@@ -161,7 +169,7 @@ the per-typeId table is §7.
 
 Pointers: **state slices** → ARCHITECTURE §3 · **types / generators / viewers** → §7 ·
 **`MathBlock`, `Equation`, `Fraction`** → §4 · **directory tree** → §11 · **Bordmodus /
-whiteboard (`src/board/`, `/bord.html`)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15.
+whiteboard (`src/board/`, `/bord.html`; tools, instruments, widget settings)** → §14 · **Oefenmodus (kiosk, link, scheduler, stats)** → §15.
 
 ---
 

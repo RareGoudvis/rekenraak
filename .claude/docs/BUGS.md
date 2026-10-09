@@ -189,3 +189,12 @@ UpdateState). Left over, found while fixing:
   overflows: stage 0 starts at ~1900 px and at 1920 px the "Automatisch bewaard" text runs under the
   undo button (wb-check/mode-buttons/topbar-1920.png). Fix: count the centre track in the overflow
   measurement. 2026-10-08
+- Honderdveld ⚙ "Tikkleur": while "Afwisselend" (cyclus) is selected, the custom-colour picker
+  next to the swatches shows black instead of a neutral / empty state (cosmetic; mathControls
+  `PaletteRow` feeds the `<input type="color">` `#000000` for any non-hex value). 2026-10-09
+- Settings kit a11y: every `ColorSwatches` custom-colour field has the same accessible name
+  "Eigen kleur (hex)" (controls.tsx), so a panel with several colour rows (accent + a kind's own
+  colours) has indistinguishable inputs for a screen reader. Fix: include the row's label. 2026-10-09
+- Passer with the pencil straight up (rotation 270°) is drawn lying on its side instead of
+  standing: the hinge sits beside the vertical needle–pencil chord (`passerHinge`), so the
+  legs point sideways. Not yet looked into beyond that. 2026-10-09

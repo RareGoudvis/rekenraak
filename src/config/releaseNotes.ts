@@ -57,6 +57,22 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
+                text: 'Bordmodus: teken rechte lijnen, pijlen en stippellijnen, en rechthoeken, ellipsen en driehoeken. Shift geeft 45°-hoeken, een vierkant of een cirkel.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: leg een lat, geodriehoek of passer op het bord. Ze klikken vast, de pen tekent er recht langs en de passer tekent echte cirkels.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: elk hulpmiddel is instelbaar via het tandwiel (timer, klok, dobbelsteen, …). Bewaar je instellingen als je eigen standaard.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: kies een achtergrond (ruitjes, lijnen, schrijflijnen, …) met een voorbeeld van elke keuze, op een licht of donker bord.',
+            },
+            {
+                kind: 'nieuw',
                 text: 'Kan een instelling niet, dan zie je onder Genereer een melding. Vroeger kreeg je stilletjes andere oefeningen.',
             },
             {
