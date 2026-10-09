@@ -221,5 +221,3 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 - Instrument handles can leave the board: the passer hinge after a wide opening, and a lat rotated to
   45° at 1280 px puts its rotate handle off-board (wb-check/full-test/05-instruments). Fix: clamp the
   handle positions / keep a grab point on-board. 2026-10-09
-- Default pen colour is black, barely visible on a dark board; pick the ink default from the
-  background (licht → black, donker → white) when the pen has no custom colour. 2026-10-09

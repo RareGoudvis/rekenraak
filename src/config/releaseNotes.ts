@@ -100,6 +100,46 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 text: 'Kan een instelling niet, dan zie je onder Genereer een melding. Vroeger kreeg je stilletjes andere oefeningen.',
             },
             {
+                kind: 'opgelost',
+                text: 'Cijferen optellen: in de oplossing staat het onthoudcijfer nu boven de kolom waar het bij hoort, zoals de leerling het schrijft.',
+                example: {
+                    leafId: 'cijferen-optellen-nat', constraints: { maxRange: 1000, bridges: { E: 'REQUIRED' } }, grade: 3, count: 2,
+                    before: 'de 1 stond een kolom te ver naar rechts', after: 'de 1 boven de tientallen',
+                },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Cijferen vermenigvuldigen: de deelproducten staan in de oplossing nu in de volgorde waarin je ze schrijft (eerst × eenheden).',
+                example: {
+                    leafId: 'cijferen-vermenigvuldigen-nat', grade: 5, count: 2,
+                    before: '× tientallen bovenaan', after: '× eenheden bovenaan',
+                },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Cijferen: een brug of getalopbouw die niet kan (bv. een brug op de hoogste plaats), geeft nu minder of geen oefeningen met een melding, geen andere sommen.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Cijferen delen met kommagetallen: deeltal en deler staan nu exact in het rooster (0,7 was “1”) en het quotiënt krijgt genoeg vakjes.',
+                example: {
+                    leafId: 'cijferen-delen-dec', constraints: { operand1Mask: { t: true }, scaffolding: 1 }, grade: 6, count: 2,
+                    before: '0,7 werd “1”', after: '0,7 staat er zoals het is',
+                },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Delen (andere delers): de quotiënten zijn nu gespreid over het hele bereik; vroeger was meer dan de helft “: iets = 1”.',
+                example: {
+                    leafId: 'hr-std-delen-nat', constraints: { multiplicationMode: 'andere', maxGetal: 1000 }, grade: 4, count: 4,
+                    before: 'meestal quotiënt 1', after: 'quotiënten over het hele bereik',
+                },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
+            },
+            {
                 kind: 'nieuw',
                 text: 'Delen met rest heeft een “Maximum deeltal” dat het leerjaar volgt: tot 100 in leerjaar 2, tot 1\u00a0000 vanaf leerjaar 3.',
                 example: {

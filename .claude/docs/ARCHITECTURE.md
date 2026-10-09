@@ -440,7 +440,9 @@ the retry loop and build exactly `n` items directly.
 > patronen / schattend 100 000, …). `PLACE_VALUES` (mathEngine.ts) runs Mrd · HM · TM · M … td, so
 > masks / bridges / plaatswaarde reach the miljarden; `getMaskPlaces(max)` only exposes places ≤ max.
 > Above 1e6 (only): compenseren rounds to 10^(digits−2) (… 299 999 999); tienvoud's base is capped at
-> 10 000; delen 'andere' keeps the divisor ≤ half the dividend's digits (mask-only paths divide exactly);
+> 10 000. Delen 'andere' (every max since 2026-10-09): the quotient is drawn over the range and the
+> dividend derived, divisor ≤ half the max's digits (decimal: shifted 0..dp places; masked dividend:
+> divisor up to half of it), a quotient of 1 only after half of MAX_ATTEMPTS — ≤ 15 % ones, exact, no note;
 > cijferen bridges cover every place to Mrd, multiplier/divisor tiers go to 9 999. MathBlockRenderer fits a
 > 3–4-term chain of 10+-char operands that its estimate says overflows `useBlockWidth()`: font steps 0.95 →
 > 0.85 (= WIDTH_FIT_FLOOR), then the chain wraps before its last term; otherwise styles are untouched.
@@ -491,7 +493,7 @@ only.
 | `hr-std-vermenigvuldigen` | `exercises` | `generateMultiplicationExercises` | `MathBlockRenderer` | `MultiplicationConfig` | `MulDivConstraints` via `mulDivDefaults`: multiplicationMode, selectedTables, tableLimit, fractionMultMode |
 | `hr-std-delen` | `exercises` | `generateDivisionExercises` | `MathBlockRenderer` | `DivisionConfig` | `mulDivDefaults`: divisionLevel, metRestLevel, selectedTables, tableLimit |
 | `hr-std-gemengd` | `exercises` | `math/mixedGenerator.ts` (per exercise: pick a VARIANT, build the effective hr-std block, run `mathEngine` + `relax`) | `MathBlockRenderer` | `GemengdConfig` (per-variant tabs mount the four hr-std plugins under a `ConstraintScope`) | `MixedConstraints`: shared AddSub bag + `variants` (8 ids in `MIXED_VARIANTS` = operator × optional preset compenseren/tienvoud), `mix` random/cycle, `perVariant[id]` sparse tab overrides merged by `effectiveBlockFor` (shared → preset defaults → tab). Two leaves (natural / decimal), last under Hoofdrekenen. Per-exercise switch: `regenerateExercise` (§3) |
-| `cijferen-optellen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` (default 4 exercises, 4 per row at full / 2 at ½ / 1 at ¼ — decimal × 3, decimal : 2; ruitje size = `cijferGrid.ts`, a factor of `--sheet-size-math` × the `gridCellSize` multiplier; grid lines on the half-stroke; ≤3 per row measured from the exercises themselves) | `CijferConfig` | operator, numberType, maxRange, numberOfTerms, bridges, operand0-3Mask; each exercise carries `decimalPlaces` (own-data rule) |
+| `cijferen-optellen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` (**no fallback**: when the asked bruggen / masks / terms cannot be met — e.g. a REQUIRED brug on the list's top place — it returns fewer or zero exercises with the shared note; mask / brug keys outside `getMaskPlaces(max)` are ignored) | `CijferViewer` (key: a carry is drawn over the column it goes INTO (`col − 1`), × partial products units-first, the staartdeling writes dividend / divisor with their own decimals never rounded and sizes the quotient row by `divQuotientInt` — all SYNC with cijferCells.ts; default 4 exercises, 4 per row at full / 2 at ½ / 1 at ¼ — decimal × 3, decimal : 2; ruitje size = `cijferGrid.ts`, a factor of `--sheet-size-math` × the `gridCellSize` multiplier; grid lines on the half-stroke; ≤3 per row measured from the exercises themselves) | `CijferConfig` | operator, numberType, maxRange, numberOfTerms, bridges, operand0-3Mask; each exercise carries `decimalPlaces` (own-data rule) |
 | `cijferen-aftrekken-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-vermenigvuldigen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-delen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above + withRemainder |
@@ -2061,7 +2063,7 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 | `choices?` / `choicesOf(ex, c)?` | the buttons, in order; `choicesOf` for per-exercise buttons (the row's numbers in vergelijken kiezen) |
 | `labels(ex, c)?` | multi-number field names (kg / g, euro / cent); named fields get a caption, numeric ones read left to right |
 | `separator(ex, c)?` | the sign between multi-number fields (ordenen `<` / `>`) |
-| `keys(c)?` | extra keypad keys `,` `/` `-` `' '` — from the SETTINGS only, never the exercise, so the keypad never hints at the answer |
+| `keys(c)?` | extra keypad keys `,` `/` `-` `' '` — from the SETTINGS only, never the exercise, so the keypad never hints at the answer (getallenas / -rijen: `,` when the STEP setting has decimals) |
 | `answerOf(ex, c)` | every accepted spelling (`'2,5'`, `'2.5'`); number+rest = exactly `[q, r]`; time = every accepted `h:mm` (8:05 and 20:05); multi-number = one entry per field, alternatives joined by `\|` |
 | `display(ex, c)` | plain text for the stats' error rows ("47 + ? = 85") |
 | `interact.kind` | `tap` (one part) · `tap-multi` (any number of parts; an empty set can be right) · `fill-cells` (type into the viewer's own blanks) · `order` (tap in sequence) · `build` (lay pieces from the tray; the laid VALUE counts, not the make-up) · `drag` (move a handle; compared part by part within `tolerance`) |
@@ -2070,10 +2072,10 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 | `interact.cellOf?(key)` | fill-cells: `{ length?, scratch? }` per cell: characters it holds (a full cell hands the keypad on) and whether it is scratch (a carry: off the Enter / auto-advance path, tapped). From the cell's role only, never its value |
 | `interact.pieces?(ex, c)` / `KioskPiece` | build: the tray in display order, `{ key, label, value, max? }` (value = what one piece adds: cents or units; `max` = most the pupil can lay, MAB 9 per place). From the SETTINGS (or the shown note), never the answer. The picture comes from `EXERCISE_UI[typeId].TrayPiece` (the registry stays free of React); absent = the label |
 | `interact.tolerance?(ex, c)` | drag: how far a part may lie from `answerOf` and still be right, in the part's own unit (minutes for an `h:mm` part on a 12-hour face, degrees, grams); absent = 0. check.ts `nearPart` |
-| `interact.show?(answer)` | stats text of an answer string (the tapped number, not its index); absent = the parts |
+| `interact.show?(answer)` | stats text of an answer string (the tapped number, not its index); absent = the parts; an empty tap-multi answer shows "geen" (deelbaarheid tabel) |
 | `prepare?(c, rng)` | the kiosk-adjusted constraints for ONE exercise, drawn with the scheduler's RNG; `nextExercise` calls it per draw and generates from the result, which is also what `answerOf` / `display` / check receive and what `current` stores. geld-wissel uses it to pick one of the teacher's `exerciseBills` (the sheet gives exercise i the i-th bill) |
 | `extraKeys?(ex, c)` / `KioskExtraKey` | fill-cells action keys beside the character keys: `{ id, label, hotkeys?, hint?, apply(state, activeCell, ex, c) }`; `apply` returns the new card state or `null` (no change). The Keypad draws each, `Kiosk` maps the hotkeys while a card cell is active, `pressExtra(id)` runs it. From the operator / settings, never the answer. Cijferen aftrekken: Lenen |
-| `kioskInstruction?` | the card header when the paper instruction names a pen verb (omcirkel, kleur, vul in) but the kiosk asks a tap or a typed cell; string or `(ex, c) => string \| undefined`. A teacher's own wording wins; the leaf's default gives way to this (`kioskInstructionOf`) |
+| `kioskInstruction?` | the card header when the paper instruction names a pen verb (omcirkel, kleur, vul in) or a paper-only answer ("in woorden") but the kiosk asks a tap or a typed cell (klok analoog lezen: "Lees de klok en typ de tijd (uu:mm)."; breuken kleuren: "Kleur 3/6 in." and the card hides its own prompt under the context); string or `(ex, c) => string \| undefined`. A teacher's own wording wins; the leaf's default gives way to this (`kioskInstructionOf`) |
 | `interact?` / `interactOf(c)?` | required whenever `input` / `inputOf` can be `interactive`: `{ kind, answerOf, fromState, keys?, cellOf?, show? }` (rows below). `interactOf` picks per SETTINGS (plaatswaarde: tap a letter or fill the tabel; undefined falls back to `interact`); read both through `kioskInteractOf(d, c)` |
 | `supported(c)?` | settings this descriptor can check (splitsen: four layouts; breuken: kleuren / herkennen / hoeveelheid); `kioskSupports` evaluates it over the registry defaults + the leaf's; the builder excludes an unsupported row with a hint |
 
@@ -2183,7 +2185,9 @@ Landscape-first: card left, answer panel right; portrait stacks (fallback). Top 
 `(statsLocked || testMode) && !run.done`: a toets never shows answers before the end, and the
 builder shows the Statistieken toggle forced on under Testmodus). Start tries `requestFullscreen`.
 Feedback is juist / fout only, never the right answer; `testMode` skips it and goes straight on
-(one try). Start screen counts viable types only ("1 soort · 1 oefening" singular). Mid-run Resultaten is a peek
+(one try). Start screen counts viable types only ("1 soort · 1 oefening" singular). Mid-run Resultaten
+is a peek with only **Verder oefenen**: `restart()` / `clear()` are no-ops outside the locked end screen,
+so a timed run cannot be escaped. Mid-run Resultaten is a peek
 (Verder oefenen); the end screen is locked and survives a reload.
 
 ### Phase C: answering on the exercise (`interact`)
@@ -2219,7 +2223,8 @@ typing into the answer panel.
 - **Kiosk-only geometry**: [cijferLayout.ts](../../src/services/cijferen/cijferLayout.ts) holds the column
   geometry CijferViewer and the descriptor share; [cijferCells.ts](../../src/services/cijferen/cijferCells.ts) the
   ruitjes (roles digit / carry / borrow / pp / quotient / rest; keys `a` answer digit · `p` partial product ·
-  `q` quotient digit · `c` carry · `b` exchanged top digit · `r` rest; SYNC with CijferViewer's kiosk branch).
+  `q` quotient digit · `c` carry · `b` exchanged top digit · `r` rest; SYNC with CijferViewer's kiosk branch;
+  `divQuotientInt(ex)` sizes the quotient row from the SHIFTED dividend for a decimal divisor, sheet and card alike).
   `cijferKiosk({ strictCarries })`: by default only a WRONG carry / borrow fails (a blank one is fine);
   `true` fails a blank one too. Deelbaarheid-kleuren shows at most `KIOSK_MAX_NUMBERS` (20) numbers, never
   fewer than two multiples (`kioskNumbers`).
