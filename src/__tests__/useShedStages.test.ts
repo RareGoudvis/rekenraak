@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { measureContentWidth } from '../hooks/useShedStages';
+import { measureCentredRowWidth, measureContentWidth } from '../hooks/useShedStages';
 
 // jsdom never computes real layout, so scrollWidth/columnGap have to be stubbed per
 // element — this pins down the ONE piece of useShedStages that isn't render/effect
@@ -34,5 +34,27 @@ describe('measureContentWidth', () => {
         const parent = document.createElement('div');
         parent.append(elWithScrollWidth(40), elWithScrollWidth(40));
         expect(measureContentWidth(parent)).toBe(80);
+    });
+});
+
+describe('measureCentredRowWidth', () => {
+    it('gives the wider side group to both sides of the centred middle track', () => {
+        const parent = document.createElement('div');
+        parent.style.columnGap = '12px';
+        parent.append(elWithScrollWidth(100), elWithScrollWidth(300), elWithScrollWidth(250));
+        // 300 + 2 x 250 + 2 gaps of 12, not the plain sum 674.
+        expect(measureCentredRowWidth(parent)).toBe(824);
+    });
+
+    it('falls back to the plain sum when the middle track is empty', () => {
+        const parent = document.createElement('div');
+        parent.append(elWithScrollWidth(100), elWithScrollWidth(0), elWithScrollWidth(250));
+        expect(measureCentredRowWidth(parent)).toBe(350);
+    });
+
+    it('falls back to the plain sum when the row is not three tracks', () => {
+        const parent = document.createElement('div');
+        parent.append(elWithScrollWidth(40), elWithScrollWidth(60));
+        expect(measureCentredRowWidth(parent)).toBe(100);
     });
 });

@@ -9,7 +9,7 @@ import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import { Info } from '@phosphor-icons/react';
-import { useShedStages } from '../../hooks/useShedStages';
+import { measureCentredRowWidth, useShedStages } from '../../hooks/useShedStages';
 
 interface Props {
     onPrint: (withSolutions: boolean) => void;
@@ -155,7 +155,8 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     // bar itself grows a second (fixed 28px) line at stage 2+, which must NOT count toward
     // the overflow measurement.
     const contentRef = useRef<HTMLDivElement>(null);
-    const stage = useShedStages(barRef, contentRef, STAGE_COUNT);
+    // Centred measure: the name track stays dead centre, so the wider group sets both sides.
+    const stage = useShedStages(barRef, contentRef, STAGE_COUNT, measureCentredRowWidth);
     const iconOnly = stage >= 1;
     const nameInRow = stage < 2;
     const foldedIntoMenu = stage >= 3;

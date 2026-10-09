@@ -44,17 +44,39 @@ export function measureContentWidth(el: HTMLElement): number {
     return kids.reduce((sum, kid) => sum + kid.scrollWidth, 0) + gap * (kids.length - 1);
 }
 
+// For a `1fr | auto | 1fr` row whose middle track sits dead centre: both side tracks are
+// equally wide, so the wider side group needs its width on BOTH sides of the middle. A
+// plain sum let a wide right group run under a narrow left group's spare room (the name
+// and "Automatisch bewaard" disappeared under undo at 1920 px).
+export function measureCentredRowWidth(el: HTMLElement): number {
+    const kids = Array.from(el.children) as HTMLElement[];
+    if (kids.length !== 3) return measureContentWidth(el);
+    const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+    const [left, middle, right] = kids;
+    // An empty middle has nothing to collide with: the two groups may share the row freely.
+    if (middle.scrollWidth === 0) return measureContentWidth(el);
+    return middle.scrollWidth + 2 * Math.max(left.scrollWidth, right.scrollWidth) + 2 * gap;
+}
+
+// The bar's clientWidth includes its own side padding, which the content row never gets.
+function innerWidth(el: HTMLElement): number {
+    const cs = getComputedStyle(el);
+    return el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+}
+
 /**
  * @param barRef ref to the element whose clientWidth is the available width budget
  * @param contentRef ref to the row whose direct children's combined width is what the
  *   current stage's content actually needs
  * @param stageCount number of stages, 0 (fullest) .. stageCount-1 (leanest)
+ * @param measure what the content row needs (measureCentredRowWidth for a centred 3-track row)
  * @returns the active stage index
  */
 export function useShedStages(
     barRef: React.RefObject<HTMLElement | null>,
     contentRef: React.RefObject<HTMLElement | null>,
     stageCount: number,
+    measure: (el: HTMLElement) => number = measureContentWidth,
 ): number {
     const [stage, setStage] = useState(0);
     // neededWidth[s] = the content width stage s's row last measured at, recorded on
@@ -110,8 +132,8 @@ export function useShedStages(
                 setStage(next);
             };
 
-            const barWidth = bar.clientWidth;
-            const contentWidth = measureContentWidth(content);
+            const barWidth = innerWidth(bar);
+            const contentWidth = measure(content);
             const fits = contentWidth <= barWidth - OVERFLOW_SLACK_PX;
             neededWidth.current[stage] = contentWidth;
 
