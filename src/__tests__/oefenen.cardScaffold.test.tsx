@@ -63,3 +63,20 @@ describe('the kiosk card hides the scaffold the kiosk does not ask (call 10)', (
         expect(sheet).toBeGreaterThan(onCard);
     });
 });
+
+// Classroom note (2026-10-09): pupils read the symbolic duizendtal stamp (four squares) as four
+// hundreds. The card draws it as one labelled cube; the sheet keeps the stamp.
+describe('the kiosk card draws a duizendtal as a labelled cube', () => {
+    test.each(['symbolic', 'mab-bw', 'mab-color'])('%s', (mabStyle) => {
+        const block = blockOf('mab-herkennen', { maxNumber: 1000, mabStyle });
+        (block as unknown as { mabExercises: unknown[] }).mabExercises = [{ id: 'm', value: 1000, thousands: 1, hundreds: 0, tens: 0, units: 0, isManuallyEdited: false }];
+        const sheet = html(block, false);
+        expect(sheet.querySelector('[data-mab-thousand]')).toBeNull();
+        expect(sheet.textContent).not.toContain('1000');
+        cleanup();
+        const card = html(block, true);
+        const cube = card.querySelectorAll('[data-mab-thousand]');
+        expect(cube).toHaveLength(1);
+        expect(cube[0].textContent).toBe('1000');
+    });
+});

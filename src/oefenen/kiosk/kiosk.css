@@ -591,21 +591,25 @@ html:has(.oefen-body),
   display: grid;
   /* auto-fit: a short tray (MAB's three places) widens its tiles instead of leaving gaps. */
   grid-template-columns: repeat(auto-fit, minmax(clamp(76px, 12vmin, 112px), 1fr));
-  /* Tiles never under a thumb's target; on a Chromebook they grow, up to a comfortable coin. */
-  grid-auto-rows: minmax(var(--kiosk-tap), clamp(72px, 14vmin, 120px));
-  align-content: center;
+  /* A slot = the tile (never under a thumb's target) + its − / + row; on a Chromebook the
+     tile grows, up to a comfortable coin. */
+  grid-auto-rows: minmax(calc(2 * var(--kiosk-tap) + var(--sp-1)), calc(clamp(72px, 14vmin, 120px) + var(--kiosk-tap)));
+  /* safe: a tray taller than the panel starts at its top instead of centring its first row out of reach. */
+  align-content: safe center;
   gap: var(--sp-2);
-  /* Room for the count badges that sit over the tiles' top edge. */
-  padding-top: var(--sp-2);
+  /* A long money tray on a landscape phone scrolls rather than squeezing tiles under 44 px. */
+  overflow-y: auto;
 }
-.kiosk-tray-slot { position: relative; min-width: 0; display: flex; }
+.kiosk-tray-slot { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
 .kiosk-tray-piece {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: var(--kiosk-tap);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   padding: var(--sp-1);
   border: 2px solid var(--separator);
   border-radius: var(--radius-md);
@@ -623,36 +627,45 @@ html:has(.oefen-body),
 .kiosk-tray-piece.is-laid { border-color: var(--accent); }
 .kiosk-tray-piece:disabled { opacity: 0.45; cursor: default; }
 /* The sheet's coin / block figures are em of --sheet-size-math: a bill (56 px at 13pt) fills
-   about 80% of the tile's width and a coin (2.65 em) 80% of its height, capped so a
-   Chromebook's big tiles do not draw 150 px coins. */
+   about 80% of the tile's width and a coin (2.65 em) 70% of its height (the badge takes the
+   rest), capped so a Chromebook's big tiles do not draw 150 px coins. */
 .kiosk-tray-figure {
-  --sheet-size-math: min(22px, 25cqi, 30cqh);
+  --sheet-size-math: min(22px, 25cqi, 26cqh);
   display: inline-flex;
   font-size: var(--sheet-size-math);
   pointer-events: none;
 }
+/* "gelegd: n" under the figure: quiet at 0, the accent once something is laid. */
 .kiosk-tray-count {
-  position: absolute;
-  top: calc(-1 * var(--sp-2));
-  right: calc(-1 * var(--sp-1));
-  min-width: 32px;
-  height: 32px;
-  padding: 0 var(--sp-2);
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border: none;
+  flex: none;
+  padding: 1px var(--sp-2);
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--accent-on);
-  font: 700 var(--kiosk-text)/1 var(--font-ui);
+  background: var(--bg-active);
+  color: var(--text-muted);
+  font: 600 var(--text-sm)/1.2 var(--font-ui);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.kiosk-tray-count.is-laid { background: var(--accent); color: var(--accent-on); }
+.kiosk-tray-step {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-1);
+}
+.kiosk-tray-btn {
+  min-width: 0;
+  min-height: var(--kiosk-tap);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--kiosk-ink);
+  font: 700 var(--kiosk-text)/1 var(--font-ui);
   cursor: pointer;
 }
-/* The badge draws at 32 px; its tap target reaches 44 px (WCAG 2.5.5). */
-.kiosk-tray-count::after { content: ''; position: absolute; inset: -6px; }
-.kiosk-tray-count:active { background: var(--accent-strong); }
-.kiosk-tray-minus { font-weight: 400; }
+.kiosk-tray-btn:active { background: var(--bg-active); }
+.kiosk-tray-btn:disabled { opacity: 0.4; cursor: default; }
 .kiosk-tray-actions {
   flex: none;
   display: grid;

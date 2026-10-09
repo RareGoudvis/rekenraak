@@ -40,6 +40,7 @@ export default function AnswerInput() {
             return (
                 <div className="kiosk-answer">
                     <Tray typeId={sessie!.types[shown.slot].typeId} constraints={shown.constraints} pieces={info.pieces ?? []} />
+                    <p className="kiosk-keypad-hint">Tik om te leggen, − om weg te nemen.</p>
                     <div className="kiosk-tray-actions">
                         <button type="button" className="kiosk-btn" onClick={clearBuild} disabled={interaction.build.length === 0}>Wissen</button>
                         <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!ready}>Controleer</button>

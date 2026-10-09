@@ -150,13 +150,25 @@ describe('kiosk flow: lay the answer from the tray', () => {
         const laidCount = right.reduce((n, b) => n + b.count, 0);
         expect(cardSvgs(container)).toBe(before + laidCount);
         expect(controleer().disabled).toBe(false);
-        // The badge shows the count and takes one back; Backspace takes back the newest kind.
+        // Every piece has a "gelegd: n" badge and its own − / +; Backspace takes back the newest kind.
         const first = right[0];
-        const badge = screen.getByRole('button', { name: `Eén ${pieces.find(p => p.key === first.key)!.label} terugnemen` });
-        expect(badge.textContent).toBe(`−${first.count}`);
-        fireEvent.click(badge);
+        const label = pieces.find(p => p.key === first.key)!.label;
+        const slot = tile(first.key).closest('.kiosk-tray-slot') as HTMLElement;
+        expect(slot.querySelector('.kiosk-tray-count')!.textContent).toBe(`gelegd: ${first.count}`);
+        const minus = screen.getByRole('button', { name: `Eén ${label} terugnemen` }) as HTMLButtonElement;
+        expect(minus.textContent).toBe('−');
+        fireEvent.click(minus);
         expect(builtCount(st().interaction, first.key)).toBe(first.count - 1);
-        fireEvent.click(tile(first.key));
+        fireEvent.click(screen.getByRole('button', { name: `Nog een ${label}` }));
+        expect(builtCount(st().interaction, first.key)).toBe(first.count);
+        // A piece not laid yet reads "gelegd: 0" and its − is off.
+        const unlaid = pieces.find(p => !right.some(b => b.key === p.key));
+        if (unlaid) {
+            expect(tile(unlaid.key).closest('.kiosk-tray-slot')!.querySelector('.kiosk-tray-count')!.textContent).toBe('gelegd: 0');
+            expect((screen.getByRole('button', { name: `Eén ${unlaid.label} terugnemen` }) as HTMLButtonElement).disabled).toBe(true);
+        }
+        // One line under the tray says how it works.
+        expect(screen.getByText('Tik om te leggen, − om weg te nemen.')).toBeTruthy();
         const newest = st().interaction.build[st().interaction.build.length - 1];
         fireEvent.keyDown(window, { key: 'Backspace' });
         expect(builtCount(st().interaction, newest.key)).toBe(newest.count - 1);
@@ -204,6 +216,7 @@ describe('kiosk flow: lay the answer from the tray', () => {
         for (let i = 0; i < 12; i++) fireEvent.click(tile('E'));
         expect(builtCount(st().interaction, 'E')).toBe(9);
         expect(tile('E').disabled).toBe(true);
+        expect((screen.getByRole('button', { name: 'Nog een eenheid' }) as HTMLButtonElement).disabled).toBe(true);
     });
 
     test('geld-wissel: the shown note is not in the tray', () => {

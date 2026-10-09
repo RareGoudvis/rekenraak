@@ -137,11 +137,6 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- Kiosk MAB (mab-herkennen / mab-tekenen): the duizendtal block is hard to read at kiosk scale —
-  pupils could not tell it from the honderdtal; and adding / taking away pieces in the tray needs
-  more UI help (which piece, how many laid, a clear +/−). Owner note from the first test with
-  real kids. 2026-10-09
-
 - hr-std-delen-nat "Met rest" keeps the tafels picked in tafels mode hidden, so a session can go dead
   with tafels [1] without the teacher seeing why (pre-flight flags it). 2026-10-09
 
