@@ -286,11 +286,13 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                 <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
             )}
 
-            {/* Solutions: carry row */}
+            {/* Solutions: carry row. computeAddCarries keys a carry by the column that MADE it; a
+                pupil writes it over the next column left, so it is drawn at col − 1.
+                SYNC: cijferCells cijferCheck reads the carry cell over col from carries.get(col + 1). */}
             {showSolutions && ex.operator === '+' &&
                 computeAddCarries(ex.operands, dp, maxInt)
-                    .filter(c => c.col >= 0 && c.col < maxInt + decCols)
-                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
+                    .filter(c => c.col - 1 >= 0 && c.col < maxInt + decCols)
+                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col - 1)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
             }
 
             {cells && cijferKioskGrid(ex, dp).cells.map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} />)}

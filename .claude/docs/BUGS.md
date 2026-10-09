@@ -31,11 +31,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   to 2 (owner call). 2026-09-27
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
-- Cijferen optellen with solutions on: the red carries sit above the column that MADE them, one
-  column right of where a pupil writes them (`computeAddCarries` keys by the source column; the
-  AddSubGrid draws at that col). Repro: 525 + 445, Oplossingen aan, scaffolding 1 → the "1" is over
-  the E, not the T. Fix: draw at `col - 1` (the kiosk's cijferCells already reads it so). 2026-10-08
-  (Since the empty-grid key fix this shows at every scaffolding level, incl. the default.)
 - Cijferen vermenigvuldigen key: the partial products stack with the units product LAST (1246 × 73
   → 87220 above 3738; MultiplicationGrid `ppStartRow + (n - 1 - ppIdx)`), while pupils write × 3
   first. Owner call whether to flip the order. 2026-10-09

@@ -225,6 +225,7 @@ export function cijferCheck(ex: CijferExercise, dp: number, strictCarries: boole
         const col = cell.col - 1;
         if (cell.role === 'digit') return answer[col];
         // computeAddCarries keys a carry by the column that MADE it; this cell holds the one coming in.
+        // SYNC: CijferViewer AddSubGrid draws the sheet's red carry at that same col − 1.
         if (cell.role === 'carry') return carryWant(carries.get(col + 1) ?? 0, strictCarries);
         // An exchanged column ends at its new value; an untouched one may be copied or left blank.
         const v = after[col];

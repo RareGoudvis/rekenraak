@@ -45,6 +45,7 @@ export function ppDigitCols(value: number, intCols: number): { col: number; char
     return result;
 }
 
+// Keyed by the column that MADE the carry; it is written over col − 1 (CijferViewer, cijferCells).
 export function computeAddCarries(operands: number[], dp: number, intCols: number): { col: number; carry: number }[] {
     const totalPositions = intCols + dp;
     const carries: { col: number; carry: number }[] = [];
