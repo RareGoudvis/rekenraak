@@ -218,8 +218,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-G teacher UX
 
-- **O17** The Oefenmodus catalogue has no search field and no leerjaar filter (the editor sidebar has
-  both). 2026-10-09
 - **O18** "Aantal: ∞" is a small label above a slider with the thumb far right, no "onbeperkt"
   wording (OefenBuilderModal.tsx:242). 2026-10-09
 - **O19** The share modal shows only "N soorten · M min" (OefenShareModal.tsx:75): no total number

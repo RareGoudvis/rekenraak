@@ -4,6 +4,7 @@ import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 import { nextExercise, type Rng } from '../../services/oefenen/scheduler';
+import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
 export interface OefenLeaf {
@@ -16,6 +17,16 @@ export interface OefenLeaf {
     accentVar: string;
     constraints: Record<string, unknown>;
     instruction?: string | InstructionFn;
+    // Lower-cased labels the catalogue search matches: kiosk + sidebar label, parent, subdomain, domain.
+    searchText: string[];
+    // First leerjaar the sidebar's filter shows this leaf in (leafAllowedForGrade).
+    minGrade: Leerjaar;
+}
+
+// Case-insensitive substring match on the leaf's labels (the sidebar's search rule) + its leerjaar filter.
+export function filterOefenLeaves(leaves: OefenLeaf[], query: string, grade: Leerjaar | null): OefenLeaf[] {
+    const needle = query.trim().toLowerCase();
+    return leaves.filter(l => (grade === null || l.minGrade <= grade) && (!needle || l.searchText.some(s => s.includes(needle))));
 }
 
 export function listOefenLeaves(): OefenLeaf[] {
@@ -26,16 +37,19 @@ export function listOefenLeaves(): OefenLeaf[] {
         for (const leaf of t.children ?? [t]) {
             const flat = appLeaf.get(leaf.id);
             if (!leaf.typeId || !flat || !capable.has(leaf.id)) continue;
+            const label = kioskLabel(flat);
             out.push({
                 id: leaf.id,
                 typeId: leaf.typeId,
-                label: kioskLabel(flat),
+                label,
                 context: sub.label,
                 domainId: dom.id,
                 domainLabel: dom.label,
                 accentVar: dom.accentVar,
                 constraints: leaf.defaultConstraints ?? {},
                 instruction: leaf.instruction,
+                searchText: [label, leaf.label, ...(t.children ? [t.label] : []), sub.label, dom.label].map(s => s.toLowerCase()),
+                minGrade: LEERJAREN.find(g => leafAllowedForGrade(leaf, g)) ?? 6,
             });
         }
     }

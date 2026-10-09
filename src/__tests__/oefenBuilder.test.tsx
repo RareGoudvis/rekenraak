@@ -3,13 +3,18 @@ import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, screen, within, act } from '@testing-library/react';
 import OefenBuilderModal from '../components/oefenen/OefenBuilderModal';
 import OefenShareModal from '../components/oefenen/OefenShareModal';
-import { buildSessie, listOefenLeaves, normaliseWeights, rowYields, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
+import { buildSessie, filterOefenLeaves, listOefenLeaves, normaliseWeights, rowYields, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
 import { kioskSupports } from '../services/oefenen/kiosk';
 import { denominationLabel } from '../services/geld/geldGenerator';
 import { loadOefenSessies } from '../services/persistence';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import type { OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
+import { LEERJAREN, leafAllowedForGrade } from '../config/gradePresets';
+import { APP_STRUCTURE } from '../config/appstructure';
+
+// The raw sidebar node of a leaf: what the sidebar's leerjaar filter reads.
+const leafNode = (id: string) => APP_STRUCTURE.flatMap(d => d.subdomains.flatMap(s => s.types.flatMap(t => [t, ...(t.children ?? [])]))).find(l => l.id === id)!;
 
 // The previews lazy-mount on scroll and measure with ResizeObserver; jsdom has neither.
 class VisibleObserver {
@@ -405,5 +410,53 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
         const klok = leaf('klok-analoog-lezen');
         expect(rowYields({ leaf: klok, constraints: { ...klok.constraints, timeTypes: [] } })).toBe(false);
         expect(rowYields({ leaf: klok, constraints: { ...klok.constraints, timeTypes: ['uren'] } })).toBe(true);
+    });
+});
+
+describe('OefenBuilderModal catalogue search + leerjaar (O17)', () => {
+    const labels = () => screen.getAllByTitle('Toevoegen aan de sessie').map(b => b.textContent?.replace(/\d+×$/, ''));
+    const search = () => screen.getByPlaceholderText('Zoek oefening…');
+    const chip = (name: string) => within(screen.getByRole('group', { name: 'Leerjaar' })).getByRole('button', { name });
+    afterEach(() => { useWorksheetStore.setState({ selectedGrade: null }); });
+
+    test('search narrows the list case-insensitively, also on the leaf group; no hit says so', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        const all = labels().length;
+        fireEvent.change(search(), { target: { value: 'PERCENT' } });
+        expect(labels()).toContain(leaf('procenten-nemen').label);
+        expect(labels()).not.toContain(leaf('breuken-vereenvoudigen').label);
+        expect(labels().length).toBeLessThan(all);
+        // "Analoge klok" is the parent of "Lezen": the sidebar finds its children by it too.
+        fireEvent.change(search(), { target: { value: 'analoge klok' } });
+        expect(labels()).toContain(leaf('klok-analoog-lezen').label);
+        fireEvent.change(search(), { target: { value: 'zzqq' } });
+        expect(screen.queryAllByTitle('Toevoegen aan de sessie')).toHaveLength(0);
+        expect(screen.getByText('Geen oefening gevonden voor "zzqq".')).toBeTruthy();
+        fireEvent.change(search(), { target: { value: '' } });
+        expect(labels().length).toBe(all);
+    });
+
+    test('leerjaar chips: L4 hides a L5 leaf, L5 and Alle show it; the sidebar leerjaar is the start value', () => {
+        useWorksheetStore.setState({ selectedGrade: 4 });
+        render(<OefenBuilderModal onClose={() => { }} />);
+        expect(chip('L4').getAttribute('aria-pressed')).toBe('true');
+        expect(labels()).not.toContain(leaf('procenten-nemen').label);
+        fireEvent.click(chip('L5'));
+        expect(labels()).toContain(leaf('procenten-nemen').label);
+        fireEvent.click(chip('L1'));
+        const l1 = labels().length;
+        fireEvent.click(chip('Alle'));
+        expect(labels().length).toBeGreaterThan(l1);
+        // The builder's own filter never moves the sidebar's leerjaar.
+        expect(useWorksheetStore.getState().selectedGrade).toBe(4);
+    });
+
+    test('filterOefenLeaves: same leerjaar rule as the sidebar (leafAllowedForGrade)', () => {
+        const all = listOefenLeaves();
+        for (const g of LEERJAREN) {
+            const kept = new Set(filterOefenLeaves(all, '', g).map(l => l.id));
+            for (const l of all) expect(kept.has(l.id), `${l.id} L${g}`).toBe(leafAllowedForGrade(leafNode(l.id), g));
+        }
+        expect(filterOefenLeaves(all, '  ', null)).toHaveLength(all.length);
     });
 });

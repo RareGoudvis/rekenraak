@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, FloppyDisk, Plus, Share, Trash, Warning } from '@phosphor-icons/react';
+import { Check, FloppyDisk, Share, Trash, Warning } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { deleteOefenSessie, saveOefenSessie } from '../../services/persistence';
@@ -9,6 +9,7 @@ import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
 import Switch from '../ui/Switch';
 import OefenShareModal from './OefenShareModal';
+import OefenCatalogue from './OefenCatalogue';
 import { newSessieId } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import {
@@ -30,11 +31,6 @@ type Row = Omit<BuilderRow, 'constraints'>;
 // then save the session to the library or share it as link + QR.
 export default function OefenBuilderModal({ onClose, initial }: Props) {
     const leaves = useMemo(() => listOefenLeaves(), []);
-    const domains = useMemo(() => {
-        const seen = new Map<string, { id: string; label: string; accentVar: string }>();
-        for (const l of leaves) if (!seen.has(l.domainId)) seen.set(l.domainId, { id: l.domainId, label: l.domainLabel, accentVar: l.accentVar });
-        return [...seen.values()];
-    }, [leaves]);
 
     const setDraftBlocks = useWorksheetStore((s) => s.setDraftBlocks);
     const clearDraftBlocks = useWorksheetStore((s) => s.clearDraftBlocks);
@@ -133,36 +129,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                 </div>
 
                 <div style={S.bodyRow}>
-                    {/* LEFT: kiosk-capable leaves grouped by domain, click adds a row */}
-                    <div style={S.list}>
-                        {domains.map(dom => (
-                            <div key={dom.id} style={S.domGroup}>
-                                <div style={S.domHead}>
-                                    <span style={{ ...S.domDot, background: `var(${dom.accentVar})` }} aria-hidden />
-                                    <span>{dom.label}</span>
-                                </div>
-                                {(() => {
-                                    let prevCtx: string | null = null;
-                                    const els: React.ReactNode[] = [];
-                                    for (const leaf of leaves.filter(l => l.domainId === dom.id)) {
-                                        if (leaf.context !== prevCtx) {
-                                            prevCtx = leaf.context;
-                                            els.push(<div key={`sub-${leaf.context}`} style={S.subHead}>{leaf.context}</div>);
-                                        }
-                                        const n = rows.filter(r => r.leaf.id === leaf.id).length;
-                                        els.push(
-                                            <button key={leaf.id} className="ui-hover" style={S.leafBtn} onClick={() => addLeaf(leaf)} title="Toevoegen aan de sessie">
-                                                <Plus size={14} />
-                                                <span style={S.leafLabel}>{leaf.label}</span>
-                                                {n > 0 && <span style={S.leafCount}>{n}×</span>}
-                                            </button>,
-                                        );
-                                    }
-                                    return els;
-                                })()}
-                            </div>
-                        ))}
-                    </div>
+                    <OefenCatalogue leaves={leaves} countOf={id => rows.filter(r => r.leaf.id === id).length} onAdd={addLeaf} />
 
                     {/* MAIN: session settings, then one row per added type */}
                     <div style={S.main}>
@@ -332,14 +299,7 @@ const S = {
     title: { margin: 0, fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-main)' } as React.CSSProperties,
     subtitle: { margin: 'var(--sp-1) 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', maxWidth: '780px' } as React.CSSProperties,
     bodyRow: { flex: 1, display: 'flex', minHeight: 0 } as React.CSSProperties,
-    list: { width: '280px', flexShrink: 0, overflowY: 'auto', borderRight: '1px solid var(--separator)', padding: 'var(--sp-3)' } as React.CSSProperties,
-    domGroup: { marginBottom: 'var(--sp-4)' } as React.CSSProperties,
-    domHead: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-main)', padding: 'var(--sp-1) var(--sp-2)' } as React.CSSProperties,
     domDot: { width: '8px', height: '8px', borderRadius: 'var(--radius-pill)', flexShrink: 0 } as React.CSSProperties,
-    subHead: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', padding: 'var(--sp-2) var(--sp-2) 2px' } as React.CSSProperties,
-    leafBtn: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', width: '100%', textAlign: 'left', padding: '6px var(--sp-2)', borderRadius: 'var(--radius-xs)', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontSize: 'var(--text-sm)' } as React.CSSProperties,
-    leafLabel: { flex: 1, minWidth: 0 } as React.CSSProperties,
-    leafCount: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--accent)' } as React.CSSProperties,
     main: { flex: 1, minWidth: 0, overflowY: 'auto', padding: 'var(--sp-4) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' } as React.CSSProperties,
     card: { background: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-1)', padding: 'var(--sp-4)' } as React.CSSProperties,
     settingsGrid: { display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(200px, 1fr) minmax(260px, 1.4fr)', gap: 'var(--sp-4)', alignItems: 'start' } as React.CSSProperties,
