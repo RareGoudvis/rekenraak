@@ -115,8 +115,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - schattend-nat mixes "=" and "≈" for the final result within one block. 2026-09-27
   (The getallenas step-over-max half of this line moved to [L1] below.)
 
-- `typeId.startsWith('layout-')` is still used in Inspector.tsx (~443, ~649), blockLayout.ts (~562) and
-  blockNumbering.ts (~21); switch to `REGISTRY[t]?.isFurniture`. 2026-09-27
 
 ## Limit audit 2026-10-07
 

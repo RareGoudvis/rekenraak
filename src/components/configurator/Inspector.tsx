@@ -8,6 +8,7 @@ import { ArrowUp, ArrowDown, Sparkle as Sparkles } from '@phosphor-icons/react';
 import IconButton from '../ui/IconButton';
 import { useWorksheetStore, DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
+import { REGISTRY } from '../../config/exerciseRegistry';
 import { DOMAIN_BY_TYPE } from '../../config/appstructure';
 import { buildCatalog } from '../../config/exerciseCatalog';
 import { regenerateBlock } from '../../services/generateDispatch';
@@ -441,7 +442,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
             {/* ── 1. Opdrachtblok ── */}
             {(() => {
                 // Sheet furniture has no exercises, so instruction/score/aantal do not apply.
-                const isFurniture = activeBlock.typeId.startsWith('layout-');
+                const isFurniture = !!REGISTRY[activeBlock.typeId]?.isFurniture;
                 const aantal = activeBlock.numberOfExercises || 10;
                 const scoreMax = Math.max(1, aantal * 2);   // Score caps at 2 points per exercise
                 const sliderStyle = (on: boolean): React.CSSProperties => ({ width: '100%', accentColor: 'var(--accent-purple)', cursor: on ? 'pointer' : 'not-allowed', opacity: on ? 1 : 0.5 });
@@ -647,7 +648,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                             {/* The title row is presentation: hiding it leaves the block in the
                                                 opdracht numbering, so the numbers after it never shift.
                                                 layout-* furniture has no title row to begin with. */}
-                                            {!activeBlock.typeId.startsWith('layout-') && (<>
+                                            {!REGISTRY[activeBlock.typeId]?.isFurniture && (<>
                                             <div style={{ ...S.switchRow, marginTop: '12px' }}>
                                                 <span style={S.switchText}>Opdrachttekst tonen</span>
                                                 <Switch
