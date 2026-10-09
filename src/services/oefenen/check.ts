@@ -3,7 +3,8 @@ import type { InteractionKind } from '../../components/viewer/ViewerInteractionC
 import { kioskInputOf, kioskInteractOf } from './kiosk';
 
 // Is the pupil's answer right? Typed answers are normalised (spaces, comma/dot, leading and
-// trailing zeros, minus glyphs) and compared with every spelling the descriptor accepts.
+// trailing zeros, minus glyphs) and compared with every spelling the descriptor accepts; a breuk
+// answer also by value unless the row asks the exact form (exactFormOf).
 
 // Spaces of any kind (\s covers no-break and thin spaces) are thousands separators ('1 234');
 // U+2212 is the sheet's minus, U+2013 what some keyboards make of a hyphen.
@@ -36,10 +37,44 @@ export function normaliseFraction(raw: string): string | null {
 // A fraction when it has a slash, else a plain number.
 const canonical = (raw: string) => (raw.includes('/') ? normaliseFraction(raw) : normaliseNumber(raw));
 
-const sameValue = (given: string, accepted: readonly string[]) => {
+/** A typed breuk or whole number as exact [teller, noemer]; null for a decimal with a fraction part. */
+export function rationalOf(raw: string): [bigint, bigint] | null {
+    if (!raw.includes('/')) {
+        const v = normaliseNumber(raw);
+        // Owner 2026-10-09: a breuk answer does not take a kommagetal ('3,25' for 13/4), not now.
+        return v === null || v.includes('.') ? null : [BigInt(v), 1n];
+    }
+    const m = /^(-?)(?:(\d+) )?(\d+)\/(\d+)$/.exec(normaliseFraction(raw) ?? '');
+    if (!m) return null;
+    const n = BigInt(m[3]), d = BigInt(m[4]);
+    // A gemengd getal needs a proper breuk part: '2 5/4' is not a way to write 3 1/4.
+    if (m[2] !== undefined && n >= d) return null;
+    const total = BigInt(m[2] ?? 0) * d + n;
+    return [m[1] ? -total : total, d];
+}
+
+// BigInt: cross products of 1e9-sized tellers pass 2^53.
+const equalRatio = (a: [bigint, bigint], b: [bigint, bigint]) => a[0] * b[1] === b[0] * a[1];
+
+// exact = the given text must be one of the accepted spellings; else a breuk or whole number of
+// the same value counts too (26/8 for 3 1/4), as long as the accepted answer is one as well.
+const sameValue = (given: string, accepted: readonly string[], exact = true) => {
     const g = canonical(given);
-    return g !== null && accepted.some(a => canonical(a) === g);
+    if (g === null) return false;
+    if (accepted.some(a => canonical(a) === g)) return true;
+    if (exact) return false;
+    const gv = rationalOf(given);
+    return gv !== null && accepted.some(a => {
+        const av = rationalOf(a);
+        return av !== null && equalRatio(gv, av);
+    });
 };
+
+/** Whether this row wants the asked spelling: the row's choice, else the descriptor's default; always where no breuk is asked. */
+export function exactFormOf(d: KioskDescriptor, c: Record<string, unknown>, rowExactForm?: boolean): boolean {
+    const byDefault = d.exactFormDefault?.(c);
+    return byDefault === undefined ? true : rowExactForm ?? byDefault;
+}
 
 /** Canonical text of a typed word: case and spacing do not count ('mmxiv ' = 'MMXIV'). */
 export const normaliseText = (raw: string) => raw.trim().replace(SPACES, ' ').toLowerCase();
@@ -81,7 +116,7 @@ function nearPart(given: string, want: string, tol: number): boolean {
 }
 
 /** An interactive answer (fromState) against the descriptor's canonical one, by its kind. */
-function sameInteraction(kind: InteractionKind, given: string, want: string, tol = 0): boolean {
+function sameInteraction(kind: InteractionKind, given: string, want: string, tol: number, exact: boolean): boolean {
     const g = partsOf(given), w = partsOf(want);
     if (g.length !== w.length) return false;
     if (kind === 'drag') return g.length > 0 && g.every((x, i) => nearPart(x, w[i], tol));
@@ -91,19 +126,21 @@ function sameInteraction(kind: InteractionKind, given: string, want: string, tol
         return [...g].sort().every((x, i) => x === ws[i]);
     }
     // A blank cell is right only where an empty alternative allows it (a carry left out).
-    if (kind === 'fill-cells') return g.every((x, i) => (x === '' ? w[i].split('|').includes('') : sameValue(x, w[i].split('|'))));
+    if (kind === 'fill-cells') return g.every((x, i) => (x === '' ? w[i].split('|').includes('') : sameValue(x, w[i].split('|'), exact)));
     // build: the laid value (total cents, the number) as a number; how it was made up does not count.
     if (kind === 'build') return g.every((x, i) => sameValue(x, [w[i]]));
     return g.every((x, i) => x === w[i]);
 }
 
-export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, given: KioskAnswer): boolean {
+// rowExactForm = the session row's exactForm (OefenType); absent = the descriptor's default.
+export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>, given: KioskAnswer, rowExactForm?: boolean): boolean {
     const input = kioskInputOf(d, ex, c);
+    const exact = exactFormOf(d, c, rowExactForm);
     if (input === 'interactive') {
         const ia = kioskInteractOf(d, c);
         if (!ia) return false;
         const one = Array.isArray(given) ? given.join(INTERACT_SEP) : given;
-        return sameInteraction(ia.kind, one, ia.answerOf(ex, c), ia.tolerance?.(ex, c) ?? 0);
+        return sameInteraction(ia.kind, one, ia.answerOf(ex, c), ia.tolerance?.(ex, c) ?? 0, exact);
     }
     const accepted = d.answerOf(ex, c);
     if (input === 'number+rest') {
@@ -115,11 +152,11 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
     if (input === 'multi-number') {
         // Every field must hold its own blank's value, in order.
         const parts = Array.isArray(given) ? given : [given];
-        return parts.length === accepted.length && parts.every((g, i) => sameValue(g, accepted[i].split('|')));
+        return parts.length === accepted.length && parts.every((g, i) => sameValue(g, accepted[i].split('|'), exact));
     }
     const one = Array.isArray(given) ? (given.length === 1 ? given[0] : null) : given;
     if (one === null) return false;
     if (input === 'choice') return accepted.includes(one.trim());
     if (input === 'text') return one.trim() !== '' && accepted.some(a => normaliseText(a) === normaliseText(one));
-    return sameValue(one, accepted);
+    return sameValue(one, accepted, exact);
 }

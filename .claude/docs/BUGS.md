@@ -205,12 +205,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-C answer check
 
-- **O8** C3: "Reken uit." on hr breuken rejects every unreduced equivalent (26/8 for 3 1/4, 12/4 for 3)
-  because the right answers are a fixed spelling list (kioskDescriptors.ts:47) compared as text
-  (check.ts:39). Owner: per-row option "Gelijkwaardige antwoorden goedrekenen" (default on for
-  Reken-uit leaves) vs "Enkel de gevraagde vorm" (default for vereenvoudigen / gelijknamig
-  leaves), one append-only row flag bit in the wire. 2026-10-09
-
 ### WP-D generation guard
 
 - **O9** C4: a row whose settings generate 0 exercises (klok with every tijdstype unticked) ships
