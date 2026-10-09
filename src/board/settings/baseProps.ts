@@ -27,7 +27,7 @@ export function fontScale(widget: BoardWidget): number {
 // Kinds that multiply their own type sizes by fontScale(); every other kind gets the font
 // size as the frame's inner text zoom (the exercise Tekstgrootte mechanism), which reflows.
 export const SELF_SCALED_FONT: ReadonlySet<WidgetKind> = new Set<WidgetKind>([
-    'checklist', 'stappenplan', 'werksymbolen', 'namen', 'groepjes', 'datum',
+    'checklist', 'stappenplan', 'werksymbolen', 'namen', 'groepjes', 'datum', 'klok',
 ]);
 
 export const isHex = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
