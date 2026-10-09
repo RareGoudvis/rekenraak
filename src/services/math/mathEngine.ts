@@ -1202,8 +1202,14 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             : (divisionLevel >= 1 ? [divisionLevel] : []);
         const useDividendMask = Object.values(operand1Mask).some(v => v);
         const useDivisorMask = Object.values(operand2Mask).some(v => v);
-        // SYNC: every bigNatural branch below is new; ≤ 1e6 keeps its exact RNG stream.
-        const bigNatural = numberType === 'natural' && maxGetal > BIG_MAX;
+        // The quotient-spread branches began past a million; every natural max uses them now
+        // (a divisor drawn uniformly up to the max made most quotients 1 at 1 000 too).
+        const spreadNatural = numberType === 'natural';
+        // Divisor digits ≤ half the max's whole digits (≥ 1), so the quotient carries the size.
+        const spreadDivisor = () => {
+            const k = randInt(1, Math.max(1, Math.floor((String(Math.floor(maxGetal)).length - 1) / 2)));
+            return randInt(k === 1 ? 2 : Math.pow(10, k - 1), Math.pow(10, k) - 1);
+        };
 
         while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
             attempts++;
@@ -1242,16 +1248,19 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                     dividendVal = quotientVal * divisorVal;
                     if (dividendVal > maxGetal || dividendVal <= 0) continue;
                 }
-            } else if (bigNatural && useDividendMask && !useDivisorMask) {
-                // Past a million a masked dividend over a divisor drawn up to itself is almost never
-                // exact, so the block starved into relaxation: a 2-digit divisor that divides it is.
+            } else if (spreadNatural && useDividendMask && !useDivisorMask) {
+                // A masked dividend over a divisor drawn up to itself is rarely exact, so the block
+                // starved into relaxation: a 2-digit divisor that divides it is.
                 const rawA = generateMaskedInt(operand1Mask);
                 if (rawA === null) continue;
                 dividendVal = Math.round(rawA / INTERNAL_SCALE);
-                divisorVal = randInt(2, 99);
+                // Up to half the dividend keeps "37 : 37 = 1" out; a mask with too few such pairs gets them back late.
+                const hi = Math.min(99, attempts > MAX_ATTEMPTS / 2 ? dividendVal : Math.floor(dividendVal / 2));
+                if (hi < 2) continue;
+                divisorVal = randInt(2, hi);
                 if (dividendVal <= 0 || dividendVal > maxGetal || dividendVal % divisorVal !== 0) continue;
                 quotientVal = dividendVal / divisorVal;
-            } else if (bigNatural && useDivisorMask && !useDividendMask) {
+            } else if (spreadNatural && useDivisorMask && !useDividendMask) {
                 // Same starvation with only the divisor masked: answer-first makes it exact by construction.
                 const rawB = generateMaskedInt(operand2Mask);
                 if (rawB === null) continue;
@@ -1280,15 +1289,28 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 if (rawQuotient <= 0 || Math.abs(scaledQ - Math.round(scaledQ)) > 1e-9) continue;
                 quotientVal = Math.round(scaledQ) / displayScale;
 
-            } else if (bigNatural) {
-                // A divisor drawn uniformly below the max is > max / 2 most of the time, so past a
-                // million nearly every quotient was 1. Keep the divisor to at most half the
-                // dividend's digits (≤ 4 at 1e9) and let the quotient carry the size.
-                const k = randInt(1, Math.max(1, Math.floor((String(maxGetal).length - 1) / 2)));
-                divisorVal = randInt(k === 1 ? 2 : Math.pow(10, k - 1), Math.pow(10, k) - 1);
-                quotientVal = randInt(2, Math.max(2, Math.floor(maxGetal / divisorVal)));
+            } else if (spreadNatural) {
+                // A divisor drawn uniformly below the max is > max / 2 most of the time, so nearly
+                // every quotient was 1. Keep the divisor to at most half the dividend's digits
+                // (≤ 4 at 1e9) and let the quotient carry the size.
+                divisorVal = spreadDivisor();
+                // Quotient 1 only late, for a max too small to fill the block without it (10: eight).
+                quotientVal = randInt(attempts > MAX_ATTEMPTS / 2 ? 1 : 2, Math.max(2, Math.floor(maxGetal / divisorVal)));
                 dividendVal = divisorVal * quotientVal;
-                if (dividendVal > maxGetal || String(divisorVal).length * 2 > String(dividendVal).length) continue;
+                // A one-digit dividend (12 : 3 is fine, so is 8 : 4) still counts as two digits here.
+                if (dividendVal > maxGetal || String(divisorVal).length * 2 > Math.max(2, String(dividendVal).length)) continue;
+            } else if (numberType === 'decimal' && !useDividendMask && !useDivisorMask) {
+                // Same spread for decimals: a 1-digit divisor shifted j places (6 / 0,6 / 0,06) and a
+                // quotient with the dp - j decimals left, so the dividend keeps ≤ dp decimals, exact.
+                const d = spreadDivisor();
+                const j = randInt(0, decimalPlaces);
+                const qScale = Math.pow(10, decimalPlaces - j);
+                const qHi = Math.min(Math.floor((maxGetal * displayScale) / d), maxGetal * qScale);
+                if (qHi < 2) continue;
+                const qScaled = randInt(2, qHi);
+                divisorVal = d / Math.pow(10, j);
+                quotientVal = qScaled / qScale;
+                dividendVal = (d * qScaled) / displayScale;
             } else {
                 // Geen maskers: bouw clean oefening (deler × geheel quotiënt = deeltal)
                 const intDivisorScaled = randInt(1, (maxGetal - 1) * displayScale);
