@@ -151,16 +151,8 @@ export function dobbelProps(widget: BoardWidget): DobbelProps {
     };
 }
 
-// ── Ademhaling widget props ──────────────────────────────────────────────────
-export interface AdemProps { inSec: number; holdSec: number; outSec: number; }
-export function ademProps(widget: BoardWidget): AdemProps {
-    const p = widget.props ?? {};
-    return {
-        inSec: Math.max(1, Number(p.inSec ?? 4)),
-        holdSec: Math.max(0, Number(p.holdSec ?? 4)),
-        outSec: Math.max(1, Number(p.outSec ?? 4)),
-    };
-}
+// ── Ademhaling widget props: the schema lives with its settings panel ───────
+export { ademProps, type AdemModel as AdemProps } from './settings/ademModel';
 
 // ── Groepjesmaker ────────────────────────────────────────────────────────────
 export interface GroepjesProps {

@@ -227,9 +227,9 @@ describe('prop normalisers', () => {
         expect(dobbelProps(w('dobbelsteen', { custom: ' rood \n\n blauw\n' })).custom).toEqual(['rood', 'blauw']);
     });
 
-    test('adem: in/out ≥ 1, hold ≥ 0', () => {
-        expect(ademProps(w('adem'))).toEqual({ inSec: 4, holdSec: 4, outSec: 4 });
-        expect(ademProps(w('adem', { inSec: 0, holdSec: -3, outSec: -1 }))).toEqual({ inSec: 1, holdSec: 0, outSec: 1 });
+    test('adem: in/out ≥ 1, hold ≥ 0, the old 4-4-4 circle by default', () => {
+        expect(ademProps(w('adem'))).toMatchObject({ inSec: 4, holdSec: 4, outSec: 4, holdOutSec: 0, cycles: 0, shape: 'cirkel', guideText: true, speed: 1 });
+        expect(ademProps(w('adem', { inSec: 0, holdSec: -3, outSec: -1 }))).toMatchObject({ inSec: 1, holdSec: 0, outSec: 1 });
     });
 
     test('groepjes: mode, minimum 2, rule text', () => {

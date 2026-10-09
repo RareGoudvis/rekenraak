@@ -10,6 +10,7 @@ import ChecklistSettings from './ChecklistSettings';
 import StappenplanSettings from './StappenplanSettings';
 import StopwatchSettings from './StopwatchSettings';
 import TimerSettings from './TimerSettings';
+import AdemSettings from './AdemSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -30,4 +31,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     stappenplan: StappenplanSettings,
     stopwatch: StopwatchSettings,
     timer: TimerSettings,
+    adem: AdemSettings,
 };

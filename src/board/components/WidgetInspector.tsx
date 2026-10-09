@@ -1,7 +1,7 @@
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { dobbelProps, ademProps, getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
+import { dobbelProps, getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
 import BaselineSettings from '../settings/BaselineSettings';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
@@ -12,7 +12,7 @@ interface Props {
 
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
-    dobbelsteen: DobbelSettings, adem: AdemSettings,
+    dobbelsteen: DobbelSettings, 
     getallenlijn: GetallenlijnSettings, positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings, mabmat: MabMatSettings,
 };
@@ -65,33 +65,6 @@ function DobbelSettings({ widget }: { widget: BoardWidget }) {
         </div>
     );
 }
-
-function AdemSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const p = ademProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const slider = (label: string, value: number, key: string, min: number) => (
-        <div>
-            <div style={S.sectionLabel}>{label} ({value}s)</div>
-            <input type="range" min={min} max={10} step={1} value={value} style={{ width: '100%' }}
-                onChange={(e) => set({ [key]: Number(e.target.value) })} />
-        </div>
-    );
-    return (
-        <div>
-            {slider('Adem in', p.inSec, 'inSec', 1)}
-            {slider('Houd vast', p.holdSec, 'holdSec', 0)}
-            {slider('Adem uit', p.outSec, 'outSec', 1)}
-            <div style={S.sectionLabel}>Presets</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ inSec: 4, holdSec: 4, outSec: 4 })}>4-4-4</button>
-                <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ inSec: 4, holdSec: 7, outSec: 8 })}>4-7-8</button>
-                <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ inSec: 3, holdSec: 0, outSec: 5 })}>3-0-5</button>
-            </div>
-        </div>
-    );
-}
-
 
 function GetallenlijnSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
