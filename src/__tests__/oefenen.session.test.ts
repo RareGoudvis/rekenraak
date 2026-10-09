@@ -287,3 +287,34 @@ describe('2 kansen (wire slot 8, appended)', () => {
         expect(() => decodeSessie(packWire([1, 'abc', 1, 0, [[3]], null, null, null, 3]))).toThrow(/ongeldig \(kansen\)/);
     });
 });
+
+describe('exactForm (row slot 8, appended)', () => {
+    test('true / false ride in slot 8 and round-trip; absent leaves the row as it was', () => {
+        const base = sessieOf(3, 0);
+        const s: OefenSessie = { ...base, types: [{ ...base.types[0], exactForm: true }, { ...base.types[1], exactForm: false }, base.types[2]] };
+        const rows = toWire(s)[4] as unknown[][];
+        expect(rows[0][8]).toBe(1);
+        expect(rows[1][8]).toBe(0);
+        expect(rows[2]).toEqual((toWire(base)[4] as unknown[][])[2]);
+        expect(rows[2].length).toBeLessThan(9);
+        expect(roundTrip(s)).toEqual(json(s));
+        expect(roundTrip(base).types.every(t => !('exactForm' in t))).toBe(true);
+    });
+    test('a row made before the slot existed decodes to "not set" (descriptor default)', () => {
+        const old = decodeSessie(packWire([1, 'oud12345', MINUTE_AT / 60_000, 0, [[3, null, null, 4]]]));
+        expect(old.types[0].limit).toBe(4);
+        expect(old.types[0]).not.toHaveProperty('exactForm');
+    });
+    test('a bad exactForm value is a Dutch error', () => {
+        expect(() => decodeSessie(packWire([1, 'abc', 1, 0, [[3, null, null, null, null, null, null, null, 2]]]))).toThrow(/oefenlink is ongeldig/);
+        const s = json(sessieOf(1, 0)) as unknown as Record<string, unknown>;
+        (s.types as Record<string, unknown>[])[0].exactForm = 'ja';
+        expect(() => parseSessie(s)).toThrow(/oefenlink is ongeldig/);
+    });
+    test('QR budget holds with exactForm set on all 20 rows', () => {
+        const s = sessieOf(20, 1);
+        s.types = s.types.map((t, i) => ({ ...t, exactForm: i % 2 === 0 }));
+        expect(qrVersion(s)).toBeLessThanOrEqual(20);
+        expect(roundTrip(s)).toEqual(json(s));
+    });
+});

@@ -30,7 +30,7 @@ export function newSessieId(): string {
 // ── OefenWire v1 ─────────────────────────────────────────────────────────────
 // Positional arrays, trailing defaults trimmed, null = "default" in a middle slot:
 //   session: [v, id, created, flags, rows, title?, timerMin?, total?, attempts?]
-//   row:     [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?]
+//   row:     [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?, exact?]
 // created: whole minutes when createdAt falls on a minute (the builder floors it), else ms.
 // flags:   bit 0 willekeurig · 1 allowRepeatType · 2 testMode · 3 statsLocked.
 // leaf:    index into KIOSK_LEAF_TABLE_V1, else the leafId string.
@@ -39,6 +39,8 @@ export function newSessieId(): string {
 // attempts: 2 or omitted (= 1); appended last so links made before it still decode.
 // weight:  omitted when it equals the equal split; instruction: omitted when it equals the
 //          leaf's default, 0 when the session has none; typeId: only when it is not the leaf's.
+// exact:   1 / 0 = the teacher set exactForm true / false; omitted = the descriptor's default.
+//          Appended last so rows made before it still decode.
 type WireKey = number | string;
 type WireRow = unknown[];
 type OefenWire = unknown[];
@@ -108,6 +110,7 @@ function rowOut(t: OefenType, slot: number, n: number): WireRow {
         instruction,
         removed.length ? removed : null,
         t.typeId === leafTypeId ? null : t.typeId,
+        t.exactForm === undefined ? null : t.exactForm ? 1 : 0,
     ]);
 }
 
@@ -190,7 +193,7 @@ const opt = <T>(v: unknown): T | undefined => (v === null || v === undefined ? u
 function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
     const what = `oefening ${slot + 1}`;
     if (!Array.isArray(raw)) return bad(what);
-    const [leaf, diff, weight, limit, label, instruction, removed, typeId] = raw;
+    const [leaf, diff, weight, limit, label, instruction, removed, typeId, exact] = raw;
     const leafId = typeof leaf === 'number' ? KIOSK_LEAF_TABLE_V1[leaf] : leaf;
     if (typeof leafId !== 'string') return bad(what);
     const tId = opt<unknown>(typeId) ?? LEAF_BY_ID[leafId]?.typeId;
@@ -214,6 +217,8 @@ function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
             instruction: opt<unknown>(instruction) ?? defaultInstructionOf(tId, leafId, lbl, constraints),
         }),
         ...(limit != null && { limit }),
+        // Anything but 1 / 0 passes through for parseType to refuse.
+        ...(exact != null && { exactForm: exact === 1 ? true : exact === 0 ? false : exact }),
     };
 }
 
@@ -243,17 +248,19 @@ function fromWire(w: unknown): Record<string, unknown> {
 
 function parseType(raw: unknown, i: number): OefenType {
     if (!isObj(raw)) return bad(`oefening ${i + 1}`);
-    const { typeId, leafId, label, instruction, constraints, limit, weight } = raw;
+    const { typeId, leafId, label, instruction, constraints, limit, weight, exactForm } = raw;
     if (typeof typeId !== 'string' || typeof leafId !== 'string' || typeof label !== 'string') return bad(`oefening ${i + 1}`);
     if (!REGISTRY[typeId]?.kiosk) throw new Error(`Deze oefenlink bevat een oefening die deze versie niet kent (${typeId}). Werk de app bij.`);
     if (instruction !== undefined && typeof instruction !== 'string') return bad(`opdracht van oefening ${i + 1}`);
     if (!isObj(constraints)) return bad(`instellingen van oefening ${i + 1}`);
     if (limit !== undefined && !isPosInt(limit)) return bad(`limiet van oefening ${i + 1}`);
     if (typeof weight !== 'number' || !Number.isFinite(weight) || weight < 0) return bad(`kans van oefening ${i + 1}`);
+    if (exactForm !== undefined && typeof exactForm !== 'boolean') return bad(`vorm van oefening ${i + 1}`);
     return {
         typeId, leafId, label, constraints, weight,
         ...(instruction !== undefined && { instruction }),
         ...(limit !== undefined && { limit: limit as number }),
+        ...(exactForm !== undefined && { exactForm }),
     };
 }
 
