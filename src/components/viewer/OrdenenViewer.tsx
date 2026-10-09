@@ -7,6 +7,7 @@ import VerticalFraction from './VerticalFraction';
 import { SOL, centerWhenSingle } from './solutionStyle';
 import { ordenenRowPx } from '../../services/layout/blockLayout';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
+import { formatMathNumber } from '../../services/math/formatters';
 
 interface Props {
     block: MathBlock;
@@ -41,7 +42,7 @@ function parseValue(text: string): number | Fraction | null {
 
 function renderVal(v: number | Fraction, color?: string) {
     if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={15} mono />;
-    return <span style={{ color, fontWeight: 'normal' }}>{v.toLocaleString('nl-BE')}</span>;
+    return <span style={{ color, fontWeight: 'normal' }}>{formatMathNumber(v)}</span>;
 }
 
 // Click a prompt number to edit it; commit re-sorts the answer.
@@ -76,7 +77,7 @@ function charsOf(v: number | Fraction): number {
         const parts = [String(v.n), String(v.d)];
         return Math.max(...parts.map((s) => s.length)) + (v.whole ? String(v.whole).length + 1 : 0);
     }
-    return v.toLocaleString('nl-BE').length;
+    return formatMathNumber(v).length;
 }
 
 export default function OrdenenViewer({ block, showSolutions }: Props) {
@@ -124,6 +125,8 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                 // and answer rows of this exercise, so a blank always sits directly under its
                 // number — separators are a narrow fixed track, numbers auto-size to content.
                 const gridTemplateColumns = Array(n).fill('max-content').join(' 22px ');
+                // Flemish lists decimal numbers with ';': "970,55, 902,86" reads as one number.
+                const listSep = ex.display.some(v => !isFrac(v) && !Number.isInteger(v)) ? ';' : ',';
                 return (
                     <div key={ex.id} className="print-exercise" style={{
                         display: 'grid', gridTemplateColumns, columnGap: 0, rowGap: '10px',
@@ -136,7 +139,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                                 {ix
                                     ? <span {...interactionProps(ix, String(i), 'order')} style={{ padding: '9px 7px', borderRadius: '8px' }}>{renderVal(v)}</span>
                                     : <EditableValue value={v} onCommit={(nv) => editAt(ex.id, ex.display, ex.operator, i, nv)} />}
-                                {i < n - 1 && <span>,</span>}
+                                {i < n - 1 && <span>{listSep}</span>}
                             </div>
                         ))}
                         {/* ordered blanks/boxes, aligned to the same columns */}

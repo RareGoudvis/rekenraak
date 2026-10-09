@@ -65,7 +65,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
 
     // ── SHAPE-BASED (kleuren / herkennen) ────────────────────────────────────
     if (subType === 'kleuren' || subType === 'herkennen') {
-        const showColored = subType === 'herkennen';
+        // kleuren's key is the figure with its numerator parts coloured (any such parts are right).
+        const showColored = subType === 'herkennen' || showSolutions;
         // Static size: keep the shape a fixed cm size across denominators. 1cm ≈ 37.8px @96dpi.
         const CM = 37.8;
         const staticProps = c.staticSize ? {

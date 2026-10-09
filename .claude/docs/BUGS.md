@@ -14,11 +14,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   "all-longhand" comment, and SheetFooter's `kader` spreads `borderStyle` over `borderTopStyle`.
   Repro: set headerStyle kader → onderstreept, footerStyle kader → lijn. Fix: write all four sides
   as longhands (changes no pixels). 2026-09-27
-- Hoofdrekenen puntoefening with solutions on: the red answer in a missing operand is bold at 1.04×
-  plus 8px padding, but its box (`termBoxPx`, MathBlockRenderer) is sized for 1× digits, so any
-  answer with a thousands space wraps onto two lines ("26 / 778"). Repro: optellen, Tot 100 000,
-  puntoefening, Oplossingen aan. Fix: size the box for the solution width when `anyMissingTerm`
-  (widens every puntoefening block a few px; `nowrap` alone overflows the cell's left edge). 2026-09-27
 
 - Getallenas at its 1e5 top (all numberTypes, every width): the first tick label hangs 5–15 px
   outside the cell's left edge (`npm run bignum:audit -- --only getalbegrip-getallenassen-nat`).
@@ -43,11 +38,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - breuken-lijnstuk DEFAULT, w4: 10-12 cm segments are drawn clamped to ~8,9 cm (335 px) while the key
   says "12 cm : 6 = 2 cm": the child measures a different length than the key. Fix: cap
   maxLineLength to the column's cm width instead of scaling one segment. 2026-09-27
-- Ordenen prints thousands with a DOT (`toLocaleString('nl-BE')`, OrdenenViewer.tsx ~43/~78):
-  "97.055", "9.705,494" at its max (100 000) and any max >= 1 000; every other viewer uses the space.
-  The default decimal leaf also separates items with ", " between decimal-comma numbers
-  ("970,55,  902,86"). pw017 {decimal, 3 dp, 100 000} is 8 px te breed. Fix: the shared space
-  formatter and a non-comma list separator. 2026-09-27
+- Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept
+  every glyph count). 2026-09-27
 - Getalpatronen at its max (100 000): every five-digit term breaks at its thousands space ("97 /
   055") at every width, w4 included. Fix: nowrap per number, column width from monoTextPx. 2026-09-27
 - patronen-geh DEFAULT: the en-dash separator next to negative terms reads "-53 – -43 – -33".
@@ -69,8 +61,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Hoofdrekenen natural at 1e6 with an operand mask (pw059-061 optellen/aftrekken, gemengd pw052-058):
   the two-per-row layout ends 11 px past the full-width cell (te breed at every width); hrRowLayout
   picks 2 columns the row does not fit. 2026-09-27
-- Solution styling: klok-analoog-tekenen solved hands are black, not the solution red; klok lezen /
-  omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
+- Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
   too; geld-tekenen's key only repeats the prompt amount (~7 px); colouring keys (breuken hoeveelheid /
   veelhoek, deelbaarheid, even-oneven) use the light-blue fill, not red (owner call). 2026-09-27
 - deelbaarheid at its max (100 000) prints "70344" without the thousands space. 2026-09-27
@@ -107,8 +98,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Hoofdrekenen breuken keys print whole numbers as n/1 ("4/3 : 2/9 = 6/1" at the hr-std-delen-rat
   DEFAULT; "288/1") and big numerators without spaces ("36000004/5"); an {M, E} operand mask at max
   1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
-- Empty keys: breuken-kleuren ignores Oplossingen (FractionExerciseItem.tsx ~65: showColored only for
-  herkennen); breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
+- Empty keys: breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
   geld-wissel draws no model exchange. 2026-09-27
 - Degenerate defaults: deelbaarheid-veelvouden is six copies of "veelvouden van 9" ("Kleine reeks: 5
   oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
@@ -123,20 +113,11 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - schattend-nat mixes "=" and "≈" for the final result within one block. 2026-09-27
   (The getallenas step-over-max half of this line moved to [L1] below.)
 
-- `loadWorksheet` doesn't reset `staleBlocks`: the previous sheet's "verouderd" flags linger in the
-  map (harmless ids, but it grows). Fix: `staleBlocks: {}` in documentSlice.loadWorksheet. 2026-09-27
-- `typeId.startsWith('layout-')` is still used in Inspector.tsx (~443, ~649), blockLayout.ts (~562) and
-  blockNumbering.ts (~21); switch to `REGISTRY[t]?.isFurniture`. 2026-09-27
 
 ## Limit audit 2026-10-07
 
 All [L1]-[L21], [E1]-[E11], [N1]-[N2] and [T1] are fixed on rc (fix campaign 2026-10-07/08, see
 UpdateState). Left over, found while fixing:
-
-- MathBlockRenderer draws the compenseren tussenstap from the block's stored `preset`, so when the
-  relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
-  scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
-  Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
@@ -169,8 +150,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 ### WP-H test infra
 
 
-- CijferViewer delen-dec q/r box rounds the rest to the exercise's decimals: 742,4 : 0,7 = 1060,57 r 0,001 prints "r 0,00"
-  (`fmtDisplay(ex.remainder, dp)`; the rest of a decimal staartdeling has up to 2·dp decimals). Found by WP-1. 2026-10-09
 
 ## Tooling
 

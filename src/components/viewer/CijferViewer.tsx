@@ -37,6 +37,15 @@ function fmtDisplay(n: number, dp: number): string {
     return dp > 0 ? `${intFmt},${decP}` : intFmt;
 }
 
+// The rest of a division to dp decimals counts in 10^-2dp units (1 : 0,07 = 14,28 r 0,0004),
+// so it prints exactly, up to 2·dp decimals, without the trailing zeros.
+function fmtRest(n: number, dp: number): string {
+    const [intP, decP = ''] = Math.abs(n).toFixed(2 * dp).split('.');
+    const dec = decP.replace(/0+$/, '');
+    const intFmt = intP.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return dec ? `${intFmt},${dec}` : intFmt;
+}
+
 function computeEstimation(ex: CijferExercise): string {
     const roundSig = (n: number): number => {
         if (n === 0) return 0;
@@ -629,7 +638,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                     {showSolutions ? (
                         <>
                             <span>q  <span style={solutionText}>{fmtDisplay(ex.answer, dp)}</span></span>
-                            <span>r  <span style={solutionText}>{ex.remainder > 0 ? fmtDisplay(ex.remainder, dp) : '0'}</span></span>
+                            <span>r  <span style={solutionText}>{ex.remainder > 0 ? fmtRest(ex.remainder, dp) : '0'}</span></span>
                         </>
                     ) : (
                         <>

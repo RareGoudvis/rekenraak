@@ -172,8 +172,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
         if (isMissing) {
             if (showSolutions) {
-                if (isFraction(val)) return <span style={atFont(styles.solutionText, HR_SOLUTION_FONT)}><FractionDisplay val={val} /></span>;
-                return <span style={atFont(styles.solutionText, HR_SOLUTION_FONT)}>{formatMathNumber(val)}</span>;
+                // The term box is sized for 1× digits: the answer-column 1.04× and padding wrapped "26 / 778".
+                // Bold stays (rule 3): Azeret Mono bold has the regular advance, so it costs no width.
+                const missingSol = { ...atFont(solutionText, 1), padding: 0 };
+                if (isFraction(val)) return <span style={missingSol}><FractionDisplay val={val} /></span>;
+                return <span style={missingSol}>{formatMathNumber(val)}</span>;
             }
             return <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
         }
@@ -297,11 +300,15 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     && !anyMissing && ex.operands.length === 2
                     && typeof ex.operands[0] === 'number' && typeof ex.operands[1] === 'number';
                 let compParts: { tienvoud: number; delta: number } | null = null;
-                if (compScaffold) {
+                if (compScaffold && Number.isInteger(ex.operands[1])) {
                     const b = ex.operands[1] as number;
                     const unit = (100 - (b % 100)) % 100 <= 2 && b > 90 ? 100 : 10;
                     const tienvoud = b + ((unit - (b % unit)) % unit);
-                    compParts = { tienvoud, delta: tienvoud - b };
+                    // The exercise carries no strategy tag, so its own shape decides: the generator's
+                    // compenseren operand sits 1-2 under a round number. A relaxed (preset-dropped)
+                    // block keeps preset 'compenseren' but draws plain sums ("385 − 30 + 0").
+                    const delta = tienvoud - b;
+                    if (delta >= 1 && delta <= 2) compParts = { tienvoud, delta };
                 }
                 const compBlank = (v: number) => showSolutions
                     ? <span style={{ ...solutionText, padding: '0 4px' }}>{formatMathNumber(v)}</span>

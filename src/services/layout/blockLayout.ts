@@ -1,4 +1,5 @@
 import type { MathBlock } from '../math/types';
+import { REGISTRY } from '../../config/exerciseRegistry';
 import { cellWidthPx, ANSWER_SPACE_DEFAULT_PX, ANSWER_REGEL } from '../../components/viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from '../../components/viewer/scaledBlockFit';
 
@@ -562,7 +563,7 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
 // Budgeted height of a block at a given width, in row units. Pure function of settings.
 // Sheet furniture is sized by its own settings rather than by an exercise count.
 function layoutBlockHeight(block: MathBlock): number | null {
-    if (!block.typeId.startsWith('layout-')) return null;
+    if (!REGISTRY[block.typeId]?.isFurniture) return null;
     const c = (block.constraints ?? {}) as Record<string, unknown>;
     const CM_PER_MM = 3.78;   // 1mm at 96dpi
     switch (block.typeId) {
