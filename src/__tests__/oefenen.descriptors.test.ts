@@ -969,3 +969,20 @@ describe('O25: a decimal divisor sizes the quotient from the shifted dividend', 
         expect(checkAnswer(d, ex, c, given)).toBe(true);
     });
 });
+
+describe('O26: a getallenrij / getallenas keypad has a komma when the step has decimals', () => {
+    const d = kioskFor('getallenrijen')!;
+    // From the settings, never the exercise: the keypad must not change from one rij to the next.
+    test.each([
+        [{ numberType: 'natural', step: 0.5 }, [',']],
+        [{ numberType: 'natural', step: 0.1 }, [',']],
+        [{ numberType: 'geheel', step: 0.5 }, ['-', ',']],
+        [{ numberType: 'natural', step: 5 }, []],
+        [{ numberType: 'geheel', step: 5 }, ['-']],
+        [{ numberType: 'decimal', step: 0.1 }, [',']],
+        [{ numberType: 'rational', step: 0.5, fractionStep: 4 }, ['/', ' ']],
+    ])('%j → keys %j', (c, keys) => {
+        expect(d.keys?.(c)).toEqual(keys);
+        expect(kioskFor('getallenas')!.keys?.(c)).toEqual(keys);
+    });
+});

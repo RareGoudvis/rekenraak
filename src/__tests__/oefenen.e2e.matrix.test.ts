@@ -35,8 +35,6 @@ const SETTINGS: BuilderSettings = { id: 'e2e', createdAt: 0, title: '', mode: 'a
 // then delete the entry here and its BUGS.md line in the same commit).
 interface KnownBreak { bugId: string; leaf: RegExp; match: RegExp; sample: [leafId: string, variant: string] }
 const KNOWN_BREAKS: KnownBreak[] = [
-    // "Eigen sprong" 0,5 on a natural / gehele getallenrij: the keypad gets no komma (keys follow numberType only).
-    { bugId: 'O26', leaf: /^getalbegrip-getallenrijen-(nat|geh)$/, match: /fill-cells: cell \w+ = '[^']*,[^']*' not typeable/, sample: ['getalbegrip-getallenrijen-nat', 'step=0.5'] },
     // "Tik elk getal deelbaar door …" with no such number: a wrong tap's Resultaten row shows an empty Juist cell.
     { bugId: 'O27', leaf: /^deelbaarheid-(tabel|veelvouden)$/, match: /unreadable error row .*"expected":""/, sample: ['deelbaarheid-tabel', 'default'] },
 ];
@@ -45,6 +43,8 @@ const KNOWN_BREAKS: KnownBreak[] = [
 const FIXED: Array<Omit<KnownBreak, 'leaf'>> = [
     // A decimal divisor moves the komma: 742,4 : 0,7 = 1060,57 needs six quotient cells.
     { bugId: 'O25', match: /checkAnswer refuses the entered answer/, sample: ['cijferen-delen-dec', 'operand1Mask={"t":true}'] },
+    // "Eigen sprong" 0,5 on a natural / gehele getallenrij: the keypad needs a komma.
+    { bugId: 'O26', match: /fill-cells: cell \w+ = '[^']*,[^']*' not typeable/, sample: ['getalbegrip-getallenrijen-nat', 'step=0.5'] },
 ];
 
 // constraintSpace is a flat union over a type's configs; these one-option variants are no

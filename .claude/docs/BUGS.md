@@ -204,10 +204,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ### WP-H test infra
 
-- **O26** (proposed, pinned) getallenrijen natuurlijk / geheel with an "Eigen sprong" of 0,5 or 0,1
-  (GetallenrijenConfig offers it for every non-rational type): the row has kommagetallen but the kiosk keypad
-  has no komma (GETALLENAS_KIOSK keys follow numberType only), so the blanks cannot be typed. Fix: keys
-  from the step's decimals too. 2026-10-09
 - **O27** (proposed, pinned) deelbaarheid tabel (and veelvouden in tabel layout) "Tik aan door welke getallen
   693 deelbaar is" with none of the divisors right: a wrong tap gives a Resultaten row with an empty
   Juist cell (`expectedText` of an empty tap-multi answer is ''). Fix: a `show` that says "geen". 2026-10-09
