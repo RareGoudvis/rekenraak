@@ -174,6 +174,12 @@ UpdateState). Left over, found while fixing:
   "in woorden" to the banned verbs in oefenen.kioskInstruction.test.ts; sweep the other leaves for
   the same mismatch. Owner: log only, not fixing now. 2026-10-09
 
+- Builder: Opslaan still accepts a session with a dead row (pre-flight only blocks Delen), and Delen from
+  Mijn bladen skips the pre-flight; the runtime retire-dead-slot rule covers it, but the teacher gets no
+  warning on that path. 2026-10-09
+- hr-std-delen-nat "Met rest" keeps the tafels picked in tafels mode hidden, so a session can go dead
+  with tafels [1] without the teacher seeing why (pre-flight flags it). 2026-10-09
+
 ## Oefenmodus beta audit 2026-10-09
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
@@ -240,6 +246,10 @@ grouped per work package so parallel deletions merge cleanly.
   `checkAnswer` → stats over the constraintSpace options; no Playwright kiosk smoke per input kind. 2026-10-09
 
 ## Tooling
+
+- `constraintSpace` lists kettingsommen `chainLength` [2,4,6] while KettingConfig offers 3-5, so the
+  matrix/zero-output sweep tests values the UI cannot reach and skips the ones it can. 2026-10-09
+
 
 - A leaf's own `defaultCount` (oppervlakte-rooster = 2) is not seen by `scripts/height-audit.mjs:81`
   and `scripts/width-matrix.mjs:82` (they add blocks without `leafId`); worksheetTemplates.ts
