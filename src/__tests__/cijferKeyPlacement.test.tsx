@@ -7,6 +7,7 @@ import CijferViewer from '../components/viewer/CijferViewer';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 import { cijferCheck, cijferKioskGrid, kioskMulRows } from '../services/cijferen/cijferCells';
 import type { CijferExercise, MathBlock } from '../services/math/types';
+import { divideToDecimals } from '../services/cijferen/cijferGenerator';
 
 // WHERE the answer key's red digits sit, not just which: a carry over the column it goes INTO
 // (where a pupil writes it), and the partial products units-first, both as the kiosk reads them.
@@ -100,5 +101,21 @@ describe('cijferen vermenigvuldigen key: partial products units-first', () => {
         const row = (r: number) => keys.filter(k => k.startsWith(`p${r}_`)).sort((a, b) => Number(a.split('_')[1]) - Number(b.split('_')[1])).map(k => answer[k]).join('');
         expect(kioskMulRows(2).ppRows).toBe(2);
         expect([row(0), row(1)]).toEqual(['3738', '87220']);
+    });
+});
+
+describe('cijferen delen-dec key: the quotient row fits the shifted dividend (O25)', () => {
+    test('742,4 : 0,7 = 1060,57 draws six quotient digits in the kiosk card\'s columns', () => {
+        const { quotient, remainder } = divideToDecimals(742.4, 0.7, 2);
+        const ex = { ...exOf(':', [742.4, 0.7], quotient, 2), remainder };
+        const container = renderKey('cijferen-delen-dec', ex, 1);
+        const q = redDigits(container).filter(d => d.row === 1 && !d.small).sort((a, b) => a.col - b.col);
+        expect(q.map(d => d.char).join('')).toBe('106057');
+        // Every quotient digit inside the grid: the svg is one px wider than its columns.
+        const cell = parseFloat((container.querySelector('div[style*="--ink-solution"]') as HTMLElement).style.width);
+        const gridCols = Math.floor(Number(container.querySelector('svg')!.getAttribute('width')) / cell);
+        expect(Math.max(...q.map(d => d.col))).toBeLessThan(gridCols);
+        const kioskCols = cijferKioskGrid(ex, 2).cells.filter(c => c.role === 'quotient').map(c => c.col);
+        expect(q.map(d => d.col)).toEqual(kioskCols);
     });
 });

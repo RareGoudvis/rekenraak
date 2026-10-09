@@ -9,7 +9,7 @@ import { SOL, solutionText } from './solutionStyle';
 import { monoTextPx } from '../../services/layout/blockLayout';
 import { divideToDecimals } from '../../services/cijferen/cijferGenerator';
 import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
-import { cijferKioskGrid, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
+import { cijferKioskGrid, divQuotientInt, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
 import { borrowedProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
 
@@ -100,7 +100,7 @@ function divGridCols(ex: CijferExercise, dp: number, extraCols: number): number 
     // The working area always keeps at least 3 decimal columns so a pupil can work past dp.
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
     const leftCols = intLen(ex.operands[0]) + workingDecCols;
-    const rightCols = Math.max(intLen(ex.operands[1]), intLen(ex.operands[0]) + dp);
+    const rightCols = Math.max(intLen(ex.operands[1]), divQuotientInt(ex) + dp);
     return leftCols + rightCols + extraCols;
 }
 
@@ -424,8 +424,9 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
 
     const dividendIntCols = intLen(dividend);
     const divisorCols = intLen(divisor);
-    // always same width as dividend — student must determine how many digits the quotient needs
-    const quotientIntCols = dividendIntCols;
+    // As wide as the dividend after the komma shift (742,4 : 0,7 → 7424 : 7) — the pupil must
+    // determine how many digits the quotient needs. SYNC: cijferCells divGeometry (the kiosk's q cells).
+    const quotientIntCols = divQuotientInt(ex);
 
     // Working area always has at least 3 decimal cols so students can work past dp if needed
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
