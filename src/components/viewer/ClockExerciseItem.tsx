@@ -2,7 +2,7 @@ import type { ClockExercise, MathBlock } from '../../services/math/types';
 import type { ClockType, ExerciseMode, HandChoice } from '../../services/clock/clockTypes';
 import AnalogClockSVG from './AnalogClockSVG';
 import type { ClockConstraints } from '../../services/math/constraintTypes';
-import { solutionText } from './solutionStyle';
+import { SOL, solutionText } from './solutionStyle';
 import { ANSWER_LINE_H } from './BlockWidthContext';
 import { useViewerInteraction } from './ViewerInteractionContext';
 import ClockDragFace from './ClockDragFace';
@@ -34,8 +34,9 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     // Oefenmodus: the pupil sets the hands on the card (kiosk only; null on the sheet).
     const ctx = useViewerInteraction();
 
-    const clock = (showH: boolean, showM: boolean) => (
-        <AnalogClockSVG hours={ex.hours} minutes={ex.minutes} showHourHand={showH} showMinuteHand={showM} is24hour={is24hour} size={CLOCK_SIZE} />
+    const clock = (showH: boolean, showM: boolean, redH = false, redM = false) => (
+        <AnalogClockSVG hours={ex.hours} minutes={ex.minutes} showHourHand={showH} showMinuteHand={showM} is24hour={is24hour} size={CLOCK_SIZE}
+            hourHandColor={redH ? SOL : undefined} minuteHandColor={redM ? SOL : undefined} />
     );
 
     const digitalBox = (
@@ -80,7 +81,8 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
                 showH = handChoice === 'minuut';
                 showM = handChoice === 'uur';
             }
-            inner = <>{timeLabel}{clock(showH, showM)}</>;
+            // The key draws the asked hands red; a hand printed as a given stays black.
+            inner = <>{timeLabel}{clock(showH, showM, showSolutions && handChoice !== 'minuut', showSolutions && handChoice !== 'uur')}</>;
         }
     } else if (exerciseMode === 'lezen') {
         const display = clockType === 'analoog' ? clock(true, true) : digitalBox;

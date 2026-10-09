@@ -66,8 +66,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Hoofdrekenen natural at 1e6 with an operand mask (pw059-061 optellen/aftrekken, gemengd pw052-058):
   the two-per-row layout ends 11 px past the full-width cell (te breed at every width); hrRowLayout
   picks 2 columns the row does not fit. 2026-09-27
-- Solution styling: klok-analoog-tekenen solved hands are black, not the solution red; klok lezen /
-  omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
+- Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
   too; geld-tekenen's key only repeats the prompt amount (~7 px); colouring keys (breuken hoeveelheid /
   veelhoek, deelbaarheid, even-oneven) use the light-blue fill, not red (owner call). 2026-09-27
 - deelbaarheid at its max (100 000) prints "70344" without the thousands space. 2026-09-27

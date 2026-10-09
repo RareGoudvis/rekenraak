@@ -12,6 +12,9 @@ interface Props {
     // own angle when it is printed for another time than `minutes`, pointer handlers on the
     // face, and the drag handles drawn over the hands.
     hourAngleDeg?: number;
+    // Answer key: the hands the pupil had to draw take the solution colour.
+    hourHandColor?: string;
+    minuteHandColor?: string;
     surfaceProps?: React.SVGProps<SVGSVGElement>;
     children?: React.ReactNode;
 }
@@ -21,7 +24,7 @@ interface Props {
 // then follows the teacher's Lettergrootte slider. SYNC: same divisor in every viewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
 
-export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinuteHand, is24hour, size = 130, style, hourAngleDeg, surfaceProps, children }: Props) {
+export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinuteHand, is24hour, size = 130, style, hourAngleDeg, hourHandColor = '#000', minuteHandColor = '#000', surfaceProps, children }: Props) {
     // In 24h mode the SVG canvas grows by 24px so the outer 13-24 ring fits without shrinking the clock circle.
     const svgSize = is24hour ? size + 24 : size;
     const cx = svgSize / 2;
@@ -126,13 +129,13 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
             {showHourHand && (
                 <line
                     x1={cx} y1={cy} x2={hourEnd.x} y2={hourEnd.y}
-                    stroke="#000" strokeWidth={Math.max(2.5, size * 0.022)} strokeLinecap="round"
+                    stroke={hourHandColor} strokeWidth={Math.max(2.5, size * 0.022)} strokeLinecap="round"
                 />
             )}
             {showMinuteHand && (
                 <line
                     x1={cx} y1={cy} x2={minuteEnd.x} y2={minuteEnd.y}
-                    stroke="#000" strokeWidth={Math.max(1.5, size * 0.015)} strokeLinecap="round"
+                    stroke={minuteHandColor} strokeWidth={Math.max(1.5, size * 0.015)} strokeLinecap="round"
                 />
             )}
             <circle cx={cx} cy={cy} r={Math.max(2.5, size * 0.022)} fill="#000" />

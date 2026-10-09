@@ -5,6 +5,8 @@ import { makeBlock } from './helpers/makeBlock';
 import MathBlockRenderer from '../components/viewer/MathBlockRenderer';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 import FractionViewer from '../components/viewer/FractionViewer';
+import ClockViewer from '../components/viewer/ClockViewer';
+import { SOL } from '../components/viewer/solutionStyle';
 import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 
 // Clean sweep S2: sheet-renderer fixes, each one a repro from BUGS.md.
@@ -75,5 +77,43 @@ describe('breuken-kleuren answer key colours the parts', () => {
         expect(filled(renderKl(true))).toBe(3);
         cleanup();
         expect(filled(renderKl(false))).toBe(0);
+    });
+});
+
+describe('klok tekenen key: the hands the pupil draws are in the solution red', () => {
+    const clockBlock = (handChoice: 'uur' | 'minuut' | 'beide', exerciseMode: 'tekenen' | 'lezen' = 'tekenen'): MathBlock => ({
+        ...makeBlock('klok-kloklezen', { id: 'kt', constraints: { clockType: 'analoog', exerciseMode, handChoice } }),
+        clockExercises: [{
+            id: 'c1', hours: 3, minutes: 15, timeText: 'kwart over 3', digitalText: '03:15',
+            exerciseMode, clockType: 'analoog', is24hour: false, handChoice, isManuallyEdited: false,
+        }],
+    });
+    // Hands are the round-capped lines; the ticks are butt-capped.
+    const hands = (container: HTMLElement) =>
+        Array.from(container.querySelectorAll('line[stroke-linecap="round"]')).map(l => l.getAttribute('stroke'));
+    const renderClock = (b: MathBlock, showSolutions: boolean) => render(
+        <BlockWidthProvider value={FULL_BLOCK_WIDTH_PX}>
+            <ClockViewer block={b} showSolutions={showSolutions} />
+        </BlockWidthProvider>,
+    ).container;
+
+    test('beide: both hands red in the key, none drawn without it', () => {
+        expect(hands(renderClock(clockBlock('beide'), true))).toEqual([SOL, SOL]);
+        cleanup();
+        expect(hands(renderClock(clockBlock('beide'), false))).toEqual([]);
+    });
+
+    test('minuut asked: the given hour hand stays black, the minute hand is red', () => {
+        expect(hands(renderClock(clockBlock('minuut'), true))).toEqual(['#000', SOL]);
+        cleanup();
+        expect(hands(renderClock(clockBlock('minuut'), false))).toEqual(['#000']);
+    });
+
+    test('uur asked: the given minute hand stays black, the hour hand is red', () => {
+        expect(hands(renderClock(clockBlock('uur'), true))).toEqual([SOL, '#000']);
+    });
+
+    test('klok lezen: the printed clock is the question, its hands stay black', () => {
+        expect(hands(renderClock(clockBlock('beide', 'lezen'), true))).toEqual(['#000', '#000']);
     });
 });
