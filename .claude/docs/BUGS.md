@@ -156,8 +156,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 ### WP-H test infra
 
 
-- CijferViewer delen-dec q/r box rounds the rest to the exercise's decimals: 742,4 : 0,7 = 1060,57 r 0,001 prints "r 0,00"
-  (`fmtDisplay(ex.remainder, dp)`; the rest of a decimal staartdeling has up to 2·dp decimals). Found by WP-1. 2026-10-09
 
 ## Tooling
 

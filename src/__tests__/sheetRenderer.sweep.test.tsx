@@ -7,6 +7,7 @@ import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/Bl
 import FractionViewer from '../components/viewer/FractionViewer';
 import ClockViewer from '../components/viewer/ClockViewer';
 import OrdenenViewer from '../components/viewer/OrdenenViewer';
+import CijferViewer from '../components/viewer/CijferViewer';
 import { SOL } from '../components/viewer/solutionStyle';
 import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 
@@ -146,4 +147,29 @@ describe('ordenen prints numbers like every other viewer', () => {
     test('whole numbers keep the comma list', () => {
         expect(textOf(ordBlock('natural', [345, 12, 7000]), false)).toContain('345,12,7 000');
     });
+});
+
+describe('cijferen delen-dec q/r box: the rest is exact, never rounded to the quotient\'s decimals', () => {
+    const qrText = (operands: number[], answer: number, remainder: number) => {
+        const block: MathBlock = {
+            ...makeBlock('cijferen-delen-dec', { id: 'cd', constraints: { operator: ':', numberType: 'decimal', decimalPlaces: 2 } }),
+            numberOfExercises: 1,
+            cijferExercises: [{ id: 'd1', operands, operator: ':', answer, remainder, isManuallyEdited: false, decimalPlaces: 2 }],
+        };
+        const c = render(
+            <BlockWidthProvider value={FULL_BLOCK_WIDTH_PX}>
+                <CijferViewer block={block} showSolutions />
+            </BlockWidthProvider>,
+        ).container;
+        const r = Array.from(c.querySelectorAll('span')).find(s => /^r\s/.test(s.textContent ?? ''));
+        return (r?.textContent ?? '').replace(/^r\s+/, '');
+    };
+
+    // 1 : 0,07 = 14,28 r 0,0004 (100 − 99,96 at 4 decimals); the old box printed "0,00".
+    test('up to 2·dp decimals', () => expect(qrText([1, 0.07], 14.28, 0.0004)).toBe('0,0004'));
+    // 495 : 80 = 6,18 r 0,6: trailing zeros trimmed.
+    test('trailing zeros trimmed', () => expect(qrText([495, 80], 6.18, 0.6)).toBe('0,6'));
+    // 1 234 567,5 : 500 000 = 2,46 r 4 567,5
+    test('a big rest keeps its thousands space', () => expect(qrText([1234567.5, 500000], 2.46, 4567.5)).toBe('4 567,5'));
+    test('no rest prints 0', () => expect(qrText([10, 4], 2.5, 0)).toBe('0'));
 });
