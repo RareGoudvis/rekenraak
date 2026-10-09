@@ -8,8 +8,8 @@ import { PLACE_VALUES } from '../../services/math/mathEngine';
 import { SOL, solutionText } from './solutionStyle';
 import { monoTextPx } from '../../services/layout/blockLayout';
 import { divideToDecimals } from '../../services/cijferen/cijferGenerator';
-import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
-import { cijferKioskGrid, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
+import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, decimalsOf, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
+import { cijferKioskGrid, divQuotientInt, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
 import { borrowedProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
 
@@ -96,11 +96,14 @@ function mulGridCols(ex: CijferExercise, dp: number, extraCols: number): number 
     return 1 + mulLayout(ex, dp).digitCols + extraCols;
 }
 
+// A decimal divisor is written with its own decimals (0,7 takes two ruitjes), never rounded.
+const divisorColsOf = (divisor: number) => intLen(divisor) + decimalsOf(divisor);
+
 function divGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
     // The working area always keeps at least 3 decimal columns so a pupil can work past dp.
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
     const leftCols = intLen(ex.operands[0]) + workingDecCols;
-    const rightCols = Math.max(intLen(ex.operands[1]), intLen(ex.operands[0]) + dp);
+    const rightCols = Math.max(divisorColsOf(ex.operands[1]), divQuotientInt(ex) + dp);
     return leftCols + rightCols + extraCols;
 }
 
@@ -286,11 +289,13 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                 <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
             )}
 
-            {/* Solutions: carry row */}
+            {/* Solutions: carry row. computeAddCarries keys a carry by the column that MADE it; a
+                pupil writes it over the next column left, so it is drawn at col − 1.
+                SYNC: cijferCells cijferCheck reads the carry cell over col from carries.get(col + 1). */}
             {showSolutions && ex.operator === '+' &&
                 computeAddCarries(ex.operands, dp, maxInt)
-                    .filter(c => c.col >= 0 && c.col < maxInt + decCols)
-                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
+                    .filter(c => c.col - 1 >= 0 && c.col < maxInt + decCols)
+                    .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col - 1)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
             }
 
             {cells && cijferKioskGrid(ex, dp).cells.map(cell => <GridCell key={cell.key} cell={cell} CELL={CELL} />)}
@@ -388,9 +393,10 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                 <CommaEdge afterGridCol={mlInt} row={multiplierRow} CELL={CELL} />
             )}
 
-            {/* Partial products — student fills these in; shown as solutions only */}
+            {/* Partial products — student fills these in; shown as solutions only. Units product on
+                top, the way a pupil writes × 3 before × 70. SYNC: cijferCells p0 (top row) = the units product. */}
             {showSolutions && partialProducts.map((pp, ppIdx) => {
-                const row = ppStartRow + (n - 1 - ppIdx);
+                const row = ppStartRow + ppIdx;
                 return ppDigitCols(pp, digitCols).map((d, i) => (
                     <DC key={`pp${ppIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} color={SOL} />
                 ));
@@ -420,13 +426,17 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
     const quotient = ex.answer;
 
     const dividendIntCols = intLen(dividend);
-    const divisorCols = intLen(divisor);
-    // always same width as dividend — student must determine how many digits the quotient needs
-    const quotientIntCols = dividendIntCols;
+    const divisorIntCols = intLen(divisor);
+    const divisorDp = decimalsOf(divisor);
+    const divisorCols = divisorColsOf(divisor);
+    // As wide as the dividend after the komma shift (742,4 : 0,7 → 7424 : 7) — the pupil must
+    // determine how many digits the quotient needs. SYNC: cijferCells divGeometry (the kiosk's q cells).
+    const quotientIntCols = divQuotientInt(ex);
 
     // Working area always has at least 3 decimal cols so students can work past dp if needed
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
-    const dividendDecStr = dp > 0 ? (dividend.toFixed(dp).split('.')[1] || '') : '';
+    // Whole part and decimals from one exact string: rounding the whole part drew 336,6 as "337,60".
+    const [dividendWhole, dividendDecStr = ''] = dividend.toFixed(dp).split('.');
     const leftCols = dividendIntCols + workingDecCols;
     const rightContentCols = Math.max(divisorCols, quotientIntCols + dp);
     const rightCols = rightContentCols;
@@ -471,7 +481,7 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
             </svg>
 
             {/* Dividend integer digits (left, row 0) */}
-            {scaffolding <= 1 && getDigitCols(dividend, 0, dividendIntCols).map((d, i) => (
+            {scaffolding <= 1 && getDigitCols(Number(dividendWhole), 0, dividendIntCols).map((d, i) => (
                 <DC key={`dv${i}`} col={d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
             {/* Decimal digits of dividend (actual digits if dividend is decimal, else "0") */}
@@ -484,9 +494,12 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
             )}
 
             {/* Divisor digits (right section, row 0) */}
-            {scaffolding <= 1 && getDigitCols(divisor, 0, divisorCols).map((d, i) => (
+            {scaffolding <= 1 && getDigitCols(divisor, divisorDp, divisorIntCols).map((d, i) => (
                 <DC key={`dr${i}`} col={leftCols + d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
+            {scaffolding <= 1 && divisorDp > 0 && (
+                <CommaEdge afterGridCol={leftCols + divisorIntCols - 1} row={0} CELL={CELL} rowH={ROW_H} />
+            )}
 
             {/* Quotient digits (right section, row 1 — below horizontal line), at every scaffolding level */}
             {showSolutions && (
@@ -651,7 +664,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
     const CELL = cellPxOf(c.gridCellSize, sheetPx);
 
     if (exercises.length === 0) {
-        return <div style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     const exPerRow = computeExPerRow(exercises, c, CELL, sheetPx, availableWidth);

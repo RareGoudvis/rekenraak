@@ -31,18 +31,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   to 2 (owner call). 2026-09-27
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
-- Cijferen optellen with solutions on: the red carries sit above the column that MADE them, one
-  column right of where a pupil writes them (`computeAddCarries` keys by the source column; the
-  AddSubGrid draws at that col). Repro: 525 + 445, Oplossingen aan, scaffolding 1 → the "1" is over
-  the E, not the T. Fix: draw at `col - 1` (the kiosk's cijferCells already reads it so). 2026-10-08
-  (Since the empty-grid key fix this shows at every scaffolding level, incl. the default.)
-- Cijferen vermenigvuldigen key: the partial products stack with the units product LAST (1246 × 73
-  → 87220 above 3738; MultiplicationGrid `ppStartRow + (n - 1 - ppIdx)`), while pupils write × 3
-  first. Owner call whether to flip the order. 2026-10-09
-
-- CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
-  `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of
-  `var(--text-muted)` (as do the Geld*/Herleidingen placeholders). Found by WP2. 2026-10-07
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -114,9 +102,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Hoofdrekenen delen 'andere' at max ≤ 1e6 (natural, no mask): the divisor is uniform up to the
   max, so most quotients are 1; with only the dividend masked an exact division is rare and the
   block relaxes. Fixed above 1e6 only (RNG-stream rule). Fix direction: the >1e6 branches. 2026-09-27
-- REQUIRED bridge on the TOP place (e.g. H at max 1 000, HM at 1e9) is unreachable by construction
-  (needs a sum/minuend of exactly the max); cijferen then silently falls back to its [max/2, max/4]
-  exercise, ignoring the bridges. Fix: hide the top place in BridgeControl or note it. 2026-09-27
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -193,13 +178,8 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 ### WP-H test infra
 
 
-- CijferViewer DivisionGrid (sheet at scaffolding ≤ 1, and every kiosk card) draws a decimal divisor
-  through `getDigitCols(divisor, 0, …)` (~CijferViewer.tsx:487), which rounds it: 0,7 shows as "1", 0,3 and
-  0,1 as "0"; the dividend's whole digits round the same way (~:474, 336,6 shows as "337,60"). The card
-  hides the header, so the pupil sees a wrong sum. Fix: whole digits from `Math.floor`, the divisor with its
-  decimals and a comma. Also the quotient row still sizes from the dividend (~:103, ~:425): mirror
-  `divQuotientInt` (cijferCells.ts, O25) so the sixth `q` cell sits inside the grid and the comma after
-  the shifted whole places. 2026-10-09
+- CijferViewer delen-dec q/r box rounds the rest to the exercise's decimals: 742,4 : 0,7 = 1060,57 r 0,001 prints "r 0,00"
+  (`fmtDisplay(ex.remainder, dp)`; the rest of a decimal staartdeling has up to 2·dp decimals). Found by WP-1. 2026-10-09
 
 ## Tooling
 

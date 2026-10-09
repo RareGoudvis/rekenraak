@@ -1,6 +1,6 @@
 import type { CijferExercise } from '../math/types';
 import type { InteractionState } from '../../components/viewer/ViewerInteractionContext';
-import { addSubMaxInt, computeAddCarries, getDigitCols, intLen, mulLayout } from './cijferLayout';
+import { addSubMaxInt, computeAddCarries, decimalsOf, getDigitCols, intLen, mulLayout } from './cijferLayout';
 import { PLACE_VALUES } from '../math/mathEngine';
 
 // Oefenmodus (Phase C2): the ruitjes of a cijfer grid the pupil fills on the kiosk card.
@@ -52,9 +52,6 @@ export interface CijferKioskGrid {
     answerRow: number;
 }
 
-// Decimals the divisor really has (0,7 → 1); generators keep floats, so 9 places strip the tail.
-const decimalsOf = (x: number) => (String(Number(x.toFixed(9))).split('.')[1] ?? '').length;
-
 /** Whole places the quotient may need: a decimal divisor is worked after the komma shift
  *  (742,4 : 0,7 = 7424 : 7), so they are the SHIFTED dividend's (1060,57 needs four, not three). */
 // SYNC: CijferViewer DivisionGrid quotientIntCols and divGridCols size the quotient row from this.
@@ -88,6 +85,8 @@ export function cijferKioskGrid(ex: CijferExercise, dp: number): CijferKioskGrid
         const mcLen = String(scaledMultiplicand).length;
         // One-digit multiplier: a carry above every multiplicand digit but the units.
         const carryAt = (col: number) => n === 1 && digitCols - 1 - col >= 1 && digitCols - 1 - col < mcLen;
+        // Row r holds the product by multiplier digit r from the units (checked in any order).
+        // SYNC: CijferViewer MultiplicationGrid's key draws partialProducts[r] in row ppStart + r.
         for (let r = 0; r < pp; r++) for (let col = digitCols - 1; col >= 0; col--) add(`p${r}_${col}`, 'pp', ppStart + r, col + 1, unitsCol, r);
         for (let col = digitCols - 1; col >= 0; col--) {
             add(`a${col}`, 'digit', answerRow, col + 1, unitsCol);
@@ -234,6 +233,7 @@ export function cijferCheck(ex: CijferExercise, dp: number, strictCarries: boole
         const col = cell.col - 1;
         if (cell.role === 'digit') return answer[col];
         // computeAddCarries keys a carry by the column that MADE it; this cell holds the one coming in.
+        // SYNC: CijferViewer AddSubGrid draws the sheet's red carry at that same col − 1.
         if (cell.role === 'carry') return carryWant(carries.get(col + 1) ?? 0, strictCarries);
         // An exchanged column ends at its new value; an untouched one may be copied or left blank.
         const v = after[col];

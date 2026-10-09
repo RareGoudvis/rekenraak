@@ -226,7 +226,7 @@ export default function GeldTeruggevenViewer({ block, showSolutions }: Props) {
     const laid = ia?.kind === 'build' ? ia.state.build : null;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '13px' }}>(Nog geen oefeningen — klik Genereer)</div>;
+        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '13px' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     return (

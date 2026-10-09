@@ -64,27 +64,18 @@ describe('P3 forced identical fills say so', () => {
         expect(dupes(items)).toBe(5);
         expect(note).toBe('Kleine reeks: 5 oefeningen komen dubbel voor.');
     });
-    test('cijferen x impossible mask: the fallback varies within the max and stays noted', () => {
-        const max = 100;
-        const { items, note } = noted('cijferen-vermenigvuldigen-nat', { operator: 'x', numberType: 'natural', maxRange: max, operand1Mask: { T: true } }, 8);
-        const exs = items as CijferExercise[];
-        expect(note).toMatch(/^Alle oefeningen passen niet bij de gekozen getalopbouw/);
-        expect(new Set(exs.map(e => e.operands.join('x'))).size).toBeGreaterThan(1);
-        for (const e of exs) {
-            expect(e.answer).toBeLessThanOrEqual(max);
-            expect(e.operands[0] * e.operands[1]).toBe(e.answer);
-        }
-        expect(repeatCount(note)).toBe(dupes(exs) > 0 ? 1 : 0);
+    // No fallback since 2026-10-09 (owner): an impossible getalopbouw leaves the block empty, noted, never repeated stand-ins.
+    test('cijferen x impossible mask: no stand-in exercises, the note says so', () => {
+        const { items, note } = noted('cijferen-vermenigvuldigen-nat', { operator: 'x', numberType: 'natural', maxRange: 100, operand1Mask: { T: true } }, 8);
+        expect(items).toEqual([]);
+        expect(note).toMatch(/^Geen oefeningen mogelijk met deze instellingen tot 100: kies een andere getalopbouw\.$/);
+        expect(repeatCount(note)).toBe(0);
     });
-    test('cijferen x fallback with room for only one exercise notes the repeats', () => {
-        const { items, note } = noted('cijferen-vermenigvuldigen-nat', { operator: 'x', numberType: 'natural', maxRange: 3, operand1Mask: { T: true } }, 4);
-        expect(dupes(items)).toBe(3);
-        expect(note).toMatch(/Kleine reeks: 3 oefeningen komen dubbel voor\.$/);
-    });
-    test('cijferen x decimal fallback varies too', () => {
-        const { items } = noted('cijferen-vermenigvuldigen-dec', { operator: 'x', numberType: 'decimal', maxRange: 20, decimalPlaces: 2, operand1Mask: { HD: true } }, 6);
+    test('cijferen x decimal: a getalopbouw key above the max is not shown, so it is ignored', () => {
+        const { items, note } = noted('cijferen-vermenigvuldigen-dec', { operator: 'x', numberType: 'decimal', maxRange: 20, decimalPlaces: 2, operand1Mask: { HD: true } }, 6);
         const exs = items as CijferExercise[];
-        expect(new Set(exs.map(e => e.operands.join('x'))).size).toBeGreaterThan(1);
+        expect(exs).toHaveLength(6);
+        expect(note).toBeNull();
         for (const e of exs) expect(e.answer).toBeLessThanOrEqual(20);
     });
     test('getallenrijen teller max 1: identical rows, both notes', () => {

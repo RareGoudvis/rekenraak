@@ -61,6 +61,7 @@ export function cijferFill(ex: CijferExercise, keys: string[]): CijferFill {
         const mc = Math.round(a * 10 ** dp);
         const mDigits = String(Math.round(b * 10 ** mdp)).split('').reverse().map(Number);
         const rows = [...new Set(keys.filter(k => k.startsWith('p')).map(k => k.split('_')[0]))].sort();
+        // Units product in the top row, as the sheet's key draws it (MultiplicationGrid); alt = bottom-up.
         const pps = mDigits.map((d, shift) => String(mc * d * 10 ** shift));
         const ppCells = (order: string[]) => Object.assign({}, ...rows.map((row, r) => rightAlign(keysOf(keys, `${row}_`), order[r])));
         const scratch: Cells = {};

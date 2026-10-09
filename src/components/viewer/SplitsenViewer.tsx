@@ -40,7 +40,7 @@ export default function SplitsenViewer({ block, showSolutions }: Props) {
 
     if (exercises.length === 0) {
         return (
-            <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>
+            <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px' }}>
                 (Nog geen oefeningen — klik Genereer)
             </div>
         );

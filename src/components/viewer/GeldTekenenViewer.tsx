@@ -88,7 +88,7 @@ export default function GeldTekenenViewer({ block, showSolutions }: Props) {
     const perRow = fitCols(availableWidth, ITEM_MIN_PX, exercisesPerRow ?? 3, gap);
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
+        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     return (

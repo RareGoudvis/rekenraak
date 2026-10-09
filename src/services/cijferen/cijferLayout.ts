@@ -8,6 +8,9 @@ export function cijferDp(ex: CijferExercise, c: { numberType?: string; decimalPl
     return ex.decimalPlaces ?? (c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0);
 }
 
+// Decimals a number really has (0,7 → 1); generators keep floats, so 9 places strip the tail.
+export const decimalsOf = (x: number) => (String(Number(x.toFixed(9))).split('.')[1] ?? '').length;
+
 export function intLen(n: number): number {
     const abs = Math.abs(Math.floor(n));
     return abs === 0 ? 1 : String(abs).length;
@@ -45,6 +48,7 @@ export function ppDigitCols(value: number, intCols: number): { col: number; char
     return result;
 }
 
+// Keyed by the column that MADE the carry; it is written over col − 1 (CijferViewer, cijferCells).
 export function computeAddCarries(operands: number[], dp: number, intCols: number): { col: number; carry: number }[] {
     const totalPositions = intCols + dp;
     const carries: { col: number; carry: number }[] = [];

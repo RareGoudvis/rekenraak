@@ -42,7 +42,7 @@ const styles = {
         minWidth: `${Math.min(tight ? 40 : 55, widthPx)}px`,
         width: (tight || layout === 'inline-long' || layout === 'stepped') ? '100%' : `${widthPx}px`,
     }),
-    emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
+    emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px' } as React.CSSProperties,
     // The popup anchors to the glyph itself (an inline span, not a full-width trigger like
     // PopupSelect's), so it can't reuse sharedPluginStyles.selectMenu's left:0/right:0 —
     // that would stretch the menu to the glyph's own (tiny) width instead of its content.
