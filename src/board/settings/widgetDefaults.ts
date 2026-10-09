@@ -8,7 +8,7 @@ export const BOARD_DEFAULTS_KEY = 'rekenraak_board_defaults_v1';
 // Per-instance state, never part of a standaard: the current tick list, the picked names,
 // a dealt group result, the time on the clock, an image payload, the active symbol.
 export const TRANSIENT_PROP_KEYS: readonly string[] = [
-    'checked', 'done', 'picked', 'result', 'locked', 'active',
+    'checked', 'done', 'picked', 'current', 'result', 'locked', 'active',
     'hours', 'minutes', 'src', 'marks', 'd', 'h', 't', 'e',
 ];
 
