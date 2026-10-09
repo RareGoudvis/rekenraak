@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import type { OefenHistoryEntry, OefenSessie, OefenStats, OefenType } from '../services/oefenen/types';
-import { isDone, nextExercise, nextType, plannedTotal, poolOf } from '../services/oefenen/scheduler';
+import { deadSlots, isDone, nextExercise, nextType, plannedTotal, poolOf } from '../services/oefenen/scheduler';
 import { mulberry32 } from './helpers/limitHarness';
 
 const type = (over: Partial<OefenType> = {}): OefenType => ({
@@ -166,6 +166,45 @@ describe('nextExercise', () => {
         const got = nextExercise(sessie([t]), t, new Set(), mulberry32(1))!;
         expect(got.constraints.maxGetal).toBe(100);
         expect(got.constraints.bridges).toBeDefined();
+    });
+});
+
+describe('a type whose settings generate nothing is retired', () => {
+    // Every tijdstype unticked: the clock generator returns [].
+    const dead = () => type({ typeId: 'klok-kloklezen', leafId: 'klok-analoog-lezen', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'lezen', timeTypes: [] } });
+    const live = () => type({ limit: 1 });
+
+    // The kiosk store's next() loop: isDone → nextType → nextExercise, the run ends on the first null.
+    function serve(s: OefenSessie, rng = mulberry32(4)): number[] {
+        const history: OefenHistoryEntry[] = [];
+        for (let i = 0; i < 50; i++) {
+            if (isDone(s, { startedAt: 0, perType: {}, history })) break;
+            const pick = nextType(s, history, rng);
+            const made = pick && nextExercise(s, pick.type, new Set(history.map(h => h.exerciseKey)), rng);
+            if (!pick || !made) break;
+            history.push({ slot: pick.slot, typeId: pick.type.typeId, exerciseKey: made.key, correct: true, ms: 1 });
+        }
+        return history.map(h => h.slot);
+    }
+
+    test('the live type is served, then the run is done', () => {
+        for (const mode of ['afwisselen', 'willekeurig'] as const) {
+            expect(serve(sessie([dead(), live()], { mode })), `${mode} dead first`).toEqual([1]);
+            expect(serve(sessie([live(), dead()], { mode })), `${mode} dead last`).toEqual([0]);
+            expect(serve(sessie([dead(), live(), dead(), type({ limit: 2 })], { mode })).sort(), `${mode} mixed`).toEqual([1, 3, 3]);
+        }
+    });
+    test('an endless live type keeps going; the dead slot is reported', () => {
+        const s = sessie([dead(), type()], { mode: 'willekeurig' });
+        expect(drain(s, 30)).toEqual(Array(30).fill(1));
+        expect([...deadSlots(s)]).toEqual([0]);
+        expect(poolOf(s, [])).toEqual([1]);
+    });
+    test('every type dead: nothing to serve, the run is done', () => {
+        const s = sessie([dead(), dead()]);
+        expect(nextType(s, [])).toBeNull();
+        expect(isDone(s, emptyStats(s, 0))).toBe(true);
+        expect([...deadSlots(s)]).toEqual([0, 1]);
     });
 });
 
