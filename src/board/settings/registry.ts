@@ -14,6 +14,7 @@ import AdemSettings from './AdemSettings';
 import GeluidSettings from './GeluidSettings';
 import DobbelsteenSettings from './DobbelsteenSettings';
 import AfbeeldingSettings from './AfbeeldingSettings';
+import TekstSettings from './TekstSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -38,4 +39,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     geluid: GeluidSettings,
     dobbelsteen: DobbelsteenSettings,
     afbeelding: AfbeeldingSettings,
+    tekst: TekstSettings,
 };
