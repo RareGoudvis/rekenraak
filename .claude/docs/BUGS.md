@@ -31,9 +31,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   to 2 (owner call). 2026-09-27
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
-- Cijferen vermenigvuldigen key: the partial products stack with the units product LAST (1246 × 73
-  → 87220 above 3738; MultiplicationGrid `ppStartRow + (n - 1 - ppIdx)`), while pupils write × 3
-  first. Owner call whether to flip the order. 2026-10-09
 
 - CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
   `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of

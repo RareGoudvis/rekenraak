@@ -79,6 +79,8 @@ export function cijferKioskGrid(ex: CijferExercise, dp: number): CijferKioskGrid
         const mcLen = String(scaledMultiplicand).length;
         // One-digit multiplier: a carry above every multiplicand digit but the units.
         const carryAt = (col: number) => n === 1 && digitCols - 1 - col >= 1 && digitCols - 1 - col < mcLen;
+        // Row r holds the product by multiplier digit r from the units (checked in any order).
+        // SYNC: CijferViewer MultiplicationGrid's key draws partialProducts[r] in row ppStart + r.
         for (let r = 0; r < pp; r++) for (let col = digitCols - 1; col >= 0; col--) add(`p${r}_${col}`, 'pp', ppStart + r, col + 1, unitsCol, r);
         for (let col = digitCols - 1; col >= 0; col--) {
             add(`a${col}`, 'digit', answerRow, col + 1, unitsCol);

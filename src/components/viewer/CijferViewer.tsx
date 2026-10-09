@@ -390,9 +390,10 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                 <CommaEdge afterGridCol={mlInt} row={multiplierRow} CELL={CELL} />
             )}
 
-            {/* Partial products — student fills these in; shown as solutions only */}
+            {/* Partial products — student fills these in; shown as solutions only. Units product on
+                top, the way a pupil writes × 3 before × 70. SYNC: cijferCells p0 (top row) = the units product. */}
             {showSolutions && partialProducts.map((pp, ppIdx) => {
-                const row = ppStartRow + (n - 1 - ppIdx);
+                const row = ppStartRow + ppIdx;
                 return ppDigitCols(pp, digitCols).map((d, i) => (
                     <DC key={`pp${ppIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} color={SOL} />
                 ));

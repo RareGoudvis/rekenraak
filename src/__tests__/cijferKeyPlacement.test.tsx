@@ -2,9 +2,10 @@
 import { describe, test, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { makeBlock } from './helpers/makeBlock';
+import { cijferFill } from './helpers/fillCells';
 import CijferViewer from '../components/viewer/CijferViewer';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
-import { cijferCheck, cijferKioskGrid } from '../services/cijferen/cijferCells';
+import { cijferCheck, cijferKioskGrid, kioskMulRows } from '../services/cijferen/cijferCells';
 import type { CijferExercise, MathBlock } from '../services/math/types';
 
 // WHERE the answer key's red digits sit, not just which: a carry over the column it goes INTO
@@ -72,4 +73,32 @@ describe('cijferen optellen key: the carry sits over the column it goes into', (
             expect(sheet).toEqual(kiosk);
         });
     }
+});
+
+// The red full-size rows of a multiplication key, top to bottom, each read left to right.
+function keyRows(container: HTMLElement): string[] {
+    const rows = new Map<number, RedDigit[]>();
+    for (const d of redDigits(container).filter(d => !d.small)) rows.set(d.row, [...(rows.get(d.row) ?? []), d]);
+    return [...rows.entries()].sort((a, b) => a[0] - b[0]).map(([, ds]) => ds.sort((a, b) => a.col - b.col).map(d => d.char).join(''));
+}
+
+describe('cijferen vermenigvuldigen key: partial products units-first', () => {
+    const ex = exOf('x', [1246, 73], 90958);
+    for (const scaffolding of [1, 2, 3]) {
+        test(`1246 × 73, scaffolding ${scaffolding}: 3738 above 87220 above 90958`, () => {
+            expect(keyRows(renderKey('cijferen-vermenigvuldigen-nat', ex, scaffolding))).toEqual(['3738', '87220', '90958']);
+        });
+    }
+
+    test('three-digit multiplier: 214 × 365 stacks × 5, × 60, × 300', () => {
+        expect(keyRows(renderKey('cijferen-vermenigvuldigen-nat', exOf('x', [214, 365], 78110), 1))).toEqual(['1070', '12840', '64200', '78110']);
+    });
+
+    test('the kiosk fill writes the same row order (p0 = the units product, top)', () => {
+        const keys = cijferKioskGrid(ex, 0).cells.map(c => c.key);
+        const { answer } = cijferFill(ex, keys);
+        const row = (r: number) => keys.filter(k => k.startsWith(`p${r}_`)).sort((a, b) => Number(a.split('_')[1]) - Number(b.split('_')[1])).map(k => answer[k]).join('');
+        expect(kioskMulRows(2).ppRows).toBe(2);
+        expect([row(0), row(1)]).toEqual(['3738', '87220']);
+    });
 });
