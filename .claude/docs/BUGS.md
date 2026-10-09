@@ -32,10 +32,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
 
-- CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
-  `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of
-  `var(--text-muted)` (as do the Geld*/Herleidingen placeholders). Found by WP2. 2026-10-07
-
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
 - Blocks taller than one A4 page at their sidebar DEFAULTS, full width (clipped on paper): omtrek,

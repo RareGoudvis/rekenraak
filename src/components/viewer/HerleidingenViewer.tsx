@@ -63,7 +63,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     const gap = block.verticalSpacing || 14;
 
     if (exercises.length === 0) {
-        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
+        return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     // Recompute the answer and persist after any teacher edit to a shown field.

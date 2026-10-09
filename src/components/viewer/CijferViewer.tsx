@@ -654,7 +654,7 @@ export default function CijferViewer({ block, showSolutions }: Props) {
     const CELL = cellPxOf(c.gridCellSize, sheetPx);
 
     if (exercises.length === 0) {
-        return <div style={{ padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
+        return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
     const exPerRow = computeExPerRow(exercises, c, CELL, sheetPx, availableWidth);
