@@ -1,7 +1,7 @@
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { dobbelProps, getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
+import { getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
 import BaselineSettings from '../settings/BaselineSettings';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
@@ -12,7 +12,6 @@ interface Props {
 
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
-    dobbelsteen: DobbelSettings, 
     getallenlijn: GetallenlijnSettings, positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings, mabmat: MabMatSettings,
 };
@@ -38,34 +37,6 @@ export default function WidgetInspector({ widget }: Props) {
         </div>
     );
 }
-function DobbelSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const p = dobbelProps(widget);
-    const rawCustom = typeof widget.props?.custom === 'string' ? widget.props.custom : '';
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Aantal dobbelstenen ({p.count})</div>
-            <div className="seg-group">
-                {[1, 2, 3].map(n => (
-                    <button key={n} type="button" className="seg-btn" aria-pressed={p.count === n} onClick={() => set({ count: n })}>{n}</button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Zijden ({p.sides})</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[4, 6, 8, 10, 12, 20].map(n => (
-                    <button key={n} type="button" className="ui-hover"
-                        style={{ ...S.smallBtn, ...(p.sides === n && !p.custom.length ? { borderColor: 'var(--accent-purple)', background: 'var(--bg-active)' } : {}) }}
-                        onClick={() => set({ sides: n, custom: '' })}>{n}</button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Eigen zijden (één per lijn; leeg = getallen)</div>
-            <textarea value={rawCustom} placeholder={'rood\nblauw\ngeel'} onChange={(e) => set({ custom: e.target.value })}
-                style={{ width: '100%', minHeight: '110px', resize: 'vertical', boxSizing: 'border-box', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '8px', fontSize: '13px', fontFamily: "'Azeret Mono', monospace", outline: 'none' }} />
-        </div>
-    );
-}
-
 function GetallenlijnSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const g = getallenlijnProps(widget);

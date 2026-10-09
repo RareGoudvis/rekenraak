@@ -220,11 +220,11 @@ describe('prop normalisers', () => {
         for (const c of Object.keys(DATUM_COLORS)) expect(datumProps(w('datum', { color: c })).color).toBe(c);
     });
 
-    test('dobbelsteen clamps count 1-3 and sides 2-20, parses the custom list', () => {
-        expect(dobbelProps(w('dobbelsteen'))).toEqual({ count: 1, sides: 6, custom: [] });
+    test('dobbelsteen clamps count 1-6 and sides 2-100, parses the custom list', () => {
+        expect(dobbelProps(w('dobbelsteen'))).toMatchObject({ count: 1, sides: 6, custom: '', labels: [], faceImages: [], animate: true, showSum: false, showHistory: false });
         expect(dobbelProps(w('dobbelsteen', { count: 0, sides: 1 }))).toMatchObject({ count: 1, sides: 2 });
-        expect(dobbelProps(w('dobbelsteen', { count: 9, sides: 99 }))).toMatchObject({ count: 3, sides: 20 });
-        expect(dobbelProps(w('dobbelsteen', { custom: ' rood \n\n blauw\n' })).custom).toEqual(['rood', 'blauw']);
+        expect(dobbelProps(w('dobbelsteen', { count: 9, sides: 999 }))).toMatchObject({ count: 6, sides: 100 });
+        expect(dobbelProps(w('dobbelsteen', { custom: ' rood \n\n blauw\n' })).labels).toEqual(['rood', 'blauw']);
     });
 
     test('adem: in/out ≥ 1, hold ≥ 0, the old 4-4-4 circle by default', () => {

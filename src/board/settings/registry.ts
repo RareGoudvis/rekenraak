@@ -12,6 +12,7 @@ import StopwatchSettings from './StopwatchSettings';
 import TimerSettings from './TimerSettings';
 import AdemSettings from './AdemSettings';
 import GeluidSettings from './GeluidSettings';
+import DobbelsteenSettings from './DobbelsteenSettings';
 
 export type WidgetSettingsPanel = ComponentType<{ widget: BoardWidget }>;
 
@@ -34,4 +35,5 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     timer: TimerSettings,
     adem: AdemSettings,
     geluid: GeluidSettings,
+    dobbelsteen: DobbelsteenSettings,
 };
