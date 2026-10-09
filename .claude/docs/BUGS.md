@@ -194,12 +194,12 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 - No answer overlay on the board for breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
-- Board cards at Tekstgrootte 200 % (viewer width 298 px) still overflow for afronden-dec-simpel,
-  geld-rekenen-winst, lengte-meten, herleidingen-inhoud (81-360 px) and getallenrijen-dec (4 px). 2026-10-09
+- getallenrijen (seen on getalbegrip-getallenrijen-dec in a 298 px board card at 200 %): the first and last
+  numbers of each row sit across the oval's left / right outline ("8|35", "86|0"); the viewer, not the card. 2026-10-09
 - The board's "Wiskunde toevoegen" panel (BoardAddModal) does not close on Escape or an outside
   press, unlike every bottom-bar popup; only its ✕ closes it. 2026-10-09
-- Honderdveld at 20 columns + Tekstgrootte XL and positietabel with every place column at "Heel groot"
-  clip on the right of the card instead of shrinking (wb-check/full-test/03-widgets/_walk-02.png, -03). 2026-10-09
+- Positietabel with every place column at "Heel groot" clips on the right of the card instead of
+  shrinking (wb-check/full-test/03-widgets/_walk-03.png). 2026-10-09
 - Instrument handles can leave the board: the passer hinge after a wide opening, and a lat rotated to
   45° at 1280 px puts its rotate handle off-board (wb-check/full-test/05-instruments). Fix: clamp the
   handle positions / keep a grab point on-board. 2026-10-09

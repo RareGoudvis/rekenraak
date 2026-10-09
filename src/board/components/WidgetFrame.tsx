@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Trash, ArrowCounterClockwise, Eye, EyeSlash, GearSix, CopySimple } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
-import { naturalWidth, widgetTitle, KINDS_WITH_SETTINGS } from '../widgetSizing';
+import { cardFitZoom, naturalWidth, widgetTitle, KINDS_WITH_SETTINGS } from '../widgetSizing';
 import { SELF_SCALED_FONT, fontScale, widgetAccent } from '../settings/baseProps';
 import type { BoardWidget } from '../boardTypes';
 
@@ -75,6 +75,27 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     const textScale = (widget.scale ?? 1) * (SELF_SCALED_FONT.has(widget.kind) ? 1 : fontScale(widget));
     const accent = widgetAccent(widget);
     const handMode = tool === 'hand';
+    const layoutW = naturalWidth(widget.kind) / textScale;
+
+    // Content wider than the body (a 200 % exercise card, a 20-column honderdveld at XL) is
+    // shrunk to fit instead of cut off by the body's overflow-x: hidden. The fit box keeps its
+    // own-unit width, so the zoom never reflows the content and the ratio cannot feed back.
+    const fitRef = useRef<HTMLDivElement>(null);
+    const [fit, setFit] = useState(1);
+    const measureFit = () => {
+        const el = fitRef.current;
+        if (el) setFit(cardFitZoom(el.scrollWidth, el.clientWidth));
+    };
+    // Every render: a regenerated block, a new setting or a text zoom can change the width.
+    useLayoutEffect(measureFit);
+    useLayoutEffect(() => {
+        const el = fitRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(measureFit);
+        ro.observe(el);
+        if (el.firstElementChild) ro.observe(el.firstElementChild);
+        return () => ro.disconnect();
+    }, []);
     const showHeader = widget.props?.showHeader !== false;
     const hasSettings = KINDS_WITH_SETTINGS.includes(widget.kind);
 
@@ -184,8 +205,10 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                 <div style={{ zoom: frameZoom, width: naturalWidth(widget.kind) }}>
                     {/* Inner text zoom keeps the layout width constant: content reflows at
                         naturalW/textScale and zooms back up, so bigger text = same frame. */}
-                    <div style={{ zoom: textScale, width: naturalWidth(widget.kind) / textScale, pointerEvents: handMode ? 'none' : undefined }}>
-                        {children}
+                    <div style={{ zoom: textScale, width: layoutW, pointerEvents: handMode ? 'none' : undefined }}>
+                        <div ref={fitRef} data-widget-fit="" style={{ width: layoutW, ...(fit < 1 ? { zoom: fit } : {}) }}>
+                            {children}
+                        </div>
                     </div>
                 </div>
             </div>
