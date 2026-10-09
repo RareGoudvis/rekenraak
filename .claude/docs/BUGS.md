@@ -194,9 +194,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 - No answer overlay on the board for breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
-- Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
-  Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
-  instead of the sheet (checked with a print-to-PDF). 2026-10-08
 - Honderdveld ⚙ "Tikkleur": while "Afwisselend" (cyclus) is selected, the custom-colour picker
   next to the swatches shows black instead of a neutral / empty state (cosmetic; mathControls
   `PaletteRow` feeds the `<input type="color">` `#000000` for any non-hex value). 2026-10-09
