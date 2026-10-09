@@ -6,7 +6,7 @@ import SheetThumbnail from '../shared/SheetThumbnail';
 import {
     loadPresets, savePreset, renamePreset, deletePreset, duplicatePreset,
     exportWorksheetFile, savePresetFromFile, parseWorksheetFile, clearAutosave,
-    loadOefenSessies, deleteOefenSessie, renameOefenSessie,
+    loadOefenSessies, deleteOefenSessie, renameOefenSessie, duplicateOefenSessie,
     type Preset, type OefenSessieEntry,
 } from '../../services/persistence';
 import OefenBuilderModal from '../oefenen/OefenBuilderModal';
@@ -86,6 +86,11 @@ export default function MijnBladenView() {
         const name = window.prompt('Nieuwe naam:', e.name);
         if (name === null) return;
         renameOefenSessie(e.id, name);
+        bump();
+    };
+
+    const handleOefenDuplicate = (e: OefenSessieEntry) => {
+        if (!duplicateOefenSessie(e.id)) { window.alert('Dupliceren mislukt: de opslag van je browser is vol.'); return; }
         bump();
     };
 
@@ -195,6 +200,7 @@ export default function MijnBladenView() {
                                     </div>
                                 </div>
                                 <button style={S.iconBtn} title="Hernoemen" onClick={() => handleOefenRename(e)}><PencilSimple size={15} /></button>
+                                <button style={S.iconBtn} title="Dupliceren" aria-label="Dupliceren" onClick={() => handleOefenDuplicate(e)}><Copy size={15} /></button>
                                 <button style={S.ghostBtn} onClick={() => setOefenShare(e.sessie)}><Share size={15} /> Delen</button>
                                 <button style={S.ghostBtn} onClick={() => setOefenEdit(e.sessie.title ? e.sessie : { ...e.sessie, title: e.name.slice(0, 60) })}><PencilSimple size={15} /> Bewerken</button>
                                 <button style={{ ...S.iconBtn, color: 'var(--danger)' }} title="Verwijderen" aria-label="Verwijderen" onClick={() => handleOefenDelete(e)}><Trash size={15} /></button>

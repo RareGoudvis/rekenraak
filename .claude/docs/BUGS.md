@@ -210,19 +210,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-G teacher UX
 
-- **O17** The Oefenmodus catalogue has no search field and no leerjaar filter (the editor sidebar has
-  both). 2026-10-09
-- **O18** "Aantal: ∞" is a small label above a slider with the thumb far right, no "onbeperkt"
-  wording (OefenBuilderModal.tsx:242). 2026-10-09
-- **O19** The share modal shows only "N soorten · M min" (OefenShareModal.tsx:75): no total number
-  of exercises / onbeperkt, no toets / kansen / statistieken settings, and no note that every
-  pupil's device generates its own exercises. 2026-10-09
-- **O20** Mijn bladen › Oefensessies has no Dupliceren (MijnBladenView.tsx:197-200; worksheet presets
-  have it at :163). 2026-10-09
-- **O21** Builder description for analoge klok lezen reads "Klok zien → tijd in woorden schrijven"
-  (ClockConfig.tsx:49) while the kiosk takes uu:mm (pairs with the classroom-test line above). 2026-10-09
-- **O22** Breuken kleuren card says "Tik 3 van de 6 delen aan." (`kioskInstruction`, BREUKEN_KIOSK)
-  which gives the count away. Owner: "Kleur 3/6 in." only. 2026-10-09
 
 ### WP-H test infra
 

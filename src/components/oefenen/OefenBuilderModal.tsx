@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, FloppyDisk, Plus, Share, Trash, Warning } from '@phosphor-icons/react';
+import { Check, FloppyDisk, Share, Trash, Warning } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { deleteOefenSessie, saveOefenSessie } from '../../services/persistence';
@@ -9,10 +9,12 @@ import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
 import Switch from '../ui/Switch';
 import OefenShareModal from './OefenShareModal';
-import { newSessieId } from '../../services/oefenen/session';
+import OefenCatalogue from './OefenCatalogue';
+import { MAX_TITLE, MAX_TYPES, newSessieId } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
+import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
-    LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
+    LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -30,17 +32,12 @@ type Row = Omit<BuilderRow, 'constraints'>;
 // then save the session to the library or share it as link + QR.
 export default function OefenBuilderModal({ onClose, initial }: Props) {
     const leaves = useMemo(() => listOefenLeaves(), []);
-    const domains = useMemo(() => {
-        const seen = new Map<string, { id: string; label: string; accentVar: string }>();
-        for (const l of leaves) if (!seen.has(l.domainId)) seen.set(l.domainId, { id: l.domainId, label: l.domainLabel, accentVar: l.accentVar });
-        return [...seen.values()];
-    }, [leaves]);
 
     const setDraftBlocks = useWorksheetStore((s) => s.setDraftBlocks);
     const clearDraftBlocks = useWorksheetStore((s) => s.clearDraftBlocks);
     const draftBlocks = useWorksheetStore((s) => s.draftBlocks);
 
-    const [rows, setRows] = useState<Row[]>(() => (initial ? rowsFromSessie(initial).map(r => ({ key: r.key, leaf: r.leaf, limit: r.limit, weight: r.weight })) : []));
+    const [rows, setRows] = useState<Row[]>(() => (initial ? rowsFromSessie(initial).map(({ constraints: _c, ...row }) => row) : []));
     const [title, setTitle] = useState(initial?.title ?? '');
     const [mode, setMode] = useState(initial?.mode ?? 'afwisselen');
     const [allowRepeatType, setAllowRepeatType] = useState(initial?.allowRepeatType ?? false);
@@ -71,6 +68,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         draftBlocks.find(b => b.id === draftIdOf(key))?.constraints as Record<string, unknown> | undefined;
 
     const addLeaf = (leaf: OefenLeaf) => {
+        if (rows.length >= MAX_TYPES) return;
         const key = `r${nextKey.current++}`;
         const st = useWorksheetStore.getState();
         st.setDraftBlocks([...st.draftBlocks, makeDraftBlock(leaf.typeId, leaf.constraints, draftIdOf(key))]);
@@ -107,7 +105,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
             name = asked;
         }
         // The library name doubles as the pupil's title, so the kiosk never falls back on "Oefenen".
-        const titled = title.trim() ? sessie : { ...sessie, title: name.trim().slice(0, 60) };
+        const titled = title.trim() ? sessie : { ...sessie, title: name.trim().slice(0, MAX_TITLE) };
         if (!title.trim()) setTitle(titled.title ?? '');
         const entry = saveOefenSessie(titled, name);
         if (!entry) { window.alert('Opslaan mislukt: de opslag van je browser is vol.'); return; }
@@ -123,6 +121,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const canShare = canShip && dead.size === 0;
     // A dead row the kiosk also refuses (klok without tijdstypes) is counted once, as dead.
     const unsupportedOnly = excluded.filter(r => !dead.has(r.key)).length;
+    // The kiosk's own rule: one row without a limit makes the run endless, and only a timer ends it then.
+    const endless = sessie.types.length > 0 && plannedTotal(sessie) === null && !sessie.timerMin;
 
     return (
         <>
@@ -133,36 +133,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                 </div>
 
                 <div style={S.bodyRow}>
-                    {/* LEFT: kiosk-capable leaves grouped by domain, click adds a row */}
-                    <div style={S.list}>
-                        {domains.map(dom => (
-                            <div key={dom.id} style={S.domGroup}>
-                                <div style={S.domHead}>
-                                    <span style={{ ...S.domDot, background: `var(${dom.accentVar})` }} aria-hidden />
-                                    <span>{dom.label}</span>
-                                </div>
-                                {(() => {
-                                    let prevCtx: string | null = null;
-                                    const els: React.ReactNode[] = [];
-                                    for (const leaf of leaves.filter(l => l.domainId === dom.id)) {
-                                        if (leaf.context !== prevCtx) {
-                                            prevCtx = leaf.context;
-                                            els.push(<div key={`sub-${leaf.context}`} style={S.subHead}>{leaf.context}</div>);
-                                        }
-                                        const n = rows.filter(r => r.leaf.id === leaf.id).length;
-                                        els.push(
-                                            <button key={leaf.id} className="ui-hover" style={S.leafBtn} onClick={() => addLeaf(leaf)} title="Toevoegen aan de sessie">
-                                                <Plus size={14} />
-                                                <span style={S.leafLabel}>{leaf.label}</span>
-                                                {n > 0 && <span style={S.leafCount}>{n}×</span>}
-                                            </button>,
-                                        );
-                                    }
-                                    return els;
-                                })()}
-                            </div>
-                        ))}
-                    </div>
+                    <OefenCatalogue leaves={leaves} countOf={id => rows.filter(r => r.leaf.id === id).length} onAdd={addLeaf} full={rows.length >= MAX_TYPES} />
 
                     {/* MAIN: session settings, then one row per added type */}
                     <div style={S.main}>
@@ -170,7 +141,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             <div style={S.settingsGrid}>
                                 <div style={S.field}>
                                     <label style={S.label} htmlFor="oefen-title">Titel</label>
-                                    <input id="oefen-title" style={S.input} value={title} maxLength={60} placeholder="Bv. Tafels en procenten" onChange={e => setTitle(e.target.value)} />
+                                    <input id="oefen-title" style={S.input} value={title} maxLength={MAX_TITLE} placeholder="Bv. Tafels en procenten" onChange={e => setTitle(e.target.value)} />
                                 </div>
                                 <div style={S.field}>
                                     <span style={S.label}>Volgorde</span>
@@ -226,6 +197,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             const supported = !constraints || kioskSupports(r.leaf.typeId, constraints);
                             const isDead = dead.has(r.key);
                             const pct = percentOf(r.key);
+                            const formDefault = constraints ? exactFormDefaultOf({ leaf: r.leaf, constraints }) : undefined;
                             return (
                                 <section key={r.key} style={isDead ? { ...S.card, border: '1px solid var(--danger)' } : S.card} aria-label={r.leaf.label}>
                                     <div style={S.rowHead}>
@@ -256,13 +228,27 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                                 {constraints && <ExercisePreview typeId={r.leaf.typeId} constraints={constraints} count={2} height={130} />}
                                             </div>
                                             <div style={S.field}>
-                                                <label style={S.label} htmlFor={`n-${r.key}`}>Aantal: {r.limit ?? '∞'}</label>
+                                                <label style={S.label} htmlFor={`n-${r.key}`}>Aantal: {r.limit ?? 'onbeperkt'}</label>
                                 <input
                                     // ∞ sits past 50 at the right end: a "0 = unlimited" left end read as "none" to teachers.
                                     id={`n-${r.key}`} type="range" min={1} max={LIMIT_MAX + 1} step={1} value={r.limit ?? LIMIT_MAX + 1}
                                     style={S.range} onChange={e => { const v = Number(e.target.value); patchRow(r.key, { limit: v > LIMIT_MAX ? undefined : v }); }}
                                 />
                             </div>
+                                            {formDefault !== undefined && (
+                                                <div style={S.field}>
+                                                    <span style={S.label}>Antwoord</span>
+                                                    <div className="seg-group" role="group" aria-label="Antwoord" style={S.formGroup}>
+                                                        {([false, true] as const).map(exact => (
+                                                            // Picking the default stores nothing, so the row follows the leaf default in the link.
+                                                            <button key={String(exact)} className="seg-btn" style={S.formBtn} aria-pressed={(r.exactForm ?? formDefault) === exact}
+                                                                onClick={() => patchRow(r.key, { exactForm: exact === formDefault ? undefined : exact })}>
+                                                                {exact ? 'Enkel de gevraagde vorm' : 'Gelijkwaardig goedrekenen'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                             {mode === 'willekeurig' && (
                                                 <div style={S.field}>
                                                     <label style={S.label} htmlFor={`w-${r.key}`}>Kans: {pct === null ? '–' : `${pct}%`}</label>
@@ -280,6 +266,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                 </section>
                             );
                         })}
+
+                        {endless && <p style={S.note} role="note">Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.</p>}
                     </div>
                 </div>
 
@@ -332,14 +320,7 @@ const S = {
     title: { margin: 0, fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-main)' } as React.CSSProperties,
     subtitle: { margin: 'var(--sp-1) 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)', maxWidth: '780px' } as React.CSSProperties,
     bodyRow: { flex: 1, display: 'flex', minHeight: 0 } as React.CSSProperties,
-    list: { width: '280px', flexShrink: 0, overflowY: 'auto', borderRight: '1px solid var(--separator)', padding: 'var(--sp-3)' } as React.CSSProperties,
-    domGroup: { marginBottom: 'var(--sp-4)' } as React.CSSProperties,
-    domHead: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-main)', padding: 'var(--sp-1) var(--sp-2)' } as React.CSSProperties,
     domDot: { width: '8px', height: '8px', borderRadius: 'var(--radius-pill)', flexShrink: 0 } as React.CSSProperties,
-    subHead: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', padding: 'var(--sp-2) var(--sp-2) 2px' } as React.CSSProperties,
-    leafBtn: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', width: '100%', textAlign: 'left', padding: '6px var(--sp-2)', borderRadius: 'var(--radius-xs)', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontSize: 'var(--text-sm)' } as React.CSSProperties,
-    leafLabel: { flex: 1, minWidth: 0 } as React.CSSProperties,
-    leafCount: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--accent)' } as React.CSSProperties,
     main: { flex: 1, minWidth: 0, overflowY: 'auto', padding: 'var(--sp-4) var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' } as React.CSSProperties,
     card: { background: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-1)', padding: 'var(--sp-4)' } as React.CSSProperties,
     settingsGrid: { display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) minmax(200px, 1fr) minmax(260px, 1.4fr)', gap: 'var(--sp-4)', alignItems: 'start' } as React.CSSProperties,
@@ -365,6 +346,10 @@ const S = {
     previewWrap: { borderRadius: 'var(--radius-xs)', border: '1px solid var(--separator)', background: '#fff' } as React.CSSProperties,
     muted: { margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontStyle: 'italic' } as React.CSSProperties,
     range: { width: '100%', accentColor: 'var(--accent)' } as React.CSSProperties,
+    // Two long labels in a ~280 px column: stack them instead of squeezing one line.
+    formGroup: { flexDirection: 'column', alignItems: 'stretch' } as React.CSSProperties,
+    // .seg-btn's flex: 1 would collapse its height to 0-basis in a column.
+    formBtn: { flex: 'none' } as React.CSSProperties,
     footer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 'var(--sp-3) var(--sp-5)', borderTop: '1px solid var(--separator)', flexShrink: 0 } as React.CSSProperties,
     footerCount: { fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 600 } as React.CSSProperties,
     footerBtns: { display: 'flex', gap: 'var(--sp-2)' } as React.CSSProperties,

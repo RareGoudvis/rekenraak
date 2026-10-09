@@ -2,8 +2,9 @@ import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '..
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
-import { kioskCapableLeaves, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
+import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 import { nextExercise, type Rng } from '../../services/oefenen/scheduler';
+import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
 export interface OefenLeaf {
@@ -16,6 +17,16 @@ export interface OefenLeaf {
     accentVar: string;
     constraints: Record<string, unknown>;
     instruction?: string | InstructionFn;
+    // Lower-cased labels the catalogue search matches: kiosk + sidebar label, parent, subdomain, domain.
+    searchText: string[];
+    // First leerjaar the sidebar's filter shows this leaf in (leafAllowedForGrade).
+    minGrade: Leerjaar;
+}
+
+// Case-insensitive substring match on the leaf's labels (the sidebar's search rule) + its leerjaar filter.
+export function filterOefenLeaves(leaves: OefenLeaf[], query: string, grade: Leerjaar | null): OefenLeaf[] {
+    const needle = query.trim().toLowerCase();
+    return leaves.filter(l => (grade === null || l.minGrade <= grade) && (!needle || l.searchText.some(s => s.includes(needle))));
 }
 
 export function listOefenLeaves(): OefenLeaf[] {
@@ -26,16 +37,19 @@ export function listOefenLeaves(): OefenLeaf[] {
         for (const leaf of t.children ?? [t]) {
             const flat = appLeaf.get(leaf.id);
             if (!leaf.typeId || !flat || !capable.has(leaf.id)) continue;
+            const label = kioskLabel(flat);
             out.push({
                 id: leaf.id,
                 typeId: leaf.typeId,
-                label: kioskLabel(flat),
+                label,
                 context: sub.label,
                 domainId: dom.id,
                 domainLabel: dom.label,
                 accentVar: dom.accentVar,
                 constraints: leaf.defaultConstraints ?? {},
                 instruction: leaf.instruction,
+                searchText: [label, leaf.label, ...(t.children ? [t.label] : []), sub.label, dom.label].map(s => s.toLowerCase()),
+                minGrade: LEERJAREN.find(g => leafAllowedForGrade(leaf, g)) ?? 6,
             });
         }
     }
@@ -48,7 +62,12 @@ export interface BuilderRow {
     constraints: Record<string, unknown>;     // the draft block's current constraints
     limit?: number;
     weight: number;                           // raw slider value 1-100, normalised on build
+    exactForm?: boolean;                      // the teacher's "Antwoord" pick; absent = the descriptor default
 }
+
+/** The row's breuk-answer default (exactFormDefault), or undefined where the row asks no breuk. */
+export const exactFormDefaultOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): boolean | undefined =>
+    kioskFor(row.leaf.typeId)?.exactFormDefault?.(row.constraints);
 
 export interface BuilderSettings {
     id: string;
@@ -101,6 +120,8 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
             constraints: r.constraints,
             ...(r.limit ? { limit: r.limit } : {}),
             weight: weights[i],
+            // Only where the check reads it (exactFormOf ignores it without a default): keeps the link short.
+            ...(r.exactForm !== undefined && exactFormDefaultOf(r) !== undefined ? { exactForm: r.exactForm } : {}),
         })),
         mode: s.mode,
         // Afwisselen never repeats a type by definition; only willekeurig can allow it.
@@ -121,7 +142,7 @@ export function rowsFromSessie(sessie: OefenSessie): BuilderRow[] {
     sessie.types.forEach((t, i) => {
         const leaf = leaves.get(t.leafId);
         if (!leaf) return;
-        rows.push({ key: `r${i}`, leaf, constraints: t.constraints, limit: t.limit, weight: Math.max(1, t.weight) });
+        rows.push({ key: `r${i}`, leaf, constraints: t.constraints, limit: t.limit, weight: Math.max(1, t.weight), ...(t.exactForm !== undefined ? { exactForm: t.exactForm } : {}) });
     });
     return rows;
 }

@@ -3,13 +3,18 @@ import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, screen, within, act } from '@testing-library/react';
 import OefenBuilderModal from '../components/oefenen/OefenBuilderModal';
 import OefenShareModal from '../components/oefenen/OefenShareModal';
-import { buildSessie, listOefenLeaves, normaliseWeights, rowYields, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
+import { buildSessie, filterOefenLeaves, listOefenLeaves, normaliseWeights, rowYields, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
 import { kioskSupports } from '../services/oefenen/kiosk';
 import { denominationLabel } from '../services/geld/geldGenerator';
 import { loadOefenSessies } from '../services/persistence';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import type { OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
+import { LEERJAREN, leafAllowedForGrade } from '../config/gradePresets';
+import { APP_STRUCTURE } from '../config/appstructure';
+
+// The raw sidebar node of a leaf: what the sidebar's leerjaar filter reads.
+const leafNode = (id: string) => APP_STRUCTURE.flatMap(d => d.subdomains.flatMap(s => s.types.flatMap(t => [t, ...(t.children ?? [])]))).find(l => l.id === id)!;
 
 // The previews lazy-mount on scroll and measure with ResizeObserver; jsdom has neither.
 class VisibleObserver {
@@ -266,7 +271,7 @@ describe('OefenBuilderModal limit slider', () => {
         expect(slider.min).toBe('1');
         expect(slider.max).toBe('51');
         expect(slider.value).toBe('51');
-        expect(screen.getByText('Aantal: ∞')).toBeTruthy();
+        expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
         fireEvent.change(slider, { target: { value: '12' } });
         expect(screen.getByText('Aantal: 12')).toBeTruthy();
         fireEvent.click(footerBtn('Delen'));
@@ -277,7 +282,7 @@ describe('OefenBuilderModal limit slider', () => {
         fireEvent.click(addBtn('procenten-nemen'));
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '7' } });
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '51' } });
-        expect(screen.getByText('Aantal: ∞')).toBeTruthy();
+        expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
         fireEvent.click(footerBtn('Delen'));
         expect(decodeSessie(screen.getByRole('link').getAttribute('href')!.split('#oefen=')[1]).types[0].limit).toBeUndefined();
     });
@@ -405,5 +410,186 @@ describe('OefenBuilderModal pre-flight (no exercises)', () => {
         const klok = leaf('klok-analoog-lezen');
         expect(rowYields({ leaf: klok, constraints: { ...klok.constraints, timeTypes: [] } })).toBe(false);
         expect(rowYields({ leaf: klok, constraints: { ...klok.constraints, timeTypes: ['uren'] } })).toBe(true);
+    });
+});
+
+describe('OefenBuilderModal catalogue search + leerjaar (O17)', () => {
+    const labels = () => screen.getAllByTitle('Toevoegen aan de sessie').map(b => b.textContent?.replace(/\d+×$/, ''));
+    const search = () => screen.getByPlaceholderText('Zoek oefening…');
+    const chip = (name: string) => within(screen.getByRole('group', { name: 'Leerjaar' })).getByRole('button', { name });
+    afterEach(() => { useWorksheetStore.setState({ selectedGrade: null }); });
+
+    test('search narrows the list case-insensitively, also on the leaf group; no hit says so', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        const all = labels().length;
+        fireEvent.change(search(), { target: { value: 'PERCENT' } });
+        expect(labels()).toContain(leaf('procenten-nemen').label);
+        expect(labels()).not.toContain(leaf('breuken-vereenvoudigen').label);
+        expect(labels().length).toBeLessThan(all);
+        // "Analoge klok" is the parent of "Lezen": the sidebar finds its children by it too.
+        fireEvent.change(search(), { target: { value: 'analoge klok' } });
+        expect(labels()).toContain(leaf('klok-analoog-lezen').label);
+        fireEvent.change(search(), { target: { value: 'zzqq' } });
+        expect(screen.queryAllByTitle('Toevoegen aan de sessie')).toHaveLength(0);
+        expect(screen.getByText('Geen oefening gevonden voor "zzqq".')).toBeTruthy();
+        fireEvent.change(search(), { target: { value: '' } });
+        expect(labels().length).toBe(all);
+    });
+
+    test('leerjaar chips: L4 hides a L5 leaf, L5 and Alle show it; the sidebar leerjaar is the start value', () => {
+        useWorksheetStore.setState({ selectedGrade: 4 });
+        render(<OefenBuilderModal onClose={() => { }} />);
+        expect(chip('L4').getAttribute('aria-pressed')).toBe('true');
+        expect(labels()).not.toContain(leaf('procenten-nemen').label);
+        fireEvent.click(chip('L5'));
+        expect(labels()).toContain(leaf('procenten-nemen').label);
+        fireEvent.click(chip('L1'));
+        const l1 = labels().length;
+        fireEvent.click(chip('Alle'));
+        expect(labels().length).toBeGreaterThan(l1);
+        // The builder's own filter never moves the sidebar's leerjaar.
+        expect(useWorksheetStore.getState().selectedGrade).toBe(4);
+    });
+
+    test('filterOefenLeaves: same leerjaar rule as the sidebar (leafAllowedForGrade)', () => {
+        const all = listOefenLeaves();
+        for (const g of LEERJAREN) {
+            const kept = new Set(filterOefenLeaves(all, '', g).map(l => l.id));
+            for (const l of all) expect(kept.has(l.id), `${l.id} L${g}`).toBe(leafAllowedForGrade(leafNode(l.id), g));
+        }
+        expect(filterOefenLeaves(all, '  ', null)).toHaveLength(all.length);
+    });
+});
+
+describe('OefenShareModal summary (O19)', () => {
+    const base: OefenSessie = {
+        v: 1, id: 'x', title: 'Klein', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false,
+        types: [{ typeId: 'procenten', leafId: 'procenten-nemen', label: 'Percent', constraints: { subType: 'nemen' }, weight: 100 }],
+    };
+    const summary = () => screen.getByRole('list', { name: 'Samenvatting van de sessie' });
+    const OWN = 'Elk toestel maakt zijn eigen oefeningen: leerlingen krijgen niet dezelfde sommen.';
+
+    test('one unlimited type, no timer: singular, onbeperkt, geen timer, no toets, 1 kans, results always', () => {
+        render(<OefenShareModal sessie={base} onClose={() => { }} />);
+        const s = within(summary());
+        expect(s.getByText('1 soort · onbeperkt')).toBeTruthy();
+        expect(s.getByText('Timer: geen')).toBeTruthy();
+        expect(s.getByText('Toets: nee')).toBeTruthy();
+        expect(s.getByText('Kansen: 1')).toBeTruthy();
+        expect(s.getByText('Resultaten: altijd')).toBeTruthy();
+        expect(screen.getByText(OWN)).toBeTruthy();
+    });
+
+    test('limited types, timer, 2 kansen, results at the end; testmodus forces 1 kans and the end', () => {
+        const two: OefenSessie = { ...base, timerMin: 15, attempts: 2, statsLocked: true, types: [{ ...base.types[0], limit: 10 }, { ...base.types[0], limit: 5 }] };
+        render(<OefenShareModal sessie={two} onClose={() => { }} />);
+        let s = within(summary());
+        expect(s.getByText('2 soorten · 15 oefeningen')).toBeTruthy();
+        expect(s.getByText('Timer: 15 min')).toBeTruthy();
+        expect(s.getByText('Kansen: 2')).toBeTruthy();
+        expect(s.getByText('Resultaten: pas op het einde')).toBeTruthy();
+        cleanup();
+        render(<OefenShareModal sessie={{ ...base, testMode: true, attempts: 2, types: [{ ...base.types[0], limit: 1 }] }} onClose={() => { }} />);
+        s = within(summary());
+        expect(s.getByText('1 soort · 1 oefening')).toBeTruthy();
+        expect(s.getByText('Toets: ja')).toBeTruthy();
+        expect(s.getByText('Kansen: 1')).toBeTruthy();
+        expect(s.getByText('Resultaten: pas op het einde')).toBeTruthy();
+    });
+});
+
+describe('exactForm control (O8 builder half)', () => {
+    const SAME = 'Gelijkwaardig goedrekenen';
+    const EXACT = 'Enkel de gevraagde vorm';
+    const rowOf = (id: string) => within(screen.getByRole('region', { name: leaf(id).label }));
+    // The button reads "Opgeslagen" for 2 s after a save.
+    const saved = () => { fireEvent.click(screen.getByRole('button', { name: /Opslaan|Opgeslagen/ })); return loadOefenSessies()[0].sessie; };
+
+    test('preselected from the descriptor default; only a change is written to the row', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Breuken' } });
+        fireEvent.click(addBtn('breuken-vereenvoudigen'));
+        fireEvent.click(addBtn('procenten-nemen'));
+        // A leaf without a breuk answer (no exactFormDefault) gets no control.
+        expect(rowOf('procenten-nemen').queryByRole('group', { name: 'Antwoord' })).toBeNull();
+        const group = within(rowOf('breuken-vereenvoudigen').getByRole('group', { name: 'Antwoord' }));
+        expect(group.getByRole('button', { name: EXACT }).getAttribute('aria-pressed')).toBe('true');
+        expect(group.getByRole('button', { name: SAME }).getAttribute('aria-pressed')).toBe('false');
+        expect('exactForm' in saved().types[0]).toBe(false);
+
+        fireEvent.click(group.getByRole('button', { name: SAME }));
+        expect(group.getByRole('button', { name: SAME }).getAttribute('aria-pressed')).toBe('true');
+        expect(saved().types[0].exactForm).toBe(false);
+        expect('exactForm' in saved().types[1]).toBe(false);
+
+        // Back to the default: the row stores nothing again, so the link stays as short as before.
+        fireEvent.click(group.getByRole('button', { name: EXACT }));
+        expect('exactForm' in saved().types[0]).toBe(false);
+    });
+
+    test('buildSessie ships a row exactForm only where the descriptor has a default; rowsFromSessie reads it back', () => {
+        const rows: BuilderRow[] = [
+            { key: 'a', leaf: leaf('breuken-vereenvoudigen'), constraints: { ...leaf('breuken-vereenvoudigen').constraints }, weight: 50, exactForm: false },
+            { key: 'b', leaf: leaf('procenten-nemen'), constraints: { subType: 'nemen' }, weight: 50, exactForm: true },
+        ];
+        const { sessie } = buildSessie(rows, settings);
+        expect(sessie.types[0].exactForm).toBe(false);
+        expect('exactForm' in sessie.types[1]).toBe(false);
+        expect(rowsFromSessie(sessie)[0].exactForm).toBe(false);
+    });
+});
+
+describe('builder stays within the link bounds (item 8)', () => {
+    test('20 rows: every add button is off with a note; removing one turns them back on', () => {
+        // Reopened with 20 types: one render instead of 20 adds, each re-rendering every row.
+        const type = { typeId: 'procenten', leafId: 'procenten-nemen', label: 'Percent', constraints: { ...leaf('procenten-nemen').constraints }, weight: 5 };
+        const full: OefenSessie = { v: 1, id: 'full', title: 'Vol', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false, types: Array.from({ length: 20 }, () => ({ ...type })) };
+        render(<OefenBuilderModal onClose={() => { }} initial={full} />);
+        expect(screen.getByText('20 soorten in de sessie')).toBeTruthy();
+        const adds = () => screen.getAllByTitle(/Toevoegen aan de sessie|Maximum 20 soorten per sessie/) as HTMLButtonElement[];
+        expect(adds().every(b => b.disabled)).toBe(true);
+        expect(screen.getByText('Maximum 20 soorten per sessie.')).toBeTruthy();
+        fireEvent.click(addBtn('procenten-welk'));
+        expect(screen.getByText('20 soorten in de sessie')).toBeTruthy();
+        fireEvent.click(screen.getAllByRole('button', { name: /Verwijderen/ })[0]);
+        expect(adds().every(b => !b.disabled)).toBe(true);
+        expect(screen.queryByText('Maximum 20 soorten per sessie.')).toBeNull();
+    });
+
+    test('the title field takes at most 80 characters (the link refuses longer)', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        expect((screen.getByLabelText('Titel') as HTMLInputElement).maxLength).toBe(80);
+    });
+});
+
+describe('klok description says what the kiosk asks (O21)', () => {
+    // ClockConfig serves the sheet too, where lezen IS written in words: both answers are named.
+    test('analoge klok lezen: uu:mm typen in de oefenmodus; tekenen: wijzers slepen', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('klok-analoog-lezen'));
+        fireEvent.click(addBtn('klok-analoog-tekenen'));
+        expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd typen als uu:mm)')).toBeTruthy();
+        expect(screen.getByText('Analoog · Tijd in woorden → wijzers tekenen op klok (oefenmodus: wijzers slepen)')).toBeTruthy();
+    });
+});
+
+describe('OefenBuilderModal endless-session hint (O18)', () => {
+    const ENDLESS = 'Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.';
+
+    test('an unlimited row without a timer says when the run stops; a timer or limits on every row clear it', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        expect(screen.queryByText(ENDLESS)).toBeNull();
+        fireEvent.click(addBtn('procenten-nemen'));
+        expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
+        expect(screen.getByText(ENDLESS)).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: '10 min' }));
+        expect(screen.queryByText(ENDLESS)).toBeNull();
+        fireEvent.click(within(screen.getByRole('group', { name: 'Tijd' })).getByRole('button', { name: 'Uit' }));
+        expect(screen.getByText(ENDLESS)).toBeTruthy();
+        fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '12' } });
+        expect(screen.queryByText(ENDLESS)).toBeNull();
+        // One unlimited row is enough to make the whole run endless.
+        fireEvent.click(addBtn('procenten-welk'));
+        expect(screen.getByText(ENDLESS)).toBeTruthy();
     });
 });

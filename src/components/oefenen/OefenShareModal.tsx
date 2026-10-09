@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Copy, CornersOut, ImageSquare, Printer } from '@phosphor-icons/react';
-import type { OefenSessie } from '../../services/oefenen/types';
+import { attemptsOf, type OefenSessie } from '../../services/oefenen/types';
+import { viablePlannedTotal } from '../../services/oefenen/stats';
 import { QR_QUIET, drawQr, qrMatrixOrNull, qrVersionOf } from '../../services/qr';
 import ModalShell from '../ui/ModalShell';
 import ModalPortal from '../ui/ModalPortal';
@@ -72,7 +73,10 @@ export default function OefenShareModal({ sessie, onClose }: Props) {
             <ModalShell onClose={() => { if (!big) onClose(); }} ariaLabel="Oefenmodus delen" maxWidth={560}>
                 <div style={S.header}>
                     <h2 style={S.title}>Oefenmodus delen</h2>
-                    <p style={S.subtitle}>{sessie.types.length} {sessie.types.length === 1 ? 'soort' : 'soorten'}{sessie.timerMin ? ` · ${sessie.timerMin} min` : ''}</p>
+                    <ul style={S.summary} aria-label="Samenvatting van de sessie">
+                        {summaryOf(sessie).map(item => <li key={item} style={S.summaryItem}>{item}</li>)}
+                    </ul>
+                    <p style={S.subtitle}>Elk toestel maakt zijn eigen oefeningen: leerlingen krijgen niet dezelfde sommen.</p>
                 </div>
 
                 <div style={S.body}>
@@ -122,6 +126,21 @@ export default function OefenShareModal({ sessie, onClose }: Props) {
             {printing && matrix && <PrintQr matrix={matrix} title={name} onDone={() => setPrinting(false)} />}
         </>
     );
+}
+
+// What the teacher is about to hand out, in the kiosk's own terms (viable types, testmodus rules).
+function summaryOf(s: OefenSessie): string[] {
+    const n = s.types.length;
+    const total = viablePlannedTotal(s);
+    const amount = total === null ? 'onbeperkt' : `${total} ${total === 1 ? 'oefening' : 'oefeningen'}`;
+    return [
+        `${n} ${n === 1 ? 'soort' : 'soorten'} · ${amount}`,
+        `Timer: ${s.timerMin ? `${s.timerMin} min` : 'geen'}`,
+        `Toets: ${s.testMode ? 'ja' : 'nee'}`,
+        `Kansen: ${attemptsOf(s)}`,
+        // Testmodus hides the results until the end whatever statsLocked says.
+        `Resultaten: ${s.statsLocked || s.testMode ? 'pas op het einde' : 'altijd'}`,
+    ];
 }
 
 // Full-screen QR for the classroom beamer; Escape or a click closes only this layer.
@@ -205,7 +224,9 @@ function PrintQr({ matrix, title, onDone }: { matrix: boolean[][]; title: string
 const S = {
     header: { padding: 'var(--sp-4) 56px var(--sp-3) var(--sp-5)', borderBottom: '1px solid var(--separator)' } as React.CSSProperties,
     title: { margin: 0, fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--text-main)' } as React.CSSProperties,
-    subtitle: { margin: 'var(--sp-1) 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' } as React.CSSProperties,
+    subtitle: { margin: 'var(--sp-2) 0 0', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' } as React.CSSProperties,
+    summary: { listStyle: 'none', margin: 'var(--sp-2) 0 0', padding: 0, display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-1) var(--sp-2)' } as React.CSSProperties,
+    summaryItem: { fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-main)', padding: '2px var(--sp-2)', borderRadius: 'var(--radius-pill)', background: 'var(--bg-surface-2)', border: '1px solid var(--separator)' } as React.CSSProperties,
     body: { padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)', overflowY: 'auto' } as React.CSSProperties,
     linkRow: { display: 'flex', gap: 'var(--sp-3)', alignItems: 'center' } as React.CSSProperties,
     linkText: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' } as React.CSSProperties,
