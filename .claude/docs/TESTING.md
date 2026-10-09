@@ -69,13 +69,13 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `oefenLibrary.test.ts` | `rekenraak_oefen_sessies_v1`: save / list / rename / delete, same id replaces and keeps the name, the 50 cap drops the oldest, a full quota returns `null`, garbage reads as empty. |
 | `qr.test.ts` | `qrMatrix`: finder patterns, timing pattern and dark module, version grows with the payload and gives `null` past v40, an upper-case tail is coded alphanumeric (smaller than the same text in lower case). |
 
-## Bordmodus suites (`src/__tests__/board*` + `bordEntry`, `clockMath`, `klokWidget`, `wbCosmetics`)
+## Bordmodus suites (`src/__tests__/board*` + `instrumentGeometry`, `bordEntry`, `clockMath`, `klokWidget`, `wbCosmetics`)
 
-All jsdom except `boardGroepjes` and `clockMath`. An open board bug may be pinned as
+All jsdom except `boardGroepjes`, `instrumentGeometry` and `clockMath`. An open board bug may be pinned as
 `test.fails` next to its BUGS.md line under "Bordmodus" (fixing it flips the pin to a failure:
 turn it into a plain `test` in the fix commit); none are pinned today, the WB2 pins were all
-flipped by the fold-in fixes. `npx vitest run src/__tests__/board src/__tests__/bordEntry
-src/__tests__/clockMath src/__tests__/klokWidget src/__tests__/wbCosmetics` runs them in ~15 s;
+flipped by the fold-in fixes. `npx vitest run src/__tests__/board src/__tests__/instrumentGeometry
+src/__tests__/bordEntry src/__tests__/clockMath src/__tests__/klokWidget src/__tests__/wbCosmetics` runs them;
 with `@vitest/coverage-v8` installed (`npm i --no-save`),
 `--coverage --coverage.include='src/board/**'` measures them.
 
@@ -93,6 +93,22 @@ with `@vitest/coverage-v8` installed (`npm i --no-save`),
 | `clockMath.test.ts` | The pure clock maths (`services/clock/clockMath.ts`) against a circular-distance oracle: `minuteFromAngle` (step snapping, wrap of negative / over-full angles), `hourFromAngle` at every 5° × 5 min (the minute offset: at :50 the hand near the 4 is still 3), `carryHour` both ways across 12, 12 / 24 h folding and the voormiddag / namiddag flip of `turnHourTo`, arrow-key `stepMinutes` / `stepHours` (a full turn of minute steps = one hour). |
 | `klokWidget.test.tsx` | The board KlokWidget under simulated pointer drags (jsdom): the minute hand carries the hour forward and back past 12, a full turn advances exactly one hour also across noon, the hour hand snaps to whole hours and keeps the minutes, the geschreven tijd follows the face after a carry past noon. |
 | `wbCosmetics.test.tsx` | The clock-cosmetics fixes: clock face and geld palette do not select text on drag; the add-panel search ("klok" finds the kloklezen variants and the Klok tool; a typeId finds its row; a found tool lands on the board); every bottom-bar popup closes on Escape and an outside press, not an inside one; twelve adds land on twelve spots and a freed spot is reused (`staggerSlot`); Aantal applies at once (tail cut / top-up keeps the rest); the Werksymbolen panel renders without a key warning. |
+| `boardDrawTools.test.tsx` | P3 lijn / vormen: geometry (grid snap, Shift 45° rays, plain `M…L`, arrowheads as closed triangles after a shortened shaft, segment hit-test), the line and shape `ToolEngine`s (one stroke per drag, < 4 px = nothing, preview / cancel, grid folds dropped, Shift square / circle / equilateral, soft fill, options on the stroke), the InkLayer (preview not a stroke, Escape, Shift mid-drag re-shapes, undo / redo / eraser along the middle or on the outline only, dashed shaft with solid heads), InkSettingsBar options per tool, `L` / `V` shortcuts (not while typing or with Ctrl), a pre-P3 board loads unchanged, 50 shapes save / load / hit-test fast. |
+| `instrumentGeometry.test.ts` | Pure P4 maths: 1 board cm = 10 sheet mm; local ↔ board transforms (clockwise, round-trip); `snapRotation` (3°, 15° with grid), `snapPoint` (8 px, endpoints win ties); per-instrument Vastklikken (absent = all on, each flag alone, master off = free whole degrees); `pathEndpoints` / `strokeEndpoints`; default placement (own spots, 1280 × 720 fallback, passer 5 cm); lat / geodriehoek body and edges; `nearestEdge`, `projectOnEdge` (whole mm, never past the plastic), `startGuidedLine` (wobbly drag → one `M…L`, tap = dot, rays at whole degrees from the centre, the centre beats the hypotenuse, legs guide); passer `openPasser`, `unwrapDelta`, `arcPath` (one `A`, full turn = two half arcs), `arcPts`, the hinge always up; `formatCm`. |
+| `boardInstruments.test.tsx` | The instrument store (toggle one per kind, update / remove / hide all, per page, cleared page keeps them, duplicated page = fresh ids); format v2 (v1 loads unchanged, round-trip, junk / second-of-a-kind dropped, passer radius clamped, Vastklikken flags, newer version refused); the layer (body drag + grid / endpoint snap with a snap dot, rotate handle 45° / 15°, Vastklikken off and endpoints-only, keyboard arrows / Shift / `[ ]` / R / Escape, not while typing, inset core while inking, line / shape make grips inert, a press never reaches the canvas); lat and geodriehoek guide the pen / marker (straight ruled stroke with readout, 45° hypotenuse, a ray from the centre), passer (open on mm, needle snaps, half-turn arc, full circle, marker circle, tap = nothing, erase + undo); the bottom-bar popover (toggles, Vastklikken ⚙, Alles verbergen, Escape, pen stays active). |
+| `boardUndoShortcut.test.tsx` | Board open: Ctrl+Z pops an ink stroke and the worksheet history stays; editor: Ctrl+Z still undoes the sheet and never touches ink; typing in a tekst widget keeps Ctrl+Z for the text. |
+| `boardBackgroundPicker.test.tsx` | A tile for every pattern, scale and board colour; a click applies and keeps the popover open; Escape / outside close; focus on the current pattern, arrows + Enter; the ⚙ popup lost its background section; `backgroundStyle` zoom keeps lines ≥ 1 px and moves the Cornell column with the zoom only. |
+| `boardSettings.test.tsx` | The settings system: every kind but `exercise` has the ⚙ + baseline, registered kinds add their panel; baseline writes (titel, titelbalk, tekstgrootte, accentkleur), the frame's accent dot and font zoom (not for `SELF_SCALED_FONT` kinds); mijn standaard (save → new widgets start from it, caller props win, transient state left out; Vergeet; Standaard herstellen asks once and keeps an image; garbage under the key = none); non-object props load as none; kit controls (no React style warning, `ListEditor` edit / move / remove / add / paste by button). |
+| `boardPropSchema.test.ts` | `readProps` (defaults, clamps, junk per field, empty colour = unset), `cleanProps` (drops junk owned keys, keeps good and foreign keys), reset keeps the content keys, transient state never saved. |
+| `boardSettings{Checklist,Datum,Groepjes,Klok,Namen,Stappenplan,Weer,Werksymbolen}.test.tsx` | Settings round A, one suite per kind: an old board reads exactly as before, junk keys read as defaults after a load, panel edits reach the widget and survive a save / load, plus the kind's own behaviour (templates; date helpers; locked groups, labels, text export; 12 / 24 h digital, the classic face = the sheet clock; no-repeat picks, several names; tap-to-tick steps; wind helpers + refresh interval; named werksymbolen sets saved app-wide). |
+| `board{Stopwatch,Timer,Adem,Geluid,Dobbelsteen,Afbeelding,Tekst}.test.tsx` | Settings round B, one suite per schema'd kind: defaults = the pre-settings look, junk falls back per field, the kind's behaviour (laps, countdown, space bar; keypad / draaien / presets, warn colour, auto-restart; breathing phases and shapes; poster levels and meter bands; 1–6 dice, locks, picture faces, history; image fit / caption / turns; note bullets and lines), every control writes the widget and survives save + load, a reset keeps the content (text, picture, rolls). |
+| `board{Getallenlijn,Positietabel,Honderdveld,Breukviz,MabMat,Geld}.test.tsx` | Settings round C (wiskunde-gereedschap): old boards keep their look (number-line min/max/ticks, positietabel columns, honderdveld palette-index marks, breukviz top-level n/d, MAB counts), junk reads as defaults, the tap modes (markeren / springen / verbergen, paint colour or cycle, tap parts, + / inwissel / autoWissel, editable cells), settings round-trip through the board file and the panels write the store, per-card state (laid blocks, typed cells) never enters a standaard; geld: dock settings default to today, a dropped piece keeps its caption / style, the panel picks denominations / style / caption / size, snap on drop. |
+| `helpers/boardWidgetHarness.tsx` | Shared harness for the per-widget suites (not a suite): `w(kind, props)`, `mountWidget` (rendered live from the store), the ⚙ panel, a save + load through `parseBoardFile`. |
+
+`boardFrame` also covers the headerless pill (hidden until hover / selection / focus, same
+controls as the bar, a pill press never drags, no pill with the title bar on); `boardSizing`
+the new dobbelsteen (1–6, sides 2–100) and adem clamps; `boardStore` the ink draft fix (a
+pointer move queued behind the pointerup no longer crashes on the nulled drawing ref).
 
 ## The generator matrix
 
@@ -780,3 +796,27 @@ bar, resize grip, clock hands, geld palette) — the board runs on pointer event
 7. **Print = sheet only** — with the board open, `page.emulateMedia({ media: 'print' })` (or
    `page.pdf()`): `[data-whiteboard]` is `display: none` (`.no-print`) and the worksheet's
    `.page-sheet`s are what print.
+8. **Lijn / vormen** — press `L` (or the "Lijn / pijl" button), drag on `[data-board-canvas]`
+   with `mouse.down/move/up`: a `[data-ink-preview]` follows while dragging, one stroke lands on
+   release; hold Shift (`keyboard.down('Shift')`) mid-drag to see the 45° snap; Escape mid-drag
+   drops it. In the settings strip pick an arrow / dashed, then `V` for vormen: rect, ellipse,
+   triangle, soft fill, Shift = square / circle / equilateral. Ctrl+Z / Ctrl+Y walk them back
+   and forth (the sheet underneath does not change).
+9. **Meetinstrumenten** — `getByLabel('Meetinstrumenten')` → toggle Lat, Geodriehoek, Passer
+   (`g[data-instrument="lat"]` …). Drag a body (`[data-instrument-grip="body"]`) near a line end
+   or, with Uitlijnen on, a grid point: `[data-snap-dot]` shows and it jumps there. Turn with the
+   round handle: the readout pill shows degrees, it clicks onto 45°. With the pen, start a drag
+   on the lat's measuring edge and wobble: one straight stroke with a cm readout. From the
+   geodriehoek's centre: a ray with a degree readout. Passer: drag the pencil leg to open it
+   (cm readout), then the pencil tip round the needle: an arc, a full turn = a circle. Open the
+   ⚙ next to a placed instrument (Vastklikken), switch the master off and drag again: no snap.
+   "Pagina leegmaken" keeps the instruments; reload keeps them (format v2 autosave).
+10. **Widget settings** — on any card ⚙ (`getByLabel('Widget-instellingen')`): the kind's own
+    sections, then "Kaart" (Titel, Titelbalk tonen, Tekstgrootte, Accentkleur) and
+    "Standaard". Turn Titelbalk off: hovering the card shows the `[data-widget-pill]` with ⚙ /
+    duplicate / delete. "Bewaar als mijn standaard", then add the same tool again: it starts
+    from the saved look; "Standaard herstellen" asks once. Screenshot each panel at 1920 × 1080
+    (the flyout is 340 px wide; nothing should wrap into slivers). The geld dock has its own ⚙.
+11. **Achtergrond** — the paint-roller button opens the tile picker: every pattern, three
+    sizes, Licht / Donker as live previews; a click applies at once and the popover stays
+    open; arrows + Enter work from the focused tile; Escape closes.

@@ -198,8 +198,10 @@ across refresh). UI-only state (activeBlockId, showSolutions, bladSection, histo
 draftBlocks) is excluded. Empty fresh-tab state never overwrites a populated autosave.
 
 **The board store** — Bordmodus runs on a second, separate Zustand store,
-[useBoardStore.tsx](../../src/board/useBoardStore.tsx) (pages, widgets, strokes, tool, ink
-settings; own debounced autosave to `rekenraak_board_autosave_v1`; ink-only undo). Separate on
+[useBoardStore.tsx](../../src/board/useBoardStore.tsx) (pages, widgets, strokes, per-page
+meetinstrumenten, tool, ink settings, lijn / vormen `drawOptions`; own debounced autosave to
+`rekenraak_board_autosave_v1`; ink-only undo, also on Ctrl+Z / Ctrl+Y while the board is open,
+when the TopBar's sheet shortcut stands down). Separate on
 purpose: neither app can corrupt the other's state, and board edits never enter the sheet's
 history. The one bridge is the **draftBlocks mirror**: while an exercise card's inspector is
 open, `BoardInspector` seeds `draftBlocks = [widget.block]`, the real config plugins edit it
@@ -1228,7 +1230,7 @@ src/
 │  (repo root) .claude/hooks/commit-bypass-guard.ps1  # Claude Code PreToolUse: any gate bypass in a shell command → permissionDecision 'ask'
 │  (repo root) oefenen.html              # the pupil kiosk page: an extra Vite entry (vite.config.ts rollupOptions.input `oefenen`), mounts src/oefenen/main.tsx; noindex
 │  (repo root) bord.html                 # the app booted straight into Bordmodus: <html data-boot="bord">, own title/meta/canonical, Vite input `bord` (§14)
-│  (repo root) src/__tests__/board*.test.ts(x), bordEntry, clockMath, klokWidget, wbCosmetics  # the Bordmodus suites (TESTING.md "Bordmodus suites")
+│  (repo root) src/__tests__/board*.test.ts(x), instrumentGeometry, bordEntry, clockMath, klokWidget, wbCosmetics + helpers/boardWidgetHarness.tsx  # the Bordmodus suites (TESTING.md "Bordmodus suites")
 │  (repo root) about.html, faq.html, oefeningen.html + src/site.ts, src/site.css  # static SEO pages built by Vite (vite.config.ts rollupOptions.input) so they reuse the app's real CSS/classes (mac-vibrant, panel-head, seg-group, sidebar-row, Wordmark markup): sidebar = page tabs + anchors / questions / exercise filter, top bar = "Open RekenRaak", no inspector; sitemap/robots stay in public/
 ├── styles/
 │   └── appStyles.ts             # CSS-in-JS inline layout styles
@@ -1293,28 +1295,52 @@ src/
 │   ├── vormleer/hoekDrag.ts                    # Oefenmodus: hoek class as centre ± tolerance over 5° snaps (hoekTarget), hoekFromPoint, hoekStep; shared by HoekDragSVG and VORMLEER_KIOSK
 │   ├── vormleer/vormleerGenerator.ts           # punt-lijn/hoek/figuur constructors + CONCEPT_NAMES + buildScenario (one niveau scenario for both modes)
 │   └── vormleer/scenarioLayout.ts              # layoutScenario(): viewBox geometry + collision-free label placement for punt-lijn figures (asserted by vormleer.test.ts)
-├── board/                       # Bordmodus, the whiteboard app (§14); outside it only the four §14 touchpoints
-│   ├── boardTypes.ts            # BoardWidget / WidgetKind (22) / Stroke / BoardTool / BoardPage / BoardBackground, ToolEngine contract (P4), rndId, emptyPage
-│   ├── useBoardStore.tsx        # the second Zustand store: pages, widgets, ink, tools, selection/inspector; module-init hydration + 1.5 s autosave (§3, §14)
+├── board/                       # Bordmodus, the whiteboard app (§14); outside it only the five §14 touchpoints
+│   ├── boardTypes.ts            # BoardWidget / WidgetKind (22) / Stroke (+ fill, fillOpacity, dash) / DrawOptions / BoardTool / ToolContext + ToolEngine (preview, cancel) / BoardPage (+ instruments) / Instrument + InstrumentSnap + InstrumentGeometry / BoardBackground, rndId, emptyPage
+│   ├── useBoardStore.tsx        # the second Zustand store: pages, widgets, ink, drawOptions, instruments (toggle / update / remove / hide all / select), tools, selection/inspector; addWidget merges mijn standaard; module-init hydration + 1.5 s autosave (§3, §14)
 │   ├── boardBlocks.ts           # exercise cards: makeBoardBlock (seedConstraints) + sheetSeedContext, regenerateBoardBlock (generateForBlock), resizeBoardBlock (generateExtra), withFreshIds
-│   ├── boardPersistence.ts      # BOARD_FORMAT_VERSION 1, strict parseBoardFile, autosave, "Mijn borden" presets (cap 30, false on quota), file export
-│   ├── widgetSizing.ts          # NATURAL_W / titles / KINDS_WITH_SETTINGS per kind + every prop normaliser (klok, weer, datum, groepjes + makeGroups, …), class-list key
+│   ├── boardPersistence.ts      # BOARD_FORMAT_VERSION 2 (reads 1), strict parseBoardFile (+ cleanWidgetProps, instrument parsing), autosave, "Mijn borden" presets (cap 30, false on quota), file export
+│   ├── widgetSizing.ts          # NATURAL_W / titles / KINDS_WITH_SETTINGS (every kind) + the older normalisers (klok, weer, datum, groepjes + makeGroups, …), class-list key; re-exports dobbelProps / ademProps
 │   ├── addWidgets.ts            # staggerSlot / staggerPos (first free slot) + addBasicWidget
 │   ├── toolCatalog.ts           # TOOL_CATALOG (Wiskunde-gereedschap / Klasmanagement / Organisatie tiles), runTool, ★ favorites (max 6)
-│   ├── backgrounds.ts           # page backgrounds: pattern × white/black × size, pure CSS gradients
+│   ├── backgrounds.ts           # page backgrounds: pattern × white/black × size, pure CSS gradients; backgroundStyle(bg, zoom) for preview tiles
+│   ├── inkGeometry.ts           # pure: snapToGrid, snapAngle (Shift 45°), linePath (arrowheads), dragBox, shapeGeometry, strokeHit (segment distance), splitSubpaths
+│   ├── drawTools.ts             # ToolEngines createLineTool / createShapeTool (shared dragEngine: 4 px tap rule, preview, cancel), SOFT_FILL_OPACITY
+│   ├── instrumentGeometry.ts    # pure meetinstrumenten maths: BOARD_CM_PX, LAT / GEO / PASSER sizes, toWorld/toLocal, snapping + Vastklikken, strokeEndpoints, edges, startGuidedLine, openPasser, arcPath / arcPts, defaultInstrument
+│   ├── settings/                # widget ⚙ system (§14 "Widget settings")
+│   │   ├── registry.ts          # WIDGET_SETTINGS: one panel per kind (20)
+│   │   ├── BaselineSettings.tsx # Kaart (titel, titelbalk, tekstgrootte, accentkleur) + Standaard (save / reset) under every panel
+│   │   ├── baseProps.ts         # FONT_SIZES, fontScale, SELF_SCALED_FONT, ACCENT_PALETTE, widgetAccent, useSetProps (live merge)
+│   │   ├── controls.tsx         # the shared kit: Section, Row, Toggle, Segmented, Slider, fields, ColorSwatches / ColorDot, IconPicker, ListEditor, ResetRow, SaveDefaultRow
+│   │   ├── mathControls.tsx     # NumberField (half-typed values), PaletteRow (pastel fills)
+│   │   ├── ChoiceButtons.tsx    # wrapping one-of-many buttons (tones)
+│   │   ├── palettes.ts          # BRIGHT_PALETTE / LIGHT_PALETTE (named face colours)
+│   │   ├── tones.ts             # WebAudio signal tones (bel, gong, piep, xylofoon, zacht), silent without AudioContext
+│   │   ├── imageFile.ts         # readImageFile: picked file → dataURL, optional downscale
+│   │   ├── propSchema.ts        # typed field builders (num, bool, oneOf, text, color, lists, custom) + readProps / cleanProps
+│   │   ├── propSchemas.ts       # PROP_SCHEMAS (schema + content keys per schema'd kind) + cleanWidgetProps (load time)
+│   │   ├── widgetDefaults.ts    # "mijn standaard" in rekenraak_board_defaults_v1, TRANSIENT_PROP_KEYS, stripTransient, resetProps
+│   │   ├── <kind>Model.ts       # per-kind readers: stopwatch, timer, adem, geluid, dobbel, afbeelding, tekst (schemas); klok, weer, namen (class list store), datum, werksymbolen (+ werksets key), groepjes, listModel (checklist + stappenplan)
+│   │   ├── <Kind>Settings.tsx   # one panel per kind (Klok, Weer, Namen, Datum, Werksymbolen, Groepjes, Checklist, Stappenplan, Stopwatch, Timer, Adem, Geluid, Dobbelsteen, Afbeelding, Tekst, Getallenlijn, Positietabel, Honderdveld, Breukviz, MabMat)
+│   │   └── GeldPaletSettings.tsx # the geld dock's own ⚙ (device setting, not in the registry)
+│   ├── mathTools/               # settings models of the wiskunde-gereedschap: getallenlijn, positietabel, honderdveld, breukviz, mabmat, geld (dock key rekenraak_board_geldpalet_v1) + shared.ts validators / TOOL_COLORS / INK_COLORS
 │   └── components/
-│       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'
-│       ├── BoardPageCanvas.tsx  # one page: background, isolated widget layer, ink layer, geld dock; text-tool placement, 🔄 / 👁 wiring
-│       ├── WidgetFrame.tsx      # window-card chrome: title bar drag, actions, resize grip, zoom = w / NATURAL_W, height cap
-│       ├── BoardBottomBar.tsx   # Toevoegen + favorites, board settings, tools, ink undo/redo, pages, save/presets/import, Bordmodus verlaten; popups close on Escape/outside
+│       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'; board Ctrl+Z / Ctrl+Y → ink undo / redo
+│       ├── BoardPageCanvas.tsx  # one page: background, isolated widget layer, ink layer, instrument layer, geld dock; text-tool placement, 🔄 / 👁 wiring
+│       ├── WidgetFrame.tsx      # window-card chrome: title bar drag, actions, accent dot, headerless pill, resize grip, zoom = w / NATURAL_W × font size, height cap
+│       ├── BoardBottomBar.tsx   # Toevoegen + favorites, board settings, achtergrond, tools (L / V keys), Meetinstrumenten popover + Vastklikken, ink undo/redo, pages, save/presets/import, Bordmodus verlaten; popups close on Escape/outside
+│       ├── BackgroundPicker.tsx # achtergrond popover: live preview tiles for pattern / size / board colour, arrow-key grid
 │       ├── BoardAddModal.tsx    # "RekenRaak blok…" single-add picker: exerciseCatalog + ExercisePreview, search over variants/typeIds/tools
 │       ├── BoardInspector.tsx   # exercise card flyout: draftBlocks mirror, Config + StyleConfig + AdvancedConfig, Aantal/Witruimte/Tekstgrootte, GenerationNote
-│       ├── WidgetInspector.tsx  # ⚙ panels for every non-exercise kind
-│       ├── InkLayer.tsx         # SVG strokes (pen/marker), per-stroke eraser hit-test
-│       ├── InkSettingsBar.tsx   # pen/marker colours (defaults + saved in rekenraak_board_colors_v1) and widths
-│       ├── GeldPalet.tsx        # euro dock (Tekening / Echt), drag-to-create geld-item widgets
-│       ├── BoardErrorBoundary.tsx # per-widget + ink-layer crash guard with a local reset
-│       └── widgets/             # one component per WidgetKind (ExerciseWidget mounts EXERCISE_UI Viewer; KlokWidget on clockMath; …)
+│       ├── WidgetInspector.tsx  # non-exercise flyout: WIDGET_SETTINGS[kind] + BaselineSettings
+│       ├── InkLayer.tsx         # SVG strokes (pen/marker freehand, line/shape via ToolEngine + preview, guided lines on instruments), dashed shaft, per-stroke eraser
+│       ├── InkSettingsBar.tsx   # pen/marker/lijn/vormen colours (defaults + saved in rekenraak_board_colors_v1), widths, arrowheads / dashed, shape / soft fill
+│       ├── InstrumentLayer.tsx  # z 12 SVG: drag / rotate / snap / keyboard per instrument, passer opening + arc strokes, readout pill, snap dot
+│       ├── InstrumentShapes.tsx # LatShape / GeodriehoekShape / PasserShape in local frames, grips (body / rotate / open / draw)
+│       ├── instrumentStyle.ts   # IC token colours (frosted body), NO_POINTER
+│       ├── GeldPalet.tsx        # euro dock (Tekening / Echt), drag-to-create geld-item widgets, ⚙ dock settings, "Tel samen"
+│       ├── BoardErrorBoundary.tsx # per-widget + ink-layer + instrument-layer crash guard with a local reset
+│       └── widgets/             # one component per WidgetKind (ExerciseWidget mounts EXERCISE_UI Viewer; KlokWidget on clockMath + BoardClockFace.tsx, the board's own face with styles / rings / seconds; …), each reading its settings model
 └── components/
     ├── sheet/                  # the A4 sheet surface, split out of App.tsx (R1)
     │   ├── SheetPages.tsx      # PageSheet loop: cell width/left, tail + split wiring, fit/widen handlers
@@ -1520,7 +1546,7 @@ count + page-break + width. The lock is enforced in the store, so it holds regar
 
 A second, deliberately isolated app for digibord teaching, folded into `rc` on 2026-10-08
 (revert points: tags `pre-whiteboard-rc`, `pre-whiteboard-rc-oefenen`). ALL board code lives
-under `src/board/`. Touchpoints with the main app are exactly four:
+under `src/board/`. Touchpoints with the main app are exactly five:
 
 1. **View union** — `WorksheetView` ([store/types.ts](../../src/store/types.ts)) gains
    `'whiteboard'`; `uiSlice` starts at `initialView()` and routes `setView` (below).
@@ -1532,6 +1558,13 @@ under `src/board/`. Touchpoints with the main app are exactly four:
    the TopBar, so its fold stages are the pre-whiteboard ones.
 4. **GeldViewer exports** — `EuroCoin` / `CentCoin` are exported (`Bill` already was) so the
    board's geld palette and geld-item widgets draw the same money as the sheet.
+5. **TopBar undo guard** — the TopBar's Ctrl+Z / Ctrl+Y handler returns early while
+   `view === 'whiteboard'` (the TopBar stays mounted under the overlay; a sheet undo there would
+   be invisible). The board's own handler takes the keys (see "Undo is ink-only").
+
+Two sheet SVG parts gained an optional board-only prop the sheet never passes (byte-identical
+sheet, visual gate): `FractionShapeSVG` `fillColor` (breukviz) and `MabPlaceColumn` `fill`
+(MAB-mat colours per place).
 
 Shared code the board reuses (not touchpoints, plain imports): the registry
 (`REGISTRY`, `EXERCISE_UI`), `seedConstraints`, `generateForBlock` / `generateExtra`,
@@ -1559,15 +1592,26 @@ store's `draftBlocks`, `exerciseCatalog` + `ExercisePreview`, `AnalogClockSVG` a
 A second Zustand store, separate from `useWorksheetStore` so neither can corrupt the other
 (§3). `pages: BoardPage[]` (each `{ id, widgets, strokes, background }`), `activePageIdx`,
 `selectedWidgetId`, `inspectorOpen` (the ⚙ opens it, selection alone does not),
-`geldPaletOpen` (UI-only), `tool`, `gridSnap` / `gridSize`, `inkSettings` per stroke tool,
-`_redoStrokes`. `BoardTool` = `select | hand | text | pen | marker | eraser` (+ reserved
-`line | shape | instrument` for P3/P4); `hand` drags widgets without selecting, `text` places a
-tekst widget at the tap point and hops back to `select`. Hydrates from autosave at module
+`geldPaletOpen` (UI-only), `tool`, `gridSnap` / `gridSize`, `inkSettings` per stroke tool
+(`pen | marker | line | shape`), `drawOptions` (lijn / vormen options, below),
+`selectedInstrumentId` + `toggleInstrument` / `updateInstrument` / `removeInstrument` /
+`hideAllInstruments` / `selectInstrument` (instruments, below), `_redoStrokes`.
+`BoardTool` = `select | hand | text | pen | marker | eraser | line | shape | instrument`
+(`instrument` is typed but never set: the ruler button opens a popover, the active tool stays);
+`hand` drags widgets without selecting, `text` places a tekst widget at the tap point and hops
+back to `select`. `addWidget` merges the teacher's saved standaard for that kind under the
+caller's props (`loadWidgetDefaults`, §14 "Widget settings"). Every page add / duplicate /
+remove / goto, `loadBoard` and `resetBoard` clear both selections. Hydrates from autosave at module
 init; a debounced (1.5 s) subscription on `pages` / `activePageIdx` writes
-`rekenraak_board_autosave_v1` (tool state is not persisted).
+`rekenraak_board_autosave_v1` (tool state, ink settings and draw options are not persisted).
 
-**Undo is ink-only.** The bottom bar's undo/redo walk the active page's stroke stack (redo
-clears on a new stroke, an erase or a page switch). Widget actions (add, move, delete,
+**Undo is ink-only.** The bottom bar's undo/redo and **Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z)** walk
+the active page's stroke stack (redo clears on a new stroke, an erase or a page switch); a
+line, shape, ruled line or passer arc is an ordinary stroke, so it undoes like pen ink. The keys
+are a `window` keydown in [WhiteboardView.tsx](../../src/board/components/WhiteboardView.tsx),
+ignored inside an input / textarea / select / contenteditable (a tekst widget keeps its own
+text undo); the TopBar's sheet shortcut is inert while the board is open (touchpoint 5), so a
+Ctrl+Z on the board never undoes the hidden worksheet. Widget actions (add, move, delete,
 settings) have no undo.
 
 **Fresh ids on copy.** `duplicateWidget` and `duplicatePage` deep-copy and give every widget,
@@ -1582,23 +1626,34 @@ id would edit both copies.
 `klok`, `afbeelding` (dataURL), `namen`, `weer`, `geluid`, `werksymbolen`, `timer`,
 `stopwatch`, `dobbelsteen`, `adem`, `groepjes`, `checklist`, `stappenplan`, `getallenlijn`,
 `positietabel`, `honderdveld`, `breukviz`, `mabmat`, `geld-item`. Per-kind natural widths,
-default titles, which kinds have a ⚙ panel and every prop normaliser (`klokProps`,
-`groepjesProps` + `makeGroups`, …) live in [widgetSizing.ts](../../src/board/widgetSizing.ts);
-the ⚙ panels for every non-exercise kind are [WidgetInspector.tsx](../../src/board/components/WidgetInspector.tsx).
+default titles, `KINDS_WITH_SETTINGS` (now every kind: all have the baseline panel) and the
+older prop normalisers (`groepjesProps` + `makeGroups`, the class-list key, re-exports of
+`dobbelProps` / `ademProps`) live in [widgetSizing.ts](../../src/board/widgetSizing.ts); each
+kind's settings model and ⚙ panel live in `src/board/settings/` and `src/board/mathTools/`
+("Widget settings" below). [WidgetInspector.tsx](../../src/board/components/WidgetInspector.tsx)
+is only the flyout: registry panel + baseline.
 
 - **Sizing** is CSS-`zoom`-based: frame zoom = `w / NATURAL_W[kind]`, so a corner drag is a
-  uniform zoom and the layout height follows. Exercise `scale` = extra inner text zoom at
-  constant frame width.
+  uniform zoom and the layout height follows. Inner text zoom = exercise `scale` × the baseline
+  Tekstgrootte (`fontScale(widget)`), except for the `SELF_SCALED_FONT` kinds, which multiply
+  their own type sizes instead (their fixed-size faces would clip under a zoom).
 - **Chrome** ([WidgetFrame.tsx](../../src/board/components/WidgetFrame.tsx)) = a window card:
-  editable title bar (`props.title`) as drag handle, actions 🔄 / 👁 (exercise), ⚙, ⧉ duplicate,
-  🗑, resize grip bottom-right. `showHeader: false` → a bare card draggable from anywhere.
-  `BoardErrorBoundary` wraps every widget and the ink layer.
+  editable title bar (`props.title`) as drag handle, the accent dot in `props.accent`, actions
+  🔄 / 👁 (exercise), ⚙, ⧉ duplicate, 🗑, resize grip bottom-right. `BoardErrorBoundary` wraps
+  every widget, the ink layer and the instrument layer.
+- **Headerless pill** — `showHeader: false` → a bare card draggable from its body, with the
+  same action buttons (one `controls` fragment, so bar and pill never drift) in a floating
+  `[data-widget-pill]` toolbar top-right inside the card. Shown on mouse/pen hover (a touch
+  `pointerenter` is ignored so a tap does not flash it), while the card is selected, or while
+  focus is inside it; always mounted (opacity + `pointer-events`) so Tab reaches the buttons.
+  A press on the pill stops propagation, so it never starts a body drag.
 - **Height cap** — a card is never taller than the board below its top edge:
   `maxHeight: max(140px, 100% − y − 8px)`; the body scrolls inside (tall omtrek / cijferen
   delen cards keep their resize grip on the board).
 - **Stacking** — the canvas and the widget layer are each their own stacking context
   (`isolation: isolate`): a card's `z` grows with every bring-to-front, but stays inside the
-  widget layer, so ink (z 10) always draws above the cards and the geld dock (45), inspectors
+  widget layer, so ink (z 10) always draws above the cards, the meetinstrumenten (12) above
+  the ink, and the geld dock (45), inspectors
   and bottom-bar popups stay above the whole board.
 - **Placement** — `staggerSlot(k)` ([addWidgets.ts](../../src/board/addWidgets.ts)) is a
   diagonal run of 5 slots 40 px apart, runs 240 px apart, a 20 px lap shift after 4 runs;
@@ -1607,14 +1662,112 @@ the ⚙ panels for every non-exercise kind are [WidgetInspector.tsx](../../src/b
 - **Klok** ([KlokWidget.tsx](../../src/board/components/widgets/KlokWidget.tsx)) — drag hands
   (outer ring = minute, inner = hour) on the shared pure `clockMath.ts` helpers, on a **24-hour
   cycle**: the minute hand carries the hour across 12 both ways, the hour hand snaps to whole
-  hours and passing 12 flips voormiddag/namiddag, so the geschreven tijd stays right.
+  hours and passing 12 flips voormiddag/namiddag, so the geschreven tijd stays right. The face is
+  the board's own [BoardClockFace.tsx](../../src/board/components/widgets/BoardClockFace.tsx)
+  (`// SYNC:` its 'klassiek' style at default options draws `AnalogClockSVG`'s geometry exactly,
+  so pre-settings kloks look unchanged; styles, 24 h ring, minute numbers and a seconds hand are
+  added without touching the sheet clock).
 - Others in one line: namen (random picker; class list app-wide in `rekenraak_board_names_v1`,
-  shared with groepjes), weer (open-meteo + geocoding search, geolocation with Brussels
-  fallback), geluid (getUserMedia RMS → 5 levels), groepjes (size ↔ count, must / cannot be
-  together via union-find + shuffle repair), honderdveld (tap colour cycle), mabmat
-  (`MabPlaceColumn`), geld-item (a dropped coin/bill, titleless). **GeldPalet**
-  ([GeldPalet.tsx](../../src/board/components/GeldPalet.tsx)) is a dock with the full euro
-  catalogue, Tekening (GeldViewer exports) or Echt style, drag-to-create with pointer capture.
+  shared with groepjes through `namenModel.useClassList`), weer (open-meteo + geocoding search,
+  geolocation with Brussels fallback), geluid (getUserMedia RMS → levels), groepjes (size ↔
+  count, must / cannot be together via union-find + shuffle repair, lockable groups),
+  honderdveld (tap colour cycle or a picked colour), mabmat (`MabPlaceColumn`), geld-item (a
+  dropped coin/bill, titleless). **GeldPalet** ([GeldPalet.tsx](../../src/board/components/GeldPalet.tsx))
+  is a dock with the euro catalogue, Tekening (GeldViewer exports) or Echt style,
+  drag-to-create with pointer capture; its own ⚙ ([GeldPaletSettings.tsx](../../src/board/settings/GeldPaletSettings.tsx))
+  is a **device** setting in `rekenraak_board_geldpalet_v1` (which pieces, style, caption, new
+  piece size, grid snap on drop, "Tel samen"), not board content; a dropped piece copies style +
+  caption into its props and its size into `w`.
+
+### Widget settings — `src/board/settings/` + `src/board/mathTools/`
+
+Every non-exercise kind gets its options through one registry, so no component switches on
+`kind`:
+
+- **Registry** — [registry.ts](../../src/board/settings/registry.ts) `WIDGET_SETTINGS:
+  Partial<Record<WidgetKind, panel>>`, one line per kind (20 kinds: all but `exercise`, which
+  has `BoardInspector`, and `geld-item`, baseline only). `WidgetInspector` renders
+  `WIDGET_SETTINGS[kind]` then `BaselineSettings`.
+- **Baseline** — [BaselineSettings.tsx](../../src/board/settings/BaselineSettings.tsx), under
+  every panel: section "Kaart" (Titel, Titelbalk tonen, Tekstgrootte, Accentkleur) + section
+  "Standaard" (Bewaar als mijn standaard / Vergeet, Standaard herstellen). Readers in
+  [baseProps.ts](../../src/board/settings/baseProps.ts): `FONT_SIZES` (klein 0.85 · normaal 1 ·
+  groot 1.25 · xl 1.5), `fontSizeKey` / `fontScale`, `SELF_SCALED_FONT` (checklist,
+  stappenplan, werksymbolen, namen, groepjes, datum, klok, weer, getallenlijn, breukviz, mabmat
+  scale their own type; the rest get the frame's text zoom), `ACCENT_PALETTE` (9 named ink
+  colours, UI-GUIDE §3 worksheet ink) + `widgetAccent`, and `useSetProps(widget)`, which merges
+  a patch into the **live** store props (the panel's `widget` prop is a render behind, so two
+  quick edits never drop the first).
+- **Controls kit** — [controls.tsx](../../src/board/settings/controls.tsx): `Section`, `Hint`,
+  `Row`, `Toggle`, `Segmented`, `Slider`, `TextField`, `TextArea`, `Button` / `ButtonRow`,
+  `ColorSwatches` (palette + "Standaard" + a custom hex field), `ColorDot`, `IconPicker`,
+  `ItemRow`, `FontSizeRow`, `ListEditor` (reorder / add / remove by button, optional "Plak een
+  lijst" bulk paste), `ItemInput`, `ResetRow` (asks once: widget edits have no undo),
+  `SaveDefaultRow`. Same tokens and tiers as the sheet Inspector (sentence-case section titles,
+  `.seg-group`, Switch); every control is a real button / input. Add-ons:
+  [mathControls.tsx](../../src/board/settings/mathControls.tsx) (`NumberField` tolerating a
+  half-typed value, `PaletteRow` over pastel fills), [ChoiceButtons.tsx](../../src/board/settings/ChoiceButtons.tsx)
+  (wrapping one-of-many, e.g. tones), [palettes.ts](../../src/board/settings/palettes.ts)
+  (`BRIGHT_PALETTE`, `LIGHT_PALETTE`, names distinct from the accent palette),
+  [tones.ts](../../src/board/settings/tones.ts) (bel / gong / piep / xylofoon / zacht, WebAudio
+  synthesised, silent without an AudioContext), [imageFile.ts](../../src/board/settings/imageFile.ts)
+  (picked file → dataURL, optionally downscaled).
+- **Models per kind** — one reader per kind is the validation layer: a missing or junk value
+  reads as today's look, so old boards render unchanged. Two styles: **schema'd** kinds declare
+  a field table with [propSchema.ts](../../src/board/settings/propSchema.ts) (`num` / `bool` /
+  `oneOf` / `text` / `color` / `numList` / `strList` / `boolList` / `custom`; `readProps` =
+  read-time model, `cleanProps` = load-time clean-up) in `<kind>Model.ts` — stopwatch, timer,
+  adem, geluid, dobbelsteen, afbeelding, tekst, listed in [propSchemas.ts](../../src/board/settings/propSchemas.ts)
+  `PROP_SCHEMAS` with their **content keys** (kept by Standaard herstellen: a note's text, the
+  dice's last roll; `src` always). **Hand-written normalisers**: `klokModel`, `weerModel`,
+  `namenModel`, `datumModel`, `werksymbolenModel`, `groepjesModel`, `listModel` (checklist +
+  stappenplan share it), and the wiskunde-gereedschap models in `mathTools/` (`getallenlijn`,
+  `positietabel`, `honderdveld`, `breukviz`, `mabmat`, `geld`; validators in `mathTools/shared.ts`,
+  `TOOL_COLORS` pastels, `INK_COLORS`). Each reader accepts the pre-settings prop shape (e.g.
+  breukviz top-level `n`/`d`, honderdveld palette-index marks, checklist newline text).
+- **Mijn standaard** — [widgetDefaults.ts](../../src/board/settings/widgetDefaults.ts):
+  `rekenraak_board_defaults_v1` = `{ [kind]: props }`. `saveWidgetDefaults` strips
+  `TRANSIENT_PROP_KEYS` (per-card state: ticks, picked names, dealt groups, clock time, image
+  `src`, laps, rolls, MAB counts `d/h/t/e`, number-line marks/jumps, typed cells, …) and returns
+  `false` on quota; `addWidget` merges the saved props under the caller's (a tool's own payload
+  wins); `resetProps` = saved standaard (else `{}` = factory look) + the kind's content keys.
+- **Load-time clean-up** — `parseBoardFile` turns non-object `props` into `{}` and runs
+  `cleanWidgetProps` (schema'd kinds drop each junk owned key, keep foreign keys); kinds without
+  a schema rely on their reader.
+- **App-wide lists** — the class list `rekenraak_board_names_v1` (namen + groepjes, live via
+  `useSyncExternalStore`), the teacher's werksymbolen sets `rekenraak_board_werksets_v1`
+  (next to the built-in "Alle symbolen / Stil werken / Samenwerken / Toets"), the geld dock
+  `rekenraak_board_geldpalet_v1`.
+
+**Adding a widget kind's options** = a model (schema or normaliser) + a `<Kind>Settings.tsx`
+panel on the kit + one `WIDGET_SETTINGS` line + (schema'd) one `PROP_SCHEMAS` row; new
+per-card state keys go into `TRANSIENT_PROP_KEYS`.
+
+**Per-widget options** (the kind's own panel; every kind also has the baseline):
+
+| Kind | Main options |
+|---|---|
+| `tekst` | lettertype mono/sans, lettergrootte, uitlijnen, lange regels (terugloop / één regel), opsomming (bolletjes / nummers), achtergrond + schriftlijntjes + lijnkleur, binnenmarge |
+| `datum` | vorm lang / kort / numeriek, letters (hoofd/klein), weekdag, jaartal, weeknummer, dag van het jaar, seizoen, live tijd (+ seconden), gekleurde achtergrond, aftellen tot een datum |
+| `klok` | soort (analoog / digitaal / beide), stijl klassiek / kleur / kinder, grootte, uur- / minuut- / secondewijzer, 24-uursring, minuten rond de klok, live tijd, geschreven tijd + schrijfwijze, 12/24 h digitaal |
+| `afbeelding` | passen (natuurlijk / passend / vullend / uitrekken) + verhouding, rand + kaderdikte + afgeronde hoeken, onderschrift (plaats onder / boven / over), kwartslag links/rechts, spiegelen, vervangen |
+| `namen` | lijst (klaslijst / eigen, sorteren, plakken), manier + animatie, namen per keer, gekozen namen overslaan / tonen, opnieuw beginnen |
+| `weer` | plaats zoeken, eenheden (°C/°F, km/u · m/s · Beaufort), temperatuur nu, min/max, weer-icoon + naam, neerslag (kans / hoeveelheid), wind, zon op/onder, voorspelling, iconen, vernieuwen |
+| `geluid` | soort poster / meter, niveaus (naam, kleur, uitleg per niveau), weergave balk / verkeerslicht / smiley, gevoeligheid + kalibreren, oranje / rood vanaf, piek vasthouden, te luid: knipperen + geluidssignaal, enkel beeld |
+| `werksymbolen` | symbolen (eigen naam, icoon, kleur), sets (ingebouwd + eigen, app-wide), schikking raster / rij / kolom + kolommen, grootte, naam tonen, meerdere actief, enkel actief tonen |
+| `timer` | duur + snelkeuzes (minuten, op de kaart), invoer paneel / draaien / toetsen, voortgang taart / ring / balk / zandloper, resterende tijd mm:ss / minuten / geen, kleur + eindkleur vanaf nog …, einde: knipperen, geluid, herhalen, automatisch opnieuw, pauzeren toegestaan |
+| `stopwatch` | richting op / af (+ aftellen vanaf), nauwkeurigheid s / tienden / honderdsten, rondes, grote cijfers, spatiebalk start/stop, meteen starten, geluid bij stoppen |
+| `dobbelsteen` | aantal 1–6, zijden 2–100, eigen woorden of afbeeldingen als zijden, kleuren (alle / per steen), tik vastzetten, rolanimatie, som, vorige worpen |
+| `adem` | ritme in / vast (vol) / uit / vast (leeg) in s, snelheid, aantal ademhalingen (eindig → "Klaar"), vorm cirkel / vierkant / bloem + kleur, begeleidende tekst per fase, zacht geluid per stap |
+| `groepjes` | namenlijst (klas / eigen), verdelen op groepen of per groep, regels (moeten samen / mogen niet samen), groepsnummers, dier per groep, kleur per groep, animatie, groep vastzetten, groepen als tekst |
+| `checklist` | items (tekst + kleur, sjablonen), nummering, vakje, grote tikvakken, afgevinkt item doorstreept / vink / vervaagd |
+| `stappenplan` | rijen (koppen `#`, kleur per rij, sjablonen), nummering, stappen afvinken + stijl, grote tikvakken |
+| `getallenlijn` | bereik van / tot / stap, getallen natuurlijk / kommagetal / breuk (noemer), labels alles / uiteinden / geen + om de zoveel, pijlpunt, richting, sprongen, een tik: markeren / springen / verbergen (invul-vakje) |
+| `positietabel` | plaatsen Mrd … duizendsten, rijen, kop afkorting / naam / beide + klassen erboven, kleur zalm / groepen / geen, getal in de eerste rij, cellen invulbaar, cijfergrootte |
+| `honderdveld` | startgetal, aantal vakjes (≤ 400), vakjes per rij, patronen kleuren (even / oneven / veelvoud / laatste cijfer, gelaagd), tikkleur (afwisselend of één kleur), een tik: kleuren / verbergen |
+| `breukviz` | vorm cirkel / pizza / rechthoek / strook / getallenlijn, breuken naast elkaar (≤ 4, teller / noemer / kleur), stambreuken, gemengde getallen, gelijkwaardige breuk (elk deel opsplitsen), label breuk / gemengd / decimaal, tik op een deel kleurt |
+| `mabmat` | plaatsen D H T E, stijl kleur / zwart-wit / symbolisch, kleuren standaard / eigen per plaats, grootte, knoppen + / −, inwisselen / ontbinden, automatisch inwisselen bij 10, tik op kolom = blokje, getal leggen, uitgeschreven (plaatsen / waarden) |
+| geld dock | munten en biljetten in het palet, stijl tekening / echt, bedrag onder elk stuk, grootte van nieuwe stukken, vastklikken op het raster, tel samen (device setting, not a widget) |
 
 ### Exercise widgets = the registry payoff
 
@@ -1652,40 +1805,174 @@ An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
 
 ### Bottom bar — [BoardBottomBar.tsx](../../src/board/components/BoardBottomBar.tsx)
 
-`[+ Toevoegen][★ favorites ≤ 6][⚙ board settings] | [select][hand][T][pen][marker][eraser]
-[ink undo][ink redo][page clear] | [◀][page options][▶][+ page] | [save] | [Bordmodus verlaten]`. Toevoegen = RekenRaak blok · Wiskunde-
-gereedschap · Klasmanagement · Organisatie, the last three as tile panels from
-[toolCatalog.ts](../../src/board/toolCatalog.ts) with a ★ per tile (favorites in
-`rekenraak_board_favorites_v1`). Board settings = background pattern / size / white-black + "Uitlijnen" grid snap and size. Every popup (add, settings, page, save) closes on **Escape** and on a press outside it
-(capture-phase `pointerdown`, since widgets stop propagation). Pen/marker show
+`[+ Toevoegen][★ favorites ≤ 6][⚙ board settings][🎨 achtergrond] | [select][hand][T][pen][marker][eraser]
+[lijn][vormen][📏 meetinstrumenten][ink undo][ink redo][page clear] | [◀][page options][▶][+ page] | [save] | [Bordmodus verlaten]`.
+Toevoegen = RekenRaak blok · Wiskunde-gereedschap · Klasmanagement · Organisatie, the last
+three as tile panels from [toolCatalog.ts](../../src/board/toolCatalog.ts) with a ★ per tile
+(favorites in `rekenraak_board_favorites_v1`). Board settings = "Uitlijnen" grid snap and
+size only. Every popup (add, settings, background, instruments, page, save) closes on
+**Escape** and on a press outside it (capture-phase `pointerdown`, since widgets stop
+propagation). **Single-letter shortcuts** `L` = lijn, `V` = vormen (`TOOL_KEYS`; shown in the
+tooltips), ignored while typing and with Ctrl / Meta / Alt or key repeat, so Ctrl+L keeps its
+browser meaning. Pen / marker / lijn / vormen show
 [InkSettingsBar.tsx](../../src/board/components/InkSettingsBar.tsx) (default + saved colours,
-three widths).
+three widths, plus the lijn / vormen options).
+
+**Achtergrond** — its own bar button opens [BackgroundPicker.tsx](../../src/board/components/BackgroundPicker.tsx)
+(`role="dialog"`): three tile grids, Patroon (every pattern) · Grootte (Klein / Normaal /
+Groot, previewed on the current pattern, or on raster when it is blanco) · Bord (Licht /
+Donker). Each tile is a live swatch drawn by `backgroundStyle(preview, 0.3)`; a pick applies at
+once and the popover stays open; focus lands on the current pattern, arrows move (Up/Down = one
+row of 3), Enter picks. The ring marks the current tile, never a fill, so the swatch keeps the
+board's exact colour.
 
 ### Ink — [InkLayer.tsx](../../src/board/components/InkLayer.tsx)
 
-Strokes are SVG paths with quadratic-midpoint smoothing; `Stroke.pts` keeps flattened samples
-for the per-stroke eraser hit-test. Marker = wide + 0.45 opacity + multiply blend. Pointer
-routing: ink tool active → widget layer `pointer-events: none`, else reverse — one rule.
-The `ToolEngine` contract in boardTypes.ts reserves the P4 instrument design: tools receive
-instrument geometry in ctx, so meetlat / geodriehoek / passer emit exact SVG geometry (owner
-requirement: real snapping, not display-only overlays).
+Pen strokes are SVG paths with quadratic-midpoint smoothing; `Stroke.pts` keeps flattened
+samples for the per-stroke eraser hit-test. Marker = wide + 0.45 opacity + multiply blend.
+Pointer routing: ink tool (pen / marker / eraser / lijn / vormen) active → widget layer
+`pointer-events: none`, else reverse — one rule. The move handler snapshots the sample array
+before `setDraft`, so an updater React runs after the pointerup (which nulls the drawing ref)
+never crashes (fix 0dd1cd5).
+
+| Tool | Key | Emits | Options | Shift | Grid on |
+|---|---|---|---|---|---|
+| pen | | freehand smoothed path, `tool: 'pen'` | colour, 3 widths | | (follows an instrument edge when started on one, below) |
+| marker | | same, wide, 0.45 opacity, multiply | colour, 3 widths | | idem |
+| eraser | | removes every stroke `strokeHit` within 14 px | | | |
+| lijn | `L` | `tool: 'line'`, `pts = [x0,y0,x1,y1]` | arrowheads none / end / both, dashed | end on the nearest 0/45/90° ray (`snapAngle`, length in dx units so it stays on the grid) | both ends snap |
+| vormen | `V` | `tool: 'shape'`, closed outline as `pts` | rect / ellipse / triangle, soft fill | square / circle / equilateral triangle | corners snap |
+
+- **ToolEngine** — [drawTools.ts](../../src/board/drawTools.ts) `createLineTool` /
+  `createShapeTool` on a shared `dragEngine`: `onPointerDown/Move/Up`, `preview()` (the
+  in-progress stroke, drawn as a `[data-ink-preview]` element, never in the store) and
+  `cancel()` (Escape, or a `pointercancel` such as a palm). A press that moves < `MIN_DRAG_PX`
+  (4) is a tap: nothing; a drag that grid snapping folds onto its start, or a zero-width box,
+  is dropped. Pressing / releasing Shift mid-drag re-shapes the preview at once (a keydown /
+  keyup listener while dragging). `ToolContext = { gridSnap, gridSize, shift?, instrument? }`:
+  `shift` comes from the pointer event; `instrument` (the page's `InstrumentGeometry`) is what
+  the pen / marker read, the line and shape tools ignore it.
+- **Stroke encoding** (all extras optional, so pre-P3 strokes stay valid): a line's path is
+  the shaft `M x0 y0 L x1 y1` (stopped at the head's base so a round cap never pokes through)
+  followed by each arrowhead as a closed triangle subpath; `fill = colour` fills the heads
+  (head length `min(width·3 + 8, 40 % of the line)`, ≈ 26° half-angle). `dash: true` dashes
+  only the FIRST subpath (`splitSubpaths`), heads stay solid. Shapes: rect / triangle
+  (isosceles, apex up) as exact `L` outlines, ellipse as two `A` half-arcs; `fill` +
+  `fillOpacity` 0.18 (`SOFT_FILL_OPACITY`) for the soft fill. Coordinates rounded to 0.1 px.
+- **Hit-test** — [inkGeometry.ts](../../src/board/inkGeometry.ts) `strokeHit` measures the
+  distance to every **segment** of the `pts` polyline (`segDist2`), so a two-point line is
+  hittable along its whole length and a shape only on its outline (an ellipse is 48 chords);
+  a single point is a dot; old strokes without `pts` never hit. inkGeometry.ts also holds
+  `snapToGrid`, `snapAngle`, `headLength`, `linePath`, `dragBox`, `shapeGeometry`,
+  `splitSubpaths` — pure, no React.
+- **`drawOptions`** — `{ arrow, dashed, shape, fill }` in the store (UI-only, not persisted;
+  the emitted stroke carries the result), set from the InkSettingsBar's option buttons; line
+  and shape have their own `inkSettings` rows (default black 4 px / blue 4 px).
+
+### Meetinstrumenten — [InstrumentLayer.tsx](../../src/board/components/InstrumentLayer.tsx) + [instrumentGeometry.ts](../../src/board/instrumentGeometry.ts)
+
+Lat, geodriehoek and passer are **neither widgets nor strokes**: a per-page list
+`BoardPage.instruments?: Instrument[]` (absent = none), at most one of each kind (the popover
+toggles add / remove).
+
+- **Model** — `Instrument { id, kind: 'lat' | 'geodriehoek' | 'passer', x, y, rotation,
+  scale?, radius?, snap? }` ([boardTypes.ts](../../src/board/boardTypes.ts)). `x, y` = the
+  **reference point**, the one that snaps: lat = the zero mark on its measuring edge,
+  geodriehoek = the protractor centre (hypotenuse midpoint), passer = the needle. `rotation` in
+  degrees clockwise on screen (passer: the needle → pencil direction). `radius` = the passer's
+  opening in board px. `scale` is reserved (no size toggle yet).
+- **Units** — `BOARD_CM_PX = PX_PER_MM × 10` (the sheet's `cijferGrid` constant, 96 dpi), so a
+  board cm is a CSS cm: 5 cm on the board's lat is 5 cm on the sheet's ruler. Lat 0–20 cm with
+  0.6 cm plastic each side, 3.2 cm deep; geodriehoek 16 cm hypotenuse, right angle 8 cm below
+  the centre, cm scale 0–7 both ways + protractor (a tick per degree, two numbered rings,
+  outer from the right end, inner from the left); passer legs 12 cm, opening 0.5–21.5 cm,
+  hinge always on the upper side (`passerHinge`) so it stands like one held in the hand.
+- **Layer and z-order** — one SVG at z 12 above the ink (z 10), below the bottom bar and the
+  popups; the SVG itself is `pointer-events: none`, only each instrument's grips take pointers
+  (`Grip = body | rotate | open | draw`; scale marks and labels are `NO_POINTER`). A press on an
+  instrument stops propagation (no deselect, no text widget) and deselects any widget.
+  Colours are tokens ([instrumentStyle.ts](../../src/board/components/instrumentStyle.ts) `IC`:
+  a frosted `color-mix` body that reads on a white and a black board). Shapes:
+  [InstrumentShapes.tsx](../../src/board/components/InstrumentShapes.tsx) (`LatShape`,
+  `GeodriehoekShape`, `PasserShape`, each in its local frame; the layer places it with
+  `translate + rotate`).
+- **Moving and turning** — drag the body: the reference point follows the pointer and snaps;
+  the round handle turns about the reference point (degree readout pill); keyboard on the
+  selected one: arrows 1 px (Shift 10), `[` / `]` 1° (Shift 15°), `R` back to 0°, Escape
+  deselects (ignored while typing or with Ctrl / Meta / Alt). With pen / marker / eraser active
+  only the inset core grabs (`bodyPolygon(kind, EDGE_TOL_PX)`): the 10 px band along each edge
+  draws instead. With lijn / vormen active every grip goes pointer-transparent
+  (`data-instrument-inert`): those tools ignore the instruments and draw straight across.
+- **Snapping** (owner rule: instruments snap) — rotation to 0/45/90° multiples within
+  `ROTATION_SNAP_DEG` 3°, plus 15° steps only while the board grid is on; the reference point
+  to grid points (grid on) and to **stroke endpoints** (always) within `POINT_SNAP_PX` 8 px,
+  endpoints winning ties; a snap dot marks the hit. Endpoints come from `strokeEndpoints` (the
+  path's first / last point via `pathEndpoints`, the `pts` ends as fallback), gathered once
+  per drag. **Vastklikken** per instrument: `snap: InstrumentSnap { on, angles45, angles15,
+  grid, endpoints }`, absent = all on (`DEFAULT_SNAP`, `snapOf`). `on` is the master: off →
+  no point snap and rotation free in whole degrees. `angles15` and `grid` only act while the
+  board grid is on. `snapInstrumentRotation` / `snapInstrumentPoint` apply them.
+- **Drawing with each** — the pen / marker reads `ToolContext.instrument`
+  (`pageInstrumentGeometry` = every straight edge + every protractor centre); `startGuidedLine`
+  decides at pointerdown:
+  - **lat**: started within `EDGE_TOL_PX` 10 px of the measuring edge or the back edge (and
+    beside it), the whole drag is one straight stroke on that edge, both ends projected on
+    whole mm from the zero and clamped to the plastic, with a live cm readout (`formatCm`,
+    Dutch comma); a tap leaves a dot on the mm.
+  - **geodriehoek**: its three edges guide the same way (hypotenuse measured from its
+    midpoint, each leg from its corner); started within 10 px of the **centre** (which wins
+    over the hypotenuse it lies on) the pen draws a ray at a whole degree and a whole mm, with
+    the degree readout: an angle in one stroke.
+  - **passer**: drag the needle leg / hinge = move (the needle snaps like any reference
+    point); drag the pencil leg = open it (`openPasser`, whole mm, cm readout, no ink); drag
+    the pencil tip round the needle = an **exact arc stroke** (`arcPath`: one SVG `A`, sweep
+    tracked with `unwrapDelta` and clamped to ±360°; within 3° of a full turn it closes into a
+    circle of two half arcs; `arcPts` samples for the eraser) in the pen's colour and width, or
+    the marker's when the marker is the active tool; under 1° is a tap and draws nothing.
+  Guided lines and arcs are ordinary strokes: eraser, undo / redo and persistence need no
+  special case.
+- **Popover** — the 📏 bar button is not a tool mode: it opens "Meetinstrumenten" and the
+  active pen keeps drawing. One toggle per kind ("Lat: aan"), a ⚙ per *placed* instrument
+  opening its Vastklikken (master + Hoeken 0/45/90° · Hoeken per 15° met raster · Rasterpunten
+  · Lijneinden, greyed while the master is off), and "Alles verbergen". A new instrument lands
+  in its own spot on the visible board (`defaultInstrument`, from `[data-board-canvas]`'s size,
+  1280 × 720 fallback; the passer opened 5 cm). The ruler icon fills while any is placed.
+- **Pages** — "Pagina leegmaken" (`clearActivePage`) keeps the instruments (tools, not content);
+  `duplicatePage` copies them with fresh ids; switching pages deselects.
+- **Limits (v1)** — no multi-touch rotate (one pointer on the handle, or the keyboard); the
+  frosted body dims ink underneath it; no size toggle (`scale` reserved); the line and shape
+  tools never follow an instrument.
 
 ### Persistence — [boardPersistence.ts](../../src/board/boardPersistence.ts)
 
-`BOARD_FORMAT_VERSION 1`. **`parseBoardFile` is strict at the top and forgiving inside**:
-wrong/missing version, no pages or a malformed page → `null`; inside a sound page a widget
-with an unknown kind, non-finite x/y/w/z or an exercise without a block is dropped, a stroke
-without id/path is dropped (strokes from early builds get `pts: []`), and `activePageIdx` is
-clamped. Autosave skips silently on quota. "Mijn borden" presets (`rekenraak_board_presets_v1`,
+`BOARD_FORMAT_VERSION 2` (P4: per-page `instruments`); the parser reads 1 and 2
+(`READABLE_VERSIONS`), a v1 board reads as v2 without instruments, a newer version is refused.
+The autosave key stays `rekenraak_board_autosave_v1`. **`parseBoardFile` is strict at the top
+and forgiving inside**: wrong/missing version, no pages or a malformed page → `null`; inside a
+sound page a widget with an unknown kind, non-finite x/y/w/z or an exercise without a block is
+dropped, a widget whose `props` is not an object loads with `{}`, schema'd kinds drop each junk
+prop (`cleanWidgetProps`, "Widget settings"), a stroke without id/path is dropped (strokes from
+early builds get `pts: []`; P3 `fill` / `fillOpacity` / `dash` are optional), and
+`activePageIdx` is clamped. **Instruments**: only a page that carries the field gets it back
+(a v1 page round-trips unchanged); an entry without a string id, with an unknown kind or with
+a non-finite x / y / rotation is dropped, a second one of a kind too (first wins); `scale`
+survives only when finite and > 0; each non-boolean `snap` flag reads as on; the passer's
+`radius` is clamped to 0.5–21.5 cm, or 5 cm when junk. Autosave skips silently on quota. "Mijn borden" presets (`rekenraak_board_presets_v1`,
 max 30, newest first): `saveBoardPreset` returns `false` when the write is refused and the
 bottom bar shows a Dutch alert ("Kon het bord niet bewaren (opslag vol?) — bewaar het als
 bestand via Exporteren."). File export/import (`rekenraak-bord.json`). No share link (stroke
 and image payloads exceed URL limits). Backgrounds ([backgrounds.ts](../../src/board/backgrounds.ts)):
 blanco / raster / lijnen / schrijflijnen (2- and 4-line with a light-blue x-height band) /
 cornell × white/black × size (0.75 / 1 / 1.5), pure CSS gradients, per page.
+`backgroundStyle(bg, zoom = 1)`: `zoom` shrinks the whole layout for a preview tile while every
+line stays 1 px (`ln(v)` draws a line from the rounded offset to +1 px; rounding start and end
+separately used to collapse lines, e.g. schrijflijnen4 at Klein); the Cornell cue column
+(240 px, a board width, not a pattern size) follows only the zoom.
 
 **localStorage keys** — all `rekenraak_board_*`: `autosave_v1`, `presets_v1`,
-`favorites_v1`, `names_v1`, `colors_v1` (teacher-saved ink colours).
+`favorites_v1`, `names_v1` (class list), `colors_v1` (teacher-saved ink colours),
+`defaults_v1` ("Bewaar als mijn standaard" per kind), `werksets_v1` (own werksymbolen sets),
+`geldpalet_v1` (geld dock settings).
 
 ### Not in the print flow
 
@@ -1695,8 +1982,13 @@ never the board (§9). The board itself has no print path.
 
 ### Roadmap
 
-P3: line/arrow tool, shapes (plane figures + solid-figure stamps), more dagritme widgets.
-P4: snapping instruments (ToolEngine ctx), pdf.js backgrounds, more klasmanagement.
+**Done (2026-10-09, rc-oefenen):** P3 lijn / pijl + vormen (rect / ellipse / triangle, soft
+fill); P4 lat / geodriehoek / passer with snapping and per-instrument Vastklikken (format v2);
+options for all 20 widget kinds + mijn standaard; headerless pill; background picker with
+previews; Ctrl+Z for ink.
+**Still open:** solid-figure stamps and more plane figures, more dagritme / klasmanagement
+widgets, pdf.js backgrounds, a size toggle and multi-touch rotate for the instruments, the
+bottom bar at 1280 px (BUGS.md "Bordmodus").
 
 ---
 
