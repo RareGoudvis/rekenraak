@@ -803,6 +803,8 @@ html:has(.oefen-body),
   .kiosk-topbar-title { display: none; }
   .kiosk-topbar { grid-template-columns: auto minmax(0, 1fr); }
   .kiosk-table { font-size: var(--text-lg); }
+  /* With 2 kansen the per-type table has seven columns: smaller headers keep it within a phone. */
+  .kiosk-table thead th { font-size: var(--text-sm); }
   .kiosk-table th,
   .kiosk-table td { padding: var(--sp-2) var(--sp-1); }
   .kiosk-table th:first-child,

@@ -184,10 +184,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-B store / stats
 
-- **O6** Stats headline: a right second try counts as juist (stats.ts:70) so "3 van 3 juist · 100 %"
-  hides a first-try 2/3; a timed/limited run shows "7 van 8 juist" and never the planned total
-  (StatsScreen.tsx:119). Owner wording: "7 van 8 juist (8 van 10 gemaakt)" + column "Juist in één
-  keer". 2026-10-09
 - **O7** C7 (log only, owner): a reload clears the typed draft, the cijferen cells and the geld tray
   (only `current` is persisted, useOefenStore.ts:276, 287). Not fixing. 2026-10-09
 
