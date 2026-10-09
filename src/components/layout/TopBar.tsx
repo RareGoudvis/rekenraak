@@ -155,7 +155,8 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     // bar itself grows a second (fixed 28px) line at stage 2+, which must NOT count toward
     // the overflow measurement.
     const contentRef = useRef<HTMLDivElement>(null);
-    const stage = useShedStages(barRef, contentRef, STAGE_COUNT);
+    // Keyed on the committed name, not the edit box: a shed mid-edit would unmount the input.
+    const stage = useShedStages(barRef, contentRef, STAGE_COUNT, headerTitle);
     const iconOnly = stage >= 1;
     const nameInRow = stage < 2;
     const foldedIntoMenu = stage >= 3;
@@ -215,9 +216,8 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                 physically above the thing it changes. The panel tab strips live here rather
                 than inside their panels: visually they belong to the bar, functionally to
                 the column below (state in the store). */}
-            {/* One row: app chrome left, wordmark dead centre, sheet actions right. The
-                logo is a grid track of its own so it stays centred whatever the two
-                groups weigh. The panel tabs are NOT here — they live in the panel
+            {/* One row: app chrome left, sheet name centred in the room between, sheet
+                actions right. The panel tabs are NOT here — they live in the panel
                 headers, which run to the top of the window alongside this bar. */}
             <div ref={contentRef} style={S.zones}>
               <div style={S.groupLeft}>
@@ -453,20 +453,19 @@ const S = {
     } as React.CSSProperties,
     logoBtn: { background: 'transparent', border: 'none', padding: '2px 6px', marginRight: 'var(--sp-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', flexShrink: 0 } as React.CSSProperties,
     row: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' } as React.CSSProperties,
-    // SYNC: the outer column widths must match Sidebar's aside (286px) and Inspector's (338px).
-    // 1fr | auto | 1fr keeps the wordmark optically centred no matter how the two action
-    // groups grow, which a plain flex row with space-between does not.
-    // The centre track is minmax(0, auto), NOT auto: an `auto` track refuses to shrink
-    // below its content, so a long sheet name used to push the two action groups into
-    // each other instead of truncating itself. With a 0 floor the title's own maxWidth +
-    // ellipsis absorbs the squeeze. (No overflow:hidden on the groups — it would clip the
-    // dropdown menus, which are absolutely positioned inside them.)
+    // auto | 1fr | auto: the name centres in the room the two groups leave, not dead centre
+    // of the bar. Dead centre made the wider right group need its width on both sides, which
+    // pushed the name onto a second line at 1280 px; now the plain sum is all the row needs.
+    // The middle's 0 floor lets the title's own maxWidth + ellipsis absorb a long name.
+    // (No overflow:hidden on the groups — it would clip the dropdown menus inside them.)
     // flexShrink: 0 keeps the button row at its natural (--bar-h-driven) height even
     // when the second line (stage 2+) shares the now-auto-height bar with it.
-    zones: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr)', alignItems: 'center', gap: 'var(--sp-3)', minHeight: 'var(--bar-h)', flexShrink: 0 } as React.CSSProperties,
+    zones: { display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 'var(--sp-3)', minHeight: 'var(--bar-h)', flexShrink: 0 } as React.CSSProperties,
     groupLeft: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'start', paddingRight: 'var(--sp-5)' } as React.CSSProperties,
     groupRight: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', minWidth: 0, justifySelf: 'end', paddingLeft: 'var(--sp-5)' } as React.CSSProperties,
-    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap', minWidth: 0, justifyContent: 'center' } as React.CSSProperties,
+    // justifySelf, not a stretched track: the box must hug its content, or its scrollWidth
+    // would report the whole 1fr track and useShedStages would never see it fit.
+    centreTrack: { display: 'flex', alignItems: 'center', gap: 'var(--sp-5)', whiteSpace: 'nowrap', minWidth: 0, justifySelf: 'center' } as React.CSSProperties,
     group: { display: 'flex', gap: 'var(--sp-1)', marginRight: 'var(--sp-2)', flexShrink: 0 } as React.CSSProperties,
     spacer: { flex: 1, minWidth: 0 } as React.CSSProperties,
     vsep: { width: '1px', alignSelf: 'stretch', margin: '2px 4px', background: 'var(--separator)', flexShrink: 0 } as React.CSSProperties,

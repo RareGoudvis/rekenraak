@@ -36,3 +36,4 @@ describe('measureContentWidth', () => {
         expect(measureContentWidth(parent)).toBe(80);
     });
 });
+
