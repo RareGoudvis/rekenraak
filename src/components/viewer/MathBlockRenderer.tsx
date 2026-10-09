@@ -172,8 +172,11 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
         if (isMissing) {
             if (showSolutions) {
-                if (isFraction(val)) return <span style={atFont(styles.solutionText, HR_SOLUTION_FONT)}><FractionDisplay val={val} /></span>;
-                return <span style={atFont(styles.solutionText, HR_SOLUTION_FONT)}>{formatMathNumber(val)}</span>;
+                // The term box is sized for 1× digits: the answer-column 1.04× and padding wrapped "26 / 778".
+                // Bold stays (rule 3): Azeret Mono bold has the regular advance, so it costs no width.
+                const missingSol = { ...atFont(solutionText, 1), padding: 0 };
+                if (isFraction(val)) return <span style={missingSol}><FractionDisplay val={val} /></span>;
+                return <span style={missingSol}>{formatMathNumber(val)}</span>;
             }
             return <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
         }

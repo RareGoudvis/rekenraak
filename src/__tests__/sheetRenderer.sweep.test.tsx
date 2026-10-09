@@ -175,6 +175,22 @@ describe('cijferen delen-dec q/r box: the rest is exact, never rounded to the qu
     test('no rest prints 0', () => expect(qrText([10, 4], 2.5, 0)).toBe('0'));
 });
 
+describe('puntoefening key: the red operand is set like its neighbours', () => {
+    // 70 341 + . = 97 119: at 1.04× plus 8 px padding "26 778" wrapped inside its term box.
+    test('same font size as the given operand, no padding', () => {
+        const block: MathBlock = {
+            ...makeBlock('hr-std-optellen', { id: 'pt', constraints: { numberType: 'natural', maxGetal: 100000, equationType: 'puntoefening' } }),
+            exercises: [{ ...eq('p', 70341, 26778, '+'), missingTerm: 'operand2' }],
+        };
+        const c = renderHr(block, true);
+        const given = c.querySelector('input')!;
+        const red = Array.from(c.querySelectorAll<HTMLElement>('span')).find(s => s.textContent === '26 778')!;
+        expect(red.style.color).toBe(SOL);
+        expect(red.style.fontSize).toBe(given.style.fontSize);
+        expect(red.style.padding).toBe('0px');
+    });
+});
+
 describe('loadWorksheet starts without the previous sheet\'s "verouderd" flags', () => {
     test('staleBlocks is empty after a load', () => {
         const s = useWorksheetStore.getState();
