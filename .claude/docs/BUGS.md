@@ -187,3 +187,16 @@ UpdateState). Left over, found while fixing:
   overflows: stage 0 starts at ~1900 px and at 1920 px the "Automatisch bewaard" text runs under the
   undo button (wb-check/mode-buttons/topbar-1920.png). Fix: count the centre track in the overflow
   measurement. 2026-10-08
+- Cijferen at the default scaffolding 2 (empty grid) shows no answer with Oplossingen on, sheet and
+  board alike (CijferViewer draws solutions only for `scaffolding <= 1`): the answer key is blank for the
+  optellen, aftrekken and vermenigvuldigen leaves, nat + dec (wb-check/full-test/probe/sheet-cijfer-solutions.png). 2026-10-09
+- BreukBewerkViewer gelijknamig ignores `useBlockWidth()`: its 2-up rows run past a 628 px board card
+  (the last "en ____" is cut, wb-check/full-test/probe/cards-width-after.png). 2026-10-09
+- Board cards at Tekstgrootte 200 % (viewer width 298 px) still overflow for afronden-dec-simpel,
+  geld-rekenen-winst, lengte-meten, herleidingen-inhoud (81-360 px) and getallenrijen-dec (4 px). 2026-10-09
+- The board's "Wiskunde toevoegen" panel (BoardAddModal) does not close on Escape or an outside
+  press, unlike every bottom-bar popup; only its ✕ closes it. 2026-10-09
+- Board ⚙ panels: after "Standaard herstellen" the Accentkleur hex field keeps the old custom hex
+  (ColorSwatches holds it in local state) while the swatch row says Standaard. 2026-10-09
+- Honderdveld at 20 columns + Tekstgrootte XL and positietabel with every place column at "Heel groot"
+  clip on the right of the card instead of shrinking (wb-check/full-test/03-widgets/_walk-02.png, -03). 2026-10-09
