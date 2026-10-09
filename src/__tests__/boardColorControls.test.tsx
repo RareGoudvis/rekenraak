@@ -49,3 +49,24 @@ describe('ColorSwatches custom-colour fields', () => {
         expect(getAllByLabelText(/eigen kleur/i)).toHaveLength(4);
     });
 });
+
+describe('ColorSwatches hex field follows the value', () => {
+    // "Standaard herstellen" resets the prop from outside; the typed hex must not linger.
+    test('a value set from outside (reset, swatch) replaces the typed hex', () => {
+        const { getByLabelText, rerender } = render(<ColorSwatches label="Accentkleur" value="#0f766e" onChange={() => { }} />);
+        const hex = () => getByLabelText('Accentkleur — eigen kleur (hex)') as HTMLInputElement;
+        expect(hex().value).toBe('#0f766e');
+        rerender(<ColorSwatches label="Accentkleur" value={null} onChange={() => { }} />);
+        expect(hex().value).toBe('');
+        rerender(<ColorSwatches label="Accentkleur" value="#b91c1c" onChange={() => { }} />);
+        expect(hex().value).toBe('#b91c1c');
+    });
+
+    test('a half-typed hex stays while the value does not change', () => {
+        const { getByLabelText, rerender } = render(<ColorSwatches label="Accentkleur" value="#0f766e" onChange={() => { }} />);
+        const hex = getByLabelText('Accentkleur — eigen kleur (hex)') as HTMLInputElement;
+        fireEvent.change(hex, { target: { value: '#12' } });
+        rerender(<ColorSwatches label="Accentkleur" value="#0f766e" onChange={() => { }} />);
+        expect(hex.value).toBe('#12');
+    });
+});

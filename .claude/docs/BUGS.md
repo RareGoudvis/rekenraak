@@ -200,8 +200,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
   geld-rekenen-winst, lengte-meten, herleidingen-inhoud (81-360 px) and getallenrijen-dec (4 px). 2026-10-09
 - The board's "Wiskunde toevoegen" panel (BoardAddModal) does not close on Escape or an outside
   press, unlike every bottom-bar popup; only its ✕ closes it. 2026-10-09
-- Board ⚙ panels: after "Standaard herstellen" the Accentkleur hex field keeps the old custom hex
-  (ColorSwatches holds it in local state) while the swatch row says Standaard. 2026-10-09
 - Honderdveld at 20 columns + Tekstgrootte XL and positietabel with every place column at "Heel groot"
   clip on the right of the card instead of shrinking (wb-check/full-test/03-widgets/_walk-02.png, -03). 2026-10-09
 - Instrument handles can leave the board: the passer hinge after a wide opening, and a lat rotated to

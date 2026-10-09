@@ -124,6 +124,10 @@ export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard',
     palette?: ReadonlyArray<{ name: string; hex: string }>;
 }) {
     const [hex, setHex] = useState(value ?? '');
+    // A value changed from outside (Standaard herstellen, a swatch) replaces the typed hex;
+    // adjusted during render, React's pattern for state derived from a prop.
+    const [shown, setShown] = useState(value);
+    if (shown !== value) { setShown(value); setHex(value ?? ''); }
     const size = compact ? 24 : 30;
     const dot = (bg: string, on: boolean): React.CSSProperties => ({
         width: size, height: size, borderRadius: '50%', cursor: 'pointer', padding: 0, flexShrink: 0,
