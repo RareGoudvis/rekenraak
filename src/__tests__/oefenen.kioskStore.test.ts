@@ -138,22 +138,49 @@ describe('a run', () => {
         expect(st().storageFailed).toBe(false);
     });
 
-    test('Wissen clears this device and returns to the start screen', () => {
-        st().load(hashOf(starterSessie()));
+    // Opnieuw / Wissen live on the end screen: a one-exercise run gets there.
+    const finished = () => {
+        st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 1 }] })));
         st().start();
+        fillAnswer(true); st().answer(); st().next();
+        expect(st().phase).toBe('locked');
+    };
+
+    test('Wissen clears this device and returns to the start screen', () => {
+        finished();
         st().clear();
         expect(st().phase).toBe('start');
         expect(loadRuns('kiosktest')).toEqual([]);
     });
 
     test('Opnieuw starts a new run and keeps the old one', () => {
-        st().load(hashOf(starterSessie()));
-        st().start();
-        fillAnswer(true); st().answer();
+        finished();
         st().restart();
         expect(st().run!.index).toBe(1);
         expect(st().run!.stats.history).toHaveLength(0);
         expect(loadRuns('kiosktest').map(r => r.index)).toEqual([0, 1]);
+    });
+
+    // Owner call 15: the mid-run Resultaten peek is Verder oefenen only, in the store too, so no
+    // path (a stale button, a script) lets a pupil escape a timed test by starting over.
+    test('a timed run cannot be restarted or wiped from the mid-run peek', () => {
+        st().load(hashOf(starterSessie({ timerMin: 5 })));
+        st().start();
+        const { index, timerEndsAt } = st().run!;
+        fillAnswer(true); st().answer();
+        st().openStats();
+        expect(st().phase).toBe('stats');
+        st().restart();
+        st().clear();
+        expect(st().phase).toBe('stats');
+        expect(st().run).toMatchObject({ index, timerEndsAt });
+        expect(st().run!.stats.history).toHaveLength(1);
+        expect(loadRuns('kiosktest').map(r => r.index)).toEqual([index]);
+        st().closeStats();
+        expect(st().phase).toBe('exercise');
+        // Mid-exercise as well.
+        st().restart(); st().clear();
+        expect(st().run).toMatchObject({ index, timerEndsAt });
     });
 });
 
