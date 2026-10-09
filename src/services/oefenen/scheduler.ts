@@ -65,8 +65,9 @@ export function nextType(s: OefenSessie, history: readonly OefenHistoryEntry[], 
             if (pool.includes(cand)) { slot = cand; break; }
         }
     } else {
-        slot = weightedDraw(s, pool, rng);
-        if (!s.allowRepeatType && slot === prev && pool.length >= 2) slot = weightedDraw(s, pool, rng);
+        const others = pool.filter(i => i !== prev);
+        // Without repeats the previous type sits out whenever another can serve; the weights renormalise over the rest.
+        slot = weightedDraw(s, !s.allowRepeatType && others.length > 0 ? others : pool, rng);
     }
     return { slot, type: s.types[slot] };
 }

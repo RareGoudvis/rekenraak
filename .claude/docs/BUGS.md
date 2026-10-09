@@ -182,11 +182,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-A scheduler
 
-- **O1** C6: willekeurig with "Zelfde soort na elkaar toestaan" off still repeats a type ≈25 % of the
-  time while another type has capacity (one weighted redraw, scheduler.ts:69; the ≈25 % is pinned by
-  oefenen.scheduler.test.ts:87-94). Fix: exclude the previous type from the pool whenever another
-  type still has capacity; repeat only when forced (flagged). 2026-10-09
-
 ### WP-B store / stats
 
 - **O2** C1: testMode + statsLocked off → "Resultaten" mid-run shows juist/fout and the right answer
