@@ -15,8 +15,10 @@ const mono = "'Azeret Mono', monospace";
 // 13pt (the --sheet-size-math default) is 17.33 CSS px: the item minimums below are the px
 // an item needs at that default, scaled with the token because the fractions are.
 const PX_PER_EM_AT_DEFAULT = 17.33;
-// gelijknamig prints four fractions and two "en" on one row; the others are frac = line.
-const ITEM_MIN_PX_AT_DEFAULT: Record<string, number> = { gelijknamig: 300 };
+// gelijknamig prints four fractions and two "en" on one row (measured 314-318 px); the others
+// are frac = line.
+const ITEM_MIN_PX_AT_DEFAULT: Record<string, number> = { gelijknamig: 320 };
+const COLUMN_GAP = 28;
 const ITEM_MIN_FALLBACK_PX = 140;
 
 // Writing line the pupil writes the answer on (works for both a fraction and a mixed number).
@@ -40,10 +42,15 @@ export default function BreukBewerkViewer({ block, showSolutions }: Props) {
     const itemMinPx = Math.max(...exercises.map(ex =>
         ITEM_MIN_PX_AT_DEFAULT[ex.subType] ?? ITEM_MIN_FALLBACK_PX)) * (sheetPx / PX_PER_EM_AT_DEFAULT);
 
+    // The real gap, not fitCols' default 12: two rows plus 28 px must fit the width.
+    const cols = fitCols(availableWidth, itemMinPx, 2, COLUMN_GAP);
     return (
         <FragmentableGrid
-            cols={fitCols(availableWidth, itemMinPx, 2)}
-            columnGap={28}
+            cols={cols}
+            columnGap={COLUMN_GAP}
+            // 1-up (a board card, a narrow column): keep each row compact instead of spreading
+            // its auto tracks over the whole width.
+            justifyItems={cols === 1 ? 'start' : undefined}
             rowGap={gap + 8}
             items={exercises.map(ex => {
                 // gelijknamig has two inputs/answers joined by "en"; the rest are 1→1.
