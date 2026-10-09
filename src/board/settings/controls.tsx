@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
-import { CaretUp, CaretDown, Trash, Plus } from '@phosphor-icons/react';
+import { CaretUp, CaretDown, Trash, Plus, type Icon } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
 import { ACCENT_PALETTE, FONT_SIZES, colorName, isHex, type FontSizeKey } from './baseProps';
@@ -172,6 +172,33 @@ export function ColorDot({ label, value, onChange }: { label: string; value: str
             {open && (
                 <div style={{ flexBasis: '100%', order: 10 }}>
                     <ColorSwatches compact label={label} value={value} onChange={(v) => { onChange(v); setOpen(false); }} />
+                </div>
+            )}
+        </>
+    );
+}
+
+// Icon choice for a ListEditor row (place it in an ItemRow): the current icon as a button
+// that opens a grid of the offered icons on its own line.
+export function IconPicker({ label, value, icons, onChange }: {
+    label: string; value: string; icons: Record<string, { icon: Icon; name: string }>; onChange: (key: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const Cur = icons[value]?.icon;
+    return (
+        <>
+            <button type="button" aria-expanded={open} aria-label={`${label}: ${icons[value]?.name ?? value}`} title={icons[value]?.name ?? value} onClick={() => setOpen(!open)}
+                style={{ ...S.iconBtn, width: '32px', height: '32px', background: 'var(--bg-surface)', boxShadow: '0 0 0 1px var(--separator)' }}>
+                {Cur && <Cur size={18} />}
+            </button>
+            {open && (
+                <div role="group" aria-label={label} style={{ flexBasis: '100%', order: 10, display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    {Object.entries(icons).map(([key, { icon: I, name }]) => (
+                        <button key={key} type="button" aria-pressed={key === value} aria-label={name} title={name} onClick={() => { onChange(key); setOpen(false); }}
+                            style={{ ...S.iconBtn, width: '34px', height: '34px', background: key === value ? 'var(--accent-soft)' : 'var(--bg-surface)', color: key === value ? 'var(--accent)' : 'var(--text-main)' }}>
+                            <I size={20} />
+                        </button>
+                    ))}
                 </div>
             )}
         </>
