@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useBoardStore } from '../useBoardStore';
+import { effectiveInk, useBoardStore } from '../useBoardStore';
 import { rndId } from '../boardTypes';
 import type { BoardTool, Stroke, ToolContext, ToolEngine } from '../boardTypes';
 import { splitSubpaths, strokeHit } from '../inkGeometry';
@@ -28,9 +28,10 @@ function pathFrom(pts: number[]): string {
 
 // Drag-to-draw tools (P3) run through a ToolEngine; pen / marker keep the freehand path above.
 function engineFor(tool: BoardTool): ToolEngine | null {
-    const { inkSettings, drawOptions } = useBoardStore.getState();
-    if (tool === 'line') return createLineTool({ ...inkSettings.line, arrow: drawOptions.arrow, dashed: drawOptions.dashed });
-    if (tool === 'shape') return createShapeTool({ ...inkSettings.shape, kind: drawOptions.shape, fill: drawOptions.fill });
+    const st = useBoardStore.getState();
+    const { drawOptions } = st;
+    if (tool === 'line') return createLineTool({ ...effectiveInk(st, 'line'), arrow: drawOptions.arrow, dashed: drawOptions.dashed });
+    if (tool === 'shape') return createShapeTool({ ...effectiveInk(st, 'shape'), kind: drawOptions.shape, fill: drawOptions.fill });
     return null;
 }
 
@@ -42,7 +43,6 @@ const toolCtx = (shift: boolean): ToolContext => {
 export default function InkLayer({ active }: { active: boolean }) {
     const strokes = useBoardStore((s) => s.pages[s.activePageIdx].strokes);
     const tool = useBoardStore((s) => s.tool);
-    const inkSettings = useBoardStore((s) => s.inkSettings);
     const addStroke = useBoardStore((s) => s.addStroke);
     const removeStrokes = useBoardStore((s) => s.removeStrokes);
 
@@ -108,7 +108,7 @@ export default function InkLayer({ active }: { active: boolean }) {
             return;
         }
         if (tool !== 'pen' && tool !== 'marker') return;
-        const cfg = inkSettings[tool];
+        const cfg = effectiveInk(useBoardStore.getState(), tool);
         const board = useBoardStore.getState();
         const line = startGuidedLine({
             gridSnap: board.gridSnap, gridSize: board.gridSize,
@@ -166,14 +166,14 @@ export default function InkLayer({ active }: { active: boolean }) {
         // fast tap-release can never race React's render cycle.
         const pts = drawing.current;
         if (guided.current && (tool === 'pen' || tool === 'marker')) {
-            const cfg = inkSettings[tool];
+            const cfg = effectiveInk(useBoardStore.getState(), tool);
             const { path, pts: gp } = guided.current.last;
             addStroke({ id: rndId(), tool, color: cfg.color, width: cfg.width, opacity: tool === 'marker' ? 0.45 : 1, path, pts: gp });
         }
         guided.current = null;
         setGuideReadout(null);
         if (pts && pts.length >= 2 && (tool === 'pen' || tool === 'marker')) {
-            const cfg = inkSettings[tool];
+            const cfg = effectiveInk(useBoardStore.getState(), tool);
             addStroke({
                 id: rndId(), tool, color: cfg.color, width: cfg.width,
                 opacity: tool === 'marker' ? 0.45 : 1,

@@ -4,7 +4,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { addBasicWidget } from '../addWidgets';
 import { TOOL_CATALOG, runTool, loadFavorites, toggleFavorite, MAX_FAVORITES, type ToolCategory, type BoardToolDef } from '../toolCatalog';
-import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
+import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, parseBoardSettings, type BoardPreset } from '../boardPersistence';
 import type { BoardTool } from '../boardTypes';
 import { INSTRUMENT_KINDS, INSTRUMENT_LABELS, snapOf } from '../instrumentGeometry';
 import type { InstrumentKind, InstrumentSnap } from '../boardTypes';
@@ -116,7 +116,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         const name = window.prompt('Naam voor dit bord:', 'Mijn bord');
         if (name === null) return;
         const st = useBoardStore.getState();
-        const saved = saveBoardPreset(name, st.pages, st.activePageIdx);
+        const saved = saveBoardPreset(name, st.pages, st.activePageIdx, st.boardSettings);
         // Same wording as the sheet's TopBar save error; Exporteren still works when storage is full.
         if (!saved) { window.alert('Kon het bord niet bewaren (opslag vol?) — bewaar het als bestand via Exporteren.'); return; }
         setPresets(saved);
@@ -129,7 +129,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         reader.onload = () => {
             const parsed = parseBoardFile(String(reader.result));
             if (!parsed) { window.alert('Dit bestand is geen geldig Rekenraak-bord.'); return; }
-            useBoardStore.getState().loadBoard(parsed.pages, parsed.activePageIdx);
+            useBoardStore.getState().loadBoard(parsed.pages, parsed.activePageIdx, parsed.settings);
             setMenu(null);
         };
         reader.readAsText(file);
@@ -328,7 +328,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={handleSavePreset}>
                             <FloppyDisk size={16} /> Bord bewaren als…
                         </button>
-                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { exportBoardFile(useBoardStore.getState().pages, useBoardStore.getState().activePageIdx); setMenu(null); }}>
+                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { const s = useBoardStore.getState(); exportBoardFile(s.pages, s.activePageIdx, s.boardSettings); setMenu(null); }}>
                             <DownloadSimple size={16} /> Exporteren…
                         </button>
                         <button type="button" className="ui-hover" style={S.popupItem} onClick={() => importRef.current?.click()}>
@@ -342,7 +342,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                             <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                                 <button type="button" className="ui-hover" style={{ ...S.popupItem, flex: 1, minWidth: 0 }}
                                     title={`${p.name} (${p.pageCount} pagina's)`}
-                                    onClick={() => { useBoardStore.getState().loadBoard(p.payload.pages, p.payload.activePageIdx); setMenu(null); }}>
+                                    onClick={() => { useBoardStore.getState().loadBoard(p.payload.pages, p.payload.activePageIdx, parseBoardSettings(p.payload.settings)); setMenu(null); }}>
                                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                                 </button>
                                 <button type="button" className="ui-hover" title="Verwijderen" aria-label={`Verwijder ${p.name}`}
@@ -385,6 +385,7 @@ function InstrumentMenu({ open, placed, onToggle }: { open: boolean; placed: str
 // The popover body; mounted only while open, so every opening starts with the ⚙ panels shut.
 function InstrumentPopup({ on }: { on: string[] }) {
     const [snapOpen, setSnapOpen] = useState<InstrumentKind | null>(null);
+    const keepHandles = useBoardStore((s) => s.boardSettings.keepHandles);
     const toggle = (kind: InstrumentKind) => {
         // A new instrument lands in the middle of the visible board.
         const r = document.querySelector('[data-board-canvas]')?.getBoundingClientRect();
@@ -414,6 +415,11 @@ function InstrumentPopup({ on }: { on: string[] }) {
                 </div>
             ))}
             <div style={S.popupDivider} />
+            {/* board-wide: an instrument may hang past the edge, its grab handles stay reachable */}
+            <label style={{ ...S.snapRow, padding: '0 12px', whiteSpace: 'nowrap' }} title="Draaihandvat en scharnier blijven op het bord, ook als het instrument over de rand steekt">
+                <input type="checkbox" checked={keepHandles} onChange={(e) => useBoardStore.getState().setKeepHandles(e.target.checked)} />
+                Handvatten op het bord houden
+            </label>
             <button type="button" className="ui-hover" style={S.popupItem} disabled={!on.length}
                 onClick={() => useBoardStore.getState().hideAllInstruments()}>
                 Alles verbergen

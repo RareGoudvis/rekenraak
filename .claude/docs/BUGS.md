@@ -197,9 +197,6 @@ UpdateState). Left over, found while fixing:
 - Settings kit a11y: every `ColorSwatches` custom-colour field has the same accessible name
   "Eigen kleur (hex)" (controls.tsx), so a panel with several colour rows (accent + a kind's own
   colours) has indistinguishable inputs for a screen reader. Fix: include the row's label. 2026-10-09
-- Passer with the pencil straight up (rotation 270°) is drawn lying on its side instead of
-  standing: the hinge sits beside the vertical needle–pencil chord (`passerHinge`), so the
-  legs point sideways. Not yet looked into beyond that. 2026-10-09
 - BreukBewerkViewer gelijknamig ignores `useBlockWidth()`: its 2-up rows run past a 628 px board card
   (the last "en ____" is cut, wb-check/full-test/probe/cards-width-after.png). 2026-10-09
 - Board cards at Tekstgrootte 200 % (viewer width 298 px) still overflow for afronden-dec-simpel,

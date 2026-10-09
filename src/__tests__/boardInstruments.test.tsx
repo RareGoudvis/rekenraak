@@ -3,7 +3,7 @@ import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vi
 import { render, cleanup, fireEvent, act, screen } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import { BOARD_FORMAT_VERSION, parseBoardFile } from '../board/boardPersistence';
-import { BOARD_CM_PX, LAT, PASSER, pathEndpoints, round1 } from '../board/instrumentGeometry';
+import { BOARD_CM_PX, LAT, PASSER, pathEndpoints, round1, toWorld } from '../board/instrumentGeometry';
 import type { Instrument, Stroke } from '../board/boardTypes';
 import InstrumentLayer from '../board/components/InstrumentLayer';
 import InkLayer from '../board/components/InkLayer';
@@ -460,6 +460,36 @@ describe('passer: open, place, draw an arc', () => {
         act(() => { fireEvent.pointerUp(leg, { pointerId: 1 }); });
         expect(container.querySelector('[data-passer-radius]')!.textContent).toBe('5,0 cm');
         expect(page().strokes).toHaveLength(0);
+    });
+
+    // The rendered hinge in screen px: the layer's translate + rotate applied to its local centre.
+    const renderedHinge = (c: HTMLElement): [number, number] => {
+        const g = c.querySelector('[data-instrument="passer"]')!;
+        const [, x, y, rot] = g.getAttribute('transform')!.match(/translate\(([-\d.]+) ([-\d.]+)\) rotate\(([-\d.]+)\)/)!.map(Number);
+        const h = g.querySelector('[data-passer-hinge]')!;
+        return toWorld({ x, y, rotation: rot }, Number(h.getAttribute('cx')), Number(h.getAttribute('cy')));
+    };
+
+    test('top-down drawing: legs of equal length; pointing up the hinge is above both tips, at 270° beside the upright chord', () => {
+        placePasser({ radius: R5, rotation: 0 });
+        const { container, rerender } = render(<InstrumentLayer />);
+        let [hx, hy] = renderedHinge(container);
+        // pointing up: both tips on y = 400, the hinge straight above their midpoint
+        expect(hy).toBeLessThan(400 - 0.9 * PASSER.leg);
+        expect(hx).toBeCloseTo(400 + R5 / 2, 0);
+        expect(Math.hypot(hx - 400, hy - 400)).toBeCloseTo(Math.hypot(hx - 400 - R5, hy - 400), 0);
+        // pencil straight up: the same rigid passer a quarter turn back, hinge level with the chord's midpoint
+        act(() => { st().updateInstrument(one('passer').id, { rotation: 270 }); });
+        rerender(<InstrumentLayer />);
+        [hx, hy] = renderedHinge(container);
+        expect(hy).toBeCloseTo(400 - R5 / 2, 0);
+        expect(Math.hypot(hx - 400, hy - 400)).toBeCloseTo(PASSER.leg, 0);
+        expect(Math.hypot(hx - 400, hy - (400 - R5))).toBeCloseTo(PASSER.leg, 0);
+        // rotation 180: no flip back to the top, the hinge hangs below the chord like the turned drawing
+        act(() => { st().updateInstrument(one('passer').id, { rotation: 180 }); });
+        rerender(<InstrumentLayer />);
+        expect(renderedHinge(container)[1]).toBeGreaterThan(400 + 0.9 * PASSER.leg);
+        expect(container.innerHTML).not.toMatch(/NaN/);
     });
 
     test('the needle snaps to a stroke endpoint when the passer is dragged', () => {

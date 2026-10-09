@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import type { BoardPage, BoardWidget, BoardTool, BoardBackground, DrawOptions, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
-import { emptyPage, rndId } from './boardTypes';
+import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground, DrawOptions, InkSettings, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, emptyPage, inkColor, rndId } from './boardTypes';
 import { defaultInstrument } from './instrumentGeometry';
-import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
+import { loadBoardAutosave, loadInkSettings, saveBoardAutosave, saveInkSettings } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
 import { loadWidgetDefaults } from './settings/widgetDefaults';
 
-export interface InkSettings { color: string; width: number; }
+export type { InkSettings };
 
 // Whiteboard app store — deliberately separate from useWorksheetStore so the
 // worksheet editor and bordmodus can't corrupt each other's state. Everything
@@ -66,8 +66,12 @@ interface BoardState {
     hideAllInstruments: () => void;
     selectInstrument: (id: string | null) => void;
 
-    // persistence hooks (boardPersistence.ts)
-    loadBoard: (pages: BoardPage[], activeIdx?: number) => void;
+    // Page-independent settings, saved with the board ("Handvatten op het bord houden").
+    boardSettings: BoardSettings;
+    setKeepHandles: (on: boolean) => void;
+
+    // persistence hooks (boardPersistence.ts); a board loaded with settings takes them over
+    loadBoard: (pages: BoardPage[], activeIdx?: number, settings?: BoardSettings) => void;
     resetBoard: () => void;
 }
 
@@ -188,12 +192,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     setGridSnap: (on) => set({ gridSnap: on }),
     setGridSize: (px) => set({ gridSize: px }),
 
-    inkSettings: {
-        pen: { color: '#111827', width: 4 },
-        marker: { color: '#fde047', width: 18 },
-        line: { color: '#111827', width: 4 },
-        shape: { color: '#1d4ed8', width: 4 },
-    },
+    inkSettings: loadInkSettings(),
     setInkSetting: (tool, patch) => set((state) => ({
         inkSettings: { ...state.inkSettings, [tool]: { ...state.inkSettings[tool], ...patch } },
     })),
@@ -256,21 +255,39 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     })),
     selectInstrument: (id) => set({ selectedInstrumentId: id }),
 
-    loadBoard: (pages, activeIdx = 0) => set({
+    boardSettings: restored?.settings ?? DEFAULT_BOARD_SETTINGS,
+    setKeepHandles: (on) => set((state) => ({ boardSettings: { ...state.boardSettings, keepHandles: on } })),
+
+    loadBoard: (pages, activeIdx = 0, settings) => set({
         pages: pages.length ? pages : [emptyPage()],
         activePageIdx: Math.max(0, Math.min(pages.length - 1, activeIdx)),
         selectedWidgetId: null,
         selectedInstrumentId: null,
+        ...(settings ? { boardSettings: settings } : {}),
     }),
 
     resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null }),
 }));
 
 // Debounced autosave — 1.5s after the last board mutation (same cadence as the
-// worksheet autosave). Only pages/activePageIdx are persisted; tool state is not.
+// worksheet autosave). Pages, activePageIdx and the board settings are persisted; tool state is not.
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 useBoardStore.subscribe((state, prev) => {
-    if (state.pages === prev.pages && state.activePageIdx === prev.activePageIdx) return;
+    if (state.pages === prev.pages && state.activePageIdx === prev.activePageIdx && state.boardSettings === prev.boardSettings) return;
     if (autosaveTimer) clearTimeout(autosaveTimer);
-    autosaveTimer = setTimeout(() => saveBoardAutosave(useBoardStore.getState().pages, useBoardStore.getState().activePageIdx), 1500);
+    autosaveTimer = setTimeout(() => {
+        const s = useBoardStore.getState();
+        saveBoardAutosave(s.pages, s.activePageIdx, s.boardSettings);
+    }, 1500);
+});
+
+// The ink a tool draws with right now: a picked colour as is, the default one for the active
+// page's board (white pen on a dark board).
+export function effectiveInk(state: Pick<BoardState, 'inkSettings' | 'pages' | 'activePageIdx'>, tool: StrokeTool): { color: string; width: number } {
+    const cfg = state.inkSettings[tool];
+    return { color: inkColor(cfg, tool, !!state.pages[state.activePageIdx]?.background.dark), width: cfg.width };
+}
+
+useBoardStore.subscribe((state, prev) => {
+    if (state.inkSettings !== prev.inkSettings) saveInkSettings(state.inkSettings);
 });

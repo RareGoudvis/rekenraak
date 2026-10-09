@@ -1603,7 +1603,11 @@ back to `select`. `addWidget` merges the teacher's saved standaard for that kind
 caller's props (`loadWidgetDefaults`, §14 "Widget settings"). Every page add / duplicate /
 remove / goto, `loadBoard` and `resetBoard` clear both selections. Hydrates from autosave at module
 init; a debounced (1.5 s) subscription on `pages` / `activePageIdx` writes
-`rekenraak_board_autosave_v1` (tool state, ink settings and draw options are not persisted).
+`rekenraak_board_autosave_v1` (tool state and draw options are not persisted; ink settings are, under
+`rekenraak_board_ink_v1` — `color: null` means "default", resolved by `effectiveInk` to black on a light
+board and white on a dark one, with a Standaard swatch to return to it). Board-level `boardSettings`
+(`keepHandles`, the "Handvatten op het bord houden" toggle in the Meetinstrumenten popover, default on)
+travel with the board file (version stays 2) and autosave; `loadBoard` takes them.
 
 **Undo is ink-only.** The bottom bar's undo/redo and **Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z)** walk
 the active page's stroke stack (redo clears on a new stroke, an erase or a page switch); a
@@ -1885,8 +1889,11 @@ toggles add / remove).
   board cm is a CSS cm: 5 cm on the board's lat is 5 cm on the sheet's ruler. Lat 0–20 cm with
   0.6 cm plastic each side, 3.2 cm deep; geodriehoek 16 cm hypotenuse, right angle 8 cm below
   the centre, cm scale 0–7 both ways + protractor (a tick per degree, two numbered rings,
-  outer from the right end, inner from the left); passer legs 12 cm, opening 0.5–21.5 cm,
-  hinge always on the upper side (`passerHinge`) so it stands like one held in the hand.
+  outer from the right end, inner from the left); passer legs 12 cm (`PASSER_LEG_CM`), drawn top-down as one rigid piece: hinge at the
+  apex of the isosceles triangle on the needle–pencil centre line, opening capped at 2 × leg, so it
+  turns with the chord and the hinge never jumps sides while drawing. With `keepHandles` on, a grab
+  handle that would leave the board moves to the next on-board spot (lat: the 0 end, then along the
+  body; passer: the hinge flips sides) or becomes a chip at the nearest edge.
 - **Layer and z-order** — one SVG at z 12 above the ink (z 10), below the bottom bar and the
   popups; the SVG itself is `pointer-events: none`, only each instrument's grips take pointers
   (`Grip = body | rotate | open | draw`; scale marks and labels are `NO_POINTER`). A press on an

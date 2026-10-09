@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { useBoardStore } from '../useBoardStore';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { effectiveInk, useBoardStore } from '../useBoardStore';
 import type { Instrument, Stroke } from '../boardTypes';
 import { rndId } from '../boardTypes';
-import { arcPath, arcPts, formatCm, openPasser, round1, snapInstrumentPoint, snapInstrumentRotation, snapOf, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
+import { arcPath, arcPts, formatCm, openPasser, placePasserHinge, placeRotateHandle, round1, snapInstrumentPoint, type BoardSize, snapInstrumentRotation, snapOf, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
 import { GeodriehoekShape, LatShape, PasserShape, type Grip } from './InstrumentShapes';
 import { IC, NO_POINTER } from './instrumentStyle';
 
@@ -27,7 +27,10 @@ export default function InstrumentLayer() {
     const instruments = useBoardStore((s) => s.pages[s.activePageIdx].instruments) ?? EMPTY;
     const selectedId = useBoardStore((s) => s.selectedInstrumentId);
     const tool = useBoardStore((s) => s.tool);
+    const keepHandles = useBoardStore((s) => s.boardSettings.keepHandles);
     const svgRef = useRef<SVGSVGElement>(null);
+    // The board's size: the handles are kept inside it ("Handvatten op het bord houden").
+    const [board, setBoard] = useState<BoardSize | null>(null);
     const drag = useRef<Drag | null>(null);
     const [snapDot, setSnapDot] = useState<{ x: number; y: number } | null>(null);
     const [readout, setReadout] = useState<Readout | null>(null);
@@ -88,7 +91,7 @@ export default function InstrumentLayer() {
             d.sweep = Math.max(-2 * Math.PI, Math.min(2 * Math.PI, d.sweep + unwrapDelta(d.last, a)));
             d.last = a;
             st.updateInstrument(d.id, { rotation: round1((((a * 180) / Math.PI) % 360 + 360) % 360) });
-            const ink = inkFor(st.tool, st.inkSettings);
+            const ink = inkFor(st.tool, st);
             setArcDraft({ id: 'arc-draft', ...ink, path: arcPath(d.cx, d.cy, d.r, d.start, d.sweep), pts: [] });
             setReadout({ x: d.cx, y: d.cy - 30, text: `${Math.round(Math.abs(d.sweep) * 180 / Math.PI)}°` });
         } else {
@@ -106,7 +109,7 @@ export default function InstrumentLayer() {
         if (d?.grip === 'draw' && Math.abs(d.sweep) >= Math.PI / 180) {
             const st = useBoardStore.getState();
             st.addStroke({
-                id: rndId(), ...inkFor(st.tool, st.inkSettings),
+                id: rndId(), ...inkFor(st.tool, st),
                 path: arcPath(d.cx, d.cy, d.r, d.start, d.sweep), pts: arcPts(d.cx, d.cy, d.r, d.start, d.sweep),
             });
         }
@@ -115,6 +118,23 @@ export default function InstrumentLayer() {
         setSnapDot(null);
         setReadout(null);
     };
+
+    useLayoutEffect(() => {
+        const el = svgRef.current;
+        if (!el) return;
+        const measure = () => {
+            const r = el.getBoundingClientRect();
+            setBoard(b => (b && b.w === r.width && b.h === r.height ? b : { w: r.width, h: r.height }));
+        };
+        measure();
+        if (typeof ResizeObserver === 'undefined') {
+            window.addEventListener('resize', measure);
+            return () => window.removeEventListener('resize', measure);
+        }
+        const ro = new ResizeObserver(measure);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
 
     // Keyboard on the selected instrument; typing in a widget's field is left alone.
     useEffect(() => {
@@ -160,7 +180,11 @@ export default function InstrumentLayer() {
                     strokeLinecap="round" opacity={arcDraft.opacity} style={NO_POINTER} />
             )}
             {instruments.map((inst) => {
-                const props = { inst, selected: inst.id === selectedId, passThrough, onGrip: (e: React.PointerEvent, g: Grip) => begin(e, inst.id, g) };
+                const props = {
+                    inst, selected: inst.id === selectedId, passThrough, onGrip: (e: React.PointerEvent, g: Grip) => begin(e, inst.id, g),
+                    handle: placeRotateHandle(inst, board, keepHandles),
+                    passer: inst.kind === 'passer' ? placePasserHinge(inst, board, keepHandles) : undefined,
+                };
                 return (
                     <g key={inst.id} data-instrument={inst.kind} data-instrument-inert={inert || undefined}
                         transform={`translate(${inst.x} ${inst.y}) rotate(${inst.rotation})`}>
@@ -184,9 +208,9 @@ export default function InstrumentLayer() {
 const formatDeg = (d: number) => String(Math.round(d) % 360);
 
 // The passer draws with the marker when the marker is the active tool, else with the pen.
-function inkFor(tool: string, settings: ReturnType<typeof useBoardStore.getState>['inkSettings']): Pick<Stroke, 'tool' | 'color' | 'width' | 'opacity'> {
+function inkFor(tool: string, st: ReturnType<typeof useBoardStore.getState>): Pick<Stroke, 'tool' | 'color' | 'width' | 'opacity'> {
     const t = tool === 'marker' ? 'marker' : 'pen';
-    return { tool: t, color: settings[t].color, width: settings[t].width, opacity: t === 'marker' ? 0.45 : 1 };
+    return { tool: t, ...effectiveInk(st, t), opacity: t === 'marker' ? 0.45 : 1 };
 }
 
 // A pill with the live value (degrees, cm) next to what is being dragged.
