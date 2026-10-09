@@ -228,6 +228,18 @@ grouped per work package so parallel deletions merge cleanly.
 
 - **O24** No test exercises the kiosk chain generate → descriptor answer → keys can type it →
   `checkAnswer` → stats over the constraintSpace options; no Playwright kiosk smoke per input kind. 2026-10-09
+- **O25** (proposed, found by `oefenen.e2e.matrix.test.ts`, pinned `test.fails`) cijferen-delen-dec with a
+  decimal divisor (Cijferen config mask on the 2nd getal, e.g. tienden): the komma shift makes the quotient
+  longer than the card's quotient cells: 742,4 : 0,7 = 1060,57 needs six `q` cells, the card has five, so the
+  pupil can never enter it (935,6 : 0,8 = 1169,5 too). Fix: size the quotient row from the shifted
+  dividend (cijferCells / CIJFER_KIOSK keys). 2026-10-09
+- **O26** (proposed, pinned) getallenrijen natuurlijk / geheel with an "Eigen sprong" of 0,5 or 0,1
+  (GetallenrijenConfig offers it for every non-rational type): the row has kommagetallen but the kiosk keypad
+  has no komma (GETALLENAS_KIOSK keys follow numberType only), so the blanks cannot be typed. Fix: keys
+  from the step's decimals too. 2026-10-09
+- **O27** (proposed, pinned) deelbaarheid tabel (and veelvouden in tabel layout) "Tik aan door welke getallen
+  693 deelbaar is" with none of the divisors right: a wrong tap gives a Resultaten row with an empty
+  Juist cell (`expectedText` of an empty tap-multi answer is ''). Fix: a `show` that says "geen". 2026-10-09
 
 ## Tooling
 
