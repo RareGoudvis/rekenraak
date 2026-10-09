@@ -8,6 +8,8 @@ import type { OefenType } from '../services/oefenen/types';
 import { emptyStats, saveRun } from '../services/oefenen/stats';
 import { flattenLeaves } from '../config/appstructure';
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
+import { packWire } from '../services/oefenen/session';
+import { KIOSK_LEAF_TABLE_V1 } from '../services/oefenen/kiosk';
 
 // A session row for a sidebar leaf at its sidebar defaults, as the builder makes it.
 function leafType(leafId: string): OefenType {
@@ -41,6 +43,20 @@ describe('kiosk screens', () => {
         st().load('#oefen=kapot');
         render(<OefenApp />);
         expect(screen.getByRole('alert').textContent).toMatch(/ongeldig/);
+    });
+
+    test('a link from a newer app asks to update, not to share again', () => {
+        const hash = hashOf(starterSessie());
+        st().load(hash);
+        expect(st().error).toBeNull();
+        // The first row's leaf index pushed past this version's table.
+        st().load('#oefen=' + packWire([1, 'nieuw', 1, 0, [[KIOSK_LEAF_TABLE_V1.length]]]));
+        render(<OefenApp />);
+        const alert = screen.getByRole('alert').textContent ?? '';
+        expect(alert).toMatch(/Werk de app bij/);
+        expect(alert).not.toMatch(/ongeldig/);
+        expect(alert).toMatch(/Herlaad/);
+        expect(alert).not.toMatch(/opnieuw te delen/);
     });
 
     test('start screen names the session', () => {

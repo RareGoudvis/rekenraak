@@ -194,7 +194,8 @@ describe('strict decode', () => {
         ['truncated', `#oefen=${packWire([1, 'abc', 1, 0, [[3]]]).slice(0, 12)}`],
         ['not a wire', packWire({ v: 1 })],
         ['no rows', wire(w => { w[4] = []; })],
-        ['bad leaf index', wire(w => { w[4] = [[999]]; })],
+        ['bad leaf index', wire(w => { w[4] = [[-1]]; })],
+        ['fractional leaf index', wire(w => { w[4] = [[2.5]]; })],
         ['odd diff', wire(w => { w[4] = [[3, [1]]]; })],
         ['unknown key index', wire(w => { w[4] = [[3, [999, 1]]]; })],
         ['bad flags', wire(w => { w[3] = 'x'; })],
@@ -203,6 +204,9 @@ describe('strict decode', () => {
         ['bad weight', wire(w => { w[4] = [[3, null, -1]]; })],
     ])('%s → Dutch error', (_name, hash) => {
         expect(() => decodeSessie(hash)).toThrow(/oefenlink is ongeldig/);
+    });
+    test('a leaf index past this table comes from a newer app: ask to update (REVIEW §F)', () => {
+        expect(() => decodeSessie(wire(w => { w[4] = [[3], [KIOSK_LEAF_TABLE_V1.length + 5]]; }))).toThrow(/oefening 2.*Werk de app bij/);
     });
     test('a type without a kiosk descriptor is refused (ask to update)', () => {
         expect(() => decodeSessie(wire(w => { w[4] = [['kalender-maandrooster']]; }))).toThrow(/niet kent \(.+\).*Werk de app bij/);

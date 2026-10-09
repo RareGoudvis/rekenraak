@@ -245,6 +245,10 @@ function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
     const what = `oefening ${slot + 1}`;
     if (!Array.isArray(raw)) return bad(what);
     const [leaf, diff, weight, limit, label, instruction, removed, typeId, exact] = raw;
+    // An index past the table is a leaf a newer app appended: the link is fine, this app is old.
+    if (typeof leaf === 'number' && Number.isInteger(leaf) && leaf >= KIOSK_LEAF_TABLE_V1.length) {
+        throw new Error(`Deze oefenlink bevat een oefening die deze versie niet kent (${what}). Werk de app bij.`);
+    }
     const leafId = typeof leaf === 'number' ? KIOSK_LEAF_TABLE_V1[leaf] : leaf;
     if (typeof leafId !== 'string' || leafId.length > MAX_ID) return bad(what);
     if (typeId != null && (typeof typeId !== 'string' || typeId.length > MAX_ID)) return bad(what);
