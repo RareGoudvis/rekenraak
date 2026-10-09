@@ -29,6 +29,7 @@
     "limits:diff": "node scripts/limits-diff.mjs",
     "height:audit": "node scripts/height-audit.mjs",
     "catalogue": "node scripts/catalogue.mjs",
+    "oefen:smoke": "node scripts/oefen-smoke.mjs",
     "bignum:audit": "node scripts/bignum-audit.mjs",
     "sweep": "node scripts/full-sweep.mjs",
     "limits:audit": "vitest run --config vitest.audit.config.ts"

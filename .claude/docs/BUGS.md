@@ -226,8 +226,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-H test infra
 
-- **O24** No test exercises the kiosk chain generate → descriptor answer → keys can type it →
-  `checkAnswer` → stats over the constraintSpace options; no Playwright kiosk smoke per input kind. 2026-10-09
 - **O25** (proposed, found by `oefenen.e2e.matrix.test.ts`, pinned `test.fails`) cijferen-delen-dec with a
   decimal divisor (Cijferen config mask on the 2nd getal, e.g. tienden): the komma shift makes the quotient
   longer than the card's quotient cells: 742,4 : 0,7 = 1060,57 needs six `q` cells, the card has five, so the
