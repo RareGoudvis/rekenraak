@@ -150,6 +150,20 @@ describe('OefenBuilderModal', () => {
         expect(kansen.getByRole('button', { name: '2' }).getAttribute('aria-pressed')).toBe('true');
     });
 
+    test('testmodus forces "Statistieken pas op het einde" on, disabled, says why; off again restores the choice', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        const locked = () => screen.getByRole('switch', { name: /Statistieken pas op het einde/ }) as HTMLButtonElement;
+        expect(locked().getAttribute('aria-checked')).toBe('false');
+        fireEvent.click(screen.getByRole('switch', { name: /Testmodus/ }));
+        expect(locked().getAttribute('aria-checked')).toBe('true');
+        expect(locked().disabled).toBe(true);
+        expect(screen.getByText(/In testmodus zie je de resultaten pas op het einde/)).toBeTruthy();
+        fireEvent.click(screen.getByRole('switch', { name: /Testmodus/ }));
+        expect(locked().getAttribute('aria-checked')).toBe('false');
+        expect(locked().disabled).toBe(false);
+    });
+
     test('a row with settings the kiosk cannot check shows a hint and keeps Delen off', () => {
         render(<OefenBuilderModal onClose={() => { }} />);
         fireEvent.click(addBtn('vormleer-hoeken-herkennen'));

@@ -86,6 +86,15 @@ describe('a run', () => {
         expect(st().phase).toBe('exercise');
     });
 
+    test('testmode keeps the stats closed until the run ends, also with statsLocked off', () => {
+        st().load(hashOf(starterSessie({ testMode: true, statsLocked: false })));
+        st().start();
+        fillAnswer(false);
+        st().answer();
+        st().openStats();
+        expect(st().phase).toBe('exercise');
+    });
+
     test('the timer locks the run at 0', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-10-08T09:00:00'));

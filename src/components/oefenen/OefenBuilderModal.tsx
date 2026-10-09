@@ -197,7 +197,9 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                         ))}
                                     </div>
                                 </div>
-                                <SwitchRow label="Statistieken pas op het einde" checked={statsLocked} onChange={setStatsLocked} />
+                                {/* The kiosk hides a test's results until the end anyway; the teacher's own choice returns when testmodus goes off. */}
+                                <SwitchRow label="Statistieken pas op het einde" checked={statsLocked || testMode} onChange={setStatsLocked} disabled={testMode}
+                                    note={testMode ? 'In testmodus zie je de resultaten pas op het einde.' : undefined} />
                             </div>
                         </section>
 
@@ -286,11 +288,14 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     );
 }
 
-function SwitchRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function SwitchRow({ label, checked, onChange, disabled, note }: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; note?: string }) {
     return (
         <div style={S.switchRow}>
-            <span style={S.switchText}>{label}</span>
-            <Switch checked={checked} onChange={onChange} aria-label={label} />
+            <span style={S.switchText}>
+                {label}
+                {note && <span style={S.switchNote}>{note}</span>}
+            </span>
+            <Switch checked={checked} onChange={onChange} aria-label={label} disabled={disabled} />
         </div>
     );
 }

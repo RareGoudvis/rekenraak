@@ -184,10 +184,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-B store / stats
 
-- **O2** C1: testMode + statsLocked off → "Resultaten" mid-run shows juist/fout and the right answer
-  (useOefenStore.ts:394 gates on `statsLocked && !run.done` only) while the start screen says "je
-  ziet pas op het einde wat juist was" (StartScreen.tsx:38). Owner: testMode forces results hidden
-  until the end; builder greys the toggle. 2026-10-09
 - **O3** C2: Mijn bladen › Bewerken › Opslaan keeps the session id (OefenBuilderModal.tsx:56), so the
   new link reopens the old finished run (useOefenStore.ts:281); removing a type shifts every saved
   per-type result to the wrong type (index-keyed `perType[slot]`, stats.ts:80-81). Owner: a content

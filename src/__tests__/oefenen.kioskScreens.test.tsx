@@ -162,6 +162,14 @@ describe('kiosk screens', () => {
         expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
     });
 
+    test('testmode hides the Resultaten button mid-run, also with statsLocked off', () => {
+        st().load(hashOf(starterSessie({ testMode: true, statsLocked: false })));
+        st().start();
+        act(() => { fillAnswer(false); st().answer(); });
+        render(<OefenApp />);
+        expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
+    });
+
     test('choice buttons: signs big, words in the word size; kiezen is tapped on the card', () => {
         const kiezen = leafType('vergelijken-kiezen');
         st().load(hashOf(starterSessie({ types: [kiezen] })));

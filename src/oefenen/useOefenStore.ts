@@ -77,6 +77,9 @@ interface OefenState {
     pressExtra(id: string): void;
 }
 
+// A test shows nothing about juist/fout until the end, so it hides the results like statsLocked does.
+export const resultsHidden = (s: OefenSessie, run: OefenRun) => (s.statsLocked || s.testMode) && !run.done;
+
 const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
 
 export interface CurrentInput {
@@ -391,7 +394,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         openStats() {
             const { phase, sessie: s, run } = get();
             if (!s || !run || (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry')) return;
-            if (s.statsLocked && !run.done) return;
+            if (resultsHidden(s, run)) return;
             // The flash waits behind the stats; closing them ends it.
             clearFlash();
             set({ phase: 'stats', statsFrom: phase });

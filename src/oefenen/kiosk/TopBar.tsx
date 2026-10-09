@@ -1,5 +1,5 @@
 import { ChartBar, Timer } from '@phosphor-icons/react';
-import { useOefenStore } from '../useOefenStore';
+import { resultsHidden, useOefenStore } from '../useOefenStore';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 
 interface Props {
@@ -27,7 +27,7 @@ export default function TopBar({ now }: Props) {
     const shownAt = total !== null ? Math.min(at, total) : at;
     const left = run.timerEndsAt !== undefined ? run.timerEndsAt - now : null;
     const lastMinute = left !== null && left < 60_000;
-    const statsHidden = sessie.statsLocked && !run.done;
+    const statsHidden = resultsHidden(sessie, run);
 
     return (
         <header className="kiosk-topbar">
