@@ -22,6 +22,7 @@ import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
+import { ladderFor } from '../herleidingen/herleidingenGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -609,23 +610,47 @@ export const MAATEENHEID_KIOSK = descriptor<MaateenheidExercise>({
 });
 
 // number blank: one field per part (2 m 35 cm → two fields, labelled with the units); unit
-// blank: tap the unit. Units the pupil writes next to a number (writeUnits) are not asked.
+// blank: tap the unit. writeUnits (owner 2026-10-09): the pupil also picks the unit, so a number
+// blank is one number + a unit from the measure's whole ladder, right by value (number+unit).
 const herleidUnits = (ex: HerleidingExercise, c: Record<string, unknown>) =>
     [...new Set([...((c.units as string[] | undefined) ?? []), ...ex.fromParts.map(p => p.key), ...ex.toParts.map(p => p.key)])];
 const partsText = (ps: HerleidingPart[]) => ps.map(p => `${showNum(p.value)} ${p.key}`).join(' ');
+const herleidLadder = (c: Record<string, unknown>) => ladderFor((c.measure as string | undefined) ?? 'lengte');
+const writesUnit = (ex: HerleidingExercise, c: Record<string, unknown>) => !!c.writeUnits && ex.blank === 'number';
+// The to-side as one quantity in its largest unit ('2,35' m for 2 m 35 cm), exact in BigInt:
+// the ladder's factors are powers of ten of the smallest unit.
+function herleidAnswer(ex: HerleidingExercise, c: Record<string, unknown>): [string, string] {
+    const factor = new Map(herleidLadder(c).map(u => [u.key, u.factor]));
+    const top = ex.toParts.reduce((a, p) => ((factor.get(p.key) ?? 1) > (factor.get(a.key) ?? 1) ? p : a));
+    if (ex.toParts.length === 1) return [numberSpellings(top.value)[0], top.key];
+    const total = ex.toParts.reduce((s, p) => s + BigInt(Math.round(p.value)) * BigInt(factor.get(p.key) ?? 1), 0n);
+    const zeros = String(factor.get(top.key) ?? 1).length - 1;
+    const digits = total.toString().padStart(zeros + 1, '0');
+    const frac = digits.slice(digits.length - zeros).replace(/0+$/, '');
+    const int = digits.slice(0, digits.length - zeros);
+    return [frac ? `${int},${frac}` : int, top.key];
+}
 export const HERLEIDINGEN_KIOSK = descriptor<HerleidingExercise>({
     input: 'number',
-    inputOf: (ex) => (ex.blank === 'unit' ? 'choice' : ex.toParts.length > 1 ? 'multi-number' : 'number'),
-    choicesOf: herleidUnits,
+    inputOf: (ex, c) => (ex.blank === 'unit' ? 'choice' : writesUnit(ex, c) ? 'number+unit' : ex.toParts.length > 1 ? 'multi-number' : 'number'),
+    // The whole ladder from the settings: the exercise's own units would hint at the answer.
+    choicesOf: (ex, c) => (writesUnit(ex, c) ? herleidLadder(c).map(u => u.key) : herleidUnits(ex, c)),
+    // number+unit: 2 m 35 cm can be 2,35 m.
+    keys: (c) => (c.writeUnits ? [','] : []),
     labels: (ex) => ex.toParts.map(p => p.key),
-    answerOf: (ex) => {
+    // A single given quantity copied back (235 cm = 235 cm) is no herleiding: its unit is left out.
+    unitFactors: (ex, c) => Object.fromEntries(herleidLadder(c)
+        .filter(u => !(ex.fromParts.length === 1 && u.key === ex.fromParts[0].key))
+        .map(u => [u.key, u.factor])),
+    answerOf: (ex, c) => {
         if (ex.blank === 'unit') return [ex.toParts[0].key];
+        if (writesUnit(ex, c)) return herleidAnswer(ex, c);
         return ex.toParts.length > 1 ? ex.toParts.map(p => String(p.value)) : numberSpellings(ex.toParts[0].value);
     },
-    display: (ex) => (ex.blank === 'unit'
+    display: (ex, c) => (ex.blank === 'unit'
         ? `${partsText(ex.fromParts)} = ${showNum(ex.toParts[0].value)} ?`
+        : writesUnit(ex, c) ? `${partsText(ex.fromParts)} = ? (getal en eenheid)`
         : `${partsText(ex.fromParts)} = ${ex.toParts.map(p => `? ${p.key}`).join(' ')}`),
-    supported: (c) => !c.writeUnits,
 });
 
 // ── Geld ─────────────────────────────────────────────────────────────────────

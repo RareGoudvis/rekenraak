@@ -81,6 +81,32 @@ export default function AnswerInput() {
         );
     }
 
+    // number+unit (herleidingen writeUnits): the number field, the picked unit beside it, the
+    // measure's unit ladder as buttons (no native select: a pupil taps, like every kiosk choice), the keypad.
+    if (info.kind === 'number+unit') {
+        const unitCols = info.choices.length <= 7 ? info.choices.length : Math.ceil(info.choices.length / 2);
+        return (
+            <div className="kiosk-answer">
+                <div className="kiosk-fields">
+                    <label className="kiosk-field-bare">
+                        <input aria-label={info.labels[0]} placeholder={info.labels[0]} ref={el => { refs.current[0] = el; }}
+                            className="kiosk-field" inputMode="none" autoCapitalize="off" autoComplete="off" spellCheck={false}
+                            value={input[0] ?? ''} onChange={e => setField(0, e.target.value)} onFocus={() => focusField(0)} />
+                    </label>
+                    <span className={`kiosk-field-unit${input[1] ? '' : ' is-empty'}`} aria-hidden>{input[1] || '?'}</span>
+                </div>
+                <div className="kiosk-choices is-units" role="radiogroup" aria-label="Kies de eenheid"
+                    style={{ '--unit-cols': unitCols } as React.CSSProperties}>
+                    {info.choices.map(u => (
+                        <button key={u} type="button" role="radio" aria-checked={input[1] === u}
+                            className={`kiosk-choice${input[1] === u ? ' is-picked' : ''}`} onClick={() => choose(u)}>{u}</button>
+                    ))}
+                </div>
+                <Keypad extras={info.keys} onKey={press} onCheck={answer} canCheck={canCheck} />
+            </div>
+        );
+    }
+
     const text = info.kind === 'text';
     const many = info.labels.length > 2;
     const sep = SEPARATOR[info.kind] ?? info.separator;

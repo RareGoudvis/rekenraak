@@ -92,6 +92,22 @@ function sameTime(given: readonly string[], accepted: readonly string[]): boolea
     });
 }
 
+// A typed amount of a unit as an exact decimal in the smallest unit: [digits × factor, decimals]
+// ('2,35' m at factor 1000 → [2350000n, 2] = 2350 mm). null: no number, a negative or no factor.
+function quantityOf(raw: string, factor: number | undefined): [bigint, number] | null {
+    const v = factor === undefined ? null : normaliseNumber(raw);
+    if (v === null || v.startsWith('-')) return null;
+    const [int, frac = ''] = v.split('.');
+    return [BigInt(int + frac) * BigInt(factor!), frac.length];
+}
+
+/** number+unit: the given [number, unit] is the same quantity as the accepted one (1,2 m = 120 cm). */
+function sameQuantity(given: readonly string[], accepted: readonly string[], factors: Record<string, number>): boolean {
+    const g = quantityOf(given[0] ?? '', factors[(given[1] ?? '').trim()]);
+    const a = quantityOf(accepted[0] ?? '', factors[accepted[1] ?? '']);
+    return g !== null && a !== null && g[0] * 10n ** BigInt(a[1]) === a[0] * 10n ** BigInt(g[1]);
+}
+
 // An empty middle part stays ('5 ·  · 3' = three cells, the second blank).
 const partsOf = (s: string) => (s.trim() === '' ? [] : s.split(INTERACT_SEP.trim()).map(p => p.trim()));
 
@@ -149,6 +165,7 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
         return sameValue(given[0], [accepted[0]]) && sameValue(given[1], [accepted[1]]);
     }
     if (input === 'time') return Array.isArray(given) && given.length === 2 && sameTime(given, accepted);
+    if (input === 'number+unit') return Array.isArray(given) && given.length === 2 && accepted.length === 2 && sameQuantity(given, accepted, d.unitFactors?.(ex, c) ?? {});
     if (input === 'multi-number') {
         // Every field must hold its own blank's value, in order.
         const parts = Array.isArray(given) ? given : [given];

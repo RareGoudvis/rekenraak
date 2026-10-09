@@ -51,8 +51,9 @@ function useKioskKeys() {
                 e.preventDefault();
                 // The next cell to fill, Controleer after the last one.
                 if (cells) { st.enterCell(); return; }
-                // quotiënt typed, rest still empty: Enter moves on to the rest field.
-                if (st.input.length > 1 && st.field < st.input.length - 1 && st.input[st.field + 1] === '') st.focusField(st.field + 1);
+                // quotiënt typed, rest still empty: Enter moves on to the rest field (a unit is a button, not a field).
+                const unitPick = currentInput(st.sessie, st.shown)?.kind === 'number+unit';
+                if (!unitPick && st.input.length > 1 && st.field < st.input.length - 1 && st.input[st.field + 1] === '') st.focusField(st.field + 1);
                 else st.answer();
                 return;
             }

@@ -21,6 +21,7 @@ export function answerText(d: KioskDescriptor, ex: unknown, c: Record<string, un
     const input = kioskInputOf(d, ex, c);
     if (input !== 'interactive' && d.showAnswer) return d.showAnswer(parts, ex, c);
     if (input === 'number+rest') return `${parts[0] ?? ''} r ${parts[1] ?? ''}`;
+    if (input === 'number+unit') return `${parts[0] ?? ''} ${parts[1] ?? ''}`;
     if (input === 'time') return `${parts[0] ?? ''}:${(parts[1] ?? '').padStart(2, '0')}`;
     if (input === 'multi-number') return parts.join(' ; ');
     const ia = input === 'interactive' ? kioskInteractOf(d, c) : undefined;
@@ -33,7 +34,7 @@ export function expectedText(d: KioskDescriptor, ex: unknown, c: Record<string, 
     const accepted = d.answerOf(ex, c);
     const input = kioskInputOf(d, ex, c);
     if (input !== 'interactive' && d.showAnswer) return d.showAnswer(input === 'multi-number' ? accepted.map(a => a.split('|')[0]) : accepted.slice(0, input === 'number+rest' || input === 'time' ? 2 : 1), ex, c);
-    if (input === 'number+rest') return answerText(d, ex, c, accepted);
+    if (input === 'number+rest' || input === 'number+unit') return answerText(d, ex, c, accepted);
     // One field each, its first spelling.
     if (input === 'multi-number') return accepted.map(a => a.split('|')[0]).join(' ; ');
     const ia = input === 'interactive' ? kioskInteractOf(d, c) : undefined;
