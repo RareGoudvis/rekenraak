@@ -20,6 +20,7 @@ export default function KettingConfig({ block }: Props) {
     const opSettings: Record<string, OpSetting> = c.opSettings ?? {};
     const chainLength: number = c.chainLength ?? 4;
     const maxGetal = c.maxGetal ?? 100;
+    const showIntermediates: boolean = c.showIntermediates ?? false;
     const blankMiddle: boolean = c.blankMiddle ?? false;
 
     const set = (key: keyof KettingConstraints, value: unknown) => patch({ [key]: value } as Partial<KettingConstraints>);
@@ -74,9 +75,14 @@ export default function KettingConfig({ block }: Props) {
             </div>}
 
             <div style={styles.onOffRow}>
+                <SettingLabel text="Tussenresultaten tonen" info="Uit: de leerling rekent elke stap zelf uit. Aan: de tussenresultaten staan er al, alleen het eindresultaat is open." />
+                <button onClick={() => set('showIntermediates', !showIntermediates)} style={styles.onOffBtn(showIntermediates)}>{showIntermediates ? 'Aan' : 'Uit'}</button>
+            </div>
+
+            {showIntermediates && <div style={styles.onOffRow}>
                 <SettingLabel text="Ook tussenstap blanco" info="Naast het eindresultaat wordt ook één tussenwaarde opengelaten." />
                 <button onClick={() => set('blankMiddle', !blankMiddle)} style={styles.onOffBtn(blankMiddle)}>{blankMiddle ? 'Aan' : 'Uit'}</button>
-            </div>
+            </div>}
         </div>
     );
 }

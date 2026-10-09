@@ -104,9 +104,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
   10, 2. 2026-09-27
-- kettingsommen DEFAULT prints every intermediate result (only the last step is asked), and its max
-  picker is dead: kettingGenerator.ts ~41 starts <= 20 with operands <= 10, so Tot 1 000 looks like
-  Tot 100. Owner call on blanks; scale start/operands with maxGetal. 2026-09-27
 - kalender-datum-rekenen / -notatie DEFAULT: one exercise per block (REGISTRY 'kalender' defaultCount 1,
   sized for a maandrooster). Fix: a per-subType count. (constraintSpace questionCount [1,5,10] vs the
   3-8 slider.) 2026-09-27

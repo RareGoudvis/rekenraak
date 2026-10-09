@@ -500,6 +500,10 @@ const kettingSpec: TypeSpec<PatroonExercise> = {
             const s = e.cycle[(i - 1) % e.cycle.length];
             if (!sameNum(applyOp(e.values[i - 1], s.op, s.operand), e.values[i])) { push('answer-key', e.values[i], applyOp(e.values[i - 1], s.op, s.operand), ex); break; }
         }
+        // Tussenresultaten off: the start is the only printed value; on: the end is always open.
+        const shown = e.blankMask.map((b, i) => (b ? -1 : i)).filter(i => i >= 0);
+        if (!c.showIntermediates && shown.join() !== '0') push('intermediate-shown', shown.join(','), '0', ex);
+        if (c.showIntermediates && !e.blankMask[e.values.length - 1]) push('end-not-blank', e.values.length - 1, 'blank', ex);
     },
 };
 

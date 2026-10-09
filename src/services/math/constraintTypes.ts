@@ -470,6 +470,9 @@ export type KettingConstraints = {
     chainLength: number;
     ops: string[];
     opSettings: Record<string, OpSetting>;
+    // false (default) = every value after the start is blank: the pupil works the whole chain.
+    showIntermediates?: boolean;
+    // Only with showIntermediates: one tussenwaarde is left open next to the end.
     blankMiddle: boolean;
     showArrows: boolean;
     showOperators: boolean;
