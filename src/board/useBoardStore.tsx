@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { BoardPage, BoardWidget, BoardTool, BoardBackground, DrawOptions, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
-import { emptyPage, rndId } from './boardTypes';
+import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground, DrawOptions, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, emptyPage, rndId } from './boardTypes';
 import { defaultInstrument } from './instrumentGeometry';
 import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
@@ -66,8 +66,12 @@ interface BoardState {
     hideAllInstruments: () => void;
     selectInstrument: (id: string | null) => void;
 
-    // persistence hooks (boardPersistence.ts)
-    loadBoard: (pages: BoardPage[], activeIdx?: number) => void;
+    // Page-independent settings, saved with the board ("Handvatten op het bord houden").
+    boardSettings: BoardSettings;
+    setKeepHandles: (on: boolean) => void;
+
+    // persistence hooks (boardPersistence.ts); a board loaded with settings takes them over
+    loadBoard: (pages: BoardPage[], activeIdx?: number, settings?: BoardSettings) => void;
     resetBoard: () => void;
 }
 
@@ -256,21 +260,28 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     })),
     selectInstrument: (id) => set({ selectedInstrumentId: id }),
 
-    loadBoard: (pages, activeIdx = 0) => set({
+    boardSettings: restored?.settings ?? DEFAULT_BOARD_SETTINGS,
+    setKeepHandles: (on) => set((state) => ({ boardSettings: { ...state.boardSettings, keepHandles: on } })),
+
+    loadBoard: (pages, activeIdx = 0, settings) => set({
         pages: pages.length ? pages : [emptyPage()],
         activePageIdx: Math.max(0, Math.min(pages.length - 1, activeIdx)),
         selectedWidgetId: null,
         selectedInstrumentId: null,
+        ...(settings ? { boardSettings: settings } : {}),
     }),
 
     resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null }),
 }));
 
 // Debounced autosave — 1.5s after the last board mutation (same cadence as the
-// worksheet autosave). Only pages/activePageIdx are persisted; tool state is not.
+// worksheet autosave). Pages, activePageIdx and the board settings are persisted; tool state is not.
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 useBoardStore.subscribe((state, prev) => {
-    if (state.pages === prev.pages && state.activePageIdx === prev.activePageIdx) return;
+    if (state.pages === prev.pages && state.activePageIdx === prev.activePageIdx && state.boardSettings === prev.boardSettings) return;
     if (autosaveTimer) clearTimeout(autosaveTimer);
-    autosaveTimer = setTimeout(() => saveBoardAutosave(useBoardStore.getState().pages, useBoardStore.getState().activePageIdx), 1500);
+    autosaveTimer = setTimeout(() => {
+        const s = useBoardStore.getState();
+        saveBoardAutosave(s.pages, s.activePageIdx, s.boardSettings);
+    }, 1500);
 });

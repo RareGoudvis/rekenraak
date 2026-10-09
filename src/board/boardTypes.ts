@@ -139,6 +139,13 @@ export interface InstrumentGeometry {
     protractors: { x: number; y: number; rotation: number }[];
 }
 
+// Page-independent board settings, saved with the board (autosave, Mijn borden, file).
+export interface BoardSettings {
+    // "Handvatten op het bord houden": an instrument's grab handles stay on the board.
+    keepHandles: boolean;
+}
+export const DEFAULT_BOARD_SETTINGS: BoardSettings = { keepHandles: true };
+
 export const DEFAULT_BACKGROUND: BoardBackground = { pattern: 'blanco', dark: false };
 
 export const rndId = () => Math.random().toString(36).substring(2, 9);

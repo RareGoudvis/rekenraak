@@ -1,5 +1,5 @@
-import type { BoardPage, BoardWidget, Instrument, Stroke } from './boardTypes';
-import { emptyPage } from './boardTypes';
+import type { BoardPage, BoardSettings, BoardWidget, Instrument, Stroke } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, emptyPage } from './boardTypes';
 import { NATURAL_W } from './widgetSizing';
 import { BOARD_CM_PX, INSTRUMENT_KINDS, PASSER } from './instrumentGeometry';
 import { cleanWidgetProps } from './settings/propSchemas';
@@ -19,6 +19,8 @@ export interface BoardFile {
     exportedAt: string;
     pages: BoardPage[];
     activePageIdx?: number;
+    // Page-independent board settings; absent (older files) = the defaults.
+    settings?: BoardSettings;
 }
 
 export interface BoardPreset {
@@ -29,8 +31,8 @@ export interface BoardPreset {
     payload: BoardFile;
 }
 
-function makeFile(pages: BoardPage[], activePageIdx: number): BoardFile {
-    return { version: BOARD_FORMAT_VERSION, exportedAt: new Date().toISOString(), pages, activePageIdx };
+function makeFile(pages: BoardPage[], activePageIdx: number, settings: BoardSettings = DEFAULT_BOARD_SETTINGS): BoardFile {
+    return { version: BOARD_FORMAT_VERSION, exportedAt: new Date().toISOString(), pages, activePageIdx, settings };
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -75,6 +77,12 @@ function parseInstruments(list: unknown): Instrument[] {
     return out;
 }
 
+// Each setting that is not the right type reads as its default.
+export function parseBoardSettings(v: unknown): BoardSettings {
+    const o = isObj(v) ? v : {};
+    return { keepHandles: typeof o.keepHandles === 'boolean' ? o.keepHandles : DEFAULT_BOARD_SETTINGS.keepHandles };
+}
+
 const isPage = (p: unknown): p is BoardPage =>
     isObj(p) && typeof p.id === 'string' && Array.isArray(p.widgets) && Array.isArray(p.strokes) && isObj(p.background);
 
@@ -101,16 +109,16 @@ export function parseBoardFile(json: string): BoardFile | null {
         }));
         const idx = data.activePageIdx;
         const activePageIdx = Number.isInteger(idx) ? Math.max(0, Math.min(pages.length - 1, idx as number)) : 0;
-        return { version: BOARD_FORMAT_VERSION, exportedAt: String(data.exportedAt ?? ''), pages, activePageIdx };
+        return { version: BOARD_FORMAT_VERSION, exportedAt: String(data.exportedAt ?? ''), pages, activePageIdx, settings: parseBoardSettings(data.settings) };
     } catch {
         return null;
     }
 }
 
 // ── Autosave ──────────────────────────────────────────────────────────────────
-export function saveBoardAutosave(pages: BoardPage[], activePageIdx: number): void {
+export function saveBoardAutosave(pages: BoardPage[], activePageIdx: number, settings?: BoardSettings): void {
     try {
-        localStorage.setItem(BOARD_AUTOSAVE_KEY, JSON.stringify(makeFile(pages, activePageIdx)));
+        localStorage.setItem(BOARD_AUTOSAVE_KEY, JSON.stringify(makeFile(pages, activePageIdx, settings)));
     } catch {
         // Quota exceeded (large images) — autosave silently skips; export still works.
     }
@@ -138,14 +146,14 @@ export function loadBoardPresets(): BoardPreset[] {
 
 // Returns false when the write is refused (quota full: a board with big images), so the
 // caller can tell the teacher instead of the throw escaping a click handler.
-export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number): BoardPreset[] | false {
+export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number, settings?: BoardSettings): BoardPreset[] | false {
     const list = loadBoardPresets();
     const preset: BoardPreset = {
         id: Math.random().toString(36).substring(2, 9),
         name: name.trim() || 'Naamloos bord',
         savedAt: new Date().toISOString(),
         pageCount: pages.length,
-        payload: makeFile(pages, activePageIdx),
+        payload: makeFile(pages, activePageIdx, settings),
     };
     const next = [preset, ...list].slice(0, MAX_BOARD_PRESETS);
     try {
@@ -163,8 +171,8 @@ export function deleteBoardPreset(id: string): BoardPreset[] {
 }
 
 // ── File export / import ─────────────────────────────────────────────────────
-export function exportBoardFile(pages: BoardPage[], activePageIdx: number): void {
-    const blob = new Blob([JSON.stringify(makeFile(pages, activePageIdx), null, 2)], { type: 'application/json' });
+export function exportBoardFile(pages: BoardPage[], activePageIdx: number, settings?: BoardSettings): void {
+    const blob = new Blob([JSON.stringify(makeFile(pages, activePageIdx, settings), null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

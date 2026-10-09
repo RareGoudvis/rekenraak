@@ -1,6 +1,6 @@
 import type { Instrument } from '../boardTypes';
 import { IC, NO_POINTER } from './instrumentStyle';
-import { BOARD_CM_PX, BOARD_MM_PX, EDGE_TOL_PX, GEO, LAT, bodyPolygon, formatCm, passerHinge, polyPoints, round1 } from '../instrumentGeometry';
+import { BOARD_CM_PX, BOARD_MM_PX, EDGE_TOL_PX, LAT, bodyPolygon, formatCm, passerHinge, polyPoints, rotateHandleSpots, round1, type PasserSide } from '../instrumentGeometry';
 
 // The meetinstrumenten as SVG, each drawn in its own local frame (InstrumentLayer places it
 // with translate + rotate). Translucent "plastic" from tokens: a frosted light body keeps the
@@ -14,16 +14,21 @@ export interface ShapeProps {
     // An ink tool is active: only the inner zone grabs, the band along each edge draws.
     passThrough: boolean;
     onGrip: (e: React.PointerEvent, grip: Grip) => void;
+    // "Handvatten op het bord houden" (placeRotateHandle / placePasserHinge); absent = the default spot.
+    handle?: { at: [number, number]; chip: boolean };
+    passer?: { side: PasserSide; chip: [number, number] | null };
 }
 
 
 const HANDLE_R = 19;    // ≈ 40 px across: a finger-sized target on a digibord
 
-function RotateHandle({ x, y, onGrip }: { x: number; y: number; onGrip: ShapeProps['onGrip'] }) {
+function RotateHandle({ at, chip, onGrip }: { at: [number, number]; chip: boolean; onGrip: ShapeProps['onGrip'] }) {
     return (
-        <g data-instrument-grip="rotate" transform={`translate(${round1(x)} ${round1(y)})`}
+        <g data-instrument-grip="rotate" data-handle-chip={chip || undefined} transform={`translate(${round1(at[0])} ${round1(at[1])})`}
             style={{ pointerEvents: 'all', cursor: 'grab' }} onPointerDown={(e) => onGrip(e, 'rotate')}>
             <title>Draaien</title>
+            {/* pulled off the body to the board's edge: a light ring sets it apart from the board */}
+            {chip && <circle r={HANDLE_R + 3} style={{ fill: IC.label }} />}
             <circle r={HANDLE_R} style={{ fill: IC.handle }} />
             <path d="M -8 -3 A 9 9 0 1 1 -3 8" fill="none" strokeWidth={2.4} strokeLinecap="round" style={{ stroke: IC.handleOn }} />
             <path d="M -12 -6 L -8 -3 L -5 -8" fill="none" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" style={{ stroke: IC.handleOn }} />
@@ -74,7 +79,7 @@ export function LatShape(p: ShapeProps) {
                 ))}
                 <text x={round1(0.15 * BOARD_CM_PX)} y={round1(2.1 * BOARD_CM_PX)} fontSize={14} fontFamily="var(--font-ui)" style={{ fill: IC.faint }}>cm</text>
             </g>
-            <RotateHandle x={LAT.cm * BOARD_CM_PX - 0.9 * BOARD_CM_PX} y={LAT.h - 0.95 * BOARD_CM_PX} onGrip={p.onGrip} />
+            <RotateHandle {...(p.handle ?? { at: rotateHandleSpots('lat')[0], chip: false })} onGrip={p.onGrip} />
         </Body>
     );
 }
@@ -135,7 +140,7 @@ export function GeodriehoekShape(p: ShapeProps) {
                 <path d={`M 0 ${round1(0.55 * BOARD_CM_PX)} V ${round1(GEO_RING_IN - 0.4 * BOARD_CM_PX)}`} strokeWidth={1} strokeDasharray="4 4" style={{ stroke: IC.faint }} />
                 <circle r={3.5} style={{ fill: IC.selected }} />
             </g>
-            <RotateHandle x={0} y={GEO.half - 1.55 * BOARD_CM_PX} onGrip={p.onGrip} />
+            <RotateHandle {...(p.handle ?? { at: rotateHandleSpots('geodriehoek')[0], chip: false })} onGrip={p.onGrip} />
         </Body>
     );
 }
@@ -158,9 +163,10 @@ function back(fx: number, fy: number, tx: number, ty: number, d: number): [numbe
 // perpendicular bisector (passerHinge), its grip stem pointing away from the chord. A rigid
 // drawing, so it reads right at every rotation. Needle leg and hinge move the passer, the
 // pencil leg opens it, the pencil tip draws.
-export function PasserShape({ inst, selected, onGrip }: ShapeProps) {
+export function PasserShape({ inst, selected, onGrip, passer }: ShapeProps) {
     const r = inst.radius ?? 5 * BOARD_CM_PX;
-    const side = -1 as const;
+    const side = passer?.side ?? -1;
+    const chip = passer?.chip ?? null;
     const [hx, hy] = passerHinge(r, side);
     const metal = selected ? IC.selected : IC.edge;
     const cm = BOARD_CM_PX;
@@ -220,6 +226,17 @@ export function PasserShape({ inst, selected, onGrip }: ShapeProps) {
                 <circle cx={round1(hx)} cy={round1(hy)} r={8} strokeWidth={1.4} style={{ fill: 'none', stroke: IC.handleOn }} />
                 <circle cx={round1(hx)} cy={round1(hy)} r={3} style={{ fill: IC.handleOn }} />
             </g>
+            {/* the hinge is off the board on both sides: an on-board stand-in at the nearest edge, tied to it by a dashed line */}
+            {chip && (
+                <g data-instrument-grip="body" data-passer-part="hinge-chip" style={{ pointerEvents: 'all', cursor: 'move' }} onPointerDown={(e) => onGrip(e, 'body')}>
+                    <title>Passer verplaatsen</title>
+                    <line x1={round1(chip[0])} y1={round1(chip[1])} x2={round1(hx)} y2={round1(hy)} strokeWidth={2} strokeDasharray="5 5" style={{ stroke: IC.handle, pointerEvents: 'none' }} />
+                    <circle cx={round1(chip[0])} cy={round1(chip[1])} r={HANDLE_R + 3} style={{ fill: IC.label }} />
+                    <circle cx={round1(chip[0])} cy={round1(chip[1])} r={HANDLE_R} strokeWidth={1.6} style={{ fill: IC.handle, stroke: metal }} />
+                    <circle cx={round1(chip[0])} cy={round1(chip[1])} r={8} strokeWidth={1.4} style={{ fill: 'none', stroke: IC.handleOn }} />
+                    <circle cx={round1(chip[0])} cy={round1(chip[1])} r={3} style={{ fill: IC.handleOn }} />
+                </g>
+            )}
         </>
     );
 }

@@ -228,6 +228,59 @@ export function passerPoints(inst: Pick<Instrument, 'x' | 'y' | 'rotation' | 'ra
     return { needle: [inst.x, inst.y] as [number, number], pencil: toWorld(inst, r, 0), hinge: toWorld(inst, hx, hy) };
 }
 
+// ── "Handvatten op het bord houden" ──────────────────────────────────────────
+// An instrument may hang past the board's edge, but its grab handles stay reachable: the
+// rotate handle moves to the next spot on the body that is on the board, the passer mirrors
+// its hinge to the other side of the chord, and when nothing fits the handle becomes a chip
+// at the nearest edge.
+export interface BoardSize { w: number; h: number }
+// A handle (≈ 40 px across) counts as on the board when its whole disc is.
+export const HANDLE_MARGIN_PX = 22;
+
+const onBoard = (p: [number, number], b: BoardSize, m = HANDLE_MARGIN_PX) =>
+    p[0] >= m && p[0] <= b.w - m && p[1] >= m && p[1] <= b.h - m;
+
+export const clampToBoard = (p: [number, number], b: BoardSize, m = HANDLE_MARGIN_PX): [number, number] =>
+    [Math.min(b.w - m, Math.max(m, p[0])), Math.min(b.h - m, Math.max(m, p[1]))];
+
+// Where the rotate handle may sit, in the local frame, preferred spot first. Lat: near the
+// 20 cm end, then mirrored near the 0 end, then along the body; geodriehoek: by the right
+// angle, then by either end of the hypotenuse, then above the protractor's centre.
+export function rotateHandleSpots(kind: InstrumentKind): [number, number][] {
+    const cm = BOARD_CM_PX;
+    if (kind === 'lat') {
+        const y = LAT.h - 0.95 * cm;
+        return [[LAT.cm * cm - 0.9 * cm, y], [1.3 * cm, y], [10 * cm, y], [5 * cm, y], [15 * cm, y]];
+    }
+    if (kind === 'geodriehoek') {
+        return [[0, GEO.half - 1.55 * cm], [6.2 * cm, 1.15 * cm], [-6.2 * cm, 1.15 * cm], [0, 2.3 * cm]];
+    }
+    return [];
+}
+
+// The rotate handle's local position; `chip` = no spot on the body is on the board, so the
+// handle is pulled in to the nearest edge. Off (or no measured board) = always the first spot.
+export function placeRotateHandle(inst: Instrument, board: BoardSize | null, keep: boolean): { at: [number, number]; chip: boolean } {
+    const spots = rotateHandleSpots(inst.kind);
+    if (!spots.length) return { at: [0, 0], chip: false };
+    if (!keep || !board || board.w <= 0 || board.h <= 0) return { at: spots[0], chip: false };
+    const hit = spots.find(s => onBoard(toWorld(inst, s[0], s[1]), board));
+    if (hit) return { at: hit, chip: false };
+    const [wx, wy] = clampToBoard(toWorld(inst, spots[0][0], spots[0][1]), board);
+    return { at: toLocal(inst, wx, wy), chip: true };
+}
+
+// The passer's hinge side, and a local chip position when the hinge is off the board on both
+// sides of the chord (a wide-open or nearly closed passer by an edge).
+export function placePasserHinge(inst: Instrument, board: BoardSize | null, keep: boolean): { side: PasserSide; chip: [number, number] | null } {
+    if (!keep || !board || board.w <= 0 || board.h <= 0) return { side: -1, chip: null };
+    const up = passerPoints(inst, -1).hinge;
+    if (onBoard(up, board)) return { side: -1, chip: null };
+    if (onBoard(passerPoints(inst, 1).hinge, board)) return { side: 1, chip: null };
+    const [wx, wy] = clampToBoard(up, board);
+    return { side: -1, chip: toLocal(inst, wx, wy) };
+}
+
 // ── Passer: opening and arcs ─────────────────────────────────────────────────
 // Dragging the pencil leg: the tip follows the pointer, the opening on whole mm within the
 // passer's range; rotation = the needle → pencil direction.

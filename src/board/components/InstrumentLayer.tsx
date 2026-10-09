@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useBoardStore } from '../useBoardStore';
 import type { Instrument, Stroke } from '../boardTypes';
 import { rndId } from '../boardTypes';
-import { arcPath, arcPts, formatCm, openPasser, round1, snapInstrumentPoint, snapInstrumentRotation, snapOf, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
+import { arcPath, arcPts, formatCm, openPasser, placePasserHinge, placeRotateHandle, round1, snapInstrumentPoint, type BoardSize, snapInstrumentRotation, snapOf, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
 import { GeodriehoekShape, LatShape, PasserShape, type Grip } from './InstrumentShapes';
 import { IC, NO_POINTER } from './instrumentStyle';
 
@@ -27,7 +27,10 @@ export default function InstrumentLayer() {
     const instruments = useBoardStore((s) => s.pages[s.activePageIdx].instruments) ?? EMPTY;
     const selectedId = useBoardStore((s) => s.selectedInstrumentId);
     const tool = useBoardStore((s) => s.tool);
+    const keepHandles = useBoardStore((s) => s.boardSettings.keepHandles);
     const svgRef = useRef<SVGSVGElement>(null);
+    // The board's size: the handles are kept inside it ("Handvatten op het bord houden").
+    const [board, setBoard] = useState<BoardSize | null>(null);
     const drag = useRef<Drag | null>(null);
     const [snapDot, setSnapDot] = useState<{ x: number; y: number } | null>(null);
     const [readout, setReadout] = useState<Readout | null>(null);
@@ -116,6 +119,23 @@ export default function InstrumentLayer() {
         setReadout(null);
     };
 
+    useLayoutEffect(() => {
+        const el = svgRef.current;
+        if (!el) return;
+        const measure = () => {
+            const r = el.getBoundingClientRect();
+            setBoard(b => (b && b.w === r.width && b.h === r.height ? b : { w: r.width, h: r.height }));
+        };
+        measure();
+        if (typeof ResizeObserver === 'undefined') {
+            window.addEventListener('resize', measure);
+            return () => window.removeEventListener('resize', measure);
+        }
+        const ro = new ResizeObserver(measure);
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
     // Keyboard on the selected instrument; typing in a widget's field is left alone.
     useEffect(() => {
         if (!selectedId) return;
@@ -160,7 +180,11 @@ export default function InstrumentLayer() {
                     strokeLinecap="round" opacity={arcDraft.opacity} style={NO_POINTER} />
             )}
             {instruments.map((inst) => {
-                const props = { inst, selected: inst.id === selectedId, passThrough, onGrip: (e: React.PointerEvent, g: Grip) => begin(e, inst.id, g) };
+                const props = {
+                    inst, selected: inst.id === selectedId, passThrough, onGrip: (e: React.PointerEvent, g: Grip) => begin(e, inst.id, g),
+                    handle: placeRotateHandle(inst, board, keepHandles),
+                    passer: inst.kind === 'passer' ? placePasserHinge(inst, board, keepHandles) : undefined,
+                };
                 return (
                     <g key={inst.id} data-instrument={inst.kind} data-instrument-inert={inert || undefined}
                         transform={`translate(${inst.x} ${inst.y}) rotate(${inst.rotation})`}>
