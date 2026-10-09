@@ -105,11 +105,14 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         if (subType === 'kleuren') {
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', fontWeight: 'normal' }}>
-                        <span>Kleur</span>
-                        {vertFrac(ex.numerator, ex.denominator)}
-                        <span>in:</span>
-                    </div>
+                    {/* The kiosk header already says "Kleur 1/5 in.": the card shows the figure alone. */}
+                    {!ix && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', fontWeight: 'normal' }}>
+                            <span>Kleur</span>
+                            {vertFrac(ex.numerator, ex.denominator)}
+                            <span>in:</span>
+                        </div>
+                    )}
                     <div style={{ minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {shape}
                     </div>

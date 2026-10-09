@@ -10,6 +10,8 @@ interface Props {
     nonce?: number;                          // bump to force a fresh random generation
     height?: number;                         // clip-box height; default 150
     count?: number;                          // exercises to generate; default 1
+    // Shown instead of the viewer when the settings generate nothing (the viewers' own empty text says "klik Genereer").
+    emptyText?: string;
 }
 
 // A preview never needs huge numbers, and a generator fed an out-of-range max (e.g. the
@@ -65,7 +67,7 @@ function useInView<T extends HTMLElement>() {
     return { ref, inView };
 }
 
-export default function ExercisePreview({ typeId, constraints, nonce = 0, height = 150, count = 1 }: Props) {
+export default function ExercisePreview({ typeId, constraints, nonce = 0, height = 150, count = 1, emptyText }: Props) {
     const { ref: boxRef, inView } = useInView<HTMLDivElement>();
     const innerRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
@@ -83,6 +85,8 @@ export default function ExercisePreview({ typeId, constraints, nonce = 0, height
     }, [typeId, constraintsKey, nonce, inView, count]);
 
     const Viewer = EXERCISE_UI[typeId]?.Viewer;
+    const field = REGISTRY[typeId]?.exerciseField;
+    const empty = !!emptyText && !!block && !!field && Array.isArray(block[field]) && (block[field] as unknown[]).length === 0;
 
     // Measure the unscaled content and the box, then scale so the WHOLE example fits.
     // transform doesn't affect layout, so measuring the (unscaled) inner is stable.
@@ -115,6 +119,7 @@ export default function ExercisePreview({ typeId, constraints, nonce = 0, height
             {!inView && <div style={fallbackStyle}>…</div>}
             {inView && (!block || !Viewer
                 ? <div style={fallbackStyle}>Voorbeeld niet beschikbaar</div>
+                : empty ? <div style={fallbackStyle}>{emptyText}</div>
                 : (
                     <div ref={innerRef} style={{ ...scaleWrap, transform: `scale(${scale})` }}>
                         <BlockErrorBoundary

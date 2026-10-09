@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { X, UploadSimple, FloppyDisk, PencilSimple, Copy, DownloadSimple, Trash, Plus, ArrowRight, Share } from '@phosphor-icons/react';
+import { X, UploadSimple, FloppyDisk, PencilSimple, Copy, DownloadSimple, Trash, Plus, ArrowRight, Share, Warning } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import Wordmark from '../ui/Wordmark';
 import SheetThumbnail from '../shared/SheetThumbnail';
@@ -11,6 +11,7 @@ import {
 } from '../../services/persistence';
 import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 import OefenShareModal from '../oefenen/OefenShareModal';
+import { deadRowsOf } from '../oefenen/oefenBuild';
 import type { OefenSessie } from '../../services/oefenen/types';
 
 type SortKey = 'recent' | 'name';
@@ -34,6 +35,8 @@ export default function MijnBladenView() {
     // null = closed; 'new' = empty builder; a session = editing it. Remount via key so drafts reseed.
     const [oefenEdit, setOefenEdit] = useState<OefenSessie | 'new' | null>(null);
     const [oefenShare, setOefenShare] = useState<OefenSessie | null>(null);
+    // Delen's pre-flight verdict for one library row: the labels of its rows that generate nothing.
+    const [deadOf, setDeadOf] = useState<{ id: string; labels: string[] } | null>(null);
     const bump = () => setRefresh((n) => n + 1);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `refresh` is the explicit re-read trigger after a mutation
@@ -92,6 +95,14 @@ export default function MijnBladenView() {
     const handleOefenDuplicate = (e: OefenSessieEntry) => {
         if (!duplicateOefenSessie(e.id)) { window.alert('Dupliceren mislukt: de opslag van je browser is vol.'); return; }
         bump();
+    };
+
+    // The builder's Delen pre-flight: a dead row would end every pupil's run, so no link.
+    const handleOefenShare = (e: OefenSessieEntry) => {
+        const dead = deadRowsOf(e.sessie);
+        if (dead.length) { setDeadOf({ id: e.id, labels: dead.map(r => r.leaf.label) }); return; }
+        setDeadOf(null);
+        setOefenShare(e.sessie);
     };
 
     const handleOefenDelete = (e: OefenSessieEntry) => {
@@ -198,10 +209,15 @@ export default function MijnBladenView() {
                                         {e.sessie.types.length} {e.sessie.types.length === 1 ? 'soort' : 'soorten'}
                                         {e.sessie.timerMin ? ` · ${e.sessie.timerMin} min` : ''} · bewaard {formatDate(e.savedAt)}
                                     </div>
+                                    {deadOf?.id === e.id && (
+                                        <div style={S.deadNote} role="alert">
+                                            <Warning size={14} /> {deadOf.labels.join(', ')} {deadOf.labels.length === 1 ? 'levert' : 'leveren'} geen oefeningen op. Pas de sessie aan via Bewerken om te delen.
+                                        </div>
+                                    )}
                                 </div>
                                 <button style={S.iconBtn} title="Hernoemen" onClick={() => handleOefenRename(e)}><PencilSimple size={15} /></button>
                                 <button style={S.iconBtn} title="Dupliceren" aria-label="Dupliceren" onClick={() => handleOefenDuplicate(e)}><Copy size={15} /></button>
-                                <button style={S.ghostBtn} onClick={() => setOefenShare(e.sessie)}><Share size={15} /> Delen</button>
+                                <button style={S.ghostBtn} onClick={() => handleOefenShare(e)}><Share size={15} /> Delen</button>
                                 <button style={S.ghostBtn} onClick={() => setOefenEdit(e.sessie.title ? e.sessie : { ...e.sessie, title: e.name.slice(0, 60) })}><PencilSimple size={15} /> Bewerken</button>
                                 <button style={{ ...S.iconBtn, color: 'var(--danger)' }} title="Verwijderen" aria-label="Verwijderen" onClick={() => handleOefenDelete(e)}><Trash size={15} /></button>
                             </div>
@@ -237,6 +253,7 @@ const S = {
     oefenList: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' } as React.CSSProperties,
     oefenRow: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', padding: 'var(--sp-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', background: 'var(--bg-surface)', boxShadow: 'var(--shadow-1)' } as React.CSSProperties,
     subMeta: { fontSize: 'var(--text-sm)', color: 'var(--text-muted)' } as React.CSSProperties,
+    deadNote: { display: 'flex', alignItems: 'center', gap: 'var(--sp-1)', marginTop: 'var(--sp-1)', fontSize: 'var(--text-sm)', color: 'var(--danger)', fontWeight: 600 } as React.CSSProperties,
     controls: { display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' } as React.CSSProperties,
     search: { padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', background: 'var(--bg-surface)', color: 'var(--text-main)', fontSize: 'var(--text-sm)', minWidth: '240px' } as React.CSSProperties,
     sortSel: { padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--separator)', background: 'var(--bg-surface)', color: 'var(--text-main)', fontSize: 'var(--text-sm)', cursor: 'pointer' } as React.CSSProperties,

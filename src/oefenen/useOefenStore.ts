@@ -419,13 +419,16 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (statsFrom !== 'exercise') get().skipFlash();
         },
 
+        // Owner call 15: only the end screen starts over or wipes; mid-run (the Resultaten peek
+        // included) a pupil must not escape a timed test or lose the run.
         restart() {
+            if (get().phase !== 'locked') return;
             get().start();
         },
 
         clear() {
             const s = get().sessie;
-            if (!s) return;
+            if (!s || get().phase !== 'locked') return;
             clearFlash();
             clearRuns(s.id);
             set({ run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null });

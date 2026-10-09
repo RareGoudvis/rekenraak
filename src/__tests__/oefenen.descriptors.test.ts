@@ -12,10 +12,13 @@ import { checkAnswer, normaliseFraction, normaliseNumber } from '../services/oef
 import { INTERACT_SEP } from '../services/oefenen/types';
 import { EMPTY_INTERACTION, type BuildEntry } from '../components/viewer/ViewerInteractionContext';
 import { fractionSpellings, numberSpellings } from '../services/oefenen/kioskDescriptors';
+import { answerText, expectedText } from '../services/oefenen/stats';
 import { gradeBase, mulberry32 } from './helpers/limitHarness';
 import { cellsFromParts, cijferFill, type Cells } from './helpers/fillCells';
 import { checkDrag } from './helpers/dragCheck';
 import { cijferKiosk } from '../services/oefenen/kioskDescriptors';
+import { cijferKioskGrid } from '../services/cijferen/cijferCells';
+import { divideToDecimals } from '../services/cijferen/cijferGenerator';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
 import type * as T from '../services/math/types';
 import { PLACE_VALUES } from '../services/math/mathEngine';
@@ -944,4 +947,61 @@ describe('spellings and normalisation', () => {
         ['3/4', '3/4'], [' 1  3 / 4 ', '1 3/4'], ['03/04', '3/4'], ['0 3/4', '3/4'],
     ])('normaliseFraction(%j) = %j', (raw, want) => expect(normaliseFraction(raw)).toBe(want));
     test.each(['3/0', '3/', '/4', '1 2 3/4'])('normaliseFraction(%j) = null', raw => expect(normaliseFraction(raw)).toBeNull());
+});
+
+describe('O25: a decimal divisor sizes the quotient from the shifted dividend', () => {
+    // 742,4 : 0,7 is worked as 7424 : 7, so the quotient has as many whole places as 7424.
+    test.each([
+        [742.4, 0.7, '1060,57', 6],
+        [935.6, 0.8, '1169,5', 6],
+        [74.24, 0.07, '1060,57', 6],
+        [742.4, 7, '106,05', 5],
+    ])('%d : %d = %s fits %d quotient cells and checks', (dividend, divisor, quotient, cells) => {
+        const { quotient: answer, remainder } = divideToDecimals(dividend, divisor, 2);
+        const ex: CijferExercise = { id: 'o25', operands: [dividend, divisor], operator: ':', answer, remainder, isManuallyEdited: false, decimalPlaces: 2 };
+        const c = { numberType: 'decimal', decimalPlaces: 2 };
+        const q = cijferKioskGrid(ex, 2).cells.filter(cell => cell.role === 'quotient');
+        expect(q).toHaveLength(cells);
+        const d = cijferKiosk();
+        const keys = kioskInteractOf(d, c)!.keys!(ex, c);
+        const { answer: right } = cijferFill(ex, keys);
+        const given = kioskInteractOf(d, c)!.fromState({ ...EMPTY_INTERACTION, cells: right }, ex, c);
+        expect(normaliseNumber(given.split(INTERACT_SEP)[0])).toBe(normaliseNumber(quotient));
+        expect(checkAnswer(d, ex, c, given)).toBe(true);
+    });
+});
+
+describe('O26: a getallenrij / getallenas keypad has a komma when the step has decimals', () => {
+    const d = kioskFor('getallenrijen')!;
+    // From the settings, never the exercise: the keypad must not change from one rij to the next.
+    test.each([
+        [{ numberType: 'natural', step: 0.5 }, [',']],
+        [{ numberType: 'natural', step: 0.1 }, [',']],
+        [{ numberType: 'geheel', step: 0.5 }, ['-', ',']],
+        [{ numberType: 'natural', step: 5 }, []],
+        [{ numberType: 'geheel', step: 5 }, ['-']],
+        [{ numberType: 'decimal', step: 0.1 }, [',']],
+        [{ numberType: 'rational', step: 0.5, fractionStep: 4 }, ['/', ' ']],
+    ])('%j → keys %j', (c, keys) => {
+        expect(d.keys?.(c)).toEqual(keys);
+        expect(kioskFor('getallenas')!.keys?.(c)).toEqual(keys);
+    });
+});
+
+describe('O27: a deelbaarheidstabel row with no divisor says "geen" in Resultaten', () => {
+    const d = kioskFor('deelbaarheid')!;
+    const c = { layout: 'tabel', divisors: [2, 5, 10] };
+    const fill = (ex: T.DeelbaarheidExercise, selected: string[]) => kioskInteractOf(d, c)!.fromState({ ...EMPTY_INTERACTION, selected }, ex, c);
+    test('291: none of 2, 5, 10 → Juist antwoord "geen", tapping nothing is juist', () => {
+        const ex: T.DeelbaarheidExercise = { id: 'o27', number: 291, isManuallyEdited: false };
+        expect(expectedText(d, ex, c)).toBe('geen');
+        expect(checkAnswer(d, ex, c, fill(ex, []))).toBe(true);
+        expect(answerText(d, ex, c, fill(ex, []))).toBe('geen');
+        expect(checkAnswer(d, ex, c, fill(ex, ['0']))).toBe(false);
+        expect(answerText(d, ex, c, fill(ex, ['0']))).toBe('2');
+    });
+    test('40: the divisors as before', () => {
+        const ex: T.DeelbaarheidExercise = { id: 'o27b', number: 40, isManuallyEdited: false };
+        expect(expectedText(d, ex, c)).toBe(['2', '5', '10'].join(INTERACT_SEP));
+    });
 });

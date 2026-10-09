@@ -146,6 +146,17 @@ describe('breuken kleuren', () => {
     });
 
     test('kiosk flow: any n parts are right, juist and fout', () => cardFlow('breuken-kleuren', null, tapCount));
+
+    // Owner call 12: the kiosk header already says "Kleur 1/5 in.", so the card drops its own prompt; the sheet keeps it.
+    test('the card has no "Kleur … in:" prompt of its own; the sheet does', () => {
+        const block = oneExercise('breuken', { subType: 'kleuren', shapes: ['rectangle'], shape: 'rectangle', minDenominator: 5, maxDenominator: 5 });
+        const kiosk = render(<Harness block={block} kind="tap-multi" />);
+        expect(kiosk.container.textContent).not.toMatch(/Kleur|in:/);
+        cleanup();
+        const { Viewer } = EXERCISE_UI[block.typeId];
+        const sheet = render(<BlockWidthProvider value={340}><Viewer block={block} showSolutions={false} /></BlockWidthProvider>);
+        expect(sheet.container.textContent).toMatch(/Kleur.*in:/);
+    });
 });
 
 describe('deelbaarheid kleuren', () => {
