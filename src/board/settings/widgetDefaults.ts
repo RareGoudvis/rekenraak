@@ -1,4 +1,5 @@
 import type { WidgetKind } from '../boardTypes';
+import { PROP_SCHEMAS } from './propSchemas';
 
 // "Bewaar als mijn standaard": the teacher's own starting props per widget kind, applied by
 // addWidget to every new widget of that kind (the caller's props still win, so a tool's own
@@ -10,6 +11,7 @@ export const BOARD_DEFAULTS_KEY = 'rekenraak_board_defaults_v1';
 export const TRANSIENT_PROP_KEYS: readonly string[] = [
     'checked', 'done', 'picked', 'result', 'locked', 'active',
     'hours', 'minutes', 'src', 'marks', 'd', 'h', 't', 'e',
+    'laps', 'values', 'history', 'level', 'calibrateAt',
 ];
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -56,6 +58,8 @@ export function clearWidgetDefaults(kind: WidgetKind): void {
 // (empty props: every reader defaults a missing key to today's behaviour). An image payload
 // is the widget itself, not a setting, so it survives.
 export function resetProps(kind: WidgetKind, current?: Record<string, unknown>): Record<string, unknown> {
-    const keep = current && 'src' in current ? { src: current.src } : {};
+    // A kind's schema names its other content keys too (a note's text, the dice's last roll).
+    const content = ['src', ...(PROP_SCHEMAS[kind]?.content ?? [])];
+    const keep = Object.fromEntries(content.filter(k => current && k in current).map(k => [k, current![k]]));
     return { ...(loadWidgetDefaults(kind) ?? {}), ...keep };
 }
