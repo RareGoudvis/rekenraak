@@ -1,34 +1,49 @@
 import { useEffect, useState } from 'react';
-import { datumProps, DATUM_COLORS } from '../../widgetSizing';
+import { datumModel, datumColors, formatDate, isoWeek, dayOfYear, season, daysUntil, countdownText } from '../../settings/datumModel';
+import { fontScale, widgetAccent } from '../../settings/baseProps';
 import type { BoardWidget } from '../../boardTypes';
 
-// Daily-routine widget: weekday / full date / live clock, each toggleable, with a
-// small curated color accent (settings panel).
+// Daily-routine widget: weekday / date / live clock plus optional week number, day of the
+// year, season and a countdown; format, letter case, colours and size from the ⚙ panel.
 export default function DatumWidget({ widget }: { widget: BoardWidget }) {
-    const p = datumProps(widget);
-    const c = DATUM_COLORS[p.color];
+    const m = datumModel(widget);
+    const c = datumColors(m, widgetAccent(widget));
+    const fs = fontScale(widget);
     const [now, setNow] = useState(() => new Date());
 
-    // Tick only when the clock is visible; per-second only when seconds show.
+    // Tick per second with seconds showing, else every 10 s (also rolls the date over at midnight).
     useEffect(() => {
-        if (!p.showTime) return;
-        const iv = setInterval(() => setNow(new Date()), p.showSeconds ? 1000 : 10_000);
+        const iv = setInterval(() => setNow(new Date()), m.showTime && m.showSeconds ? 1000 : 10_000);
         return () => clearInterval(iv);
-    }, [p.showTime, p.showSeconds]);
+    }, [m.showTime, m.showSeconds]);
 
     const weekday = now.toLocaleDateString('nl-BE', { weekday: 'long' });
-    const dateStr = now.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' });
-    const timeStr = now.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit', ...(p.showSeconds ? { second: '2-digit' } : {}) });
+    const timeStr = now.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit', ...(m.showSeconds ? { second: '2-digit' } : {}) });
+    const caseOf = (capitalizeFirst: boolean): React.CSSProperties['textTransform'] =>
+        m.textCase === 'hoofdletters' ? 'uppercase' : m.textCase === 'klein' ? 'lowercase' : capitalizeFirst ? 'capitalize' : 'none';
+    const s = season(now);
+    const countdown = m.countdownDate ? countdownText(daysUntil(now, m.countdownDate), m.countdownLabel) : null;
+    const extras = [
+        m.showWeek && `week ${isoWeek(now)}`,
+        m.showDayOfYear && `dag ${dayOfYear(now)} van het jaar`,
+        m.showSeason && `${s.icon} ${s.name}`,
+    ].filter(Boolean) as string[];
 
     return (
         <div style={{
             margin: '12px', padding: '14px 20px', borderRadius: '10px', textAlign: 'center',
-            background: c.bg, border: `1px solid ${c.border}`,
+            background: m.tint ? c.bg : 'transparent', border: `1px solid ${m.tint ? c.border : 'transparent'}`,
             fontFamily: "'Azeret Mono', monospace",
         }}>
-            {p.showWeekday && <div style={{ fontSize: '30px', fontWeight: 700, textTransform: 'capitalize', color: c.text }}>{weekday}</div>}
-            {p.showDate && <div style={{ fontSize: '22px', marginTop: '4px', color: '#111' }}>{dateStr}</div>}
-            {p.showTime && <div style={{ fontSize: '34px', fontWeight: 700, marginTop: '6px', color: c.text }}>{timeStr}</div>}
+            {m.showWeekday && <div style={{ fontSize: `${30 * fs}px`, fontWeight: 700, textTransform: caseOf(true), color: c.text }}>{weekday}</div>}
+            {m.showDate && <div style={{ fontSize: `${22 * fs}px`, marginTop: '4px', color: '#111', textTransform: caseOf(false) }}>{formatDate(now, m)}</div>}
+            {m.showTime && <div style={{ fontSize: `${34 * fs}px`, fontWeight: 700, marginTop: '6px', color: c.text }}>{timeStr}</div>}
+            {extras.length > 0 && (
+                <div style={{ fontSize: `${15 * fs}px`, marginTop: '8px', color: '#444', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 14px', textTransform: caseOf(false) }}>
+                    {extras.map(x => <span key={x}>{x}</span>)}
+                </div>
+            )}
+            {countdown && <div data-datum-countdown style={{ fontSize: `${17 * fs}px`, fontWeight: 700, marginTop: '8px', color: c.text, textTransform: caseOf(false) }}>{countdown}</div>}
         </div>
     );
 }

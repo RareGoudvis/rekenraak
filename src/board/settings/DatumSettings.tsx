@@ -1,11 +1,12 @@
-import { Section, Toggle } from './controls';
+import { Section, Segmented, Toggle, TextField, Hint, Button, ButtonRow } from './controls';
 import { useSetProps } from './baseProps';
-import { datumProps, DATUM_COLORS } from '../widgetSizing';
+import { datumModel, formatDate } from './datumModel';
 import type { BoardWidget } from '../boardTypes';
 
 export default function DatumSettings({ widget }: { widget: BoardWidget }) {
     const set = useSetProps(widget);
-    const d = datumProps(widget);
+    const d = datumModel(widget);
+    const sample = new Date();
     return (
         <>
             <Section title="Weergave">
@@ -14,18 +15,31 @@ export default function DatumSettings({ widget }: { widget: BoardWidget }) {
                 <Toggle label="Tijd (live)" checked={d.showTime} onChange={(v) => set({ showTime: v })} />
                 {d.showTime && <Toggle label="Seconden" checked={d.showSeconds} onChange={(v) => set({ showSeconds: v })} />}
             </Section>
+            <Section title="Datum schrijven">
+                <Segmented label="Vorm" value={d.format} onChange={(v) => set({ format: v })}
+                    options={[
+                        { value: 'lang', label: formatDate(sample, { format: 'lang', showYear: false }) },
+                        { value: 'kort', label: formatDate(sample, { format: 'kort', showYear: false }) },
+                        { value: 'numeriek', label: formatDate(sample, { format: 'numeriek', showYear: false }) },
+                    ]} />
+                <Toggle label="Jaartal" checked={d.showYear} onChange={(v) => set({ showYear: v })} />
+                <Segmented label="Letters" value={d.textCase} onChange={(v) => set({ textCase: v })}
+                    options={[{ value: 'normaal', label: 'Maandag' }, { value: 'hoofdletters', label: 'MAANDAG' }, { value: 'klein', label: 'maandag' }]} />
+            </Section>
+            <Section title="Extra">
+                <Toggle label="Weeknummer" checked={d.showWeek} onChange={(v) => set({ showWeek: v })} />
+                <Toggle label="Dag van het jaar" checked={d.showDayOfYear} onChange={(v) => set({ showDayOfYear: v })} />
+                <Toggle label="Seizoen" checked={d.showSeason} onChange={(v) => set({ showSeason: v })} />
+            </Section>
+            <Section title="Aftellen">
+                <TextField type="date" label="Datum (bv. eerste vakantiedag)" value={d.countdownDate ?? ''} onChange={(v) => set({ countdownDate: v || undefined })} />
+                <TextField label="Aftellen tot" value={typeof widget.props?.countdownLabel === 'string' ? widget.props.countdownLabel : ''} placeholder="de vakantie" onChange={(v) => set({ countdownLabel: v })} />
+                {d.countdownDate && <ButtonRow><Button onClick={() => set({ countdownDate: undefined })}>Aftellen weghalen</Button></ButtonRow>}
+                <Hint>Toont "Nog 12 dagen tot de vakantie" tot die dag.</Hint>
+            </Section>
             <Section title="Kleur">
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    {Object.entries(DATUM_COLORS).map(([key, c]) => (
-                        <button key={key} type="button" aria-label={`Kleur ${key}`} title={key} aria-pressed={d.color === key}
-                            onClick={() => set({ color: key })}
-                            style={{
-                                width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer',
-                                background: c.text, border: '2px solid var(--bg-surface)',
-                                boxShadow: d.color === key ? '0 0 0 2px var(--accent)' : 'none',
-                            }} />
-                    ))}
-                </div>
+                <Toggle label="Gekleurde achtergrond" checked={d.tint} onChange={(v) => set({ tint: v })} />
+                <Hint>De kleur kies je bij Accentkleur, hieronder.</Hint>
             </Section>
         </>
     );
