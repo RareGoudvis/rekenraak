@@ -55,12 +55,21 @@ export function clearWidgetDefaults(kind: WidgetKind): void {
     try { localStorage.setItem(BOARD_DEFAULTS_KEY, JSON.stringify(all)); } catch { /* nothing to undo */ }
 }
 
+// Rows and fractions the teacher made on the card: kept by a reset, yet unlike the transient
+// keys they may travel in a standaard (a teacher's own checklist, her default fractions).
+const RESET_KEEP_KEYS: Partial<Record<WidgetKind, readonly string[]>> = {
+    checklist: ['list', 'items', 'text'],
+    stappenplan: ['list', 'text'],
+    breukviz: ['fractions', 'n', 'd'],
+};
+
 // What "Standaard" resets a widget to: the teacher's saved standaard, else the factory look
-// (empty props: every reader defaults a missing key to today's behaviour). An image payload
-// is the widget itself, not a setting, so it survives.
+// (empty props: every reader defaults a missing key to today's behaviour). What is ON the card
+// (an image, MAB blocks, number-line marks, typed cells, the clock time) is the widget itself,
+// not a setting, so it survives.
 export function resetProps(kind: WidgetKind, current?: Record<string, unknown>): Record<string, unknown> {
     // A kind's schema names its other content keys too (a note's text, the dice's last roll).
-    const content = ['src', ...(PROP_SCHEMAS[kind]?.content ?? [])];
+    const content = ['src', ...TRANSIENT_PROP_KEYS, ...(PROP_SCHEMAS[kind]?.content ?? []), ...(RESET_KEEP_KEYS[kind] ?? [])];
     const keep = Object.fromEntries(content.filter(k => current && k in current).map(k => [k, current![k]]));
     return { ...(loadWidgetDefaults(kind) ?? {}), ...keep };
 }
