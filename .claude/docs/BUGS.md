@@ -40,11 +40,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - breuken-lijnstuk DEFAULT, w4: 10-12 cm segments are drawn clamped to ~8,9 cm (335 px) while the key
   says "12 cm : 6 = 2 cm": the child measures a different length than the key. Fix: cap
   maxLineLength to the column's cm width instead of scaling one segment. 2026-09-27
-- Ordenen prints thousands with a DOT (`toLocaleString('nl-BE')`, OrdenenViewer.tsx ~43/~78):
-  "97.055", "9.705,494" at its max (100 000) and any max >= 1 000; every other viewer uses the space.
-  The default decimal leaf also separates items with ", " between decimal-comma numbers
-  ("970,55,  902,86"). pw017 {decimal, 3 dp, 100 000} is 8 px te breed. Fix: the shared space
-  formatter and a non-comma list separator. 2026-09-27
+- Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept
+  every glyph count). 2026-09-27
 - Getalpatronen at its max (100 000): every five-digit term breaks at its thousands space ("97 /
   055") at every width, w4 included. Fix: nowrap per number, column width from monoTextPx. 2026-09-27
 - patronen-geh DEFAULT: the en-dash separator next to negative terms reads "-53 – -43 – -33".

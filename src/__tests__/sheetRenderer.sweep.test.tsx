@@ -6,6 +6,7 @@ import MathBlockRenderer from '../components/viewer/MathBlockRenderer';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 import FractionViewer from '../components/viewer/FractionViewer';
 import ClockViewer from '../components/viewer/ClockViewer';
+import OrdenenViewer from '../components/viewer/OrdenenViewer';
 import { SOL } from '../components/viewer/solutionStyle';
 import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 
@@ -115,5 +116,34 @@ describe('klok tekenen key: the hands the pupil draws are in the solution red', 
 
     test('klok lezen: the printed clock is the question, its hands stay black', () => {
         expect(hands(renderClock(clockBlock('beide', 'lezen'), true))).toEqual(['#000', '#000']);
+    });
+});
+
+describe('ordenen prints numbers like every other viewer', () => {
+    const ordBlock = (numberType: string, display: number[]): MathBlock => ({
+        ...makeBlock('ordenen', { id: 'or', constraints: { numberType, maxGetal: 100000 } }),
+        ordenenExercises: [{ id: 'o1', display, values: [...display].sort((a, b) => a - b), operator: '<', isManuallyEdited: false }],
+    });
+    const textOf = (b: MathBlock, showSolutions: boolean) => render(
+        <BlockWidthProvider value={FULL_BLOCK_WIDTH_PX}>
+            <OrdenenViewer block={b} showSolutions={showSolutions} />
+        </BlockWidthProvider>,
+    ).container.textContent ?? '';
+
+    test('thousands take a space, never a dot (97 055, 9 705,494)', () => {
+        const t = textOf(ordBlock('decimal', [97055, 9705.494, 12.5]), true);
+        expect(t).toContain('97 055');
+        expect(t).toContain('9 705,494');
+        expect(t).not.toMatch(/\d\.\d/);
+    });
+
+    test('decimal numbers are listed with ";" so the list comma never reads as a decimal comma', () => {
+        const t = textOf(ordBlock('decimal', [970.55, 902.86, 12.5]), false);
+        expect(t).toContain('970,55;');
+        expect(t).not.toMatch(/\d,\d+,/);
+    });
+
+    test('whole numbers keep the comma list', () => {
+        expect(textOf(ordBlock('natural', [345, 12, 7000]), false)).toContain('345,12,7 000');
     });
 });
