@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, FloppyDisk, Plus, Share, Trash, Warning } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
-import { saveOefenSessie } from '../../services/persistence';
+import { deleteOefenSessie, saveOefenSessie } from '../../services/persistence';
 import { attemptsOf, type OefenAttempts, type OefenSessie } from '../../services/oefenen/types';
 import { makeDraftBlock } from '../curriculum/draftBlock';
 import ExercisePreview from '../shared/ExercisePreview';
@@ -18,7 +18,7 @@ import {
 
 interface Props {
     onClose: () => void;
-    // Reopen a saved session for editing (same id, so "Opslaan" replaces it).
+    // Reopen a saved session for editing ("Opslaan" replaces it; a content edit gets a new id).
     initial?: OefenSessie;
 }
 
@@ -54,6 +54,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const nextKey = useRef(rows.length);
     // Whole minutes: the share link then carries createdAt as a 8-digit minute count.
     const [meta] = useState(() => ({ id: initial?.id ?? newSessieId(), createdAt: initial?.createdAt ?? Math.floor(Date.now() / 60_000) * 60_000 }));
+    // The id an edited session ships under once its content differs from `initial`.
+    const [editedId] = useState(newSessieId);
 
     // Seed drafts for a reopened session; always tear them down on close (they are off-sheet).
     useEffect(() => {
@@ -86,7 +88,10 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         const constraints = constraintsOf(r.key);
         return constraints ? [{ ...r, constraints }] : [];
     });
-    const { sessie, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts });
+    const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts });
+    // Pupils' runs are stored per session id with per-slot stats, so changed content must not reopen
+    // (or mislabel) old runs: a content edit is a new session, a rename keeps the id.
+    const sessie = initial && !sameContent(built, initial) ? { ...built, id: editedId } : built;
     const percents = normaliseWeights(sessie.types.map(t => t.weight));
     const percentOf = (key: string): number | null => {
         const i = buildable.filter(r => kioskSupports(r.leaf.typeId, r.constraints)).findIndex(r => r.key === key);
@@ -106,6 +111,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         if (!title.trim()) setTitle(titled.title ?? '');
         const entry = saveOefenSessie(titled, name);
         if (!entry) { window.alert('Opslaan mislukt: de opslag van je browser is vol.'); return; }
+        // One library row per edited session: drop the version saved under the other id of this edit.
+        if (initial) for (const id of [initial.id, editedId]) if (id !== titled.id) deleteOefenSessie(id);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
@@ -286,6 +293,17 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
             {shareOf && <OefenShareModal sessie={shareOf} onClose={() => setShareOf(null)} />}
         </>
     );
+}
+
+// Key-order-independent JSON, so two equal sessions compare equal however they were built.
+const stable = (v: unknown): string => JSON.stringify(v, (_, x: unknown) => (x && typeof x === 'object' && !Array.isArray(x)
+    ? Object.fromEntries(Object.entries(x as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)))
+    : x));
+
+// Everything but the name: id, title and createdAt do not change what a pupil practises.
+function sameContent(a: OefenSessie, b: OefenSessie): boolean {
+    const strip = ({ id: _id, title: _title, createdAt: _createdAt, ...rest }: OefenSessie) => rest;
+    return stable(strip(a)) === stable(strip(b));
 }
 
 function SwitchRow({ label, checked, onChange, disabled, note }: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; note?: string }) {

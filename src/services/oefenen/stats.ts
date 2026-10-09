@@ -87,6 +87,7 @@ export const viablePlannedTotal = (s: OefenSessie): number | null => plannedTota
 
 /** One row per type in session order, with percent correct. */
 export function summary(stats: OefenStats, s: OefenSessie): OefenSummaryRow[] {
+    // Driven by the session's types: slots a stored run has beyond them (an older edit) are ignored.
     return s.types.map((t, slot) => {
         const st = stats.perType[slot] ?? emptyType();
         return {

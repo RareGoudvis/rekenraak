@@ -184,10 +184,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-B store / stats
 
-- **O3** C2: Mijn bladen › Bewerken › Opslaan keeps the session id (OefenBuilderModal.tsx:56), so the
-  new link reopens the old finished run (useOefenStore.ts:281); removing a type shifts every saved
-  per-type result to the wrong type (index-keyed `perType[slot]`, stats.ts:80-81). Owner: a content
-  edit gets a new id; Hernoemen keeps it. 2026-10-09
 - **O4** D6: an answer submitted after the deadline but before the next 1 s tick is counted
   (`answer()` has no timeUp guard, useOefenStore.ts:360-389; only `next()`/`tick()` check). 2026-10-09
 - **O5** D5: when localStorage throws, `persist` ignores `saveRun === false` (useOefenStore.ts:199-202):

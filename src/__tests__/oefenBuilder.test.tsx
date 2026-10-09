@@ -191,6 +191,34 @@ describe('OefenBuilderModal', () => {
         expect(loadOefenSessies()).toHaveLength(1);
         expect(within(screen.getByLabelText('Instellingen van de sessie')).getByLabelText('Titel')).toBeTruthy();
     });
+
+    test('Bewerken: renaming keeps the id; changing a type saves a new id in the same library row', () => {
+        const first = render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Procenten' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+        const original = loadOefenSessies()[0].sessie;
+        first.unmount();
+
+        const renamed = render(<OefenBuilderModal onClose={() => { }} initial={original} />);
+        fireEvent.change(screen.getByLabelText('Titel'), { target: { value: 'Procenten week 2' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+        expect(loadOefenSessies().map(e => [e.id, e.sessie.id, e.sessie.title])).toEqual([[original.id, original.id, 'Procenten week 2']]);
+        renamed.unmount();
+
+        const reopened = loadOefenSessies()[0].sessie;
+        render(<OefenBuilderModal onClose={() => { }} initial={reopened} />);
+        fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '12' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+        const lib = loadOefenSessies();
+        expect(lib).toHaveLength(1);
+        expect(lib[0].sessie.id).not.toBe(original.id);
+        expect(lib[0].id).toBe(lib[0].sessie.id);
+        expect(lib[0].sessie.types[0].limit).toBe(12);
+        // The link carries the new id too, so pupils start fresh instead of reopening the old run.
+        fireEvent.click(footerBtn('Delen'));
+        expect(decodeSessie(screen.getByRole('link').getAttribute('href')!.split('#oefen=')[1]).id).toBe(lib[0].sessie.id);
+    });
 });
 
 describe('OefenBuilderModal title', () => {
