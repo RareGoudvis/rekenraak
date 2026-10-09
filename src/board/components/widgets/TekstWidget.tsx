@@ -10,7 +10,8 @@ import type { BoardWidget } from '../../boardTypes';
 export default function TekstWidget({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const m = tekstProps(widget);
-    const [editing, setEditing] = useState(false);
+    // A note just placed with the T tool (empty and selected) opens ready to type.
+    const [editing, setEditing] = useState(() => m.text === '' && useBoardStore.getState().selectedWidgetId === widget.id);
     const linePx = m.textPx * TEKST_LINE_HEIGHT;
 
     const box: React.CSSProperties = {

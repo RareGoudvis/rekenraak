@@ -67,6 +67,8 @@ export default function BoardPageCanvas() {
             // widget at the tap point and hop back to select.
             onPointerDown={(e) => {
                 if (tool === 'text') {
+                    // No mousedown focus on the board: it would blur the new note's textarea at once.
+                    e.preventDefault();
                     const r = e.currentTarget.getBoundingClientRect();
                     const board = useBoardStore.getState();
                     board.addWidget({
