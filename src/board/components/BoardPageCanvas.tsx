@@ -114,7 +114,7 @@ function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean })
         case 'geluid': return <GeluidWidget widget={widget} />;
         case 'werksymbolen': return <WerksymbolenWidget widget={widget} />;
         case 'timer': return <TimerWidget widget={widget} />;
-        case 'stopwatch': return <StopwatchWidget />;
+        case 'stopwatch': return <StopwatchWidget widget={widget} />;
         case 'dobbelsteen': return <DobbelsteenWidget widget={widget} />;
         case 'adem': return <AdemWidget widget={widget} />;
         case 'groepjes': return <GroepjesWidget widget={widget} />;
