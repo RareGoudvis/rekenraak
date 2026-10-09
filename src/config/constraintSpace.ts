@@ -279,7 +279,7 @@ const patroonSpace: OptionSpace = {
 const kettingSpace: OptionSpace = {
     numberType: ['natural'],
     maxGetal: union(RANGES.ketting),
-    chainLength: [2, 4, 6],
+    chainLength: [3, 4, 5],
     ops: [['+'], ['+', '-'], ['x'], [':'], ['+', '-', 'x', ':']],
     // KettingConfig 'max' per + / − operator.
     opSettings: [{}, { '+': { max: 10 }, '-': { max: 10 } }, { '+': { max: 50 }, '-': { max: 50 } }],

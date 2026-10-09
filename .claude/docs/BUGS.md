@@ -171,10 +171,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Tooling
 
-- `constraintSpace` lists kettingsommen `chainLength` [2,4,6] while KettingConfig offers 3-5, so the
-  matrix/zero-output sweep tests values the UI cannot reach and skips the ones it can. 2026-10-09
-
-
 - A leaf's own `defaultCount` (oppervlakte-rooster = 2) is not seen by `scripts/height-audit.mjs:81`
   and `scripts/width-matrix.mjs:82` (they add blocks without `leafId`); worksheetTemplates.ts
   `buildBlock` and the curriculum draft use the row count on purpose. 2026-10-08
