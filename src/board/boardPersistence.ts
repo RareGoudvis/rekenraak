@@ -1,5 +1,5 @@
-import type { BoardPage, BoardSettings, BoardWidget, Instrument, Stroke } from './boardTypes';
-import { DEFAULT_BOARD_SETTINGS, emptyPage } from './boardTypes';
+import type { BoardPage, BoardSettings, BoardWidget, InkSettings, Instrument, Stroke, StrokeTool } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, DEFAULT_INK, emptyPage } from './boardTypes';
 import { NATURAL_W } from './widgetSizing';
 import { BOARD_CM_PX, INSTRUMENT_KINDS, PASSER } from './instrumentGeometry';
 import { cleanWidgetProps } from './settings/propSchemas';
@@ -113,6 +113,31 @@ export function parseBoardFile(json: string): BoardFile | null {
     } catch {
         return null;
     }
+}
+
+// ── Ink settings (per tool, not per board) ──────────────────────────────────
+// The teacher's pen setup outlives a reload; "default" (null colour) is saved as such, so a
+// pen that follows the board keeps following it.
+export const BOARD_INK_KEY = 'rekenraak_board_ink_v1';
+
+export function saveInkSettings(ink: Record<StrokeTool, InkSettings>): void {
+    try { localStorage.setItem(BOARD_INK_KEY, JSON.stringify(ink)); } catch { /* quota: the pens fall back to defaults */ }
+}
+
+// Each tool's entry read on its own: a junk colour reads as the default, a junk width too.
+export function loadInkSettings(): Record<StrokeTool, InkSettings> {
+    const out = Object.fromEntries((Object.keys(DEFAULT_INK) as StrokeTool[]).map(t => [t, { color: null, width: DEFAULT_INK[t].width }])) as Record<StrokeTool, InkSettings>;
+    try {
+        const data: unknown = JSON.parse(localStorage.getItem(BOARD_INK_KEY) ?? 'null');
+        if (!isObj(data)) return out;
+        for (const t of Object.keys(out) as StrokeTool[]) {
+            const v = data[t];
+            if (!isObj(v)) continue;
+            if (typeof v.color === 'string' && /^#[0-9a-f]{6}$/i.test(v.color)) out[t].color = v.color;
+            if (isNum(v.width) && v.width > 0 && v.width <= 100) out[t].width = v.width;
+        }
+    } catch { /* unreadable: defaults */ }
+    return out;
 }
 
 // ── Autosave ──────────────────────────────────────────────────────────────────

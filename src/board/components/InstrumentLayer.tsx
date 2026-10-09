@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useBoardStore } from '../useBoardStore';
+import { effectiveInk, useBoardStore } from '../useBoardStore';
 import type { Instrument, Stroke } from '../boardTypes';
 import { rndId } from '../boardTypes';
 import { arcPath, arcPts, formatCm, openPasser, placePasserHinge, placeRotateHandle, round1, snapInstrumentPoint, type BoardSize, snapInstrumentRotation, snapOf, strokeEndpoints, unwrapDelta } from '../instrumentGeometry';
@@ -91,7 +91,7 @@ export default function InstrumentLayer() {
             d.sweep = Math.max(-2 * Math.PI, Math.min(2 * Math.PI, d.sweep + unwrapDelta(d.last, a)));
             d.last = a;
             st.updateInstrument(d.id, { rotation: round1((((a * 180) / Math.PI) % 360 + 360) % 360) });
-            const ink = inkFor(st.tool, st.inkSettings);
+            const ink = inkFor(st.tool, st);
             setArcDraft({ id: 'arc-draft', ...ink, path: arcPath(d.cx, d.cy, d.r, d.start, d.sweep), pts: [] });
             setReadout({ x: d.cx, y: d.cy - 30, text: `${Math.round(Math.abs(d.sweep) * 180 / Math.PI)}°` });
         } else {
@@ -109,7 +109,7 @@ export default function InstrumentLayer() {
         if (d?.grip === 'draw' && Math.abs(d.sweep) >= Math.PI / 180) {
             const st = useBoardStore.getState();
             st.addStroke({
-                id: rndId(), ...inkFor(st.tool, st.inkSettings),
+                id: rndId(), ...inkFor(st.tool, st),
                 path: arcPath(d.cx, d.cy, d.r, d.start, d.sweep), pts: arcPts(d.cx, d.cy, d.r, d.start, d.sweep),
             });
         }
@@ -208,9 +208,9 @@ export default function InstrumentLayer() {
 const formatDeg = (d: number) => String(Math.round(d) % 360);
 
 // The passer draws with the marker when the marker is the active tool, else with the pen.
-function inkFor(tool: string, settings: ReturnType<typeof useBoardStore.getState>['inkSettings']): Pick<Stroke, 'tool' | 'color' | 'width' | 'opacity'> {
+function inkFor(tool: string, st: ReturnType<typeof useBoardStore.getState>): Pick<Stroke, 'tool' | 'color' | 'width' | 'opacity'> {
     const t = tool === 'marker' ? 'marker' : 'pen';
-    return { tool: t, color: settings[t].color, width: settings[t].width, opacity: t === 'marker' ? 0.45 : 1 };
+    return { tool: t, ...effectiveInk(st, t), opacity: t === 'marker' ? 0.45 : 1 };
 }
 
 // A pill with the live value (degrees, cm) next to what is being dragged.

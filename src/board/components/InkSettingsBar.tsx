@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
 import type { ArrowHeads, ShapeKind, StrokeTool } from '../boardTypes';
+import { DEFAULT_INK, INK_FOLLOWS_BOARD, inkColor } from '../boardTypes';
 
 const SAVED_COLORS_KEY = 'rekenraak_board_colors_v1';
 const DEFAULT_COLORS = ['#111827', '#1d4ed8', '#dc2626', '#16a34a', '#ea580c', '#7c3aed', '#fde047', '#ffffff'];
@@ -15,9 +16,15 @@ function loadSavedColors(): string[] {
 
 // Floating settings strip for the active ink tool: color swatches (defaults +
 // teacher-saved), custom color picker with save, three stroke widths, and the
-// lijn tool's arrowheads + dashed toggle or the vormen tool's shape + soft fill.
+// lijn tool's arrowheads + dashed toggle or the vormen tool's shape + soft fill. Pen and lijn
+// lead with a "Standaard" swatch: their default colour follows the board (white on dark).
 export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
     const cfg = useBoardStore((s) => s.inkSettings[tool]);
+    const dark = useBoardStore((s) => s.pages[s.activePageIdx].background.dark);
+    const color = inkColor(cfg, tool, dark);
+    const follows = INK_FOLLOWS_BOARD.includes(tool);
+    // The ringed palette swatch: the picked colour; a default that cannot change is its swatch too.
+    const ringed = cfg.color ?? (follows ? null : color);
     const setInkSetting = useBoardStore((s) => s.setInkSetting);
     const drawOptions = useBoardStore((s) => s.drawOptions);
     const setDrawOptions = useBoardStore((s) => s.setDrawOptions);
@@ -25,7 +32,7 @@ export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
 
     const saveCustom = () => {
         // Max 8 saved colors, most recent first, no duplicates.
-        const next = [cfg.color, ...saved.filter(c => c !== cfg.color)].slice(0, 8);
+        const next = [color, ...saved.filter(c => c !== color)].slice(0, 8);
         setSaved(next);
         localStorage.setItem(SAVED_COLORS_KEY, JSON.stringify(next));
     };
@@ -34,6 +41,19 @@ export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
 
     return (
         <div style={S.bar} onPointerDown={(e) => e.stopPropagation()}>
+            {follows && (
+                <button
+                    type="button" data-ink-default aria-label="Standaardkleur (volgt het bord)" aria-pressed={cfg.color === null}
+                    title="Standaard: zwart op een licht bord, wit op een donker bord"
+                    onClick={() => setInkSetting(tool, { color: null })}
+                    style={{
+                        ...S.swatch, ...S.autoSwatch, background: DEFAULT_INK[tool][dark ? 'dark' : 'light'],
+                        color: DEFAULT_INK[tool][dark ? 'light' : 'dark'],
+                        border: dark ? '1px solid rgba(0,0,0,0.25)' : '1px solid transparent',
+                        outline: cfg.color === null ? '3px solid var(--accent-purple)' : 'none',
+                    }}
+                >A</button>
+            )}
             {[...DEFAULT_COLORS, ...saved.filter(c => !DEFAULT_COLORS.includes(c))].map(c => (
                 <button
                     key={c} type="button" aria-label={`Kleur ${c}`}
@@ -41,13 +61,13 @@ export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
                     style={{
                         ...S.swatch, background: c,
                         border: c === '#ffffff' ? '1px solid rgba(0,0,0,0.25)' : '1px solid transparent',
-                        outline: cfg.color === c ? '3px solid var(--accent-purple)' : 'none',
+                        outline: ringed === c ? '3px solid var(--accent-purple)' : 'none',
                     }}
                 />
             ))}
             {/* Custom color + save */}
             <label style={{ ...S.swatch, overflow: 'hidden', position: 'relative', background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }} title="Eigen kleur">
-                <input type="color" value={cfg.color}
+                <input type="color" value={color}
                     onChange={(e) => setInkSetting(tool, { color: e.target.value })}
                     style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
             </label>
@@ -63,7 +83,7 @@ export default function InkSettingsBar({ tool }: { tool: StrokeTool }) {
                     onClick={() => setInkSetting(tool, { width: w })}
                     style={{ ...S.widthBtn, outline: cfg.width === w ? '3px solid var(--accent-purple)' : 'none' }}
                 >
-                    <span style={{ width: Math.min(w + 6, 28), height: Math.min(w + 6, 28), borderRadius: '50%', background: cfg.color, display: 'block', border: cfg.color === '#ffffff' ? '1px solid rgba(0,0,0,0.25)' : 'none' }} />
+                    <span style={{ width: Math.min(w + 6, 28), height: Math.min(w + 6, 28), borderRadius: '50%', background: color, display: 'block', border: color === '#ffffff' ? '1px solid rgba(0,0,0,0.25)' : 'none' }} />
                 </button>
             ))}
 
@@ -159,6 +179,11 @@ const S = {
         display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px',
         background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '14px',
         boxShadow: '0 8px 30px rgba(0,0,0,0.25)', zIndex: 40,
+    } as React.CSSProperties,
+    // The "A" of Standaard sits in the other default colour, so it reads on either fill.
+    autoSwatch: {
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-ui)',
     } as React.CSSProperties,
     swatch: {
         width: '34px', height: '34px', borderRadius: '50%', cursor: 'pointer', padding: 0,

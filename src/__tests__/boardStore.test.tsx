@@ -154,7 +154,8 @@ describe('selection and inspector', () => {
         st().setGeldPaletOpen(true);
         expect(st()).toMatchObject({
             gridSnap: true, gridSize: 20, geldPaletOpen: true,
-            inkSettings: { pen: { color: '#ff0000', width: 4 }, marker: { color: '#fde047', width: 30 } },
+            // the marker's colour stays "default" (null) when only its width changes
+            inkSettings: { pen: { color: '#ff0000', width: 4 }, marker: { color: null, width: 30 } },
         });
     });
 });

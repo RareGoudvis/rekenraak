@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground, DrawOptions, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
-import { DEFAULT_BOARD_SETTINGS, emptyPage, rndId } from './boardTypes';
+import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground, DrawOptions, InkSettings, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, emptyPage, inkColor, rndId } from './boardTypes';
 import { defaultInstrument } from './instrumentGeometry';
-import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
+import { loadBoardAutosave, loadInkSettings, saveBoardAutosave, saveInkSettings } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
 import { loadWidgetDefaults } from './settings/widgetDefaults';
 
-export interface InkSettings { color: string; width: number; }
+export type { InkSettings };
 
 // Whiteboard app store — deliberately separate from useWorksheetStore so the
 // worksheet editor and bordmodus can't corrupt each other's state. Everything
@@ -192,12 +192,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     setGridSnap: (on) => set({ gridSnap: on }),
     setGridSize: (px) => set({ gridSize: px }),
 
-    inkSettings: {
-        pen: { color: '#111827', width: 4 },
-        marker: { color: '#fde047', width: 18 },
-        line: { color: '#111827', width: 4 },
-        shape: { color: '#1d4ed8', width: 4 },
-    },
+    inkSettings: loadInkSettings(),
     setInkSetting: (tool, patch) => set((state) => ({
         inkSettings: { ...state.inkSettings, [tool]: { ...state.inkSettings[tool], ...patch } },
     })),
@@ -284,4 +279,15 @@ useBoardStore.subscribe((state, prev) => {
         const s = useBoardStore.getState();
         saveBoardAutosave(s.pages, s.activePageIdx, s.boardSettings);
     }, 1500);
+});
+
+// The ink a tool draws with right now: a picked colour as is, the default one for the active
+// page's board (white pen on a dark board).
+export function effectiveInk(state: Pick<BoardState, 'inkSettings' | 'pages' | 'activePageIdx'>, tool: StrokeTool): { color: string; width: number } {
+    const cfg = state.inkSettings[tool];
+    return { color: inkColor(cfg, tool, !!state.pages[state.activePageIdx]?.background.dark), width: cfg.width };
+}
+
+useBoardStore.subscribe((state, prev) => {
+    if (state.inkSettings !== prev.inkSettings) saveInkSettings(state.inkSettings);
 });

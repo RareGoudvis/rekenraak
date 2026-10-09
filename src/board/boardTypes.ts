@@ -47,6 +47,21 @@ export interface Stroke {
     dash?: boolean;            // dashed: only the FIRST subpath (the line itself), heads stay solid
 }
 
+// Per-tool ink. color null = the tool's default, which for pen and lijn follows the board
+// (black on a light board, white on a dark one); a colour the teacher picked is a string and
+// never changes with the board, even when it is black.
+export interface InkSettings { color: string | null; width: number; }
+export const DEFAULT_INK: Record<StrokeTool, { light: string; dark: string; width: number }> = {
+    pen: { light: '#111827', dark: '#ffffff', width: 4 },
+    marker: { light: '#fde047', dark: '#fde047', width: 18 },
+    line: { light: '#111827', dark: '#ffffff', width: 4 },
+    shape: { light: '#1d4ed8', dark: '#1d4ed8', width: 4 },
+};
+// The tools whose default colour swaps with the board (the others' default reads on both).
+export const INK_FOLLOWS_BOARD: StrokeTool[] = ['pen', 'line'];
+export const inkColor = (cfg: InkSettings, tool: StrokeTool, dark: boolean): string =>
+    cfg.color ?? DEFAULT_INK[tool][dark ? 'dark' : 'light'];
+
 // Line / shape tool options (UI state, not persisted; the emitted stroke carries the result).
 export type ArrowHeads = 'none' | 'end' | 'both';
 export type ShapeKind = 'rect' | 'ellipse' | 'triangle';
