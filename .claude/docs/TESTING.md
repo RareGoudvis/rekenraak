@@ -56,6 +56,7 @@ The viewer suite opts into a DOM with `// @vitest-environment jsdom` at the top 
 | `modeButtons.test.tsx` | The sidebar mode row: Oefenmodus opens the builder, Bordmodus switches the view, the row survives the Overzicht tab, a locked curriculum hides Oefenmodus only, the TopBar carries neither. |
 | `leafDefaultCount.test.ts`, `sheetBlock.emptyNote.test.tsx` | A leaf's own `defaultCount` (oppervlakte-rooster = 2, everything else the row's); an empty block with a note shows the note on screen and nothing on paper. |
 | `oefenen.descriptors.test.ts` | Oefenmodus answers: exactly the expected kiosk-capable leaves (`EXPECTED_LEAVES`); every capable leaf × every leerjaar seed × 50 seeds, the descriptor's `answerOf` equals the generator's own answer field re-derived in the test (`TRUTH` per typeId, from-scratch arithmetic: half-up rounding, Roman numerals, unit ladders), `checkAnswer` takes every spelling and refuses a wrong one, every accepted answer is typeable with the offered keys; `supported()` per setting; input kinds per exercise; build trays and drag answers (right / wrong values from `helpers/dragCheck.ts` per family); breuken-bewerken accepts only the asked form. |
+| `oefenen.e2e.matrix.test.ts` | O24 chain matrix: every leaf-table leaf × constraintSpace option × 3 seeds from a builder row through the share link, `nextExercise`, an answer the pupil can actually enter (keypad keys, buttons, taps, cells, tray, drag), `checkAnswer` right and wrong, to `summary`. Builder-unreachable settings skipped; found bugs pinned `test.fails` (O25-O27). See "Oefenmodus end-to-end". |
 | `oefenen.session.test.ts` | The share-link codec: lossless round-trip for every kiosk leaf at defaults and with every setting changed, removed / unknown / null settings, custom labels / instructions / weights, the same leaf twice; base32 upper-case and case-insensitive; QR budget (4 types ≤ v10, 20 ≤ v20, 20 customised ≤ v40); too large → null; the **frozen** `KIOSK_LEAF_TABLE_V1` / `KIOSK_KEY_TABLE_V1` pinned in full (append only); strict decode with Dutch errors (newer version, unknown type → "Werk de app bij"); `kioskLabel` names and uniqueness. |
 | `oefenen.scheduler.test.ts` | Limits reached exactly, `total` caps, afwisselen never repeats while ≥ 2 remain (round-robin), willekeurig weights ≈ distribution over 10 000 draws, all-zero = equal, `!allowRepeatType` re-draws; `nextExercise` never repeats exactly in 200 draws, flags a forced repeat, is seed-deterministic and restores `Math.random`; `isDone` on limits / timer / `finishedAt`. |
 | `oefenen.stats.test.ts` | `recordAnswer` + `summary` per slot with readable error rows; runs saved / replaced by index / last 5 kept / per session id; a full quota drops the oldest runs first; no storage → `[]` / `false`. |
@@ -725,11 +726,84 @@ There is no native drag-and-drop left in the app (`dist/assets/*.js` contains no
 `setDragImage`/`dataTransfer` of ours) — an extension that hooks `dragstart` used to hang
 the tab for a whole drag.
 
-## Oefenmodus end-to-end (Playwright, by hand)
+## Oefenmodus end-to-end
 
-Not in the gate; the jsdom suites above cover the logic. Run it after a kiosk / builder change,
-with a dev server (`npx vite --port <p> --strictPort`, kill it after) and scripts in a scratch
-folder (`~/Downloads/<task>-check/`), never in the repo. The 2026-10-08 run (K4) used these steps:
+Three layers: the chain matrix (vitest, in the gate), the kiosk smoke (Playwright, a script,
+out of the gate) and the by-hand recipe (Playwright from a scratch folder) below them.
+
+### The chain matrix (`oefenen.e2e.matrix.test.ts`, in the gate, ~2 s)
+
+Every `KIOSK_LEAF_TABLE_V1` leaf × each `constraintSpace` option on its own (plus the leaf
+defaults) × seeds 1-3, through the pupil's whole chain without a browser: a builder row
+(`limit: 1`) → `buildSessie` → `encodeSessie` / `decodeSessie` (the pupil runs the decoded
+link) → `nextExercise` → the descriptor's answer → **enterable**: a typed answer must survive
+`sanitizeAnswer` with the descriptor's `keys` (so every character is on the keypad, ≤ 12
+chars), a choice must be one of the buttons, tap / tap-multi / order must be reachable by
+tapping `interact.keys` parts, fill-cells via `rightCells` (each cell typeable and no longer
+than its `cellOf` length), build via a bounded change-making over the tray's `pieces`, drag by
+setting the handle(s) → `checkAnswer` (with the row's `exactForm`) takes it and refuses a
+wrong one (answer + 1, one teller more, a spoilt cell, one piece more, a handle off by one
+step) → `recordAnswer` → `summary` says 1 gemaakt / 1 juist / 100 %, and after the wrong one
+1 fout with a readable error row (no `undefined` / `NaN`, expected = `expectedText`, not empty).
+2026-10-09: 3 764 variants, 10 617 chains (number 4 713, fill-cells 3 138, multi-number 588,
+choice 528, order 402, tap-multi 360, tap 324, drag 210, time 166, build 111, missing-operand 42,
+text 30, number+rest 5).
+
+Not run, and counted in the summary line it logs: variants the builder cannot make
+(`reachable()`: a max outside the registry's `maxPresets` list for those settings, and the
+`UNREACHABLE` table: a pinned `numberType`, decimal getallenas steps on a natural leaf), rows
+`kioskSupports` refuses (the builder leaves them out), and rows the pre-flight `rowYields`
+flags dead (Delen stays off; `oefenen.zeroOutput.test.ts` owns those). `lengte-meten` and
+`omtrek` are in the leaf table but not in `listOefenLeaves()` (capable only off their
+defaults): pinned in `NOT_IN_BUILDER`, still run as a link would carry them.
+
+Reading a failure: one test per leaf; the assertion lists `<variant>: seed <n>: <what broke>`
+with the exercise JSON. "not typeable with keys [...]" = the keypad lacks a character (or the
+answer is over 12 chars); "checkAnswer refuses the entered answer" = what the card lets the pupil
+enter is not what the check wants (cell count, spelling); "takes the wrong answer" = the check is
+too loose; "unreadable error row" = Resultaten would show `undefined` / an empty Juist cell. A
+real bug gets a BUGS.md line and a `KNOWN_BREAKS` entry (`bugId`, leaf regex, message regex, one
+sample variant): the sweep skips matching breaks and a `test.fails` pin runs the sample, so the
+fix flips it (then drop the entry and the BUGS line in the fix commit). A variant no teacher can
+reach goes into `UNREACHABLE` with the reason. Pinned today: O25, O26, O27.
+
+### The kiosk smoke (`scripts/oefen-smoke.mjs`, `npm run oefen:smoke`, out of the gate)
+
+```bash
+npx vite --port 5478 --strictPort                                    # own port, kill it afterwards
+node scripts/oefen-smoke.mjs --url http://localhost:5478/ --out ~/Downloads/oefen-check/smoke
+# options: --only number,drag (kinds)  --viewports 1280x800,1024x768  --seed 1234  --headed
+```
+
+One leaf per input kind (number `hr-std-optellen-nat`, number+rest `hr-std-delen-nat` met rest,
+time `klok-analoog-lezen`, choice `vergelijken-getallen`, tap `vergelijken-kiezen`, tap-multi
+`even-oneven-rooster`, order `getalbegrip-ordenen-nat`, fill-cells `cijferen-optellen-nat`,
+build `geld-tekenen`, drag `temperatuur-kleuren`) × 1280×800 and 1024×768. Per case: the link
+is made in-page through `listOefenLeaves` → `buildSessie` (one row, limit 1) → `encodeSessie`; a
+fresh context seeds `Math.random` (mulberry32, `--seed`) so two runs show the same exercises;
+Start; the expected answer is read in the page (`kioskFor(typeId).answerOf`, `kioskInteractOf`,
+`rightCells` for cijferen carries; same module instances as the kiosk); it is entered with real
+clicks: keypad keys (fields clicked first), choice buttons, `[data-kiosk-key]` parts on the
+card, each `input[data-kiosk-cell]` then the keypad, `[data-tray-key]` tiles, and a mouse drag
+that presses on the `[data-kiosk-handle]` and slides along it until the store holds the value.
+Then Controleer → `.kiosk-feedback-text` must start with "Juist" → the flash runs out and the
+run ends on the locked screen, whose `.kiosk-stats-total` must say "1 van 1 juist"; any console
+error fails the case.
+
+Output: `<out>/index.json` in the font-baseline shape (`rows[]` keyed
+`<leafId>-w<viewport width>-s<0|1>`: s0 = the whole kiosk with the answer entered, s1 = the
+Resultaten screen; `text`, `cellHeightPx`, `intrinsicPx`, `screenshot`, plus `kind` / `ok`), one
+PNG per row, and `<leafId>-w<w>-fail.png` for a failed case. `font:compare --before <run1>
+--after <run2>` diffs two runs (a clean pair: 0 flagged). Exit code 1 when a case fails; the
+console line says which step: "expected input kind X, the card asks Y" (the leaf's default
+changed: pick another leaf), "no keypad key for ','", "Controleer stays disabled" (the entered
+answer is incomplete), `feedback "Fout!"` (UI and check disagree), `Resultaten says …`, or
+"console: …". The 2026-10-09 run: 20 / 20 ok in 34 s (`~/Downloads/oefen-check/fix-h/`).
+
+### By hand (the 2026-10-08 K4 recipe)
+
+Run it after a kiosk / builder change, with a dev server (`npx vite --port <p> --strictPort`,
+kill it after) and scripts in a scratch folder (`~/Downloads/<task>-check/`), never in the repo:
 
 1. **Teacher** at 1440×900, fresh context: Overslaan → `getByRole('button', { name: /^Oefenmodus/ })`
    → add leaves with `button[title="Toevoegen aan de sessie"]` (filter by exact text), change
