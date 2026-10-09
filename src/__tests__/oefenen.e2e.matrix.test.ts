@@ -283,7 +283,7 @@ const byId = new Map(builderLeaves.map(l => [l.id, l]));
 // The table leaves the builder does not list, as a link would carry them.
 for (const id of NOT_IN_BUILDER) {
     const flat = flattenLeaves().find(l => l.id === id)!;
-    byId.set(id, { id, typeId: flat.typeId, label: kioskLabel(flat), context: '', domainId: '', domainLabel: '', accentVar: '', constraints: flat.defaultConstraints ?? {}, instruction: flat.instruction });
+    byId.set(id, { id, typeId: flat.typeId, label: kioskLabel(flat), context: '', domainId: '', domainLabel: '', accentVar: '', constraints: flat.defaultConstraints ?? {}, instruction: flat.instruction, searchText: [], minGrade: 1 });
 }
 const found: Record<string, string[]> = {};
 const isKnown = (leafId: string, b: string) => KNOWN_BREAKS.some(k => k.leaf.test(leafId) && k.match.test(b));
