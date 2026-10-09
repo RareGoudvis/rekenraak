@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { describe, test, expect, afterEach, beforeAll } from 'vitest';
+import { describe, test, expect, afterEach, beforeAll, vi } from 'vitest';
 import { useState } from 'react';
 import { render, cleanup, fireEvent, act, screen, within } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import WidgetInspector from '../board/components/WidgetInspector';
 import WidgetFrame from '../board/components/WidgetFrame';
 import { WIDGET_SETTINGS } from '../board/settings/registry';
-import { ListEditor, ItemInput } from '../board/settings/controls';
+import { ListEditor, ItemInput, Button } from '../board/settings/controls';
 import { fontScale, fontSizeKey, widgetAccent, SELF_SCALED_FONT } from '../board/settings/baseProps';
 import { BOARD_DEFAULTS_KEY, loadWidgetDefaults, saveWidgetDefaults } from '../board/settings/widgetDefaults';
 import { parseBoardFile, BOARD_FORMAT_VERSION } from '../board/boardPersistence';
@@ -140,6 +140,31 @@ describe('old and junk boards', () => {
         expect(b.props).toEqual({});
         expect(fontScale(c)).toBe(1);
         expect(widgetAccent(c)).toBeNull();
+    });
+});
+
+describe('controls kit', () => {
+    test('the "no colour" swatch shows ∅ and the paste box says Eén (no double-encoded text)', () => {
+        openPanel('tekst');
+        expect(screen.getByRole('button', { name: 'Standaard' }).textContent).toBe('∅');
+        cleanup();
+        render(<ListEditor label="L" items={['a']} onChange={() => {}} newItem={() => ''} renderItem={(it) => it} bulk={{ toText: (x) => x.join('\n'), fromText: (t) => [t] }} />);
+        fireEvent.click(screen.getByText('Plak een lijst'));
+        expect((screen.getByLabelText('Plak een lijst') as HTMLTextAreaElement).placeholder).toBe('Eén per lijn');
+    });
+
+    test('a Button toggling pressed logs no React style warning', () => {
+        const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+        function Toggler() {
+            const [on, setOn] = useState(false);
+            return <><Button pressed={on} onClick={() => setOn(!on)}>Aan</Button><Button danger onClick={() => {}}>Weg</Button></>;
+        }
+        render(<Toggler />);
+        fireEvent.click(screen.getByText('Aan'));
+        fireEvent.click(screen.getByText('Aan'));
+        const calls = errors.mock.calls.map(c => c.map(String).join(' '));
+        errors.mockRestore();
+        expect(calls).toEqual([]);
     });
 });
 
