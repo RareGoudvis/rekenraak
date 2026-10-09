@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, X } from '@phosphor-icons/react';
 import ExercisePreview from '../../components/shared/ExercisePreview';
 import { buildCatalog, catalogDomains, type CatalogItem, type CatalogVariant } from '../../config/exerciseCatalog';
@@ -48,6 +48,22 @@ export default function BoardAddModal({ onClose }: Props) {
     const addWidget = useBoardStore((s) => s.addWidget);
 
     const [domain, setDomain] = useState<string | null>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    // Same close rules as the bottom-bar popups: Escape, or a press outside the panel. Capture
+    // phase, because widgets and the panel itself stop their pointerdown from bubbling.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        const onDown = (e: PointerEvent) => {
+            if (!(e.target instanceof Node && panelRef.current?.contains(e.target))) onClose();
+        };
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('pointerdown', onDown, true);
+        return () => {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('pointerdown', onDown, true);
+        };
+    }, [onClose]);
     const [search, setSearch] = useState('');
 
     const needle = search.trim().toLowerCase();
@@ -75,7 +91,7 @@ export default function BoardAddModal({ onClose }: Props) {
     return (
         // Side panel anchored next to the Toevoegen menu (bottom-left), not a
         // centered modal — the board stays visible while picking (Ruben decision).
-        <div style={S.panel} aria-label="Wiskunde toevoegen" onPointerDown={(e) => e.stopPropagation()}>
+        <div ref={panelRef} style={S.panel} aria-label="Wiskunde toevoegen" onPointerDown={(e) => e.stopPropagation()}>
             <div style={S.head}>
                 <h2 style={S.title}>Wiskunde toevoegen</h2>
                 <input
