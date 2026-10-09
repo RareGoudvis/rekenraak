@@ -147,12 +147,7 @@ UpdateState). Left over, found while fixing:
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
 ~/Downloads/oefen-check/audit/{1,2,3}/). Plan: ~/.claude/plans/oefen-audit-fixes.md. Lines are
-grouped per work package so parallel deletions merge cleanly; fixed lines are deleted, O7 / O16 stay by owner decision.
-
-### WP-B store / stats
-
-- **O7** C7 (log only, owner): a reload clears the typed draft, the cijferen cells and the geld tray
-  (only `current` is persisted, useOefenStore.ts:276, 287). Not fixing. 2026-10-09
+grouped per work package so parallel deletions merge cleanly; fixed lines are deleted, O16 stays by owner decision (O7 closed as log-only, REVIEW §D).
 
 ### WP-F session format
 
