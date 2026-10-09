@@ -14,7 +14,7 @@ import { targetsFor, roundTo } from '../../services/afronden/afrondenGenerator';
 import { effectiveBlockFor } from '../../services/math/mixedGenerator';
 import { ladderFor } from '../../services/herleidingen/herleidingenGenerator';
 import { NIVEAU_MAX } from '../../services/romeinse/romeinseGenerator';
-import { numberMatchesMask } from '../../services/math/mathEngine';
+import { getBridgePlaces, numberMatchesMask } from '../../services/math/mathEngine';
 import { scaled, isFraction, fracValue, numValue, applyOp, evaluateChain, evaluateTokens, gcd } from './answerKeys';
 
 // ── The limit harness rule book ──────────────────────────────────────────────
@@ -173,14 +173,61 @@ const gemengdSpec: TypeSpec<Equation> = {
 
 // ── Cijferen ─────────────────────────────────────────────────────────────────
 
+// Integer place keys from the units up, as the Bruginstellingen name them.
+const CIJFER_BRIDGE_KEYS = ['E', 'T', 'H', 'D', 'TD', 'HD', 'M', 'TM', 'HM', 'Mrd'];
+const CIJFER_MASK_KEYS = ['operand0Mask', 'operand1Mask', 'operand2Mask', 'operand3Mask'];
+
+// Whether each integer column carries (+) or borrows (−), units first, in scaled integers.
+function cijferBridgesOf(e: CijferExercise, dp: number): boolean[] {
+    const digits = (x: number) => String(Math.round(Math.abs(x) * 10 ** dp)).split('').reverse().map(Number);
+    const ops = e.operands.map(digits);
+    const out: boolean[] = [];
+    let carry = 0;
+    for (let pos = 0; pos < dp + CIJFER_BRIDGE_KEYS.length; pos++) {
+        const d = (o: number[]) => o[pos] ?? 0;
+        carry = e.operator === '+'
+            ? Math.floor((ops.reduce((s, o) => s + d(o), 0) + carry) / 10)
+            : (d(ops[0]) - carry - d(ops[1]) < 0 ? 1 : 0);
+        if (pos >= dp) out.push(carry > 0);
+    }
+    return out;
+}
+
 const cijferSpec: TypeSpec<CijferExercise> = {
     extract: e => ex4(e.operands, [e.answer, ...(e.remainder ? [e.remainder] : [])]),
+    // No fallback (owner 2026-10-09): settings the max cannot meet leave the block short, WITH a note.
+    block: (items, ctx, push) => {
+        if (items.length < ctx.requested && !ctx.note) push('count-short', items.length, ctx.requested, '(no note)');
+    },
     item: (e, ctx, push) => {
         const c = ctx.c;
         const max = n(c.maxRange, 1000);
         const dec = c.numberType === 'decimal';
         const [a, b] = e.operands;
         const ex = `${e.operands.join(` ${e.operator} `)} = ${e.answer}${e.remainder ? ` r ${e.remainder}` : ''}`;
+        const dp = e.decimalPlaces ?? (dec ? n(c.decimalPlaces, 2) : 0);
+        const maskOf = (i: number) => (c[CIJFER_MASK_KEYS[Math.min(i, 3)]] ?? {}) as Record<string, boolean>;
+        const fits = (v: number, i: number) => numberMatchesMask(v, maskOf(i), max, dec ? 'decimal' : 'natural', dp);
+        // Every exercise is one the settings asked for: a stand-in that ignores them is the old fallback.
+        if (e.operator === '+' || e.operator === '-') {
+            if (e.operator === '+') {
+                const terms = Math.min(Math.max(2, n(c.numberOfTerms, 2)), 4);
+                if (e.operands.length !== terms) push('terms', e.operands.length, terms, ex);
+            }
+            const bridges = (c.bridges ?? {}) as Record<string, string>;
+            // Only the bruggen the config offers at this max (a leftover key from a larger max is not shown).
+            const offered = new Set(getBridgePlaces(max, dec ? 'decimal' : 'natural').map(p => p.key));
+            cijferBridgesOf(e, dp).forEach((made, i) => {
+                const want = offered.has(CIJFER_BRIDGE_KEYS[i]) ? bridges[CIJFER_BRIDGE_KEYS[i]] : undefined;
+                if ((want === 'REQUIRED' && !made) || (want === 'FORBIDDEN' && made)) push('bridge', `${CIJFER_BRIDGE_KEYS[i]}:${made ? 'brug' : 'geen'}`, want, ex);
+            });
+            e.operands.forEach((o, i) => { if (!fits(o, i)) push('mask', o, JSON.stringify(maskOf(i)), ex); });
+        } else if (e.operator === 'x') {
+            // A natural multiplicand shorter than its multiplier is written second (the generator swaps them).
+            if (!(fits(a, 0) && fits(b, 1)) && (dec || !(fits(b, 0) && fits(a, 1)))) push('mask', `${a} × ${b}`, JSON.stringify([maskOf(0), maskOf(1)]), ex);
+        } else if (!dec) {
+            e.operands.forEach((o, i) => { if (!fits(o, i)) push('mask', o, JSON.stringify(maskOf(i)), ex); });
+        }
         if (e.operator === '+') {
             if (over(e.answer, max)) push('answer>max', e.answer, max, ex);
             if (!sameNum(e.operands.reduce((s, x) => s + x, 0), e.answer)) push('answer-key', e.answer, e.operands.reduce((s, x) => s + x, 0), ex);

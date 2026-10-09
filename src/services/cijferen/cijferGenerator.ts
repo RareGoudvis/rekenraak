@@ -1,7 +1,6 @@
-import { PLACE_VALUES } from '../math/mathEngine';
+import { PLACE_VALUES, getBridgePlaces, getMaskPlaces } from '../math/mathEngine';
 import type { MathBlock } from '../math/types';
 import type { CijferExercise, CijferConstraints, ConstraintType } from '../math/types';
-import { joinNotes, repeatNote, repeatsIn } from '../generationNotes';
 
 const MAX_ATTEMPTS = 500;
 
@@ -127,25 +126,48 @@ export function divideToDecimals(dividend: number, divisor: number, dp: number):
     return { quotient: q / s, remainder: r / (s * s) };
 }
 
+// No fallback (owner decision 2026-10-09): a getalopbouw / bruggetje / term count the max cannot
+// meet gives fewer or no exercises with a note, never an exercise that ignores the settings.
 export function generateCijferExercisesNoted(block: MathBlock): { items: CijferExercise[]; note: string | null } {
-    const c = block.constraints as CijferConstraints;
+    const c = liveConstraints(block.constraints as CijferConstraints);
     const count = block.numberOfExercises || 4;
     // Stamp the decimal-place count on every exercise: the grid draws the columns the
     // exercise was made with, not the ones the settings happen to say now.
     const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
     const results: CijferExercise[] = [];
-    let fallbacks = 0;
     for (let i = 0; i < count; i++) {
-        const { ex, fellBack } = generateOne(c);
-        if (fellBack) fallbacks++;
-        results.push({ ...ex, decimalPlaces: dp });
+        const ex = generateOne(c);
+        if (ex) results.push({ ...ex, decimalPlaces: dp });
     }
-    const note = fallbacks === 0 ? null
-        : fallbacks === 1
-            ? '1 oefening past niet bij de gekozen getalopbouw en het maximum; daarvoor staat er een eenvoudige oefening binnen het maximum.'
-            : `${fallbacks === count ? 'Alle' : fallbacks} oefeningen passen niet bij de gekozen getalopbouw en het maximum; daarvoor staan er eenvoudige oefeningen binnen het maximum.`;
-    // A fallback has few exercises to pick from (+, −, : have one), so the block can repeat itself.
-    return { items: results, note: fallbacks > 0 ? joinNotes(note, repeatNote(repeatsIn(results))) : note };
+    return { items: results, note: results.length >= count ? null : shortNote(c, results.length) };
+}
+
+// Only the getalopbouw places and bruggen the config shows at this max count: a key left over
+// from a larger max (or more decimals) would otherwise empty the block without the teacher seeing why.
+// SYNC: CijferConfig's maskPlaces / bridgePlaces.
+function liveConstraints(c: CijferConstraints): CijferConstraints {
+    const nt = c.numberType === 'decimal' ? 'decimal' : 'natural';
+    const max = c.maxRange || 1000;
+    const maskKeys = new Set(getMaskPlaces(max, nt, nt === 'decimal' ? (c.decimalPlaces || 2) : 0).map(p => p.key));
+    const bridgeKeys = new Set(getBridgePlaces(max, nt).map(p => p.key));
+    const keep = <T,>(o: Record<string, T>, keys: Set<string>) => Object.fromEntries(Object.entries(o).filter(([k]) => keys.has(k)));
+    const live: CijferConstraints = { ...c, bridges: keep(c.bridges ?? {}, bridgeKeys) };
+    for (const k of ['operand0Mask', 'operand1Mask', 'operand2Mask', 'operand3Mask'] as const) {
+        const mask = c[k] as Record<string, boolean> | undefined;
+        if (mask) (live as Record<string, unknown>)[k] = keep(mask, maskKeys);
+    }
+    return live;
+}
+
+function shortNote(c: CijferConstraints, made: number): string {
+    const max = (c.maxRange || 1000).toLocaleString('nl-BE');
+    const hasBridges = c.operator !== 'x' && c.operator !== ':' && Object.values(c.bridges ?? {}).some(v => v === 'REQUIRED' || v === 'FORBIDDEN');
+    const hasMask = [0, 1, 2, 3].some(i => Object.values(getMask(c, i)).some(Boolean));
+    const tips = [hasBridges ? 'minder bruggen' : null, hasMask ? 'een andere getalopbouw' : null].filter(Boolean);
+    const tip = `kies ${tips.length ? tips.join(' of ') : 'een groter maximum'}.`;
+    return made === 0
+        ? `Geen oefeningen mogelijk met deze instellingen tot ${max}: ${tip}`
+        : `Slechts ${made} ${made === 1 ? 'oefening' : 'oefeningen'} mogelijk met deze instellingen tot ${max}: ${tip}`;
 }
 
 export function generateCijferExercises(block: MathBlock): CijferExercise[] {
@@ -157,31 +179,12 @@ function getMask(c: CijferConstraints, i: number): Record<string, boolean> {
     return (c[keys[Math.min(i, 3)]] || {}) as Record<string, boolean>;
 }
 
-function generateOne(c: CijferConstraints): { ex: CijferExercise; fellBack: boolean } {
+function generateOne(c: CijferConstraints): CijferExercise | null {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const ex = tryGenerate(c);
-        if (ex) return { ex, fellBack: false };
+        if (ex) return ex;
     }
-    // Fallback ignores masks and numberOfTerms but must stay inside the max (operands and answer)
-    const dp = c.numberType === 'decimal' ? (c.decimalPlaces || 2) : 0;
-    const s = scaleOf(dp);
-    const half = Math.round((c.maxRange / 2) * s) / s;
-    const quarter = Math.round((c.maxRange / 4) * s) / s;
-    const mk = (operands: number[], operator: CijferExercise['operator'], answer: number, remainder = 0): { ex: CijferExercise; fellBack: boolean } =>
-        ({ ex: { id: genId(), operands, operator, answer, remainder, isManuallyEdited: false }, fellBack: true });
-    if (c.operator === '+') return mk([half, quarter], '+', parseFloat((half + quarter).toFixed(dp)));
-    if (c.operator === '-') return mk([half, quarter], '-', parseFloat((half - quarter).toFixed(dp)));
-    if (c.operator === 'x') {
-        // multiplicand ≤ max/multiplier so the product stays ≤ max; drawn from the upper half so
-        // a block of fallbacks is not four times the same "33 × 3"
-        const mult = c.maxRange >= 3 ? 3 : 2;
-        const top = Math.max(1, Math.floor((c.maxRange * s) / mult));
-        const multiplicand = randInt(Math.ceil(top / 2), top) / s;
-        return mk([multiplicand, mult], 'x', parseFloat((multiplicand * mult).toFixed(dp)));
-    }
-    // With a remainder requested, pick the first divisor that leaves one (max % 4 is often 0)
-    const divisor = (c.withRemainder && c.numberType !== 'decimal' && [4, 3, 7, 9, 6, 5].find(d => c.maxRange % d !== 0)) || 4;
-    return mk([c.maxRange, divisor], ':', Math.floor(c.maxRange / divisor), c.maxRange % divisor);
+    return null;
 }
 
 function tryGenerate(c: CijferConstraints): CijferExercise | null {
@@ -223,13 +226,16 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
     if (c.operator === '-') {
         const maskA = getMask(c, 0);
         const maskedA = applyMask(maskA, maxVal, dp);
-        // a mask that doesn't fit used to be dropped silently; retry, then fall back with a note
+        // a mask that doesn't fit used to be dropped silently; retry, then leave the exercise out with a note
         if (maskedA === null && Object.values(maskA).some(v => v)) return null;
         const a = maskedA !== null
             ? maskedA
             : parseFloat((randInt(Math.ceil(maxVal * s * 0.1), Math.round(maxVal * s)) / s).toFixed(dp));
 
-        const bMaxScaled = Math.round(a * s) - s;
+        // The aftrekker stays ≥ 1, except under a minuend of at most 1 (a getalopbouw of tienden only:
+        // 0,5 − 0,2), which only fits with terms of one decimal unit and up.
+        const bMinScaled = Math.round(a * s) > s ? s : 1;
+        const bMaxScaled = Math.round(a * s) - bMinScaled;
         if (bMaxScaled <= 0) return null;
 
         const maskB = getMask(c, 1);
@@ -242,7 +248,7 @@ function tryGenerate(c: CijferConstraints): CijferExercise | null {
         } else if (hasMaskB) {
             return null;
         } else {
-            const bScaled = randInt(s, bMaxScaled);
+            const bScaled = randInt(bMinScaled, bMaxScaled);
             if (bScaled <= 0) return null;
             b = parseFloat((bScaled / s).toFixed(dp));
         }

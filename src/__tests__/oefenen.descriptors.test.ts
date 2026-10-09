@@ -473,7 +473,8 @@ describe('descriptor answers agree with the generators', () => {
         ['splitsen-basis', { decimalPlaces: 1, maxGetal: 100 }, 'interactive'],
         ['plaatswaarde-tabel', { decimalPlaces: 3, maxGetal: 1000000 }, 'interactive'],
         ['cijferen-optellen-nat', { numberOfTerms: 4, maxRange: 100000 }, 'interactive'],
-        ['cijferen-vermenigvuldigen-dec', { operand1Mask: { T: true, E: true } }, 'interactive'],
+        // A two-digit multiplier needs a max above 100 (the multiplier tier); no stand-in fills in since 2026-10-09.
+        ['cijferen-vermenigvuldigen-dec', { operand1Mask: { T: true, E: true }, maxRange: 10000 }, 'interactive'],
         // Phase C3: laid from the tray.
         ['geld-tekenen', { format: 'decimaal', maxGetal: 100 }, 'interactive'],
         ['geld-tekenen', { allowedDenominations: [200, 100, 50, 20, 10, 5], scaffolding: 'verdeeld' }, 'interactive'],

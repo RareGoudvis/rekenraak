@@ -106,9 +106,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Hoofdrekenen delen 'andere' at max ≤ 1e6 (natural, no mask): the divisor is uniform up to the
   max, so most quotients are 1; with only the dividend masked an exact division is rare and the
   block relaxes. Fixed above 1e6 only (RNG-stream rule). Fix direction: the >1e6 branches. 2026-09-27
-- REQUIRED bridge on the TOP place (e.g. H at max 1 000, HM at 1e9) is unreachable by construction
-  (needs a sum/minuend of exactly the max); cijferen then silently falls back to its [max/2, max/4]
-  exercise, ignoring the bridges. Fix: hide the top place in BridgeControl or note it. 2026-09-27
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 

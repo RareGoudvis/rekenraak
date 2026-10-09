@@ -14,17 +14,15 @@ const run = (typeId: string, constraints: Record<string, unknown>, count = 8) =>
 };
 
 describe('cijferen limits', () => {
-    test('L3: an unsatisfiable mask falls back inside the max and says so', () => {
+    // No fallback (owner 2026-10-09): what the settings cannot give is left out, WITH a note.
+    test('L3: an unsatisfiable mask leaves the block empty and says so', () => {
         for (const r of run('cijferen-vermenigvuldigen-nat', { maxRange: 100, operand0Mask: { H: true } })) {
-            expect(r.note).toBeTruthy();
-            for (const ex of r.items) {
-                expect(Math.max(...ex.operands, ex.answer)).toBeLessThanOrEqual(100);
-                expect(ex.answer).toBe(ex.operands[0] * ex.operands[1]);
-            }
+            expect(r.items).toEqual([]);
+            expect(r.note).toMatch(/^Geen oefeningen mogelijk met deze instellingen tot 100: kies een andere getalopbouw\.$/);
         }
     });
 
-    test('L3: other operators stay inside the max in the fallback', () => {
+    test('L3: every operator stays inside the max', () => {
         const cases: [string, Record<string, unknown>][] = [
             ['cijferen-optellen-nat', { maxRange: 10, operand0Mask: { H: true } }],
             ['cijferen-aftrekken-nat', { maxRange: 10, operand0Mask: { H: true } }],
@@ -32,20 +30,25 @@ describe('cijferen limits', () => {
             ['cijferen-vermenigvuldigen-dec', { maxRange: 20, operand0Mask: { H: true } }],
         ];
         for (const [id, c] of cases) for (const r of run(id, c)) {
-            expect(r.note).toBeTruthy();
             for (const ex of r.items) expect(Math.max(...ex.operands, ex.answer)).toBeLessThanOrEqual(c.maxRange as number);
         }
     });
 
-    test('note grammar: singular and plural forms', () => {
-        const mk = (n: number) => generateCijferExercisesNoted(makeBlock('cijferen-optellen-nat', {
-            constraints: { operator: '+', numberType: 'natural', maxRange: 10, operand0Mask: { H: true } }, block: { numberOfExercises: n } }));
-        expect(mk(1).note).toMatch(/^1 oefening past niet .* daarvoor staat er een eenvoudige oefening/);
-        expect(mk(3).note).toMatch(/^Alle oefeningen passen niet .* daarvoor staan er eenvoudige oefeningen/);
+    test('note grammar: none, one, several', () => {
+        // A brug out of H at 1 000 needs a sum of exactly 1 000, so a block of 6 comes up short.
+        const forms = new Set<string>();
+        for (const r of run('cijferen-optellen-nat', { maxRange: 1000, bridges: { H: 'REQUIRED' } }, 6)) {
+            const k = r.items.length;
+            if (k === 6) { expect(r.note).toBeNull(); continue; }
+            expect(r.note).toBe(k === 0 ? 'Geen oefeningen mogelijk met deze instellingen tot 1.000: kies minder bruggen.'
+                : `Slechts ${k} ${k === 1 ? 'oefening' : 'oefeningen'} mogelijk met deze instellingen tot 1.000: kies minder bruggen.`);
+            forms.add(k === 0 ? 'none' : k === 1 ? 'one' : 'several');
+        }
+        expect(forms.size).toBeGreaterThan(0);
     });
 
-    test('fallback division keeps a remainder when one is requested', () => {
-        for (const r of run('cijferen-delen-nat', { maxRange: 100, withRemainder: true, operand0Mask: { H: true } }))
+    test('division keeps a remainder when one is requested', () => {
+        for (const r of run('cijferen-delen-nat', { maxRange: 100, withRemainder: true, operand0Mask: { T: true } }))
             for (const ex of r.items) { expect(ex.remainder).toBeGreaterThan(0); expect(ex.operands[0]).toBe(ex.answer * ex.operands[1] + ex.remainder); }
     });
 
