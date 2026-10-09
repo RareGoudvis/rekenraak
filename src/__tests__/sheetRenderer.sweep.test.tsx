@@ -8,6 +8,7 @@ import FractionViewer from '../components/viewer/FractionViewer';
 import ClockViewer from '../components/viewer/ClockViewer';
 import OrdenenViewer from '../components/viewer/OrdenenViewer';
 import CijferViewer from '../components/viewer/CijferViewer';
+import { useWorksheetStore } from '../store/useWorksheetStore';
 import { SOL } from '../components/viewer/solutionStyle';
 import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 
@@ -172,4 +173,16 @@ describe('cijferen delen-dec q/r box: the rest is exact, never rounded to the qu
     // 1 234 567,5 : 500 000 = 2,46 r 4 567,5
     test('a big rest keeps its thousands space', () => expect(qrText([1234567.5, 500000], 2.46, 4567.5)).toBe('4 567,5'));
     test('no rest prints 0', () => expect(qrText([10, 4], 2.5, 0)).toBe('0'));
+});
+
+describe('loadWorksheet starts without the previous sheet\'s "verouderd" flags', () => {
+    test('staleBlocks is empty after a load', () => {
+        const s = useWorksheetStore.getState();
+        useWorksheetStore.setState({ staleBlocks: { old1: true, old2: true } });
+        s.loadWorksheet({
+            blocks: [makeBlock('hr-std-optellen', { id: 'fresh' })],
+            header: s.header, footer: s.footer, docSettings: s.docSettings, baseSettings: s.baseSettings,
+        });
+        expect(useWorksheetStore.getState().staleBlocks).toEqual({});
+    });
 });

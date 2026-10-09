@@ -53,6 +53,7 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
             // NOT re-run setSelectedGrade's preset seeding here.
             selectedGrade: file.selectedGrade ?? null,
             activeBlockId: null,
+            staleBlocks: {},
             _history: [blocks],
             _historyIndex: 0,
         };

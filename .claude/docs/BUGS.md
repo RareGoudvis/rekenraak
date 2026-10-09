@@ -115,8 +115,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - schattend-nat mixes "=" and "≈" for the final result within one block. 2026-09-27
   (The getallenas step-over-max half of this line moved to [L1] below.)
 
-- `loadWorksheet` doesn't reset `staleBlocks`: the previous sheet's "verouderd" flags linger in the
-  map (harmless ids, but it grows). Fix: `staleBlocks: {}` in documentSlice.loadWorksheet. 2026-09-27
 - `typeId.startsWith('layout-')` is still used in Inspector.tsx (~443, ~649), blockLayout.ts (~562) and
   blockNumbering.ts (~21); switch to `REGISTRY[t]?.isFurniture`. 2026-09-27
 
