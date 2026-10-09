@@ -175,10 +175,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
   strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
   2026-10-08
 
-- Flaky under full-suite load: `oefenBuilder.test.tsx` › OefenShareModal › "Afdrukken (A5) prints only
-  the A5 QR sheet" failed once in the pre-commit gate ("expected bound to be called 1 times, got 0")
-  and passes alone. Likely a timer/print wait too short when 99 workers share the CPU. 2026-10-09
-
 ## Bordmodus
 
 - No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
