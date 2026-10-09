@@ -34,6 +34,7 @@ npm run font:baseline  # screenshot every sidebar leaf (--out dir --seed); font:
 npm run limits:audit   # full limit diagnosis, out of the gate (env LIMITS_OUT/DUMP/ONLY/SEEDS/COUNT/RANDOM) → summary.json, violations.json, report.md (+ seeded dumps)
 npm run limits:diff    # diff two limits:audit dirs (--before --after --out [--touched]) → report.md/.html
 npm run trigger:shots  # screenshot the repro cases in scripts/limit-trigger-cases.json (font-baseline shape; font:compare diffs two runs)
+npm run oefen:smoke    # Playwright kiosk smoke: one leaf per input kind × 1280×800 / 1024×768 → index.json + PNGs (needs a dev server; --url --out)
 npm run gate           # what the pre-commit hook runs: check + visual gate on the staged files
 npm run visual:gate    # -- --all | --files a,b | --scope-only : targeted leaf walk vs scripts/visual-baseline.json
 npm run visual:baseline # accept a visual change: rewrites the scoped rows of the baseline (stage the JSON)

@@ -184,22 +184,12 @@ UpdateState). Left over, found while fixing:
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
 ~/Downloads/oefen-check/audit/{1,2,3}/). Plan: ~/.claude/plans/oefen-audit-fixes.md. Lines are
-grouped per work package so parallel deletions merge cleanly.
-
-### WP-A scheduler
+grouped per work package so parallel deletions merge cleanly; fixed lines are deleted, O7 / O16 stay by owner decision.
 
 ### WP-B store / stats
 
 - **O7** C7 (log only, owner): a reload clears the typed draft, the cijferen cells and the geld tray
   (only `current` is persisted, useOefenStore.ts:276, 287). Not fixing. 2026-10-09
-
-### WP-C answer check
-
-### WP-D generation guard
-
-
-### WP-E keyboard / a11y
-
 
 ### WP-F session format
 
@@ -207,9 +197,6 @@ grouped per work package so parallel deletions merge cleanly.
   stringifies the whole run, `saveRun` reloads all runs, `next` rebuilds the seen-keys set:
   quadratic per run, ~0.5 ms per answer and ~170 kB stored at #1000 (test: < 5 ms, < 300 kB). Only
   an endless run far past 1000 answers would feel it. 2026-10-09
-
-### WP-G teacher UX
-
 
 ### WP-H test infra
 

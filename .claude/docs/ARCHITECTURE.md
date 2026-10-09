@@ -1163,13 +1163,14 @@ src/
 │   ├── useOefenStore.ts         # the kiosk's own Zustand store: phase, run, shown exercise, input fields, timer tick; currentInput(), sanitizeAnswer()
 │   └── kiosk/
 │       ├── Kiosk.tsx            # running layout (card left, answer panel right; portrait stacks) + physical-keyboard routing + 1 s clock
-│       ├── TopBar.tsx           # title, progress n / total, countdown (red < 1 min), Resultaten (hidden while statsLocked)
+│       ├── TopBar.tsx           # title, progress n / total, countdown (red < 1 min), Resultaten (hidden while resultsHidden: statsLocked or testMode, run not done)
 │       ├── ExerciseCard.tsx     # ONE exercise through the registry Viewer at 340 px, scaled to the card; inert; ScaffoldProvider false
 │       ├── AnswerInput.tsx      # fields (number / two / time / multi-number / text) + Keypad, or the choice buttons
 │       ├── Keypad.tsx           # 7-8-9 keypad, ⌫, up to two extra keys from descriptor.keys(c), the descriptor's action keys (Lenen) and Controleer
 │       ├── Tray.tsx             # build kind: one tile per KioskPiece (picture from EXERCISE_UI[typeId].TrayPiece), tap lays one, the count badge takes one back; never shows the running total
 │       ├── FeedbackOverlay.tsx  # Juist! / Fout / retry flash (tap or Enter skips), never the right answer; no Volgende button
-│       ├── StatsScreen.tsx      # per type gemaakt/juist/fout/%, Foutjes (exercise, given, expected), Opnieuw, two-tap Wissen
+│       ├── StatsScreen.tsx      # headline c van m juist (m van p gemaakt), per type gemaakt/juist/juist in één keer/juist na 2e kans/fout/%, Foutjes (exercise, given, expected), Opnieuw, two-tap Wissen
+│       ├── StorageBanner.tsx    # role=alert strip when saveRun returned false (storageFailed): "Dit toestel kan je resultaten niet bewaren."
 │       ├── StartScreen.tsx      # confirm screen (title, n soorten · n oefeningen · min, type chips), Start (+ fullscreen try)
 │       ├── ErrorScreen.tsx      # bad / truncated / newer link, or no link
 │       └── kiosk.css            # kiosk layer on top of the app tokens (--kiosk-* sizes, 44 px taps, landscape-first grid)
@@ -1220,6 +1221,8 @@ src/
 │  (repo root) vitest.audit.config.ts    # vitest config for src/__tests__/audit/ only (npm run limits:audit); vitest.config.ts excludes that folder
 │  (repo root) src/__tests__/viewers.interaction.test.tsx, viewers.interaction.grids.test.tsx  # Phase C: no provider = no kiosk attributes, every interactive leaf taps / fills / orders to a right answer (TESTING.md)
 │  (repo root) src/__tests__/viewers.interaction.build.test.tsx, viewers.interaction.drag.test.tsx  # Phase C3/C4: build + drag leaves reach a right answer through the tray / pointer + arrow keys; no provider = no kiosk attributes (TESTING.md)
+│  (repo root) scripts/oefen-smoke.mjs  # Playwright kiosk smoke: one leaf per input kind × 1280×800 / 1024×768 through the real UI to "1 van 1 juist"; index.json + PNGs in font-baseline shape (npm run oefen:smoke --url --out)
+│  (repo root) src/__tests__/fixtures/oefenen/links-2026-10-09.json  # real links made with the 2026-10-09 encoder; oefenen.session.frozen.test.ts decodes them byte-identical
 │  (repo root) src/__tests__/helpers/fillCells.ts, oefenKiosk.ts, dragCheck.ts  # fill-cells answers written from the exercise itself; starter session + tap helpers for the kiosk suites; dragCheck = right / wrong drag values per family from the generator's truth
 │  (repo root) src/__tests__/oefenen.kioskInstruction.test.ts  # every kioskInstruction names a tap / fill, never a pen verb
 │  (repo root) src/__tests__/helpers/limitRules.ts, limitHarness.ts, answerKeys.ts  # the limit rule book (LIMIT_SPECS per typeId), case runner, shared answer-key arithmetic
@@ -1244,9 +1247,10 @@ src/
 │   │   ├── kiosk.ts             # kioskFor / kioskSupports / kioskCapableLeaves / kioskLabel + the frozen KIOSK_LEAF_TABLE_V1 / KIOSK_KEY_TABLE_V1
 │   │   ├── kioskDescriptors.ts  # one KioskDescriptor per family (answerOf, inputOf, choicesOf, labels, separator, keys, display, supported)
 │   │   ├── check.ts             # checkAnswer + normaliseNumber / normaliseFraction / normaliseText; drag compares within `tolerance` (12-hour face minutes), build compares the laid value
-│   │   ├── session.ts           # OefenSessie ↔ wire v1 ↔ DEFLATE (fflate) + base32 ↔ #oefen= link; strict parse with Dutch errors
-│   │   ├── scheduler.ts         # nextType (afwisselen / willekeurig), nextExercise (throwaway block, no exact repeats), isDone, plannedTotal
-│   │   └── stats.ts             # recordAnswer / summary / answerText / expectedText + runs in localStorage (last 5)
+│   │   ├── session.ts           # OefenSessie ↔ wire v1 ↔ DEFLATE (fflate) + base32 ↔ #oefen= link; strict parse with Dutch errors + size / count bounds; diffs against kioskDefaults
+│   │   ├── kioskDefaults.ts     # KIOSK_DEFAULTS_V1: frozen per-leaf seed / label / instruction the wire diffs against (append-only; a drift fails oefenen.session.defaults.test.ts)
+│   │   ├── scheduler.ts         # nextType (afwisselen / willekeurig, no repeat while another slot can serve), nextExercise (throwaway block, no exact repeats), deadSlots (settings that generate nothing are retired), isDone, plannedTotal
+│   │   └── stats.ts             # recordAnswer / summary / viableTypes / viablePlannedTotal / answerText / expectedText + runs in localStorage (last 5; saveRun → false on quota / throw)
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
@@ -1368,9 +1372,10 @@ src/
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)
     ├── curriculum/draftBlock.ts                           # makeDraftBlock(typeId, constraints, id?): the off-sheet block both builders mount Configs on (§13)
-    ├── oefenen/OefenBuilderModal.tsx                      # §15 teacher builder: kiosk-capable leaves, a draft block per row, limit / kans / timer / flags, Opslaan / Delen
-    ├── oefenen/oefenBuild.ts                              # pure: listOefenLeaves, buildSessie (unsupported rows excluded, weights → whole %), rowsFromSessie, LIMIT_STEPS / TIMER_STEPS
-    ├── oefenen/OefenShareModal.tsx                        # §15 link + copy, QR (copy PNG / download), Groot tonen (beamer), Afdrukken (A5)
+    ├── oefenen/OefenBuilderModal.tsx                      # §15 teacher builder: a draft block per row, limit / kans / Antwoord (exactForm) / timer / flags, per-row pre-flight (dead rows block Delen), ≤ 20 rows, Opslaan (new id on a content edit) / Delen
+    ├── oefenen/OefenCatalogue.tsx                         # §15 the builder's type picker: Zoek oefening… + leerjaar chips (the sidebar's rules), kiosk-capable leaves only
+    ├── oefenen/oefenBuild.ts                              # pure: listOefenLeaves (+ searchText / minGrade), filterOefenLeaves, rowYields / deadRows (pre-flight), buildSessie (unsupported rows excluded, weights → whole %), rowsFromSessie, LIMIT_STEPS / TIMER_STEPS
+    ├── oefenen/OefenShareModal.tsx                        # §15 summary chips + own-exercises note, link + copy, QR (copy PNG / download), Groot tonen (beamer), Afdrukken (A5)
     ├── shared/{ExercisePreview.tsx,SheetThumbnail.tsx}    # §13 fit-to-card live example; mini sheet preview
     ├── ui/{IconButton,Wordmark,Switch,PopupSelect,InfoTip,Swatch,ModalPortal,ModalShell}.tsx
     ├── configurator/
@@ -2021,14 +2026,18 @@ Plan and owner decisions: `~/.claude/plans/oefen-app-kiosk.md` (K1–K5, Phase C
 ### Data flow
 
 ```
-OefenBuilderModal ── rows: leaf + draft block (store.draftBlocks, real Config) + limit + kans
+OefenBuilderModal ── OefenCatalogue (Zoek oefening… + leerjaar chips, the sidebar's rules) → rows: leaf +
+   │ draft block (store.draftBlocks, real Config) + limit + kans + Antwoord (exactForm, breuk rows only)
+   │ pre-flight per row: rowYields / deadRows (one draw through nextExercise) → red note, Delen off; ≤ 20 rows
    │ buildSessie (oefenBuild.ts): drop rows whose descriptor.supported(c) is false, weights → whole %
-   │ that sum to 100, instruction frozen to text, createdAt floored to the minute
+   │ that sum to 100, instruction frozen to text, createdAt floored to the minute; a CONTENT edit of a saved
+   │ session gets a new id (Hernoemen keeps it), so pupils' stored runs never bleed into the new link
    ▼
 OefenSessie ── toWire (positional) → JSON → DEFLATE → base32 ── sessieLink → origin/oefenen.html#oefen=…
    │                                      (Opslaan → rekenraak_oefen_sessies_v1, §10)
    ▼
-OefenShareModal: link + Kopieer, QR (canvas, Kopieer QR → PNG or download), Groot tonen, Afdrukken (A5)
+OefenShareModal: summary chips (soorten · oefeningen / onbeperkt, timer, toets, kansen, resultaten) + "elk toestel
+   maakt zijn eigen oefeningen", link + Kopieer, QR (canvas, Kopieer QR → PNG or download), Groot tonen, Afdrukken (A5)
    ▼  pupil scans / opens
 decodeSessie → fromWire → parseSessie (strict, Dutch errors, version gate)
    ▼
@@ -2036,7 +2045,8 @@ useOefenStore.load → latest stored run? (done → locked stats · timer passed
    ▼ Start
 next(): nextType (scheduler) → nextExercise (generator on a throwaway block) → ExerciseCard + AnswerInput
    ▼ Controleer
-answer(): checkAnswer(descriptor) → recordAnswer → saveRun → Juist!/Fout flash that moves on by itself (none in testMode);
+answer(): past the deadline → finish (nothing counted) · checkAnswer(descriptor, …, type.exactForm) → recordAnswer →
+   saveRun (false → storageFailed → StorageBanner) → Juist!/Fout flash that moves on by itself (none in testMode);
    a wrong 1st try with 2 kansen → 'retry' flash → the same exercise again (Kans 2 van 2)
    ▼ all limits / total reached, or timer 0
 finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; Opnieuw / Wissen
@@ -2070,6 +2080,11 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 [check.ts](../../src/services/oefenen/check.ts) normalises before comparing: numbers drop
 spaces of any kind, accept `,`/`.`, leading/trailing zeros and the `−`/`–` glyphs; fractions
 normalise `1  3 / 4`; text is case- and space-free; times compare hours and minutes as numbers.
+**Breuk answers count by value or by form** (`exactFormOf(d, c, row)`): the row's `exactForm`, else the
+descriptor's `exactFormDefault(c)` (`true` where the form IS the task: breuken-bewerken; `false` for
+"Reken uit." rational leaves; `undefined` = no breuk asked, the builder shows no Antwoord toggle), else
+exact. By value = BigInt cross products, so `26/8`, `3 2/8`, `13/4`, `3 1/4` and `12/4` all match
+3 1/4; decimals never match a breuk. By form = the descriptor's spelling list.
 The store's `currentInput()` turns the descriptor into fields (`FIXED_LABELS` for quotiënt/rest,
 uur/min; for multi-number only the COUNT of `answerOf` is read) and `sanitizeAnswer` keeps what
 a field may hold (12 chars, 24 for words; `.` types as `,`; time fields 2 digits and the keypad
@@ -2086,11 +2101,16 @@ type — limits, weights, `perType` stats, history entries — is keyed by **slo
 
 ### Scheduler ([scheduler.ts](../../src/services/oefenen/scheduler.ts), pure, injected RNG)
 
-- **Pool** = slots under their limit. `plannedTotal` = the sum of the limits when every type has
-  one (capped by `total`), else `total`, else `null` = endless (the timer or the pupil ends it).
+- **Pool** = slots under their limit and not **dead**. A slot is dead when its settings generate
+  nothing: each slot is tried once per session object with a fixed seed (cached, the caller's
+  `Math.random` untouched), and a `null` from `nextExercise` retires it too; `deadSlots(s)` exposes
+  the set (stats.ts `viableTypes` / `viablePlannedTotal` feed the start screen and the headline).
+  `plannedTotal` = the sum of the limits when every type has one (capped by `total`), else `total`,
+  else `null` = endless (the timer or the pupil ends it).
 - **afwisselen**: round-robin in session order from the previous slot (never the same type twice
   while ≥ 2 remain). **willekeurig**: weighted draw (all weights 0 = equal); without
-  `allowRepeatType` a draw equal to the previous slot is re-drawn once while the pool has ≥ 2.
+  `allowRepeatType` the previous slot is **left out of the draw** whenever another slot can serve
+  (weights spread over the rest); only the last type left repeats, flagged.
 - **nextExercise** runs `REGISTRY[typeId].generate` on a throwaway block (`blockFor`, SYNC with
   `addBlockFromType`; constraints through `seedConstraints`), re-drawing up to `MAX_REDRAWS` (20)
   times to avoid an `exerciseKeyOf` already seen in this run, else accepts the repeat (flagged).
@@ -2104,26 +2124,40 @@ A run = `{ index, stats: { startedAt, finishedAt?, perType[slot]: { made, correc
 secondTry?, errors[{ exercise, given, expected, at, secondTry?, second? }] }, history[{ slot, typeId, exerciseKey, correct, ms, secondTry? }] },
 timerEndsAt?, current?, done }`. `current` (exercise + the constraints it was generated with)
 makes a reload show the same exercise; it is cleared once answered so nothing counts twice.
-`saveRun` replaces by index and, on a full quota, drops the oldest runs first. Opnieuw = a new run
+`saveRun` replaces by index and, on a full quota, drops the oldest runs first; it returns `false`
+when storage refuses, and the store's `persist` turns that into `storageFailed` →
+[StorageBanner.tsx](../../src/oefenen/kiosk/StorageBanner.tsx) ("Dit toestel kan je resultaten
+niet bewaren.", `role=alert`, kiosk + end screen; reset on load). Opnieuw = a new run
 index (older runs stay stored; the UI shows the newest only); Wissen = `clearRuns` (two taps).
-Never the worksheet autosave.
+Never the worksheet autosave. Cost per answer is a history copy + one full-run stringify
+(~0.5 ms and ~170 kB at answer #1000, pinned by `oefenen.perf.test.ts`).
 
 ### Wire format v1 ([session.ts](../../src/services/oefenen/session.ts))
 
 Positional arrays, trailing defaults trimmed, `null` = default in a middle slot:
 `session = [v, id, created, flags, rows, title?, timerMin?, total?, attempts?]` (`attempts` = 2 or omitted, appended last so older links still decode),
-`row = [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?]`.
+`row = [leaf, diff?, weight?, limit?, label?, instruction?, removed?, typeId?, exact?]` (`exact` = 1 / 0,
+only written when the teacher set the row's Antwoord choice; absent = the descriptor default).
 `created` in whole minutes when it falls on one; `flags` bits 0 willekeurig · 1 allowRepeatType ·
 2 testMode · 3 statsLocked. `leaf` = index into **`KIOSK_LEAF_TABLE_V1`**, else the leafId string.
-`diff` = flat `[key, value, …]` of the constraints that differ from the leaf's **seed**
-(`seedConstraints` at `DEFAULT_BASE`, no grade, the leaf's defaults), keys by index into
-**`KIOSK_KEY_TABLE_V1`** else the string; `removed` = seed keys the session lacks. `weight` is left
-out when it equals the equal split, `label` when it equals `kioskLabelOf(leaf)`, `instruction`
-when it equals the leaf's default (`0` = none), `typeId` when it is the leaf's. Both tables
-are **frozen, append-only** (an index in a shared link must keep meaning the same leaf/key);
-`oefenen.session.test.ts` pins full copies. Transport: `JSON` → raw DEFLATE (`fflate`, level 9)
-→ RFC 4648 base32 (A–Z 2–7, no padding, decoded case-insensitively) → `#oefen=`; at most
-`MAX_SESSIE_BYTES` (30 000) or no link. Base32 is upper-case so [qr.ts](../../src/services/qr.ts)
+`diff` = flat `[key, value, …]` of the constraints that differ from the leaf's **frozen seed** in
+[kioskDefaults.ts](../../src/services/oefenen/kioskDefaults.ts) (`KIOSK_DEFAULTS_V1`: per table
+leaf the seeded settings, kiosk label, default instruction and a settings-dependent flag, as of
+2026-10-09 — NOT the live registry, so a later default change cannot rewrite an old link; a leaf
+missing from the snapshot still uses the live seed), keys by index into **`KIOSK_KEY_TABLE_V1`**
+else the string; `removed` = seed keys the session lacks. `weight` is left out when it equals the
+equal split, `label` when it equals the snapshot label, `instruction` when it equals the snapshot
+default (`0` = none; a settings-dependent instruction is always written as text when the settings
+changed), `typeId` when it is the snapshot's. All three tables are **frozen, append-only**;
+`oefenen.session.test.ts` pins the leaf/key tables, `oefenen.session.defaults.test.ts` fails on any
+drift of the live defaults from the snapshot ("bump the wire version and add a KIOSK_DEFAULTS_V2";
+`ACCEPTED_DRIFT` for a deliberate one), `oefenen.session.frozen.test.ts` decodes the fixture links
+in `src/__tests__/fixtures/oefenen/links-2026-10-09.json` byte-identical even with the registry
+patched. Transport: `JSON` → raw DEFLATE (`fflate`, level 9) → RFC 4648 base32 (A–Z 2–7, no
+padding, decoded case-insensitively) → `#oefen=`. **Bounds** (decode refuses, encode returns
+null): payload ≤ `MAX_SESSIE_BYTES` 4 096 chars (the largest real link is ~760), inflated JSON
+≤ 64 kB into a fixed buffer, ≤ 20 types, title / label ≤ 80, instruction ≤ 200, id ≤ 60,
+limit ≤ 1 000, total ≤ 10 000, timer ≤ 1 440 min. Base32 is upper-case so [qr.ts](../../src/services/qr.ts)
 (`qrcode-generator`, level M) codes the payload as an **alphanumeric segment** (5.5 bits/char)
 after a byte-mode URL head. A 6-type session is a ~260-char link, QR version 10 (57×57).
 Decode errors are Dutch and land on the ErrorScreen: a newer `v` / a type without a descriptor →
@@ -2145,9 +2179,11 @@ in time fields, …) are in REVIEW.local.md §F.
 ### Layout and flow details
 
 Landscape-first: card left, answer panel right; portrait stacks (fallback). Top bar: title,
-`n / total` (or `n`), countdown (red under 1 min), **Resultaten** (hidden while `statsLocked`
-and the run is not done). Start tries `requestFullscreen`. Feedback is juist / fout only, never
-the right answer; `testMode` skips it and goes straight on (one try). Mid-run Resultaten is a peek
+`n / total` (or `n`), countdown (red under 1 min), **Resultaten** (hidden while `resultsHidden` =
+`(statsLocked || testMode) && !run.done`: a toets never shows answers before the end, and the
+builder shows the Statistieken toggle forced on under Testmodus). Start tries `requestFullscreen`.
+Feedback is juist / fout only, never the right answer; `testMode` skips it and goes straight on
+(one try). Start screen counts viable types only ("1 soort · 1 oefening" singular). Mid-run Resultaten is a peek
 (Verder oefenen); the end screen is locked and survives a reload.
 
 ### Phase C: answering on the exercise (`interact`)
@@ -2167,9 +2203,15 @@ typing into the answer panel.
   `cellOf` (`flow` = keys minus scratch cells). The keypad types into `activeCell` through `typeCell` /
   `writeCell`; a full cell (`length`) hands on to the next flow cell. **Enter** (`enterCell`) moves to the next
   flow cell and after the last checks (nothing to check yet: back to the first cell); **Tab / Shift+Tab**
-  (`moveCell`) walks every key including carries; Enter / Space on a tap part toggles it with
-  `preventDefault`, which keeps Kiosk's window handler from reading it as Controleer. `KioskCell` takes the
-  focus when it becomes active and scrolls into view.
+  (`moveCell`, returns whether it moved) walks every key including carries and **does not wrap**: past
+  either end the key is not prevented and the browser continues in DOM order (Resultaten before the grid,
+  keypad → Controleer after it), so a viewer must draw its cells in key order (pinned for all 30
+  fill-cells leaves). **Escape** anywhere on the card focuses the answer panel's first enabled button.
+  Enter / Space on a tap part toggles it with `preventDefault`, which keeps Kiosk's window handler from
+  reading it as Controleer. `KioskCell` takes the focus when it becomes active and scrolls into view, and
+  takes a `label`: `cellProps(ctx, key, label = 'Vul in')`; cijferen names every cell by role + column
+  (`CijferCell.label`: "Antwoord tientallen", "Onthouden honderdtallen", "Lenen eenheden",
+  "Deelproduct 2 eenheden", "Quotiënt tienden", "Rest").
 - **Size**: `ExerciseCard` raises the scale until the smallest `input[data-kiosk-cell]` is **40 px**
   (`MIN_CELL_PX`; WCAG 2.5.8 + room for the digit); a grid taller than the card then scrolls inside it
   (`.kiosk-card-body.is-scrolling`, from its top-left) instead of shrinking. A tappable part counts whole in
@@ -2230,8 +2272,22 @@ wrong on the last try → `feedback` (Fout). **There is no Volgende button:** th
 Opening Resultaten mid-flash remembers the phase (`statsFrom`); Verder oefenen resumes as if the flash had ended.
 Stats: an exercise counts once; right on the 2nd try is `correct` AND `secondTry` (`OefenTypeStats.secondTry`,
 history `secondTry`); wrong twice is an `OefenError` with the first answer in `given` and the second in
-`second`. StatsScreen adds a "Juist na 2e kans" column when the session has 2 kansen and lists **Vorige keren**
-(earlier runs on this device; tap one for its numbers, read-only). Teacher side: the builder's "Kansen per
-oefening" 1 / 2 control; the per-type limit is a slider **1–50 with ∞ at the right end** (`LIMIT_MAX`); Opnieuw /
-Wissen only on the end screen; rows are named by `kioskLabel` (domain · type · detail) and the library name
-becomes the session title.
+`second`. StatsScreen headline: `c van m juist`, plus ` (m van p gemaakt)` when `viablePlannedTotal` is
+finite and the run stopped short; with 2 kansen the table shows "Juist in één keer" and "Juist na 2e kans"
+beside Juist, and it lists **Vorige keren** (earlier runs on this device; tap one for its numbers,
+read-only). Teacher side: the builder's "Kansen per oefening" 1 / 2 control; the per-type limit is a
+slider **1–50 with ∞ at the right end** (`LIMIT_MAX`, label "Aantal: onbeperkt" + an endless-run note
+when no timer is set); at most `MAX_TYPES` (20) rows and `MAX_TITLE` (80) chars; Opnieuw / Wissen only
+on the end screen; rows are named by `kioskLabel` (domain · type · detail) and the library name becomes
+the session title. Mijn bladen › Oefensessies: Delen / Bewerken / hernoemen / **Dupliceren**
+(`duplicateOefenSessie`, new id, " (kopie)") / verwijderen. Builder-reachable settings that generate
+nothing are pinned per leaf in `oefenen.zeroOutput.test.ts` (DEAD table; a new one fails the gate).
+
+### Harnesses
+
+`oefenen.e2e.matrix.test.ts` (gate, ~2 s): every table leaf × its constraintSpace options × 3 seeds →
+builder row → `nextExercise` → descriptor answer → typeable with the descriptor's keys → `checkAnswer` →
+`recordAnswer` → `summary`; a wrong answer must be refused; unreachable settings are skipped, broken
+chains pinned `test.fails` (BUGS O25–O27). `npm run oefen:smoke` (Playwright, out of the gate): one leaf
+per input kind × 1280×800 / 1024×768 through the real UI to "1 van 1 juist", PNGs + `index.json` in the
+font-baseline shape. Detail: TESTING.md "Oefenmodus end-to-end".

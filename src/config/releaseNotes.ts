@@ -53,6 +53,30 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
+                text: 'Oefenmodus: zoek een oefening of filter op leerjaar, dupliceer een oefensessie, en zie bij het delen in één oogopslag aantal, tijd, toets en kansen.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Oefenmodus: bij breuken telt elk gelijkwaardig antwoord (26/8 = 3 1/4). Per soort kies je “Enkel de gevraagde vorm” als de vorm de opdracht is.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Oefenmodus: in testmodus ziet de leerling de resultaten pas op het einde. Bewerk je een gedeelde sessie, dan krijgt ze een nieuwe link.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: instellingen die geen oefeningen opleveren (bv. een klok zonder tijdstype) zie je nu rood in de bouwer; de sessie stopt er niet meer op.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: bij Willekeurig zonder “zelfde soort na elkaar” komt nooit twee keer dezelfde soort na elkaar.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: de leerling ziet een melding als het toestel de resultaten niet kan bewaren, en Tab verlaat het cijferrooster.',
+            },
+            {
+                kind: 'nieuw',
                 text: 'Bordmodus (bèta): zet oefeningen, een klok, timer, getallenlijn en meer op het digibord. Via de knop Bordmodus of op rekenraak.be/bord.html.',
             },
             {
