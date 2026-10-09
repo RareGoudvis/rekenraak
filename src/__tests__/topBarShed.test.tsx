@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import { render, cleanup, act } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import TopBar from '../components/layout/TopBar';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 
@@ -12,9 +14,12 @@ const ZONE_WIDTHS: Record<number, [number, number, number]> = {
     2: [138, 0, 226],
     3: [54, 0, 226],
 };
-// What --sp-5 (bar side padding) and --sp-3 (zone gap) resolve to; jsdom leaves var() unresolved.
-const BAR_PADDING = '20px';
-const ZONE_GAP = '12px';
+// jsdom leaves var() unresolved, so the bar padding and zone gap the components really set
+// are resolved against theme.css: a padding change shows up here instead of in a stub.
+const THEME = readFileSync(join(__dirname, '../assets/theme.css'), 'utf8');
+const resolveTokens = (v: string) => v.replace(/var\((--[\w-]+)\)/g, (_, name: string) => THEME.match(new RegExp(`${name}:\\s*([^;]+);`))?.[1].trim() ?? '0px');
+// The shorthand's horizontal value: 'V' or 'V H ...', never splitting inside var(...).
+const sidePadding = (el: HTMLElement) => { const parts = el.style.padding.split(/\s+(?![^(]*\))/); return resolveTokens(parts[1] ?? parts[0]); };
 let barWidth = 0;
 
 // Shadowing on HTMLElement.prototype leaves jsdom's own Element.prototype getters intact.
@@ -31,8 +36,9 @@ beforeAll(() => {
             if (!row || !bar || !isBar(bar)) return 0;
             const idx = Array.from(row.children).indexOf(this);
             const w = ZONE_WIDTHS[Number(bar.dataset.stage)]?.[idx] ?? 0;
-            // A long sheet name widens the name track by what its 320 px cap allows.
-            return idx === 1 && w > 0 && (this.textContent ?? '').length > 30 ? w + 180 : w;
+            // A long sheet name widens the name track by what its 320 px cap allows. Read from the
+            // store, not textContent: the track's beta chip + save text alone pass 30 characters.
+            return idx === 1 && w > 0 && (useWorksheetStore.getState().header.titel ?? '').length > 30 ? w + 180 : w;
         },
     });
     Object.defineProperty(proto, 'clientWidth', {
@@ -44,8 +50,8 @@ beforeAll(() => {
         const cs = real(el, pseudo);
         return new Proxy(cs, {
             get(target, key) {
-                if (isBar(el) && (key === 'paddingLeft' || key === 'paddingRight')) return BAR_PADDING;
-                if (isZoneRow(el) && key === 'columnGap') return ZONE_GAP;
+                if (isBar(el) && (key === 'paddingLeft' || key === 'paddingRight')) return sidePadding(el as HTMLElement);
+                if (isZoneRow(el) && key === 'columnGap') return resolveTokens((el as HTMLElement).style.gap);
                 const v = Reflect.get(target, key, target);
                 return typeof v === 'function' ? v.bind(target) : v;
             },
@@ -67,10 +73,16 @@ const stageAt = (width: number) => {
 };
 
 describe('TopBar shedding', () => {
+    // Why (owner call 3): a 1920 px screen is the common classroom size; at 20 px side padding
+    // its inner width fell 16 px short of the full labels and the whole bar went icon-only.
+    test('1920 px window: every label fits the inner width', () => {
+        expect(stageAt(1268)).toBe(0);
+    });
+
     // Why: the bar's padding is not room the row gets; counting it kept stage 0 at 1920 px
     // while the right group ran over "Automatisch bewaard".
-    test('1920 px window: the full labels do not fit the inner width, so it sheds to icons', () => {
-        expect(stageAt(1268)).toBe(1);
+    test('a window just under 1920 px sheds to icons once the inner width is short', () => {
+        expect(stageAt(1260)).toBe(1);
     });
 
     // Why: the name centres in the space the groups leave, not dead centre of the bar, so
