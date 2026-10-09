@@ -25,6 +25,8 @@ export function NumberField({ label, value, onChange, min, max }: {
     );
 }
 
+const isHexColor = (v: string) => /^#[0-9a-f]{6}$/i.test(v);
+
 export function PaletteRow({ label, value, palette, onChange, extra }: {
     label: string; value: string; palette: readonly string[]; onChange: (v: string) => void;
     // A leading non-colour choice (e.g. 'cyclus'), drawn as a striped swatch.
@@ -35,6 +37,7 @@ export function PaletteRow({ label, value, palette, onChange, extra }: {
         background: bg, border: '2px solid var(--bg-surface)',
         boxShadow: on ? '0 0 0 2px var(--accent)' : '0 0 0 1px var(--separator)',
     });
+    const custom = isHexColor(value) && !palette.some(c => c.toLowerCase() === value.toLowerCase());
     return (
         <div style={S.stacked}>
             <span style={S.label}>{label}</span>
@@ -47,9 +50,15 @@ export function PaletteRow({ label, value, palette, onChange, extra }: {
                     <button key={c} type="button" aria-pressed={value.toLowerCase() === c.toLowerCase()} aria-label={`Kleur ${c}`} title={c}
                         onClick={() => onChange(c)} style={dot(c, value.toLowerCase() === c.toLowerCase())} />
                 ))}
-                <input type="color" aria-label={`${label}: eigen kleur`} value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#000000'}
-                    onChange={(e) => onChange(e.target.value)}
-                    style={{ width: 36, height: 34, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer' }} />
+                {/* A native colour input cannot be empty (it shows black for 'cyclus'), so it sits
+                    invisible over a swatch that is neutral until a colour outside the palette is chosen. */}
+                <label data-palette-custom="" title={`${label}: eigen kleur`}
+                    style={{ ...dot(custom ? value : 'var(--bg-surface-2)', custom), position: 'relative', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
+                    {!custom && '+'}
+                    <input type="color" aria-label={`${label}: eigen kleur`} value={isHexColor(value) ? value : palette[0] ?? '#ffffff'}
+                        onChange={(e) => onChange(e.target.value)}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', padding: 0, border: 'none', opacity: 0, cursor: 'pointer' }} />
+                </label>
             </div>
         </div>
     );
