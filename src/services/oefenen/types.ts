@@ -161,6 +161,9 @@ export interface KioskDescriptor<E = unknown> {
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
     display(ex: E, c: Record<string, unknown>): string;
+    // Stats text of a typed answer, one entry per field (the pupil's or the first accepted
+    // spellings): euro + cent fields read "€ 2,65". Absent = the fields joined as typed.
+    showAnswer?(parts: string[], ex: E, c: Record<string, unknown>): string;
     // The card header when the paper instruction names a pen verb (omcirkel, kleur ...) but the
     // kiosk input is a button or field; undefined = keep the leaf's instruction.
     kioskInstruction?: string | ((ex: E, c: Record<string, unknown>) => string | undefined);

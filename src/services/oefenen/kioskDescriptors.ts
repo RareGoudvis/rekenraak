@@ -465,6 +465,11 @@ const conceptsOf = (c: Record<string, unknown>) => (c.concepts as string[] | und
 // to 5°, right within the class's range). A drawn figuur or punt-lijn has no single value.
 const isHoekDrag = (c: Record<string, unknown>) => c.mode === 'tekenen' && c.kind === 'hoek';
 const hoekName = (ex: VormleerExercise) => CONCEPT_NAMES[ex.concept] ?? ex.concept;
+// What the card drew, for an error row, without naming the soort (that is the answer).
+const FIGURE_BY_CORNERS: Record<number, string> = { 3: 'driehoek', 4: 'vierhoek' };
+const figureText = (ex: VormleerExercise) => (ex.kind === 'hoek'
+    ? `hoek van ${ex.angleDeg ?? '?'}°`
+    : `${FIGURE_BY_CORNERS[ex.points?.length ?? 0] ?? 'figuur'}${ex.sides?.length ? `, zijden ${ex.sides.map(showNum).join(' · ')} cm` : ''}`);
 const hoekDrag: KioskInteract<VormleerExercise> = {
     kind: 'drag',
     keys: () => ['a'],
@@ -480,7 +485,7 @@ export const VORMLEER_KIOSK = descriptor<VormleerExercise>({
     interactOf: (c) => (isHoekDrag(c) ? hoekDrag : undefined),
     choicesOf: (_ex, c) => conceptsOf(c).map(k => CONCEPT_NAMES[k] ?? k),
     answerOf: (ex, c) => (isHoekDrag(c) ? [hoekDrag.answerOf(ex, c)] : [hoekName(ex)]),
-    display: (ex, c) => (isHoekDrag(c) ? `teken een ${hoekName(ex)}: ?°` : 'Welke soort? ?'),
+    display: (ex, c) => (isHoekDrag(c) ? `teken een ${hoekName(ex)}: ?°` : `${figureText(ex)}: welke soort?`),
     kioskInstruction: (ex, c) => (isHoekDrag(c) ? `Sleep het been tot je een ${hoekName(ex)} hebt.` : undefined),
     supported: (c) => {
         const ks = conceptsOf(c);
@@ -648,6 +653,15 @@ export const GELD_TERUGGEVEN_KIOSK = descriptor<GeldTeruggevenExercise>({
         ? euros(ex.changeCents)
         : [String(Math.floor(ex.changeCents / 100)), String(ex.changeCents % 100)]),
     display: (ex) => `${showEuro(ex.priceCents)} betalen met ${showEuro(ex.payWithCents)}: terug ?`,
+    // An amount reads "€ 2,65", not the fields "2 ; 65"; a cent field past 99 stays as typed.
+    showAnswer: (parts, _ex, c) => {
+        if (teruggevenDecimaal(c)) {
+            const raw = (parts[0] ?? '').replace(/\s/g, '');
+            return /^\d+([,.]\d{1,2})?$/.test(raw) ? showEuro(Math.round(Number(raw.replace(',', '.')) * 100)) : `€ ${raw}`;
+        }
+        const [e = '', ct = ''] = parts;
+        return /^\d+$/.test(e) && /^\d{1,2}$/.test(ct) ? showEuro(Number(e) * 100 + Number(ct)) : `${e} euro ${ct} cent`;
+    },
 });
 
 // korting: korting in € + nieuwe prijs (two fields); intrest: the interest. Winst asks a word too.
@@ -968,7 +982,7 @@ export const KLOK_KIOSK = descriptor<ClockExercise>({
         const h12 = ex.hours % 12;
         return (h12 === 0 ? [0, 12] : [h12, h12 + 12]).map(h => hm(h, ex.minutes));
     },
-    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? 'analoge' : 'digitale'} klok: ? : ??`
+    display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? `analoge klok toont ${hm(ex.hours % 12 || 12, ex.minutes)}` : `digitale klok toont ${ex.digitalText}`}: hoe laat?`
         : isKlokDrag(ex, c) ? `${ex.timeText}: wijzers op ?` : `${ex.timeText} = ? : ??`),
     // Owner call 13: the paper's lezen asks the time in words (a writing line under the clock); the card takes uu:mm only.
     kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.`
