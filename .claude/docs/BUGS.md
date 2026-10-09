@@ -226,8 +226,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-H test infra
 
-- **O23** CI `check.yml` triggers only on dev / main pushes and PRs, so rc / rc-oefenen are never
-  checked in CI. Owner: add both. 2026-10-09
 - **O24** No test exercises the kiosk chain generate → descriptor answer → keys can type it →
   `checkAnswer` → stats over the constraintSpace options; no Playwright kiosk smoke per input kind. 2026-10-09
 
