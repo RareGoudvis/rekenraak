@@ -193,6 +193,26 @@ describe('OefenBuilderModal title', () => {
     });
 });
 
+describe('OefenBuilderModal kans slider', () => {
+    test('one row: 100 %, slider disabled with a hint; a second row enables both and splits', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        fireEvent.click(screen.getByRole('button', { name: 'Willekeurig' }));
+        const one = screen.getByLabelText(/^Kans:/) as HTMLInputElement;
+        expect(one.disabled).toBe(true);
+        expect(screen.getByText('Kans: 100%')).toBeTruthy();
+        expect(screen.getByText('Voeg een tweede soort toe om de kansen te verdelen.')).toBeTruthy();
+        fireEvent.click(addBtn('procenten-welk'));
+        const sliders = screen.getAllByLabelText(/^Kans:/) as HTMLInputElement[];
+        expect(sliders.every(s => !s.disabled)).toBe(true);
+        fireEvent.change(sliders[0], { target: { value: '100' } });
+        fireEvent.change(sliders[1], { target: { value: '50' } });
+        expect(screen.getByText('Kans: 67%')).toBeTruthy();
+        expect(screen.getByText('Kans: 33%')).toBeTruthy();
+        expect(screen.queryByText('Voeg een tweede soort toe om de kansen te verdelen.')).toBeNull();
+    });
+});
+
 describe('OefenBuilderModal limit slider', () => {
     test('the right end past 50 means unlimited, other values become the session limit', () => {
         render(<OefenBuilderModal onClose={() => { }} />);

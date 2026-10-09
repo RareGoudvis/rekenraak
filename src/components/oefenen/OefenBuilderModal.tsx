@@ -251,8 +251,11 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                                     <label style={S.label} htmlFor={`w-${r.key}`}>Kans: {pct === null ? '–' : `${pct}%`}</label>
                                                     <input
                                                         id={`w-${r.key}`} type="range" min={1} max={100} value={r.weight}
+                                                        // The % is this row's share of all rows, so one row is always 100 %: say so instead of a dead slider.
+                                                        disabled={percents.length < 2}
                                                         style={S.range} onChange={e => patchRow(r.key, { weight: Number(e.target.value) })}
                                                     />
+                                                    {percents.length < 2 && <p style={S.note}>Voeg een tweede soort toe om de kansen te verdelen.</p>}
                                                 </div>
                                             )}
                                         </div>
@@ -321,6 +324,7 @@ const S = {
     rowLabel: { fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--text-main)' } as React.CSSProperties,
     rowDomain: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)' } as React.CSSProperties,
     removeBtn: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--danger)', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: 'var(--text-sm)' } as React.CSSProperties,
+    note: { margin: 'var(--sp-1) 0 0', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontStyle: 'italic' } as React.CSSProperties,
     hint: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', margin: '0 0 var(--sp-3)', padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--radius-xs)', background: 'var(--danger-soft)', color: 'var(--danger)', fontSize: 'var(--text-sm)' } as React.CSSProperties,
     rowGrid: { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(240px, 320px)', gap: 'var(--sp-5)', alignItems: 'start' } as React.CSSProperties,
     configCol: { minWidth: 0 } as React.CSSProperties,
