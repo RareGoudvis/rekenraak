@@ -3,7 +3,7 @@ import type { ClockType, ExerciseMode, HandChoice } from '../../services/clock/c
 import AnalogClockSVG from './AnalogClockSVG';
 import type { ClockConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
-import { ANSWER_LINE_H } from './BlockWidthContext';
+import { ANSWER_LINE_H, useShowScaffold } from './BlockWidthContext';
 import { useViewerInteraction } from './ViewerInteractionContext';
 import ClockDragFace from './ClockDragFace';
 
@@ -33,6 +33,8 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     const handChoice = (ex.handChoice ?? c.handChoice ?? 'beide') as HandChoice;
     // Oefenmodus: the pupil sets the hands on the card (kiosk only; null on the sheet).
     const ctx = useViewerInteraction();
+    // Oefenmodus card: the time is typed as uu:mm, the line for it in words is not asked.
+    const scaffold = useShowScaffold();
 
     const clock = (showH: boolean, showM: boolean) => (
         <AnalogClockSVG hours={ex.hours} minutes={ex.minutes} showHourHand={showH} showMinuteHand={showM} is24hour={is24hour} size={CLOCK_SIZE} />
@@ -50,7 +52,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
         </span>
     );
 
-    const blankLine = <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: ANSWER_LINE_H }} />;
+    const blankLine = scaffold ? <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: ANSWER_LINE_H }} /> : null;
     // isMath: digitalText ("03:15") reads as math, timeText ("kwart over 3") reads as words
     const sol = (text: string, isMath = false) => (
         <span style={{ ...solutionText, fontSize: isMath ? 'calc(var(--sheet-size-math) * 0.7)' : 'calc(var(--sheet-size-text) * 0.6)' }}>{text}</span>

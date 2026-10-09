@@ -5,7 +5,7 @@ import type { FractionConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { useViewerInteraction } from './ViewerInteractionContext';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
-import { useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import { useSheetSizePx, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
 
 // Object geometry is written as px at the 13pt default and emitted as em, so the drawn
 // hoeveelheid objects follow the Lettergrootte slider.
@@ -48,6 +48,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const sheetSizePx = useSheetSizePx('math');
     // Oefenmodus: null on the sheet; in the kiosk the pupil taps the parts to colour (kleuren only).
     const ix = useViewerInteraction();
+    // Oefenmodus card: a hoeveelheid asks only the final amount, so its working rows stay on paper.
+    const scaffold = useShowScaffold();
     // A figure `figureUnits` wide at the 13pt default may only grow until it fills the
     // column; past that the slider would push it off the page instead of enlarging it.
     const figureFont = (figureUnits: number): React.CSSProperties =>
@@ -231,6 +233,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             </div>
         );
 
+        if (!scaffold) return <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>{gridWrap}{questionLine}</div>;
+
         if (answerFormat === 'met-hulp') {
             // One grid for the figure and both calc rows: the figure spans all 5 columns,
             // then each calc line's cells land in those same 5 columns (a fragment's
@@ -334,6 +338,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                 {vertFrac(ex.numerator, ex.denominator)}<span> van {total} is</span>{showSolutions ? sol(String(coloredCount)) : blank(36)}
             </div>
         );
+        if (!scaffold) return questionLine;
 
         if (answerMode === 'structuurlijnen') {
             return (

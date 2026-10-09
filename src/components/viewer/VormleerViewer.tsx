@@ -707,7 +707,8 @@ export default function VormleerViewer({ block, showSolutions }: Props) {
                             {mini(ex, 110)}
                             {showSolutions
                                 ? <span style={{ ...solutionText, fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.6)', textAlign: 'center' }}>{CONCEPT_NAMES[ex.concept] ?? ex.concept}</span>
-                                : <span style={{ borderBottom: '1.5px solid #000', width: '90%', height: '16px' }} />}
+                                // Oefenmodus card: the name is a button in the kiosk panel, not a written line.
+                                : scaffold && <span style={{ borderBottom: '1.5px solid #000', width: '90%', height: '16px' }} />}
                         </div>
                     ))}
                 </div>,

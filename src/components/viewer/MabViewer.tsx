@@ -3,7 +3,7 @@ import { MabGlyph, MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
 import { builtCount, useViewerInteraction, type InteractionState } from './ViewerInteractionContext';
 import type { KioskPiece } from '../../services/oefenen/types';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useShowScaffold, useSheetSizePx } from './BlockWidthContext';
 import type { MabConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -163,6 +163,9 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
     // In tekenen mode the number is printed on the answer line by default; in
     // herkennen mode the line stays empty unless solutions are shown.
     const showNumberOnLine = mode === 'tekenen' || showSolutions;
+    // Oefenmodus card: herkennen's number is typed in the kiosk panel, so its write-on line goes.
+    const scaffold = useShowScaffold();
+    const answerLine = showNumberOnLine || scaffold;
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: `${figureFontPx}px` }}>
@@ -225,8 +228,8 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                     ))}
                 </div>
             </div>
-            {/* ANSWER LINE — always shown */}
-            <div style={{
+            {/* ANSWER LINE — always on the sheet */}
+            {answerLine && <div style={{
                 width: '100%',
                 height: `${answerHeight}px`,
                 marginTop: '8px',
@@ -240,7 +243,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                     ? <span style={{ ...(showSolutions && mode === 'herkennen' ? solutionText : { color: '#000' }), fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{fmt(ex.value)}</span>
                     : <div style={{ width: '70%', borderBottom: '1.5px solid #000' }} />
                 }
-            </div>
+            </div>}
         </div>
     );
 }

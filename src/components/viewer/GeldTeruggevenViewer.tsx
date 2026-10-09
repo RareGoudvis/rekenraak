@@ -3,6 +3,7 @@ import { Bill, LaidMoney } from './GeldViewer';
 import { useViewerInteraction, type BuildEntry } from './ViewerInteractionContext';
 import type { GeldTeruggevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { useShowScaffold } from './BlockWidthContext';
 
 // ── Amount formatting ─────────────────────────────────────────────────────────
 
@@ -178,6 +179,8 @@ function TeruggevenCell({ ex, block, showSolutions, laid }: { ex: GeldTeruggeven
     const antwoordFormat: string     = c.antwoordFormat   ?? 'euro-cent';
     const betalenMetTekening: boolean = c.betalenMetTekening ?? false;
     const boxHeight: number          = c.boxHeight        ?? 120;
+    // Oefenmodus card: the answer goes in the kiosk panel or tray, so the sprong and the write-on line are not asked.
+    const scaffold = useShowScaffold();
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px 4px', boxSizing: 'border-box' }}>
@@ -195,7 +198,7 @@ function TeruggevenCell({ ex, block, showSolutions, laid }: { ex: GeldTeruggeven
             </div>
 
             {/* Diagram / scaffolding */}
-            <ScaffoldingArea ex={ex} scaffolding={scaffolding} showSolutions={showSolutions} boxHeight={boxHeight} />
+            {scaffold && <ScaffoldingArea ex={ex} scaffolding={scaffolding} showSolutions={showSolutions} boxHeight={boxHeight} />}
 
             {/* Answer */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '2px' }}>
@@ -209,7 +212,7 @@ function TeruggevenCell({ ex, block, showSolutions, laid }: { ex: GeldTeruggeven
                         <span style={{ fontSize: FS_LABEL, fontStyle: 'italic', color: '#666' }}>Teken dit bedrag.</span>
                     </div>
                 )}
-                <AnswerLine ex={ex} antwoordFormat={antwoordFormat} showSolutions={showSolutions} />
+                {scaffold && <AnswerLine ex={ex} antwoordFormat={antwoordFormat} showSolutions={showSolutions} />}
             </div>
         </div>
     );

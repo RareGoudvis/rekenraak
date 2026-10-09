@@ -2,7 +2,7 @@ import type { MathBlock, SchattendExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import { targetsFor, roundTo, ROUND_SCALE } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useShowScaffold } from './BlockWidthContext';
 import { OP_GLYPH } from '../../services/math/formatters';
 import type { SchattendConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
@@ -23,6 +23,8 @@ const chOf = (n: number) => `${n}ch`;
 
 export default function SchattendViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    // Oefenmodus card: only the estimate is asked, the rounded operands are scrap work.
+    const scaffold = useShowScaffold();
     const exercises: SchattendExercise[] = block.schattendExercises || [];
     const c = block.constraints as SchattendConstraints;
     const numberType: string = c.numberType ?? 'natural';
@@ -37,7 +39,7 @@ export default function SchattendViewer({ block, showSolutions }: Props) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
-    const withSteps = scaffolding === 'tussenstappen';
+    const withSteps = scaffolding === 'tussenstappen' && scaffold;
 
     // Everything the row prints, computed once: the column widths below are the widest of
     // each of these across the block, so the settings decide the layout, not the roll.
