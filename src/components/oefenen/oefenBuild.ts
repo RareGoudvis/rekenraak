@@ -1,8 +1,9 @@
 import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
-import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie } from '../../services/oefenen/types';
+import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
+import { nextExercise, type Rng } from '../../services/oefenen/scheduler';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
 export interface OefenLeaf {
@@ -124,3 +125,25 @@ export function rowsFromSessie(sessie: OefenSessie): BuilderRow[] {
     });
     return rows;
 }
+
+// Pre-flight verdicts per draft constraints object: the store swaps the object on every edit, so identity = freshness.
+const yieldCache = new WeakMap<object, Map<string, boolean>>();
+
+/** The row's settings give the kiosk at least one exercise: one draw through the kiosk's own nextExercise. */
+export function rowYields(row: Pick<BuilderRow, 'leaf' | 'constraints'>, rng?: Rng): boolean {
+    const cacheKey = `${row.leaf.typeId}|${row.leaf.id}`;
+    const cached = rng ? undefined : yieldCache.get(row.constraints)?.get(cacheKey);
+    if (cached !== undefined) return cached;
+    const type: OefenType = { typeId: row.leaf.typeId, leafId: row.leaf.id, label: row.leaf.label, constraints: row.constraints, weight: 100 };
+    const probe: OefenSessie = { v: OEFEN_VERSION, id: 'preflight', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false };
+    const yields = nextExercise(probe, type, new Set(), rng) !== null;
+    if (!rng) {
+        const perRow = yieldCache.get(row.constraints) ?? new Map<string, boolean>();
+        perRow.set(cacheKey, yields);
+        yieldCache.set(row.constraints, perRow);
+    }
+    return yields;
+}
+
+/** Rows whose settings generate nothing: the kiosk would end a pupil's run on them, so Delen waits. */
+export const deadRows = (rows: BuilderRow[]): BuilderRow[] => rows.filter(r => !rowYields(r));

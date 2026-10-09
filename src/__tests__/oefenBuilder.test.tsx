@@ -3,7 +3,8 @@ import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, screen, within, act } from '@testing-library/react';
 import OefenBuilderModal from '../components/oefenen/OefenBuilderModal';
 import OefenShareModal from '../components/oefenen/OefenShareModal';
-import { buildSessie, listOefenLeaves, normaliseWeights, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
+import { buildSessie, listOefenLeaves, normaliseWeights, rowYields, rowsFromSessie, type BuilderRow, type BuilderSettings } from '../components/oefenen/oefenBuild';
+import { kioskSupports } from '../services/oefenen/kiosk';
 import { loadOefenSessies } from '../services/persistence';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import type { OefenSessie } from '../services/oefenen/types';
@@ -289,5 +290,38 @@ describe('OefenShareModal', () => {
         render(<OefenShareModal sessie={{ ...small, types: [{ ...small.types[0], constraints: { noise } }] }} onClose={() => { }} />);
         expect(screen.getByRole('status').textContent).toMatch(/te groot voor een deelbare link/);
         expect(screen.queryByRole('link')).toBeNull();
+    });
+});
+
+describe('OefenBuilderModal pre-flight (no exercises)', () => {
+    const DEAD = 'Deze instellingen leveren geen oefeningen op.';
+    const rowOf = (id: string) => within(screen.getByRole('region', { name: leaf(id).label }));
+
+    test('klok lezen with every tijdstype unticked: red note, Delen off; one ticked again clears both', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('procenten-nemen'));
+        fireEvent.click(addBtn('klok-analoog-lezen'));
+        expect(screen.queryByText(DEAD)).toBeNull();
+        expect(footerBtn('Delen').disabled).toBe(false);
+
+        // Through the row's real ClockConfig checkboxes, the way a teacher gets there.
+        const boxes = () => rowOf('klok-analoog-lezen').getAllByRole('checkbox') as HTMLInputElement[];
+        for (const box of boxes().filter(b => b.checked)) fireEvent.click(box);
+        expect(boxes().every(b => !b.checked)).toBe(true);
+        expect(rowOf('klok-analoog-lezen').getByText(DEAD)).toBeTruthy();
+        // A healthy second row does not make it shareable: the dead row would end the pupil's run.
+        expect(footerBtn('Delen').disabled).toBe(true);
+
+        fireEvent.click(boxes()[0]);
+        expect(screen.queryByText(DEAD)).toBeNull();
+        expect(footerBtn('Delen').disabled).toBe(false);
+    });
+
+    test('kioskSupports refuses a klok without tijdstypes; rowYields pre-flights one row', () => {
+        expect(kioskSupports('klok-kloklezen', { timeTypes: [] })).toBe(false);
+        expect(kioskSupports('klok-kloklezen', { timeTypes: ['uren'] })).toBe(true);
+        const klok = leaf('klok-analoog-lezen');
+        expect(rowYields({ leaf: klok, constraints: { ...klok.constraints, timeTypes: [] } })).toBe(false);
+        expect(rowYields({ leaf: klok, constraints: { ...klok.constraints, timeTypes: ['uren'] } })).toBe(true);
     });
 });
