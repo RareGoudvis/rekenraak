@@ -321,7 +321,7 @@ const getallenasSpace: OptionSpace = {
 
 const getallenrijSpace: OptionSpace = {
     ...getallenasSpace,
-    maxGetal: union(RANGES.getallenrijen),
+    maxGetal: union(RANGES.getallenrijen, RANGES.getallenrijenDecimal),
     numberMask: MASKS,
     fractionStep: [2, 4, 10],
     maxTeller: [1, 3, 10, 25],

@@ -6,6 +6,8 @@ import { useMaxPresets } from '../components/configurator/useMaxPresets';
 import { ConstraintScopeContext, type ConstraintScopeValue } from '../components/configurator/ConstraintScope';
 import { RANGES } from '../config/numberRanges';
 import { makeBlock } from './helpers/makeBlock';
+import { flattenLeaves } from '../config/appstructure';
+import { floorMaxIntoList } from '../config/exerciseRegistry';
 import type { MathBlock } from '../services/math/types';
 
 // The hook is the configs' only road to a max list, so it must follow every branch the
@@ -42,6 +44,17 @@ describe('useMaxPresets without a scope', () => {
     ])('%s %j', (typeId, constraints, want) => {
         const range = listFor(makeBlock(typeId, { constraints }));
         expect(range?.presets ?? null).toEqual(want);
+    });
+
+    // Opening the config must not snap the leaf's pinned max away (it used to jump 10 → 20 and regenerate).
+    test('the decimal getallenrijen leaf finds its pinned 10 in its list; natural keeps its list', () => {
+        const leaf = flattenLeaves().find(l => l.id === 'getalbegrip-getallenrijen-dec')!;
+        const block = makeBlock(leaf.typeId, { constraints: leaf.defaultConstraints, leafId: leaf.id });
+        expect(block.constraints.maxGetal).toBe(10);
+        expect(listFor(block)?.presets).toContain(10);
+        expect(floorMaxIntoList(block.typeId, block.constraints)).toEqual(block.constraints);
+        expect(listFor(makeBlock('getallenrijen', { constraints: { numberType: 'natural' } }))?.presets).toEqual(RANGES.getallenrijen);
+        expect(RANGES.getallenrijen).not.toContain(10);
     });
 
     test('names the key the list belongs to', () => {

@@ -474,6 +474,12 @@ const evenOnevenMax: MaxPresetsFn = (c) =>
 const vergelijkenMax: MaxPresetsFn = (c) =>
     maxGetal(c.subType === 'representaties' ? RANGES.vergelijkenRepresentaties : RANGES.vergelijken);
 
+const getallenrijMax: MaxPresetsFn = (c) => {
+    const numberType = numberTypeOf(c);
+    if (numberType === 'rational') return null;
+    return maxGetal(numberType === 'decimal' ? RANGES.getallenrijenDecimal : RANGES.getallenrijen);
+};
+
 const afrondenMax: MaxPresetsFn = (c) =>
     maxGetal(numberTypeOf(c) === 'decimal' ? RANGES.decimal : RANGES.afrondenNatural);
 
@@ -525,7 +531,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'getalpatronen': row<PatroonConstraints>({ exerciseField: 'patroonExercises', generate: generatePatroonExercises, generateNoted: generatePatroonExercisesNoted, defaultConstraints: patroonDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.patronen) , kiosk: PATROON_KIOSK }),
     'deelbaarheid-kleuren': row<DeelbaarheidKleurConstraints>({ exerciseField: 'deelbaarheidKleurExercises', generate: generateDeelbaarheidKleurExercises, defaultConstraints: deelbaarheidKleurDefaults, defaultCount: 3, maxPresets: deelbaarheidKleurMax, kiosk: DEELBAARHEID_KLEUR_KIOSK }),
     'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   generateNoted: generateGetallenasExercisesNoted, defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) , kiosk: GETALLENAS_KIOSK }),
-    'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenrijen) , kiosk: GETALLENAS_KIOSK }),
+    'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: getallenrijMax, kiosk: GETALLENAS_KIOSK }),
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises,  defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: LENGTE_KIOSK }),
     'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises, generateNoted: generateOmtrekExercisesNoted,       defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: OMTREK_KIOSK }),
     'temperatuur':  row<TemperatuurConstraints>({ exerciseField: 'temperatuurExercises',  generate: generateTemperatuurExercises,  defaultConstraints: temperatuurDefaults,  defaultCount: 4 , kiosk: TEMPERATUUR_KIOSK }),
