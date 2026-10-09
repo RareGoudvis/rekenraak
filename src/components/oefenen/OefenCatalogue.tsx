@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { MagnifyingGlass, Plus } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { LEERJAREN, type Leerjaar } from '../../config/gradePresets';
+import { MAX_TYPES } from '../../services/oefenen/session';
 import { filterOefenLeaves, type OefenLeaf } from './oefenBuild';
 
 interface Props {
@@ -9,11 +10,13 @@ interface Props {
     // How often a leaf is already in the session (the "2×" counter).
     countOf: (leafId: string) => number;
     onAdd: (leaf: OefenLeaf) => void;
+    // The session holds MAX_TYPES rows: a share link refuses more.
+    full?: boolean;
 }
 
 // The builder's left column: kiosk-capable leaves grouped by domain, with the sidebar's search
 // and leerjaar filter on top. Click adds a row.
-export default function OefenCatalogue({ leaves, countOf, onAdd }: Props) {
+export default function OefenCatalogue({ leaves, countOf, onAdd, full = false }: Props) {
     const [search, setSearch] = useState('');
     // Starts at the sidebar's leerjaar but never writes it back: the sheet's grade is not the session's.
     const [grade, setGrade] = useState<Leerjaar | null>(() => useWorksheetStore.getState().selectedGrade);
@@ -42,6 +45,7 @@ export default function OefenCatalogue({ leaves, countOf, onAdd }: Props) {
                         <button key={g} className="seg-btn" aria-pressed={grade === g} onClick={() => setGrade(g)}>L{g}</button>
                     ))}
                 </div>
+                {full && <p style={S.full} role="status">Maximum {MAX_TYPES} soorten per sessie.</p>}
             </div>
             <div style={S.list}>
                 {domains.length === 0 && search.trim() !== '' && (
@@ -57,7 +61,8 @@ export default function OefenCatalogue({ leaves, countOf, onAdd }: Props) {
                         }
                         const n = countOf(leaf.id);
                         els.push(
-                            <button key={leaf.id} className="ui-hover" style={S.leafBtn} onClick={() => onAdd(leaf)} title="Toevoegen aan de sessie">
+                            <button key={leaf.id} className="ui-hover" style={full ? { ...S.leafBtn, ...S.leafBtnOff } : S.leafBtn} onClick={() => onAdd(leaf)} disabled={full}
+                                title={full ? `Maximum ${MAX_TYPES} soorten per sessie` : 'Toevoegen aan de sessie'}>
                                 <Plus size={14} />
                                 <span style={S.leafLabel}>{leaf.label}</span>
                                 {n > 0 && <span style={S.leafCount}>{n}×</span>}
@@ -94,6 +99,8 @@ const S = {
     domDot: { width: '8px', height: '8px', borderRadius: 'var(--radius-pill)', flexShrink: 0 } as React.CSSProperties,
     subHead: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', padding: 'var(--sp-2) var(--sp-2) 2px' } as React.CSSProperties,
     leafBtn: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', width: '100%', textAlign: 'left', padding: '6px var(--sp-2)', borderRadius: 'var(--radius-xs)', border: 'none', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', fontSize: 'var(--text-sm)' } as React.CSSProperties,
+    leafBtnOff: { opacity: 0.5, cursor: 'not-allowed' } as React.CSSProperties,
+    full: { margin: 0, fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontStyle: 'italic' } as React.CSSProperties,
     leafLabel: { flex: 1, minWidth: 0 } as React.CSSProperties,
     leafCount: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--accent)' } as React.CSSProperties,
 };

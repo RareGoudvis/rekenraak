@@ -539,6 +539,29 @@ describe('exactForm control (O8 builder half)', () => {
     });
 });
 
+describe('builder stays within the link bounds (item 8)', () => {
+    test('20 rows: every add button is off with a note; removing one turns them back on', () => {
+        // Reopened with 20 types: one render instead of 20 adds, each re-rendering every row.
+        const type = { typeId: 'procenten', leafId: 'procenten-nemen', label: 'Percent', constraints: { ...leaf('procenten-nemen').constraints }, weight: 5 };
+        const full: OefenSessie = { v: 1, id: 'full', title: 'Vol', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false, types: Array.from({ length: 20 }, () => ({ ...type })) };
+        render(<OefenBuilderModal onClose={() => { }} initial={full} />);
+        expect(screen.getByText('20 soorten in de sessie')).toBeTruthy();
+        const adds = () => screen.getAllByTitle(/Toevoegen aan de sessie|Maximum 20 soorten per sessie/) as HTMLButtonElement[];
+        expect(adds().every(b => b.disabled)).toBe(true);
+        expect(screen.getByText('Maximum 20 soorten per sessie.')).toBeTruthy();
+        fireEvent.click(addBtn('procenten-welk'));
+        expect(screen.getByText('20 soorten in de sessie')).toBeTruthy();
+        fireEvent.click(screen.getAllByRole('button', { name: /Verwijderen/ })[0]);
+        expect(adds().every(b => !b.disabled)).toBe(true);
+        expect(screen.queryByText('Maximum 20 soorten per sessie.')).toBeNull();
+    });
+
+    test('the title field takes at most 80 characters (the link refuses longer)', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        expect((screen.getByLabelText('Titel') as HTMLInputElement).maxLength).toBe(80);
+    });
+});
+
 describe('klok description says what the kiosk asks (O21)', () => {
     // ClockConfig serves the sheet too, where lezen IS written in words: both answers are named.
     test('analoge klok lezen: uu:mm typen in de oefenmodus; tekenen: wijzers slepen', () => {

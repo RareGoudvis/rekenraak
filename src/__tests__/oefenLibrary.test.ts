@@ -4,6 +4,7 @@ import {
     loadOefenSessies, saveOefenSessie, deleteOefenSessie, renameOefenSessie, duplicateOefenSessie, MAX_OEFEN_SESSIES,
 } from '../services/persistence';
 import type { OefenSessie } from '../services/oefenen/types';
+import { MAX_TITLE } from '../services/oefenen/session';
 
 const sessie = (id: string, title = 'Tafels'): OefenSessie => ({
     v: 1, id, title, createdAt: 1,
@@ -61,9 +62,11 @@ describe('oefensessie library', () => {
         expect(duplicateOefenSessie('nope')).toBeNull();
     });
 
-    test('duplicate keeps the title within the 60-character pupil title', () => {
-        saveOefenSessie(sessie('a', 'x'.repeat(60)));
-        expect(duplicateOefenSessie('a')!.sessie.title!.length).toBeLessThanOrEqual(60);
+    test('duplicate keeps the title within the link\'s MAX_TITLE', () => {
+        saveOefenSessie(sessie('a', 'x'.repeat(MAX_TITLE)));
+        const title = duplicateOefenSessie('a')!.sessie.title!;
+        expect(title.length).toBeLessThanOrEqual(MAX_TITLE);
+        expect(title.endsWith(' (kopie)')).toBe(true);
     });
 
     test('garbage in storage reads as an empty library', () => {

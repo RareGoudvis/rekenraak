@@ -10,7 +10,7 @@ import ModalShell from '../ui/ModalShell';
 import Switch from '../ui/Switch';
 import OefenShareModal from './OefenShareModal';
 import OefenCatalogue from './OefenCatalogue';
-import { newSessieId } from '../../services/oefenen/session';
+import { MAX_TITLE, MAX_TYPES, newSessieId } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
@@ -68,6 +68,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         draftBlocks.find(b => b.id === draftIdOf(key))?.constraints as Record<string, unknown> | undefined;
 
     const addLeaf = (leaf: OefenLeaf) => {
+        if (rows.length >= MAX_TYPES) return;
         const key = `r${nextKey.current++}`;
         const st = useWorksheetStore.getState();
         st.setDraftBlocks([...st.draftBlocks, makeDraftBlock(leaf.typeId, leaf.constraints, draftIdOf(key))]);
@@ -104,7 +105,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
             name = asked;
         }
         // The library name doubles as the pupil's title, so the kiosk never falls back on "Oefenen".
-        const titled = title.trim() ? sessie : { ...sessie, title: name.trim().slice(0, 60) };
+        const titled = title.trim() ? sessie : { ...sessie, title: name.trim().slice(0, MAX_TITLE) };
         if (!title.trim()) setTitle(titled.title ?? '');
         const entry = saveOefenSessie(titled, name);
         if (!entry) { window.alert('Opslaan mislukt: de opslag van je browser is vol.'); return; }
@@ -132,7 +133,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                 </div>
 
                 <div style={S.bodyRow}>
-                    <OefenCatalogue leaves={leaves} countOf={id => rows.filter(r => r.leaf.id === id).length} onAdd={addLeaf} />
+                    <OefenCatalogue leaves={leaves} countOf={id => rows.filter(r => r.leaf.id === id).length} onAdd={addLeaf} full={rows.length >= MAX_TYPES} />
 
                     {/* MAIN: session settings, then one row per added type */}
                     <div style={S.main}>
@@ -140,7 +141,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             <div style={S.settingsGrid}>
                                 <div style={S.field}>
                                     <label style={S.label} htmlFor="oefen-title">Titel</label>
-                                    <input id="oefen-title" style={S.input} value={title} maxLength={60} placeholder="Bv. Tafels en procenten" onChange={e => setTitle(e.target.value)} />
+                                    <input id="oefen-title" style={S.input} value={title} maxLength={MAX_TITLE} placeholder="Bv. Tafels en procenten" onChange={e => setTitle(e.target.value)} />
                                 </div>
                                 <div style={S.field}>
                                     <span style={S.label}>Volgorde</span>
