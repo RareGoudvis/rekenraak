@@ -178,13 +178,8 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 ### WP-H test infra
 
 
-- CijferViewer DivisionGrid (sheet at scaffolding ≤ 1, and every kiosk card) draws a decimal divisor
-  through `getDigitCols(divisor, 0, …)` (~CijferViewer.tsx:487), which rounds it: 0,7 shows as "1", 0,3 and
-  0,1 as "0"; the dividend's whole digits round the same way (~:474, 336,6 shows as "337,60"). The card
-  hides the header, so the pupil sees a wrong sum. Fix: whole digits from `Math.floor`, the divisor with its
-  decimals and a comma. Also the quotient row still sizes from the dividend (~:103, ~:425): mirror
-  `divQuotientInt` (cijferCells.ts, O25) so the sixth `q` cell sits inside the grid and the comma after
-  the shifted whole places. 2026-10-09
+- CijferViewer delen-dec q/r box rounds the rest to the exercise's decimals: 742,4 : 0,7 = 1060,57 r 0,001 prints "r 0,00"
+  (`fmtDisplay(ex.remainder, dp)`; the rest of a decimal staartdeling has up to 2·dp decimals). Found by WP-1. 2026-10-09
 
 ## Tooling
 

@@ -8,7 +8,7 @@ import { PLACE_VALUES } from '../../services/math/mathEngine';
 import { SOL, solutionText } from './solutionStyle';
 import { monoTextPx } from '../../services/layout/blockLayout';
 import { divideToDecimals } from '../../services/cijferen/cijferGenerator';
-import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
+import { addSubMaxInt, cijferDp as dpOf, computeAddCarries, decimalsOf, getDigitCols, intLen, mulLayout, ppDigitCols } from '../../services/cijferen/cijferLayout';
 import { cijferKioskGrid, divQuotientInt, kioskMulRows, type CijferCell } from '../../services/cijferen/cijferCells';
 import { borrowedProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
@@ -96,11 +96,14 @@ function mulGridCols(ex: CijferExercise, dp: number, extraCols: number): number 
     return 1 + mulLayout(ex, dp).digitCols + extraCols;
 }
 
+// A decimal divisor is written with its own decimals (0,7 takes two ruitjes), never rounded.
+const divisorColsOf = (divisor: number) => intLen(divisor) + decimalsOf(divisor);
+
 function divGridCols(ex: CijferExercise, dp: number, extraCols: number): number {
     // The working area always keeps at least 3 decimal columns so a pupil can work past dp.
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
     const leftCols = intLen(ex.operands[0]) + workingDecCols;
-    const rightCols = Math.max(intLen(ex.operands[1]), divQuotientInt(ex) + dp);
+    const rightCols = Math.max(divisorColsOf(ex.operands[1]), divQuotientInt(ex) + dp);
     return leftCols + rightCols + extraCols;
 }
 
@@ -423,14 +426,17 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
     const quotient = ex.answer;
 
     const dividendIntCols = intLen(dividend);
-    const divisorCols = intLen(divisor);
+    const divisorIntCols = intLen(divisor);
+    const divisorDp = decimalsOf(divisor);
+    const divisorCols = divisorColsOf(divisor);
     // As wide as the dividend after the komma shift (742,4 : 0,7 → 7424 : 7) — the pupil must
     // determine how many digits the quotient needs. SYNC: cijferCells divGeometry (the kiosk's q cells).
     const quotientIntCols = divQuotientInt(ex);
 
     // Working area always has at least 3 decimal cols so students can work past dp if needed
     const workingDecCols = dp > 0 ? Math.max(dp, 3) : 0;
-    const dividendDecStr = dp > 0 ? (dividend.toFixed(dp).split('.')[1] || '') : '';
+    // Whole part and decimals from one exact string: rounding the whole part drew 336,6 as "337,60".
+    const [dividendWhole, dividendDecStr = ''] = dividend.toFixed(dp).split('.');
     const leftCols = dividendIntCols + workingDecCols;
     const rightContentCols = Math.max(divisorCols, quotientIntCols + dp);
     const rightCols = rightContentCols;
@@ -475,7 +481,7 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
             </svg>
 
             {/* Dividend integer digits (left, row 0) */}
-            {scaffolding <= 1 && getDigitCols(dividend, 0, dividendIntCols).map((d, i) => (
+            {scaffolding <= 1 && getDigitCols(Number(dividendWhole), 0, dividendIntCols).map((d, i) => (
                 <DC key={`dv${i}`} col={d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
             {/* Decimal digits of dividend (actual digits if dividend is decimal, else "0") */}
@@ -488,9 +494,12 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
             )}
 
             {/* Divisor digits (right section, row 0) */}
-            {scaffolding <= 1 && getDigitCols(divisor, 0, divisorCols).map((d, i) => (
+            {scaffolding <= 1 && getDigitCols(divisor, divisorDp, divisorIntCols).map((d, i) => (
                 <DC key={`dr${i}`} col={leftCols + d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
+            {scaffolding <= 1 && divisorDp > 0 && (
+                <CommaEdge afterGridCol={leftCols + divisorIntCols - 1} row={0} CELL={CELL} rowH={ROW_H} />
+            )}
 
             {/* Quotient digits (right section, row 1 — below horizontal line), at every scaffolding level */}
             {showSolutions && (

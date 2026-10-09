@@ -1,6 +1,6 @@
 import type { CijferExercise } from '../math/types';
 import type { InteractionState } from '../../components/viewer/ViewerInteractionContext';
-import { addSubMaxInt, computeAddCarries, getDigitCols, intLen, mulLayout } from './cijferLayout';
+import { addSubMaxInt, computeAddCarries, decimalsOf, getDigitCols, intLen, mulLayout } from './cijferLayout';
 import { PLACE_VALUES } from '../math/mathEngine';
 
 // Oefenmodus (Phase C2): the ruitjes of a cijfer grid the pupil fills on the kiosk card.
@@ -51,9 +51,6 @@ export interface CijferKioskGrid {
     // The row the answer digits sit in (add / sub / mul).
     answerRow: number;
 }
-
-// Decimals the divisor really has (0,7 → 1); generators keep floats, so 9 places strip the tail.
-const decimalsOf = (x: number) => (String(Number(x.toFixed(9))).split('.')[1] ?? '').length;
 
 /** Whole places the quotient may need: a decimal divisor is worked after the komma shift
  *  (742,4 : 0,7 = 7424 : 7), so they are the SHIFTED dividend's (1060,57 needs four, not three). */

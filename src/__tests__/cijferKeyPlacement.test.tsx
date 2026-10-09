@@ -104,6 +104,31 @@ describe('cijferen vermenigvuldigen key: partial products units-first', () => {
     });
 });
 
+// The printed top row of a staartdeling (dividend | divisor), digits and commas left to right.
+function divisionTopRow(container: HTMLElement): string {
+    return Array.from(container.querySelectorAll<HTMLElement>('div'))
+        .filter(el => el.style.position === 'absolute' && parseFloat(el.style.top) === 0 && /^[\d,]$/.test(el.textContent ?? ''))
+        .sort((a, b) => parseFloat(a.style.left) - parseFloat(b.style.left))
+        .map(el => el.textContent).join('');
+}
+
+describe('cijferen delen-dec: the grid writes the numbers as they are, never rounded', () => {
+    const cases: Array<[number, number, string]> = [
+        [336.6, 0.7, '336,60|0,7'],
+        [336.6, 0.3, '336,60|0,3'],
+        [12.25, 0.25, '12,25|0,25'],
+        [742, 0.1, '742,00|0,1'],
+        [86.5, 7, '86,50|7'],
+    ];
+    for (const [a, b, want] of cases) {
+        test(`${a} : ${b} prints ${want}`, () => {
+            const { quotient, remainder } = divideToDecimals(a, b, 2);
+            const container = renderKey('cijferen-delen-dec', { ...exOf(':', [a, b], quotient, 2), remainder }, 1);
+            expect(divisionTopRow(container)).toBe(want.replace('|', ''));
+        });
+    }
+});
+
 describe('cijferen delen-dec key: the quotient row fits the shifted dividend (O25)', () => {
     test('742,4 : 0,7 = 1060,57 draws six quotient digits in the kiosk card\'s columns', () => {
         const { quotient, remainder } = divideToDecimals(742.4, 0.7, 2);
