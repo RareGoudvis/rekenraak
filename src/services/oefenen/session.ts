@@ -6,6 +6,7 @@ import { LEAF_BY_ID, flattenLeaves } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../math/constraintTypes';
 import { KIOSK_KEY_TABLE_V1, KIOSK_LEAF_TABLE_V1, kioskLabelOf } from './kiosk';
+import { kioskDefaultV1, type KioskDefault } from './kioskDefaults';
 
 // Oefensessie ↔ URL hash (#oefen=…): the share-link trick of persistence.ts. Only settings
 // travel; the pupil's device generates the exercises. The link is also a classroom QR, so the
@@ -36,9 +37,12 @@ export function newSessieId(): string {
 // leaf:    index into KIOSK_LEAF_TABLE_V1, else the leafId string.
 // diff:    flat [key, value, key, value…] of the constraints that differ from the leaf's seed
 //          (key = index into KIOSK_KEY_TABLE_V1, else the key string); removed: seed keys absent.
+//          The seed, the default label and instruction come from the frozen KIOSK_DEFAULTS_V1
+//          (kioskDefaults.ts), the live registry only for a row the snapshot lacks.
 // attempts: 2 or omitted (= 1); appended last so links made before it still decode.
 // weight:  omitted when it equals the equal split; instruction: omitted when it equals the
 //          leaf's default, 0 when the session has none; typeId: only when it is not the leaf's.
+//          A settings-dependent instruction on changed settings always travels (frozenInstructionOf).
 // exact:   1 / 0 = the teacher set exactForm true / false; omitted = the descriptor's default.
 //          Appended last so rows made before it still decode.
 type WireKey = number | string;
@@ -53,21 +57,49 @@ const MINUTES_BELOW = 1e10;
 const LEAF_DEFAULTS: Record<string, Record<string, unknown> | undefined> =
     Object.fromEntries(flattenLeaves().map(l => [l.id, l.defaultConstraints]));
 
-// What a sidebar click on this leaf seeds on an untouched base: the baseline the diff is against.
+// What a sidebar click on this leaf seeds on an untouched base TODAY. Only a row outside
+// KIOSK_DEFAULTS_V1 (a leaf it predates, another typeId) still diffs against this live seed.
 function seedOf(typeId: string, leafId: string): Record<string, unknown> {
     const override = LEAF_BY_ID[leafId]?.typeId === typeId ? LEAF_DEFAULTS[leafId] : undefined;
     // Cloned: the overlay below must never write into a registry default's nested object.
     return JSON.parse(JSON.stringify(seedConstraints({ typeId, leafId, base: DEFAULT_BASE, grade: null, override }))) as Record<string, unknown>;
 }
 
-// The builder names a row by kioskLabel, so a label only travels when the teacher renamed it.
-const defaultLabelOf = kioskLabelOf;
+// The frozen defaults a row's settings, label and instruction are diffed against (O14): later
+// changes to the registry, the leaf defaults or the wording must not re-point an old link.
+interface Baseline {
+    frozen?: KioskDefault;      // the row's leaf in KIOSK_DEFAULTS_V1, when its typeId matches
+    leafTypeId?: string;
+    label?: string;
+    seed: Record<string, unknown>;
+}
+
+function baselineOf(typeId: string | undefined, leafId: string): Baseline {
+    const d = kioskDefaultV1(leafId);
+    const leafTypeId = d?.typeId ?? LEAF_BY_ID[leafId]?.typeId;
+    const tId = typeId ?? leafTypeId;
+    const frozen = d && d.typeId === tId ? d : undefined;
+    return {
+        frozen, leafTypeId,
+        // The builder names a row by kioskLabel, so a label only travels when the teacher renamed it.
+        label: d?.label ?? kioskLabelOf(leafId),
+        seed: frozen?.constraints ?? (tId ? seedOf(tId, leafId) : {}),
+    };
+}
 
 // What a sidebar click would title the block (the sidebar label feeds the fallback, not the
 // short kiosk label); an unknown leaf falls back on the row's own label.
-function defaultInstructionOf(typeId: string, leafId: string, label: string, constraints: Record<string, unknown>): string {
+function liveInstructionOf(typeId: string, leafId: string, label: string, constraints: Record<string, unknown>): string {
     const leaf = LEAF_BY_ID[leafId]?.typeId === typeId ? LEAF_BY_ID[leafId] : undefined;
     return resolveInstruction(leaf?.instruction, typeId, leaf?.label ?? label, constraints as BlockConstraints);
+}
+
+// The instruction an omitted slot stands for: the frozen one, unless the leaf's instruction
+// depends on settings the row changed. Links made before the snapshot resolved those live, so
+// that stays undefined here (resolved live on decode) and rowOut ships the text instead.
+function frozenInstructionOf(b: Baseline, changed: boolean): string | undefined {
+    if (!b.frozen || (b.frozen.dynInstruction && changed)) return undefined;
+    return b.frozen.instruction;
 }
 
 // Largest-remainder equal split, like normaliseWeights on equal sliders: the first slots get the +1s.
@@ -88,8 +120,8 @@ const trim = (a: unknown[]) => { while (a.length > 0 && a[a.length - 1] === null
 
 function rowOut(t: OefenType, slot: number, n: number): WireRow {
     const leafIdx = KIOSK_LEAF_TABLE_V1.indexOf(t.leafId);
-    const leafTypeId = LEAF_BY_ID[t.leafId]?.typeId;
-    const seed = seedOf(t.typeId, t.leafId);
+    const b = baselineOf(t.typeId, t.leafId);
+    const seed = b.seed;
     const diff: unknown[] = [];
     const removed: WireKey[] = [];
     for (const [k, v] of Object.entries(t.constraints)) {
@@ -98,18 +130,18 @@ function rowOut(t: OefenType, slot: number, n: number): WireRow {
     for (const k of Object.keys(seed)) {
         if (seed[k] !== undefined && t.constraints[k] === undefined) removed.push(keyOut(k));
     }
-    const label = defaultLabelOf(t.leafId);
-    const instruction = t.instruction === undefined ? 0
-        : t.instruction === defaultInstructionOf(t.typeId, t.leafId, t.label, t.constraints) ? null : t.instruction;
+    const omitted = b.frozen ? frozenInstructionOf(b, diff.length + removed.length > 0)
+        : liveInstructionOf(t.typeId, t.leafId, t.label, t.constraints);
+    const instruction = t.instruction === undefined ? 0 : t.instruction === omitted ? null : t.instruction;
     return trim([
         leafIdx >= 0 ? leafIdx : t.leafId,
         diff.length ? diff : null,
         t.weight === equalWeight(n, slot) ? null : t.weight,
         t.limit ?? null,
-        t.label === label ? null : t.label,
+        t.label === b.label ? null : t.label,
         instruction,
         removed.length ? removed : null,
-        t.typeId === leafTypeId ? null : t.typeId,
+        t.typeId === b.leafTypeId ? null : t.typeId,
         t.exactForm === undefined ? null : t.exactForm ? 1 : 0,
     ]);
 }
@@ -196,10 +228,12 @@ function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
     const [leaf, diff, weight, limit, label, instruction, removed, typeId, exact] = raw;
     const leafId = typeof leaf === 'number' ? KIOSK_LEAF_TABLE_V1[leaf] : leaf;
     if (typeof leafId !== 'string') return bad(what);
-    const tId = opt<unknown>(typeId) ?? LEAF_BY_ID[leafId]?.typeId;
+    if (typeId != null && typeof typeId !== 'string') return bad(what);
+    const b = baselineOf(opt<string>(typeId), leafId);
+    const tId = opt<string>(typeId) ?? b.leafTypeId;
     if (typeof tId !== 'string') return bad(what);
     if (!REGISTRY[tId]?.kiosk) throw new Error(`Deze oefenlink bevat een oefening die deze versie niet kent (${tId}). Werk de app bij.`);
-    const constraints = seedOf(tId, leafId);
+    const constraints = b.seed;
     if (removed != null) {
         if (!Array.isArray(removed)) return bad(`instellingen van ${what}`);
         for (const k of removed) delete constraints[keyIn(k, `instellingen van ${what}`)];
@@ -208,13 +242,14 @@ function rowIn(raw: unknown, slot: number, n: number): Record<string, unknown> {
         if (!Array.isArray(diff) || diff.length % 2 !== 0) return bad(`instellingen van ${what}`);
         for (let i = 0; i < diff.length; i += 2) constraints[keyIn(diff[i], `instellingen van ${what}`)] = diff[i + 1];
     }
-    const lbl = opt<unknown>(label) ?? defaultLabelOf(leafId);
+    const lbl = opt<unknown>(label) ?? b.label;
     if (typeof lbl !== 'string') return bad(what);
+    const changed = (Array.isArray(diff) && diff.length > 0) || (Array.isArray(removed) && removed.length > 0);
     return {
         typeId: tId, leafId, label: lbl, constraints,
         weight: opt<unknown>(weight) ?? equalWeight(n, slot),
         ...(instruction !== 0 && {
-            instruction: opt<unknown>(instruction) ?? defaultInstructionOf(tId, leafId, lbl, constraints),
+            instruction: opt<unknown>(instruction) ?? frozenInstructionOf(b, changed) ?? liveInstructionOf(tId, leafId, lbl, constraints),
         }),
         ...(limit != null && { limit }),
         // Anything but 1 / 0 passes through for parseType to refuse.
