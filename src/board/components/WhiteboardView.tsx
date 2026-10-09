@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BoardBottomBar from './BoardBottomBar';
 import BoardPageCanvas from './BoardPageCanvas';
 import BoardAddModal from './BoardAddModal';
@@ -17,6 +17,23 @@ export default function WhiteboardView() {
     const inspectorOpen = useBoardStore((s) => s.inspectorOpen);
     const tool = useBoardStore((s) => s.tool);
 
+    // Ink undo/redo only (widget actions have no history). Ignored while typing so a tekst
+    // widget or title field keeps its own text undo.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+            const key = e.key.toLowerCase();
+            if (key !== 'z' && key !== 'y') return;
+            const t = e.target as HTMLElement | null;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            e.preventDefault();
+            const { undoStroke, redoStroke } = useBoardStore.getState();
+            if (key === 'y' || e.shiftKey) redoStroke(); else undoStroke();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
+
     return (
         // no-print: Ctrl+P or the Afdrukken path with the board open must print the sheet
         // underneath, not this fixed overlay on top of every page.
@@ -26,8 +43,8 @@ export default function WhiteboardView() {
                 {/* Inspector flyouts — opened via the ⚙ in the widget's title bar. */}
                 {inspectorOpen && selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {inspectorOpen && selectedWidget && selectedWidget.kind !== 'exercise' && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
-                {/* Ink tool settings strip (colors + widths) while pen/marker is active. */}
-                {(tool === 'pen' || tool === 'marker') && <InkSettingsBar tool={tool} />}
+                {/* Ink tool settings strip (colors + widths, + line options) while an ink tool is active. */}
+                {(tool === 'pen' || tool === 'marker' || tool === 'line' || tool === 'shape') && <InkSettingsBar tool={tool} />}
             </div>
             <BoardBottomBar onOpenWiskunde={() => setAddOpen(true)} />
             {addOpen && <BoardAddModal onClose={() => setAddOpen(false)} />}

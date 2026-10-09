@@ -134,33 +134,11 @@ export function datumProps(widget: BoardWidget): DatumProps {
     };
 }
 
-// ── Dobbelsteen widget props ─────────────────────────────────────────────────
-export interface DobbelProps {
-    count: number;             // 1-3 dice
-    sides: number;             // 6 (pips) or 2-20 (number faces); ignored with custom list
-    custom: string[];          // non-empty = roll strings instead of numbers
-}
-export function dobbelProps(widget: BoardWidget): DobbelProps {
-    const p = widget.props ?? {};
-    const custom = typeof p.custom === 'string'
-        ? p.custom.split('\n').map(s => s.trim()).filter(Boolean) : [];
-    return {
-        count: Math.min(3, Math.max(1, Number(p.count ?? 1))),
-        sides: Math.min(20, Math.max(2, Number(p.sides ?? 6))),
-        custom,
-    };
-}
+// ── Dobbelsteen widget props: the schema lives with its settings panel ──────
+export { dobbelProps, type DobbelModel as DobbelProps } from './settings/dobbelModel';
 
-// ── Ademhaling widget props ──────────────────────────────────────────────────
-export interface AdemProps { inSec: number; holdSec: number; outSec: number; }
-export function ademProps(widget: BoardWidget): AdemProps {
-    const p = widget.props ?? {};
-    return {
-        inSec: Math.max(1, Number(p.inSec ?? 4)),
-        holdSec: Math.max(0, Number(p.holdSec ?? 4)),
-        outSec: Math.max(1, Number(p.outSec ?? 4)),
-    };
-}
+// ── Ademhaling widget props: the schema lives with its settings panel ───────
+export { ademProps, type AdemModel as AdemProps } from './settings/ademModel';
 
 // ── Groepjesmaker ────────────────────────────────────────────────────────────
 export interface GroepjesProps {

@@ -26,6 +26,7 @@ import GeldPalet from './GeldPalet';
 import { regenerateBoardBlock } from '../boardBlocks';
 import { backgroundStyle } from '../backgrounds';
 import InkLayer from './InkLayer';
+import InstrumentLayer from './InstrumentLayer';
 import BoardErrorBoundary from './BoardErrorBoundary';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { BoardWidget } from '../boardTypes';
@@ -40,7 +41,7 @@ export default function BoardPageCanvas() {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const tool = useBoardStore((s) => s.tool);
     const geldPaletOpen = useBoardStore((s) => s.geldPaletOpen);
-    const inkActive = tool === 'pen' || tool === 'marker' || tool === 'eraser';
+    const inkActive = tool === 'pen' || tool === 'marker' || tool === 'eraser' || tool === 'line' || tool === 'shape';
 
     // Quick 🔄 on the widget frame: reroll exercises without opening the inspector.
     // Keep the inspector's draft mirror in sync when it's open for this block.
@@ -76,6 +77,7 @@ export default function BoardPageCanvas() {
                     return;
                 }
                 selectWidget(null);
+                useBoardStore.getState().selectInstrument(null);
             }}
         >
             {/* Widget layer goes inert while an ink tool is active — one routing rule.
@@ -97,6 +99,9 @@ export default function BoardPageCanvas() {
             <BoardErrorBoundary label="Inktlaag">
                 <InkLayer active={inkActive} />
             </BoardErrorBoundary>
+            <BoardErrorBoundary label="Meetinstrumenten">
+                <InstrumentLayer />
+            </BoardErrorBoundary>
             {geldPaletOpen && <GeldPalet />}
         </div>
     );
@@ -109,12 +114,12 @@ function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean })
         case 'datum': return <DatumWidget widget={widget} />;
         case 'klok': return <KlokWidget widget={widget} dark={dark} />;
         case 'afbeelding': return <AfbeeldingWidget widget={widget} />;
-        case 'namen': return <NamenWidget dark={dark} />;
+        case 'namen': return <NamenWidget widget={widget} dark={dark} />;
         case 'weer': return <WeerWidget widget={widget} dark={dark} />;
         case 'geluid': return <GeluidWidget widget={widget} />;
         case 'werksymbolen': return <WerksymbolenWidget widget={widget} />;
         case 'timer': return <TimerWidget widget={widget} />;
-        case 'stopwatch': return <StopwatchWidget />;
+        case 'stopwatch': return <StopwatchWidget widget={widget} />;
         case 'dobbelsteen': return <DobbelsteenWidget widget={widget} />;
         case 'adem': return <AdemWidget widget={widget} />;
         case 'groepjes': return <GroepjesWidget widget={widget} />;

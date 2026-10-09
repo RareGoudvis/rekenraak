@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { BoardPage, BoardWidget, BoardTool, BoardBackground, Stroke, StrokeTool } from './boardTypes';
+import type { BoardPage, BoardWidget, BoardTool, BoardBackground, DrawOptions, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
 import { emptyPage, rndId } from './boardTypes';
+import { defaultInstrument } from './instrumentGeometry';
 import { loadBoardAutosave, saveBoardAutosave } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
 import { loadWidgetDefaults } from './settings/widgetDefaults';
@@ -46,6 +47,9 @@ interface BoardState {
     setGridSize: (px: number) => void;
     inkSettings: Record<StrokeTool, InkSettings>;
     setInkSetting: (tool: StrokeTool, patch: Partial<InkSettings>) => void;
+    // Lijn / vormen options (arrowheads, dashed, shape kind, soft fill); UI-only.
+    drawOptions: DrawOptions;
+    setDrawOptions: (patch: Partial<DrawOptions>) => void;
 
     // ink (always the active page)
     addStroke: (s: Stroke) => void;
@@ -53,6 +57,14 @@ interface BoardState {
     undoStroke: () => void;
     redoStroke: () => void;
     _redoStrokes: Stroke[];    // in-memory only (cleared on page switch / erase)
+
+    // meetinstrumenten (active page; at most one per kind, so a toggle adds or removes it)
+    selectedInstrumentId: string | null;
+    toggleInstrument: (kind: InstrumentKind, boardW?: number, boardH?: number) => void;
+    updateInstrument: (id: string, patch: Partial<Omit<Instrument, 'id' | 'kind'>>) => void;
+    removeInstrument: (id: string) => void;
+    hideAllInstruments: () => void;
+    selectInstrument: (id: string | null) => void;
 
     // persistence hooks (boardPersistence.ts)
     loadBoard: (pages: BoardPage[], activeIdx?: number) => void;
@@ -134,6 +146,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         pages: [...state.pages, emptyPage()],
         activePageIdx: state.pages.length,
         selectedWidgetId: null,
+        selectedInstrumentId: null,
     })),
 
     duplicatePage: () => set((state) => {
@@ -143,26 +156,27 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         copy.id = rndId();
         copy.widgets.forEach(w => { w.id = rndId(); if (w.block) w.block = withFreshIds(w.block); });
         copy.strokes.forEach(s => { s.id = rndId(); });
+        copy.instruments?.forEach(i => { i.id = rndId(); });
         const pages = [...state.pages];
         pages.splice(state.activePageIdx + 1, 0, copy);
-        return { pages, activePageIdx: state.activePageIdx + 1, selectedWidgetId: null };
+        return { pages, activePageIdx: state.activePageIdx + 1, selectedWidgetId: null, selectedInstrumentId: null };
     }),
 
     removePage: () => set((state) => {
         if (state.pages.length <= 1) {
             // Last page: clear it instead of leaving a page-less board.
-            return { pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null };
+            return { pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null };
         }
         const pages = state.pages.filter((_, i) => i !== state.activePageIdx);
-        return { pages, activePageIdx: Math.min(state.activePageIdx, pages.length - 1), selectedWidgetId: null };
+        return { pages, activePageIdx: Math.min(state.activePageIdx, pages.length - 1), selectedWidgetId: null, selectedInstrumentId: null };
     }),
 
     gotoPage: (idx) => {
         const n = get().pages.length;
-        set({ activePageIdx: Math.max(0, Math.min(n - 1, idx)), selectedWidgetId: null, _redoStrokes: [] });
+        set({ activePageIdx: Math.max(0, Math.min(n - 1, idx)), selectedWidgetId: null, selectedInstrumentId: null, _redoStrokes: [] });
     },
 
-    // Mass delete on the current page (background stays).
+    // Mass delete on the current page (background and instruments stay: they are tools, not content).
     clearActivePage: () => set((state) => ({
         ...withActivePage(state, (p) => ({ ...p, widgets: [], strokes: [] })),
         selectedWidgetId: null,
@@ -177,10 +191,14 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     inkSettings: {
         pen: { color: '#111827', width: 4 },
         marker: { color: '#fde047', width: 18 },
+        line: { color: '#111827', width: 4 },
+        shape: { color: '#1d4ed8', width: 4 },
     },
     setInkSetting: (tool, patch) => set((state) => ({
         inkSettings: { ...state.inkSettings, [tool]: { ...state.inkSettings[tool], ...patch } },
     })),
+    drawOptions: { arrow: 'none', dashed: false, shape: 'rect', fill: false },
+    setDrawOptions: (patch) => set((state) => ({ drawOptions: { ...state.drawOptions, ...patch } })),
 
     _redoStrokes: [],
     addStroke: (s) => set((state) => ({
@@ -210,13 +228,42 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         };
     }),
 
+    selectedInstrumentId: null,
+    toggleInstrument: (kind, boardW = 0, boardH = 0) => set((state) => {
+        const existing = (state.pages[state.activePageIdx].instruments ?? []).find(i => i.kind === kind);
+        if (existing) {
+            return {
+                ...withActivePage(state, (p) => ({ ...p, instruments: (p.instruments ?? []).filter(i => i.id !== existing.id) })),
+                selectedInstrumentId: state.selectedInstrumentId === existing.id ? null : state.selectedInstrumentId,
+            };
+        }
+        const inst: Instrument = { id: rndId(), ...defaultInstrument(kind, boardW, boardH) };
+        return {
+            ...withActivePage(state, (p) => ({ ...p, instruments: [...(p.instruments ?? []), inst] })),
+            selectedInstrumentId: inst.id,
+        };
+    }),
+    updateInstrument: (id, patch) => set((state) => withActivePage(state, (p) => ({
+        ...p, instruments: (p.instruments ?? []).map(i => (i.id === id ? { ...i, ...patch } : i)),
+    }))),
+    removeInstrument: (id) => set((state) => ({
+        ...withActivePage(state, (p) => ({ ...p, instruments: (p.instruments ?? []).filter(i => i.id !== id) })),
+        selectedInstrumentId: state.selectedInstrumentId === id ? null : state.selectedInstrumentId,
+    })),
+    hideAllInstruments: () => set((state) => ({
+        ...withActivePage(state, (p) => ({ ...p, instruments: [] })),
+        selectedInstrumentId: null,
+    })),
+    selectInstrument: (id) => set({ selectedInstrumentId: id }),
+
     loadBoard: (pages, activeIdx = 0) => set({
         pages: pages.length ? pages : [emptyPage()],
         activePageIdx: Math.max(0, Math.min(pages.length - 1, activeIdx)),
         selectedWidgetId: null,
+        selectedInstrumentId: null,
     }),
 
-    resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null }),
+    resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null }),
 }));
 
 // Debounced autosave — 1.5s after the last board mutation (same cadence as the

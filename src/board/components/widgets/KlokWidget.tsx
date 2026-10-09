@@ -1,18 +1,35 @@
-import { useRef } from 'react';
-import AnalogClockSVG from '../../../components/viewer/AnalogClockSVG';
-import { formatTimeText, formatDigitalTime } from '../../../services/clock/clockTypes';
+import { useEffect, useRef, useState } from 'react';
+import BoardClockFace from './BoardClockFace';
+import { formatTimeText } from '../../../services/clock/clockTypes';
 import { minuteFromAngle, hourFromAngle, carryHour, turnHourTo } from '../../../services/clock/clockMath';
 import { useBoardStore } from '../../useBoardStore';
 import { klokProps, type KlokProps } from '../../widgetSizing';
+import { klokModel, digitalTime, FACE_SIZES } from '../../settings/klokModel';
+import { fontScale, widgetAccent } from '../../settings/baseProps';
 import type { BoardWidget } from '../../boardTypes';
 
 // Settable clock: drag the hands directly on the face (outer zone = minute hand,
-// inner zone = hour hand), with optional digital display and written time.
+// inner zone = hour hand), with optional digital display and written time. Face style,
+// size, rings, seconds hand and live time come from the ⚙ panel.
 export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
-    const k = klokProps(widget);
+    const k = klokModel(widget);
+    const fs = fontScale(widget);
     const faceRef = useRef<HTMLDivElement>(null);
     const dragging = useRef<'uur' | 'minuut' | null>(null);
+    const [now, setNow] = useState(() => new Date());
+
+    // Live time ticks per second only when seconds show.
+    useEffect(() => {
+        if (!k.live) return;
+        const tick = () => setNow(new Date());
+        tick();
+        const iv = setInterval(tick, k.showSeconds ? 1000 : 5000);
+        return () => clearInterval(iv);
+    }, [k.live, k.showSeconds]);
+    const hours = k.live ? now.getHours() : k.hours;
+    const minutes = k.live ? now.getMinutes() : k.minutes;
+    const seconds = k.live && k.showSeconds ? now.getSeconds() : null;
 
     // Several pointermoves can land before a re-render; the carry must compare against the stored time, not the rendered one.
     const live = () => {
@@ -32,20 +49,22 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
 
     const applyDrag = (e: React.PointerEvent) => {
         const { angle } = angleAt(e);
-        const now = klokProps(live());
+        const cur = klokProps(live());
         if (dragging.current === 'minuut') {
             // Like a real clock: the kleine wijzer travels with the minutes and carries past 12.
             const m = minuteFromAngle(angle);
-            if (m !== now.minutes) setProps({ minutes: m, hours: carryHour(now.minutes, m, now.hours, 24) });
+            if (m !== cur.minutes) setProps({ minutes: m, hours: carryHour(cur.minutes, m, cur.hours, 24) });
         } else if (dragging.current === 'uur') {
             // The kleine wijzer snaps to whole hours; the minutes stay what the grote wijzer says.
-            const h = turnHourTo(hourFromAngle(angle, now.minutes), now.hours, 24);
-            if (h !== now.hours) setProps({ hours: h });
+            const h = turnHourTo(hourFromAngle(angle, cur.minutes), cur.hours, 24);
+            if (h !== cur.hours) setProps({ hours: h });
         }
     };
 
     const onPointerDown = (e: React.PointerEvent) => {
         e.stopPropagation();
+        // Live time follows the real clock; the hands are not draggable then.
+        if (k.live) return;
         const { dist, radius } = angleAt(e);
         // Inner 45% of the face grabs the hour hand, the rest the minute hand.
         dragging.current = dist < radius * 0.45 ? 'uur' : 'minuut';
@@ -56,32 +75,34 @@ export default function KlokWidget({ widget, dark }: { widget: BoardWidget; dark
     const endDrag = () => { dragging.current = null; };
 
     const textColor = dark ? '#fff' : '#111';
-    // Fixed design size — the frame's zoom (w / naturalW) handles the visual size.
-    const size = 240;
+    // Fixed design size per face size; the frame's zoom (w / naturalW) handles the rest.
+    // An outer number ring widens the canvas (BoardClockFace); 264 overall fits the 300 natural width.
+    const size = Math.min(FACE_SIZES[k.faceSize], k.minuteNumbers ? 234 : k.ring24 ? 240 : 264);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '10px' }}>
             {k.showAnalog && (
                 <div
                     ref={faceRef} data-klok-face
-                    style={{ background: '#fff', borderRadius: '50%', padding: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', cursor: 'grab', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+                    style={{ background: '#fff', borderRadius: '50%', padding: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', cursor: k.live ? 'default' : 'grab', touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
                     onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={endDrag} onPointerCancel={endDrag}
                 >
-                    <AnalogClockSVG hours={k.hours} minutes={k.minutes} showHourHand={k.showHourHand} showMinuteHand={k.showMinuteHand} is24hour={false} size={size} />
+                    <BoardClockFace hours={hours} minutes={minutes} seconds={seconds} showHourHand={k.showHourHand} showMinuteHand={k.showMinuteHand}
+                        ring24={k.ring24} minuteNumbers={k.minuteNumbers} faceStyle={k.faceStyle} size={size} accent={widgetAccent(widget)} />
                 </div>
             )}
             {k.showDigital && (
                 <div style={{
-                    fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: '34px', color: textColor,
+                    fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: `${34 * fs}px`, color: textColor,
                     background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderRadius: '10px', padding: '4px 16px',
                 }}>
-                    {formatDigitalTime(k.hours, k.minutes)}
+                    {digitalTime(hours, minutes, seconds, k.clock24)}
                 </div>
             )}
             {k.showText && (
-                <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: '20px', color: textColor }}>
+                <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: `${20 * fs}px`, color: textColor }}>
                     {/* The carry runs the hours 0-23; the written time reads the 1-12 of the face ("kwart over 1", not "13"). */}
-                    {k.textStyle === 'tekst' ? formatTimeText(k.hours % 12 || 12, k.minutes, false) : formatDigitalTime(k.hours, k.minutes)}
+                    {k.textStyle === 'tekst' ? formatTimeText(hours % 12 || 12, minutes, false) : digitalTime(hours, minutes, null, k.clock24)}
                 </div>
             )}
         </div>

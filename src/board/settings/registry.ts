@@ -8,6 +8,13 @@ import WerksymbolenSettings from './WerksymbolenSettings';
 import GroepjesSettings from './GroepjesSettings';
 import ChecklistSettings from './ChecklistSettings';
 import StappenplanSettings from './StappenplanSettings';
+import StopwatchSettings from './StopwatchSettings';
+import TimerSettings from './TimerSettings';
+import AdemSettings from './AdemSettings';
+import GeluidSettings from './GeluidSettings';
+import DobbelsteenSettings from './DobbelsteenSettings';
+import AfbeeldingSettings from './AfbeeldingSettings';
+import TekstSettings from './TekstSettings';
 import GetallenlijnSettings from './GetallenlijnSettings';
 import PositietabelSettings from './PositietabelSettings';
 import HonderdveldSettings from './HonderdveldSettings';
@@ -31,6 +38,13 @@ export const WIDGET_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> =
     groepjes: GroepjesSettings,
     checklist: ChecklistSettings,
     stappenplan: StappenplanSettings,
+    stopwatch: StopwatchSettings,
+    timer: TimerSettings,
+    adem: AdemSettings,
+    geluid: GeluidSettings,
+    dobbelsteen: DobbelsteenSettings,
+    afbeelding: AfbeeldingSettings,
+    tekst: TekstSettings,
     getallenlijn: GetallenlijnSettings,
     positietabel: PositietabelSettings,
     honderdveld: HonderdveldSettings,

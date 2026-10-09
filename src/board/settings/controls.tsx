@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
-import { CaretUp, CaretDown, Trash, Plus } from '@phosphor-icons/react';
+import { CaretUp, CaretDown, Trash, Plus, type Icon } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
 import { ACCENT_PALETTE, FONT_SIZES, colorName, isHex, type FontSizeKey } from './baseProps';
@@ -7,7 +7,7 @@ import { loadWidgetDefaults, saveWidgetDefaults, clearWidgetDefaults, resetProps
 import { TITLE_DEFAULTS } from '../widgetSizing';
 import type { BoardWidget } from '../boardTypes';
 
-// The shared controls kit for every board âš™ panel: same tokens and tiers as the sheet
+// The shared controls kit for every board ⚙ panel: same tokens and tiers as the sheet
 // Inspector (sentence-case section titles, muted labels, .seg-group segments, Switch).
 // Every control is a real button / input, so Tab + Enter/Space reach all of it.
 
@@ -117,9 +117,11 @@ export function ButtonRow({ children }: { children: ReactNode }) {
     return <div style={S.btnRow}>{children}</div>;
 }
 
-// Palette swatches + a custom colour; null = the widget's own colour ("Standaard").
-export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard', compact }: {
+// Palette swatches + a custom colour; null = the widget's own colour ("Standaard"). `palette`
+// swaps the ink palette for another (light fills behind text, dice bodies).
+export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard', compact, palette = ACCENT_PALETTE }: {
     label: string; value: string | null; onChange: (v: string | null) => void; noneLabel?: string; compact?: boolean;
+    palette?: ReadonlyArray<{ name: string; hex: string }>;
 }) {
     const [hex, setHex] = useState(value ?? '');
     const size = compact ? 24 : 30;
@@ -134,13 +136,13 @@ export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard',
     };
     return (
         <div style={S.rowStacked}>
-            {!compact && <span style={S.rowLabel}>{label}: <strong style={{ fontWeight: 600 }}>{value ? colorName(value) : noneLabel}</strong></span>}
+            {!compact && <span style={S.rowLabel}>{label}: <strong style={{ fontWeight: 600 }}>{value ? (palette.find(c => c.hex === value.toLowerCase())?.name ?? colorName(value)) : noneLabel}</strong></span>}
             <div role="group" aria-label={label} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                 <button type="button" aria-pressed={value === null} aria-label={noneLabel} title={noneLabel} onClick={() => onChange(null)}
                     style={{ ...dot('var(--bg-surface-2)', value === null), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
-                    âˆ…
+                    ∅
                 </button>
-                {ACCENT_PALETTE.map(c => (
+                {palette.map(c => (
                     <button key={c.hex} type="button" aria-pressed={value?.toLowerCase() === c.hex} aria-label={c.name} title={c.name}
                         onClick={() => onChange(c.hex)} style={dot(c.hex, value?.toLowerCase() === c.hex)} />
                 ))}
@@ -159,6 +161,55 @@ export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard',
             </div>
         </div>
     );
+}
+
+// Compact per-item colour for a ListEditor row (place it in an ItemRow): a dot that opens
+// the palette on its own line below the row.
+export function ColorDot({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <>
+            <button type="button" aria-expanded={open} aria-label={`${label}: ${colorName(value)}`} title={`${label}: ${colorName(value)}`} onClick={() => setOpen(!open)}
+                style={{ width: '28px', height: '28px', marginTop: '2px', borderRadius: '50%', cursor: 'pointer', padding: 0, flexShrink: 0, border: '2px solid var(--bg-surface)', boxShadow: '0 0 0 1px var(--separator)', background: value ?? 'var(--bg-surface)' }} />
+            {open && (
+                <div style={{ flexBasis: '100%', order: 10 }}>
+                    <ColorSwatches compact label={label} value={value} onChange={(v) => { onChange(v); setOpen(false); }} />
+                </div>
+            )}
+        </>
+    );
+}
+
+// Icon choice for a ListEditor row (place it in an ItemRow): the current icon as a button
+// that opens a grid of the offered icons on its own line.
+export function IconPicker({ label, value, icons, onChange }: {
+    label: string; value: string; icons: Record<string, { icon: Icon; name: string }>; onChange: (key: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const Cur = icons[value]?.icon;
+    return (
+        <>
+            <button type="button" aria-expanded={open} aria-label={`${label}: ${icons[value]?.name ?? value}`} title={icons[value]?.name ?? value} onClick={() => setOpen(!open)}
+                style={{ ...S.iconBtn, width: '32px', height: '32px', background: 'var(--bg-surface)', boxShadow: '0 0 0 1px var(--separator)' }}>
+                {Cur && <Cur size={18} />}
+            </button>
+            {open && (
+                <div role="group" aria-label={label} style={{ flexBasis: '100%', order: 10, display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    {Object.entries(icons).map(([key, { icon: I, name }]) => (
+                        <button key={key} type="button" aria-pressed={key === value} aria-label={name} title={name} onClick={() => { onChange(key); setOpen(false); }}
+                            style={{ ...S.iconBtn, width: '34px', height: '34px', background: key === value ? 'var(--accent-soft)' : 'var(--bg-surface)', color: key === value ? 'var(--accent)' : 'var(--text-main)' }}>
+                            <I size={20} />
+                        </button>
+                    ))}
+                </div>
+            )}
+        </>
+    );
+}
+
+// One ListEditor row's controls side by side, wrapping (a ColorDot's palette takes a line).
+export function ItemRow({ children }: { children: ReactNode }) {
+    return <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 'var(--sp-1)' }}>{children}</div>;
 }
 
 export function FontSizeRow({ value, onChange, label = 'Tekstgrootte' }: { value: FontSizeKey; onChange: (v: FontSizeKey) => void; label?: string }) {
@@ -194,7 +245,7 @@ export function ListEditor<T>({ label, items, onChange, renderItem, newItem, add
             {bulkOpen && bulk ? (
                 <>
                     <textarea aria-label={bulk.label ?? 'Plak een lijst'} value={bulkText} rows={8} onChange={(e) => setBulkText(e.target.value)} style={S.area}
-                        placeholder="EÃ©n per lijn" />
+                        placeholder="Eén per lijn" />
                     <ButtonRow>
                         <Button onClick={() => { onChange(bulk.fromText(bulkText)); setBulkOpen(false); }}>Lijst overnemen</Button>
                         <Button onClick={() => setBulkOpen(false)}>Annuleer</Button>
@@ -229,7 +280,7 @@ export function ListEditor<T>({ label, items, onChange, renderItem, newItem, add
 
 // A one-line text input sized for a ListEditor row.
 export function ItemInput({ value, onChange, label, placeholder }: { value: string; onChange: (v: string) => void; label: string; placeholder?: string }) {
-    return <input aria-label={label} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} style={{ ...S.input, height: '32px', width: '100%' }} />;
+    return <input aria-label={label} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} style={{ ...S.input, height: '32px', width: '100%', flex: '1 1 0' }} />;
 }
 
 // "Standaard": back to the teacher's saved standaard (or the factory look); asks once, since
@@ -293,7 +344,9 @@ const S = {
     btnRow: { display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-2)' } as React.CSSProperties,
     btn: {
         display: 'inline-flex', alignItems: 'center', gap: '6px', minHeight: '34px', padding: '0 12px',
-        borderRadius: 'var(--radius-sm)', border: '1px solid var(--separator)', background: 'var(--bg-surface)',
+        // Longhands only: btnOn / btnDanger override borderColor, and React warns when a shorthand
+        // and its longhand mix across re-renders.
+        borderRadius: 'var(--radius-sm)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--separator)', background: 'var(--bg-surface)',
         color: 'var(--text-main)', fontSize: 'var(--text-sm)', cursor: 'pointer',
     } as React.CSSProperties,
     btnDanger: { borderColor: 'var(--danger)', color: 'var(--danger)' } as React.CSSProperties,

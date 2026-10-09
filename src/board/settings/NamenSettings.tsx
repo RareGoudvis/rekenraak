@@ -1,16 +1,42 @@
-import { useState } from 'react';
-import { Section, TextArea, Hint } from './controls';
-import { NAMES_KEY } from '../widgetSizing';
+import { Section, Segmented, Slider, Toggle, ListEditor, ItemInput, Button, ButtonRow, Hint } from './controls';
+import { useSetProps } from './baseProps';
+import { namenProps, useClassList, saveClassList, cleanNames, sortNames } from './namenModel';
+import type { BoardWidget } from '../boardTypes';
 
-// Class list is app-wide (localStorage), not per widget — a teacher has one class.
-export default function NamenSettings() {
-    const [names, setNames] = useState(() => localStorage.getItem(NAMES_KEY) ?? '');
-    const save = (v: string) => { setNames(v); localStorage.setItem(NAMES_KEY, v); };
-    const count = names.split('\n').map(s => s.trim()).filter(Boolean).length;
+export default function NamenSettings({ widget }: { widget: BoardWidget }) {
+    const set = useSetProps(widget);
+    const p = namenProps(widget);
+    const classList = useClassList();
+    const own = p.source === 'eigen';
+    const list = own ? p.names : classList;
+    const save = (names: string[]) => (own ? set({ names }) : saveClassList(names));
     return (
-        <Section title={`Namenlijst (${count})`}>
-            <TextArea label="Eén naam per lijn" value={names} rows={12} placeholder={'Emma\nNoah\nLina\n…'} onChange={save} />
-            <Hint>Wordt lokaal bewaard op dit toestel en gedeeld door alle borden.</Hint>
-        </Section>
+        <>
+            <Section title="Namen">
+                <Segmented label="Lijst" value={p.source} onChange={(v) => set({ source: v })}
+                    options={[{ value: 'klas', label: 'Klaslijst' }, { value: 'eigen', label: 'Eigen lijst' }]} />
+                <ListEditor<string>
+                    label={own ? 'Namen van deze kaart' : 'Klaslijst'} items={list} addLabel="Naam toevoegen"
+                    newItem={() => ''}
+                    itemName={(n, i) => n || `naam ${i + 1}`}
+                    onChange={save}
+                    bulk={{ toText: (xs) => xs.join('\n'), fromText: (t) => cleanNames(t.split('\n')), label: 'Plak een klaslijst' }}
+                    renderItem={(n, update, i) => <ItemInput label={`Naam ${i + 1}`} value={n} onChange={update} />}
+                />
+                <ButtonRow>
+                    <Button onClick={() => save(sortNames(cleanNames(list)))}>Sorteer A-Z</Button>
+                </ButtonRow>
+                <Hint>{own ? 'Deze namen horen enkel bij deze kaart.' : 'De klaslijst wordt bewaard op dit toestel en gedeeld met de groepjesmaker en alle borden.'}</Hint>
+            </Section>
+            <Section title="Kiezen">
+                <Segmented label="Manier" value={p.mode} onChange={(v) => set({ mode: v })}
+                    options={[{ value: 'een', label: 'Naam tonen' }, { value: 'rad', label: 'Rad draaien' }]} />
+                {p.mode === 'een' && <Slider label="Namen per keer" value={p.count} min={1} max={5} onChange={(v) => set({ count: v })} />}
+                <Toggle label="Gekozen namen overslaan" checked={p.noRepeat} onChange={(v) => set({ noRepeat: v })} />
+                <Toggle label="Gekozen namen tonen" checked={p.showPicked} onChange={(v) => set({ showPicked: v })} />
+                <Toggle label="Animatie" checked={p.animate} onChange={(v) => set({ animate: v })} />
+                <ButtonRow><Button onClick={() => set({ picked: [], current: [] })}>Opnieuw beginnen ({p.picked.length} gekozen)</Button></ButtonRow>
+            </Section>
+        </>
     );
 }

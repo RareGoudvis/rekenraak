@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Sun, Moon, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
+import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
-import { PATTERN_LABELS, BACKGROUND_SCALES } from '../backgrounds';
 import { addBasicWidget } from '../addWidgets';
 import { TOOL_CATALOG, runTool, loadFavorites, toggleFavorite, MAX_FAVORITES, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, type BoardPreset } from '../boardPersistence';
-import type { BackgroundPattern } from '../boardTypes';
+import type { BoardTool } from '../boardTypes';
+import { INSTRUMENT_KINDS, INSTRUMENT_LABELS, snapOf } from '../instrumentGeometry';
+import type { InstrumentKind, InstrumentSnap } from '../boardTypes';
+import BackgroundPicker from './BackgroundPicker';
+
+// Single-letter tool shortcuts (shown in each tooltip). Only the draw tools have one so far.
+const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape' };
 
 interface Props {
     onOpenWiskunde: () => void;
 }
 
 // Bottom toolbar of the whiteboard. Layout (owner design):
-// [+ Toevoegen][★ favorites ≤6][⚙ bordinstellingen] | [cursor][hand][T][pen][marker][gom]…
+// [+ Toevoegen][★ favorites ≤6][⚙ bordinstellingen][achtergrond] | [cursor][hand][T][pen][marker][gom]…
 // Digibord-first: ≥44px touch targets, no hover-only affordances.
 export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const setView = useWorksheetStore((s) => s.setView);
-    const background = useBoardStore((s) => s.pages[s.activePageIdx].background);
-    const setBackground = useBoardStore((s) => s.setBackground);
     const gridSnap = useBoardStore((s) => s.gridSnap);
     const setGridSnap = useBoardStore((s) => s.setGridSnap);
     const gridSize = useBoardStore((s) => s.gridSize);
@@ -37,7 +40,9 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
     const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
 
-    const [menu, setMenu] = useState<'add' | 'settings' | 'page' | 'save' | null>(null);
+    const instrumentKinds = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).map(i => i.kind).join(','));
+
+    const [menu, setMenu] = useState<'add' | 'settings' | 'background' | 'page' | 'save' | 'instruments' | null>(null);
     const [addSub, setAddSub] = useState<ToolCategory | null>(null);
     const [favorites, setFavorites] = useState<string[]>(loadFavorites);
     const [presets, setPresets] = useState<BoardPreset[]>([]);
@@ -62,6 +67,20 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             document.removeEventListener('pointerdown', onDown, true);
         };
     }, [menu]);
+
+    // Ignored while typing (tekst widget, titles, inspector fields) and with a modifier held,
+    // so Ctrl+L and friends keep their browser meaning.
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+            const t = e.target as HTMLElement | null;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            const next = TOOL_KEYS[e.key.toLowerCase()];
+            if (next) setTool(next);
+        };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [setTool]);
 
     const handleTool = (def: BoardToolDef) => {
         if (!runTool(def)) { imageRef.current?.click(); return; }
@@ -111,9 +130,9 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         { key: 'pen' as const, icon: PenNib, label: 'Pen', enabled: true },
         { key: 'marker' as const, icon: Highlighter, label: 'Markeerstift', enabled: true },
         { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
-        { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (binnenkort)', enabled: false },
-        { key: 'shape' as const, icon: Shapes, label: 'Vormen (binnenkort)', enabled: false },
-        { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten (binnenkort)', enabled: false },
+        { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (L) — Shift: 45°-stappen', enabled: true },
+        { key: 'shape' as const, icon: Shapes, label: 'Vormen (V) — Shift: vierkant / cirkel', enabled: true },
+        { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten', enabled: true },
     ];
 
     const favDefs = favorites.map(id => TOOL_CATALOG.find(t => t.id === id)).filter(Boolean) as BoardToolDef[];
@@ -164,7 +183,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                 </div>
             )}
 
-            {/* ── ⚙ Bordinstellingen (achtergrond + raster) ── */}
+            {/* ── ⚙ Bordinstellingen (raster; the background has its own button) ── */}
             <div data-board-menu="settings" style={{ position: 'relative' }}>
                 <button type="button" className="ui-hover" title="Bordinstellingen" aria-label="Bordinstellingen"
                     style={{ ...S.toolBtn, ...(menu === 'settings' ? S.toolActive : {}) }}
@@ -173,27 +192,6 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                 </button>
                 {menu === 'settings' && (
                     <div style={{ ...S.popup, minWidth: '200px', maxHeight: '70vh', overflowY: 'auto' }}>
-                        <div style={S.popupSection}><PaintRoller size={11} style={{ marginRight: '4px' }} />Achtergrond</div>
-                        {(Object.keys(PATTERN_LABELS) as BackgroundPattern[]).map(p => (
-                            <button key={p} type="button" className="ui-hover"
-                                style={{ ...S.popupItem, ...(background.pattern === p ? S.popupItemOn : {}) }}
-                                onClick={() => setBackground({ ...background, pattern: p })}>
-                                {PATTERN_LABELS[p]}
-                            </button>
-                        ))}
-                        <div style={S.popupSection}>Grootte</div>
-                        {BACKGROUND_SCALES.map(sc => (
-                            <button key={sc.value} type="button" className="ui-hover"
-                                style={{ ...S.popupItem, ...((background.scale ?? 1) === sc.value ? S.popupItemOn : {}) }}
-                                onClick={() => setBackground({ ...background, scale: sc.value })}>
-                                {sc.label}
-                            </button>
-                        ))}
-                        <div style={S.popupDivider} />
-                        <button type="button" className="ui-hover" style={S.popupItem}
-                            onClick={() => setBackground({ ...background, dark: !background.dark })}>
-                            {background.dark ? <Sun size={16} /> : <Moon size={16} />} {background.dark ? 'Wit bord' : 'Zwart bord'}
-                        </button>
                         <div style={S.popupSection}><GridFour size={11} style={{ marginRight: '4px' }} />Raster uitlijnen</div>
                         <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(gridSnap ? S.popupItemOn : {}) }}
                             onClick={() => setGridSnap(!gridSnap)}>
@@ -210,11 +208,29 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
                 )}
             </div>
 
+            {/* ── Achtergrond (preview tiles for every pattern, scale and board colour) ── */}
+            <div data-board-menu="background" style={{ position: 'relative' }}>
+                <button type="button" className="ui-hover" title="Achtergrond" aria-label="Achtergrond"
+                    style={{ ...S.toolBtn, ...(menu === 'background' ? S.toolActive : {}) }}
+                    onClick={() => openMenu('background')}>
+                    <PaintRoller size={22} />
+                </button>
+                {menu === 'background' && (
+                    <div style={{ ...S.popup, maxHeight: '75vh', overflowY: 'auto' }}>
+                        <BackgroundPicker />
+                    </div>
+                )}
+            </div>
+
             <div style={S.sep} />
 
             {/* ── Tools ── */}
             <div style={S.group}>
-                {tools.map(t => (
+                {tools.map(t => t.key === 'instrument' ? (
+                    // Not a tool mode: the ruler opens the instruments popover; the pen keeps drawing.
+                    <InstrumentMenu key={t.key} open={menu === 'instruments'} placed={instrumentKinds}
+                        onToggle={() => openMenu('instruments')} />
+                ) : (
                     <button
                         key={t.key} type="button"
                         className={t.enabled ? 'ui-hover' : undefined}
@@ -231,11 +247,11 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
 
             {/* ── Ink undo/redo + pagina leegmaken ── */}
             <div style={S.group}>
-                <button type="button" className="ui-hover" title="Ongedaan maken (inkt)" aria-label="Ongedaan maken"
+                <button type="button" className="ui-hover" title="Ongedaan maken (Ctrl+Z): alleen getekende inkt, widgets niet" aria-label="Ongedaan maken"
                     disabled={!canUndoInk} style={{ ...S.toolBtn, ...(!canUndoInk ? S.toolDisabled : {}) }} onClick={undoStroke}>
                     <ArrowUUpLeft size={22} />
                 </button>
-                <button type="button" className="ui-hover" title="Opnieuw (inkt)" aria-label="Opnieuw"
+                <button type="button" className="ui-hover" title="Opnieuw (Ctrl+Y): alleen getekende inkt" aria-label="Opnieuw"
                     disabled={!canRedoInk} style={{ ...S.toolBtn, ...(!canRedoInk ? S.toolDisabled : {}) }} onClick={redoStroke}>
                     <ArrowUUpRight size={22} />
                 </button>
@@ -329,6 +345,90 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
             <button type="button" className="ui-hover" style={S.exitBtn} onClick={() => setView('editor')}>
                 <X size={18} /> Bordmodus verlaten
             </button>
+        </div>
+    );
+}
+
+// "Meetinstrumenten": one toggle per instrument (at most one of each on a page) + hide all.
+function InstrumentMenu({ open, placed, onToggle }: { open: boolean; placed: string; onToggle: () => void }) {
+    const on = placed ? placed.split(',') : [];
+    return (
+        <div data-board-menu="instruments" style={{ position: 'relative' }}>
+            <button type="button" className="ui-hover" title="Meetinstrumenten" aria-label="Meetinstrumenten"
+                aria-expanded={open} onClick={onToggle}
+                style={{ ...S.toolBtn, ...(open || on.length ? S.toolActive : {}) }}>
+                <Ruler size={22} weight={on.length ? 'fill' : 'regular'} />
+            </button>
+            {open && <InstrumentPopup on={on} />}
+        </div>
+    );
+}
+
+// The popover body; mounted only while open, so every opening starts with the ⚙ panels shut.
+function InstrumentPopup({ on }: { on: string[] }) {
+    const [snapOpen, setSnapOpen] = useState<InstrumentKind | null>(null);
+    const toggle = (kind: InstrumentKind) => {
+        // A new instrument lands in the middle of the visible board.
+        const r = document.querySelector('[data-board-canvas]')?.getBoundingClientRect();
+        useBoardStore.getState().toggleInstrument(kind, r?.width ?? 0, r?.height ?? 0);
+    };
+    return (
+        <div style={{ ...S.popup, minWidth: '210px' }}>
+            <div style={S.popupSection}>Meetinstrumenten</div>
+            {INSTRUMENT_KINDS.map(kind => (
+                <div key={kind}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                        <button type="button" className="ui-hover" aria-pressed={on.includes(kind)}
+                            style={{ ...S.popupItem, flex: 1, ...(on.includes(kind) ? S.popupItemOn : {}) }}
+                            onClick={() => toggle(kind)}>
+                            {INSTRUMENT_LABELS[kind]}{on.includes(kind) ? ': aan' : ''}
+                        </button>
+                        {/* Vastklikken lives on the placed instrument, so the ⚙ needs one on the page */}
+                        <button type="button" className="ui-hover" title={`Vastklikken: ${INSTRUMENT_LABELS[kind]}`}
+                            aria-label={`Vastklikken ${INSTRUMENT_LABELS[kind]}`} aria-expanded={snapOpen === kind}
+                            disabled={!on.includes(kind)}
+                            style={{ ...S.popupItem, padding: '0 10px', ...(snapOpen === kind ? S.popupItemOn : {}), ...(!on.includes(kind) ? S.toolDisabled : {}) }}
+                            onClick={() => setSnapOpen(snapOpen === kind ? null : kind)}>
+                            <GearSix size={16} />
+                        </button>
+                    </div>
+                    {snapOpen === kind && on.includes(kind) && <SnapSettings kind={kind} />}
+                </div>
+            ))}
+            <div style={S.popupDivider} />
+            <button type="button" className="ui-hover" style={S.popupItem} disabled={!on.length}
+                onClick={() => useBoardStore.getState().hideAllInstruments()}>
+                Alles verbergen
+            </button>
+        </div>
+    );
+}
+
+const SNAP_LABELS: [keyof Omit<InstrumentSnap, 'on'>, string][] = [
+    ['angles45', 'Hoeken (0/45/90°)'],
+    ['angles15', 'Hoeken (per 15°, met raster)'],
+    ['grid', 'Rasterpunten'],
+    ['endpoints', 'Lijneinden'],
+];
+
+// One instrument's "Vastklikken": a master switch and the four snap kinds (greyed while off).
+function SnapSettings({ kind }: { kind: InstrumentKind }) {
+    const inst = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).find(i => i.kind === kind));
+    if (!inst) return null;
+    const snap = snapOf(inst);
+    const set = (patch: Partial<InstrumentSnap>) => useBoardStore.getState().updateInstrument(inst.id, { snap: { ...snap, ...patch } });
+    return (
+        <div data-snap-settings={kind} style={S.snapBox}>
+            <label style={{ ...S.snapRow, fontWeight: 600 }}>
+                <input type="checkbox" checked={snap.on} onChange={(e) => set({ on: e.target.checked })} />
+                Vastklikken {snap.on ? 'aan' : 'uit'}
+            </label>
+            {SNAP_LABELS.map(([k, label]) => (
+                <label key={k} style={{ ...S.snapRow, paddingLeft: '22px', opacity: snap.on ? 1 : 0.45 }}>
+                    <input type="checkbox" checked={snap[k]} disabled={!snap.on} onChange={(e) => set({ [k]: e.target.checked })} />
+                    {label}
+                </label>
+            ))}
         </div>
     );
 }
@@ -436,6 +536,14 @@ const S = {
         display: 'flex', alignItems: 'center',
         padding: '8px 12px 2px', fontSize: '10px', letterSpacing: '0.8px', textTransform: 'uppercase',
         color: 'var(--text-muted)', fontFamily: "'Azeret Mono', monospace", userSelect: 'none',
+    } as React.CSSProperties,
+    snapBox: {
+        display: 'flex', flexDirection: 'column', gap: '2px', margin: '2px 6px 6px', padding: '6px 8px',
+        borderRadius: '8px', background: 'var(--bg-surface-2)',
+    } as React.CSSProperties,
+    snapRow: {
+        display: 'flex', alignItems: 'center', gap: '8px', minHeight: '32px',
+        fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer',
     } as React.CSSProperties,
     popupDivider: { height: '1px', background: 'var(--border-color)', margin: '4px 6px' } as React.CSSProperties,
 };
