@@ -497,7 +497,7 @@ export interface ClockExercise {
     id: string;
     hours: number;        // 1-12 (12h mode) or 0-23 (24h mode)
     minutes: number;      // 0-59
-    timeText: string;     // "kwart over 3", "25 voor 1"
+    timeText: string;     // "kwart over 3", "5 over half 1"
     digitalText: string;  // "03:15"
     // exerciseMode/clockType/is24hour/handChoice ride along from generation time so a mode
     // or clock-type drift never prints the very time it was drawn to ask the pupil for (§4).

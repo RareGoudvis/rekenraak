@@ -93,9 +93,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Dutch clock text (clockTypes.ts ~45-50 `formatTimeText`): no "voor half / over half": 01:25 → "25 over
-  1" (should be "5 voor half 2"), 20:31 → "29 voor 21", 00:05 → "5 over 0". Reachable with the 5-minute /
-  1-minute timeTypes (pw004, pw007), not at the leaf defaults. 2026-09-27
 - hr-std-gemengd-dec DEFAULT: its '×' rows multiply two 2-decimal numbers ("4,89 × 100,12 = 489,5868")
   in a mental-arithmetic block (owner call). 2026-09-27
 - Hoofdrekenen breuken keys print big numerators without spaces ("36000004/5", VerticalFraction); an
