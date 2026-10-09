@@ -12,7 +12,7 @@ import OefenShareModal from './OefenShareModal';
 import { newSessieId } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import {
-    LIMIT_MAX, TIMER_STEPS, buildSessie, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
+    LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -118,6 +118,11 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     };
 
     const canShip = sessie.types.length > 0;
+    // Pre-flight: a row that yields no exercise would end every pupil's run, so it blocks Delen until fixed.
+    const dead = new Set(deadRows(buildable).map(r => r.key));
+    const canShare = canShip && dead.size === 0;
+    // A dead row the kiosk also refuses (klok without tijdstypes) is counted once, as dead.
+    const unsupportedOnly = excluded.filter(r => !dead.has(r.key)).length;
 
     return (
         <>
@@ -219,9 +224,10 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             const Config = EXERCISE_UI[r.leaf.typeId]?.Config;
                             const constraints = draft?.constraints as Record<string, unknown> | undefined;
                             const supported = !constraints || kioskSupports(r.leaf.typeId, constraints);
+                            const isDead = dead.has(r.key);
                             const pct = percentOf(r.key);
                             return (
-                                <section key={r.key} style={S.card} aria-label={r.leaf.label}>
+                                <section key={r.key} style={isDead ? { ...S.card, border: '1px solid var(--danger)' } : S.card} aria-label={r.leaf.label}>
                                     <div style={S.rowHead}>
                                         <div style={S.rowTitle}>
                                             <span style={{ ...S.domDot, background: `var(${r.leaf.accentVar})` }} aria-hidden />
@@ -233,7 +239,9 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                         </button>
                                     </div>
 
-                                    {!supported && (
+                                    {isDead && <p style={S.deadNote} role="alert"><Warning size={14} /> Deze instellingen leveren geen oefeningen op.</p>}
+
+                                    {!supported && !isDead && (
                                         <p style={S.hint} role="status">
                                             <Warning size={14} /> Deze instelling kan nog niet in de oefenmodus. Deze soort komt niet in de link tot je een andere instelling kiest.
                                         </p>
@@ -278,13 +286,14 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                 <div style={S.footer}>
                     <span style={S.footerCount}>
                         {sessie.types.length} {sessie.types.length === 1 ? 'soort' : 'soorten'} in de sessie
-                        {excluded.length > 0 && ` · ${excluded.length} niet ondersteund`}
+                        {unsupportedOnly > 0 && ` · ${unsupportedOnly} niet ondersteund`}
+                        {dead.size > 0 && ` · ${dead.size} zonder oefeningen`}
                     </span>
                     <div style={S.footerBtns}>
                         <button className="ui-hover" style={S.btn(canShip)} disabled={!canShip} onClick={handleSave}>
                             {saved ? <><Check size={15} /> Opgeslagen</> : <><FloppyDisk size={15} /> Opslaan</>}
                         </button>
-                        <button className="ui-hover" style={S.btn(canShip)} disabled={!canShip} onClick={() => setShareOf(sessie)}>
+                        <button className="ui-hover" style={S.btn(canShare)} disabled={!canShare} onClick={() => setShareOf(sessie)}>
                             <Share size={15} /> Delen
                         </button>
                     </div>
@@ -348,6 +357,7 @@ const S = {
     rowDomain: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)' } as React.CSSProperties,
     removeBtn: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--danger)', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: 'var(--text-sm)' } as React.CSSProperties,
     note: { margin: 'var(--sp-1) 0 0', color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontStyle: 'italic' } as React.CSSProperties,
+    deadNote: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', margin: '0 0 var(--sp-3)', color: 'var(--danger)', fontSize: 'var(--text-sm)', fontWeight: 600 } as React.CSSProperties,
     hint: { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', margin: '0 0 var(--sp-3)', padding: 'var(--sp-2) var(--sp-3)', borderRadius: 'var(--radius-xs)', background: 'var(--danger-soft)', color: 'var(--danger)', fontSize: 'var(--text-sm)' } as React.CSSProperties,
     rowGrid: { display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(240px, 320px)', gap: 'var(--sp-5)', alignItems: 'start' } as React.CSSProperties,
     configCol: { minWidth: 0 } as React.CSSProperties,

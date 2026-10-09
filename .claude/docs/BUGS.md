@@ -191,16 +191,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-D generation guard
 
-- **O9** C4: a row whose settings generate 0 exercises (klok with every tijdstype unticked) ships
-  without a builder warning (`kioskSupports` ignores `timeTypes`). Fix: pre-flight each row at Delen
-  (0 → red row, Delen blocked). 2026-10-09
-- **O10** Builder-reachable zero-output settings: `timeTypes=[]` on klok-analoog-lezen / -tekenen /
-  -omzetten and klok-digitaal-tekenen; `selectedTables=[]` on hr-std-vermenigvuldigen-nat and
-  hr-std-delen-nat (NaturalSettings has no keep-one guard); `payWithOptions=[]` on geld-teruggeven.
-  Pairwise, reachability unchecked: vergelijken-kiezen breuk both sides + HM mask; kettingsommen
-  `[":"]` chain 6; hr-std-delen-dec / -vermenigvuldigen-dec combos; handig-rekenvolgorde `:`-only +
-  haakjes MOET + 4 ops + max 100; schattend-nat max 10 with T/H rounding; hr-std-aftrekken-rat
-  compenseren puntoefening. 2026-10-09
 
 ### WP-E keyboard / a11y
 

@@ -963,6 +963,8 @@ export const KLOK_KIOSK = descriptor<ClockExercise>({
     kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.` : undefined),
     supported: (c) => {
         const type = (c.clockType as string | undefined) ?? 'analoog';
+        // No tijdstype ticked: the generator has no minutes to draw from (clockGenerator returns []).
+        if (Array.isArray(c.timeTypes) && c.timeTypes.length === 0) return false;
         return type === 'analoog' || ((c.exerciseMode as string | undefined) ?? 'lezen') === 'tekenen';
     },
 });

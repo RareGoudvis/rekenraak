@@ -55,7 +55,10 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
 
     const toggleTable = (table: number) => {
         if (selectedTables.includes(table)) {
-            updateConstraint('selectedTables', selectedTables.filter((t: number) => t !== table));
+            const next = selectedTables.filter((t: number) => t !== table);
+            // Keep ≥1 of the tables this mode shows (never only 0 as a deler): none left generates no sums.
+            const shown = multiplicationMode === 'met_rest' ? MET_REST_TABLES : AVAILABLE_TABLES;
+            if (next.some(t => shown.includes(t) && !(isDivision && t === 0))) updateConstraint('selectedTables', next);
         } else {
             updateConstraint('selectedTables', [...selectedTables, table].sort((a: number, b: number) => a - b));
         }
