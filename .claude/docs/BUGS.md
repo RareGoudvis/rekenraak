@@ -217,9 +217,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-G teacher UX
 
-- **O19** The share modal shows only "N soorten · M min" (OefenShareModal.tsx:75): no total number
-  of exercises / onbeperkt, no toets / kansen / statistieken settings, and no note that every
-  pupil's device generates its own exercises. 2026-10-09
 - **O20** Mijn bladen › Oefensessies has no Dupliceren (MijnBladenView.tsx:197-200; worksheet presets
   have it at :163). 2026-10-09
 - **O21** Builder description for analoge klok lezen reads "Klok zien → tijd in woorden schrijven"

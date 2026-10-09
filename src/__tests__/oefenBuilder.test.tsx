@@ -461,6 +461,43 @@ describe('OefenBuilderModal catalogue search + leerjaar (O17)', () => {
     });
 });
 
+describe('OefenShareModal summary (O19)', () => {
+    const base: OefenSessie = {
+        v: 1, id: 'x', title: 'Klein', createdAt: 1, mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false,
+        types: [{ typeId: 'procenten', leafId: 'procenten-nemen', label: 'Percent', constraints: { subType: 'nemen' }, weight: 100 }],
+    };
+    const summary = () => screen.getByRole('list', { name: 'Samenvatting van de sessie' });
+    const OWN = 'Elk toestel maakt zijn eigen oefeningen: leerlingen krijgen niet dezelfde sommen.';
+
+    test('one unlimited type, no timer: singular, onbeperkt, geen timer, no toets, 1 kans, results always', () => {
+        render(<OefenShareModal sessie={base} onClose={() => { }} />);
+        const s = within(summary());
+        expect(s.getByText('1 soort · onbeperkt')).toBeTruthy();
+        expect(s.getByText('Timer: geen')).toBeTruthy();
+        expect(s.getByText('Toets: nee')).toBeTruthy();
+        expect(s.getByText('Kansen: 1')).toBeTruthy();
+        expect(s.getByText('Resultaten: altijd')).toBeTruthy();
+        expect(screen.getByText(OWN)).toBeTruthy();
+    });
+
+    test('limited types, timer, 2 kansen, results at the end; testmodus forces 1 kans and the end', () => {
+        const two: OefenSessie = { ...base, timerMin: 15, attempts: 2, statsLocked: true, types: [{ ...base.types[0], limit: 10 }, { ...base.types[0], limit: 5 }] };
+        render(<OefenShareModal sessie={two} onClose={() => { }} />);
+        let s = within(summary());
+        expect(s.getByText('2 soorten · 15 oefeningen')).toBeTruthy();
+        expect(s.getByText('Timer: 15 min')).toBeTruthy();
+        expect(s.getByText('Kansen: 2')).toBeTruthy();
+        expect(s.getByText('Resultaten: pas op het einde')).toBeTruthy();
+        cleanup();
+        render(<OefenShareModal sessie={{ ...base, testMode: true, attempts: 2, types: [{ ...base.types[0], limit: 1 }] }} onClose={() => { }} />);
+        s = within(summary());
+        expect(s.getByText('1 soort · 1 oefening')).toBeTruthy();
+        expect(s.getByText('Toets: ja')).toBeTruthy();
+        expect(s.getByText('Kansen: 1')).toBeTruthy();
+        expect(s.getByText('Resultaten: pas op het einde')).toBeTruthy();
+    });
+});
+
 describe('OefenBuilderModal endless-session hint (O18)', () => {
     const ENDLESS = 'Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.';
 
