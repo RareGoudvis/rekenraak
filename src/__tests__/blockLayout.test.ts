@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, monoTextPx, grownColumn, splitColumns, ordenenRowPx, MONO_ADVANCE_EM, type WidthUnits } from '../services/layout/blockLayout';
+import { minWidthUnits, pickerMinWidthUnits, tierWidthPx, monoTextPx, grownColumn, splitColumns, ordenenRowPx, ordenenMaxChars, MONO_ADVANCE_EM, type WidthUnits } from '../services/layout/blockLayout';
 import { makeBlock } from './helpers/makeBlock';
 
 // The width clamp has two regimes: with a measured content width it answers the smallest
@@ -252,8 +252,26 @@ describe('getalbegrip width helpers', () => {
     });
 
     test('ordenenRowPx charges each number its 0.65em mono width at the sheet default', () => {
-        // Five numbers up to 1000 (4 glyphs) + 8px air each, and four 20px separators.
-        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 1000 }, 5)).toBeCloseTo(5 * (4 * 0.65 * 17.33 + 8) + 4 * 20);
+        // Five numbers up to 1000 ("1 000", 5 glyphs) + 8px air each, and four 20px separators.
+        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 1000 }, 5)).toBeCloseTo(5 * (5 * 0.65 * 17.33 + 8) + 4 * 20);
+    });
+
+    // The inclusive max is reachable, so its thousands separators print too.
+    test.each([
+        [{ numberType: 'natural', maxGetal: 100 }, '100'],
+        [{ numberType: 'natural', maxGetal: 100000 }, '100 000'],
+        [{ numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, '100,00'],
+        [{ numberType: 'decimal', maxGetal: 1000, decimalPlaces: 1 }, '1 000,0'],
+        [{ numberType: 'decimal', maxGetal: 100000, decimalPlaces: 3 }, '100 000,000'],
+        [{ numberType: 'geheel', maxGetal: 10000 }, '-10 000'],
+    ])('ordenenMaxChars %j counts "%s"', (c, printed) => {
+        expect(ordenenMaxChars('ordenen', c)).toBe(printed.length);
+    });
+
+    test('a decimal ordenen row of "1 000,00" values no longer fits a half', () => {
+        const c = { numberType: 'decimal', maxGetal: 1000, decimalPlaces: 2, count: 3 };
+        expect(ordenenRowPx('ordenen', c, 3)).toBeGreaterThan(330 - 28);
+        expect(minWidthUnits(makeBlock('ordenen', { constraints: c }), measure(10, 1))).toBe(4);
     });
 
     test('grownColumn keeps the tuned px while the text fits, so default sheets print as before', () => {

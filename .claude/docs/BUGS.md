@@ -26,9 +26,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Even-oneven rooster at its 1e4 top, width ½ / ¼: four-digit numbers wrap inside the 46 px cells
   and the lines overlap. Fix: size cells from the character count (46 px floor). 2026-09-27
   (Full sweep: they wrap ("9 / 029") at full width too; only ½ / ¼ trip the overlap check.)
-- `ordenenMaxChars` (blockLayout.ts) ignores the thousands spaces of the inclusive max ("1 000,0"
-  counted as 6 chars). Fixing it moves the default getalbegrip-ordenen-dec block from width tier 1
-  to 2 (owner call). 2026-09-27
 - AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
   width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
 - Cijferen optellen with solutions on: the red carries sit above the column that MADE them, one

@@ -291,7 +291,10 @@ export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): num
     const decimalPlaces = c.numberType === 'decimal' ? (typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 1) : 0;
     // 'geheel' allows negatives unless the teacher raised the lower bound to 0.
     const negative = c.numberType === 'geheel' && (typeof c.minGetal !== 'number' || c.minGetal < 0);
-    return String(Math.floor(maxGetal)).length + (decimalPlaces > 0 ? decimalPlaces + 1 : 0) + (negative ? 1 : 0);
+    // The max itself is drawn (inclusive), so its thousands separators print: "1 000,0" is 7 glyphs.
+    const intDigits = String(Math.floor(maxGetal)).length;
+    const separators = Math.floor((intDigits - 1) / 3);
+    return intDigits + separators + (decimalPlaces > 0 ? decimalPlaces + 1 : 0) + (negative ? 1 : 0);
 }
 
 /** Estimated px width of ONE exercise's row of `count` numbers/blanks, at the sheet default. */
