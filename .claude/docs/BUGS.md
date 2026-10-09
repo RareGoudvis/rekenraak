@@ -180,6 +180,10 @@ UpdateState). Left over, found while fixing:
 - hr-std-delen-nat "Met rest" keeps the tafels picked in tafels mode hidden, so a session can go dead
   with tafels [1] without the teacher seeing why (pre-flight flags it). 2026-10-09
 
+- Oefenmodus builder: a dead row's preview still reads "(Nog geen oefeningen — klik Genereer)" while the
+  builder has no Genereer button (the red pre-flight note above it is right). Fix: a kiosk-side empty text
+  for ExercisePreview. 2026-10-09
+
 ## Oefenmodus beta audit 2026-10-09
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
