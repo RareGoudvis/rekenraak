@@ -1,4 +1,5 @@
 import type { BoardWidget, WidgetKind } from './boardTypes';
+import { SAFETY } from '../components/viewer/scaledBlockFit';
 
 // Natural (design) width per widget kind. The frame's zoom = w / naturalW, so
 // dragging the corner is a pure uniform zoom: content never reflows, it only
@@ -28,6 +29,13 @@ export const NATURAL_W: Record<WidgetKind, number> = {
     mabmat: 560,
     'geld-item': 100,
 };
+
+// The zoom that fits a card's content into its body: 1 when it fits (sub-pixel rounding
+// ignored), else the width ratio with ScaledBlock's safety margin so a fitted row keeps its edge.
+export function cardFitZoom(scrollW: number, clientW: number): number {
+    if (!(clientW > 0) || scrollW <= clientW + 1) return 1;
+    return (clientW / scrollW) * SAFETY;
+}
 
 export function naturalWidth(kind: WidgetKind): number {
     return NATURAL_W[kind] ?? 400;

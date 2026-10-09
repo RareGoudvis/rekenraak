@@ -128,7 +128,8 @@ export default function MijnBladenView() {
     };
 
     return (
-        <div style={S.overlay}>
+        // no-print: Ctrl+P with this overlay open prints the sheet underneath (as WhiteboardView does).
+        <div className="no-print" style={S.overlay}>
             <input ref={fileRef} type="file" accept=".rekenraak,application/json,.json" style={{ display: 'none' }} onChange={handleImport} />
 
             <header style={S.topbar}>

@@ -40,6 +40,17 @@ export const SELF_SCALED_FONT: ReadonlySet<WidgetKind> = new Set<WidgetKind>([
     'getallenlijn', 'breukviz', 'mabmat',
 ]);
 
+// The frame's inner text zoom: exercise Tekstgrootte × the baseline font size (not for SELF_SCALED_FONT).
+export function cardTextScale(widget: BoardWidget): number {
+    return (widget.scale ?? 1) * (SELF_SCALED_FONT.has(widget.kind) ? 1 : fontScale(widget));
+}
+
+// The width a card's content is laid out at (it zooms back up to the frame), so a bigger
+// text size leaves less room: naturalW / text zoom.
+export function cardLayoutWidth(widget: BoardWidget): number {
+    return naturalWidth(widget.kind) / cardTextScale(widget);
+}
+
 export const isHex = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
 
 // Widget ink on the white card, not UI chrome (UI-GUIDE §3 "worksheet-ink"): the board's

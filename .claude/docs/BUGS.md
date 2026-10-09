@@ -98,8 +98,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Hoofdrekenen breuken keys print whole numbers as n/1 ("4/3 : 2/9 = 6/1" at the hr-std-delen-rat
   DEFAULT; "288/1") and big numerators without spaces ("36000004/5"); an {M, E} operand mask at max
   1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
-- Empty keys: breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
-  geld-wissel draws no model exchange. 2026-09-27
+- Empty keys: breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on. 2026-09-27
 - Degenerate defaults: deelbaarheid-veelvouden is six copies of "veelvouden van 9" ("Kleine reeks: 5
   oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
@@ -157,29 +156,13 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
   strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
   2026-10-08
 
+- Flaky: `oefenen.zeroOutput.test.ts` failed once in the gate on `hr-std-delen-dec {"maxGetal":1e9,
+  "operandMax":[20,20,20,20]}: pre-flight must flag it` (the unseeded `rowYields` found an exercise that
+  run); passes alone. The dead/alive verdict depends on Math.random. 2026-10-09
+
 ## Bordmodus
 
-- No answer overlay on the board for geld-wissel and breuken-kleuren: 👁 toggles nothing visible.
+- No answer overlay on the board for breuken-kleuren: 👁 toggles nothing visible.
   Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
-- Outside the board, same class of bug as the one fixed for WhiteboardView: the Mijn bladen and
-  Bibliotheek overlays are not `.no-print`, so Ctrl+P while one is open prints the overlay
-  instead of the sheet (checked with a print-to-PDF). 2026-10-08
-- Honderdveld ⚙ "Tikkleur": while "Afwisselend" (cyclus) is selected, the custom-colour picker
-  next to the swatches shows black instead of a neutral / empty state (cosmetic; mathControls
-  `PaletteRow` feeds the `<input type="color">` `#000000` for any non-hex value). 2026-10-09
-- Settings kit a11y: every `ColorSwatches` custom-colour field has the same accessible name
-  "Eigen kleur (hex)" (controls.tsx), so a panel with several colour rows (accent + a kind's own
-  colours) has indistinguishable inputs for a screen reader. Fix: include the row's label. 2026-10-09
-- BreukBewerkViewer gelijknamig ignores `useBlockWidth()`: its 2-up rows run past a 628 px board card
-  (the last "en ____" is cut, wb-check/full-test/probe/cards-width-after.png). 2026-10-09
-- Board cards at Tekstgrootte 200 % (viewer width 298 px) still overflow for afronden-dec-simpel,
-  geld-rekenen-winst, lengte-meten, herleidingen-inhoud (81-360 px) and getallenrijen-dec (4 px). 2026-10-09
-- The board's "Wiskunde toevoegen" panel (BoardAddModal) does not close on Escape or an outside
-  press, unlike every bottom-bar popup; only its ✕ closes it. 2026-10-09
-- Board ⚙ panels: after "Standaard herstellen" the Accentkleur hex field keeps the old custom hex
-  (ColorSwatches holds it in local state) while the swatch row says Standaard. 2026-10-09
-- Honderdveld at 20 columns + Tekstgrootte XL and positietabel with every place column at "Heel groot"
-  clip on the right of the card instead of shrinking (wb-check/full-test/03-widgets/_walk-02.png, -03). 2026-10-09
-- Instrument handles can leave the board: the passer hinge after a wide opening, and a lat rotated to
-  45° at 1280 px puts its rotate handle off-board (wb-check/full-test/05-instruments). Fix: clamp the
-  handle positions / keep a grab point on-board. 2026-10-09
+- getallenrijen (seen on getalbegrip-getallenrijen-dec in a 298 px board card at 200 %): the first and last
+  numbers of each row sit across the oval's left / right outline ("8|35", "86|0"); the viewer, not the card. 2026-10-09

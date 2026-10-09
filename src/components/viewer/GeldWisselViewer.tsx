@@ -4,6 +4,8 @@ import { useViewerInteraction, type BuildEntry } from './ViewerInteractionContex
 import FragmentableGrid from './FragmentableGrid';
 import type { GeldWisselConstraints } from '../../services/math/constraintTypes';
 import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { DENOMINATION_CATALOGUE } from '../../services/geld/geldGenerator';
+import { solutionText } from './solutionStyle';
 
 // Size below is a factor of the sheet token (--sheet-size-math), not a fixed px
 const PX_PER_EM_AT_DEFAULT = 17.33;
@@ -11,8 +13,24 @@ const PX_PER_EM_AT_DEFAULT = 17.33;
 // needs; scaled with the math token since the bill figure itself is `em`-sized (GeldViewer).
 const ITEM_MIN_PX_AT_DEFAULT = 200;
 
+// The key shows one model exchange, largest smaller money first (€5 → €2 + €2 + €1); any other
+// make-up is right too. SYNC: kioskDescriptors wisselMoney (the tray holds the money below the bill).
+function modelExchange(bill: number): BuildEntry[] {
+    const parts: BuildEntry[] = [];
+    let rest = bill;
+    for (const { valueCents } of DENOMINATION_CATALOGUE) {
+        if (valueCents >= bill || rest < valueCents) continue;
+        parts.push({ key: String(valueCents), count: Math.floor(rest / valueCents) });
+        rest %= valueCents;
+    }
+    return rest === 0 ? parts : [];
+}
+
+const pieceLabel = (cents: number) => (cents >= 100 ? `€ ${cents / 100}` : `${cents} cent`);
+
 // laid = the money a pupil laid from the kiosk tray (Oefenmodus build); null on the sheet.
-function WisselCell({ ex, boxHeight, laid }: { ex: GeldWisselExercise; boxHeight: number; laid: readonly BuildEntry[] | null }) {
+function WisselCell({ ex, boxHeight, laid, showSolutions }: { ex: GeldWisselExercise; boxHeight: number; laid: readonly BuildEntry[] | null; showSolutions: boolean }) {
+    const key = showSolutions && !laid ? modelExchange(ex.billValueCents) : [];
     return (
         <div className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px', boxSizing: 'border-box' }}>
             <div style={{ flexShrink: 0 }}>
@@ -25,6 +43,13 @@ function WisselCell({ ex, boxHeight, laid }: { ex: GeldWisselExercise; boxHeight
                 <div style={{ flex: 1, minHeight: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <LaidMoney build={laid} />
                 </div>
+            ) : key.length ? (
+                <div style={{ flex: 1, minHeight: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <LaidMoney build={key} />
+                    <div data-wissel-key="" style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: "'Azeret Mono', monospace", textAlign: 'center', paddingBottom: '4px' }}>
+                        {key.flatMap(b => Array.from({ length: b.count }, () => pieceLabel(Number(b.key)))).join(' + ')}
+                    </div>
+                </div>
             ) : (
                 <div style={{ flex: 1, height: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px' }} />
             )}
@@ -34,8 +59,7 @@ function WisselCell({ ex, boxHeight, laid }: { ex: GeldWisselExercise; boxHeight
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
-// showSolutions unused — wissel has no solution overlay (student draws the answer).
-export default function GeldWisselViewer({ block }: Props) {
+export default function GeldWisselViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const ia = useViewerInteraction();
     const laid = ia?.kind === 'build' ? ia.state.build : null;
@@ -59,7 +83,7 @@ export default function GeldWisselViewer({ block }: Props) {
             columnGap={gap}
             rowGap={gap}
             items={exercises.map(ex => (
-                <WisselCell key={ex.id} ex={ex} boxHeight={boxHeight} laid={laid} />
+                <WisselCell key={ex.id} ex={ex} boxHeight={boxHeight} laid={laid} showSolutions={showSolutions} />
             ))}
         />
     );

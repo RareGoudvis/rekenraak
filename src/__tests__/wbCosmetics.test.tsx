@@ -51,6 +51,18 @@ describe('add panel search', () => {
         expect(labels).toContain('Digitale klok · Tekenen');
     });
 
+    test('the panel closes on Escape and on a press outside it, not on one inside', () => {
+        const onClose = vi.fn();
+        const { getByPlaceholderText, getByText } = render(<BoardAddModal onClose={onClose} />);
+        fireEvent.pointerDown(getByPlaceholderText('Zoeken…'));
+        fireEvent.pointerDown(getByText('Wiskunde toevoegen'));
+        expect(onClose).not.toHaveBeenCalled();
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(onClose).toHaveBeenCalledTimes(1);
+        fireEvent.pointerDown(document.body);
+        expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
     test('a typeId finds its row and adding a found tool puts it on the board', () => {
         const onClose = vi.fn();
         const { getByPlaceholderText, getByRole, queryByText } = render(<BoardAddModal onClose={onClose} />);
