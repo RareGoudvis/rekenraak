@@ -277,17 +277,17 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                 <CommaEdge key={`cop${opIdx}`} afterGridCol={eGridCol} row={firstOperandRow + opIdx} CELL={CELL} />
             ))}
 
-            {/* Level 1 + solutions: answer */}
-            {scaffolding <= 1 && showSolutions &&
+            {/* Solutions at every scaffolding level: the grid geometry is the same, so the empty-grid key draws the same cells. */}
+            {showSolutions &&
                 getDigitCols(ex.answer, dp, maxInt)
                     .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL} />)
             }
-            {scaffolding <= 1 && showSolutions && dp > 0 && (
+            {showSolutions && dp > 0 && (
                 <CommaEdge afterGridCol={eGridCol} row={answerRow} CELL={CELL} />
             )}
 
-            {/* Level 1 + solutions: carry row */}
-            {scaffolding <= 1 && showSolutions && ex.operator === '+' &&
+            {/* Solutions: carry row */}
+            {showSolutions && ex.operator === '+' &&
                 computeAddCarries(ex.operands, dp, maxInt)
                     .filter(c => c.col >= 0 && c.col < maxInt + decCols)
                     .map((c, i) => <DC key={`carry${i}`} col={toGridCol(c.col)} row={freeRows} char={String(c.carry)} CELL={CELL} color={SOL} small />)
@@ -389,19 +389,19 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
             )}
 
             {/* Partial products — student fills these in; shown as solutions only */}
-            {scaffolding <= 1 && showSolutions && partialProducts.map((pp, ppIdx) => {
+            {showSolutions && partialProducts.map((pp, ppIdx) => {
                 const row = ppStartRow + (n - 1 - ppIdx);
                 return ppDigitCols(pp, digitCols).map((d, i) => (
                     <DC key={`pp${ppIdx}_${i}`} col={toGridCol(d.col)} row={row} char={d.char} CELL={CELL} color={SOL} />
                 ));
             })}
 
-            {/* Level 1 + solutions: answer */}
-            {scaffolding <= 1 && showSolutions &&
+            {/* Solutions at every scaffolding level (same geometry): answer */}
+            {showSolutions &&
                 getDigitCols(ex.answer, tdp, maxInt)
                     .map((d, i) => <DC key={`ans${i}`} col={toGridCol(d.col)} row={answerRow} char={d.char} CELL={CELL} color={SOL} />)
             }
-            {scaffolding <= 1 && showSolutions && tdp > 0 && (
+            {showSolutions && tdp > 0 && (
                 <CommaEdge afterGridCol={maxInt} row={answerRow} CELL={CELL} />
             )}
 
@@ -488,12 +488,12 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
                 <DC key={`dr${i}`} col={leftCols + d.col} row={0} char={d.char} CELL={CELL} rowH={ROW_H} />
             ))}
 
-            {/* Quotient digits (right section, row 1 — below horizontal line) */}
-            {scaffolding <= 1 && showSolutions && (
+            {/* Quotient digits (right section, row 1 — below horizontal line), at every scaffolding level */}
+            {showSolutions && (
                 getDigitCols(quotient, dp, quotientIntCols)
                     .map((d, i) => <DC key={`qt${i}`} col={leftCols + d.col} row={1} char={d.char} CELL={CELL} rowH={ROW_H} color={SOL} />)
             )}
-            {scaffolding <= 1 && showSolutions && dp > 0 && (
+            {showSolutions && dp > 0 && (
                 <CommaEdge afterGridCol={leftCols + quotientIntCols - 1} row={1} CELL={CELL} rowH={ROW_H} />
             )}
 

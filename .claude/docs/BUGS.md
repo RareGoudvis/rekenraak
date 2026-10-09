@@ -35,6 +35,10 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   column right of where a pupil writes them (`computeAddCarries` keys by the source column; the
   AddSubGrid draws at that col). Repro: 525 + 445, Oplossingen aan, scaffolding 1 → the "1" is over
   the E, not the T. Fix: draw at `col - 1` (the kiosk's cijferCells already reads it so). 2026-10-08
+  (Since the empty-grid key fix this shows at every scaffolding level, incl. the default.)
+- Cijferen vermenigvuldigen key: the partial products stack with the units product LAST (1246 × 73
+  → 87220 above 3738; MultiplicationGrid `ppStartRow + (n - 1 - ppIdx)`), while pupils write × 3
+  first. Owner call whether to flip the order. 2026-10-09
 
 - CijferViewer's empty-state "(Nog geen oefeningen — klik Genereer)" (CijferViewer.tsx ~678) lacks
   `no-print`, so an ungenerated cijferen block prints that line; it also uses `#999` instead of
@@ -196,9 +200,6 @@ UpdateState). Left over, found while fixing:
 - Passer with the pencil straight up (rotation 270°) is drawn lying on its side instead of
   standing: the hinge sits beside the vertical needle–pencil chord (`passerHinge`), so the
   legs point sideways. Not yet looked into beyond that. 2026-10-09
-- Cijferen at the default scaffolding 2 (empty grid) shows no answer with Oplossingen on, sheet and
-  board alike (CijferViewer draws solutions only for `scaffolding <= 1`): the answer key is blank for the
-  optellen, aftrekken and vermenigvuldigen leaves, nat + dec (wb-check/full-test/probe/sheet-cijfer-solutions.png). 2026-10-09
 - BreukBewerkViewer gelijknamig ignores `useBlockWidth()`: its 2-up rows run past a 628 px board card
   (the last "en ____" is cut, wb-check/full-test/probe/cards-width-after.png). 2026-10-09
 - Board cards at Tekstgrootte 200 % (viewer width 298 px) still overflow for afronden-dec-simpel,
