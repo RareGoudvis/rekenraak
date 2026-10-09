@@ -174,6 +174,12 @@ UpdateState). Left over, found while fixing:
   "in woorden" to the banned verbs in oefenen.kioskInstruction.test.ts; sweep the other leaves for
   the same mismatch. Owner: log only, not fixing now. 2026-10-09
 
+- Builder: Opslaan still accepts a session with a dead row (pre-flight only blocks Delen), and Delen from
+  Mijn bladen skips the pre-flight; the runtime retire-dead-slot rule covers it, but the teacher gets no
+  warning on that path. 2026-10-09
+- hr-std-delen-nat "Met rest" keeps the tafels picked in tafels mode hidden, so a session can go dead
+  with tafels [1] without the teacher seeing why (pre-flight flags it). 2026-10-09
+
 ## Oefenmodus beta audit 2026-10-09
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
@@ -204,17 +210,10 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-F session format
 
-- **O14** D4: a shared link stores only the diff from the CURRENT defaults (`seedOf` / `rowOut` /
-  `rowIn`, session.ts): changing a registry or leaf default, `DEFAULT_BASE`, `SEED_FIT`, a leaf
-  label (`kioskLabelOf`) or a leaf instruction silently changes what an old link decodes to
-  (verified: numberType, bridges, operand2Mask rewritten). Fix: a frozen `KIOSK_DEFAULTS_V1`
-  snapshot per leaf + a fixture-link test. 2026-10-09
-- **O15** D11: `decodeSessie` has no bound on payload length, inflated size, title length or type
-  count (a 50 MB title loads in 4.7 s / 71 MB heap and renders as an off-screen h1). Fix: bounds →
-  ErrorScreen. 2026-10-09
-- **O16** D12 (note, no fix): every answer copies the history and stringifies the whole run,
-  `saveRun` reloads all runs, `next` rebuilds the seen-keys set: 0.06 → 0.48 ms per answer at
-  #1000, quadratic per run but 0.55 s for 1000 answers. Pin with a perf test. 2026-10-09
+- **O16** D12 (note, no fix, pinned by `oefenen.perf.test.ts`): every answer copies the history and
+  stringifies the whole run, `saveRun` reloads all runs, `next` rebuilds the seen-keys set:
+  quadratic per run, ~0.5 ms per answer and ~170 kB stored at #1000 (test: < 5 ms, < 300 kB). Only
+  an endless run far past 1000 answers would feel it. 2026-10-09
 
 ### WP-G teacher UX
 
@@ -238,6 +237,10 @@ grouped per work package so parallel deletions merge cleanly.
   `checkAnswer` → stats over the constraintSpace options; no Playwright kiosk smoke per input kind. 2026-10-09
 
 ## Tooling
+
+- `constraintSpace` lists kettingsommen `chainLength` [2,4,6] while KettingConfig offers 3-5, so the
+  matrix/zero-output sweep tests values the UI cannot reach and skips the ones it can. 2026-10-09
+
 
 - A leaf's own `defaultCount` (oppervlakte-rooster = 2) is not seen by `scripts/height-audit.mjs:81`
   and `scripts/width-matrix.mjs:82` (they add blocks without `leafId`); worksheetTemplates.ts
