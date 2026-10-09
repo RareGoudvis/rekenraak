@@ -66,6 +66,8 @@ export const RANGES = {
     deelbaarheidKleurRaster: [20, 100, 1_000] as readonly number[],
     getallenas: TO_1E5_FROM_20,
     getallenrijen: TO_1E5_FROM_20,
+    // Decimal rows step by 0,1 from 0 to 10 (the leaf's pin); natural rows keep 20 as their floor.
+    getallenrijenDecimal: [10, ...TO_1E5_FROM_20] as readonly number[],
     patronen: TO_1E5_FROM_20,
     ordenen: TO_1E5_FROM_20,
     schattendNatural: TO_1E5_FROM_100,

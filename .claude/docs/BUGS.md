@@ -26,11 +26,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Even-oneven rooster at its 1e4 top, width ½ / ¼: four-digit numbers wrap inside the 46 px cells
   and the lines overlap. Fix: size cells from the character count (46 px floor). 2026-09-27
   (Full sweep: they wrap ("9 / 029") at full width too; only ½ / ¼ trip the overlap check.)
-- `ordenenMaxChars` (blockLayout.ts) ignores the thousands spaces of the inclusive max ("1 000,0"
-  counted as 6 chars). Fixing it moves the default getalbegrip-ordenen-dec block from width tier 1
-  to 2 (owner call). 2026-09-27
-- AfrondenViewer simpel hardcodes `cols={2}` (viewer rule 1), which pins the default block to full
-  width. Switching to `fitCols` changes the default w2/w1 cells (owner call). 2026-09-27
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -93,15 +88,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
-- Leaf `getalbegrip-getallenrijen-dec` (appstructure.ts:156) pins `maxGetal: 10`, which is not in
-  the Getallenrijen max list (20 … 100 000): opening its config snaps the block to 20 and it
-  regenerates. Fix direction: pin 20, or give decimal getallenrijen its own list (owner call). 2026-09-27
-
 ## Generators
 
-- Hoofdrekenen delen 'andere' at max ≤ 1e6 (natural, no mask): the divisor is uniform up to the
-  max, so most quotients are 1; with only the dividend masked an exact division is rare and the
-  block relaxes. Fixed above 1e6 only (RNG-stream rule). Fix direction: the >1e6 branches. 2026-09-27
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 

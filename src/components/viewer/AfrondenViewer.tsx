@@ -3,7 +3,7 @@ import { formatMathNumber } from '../../services/math/formatters';
 import { targetsFor, roundTo, usableTargets, targetHeading } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, useSheetSizePx, fitCols, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
-import { grownColumn, splitColumns } from '../../services/layout/blockLayout';
+import { grownColumn, splitColumns, monoTextPx } from '../../services/layout/blockLayout';
 import type { AfrondenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import KioskCell from './KioskCell';
@@ -20,6 +20,7 @@ const SALMON = '#f4cbb8';
 export default function AfrondenViewer({ block, showSolutions }: Props) {
     const A4_CONTENT_PX = useBlockWidth();
     const mathPx = useSheetSizePx('math');
+    const textPx = useSheetSizePx('text');
     const exercises: AfrondenExercise[] = block.afrondenExercises || [];
     const c = block.constraints as AfrondenConstraints;
     const subType: string = c.subType ?? 'rooster';
@@ -46,9 +47,14 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
         const targetOf = (ex: AfrondenExercise) => all.find(x => x.key === ex.targetKey) ?? all[0];
         const numCol = grownColumn(60, Math.max(0, ...nums.map(n => formatMathNumber(n).length)), 0.92, mathPx, 0);
         const ansCol = grownColumn(58, Math.max(0, ...exercises.map(ex => formatMathNumber(roundTo(ex.number ?? 0, targetOf(ex).weight)).length)), 0.92, mathPx, 0);
+        // One row = number, "≈", answer and the "(H)" label (mono at 0.6 × the text token), three 8px flex gaps.
+        const labelChars = Math.max(0, ...exercises.map(ex => targetHeading(targetOf(ex)).length + 2));
+        const itemPx = numCol.px + ansCol.px + monoTextPx(1, 0.92, mathPx) + monoTextPx(labelChars, 0.6, textPx) + 3 * 8;
+        const simpelCols = fitCols(A4_CONTENT_PX, itemPx, 2, 24);
         return (
             <FragmentableGrid
-                cols={2}
+                cols={simpelCols}
+                shrinks={simpelCols > 1}
                 columnGap={24}
                 rowGap={gap}
                 items={exercises.map(ex => {
