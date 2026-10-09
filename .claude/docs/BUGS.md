@@ -174,6 +174,111 @@ UpdateState). Left over, found while fixing:
   "in woorden" to the banned verbs in oefenen.kioskInstruction.test.ts; sweep the other leaves for
   the same mismatch. Owner: log only, not fixing now. 2026-10-09
 
+## Oefenmodus beta audit 2026-10-09
+
+External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
+~/Downloads/oefen-check/audit/{1,2,3}/). Plan: ~/.claude/plans/oefen-audit-fixes.md. Lines are
+grouped per work package so parallel deletions merge cleanly.
+
+### WP-A scheduler
+
+- **O1** C6: willekeurig with "Zelfde soort na elkaar toestaan" off still repeats a type ≈25 % of the
+  time while another type has capacity (one weighted redraw, scheduler.ts:69; the ≈25 % is pinned by
+  oefenen.scheduler.test.ts:87-94). Fix: exclude the previous type from the pool whenever another
+  type still has capacity; repeat only when forced (flagged). 2026-10-09
+
+### WP-B store / stats
+
+- **O2** C1: testMode + statsLocked off → "Resultaten" mid-run shows juist/fout and the right answer
+  (useOefenStore.ts:394 gates on `statsLocked && !run.done` only) while the start screen says "je
+  ziet pas op het einde wat juist was" (StartScreen.tsx:38). Owner: testMode forces results hidden
+  until the end; builder greys the toggle. 2026-10-09
+- **O3** C2: Mijn bladen › Bewerken › Opslaan keeps the session id (OefenBuilderModal.tsx:56), so the
+  new link reopens the old finished run (useOefenStore.ts:281); removing a type shifts every saved
+  per-type result to the wrong type (index-keyed `perType[slot]`, stats.ts:80-81). Owner: a content
+  edit gets a new id; Hernoemen keeps it. 2026-10-09
+- **O4** D6: an answer submitted after the deadline but before the next 1 s tick is counted
+  (`answer()` has no timeUp guard, useOefenStore.ts:360-389; only `next()`/`tick()` check). 2026-10-09
+- **O5** D5: when localStorage throws, `persist` ignores `saveRun === false` (useOefenStore.ts:199-202):
+  no warning, the run is gone after a reload. Fix: store flag → kiosk banner. 2026-10-09
+- **O6** Stats headline: a right second try counts as juist (stats.ts:70) so "3 van 3 juist · 100 %"
+  hides a first-try 2/3; a timed/limited run shows "7 van 8 juist" and never the planned total
+  (StatsScreen.tsx:119). Owner wording: "7 van 8 juist (8 van 10 gemaakt)" + column "Juist in één
+  keer". 2026-10-09
+- **O7** C7 (log only, owner): a reload clears the typed draft, the cijferen cells and the geld tray
+  (only `current` is persisted, useOefenStore.ts:276, 287). Not fixing. 2026-10-09
+
+### WP-C answer check
+
+- **O8** C3: "Reken uit." on hr breuken rejects every unreduced equivalent (26/8 for 3 1/4, 12/4 for 3)
+  because the right answers are a fixed spelling list (kioskDescriptors.ts:47) compared as text
+  (check.ts:39). Owner: per-row option "Gelijkwaardige antwoorden goedrekenen" (default on for
+  Reken-uit leaves) vs "Enkel de gevraagde vorm" (default for vereenvoudigen / gelijknamig
+  leaves), one append-only row flag bit in the wire. 2026-10-09
+
+### WP-D generation guard
+
+- **O9** C4: a row whose settings generate 0 exercises (klok with every tijdstype unticked) ships
+  without a builder warning (`kioskSupports` ignores `timeTypes`); at runtime `nextExercise` returns
+  null and `next()` finishes the whole run ("Klaar! Nog geen oefeningen gemaakt") even when other
+  types still have exercises. Fix: pre-flight each row at Delen (0 → red row, Delen blocked); at
+  runtime retire the dead type, continue with the rest; start screen counts viable types. 2026-10-09
+- **O10** Builder-reachable zero-output settings: `timeTypes=[]` on klok-analoog-lezen / -tekenen /
+  -omzetten and klok-digitaal-tekenen; `selectedTables=[]` on hr-std-vermenigvuldigen-nat and
+  hr-std-delen-nat (NaturalSettings has no keep-one guard); `payWithOptions=[]` on geld-teruggeven.
+  Pairwise, reachability unchecked: vergelijken-kiezen breuk both sides + HM mask; kettingsommen
+  `[":"]` chain 6; hr-std-delen-dec / -vermenigvuldigen-dec combos; handig-rekenvolgorde `:`-only +
+  haakjes MOET + 4 ops + max 100; schattend-nat max 10 with T/H rounding; hr-std-aftrekken-rat
+  compenseren puntoefening. 2026-10-09
+- **O11** Start screen pluralises "1 soort · 1 oefeningen". 2026-10-09
+
+### WP-E keyboard / a11y
+
+- **O12** C5: in a fill-cells card every Tab is swallowed (Kiosk.tsx `useKioskKeys`) and `moveCell`
+  wraps `(at+step+n)%n`, so Tab/Shift+Tab cycle through answer + carry cells forever; no Escape
+  handler; Resultaten and the keypad are unreachable by keyboard during a grid exercise. Fix: Tab
+  leaves the grid at both ends, Escape → keypad. 2026-10-09
+- **O13** Every kiosk cell input has `aria-label="Vul in"` (hardcoded in `cellProps()`,
+  ViewerInteractionContext.tsx): answer, carry, borrow, partial-product, quotient and rest cells are
+  indistinguishable to a screen reader. Fix: per-role labels with the column name. 2026-10-09
+
+### WP-F session format
+
+- **O14** D4: a shared link stores only the diff from the CURRENT defaults (`seedOf` / `rowOut` /
+  `rowIn`, session.ts): changing a registry or leaf default, `DEFAULT_BASE`, `SEED_FIT`, a leaf
+  label (`kioskLabelOf`) or a leaf instruction silently changes what an old link decodes to
+  (verified: numberType, bridges, operand2Mask rewritten). Fix: a frozen `KIOSK_DEFAULTS_V1`
+  snapshot per leaf + a fixture-link test. 2026-10-09
+- **O15** D11: `decodeSessie` has no bound on payload length, inflated size, title length or type
+  count (a 50 MB title loads in 4.7 s / 71 MB heap and renders as an off-screen h1). Fix: bounds →
+  ErrorScreen. 2026-10-09
+- **O16** D12 (note, no fix): every answer copies the history and stringifies the whole run,
+  `saveRun` reloads all runs, `next` rebuilds the seen-keys set: 0.06 → 0.48 ms per answer at
+  #1000, quadratic per run but 0.55 s for 1000 answers. Pin with a perf test. 2026-10-09
+
+### WP-G teacher UX
+
+- **O17** The Oefenmodus catalogue has no search field and no leerjaar filter (the editor sidebar has
+  both). 2026-10-09
+- **O18** "Aantal: ∞" is a small label above a slider with the thumb far right, no "onbeperkt"
+  wording (OefenBuilderModal.tsx:242). 2026-10-09
+- **O19** The share modal shows only "N soorten · M min" (OefenShareModal.tsx:75): no total number
+  of exercises / onbeperkt, no toets / kansen / statistieken settings, and no note that every
+  pupil's device generates its own exercises. 2026-10-09
+- **O20** Mijn bladen › Oefensessies has no Dupliceren (MijnBladenView.tsx:197-200; worksheet presets
+  have it at :163). 2026-10-09
+- **O21** Builder description for analoge klok lezen reads "Klok zien → tijd in woorden schrijven"
+  (ClockConfig.tsx:49) while the kiosk takes uu:mm (pairs with the classroom-test line above). 2026-10-09
+- **O22** Breuken kleuren card says "Tik 3 van de 6 delen aan." (`kioskInstruction`, BREUKEN_KIOSK)
+  which gives the count away. Owner: "Kleur 3/6 in." only. 2026-10-09
+
+### WP-H test infra
+
+- **O23** CI `check.yml` triggers only on dev / main pushes and PRs, so rc / rc-oefenen are never
+  checked in CI. Owner: add both. 2026-10-09
+- **O24** No test exercises the kiosk chain generate → descriptor answer → keys can type it →
+  `checkAnswer` → stats over the constraintSpace options; no Playwright kiosk smoke per input kind. 2026-10-09
+
 ## Tooling
 
 - A leaf's own `defaultCount` (oppervlakte-rooster = 2) is not seen by `scripts/height-audit.mjs:81`
