@@ -902,7 +902,7 @@ state without it. TESTING.md lists the verdict codes (a/a2/b/c/d/e).
 ### Reordering on the sheet
 
 [useSheetDnd.ts](../../src/hooks/useSheetDnd.ts) — **pointer events only; no native
-[useShedStages.ts         # top-bar label shedding off real measured overflow (4 stages, hysteresis), not viewport width (§2)
+[useShedStages.ts         # top-bar label shedding off real measured overflow (4 stages, hysteresis), not viewport width (§2): budget = the bar's inner width, measure = plain sum of the three groups + gaps (the title centres in the remaining `minmax(0,1fr)` track), re-measured on rename (`contentKey`)
 HTML5 drag-and-drop anywhere in the app.** A browser extension that hooks `dragstart` (the
 "Claude in Chrome" extension did) froze the tab for the whole drag, and teachers' browsers
 are not ours to audit. The visible affordance is a **handle** (`.sheet-drag-handle`, the
