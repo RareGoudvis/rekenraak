@@ -172,6 +172,10 @@ UpdateState). Left over, found while fixing:
   strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
   2026-10-08
 
+- Flaky under full-suite load: `oefenBuilder.test.tsx` › OefenShareModal › "Afdrukken (A5) prints only
+  the A5 QR sheet" failed once in the pre-commit gate ("expected bound to be called 1 times, got 0")
+  and passes alone. Likely a timer/print wait too short when 99 workers share the CPU. 2026-10-09
+
 ## Bordmodus
 
 - BoardBottomBar at 1280 x 800: the bar is wider than the viewport, so "Bordmodus verlaten" is cut off

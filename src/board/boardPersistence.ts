@@ -2,6 +2,7 @@ import type { BoardPage, BoardWidget, Instrument, Stroke } from './boardTypes';
 import { emptyPage } from './boardTypes';
 import { NATURAL_W } from './widgetSizing';
 import { BOARD_CM_PX, INSTRUMENT_KINDS, PASSER } from './instrumentGeometry';
+import { cleanWidgetProps } from './settings/propSchemas';
 
 // Board persistence — mirrors the worksheet persistence patterns (strict version
 // check, debounced autosave, capped preset list) but fully separate keys/format.
@@ -88,8 +89,11 @@ export function parseBoardFile(json: string): BoardFile | null {
         const pages: BoardPage[] = data.pages.map(p => ({
             ...p,
             // Every widget reader defaults a missing prop key, so junk props (not an object)
-            // drop to none: the widget loads with its default look instead of throwing.
-            widgets: p.widgets.filter(isWidget).map(w => (w.props === undefined || isObj(w.props) ? w : { ...w, props: {} })),
+            // drop to none: the widget loads with its default look instead of throwing. Kinds
+            // with a props schema also drop each junk value, so that field reads its default.
+            widgets: p.widgets.filter(isWidget)
+                .map(w => (w.props === undefined || isObj(w.props) ? w : { ...w, props: {} }))
+                .map(cleanWidgetProps),
             // Strokes saved by early builds may lack sample points.
             strokes: p.strokes.filter(isStroke).map(s => (Array.isArray(s.pts) ? s : { ...s, pts: [] })),
             // Only a page that carries the field gets it back, so a v1 page round-trips unchanged.

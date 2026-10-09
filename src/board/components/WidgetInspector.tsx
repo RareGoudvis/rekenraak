@@ -1,7 +1,7 @@
 import { X } from '@phosphor-icons/react';
 import Switch from '../../components/ui/Switch';
 import { useBoardStore } from '../useBoardStore';
-import { dobbelProps, ademProps, getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
+import { getallenlijnProps, positietabelProps, POSITIE_KOLOMMEN, breukvizProps, widgetTitle } from '../widgetSizing';
 import { WIDGET_SETTINGS, type WidgetSettingsPanel } from '../settings/registry';
 import BaselineSettings from '../settings/BaselineSettings';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
@@ -12,7 +12,6 @@ interface Props {
 
 // Panels not yet moved to src/board/settings/ (groups B/C move theirs into the registry).
 const LEGACY_SETTINGS: Partial<Record<WidgetKind, WidgetSettingsPanel>> = {
-    timer: TimerSettings, dobbelsteen: DobbelSettings, adem: AdemSettings,
     getallenlijn: GetallenlijnSettings, positietabel: PositietabelSettings, honderdveld: HonderdveldSettings,
     breukviz: BreukvizSettings, mabmat: MabMatSettings,
 };
@@ -38,90 +37,6 @@ export default function WidgetInspector({ widget }: Props) {
         </div>
     );
 }
-function TimerSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const dur = Math.max(5, Number(widget.props?.durationSec ?? 300));
-    const color = String(widget.props?.color ?? '#16a34a');
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const COLORS = ['#16a34a', '#1d4ed8', '#dc2626', '#ea580c', '#7c3aed'];
-    return (
-        <div>
-            <div style={S.sectionLabel}>Duur ({Math.floor(dur / 60)}:{String(dur % 60).padStart(2, '0')})</div>
-            <input type="range" min={30} max={3600} step={30} value={dur} style={{ width: '100%' }}
-                onChange={(e) => set({ durationSec: Number(e.target.value) })} />
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '4px 0' }}>
-                {[60, 120, 300, 600, 900].map(s => (
-                    <button key={s} type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ durationSec: s })}>
-                        {s / 60} min
-                    </button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Kleur</div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-                {COLORS.map(c => (
-                    <button key={c} type="button" aria-label={`Kleur ${c}`} onClick={() => set({ color: c })}
-                        style={{ width: '34px', height: '34px', borderRadius: '50%', background: c, cursor: 'pointer', border: '2px solid var(--bg-panel)', outline: color === c ? '3px solid var(--accent-purple)' : 'none' }} />
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function DobbelSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const p = dobbelProps(widget);
-    const rawCustom = typeof widget.props?.custom === 'string' ? widget.props.custom : '';
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    return (
-        <div>
-            <div style={S.sectionLabel}>Aantal dobbelstenen ({p.count})</div>
-            <div className="seg-group">
-                {[1, 2, 3].map(n => (
-                    <button key={n} type="button" className="seg-btn" aria-pressed={p.count === n} onClick={() => set({ count: n })}>{n}</button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Zijden ({p.sides})</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[4, 6, 8, 10, 12, 20].map(n => (
-                    <button key={n} type="button" className="ui-hover"
-                        style={{ ...S.smallBtn, ...(p.sides === n && !p.custom.length ? { borderColor: 'var(--accent-purple)', background: 'var(--bg-active)' } : {}) }}
-                        onClick={() => set({ sides: n, custom: '' })}>{n}</button>
-                ))}
-            </div>
-            <div style={S.sectionLabel}>Eigen zijden (één per lijn; leeg = getallen)</div>
-            <textarea value={rawCustom} placeholder={'rood\nblauw\ngeel'} onChange={(e) => set({ custom: e.target.value })}
-                style={{ width: '100%', minHeight: '110px', resize: 'vertical', boxSizing: 'border-box', background: 'var(--bg-input)', color: 'var(--text-main)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '8px', fontSize: '13px', fontFamily: "'Azeret Mono', monospace", outline: 'none' }} />
-        </div>
-    );
-}
-
-function AdemSettings({ widget }: { widget: BoardWidget }) {
-    const updateWidget = useBoardStore((s) => s.updateWidget);
-    const p = ademProps(widget);
-    const set = (patch: Record<string, unknown>) => updateWidget(widget.id, { props: { ...widget.props, ...patch } });
-    const slider = (label: string, value: number, key: string, min: number) => (
-        <div>
-            <div style={S.sectionLabel}>{label} ({value}s)</div>
-            <input type="range" min={min} max={10} step={1} value={value} style={{ width: '100%' }}
-                onChange={(e) => set({ [key]: Number(e.target.value) })} />
-        </div>
-    );
-    return (
-        <div>
-            {slider('Adem in', p.inSec, 'inSec', 1)}
-            {slider('Houd vast', p.holdSec, 'holdSec', 0)}
-            {slider('Adem uit', p.outSec, 'outSec', 1)}
-            <div style={S.sectionLabel}>Presets</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ inSec: 4, holdSec: 4, outSec: 4 })}>4-4-4</button>
-                <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ inSec: 4, holdSec: 7, outSec: 8 })}>4-7-8</button>
-                <button type="button" className="ui-hover" style={S.smallBtn} onClick={() => set({ inSec: 3, holdSec: 0, outSec: 5 })}>3-0-5</button>
-            </div>
-        </div>
-    );
-}
-
-
 function GetallenlijnSettings({ widget }: { widget: BoardWidget }) {
     const updateWidget = useBoardStore((s) => s.updateWidget);
     const g = getallenlijnProps(widget);

@@ -117,9 +117,11 @@ export function ButtonRow({ children }: { children: ReactNode }) {
     return <div style={S.btnRow}>{children}</div>;
 }
 
-// Palette swatches + a custom colour; null = the widget's own colour ("Standaard").
-export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard', compact }: {
+// Palette swatches + a custom colour; null = the widget's own colour ("Standaard"). `palette`
+// swaps the ink palette for another (light fills behind text, dice bodies).
+export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard', compact, palette = ACCENT_PALETTE }: {
     label: string; value: string | null; onChange: (v: string | null) => void; noneLabel?: string; compact?: boolean;
+    palette?: ReadonlyArray<{ name: string; hex: string }>;
 }) {
     const [hex, setHex] = useState(value ?? '');
     const size = compact ? 24 : 30;
@@ -134,13 +136,13 @@ export function ColorSwatches({ label, value, onChange, noneLabel = 'Standaard',
     };
     return (
         <div style={S.rowStacked}>
-            {!compact && <span style={S.rowLabel}>{label}: <strong style={{ fontWeight: 600 }}>{value ? colorName(value) : noneLabel}</strong></span>}
+            {!compact && <span style={S.rowLabel}>{label}: <strong style={{ fontWeight: 600 }}>{value ? (palette.find(c => c.hex === value.toLowerCase())?.name ?? colorName(value)) : noneLabel}</strong></span>}
             <div role="group" aria-label={label} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                 <button type="button" aria-pressed={value === null} aria-label={noneLabel} title={noneLabel} onClick={() => onChange(null)}
                     style={{ ...dot('var(--bg-surface-2)', value === null), display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
                     ∅
                 </button>
-                {ACCENT_PALETTE.map(c => (
+                {palette.map(c => (
                     <button key={c.hex} type="button" aria-pressed={value?.toLowerCase() === c.hex} aria-label={c.name} title={c.name}
                         onClick={() => onChange(c.hex)} style={dot(c.hex, value?.toLowerCase() === c.hex)} />
                 ))}
