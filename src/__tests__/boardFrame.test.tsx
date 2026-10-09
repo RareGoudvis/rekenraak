@@ -118,3 +118,21 @@ describe('headerless cards', () => {
         expect(within(container).getByText('Getallenlijn')).toBeTruthy();
     });
 });
+
+describe('a dark board', () => {
+    // The cards stay white paper on a black board, so their text must stay dark: white ink
+    // (the pre-card look) made notes, names and the weather vanish.
+    test('card text stays dark ink on a dark board', () => {
+        const st = useBoardStore.getState();
+        st.setBackground({ pattern: 'raster', dark: true });
+        st.addWidget({ kind: 'tekst', x: 0, y: 0, w: 360, props: { text: 'hoi' } });
+        st.addWidget({ kind: 'klok', x: 0, y: 0, w: 300, props: { showDigital: true } });
+        st.addWidget({ kind: 'namen', x: 0, y: 0, w: 340, props: {} });
+        const { container } = render(<BoardPageCanvas />);
+        const bodies = [...container.querySelectorAll<HTMLElement>('[data-widget-body] *')];
+        expect(bodies.length).toBeGreaterThan(0);
+        const white = bodies.filter(el => /^(#fff|#ffffff|rgb(255, 255, 255))$/i.test(el.style.color));
+        expect(white).toEqual([]);
+        expect(container.querySelector('textarea')!.style.color).toBe('rgb(17, 17, 17)');
+    });
+});

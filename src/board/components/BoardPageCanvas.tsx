@@ -91,7 +91,7 @@ export default function BoardPageCanvas() {
                         onToggleAnswer={w.kind === 'exercise' ? () => updateWidget(w.id, { showAnswer: !w.showAnswer }) : undefined}
                     >
                         <BoardErrorBoundary label={`Widget (${w.kind})`}>
-                            <WidgetContent widget={w} dark={page.background.dark} />
+                            <WidgetContent widget={w} />
                         </BoardErrorBoundary>
                     </WidgetFrame>
                 ))}
@@ -107,15 +107,15 @@ export default function BoardPageCanvas() {
     );
 }
 
-function WidgetContent({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
+function WidgetContent({ widget }: { widget: BoardWidget }) {
     switch (widget.kind) {
         case 'exercise': return <ExerciseWidget widget={widget} />;
-        case 'tekst': return <TekstWidget widget={widget} dark={dark} />;
+        case 'tekst': return <TekstWidget widget={widget} />;
         case 'datum': return <DatumWidget widget={widget} />;
-        case 'klok': return <KlokWidget widget={widget} dark={dark} />;
+        case 'klok': return <KlokWidget widget={widget} />;
         case 'afbeelding': return <AfbeeldingWidget widget={widget} />;
-        case 'namen': return <NamenWidget widget={widget} dark={dark} />;
-        case 'weer': return <WeerWidget widget={widget} dark={dark} />;
+        case 'namen': return <NamenWidget widget={widget} />;
+        case 'weer': return <WeerWidget widget={widget} />;
         case 'geluid': return <GeluidWidget widget={widget} />;
         case 'werksymbolen': return <WerksymbolenWidget widget={widget} />;
         case 'timer': return <TimerWidget widget={widget} />;

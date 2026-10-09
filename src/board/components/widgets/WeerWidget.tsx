@@ -17,7 +17,7 @@ const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFi
 // place (props.lat/lon/placeName via the settings' city search) or browser
 // geolocation, falling back to Brussels when denied. Units, wind, forecast days,
 // icon style and the refresh interval come from the ⚙ panel.
-export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
+export default function WeerWidget({ widget }: { widget: BoardWidget }) {
     const p = weerModel(widget);
     const fs = fontScale(widget);
     const accent = widgetAccent(widget);
@@ -73,14 +73,14 @@ export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark
         return () => { cancelled = true; };
     }, [fixedLat, fixedLon, p.unit, p.windUnit, p.forecastDays, tick]);
 
-    const textColor = dark ? '#fff' : '#111';
-    const muted = dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+    const textColor = '#111';
+    const muted = 'rgba(0,0,0,0.6)';
     const mono = "'Azeret Mono', monospace";
     const deg = p.unit === 'F' ? '°F' : '°C';
     const icon = (code: number, px: number) => {
         const w = describe(code);
         return p.iconStyle === 'icoon'
-            ? <w.Icon size={px * fs} weight="duotone" color={accent ?? (dark ? '#fff' : '#1e40af')} aria-label={w.label} />
+            ? <w.Icon size={px * fs} weight="duotone" color={accent ?? '#1e40af'} aria-label={w.label} />
             : <span style={{ fontSize: `${px * fs}px`, lineHeight: 1 }}>{w.icon}</span>;
     };
     const line = (s: string) => <div style={{ fontSize: `${15 * fs}px`, color: muted }}>{s}</div>;
@@ -89,8 +89,8 @@ export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark
     return (
         <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '14px 18px',
-            background: dark ? 'rgba(255,255,255,0.06)' : `color-mix(in srgb, ${tint} 6%, transparent)`,
-            border: `1px solid ${dark ? 'rgba(255,255,255,0.2)' : `color-mix(in srgb, ${tint} 25%, transparent)`}`, borderRadius: '10px',
+            background: `color-mix(in srgb, ${tint} 6%, transparent)`,
+            border: `1px solid color-mix(in srgb, ${tint} 25%, transparent)`, borderRadius: '10px',
             color: textColor, fontFamily: mono,
         }}>
             {p.showPlace && <span style={{ fontSize: `${13 * fs}px`, color: muted }}>📍 {placeName ?? 'Huidige locatie'}</span>}

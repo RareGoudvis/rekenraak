@@ -22,15 +22,15 @@ describe('tekst model', () => {
 });
 
 describe('tekst widget', () => {
-    test('the default is the old textarea; white ink on a dark board', () => {
-        const { container } = mountWidget('tekst', { text: 'hoi' }, (p) => <TekstWidget widget={p.widget} dark />);
+    test('the default is the old textarea; dark ink on the white card', () => {
+        const { container } = mountWidget('tekst', { text: 'hoi' }, (p) => <TekstWidget widget={p.widget} />);
         const ta = container.querySelector('textarea')!;
         expect(ta.style.fontSize).toBe('26px');
-        expect(ta.style.color).toBe('rgb(255, 255, 255)');
+        expect(ta.style.color).toBe('rgb(17, 17, 17)');
     });
 
     test('bullets render a list and a tap swaps to the textarea; style options apply', () => {
-        const { container } = mountWidget('tekst', { text: 'een\ntwee', bullets: 'nummers', bold: true, align: 'center', textPx: 40, lines: true }, (p) => <TekstWidget widget={p.widget} dark={false} />);
+        const { container } = mountWidget('tekst', { text: 'een\ntwee', bullets: 'nummers', bold: true, align: 'center', textPx: 40, lines: true }, (p) => <TekstWidget widget={p.widget} />);
         expect(container.querySelectorAll('ol li')).toHaveLength(2);
         const view = container.querySelector('[data-tekst-view]') as HTMLElement;
         expect(view.style.fontWeight).toBe('700');
@@ -41,7 +41,7 @@ describe('tekst widget', () => {
     });
 
     test('the accent colours the text', () => {
-        const { container } = mountWidget('tekst', { text: 'hoi', accent: '#b91c1c' }, (p) => <TekstWidget widget={p.widget} dark />);
+        const { container } = mountWidget('tekst', { text: 'hoi', accent: '#b91c1c' }, (p) => <TekstWidget widget={p.widget} />);
         expect(container.querySelector('textarea')!.style.color).toBe('rgb(185, 28, 28)');
     });
 });

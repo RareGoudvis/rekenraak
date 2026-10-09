@@ -24,7 +24,7 @@ afterEach(() => {
 describe('drag surfaces do not select text', () => {
     test('the clock face', () => {
         const w: BoardWidget = { id: 'k', kind: 'klok', x: 0, y: 0, w: 260, z: 1, props: {} };
-        const { container } = render(<KlokWidget widget={w} dark={false} />);
+        const { container } = render(<KlokWidget widget={w} />);
         expect((container.querySelector('[data-klok-face]') as HTMLElement).style.userSelect).toBe('none');
     });
 
