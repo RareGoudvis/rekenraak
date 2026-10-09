@@ -5,6 +5,7 @@ import { TIMER_SCHEMA, TIMER_CONTENT_KEYS } from './timerModel';
 import { ADEM_SCHEMA, ADEM_CONTENT_KEYS } from './ademModel';
 import { GELUID_SCHEMA, GELUID_CONTENT_KEYS } from './geluidModel';
 import { DOBBEL_SCHEMA, DOBBEL_CONTENT_KEYS } from './dobbelModel';
+import { AFBEELDING_SCHEMA, AFBEELDING_CONTENT_KEYS } from './afbeeldingModel';
 
 // Per-kind props schema (one line per kind) + the content keys "Standaard herstellen" keeps
 // (widgetDefaults.resetProps).
@@ -14,6 +15,7 @@ export const PROP_SCHEMAS: Partial<Record<WidgetKind, { schema: Schema; content:
     adem: { schema: ADEM_SCHEMA, content: ADEM_CONTENT_KEYS },
     geluid: { schema: GELUID_SCHEMA, content: GELUID_CONTENT_KEYS },
     dobbelsteen: { schema: DOBBEL_SCHEMA, content: DOBBEL_CONTENT_KEYS },
+    afbeelding: { schema: AFBEELDING_SCHEMA, content: AFBEELDING_CONTENT_KEYS },
 };
 
 // Load-time clean-up of one widget's props: junk values of schema'd keys are dropped so the
