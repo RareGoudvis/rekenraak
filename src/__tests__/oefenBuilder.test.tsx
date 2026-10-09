@@ -271,7 +271,7 @@ describe('OefenBuilderModal limit slider', () => {
         expect(slider.min).toBe('1');
         expect(slider.max).toBe('51');
         expect(slider.value).toBe('51');
-        expect(screen.getByText('Aantal: ∞')).toBeTruthy();
+        expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
         fireEvent.change(slider, { target: { value: '12' } });
         expect(screen.getByText('Aantal: 12')).toBeTruthy();
         fireEvent.click(footerBtn('Delen'));
@@ -282,7 +282,7 @@ describe('OefenBuilderModal limit slider', () => {
         fireEvent.click(addBtn('procenten-nemen'));
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '7' } });
         fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '51' } });
-        expect(screen.getByText('Aantal: ∞')).toBeTruthy();
+        expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
         fireEvent.click(footerBtn('Delen'));
         expect(decodeSessie(screen.getByRole('link').getAttribute('href')!.split('#oefen=')[1]).types[0].limit).toBeUndefined();
     });
@@ -458,5 +458,26 @@ describe('OefenBuilderModal catalogue search + leerjaar (O17)', () => {
             for (const l of all) expect(kept.has(l.id), `${l.id} L${g}`).toBe(leafAllowedForGrade(leafNode(l.id), g));
         }
         expect(filterOefenLeaves(all, '  ', null)).toHaveLength(all.length);
+    });
+});
+
+describe('OefenBuilderModal endless-session hint (O18)', () => {
+    const ENDLESS = 'Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.';
+
+    test('an unlimited row without a timer says when the run stops; a timer or limits on every row clear it', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        expect(screen.queryByText(ENDLESS)).toBeNull();
+        fireEvent.click(addBtn('procenten-nemen'));
+        expect(screen.getByText('Aantal: onbeperkt')).toBeTruthy();
+        expect(screen.getByText(ENDLESS)).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: '10 min' }));
+        expect(screen.queryByText(ENDLESS)).toBeNull();
+        fireEvent.click(within(screen.getByRole('group', { name: 'Tijd' })).getByRole('button', { name: 'Uit' }));
+        expect(screen.getByText(ENDLESS)).toBeTruthy();
+        fireEvent.change(screen.getByLabelText(/^Aantal:/), { target: { value: '12' } });
+        expect(screen.queryByText(ENDLESS)).toBeNull();
+        // One unlimited row is enough to make the whole run endless.
+        fireEvent.click(addBtn('procenten-welk'));
+        expect(screen.getByText(ENDLESS)).toBeTruthy();
     });
 });

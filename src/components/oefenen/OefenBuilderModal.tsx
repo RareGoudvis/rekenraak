@@ -12,6 +12,7 @@ import OefenShareModal from './OefenShareModal';
 import OefenCatalogue from './OefenCatalogue';
 import { newSessieId } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
+import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
     LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
     type BuilderRow, type OefenLeaf,
@@ -119,6 +120,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const canShare = canShip && dead.size === 0;
     // A dead row the kiosk also refuses (klok without tijdstypes) is counted once, as dead.
     const unsupportedOnly = excluded.filter(r => !dead.has(r.key)).length;
+    // The kiosk's own rule: one row without a limit makes the run endless, and only a timer ends it then.
+    const endless = sessie.types.length > 0 && plannedTotal(sessie) === null && !sessie.timerMin;
 
     return (
         <>
@@ -223,7 +226,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                                 {constraints && <ExercisePreview typeId={r.leaf.typeId} constraints={constraints} count={2} height={130} />}
                                             </div>
                                             <div style={S.field}>
-                                                <label style={S.label} htmlFor={`n-${r.key}`}>Aantal: {r.limit ?? '∞'}</label>
+                                                <label style={S.label} htmlFor={`n-${r.key}`}>Aantal: {r.limit ?? 'onbeperkt'}</label>
                                 <input
                                     // ∞ sits past 50 at the right end: a "0 = unlimited" left end read as "none" to teachers.
                                     id={`n-${r.key}`} type="range" min={1} max={LIMIT_MAX + 1} step={1} value={r.limit ?? LIMIT_MAX + 1}
@@ -247,6 +250,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                 </section>
                             );
                         })}
+
+                        {endless && <p style={S.note} role="note">Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.</p>}
                     </div>
                 </div>
 

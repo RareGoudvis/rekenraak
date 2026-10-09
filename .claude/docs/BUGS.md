@@ -217,8 +217,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-G teacher UX
 
-- **O18** "Aantal: ∞" is a small label above a slider with the thumb far right, no "onbeperkt"
-  wording (OefenBuilderModal.tsx:242). 2026-10-09
 - **O19** The share modal shows only "N soorten · M min" (OefenShareModal.tsx:75): no total number
   of exercises / onbeperkt, no toets / kansen / statistieken settings, and no note that every
   pupil's device generates its own exercises. 2026-10-09
