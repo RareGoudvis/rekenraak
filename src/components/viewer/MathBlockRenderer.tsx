@@ -297,11 +297,15 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                     && !anyMissing && ex.operands.length === 2
                     && typeof ex.operands[0] === 'number' && typeof ex.operands[1] === 'number';
                 let compParts: { tienvoud: number; delta: number } | null = null;
-                if (compScaffold) {
+                if (compScaffold && Number.isInteger(ex.operands[1])) {
                     const b = ex.operands[1] as number;
                     const unit = (100 - (b % 100)) % 100 <= 2 && b > 90 ? 100 : 10;
                     const tienvoud = b + ((unit - (b % unit)) % unit);
-                    compParts = { tienvoud, delta: tienvoud - b };
+                    // The exercise carries no strategy tag, so its own shape decides: the generator's
+                    // compenseren operand sits 1-2 under a round number. A relaxed (preset-dropped)
+                    // block keeps preset 'compenseren' but draws plain sums ("385 − 30 + 0").
+                    const delta = tienvoud - b;
+                    if (delta >= 1 && delta <= 2) compParts = { tienvoud, delta };
                 }
                 const compBlank = (v: number) => showSolutions
                     ? <span style={{ ...solutionText, padding: '0 4px' }}>{formatMathNumber(v)}</span>

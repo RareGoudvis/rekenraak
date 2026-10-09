@@ -130,11 +130,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 All [L1]-[L21], [E1]-[E11], [N1]-[N2] and [T1] are fixed on rc (fix campaign 2026-10-07/08, see
 UpdateState). Left over, found while fixing:
 
-- MathBlockRenderer draws the compenseren tussenstap from the block's stored `preset`, so when the
-  relax ladder dropped the preset (note "versoepeld: strategie") plain exercises get a nonsense
-  scaffold: "385 − 30 = 385 − 30 + 0", "230 − 14 = 230 − 20 + 6". Repro: aftrekken compenseren +
-  Maximum per getal [—, 15], or compenseren + masks + verboden brug. Found by WP1. 2026-10-07
-
 ## Oefenmodus (first classroom test, 2026-10-09)
 
 - Kiosk MAB (mab-herkennen / mab-tekenen): the duizendtal block is hard to read at kiosk scale —
