@@ -52,6 +52,20 @@ describe('kiosk screens', () => {
         expect(st().phase).toBe('exercise');
     });
 
+    test('start screen says 1 soort · 1 oefening in the singular', () => {
+        st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 1 }] })));
+        render(<OefenApp />);
+        expect(screen.getByText('1 soort · 1 oefening')).toBeTruthy();
+    });
+
+    test('start screen leaves a type that generates nothing out of the count and the total', () => {
+        const dead: OefenType = { typeId: 'klok-kloklezen', leafId: 'klok-analoog-lezen', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'lezen', timeTypes: [] }, limit: 5, weight: 1 };
+        st().load(hashOf(starterSessie({ types: [dead, STARTER_TYPES[0]] })));
+        render(<OefenApp />);
+        expect(screen.getByText(/^1 soort · 2 oefening/)).toBeTruthy();
+        expect(screen.queryByText('Klok')).toBeNull();
+    });
+
     test('every starter type renders its exercise and answer panel', () => {
         for (const type of STARTER_TYPES) {
             resetKiosk();
@@ -123,24 +137,50 @@ describe('kiosk screens', () => {
         expect(screen.getByLabelText('Oefening 1 van 2')).toBeTruthy();
     });
 
-    test('the stats table gets a "Juist na 2e kans" column with 2 kansen, and the first try in Foutjes', () => {
+    test('2 kansen: "Juist in één keer" and "Juist na 2e kans" columns, the first try in Foutjes, the planned total', () => {
         st().load(hashOf(starterSessie({ types: [STARTER_TYPES[0]], attempts: 2 })));
         st().start();
         act(() => { fillAnswer(false); st().answer(); st().skipFlash(); fillAnswer(true); st().answer(); });
         render(<OefenApp />);
         fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
         expect(screen.getByRole('columnheader', { name: 'Juist na 2e kans' })).toBeTruthy();
+        expect(screen.getByRole('columnheader', { name: 'Juist in één keer' })).toBeTruthy();
         const row = screen.getByRole('row', { name: /Optellen/ });
-        expect([...row.querySelectorAll('td')].map(td => td.textContent)).toEqual(['1', '1', '1', '0', '100 %']);
+        expect([...row.querySelectorAll('td')].map(td => td.textContent)).toEqual(['1', '1', '0', '1', '0', '100 %']);
+        expect(screen.getByText('1 van 1 juist (1 van 2 gemaakt)')).toBeTruthy();
         expect(screen.getByText('99999, dan juist')).toBeTruthy();
     });
 
-    test('one kans: no "Juist na 2e kans" column', () => {
+    test('one kans: no "Juist na 2e kans" or "Juist in één keer" column', () => {
         st().load(hashOf(starterSessie()));
         st().start();
         render(<OefenApp />);
         fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
         expect(screen.queryByRole('columnheader', { name: 'Juist na 2e kans' })).toBeNull();
+        expect(screen.queryByRole('columnheader', { name: 'Juist in één keer' })).toBeNull();
+    });
+
+    test('a timed run that stops early says how many of the planned were made', () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-10-08T09:00:00'));
+        st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 10 }], timerMin: 5 })));
+        st().start();
+        act(() => {
+            for (let i = 0; i < 8; i++) { fillAnswer(i !== 3); st().answer(); st().next(); }
+            st().tick(Date.now() + 10 * 60_000);
+        });
+        render(<OefenApp />);
+        expect(screen.getByRole('heading', { name: 'De tijd is om!' })).toBeTruthy();
+        expect(screen.getByText('7 van 8 juist (8 van 10 gemaakt)')).toBeTruthy();
+    });
+
+    test('an unlimited run has no planned total to name', () => {
+        st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: undefined }] })));
+        st().start();
+        act(() => { for (const right of [true, false, true]) { fillAnswer(right); st().answer(); st().next(); } });
+        render(<OefenApp />);
+        fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
+        expect(screen.getByText('2 van 3 juist')).toBeTruthy();
     });
 
     test('stats mid-run, and the button hidden while statsLocked', () => {
@@ -151,7 +191,7 @@ describe('kiosk screens', () => {
         fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
         expect(screen.getByRole('heading', { name: 'Resultaten' })).toBeTruthy();
         expect(screen.getByText('Foutjes')).toBeTruthy();
-        expect(screen.getByText('0 van 1 juist')).toBeTruthy();
+        expect(screen.getByText('0 van 1 juist (1 van 8 gemaakt)')).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'Verder oefenen' }));
         unmount();
 
@@ -160,6 +200,36 @@ describe('kiosk screens', () => {
         st().start();
         render(<OefenApp />);
         expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
+    });
+
+    test('testmode hides the Resultaten button mid-run, also with statsLocked off', () => {
+        st().load(hashOf(starterSessie({ testMode: true, statsLocked: false })));
+        st().start();
+        act(() => { fillAnswer(false); st().answer(); });
+        render(<OefenApp />);
+        expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
+    });
+
+    test('storage refusing the run shows a banner while practising and on the end screen', () => {
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+        try {
+            st().load(hashOf(starterSessie({ types: [{ ...STARTER_TYPES[0], limit: 1 }] })));
+            st().start();
+            const { unmount } = render(<OefenApp />);
+            expect(screen.getByRole('alert').textContent).toBe('Dit toestel kan je resultaten niet bewaren.');
+            unmount();
+            act(() => { fillAnswer(true); st().answer(); st().next(); });
+            expect(st().phase).toBe('locked');
+            render(<OefenApp />);
+            expect(screen.getByRole('alert').textContent).toBe('Dit toestel kan je resultaten niet bewaren.');
+        } finally { spy.mockRestore(); }
+    });
+
+    test('no banner while storage works', () => {
+        st().load(hashOf(starterSessie()));
+        st().start();
+        render(<OefenApp />);
+        expect(screen.queryByRole('alert')).toBeNull();
     });
 
     test('choice buttons: signs big, words in the word size; kiezen is tapped on the card', () => {

@@ -1,6 +1,7 @@
 import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor, type OefenRun, type OefenSessie, type OefenStats, type OefenSummaryRow, type OefenTypeStats } from './types';
 import { kioskFor, kioskInputOf, kioskInteractOf } from './kiosk';
 import { exerciseKeyOf } from '../generateDispatch';
+import { deadSlots, plannedTotal } from './scheduler';
 
 // The pupil's results: accumulated per slot during a run, kept in this device's localStorage
 // per session id (never the worksheet autosave), last MAX_RUNS runs.
@@ -75,8 +76,18 @@ export function recordAnswer(
     };
 }
 
+/** The types that can serve (a type whose settings generate nothing is retired for the run). */
+export function viableTypes(s: OefenSessie): OefenSessie['types'] {
+    const dead = deadSlots(s);
+    return s.types.filter((_, i) => !dead.has(i));
+}
+
+/** The run's planned length without the retired types, or null when it has none. */
+export const viablePlannedTotal = (s: OefenSessie): number | null => plannedTotal({ ...s, types: viableTypes(s) });
+
 /** One row per type in session order, with percent correct. */
 export function summary(stats: OefenStats, s: OefenSessie): OefenSummaryRow[] {
+    // Driven by the session's types: slots a stored run has beyond them (an older edit) are ignored.
     return s.types.map((t, slot) => {
         const st = stats.perType[slot] ?? emptyType();
         return {

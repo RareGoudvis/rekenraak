@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useOefenStore } from '../useOefenStore';
-import { loadRuns, summary } from '../../services/oefenen/stats';
+import StorageBanner from './StorageBanner';
+import { loadRuns, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
 
 // The pupil's answer(s) in a Foutjes row: the first try, and what came of the second one.
@@ -10,8 +11,8 @@ function givenText(e: OefenError): string {
 }
 
 // Per type gemaakt / juist / fout / %, then every mistake with the pupil's answer and the
-// right one: one run, read-only. With 2 kansen, "Juist na 2e kans" splits off the juist ones
-// that needed the retry (they still count as juist).
+// right one: one run, read-only. With 2 kansen, Juist splits into "Juist in één keer" and
+// "Juist na 2e kans" (a retry still counts as juist).
 function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
     const rows = summary(run.stats, sessie);
     const errors = rows.flatMap(r => r.errors.map(e => ({ ...e, label: r.label })));
@@ -22,7 +23,7 @@ function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
                 <thead>
                     <tr>
                         <th scope="col">Oefening</th><th scope="col">Gemaakt</th><th scope="col">Juist</th>
-                        {retries && <th scope="col">Juist na 2e kans</th>}
+                        {retries && <><th scope="col">Juist in één keer</th><th scope="col">Juist na 2e kans</th></>}
                         <th scope="col">Fout</th><th scope="col">%</th>
                     </tr>
                 </thead>
@@ -31,7 +32,7 @@ function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
                         <tr key={r.slot}>
                             <th scope="row">{r.label}</th>
                             <td>{r.made}</td><td>{r.correct}</td>
-                            {retries && <td>{r.secondTry}</td>}
+                            {retries && <><td>{r.correct - r.secondTry}</td><td>{r.secondTry}</td></>}
                             <td>{r.wrong}</td>
                             <td>{r.pct === null ? '–' : `${r.pct} %`}</td>
                         </tr>
@@ -67,6 +68,12 @@ const totals = (run: OefenRun, sessie: OefenSessie) => {
     return { made: rows.reduce((n, r) => n + r.made, 0), correct: rows.reduce((n, r) => n + r.correct, 0) };
 };
 
+// A run that stopped before its planned total (timer) says so: "7 van 8 juist (8 van 10 gemaakt)".
+function scoreText(made: number, correct: number, planned: number | null): string {
+    const of = planned !== null && made < planned ? ` (${made} van ${planned} gemaakt)` : '';
+    return `${correct} van ${made} juist${of}`;
+}
+
 const whenText = (t: number) => new Date(t).toLocaleString('nl-BE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
 // Only a finished run has a duration; an abandoned one (no finishedAt) shows none.
@@ -90,6 +97,7 @@ export default function StatsScreen() {
     const locked = phase === 'locked';
     // Earlier runs of this session on this device, newest first (the current one is the screen itself).
     const earlier = locked ? loadRuns(sessie.id).filter(r => r.index !== run.index).reverse() : [];
+    const planned = viablePlannedTotal(sessie);
 
     if (viewing) {
         const t = totals(viewing, sessie);
@@ -98,7 +106,7 @@ export default function StatsScreen() {
                 <div className="kiosk-stats-head">
                     <div>
                         <h1 id="kiosk-stats-title" className="kiosk-stats-title">{whenText(viewing.stats.startedAt)}</h1>
-                        <p className="kiosk-stats-total">{t.made === 0 ? 'Geen oefeningen gemaakt.' : `${t.correct} van ${t.made} juist`}</p>
+                        <p className="kiosk-stats-total">{t.made === 0 ? 'Geen oefeningen gemaakt.' : scoreText(t.made, t.correct, planned)}</p>
                     </div>
                     <button type="button" className="kiosk-btn kiosk-btn-primary" onClick={() => setViewing(null)}>Terug</button>
                 </div>
@@ -113,10 +121,12 @@ export default function StatsScreen() {
 
     return (
         <section className="kiosk-stats" aria-labelledby="kiosk-stats-title">
+            {/* Mid-run the kiosk shows the banner above the stats already. */}
+            {locked && <StorageBanner />}
             <div className="kiosk-stats-head">
                 <div>
                     <h1 id="kiosk-stats-title" className="kiosk-stats-title">{title}</h1>
-                    <p className="kiosk-stats-total">{made === 0 ? 'Nog geen oefeningen gemaakt.' : `${correct} van ${made} juist`}</p>
+                    <p className="kiosk-stats-total">{made === 0 ? 'Nog geen oefeningen gemaakt.' : scoreText(made, correct, planned)}</p>
                 </div>
                 {!locked && (
                     <button type="button" className="kiosk-btn kiosk-btn-primary" onClick={closeStats}>Verder oefenen</button>

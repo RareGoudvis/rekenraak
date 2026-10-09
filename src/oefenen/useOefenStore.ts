@@ -47,6 +47,8 @@ interface OefenState {
     // exercise, and the cell the keypad types into. Reset with every new exercise.
     interaction: InteractionState;
     activeCell: string | null;
+    // The last save of the run was refused (quota, private mode): a reload would lose it, so the kiosk says so.
+    storageFailed: boolean;
 
     load(hash: string): void;
     start(): void;
@@ -76,6 +78,9 @@ interface OefenState {
     // fill-cells: a descriptor action key (keypad or hotkey) on the active cell, e.g. Lenen.
     pressExtra(id: string): void;
 }
+
+// A test shows nothing about juist/fout until the end, so it hides the results like statsLocked does.
+export const resultsHidden = (s: OefenSessie, run: OefenRun) => (s.statsLocked || s.testMode) && !run.done;
 
 const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
 
@@ -198,7 +203,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
     const persist = (run: OefenRun) => {
         const s = get().sessie;
-        if (s) saveRun(s.id, run);
+        if (s) set({ storageFailed: !saveRun(s.id, run) });
     };
 
     // Ends the run: the timer ran out or every exercise is made. The end screen is the stats.
@@ -261,6 +266,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         statsFrom: 'exercise',
         interaction: EMPTY_INTERACTION,
         activeCell: null,
+        storageFailed: false,
 
         load(hash) {
             // No payload at all is not an error message, just the "open the link" screen.
@@ -273,7 +279,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 return;
             }
             clearFlash();
-            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null });
+            set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
             const runs = loadRuns(s.id);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
             if (!last) return;
@@ -304,8 +310,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const now = Date.now();
             if (run.done) { set({ phase: 'locked' }); return; }
             if (timeUp(run, now) || isDone(s, run.stats, now)) { finish(run, now); return; }
-            const pick = nextType(s, run.stats.history);
-            const made = pick && nextExercise(s, pick.type, new Set(run.stats.history.map(h => h.exerciseKey)));
+            const seen = new Set(run.stats.history.map(h => h.exerciseKey));
+            let pick = nextType(s, run.stats.history);
+            let made = pick && nextExercise(s, pick.type, seen);
+            // A type that yields nothing is retired by the scheduler: draw again from the rest (bounded by the slot count).
+            for (let tries = 0; pick && !made && tries < s.types.length; tries++) {
+                pick = nextType(s, run.stats.history);
+                made = pick && nextExercise(s, pick.type, seen);
+            }
             if (!pick || !made) { finish(run, now); return; }
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
             const updated: OefenRun = { ...run, current };
@@ -361,14 +373,16 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const { phase, sessie: s, run, input, shown: cur } = get();
             // Not while a flash is on screen: a double tap on Controleer must not answer twice.
             if (phase !== 'exercise' || !s || !run || !cur) return;
+            const now = Date.now();
+            // The clock ticks once a second: an answer in the gap after the deadline ends the run uncounted.
+            if (timeUp(run, now)) { finish(run, now); return; }
             const interactive = interactionAnswer(s, cur, get().interaction);
             if (interactive ? !interactive.ready : input.some(v => v.trim() === '')) return;
             const type = s.types[cur.slot];
             const d = type && kioskFor(type.typeId);
             if (!d) return;
-            const now = Date.now();
             const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
-            const correct = checkAnswer(d, cur.exercise, cur.constraints, given);
+            const correct = checkAnswer(d, cur.exercise, cur.constraints, given, type.exactForm);
             // First try missed with 2 kansen: nothing is counted yet, the same exercise comes back.
             if (!correct && attemptsOf(s) === 2 && cur.wrongFirst === undefined) {
                 const retry: KioskCurrent = { ...cur, wrongFirst: given };
@@ -391,7 +405,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         openStats() {
             const { phase, sessie: s, run } = get();
             if (!s || !run || (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry')) return;
-            if (s.statsLocked && !run.done) return;
+            if (resultsHidden(s, run)) return;
             // The flash waits behind the stats; closing them ends it.
             clearFlash();
             set({ phase: 'stats', statsFrom: phase });

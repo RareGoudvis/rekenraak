@@ -6,6 +6,9 @@ import { nextExercise } from '../services/oefenen/scheduler';
 import { kioskFor, kioskInputOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION } from '../components/viewer/ViewerInteractionContext';
 import type { CijferExercise } from '../services/math/types';
+import type { OefenType } from '../services/oefenen/types';
+import { flattenLeaves } from '../config/appstructure';
+import { makeDraftBlock } from '../components/curriculum/draftBlock';
 import { fillAnswer, hashOf, onScreen, resetKiosk, starterSessie, STARTER_TYPES } from './helpers/oefenKiosk';
 
 // The pupil kiosk's store: phase transitions, testmode / statsLocked, the timer lock, and
@@ -86,6 +89,15 @@ describe('a run', () => {
         expect(st().phase).toBe('exercise');
     });
 
+    test('testmode keeps the stats closed until the run ends, also with statsLocked off', () => {
+        st().load(hashOf(starterSessie({ testMode: true, statsLocked: false })));
+        st().start();
+        fillAnswer(false);
+        st().answer();
+        st().openStats();
+        expect(st().phase).toBe('exercise');
+    });
+
     test('the timer locks the run at 0', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-10-08T09:00:00'));
@@ -98,6 +110,32 @@ describe('a run', () => {
         st().tick();
         expect(st().phase).toBe('locked');
         expect(loadRuns('kiosktest')[0].done).toBe(true);
+    });
+
+    test('an answer after the deadline (before the next tick) is not counted and ends the run', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-10-08T09:00:00'));
+        st().load(hashOf(starterSessie({ timerMin: 1 })));
+        st().start();
+        fillAnswer(true);
+        vi.setSystemTime(st().run!.timerEndsAt! + 100);
+        st().answer();
+        expect(st().phase).toBe('locked');
+        expect(st().run!.done).toBe(true);
+        expect(st().run!.stats.history).toHaveLength(0);
+        expect(loadRuns('kiosktest')[0].stats.history).toHaveLength(0);
+    });
+
+    test('storage that refuses the run sets storageFailed; a load starts clean', () => {
+        st().load(hashOf(starterSessie()));
+        expect(st().storageFailed).toBe(false);
+        const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+        try {
+            st().start();
+            expect(st().storageFailed).toBe(true);
+        } finally { spy.mockRestore(); }
+        st().load(hashOf(starterSessie()));
+        expect(st().storageFailed).toBe(false);
     });
 
     test('Wissen clears this device and returns to the start screen', () => {
@@ -582,5 +620,34 @@ describe('Lenen (cijferen aftrekken)', () => {
         useOefenStore.setState({ phase: 'feedback' });
         st().pressExtra('lenen');
         expect(cells()).toEqual({});
+    });
+});
+
+describe("the row's exactForm reaches the check", () => {
+    // An unreduced spelling of the value on screen: '3 1/4' → '26/8', '3' → '6/2'.
+    const unreduced = (answer: string) => {
+        const m = /^(?:(\d+) )?(\d+)\/(\d+)$/.exec(answer.trim());
+        if (!m) return `${2 * Number(answer)}/2`;
+        const d = Number(m[3]);
+        return `${2 * (Number(m[1] ?? 0) * d + Number(m[2]))}/${2 * d}`;
+    };
+    const leaf = flattenLeaves().find(l => l.id === 'hr-std-optellen-rat')!;
+    const row = (exactForm: boolean): OefenType => ({
+        typeId: leaf.typeId, leafId: leaf.id, label: 'Breuken', exactForm, weight: 1,
+        constraints: makeDraftBlock(leaf.typeId, leaf.defaultConstraints ?? {}).constraints as Record<string, unknown>,
+    });
+
+    test('exactForm true rejects an unreduced breuk, false accepts it', () => {
+        for (const exact of [true, false]) {
+            resetKiosk();
+            st().load(hashOf(starterSessie({ types: [row(exact)] })));
+            // Set on the decoded session: this pins the store → check wiring, whatever the link carries.
+            useOefenStore.setState({ sessie: starterSessie({ types: [row(exact)] }) });
+            st().start();
+            const given = unreduced(onScreen().answer[0].split('|')[0]);
+            useOefenStore.setState({ input: [given] });
+            st().answer();
+            expect(st().lastCorrect, `exactForm ${exact}: ${given}`).toBe(!exact);
+        }
     });
 });

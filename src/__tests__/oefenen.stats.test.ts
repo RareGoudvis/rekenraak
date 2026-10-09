@@ -61,6 +61,13 @@ describe('recordAnswer + summary', () => {
         // A run stored before 2 kansen has no secondTry: the summary reads it as 0.
         expect(summary(emptyStats(sessie, 0), sessie)[0].secondTry).toBe(0);
     });
+    test('a run with more slots than the session (one type removed since) shows only the session\'s types', () => {
+        let s = emptyStats({ ...sessie, types: [...sessie.types, sessie.types[1]] }, 0);
+        s = recordAnswer(s, 2, 'vergelijken', cmp, '>', true, 400, sessie.types[1].constraints, 10);
+        s = recordAnswer(s, 0, 'hr-std-delen', rest, ['4', '3'], true, 400, sessie.types[0].constraints, 20);
+        const rows = summary(s, sessie);
+        expect(rows.map(r => [r.slot, r.label, r.made])).toEqual([[0, 'Delen', 1], [1, 'Vergelijken', 0]]);
+    });
     test('nothing made → pct null; the input object is never mutated', () => {
         const s = emptyStats(sessie, 0);
         const frozen = JSON.stringify(s);

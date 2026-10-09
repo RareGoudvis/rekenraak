@@ -184,22 +184,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-B store / stats
 
-- **O2** C1: testMode + statsLocked off → "Resultaten" mid-run shows juist/fout and the right answer
-  (useOefenStore.ts:394 gates on `statsLocked && !run.done` only) while the start screen says "je
-  ziet pas op het einde wat juist was" (StartScreen.tsx:38). Owner: testMode forces results hidden
-  until the end; builder greys the toggle. 2026-10-09
-- **O3** C2: Mijn bladen › Bewerken › Opslaan keeps the session id (OefenBuilderModal.tsx:56), so the
-  new link reopens the old finished run (useOefenStore.ts:281); removing a type shifts every saved
-  per-type result to the wrong type (index-keyed `perType[slot]`, stats.ts:80-81). Owner: a content
-  edit gets a new id; Hernoemen keeps it. 2026-10-09
-- **O4** D6: an answer submitted after the deadline but before the next 1 s tick is counted
-  (`answer()` has no timeUp guard, useOefenStore.ts:360-389; only `next()`/`tick()` check). 2026-10-09
-- **O5** D5: when localStorage throws, `persist` ignores `saveRun === false` (useOefenStore.ts:199-202):
-  no warning, the run is gone after a reload. Fix: store flag → kiosk banner. 2026-10-09
-- **O6** Stats headline: a right second try counts as juist (stats.ts:70) so "3 van 3 juist · 100 %"
-  hides a first-try 2/3; a timed/limited run shows "7 van 8 juist" and never the planned total
-  (StatsScreen.tsx:119). Owner wording: "7 van 8 juist (8 van 10 gemaakt)" + column "Juist in één
-  keer". 2026-10-09
 - **O7** C7 (log only, owner): a reload clears the typed draft, the cijferen cells and the geld tray
   (only `current` is persisted, useOefenStore.ts:276, 287). Not fixing. 2026-10-09
 
@@ -209,7 +193,7 @@ grouped per work package so parallel deletions merge cleanly.
 
 - **O9** C4: a row whose settings generate 0 exercises (klok with every tijdstype unticked) ships
   without a builder warning (`kioskSupports` ignores `timeTypes`). Fix: pre-flight each row at Delen
-  (0 → red row, Delen blocked); start screen counts viable types (`deadSlots`, scheduler.ts). 2026-10-09
+  (0 → red row, Delen blocked). 2026-10-09
 - **O10** Builder-reachable zero-output settings: `timeTypes=[]` on klok-analoog-lezen / -tekenen /
   -omzetten and klok-digitaal-tekenen; `selectedTables=[]` on hr-std-vermenigvuldigen-nat and
   hr-std-delen-nat (NaturalSettings has no keep-one guard); `payWithOptions=[]` on geld-teruggeven.
@@ -217,7 +201,6 @@ grouped per work package so parallel deletions merge cleanly.
   `[":"]` chain 6; hr-std-delen-dec / -vermenigvuldigen-dec combos; handig-rekenvolgorde `:`-only +
   haakjes MOET + 4 ops + max 100; schattend-nat max 10 with T/H rounding; hr-std-aftrekken-rat
   compenseren puntoefening. 2026-10-09
-- **O11** Start screen pluralises "1 soort · 1 oefeningen". 2026-10-09
 
 ### WP-E keyboard / a11y
 
