@@ -370,12 +370,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const { phase, sessie: s, run, input, shown: cur } = get();
             // Not while a flash is on screen: a double tap on Controleer must not answer twice.
             if (phase !== 'exercise' || !s || !run || !cur) return;
+            const now = Date.now();
+            // The clock ticks once a second: an answer in the gap after the deadline ends the run uncounted.
+            if (timeUp(run, now)) { finish(run, now); return; }
             const interactive = interactionAnswer(s, cur, get().interaction);
             if (interactive ? !interactive.ready : input.some(v => v.trim() === '')) return;
             const type = s.types[cur.slot];
             const d = type && kioskFor(type.typeId);
             if (!d) return;
-            const now = Date.now();
             const given: KioskAnswer = interactive ? interactive.given : input.length > 1 ? input.map(v => v.trim()) : input[0].trim();
             const correct = checkAnswer(d, cur.exercise, cur.constraints, given, type.exactForm);
             // First try missed with 2 kansen: nothing is counted yet, the same exercise comes back.

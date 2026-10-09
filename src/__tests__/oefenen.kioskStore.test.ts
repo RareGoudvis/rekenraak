@@ -112,6 +112,20 @@ describe('a run', () => {
         expect(loadRuns('kiosktest')[0].done).toBe(true);
     });
 
+    test('an answer after the deadline (before the next tick) is not counted and ends the run', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-10-08T09:00:00'));
+        st().load(hashOf(starterSessie({ timerMin: 1 })));
+        st().start();
+        fillAnswer(true);
+        vi.setSystemTime(st().run!.timerEndsAt! + 100);
+        st().answer();
+        expect(st().phase).toBe('locked');
+        expect(st().run!.done).toBe(true);
+        expect(st().run!.stats.history).toHaveLength(0);
+        expect(loadRuns('kiosktest')[0].stats.history).toHaveLength(0);
+    });
+
     test('Wissen clears this device and returns to the start screen', () => {
         st().load(hashOf(starterSessie()));
         st().start();

@@ -184,8 +184,6 @@ grouped per work package so parallel deletions merge cleanly.
 
 ### WP-B store / stats
 
-- **O4** D6: an answer submitted after the deadline but before the next 1 s tick is counted
-  (`answer()` has no timeUp guard, useOefenStore.ts:360-389; only `next()`/`tick()` check). 2026-10-09
 - **O5** D5: when localStorage throws, `persist` ignores `saveRun === false` (useOefenStore.ts:199-202):
   no warning, the run is gone after a reload. Fix: store flag → kiosk banner. 2026-10-09
 - **O6** Stats headline: a right second try counts as juist (stats.ts:70) so "3 van 3 juist · 100 %"
