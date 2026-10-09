@@ -35,3 +35,27 @@ describe('afronden simpel columns', () => {
         expect(grid.dataset.shrinks).toBeUndefined();
     });
 });
+
+// A whole rounded result in a decimal column keeps the column's decimals: 55,97 op t is
+// "56,0", not "56" (the 97,05 wrong-key fix only fixed the rounding, not the printing).
+describe('afronden decimal keys keep the target decimals', () => {
+    const dec = (subType: string, numbers: number[], targets: string[]): MathBlock => ({
+        id: 'b', typeId: 'afronden', verticalSpacing: 14,
+        constraints: { subType, numberType: 'decimal', maxGetal: 100, decimalPlaces: 3, roundTargets: targets },
+        afrondenExercises: subType === 'rooster'
+            ? [{ id: 'e0', numbers, isManuallyEdited: false }]
+            : numbers.map((n, i) => ({ id: `e${i}`, number: n, targetKey: targets[i % targets.length], isManuallyEdited: false })),
+    } as unknown as MathBlock);
+    const text = (block: MathBlock) =>
+        render(<BlockWidthProvider value={FULL_BLOCK_WIDTH_PX}>{<AfrondenViewer block={block} showSolutions />}</BlockWidthProvider>).container.textContent ?? '';
+
+    test('rooster: t prints 56,0 and h prints 56,00; E stays 56', () => {
+        const t = text(dec('rooster', [55.97, 55.999], ['E', 't', 'h']));
+        expect(t).toContain('56,0');
+        expect(t).toContain('56,00');
+    });
+
+    test('simpel: t prints 56,0', () => {
+        expect(text(dec('simpel', [55.97], ['t']))).toContain('56,0');
+    });
+});

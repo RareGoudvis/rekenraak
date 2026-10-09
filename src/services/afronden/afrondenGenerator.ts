@@ -1,5 +1,6 @@
 import type { MathBlock, AfrondenExercise } from '../math/types';
 import { getMaskPlaces } from '../math/mathEngine';
+import { formatMathNumber } from '../math/formatters';
 import type { AfrondenConstraints } from '../math/constraintTypes';
 
 export interface RoundTarget {
@@ -75,6 +76,13 @@ export function roundTo(n: number, weight: number): number {
     const rest = units - q * step;
     if (rest * 2 >= step) q += 1;
     return (q * step) / ROUND_SCALE;
+}
+
+// The rounded value as the key prints it: a decimal target keeps its own decimals, so 55,97
+// rounded to the tiende reads "56,0" in a t column, never "56".
+export function roundedText(n: number, t: RoundTarget): string {
+    const decimals = t.weight < 1 ? Math.round(-Math.log10(t.weight)) : 0;
+    return formatMathNumber(roundTo(n, t.weight).toFixed(decimals));
 }
 
 function randInt(min: number, max: number) {

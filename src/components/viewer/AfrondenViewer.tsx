@@ -1,6 +1,6 @@
 import type { MathBlock, AfrondenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
-import { targetsFor, roundTo, usableTargets, targetHeading } from '../../services/afronden/afrondenGenerator';
+import { targetsFor, roundedText, usableTargets, targetHeading } from '../../services/afronden/afrondenGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, useSheetSizePx, fitCols, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import { grownColumn, splitColumns, monoTextPx } from '../../services/layout/blockLayout';
@@ -46,7 +46,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
         const nums = exercises.map(ex => ex.number ?? 0);
         const targetOf = (ex: AfrondenExercise) => all.find(x => x.key === ex.targetKey) ?? all[0];
         const numCol = grownColumn(60, Math.max(0, ...nums.map(n => formatMathNumber(n).length)), 0.92, mathPx, 0);
-        const ansCol = grownColumn(58, Math.max(0, ...exercises.map(ex => formatMathNumber(roundTo(ex.number ?? 0, targetOf(ex).weight)).length)), 0.92, mathPx, 0);
+        const ansCol = grownColumn(58, Math.max(0, ...exercises.map(ex => roundedText(ex.number ?? 0, targetOf(ex)).length)), 0.92, mathPx, 0);
         // One row = number, "≈", answer and the "(H)" label (mono at 0.6 × the text token), three 8px flex gaps.
         const labelChars = Math.max(0, ...exercises.map(ex => targetHeading(targetOf(ex)).length + 2));
         const itemPx = numCol.px + ansCol.px + monoTextPx(1, 0.92, mathPx) + monoTextPx(labelChars, 0.6, textPx) + 3 * 8;
@@ -64,7 +64,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                             <span style={{ minWidth: numCol.css, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number ?? 0)}</span>
                             <span>≈</span>
                             {showSolutions
-                                ? <span style={{ ...solutionText, minWidth: ansCol.css, whiteSpace: 'nowrap' }}>{formatMathNumber(roundTo(ex.number ?? 0, t.weight))}</span>
+                                ? <span style={{ ...solutionText, minWidth: ansCol.css, whiteSpace: 'nowrap' }}>{roundedText(ex.number ?? 0, t)}</span>
                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: ansCol.css, height: ANSWER_LINE_H, display: 'inline-block' }} />}
                             {/* t.key ('T', 'H', 'E', 't', ... or 1M/10M/100M/1MLD) instead of the full Dutch label — short
                                 enough to never wrap the 2-up row on its own, so the nowrap trick that
@@ -91,7 +91,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     const widest = (texts: string[]) => Math.max(0, ...texts.map(t => t.length));
     const numberCol = grownColumn(numberType === 'decimal' ? 90 : 104, widest(allNumbers.map(n => formatMathNumber(n))), CELL_FONT, mathPx, CELL_PAD_PX);
     // Sized from every rounded answer whether or not solutions show, so toggling them never reflows.
-    const targetCol = grownColumn(targets.length <= 2 ? 96 : 104, widest(allNumbers.flatMap(n => targets.map(t => formatMathNumber(roundTo(n, t.weight))))), CELL_FONT, mathPx, CELL_PAD_PX);
+    const targetCol = grownColumn(targets.length <= 2 ? 96 : 104, widest(allNumbers.flatMap(n => targets.map(t => roundedText(n, t)))), CELL_FONT, mathPx, CELL_PAD_PX);
     // A rooster wider than the cell repeats its number column over stacked tables of fewer targets.
     const groups = splitColumns(targets.length, numberCol.px, targetCol.px, A4_CONTENT_PX);
     const targetGroups: (typeof targets)[] = [];
@@ -120,7 +120,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                             <div key={t.key} style={{ ...cell, ...solutionText }}>
                                 {/* Oefenmodus: the empty cell is the pupil's (kiosk.css is-box; flex + width 0 keep the column). */}
                                 <KioskCell cellKey={`r${i}_${t.key}`} variant="is-box" style={{ flex: 1, width: 0, alignSelf: 'stretch' }}>
-                                    {showSolutions ? formatMathNumber(roundTo(num, t.weight)) : ''}
+                                    {showSolutions ? roundedText(num, t) : ''}
                                 </KioskCell>
                             </div>
                         ))}
