@@ -483,6 +483,9 @@ const S = {
     bar: {
         display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', rowGap: '6px',
         padding: '8px 14px',
+        // Above the ink strip (40) and the inspectors (50): their boxes reach down to the bar,
+        // and the bar's popups open up over them.
+        position: 'relative', zIndex: 70,
         borderTop: '1px solid var(--border-color)',
         background: 'var(--bg-panel)',
         flexShrink: 0,

@@ -150,6 +150,13 @@ describe('bottom bar on a narrow board', () => {
             expect((container.firstElementChild as HTMLElement).style.flexWrap).toBe('wrap');
         } finally { window.matchMedia = real; }
     });
+    test('the bar and its popups sit above the ink strip and the inspectors', () => {
+        const { container } = render(<BoardBottomBar onOpenWiskunde={() => { }} />);
+        const bar = container.firstElementChild as HTMLElement;
+        expect(bar.style.position).toBe('relative');
+        // InkSettingsBar 40, BoardInspector / WidgetInspector 50
+        expect(Number(bar.style.zIndex)).toBeGreaterThan(50);
+    });
     test('a wide board keeps the labelled exit', () => {
         render(<BoardBottomBar onOpenWiskunde={() => { }} />);
         expect(screen.getByRole('button', { name: 'Bordmodus verlaten' }).textContent).toContain('Bordmodus verlaten');
