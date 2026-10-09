@@ -1724,7 +1724,7 @@
   "hr-std-aftrekken-rat-w1-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 147,
-   "textHash": "399388eb9a4975b1"
+   "textHash": "6a8a515ca1fa471d"
   },
   "hr-std-aftrekken-rat-w2-s0": {
    "cellHeightPx": 586,
@@ -1734,7 +1734,7 @@
   "hr-std-aftrekken-rat-w2-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 164,
-   "textHash": "399388eb9a4975b1"
+   "textHash": "6a8a515ca1fa471d"
   },
   "hr-std-aftrekken-rat-w4-s0": {
    "cellHeightPx": 325,
@@ -1744,7 +1744,7 @@
   "hr-std-aftrekken-rat-w4-s1": {
    "cellHeightPx": 325,
    "intrinsicPx": 386,
-   "textHash": "399388eb9a4975b1"
+   "textHash": "6a8a515ca1fa471d"
   },
   "hr-std-delen-dec-w1-s0": {
    "cellHeightPx": 564,
@@ -1814,7 +1814,7 @@
   "hr-std-delen-rat-w1-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 147,
-   "textHash": "4641e0a935f6e97c"
+   "textHash": "d3f434c2b558068e"
   },
   "hr-std-delen-rat-w2-s0": {
    "cellHeightPx": 586,
@@ -1824,7 +1824,7 @@
   "hr-std-delen-rat-w2-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 164,
-   "textHash": "4641e0a935f6e97c"
+   "textHash": "d3f434c2b558068e"
   },
   "hr-std-delen-rat-w4-s0": {
    "cellHeightPx": 325,
@@ -1834,7 +1834,7 @@
   "hr-std-delen-rat-w4-s1": {
    "cellHeightPx": 325,
    "intrinsicPx": 386,
-   "textHash": "4641e0a935f6e97c"
+   "textHash": "d3f434c2b558068e"
   },
   "hr-std-gemengd-dec-w1-s0": {
    "cellHeightPx": 564,
@@ -2054,7 +2054,7 @@
   "hr-std-vermenigvuldigen-rat-w1-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 147,
-   "textHash": "d2b1dead5f92414d"
+   "textHash": "4f9e825f7cae6241"
   },
   "hr-std-vermenigvuldigen-rat-w2-s0": {
    "cellHeightPx": 586,
@@ -2064,7 +2064,7 @@
   "hr-std-vermenigvuldigen-rat-w2-s1": {
    "cellHeightPx": 586,
    "intrinsicPx": 164,
-   "textHash": "d2b1dead5f92414d"
+   "textHash": "4f9e825f7cae6241"
   },
   "hr-std-vermenigvuldigen-rat-w4-s0": {
    "cellHeightPx": 325,
@@ -2074,7 +2074,7 @@
   "hr-std-vermenigvuldigen-rat-w4-s1": {
    "cellHeightPx": 325,
    "intrinsicPx": 386,
-   "textHash": "d2b1dead5f92414d"
+   "textHash": "4f9e825f7cae6241"
   },
   "kalender-datum-rekenen-w1-s0": {
    "cellHeightPx": 148,

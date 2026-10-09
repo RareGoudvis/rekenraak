@@ -100,9 +100,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   1-minute timeTypes (pw004, pw007), not at the leaf defaults. 2026-09-27
 - hr-std-gemengd-dec DEFAULT: its '×' rows multiply two 2-decimal numbers ("4,89 × 100,12 = 489,5868")
   in a mental-arithmetic block (owner call). 2026-09-27
-- Hoofdrekenen breuken keys print whole numbers as n/1 ("4/3 : 2/9 = 6/1" at the hr-std-delen-rat
-  DEFAULT; "288/1") and big numerators without spaces ("36000004/5"); an {M, E} operand mask at max
-  1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
+- Hoofdrekenen breuken keys print big numerators without spaces ("36000004/5", VerticalFraction); an
+  {M, E} operand mask at max 1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
 - Empty keys: breuken-kleuren ignores Oplossingen (FractionExerciseItem.tsx ~65: showColored only for
   herkennen); breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
   geld-wissel draws no model exchange. 2026-09-27

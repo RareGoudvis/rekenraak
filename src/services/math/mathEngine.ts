@@ -51,6 +51,12 @@ export const simplifyFraction = (n: number, d: number): Fraction => {
     return { n: n / common, d: d / common };
 };
 
+// A result that reduces to a whole number is that number: the key printed 6/1 (or 6 0/1).
+export const wholeOrFraction = (f: Fraction): number | Fraction => {
+    const total = (f.whole ?? 0) * f.d + f.n;
+    return total % f.d === 0 ? total / f.d : f;
+};
+
 export const toMixedNumber = (n: number, d: number): Fraction => {
     const common = gcd(n, d);
     const simpN = n / common;
@@ -273,7 +279,7 @@ const generateFractionChain = (block: MathBlock, op: '+' | '-'): Equation[] => {
         const missingIndex = eqType === 'puntoefening' ? randInt(0, N - 1) : undefined;
         exercises.push({
             id: Math.random().toString(36).substring(2, 9), operands: fracs, operator: op,
-            answer: simplifyFraction(ansN, ansD), isManuallyEdited: false,
+            answer: wholeOrFraction(simplifyFraction(ansN, ansD)), isManuallyEdited: false,
             missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
             missingIndex,
         });
@@ -311,7 +317,7 @@ const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[
         const missingIndex = eqType === 'puntoefening' ? randInt(0, N - 1) : undefined;
         exercises.push({
             id: Math.random().toString(36).substring(2, 9), operands: fracs, operator: op,
-            answer: simplifyFraction(ansN, ansD), isManuallyEdited: false,
+            answer: wholeOrFraction(simplifyFraction(ansN, ansD)), isManuallyEdited: false,
             missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
             missingIndex,
         });
@@ -389,7 +395,7 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
         const ansN = (totalN1 * d2) + (totalN2 * d1);
         const ansD = d1 * d2;
 
-        const answer = (mixedNumber1 || mixedNumber2) ? toMixedNumber(ansN, ansD) : simplifyFraction(ansN, ansD);
+        const answer = wholeOrFraction((mixedNumber1 || mixedNumber2) ? toMixedNumber(ansN, ansD) : simplifyFraction(ansN, ansD));
         const op1 = mixedNumber1 ? { whole: w1, n: n1, d: d1 } : { n: n1, d: d1 };
         const op2 = mixedNumber2 ? { whole: w2, n: n2, d: d2 } : { n: n2, d: d2 };
 
@@ -527,7 +533,7 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
         const ansN = (((w1 * d1) + n1) * d2) - (((w2 * d2) + n2) * d1);
         const ansD = d1 * d2;
 
-        const answer = (mixedNumber1 || mixedNumber2) ? toMixedNumber(ansN, ansD) : simplifyFraction(ansN, ansD);
+        const answer = wholeOrFraction((mixedNumber1 || mixedNumber2) ? toMixedNumber(ansN, ansD) : simplifyFraction(ansN, ansD));
         const op1 = mixedNumber1 ? { whole: w1, n: n1, d: d1 } : { n: n1, d: d1 };
         const op2 = mixedNumber2 ? { whole: w2, n: n2, d: d2 } : { n: n2, d: d2 };
 
@@ -721,7 +727,7 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             const eqType = constraints.equationType || 'normal';
             const missingTerm = eqType === 'puntoefening' ? (Math.random() < 0.5 ? 'operand1' : 'operand2') : 'result';
             const useBA_mult = fractionMultMode !== 'fraction_fraction' && (fractionOrderMode === 'BA' || (fractionOrderMode === 'beide' && Math.random() < 0.5));
-            exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: useBA_mult ? [op2, op1] : [op1, op2], operator: 'x', answer: simplifiedAnswer, isManuallyEdited: false, missingTerm });
+            exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: useBA_mult ? [op2, op1] : [op1, op2], operator: 'x', answer: wholeOrFraction(simplifiedAnswer), isManuallyEdited: false, missingTerm });
         }
         return exercises;
     }
@@ -1030,7 +1036,7 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
 
             const eqType = constraints.equationType || 'normal';
             const missingTerm = eqType === 'puntoefening' ? (Math.random() < 0.5 ? 'operand1' : 'operand2') : 'result';
-            exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: [finalOp1, finalOp2], operator: ':', answer: simplifiedAnswer, isManuallyEdited: false, missingTerm });
+            exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: [finalOp1, finalOp2], operator: ':', answer: wholeOrFraction(simplifiedAnswer), isManuallyEdited: false, missingTerm });
         }
         return exercises;
     }
