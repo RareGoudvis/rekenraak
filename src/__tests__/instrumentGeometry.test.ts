@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import {
     BOARD_CM_PX, BOARD_MM_PX, GEO, LAT, PASSER, arcPath, arcPts, bodyPolygon, defaultInstrument, formatCm,
     instrumentEdges, nearestEdge, openPasser, unwrapDelta,
-    normDeg, pageInstrumentGeometry, passerHinge, pathEndpoints, projectOnEdge, protractorAngle, round1, snapPoint, snapRotation,
+    normDeg, pageInstrumentGeometry, passerHinge, passerPoints, PASSER_LEG_CM, pathEndpoints, projectOnEdge, protractorAngle, round1, snapPoint, snapRotation,
     startGuidedLine, strokeEndpoints, toLocal, toWorld, DEFAULT_SNAP, snapOf, snapInstrumentPoint, snapInstrumentRotation,
 } from '../board/instrumentGeometry';
 import type { InstrumentSnap, Stroke } from '../board/boardTypes';
@@ -303,15 +303,42 @@ describe('passer: opening and exact arcs', () => {
         expect(ring.length / 2).toBeGreaterThan(80);
     });
 
-    test('the hinge stays on the upper side whatever the pencil direction', () => {
-        expect(passerHinge(100, 0)[1]).toBeLessThan(0);
-        expect(passerHinge(100, 180)[1]).toBeGreaterThan(0);
-        for (const rot of [0, 60, 89, 91, 180, 269, 271, 359]) {
-            const [hx, hy] = passerHinge(100, rot);
-            const at = { x: 0, y: 0, rotation: rot };
-            // the hinge is above the chord's midpoint on screen
-            expect(toWorld(at, hx, hy)[1]).toBeLessThan(toWorld(at, 50, 0)[1]);
+    test('top-down passer: the hinge is the apex of two equal legs at every rotation and opening', () => {
+        for (const radius of [PASSER.minR, 5 * BOARD_CM_PX, 14 * BOARD_CM_PX, PASSER.maxR]) {
+            for (const rotation of [0, 37, 90, 180, 270]) {
+                const { needle, pencil, hinge } = passerPoints({ x: 400, y: 300, rotation, radius });
+                const dn = Math.hypot(hinge[0] - needle[0], hinge[1] - needle[1]);
+                const dp = Math.hypot(hinge[0] - pencil[0], hinge[1] - pencil[1]);
+                close(dn, PASSER.leg, 1e-6); close(dp, PASSER.leg, 1e-6);
+                // on the perpendicular bisector: (hinge − mid) ⟂ (pencil − needle)
+                const mx = (needle[0] + pencil[0]) / 2, my = (needle[1] + pencil[1]) / 2;
+                close((hinge[0] - mx) * (pencil[0] - needle[0]) + (hinge[1] - my) * (pencil[1] - needle[1]), 0, 1e-6);
+            }
         }
+    });
+
+    test('top-down passer turns as one rigid piece: 0/90/180/270 are quarter turns of the same hinge', () => {
+        const r = 5 * BOARD_CM_PX;
+        const at = (rotation: number) => passerPoints({ x: 0, y: 0, rotation, radius: r }).hinge;
+        const [x0, y0] = at(0);
+        expect(y0).toBeLessThan(0);
+        // each quarter turn clockwise on screen maps (x, y) → (−y, x)
+        const [x90, y90] = at(90); close(x90, -y0); close(y90, x0);
+        const [x180, y180] = at(180); close(x180, -x0); close(y180, -y0);
+        const [x270, y270] = at(270); close(x270, y0); close(y270, -x0);
+        // no side flip anywhere round the circle (the old drawing jumped at 90° and 270°)
+        for (let rot = 0; rot < 360; rot += 5) {
+            const [hx, hy] = toLocal({ x: 0, y: 0, rotation: rot }, ...at(rot));
+            close(hx, x0, 1e-6); close(hy, y0, 1e-6);
+        }
+    });
+
+    test('the opening is clamped to 2 × leg, and a closing passer raises its hinge', () => {
+        expect(PASSER.maxR).toBeLessThanOrEqual(2 * PASSER_LEG_CM * BOARD_CM_PX);
+        close(PASSER.leg, PASSER_LEG_CM * BOARD_CM_PX);
+        close(passerHinge(5 * PASSER.leg)[1], 0);
+        expect(passerHinge(PASSER.minR)[1]).toBeLessThan(passerHinge(PASSER.maxR)[1]);
+        expect(passerHinge(100, 1)[1]).toBeGreaterThan(0);
     });
 });
 

@@ -193,9 +193,6 @@ UpdateState). Left over, found while fixing:
 - Settings kit a11y: every `ColorSwatches` custom-colour field has the same accessible name
   "Eigen kleur (hex)" (controls.tsx), so a panel with several colour rows (accent + a kind's own
   colours) has indistinguishable inputs for a screen reader. Fix: include the row's label. 2026-10-09
-- Passer with the pencil straight up (rotation 270°) is drawn lying on its side instead of
-  standing: the hinge sits beside the vertical needle–pencil chord (`passerHinge`), so the
-  legs point sideways. Not yet looked into beyond that. 2026-10-09
 - Cijferen at the default scaffolding 2 (empty grid) shows no answer with Oplossingen on, sheet and
   board alike (CijferViewer draws solutions only for `scaffolding <= 1`): the answer key is blank for the
   optellen, aftrekken and vermenigvuldigen leaves, nat + dec (wb-check/full-test/probe/sheet-cijfer-solutions.png). 2026-10-09

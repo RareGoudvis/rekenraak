@@ -31,11 +31,13 @@ export const LAT = {
 export const GEO = {
     half: 8 * BOARD_CM_PX,
 };
-// Passer: legs of 12 cm; the opening runs from 0.5 cm to 90 % of the span the legs allow.
+// Passer: two legs of PASSER_LEG_CM; the opening runs from 0.5 cm to 21.5 cm, and never past
+// the 2 × leg the legs can span (the hinge would fold flat onto the chord).
+export const PASSER_LEG_CM = 12;
 export const PASSER = {
-    leg: 12 * BOARD_CM_PX,
+    leg: PASSER_LEG_CM * BOARD_CM_PX,
     minR: 0.5 * BOARD_CM_PX,
-    maxR: 21.5 * BOARD_CM_PX,
+    maxR: Math.min(21.5, 2 * PASSER_LEG_CM) * BOARD_CM_PX,
 };
 
 // ── Transforms ───────────────────────────────────────────────────────────────
@@ -205,14 +207,25 @@ export const polyPoints = (p: number[]) => p.reduce((acc, v, i) => acc + (i % 2 
 // instrument's grab zone while an ink tool is active.
 export const EDGE_TOL_PX = 10;
 
-// Passer hinge in the passer's local frame (needle at the origin, pencil at (r, 0)): legs of
-// PASSER.leg meet beside the chord's midpoint, on the side that is up on screen at this
-// rotation, so the passer stands upright like one held in the hand instead of hanging upside
-// down once the pencil passes below the needle.
-export function passerHinge(radius: number, rotation = 0): [number, number] {
-    const half = Math.min(radius, PASSER.maxR) / 2;
+// Which side of the needle → pencil chord the hinge sits on, in the local frame: -1 = local -y
+// (up on screen at rotation 0), +1 = mirrored. The passer is drawn top-down (an opened passer
+// seen from above), so it turns as one rigid piece: no side flip as the pencil goes round.
+export type PasserSide = 1 | -1;
+
+// Passer hinge in the passer's local frame (needle at the origin, pencil at (r, 0)): the apex
+// of the isosceles triangle whose two sides are the PASSER.leg legs, so it sits on the chord's
+// perpendicular bisector, higher as the passer closes.
+export function passerHinge(radius: number, side: PasserSide = -1): [number, number] {
+    const half = Math.min(Math.max(radius, 0), 2 * PASSER.leg) / 2;
     const h = Math.sqrt(Math.max(0, PASSER.leg ** 2 - half ** 2));
-    return [half, Math.cos(rotation * RAD) >= -1e-9 ? -h : h];
+    return [half, side * h];
+}
+
+// Needle, pencil tip and hinge of a placed passer in board px.
+export function passerPoints(inst: Pick<Instrument, 'x' | 'y' | 'rotation' | 'radius'>, side: PasserSide = -1) {
+    const r = inst.radius ?? 5 * BOARD_CM_PX;
+    const [hx, hy] = passerHinge(r, side);
+    return { needle: [inst.x, inst.y] as [number, number], pencil: toWorld(inst, r, 0), hinge: toWorld(inst, hx, hy) };
 }
 
 // ── Passer: opening and arcs ─────────────────────────────────────────────────
