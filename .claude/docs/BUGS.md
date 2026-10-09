@@ -175,10 +175,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
   defaults (operator '+'), so the cijferen aftrekken / vermenigvuldigen / delen "max" rows show
   additions. Per-leaf tops live in bignum:audit; take the max per leaf if it matters. 2026-09-27
 
-- Kiosk breuken kleuren, square shape with a PRIME noemer ≥ 11 (11, 13): equal parts need one row, so the
-  strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
-  2026-10-08
-
 - Flaky under full-suite load: `oefenBuilder.test.tsx` › OefenShareModal › "Afdrukken (A5) prints only
   the A5 QR sheet" failed once in the pre-commit gate ("expected bound to be called 1 times, got 0")
   and passes alone. Likely a timer/print wait too short when 99 workers share the CPU. 2026-10-09
