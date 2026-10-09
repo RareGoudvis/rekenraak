@@ -248,6 +248,22 @@ describe('layer: drag, rotate, snap, keyboard', () => {
         expect(firstY()).toBe(10);
     });
 
+    test('the line and shape tools ignore instruments: every grip goes pointer-transparent', () => {
+        place('lat');
+        const { container, rerender } = render(<InstrumentLayer />);
+        const inert = () => container.querySelector('[data-instrument="lat"]')!.hasAttribute('data-instrument-inert');
+        expect(inert()).toBe(false);
+        for (const t of ['line', 'shape'] as const) {
+            act(() => { st().setTool(t); });
+            rerender(<InstrumentLayer />);
+            expect(inert()).toBe(true);
+        }
+        act(() => { st().setTool('pen'); });
+        rerender(<InstrumentLayer />);
+        expect(inert()).toBe(false);
+        expect(container.querySelector('style')!.textContent).toContain('[data-instrument-inert] * { pointer-events: none !important; }');
+    });
+
     test('a press on an instrument does not reach the canvas (no deselect, no text widget)', () => {
         place('lat');
         st().setTool('text');

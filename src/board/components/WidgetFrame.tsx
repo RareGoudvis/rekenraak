@@ -29,6 +29,9 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     const tool = useBoardStore((s) => s.tool);
 
     const [editingTitle, setEditingTitle] = useState(false);
+    // Headerless cards reveal their controls on hover or keyboard focus (selection covers touch).
+    const [hovered, setHovered] = useState(false);
+    const [focusWithin, setFocusWithin] = useState(false);
 
     // Drag bookkeeping lives in a ref — no re-render per pointermove beyond the store write.
     const drag = useRef<{ mode: 'move' | 'resize'; startX: number; startY: number; origX: number; origY: number; origW: number } | null>(null);
@@ -76,8 +79,39 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
         setEditingTitle(false);
     };
 
+    // One button set for the title bar and the headerless pill, so both stay identical.
+    const controls = (
+        <>
+            {onRegenerate && (
+                <button type="button" title="Nieuwe oefeningen" aria-label="Nieuwe oefeningen" style={S.btn} onClick={onRegenerate}>
+                    <ArrowCounterClockwise size={17} />
+                </button>
+            )}
+            {onToggleAnswer && (
+                <button type="button" title={widget.showAnswer ? 'Verberg oplossing' : 'Toon oplossing'} aria-label="Oplossing tonen/verbergen"
+                    style={{ ...S.btn, ...(widget.showAnswer ? S.btnOn : {}) }} onClick={onToggleAnswer}>
+                    {widget.showAnswer ? <EyeSlash size={17} /> : <Eye size={17} />}
+                </button>
+            )}
+            {hasSettings && (
+                <button type="button" title="Instellingen" aria-label="Widget-instellingen" style={S.btn}
+                    onClick={() => { selectWidget(widget.id); setInspectorOpen(true); }}>
+                    <GearSix size={17} />
+                </button>
+            )}
+            <button type="button" title="Dupliceren" aria-label="Dupliceren" style={S.btn} onClick={() => duplicateWidget(widget.id)}>
+                <CopySimple size={17} />
+            </button>
+            <button type="button" title="Verwijderen" aria-label="Verwijderen" style={{ ...S.btn, color: 'var(--danger)' }} onClick={() => removeWidget(widget.id)}>
+                <Trash size={17} />
+            </button>
+        </>
+    );
+    const pillVisible = !showHeader && (hovered || selected || focusWithin);
+
     return (
         <div
+            data-widget-frame
             style={{
                 position: 'absolute', left: widget.x, top: widget.y, width: widget.w, zIndex: widget.z,
                 background: '#ffffff', borderRadius: '12px',
@@ -100,6 +134,11 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
             onPointerMove={handMode || !showHeader ? onPointerMove : undefined}
             onPointerUp={handMode || !showHeader ? endDrag : undefined}
             onPointerCancel={handMode || !showHeader ? endDrag : undefined}
+            // Mouse/pen hover only: a finger's pointerenter would flash the pill before the tap selects.
+            onPointerEnter={(e) => { if (e.pointerType !== 'touch') setHovered(true); }}
+            onPointerLeave={() => setHovered(false)}
+            onFocus={() => setFocusWithin(true)}
+            onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocusWithin(false); }}
         >
             {/* ── Title bar (drag handle; fixed UI size, outside the zoom) ── */}
             {showHeader && (
@@ -131,29 +170,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                     )}
                     <span style={{ flex: 1 }} />
                     <span style={S.btnRow} onPointerDown={(e) => e.stopPropagation()}>
-                        {onRegenerate && (
-                            <button type="button" title="Nieuwe oefeningen" aria-label="Nieuwe oefeningen" style={S.btn} onClick={onRegenerate}>
-                                <ArrowCounterClockwise size={17} />
-                            </button>
-                        )}
-                        {onToggleAnswer && (
-                            <button type="button" title={widget.showAnswer ? 'Verberg oplossing' : 'Toon oplossing'} aria-label="Oplossing tonen/verbergen"
-                                style={{ ...S.btn, ...(widget.showAnswer ? S.btnOn : {}) }} onClick={onToggleAnswer}>
-                                {widget.showAnswer ? <EyeSlash size={17} /> : <Eye size={17} />}
-                            </button>
-                        )}
-                        {hasSettings && (
-                            <button type="button" title="Instellingen" aria-label="Widget-instellingen" style={S.btn}
-                                onClick={() => { selectWidget(widget.id); setInspectorOpen(true); }}>
-                                <GearSix size={17} />
-                            </button>
-                        )}
-                        <button type="button" title="Dupliceren" aria-label="Dupliceren" style={S.btn} onClick={() => duplicateWidget(widget.id)}>
-                            <CopySimple size={17} />
-                        </button>
-                        <button type="button" title="Verwijderen" aria-label="Verwijderen" style={{ ...S.btn, color: 'var(--danger)' }} onClick={() => removeWidget(widget.id)}>
-                            <Trash size={17} />
-                        </button>
+                        {controls}
                     </span>
                 </div>
             )}
@@ -168,6 +185,18 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
                     </div>
                 </div>
             </div>
+
+            {/* ── Floating controls when the title bar is hidden: without them a headerless card
+                could not be configured or removed. Always mounted so Tab reaches the buttons. ── */}
+            {!showHeader && (
+                <div
+                    data-widget-pill role="toolbar" aria-label="Widget-acties"
+                    style={{ ...S.pill, opacity: pillVisible ? 1 : 0, pointerEvents: pillVisible ? 'auto' : 'none' }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                >
+                    {controls}
+                </div>
+            )}
 
             {/* ── Resize grip (diagonal lines, bottom-right) ── */}
             {(selected || handMode) && (
@@ -213,6 +242,15 @@ const S = {
         width: '32px', height: '32px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: '8px', background: 'transparent', color: '#333',
         cursor: 'pointer', padding: 0,
+    } as React.CSSProperties,
+    // Top-right inside the card (the frame clips overflow); wraps on narrow cards like a geld-item.
+    pill: {
+        position: 'absolute', top: '6px', right: '6px', zIndex: 2,
+        display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '2px', padding: '3px',
+        maxWidth: 'calc(100% - 12px)', boxSizing: 'border-box',
+        background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)',
+        boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+        transition: 'opacity var(--dur) var(--ease-out)',
     } as React.CSSProperties,
     btnOn: { background: 'var(--bg-active)', color: 'var(--accent-purple)' } as React.CSSProperties,
     grip: {

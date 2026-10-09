@@ -33,6 +33,9 @@ export default function InstrumentLayer() {
     const [readout, setReadout] = useState<Readout | null>(null);
     const [arcDraft, setArcDraft] = useState<Stroke | null>(null);
     const passThrough = tool === 'pen' || tool === 'marker' || tool === 'eraser';
+    // P3's line and shape tools ignore the instruments entirely: no guiding, and a drag that
+    // starts on an instrument still draws (every grip goes pointer-transparent).
+    const inert = tool === 'line' || tool === 'shape';
 
     const toBoard = (e: React.PointerEvent): [number, number] => {
         const r = svgRef.current!.getBoundingClientRect();
@@ -148,6 +151,8 @@ export default function InstrumentLayer() {
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 12, touchAction: 'none' }}
             onPointerMove={onPointerMove} onPointerUp={end} onPointerCancel={end}
         >
+            {/* !important: the grips set pointer-events inline */}
+            <style>{'[data-instrument-inert] * { pointer-events: none !important; }'}</style>
             {arcDraft && (
                 <path data-arc-draft d={arcDraft.path} fill="none" stroke={arcDraft.color} strokeWidth={arcDraft.width}
                     strokeLinecap="round" opacity={arcDraft.opacity} style={NO_POINTER} />
@@ -155,7 +160,8 @@ export default function InstrumentLayer() {
             {instruments.map((inst) => {
                 const props = { inst, selected: inst.id === selectedId, passThrough, onGrip: (e: React.PointerEvent, g: Grip) => begin(e, inst.id, g) };
                 return (
-                    <g key={inst.id} data-instrument={inst.kind} transform={`translate(${inst.x} ${inst.y}) rotate(${inst.rotation})`}>
+                    <g key={inst.id} data-instrument={inst.kind} data-instrument-inert={inert || undefined}
+                        transform={`translate(${inst.x} ${inst.y}) rotate(${inst.rotation})`}>
                         {inst.kind === 'lat' && <LatShape {...props} />}
                         {inst.kind === 'geodriehoek' && <GeodriehoekShape {...props} />}
                         {inst.kind === 'passer' && <PasserShape {...props} />}
