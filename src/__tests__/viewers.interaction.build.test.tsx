@@ -192,7 +192,8 @@ describe('kiosk flow: lay the answer from the tray', () => {
         const smallest = [...nextPieces].sort((a, b) => a.value - b.value)[0].key;
         const layWrong = () => {
             for (const b of greedy(want, nextPieces)) for (let i = 0; i < b.count; i++) fireEvent.click(tile(b.key));
-            if (tile(smallest).disabled) fireEvent.click(screen.getAllByRole('button', { name: /terugnemen$/ })[0]);
+            // Every piece has a − now (off at 0 laid): take one back where something lies.
+            if (tile(smallest).disabled) fireEvent.click((screen.getAllByRole('button', { name: /terugnemen$/ }) as HTMLButtonElement[]).find(b => !b.disabled)!);
             else fireEvent.click(tile(smallest));
         };
         layWrong();
