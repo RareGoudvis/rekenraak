@@ -169,15 +169,8 @@ UpdateState). Left over, found while fixing:
   more UI help (which piece, how many laid, a clear +/−). Owner note from the first test with
   real kids. 2026-10-09
 
-- Builder: Opslaan still accepts a session with a dead row (pre-flight only blocks Delen), and Delen from
-  Mijn bladen skips the pre-flight; the runtime retire-dead-slot rule covers it, but the teacher gets no
-  warning on that path. 2026-10-09
 - hr-std-delen-nat "Met rest" keeps the tafels picked in tafels mode hidden, so a session can go dead
   with tafels [1] without the teacher seeing why (pre-flight flags it). 2026-10-09
-
-- Oefenmodus builder: a dead row's preview still reads "(Nog geen oefeningen — klik Genereer)" while the
-  builder has no Genereer button (the red pre-flight note above it is right). Fix: a kiosk-side empty text
-  for ExercisePreview. 2026-10-09
 
 ## Oefenmodus beta audit 2026-10-09
 
