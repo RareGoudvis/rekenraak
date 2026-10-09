@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Section, Toggle, Hint, Button, ButtonRow } from './controls';
+import { Section, Toggle, Hint, Button, ButtonRow, Segmented, Slider } from './controls';
 import { useSetProps } from './baseProps';
-import { weerProps } from '../widgetSizing';
+import { weerModel, REFRESH_OPTIONS } from './weerModel';
 import { useBoardStore } from '../useBoardStore';
 import type { BoardWidget } from '../boardTypes';
 
@@ -10,7 +10,7 @@ interface Place { name: string; admin1?: string; latitude: number; longitude: nu
 export default function WeerSettings({ widget }: { widget: BoardWidget }) {
     const set = useSetProps(widget);
     const updateWidget = useBoardStore((s) => s.updateWidget);
-    const w = weerProps(widget);
+    const w = weerModel(widget);
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<Place[]>([]);
 
@@ -53,6 +53,22 @@ export default function WeerSettings({ widget }: { widget: BoardWidget }) {
                 <Toggle label="Zonsopgang / -ondergang" checked={w.showSun} onChange={(v) => set({ showSun: v })} />
                 <Toggle label="Kans op neerslag" checked={w.showRainPct} onChange={(v) => set({ showRainPct: v })} />
                 <Toggle label="Hoeveelheid neerslag" checked={w.showRainMm} onChange={(v) => set({ showRainMm: v })} />
+                <Toggle label="Wind" checked={w.showWind} onChange={(v) => set({ showWind: v })} />
+                <Toggle label="Plaatsnaam" checked={w.showPlace} onChange={(v) => set({ showPlace: v })} />
+                <Slider label="Voorspelling" value={w.forecastDays} min={0} max={5} onChange={(v) => set({ forecastDays: v })}
+                    format={(v) => (v === 0 ? 'enkel vandaag' : v === 1 ? '1 dag' : `${v} dagen`)} />
+                <Segmented label="Iconen" value={w.iconStyle} onChange={(v) => set({ iconStyle: v })}
+                    options={[{ value: 'emoji', label: 'Kleurrijk' }, { value: 'icoon', label: 'Lijntekening' }]} />
+            </Section>
+            <Section title="Eenheden">
+                <Segmented label="Temperatuur" value={w.unit} onChange={(v) => set({ unit: v })}
+                    options={[{ value: 'C', label: '°C' }, { value: 'F', label: '°F' }]} />
+                <Segmented label="Windsnelheid" value={w.windUnit} onChange={(v) => set({ windUnit: v })}
+                    options={[{ value: 'kmh', label: 'km/u' }, { value: 'ms', label: 'm/s' }, { value: 'bft', label: 'Beaufort' }]} />
+            </Section>
+            <Section title="Vernieuwen">
+                <Segmented label="Weer opnieuw ophalen" value={w.refreshMin} onChange={(v) => set({ refreshMin: v })}
+                    options={REFRESH_OPTIONS.map(m => ({ value: m, label: m === 0 ? 'Bij openen' : `${m} min` }))} />
                 <Hint>Bron: open-meteo.com.</Hint>
             </Section>
         </>

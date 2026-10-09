@@ -1,55 +1,63 @@
 import { useEffect, useState } from 'react';
-import { weerProps } from '../../widgetSizing';
+import { weerModel, describe, forecastUrl, windText } from '../../settings/weerModel';
+import { fontScale, widgetAccent } from '../../settings/baseProps';
 import type { BoardWidget } from '../../boardTypes';
 
-// WMO weather codes → emoji + Dutch label (compact classroom set).
-function describe(code: number): { icon: string; label: string } {
-    if (code === 0) return { icon: '☀️', label: 'zonnig' };
-    if (code <= 2) return { icon: '🌤️', label: 'licht bewolkt' };
-    if (code === 3) return { icon: '☁️', label: 'bewolkt' };
-    if (code <= 48) return { icon: '🌫️', label: 'mist' };
-    if (code <= 57) return { icon: '🌦️', label: 'motregen' };
-    if (code <= 67) return { icon: '🌧️', label: 'regen' };
-    if (code <= 77) return { icon: '🌨️', label: 'sneeuw' };
-    if (code <= 82) return { icon: '🌧️', label: 'buien' };
-    if (code <= 86) return { icon: '🌨️', label: 'sneeuwbuien' };
-    return { icon: '⛈️', label: 'onweer' };
-}
-
+interface DayData { date: string; code: number; tMin: number; tMax: number }
 interface WeerData {
     temp: number; code: number; tMin: number; tMax: number;
     sunrise: string; sunset: string; rainPct: number; rainMm: number;
+    wind: number | null; windDir: number | null;
+    days: DayData[];           // the days after today
 }
+
+const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
 // Live weather via open-meteo (free, no API key). Location = a teacher-chosen
 // place (props.lat/lon/placeName via the settings' city search) or browser
-// geolocation, falling back to Brussels when denied.
+// geolocation, falling back to Brussels when denied. Units, wind, forecast days,
+// icon style and the refresh interval come from the ⚙ panel.
 export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark: boolean }) {
-    const p = weerProps(widget);
+    const p = weerModel(widget);
+    const fs = fontScale(widget);
+    const accent = widgetAccent(widget);
     const [data, setData] = useState<WeerData | null>(null);
     const [error, setError] = useState(false);
+    const [tick, setTick] = useState(0);
     const fixedLat = typeof widget.props?.lat === 'number' ? widget.props.lat : null;
     const fixedLon = typeof widget.props?.lon === 'number' ? widget.props.lon : null;
     const placeName = typeof widget.props?.placeName === 'string' ? widget.props.placeName : null;
 
     useEffect(() => {
+        if (!p.refreshMin) return;
+        const iv = setInterval(() => setTick(t => t + 1), p.refreshMin * 60_000);
+        return () => clearInterval(iv);
+    }, [p.refreshMin]);
+
+    useEffect(() => {
         let cancelled = false;
         const fetchWeather = (lat: number, lon: number) => {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-                + `&current=temperature_2m,weather_code`
-                + `&daily=temperature_2m_min,temperature_2m_max,sunrise,sunset,precipitation_probability_max,precipitation_sum`
-                + `&timezone=auto&forecast_days=1`;
-            fetch(url).then(r => r.json()).then(j => {
+            fetch(forecastUrl(lat, lon, { unit: p.unit, windUnit: p.windUnit, forecastDays: p.forecastDays })).then(r => r.json()).then(j => {
                 if (cancelled) return;
+                const d = j.daily ?? {};
+                const days: DayData[] = [];
+                for (let i = 1; i <= p.forecastDays; i++) {
+                    const code = num(d.weather_code?.[i]), lo = num(d.temperature_2m_min?.[i]), hi = num(d.temperature_2m_max?.[i]);
+                    if (code !== null && lo !== null && hi !== null && typeof d.time?.[i] === 'string') days.push({ date: d.time[i], code, tMin: Math.round(lo), tMax: Math.round(hi) });
+                }
+                setError(false);
                 setData({
                     temp: Math.round(j.current.temperature_2m),
                     code: j.current.weather_code,
-                    tMin: Math.round(j.daily.temperature_2m_min[0]),
-                    tMax: Math.round(j.daily.temperature_2m_max[0]),
-                    sunrise: String(j.daily.sunrise[0]).slice(11, 16),
-                    sunset: String(j.daily.sunset[0]).slice(11, 16),
-                    rainPct: j.daily.precipitation_probability_max?.[0] ?? 0,
-                    rainMm: j.daily.precipitation_sum?.[0] ?? 0,
+                    tMin: Math.round(d.temperature_2m_min[0]),
+                    tMax: Math.round(d.temperature_2m_max[0]),
+                    sunrise: String(d.sunrise[0]).slice(11, 16),
+                    sunset: String(d.sunset[0]).slice(11, 16),
+                    rainPct: d.precipitation_probability_max?.[0] ?? 0,
+                    rainMm: d.precipitation_sum?.[0] ?? 0,
+                    wind: num(j.current.wind_speed_10m),
+                    windDir: num(j.current.wind_direction_10m),
+                    days,
                 });
             }).catch(() => { if (!cancelled) setError(true); });
         };
@@ -63,35 +71,56 @@ export default function WeerWidget({ widget, dark }: { widget: BoardWidget; dark
             );
         }
         return () => { cancelled = true; };
-    }, [fixedLat, fixedLon]);
+    }, [fixedLat, fixedLon, p.unit, p.windUnit, p.forecastDays, tick]);
 
     const textColor = dark ? '#fff' : '#111';
     const muted = dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
     const mono = "'Azeret Mono', monospace";
+    const deg = p.unit === 'F' ? '°F' : '°C';
+    const icon = (code: number, px: number) => {
+        const w = describe(code);
+        return p.iconStyle === 'icoon'
+            ? <w.Icon size={px * fs} weight="duotone" color={accent ?? (dark ? '#fff' : '#1e40af')} aria-label={w.label} />
+            : <span style={{ fontSize: `${px * fs}px`, lineHeight: 1 }}>{w.icon}</span>;
+    };
+    const line = (s: string) => <div style={{ fontSize: `${15 * fs}px`, color: muted }}>{s}</div>;
+    const tint = accent ?? '#1e40af';
 
     return (
         <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '14px 18px',
-            background: dark ? 'rgba(255,255,255,0.06)' : 'rgba(30,64,175,0.06)',
-            border: `1px solid ${dark ? 'rgba(255,255,255,0.2)' : 'rgba(30,64,175,0.25)'}`, borderRadius: '10px',
+            background: dark ? 'rgba(255,255,255,0.06)' : `color-mix(in srgb, ${tint} 6%, transparent)`,
+            border: `1px solid ${dark ? 'rgba(255,255,255,0.2)' : `color-mix(in srgb, ${tint} 25%, transparent)`}`, borderRadius: '10px',
             color: textColor, fontFamily: mono,
         }}>
-            <span style={{ fontSize: '13px', color: muted }}>📍 {placeName ?? 'Huidige locatie'}</span>
-            {error && <span style={{ fontSize: '13px', color: muted }}>Weer niet beschikbaar</span>}
-            {!data && !error && <span style={{ fontSize: '13px', color: muted }}>Weer laden…</span>}
+            {p.showPlace && <span style={{ fontSize: `${13 * fs}px`, color: muted }}>📍 {placeName ?? 'Huidige locatie'}</span>}
+            {error && <span style={{ fontSize: `${13 * fs}px`, color: muted }}>Weer niet beschikbaar</span>}
+            {!data && !error && <span style={{ fontSize: `${13 * fs}px`, color: muted }}>Weer laden…</span>}
             {data && (
                 <>
                     {p.showWeather && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ fontSize: '44px', lineHeight: 1 }}>{describe(data.code).icon}</span>
-                            <span style={{ fontSize: '18px' }}>{describe(data.code).label}</span>
+                            {icon(data.code, 44)}
+                            <span style={{ fontSize: `${18 * fs}px` }}>{describe(data.code).label}</span>
                         </div>
                     )}
-                    {p.showTemp && <div style={{ fontSize: '38px', fontWeight: 700 }}>{data.temp}°C</div>}
-                    {p.showMinMax && <div style={{ fontSize: '15px', color: muted }}>min {data.tMin}° · max {data.tMax}°</div>}
-                    {p.showSun && <div style={{ fontSize: '15px', color: muted }}>🌅 {data.sunrise} · 🌇 {data.sunset}</div>}
-                    {p.showRainPct && <div style={{ fontSize: '15px', color: muted }}>☔ {data.rainPct}% kans</div>}
-                    {p.showRainMm && <div style={{ fontSize: '15px', color: muted }}>💧 {data.rainMm} mm</div>}
+                    {p.showTemp && <div style={{ fontSize: `${38 * fs}px`, fontWeight: 700 }}>{data.temp}{deg}</div>}
+                    {p.showMinMax && line(`min ${data.tMin}° · max ${data.tMax}°`)}
+                    {p.showSun && line(`🌅 ${data.sunrise} · 🌇 ${data.sunset}`)}
+                    {p.showRainPct && line(`☔ ${data.rainPct}% kans`)}
+                    {p.showRainMm && line(`💧 ${data.rainMm} mm`)}
+                    {p.showWind && data.wind !== null && line(`💨 ${windText(data.wind, data.windDir, p.windUnit)}`)}
+                    {data.days.length > 0 && (
+                        <div data-weer-forecast style={{ display: 'flex', gap: '8px 18px', marginTop: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            {data.days.map(day => (
+                                <div key={day.date} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: `${48 * fs}px` }}>
+                                    <span style={{ fontSize: `${12 * fs}px`, color: muted }}>{new Date(`${day.date}T12:00`).toLocaleDateString('nl-BE', { weekday: 'short' })}</span>
+                                    {icon(day.code, 26)}
+                                    <span style={{ fontSize: `${12 * fs}px`, whiteSpace: 'nowrap' }}>{day.tMin}°/{day.tMax}°</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </>
             )}
         </div>
