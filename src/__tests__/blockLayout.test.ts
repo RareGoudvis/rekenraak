@@ -201,8 +201,8 @@ describe('minWidthUnits — settings-shaped editorial floors (C1 step 0)', () =>
         expect(minWidthUnits(lijnstuk, measure(10, 1))).toBe(1);
     });
 
-    test('mab-tekenen can go to a quarter, mab-herkennen stays at a half', () => {
-        expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(1);
+    test('mab-tekenen and mab-herkennen both floor at a half (the D/H/T/E table needs room to draw)', () => {
+        expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(2);
         expect(minWidthUnits(makeBlock('mab-herkennen'), measure(10, 1))).toBe(2);
     });
 

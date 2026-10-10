@@ -174,7 +174,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "mab-herkennen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
     // A single drawn place-value figure has no glyph table to read, so it can go to ¼ —
     // unlike mab-herkennen, whose numeral/glyph pairing needs the ½ floor (SETTINGS_FLOOR).
-    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 1 },
+    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
     // S5 (2026-10-10): default count 6 → 2 and the 12 px figure padding (21.42 → 8.54).
     "omtrek": { rowUnits: 8.54, perRowFull: 1, minWidth: 4 },
     // S5 (2026-10-10): measured off the rooster leaf at its 2 exercises (18.07 → 11.83).
@@ -386,9 +386,9 @@ const SETTINGS_FLOOR: Record<string, FloorRule> = {
     },
     // MAB is sized by its glyphs rather than by its share of the block: mab-herkennen
     // pairs a numeral with a glyph table, which stops reading at a quarter; mab-tekenen
-    // draws ONE place-value figure, which has no such pairing and can go to a quarter.
+    // needs room to draw in the D/H/T/E table (~75 px at a quarter leaves none), so both floor at a half.
     'mab-herkennen': () => 2,
-    'mab-tekenen': () => 1,
+    'mab-tekenen': () => 2,
     // Relation sentences ("rechte a staat ___ op rechte b") never fit a quarter.
     'vormleer-punt-lijn': (block) => {
         const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;

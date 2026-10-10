@@ -22,9 +22,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   drawn scaled down with "niet op ware grootte" (2026-10-10), so in the 'meten' model the child
   measures a smaller figure than the key's length. Owner call: cap the generated span to the column's
   cm width instead (generator). 2026-10-10
-- mab-tekenen at width ¼ (default leaf, the packer keeps w1): the D/H/T/E table is ~75 px wide, no
-  room to draw. Fix: minWidth 2 for mab-tekenen (owner call: it reverses the C1 rule pinned by
-  blockLayout.test "mab-tekenen can go to a quarter"). 2026-09-27
 - Narrow-width wrapping: vergelijken representaties woorden vs plaatswaarde at ½ / ¼ (pw021): the
   "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
 - Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
