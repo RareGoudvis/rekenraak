@@ -5,6 +5,7 @@ import { REGISTRY } from '../config/exerciseRegistry';
 import { nextExercise, type OefenExercise } from '../services/oefenen/scheduler';
 import type { OefenSessie, OefenType } from '../services/oefenen/types';
 import type { Leerjaar } from '../config/gradePresets';
+import { roundTo, targetsFor } from '../services/afronden/afrondenGenerator';
 import { mulberry32 } from './helpers/limitHarness';
 
 // Kiosk triage K2: the draws of a leaf must vary and stay within what the leaf promises.
@@ -106,6 +107,23 @@ describe('K2 task 5: decimal hoofdrekenen defaults are hoofdrekenbaar', () => {
                     expect(Math.abs(eq.answer * b - a), where).toBeLessThan(1e-9);
                 }
             }
+        }
+    });
+});
+
+describe('K2 task 6: afronden never rounds to 0', () => {
+    test.each([['afronden-nat-simpel', 'natural'], ['afronden-dec-simpel', 'decimal']])('%s: the rounded number is above 0 (200 seeds)', (leafId, numberType) => {
+        for (let seed = 1; seed <= 200; seed++) {
+            for (const o of draws(leafId, 6, seed)) {
+                const ex = o.exercise as { number: number; targetKey: string };
+                const weight = targetsFor(numberType).find(t => t.key === ex.targetKey)!.weight;
+                expect(roundTo(ex.number, weight), `seed ${seed}: ${ex.number} op ${ex.targetKey}`).toBeGreaterThan(0);
+            }
+        }
+    });
+    test('the free natural draw starts at 5', () => {
+        for (let seed = 1; seed <= 200; seed++) {
+            for (const o of draws('afronden-nat-rooster', 2, seed)) expect(Math.min(...(o.exercise as { numbers: number[] }).numbers)).toBeGreaterThanOrEqual(5);
         }
     });
 });
