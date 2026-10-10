@@ -1,4 +1,4 @@
-import { overlayRegionStyle } from '../../services/regionStyle';
+import { overlayRegionStyle, borderSides } from '../../services/regionStyle';
 import type { FooterSlot, FooterData } from '../../services/math/types';
 import type { DocSettings } from '../../store/useWorksheetStore';
 
@@ -22,6 +22,8 @@ function footerSlotText(footerData: FooterData | undefined, slot: FooterSlot | u
   }
 }
 
+const KADER = { width: '1.5px', color: '#000' };
+
 export default function SheetFooter({ footer: footerData, docSettings, pageIndex, pageCount }: { footer: FooterData | undefined; docSettings: DocSettings; pageIndex: number; pageCount: number }) {
   // Old worksheets have no slots; derive something sensible from the v2 fields so a
   // saved sheet keeps looking like itself.
@@ -41,13 +43,11 @@ export default function SheetFooter({ footer: footerData, docSettings, pageIndex
   const credit = <span className="footer-credit">Gemaakt met RekenRaak.be</span>;
   return (
     <div className="print-tfoot-inner" style={overlayRegionStyle({
-      borderTopStyle: 'solid',
-      borderTopWidth: docSettings.footerStyle === 'kader' ? '1.5px' : '1px',
-      borderTopColor: docSettings.footerStyle === 'lijn' ? '#ccc'
-        : docSettings.footerStyle === 'kader' ? '#000' : 'transparent',
+      // Per-side longhands only (borderSides): spreading `borderStyle` over `borderTopStyle`
+      // made React warn on every style switch.
       ...(docSettings.footerStyle === 'kader'
-        ? { borderStyle: 'solid', borderWidth: '1.5px', borderColor: '#000', padding: '8px 12px', borderRadius: '6px' }
-        : {}),
+        ? { ...borderSides({ Top: KADER, Right: KADER, Bottom: KADER, Left: KADER }), padding: '8px 12px', borderRadius: '6px' }
+        : borderSides({ Top: { width: '1px', color: docSettings.footerStyle === 'lijn' ? '#ccc' : 'transparent' } })),
     }, docSettings.footerCustom)}>
       <span>{brandSlot === 'left' ? credit : left}</span>
       <span>{brandSlot === 'center' ? credit : footerSlotText(footerData, centerSlot, pageIndex, pageCount)}</span>

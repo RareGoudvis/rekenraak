@@ -8,13 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- Switching Blad › koptekst/voettekst style at runtime logs React's "Updating/Removing a style
-  property during rerender … when a conflicting property is set" (dev only): SheetHeader mixes
-  `borderWidth`/`borderColor`/`borderStyle` shorthands with `borderBottom*` longhands despite its
-  "all-longhand" comment, and SheetFooter's `kader` spreads `borderStyle` over `borderTopStyle`.
-  Repro: set headerStyle kader → onderstreept, footerStyle kader → lijn. Fix: write all four sides
-  as longhands (changes no pixels). 2026-09-27
-
 - TopBar below a ~915 px window: stage 3 is the last stage, so the Meer button and the right group
   overlap (2 px at 915, ~90 px at 840; Chromium, 2026-10-09). Fix: a stage 4 (Genereer alles into
   Meer) or a min-width on the app shell. 2026-10-09
