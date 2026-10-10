@@ -347,6 +347,13 @@ describe('real-size figures: true size when they fit, else scaled down and label
         expect(polygonWidth(container.querySelector('polygon')!)).toBeCloseTo(6 * CM_PX, 0);
         expect(container.textContent).not.toContain(NOT_TRUE_SIZE);
     });
+    test('omtrek gegeven: the box holds a side label left of the figure (pw008)', () => {
+        const block = { ...meten('omtrek', [square(6)]), constraints: { measureModel: 'gegeven', answerMode: 'single', answerUnit: 'cm' } } as MathBlock;
+        const { container } = at(W.full, <MetenViewer block={block} showSolutions={false} />);
+        const svg = container.querySelector('svg')!;
+        const pad = (Number(svg.getAttribute('width')) - 6 * CM_PX) / 2;
+        expect(pad).toBeGreaterThanOrEqual(22 + monoTextPx('6 cm'.length, 0.7, MATH_PX));
+    });
     const lijnstuk = (cm: number) => ({ id: 'b', typeId: 'breuken', constraints: { subType: 'lijnstuk' }, fractionExercises: [{ id: 'f', subType: 'lijnstuk', numerator: 1, denominator: 6, lineLength: cm, isManuallyEdited: false }] }) as unknown as MathBlock;
     const segmentPx = (root: HTMLElement) => px(([...root.querySelectorAll<HTMLElement>('div')].find(d => d.style.marginTop === '10px' && d.style.display === 'flex'))!.style.width);
     test('breuken-lijnstuk 12 cm at full width is drawn 12 cm', () => {

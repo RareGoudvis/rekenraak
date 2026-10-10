@@ -1,7 +1,8 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 import type { MetenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -49,6 +50,7 @@ const anchor = (nx: number, ny: number): string => {
 
 export default function MetenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const mathPx = useSheetSizePx('math');
     const exercises: MeetExercise[] = block.meetExercises || [];
     const gap = block.verticalSpacing || 14;
     const c = block.constraints as MetenConstraints;
@@ -81,9 +83,16 @@ export default function MetenViewer({ block, showSolutions }: Props) {
     );
 
     // Wider padding when scaffold blanks sit beside the figure, so they don't bleed out.
-    const pad = sideScaffold ? 64 : 42;
+    // A side label sits OFFSET out from its side and grows away from it, so the box keeps that
+    // plus the widest label ("10,5 cm", or the 38 px scaffold blank + "cm") at its 0.7 font;
+    // a fixed 42/64 let a left-hand label hang 12-15 px out of the cell (sweep pw002/008/018).
+    const LABEL_FONT = 0.7;
+    const labelPx = labeled
+        ? monoTextPx(Math.max(1, ...exercises.flatMap(ex => (ex.sides ?? []).map(sd => `${fmt(sd)} cm`.length)), ...exercises.map(ex => `d = ${fmt((ex.radius ?? 0) * 2)} cm`.length / 2)), LABEL_FONT, mathPx)
+        : sideScaffold ? 38 + 3 + monoTextPx(2, LABEL_FONT, mathPx) : 0;
+    const pad = Math.max(sideScaffold ? 64 : 42, Math.ceil(OFFSET + labelPx + 4));
     // Side labels need the room above and below too; a bare figure only needs its stroke.
-    const padY = labeled || sideScaffold ? pad : 12;
+    const padY = labeled || sideScaffold ? (sideScaffold ? 64 : 42) : 12;
     const bottomExtra = sideScaffold ? 18 : 0;
     // True size whenever it fits the column; a figure wider than the column (Lengte max 10-18
     // with 2-4 hoeken, or a cirkel) is scaled down to fit and labelled "niet op ware grootte",
