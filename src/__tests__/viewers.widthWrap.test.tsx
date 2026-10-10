@@ -6,9 +6,10 @@ import { BlockWidthProvider, cellWidthPx } from '../components/viewer/BlockWidth
 import GetallenasViewer from '../components/viewer/GetallenasViewer';
 import EvenOnevenViewer from '../components/viewer/EvenOnevenViewer';
 import PatroonViewer from '../components/viewer/PatroonViewer';
+import HerleidingenViewer from '../components/viewer/HerleidingenViewer';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
-import type { MathBlock, GetallenasExercise } from '../services/math/types';
+import type { MathBlock, GetallenasExercise, HerleidingExercise } from '../services/math/types';
 
 // Sweep S5 (width & wrap): jsdom has no layout, so these read the px the viewers put in
 // their inline styles and check them against the glyph-advance estimate the viewers share.
@@ -103,8 +104,33 @@ describe('getalpatronen: terms never break and the row fits its column', () => {
         expect(text).toContain('−53;');
         expect(text).not.toMatch(/-\d/);
     });
-    test('a block without negatives keeps the dash', () => {
+    test('a block without negatives keeps the dash (the plain-dash default)', () => {
         const { container } = at(W.full, <PatroonViewer block={block([[3, 13, 23]])} showSolutions />);
         expect(container.textContent).toContain('–');
+    });
+});
+
+describe('herleidingen: a number never breaks, the row steps its font to fit', () => {
+    const block = (ex: Partial<HerleidingExercise>, c: Record<string, unknown> = {}) => ({
+        id: 'b', typeId: 'herleidingen', constraints: { measure: 'oppervlakte', ...c },
+        herleidingExercises: [{ id: 'h1', format: 'enkel-getal', isManuallyEdited: false, ...ex }],
+    }) as unknown as MathBlock;
+    const factorOf = (el: HTMLElement) => Number(/\* ([\d.]+)\)/.exec(el.style.fontSize)![1]);
+    // Every number/unit pair sits in one nowrap span; the row wraps between pairs only.
+    const pairsNowrap = (root: HTMLElement) => {
+        const nums = [...root.querySelectorAll('span')].filter(s => s.children.length === 0 && /^\d{1,3}( \d{3})+$/.test(s.textContent ?? ''));
+        expect(nums.length).toBeGreaterThan(0);
+        for (const n of nums) expect(n.closest('span[style*="nowrap"]')).not.toBeNull();
+    };
+    test('the red answer "977 000 445" stays whole', () => {
+        const { container } = at(W.full, <HerleidingenViewer block={block({ fromParts: [{ key: 'a', value: 977 }, { key: 'cm²', value: 445 }], toParts: [{ key: 'cm²', value: 977_000_445 }], blank: 'number' })} showSolutions />);
+        pairsNowrap(container);
+    });
+    test.each([[W.full, 0.92], [340, 0.85]])('a long given number on the answer side at %ipx', (width, maxFactor) => {
+        const { container } = at(width, <HerleidingenViewer block={block({ fromParts: [{ key: 'ha', value: 24 }], toParts: [{ key: 'dm²', value: 24_000_000_000 }], blank: 'unit' })} showSolutions={false} />);
+        pairsNowrap(container);
+        const row = container.querySelector('.print-exercise') as HTMLElement;
+        expect(factorOf(row)).toBeLessThanOrEqual(maxFactor);
+        if (width === W.full) expect(factorOf(row)).toBe(0.92);
     });
 });

@@ -37,9 +37,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - getalpatronen pw009 {decimal, max 10 000, 2 decimals, 10 ticks}: ten 8-glyph terms need ~780 px
   even at the 0.7 term-font floor, so the row runs past a full-width cell (it wrapped inside its
   terms before 2026-10-10). Fix: wrap the chain onto a second line below the floor. 2026-10-10
-- Herleidingen: the red answer wraps inside its slot, splitting a number ("977 a 445 cm² = 977 000 /
-  445 cm²" at the herleidingen-oppervlakte DEFAULT, every width; "92 189 / 777 dg" pw008). Compound
-  answers print zero parts ("71 dl 0 cl 0 ml"). Fix: size the slot from the answer (nowrap). 2026-09-27
+- Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
+  part is a blank to fill or should be dropped). 2026-09-27
 - geld-rekenen tables: narrow fixed columns split amounts at the thousands space ("€ 9 / 028,60",
   intrest pw007 maxEuro 10 000) and "verlies € / 404"; the table uses under half of a w4 block. 2026-09-27
 - Weegschaal (massa-weegschaal-aflezen DEFAULT): the needle is drawn over the scale label it points
@@ -61,11 +60,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 - RekenvolgordeViewer (`CHAR_PX = 11.1`, ~:39) and RomeinseViewer (12.7 px per char, ~:36/38) still size
   text with fixed px that don't follow the Lettergrootte slider; move to `monoTextPx`. 2026-09-27
-- HerleidingenViewer: a long given number on the answer side of a unit-blank row breaks at its
-  thousands spaces ("24 ha = 2 / 400 / 000 / 000 ___", "93 dl = 9 / 300 ___"): `formatMathNumber`
-  joins groups with a plain space and `EditableNumber`'s span has no `white-space: nowrap`. Seen in
-  the Oefenmodus card (340 px = a half-width cell, 390×844 and 844×390); a narrow sheet column can
-  hit it too. Fix: nowrap on the number span (or U+202F). 2026-10-08
 
 ## Config
 

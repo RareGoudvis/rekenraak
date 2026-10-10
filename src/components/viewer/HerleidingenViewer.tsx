@@ -6,12 +6,18 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import type { HerleidingenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
-import { ANSWER_LINE_H } from './BlockWidthContext';
+import { ANSWER_LINE_H, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
+// Exercise font steps: 0.92 is the sheet size; a row whose widest number/unit pair does not
+// fit its column steps down rather than break a number across lines.
+const ROW_FACTORS = [0.92, 0.85, 0.78, 0.7];
+// SYNC: numLine / unitLine minWidth below.
+const NUM_LINE_PX = 60, UNIT_LINE_PX = 34;
 
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const numLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: ANSWER_LINE_H, display: 'inline-block' }} />;
@@ -31,7 +37,7 @@ function EditableNumber({ value, onCommit }: { value: number; onCommit: (v: numb
                 style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', border: '1px solid var(--accent)', borderRadius: '4px', padding: '0 4px' }} />
         );
     }
-    return <span onClick={e => { e.stopPropagation(); setText(String(value)); setEditing(true); }} style={{ cursor: 'text' }} title="Klik om aan te passen">{formatMathNumber(value)}</span>;
+    return <span onClick={e => { e.stopPropagation(); setText(String(value)); setEditing(true); }} style={{ cursor: 'text', whiteSpace: 'nowrap' }} title="Klik om aan te passen">{formatMathNumber(value)}</span>;
 }
 
 function EditableUnit({ value, measure, onCommit }: { value: string; measure: string; onCommit: (v: string) => void }) {
@@ -61,6 +67,8 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     // 'compact' = the single-part side goes left so the long compound always sits right.
     const layout: string = c.herleidingLayout ?? 'uitlijnen';
     const gap = block.verticalSpacing || 14;
+    const width = useBlockWidth();
+    const mathPx = useSheetSizePx('math');
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ padding: '8px 0', fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px' }}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -77,7 +85,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         commit(ex, { ...ex, toParts: ex.toParts.map((p, idx) => idx === i ? { ...p, ...patch } : p) });
 
     const renderFrom = (ex: HerleidingExercise) => ex.fromParts.map((p, i) => (
-        <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px', marginLeft: i > 0 ? '8px' : 0 }}>
+        <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '4px', marginLeft: i > 0 ? '8px' : 0, whiteSpace: 'nowrap' }}>
             <EditableNumber value={p.value} onCommit={v => editFrom(ex, i, { value: v })} />
             <EditableUnit value={p.key} measure={measure} onCommit={k => editFrom(ex, i, { key: k })} />
         </span>
@@ -87,7 +95,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         const numBlank = ex.blank === 'number';
         const unitBlank = ex.blank === 'unit' || (writeUnits && ex.blank === 'number');
         return (
-            <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px' }}>
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px', whiteSpace: 'nowrap' }}>
                 {numBlank
                     ? (showSolutions ? <span style={{ ...solutionText }}>{formatMathNumber(p.value)}</span> : numLine())
                     : <EditableNumber value={p.value} onCommit={v => editTo(ex, i, { value: v })} />}
@@ -101,18 +109,39 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     // Auto single-column when exercises get wide (long compounds / big numbers) so they don't
     // overflow into the block controls.
     const sideLen = (ps: HerleidingPart[]) => ps.map(p => `${formatMathNumber(p.value)} ${p.key}`).join('  ').length;
-    const cols = Math.max(...exercises.map(ex => sideLen(ex.fromParts) + 3 + sideLen(ex.toParts))) > 38 ? 1 : 2;
 
-    // Width estimates: a SHOWN side ≈ 9.5px/char (Azeret Mono @16px); a BLANK side renders
-    // as fixed lines (numLine 60 + unitLine 34 + gaps ≈ 100px/part) regardless of its value.
-    const givenPx = (ps: HerleidingPart[]) => sideLen(ps) * 9.5;
+    // Width estimates in Azeret Mono at the row's font `f`; a BLANK side renders as fixed
+    // lines (numLine 60 + unitLine 34 + gaps ≈ 100px/part) regardless of its value.
+    const givenPx = (ps: HerleidingPart[], f: number) => monoTextPx(sideLen(ps), f, mathPx);
     const blankPx = (ps: HerleidingPart[]) => ps.length * 100;
     // In 'compact' the single-part (shorter) side anchors the left; in 'uitlijnen' the given
     // is always left. The long compound therefore always lands on the (wrapping) right side.
     const leftIsFrom = (ex: HerleidingExercise) => layout === 'uitlijnen' || ex.fromParts.length <= ex.toParts.length;
-    const leftPx = (ex: HerleidingExercise) => leftIsFrom(ex) ? givenPx(ex.fromParts) : blankPx(ex.toParts);
+    const leftPx = (ex: HerleidingExercise, f: number) => leftIsFrom(ex) ? givenPx(ex.fromParts, f) : blankPx(ex.toParts);
     // Left box sized to the widest left side so every '=' column stays aligned.
-    const leftW = Math.max(150, Math.round(Math.max(...exercises.map(leftPx))) + 12);
+    const leftWAt = (f: number) => Math.max(150, Math.round(Math.max(...exercises.map(ex => leftPx(ex, f)))) + 12);
+    // The right side wraps between number/unit pairs only, so its widest PAIR (a blank, or the
+    // value/answer it may show) is what the row needs beside the left box and the "=".
+    const pairPx = (ex: HerleidingExercise, p: HerleidingPart, onTo: boolean, f: number) => {
+        const numBlank = onTo && ex.blank === 'number';
+        const unitBlank = onTo && (ex.blank === 'unit' || (writeUnits && ex.blank === 'number'));
+        return Math.max(numBlank ? NUM_LINE_PX : 0, monoTextPx(formatMathNumber(p.value).length, f, mathPx)) + 5
+            + Math.max(unitBlank ? UNIT_LINE_PX : 0, monoTextPx(p.key.length, f, mathPx));
+    };
+    const rightPx = (f: number) => Math.max(...exercises.map(ex => {
+        const onTo = leftIsFrom(ex);
+        return Math.max(...(onTo ? ex.toParts : ex.fromParts).map(p => pairPx(ex, p, onTo, f)));
+    }));
+    const rowPx = (f: number) => leftWAt(f) + 16 + monoTextPx(1, f, mathPx) + rightPx(f);
+    // Auto single-column when exercises get wide (long compounds / big numbers) so they don't
+    // overflow into the block controls. Two-up may take ONE font step to stay two-up (keeps the
+    // default oppervlakte sheet at four rows); otherwise the font steps within the one column.
+    const twoUp = Math.max(...exercises.map(ex => sideLen(ex.fromParts) + 3 + sideLen(ex.toParts))) <= 38
+        && rowPx(ROW_FACTORS[1]) <= (width - 28) / 2;
+    const cols = twoUp ? 2 : 1;
+    const colPx = twoUp ? (width - 28) / 2 : width;
+    const factor = ROW_FACTORS.find(f => rowPx(f) <= colPx) ?? ROW_FACTORS[ROW_FACTORS.length - 1];
+    const leftW = leftWAt(factor);
 
     const exerciseGrid = (
         <FragmentableGrid
@@ -122,7 +151,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
             items={exercises.map(ex => {
                 const lf = leftIsFrom(ex);
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: `calc(var(--sheet-size-math) * ${factor})` }}>
                         <span style={{ display: 'inline-block', width: `${leftW}px`, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{lf ? renderFrom(ex) : renderTo(ex)}</span>
                         <span style={{ flexShrink: 0 }}>=</span>
                         {/* Wrap the long side onto a second row instead of overflowing the page. */}
