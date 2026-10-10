@@ -93,6 +93,9 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
+- Kommagetallen drop their trailing zero in a fixed-decimals block: afronden-dec-rooster DEFAULT (2 dp)
+  prints "4,1", "63,8" next to "70,34"; ordenen-dec DEFAULT prints "544,3" among "127,49" (the numbers
+  are stored as floats and printed with `formatMathNumber`, no `toFixed(dp)`). Found by S1. 2026-10-10
 - hr-std-gemengd-dec DEFAULT: its '×' rows multiply two 2-decimal numbers ("4,89 × 100,12 = 489,5868")
   in a mental-arithmetic block (owner call). 2026-09-27
 - Hoofdrekenen breuken keys print big numerators without spaces ("36000004/5", VerticalFraction); an
