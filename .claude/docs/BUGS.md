@@ -100,8 +100,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Empty keys: breuken-kleuren ignores Oplossingen (FractionExerciseItem.tsx ~65: showColored only for
   herkennen); breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on;
   geld-wissel draws no model exchange. 2026-09-27
-- Degenerate defaults: deelbaarheid-veelvouden is six copies of "veelvouden van 9" ("Kleine reeks: 5
-  oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
+- Degenerate defaults: geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
   10, 2. 2026-09-27
 

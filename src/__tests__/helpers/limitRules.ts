@@ -356,7 +356,9 @@ const deelbaarheidSpec: TypeSpec<DeelbaarheidExercise> = {
     item: (e, ctx, push) => {
         if (ctx.c.layout === 'veelvouden') {
             const seq = e.sequence ?? [];
-            if (seq.some((v, i) => v !== (e.base ?? 0) * i)) push('answer-key', seq.join(','), `multiples of ${e.base}`, seq.join(','));
+            // Consecutive multiples of the base; each row may start at its own multiple.
+            const from = seq.length ? seq[0] / (e.base || 1) : 0;
+            if (!Number.isInteger(from) || seq.some((v, i) => v !== (e.base ?? 0) * (from + i))) push('answer-key', seq.join(','), `multiples of ${e.base}`, seq.join(','));
             return;
         }
         valueRange(fin([e.number]), 10, n(ctx.c.maxGetal, 1000), `${e.number}`, push);

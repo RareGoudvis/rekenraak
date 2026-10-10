@@ -242,7 +242,10 @@ describe('deelbaarheid', () => {
         const block = makeBlock('deelbaarheid', { constraints: { layout: 'veelvouden', base: 7, terms: 8 } });
         for (const ex of generateFor(block) as DeelbaarheidExercise[]) {
             expect(ex.sequence).toBeDefined();
-            ex.sequence!.forEach((v, i) => expect(v).toBe(ex.base! * i));
+            // Consecutive multiples; each row starts at its own multiple of the base.
+            const from = ex.sequence![0] / ex.base!;
+            expect(Number.isInteger(from)).toBe(true);
+            ex.sequence!.forEach((v, i) => expect(v).toBe(ex.base! * (from + i)));
             // At least one blank must remain or there is nothing to solve.
             expect(ex.givenCount!).toBeLessThan(ex.sequence!.length);
         }
