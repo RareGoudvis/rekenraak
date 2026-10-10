@@ -168,18 +168,12 @@ function geometry(inp: HrRowInput, fontScale: number, wrapChain: boolean) {
     const compactCellPx = Math.max(46, widestTermPx + 6);
     const steppedRowMin = maxTerms * compactCellPx + (maxTerms - 1) * COMPACT_OP_GAP
         + 8 + 10 /* "=" glyph + its right margin */ + worklineMinPx + labelColPx;
-    const twoUpShort = !tight && isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= widthPx;
+    const estimateTwoUp = !tight && isInlineShort && rowEstimate * 2 + COL_GAP_MIN <= widthPx;
     // Met-rest rows ignore layout and the compenseren line is far wider than a workline:
     // both stay 1-up. Longer term chains stay eligible and fall out on width alone.
     const twoUpStepped = !tight && layout === 'stepped' && !anyRemainder && !compScaffoldOn
         && maxChars <= STEPPED_2UP_MAX_CHARS
         && steppedRowMin * 2 + COL_GAP_MIN <= widthPx;
-    const gridCols: 1 | 2 = (twoUpShort || twoUpStepped) ? 2 : 1;
-    const rowWidthUsed = twoUpShort ? rowEstimate : steppedRowMin;
-    const colGap = gridCols === 2 ? Math.min(50, widthPx - 2 * rowWidthUsed) : 50;
-    // Centring a stepped row would collapse its flex:1 workline — only the intrinsically
-    // sized inline-short rows get centred inside their column.
-    const colJustify: 'center' | 'stretch' = gridCols === 2 && isInlineShort ? 'center' : 'stretch';
     // In a narrow cell the 85px operand columns eat the width the ANSWER line needs, so
     // the operands tighten and the writing line keeps the space.
     const compact = twoUpStepped || widthPx < FULL_BLOCK_WIDTH_PX - 20;
@@ -193,15 +187,26 @@ function geometry(inp: HrRowInput, fontScale: number, wrapChain: boolean) {
     const unitPx = termUnitGap + opGlyphPx + opTermGap + termBoxPx;
     const slotPx = isInlineShort ? answerLinePx : WORKLINE_MIN_PX;
     const answerColPx = answerGap + charPx + eqGap + Math.max(slotPx, Math.ceil(maxAnswerChars * charPx * HR_SOLUTION_FONT) + 8);
+    const flatRowPx = labelColPx + termBoxPx + (maxTerms - 1) * unitPx + answerColPx;
     const rowNeedPx = wrapChain
         ? labelColPx + termBoxPx + Math.max((maxTerms - 2) * unitPx, unitPx + answerColPx)
-        : labelColPx + termBoxPx + (maxTerms - 1) * unitPx + answerColPx;
+        : flatRowPx;
+
+    // The estimate alone let natural 1e6 rows go 2-up 11px past their half (sweep pw059-061):
+    // a 2-up Kort row must also fit its column as DRAWN.
+    const twoUpShort = estimateTwoUp && flatRowPx * 2 + COL_GAP_MIN <= widthPx;
+    const gridCols: 1 | 2 = (twoUpShort || twoUpStepped) ? 2 : 1;
+    const rowWidthUsed = twoUpShort ? Math.max(rowEstimate, flatRowPx) : steppedRowMin;
+    const colGap = gridCols === 2 ? Math.min(50, widthPx - 2 * rowWidthUsed) : 50;
+    // Centring a stepped row would collapse its flex:1 workline — only the intrinsically
+    // sized inline-short rows get centred inside their column.
+    const colJustify: 'center' | 'stretch' = gridCols === 2 && isInlineShort ? 'center' : 'stretch';
 
     const layoutOut: HrRowLayout = {
         tight, compact, fontScale, wrapChain, charPx, labelPx, labelColPx, widestTermPx, termBoxPx, answerLinePx,
         gridCols, colGap, colJustify, blankW, blankM, opGlyphPx, opTermGap, termUnitGap, eqGap, answerGap,
     };
-    return { layout: layoutOut, rowNeedPx };
+    return { layout: layoutOut, rowNeedPx, estimateTwoUp };
 }
 
 /** The 1-up row width the ladder tests at one font step, wrapped or not. */
@@ -212,6 +217,14 @@ export function hrRowNeedPx(inp: HrRowInput, fontScale: number, wrapChain: boole
 /** Size the hoofdrekenen row and pick its fit: full font, a smaller step, or a wrapped chain. */
 export function hrRowLayout(inp: HrRowInput): HrRowLayout {
     const full = geometry(inp, 1, false);
+    // A Kort block the estimate calls 2-up but whose drawn row is a little too wide steps its
+    // font down the same ladder before giving up the second column.
+    if (full.estimateTwoUp && full.layout.gridCols === 1) {
+        for (const f of HR_FIT_FONT_STEPS.slice(1)) {
+            const g = geometry(inp, f, false);
+            if (g.layout.gridCols === 2) return g.layout;
+        }
+    }
     const fitCandidate = !full.layout.tight && inp.maxTerms >= 3 && inp.maxChars >= FIT_MIN_CHARS
         && inp.maxFractionPx === 0 && !inp.anyRemainder;
     if (!fitCandidate || full.rowNeedPx <= inp.widthPx) return full.layout;
