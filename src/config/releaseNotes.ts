@@ -213,6 +213,11 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'gewijzigd',
+                text: 'Herleidingen met “eenheid schrijven”: elke oefening zegt naar welke eenheid (“(in mm)” op papier, “Zet om naar mm” op het toestel). Toggle “Doeleenheid tonen”.',
+                example: { leafId: 'herleidingen-lengte', constraints: { writeUnits: true }, grade: 4, count: 2, after: '“53 cm = ____ ____ (in mm)”' },
+            },
+            {
+                kind: 'gewijzigd',
                 text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
             },
             {

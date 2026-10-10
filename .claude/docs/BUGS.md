@@ -8,6 +8,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- Herleidingen writeUnits with "Zet om naar cm": the kiosk check is value-equal, so "30 dm" counts as juist when the
+  header asked for cm; owner call whether the target unit should be enforced when shown (F4 2026-10-10). 2026-10-10
+- Kiosk Resultaten row for a writeUnits herleiding reads "= ? (getal en eenheid)" without the target unit. 2026-10-10
+- `blockLayout.minWidthUnits` reads only the top-level `preset`, so a gemengd compenseren block's first-paint
+  width misses the tussenstap (the measured clamp corrects it on screen). 2026-10-10
+
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
 
