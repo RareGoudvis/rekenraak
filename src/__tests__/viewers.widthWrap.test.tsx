@@ -109,6 +109,17 @@ describe('getalpatronen: terms never break and the row fits its column', () => {
         const gaps = (mins.length - 1) * px(row.style.columnGap);
         expect(mins.reduce((a, b) => a + b, 0) + gaps).toBeLessThanOrEqual(width);
     });
+    test('ten 8-glyph terms (pw009) wrap after a dash instead of running off the page', () => {
+        const values = [Array.from({ length: 10 }, (_, i) => (131_481 - 500 * i) / 100)];
+        const { container } = at(W.full, <PatroonViewer block={block(values)} showSolutions />);
+        const row = container.querySelector('.print-exercise') as HTMLElement;
+        expect(factorOf(row)).toBe(0.7);
+        const m = /^repeat\((\d+), minmax\(([\d.]+)px, 1fr\) minmax\(([\d.]+)px, 1fr\)\)$/.exec(row.style.gridTemplateColumns)!;
+        const [perLine, term, conn] = [Number(m[1]), Number(m[2]), Number(m[3])];
+        expect(perLine).toBeLessThan(10);
+        expect(term).toBeGreaterThanOrEqual(monoTextPx(8, 0.7, MATH_PX));
+        expect(perLine * (term + conn) + (2 * perLine - 1) * px(row.style.columnGap)).toBeLessThanOrEqual(W.full);
+    });
     test('negative terms are separated by a semicolon, with a true minus', () => {
         const { container } = at(W.full, <PatroonViewer block={block([[-53, -43, -33, -23]])} showSolutions />);
         const text = container.textContent!;

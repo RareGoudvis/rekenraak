@@ -15,7 +15,7 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 // Term font steps: the default 1.04, then smaller until the row fits its column. 0.7 (12px)
-// is the legibility floor; a row that does not fit even then overflows and is widened.
+// is the legibility floor; a row that does not fit even then wraps onto a second line.
 const TERM_FACTORS = [1.04, 0.92, 0.8, 0.7];
 const COL_GAP_PX = 2;
 // The blank under a term: 46px at the default term font, shrinking with the font steps.
@@ -73,9 +73,16 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
     }))) + 1;
     const rowPxAt = (f: number) => Array.from({ length: nVals }, (_, i) => termPxAt(f, i)).reduce((a, b) => a + b, 0)
         + (nVals - 1) * connPxAt(f) + (2 * nVals - 2) * COL_GAP_PX;
-    const factor = TERM_FACTORS.find(f => rowPxAt(f) <= width) ?? TERM_FACTORS[TERM_FACTORS.length - 1];
+    const fitting = TERM_FACTORS.find(f => rowPxAt(f) <= width);
+    const factor = fitting ?? TERM_FACTORS[TERM_FACTORS.length - 1];
     const connPx = connPxAt(factor), blankPx = blankPxAt(factor);
-    const columns = (n: number) => Array.from({ length: n * 2 - 1 }, (_, i) => `minmax(${i % 2 === 0 ? termPxAt(factor, i / 2) : connPx}px, 1fr)`).join(' ');
+    // Even the 0.7 floor too wide (ten 8-glyph terms): the chain wraps after a dash, every line
+    // `perLine` terms of the block's widest term column, instead of running off the page.
+    const widestTermPx = Math.max(...Array.from({ length: nVals }, (_, i) => termPxAt(factor, i)));
+    const perLine = fitting ? nVals : Math.max(2, Math.floor((width + COL_GAP_PX) / (widestTermPx + connPx + 2 * COL_GAP_PX)));
+    const columns = (n: number) => perLine < n
+        ? `repeat(${perLine}, minmax(${widestTermPx}px, 1fr) minmax(${connPx}px, 1fr))`
+        : Array.from({ length: n * 2 - 1 }, (_, i) => `minmax(${i % 2 === 0 ? termPxAt(factor, i / 2) : connPx}px, 1fr)`).join(' ');
 
     return (
         <FragmentableGrid
