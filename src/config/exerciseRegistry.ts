@@ -621,11 +621,18 @@ const fitAxisSpan = (c: Record<string, unknown>): Record<string, unknown> => {
     return steps.length ? { ...c, ticks: t, step: Math.max(...steps) } : { ...c, ticks: t };
 };
 
-export const SEED_FIT: Record<string, (c: Record<string, unknown>) => Record<string, unknown>> = {
+// Kettingsommen (owner 2026-10-10): leerjaar 1-2 see the tussenresultaten (only the end is blank),
+// from leerjaar 3 every value after the start is. Unset = off, so no grade and an old link stay off.
+const fitKettingGrade = (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>): Record<string, unknown> =>
+    grade != null && grade <= 2 && !(override && 'showIntermediates' in override) ? { ...c, showIntermediates: true } : c;
+
+// (merged constraints, the picked leerjaar, the leaf / author override) → the fitted seed.
+export const SEED_FIT: Record<string, (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>) => Record<string, unknown>> = {
     'afronden': fitRoundTargets,
     'schattend': fitRoundTargets,
     'getallenas': fitAxisSpan,
     'getallenrijen': fitAxisSpan,
+    'kettingsommen': fitKettingGrade,
 };
 
 // An old save or share link can hold a max its picker no longer lists (the 1e10 leerjaar-6

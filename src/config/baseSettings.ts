@@ -169,7 +169,7 @@ export function seedConstraints({ typeId, base, override: leafOverride, grade, l
     // when the max is the seed's: a max the override pins is the author's, and the generator's
     // note then explains what it had to change.
     const maxPinned = !!override && MAX_KEYS.some(k => k in override);
-    return (!maxPinned && SEED_FIT[typeId]?.(merged)) || merged;
+    return (!maxPinned && SEED_FIT[typeId]?.(merged, grade, override)) || merged;
 }
 
 // A leaf as a sidebar click at `grade` would seed it on an untouched base, plus `extra` on top
