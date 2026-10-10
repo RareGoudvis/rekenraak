@@ -11,6 +11,8 @@ import GeldRekenenViewer from '../components/viewer/GeldRekenenViewer';
 import DeelbaarheidViewer from '../components/viewer/DeelbaarheidViewer';
 import RekenvolgordeViewer from '../components/viewer/RekenvolgordeViewer';
 import RomeinseViewer from '../components/viewer/RomeinseViewer';
+import ProcentenViewer from '../components/viewer/ProcentenViewer';
+import CijferViewer from '../components/viewer/CijferViewer';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
@@ -208,5 +210,33 @@ describe('rekenvolgorde / romeinse: text columns follow the Cijfers slider', () 
         // 1.04 x the token per glyph plus the 1px letter-spacing
         const need = monoTextPx(9, 1.04, sheetSizePx('math', pt)) + 9;
         expect(px(prompt.style.width)).toBeGreaterThanOrEqual(need);
+    });
+});
+
+describe('narrow cells: an equation never breaks inside its sentence or a number', () => {
+    const factorOf = (el: HTMLElement) => Number(/\* ([\d.]+)\)/.exec(el.style.fontSize)![1]);
+    test.each([
+        ['welk-percent', { percent: 50, base: 904, answer: 452 }, 'van de'],
+        ['nemen', { percent: 25, base: 1_240, answer: 310 }, '% van'],
+    ])('procenten %s at a quarter', (subType, ex, marker) => {
+        const block = { id: 'b', typeId: 'procenten', constraints: { subType }, procentExercises: [{ id: 'p', isManuallyEdited: false, ...ex }] } as unknown as MathBlock;
+        const { container } = at(W.quarter, <ProcentenViewer block={block} showSolutions={false} />);
+        const prompt = [...container.querySelectorAll('span')].find(sp => sp.textContent!.includes(marker))!;
+        expect(prompt.style.whiteSpace).toBe('nowrap');
+        const row = prompt.parentElement as HTMLElement;
+        // The sentence itself fits the cell at the row's font; the blank may drop below it.
+        expect(monoTextPx(prompt.textContent!.length, factorOf(row), MATH_PX)).toBeLessThanOrEqual(W.quarter);
+        expect(row.style.flexWrap).toBe('wrap');
+    });
+    test('procenten keeps the 0.92 sheet size where the line fits', () => {
+        const block = { id: 'b', typeId: 'procenten', constraints: { subType: 'nemen' }, procentExercises: [{ id: 'p', percent: 25, base: 1_240, answer: 310, isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <ProcentenViewer block={block} showSolutions={false} />);
+        expect(factorOf(container.querySelector('.print-exercise > div') as HTMLElement)).toBe(0.92);
+    });
+    test('cijferen: a 4-term header at a quarter breaks between terms only', () => {
+        const block = { id: 'b', typeId: 'cijferen-optellen-nat', constraints: { operator: '+', numberType: 'natural', maxRange: 10_000 }, cijferExercises: [{ id: 'c', operands: [3_120, 1_445, 28, 2_906], operator: '+', answer: 7_499, remainder: 0, isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.quarter, <CijferViewer block={block} showSolutions={false} />);
+        expect(container.textContent).toContain('3 120 + 1 445 + 28 + 2 906 =');
+        groupedNumbersNowrap(container);
     });
 });

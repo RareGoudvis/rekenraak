@@ -45,9 +45,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   ~2 px apart: nine tens read as one solid block). mab-tekenen at width ¼ (default leaf, the packer keeps
   w1): the D/H/T/E table is ~75 px wide, no room to draw. Fix: bigger pieces; minWidth 2 for
   mab-tekenen. 2026-09-27
-- Narrow-width wrapping: procenten-nemen / -welk DEFAULT at ¼ split "452 van / de 904 / ="; cijferen
-  headers with 3-4 terms at ¼ wrap inside a number ("… + 1 / 445 + 28 ="); vergelijken representaties
-  woorden vs plaatswaarde at ½ / ¼ (pw021): the "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
+- Narrow-width wrapping: vergelijken representaties woorden vs plaatswaarde at ½ / ¼ (pw021): the
+  "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
 - Hoofdrekenen natural at 1e6 with an operand mask (pw059-061 optellen/aftrekken, gemengd pw052-058):
   the two-per-row layout ends 11 px past the full-width cell (te breed at every width); hrRowLayout
   picks 2 columns the row does not fit. 2026-09-27

@@ -2978,32 +2978,32 @@
   },
   "procenten-nemen-w1-s0": {
    "cellHeightPx": 536,
-   "intrinsicPx": 109,
+   "intrinsicPx": 145,
    "textHash": "af7823365cb5de9e"
   },
   "procenten-nemen-w1-s1": {
-   "cellHeightPx": 512,
-   "intrinsicPx": 109,
+   "cellHeightPx": 544,
+   "intrinsicPx": 145,
    "textHash": "43a28d5c298cf053"
   },
   "procenten-nemen-w2-s0": {
    "cellHeightPx": 384,
-   "intrinsicPx": 109,
+   "intrinsicPx": 145,
    "textHash": "af7823365cb5de9e"
   },
   "procenten-nemen-w2-s1": {
    "cellHeightPx": 360,
-   "intrinsicPx": 109,
+   "intrinsicPx": 145,
    "textHash": "43a28d5c298cf053"
   },
   "procenten-nemen-w4-s0": {
    "cellHeightPx": 224,
-   "intrinsicPx": 242,
+   "intrinsicPx": 314,
    "textHash": "af7823365cb5de9e"
   },
   "procenten-nemen-w4-s1": {
    "cellHeightPx": 212,
-   "intrinsicPx": 242,
+   "intrinsicPx": 314,
    "textHash": "43a28d5c298cf053"
   },
   "procenten-verbanden-w1-s0": {
@@ -3037,33 +3037,33 @@
    "textHash": "87453ed60f204e34"
   },
   "procenten-welk-w1-s0": {
-   "cellHeightPx": 669,
-   "intrinsicPx": 113,
+   "cellHeightPx": 384,
+   "intrinsicPx": 166,
    "textHash": "6d9ea10a73ff3456"
   },
   "procenten-welk-w1-s1": {
-   "cellHeightPx": 645,
-   "intrinsicPx": 113,
+   "cellHeightPx": 360,
+   "intrinsicPx": 166,
    "textHash": "6256a24b5c561808"
   },
   "procenten-welk-w2-s0": {
    "cellHeightPx": 384,
-   "intrinsicPx": 113,
+   "intrinsicPx": 166,
    "textHash": "6d9ea10a73ff3456"
   },
   "procenten-welk-w2-s1": {
    "cellHeightPx": 360,
-   "intrinsicPx": 113,
+   "intrinsicPx": 166,
    "textHash": "6256a24b5c561808"
   },
   "procenten-welk-w4-s0": {
    "cellHeightPx": 224,
-   "intrinsicPx": 251,
+   "intrinsicPx": 356,
    "textHash": "6d9ea10a73ff3456"
   },
   "procenten-welk-w4-s1": {
    "cellHeightPx": 212,
-   "intrinsicPx": 251,
+   "intrinsicPx": 356,
    "textHash": "6256a24b5c561808"
   },
   "romeinse-herkennen-w1-s0": {
