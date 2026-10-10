@@ -862,6 +862,8 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             const b = maskB !== null ? Math.round(maskB / INTERNAL_SCALE) : randInt(2, bHi);
 
             if (a <= 0 || b < 2 || a * b > maxGetal + 1e-9) continue;
+            // A whole-only Factor 1 mask ({E}) can draw a 1.
+            if (constraints.excludeOne && a === 1) continue;
             if (breaksOperandMax(constraints, [a, b])) continue;
             const comboId = `${a}*${b}`;
             if (usedCombinations.has(comboId)) continue;

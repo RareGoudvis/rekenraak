@@ -40,6 +40,12 @@ describe.each(['hr-std-vermenigvuldigen-dec', 'hr-std-gemengd-dec'])('%s ×', (l
     });
 });
 
+test('Zonder ×1 holds when a whole-only Factor 1 mask ({E}) draws a 1', () => {
+    for (const e of timesRows('hr-std-vermenigvuldigen-dec', { operand1Mask: { E: true }, excludeOne: true })) {
+        expect(e.operands, (e.operands as number[]).join(' × ')).not.toContain(1);
+    }
+});
+
 test('constraintSpace sweeps the toggle on hoofdrekenen ×', () => {
     expect(constraintSpaceFor('hr-std-vermenigvuldigen').decimalTimesDecimal).toEqual([false, true]);
 });
