@@ -149,7 +149,7 @@ const clockSpace: OptionSpace = {
         ['nauwkeurig_1'],
         ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor', 'nauwkeurig_5', 'nauwkeurig_1'],
     ],
-    minuteDirection: ['over', 'voor', 'beide'],
+    minuteDirection: ['over', 'voor', 'beide', 'uur-over', 'half-voor', 'half-over', 'uur-voor'],
     handChoice: ['uur', 'minuut', 'beide'],
 };
 
