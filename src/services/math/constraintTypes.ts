@@ -107,6 +107,9 @@ export type MulDivConstraints = AddSubConstraints & {
     divisionLevels?: number[];
     metRestLevel?: number;
     excludeOne?: boolean;
+    // Decimal ×: absent / false = kommagetal × natuurlijk getal (minimumdoelen 2.2, 3 × 0,4);
+    // true = both factors may be kommagetallen ("Kommagetal × kommagetal").
+    decimalTimesDecimal?: boolean;
     // Rational ×/: — cap the denominator the answer may keep after simplifying.
     simplifyMaxDenominatorChecked?: boolean;
     simplifyMaxDenominator?: number;

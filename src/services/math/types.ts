@@ -101,6 +101,8 @@ export interface OrdenenExercise {
     values: (number | Fraction)[];   // ordered per operator (the answer)
     display: (number | Fraction)[];  // shuffled prompt shown on top
     operator: '<' | '>';
+    // Decimal blocks: the printed decimals, trailing zeros kept (544,30 beside 127,49).
+    decimalPlaces?: number;
     isManuallyEdited: boolean;
 }
 
@@ -145,6 +147,8 @@ export interface AfrondenExercise {
     number?: number;      // simpel view: the single number
     targetKey?: string;   // simpel view: which place to round to (T/H/D/TD or E/t/h)
     numbers?: number[];   // rooster view: the left-column numbers
+    // Decimal blocks: the printed decimals of number / numbers, trailing zeros kept (4,10).
+    decimalPlaces?: number;
     isManuallyEdited: boolean;
 }
 

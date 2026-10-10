@@ -27,7 +27,7 @@ import { generateOrdenenExercises, generateOrdenenExercisesNoted } from '../serv
 import { generateDeelbaarheidExercises } from '../services/deelbaarheid/deelbaarheidGenerator';
 import { generateGetallenasExercises, generateGetallenasExercisesNoted } from '../services/getallenas/getallenasGenerator';
 import { generateGetallenrijExercises, generateGetallenrijExercisesNoted } from '../services/getallenrij/getallenrijGenerator';
-import { generateLengteMetenExercises, generateOmtrekExercises, generateOmtrekExercisesNoted, generateOppervlakteExercises, generateOppervlakteExercisesNoted } from '../services/meten/metenGenerator';
+import { generateLengteMetenExercises, generateLengteMetenExercisesNoted, generateOmtrekExercises, generateOmtrekExercisesNoted, generateOppervlakteExercises, generateOppervlakteExercisesNoted } from '../services/meten/metenGenerator';
 import { generatePatroonExercises, generatePatroonExercisesNoted } from '../services/patroon/patroonGenerator';
 import { generateDeelbaarheidKleurExercises } from '../services/deelbaarheid/deelbaarheidKleurGenerator';
 import { DEELBAARHEID_KLEUR_KIOSK } from '../services/oefenen/kioskDescriptors';
@@ -534,7 +534,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'deelbaarheid-kleuren': row<DeelbaarheidKleurConstraints>({ exerciseField: 'deelbaarheidKleurExercises', generate: generateDeelbaarheidKleurExercises, defaultConstraints: deelbaarheidKleurDefaults, defaultCount: 3, maxPresets: deelbaarheidKleurMax, kiosk: DEELBAARHEID_KLEUR_KIOSK }),
     'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   generateNoted: generateGetallenasExercisesNoted, defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) , kiosk: GETALLENAS_KIOSK }),
     'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: getallenrijMax, kiosk: GETALLENAS_KIOSK }),
-    'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises,  defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: LENGTE_KIOSK }),
+    'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises, generateNoted: generateLengteMetenExercisesNoted, defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: LENGTE_KIOSK }),
     // Real-size figures one per row (up to a 10 cm square, ~450 px with its answer): two fit
     // one A4 page at the default; six ran to 2 093 px (sweep 2026-09-27).
     'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises, generateNoted: generateOmtrekExercisesNoted,       defaultConstraints: metenDefaults,        defaultCount: 2 , kiosk: OMTREK_KIOSK }),
@@ -621,11 +621,18 @@ const fitAxisSpan = (c: Record<string, unknown>): Record<string, unknown> => {
     return steps.length ? { ...c, ticks: t, step: Math.max(...steps) } : { ...c, ticks: t };
 };
 
-export const SEED_FIT: Record<string, (c: Record<string, unknown>) => Record<string, unknown>> = {
+// Kettingsommen (owner 2026-10-10): leerjaar 1-2 see the tussenresultaten (only the end is blank),
+// from leerjaar 3 every value after the start is. Unset = off, so no grade and an old link stay off.
+const fitKettingGrade = (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>): Record<string, unknown> =>
+    grade != null && grade <= 2 && !(override && 'showIntermediates' in override) ? { ...c, showIntermediates: true } : c;
+
+// (merged constraints, the picked leerjaar, the leaf / author override) → the fitted seed.
+export const SEED_FIT: Record<string, (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>) => Record<string, unknown>> = {
     'afronden': fitRoundTargets,
     'schattend': fitRoundTargets,
     'getallenas': fitAxisSpan,
     'getallenrijen': fitAxisSpan,
+    'kettingsommen': fitKettingGrade,
 };
 
 // An old save or share link can hold a max its picker no longer lists (the 1e10 leerjaar-6

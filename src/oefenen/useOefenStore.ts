@@ -99,7 +99,13 @@ export interface CurrentInput {
     pieces?: KioskPiece[];
     // The descriptor's action keys for this exercise (Lenen), beside the character keys.
     extraKeys: KioskExtraKey[];
+    // multi-number: Controleer works with some fields empty (descriptor blankFields).
+    blankFieldsOk: boolean;
 }
+
+/** Whether Controleer may take these typed fields: all filled, or one when the fields may stay empty. */
+export const typedReady = (input: readonly string[], blankFieldsOk: boolean): boolean =>
+    blankFieldsOk ? input.some(v => v.trim() !== '') : input.every(v => v.trim() !== '');
 
 const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
     'number+rest': ['quotiënt', 'rest'], time: ['uur', 'min'], 'missing-operand': ['Wat ontbreekt?'], text: ['Antwoord'],
@@ -125,6 +131,7 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
     return {
         kind, keys: d.keys?.(cur.constraints) ?? [], choices, labels, separator: d.separator?.(cur.exercise, cur.constraints),
         extraKeys: d.extraKeys?.(cur.exercise, cur.constraints) ?? [],
+        blankFieldsOk: kind === 'multi-number' && !!d.blankFields?.(cur.exercise, cur.constraints),
         ...(ia && { interact: ia.kind }),
         ...(ia?.kind === 'build' && { pieces: ia.pieces?.(cur.exercise, cur.constraints) ?? [] }),
     };
@@ -384,7 +391,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // The clock ticks once a second: an answer in the gap after the deadline ends the run uncounted.
             if (timeUp(run, now)) { finish(run, now); return; }
             const interactive = interactionAnswer(s, cur, get().interaction);
-            if (interactive ? !interactive.ready : input.some(v => v.trim() === '')) return;
+            if (interactive ? !interactive.ready : !typedReady(input, currentInput(s, cur)?.blankFieldsOk ?? false)) return;
             const type = s.types[cur.slot];
             const d = type && kioskFor(type.typeId);
             if (!d) return;

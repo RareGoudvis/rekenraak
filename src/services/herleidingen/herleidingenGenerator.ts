@@ -189,6 +189,11 @@ function mk(format: string, fromParts: HerleidingPart[], toParts: HerleidingPart
     return { id: `herl-${Math.random().toString(36).slice(2, 9)}`, format: format as HerleidingExercise['format'], fromParts, toParts, blank, isManuallyEdited: false };
 }
 
+// Owner 2026-10-10: a compound answer's zero parts stay blanks on the sheet but leave the key
+// ("71 dl", not "71 dl 0 cl 0 ml"), and the kiosk takes them typed as 0 or left empty.
+export const isZeroAnswerPart = (ex: HerleidingExercise, p: HerleidingPart): boolean =>
+    ex.blank === 'number' && ex.toParts.length > 1 && p.value === 0 && ex.toParts.some(q => q.value !== 0);
+
 // After a teacher edits a SHOWN field, restore the equation invariant base(from) === base(to)
 // by recomputing the blanked answer side. Returns a patched copy (isManuallyEdited).
 export function recomputeHerleiding(measure: string, ex: HerleidingExercise): HerleidingExercise {

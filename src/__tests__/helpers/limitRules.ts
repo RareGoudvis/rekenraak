@@ -824,8 +824,9 @@ const lengteSpec: TypeSpec<MeetExercise> = {
         const c = ctx.c;
         const maxL = n(c.maxLength, 10), lo = Math.max(1, Math.min(n(c.minLength, 3), maxL));
         const ex = `zijden ${(e.sides ?? []).join(', ')} = ${e.perimeter}`;
-        // The path TOTAL may exceed maxLength (owner call); each drawn segment may not.
-        valueRange(e.sides ?? [], lo, maxL, ex, push);
+        // The path TOTAL may exceed maxLength (owner call); each drawn segment may not. True size
+        // (owner 2026-10-10): a column too narrow for the minimum shortens the path WITH the note.
+        valueRange(e.sides ?? [], /ware grootte/.test(ctx.note ?? '') ? 0 : lo, maxL, ex, push);
         if ((e.sides?.length ?? 1) - 1 > n(c.maxCorners, 0)) push('corners>max', (e.sides?.length ?? 1) - 1, c.maxCorners, ex);
     },
 };

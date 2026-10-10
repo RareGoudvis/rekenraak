@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { MathBlock, HerleidingExercise, HerleidingPart } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
-import { ladderFor, recomputeHerleiding } from '../../services/herleidingen/herleidingenGenerator';
+import { isZeroAnswerPart, ladderFor, recomputeHerleiding } from '../../services/herleidingen/herleidingenGenerator';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import type { HerleidingenConstraints } from '../../services/math/constraintTypes';
@@ -94,6 +94,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     const renderTo = (ex: HerleidingExercise) => ex.toParts.map((p, i) => {
         const numBlank = ex.blank === 'number';
         const unitBlank = ex.blank === 'unit' || (writeUnits && ex.blank === 'number');
+        if (showSolutions && isZeroAnswerPart(ex, p)) return null;
         return (
             <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px', whiteSpace: 'nowrap' }}>
                 {numBlank

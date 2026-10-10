@@ -112,6 +112,8 @@ const hrMixed: OptionSpace = {
         ['+', '+:compenseren', '-', '-:compenseren', 'x', 'x:tienvoud', ':', ':tienvoud'],
     ],
     mix: ['random', 'cycle'],
+    // The x tab's multiplication/DecimalSettings toggle, read through the shared bag.
+    decimalTimesDecimal: [false, true],
     // Sparse tab overrides: only what a teacher changed inside one variant's tab.
     perVariant: [
         {},
@@ -149,7 +151,7 @@ const clockSpace: OptionSpace = {
         ['nauwkeurig_1'],
         ['uren', 'halve_uren', 'kwartier_over', 'kwartier_voor', 'nauwkeurig_5', 'nauwkeurig_1'],
     ],
-    minuteDirection: ['over', 'voor', 'beide'],
+    minuteDirection: ['over', 'voor', 'beide', 'uur-over', 'half-voor', 'half-over', 'uur-voor'],
     handChoice: ['uur', 'minuut', 'beide'],
 };
 
@@ -489,7 +491,8 @@ const tijdsduurSpace: OptionSpace = {
 const kalenderSpace: OptionSpace = {
     subType: ['maandrooster', 'datum-rekenen', 'notatie'],
     questionTypes: [['dag-van-datum'], ['datum-van-dag'], ['tellen'], ['dag-van-datum', 'datum-van-dag', 'tellen']],
-    questionCount: [1, 5, 10],
+    // KalenderConfig's slider: 3-8 vragen per rooster (configDrift pins it).
+    questionCount: [3, 5, 8],
     month: ['random', 0, 1, 11],
     year: [2024, 2026],
 };
@@ -549,7 +552,8 @@ const layoutSpace: Record<string, OptionSpace> = {
 export const CONSTRAINT_SPACE: Record<string, OptionSpace> = {
     'hr-std-optellen': hrAddSub,
     'hr-std-aftrekken': hrAddSub,
-    'hr-std-vermenigvuldigen': hrMulDiv,
+    // multiplication/DecimalSettings 'Kommagetal × kommagetal' (× only).
+    'hr-std-vermenigvuldigen': { ...hrMulDiv, decimalTimesDecimal: [false, true] },
     'hr-std-delen': hrMulDiv,
     'hr-std-gemengd': hrMixed,
 

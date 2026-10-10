@@ -2,9 +2,10 @@
  * Zet een getal om naar een string met decimale komma en spaties per duizendtal.
  * Voorbeeld: 1234.56 -> "1 234,56"
  */
-export const formatMathNumber = (num: number | string | undefined): string => {
+export const formatMathNumber = (num: number | string | undefined, decimalPlaces?: number): string => {
     if (num === undefined || num === '') return '';
-    const str = String(num);
+    // A fixed-decimals block keeps its trailing zeros: 4.1 at 2 decimals is "4,10".
+    const str = typeof num === 'number' && decimalPlaces ? num.toFixed(decimalPlaces) : String(num);
     const [integerPart, decimalPart] = str.split('.');
 
     // 1. Duizendtal-spaties toevoegen

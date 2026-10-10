@@ -1,5 +1,6 @@
 import type { FractionExercise, FractionSubType, FractionShape, MathBlock } from '../math/types';
 import type { FractionConstraints } from '../math/constraintTypes';
+import { trueSizeBudgetCm } from '../layout/trueSize';
 
 function getGridLayout(denominator: number): { rows: number; cols: number } {
     const layouts: Record<number, [number, number]> = {
@@ -78,12 +79,22 @@ function makeAmountExercise(subType: FractionSubType, block: MathBlock): Fractio
     };
 }
 
+// The lijnstuk prints at true size (owner 2026-10-10), so its length is capped to the whole cm
+// its column holds. SYNC: FractionViewer columnWidth (the cell less 16 px).
+// Its instruction and calc rows measure 164 px of min-content (2026-10-10), over a quarter's 151,
+// so the packer prints a quarter-width lijnstuk at a half: that is the column it gets.
+const LIJNSTUK_RESERVE_PX = 16, LIJNSTUK_MIN_TIER = 2;
+const lijnstukCapCm = (block: MathBlock) => Math.max(1, Math.floor(trueSizeBudgetCm(block, LIJNSTUK_RESERVE_PX, LIJNSTUK_MIN_TIER)));
+
 function makeLijnstukExercise(block: MathBlock): FractionExercise {
     const { minDenominator = 2, maxDenominator = 6, minLineLength = 1, maxLineLength = 15 } = block.constraints as FractionConstraints;
-    // Swap-safe length window; line = denominator × multiplier keeps each of the
-    // `denominator` segments a whole number of cm.
-    const loLen = Math.max(1, Math.min(minLineLength, maxLineLength));
-    const hiLen = Math.max(loLen, maxLineLength);
+    // Swap-safe length window under the column's cap; line = denominator × multiplier keeps
+    // each of the `denominator` segments a whole number of cm.
+    const cap = lijnstukCapCm(block);
+    const minLen = Math.max(1, Math.min(minLineLength, maxLineLength));
+    // A minimum the column cannot hold gives way entirely: any whole-cm multiple under the cap.
+    const loLen = minLen > cap ? 1 : minLen;
+    const hiLen = Math.max(loLen, Math.min(maxLineLength, cap));
     // Only pick denominators that fit at least once within the max length (mult=1 → length=d ≤ hiLen);
     // otherwise a line of d cm would already blow the ceiling.
     const denChoices: number[] = [];
@@ -169,20 +180,33 @@ function makeAbstractExercise(block: MathBlock): FractionExercise {
 export function generateFractionExercisesNoted(block: MathBlock): { items: FractionExercise[]; note: string | null } {
     const c = block.constraints as FractionConstraints;
     const amount = c.subType === 'hoeveelheid' || c.subType === 'hoeveelheid-rechthoek';
-    const note = amount && Math.max(2, c.minDenominator ?? 2) > (c.maxTotal ?? 20)
+    let note = amount && Math.max(2, c.minDenominator ?? 2) > (c.maxTotal ?? 20)
         ? 'Het totaal is kleiner dan de minimale noemer: er wordt een kleinere noemer gebruikt.' : null;
+    if (c.subType === 'lijnstuk' && Math.max(1, c.maxLineLength ?? 15) > lijnstukCapCm(block)) {
+        note = `Op ware grootte past in deze kolom een lijnstuk van hoogstens ${lijnstukCapCm(block)} cm: de lijnstukken zijn daarop afgestemd.`;
+    }
     return { items: generateFractionExercises(block), note };
 }
+
+const SHAPE_RETRIES = 40;
 
 export function generateFractionExercises(block: MathBlock): FractionExercise[] {
     const subType = ((block.constraints as FractionConstraints).subType || 'kleuren') as FractionSubType;
     const count = block.numberOfExercises || 6;
+    // kleuren / herkennen: each breuk once while the range has fresh ones (the default repeated 7/8).
+    const seen = new Set<string>();
+    const freshShape = (st: FractionSubType): FractionExercise => {
+        let ex = makeShapeExercise(st, block);
+        for (let t = 0; t < SHAPE_RETRIES && seen.has(`${ex.numerator}/${ex.denominator}`); t++) ex = makeShapeExercise(st, block);
+        seen.add(`${ex.numerator}/${ex.denominator}`);
+        return ex;
+    };
 
     return Array.from({ length: count }, (): FractionExercise => {
         switch (subType) {
             case 'kleuren':
             case 'herkennen':
-                return makeShapeExercise(subType, block);
+                return freshShape(subType);
             case 'hoeveelheid':
             case 'hoeveelheid-rechthoek':
                 return makeAmountExercise(subType, block);

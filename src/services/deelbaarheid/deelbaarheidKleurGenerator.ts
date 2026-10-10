@@ -32,8 +32,12 @@ export function generateDeelbaarheidKleurExercises(block: MathBlock): Deelbaarhe
     const rasterCols: number = c.rasterCols ?? 10;
     const n = block.numberOfExercises;
 
-    return Array.from({ length: n }, () => {
-        const divisor = divisors[randInt(0, divisors.length - 1)];   // random divisor per row
+    // Every chosen divisor gets a row before any repeats, so a title naming them all ("2, 5 en 10")
+    // is true of the rows drawn; a shuffled start keeps one-row blocks (the kiosk) varied.
+    const order = [...divisors];
+    for (let i = order.length - 1; i > 0; i--) { const j = randInt(0, i); [order[i], order[j]] = [order[j], order[i]]; }
+    return Array.from({ length: n }, (_, row) => {
+        const divisor = order[row % order.length];
         if (isRechthoek) {
             // Pad UP to a full rectangle (a multiple of rasterCols) so the last visual row
             // is not ragged — capped at maxGetal, since there are no more distinct numbers

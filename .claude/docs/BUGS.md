@@ -10,12 +10,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
-  part is a blank to fill or should be dropped). 2026-09-27
-- lengte-meten / omtrek with Lengte max 10-18 (pairwise rows): a figure wider than its column is now
-  drawn scaled down with "niet op ware grootte" (2026-10-10), so in the 'meten' model the child
-  measures a smaller figure than the key's length. Owner call: cap the generated span to the column's
-  cm width instead (generator). 2026-10-10
 
 
 
@@ -26,16 +20,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Kommagetallen drop their trailing zero in a fixed-decimals block: afronden-dec-rooster DEFAULT (2 dp)
-  prints "4,1", "63,8" next to "70,34"; ordenen-dec DEFAULT prints "544,3" among "127,49" (the numbers
-  are stored as floats and printed with `formatMathNumber`, no `toFixed(dp)`). Found by S1. 2026-10-10
-- hr-std-gemengd-dec DEFAULT: its '×' rows multiply two 2-decimal numbers ("4,89 × 100,12 = 489,5868")
-  in a mental-arithmetic block (owner call). 2026-09-27
-- Hoofdrekenen breuken keys print big numerators without spaces ("36000004/5", VerticalFraction); an
-  {M, E} operand mask at max 1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
-- Degenerate defaults: geld-wissel's default already notes 2 doubles; breuken-kleuren /
-  -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
-  10, 2. 2026-09-27
+- Degenerate defaults: geld-wissel's default already notes 2 doubles. 2026-09-27
 
 
 ## Limit audit 2026-10-07
@@ -66,8 +51,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Tooling
 
-- `constraintSpace` lists kalender `questionCount` [1, 5, 10] while KalenderConfig's slider offers 3-8
-  (split off the kalender defaultCount line, fixed by S1 2026-10-09). 2026-09-27
 
 ## Bordmodus
 
