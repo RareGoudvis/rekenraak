@@ -3,6 +3,7 @@ import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import type { ClockType, ExerciseMode, MinuteDirection, HandChoice, TimeCategory } from '../../../services/clock/clockTypes';
+import { DIRECTION_CHOICES, directionZones } from '../../../services/clock/minuteDirection';
 import type { ClockConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -85,11 +86,13 @@ export default function ClockConfig({ block }: Props) {
             {/* RICHTING (voor nauwkeurig types) */}
             {showMinuteDirection && (
                 <div style={styles.section}>
-                    <SettingLabel text="Richting:" info="Minuten 'over' of 'voor' het uur, of beide." />
-                    <div style={styles.buttonGroup}>
-                        <button onClick={() => updateConstraint('minuteDirection', 'over')} style={styles.radioBtn(minuteDirection === 'over')}>Over</button>
-                        <button onClick={() => updateConstraint('minuteDirection', 'voor')} style={styles.radioBtn(minuteDirection === 'voor')}>Voor</button>
-                        <button onClick={() => updateConstraint('minuteDirection', 'beide')} style={styles.radioBtn(minuteDirection === 'beide')}>Beide</button>
+                    <SettingLabel text="Richting:" info="Over (5 over 2), voor half (5 voor half 3), over half (5 over half 3), voor (5 voor 3), of alle vier." />
+                    <div style={{ ...styles.buttonGroup, flexWrap: 'wrap' }}>
+                        {DIRECTION_CHOICES.map((ch) => (
+                            <button key={ch.value} onClick={() => updateConstraint('minuteDirection', ch.value)}
+                                style={styles.radioBtn(minuteDirection !== 'beide' && directionZones(minuteDirection).includes(ch.value))}>{ch.label}</button>
+                        ))}
+                        <button onClick={() => updateConstraint('minuteDirection', 'beide')} style={styles.radioBtn(minuteDirection === 'beide')}>Alle</button>
                     </div>
                 </div>
             )}

@@ -25,7 +25,8 @@ export type TimeCategory =
     | 'nauwkeurig_5'  // to 5-minute precision
     | 'nauwkeurig_1'; // to 1-minute precision
 
-export type MinuteDirection = 'over' | 'voor' | 'beide';
+// over/voor split at :30 (legacy, kept for saved sheets); the four zone values are the Config's choices, see minuteDirection.ts
+export type MinuteDirection = 'over' | 'voor' | 'beide' | 'uur-over' | 'half-voor' | 'half-over' | 'uur-voor';
 export type ClockType = 'analoog' | 'digitaal';
 export type ExerciseMode = 'lezen' | 'tekenen' | 'omzetten';
 export type HandChoice = 'uur' | 'minuut' | 'beide';
