@@ -3,7 +3,7 @@ import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
-import { nextExercise, type Rng } from '../../services/oefenen/scheduler';
+import { deadSlots, nextExercise, type Rng } from '../../services/oefenen/scheduler';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 
 // A kiosk-capable sidebar leaf plus where it lives in the sidebar (for grouping).
@@ -157,7 +157,8 @@ export function rowYields(row: Pick<BuilderRow, 'leaf' | 'constraints'>, rng?: R
     if (cached !== undefined) return cached;
     const type: OefenType = { typeId: row.leaf.typeId, leafId: row.leaf.id, label: row.leaf.label, constraints: row.constraints, weight: 100 };
     const probe: OefenSessie = { v: OEFEN_VERSION, id: 'preflight', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false };
-    const yields = nextExercise(probe, type, new Set(), rng) !== null;
+    // Unseeded callers get the kiosk's own fixed-seed verdict (deadSlots), so dead/alive never depends on Math.random.
+    const yields = rng ? nextExercise(probe, type, new Set(), rng) !== null : !deadSlots(probe).has(0);
     if (!rng) {
         const perRow = yieldCache.get(row.constraints) ?? new Map<string, boolean>();
         perRow.set(cacheKey, yields);

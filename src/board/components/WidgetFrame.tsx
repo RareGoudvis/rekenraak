@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { Trash, ArrowCounterClockwise, Eye, EyeSlash, GearSix, CopySimple } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
 import { cardFitZoom, naturalWidth, widgetTitle, KINDS_WITH_SETTINGS } from '../widgetSizing';
-import { cardLayoutWidth, cardTextScale, widgetAccent } from '../settings/baseProps';
+import { cardLayoutWidth, cardNaturalWidth, cardTextScale, widgetAccent } from '../settings/baseProps';
 import type { BoardWidget } from '../boardTypes';
 
 const FIT_DEADBAND = 0.01;
@@ -59,7 +59,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
         } else {
             // Corner grip = uniform zoom: the body's zoom is w / naturalWidth, so
             // changing w scales the whole widget like an image — content never reflows.
-            updateWidget(widget.id, { w: Math.max(150, Math.round(d.origW + dx)) });
+            updateWidget(widget.id, { w: Math.max(150, Math.round(d.origW + dx / (cardNaturalWidth(widget) / naturalWidth(widget.kind)))) });
         }
     };
 
@@ -70,8 +70,13 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
 
     // Body zoom targets the inner width (frame width minus its 2×1/2px borders is
     // handled by border-box + padding 0; borders are ON the card).
-    const innerW = widget.w - 2;   // 1px card border each side
-    const frameZoom = innerW / naturalWidth(widget.kind);
+    // A card whose content needs more than the kind's natural width (20-column honderdveld) is
+    // drawn `widenFactor` wider at the SAME zoom, instead of zooming its content down.
+    const naturalW = cardNaturalWidth(widget);
+    const widenFactor = naturalW / naturalWidth(widget.kind);
+    const outerW = widget.w * widenFactor;
+    const innerW = outerW - 2;   // 1px card border each side
+    const frameZoom = innerW / naturalW;
     // Extra content zoom: exercise tekstgrootte × the baseline font size (kinds that scale their
     // own type sizes skip the zoom, so their fixed-size faces never clip).
     const textScale = cardTextScale(widget);
@@ -144,7 +149,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
         <div
             data-widget-frame
             style={{
-                position: 'absolute', left: widget.x, top: widget.y, width: widget.w, zIndex: widget.z,
+                position: 'absolute', left: widget.x, top: widget.y, width: outerW, zIndex: widget.z,
                 background: '#ffffff', borderRadius: '12px',
                 border: selected ? '2px solid var(--accent-purple)' : '1px solid rgba(0,0,0,0.18)',
                 // Constant outer size whether selected or not (border grows inward).
@@ -208,7 +213,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
 
             {/* ── Body (zoomed content), scrolling when the card hits the board's bottom edge ── */}
             <div data-widget-body style={S.body}>
-                <div style={{ zoom: frameZoom, width: naturalWidth(widget.kind) }}>
+                <div style={{ zoom: frameZoom, width: naturalW }}>
                     {/* Inner text zoom keeps the layout width constant: content reflows at
                         naturalW/textScale and zooms back up, so bigger text = same frame. */}
                     <div style={{ zoom: textScale, width: layoutW, pointerEvents: handMode ? 'none' : undefined }}>
