@@ -1,6 +1,7 @@
 import { useBoardStore } from '../useBoardStore';
 import type { BoardWidget, WidgetKind } from '../boardTypes';
 import { naturalWidth } from '../widgetSizing';
+import { honderdveldMinLayoutWidth } from '../mathTools/honderdveld';
 
 // The baseline every widget kind gets (rendered by WidgetInspector under the kind's own
 // panel): props.title, props.fontSize, props.accent, props.showHeader. Readers here are the
@@ -48,7 +49,26 @@ export function cardTextScale(widget: BoardWidget): number {
 // The width a card's content is laid out at (it zooms back up to the frame), so a bigger
 // text size leaves less room: naturalW / text zoom.
 export function cardLayoutWidth(widget: BoardWidget): number {
-    return naturalWidth(widget.kind) / cardTextScale(widget);
+    return cardNaturalWidth(widget) / cardTextScale(widget);
+}
+
+// Kinds whose content has a floor width in layout units (a 20-column honderdveld): below it the
+// frame would shrink the content under Normaal, so the card WIDENS instead (see WidgetFrame).
+const MIN_LAYOUT_WIDTH: Partial<Record<WidgetKind, (widget: BoardWidget) => number>> = {
+    honderdveld: honderdveldMinLayoutWidth,
+};
+
+const WIDEN_SLACK = 1.03;
+
+// The kind's natural width, grown when its content needs more room at the current text zoom.
+export function cardNaturalWidth(widget: BoardWidget): number {
+    const need = MIN_LAYOUT_WIDTH[widget.kind]?.(widget);
+    const base = naturalWidth(widget.kind);
+    if (need === undefined) return base;
+    const wanted = need * cardTextScale(widget);
+    // 3 % slack: the estimate is a few px off either way and the frame's fit-zoom absorbs that,
+    // so the default 10 x 10 at XL (which fits today) must not become a different-sized card.
+    return wanted > base * WIDEN_SLACK ? wanted : base;
 }
 
 export const isHex = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);

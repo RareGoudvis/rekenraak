@@ -61,3 +61,15 @@ export function highlightColor(n: number, sets: HighlightSet[]): string | null {
     }
     return c;
 }
+
+// Own-unit width (before text zoom) the grid needs so no cell is narrower than its number:
+// 14px Azeret Mono is ~8.4px a digit, +3.5px per cell, + the card's 2x14px
+// padding and the 2x2px outline. Chromium measured ~604 for 20 columns of 3 digits (zoom rounding moves it a few px).
+const HV_DIGIT_PX = 8.4;
+const HV_CELL_EXTRA_PX = 3.5;
+const HV_FRAME_PX = 32;
+export function honderdveldMinLayoutWidth(widget: BoardWidget): number {
+    const p = honderdveldProps(widget);
+    const chars = Math.max(String(p.start).length, String(p.start + p.count - 1).length);
+    return p.cols * (chars * HV_DIGIT_PX + HV_CELL_EXTRA_PX) + HV_FRAME_PX;
+}
