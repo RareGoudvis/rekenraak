@@ -344,6 +344,32 @@ export function fitMonoFactor(chars: number, fontFactor: number, mathPx: number,
     return need <= budgetPx ? 1 : Math.max(floor, budgetPx / need);
 }
 
+// ── Getallenrijen pill fit ──────────────────────────────────────────────────
+export interface RijFit { fontPx: number; padX: number; gapPx: number; cellMin: number }
+
+/** Width of one framed/unframed number row at `fit` (px, with `scale` = math token / 13pt default). */
+export function getallenrijWidth(fit: RijFit, count: number, maxChars: number, scale: number, framed: boolean): number {
+    const cell = Math.max(fit.cellMin, monoTextPx(maxChars, 1, fit.fontPx * scale) + 4);
+    return count * cell + Math.max(0, count - 1) * fit.gapPx + (framed ? 2 * fit.padX + 3 : 0);
+}
+
+/** First step that fits: the font ladder 18 to 12 px at the roomy padding, then a tight pill (padding, gaps,
+ *  cell floor shrink) with the font down to 8 px, so neither the first nor the last number crosses the oval. */
+export function getallenrijFit(count: number, maxChars: number, availableWidth: number, scale: number, framed: boolean): RijFit {
+    const steps: Array<{ pad: number; gap: number; min: number; floor: number }> = [
+        { pad: 22, gap: 14, min: 44, floor: 12 },
+        { pad: 10, gap: 8, min: 0, floor: 8 },
+    ];
+    let fit: RijFit = { fontPx: 12, padX: 22, gapPx: 14, cellMin: 44 };
+    for (const s of steps) {
+        for (let fontPx = 18; fontPx >= s.floor; fontPx--) {
+            fit = { fontPx, padX: s.pad, gapPx: s.gap, cellMin: s.min };
+            if (getallenrijWidth(fit, count, maxChars, scale, framed) <= availableWidth) return fit;
+        }
+    }
+    return fit;
+}
+
 /** A fixed-px column that grows only when its widest text (+ `padPx`) no longer fits it.
  *  `css` is the untouched `${defaultPx}px` while the text fits, so tuned sheets print as
  *  before; a grown column follows the Cijfers slider like the text inside it. */
