@@ -3,7 +3,7 @@ import type { MathBlock } from '../../services/math/types';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { BlockErrorBoundary } from '../../components/viewer/BlockErrorBoundary';
-import { BlockWidthProvider, ScaffoldProvider } from '../../components/viewer/BlockWidthContext';
+import { BlockWidthProvider, KioskCardProvider, ScaffoldProvider } from '../../components/viewer/BlockWidthContext';
 import { ViewerInteractionProvider, type ViewerInteraction } from '../../components/viewer/ViewerInteractionContext';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../../services/oefenen/kiosk';
 import { useOefenStore } from '../useOefenStore';
@@ -115,6 +115,7 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
                         style={{ width: VIRTUAL_W, transform: `translateX(${-fit.x * fit.k}px) scale(${fit.k})` }}>
                         <BlockWidthProvider value={VIRTUAL_W}>
                         <ScaffoldProvider value={false}>
+                        <KioskCardProvider value={true}>
                         <ViewerInteractionProvider value={ctx}>
                             <BlockErrorBoundary resetKey={exerciseKey} label={typeId}
                                 fallback={<p className="kiosk-card-fallback">Deze oefening kan niet getoond worden.</p>}>
@@ -123,6 +124,7 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
                                     : <p className="kiosk-card-fallback">Deze oefening kan niet getoond worden.</p>}
                             </BlockErrorBoundary>
                         </ViewerInteractionProvider>
+                        </KioskCardProvider>
                         </ScaffoldProvider>
                         </BlockWidthProvider>
                     </div>
