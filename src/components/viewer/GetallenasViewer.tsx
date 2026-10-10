@@ -43,17 +43,21 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
     // ticks won't fit, and step the label font down until neighbouring labels can't
     // collide. Big maxGetal + 10 ticks used to run off-page.
     const A4_CONTENT_PX = useBlockWidth();
-    const pad = 24;
-    const gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
     const labelChars = Math.max(1, ...values.map(v => (isFrac(v) ? 3 : formatMathNumber(v).length)));
     // Same three stops as before (15/13/11px at the 13pt default), now scaled by the math
     // token so the shrink follows the Lettergrootte slider instead of a fixed px ladder.
     const scale = useSheetSizePx('math') / PX_PER_EM_AT_DEFAULT;
     const STEPS_PX = [15, 13, 11];
     let fontSize = STEPS_PX[0] * scale;
+    let pad = 24, gap = 96;
     for (const px of STEPS_PX) {
         fontSize = px * scale;
-        if (monoTextPx(labelChars, 1, fontSize) + 12 <= gap) break;
+        const labelPx = monoTextPx(labelChars, 1, fontSize);
+        // Labels are centred on their tick, so the end ticks need half the widest label of
+        // margin; 24 is the arrowhead's own room. A 1e5 label hung 5-15px out of the cell.
+        pad = Math.max(24, Math.ceil(labelPx / 2) + 2);
+        gap = Math.min(96, Math.floor((A4_CONTENT_PX - 2 * pad) / Math.max(1, tickCount - 1)));
+        if (labelPx + 12 <= gap) break;
     }
 
     const W = pad * 2 + gap * (tickCount - 1);

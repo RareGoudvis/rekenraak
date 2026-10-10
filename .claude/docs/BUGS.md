@@ -15,9 +15,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   Repro: set headerStyle kader → onderstreept, footerStyle kader → lijn. Fix: write all four sides
   as longhands (changes no pixels). 2026-09-27
 
-- Getallenas at its 1e5 top (all numberTypes, every width): the first tick label hangs 5–15 px
-  outside the cell's left edge (`npm run bignum:audit -- --only getalbegrip-getallenassen-nat`).
-  Fix: inset the axis by half the widest label. 2026-09-27
 - Even-oneven rooster at its 1e4 top, width ½ / ¼: four-digit numbers wrap inside the 46 px cells
   and the lines overlap. Fix: size cells from the character count (46 px floor). 2026-09-27
   (Full sweep: they wrap ("9 / 029") at full width too; only ½ / ¼ trip the overlap check.)
