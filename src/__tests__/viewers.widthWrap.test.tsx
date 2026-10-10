@@ -7,6 +7,8 @@ import GetallenasViewer from '../components/viewer/GetallenasViewer';
 import EvenOnevenViewer from '../components/viewer/EvenOnevenViewer';
 import PatroonViewer from '../components/viewer/PatroonViewer';
 import HerleidingenViewer from '../components/viewer/HerleidingenViewer';
+import GeldRekenenViewer from '../components/viewer/GeldRekenenViewer';
+import DeelbaarheidViewer from '../components/viewer/DeelbaarheidViewer';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
 import type { MathBlock, GetallenasExercise, HerleidingExercise } from '../services/math/types';
@@ -132,5 +134,55 @@ describe('herleidingen: a number never breaks, the row steps its font to fit', (
         const row = container.querySelector('.print-exercise') as HTMLElement;
         expect(factorOf(row)).toBeLessThanOrEqual(maxFactor);
         if (width === W.full) expect(factorOf(row)).toBe(0.92);
+    });
+});
+
+// Every leaf text node that holds a thousands-grouped number sits under a nowrap element.
+const groupedNumbersNowrap = (root: HTMLElement) => {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let seen = 0;
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (!/\d{1,3} \d{3}/.test(n.textContent ?? '')) continue;
+        seen++;
+        expect((n.parentElement as HTMLElement).closest('[style*="nowrap"]'), n.textContent ?? '').not.toBeNull();
+    }
+    expect(seen).toBeGreaterThan(0);
+};
+
+describe('geld-rekenen: amounts never split, columns hold the widest amount', () => {
+    const ch = (col: string) => Number(/^([\d.]+)ch$/.exec(col)![1]);
+    test.each([
+        ['intrest', { subType: 'intrest', capitalCents: 902_860, percent: 2, months: 12 }],
+        ['winst / verlies', { subType: 'winst', buyCents: 1_240_400, sellCents: 1_200_000 }],
+    ])('%s', (subType, ex) => {
+        const block = { id: 'b', typeId: 'geld-rekenen', constraints: { subType: ex.subType }, geldRekenenExercises: [{ id: 'g', isManuallyEdited: false, ...ex }] } as unknown as MathBlock;
+        const { container } = at(W.full, <GeldRekenenViewer block={block} showSolutions />);
+        groupedNumbersNowrap(container);
+        const rows = [...container.querySelectorAll('.print-exercise')] as HTMLElement[];
+        const cols = rows[1].style.gridTemplateColumns.split(' ').map(ch);
+        [...rows[1].children].forEach((cell, i) => expect(cols[i], `${subType} col ${i}`).toBeGreaterThanOrEqual(cell.textContent!.length + 1));
+    });
+});
+
+describe('deelbaarheid: numbers print with the thousands space, never split', () => {
+    test('tabel at 1e5', () => {
+        const block = { id: 'b', typeId: 'deelbaarheid', constraints: { layout: 'tabel', divisors: [2, 3] }, deelbaarheidExercises: [{ id: 'd', number: 70_344, isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <DeelbaarheidViewer block={block} showSolutions />);
+        expect(container.textContent).toContain('70 344');
+        groupedNumbersNowrap(container);
+        // The number column is sized in `ch` of the grid's own font, which must be the cells' mono.
+        const row = container.querySelector('.print-exercise') as HTMLElement;
+        expect(row.style.fontFamily).toContain('Azeret Mono');
+    });
+    test('veelvouden at 1e4', () => {
+        const block = { id: 'b', typeId: 'deelbaarheid', constraints: { layout: 'veelvouden' }, deelbaarheidExercises: [{ id: 'd', base: 1_250, sequence: [1_250, 2_500, 3_750, 5_000, 6_250], givenCount: 2, isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <DeelbaarheidViewer block={block} showSolutions />);
+        expect(container.textContent).toContain('1 250');
+        groupedNumbersNowrap(container);
+    });
+    test('tight card at a quarter', () => {
+        const block = { id: 'b', typeId: 'deelbaarheid', constraints: { layout: 'tabel', divisors: [2, 3] }, deelbaarheidExercises: [{ id: 'd', number: 70_344, isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.quarter, <DeelbaarheidViewer block={block} showSolutions />);
+        expect(container.textContent).toContain('70 344');
     });
 });

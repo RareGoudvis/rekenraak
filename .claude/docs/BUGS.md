@@ -39,8 +39,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   terms before 2026-10-10). Fix: wrap the chain onto a second line below the floor. 2026-10-10
 - Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
   part is a blank to fill or should be dropped). 2026-09-27
-- geld-rekenen tables: narrow fixed columns split amounts at the thousands space ("€ 9 / 028,60",
-  intrest pw007 maxEuro 10 000) and "verlies € / 404"; the table uses under half of a w4 block. 2026-09-27
 - Weegschaal (massa-weegschaal-aflezen DEFAULT): the needle is drawn over the scale label it points
   at ("700", "800" crossed out). Fix: stop the needle short of the label ring. 2026-09-27
 - MAB herkennen DEFAULT: pieces are tiny in big cells (hundreds ~8 px squares, units 4 px dots, tens
@@ -56,7 +54,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
   too; geld-tekenen's key only repeats the prompt amount (~7 px); colouring keys (breuken hoeveelheid /
   veelhoek, deelbaarheid, even-oneven) use the light-blue fill, not red (owner call). 2026-09-27
-- deelbaarheid at its max (100 000) prints "70344" without the thousands space. 2026-09-27
 
 - RekenvolgordeViewer (`CHAR_PX = 11.1`, ~:39) and RomeinseViewer (12.7 px per char, ~:36/38) still size
   text with fixed px that don't follow the Lettergrootte slider; move to `monoTextPx`. 2026-09-27

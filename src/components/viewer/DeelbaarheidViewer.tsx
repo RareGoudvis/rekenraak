@@ -1,6 +1,9 @@
 import type { MathBlock } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, useShowScaffold, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, useSheetSizePx, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
+import { formatMathNumber } from '../../services/math/formatters';
+import { monoTextPx } from '../../services/layout/blockLayout';
+import NumberText from './NumberText';
 import type { DeelbaarheidConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
@@ -12,6 +15,8 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 const SALMON = '#f4cbb8';
+// The tabel cells' size, a factor of the math token.
+const CELL_FONT = 0.87;
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 
 export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
@@ -20,6 +25,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     const ix = useViewerInteraction();
     // The oefenmodus card asks every multiple of the run, so it prints them all (it scales to fit).
     const capTerms = useShowScaffold();
+    const mathPx = useSheetSizePx('math');
     const exercises = block.deelbaarheidExercises || [];
     const c = block.constraints as DeelbaarheidConstraints;
     const layout = c.layout || 'tabel';
@@ -34,9 +40,13 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     if (layout === 'veelvouden') {
         // A wrapped sequence looks like a mistake ("why did the row break there?"), so cap
         // how many terms are PRINTED to what the column actually holds (~56px per term
-        // including its gap and dash) instead of letting it wrap. "– (enz.)" always closes
-        // the row, so trimming reads as "and so on" rather than as a cut-off answer.
-        const maxTerms = capTerms ? Math.max(3, Math.floor((A4_CONTENT_PX - 60) / 56)) : Infinity;
+        // including its gap and dash, more for a wide term) instead of letting it wrap.
+        // "– (enz.)" always closes the row, so trimming reads as "and so on" rather than as a
+        // cut-off answer.
+        const termChars = Math.max(1, ...exercises.flatMap(ex => (ex.sequence || []).map(v => formatMathNumber(v).length)));
+        // term (or its 40px blank) + 6px gap + the dash glyph + 6px gap, at the row's 0.92 font
+        const termPx = Math.max(56, Math.max(40, monoTextPx(termChars, 0.92, mathPx)) + 12 + monoTextPx(1, 0.92, mathPx));
+        const maxTerms = capTerms ? Math.max(3, Math.floor((A4_CONTENT_PX - 60) / termPx)) : Infinity;
         return (
             <FragmentableGrid
                 cols={1}
@@ -47,14 +57,14 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
                     return (
                         <div key={ex.id} className="print-exercise" style={{ fontFamily: mono }}>
                             <div style={{ marginBottom: '8px', fontSize: 'calc(var(--sheet-size-text) * 0.8)' }}>Vul de rij veelvouden van <strong>{ex.base}</strong> aan:</div>
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'nowrap', fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', flexWrap: 'nowrap', whiteSpace: 'nowrap', fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
                                 {seq.map((v, i) => (
                                     <span key={i} style={{ display: 'inline-flex', alignItems: 'flex-end', gap: '6px' }}>
                                         {i > 0 && <span>–</span>}
                                         {i < given
-                                            ? <span>{v}</span>
+                                            ? <NumberText value={v} />
                                             : (showSolutions
-                                                ? <span style={solutionText}>{v}</span>
+                                                ? <NumberText value={v} style={solutionText} />
                                                 : <span style={{ borderBottom: '1.5px solid #000', minWidth: '40px', height: ANSWER_LINE_H, display: 'inline-block' }} />)}
                                     </span>
                                 ))}
@@ -82,7 +92,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
                 rowGap={gap + 4}
                 items={exercises.map((ex) => (
                     <div key={ex.id} className="print-exercise" style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
-                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{ex.number}</div>
+                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}><NumberText value={ex.number ?? ''} /></div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             {divisors.map(d => (
                                 <div key={d} style={chip}>
@@ -106,16 +116,19 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     // below, since the divisor headers already say what the columns mean. Tick columns
     // share the rest (capped so few-divisor tables don't look stretched, shrunk so
     // 7-10 divisors never overflow and clip in print).
-    const numberChars = Math.max(2, ...exercises.map(ex => String(ex.number ?? '').length));
+    const numberChars = Math.max(2, ...exercises.map(ex => formatMathNumber(ex.number ?? '').length));
     const numberColCh = numberChars + 2;
-    const numberColPx = numberColCh * 8.5; // ~0.85em/ch at this font, for the tick-column budget below
+    const numberColPx = monoTextPx(numberColCh, CELL_FONT, mathPx);
     const tickColPx = Math.min(100, Math.floor((A4_CONTENT_PX - numberColPx) / divisors.length));
     const cols = `${numberColCh}ch ${divisors.map(() => `${tickColPx}px`).join(' ')}`;
+    const cellFont = `calc(var(--sheet-size-math) * ${CELL_FONT})`;
     const cell: React.CSSProperties = {
         // Kiosk: taller cells so a tap target stays >= 44px on a landscape phone (the card scales the sheet px).
         border: '1px solid #000', height: ix ? `calc(${ANSWER_ROW_H} * 1.4)` : ANSWER_ROW_H, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)', boxSizing: 'border-box',
+        justifyContent: 'center', fontFamily: mono, fontSize: cellFont, boxSizing: 'border-box', whiteSpace: 'nowrap',
     };
+    // `ch` in gridTemplateColumns resolves against the ROW's font, so the row carries the cells' mono.
+    const rowFont: React.CSSProperties = { fontFamily: mono, fontSize: cellFont };
 
     // Alone in a ½ (or ¼) column, a table narrower than the cell (few divisors, capped
     // tick columns) should sit centred rather than hug the left edge; a full-width block
@@ -124,7 +137,7 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
     return (
         <div style={centerTable ? { width: 'fit-content', margin: '0 auto' } : undefined}>
             {/* header: the number column has no label — the divisor headers say what the ticks mean */}
-            <div className="print-row" style={{ display: 'grid', gridTemplateColumns: cols }}>
+            <div className="print-row" style={{ display: 'grid', gridTemplateColumns: cols, ...rowFont }}>
                 <div style={{ ...cell, backgroundColor: SALMON }} />
                 {divisors.map(d => (
                     <div key={d} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{d}?</div>
@@ -132,8 +145,8 @@ export default function DeelbaarheidViewer({ block, showSolutions }: Props) {
             </div>
             {/* rows */}
             {exercises.map((ex) => (
-                <div key={ex.id} className="print-row print-exercise" style={{ display: 'grid', gridTemplateColumns: cols }}>
-                    <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{ex.number}</div>
+                <div key={ex.id} className="print-row print-exercise" style={{ display: 'grid', gridTemplateColumns: cols, ...rowFont }}>
+                    <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{formatMathNumber(ex.number ?? '')}</div>
                     {divisors.map((d, di) => (
                         // Key = the divisor's column position, as the kiosk descriptor reads it.
                         <div key={d} {...interactionProps(ix, String(di))} style={{ ...cell, ...solutionText }}>
