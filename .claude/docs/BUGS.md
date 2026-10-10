@@ -85,10 +85,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 - `constraintSpace` lists kalender `questionCount` [1, 5, 10] while KalenderConfig's slider offers 3-8
   (split off the kalender defaultCount line, fixed by S1 2026-10-09). 2026-09-27
 
-- Flaky: `oefenen.zeroOutput.test.ts` failed once in the gate on `hr-std-delen-dec {"maxGetal":1e9,
-  "operandMax":[20,20,20,20]}: pre-flight must flag it` (the unseeded `rowYields` found an exercise that
-  run); passes alone. The dead/alive verdict depends on Math.random. 2026-10-09
-
 ## Bordmodus
 
 - getallenrijen (seen on getalbegrip-getallenrijen-dec in a 298 px board card at 200 %): the first and last
