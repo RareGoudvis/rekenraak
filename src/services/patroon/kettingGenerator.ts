@@ -4,7 +4,7 @@ import { joinNotes, repeatNote, repeatsIn } from '../generationNotes';
 
 // Kettingsommen — a chain of DISTINCT operations (5 →+3→ 8 →×2→ 16 → …), printed by
 // the existing PatroonViewer with all operators shown. cycle length = ticks − 1 so
-// every connector carries its own step; blanks default to the end value only.
+// every connector carries its own step; every value after the start is blank by default.
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -39,10 +39,12 @@ export function generateKettingExercisesNoted(block: MathBlock): { items: Patroo
     const chainLength: number = Math.min(5, Math.max(3, c.chainLength ?? 4));
     const ops: string[] = Array.isArray(c.ops) && c.ops.length ? c.ops : ['+', '-'];
     const opSettings: Record<string, OpSetting> = c.opSettings ?? {};
+    const showIntermediates: boolean = c.showIntermediates ?? false;
     const blankMiddle: boolean = c.blankMiddle ?? false;
     const ticks = chainLength + 1;
     const n = block.numberOfExercises || 6;
-    const maxStart = Math.min(20, maxGetal);
+    // The start grows with the max (a fifth of it), so Tot 1 000 reads unlike Tot 100; up to Tot 100 it stays <= 20.
+    const maxStart = Math.max(Math.min(20, maxGetal), Math.floor(maxGetal / 5));
 
     const run = (start: number, cycle: PatroonStep[]): number[] | null => {
         const vals = [start];
@@ -86,9 +88,10 @@ export function generateKettingExercisesNoted(block: MathBlock): { items: Patroo
             cycle = pick.cycle;
             values = run(pick.starts[randInt(0, pick.starts.length - 1)], cycle)!;
         }
-        // End blank always; blankMiddle adds one random intermediate blank.
-        const blankMask = Array.from({ length: ticks }, (_, k) => k === ticks - 1);
-        if (blankMiddle && ticks > 3) blankMask[randInt(1, ticks - 2)] = true;
+        // The pupil works the chain from the start: every later value is blank, unless the teacher shows
+        // the tussenresultaten (then the end, plus one random middle value with blankMiddle).
+        const blankMask = Array.from({ length: ticks }, (_, k) => (showIntermediates ? k === ticks - 1 : k > 0));
+        if (showIntermediates && blankMiddle && ticks > 3) blankMask[randInt(1, ticks - 2)] = true;
         items.push({ id: rndId(), values, blankMask, cycle, numberType: 'natural', isManuallyEdited: false });
     }
     const note = items.length >= n ? null

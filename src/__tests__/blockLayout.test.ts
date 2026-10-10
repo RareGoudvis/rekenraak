@@ -252,26 +252,28 @@ describe('getalbegrip width helpers', () => {
     });
 
     test('ordenenRowPx charges each number its 0.65em mono width at the sheet default', () => {
-        // Five numbers up to 1000 ("1 000", 5 glyphs) + 8px air each, and four 20px separators.
-        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 1000 }, 5)).toBeCloseTo(5 * (5 * 0.65 * 17.33 + 8) + 4 * 20);
+        // Five numbers under 10 000 ("9 999", 5 glyphs) + 8px air each, and four 20px separators.
+        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 10000 }, 5)).toBeCloseTo(5 * (5 * 0.65 * 17.33 + 8) + 4 * 20);
     });
 
-    // The inclusive max is reachable, so its thousands separators print too.
+    // The draw stays under the max (call 1, 2026-10-09), so the widest value is one step below it.
     test.each([
-        [{ numberType: 'natural', maxGetal: 100 }, '100'],
-        [{ numberType: 'natural', maxGetal: 100000 }, '100 000'],
-        [{ numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, '100,00'],
-        [{ numberType: 'decimal', maxGetal: 1000, decimalPlaces: 1 }, '1 000,0'],
-        [{ numberType: 'decimal', maxGetal: 100000, decimalPlaces: 3 }, '100 000,000'],
-        [{ numberType: 'geheel', maxGetal: 10000 }, '-10 000'],
+        [{ numberType: 'natural', maxGetal: 100 }, '99'],
+        [{ numberType: 'natural', maxGetal: 100000 }, '99 999'],
+        [{ numberType: 'decimal', maxGetal: 100, decimalPlaces: 2 }, '99,99'],
+        [{ numberType: 'decimal', maxGetal: 1000, decimalPlaces: 1 }, '999,9'],
+        [{ numberType: 'decimal', maxGetal: 100000, decimalPlaces: 3 }, '99 999,999'],
+        [{ numberType: 'geheel', maxGetal: 10000 }, '-9 999'],
+        [{ numberType: 'geheel', maxGetal: 10000, minGetal: -20000 }, '-20 000'],
+        [{ numberType: 'geheel', maxGetal: 10000, minGetal: 0 }, '9 999'],
     ])('ordenenMaxChars %j counts "%s"', (c, printed) => {
         expect(ordenenMaxChars('ordenen', c)).toBe(printed.length);
     });
 
-    test('a decimal ordenen row of "1 000,00" values no longer fits a half', () => {
+    test('the decimal ordenen default (max 1 000, 2 decimals) fits a half again: "999,99", never "1 000,00"', () => {
         const c = { numberType: 'decimal', maxGetal: 1000, decimalPlaces: 2, count: 3 };
-        expect(ordenenRowPx('ordenen', c, 3)).toBeGreaterThan(330 - 28);
-        expect(minWidthUnits(makeBlock('ordenen', { constraints: c }), measure(10, 1))).toBe(4);
+        expect(ordenenRowPx('ordenen', c, 3)).toBeLessThanOrEqual(330 - 28);
+        expect(minWidthUnits(makeBlock('ordenen', { constraints: c }), measure(10, 1))).toBe(2);
     });
 
     test('grownColumn keeps the tuned px while the text fits, so default sheets print as before', () => {

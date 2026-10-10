@@ -31,7 +31,8 @@ function runSeeded(typeId: string, constraints: Record<string, unknown>, count =
     });
 }
 
-const frac = (o: unknown) => o as Fraction;
+// A breuk result that reduces to a whole number comes back as that number.
+const frac = (o: unknown): Fraction => (typeof o === 'number' ? { n: o, d: 1 } : o as Fraction);
 
 describe('shortfall note wording', () => {
     test('0 / 1 / many', () => {

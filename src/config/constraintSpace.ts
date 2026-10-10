@@ -283,6 +283,7 @@ const kettingSpace: OptionSpace = {
     ops: [['+'], ['+', '-'], ['x'], [':'], ['+', '-', 'x', ':']],
     // KettingConfig 'max' per + / − operator.
     opSettings: [{}, { '+': { max: 10 }, '-': { max: 10 } }, { '+': { max: 50 }, '-': { max: 50 } }],
+    showIntermediates: [false, true],
     blankMiddle: [false, true],
     showArrows: [true, false],
     operatorStyle: ['symbol', 'full'],

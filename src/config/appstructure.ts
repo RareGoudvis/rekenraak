@@ -483,8 +483,8 @@ export const APP_STRUCTURE: Domain[] = [
                         id: 'kalender-datum', label: 'Kalender / datum lezen',
                         children: [
                             { id: 'kalender-maandrooster', label: 'Maandrooster lezen', typeId: 'kalender', defaultConstraints: { subType: 'maandrooster' }, minLeerjaar: 2, instruction: 'Bekijk de kalender en vul in.' },
-                            { id: 'kalender-datum-rekenen', label: 'Rekenen met dagen', typeId: 'kalender', defaultConstraints: { subType: 'datum-rekenen' }, minLeerjaar: 3, instruction: 'Reken met dagen.' },
-                            { id: 'kalender-notatie', label: 'Datumnotatie', typeId: 'kalender', defaultConstraints: { subType: 'notatie' }, minLeerjaar: 3, instruction: 'Schrijf de datum anders.' },
+                            { id: 'kalender-datum-rekenen', label: 'Rekenen met dagen', typeId: 'kalender', defaultConstraints: { subType: 'datum-rekenen' }, defaultCount: 4, minLeerjaar: 3, instruction: 'Reken met dagen.' },
+                            { id: 'kalender-notatie', label: 'Datumnotatie', typeId: 'kalender', defaultConstraints: { subType: 'notatie' }, defaultCount: 4, minLeerjaar: 3, instruction: 'Schrijf de datum anders.' },
                         ],
                     },
                 ],

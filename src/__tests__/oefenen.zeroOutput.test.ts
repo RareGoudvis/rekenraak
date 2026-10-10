@@ -49,8 +49,6 @@ const DEAD: Record<string, string> = {
     'hr-std-delen-nat {"multiplicationMode":"met_rest","selectedTables":[1]}': 'flagged: tafels [1] then Met rest keeps the hidden 1 (no rest by 1)',
     'vergelijken-kiezen {"maxGetal":100000000,"numberMask":{"HM":true},"setSize":2,"leftRep":"breuk","rightRep":"breuk"}': 'flagged: a mask on the top place allows one number (100 000 000)',
     'vergelijken-kiezen {"maxGetal":1000000,"numberMask":{"M":true},"setSize":6}': 'flagged: a mask on the top place allows one number (1 000 000)',
-    'patronen-kettingsommen {"ops":[":"],"chainLength":6}': 'unreachable (KettingConfig offers 3-5 stappen); the generator clamps 6 to 5, dead as below',
-    'patronen-kettingsommen {"ops":[":"],"chainLength":5,"maxGetal":1000}': 'flagged: 5 × : needs a start ≥ 32, starts stay ≤ 20 by design (the sheet notes it too)',
     'patronen-kettingsommen {"ops":["x"],"chainLength":5,"maxGetal":20}': 'flagged: 1·2^5 = 32 > 20',
     'handig-rekenvolgorde {"operators":[":"],"haakjesMode":"MOET","opsCount":4,"maxGetal":100}': 'flagged: four whole divisions under the max',
     'handig-rekenvolgorde {"operators":[":"],"haakjesMode":"GEEN","opsCount":4,"maxGetal":1000}': 'flagged: four whole divisions under the max',

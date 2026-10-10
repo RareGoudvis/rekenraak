@@ -290,12 +290,16 @@ export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): num
     }
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 100;
     const decimalPlaces = c.numberType === 'decimal' ? (typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 1) : 0;
-    // 'geheel' allows negatives unless the teacher raised the lower bound to 0.
-    const negative = c.numberType === 'geheel' && (typeof c.minGetal !== 'number' || c.minGetal < 0);
-    // The max itself is drawn (inclusive), so its thousands separators print: "1 000,0" is 7 glyphs.
-    const intDigits = String(Math.floor(maxGetal)).length;
-    const separators = Math.floor((intDigits - 1) / 3);
-    return intDigits + separators + (decimalPlaces > 0 ? decimalPlaces + 1 : 0) + (negative ? 1 : 0);
+    // SYNC: ordenenGenerator genValue. The draw stays under the max, so the widest value is one
+    // step below it: "999,99" at max 1 000, never "1 000,00".
+    const top = Math.max(0, Math.round(maxGetal * Math.pow(10, decimalPlaces)) - 1);
+    const charsOf = (scaled: number, sign: boolean) => {
+        const intDigits = String(Math.floor(scaled / Math.pow(10, decimalPlaces))).length;
+        return intDigits + Math.floor((intDigits - 1) / 3) + (decimalPlaces > 0 ? decimalPlaces + 1 : 0) + (sign ? 1 : 0);
+    };
+    // 'geheel' mirrors the max below zero unless the teacher set the lower bound (inclusive) herself.
+    const lowest = c.numberType !== 'geheel' ? 0 : typeof c.minGetal === 'number' ? c.minGetal : -top;
+    return Math.max(charsOf(top, false), lowest < 0 ? charsOf(-lowest, true) : 0);
 }
 
 /** Estimated px width of ONE exercise's row of `count` numbers/blanks, at the sheet default. */

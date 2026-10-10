@@ -1,6 +1,6 @@
 // Dutch number-to-words for the positietabel splitsen variant (0 … 1 000 000 000 and beyond).
-// Spelling: everything below a million is one word ("vijfhonderdduizenddrieëntwintig", the
-// file's long-standing convention); "miljoen" / "miljard" stand apart with their own "een".
+// Spelling (Taalunie): one word up to "duizend", a space after it ("vijfhonderdduizend
+// drieëntwintig", "tweeduizend driehonderd"); "miljoen" / "miljard" stand apart with their own "een".
 
 const ONES = [
     'nul', 'een', 'twee', 'drie', 'vier', 'vijf', 'zes', 'zeven', 'acht', 'negen',
@@ -23,14 +23,15 @@ function underThousand(n: number): string {
     return (h === 1 ? '' : ONES[h]) + 'honderd' + (r ? underHundred(r) : '');
 }
 
-// 1 … 999 999 as one word; "duizend" and "honderd" drop their "een".
+// 1 … 999 999: "duizend" and "honderd" drop their "een" (never "éénduizend"); the rest after
+// "duizend" is its own word, "honderd" stays attached ("duizend tweehonderd").
 function underMillion(n: number): string {
     const th = Math.floor(n / 1000);
     const rest = n % 1000;
-    let out = '';
-    if (th) out += (th === 1 ? '' : underThousand(th)) + 'duizend';
-    if (rest) out += underThousand(rest);
-    return out;
+    const parts: string[] = [];
+    if (th) parts.push((th === 1 ? '' : underThousand(th)) + 'duizend');
+    if (rest) parts.push(underThousand(rest));
+    return parts.join(' ');
 }
 
 function intToDutchWords(n: number): string {

@@ -22,13 +22,16 @@ interface OrdConstraints {
 
 function genValue(numberType: string, c: OrdConstraints): number | Fraction {
     const maxGetal = c.maxGetal ?? 100;
+    // SYNC: blockLayout.ts ordenenMaxChars. The max itself is never drawn (owner call 1, 2026-10-09):
+    // "1 000,00" at max 1 000 came up ~1 in 100 000 yet forced the decimal default to one per row.
     if (numberType === 'geheel') {
-        const min = c.minGetal ?? -maxGetal;
-        return randInt(min, maxGetal);
+        // A teacher-set lower bound stays inclusive; the default one mirrors the exclusive max.
+        const min = c.minGetal ?? -(maxGetal - 1);
+        return randInt(min, Math.max(min, maxGetal - 1));
     }
     if (numberType === 'decimal') {
         const f = Math.pow(10, Math.min(3, Math.max(1, c.decimalPlaces ?? 1)));
-        return randInt(0, maxGetal * f) / f;
+        return randInt(0, Math.round(maxGetal * f) - 1) / f;
     }
     if (numberType === 'rational') {
         // Swap-tolerant: 'Noemer van 8 tot 3' becomes 3..8 rather than collapsing to 8 only.
@@ -42,7 +45,7 @@ function genValue(numberType: string, c: OrdConstraints): number | Fraction {
         if (c.allowMixed) f.whole = randInt(1, 5);
         return f;
     }
-    return randInt(0, maxGetal); // natural
+    return randInt(0, maxGetal - 1); // natural
 }
 
 export function generateOrdenenExercises(block: MathBlock): OrdenenExercise[] {

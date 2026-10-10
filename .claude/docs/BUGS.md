@@ -93,30 +93,17 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- afronden-dec-rooster: a whole rounded result prints "56" in a t column instead of "56,0" (left over
-  from the 97,05 wrong-key fix, which only fixed `roundTo`). 2026-09-27
-- Dutch clock text (clockTypes.ts ~45-50 `formatTimeText`): no "voor half / over half": 01:25 → "25 over
-  1" (should be "5 voor half 2"), 20:31 → "29 voor 21", 00:05 → "5 over 0". Reachable with the 5-minute /
-  1-minute timeTypes (pw004, pw007), not at the leaf defaults. 2026-09-27
-- hr-std-delen-dec DEFAULT: 5-8 of 10 exercises are "702,71 : 702,71 = 1" (both seeds), with no note;
-  hr-std-gemengd-dec / -nat defaults also carry "x : x = 1" rows. gemengd-dec '×' rows multiply two
-  2-decimal numbers ("28,05 × 34,91 = 979,2255") in a mental-arithmetic block (owner call). 2026-09-27
-- Hoofdrekenen breuken keys print whole numbers as n/1 ("4/3 : 2/9 = 6/1" at the hr-std-delen-rat
-  DEFAULT; "288/1") and big numerators without spaces ("36000004/5"); an {M, E} operand mask at max
-  1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
+- Kommagetallen drop their trailing zero in a fixed-decimals block: afronden-dec-rooster DEFAULT (2 dp)
+  prints "4,1", "63,8" next to "70,34"; ordenen-dec DEFAULT prints "544,3" among "127,49" (the numbers
+  are stored as floats and printed with `formatMathNumber`, no `toFixed(dp)`). Found by S1. 2026-10-10
+- hr-std-gemengd-dec DEFAULT: its '×' rows multiply two 2-decimal numbers ("4,89 × 100,12 = 489,5868")
+  in a mental-arithmetic block (owner call). 2026-09-27
+- Hoofdrekenen breuken keys print big numerators without spaces ("36000004/5", VerticalFraction); an
+  {M, E} operand mask at max 1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
 - Empty keys: breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on. 2026-09-27
-- Degenerate defaults: deelbaarheid-veelvouden is six copies of "veelvouden van 9" ("Kleine reeks: 5
-  oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
+- Degenerate defaults: geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
   10, 2. 2026-09-27
-- kettingsommen DEFAULT prints every intermediate result (only the last step is asked), and its max
-  picker is dead: kettingGenerator.ts ~41 starts <= 20 with operands <= 10, so Tot 1 000 looks like
-  Tot 100. Owner call on blanks; scale start/operands with maxGetal. 2026-09-27
-- kalender-datum-rekenen / -notatie DEFAULT: one exercise per block (REGISTRY 'kalender' defaultCount 1,
-  sized for a maandrooster). Fix: a per-subType count. (constraintSpace questionCount [1,5,10] vs the
-  3-8 slider.) 2026-09-27
-- schattend-nat mixes "=" and "≈" for the final result within one block. 2026-09-27
-  (The getallenas step-over-max half of this line moved to [L1] below.)
 
 
 ## Limit audit 2026-10-07
@@ -144,6 +131,9 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 ## Tooling
+
+- `constraintSpace` lists kalender `questionCount` [1, 5, 10] while KalenderConfig's slider offers 3-8
+  (split off the kalender defaultCount line, fixed by S1 2026-10-09). 2026-09-27
 
 - Flaky: `oefenen.zeroOutput.test.ts` failed once in the gate on `hr-std-delen-dec {"maxGetal":1e9,
   "operandMax":[20,20,20,20]}: pre-flight must flag it` (the unseeded `rowYields` found an exercise that

@@ -356,7 +356,9 @@ const deelbaarheidSpec: TypeSpec<DeelbaarheidExercise> = {
     item: (e, ctx, push) => {
         if (ctx.c.layout === 'veelvouden') {
             const seq = e.sequence ?? [];
-            if (seq.some((v, i) => v !== (e.base ?? 0) * i)) push('answer-key', seq.join(','), `multiples of ${e.base}`, seq.join(','));
+            // Consecutive multiples of the base; each row may start at its own multiple.
+            const from = seq.length ? seq[0] / (e.base || 1) : 0;
+            if (!Number.isInteger(from) || seq.some((v, i) => v !== (e.base ?? 0) * (from + i))) push('answer-key', seq.join(','), `multiples of ${e.base}`, seq.join(','));
             return;
         }
         valueRange(fin([e.number]), 10, n(ctx.c.maxGetal, 1000), `${e.number}`, push);
@@ -388,6 +390,11 @@ const ordenenSpec: TypeSpec<OrdenenExercise> = {
         } else {
             const lo = nt === 'geheel' ? n(c.minGetal, -max) : 0;
             valueRange(e.values.map(numValue), lo, max, ex, push);
+            // The max itself is never drawn (call 1), nor -max when the teacher left the lower bound alone.
+            for (const v of e.values.map(numValue)) {
+                if (v >= max) push('value=max', v, `< ${max}`, ex);
+                if (nt === 'geheel' && typeof c.minGetal !== 'number' && v <= -max) push('value=-max', v, `> ${-max}`, ex);
+            }
             // A getalopbouw the range cannot fill is dropped for that exercise, intended only WITH the note saying so.
             const mask = c.numberMask as Record<string, boolean> | undefined;
             if ((nt === 'natural' || nt === 'decimal') && mask && !/getalopbouw past niet/.test(ctx.note ?? '')
@@ -500,6 +507,10 @@ const kettingSpec: TypeSpec<PatroonExercise> = {
             const s = e.cycle[(i - 1) % e.cycle.length];
             if (!sameNum(applyOp(e.values[i - 1], s.op, s.operand), e.values[i])) { push('answer-key', e.values[i], applyOp(e.values[i - 1], s.op, s.operand), ex); break; }
         }
+        // Tussenresultaten off: the start is the only printed value; on: the end is always open.
+        const shown = e.blankMask.map((b, i) => (b ? -1 : i)).filter(i => i >= 0);
+        if (!c.showIntermediates && shown.join() !== '0') push('intermediate-shown', shown.join(','), '0', ex);
+        if (c.showIntermediates && !e.blankMask[e.values.length - 1]) push('end-not-blank', e.values.length - 1, 'blank', ex);
     },
 };
 

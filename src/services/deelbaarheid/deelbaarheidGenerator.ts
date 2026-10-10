@@ -21,8 +21,16 @@ export function generateDeelbaarheidExercises(block: MathBlock): DeelbaarheidExe
         // givenCount (set high at a larger `terms`, then terms lowered) would otherwise
         // pre-fill the whole row and leave nothing to solve.
         const given = Math.max(0, Math.min(givenCount, terms - 1));
+        // Six copies of "0, 9, 18, …" was one exercise printed six times: the first row starts at 0,
+        // every other row at its own multiple (×1 … ×10, more when the block asks for more rows).
+        const starts = Array.from({ length: Math.max(10, n - 1) }, (_, k) => k + 1);
+        for (let k = starts.length - 1; k > 0; k--) {
+            const j = randInt(0, k);
+            [starts[k], starts[j]] = [starts[j], starts[k]];
+        }
         for (let i = 0; i < n; i++) {
-            const sequence = Array.from({ length: terms }, (_, k) => base * k); // 0, base, 2·base, …
+            const from = i === 0 ? 0 : starts[i - 1];
+            const sequence = Array.from({ length: terms }, (_, k) => base * (from + k));
             results.push({ id: rndId(), base, sequence, givenCount: given, isManuallyEdited: false });
         }
         return results;

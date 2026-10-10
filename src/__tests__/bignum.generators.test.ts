@@ -71,7 +71,9 @@ function parseChunk(w: string): number {
     if (i < 0) return parseUnderThousand(w);
     const head = w.slice(0, i);
     if (head === 'een') throw new Error(`"eenduizend" in "${w}"`);
-    return (head === '' ? 1 : parseUnderThousand(head)) * 1000 + parseUnderThousand(w.slice(i + 7));
+    // Dutch writes a space after "duizend": "duizendeen" / "tweeduizenddriehonderd" are misspelled.
+    if (w.length > i + 7) throw new Error(`no space after "duizend" in "${w}"`);
+    return (head === '' ? 1 : parseUnderThousand(head)) * 1000;
 }
 function parseDutch(s: string): number {
     if (s === 'nul') return 0;
@@ -79,7 +81,7 @@ function parseDutch(s: string): number {
     for (const tok of s.split(' ')) {
         if (tok === 'miljard') { acc += cur * 1e9; cur = 0; }
         else if (tok === 'miljoen') { acc += cur * 1e6; cur = 0; }
-        else cur = parseChunk(tok);
+        else cur += parseChunk(tok);
     }
     return acc + cur;
 }
@@ -93,12 +95,18 @@ describe('numberToDutchWords up to een miljard', () => {
         [23, 'drieëntwintig'],
         [100, 'honderd'],
         [1000, 'duizend'],
-        [1001, 'duizendeen'],
+        // Dutch spelling: a space after "duizend" when more follows; the part before it stays attached.
+        [1001, 'duizend een'],
+        [1100, 'duizend honderd'],
+        [1200, 'duizend tweehonderd'],
+        [2300, 'tweeduizend driehonderd'],
+        [100_000, 'honderdduizend'],
+        [450_017, 'vierhonderdvijftigduizend zeventien'],
         [1_000_000, 'een miljoen'],
         [1_000_001, 'een miljoen een'],
         [2_500_000, 'twee miljoen vijfhonderdduizend'],
-        [325_400_023, 'driehonderdvijfentwintig miljoen vierhonderdduizenddrieëntwintig'],
-        [999_999_999, 'negenhonderdnegenennegentig miljoen negenhonderdnegenennegentigduizendnegenhonderdnegenennegentig'],
+        [325_400_023, 'driehonderdvijfentwintig miljoen vierhonderdduizend drieëntwintig'],
+        [999_999_999, 'negenhonderdnegenennegentig miljoen negenhonderdnegenennegentigduizend negenhonderdnegenennegentig'],
         [1_000_000_000, 'een miljard'],
         [1_000_000_023, 'een miljard drieëntwintig'],
         [3.45, 'drie komma vier vijf'],
