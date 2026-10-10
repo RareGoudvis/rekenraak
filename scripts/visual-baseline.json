@@ -1389,92 +1389,92 @@
   "getalbegrip-ordenen-dec-w1-s0": {
    "cellHeightPx": 502,
    "intrinsicPx": 269,
-   "textHash": "6ae4ed1172902dc5"
+   "textHash": "21208c1a3ea95f9c"
   },
   "getalbegrip-ordenen-dec-w1-s1": {
    "cellHeightPx": 502,
    "intrinsicPx": 269,
-   "textHash": "194e3ae15a64ced3"
+   "textHash": "34ed2cfb56760f73"
   },
   "getalbegrip-ordenen-dec-w2-s0": {
    "cellHeightPx": 502,
    "intrinsicPx": 269,
-   "textHash": "6ae4ed1172902dc5"
+   "textHash": "21208c1a3ea95f9c"
   },
   "getalbegrip-ordenen-dec-w2-s1": {
    "cellHeightPx": 502,
    "intrinsicPx": 269,
-   "textHash": "194e3ae15a64ced3"
+   "textHash": "34ed2cfb56760f73"
   },
   "getalbegrip-ordenen-dec-w4-s0": {
-   "cellHeightPx": 502,
-   "intrinsicPx": 269,
-   "textHash": "6ae4ed1172902dc5"
+   "cellHeightPx": 280,
+   "intrinsicPx": 567,
+   "textHash": "21208c1a3ea95f9c"
   },
   "getalbegrip-ordenen-dec-w4-s1": {
-   "cellHeightPx": 502,
-   "intrinsicPx": 269,
-   "textHash": "194e3ae15a64ced3"
+   "cellHeightPx": 280,
+   "intrinsicPx": 567,
+   "textHash": "34ed2cfb56760f73"
   },
   "getalbegrip-ordenen-geh-w1-s0": {
    "cellHeightPx": 502,
    "intrinsicPx": 202,
-   "textHash": "3827c1d89da355ba"
+   "textHash": "90f99187fb4bc9c2"
   },
   "getalbegrip-ordenen-geh-w1-s1": {
    "cellHeightPx": 502,
    "intrinsicPx": 179,
-   "textHash": "8364b36d8e7d3cf5"
+   "textHash": "b82f1768b3ec84e6"
   },
   "getalbegrip-ordenen-geh-w2-s0": {
    "cellHeightPx": 502,
    "intrinsicPx": 202,
-   "textHash": "3827c1d89da355ba"
+   "textHash": "90f99187fb4bc9c2"
   },
   "getalbegrip-ordenen-geh-w2-s1": {
    "cellHeightPx": 502,
    "intrinsicPx": 179,
-   "textHash": "8364b36d8e7d3cf5"
+   "textHash": "b82f1768b3ec84e6"
   },
   "getalbegrip-ordenen-geh-w4-s0": {
    "cellHeightPx": 280,
    "intrinsicPx": 409,
-   "textHash": "3827c1d89da355ba"
+   "textHash": "90f99187fb4bc9c2"
   },
   "getalbegrip-ordenen-geh-w4-s1": {
    "cellHeightPx": 280,
    "intrinsicPx": 375,
-   "textHash": "8364b36d8e7d3cf5"
+   "textHash": "b82f1768b3ec84e6"
   },
   "getalbegrip-ordenen-nat-w1-s0": {
    "cellHeightPx": 502,
    "intrinsicPx": 168,
-   "textHash": "854a5e6be9ffea84"
+   "textHash": "18737aa63cce17d8"
   },
   "getalbegrip-ordenen-nat-w1-s1": {
    "cellHeightPx": 502,
    "intrinsicPx": 168,
-   "textHash": "1dbc9e06c229c2e9"
+   "textHash": "8bc66b5cc0e91cde"
   },
   "getalbegrip-ordenen-nat-w2-s0": {
    "cellHeightPx": 502,
    "intrinsicPx": 168,
-   "textHash": "854a5e6be9ffea84"
+   "textHash": "18737aa63cce17d8"
   },
   "getalbegrip-ordenen-nat-w2-s1": {
    "cellHeightPx": 502,
    "intrinsicPx": 168,
-   "textHash": "1dbc9e06c229c2e9"
+   "textHash": "8bc66b5cc0e91cde"
   },
   "getalbegrip-ordenen-nat-w4-s0": {
    "cellHeightPx": 280,
    "intrinsicPx": 364,
-   "textHash": "854a5e6be9ffea84"
+   "textHash": "18737aa63cce17d8"
   },
   "getalbegrip-ordenen-nat-w4-s1": {
    "cellHeightPx": 280,
    "intrinsicPx": 364,
-   "textHash": "1dbc9e06c229c2e9"
+   "textHash": "8bc66b5cc0e91cde"
   },
   "getalbegrip-ordenen-rat-w1-s0": {
    "cellHeightPx": 331,

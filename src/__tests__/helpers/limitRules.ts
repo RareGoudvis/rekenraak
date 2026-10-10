@@ -390,6 +390,11 @@ const ordenenSpec: TypeSpec<OrdenenExercise> = {
         } else {
             const lo = nt === 'geheel' ? n(c.minGetal, -max) : 0;
             valueRange(e.values.map(numValue), lo, max, ex, push);
+            // The max itself is never drawn (call 1), nor -max when the teacher left the lower bound alone.
+            for (const v of e.values.map(numValue)) {
+                if (v >= max) push('value=max', v, `< ${max}`, ex);
+                if (nt === 'geheel' && typeof c.minGetal !== 'number' && v <= -max) push('value=-max', v, `> ${-max}`, ex);
+            }
             // A getalopbouw the range cannot fill is dropped for that exercise, intended only WITH the note saying so.
             const mask = c.numberMask as Record<string, boolean> | undefined;
             if ((nt === 'natural' || nt === 'decimal') && mask && !/getalopbouw past niet/.test(ctx.note ?? '')
