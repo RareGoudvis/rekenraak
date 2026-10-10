@@ -110,6 +110,15 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 <span style={styles.onOffLabel}>Leerling schrijft de eenheden zelf</span>
                 <button onClick={() => set('writeUnits', !c.writeUnits)} style={styles.onOffBtn(!!c.writeUnits)}>{c.writeUnits ? 'Aan' : 'Uit'}</button>
             </div>
+            {c.writeUnits && (
+                <div style={styles.onOffRow}>
+                    <span style={styles.onOffLabel}>Doeleenheid tonen</span>
+                    {/* Absent = on (decision 7): links and sheets made before the toggle name their target too. */}
+                    <button aria-label="Doeleenheid tonen" aria-pressed={c.showTargetUnit !== false}
+                        onClick={() => set('showTargetUnit', c.showTargetUnit === false)}
+                        style={styles.onOffBtn(c.showTargetUnit !== false)}>{c.showTargetUnit !== false ? 'Aan' : 'Uit'}</button>
+                </div>
+            )}
         </div>
     );
 }

@@ -561,6 +561,8 @@ export type HerleidingenConstraints = {
     compoundMode: string;
     areMode: 'enkel' | 'samengesteld';
     writeUnits: boolean;
+    // With writeUnits: name each exercise's target unit ("naar m"). Absent = on; false = the pupil picks freely.
+    showTargetUnit?: boolean;
     /** The conversion-table scaffold printed with the exercise. */
     scaffolding: 'geen' | 'tabel-headers' | 'tabel-blanco';
     herleidingLayout: 'uitlijnen' | 'compact';

@@ -22,7 +22,7 @@ import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
-import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
+import { isZeroAnswerPart, ladderFor, shownTargetUnit } from '../herleidingen/herleidingenGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -632,6 +632,8 @@ function herleidAnswer(ex: HerleidingExercise, c: Record<string, unknown>): [str
 }
 export const HERLEIDINGEN_KIOSK = descriptor<HerleidingExercise>({
     input: 'number',
+    // The target is in the header, the unit buttons stay the whole ladder: tapping it is the task.
+    kioskInstruction: (ex, c) => { const t = shownTargetUnit(ex, c); return t ? `Zet om naar ${t}.` : undefined; },
     inputOf: (ex, c) => (ex.blank === 'unit' ? 'choice' : writesUnit(ex, c) ? 'number+unit' : ex.toParts.length > 1 ? 'multi-number' : 'number'),
     // The whole ladder from the settings: the exercise's own units would hint at the answer.
     choicesOf: (ex, c) => (writesUnit(ex, c) ? herleidLadder(c).map(u => u.key) : herleidUnits(ex, c)),

@@ -33,12 +33,15 @@ const VIEWPORTS = arg('viewports', '1280x800,1024x768').split(',').map(v => v.sp
 const ONLY = arg('only', '').split(',').filter(Boolean);
 const HEADED = argv.includes('--headed');
 
-// One leaf per input kind; `over` = settings the teacher would pick in the builder row.
+// One leaf per input kind; `over` = settings the teacher would pick in the builder row; `id`
+// names a second case on the same leaf; `header` = what the card's instruction must read.
 const CASES = [
     { kind: 'number', leafId: 'hr-std-optellen-nat', over: {} },
     { kind: 'number+rest', leafId: 'hr-std-delen-nat', over: { multiplicationMode: 'met_rest' } },
-    // Herleidingen with "eenheden zelf schrijven": keypad number + a unit button.
-    { kind: 'number+unit', leafId: 'herleidingen-lengte', over: { writeUnits: true } },
+    // Herleidingen with "eenheden zelf schrijven": keypad number + a unit button; the header names
+    // the target unit ("Doeleenheid tonen", default on), or not when the teacher turned it off.
+    { kind: 'number+unit', leafId: 'herleidingen-lengte', over: { writeUnits: true, formats: ['enkel-getal'] }, header: /^Zet om naar (km|hm|dam|m|dm|cm|mm)\.$/ },
+    { kind: 'number+unit', id: 'herleidingen-lengte-vrij', leafId: 'herleidingen-lengte', over: { writeUnits: true, showTargetUnit: false, formats: ['enkel-getal'] }, header: /^Zet om\.$/ },
     { kind: 'time', leafId: 'klok-analoog-lezen', over: {} },
     { kind: 'choice', leafId: 'vergelijken-getallen', over: {} },
     { kind: 'tap', leafId: 'vergelijken-kiezen', over: {} },
@@ -235,7 +238,7 @@ async function enter(page, card) {
 
 // ── One case at one viewport ─────────────────────────────────────────────────
 async function runCase(c, link, [w, h]) {
-    const base = { leafId: c.leafId, path: `oefenmodus › ${c.kind}`, typeId: '', width: w };
+    const base = { leafId: c.id ?? c.leafId, path: `oefenmodus › ${c.kind}`, typeId: '', width: w };
     const rows = [];
     const errors = [];
     const context = await browser.newContext({ viewport: { width: w, height: h } });
@@ -253,7 +256,7 @@ async function runCase(c, link, [w, h]) {
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     page.on('pageerror', e => errors.push(String(e)));
     const shot = async (solutions, locator) => {
-        const name = `${c.leafId}-w${w}-s${solutions}.png`;
+        const name = `${base.leafId}-w${w}-s${solutions}.png`;
         await locator.screenshot({ path: join(OUT, name) });
         const box = await locator.boundingBox();
         return { ...base, solutions, cellHeightPx: Math.round(box.height), intrinsicPx: Math.round(box.width), text: await locator.innerText(), screenshot: name, consoleErrors: [...errors] };
@@ -268,6 +271,8 @@ async function runCase(c, link, [w, h]) {
         base.typeId = card.typeId;
         const kind = card.input === 'interactive' ? card.interact : card.input === 'missing-operand' ? 'number' : card.input;
         if (kind !== c.kind) throw new Error(`expected input kind ${c.kind}, the card asks ${kind}`);
+        const header = (await page.locator('.kiosk-instruction').innerText()).trim();
+        if (c.header && !c.header.test(header)) throw new Error(`header "${header}" does not match ${c.header}`);
         const check = await enter(page, card);
         rows.push(await shot(0, page.locator('.oefen-app')));
         await check.click();
@@ -279,12 +284,12 @@ async function runCase(c, link, [w, h]) {
         if (!/\b1 van 1 juist\b/.test(total)) throw new Error(`Resultaten says "${total}"`);
         rows.push(await shot(1, page.locator('.oefen-app')));
         if (errors.length) throw new Error(`console: ${errors.join(' | ')}`);
-        console.log(`  ok    ${c.kind.padEnd(11)} ${c.leafId} @${w}x${h}: ${verdict} → ${total}`);
+        console.log(`  ok    ${c.kind.padEnd(11)} ${base.leafId} @${w}x${h}: ${verdict} → ${total}`);
         return rows.map(r => ({ ...r, kind: c.kind, ok: true }));
     } catch (err) {
-        const name = `${c.leafId}-w${w}-fail.png`;
+        const name = `${base.leafId}-w${w}-fail.png`;
         try { await page.screenshot({ path: join(OUT, name) }); } catch { /* page gone */ }
-        console.log(`  FAIL  ${c.kind.padEnd(11)} ${c.leafId} @${w}x${h}: ${err.message}`);
+        console.log(`  FAIL  ${c.kind.padEnd(11)} ${base.leafId} @${w}x${h}: ${err.message}`);
         return [...rows.map(r => ({ ...r, kind: c.kind, ok: false })), { ...base, solutions: rows.length, kind: c.kind, ok: false, error: err.message, screenshot: name, consoleErrors: [...errors] }];
     } finally {
         await context.close();
@@ -302,5 +307,5 @@ await browser.close();
 
 const failed = rows.filter(r => r.error);
 writeFileSync(join(OUT, 'index.json'), JSON.stringify({ url: URL, seed: SEED, widths: VIEWPORTS.map(([w]) => w), viewports: VIEWPORTS.map(v => v.join('x')), leafCount: CASES.length, rows }, null, 2));
-console.log(`\n${CASES.length} kinds × ${VIEWPORTS.length} viewports: ${CASES.length * VIEWPORTS.length - failed.length} ok, ${failed.length} failed in ${((Date.now() - t0) / 1000).toFixed(1)}s -> ${OUT}`);
+console.log(`\n${CASES.length} cases × ${VIEWPORTS.length} viewports: ${CASES.length * VIEWPORTS.length - failed.length} ok, ${failed.length} failed in ${((Date.now() - t0) / 1000).toFixed(1)}s -> ${OUT}`);
 process.exit(failed.length ? 1 : 0);
