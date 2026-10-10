@@ -104,9 +104,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
   10, 2. 2026-09-27
-- kalender-datum-rekenen / -notatie DEFAULT: one exercise per block (REGISTRY 'kalender' defaultCount 1,
-  sized for a maandrooster). Fix: a per-subType count. (constraintSpace questionCount [1,5,10] vs the
-  3-8 slider.) 2026-09-27
 - schattend-nat mixes "=" and "≈" for the final result within one block. 2026-09-27
   (The getallenas step-over-max half of this line moved to [L1] below.)
 
@@ -160,6 +157,9 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
   (`fmtDisplay(ex.remainder, dp)`; the rest of a decimal staartdeling has up to 2·dp decimals). Found by WP-1. 2026-10-09
 
 ## Tooling
+
+- `constraintSpace` lists kalender `questionCount` [1, 5, 10] while KalenderConfig's slider offers 3-8
+  (split off the kalender defaultCount line, fixed by S1 2026-10-09). 2026-09-27
 
 - `constraintSpace` lists kettingsommen `chainLength` [2,4,6] while KettingConfig offers 3-5, so the
   matrix/zero-output sweep tests values the UI cannot reach and skips the ones it can. 2026-10-09

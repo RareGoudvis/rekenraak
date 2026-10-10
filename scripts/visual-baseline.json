@@ -2077,34 +2077,34 @@
    "textHash": "4f9e825f7cae6241"
   },
   "kalender-datum-rekenen-w1-s0": {
-   "cellHeightPx": 148,
+   "cellHeightPx": 400,
    "intrinsicPx": 200,
-   "textHash": "d3ade991ade6e3a7"
+   "textHash": "b6a129b7ccc9150b"
   },
   "kalender-datum-rekenen-w1-s1": {
-   "cellHeightPx": 146,
-   "intrinsicPx": 66,
-   "textHash": "de69b114ed1aca84"
+   "cellHeightPx": 392,
+   "intrinsicPx": 82,
+   "textHash": "1d532045bca89544"
   },
   "kalender-datum-rekenen-w2-s0": {
-   "cellHeightPx": 148,
+   "cellHeightPx": 400,
    "intrinsicPx": 200,
-   "textHash": "d3ade991ade6e3a7"
+   "textHash": "b6a129b7ccc9150b"
   },
   "kalender-datum-rekenen-w2-s1": {
-   "cellHeightPx": 146,
-   "intrinsicPx": 66,
-   "textHash": "de69b114ed1aca84"
+   "cellHeightPx": 392,
+   "intrinsicPx": 82,
+   "textHash": "1d532045bca89544"
   },
   "kalender-datum-rekenen-w4-s0": {
-   "cellHeightPx": 104,
+   "cellHeightPx": 224,
    "intrinsicPx": 200,
-   "textHash": "d3ade991ade6e3a7"
+   "textHash": "b6a129b7ccc9150b"
   },
   "kalender-datum-rekenen-w4-s1": {
-   "cellHeightPx": 101,
-   "intrinsicPx": 66,
-   "textHash": "de69b114ed1aca84"
+   "cellHeightPx": 212,
+   "intrinsicPx": 82,
+   "textHash": "1d532045bca89544"
   },
   "kalender-maandrooster-w1-s0": {
    "cellHeightPx": 449,
@@ -2137,34 +2137,34 @@
    "textHash": "fd55f8342290fe60"
   },
   "kalender-notatie-w1-s0": {
-   "cellHeightPx": 103,
+   "cellHeightPx": 220,
    "intrinsicPx": 343,
-   "textHash": "f9a3f4373baaac01"
+   "textHash": "8764f913e39f1af0"
   },
   "kalender-notatie-w1-s1": {
-   "cellHeightPx": 98,
+   "cellHeightPx": 216,
    "intrinsicPx": 284,
-   "textHash": "d7d123061ceb1e3a"
+   "textHash": "300d3d24839f6648"
   },
   "kalender-notatie-w2-s0": {
-   "cellHeightPx": 103,
+   "cellHeightPx": 220,
    "intrinsicPx": 343,
-   "textHash": "f9a3f4373baaac01"
+   "textHash": "8764f913e39f1af0"
   },
   "kalender-notatie-w2-s1": {
-   "cellHeightPx": 98,
+   "cellHeightPx": 216,
    "intrinsicPx": 284,
-   "textHash": "d7d123061ceb1e3a"
+   "textHash": "300d3d24839f6648"
   },
   "kalender-notatie-w4-s0": {
-   "cellHeightPx": 103,
+   "cellHeightPx": 220,
    "intrinsicPx": 343,
-   "textHash": "f9a3f4373baaac01"
+   "textHash": "8764f913e39f1af0"
   },
   "kalender-notatie-w4-s1": {
-   "cellHeightPx": 98,
+   "cellHeightPx": 200,
    "intrinsicPx": 284,
-   "textHash": "d7d123061ceb1e3a"
+   "textHash": "300d3d24839f6648"
   },
   "klok-analoog-lezen-w1-s0": {
    "cellHeightPx": 1788,
