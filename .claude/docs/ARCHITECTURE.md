@@ -1078,6 +1078,14 @@ multi-item viewers go through `FragmentableGrid`.
 
 ---
 
+### Width & wrap rules (clean sweep S5, 2026-10-10)
+
+- Numbers never break inside: `NumberText` / nowrap number-unit pairs (herleidingen, geld tables, deelbaarheid, patronen, procenten sentences); the blank drops below instead.
+- Rule-2 font steps within `useBlockWidth()`: patronen 1.04 → 0.7 then wrap after a dash; herleidingen and procenten step before wrapping; hr natural 1e6 + mask uses the chain-fit step. Rekenvolgorde / Romeinse size by `monoTextPx`, no char-px constants.
+- `hrRowLayout`: a 2-up row must fit as drawn (font step first, then 1-up). Getallenas insets the axis by half the widest tick label; even-oneven cells size from the widest number (46 px floor) with shared borders.
+- Real-size figures (lengte-meten, omtrek, breuken-lijnstuk) draw true size when the column allows, else scale with "niet op ware grootte" under the figure while the key keeps the real length. Default counts sized to one A4 (height audit): omtrek 2, oppervlakte 2, cijferen-delen-dec 2, breuken-lijnstuk 4 (`ExerciseType.defaultCount` on the leaf). blockLayout rowUnits: omtrek 8.54, lengte-meten 3.17, oppervlakte 11.83, even-oneven 2.17.
+- Patronen negatives read "−53 ; −43" (";" is the Dutch list separator; ordenen uses it too). Weegschaal needle stops short of its label; symbolic MAB pieces fill the place cell. `stackedFractions` is a LAYOUT flag (breuken-rangschikken), not a typeId branch.
+
 ## 10. Persistence & sharing — [persistence.ts](../../src/services/persistence.ts)
 
 All localStorage; nothing leaves the browser except share links the user copies.
@@ -1253,7 +1261,7 @@ src/
 │   │   ├── kioskDefaults.ts     # KIOSK_DEFAULTS_V1: frozen per-leaf seed / label / instruction the wire diffs against (append-only; a drift fails oefenen.session.defaults.test.ts)
 │   │   ├── scheduler.ts         # nextType (afwisselen / willekeurig, no repeat while another slot can serve), nextExercise (throwaway block, no exact repeats), deadSlots (settings that generate nothing are retired), isDone, plannedTotal
 │   │   └── stats.ts             # recordAnswer / summary / viableTypes / viablePlannedTotal / answerText / expectedText + runs in localStorage (last 5; saveRun → false on quota / throw)
-│   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel
+│   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel + borderSides(): per-side longhands only (no shorthand/longhand mix → no React style warning)
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
 │   ├── layout/blockNumbering.ts # pure numberBlocks(): opdracht numbers, skipping furniture + skipNumbering — one source for sheet, Inspector chip, thumbnail (§3)
@@ -1375,6 +1383,7 @@ src/
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)
     ├── curriculum/draftBlock.ts                           # makeDraftBlock(typeId, constraints, id?): the off-sheet block both builders mount Configs on (§13)
     ├── oefenen/OefenBuilderModal.tsx                      # §15 teacher builder: a draft block per row, limit / kans / Antwoord (exactForm) / timer / flags, per-row pre-flight (dead rows block Delen), ≤ 20 rows, Opslaan (new id on a content edit) / Delen
+    ├── viewer/NumberText.tsx                              # nowrap number span through formatMathNumber (geld tables, deelbaarheid, patronen terms); numbers never split at a thousands space
     ├── oefenen/OefenCatalogue.tsx                         # §15 the builder's type picker: Zoek oefening… + leerjaar chips (the sidebar's rules), kiosk-capable leaves only
     ├── oefenen/oefenBuild.ts                              # pure: listOefenLeaves (+ searchText / minGrade), filterOefenLeaves, rowYields / deadRows (pre-flight), buildSessie (unsupported rows excluded, weights → whole %), rowsFromSessie, LIMIT_STEPS / TIMER_STEPS
     ├── oefenen/OefenShareModal.tsx                        # §15 summary chips + own-exercises note, link + copy, QR (copy PNG / download), Groot tonen (beamer), Afdrukken (A5)
