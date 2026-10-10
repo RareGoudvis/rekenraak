@@ -7,6 +7,7 @@ import { grownColumn, splitColumns, monoTextPx } from '../../services/layout/blo
 import type { AfrondenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import KioskCell from './KioskCell';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -64,7 +65,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                             <span>≈</span>
                             {showSolutions
                                 ? <span style={{ ...solutionText, minWidth: ansCol.css, whiteSpace: 'nowrap' }}>{roundedText(ex.number ?? 0, t)}</span>
-                                : <span style={{ borderBottom: '1.5px solid #000', minWidth: ansCol.css, height: ANSWER_LINE_H, display: 'inline-block' }} />}
+                                : <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', minWidth: ansCol.css, height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskAnswerSlot>}
                             {/* t.key ('T', 'H', 'E', 't', ... or 1M/10M/100M/1MLD) instead of the full Dutch label — short
                                 enough to never wrap the 2-up row on its own, so the nowrap trick that
                                 held 'tienduizendtal' is no longer needed. */}

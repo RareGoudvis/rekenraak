@@ -54,3 +54,19 @@ describe('temperatuur verschil on the card', () => {
         expect(lines(root)).toBe(2);
     });
 });
+
+// Every typed leaf: the card holds a "?" slot where the sheet draws its answer line; the sheet holds none.
+const TYPED: Array<[string, Record<string, unknown>]> = [
+    ['hr-std-optellen-nat', {}], ['hr-std-delen-nat', { multiplicationMode: 'met_rest' }], ['afronden-nat-simpel', {}], ['procenten-nemen', {}],
+    ['romeinse-herkennen', {}], ['temperatuur-aflezen', {}], ['massa-weegschaal-aflezen', {}], ['oppervlakte-berekenen', {}],
+    ['maateenheid-kiezen', { answerMode: 'schrijven' }], ['herleidingen-lengte', {}], ['plaatswaarde-waarde', {}],
+    ['schattend-nat', {}], ['handig-rekenvolgorde', {}], ['geld-rekenen-korting', {}], ['breuken-vereenvoudigen', {}], ['breuken-hoeveelheid', { subType: 'hoeveelheid' }],
+];
+describe('typed leaves show the "?" slot on the card', () => {
+    test.each(TYPED)('%s', (leafId, extra) => {
+        const block = blockOf(leafId, extra);
+        expect(slots(html(block, false)), 'sheet').toBe(0);
+        cleanup();
+        expect(slots(html(block, true)), 'card').toBeGreaterThan(0);
+    });
+});

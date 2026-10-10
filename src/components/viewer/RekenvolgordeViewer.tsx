@@ -6,6 +6,7 @@ import { useBlockWidth, useSheetSizePx, ANSWER_ROW_H, ANSWER_LINE_H } from './Bl
 import { monoTextPx } from '../../services/layout/blockLayout';
 import { solutionText } from './solutionStyle';
 import { itemLabel, itemLabelChars } from './itemNumbering';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -120,7 +121,7 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
                                 <span style={{ flexShrink: 0 }}>=</span>
                                 {(s === 0 && showSolutions)
                                     ? <span style={{ ...solutionText, minWidth: `${LINE_PX}px`, textAlign: 'center' }}>{formatMathNumber(ex.answer)}</span>
-                                    : answerLine}
+                                    : s === 0 ? <KioskAnswerSlot>{answerLine}</KioskAnswerSlot> : answerLine}
                             </div>
                         ))}
                     </div>

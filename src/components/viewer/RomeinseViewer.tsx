@@ -5,6 +5,7 @@ import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWi
 import { monoTextPx } from '../../services/layout/blockLayout';
 import type { RomeinseConstraints } from '../../services/math/constraintTypes';
 import { solutionText, centerWhenSingle } from './solutionStyle';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -63,7 +64,7 @@ export default function RomeinseViewer({ block, showSolutions }: Props) {
                         {/* long line so pupils can add the pieces of the numeral */}
                         {showSolutions
                             ? <span style={{ ...solutionText, letterSpacing: '1px', minWidth: `${answerMin}px`, whiteSpace: 'nowrap' }}>{answer}</span>
-                            : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${answerMin}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />}
+                            : <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', minWidth: `${answerMin}px`, height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskAnswerSlot>}
                     </div>
                 );
             })}

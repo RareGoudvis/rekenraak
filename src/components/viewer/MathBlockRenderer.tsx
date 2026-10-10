@@ -13,6 +13,7 @@ import { SOL, solutionText } from './solutionStyle';
 import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
 import { itemLabel, itemLabelChars } from './itemNumbering';
 import { hrRowLayout, hrRowStats, HR_SOLUTION_FONT } from '../../services/layout/hrRowLayout';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -183,7 +184,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 if (isFraction(val)) return <span style={missingSol}><FractionDisplay val={val} /></span>;
                 return <span style={missingSol}>{formatMathNumber(val)}</span>;
             }
-            return <div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div>;
+            return <KioskAnswerSlot><div style={styles.mathDottedLine(BLANK_W, BLANK_M)}></div></KioskAnswerSlot>;
         }
 
         if (isFraction(val)) return <FractionDisplay val={val} />;
@@ -257,7 +258,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                 if (ex.remainder !== undefined) {
                     const slot = (w: number, val: string) => showSolutions
                         ? <span style={{ ...solutionText, padding: 0, width: `${w}px`, display: 'inline-block', textAlign: 'center' }}>{val}</span>
-                        : <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />;
+                        : <KioskAnswerSlot><div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskAnswerSlot>;
                     return (
                         <div key={ex.id} style={{ display: 'flex', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'Azeret Mono, monospace', height: '24px' }}>
                             {labelCell(exIndex)}
@@ -404,7 +405,7 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
                                 Array.from({ length: layout === 'stepped' ? (block.steppedLines || 1) : 1 }).map((_, i) => (
                                     <div key={i} style={{ display: 'flex', alignItems: 'flex-end', width: '100%', height: ANSWER_ROW_H }}>
                                         <span style={{ marginRight: `${EQ_GAP}px` }}>=</span>
-                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : <div style={styles.workLine(layout, answerLinePx, tight)}></div>}
+                                        {(i === 0 && showSolutions) ? renderAnswer(ex.answer) : i === 0 ? <KioskAnswerSlot><div style={styles.workLine(layout, answerLinePx, tight)}></div></KioskAnswerSlot> : <div style={styles.workLine(layout, answerLinePx, tight)}></div>}
                                     </div>
                                 ))
                             ) : (

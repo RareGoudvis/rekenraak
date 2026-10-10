@@ -6,6 +6,7 @@ import { fitCols, useBlockWidth, useShowScaffold } from './BlockWidthContext';
 import { OP_GLYPH } from '../../services/math/formatters';
 import type { SchattendConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -79,7 +80,7 @@ export default function SchattendViewer({ block, showSolutions }: Props) {
     // The grid cell already carries the width, so the line simply fills it.
     const blank = (val: number) => showSolutions
         ? <span style={{ ...solutionText, textAlign: 'center' }}>{formatMathNumber(val)}</span>
-        : <span style={{ borderBottom: '1.5px solid #000', height: '1.2em', display: 'inline-block', width: '100%' }} />;
+        : <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', height: '1.2em', display: 'inline-block', width: '100%' }} /></KioskAnswerSlot>;
 
     return (
         <FragmentableGrid

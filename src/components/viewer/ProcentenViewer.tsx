@@ -5,6 +5,7 @@ import { useBlockWidth, useSheetSizePx, fitCols, ANSWER_LINE_H } from './BlockWi
 import { monoTextPx } from '../../services/layout/blockLayout';
 import type { ProcentenConstraints } from '../../services/math/constraintTypes';
 import { solutionText, centerWhenSingle } from './solutionStyle';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -34,7 +35,7 @@ export default function ProcentenViewer({ block, showSolutions }: Props) {
 
     const blank = (val: number | string, width: number) => showSolutions
         ? <span style={{ ...solutionText, minWidth: `${width}px`, textAlign: 'center', display: 'inline-block' }}>{val}</span>
-        : <span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: ANSWER_LINE_H, display: 'inline-block' }} />;
+        : <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', minWidth: `${width}px`, height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskAnswerSlot>;
 
     // itemMinPx 200 (was 150): a "welk-percent" row is the widest of the two sentence
     // shapes and needs the extra room, which is also what keeps a half column 1-up

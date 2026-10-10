@@ -178,7 +178,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                                 {showSolutions
                                     ? <span style={{ ...solutionText }}>{ex.celsius}</span>
-                                    : answerLine(40)}
+                                    : <KioskAnswerSlot>{answerLine(40)}</KioskAnswerSlot>}
                                 <span>°C</span>
                             </div>
                         )}
