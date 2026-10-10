@@ -8,7 +8,7 @@ import FragmentableGrid from './FragmentableGrid';
 import VerticalFraction from './VerticalFraction';
 import { useBlockWidth, useShowScaffold, useSheetSizePx, ANSWER_LINE_H, ANSWER_ROW_H } from './BlockWidthContext';
 import type { MulDivConstraints, MixedConstraints, MixedVariantId } from '../../services/math/constraintTypes';
-import { MIXED_VARIANTS } from '../../services/math/constraintTypes';
+import { MIXED_VARIANTS, mixedVariant } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { sharedPluginStyles as S } from '../configurator/plugins/sharedPluginStyles';
 import { itemLabel, itemLabelChars } from './itemNumbering';
@@ -151,8 +151,13 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
         ? MIXED_VARIANTS.filter(v => mixedC.variants.includes(v.id))
         : null;
 
-    const compScaffoldOn = scaffold && c.preset === 'compenseren'
-        && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
+    // Gemengd has no top-level preset: a compenseren variant carries it, with its own tab's
+    // tussenstap choice over the preset's 'tussenstap' (SYNC: mixedGenerator effectiveBlockFor).
+    const variantTussenstap = (id: MixedVariantId) => mixedVariant(id).preset === 'compenseren'
+        && (mixedC.perVariant?.[id]?.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
+    const compScaffoldOn = scaffold && (mixedOptions
+        ? mixedOptions.some(v => variantTussenstap(v.id))
+        : c.preset === 'compenseren' && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap');
     const {
         tight, fontScale, wrapChain, labelPx, labelColPx, termBoxPx, answerLinePx,
         gridCols, colGap, colJustify, blankW: BLANK_W, blankM: BLANK_M,
@@ -296,7 +301,9 @@ export default function MathBlockRenderer({ block, showSolutions }: Props) {
 
                 // Compenseren-preset tussenstap: "= a + ___ − ___" fill-in under the sum
                 // (30 − 1 for 29). Only for plain 2-term numeric +/− with the scaffold on.
+                // In gemengd only a compenseren variant's own rows: a × row shaped "6 × 19" gets no hint.
                 const compScaffold = compScaffoldOn
+                    && (mixedOptions ? !!ex.variant && variantTussenstap(ex.variant as MixedVariantId) : true)
                     && !anyMissing && ex.operands.length === 2
                     && typeof ex.operands[0] === 'number' && typeof ex.operands[1] === 'number';
                 let compParts: { tienvoud: number; delta: number } | null = null;
