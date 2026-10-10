@@ -167,9 +167,10 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
     if (input === 'time') return Array.isArray(given) && given.length === 2 && sameTime(given, accepted);
     if (input === 'number+unit') return Array.isArray(given) && given.length === 2 && accepted.length === 2 && sameQuantity(given, accepted, d.unitFactors?.(ex, c) ?? {});
     if (input === 'multi-number') {
-        // Every field must hold its own blank's value, in order.
+        // Every field must hold its own blank's value, in order; an empty field only where '' is accepted.
         const parts = Array.isArray(given) ? given : [given];
-        return parts.length === accepted.length && parts.every((g, i) => sameValue(g, accepted[i].split('|'), exact));
+        return parts.length === accepted.length && parts.some(g => g.trim() !== '')
+            && parts.every((g, i) => (g.trim() === '' ? accepted[i].split('|').includes('') : sameValue(g, accepted[i].split('|'), exact)));
     }
     const one = Array.isArray(given) ? (given.length === 1 ? given[0] : null) : given;
     if (one === null) return false;

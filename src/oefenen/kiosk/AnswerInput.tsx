@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef } from 'react';
-import { currentInput, interactionAnswer, useOefenStore } from '../useOefenStore';
+import { currentInput, interactionAnswer, typedReady, useOefenStore } from '../useOefenStore';
 import Keypad from './Keypad';
 import Tray from './Tray';
 
@@ -23,7 +23,7 @@ export default function AnswerInput() {
     const { press, pressExtra, setField, focusField, choose, answer, clearBuild } = useOefenStore.getState();
     const refs = useRef<(HTMLInputElement | null)[]>([]);
     const info = currentInput(sessie, shown);
-    const canCheck = input.every(v => v.trim() !== '');
+    const canCheck = typedReady(input, info?.blankFieldsOk ?? false);
 
     // Focus lands in the answer field on every new exercise and follows the active field.
     useEffect(() => {

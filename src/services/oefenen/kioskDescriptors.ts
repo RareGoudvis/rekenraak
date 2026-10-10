@@ -22,7 +22,7 @@ import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
-import { ladderFor } from '../herleidingen/herleidingenGenerator';
+import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -645,8 +645,11 @@ export const HERLEIDINGEN_KIOSK = descriptor<HerleidingExercise>({
     answerOf: (ex, c) => {
         if (ex.blank === 'unit') return [ex.toParts[0].key];
         if (writesUnit(ex, c)) return herleidAnswer(ex, c);
-        return ex.toParts.length > 1 ? ex.toParts.map(p => String(p.value)) : numberSpellings(ex.toParts[0].value);
+        // '0|': a zero part may be typed as 0 or left empty (owner 2026-10-10).
+        return ex.toParts.length > 1 ? ex.toParts.map(p => (isZeroAnswerPart(ex, p) ? '0|' : String(p.value))) : numberSpellings(ex.toParts[0].value);
     },
+    // From the shape only (a compound number blank), so the button never hints at which part is 0.
+    blankFields: (ex) => ex.blank === 'number' && ex.toParts.length > 1,
     display: (ex, c) => (ex.blank === 'unit'
         ? `${partsText(ex.fromParts)} = ${showNum(ex.toParts[0].value)} ?`
         : writesUnit(ex, c) ? `${partsText(ex.fromParts)} = ? (getal en eenheid)`

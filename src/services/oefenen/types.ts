@@ -153,6 +153,10 @@ export interface KioskDescriptor<E = unknown> {
     labels?(ex: E, c: Record<string, unknown>): string[];
     // multi-number: the sign printed between the fields (ordenen: '<' or '>').
     separator?(ex: E, c: Record<string, unknown>): string;
+    // multi-number: Controleer takes the answer with some fields empty (one typed is enough); an
+    // empty field is right where its answerOf alternatives hold '' (a herleiding's zero part).
+    // From the exercise's shape, never its values, so the button does not hint at the answer.
+    blankFields?(ex: E, c: Record<string, unknown>): boolean;
     keys?(c: Record<string, unknown>): KioskKey[];
     // fill-cells: action keys for this exercise (see KioskExtraKey); from its operator or
     // settings, never its answer.

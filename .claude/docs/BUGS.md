@@ -16,8 +16,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 - Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept
   every glyph count). 2026-09-27
-- Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
-  part is a blank to fill or should be dropped). 2026-09-27
 - lengte-meten / omtrek with Lengte max 10-18 (pairwise rows): a figure wider than its column is now
   drawn scaled down with "niet op ware grootte" (2026-10-10), so in the 'meten' model the child
   measures a smaller figure than the key's length. Owner call: cap the generated span to the column's
