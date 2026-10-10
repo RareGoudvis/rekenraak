@@ -93,6 +93,10 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
         const seeded = floorToPreset(baseMaxGetal, metRange.presets);
         patch({ multiplicationMode: 'met_rest', [metRange.key]: seeded, metRestLevel: clipMetRestLevel(metRestLevel, seeded) } as Partial<MulDivConstraints>);
     };
+    // Deeltafels picks Met rest does not list stay selected (and 0 / 1 make no rest), so they show
+    // greyed with a note: tafels [1] alone otherwise left a dead block with no reason on screen.
+    const otherPicks = selectedTables.filter(t => !MET_REST_TABLES.includes(t));
+    const noRestDeler = !selectedTables.some(t => t > 1);
     // A niveau the deeltal max cannot hold is shown disabled; the stored one is clipped down.
     const activeMetRestLevel = clipMetRestLevel(metRestLevel, maxGetal);
     const blockedMetRestLevels = [1, 2, 3].filter(l => !metRestLevelFits(l, maxGetal));
@@ -156,7 +160,19 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                                 {t}
                             </button>
                         ))}
+                        {otherPicks.map(t => (
+                            <button key={`other-${t}`} disabled aria-pressed title="Gekozen bij Deeltafels; daar kies je het uit."
+                                style={{ ...styles.maskBtn(true), opacity: 0.45, cursor: 'not-allowed' }}>
+                                {t}
+                            </button>
+                        ))}
                     </div>
+                    {otherPicks.length > 0 && (
+                        <p style={styles.hint}>
+                            Ook gekozen bij Deeltafels: {otherPicks.join(', ')}.{otherPicks.some(t => t <= 1) ? ' Delen door 0 of 1 geeft geen rest.' : ''}
+                        </p>
+                    )}
+                    {noRestDeler && <p style={styles.hint}>Kies minstens één deler van 2 tot 12: zonder deler zijn er geen oefeningen.</p>}
                     {range && !hidden.has('maxGetal') && <div style={styles.section}>
                         <SettingLabel text="Maximum deeltal:" info="Het grootste deeltal (het getal dat gedeeld wordt)." />
                         <PopupSelect

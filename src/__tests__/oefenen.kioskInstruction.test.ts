@@ -12,6 +12,8 @@ import { gradeBase, mulberry32 } from './helpers/limitHarness';
 // answer "in woorden" (the kiosk only takes typed digits). Word boundaries keep descriptive
 // "onderstreepte cijfer" / "gekleurd" legal.
 const PEN_VERB = /\b(omcirkel|kleur|teken|onderstreep|zet een kruisje|kruis aan|in woorden)\b/i;
+// Owner call 2: the pupil types on a keypad or keyboard, so the card says "Typ …", never "Schrijf …".
+const WRITE_VERB = /\bschrijf\b/i;
 // Owner call (O22): breuken kleuren says "Kleur 3/6 in.": a tapped part does turn coloured on the card.
 const KLEUR_BREUK = /^Kleur \d+\/\d+ in\.$/;
 
@@ -39,6 +41,14 @@ const ALL = headers();
 describe('kiosk instruction wording', () => {
     test('no kiosk-capable leaf shows a pen verb in the card header (bar the owner\'s "Kleur 3/6 in.")', () => {
         for (const h of ALL) if (!KLEUR_BREUK.test(h.shown)) expect(h.shown, `${h.leafId} L${h.grade}`).not.toMatch(PEN_VERB);
+    });
+
+    test('no kiosk-capable leaf says "schrijf" in the card header (call 2: "Typ …")', () => {
+        const bad = [...new Set(ALL.filter(h => WRITE_VERB.test(h.shown)).map(h => `${h.leafId}: ${h.shown}`))];
+        expect(bad).toEqual([]);
+        expect(ALL.find(h => h.leafId === 'romeinse-schrijven')?.shown).toBe('Typ in Romeinse cijfers.');
+        // A setting-dependent paper wording (maateenheid schrijven) follows the same rule.
+        expect(kioskInstructionOf('maateenheid', {}, { answerMode: 'schrijven' }, 'Schrijf de passende maateenheid.')).toBe('Typ de passende maateenheid.');
     });
 
     test('klok analoog lezen asks for a typed time, the only answer the card takes', () => {

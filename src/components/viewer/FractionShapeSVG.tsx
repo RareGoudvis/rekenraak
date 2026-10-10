@@ -53,17 +53,31 @@ function piePath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
 // A phone card is about 3x wider than tall and scales a figure to its height first, so a kiosk
 // square of several parts is drawn this many times wider than tall: every part reaches 44 px.
 const KIOSK_GRID_ASPECT = 2.4;
-// A prime d has no grid (equal parts need one row): its strips keep at least this width (viewBox units).
+// A prime d has no grid: its strips keep at least this width (viewBox units).
 const KIOSK_MIN_STRIP = 30;
+// From this prime d on, one row of strips is too wide to keep 44 px parts on a phone card.
+const KIOSK_TWO_ROW_PRIME = 11;
 
-/** Rows x cols for a kiosk square of d >= 5 parts (the most square-like factor pair; a prime d stays one wider row), else null. */
-function kioskSquareGrid(d: number, side: number) {
+interface KioskCell { x: number; y: number; w: number; h: number }
+
+/** The parts of a kiosk square of d >= 5 (null below): a grid of the most square-like factor pair, else one row of strips. */
+function kioskSquareCells(d: number, side: number): { width: number; cells: KioskCell[] } | null {
     if (d < 5) return null;
     let rows = 1;
     for (let r = 2; r * r <= d; r++) if (d % r === 0) rows = r;
-    if (rows === 1) return { rows, cols: d, cellW: Math.max(side / d, KIOSK_MIN_STRIP), cellH: side };
-    const cols = d / rows;
-    return { rows, cols, cellW: (side * KIOSK_GRID_ASPECT) / cols, cellH: side / rows };
+    if (rows > 1) {
+        const cols = d / rows, w = (side * KIOSK_GRID_ASPECT) / cols, h = side / rows;
+        return { width: w * cols, cells: Array.from({ length: d }, (_, i) => ({ x: (i % cols) * w, y: Math.floor(i / cols) * h, w, h })) };
+    }
+    if (d < KIOSK_TWO_ROW_PRIME) {
+        const w = Math.max(side / d, KIOSK_MIN_STRIP);
+        return { width: w * d, cells: Array.from({ length: d }, (_, i) => ({ x: i * w, y: 0, w, h: side })) };
+    }
+    // Two rows of equal AREA (a gelijk deel is the same size): the row with more parts is taller.
+    const top = Math.ceil(d / 2), bottom = d - top, width = top * KIOSK_MIN_STRIP;
+    const topH = (side * top) / d;
+    const row = (n: number, y: number, h: number) => Array.from({ length: n }, (_, i) => ({ x: (i * width) / n, y, w: width / n, h }));
+    return { width, cells: [...row(top, 0, topH), ...row(bottom, topH, side - topH)] };
 }
 
 export default function FractionShapeSVG({
@@ -107,13 +121,10 @@ export default function FractionShapeSVG({
         // square divided into `denominator` equal vertical strips (kleuren/herkennen).
         const side = fixedSidePx ?? 90;
         // Kiosk only (ix set): strips of side/d are under a thumb's 44 px from d = 5 on, so the parts
-        // become a rows x cols grid of equal cells in a wider figure; a prime d stays one row, widened.
-        const grid = ix ? kioskSquareGrid(denominator, side) : null;
-        const cols = grid?.cols ?? denominator;
-        const rows = grid?.rows ?? 1;
-        const stripW = grid?.cellW ?? side / denominator;
-        const cellH = grid?.cellH ?? side;
-        const width = grid ? stripW * cols : side;
+        // become a grid of equal cells in a wider figure (kioskSquareCells); the sheet keeps its strips.
+        const grid = ix ? kioskSquareCells(denominator, side) : null;
+        const stripW = side / denominator;
+        const width = grid?.width ?? side;
         return (
             <svg width={size(width)} height={size(side)} viewBox={`0 0 ${width} ${side}`} style={shapeStyle}
                 {...(grid && { 'data-kiosk-layout': 'grid' })}>
@@ -121,10 +132,10 @@ export default function FractionShapeSVG({
                     <rect
                         key={i}
                         {...interactionProps(ix, String(i))}
-                        x={(i % cols) * stripW}
-                        y={Math.floor(i / cols) * cellH}
-                        width={stripW}
-                        height={rows === 1 ? side : cellH}
+                        x={grid ? grid.cells[i].x : i * stripW}
+                        y={grid ? grid.cells[i].y : 0}
+                        width={grid ? grid.cells[i].w : stripW}
+                        height={grid ? grid.cells[i].h : side}
                         fill={showColored && coloredIndices.includes(i) ? fillColor : 'white'}
                         stroke={STROKE}
                         strokeWidth={1.5}

@@ -66,8 +66,10 @@ export const attemptsOf = (s: Pick<OefenSessie, 'attempts' | 'testMode'>): Oefen
 // missing-operand = one typed answer that fills a puntoefening's blank operand;
 // text = a word typed on the device keyboard (Romeinse cijfers, a unit); time = uur + minuten
 // fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair);
-// interactive = the pupil answers ON the exercise (Phase C: tap, fill its cells, order), see `interact`.
-export type KioskInput = 'number' | 'number+rest' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
+// number+unit = a typed number plus a unit tapped from `choicesOf` (herleidingen writeUnits), right by
+// value through `unitFactors`; interactive = the pupil answers ON the exercise (Phase C: tap, fill its
+// cells, order), see `interact`.
+export type KioskInput = 'number' | 'number+rest' | 'number+unit' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
 
 // Separator of the parts in an interactive answer string ('12 · 48 · 7'): never part of a number.
 export const INTERACT_SEP = ' · ';
@@ -156,11 +158,18 @@ export interface KioskDescriptor<E = unknown> {
     // settings, never its answer.
     extraKeys?(ex: E, c: Record<string, unknown>): KioskExtraKey<E>[];
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
-    // number+rest: exactly [quotiënt, rest]. time: every accepted 'h:mm' (8:05 and 20:05).
+    // number+rest: exactly [quotiënt, rest]. number+unit: exactly [number, unit], one right
+    // quantity (any other spelling of its value counts, see unitFactors). time: every accepted 'h:mm' (8:05 and 20:05).
     // multi-number: one entry per field, alternatives within a field joined by '|'.
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
     display(ex: E, c: Record<string, unknown>): string;
+    // number+unit: the size of each unit the pupil may answer in, in one shared smallest unit
+    // (powers of ten); check compares number × factor exactly. A unit left out is never right.
+    unitFactors?(ex: E, c: Record<string, unknown>): Record<string, number>;
+    // Stats text of a typed answer, one entry per field (the pupil's or the first accepted
+    // spellings): euro + cent fields read "€ 2,65". Absent = the fields joined as typed.
+    showAnswer?(parts: string[], ex: E, c: Record<string, unknown>): string;
     // The card header when the paper instruction names a pen verb (omcirkel, kleur ...) but the
     // kiosk input is a button or field; undefined = keep the leaf's instruction.
     kioskInstruction?: string | ((ex: E, c: Record<string, unknown>) => string | undefined);

@@ -3,7 +3,7 @@ import { MabGlyph, MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
 import { builtCount, useViewerInteraction, type InteractionState } from './ViewerInteractionContext';
 import type { KioskPiece } from '../../services/oefenen/types';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useShowScaffold, useSheetSizePx } from './BlockWidthContext';
 import type { MabConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 
@@ -163,6 +163,10 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
     // In tekenen mode the number is printed on the answer line by default; in
     // herkennen mode the line stays empty unless solutions are shown.
     const showNumberOnLine = mode === 'tekenen' || showSolutions;
+    // Oefenmodus card (no scaffold): herkennen's number is typed in the kiosk panel, so its
+    // write-on line goes, and a duizendtal gets its labelled kiosk cube.
+    const scaffold = useShowScaffold();
+    const answerLine = showNumberOnLine || scaffold;
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: `${figureFontPx}px` }}>
@@ -220,13 +224,14 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                                 place={col.place}
                                 style={style}
                                 color={mode === 'tekenen' && showSolutions ? SOL : '#000'}
+                                kiosk={!scaffold}
                             />
                         </div>
                     ))}
                 </div>
             </div>
-            {/* ANSWER LINE — always shown */}
-            <div style={{
+            {/* ANSWER LINE — always on the sheet */}
+            {answerLine && <div style={{
                 width: '100%',
                 height: `${answerHeight}px`,
                 marginTop: '8px',
@@ -240,7 +245,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                     ? <span style={{ ...(showSolutions && mode === 'herkennen' ? solutionText : { color: '#000' }), fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{fmt(ex.value)}</span>
                     : <div style={{ width: '70%', borderBottom: '1.5px solid #000' }} />
                 }
-            </div>
+            </div>}
         </div>
     );
 }
@@ -248,7 +253,8 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
 // Kiosk tray: each place's block at a size that shows the places' relative size (a unit small,
 // a thousand cube big) and still fits a tile. Target px at the 13pt em base.
 const TRAY_GLYPH_PX: Record<string, { place: MabPlace; px: number; glyph: Record<'symbolic' | 'real', number> }> = {
-    D: { place: 'thousands', px: 34, glyph: { symbolic: 22, real: THOUSAND_GLYPH_PX } },
+    // The tray draws the kiosk cube (KioskThousands, 35 px) whatever the style.
+    D: { place: 'thousands', px: 34, glyph: { symbolic: 35, real: 35 } },
     H: { place: 'hundreds', px: 26, glyph: { symbolic: 10, real: 14 } },
     T: { place: 'tens', px: 52, glyph: { symbolic: 22, real: HUNDRED_GLYPH_PX } },
     E: { place: 'units', px: 14, glyph: { symbolic: 5, real: 6 } },
@@ -265,7 +271,7 @@ export function MabTrayPiece({ piece, constraints }: { piece: KioskPiece; constr
         <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '0.15em' }}>
             <span style={{ fontWeight: 700, lineHeight: 1, fontSize: 'calc(var(--sheet-size-math) * 1.2)' }}>{piece.key}</span>
             <span style={{ display: 'inline-flex', fontSize: `calc(var(--sheet-size-math) * ${(row.px / glyphPx).toFixed(3)})` }}>
-                <MabGlyph place={row.place} style={style} />
+                <MabGlyph place={row.place} style={style} kiosk />
             </span>
         </span>
     );

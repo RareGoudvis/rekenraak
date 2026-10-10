@@ -80,6 +80,12 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   defaults). Rows do touch. Fix: size the track with the cell's font factor (sheet change: visual
   baseline). 2026-10-08
 
+- HerleidingenViewer: the right-aligned left side is sized from a char-count estimate (`leftW`, ~9.5 px/char)
+  that undershoots a compound given side ("856 dm²  36 cm²" at 13pt), so it overflows the box to the LEFT;
+  the Oefenmodus card (which crops at x = 0) then cuts its first digit ("56 dm² 36 cm² ="), seen at 1280 x 800
+  (~/Downloads/clean-sweep/s3/after-number-unit/herleidingen-oppervlakte-writeunits.png). Fix: measure the
+  side or nowrap + min-width: max-content on the left box. Found by S3. 2026-10-09
+
 ## Config
 
 ## Generators
@@ -120,24 +126,11 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- Kiosk MAB (mab-herkennen / mab-tekenen): the duizendtal block is hard to read at kiosk scale —
-  pupils could not tell it from the honderdtal; and adding / taking away pieces in the tray needs
-  more UI help (which piece, how many laid, a clear +/−). Owner note from the first test with
-  real kids. 2026-10-09
-
-- hr-std-delen-nat "Met rest" keeps the tafels picked in tafels mode hidden, so a session can go dead
-  with tafels [1] without the teacher seeing why (pre-flight flags it). 2026-10-09
-
 ## Oefenmodus beta audit 2026-10-09
 
 External beta audit against 5c93876, every line re-verified on 4c51ef2 (evidence under
 ~/Downloads/oefen-check/audit/{1,2,3}/). Plan: ~/.claude/plans/oefen-audit-fixes.md. Lines are
-grouped per work package so parallel deletions merge cleanly; fixed lines are deleted, O7 / O16 stay by owner decision.
-
-### WP-B store / stats
-
-- **O7** C7 (log only, owner): a reload clears the typed draft, the cijferen cells and the geld tray
-  (only `current` is persisted, useOefenStore.ts:276, 287). Not fixing. 2026-10-09
+grouped per work package so parallel deletions merge cleanly; fixed lines are deleted, O16 stays by owner decision (O7 closed as log-only, REVIEW §D).
 
 ### WP-F session format
 
@@ -151,10 +144,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 ## Tooling
-
-- Kiosk breuken kleuren, square shape with a PRIME noemer ≥ 11 (11, 13): equal parts need one row, so the
-  strips stay ~40 px wide on an 844 px card (< 44 px target). Composite noemers use a grid (`kioskSquareGrid`).
-  2026-10-08
 
 - Flaky: `oefenen.zeroOutput.test.ts` failed once in the gate on `hr-std-delen-dec {"maxGetal":1e9,
   "operandMax":[20,20,20,20]}: pre-flight must flag it` (the unseeded `rowYields` found an exercise that

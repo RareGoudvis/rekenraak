@@ -25,6 +25,8 @@ interface ColumnProps {
     color?: string;
     // Bordmodus MAB-mat: a teacher-picked fill per place; strokes stay `color`. The sheet never passes it.
     fill?: string;
+    // Oefenmodus card: a duizendtal is drawn as a labelled cube (KioskThousands). The sheet never passes it.
+    kiosk?: boolean;
 }
 
 // 'mab-color' palette per place (fill). Strokes stay black for readability.
@@ -43,8 +45,13 @@ function resolveFill(style: MabStyle, place: MabPlace, color: string): string {
     return 'white';
 }
 
-export function MabPlaceColumn({ count, place, style, color = '#000', fill }: ColumnProps) {
+export function MabPlaceColumn({ count, place, style, color = '#000', fill, kiosk }: ColumnProps) {
     if (count === 0) return null;
+
+    // Kiosk thousands: two labelled cubes fit the D column side by side, five high.
+    if (kiosk && place === 'thousands') {
+        return <PatternedGrid count={count} maxRows={5} place="thousands" style={style} color={color} fill={fill} kiosk />;
+    }
 
     // Units: column-first 2-row "domino" pattern (1, 2, 3, 4…) for subitizing.
     if (place === 'units') {
@@ -76,12 +83,12 @@ export function MabPlaceColumn({ count, place, style, color = '#000', fill }: Co
 }
 
 /** One block of a place, as the columns draw it (the kiosk's build tray). */
-export function MabGlyph({ place, style }: { place: MabPlace; style: MabStyle }) {
-    return <Glyph place={place} style={style} color="#000" />;
+export function MabGlyph({ place, style, kiosk }: { place: MabPlace; style: MabStyle; kiosk?: boolean }) {
+    return <Glyph place={place} style={style} color="#000" kiosk={kiosk} />;
 }
 
-function PatternedGrid({ count, maxRows, place, style, color, fill }: {
-    count: number; maxRows: number; place: MabPlace; style: MabStyle; color: string; fill?: string;
+function PatternedGrid({ count, maxRows, place, style, color, fill, kiosk }: {
+    count: number; maxRows: number; place: MabPlace; style: MabStyle; color: string; fill?: string; kiosk?: boolean;
 }) {
     const cols = Math.ceil(count / maxRows);
     const cells: React.ReactNode[] = [];
@@ -92,7 +99,7 @@ function PatternedGrid({ count, maxRows, place, style, color, fill }: {
             if (idx >= count) break;
             cells.push(
                 <div key={`${k}-${r}`} style={{ gridColumn: k + 1, gridRow: r + 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Glyph place={place} style={style} color={color} fill={fill} />
+                    <Glyph place={place} style={style} color={color} fill={fill} kiosk={kiosk} />
                 </div>
             );
         }
@@ -113,7 +120,8 @@ function PatternedGrid({ count, maxRows, place, style, color, fill }: {
     );
 }
 
-function Glyph({ place, style, color, fill: fillOverride }: { place: MabPlace; style: MabStyle; color: string; fill?: string }) {
+function Glyph({ place, style, color, fill: fillOverride, kiosk }: { place: MabPlace; style: MabStyle; color: string; fill?: string; kiosk?: boolean }) {
+    if (kiosk && place === 'thousands') return <KioskThousands stroke={color} fill={style === 'symbolic' ? 'white' : fillOverride ?? resolveFill(style, place, color)} />;
     if (style === 'symbolic') {
         // Symbolic glyphs are single-colour marks, so a picked fill recolours the whole mark.
         const mark = fillOverride ?? color;
@@ -211,6 +219,22 @@ function RealisticHundreds({ stroke, fill }: { stroke: string; fill: string }) {
     return (
         <svg width={em(HUNDREDS_SQ)} height={em(HUNDREDS_SQ)} viewBox={`0 0 ${HUNDREDS_SQ} ${HUNDREDS_SQ}`}>
             <rect width={HUNDREDS_SQ} height={HUNDREDS_SQ} fill={fill} stroke={stroke} strokeWidth={STROKE} />
+        </svg>
+    );
+}
+
+// Oefenmodus: pupils read the symbolic stamp (four squares) as four hundreds, so the card and the
+// tray draw a duizendtal as a heavy-outlined cube with its value on the front face.
+// 35 px wide: two side by side still fit the D column (74 px).
+function KioskThousands({ stroke, fill }: { stroke: string; fill: string }) {
+    const S = 30, OFFSET = 5, total = S + OFFSET;
+    return (
+        <svg width={em(total)} height={em(total)} viewBox={`0 0 ${total} ${total}`} data-mab-thousand="">
+            <path d={`M 0 ${OFFSET} L ${OFFSET} 0 L ${total} 0 L ${total} ${S} L ${S} ${total}`} fill="none" stroke={stroke} strokeWidth={1.5} strokeLinejoin="round" />
+            <line x1={S} y1={OFFSET} x2={total} y2={0} stroke={stroke} strokeWidth={1.5} />
+            <rect x={0} y={OFFSET} width={S} height={S} fill={fill} stroke={stroke} strokeWidth={2.5} />
+            <text x={S / 2} y={OFFSET + S / 2} textAnchor="middle" dominantBaseline="central" fontSize={9.5} fontWeight={700}
+                fontFamily="'Azeret Mono', monospace" fill={stroke}>1000</text>
         </svg>
     );
 }

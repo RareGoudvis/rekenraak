@@ -9,8 +9,10 @@ interface Props {
     pieces: KioskPiece[];
 }
 
-// The build tray (Oefenmodus 'build'): one tile per piece, a tap lays one more on the card and
-// the count badge takes one back. It never shows the running total: adding up IS the exercise.
+// The build tray (Oefenmodus 'build'): one tile per piece, a tap lays one more on the card.
+// Classroom test (2026-10-09): pupils needed to see which piece and how many of it they laid,
+// and a clear way to take one back, so every tile carries "gelegd: n" and its own − / +.
+// It never shows the running total: adding up IS the exercise.
 export default function Tray({ typeId, constraints, pieces }: Props) {
     const interaction = useOefenStore(s => s.interaction);
     const { lay } = useOefenStore.getState();
@@ -25,12 +27,12 @@ export default function Tray({ typeId, constraints, pieces }: Props) {
                         <button type="button" className={`kiosk-tray-piece${n > 0 ? ' is-laid' : ''}`} onClick={() => lay(p.key, 1)}
                             disabled={full} aria-label={`${p.label} erbij${n > 0 ? ` (${n} gelegd)` : ''}`} data-tray-key={p.key}>
                             <span className="kiosk-tray-figure" aria-hidden>{Piece ? <Piece piece={p} constraints={constraints} /> : p.label}</span>
+                            <span className={`kiosk-tray-count${n > 0 ? ' is-laid' : ''}`} aria-hidden>gelegd: {n}</span>
                         </button>
-                        {n > 0 && (
-                            <button type="button" className="kiosk-tray-count" onClick={() => lay(p.key, -1)} aria-label={`Eén ${p.label} terugnemen`}>
-                                <span className="kiosk-tray-minus" aria-hidden>−</span>{n}
-                            </button>
-                        )}
+                        <div className="kiosk-tray-step">
+                            <button type="button" className="kiosk-tray-btn" onClick={() => lay(p.key, -1)} disabled={n === 0} aria-label={`Eén ${p.label} terugnemen`}>−</button>
+                            <button type="button" className="kiosk-tray-btn" onClick={() => lay(p.key, 1)} disabled={full} aria-label={`Nog een ${p.label}`}>+</button>
+                        </div>
                     </div>
                 );
             })}

@@ -1,7 +1,7 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
+import { useBlockWidth, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
 import type { OppervlakteConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 
@@ -30,7 +30,9 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
     const exercises: MeetExercise[] = block.meetExercises || [];
     const c = block.constraints as OppervlakteConstraints;
     const subType: string = c.subType ?? 'berekenen';
-    const scaffoldFormule: boolean = c.scaffoldFormule ?? true;
+    // Oefenmodus card: only the area is asked, so the l × b formula row gives way to "opp = __".
+    const scaffold = useShowScaffold();
+    const scaffoldFormule: boolean = (c.scaffoldFormule ?? true) && scaffold;
     const askOmtrek: boolean = c.askOmtrek ?? false;
     const gap = block.verticalSpacing || 14;
     const isRooster = subType === 'rooster';

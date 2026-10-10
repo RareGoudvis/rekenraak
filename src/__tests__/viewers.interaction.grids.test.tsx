@@ -139,6 +139,36 @@ describe('breuken kleuren', () => {
         expect(rects(plain.container).every(r => r.getAttribute('width') === rects(plain.container)[0].getAttribute('width'))).toBe(true);
     });
 
+    // BUGS (Tooling): a prime d >= 11 had no grid, so its one row of strips drew ~40 px wide on an
+    // 844 x 390 phone card. It becomes two rows of equal-AREA parts (6 + 5 for 11: the row with
+    // more parts is taller), and every d from 5 to 13 keeps each part >= 44 px on that card.
+    test.each([[11, 6], [13, 7]])('square d=%i: two rows of equal parts (%i on top)', (d, top) => {
+        const block = oneExercise('breuken', { subType: 'kleuren', shapes: ['square'], shape: 'square', minDenominator: d, maxDenominator: d });
+        const { container } = render(<Harness block={block} kind="tap-multi" />);
+        const rects = [...container.querySelectorAll<SVGRectElement>('svg[viewBox] rect')];
+        expect(rects).toHaveLength(d);
+        const num = (r: SVGRectElement, a: string) => Number(r.getAttribute(a));
+        expect(new Set(rects.map(r => r.getAttribute('y'))).size).toBe(2);
+        expect(rects.filter(r => num(r, 'y') === 0)).toHaveLength(top);
+        const areas = rects.map(r => num(r, 'width') * num(r, 'height'));
+        for (const a of areas) expect(a).toBeCloseTo(areas[0], 6);
+    });
+
+    test('square d=5..13: every kiosk part is >= 44 px on an 844 x 390 card', () => {
+        // The card body of an 844 x 390 landscape phone (ExerciseCard scales the figure into it, <= 3.2x).
+        const BOX = { w: 460, h: 250 };
+        for (let d = 5; d <= 13; d++) {
+            const block = oneExercise('breuken', { subType: 'kleuren', shapes: ['square'], shape: 'square', minDenominator: d, maxDenominator: d });
+            const { container } = render(<Harness block={block} kind="tap-multi" />);
+            const svg = container.querySelector<SVGElement>('svg[viewBox]')!;
+            const [, , w, h] = svg.getAttribute('viewBox')!.split(' ').map(Number);
+            const k = Math.min(3.2, BOX.w / w, BOX.h / h);
+            const smallest = Math.min(...[...svg.querySelectorAll('rect')].map(r => Math.min(Number(r.getAttribute('width')), Number(r.getAttribute('height')))));
+            expect(smallest * k, `d=${d}`).toBeGreaterThanOrEqual(44);
+            cleanup();
+        }
+    });
+
     test('square d=4 stays strips in the kiosk', () => {
         const block = oneExercise('breuken', { subType: 'kleuren', shapes: ['square'], shape: 'square', minDenominator: 4, maxDenominator: 4 });
         const { container } = render(<Harness block={block} kind="tap-multi" />);

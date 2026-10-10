@@ -37,6 +37,8 @@ const HEADED = argv.includes('--headed');
 const CASES = [
     { kind: 'number', leafId: 'hr-std-optellen-nat', over: {} },
     { kind: 'number+rest', leafId: 'hr-std-delen-nat', over: { multiplicationMode: 'met_rest' } },
+    // Herleidingen with "eenheden zelf schrijven": keypad number + a unit button.
+    { kind: 'number+unit', leafId: 'herleidingen-lengte', over: { writeUnits: true } },
     { kind: 'time', leafId: 'klok-analoog-lezen', over: {} },
     { kind: 'choice', leafId: 'vergelijken-getallen', over: {} },
     { kind: 'tap', leafId: 'vergelijken-kiezen', over: {} },
@@ -199,6 +201,10 @@ async function enter(page, card) {
             await fields.nth(i).click();
             await pressKeys(page, card.input === 'time' ? values[i] : typeableSpelling([values[i]], card.keys));
         }
+    } else if (card.input === 'number+unit') {
+        await page.locator('.kiosk-fields input').first().click();
+        await pressKeys(page, typeableSpelling([card.accepted[0]], card.keys));
+        await page.getByRole('radiogroup', { name: 'Kies de eenheid' }).getByRole('radio', { name: card.accepted[1], exact: true }).click();
     } else if (card.input === 'text') {
         await page.locator('.kiosk-fields input').first().fill(card.accepted[0]);
     } else if (card.input === 'interactive') {

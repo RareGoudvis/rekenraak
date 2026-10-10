@@ -567,6 +567,41 @@ html:has(.oefen-body),
   overflow-wrap: break-word;
   hyphens: auto;
 }
+/* number+unit: the unit ladder as one or two rows of compact buttons above the keypad. */
+.kiosk-choices.is-units {
+  flex: none;
+  max-height: none;
+  grid-template-columns: repeat(var(--unit-cols), minmax(0, 1fr));
+  grid-auto-rows: minmax(var(--kiosk-tap), 56px);
+  gap: var(--sp-1);
+}
+.kiosk-choices.is-units .kiosk-choice {
+  min-width: 0;
+  padding: 0;
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 600;
+}
+/* A landscape phone has no height for two unit rows above the keypad: one row that scrolls sideways. */
+@media (max-height: 480px) {
+  .kiosk-choices.is-units {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(var(--kiosk-tap), 1fr);
+    overflow-x: auto;
+  }
+  .kiosk-choices.is-units .kiosk-choice { padding: 0 2px; font-size: var(--kiosk-text); }
+}
+/* The unit picked so far, beside the number field ('?' until one is tapped). */
+.kiosk-field-unit {
+  flex: none;
+  min-width: 3ch;
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text-xl);
+  font-weight: 600;
+  color: var(--kiosk-ink);
+}
+.kiosk-field-unit.is-empty { color: var(--text-muted); }
 .kiosk-choice.is-picked {
   border-color: var(--accent);
   background: var(--accent-soft);
@@ -591,21 +626,25 @@ html:has(.oefen-body),
   display: grid;
   /* auto-fit: a short tray (MAB's three places) widens its tiles instead of leaving gaps. */
   grid-template-columns: repeat(auto-fit, minmax(clamp(76px, 12vmin, 112px), 1fr));
-  /* Tiles never under a thumb's target; on a Chromebook they grow, up to a comfortable coin. */
-  grid-auto-rows: minmax(var(--kiosk-tap), clamp(72px, 14vmin, 120px));
-  align-content: center;
+  /* A slot = the tile (never under a thumb's target) + its − / + row; on a Chromebook the
+     tile grows, up to a comfortable coin. */
+  grid-auto-rows: minmax(calc(2 * var(--kiosk-tap) + var(--sp-1)), calc(clamp(72px, 14vmin, 120px) + var(--kiosk-tap)));
+  /* safe: a tray taller than the panel starts at its top instead of centring its first row out of reach. */
+  align-content: safe center;
   gap: var(--sp-2);
-  /* Room for the count badges that sit over the tiles' top edge. */
-  padding-top: var(--sp-2);
+  /* A long money tray on a landscape phone scrolls rather than squeezing tiles under 44 px. */
+  overflow-y: auto;
 }
-.kiosk-tray-slot { position: relative; min-width: 0; display: flex; }
+.kiosk-tray-slot { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
 .kiosk-tray-piece {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: var(--kiosk-tap);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   padding: var(--sp-1);
   border: 2px solid var(--separator);
   border-radius: var(--radius-md);
@@ -623,36 +662,45 @@ html:has(.oefen-body),
 .kiosk-tray-piece.is-laid { border-color: var(--accent); }
 .kiosk-tray-piece:disabled { opacity: 0.45; cursor: default; }
 /* The sheet's coin / block figures are em of --sheet-size-math: a bill (56 px at 13pt) fills
-   about 80% of the tile's width and a coin (2.65 em) 80% of its height, capped so a
-   Chromebook's big tiles do not draw 150 px coins. */
+   about 80% of the tile's width and a coin (2.65 em) 70% of its height (the badge takes the
+   rest), capped so a Chromebook's big tiles do not draw 150 px coins. */
 .kiosk-tray-figure {
-  --sheet-size-math: min(22px, 25cqi, 30cqh);
+  --sheet-size-math: min(22px, 25cqi, 26cqh);
   display: inline-flex;
   font-size: var(--sheet-size-math);
   pointer-events: none;
 }
+/* "gelegd: n" under the figure: quiet at 0, the accent once something is laid. */
 .kiosk-tray-count {
-  position: absolute;
-  top: calc(-1 * var(--sp-2));
-  right: calc(-1 * var(--sp-1));
-  min-width: 32px;
-  height: 32px;
-  padding: 0 var(--sp-2);
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border: none;
+  flex: none;
+  padding: 1px var(--sp-2);
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--accent-on);
-  font: 700 var(--kiosk-text)/1 var(--font-ui);
+  background: var(--bg-active);
+  color: var(--text-muted);
+  font: 600 var(--text-sm)/1.2 var(--font-ui);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.kiosk-tray-count.is-laid { background: var(--accent); color: var(--accent-on); }
+.kiosk-tray-step {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-1);
+}
+.kiosk-tray-btn {
+  min-width: 0;
+  min-height: var(--kiosk-tap);
+  border: 1px solid var(--separator);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--kiosk-ink);
+  font: 700 var(--kiosk-text)/1 var(--font-ui);
   cursor: pointer;
 }
-/* The badge draws at 32 px; its tap target reaches 44 px (WCAG 2.5.5). */
-.kiosk-tray-count::after { content: ''; position: absolute; inset: -6px; }
-.kiosk-tray-count:active { background: var(--accent-strong); }
-.kiosk-tray-minus { font-weight: 400; }
+.kiosk-tray-btn:active { background: var(--bg-active); }
+.kiosk-tray-btn:disabled { opacity: 0.4; cursor: default; }
 .kiosk-tray-actions {
   flex: none;
   display: grid;
