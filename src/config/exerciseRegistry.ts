@@ -488,9 +488,11 @@ const schattendMax: MaxPresetsFn = (c) =>
 
 // All cijferen leaves share the same generator/field/defaults (operator + numberType
 // come from the appstructure leaf's defaultConstraints, merged on top at add time).
-const cijferRow = (): ExerciseTypeDef => row<CijferConstraints>({
+// `defaultCount`: a decimal staartdeling grid is 14 rows tall, so four of them (two rows of
+// two) ran past one A4 page at the default (1 028 px, sweep 2026-09-27); it starts at two.
+const cijferRow = (defaultCount = 4): ExerciseTypeDef => row<CijferConstraints>({
     exerciseField: 'cijferExercises', generate: generateCijferExercises, generateNoted: generateCijferExercisesNoted,
-    defaultConstraints: cijferDefaults, defaultCount: 4, maxPresets: cijferMax, kiosk: CIJFER_KIOSK,
+    defaultConstraints: cijferDefaults, defaultCount, maxPresets: cijferMax, kiosk: CIJFER_KIOSK,
 });
 
 export const REGISTRY: Record<string, ExerciseTypeDef> = {
@@ -510,7 +512,7 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'cijferen-vermenigvuldigen-nat': cijferRow(),
     'cijferen-vermenigvuldigen-dec': cijferRow(),
     'cijferen-delen-nat':            cijferRow(),
-    'cijferen-delen-dec':            cijferRow(),
+    'cijferen-delen-dec':            cijferRow(2),
 
     'klok-kloklezen': row<ClockConstraints>({ exerciseField: 'clockExercises',    generate: generateClockExercises,    defaultConstraints: clockDefaults,    defaultCount: 10 , kiosk: KLOK_KIOSK }),
     'breuken':        row<FractionConstraints>({ exerciseField: 'fractionExercises', generate: generateFractionExercises, generateNoted: generateFractionExercisesNoted, defaultConstraints: fractionDefaults, defaultCount: 6 , kiosk: BREUKEN_KIOSK }),
@@ -533,7 +535,9 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'getallenas':   row<GetallenasConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenasExercises,   generateNoted: generateGetallenasExercisesNoted, defaultConstraints: getallenasDefaults,   defaultCount: 5, maxPresets: nonRationalMax(RANGES.getallenas) , kiosk: GETALLENAS_KIOSK }),
     'getallenrijen':row<GetallenrijConstraints>({ exerciseField: 'getallenasExercises',   generate: generateGetallenrijExercises,  generateNoted: generateGetallenrijExercisesNoted, defaultConstraints: getallenrijDefaults,  defaultCount: 5, maxPresets: getallenrijMax, kiosk: GETALLENAS_KIOSK }),
     'lengte-meten': row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateLengteMetenExercises,  defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: LENGTE_KIOSK }),
-    'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises, generateNoted: generateOmtrekExercisesNoted,       defaultConstraints: metenDefaults,        defaultCount: 6 , kiosk: OMTREK_KIOSK }),
+    // Real-size figures one per row (up to a 10 cm square, ~450 px with its answer): two fit
+    // one A4 page at the default; six ran to 2 093 px (sweep 2026-09-27).
+    'omtrek':       row<MetenConstraints>({ exerciseField: 'meetExercises',         generate: generateOmtrekExercises, generateNoted: generateOmtrekExercisesNoted,       defaultConstraints: metenDefaults,        defaultCount: 2 , kiosk: OMTREK_KIOSK }),
     'temperatuur':  row<TemperatuurConstraints>({ exerciseField: 'temperatuurExercises',  generate: generateTemperatuurExercises,  defaultConstraints: temperatuurDefaults,  defaultCount: 4 , kiosk: TEMPERATUUR_KIOSK }),
     'plaatswaarde': row<PlaatswaardeConstraints>({ exerciseField: 'plaatswaardeExercises', ...notingShortfall(generatePlaatswaardeExercises), defaultConstraints: plaatswaardeDefaults, defaultCount: 6, maxPresets: fixedMax(RANGES.plaatswaarde) , kiosk: PLAATSWAARDE_KIOSK }),
     'even-oneven':  row<EvenOnevenConstraints>({ exerciseField: 'evenOnevenExercises',   generate: generateEvenOnevenExercises,   defaultConstraints: evenOnevenDefaults,   defaultCount: 3, maxPresets: evenOnevenMax , kiosk: EVEN_ONEVEN_KIOSK }),
@@ -567,7 +571,8 @@ export const REGISTRY: Record<string, ExerciseTypeDef> = {
     'controleren':    row<ControlerenConstraints>({ exerciseField: 'controleExercises',      generate: generateControleExercises,      defaultConstraints: controlerenDefaults,   defaultCount: 4, maxPresets: fixedMax(RANGES.controleren) , kiosk: CONTROLEREN_KIOSK }),
 
     // Meetkunde + SVG-heavy meten types.
-    'oppervlakte': row<OppervlakteConstraints>({ exerciseField: 'meetExercises',       generate: generateOppervlakteExercises, generateNoted: generateOppervlakteExercisesNoted, defaultConstraints: oppervlakteDefaults, defaultCount: 4 , kiosk: OPPERVLAKTE_KIOSK }),
+    // Two real-size figures fit one A4 page at the default; four ran to 1 382 px (sweep 2026-09-27).
+    'oppervlakte': row<OppervlakteConstraints>({ exerciseField: 'meetExercises',       generate: generateOppervlakteExercises, generateNoted: generateOppervlakteExercisesNoted, defaultConstraints: oppervlakteDefaults, defaultCount: 2 , kiosk: OPPERVLAKTE_KIOSK }),
     'weegschaal':  row<WeegschaalConstraints>({ exerciseField: 'weegschaalExercises', generate: generateWeegschaalExercises,  defaultConstraints: weegschaalDefaults,  defaultCount: 4 , kiosk: WEEGSCHAAL_KIOSK }),
     'vormleer-punt-lijn': row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 }),
     'vormleer-hoeken':    row<VormleerConstraints>({ exerciseField: 'vormleerExercises', generate: generateVormleerExercises, defaultConstraints: vormleerDefaults, defaultCount: 6 , kiosk: VORMLEER_KIOSK }),

@@ -16,6 +16,8 @@ import CijferViewer from '../components/viewer/CijferViewer';
 import OrdenenViewer from '../components/viewer/OrdenenViewer';
 import WeegschaalViewer from '../components/viewer/WeegschaalViewer';
 import MabViewer from '../components/viewer/MabViewer';
+import MetenViewer from '../components/viewer/MetenViewer';
+import FractionViewer from '../components/viewer/FractionViewer';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
@@ -304,5 +306,46 @@ describe('MAB herkennen (symbolic): pieces are big enough to count and still fit
         expect(3 * emPx(square.getAttribute('width')) + 2 * 3).toBeLessThanOrEqual(52);
         // Units: five dots across (nine in two rows) fit too.
         expect(5 * emPx(dot.getAttribute('width')) + 4 * 3).toBeLessThanOrEqual(52);
+    });
+});
+
+// 1 cm at 96 dpi: the to-scale drawings.
+const CM_PX = 96 / 2.54;
+const NOT_TRUE_SIZE = 'niet op ware grootte';
+
+describe('real-size figures: true size when they fit, else scaled down and labelled', () => {
+    const meten = (typeId: string, exs: unknown[]) => ({ id: 'b', typeId, constraints: { measureModel: 'meten', answerMode: 'single', answerUnit: 'cm' }, meetExercises: exs }) as unknown as MathBlock;
+    const square = (cm: number) => ({ id: `s${cm}`, kind: 'veelhoek', shape: 'vierkant', points: [{ x: 0, y: 0 }, { x: cm, y: 0 }, { x: cm, y: cm }, { x: 0, y: cm }], sides: [cm, cm, cm, cm], perimeter: 4 * cm, isManuallyEdited: false });
+    const line = (cm: number) => ({ id: `l${cm}`, kind: 'lijn', points: [{ x: 0, y: 0 }, { x: cm, y: 0 }], sides: [cm], perimeter: cm, isManuallyEdited: false });
+    const polygonWidth = (el: Element) => {
+        const xs = el.getAttribute('points')!.split(' ').map(pt => Number(pt.split(',')[0]));
+        return Math.max(...xs) - Math.min(...xs);
+    };
+    test.each([['omtrek', W.full], ['omtrek', W.half], ['lengte-meten', W.full]])('%s 18 cm in %ipx', (typeId, width) => {
+        const ex = typeId === 'omtrek' ? square(18) : line(18);
+        const { container } = at(width, <MetenViewer block={meten(typeId, [ex])} showSolutions />);
+        for (const svg of container.querySelectorAll('svg')) expect(Number(svg.getAttribute('width'))).toBeLessThanOrEqual(width);
+        const shape = container.querySelector('polygon, polyline')!;
+        expect(polygonWidth(shape)).toBeLessThan(18 * CM_PX);
+        expect(container.textContent).toContain(NOT_TRUE_SIZE);
+        // The key still states the real length.
+        expect(container.textContent).toContain(typeId === 'omtrek' ? '72' : '18');
+    });
+    test('a 6 cm square is drawn true size, without the note', () => {
+        const { container } = at(W.full, <MetenViewer block={meten('omtrek', [square(6)])} showSolutions />);
+        expect(polygonWidth(container.querySelector('polygon')!)).toBeCloseTo(6 * CM_PX, 0);
+        expect(container.textContent).not.toContain(NOT_TRUE_SIZE);
+    });
+    const lijnstuk = (cm: number) => ({ id: 'b', typeId: 'breuken', constraints: { subType: 'lijnstuk' }, fractionExercises: [{ id: 'f', subType: 'lijnstuk', numerator: 1, denominator: 6, lineLength: cm, isManuallyEdited: false }] }) as unknown as MathBlock;
+    const segmentPx = (root: HTMLElement) => px(([...root.querySelectorAll<HTMLElement>('div')].find(d => d.style.marginTop === '10px' && d.style.display === 'flex'))!.style.width);
+    test('breuken-lijnstuk 12 cm at full width is drawn 12 cm', () => {
+        const { container } = at(W.full, <FractionViewer block={lijnstuk(12)} showSolutions />);
+        expect(segmentPx(container)).toBeCloseTo(12 * CM_PX, 0);
+        expect(container.textContent).not.toContain(NOT_TRUE_SIZE);
+    });
+    test('breuken-lijnstuk 12 cm in a quarter is scaled and says so', () => {
+        const { container } = at(W.quarter, <FractionViewer block={lijnstuk(12)} showSolutions />);
+        expect(segmentPx(container)).toBeLessThan(W.quarter);
+        expect(container.textContent).toContain(NOT_TRUE_SIZE);
     });
 });

@@ -10,6 +10,8 @@ import { useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 // Object geometry is written as px at the 13pt default and emitted as em, so the drawn
 // hoeveelheid objects follow the Lettergrootte slider.
 const em = (px: number): string => `${px / PX_PER_EM_AT_DEFAULT}em`;
+// 1 cm at 96 dpi: the lijnstuk is a ruler task, drawn to true size.
+const CM_PX = 96 / 2.54;
 
 interface Props {
     ex: FractionExercise;
@@ -386,19 +388,25 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         const partLength = parseFloat((cm / ex.denominator).toFixed(2));
         const arcLength  = parseFloat((partLength * ex.numerator).toFixed(2));
 
-        // To-scale (1cm = 38px) until it would eat more than half the column, at which
-        // point it caps there and is a drawn line to a REDUCED scale rather than to true
-        // size — a 15cm segment in a 163px quarter cell can't be both to-scale and legible.
-        const lineWidth = Math.min(cm * 38, columnWidth * 0.5);
+        // True size (1 cm at 96 dpi) whenever the segment fits the column: the child measures
+        // it and the key says "12 cm : 6". It used to cap at half the column, so a 12 cm
+        // segment was drawn ~8.9 cm under a 12 cm key. Too long for the column → scaled down
+        // and labelled, the key keeps the real length.
+        const trueWidth = cm * CM_PX;
+        const lineWidth = Math.min(trueWidth, columnWidth);
+        const notTrueSize = lineWidth < trueWidth - 0.5;
 
         // Borders (not background-color) so the segment line always prints, even with
         // the print dialog's "Background graphics" off.
         const lineEl = (
-            <div style={{ width: `${lineWidth}px`, display: 'flex', alignItems: 'center', margin: '10px 0' }}>
-                <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
-                <div style={{ flex: 1, height: 0, borderTop: '2px solid #000' }} />
-                <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
-            </div>
+            <>
+                <div style={{ width: `${lineWidth}px`, display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+                    <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
+                    <div style={{ flex: 1, height: 0, borderTop: '2px solid #000' }} />
+                    <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
+                </div>
+                {notTrueSize && <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', fontStyle: 'italic' }}>niet op ware grootte</span>}
+            </>
         );
 
         const instructions = (

@@ -14,16 +14,19 @@ interface Props {
 const CM = 37.8;            // 1 cm at 96dpi — keeps the drawing genuinely to scale
 const OFFSET = 22;          // how far side labels sit outside the figure
 const mono = "'Azeret Mono', monospace";
+const NOT_TRUE_SIZE = 'niet op ware grootte';
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));
 
 interface Geom { w: number; h: number; pts: MeetPoint[]; isCircle: boolean; rpx: number; }
-function geomOf(ex: MeetExercise): Geom {
+// `scale` < 1 only when the true-size figure does not fit its column (see trueSizeScale).
+function geomOf(ex: MeetExercise, scale = 1): Geom {
+    const px = CM * scale;
     if (ex.kind === 'cirkel') {
-        const rpx = (ex.radius ?? 1) * CM;
+        const rpx = (ex.radius ?? 1) * px;
         return { w: 2 * rpx, h: 2 * rpx, pts: [], isCircle: true, rpx };
     }
-    const raw = (ex.points ?? []).map(p => ({ x: p.x * CM, y: p.y * CM }));
+    const raw = (ex.points ?? []).map(p => ({ x: p.x * px, y: p.y * px }));
     const minX = Math.min(...raw.map(p => p.x)), minY = Math.min(...raw.map(p => p.y));
     const maxX = Math.max(...raw.map(p => p.x)), maxY = Math.max(...raw.map(p => p.y));
     return { w: maxX - minX, h: maxY - minY, pts: raw.map(p => ({ x: p.x - minX, y: p.y - minY })), isCircle: false, rpx: 0 };
@@ -77,10 +80,17 @@ export default function MetenViewer({ block, showSolutions }: Props) {
         </span>
     );
 
-    const geoms = exercises.map(geomOf);
     // Wider padding when scaffold blanks sit beside the figure, so they don't bleed out.
     const pad = sideScaffold ? 64 : 42;
+    // Side labels need the room above and below too; a bare figure only needs its stroke.
+    const padY = labeled || sideScaffold ? pad : 12;
     const bottomExtra = sideScaffold ? 18 : 0;
+    // True size whenever it fits the column; a figure wider than the column (Lengte max 10-18
+    // with 2-4 hoeken, or a cirkel) is scaled down to fit and labelled "niet op ware grootte",
+    // while the key keeps the real length. It ran off the cell before (sweep 2026-09-27).
+    const trueW = exercises.map(ex => geomOf(ex).w);
+    const scaleOf = (i: number) => Math.min(1, (availableWidth - 2 * pad) / Math.max(1, trueW[i]));
+    const geoms = exercises.map((ex, i) => geomOf(ex, scaleOf(i)));
     const maxW = Math.max(...geoms.map(g => g.w)) + 2 * pad;
     const columnGap = gap + 10;
     // Two columns only when two items (plus the gap) actually fit the printable width.
@@ -96,8 +106,9 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                 const right = cols === 2 && idx % 2 === 1;   // mirror the second column
                 // Own height per figure (SYNC: OppervlakteViewer): a block-wide maximum left
                 // a blank the size of the tallest shape under every smaller one.
-                const figH = g.h + 2 * pad + bottomExtra;
-                const yOff = pad;
+                const figH = g.h + 2 * padY + bottomExtra;
+                const yOff = padY;
+                const scaled = scaleOf(idx) < 1;
                 const W = g.w + 2 * pad;
                 const sides = ex.sides ?? [];
 
@@ -176,6 +187,7 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                             </svg>
                             {labels}
                         </div>
+                        {scaled && <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', fontStyle: 'italic' }}>{NOT_TRUE_SIZE}</span>}
                         {answer}
                     </div>
                 );

@@ -14,17 +14,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Blocks taller than one A4 page at their sidebar DEFAULTS, full width (clipped on paper): omtrek,
-  oppervlakte-rooster, oppervlakte-berekenen (real-size figures, one or two per row), breuken-lijnstuk,
-  breuken-veelhoek, cijferen-delen-dec (1 028 px: four 14-row grids). The teacher gets the red banner on
-  the first click. Fix: fewer default exercises or smaller default figures. 2026-09-27
-- lengte-meten / omtrek: real-size polylines and circles run off the cell when Lengte max 10-18 meets
-  2-4 hoeken or "cirkel" (pairwise pw003/005/013/014/016/017: 35-912 px te breed, every width).
-  "Verklein" is no fix for a ruler task. Fix: the generator caps the drawn span to the column's cm
-  width. 2026-09-27
-- breuken-lijnstuk DEFAULT, w4: 10-12 cm segments are drawn clamped to ~8,9 cm (335 px) while the key
-  says "12 cm : 6 = 2 cm": the child measures a different length than the key. Fix: cap
-  maxLineLength to the column's cm width instead of scaling one segment. 2026-09-27
 - Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept
   every glyph count). 2026-09-27
 - getalpatronen pw009 {decimal, max 10 000, 2 decimals, 10 ticks}: ten 8-glyph terms need ~780 px
@@ -32,6 +21,10 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   terms before 2026-10-10). Fix: wrap the chain onto a second line below the floor. 2026-10-10
 - Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
   part is a blank to fill or should be dropped). 2026-09-27
+- lengte-meten / omtrek with Lengte max 10-18 (pairwise rows): a figure wider than its column is now
+  drawn scaled down with "niet op ware grootte" (2026-10-10), so in the 'meten' model the child
+  measures a smaller figure than the key's length. Owner call: cap the generated span to the column's
+  cm width instead (generator). 2026-10-10
 - mab-tekenen at width ¼ (default leaf, the packer keeps w1): the D/H/T/E table is ~75 px wide, no
   room to draw. Fix: minWidth 2 for mab-tekenen (owner call: it reverses the C1 rule pinned by
   blockLayout.test "mab-tekenen can go to a quarter"). 2026-09-27
