@@ -55,8 +55,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   too; geld-tekenen's key only repeats the prompt amount (~7 px); colouring keys (breuken hoeveelheid /
   veelhoek, deelbaarheid, even-oneven) use the light-blue fill, not red (owner call). 2026-09-27
 
-- RekenvolgordeViewer (`CHAR_PX = 11.1`, ~:39) and RomeinseViewer (12.7 px per char, ~:36/38) still size
-  text with fixed px that don't follow the Lettergrootte slider; move to `monoTextPx`. 2026-09-27
 
 ## Config
 

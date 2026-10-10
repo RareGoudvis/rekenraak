@@ -2,13 +2,16 @@
 import { describe, test, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { BlockWidthProvider, cellWidthPx } from '../components/viewer/BlockWidthContext';
+import { BlockWidthProvider, cellWidthPx, sheetSizePx } from '../components/viewer/BlockWidthContext';
 import GetallenasViewer from '../components/viewer/GetallenasViewer';
 import EvenOnevenViewer from '../components/viewer/EvenOnevenViewer';
 import PatroonViewer from '../components/viewer/PatroonViewer';
 import HerleidingenViewer from '../components/viewer/HerleidingenViewer';
 import GeldRekenenViewer from '../components/viewer/GeldRekenenViewer';
 import DeelbaarheidViewer from '../components/viewer/DeelbaarheidViewer';
+import RekenvolgordeViewer from '../components/viewer/RekenvolgordeViewer';
+import RomeinseViewer from '../components/viewer/RomeinseViewer';
+import { useWorksheetStore } from '../store/useWorksheetStore';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
 import type { MathBlock, GetallenasExercise, HerleidingExercise } from '../services/math/types';
@@ -184,5 +187,26 @@ describe('deelbaarheid: numbers print with the thousands space, never split', ()
         const block = { id: 'b', typeId: 'deelbaarheid', constraints: { layout: 'tabel', divisors: [2, 3] }, deelbaarheidExercises: [{ id: 'd', number: 70_344, isManuallyEdited: false }] } as unknown as MathBlock;
         const { container } = at(W.quarter, <DeelbaarheidViewer block={block} showSolutions />);
         expect(container.textContent).toContain('70 344');
+    });
+});
+
+describe('rekenvolgorde / romeinse: text columns follow the Cijfers slider', () => {
+    const setMathPt = (pt: number) => useWorksheetStore.setState(st => ({ docSettings: { ...st.docSettings, fontSizeMath: pt } }));
+    afterEach(() => setMathPt(13));
+    test.each([13, 16])('rekenvolgorde expression column at %ipt', (pt) => {
+        setMathPt(pt);
+        const block = { id: 'b', typeId: 'rekenvolgorde', constraints: {}, layoutPreset: 'inline-short', rekenvolgordeExercises: [{ id: 'r', tokens: ['(', 125, '+', 375, ')', 'x', 4, '-', 1_000], answer: 1_000, firstStep: 500, isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <RekenvolgordeViewer block={block} showSolutions={false} />);
+        const expr = [...container.querySelectorAll('span')].find(sp => sp.style.whiteSpace === 'pre') as HTMLElement;
+        expect(px(expr.style.width)).toBeGreaterThanOrEqual(monoTextPx(expr.textContent!.length, 1, sheetSizePx('math', pt)) - 0.5);
+    });
+    test.each([13, 16])('romeinse prompt column at %ipt', (pt) => {
+        setMathPt(pt);
+        const block = { id: 'b', typeId: 'romeinse-cijfers', constraints: { subType: 'herkennen' }, romeinseExercises: [{ id: 'r', value: 3_999, roman: 'MMMCMXCIX', isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <RomeinseViewer block={block} showSolutions />);
+        const prompt = [...container.querySelectorAll('span')].find(sp => sp.textContent === 'MMMCMXCIX') as HTMLElement;
+        // 1.04 x the token per glyph plus the 1px letter-spacing
+        const need = monoTextPx(9, 1.04, sheetSizePx('math', pt)) + 9;
+        expect(px(prompt.style.width)).toBeGreaterThanOrEqual(need);
     });
 });

@@ -2,7 +2,8 @@ import type { MathBlock, RekenvolgordeExercise } from '../../services/math/types
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH } from '../../services/math/formatters';
-import { useBlockWidth, ANSWER_ROW_H, ANSWER_LINE_H } from './BlockWidthContext';
+import { useBlockWidth, useSheetSizePx, ANSWER_ROW_H, ANSWER_LINE_H } from './BlockWidthContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 import { solutionText } from './solutionStyle';
 import { itemLabel, itemLabelChars } from './itemNumbering';
 
@@ -14,14 +15,15 @@ interface Props {
 const mono = "'Azeret Mono', monospace";
 // Same operator glyphs as everywhere else, plus the brackets this viewer alone prints.
 const GLYPH: Record<string, string> = { ...OP_GLYPH, '(': '(', ')': ')' };
-// SYNC: keep the mono face, the *1 size factor and CHAR_PX aligned with MathBlockRenderer —
-// a rekenvolgorde sum and a hoofdrekenen sum on the same sheet must print at one size.
-// CHAR_PX stays a raw px shrink-to-fit constant (measured Azeret Mono advance, not a style).
+// SYNC: keep the mono face and the *1 size factor aligned with MathBlockRenderer — a
+// rekenvolgorde sum and a hoofdrekenen sum on the same sheet must print at one size.
 
 export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     const exercises: RekenvolgordeExercise[] = block.rekenvolgordeExercises || [];
     const gap = block.verticalSpacing || 14;
     const availablePx = useBlockWidth();
+    // One glyph at the math token: the column widths follow the Cijfers slider.
+    const CHAR_PX = monoTextPx(1, 1, useSheetSizePx('math'));
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -36,7 +38,6 @@ export default function RekenvolgordeViewer({ block, showSolutions }: Props) {
     // Every row gets the same expression column, sized to the block's longest expression and
     // right-aligned, so the "=" and the writing line land at one x instead of tracking each
     // expression's own length.
-    const CHAR_PX = 11.1;   // Azeret Mono 17px advance (measured 11.06px/char in Chrome)
     const COL_GAP = 24;
     const LINE_PX = 56;
     // Same three answer-line presets as hoofdrekenen: Kort (2-up, answer-sized blank),
