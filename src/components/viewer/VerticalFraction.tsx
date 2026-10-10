@@ -1,4 +1,6 @@
 import type { Fraction } from '../../services/math/types';
+// Big tellers / noemers keep their thousands spaces in a key (36 000 004/5).
+import { formatMathNumber } from '../../services/math/formatters';
 
 interface Props {
     value: Fraction;        // { whole?, n, d } — whole shown only for mixed numbers
@@ -25,10 +27,10 @@ export default function VerticalFraction({ value, color, fontSize = 15, mono = f
     const wholeFontSize = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize * 1.2)})`;
     return (
         <div style={{ display: 'inline-flex', alignItems: 'center', fontFamily, ...(color ? { color } : {}) }}>
-            {hasWhole && <span style={{ fontSize: wholeFontSize, marginRight: '4px', ...(color ? { color } : {}) }}>{value.whole}</span>}
+            {hasWhole && <span style={{ fontSize: wholeFontSize, marginRight: '4px', ...(color ? { color } : {}) }}>{formatMathNumber(value.whole)}</span>}
             <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: digitFontSize, lineHeight: 1.1 }}>
-                <span style={{ borderBottom: `1.5px solid ${color || '#000'}`, minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{value.n}</span>
-                <span style={{ minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{value.d}</span>
+                <span style={{ borderBottom: `1.5px solid ${color || '#000'}`, minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.n)}</span>
+                <span style={{ minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.d)}</span>
             </div>
         </div>
     );

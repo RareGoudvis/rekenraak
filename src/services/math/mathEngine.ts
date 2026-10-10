@@ -638,7 +638,9 @@ function tienvoudPool(c: MulDivConstraints, maxGetal: number, numberType: string
 // draw is on the display grid (steps of 1/scale up to maxGetal) and must not be divided by
 // INTERNAL_SCALE too, which shrank it to 0 or 0,0x.
 function decimalFactor(mask: Record<string, boolean>, maxGetal: number, scale: number): number {
-    const maskA = Object.values(mask).some(v => v) ? generateMaskedInt(mask) : null;
+    // Places above the max are ignored (as in cijferen), so a stale high place never overrides it.
+    const inRange = Object.fromEntries(Object.entries(mask).filter(([k]) => (PLACE_VALUES.find(p => p.key === k)?.weight ?? Infinity) <= maxGetal));
+    const maskA = Object.values(inRange).some(v => v) ? generateMaskedInt(inRange) : null;
     return maskA !== null
         ? withDecimals(Math.round((maskA / INTERNAL_SCALE) * scale), Infinity, scale) / scale
         : withDecimals(randInt(1, maxGetal * scale), maxGetal * scale, scale) / scale;
@@ -692,8 +694,8 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
                 const useSpecificStructure = Object.values(operand1Mask).some(v => v);
                 let intVal: number;
                 if (useSpecificStructure) {
-                    const maskA = generateMaskedInt(operand1Mask);
-                    intVal = maskA !== null ? (maskA / INTERNAL_SCALE) : randInt(1, maxGetal);
+                    // Places above the max are ignored (as in cijferen): {M, E} at max 1 000 made 9 000 001.
+                    intVal = buildMaskedNatural(operand1Mask, maxGetal) ?? randInt(1, maxGetal);
                 } else {
                     intVal = randInt(1, maxGetal);
                 }
@@ -1022,8 +1024,8 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
                 const useSpecificStructure = Object.values(operand1Mask).some(v => v);
                 let intVal: number;
                 if (useSpecificStructure) {
-                    const maskA = generateMaskedInt(operand1Mask);
-                    intVal = maskA !== null ? (maskA / INTERNAL_SCALE) : randInt(1, maxGetal);
+                    // Places above the max are ignored (as in cijferen): {M, E} at max 1 000 made 9 000 001.
+                    intVal = buildMaskedNatural(operand1Mask, maxGetal) ?? randInt(1, maxGetal);
                 } else {
                     intVal = randInt(1, maxGetal);
                 }
