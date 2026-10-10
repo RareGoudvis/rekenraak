@@ -8,10 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- TopBar below a ~915 px window: stage 3 is the last stage, so the Meer button and the right group
-  overlap (2 px at 915, ~90 px at 840; Chromium, 2026-10-09). Fix: a stage 4 (Genereer alles into
-  Meer) or a min-width on the app shell. 2026-10-09
-
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
 - Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept

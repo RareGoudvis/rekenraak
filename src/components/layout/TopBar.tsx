@@ -10,6 +10,7 @@ import BaseSettingsModal from './BaseSettingsModal';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import { Info } from '@phosphor-icons/react';
 import { useShedStages } from '../../hooks/useShedStages';
+import { TOPBAR_STAGE_COUNT, topBarStageFlags } from './topBarStages';
 
 interface Props {
     onPrint: (withSolutions: boolean) => void;
@@ -18,10 +19,10 @@ interface Props {
 
 // 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
 // (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the two
-// least-used buttons (Toevoegen, Uitleg) fold into the Meer menu. Each stage strictly
-// sheds width relative to the last, which is what lets useShedStages' hysteresis work.
+// least-used buttons (Toevoegen, Uitleg) fold into the Meer menu; 4 = "Genereer alles" folds too.
+// Each stage strictly sheds width relative to the last, which is what lets useShedStages' hysteresis work.
 // Oefenmodus/Bordmodus live in the sidebar foot, not here: in the bar they pushed stage 0 past 1920 px.
-const STAGE_COUNT = 4;
+// Table + flags: topBarStages.ts.
 
 // Autosave refused the write (browser storage full): the only way out is an explicit
 // file export, so the tooltip says that instead of a generic failure.
@@ -156,10 +157,8 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     // the overflow measurement.
     const contentRef = useRef<HTMLDivElement>(null);
     // Keyed on the committed name, not the edit box: a shed mid-edit would unmount the input.
-    const stage = useShedStages(barRef, contentRef, STAGE_COUNT, headerTitle);
-    const iconOnly = stage >= 1;
-    const nameInRow = stage < 2;
-    const foldedIntoMenu = stage >= 3;
+    const stage = useShedStages(barRef, contentRef, TOPBAR_STAGE_COUNT, headerTitle);
+    const { iconOnly, nameInRow, quickFolded: foldedIntoMenu, generateFolded, historyFolded } = topBarStageFlags(stage);
 
     // Close any open dropdown on outside click / Escape. A fixed backdrop can't be used here:
     // the `.mac-vibrant` bar has backdrop-filter, which traps position:fixed to the bar instead
@@ -257,6 +256,21 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
                                             <HelpIcon size={15} /> Uitleg
                                         </button>
+                                        {generateFolded && (
+                                            <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); if (hasBlocks) generateAllBlocks(); }}>
+                                                <Sparkles size={15} /> Genereer alles
+                                            </button>
+                                        )}
+                                        {historyFolded && (
+                                            <>
+                                                <button className="ui-hover" style={S.menuItem} disabled={!canUndo} onClick={() => { setMenu(null); doUndo(); }}>
+                                                    <Undo2 size={15} /> Ongedaan maken
+                                                </button>
+                                                <button className="ui-hover" style={S.menuItem} disabled={!canRedo} onClick={() => { setMenu(null); doRedo(); }}>
+                                                    <Redo2 size={15} /> Opnieuw
+                                                </button>
+                                            </>
+                                        )}
                                         <div style={S.menuDivider} />
                                     </>
                                 )}
@@ -356,19 +370,23 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                 {/* Undo/redo were already icon-only before this — nothing to shed here at
                     any stage, so no data-stage gate is needed on this group. */}
-                <div style={S.group}>
-                    <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={doUndo} disabled={!canUndo} />
-                    <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={doRedo} disabled={!canRedo} />
-                </div>
+                {!historyFolded && (
+                    <div style={S.group}>
+                        <IconButton icon={Undo2} label="Ongedaan maken (Ctrl+Z)" onClick={doUndo} disabled={!canUndo} />
+                        <IconButton icon={Redo2} label="Opnieuw (Ctrl+Y)" onClick={doRedo} disabled={!canRedo} />
+                    </div>
+                )}
 
-                <IconButton
-                    icon={Sparkles}
-                    label="Alle niet-vergrendelde blokken opnieuw genereren"
-                    visibleLabel={iconOnly ? undefined : 'Genereer alles'}
-                    onClick={() => hasBlocks && generateAllBlocks()}
-                    disabled={!hasBlocks}
-                    variant="secondary"
-                />
+                {!generateFolded && (
+                    <IconButton
+                        icon={Sparkles}
+                        label="Alle niet-vergrendelde blokken opnieuw genereren"
+                        visibleLabel={iconOnly ? undefined : 'Genereer alles'}
+                        onClick={() => hasBlocks && generateAllBlocks()}
+                        disabled={!hasBlocks}
+                        variant="secondary"
+                    />
+                )}
 
                 {shareFlash && <span style={S.shareFlash}><Check size={14} /> Link gekopieerd</span>}
 
