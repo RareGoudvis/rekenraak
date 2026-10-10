@@ -457,7 +457,6 @@ describe('descriptor answers agree with the generators', () => {
         ['temperatuur-aflezen', { includeNegatives: true }, 'number'],
         ['massa-weegschaal-aflezen', { notatie: 'kg-g', bereikGram: 5000, stepGram: 250 }, 'multi-number'],
         ['massa-weegschaal-aflezen', { notatie: 'kg-komma', bereikGram: 5000, stepGram: 250 }, 'number'],
-        ['lengte-meten', { measureModel: 'gegeven' }, 'choice'],
         ['omtrek', { measureModel: 'gegeven', precision: 'mm', shapes: ['cirkel', 'trapezium', 'ruit'] }, 'number'],
         ['oppervlakte-berekenen', { askOmtrek: true, shapes: ['rechthoek', 'driehoek'] }, 'multi-number'],
         ['maateenheid-kiezen', { answerMode: 'schrijven', grootheden: ['temperatuur', 'tijd'] }, 'text'],
@@ -1037,5 +1036,15 @@ describe('O27: a deelbaarheidstabel row with no divisor says "geen" in Resultate
     test('40: the divisors as before', () => {
         const ex: T.DeelbaarheidExercise = { id: 'o27b', number: 40, isManuallyEdited: false };
         expect(expectedText(d, ex, c)).toBe(['2', '5', '10'].join(INTERACT_SEP));
+    });
+});
+
+// K2: a bare line with "lengte = 4 cm, juist of fout?" has nothing to measure on a screen.
+describe('lengte-meten is never offered in the kiosk', () => {
+    test.each([{}, { measureModel: 'gegeven' }, { measureModel: 'gegeven', precision: 'mm' }])('kioskSupports %j is false', (extra) => {
+        expect(kioskSupports('lengte-meten', extra)).toBe(false);
+    });
+    test('omtrek gegeven stays capable', () => {
+        expect(kioskSupports('omtrek', { measureModel: 'gegeven' })).toBe(true);
     });
 });

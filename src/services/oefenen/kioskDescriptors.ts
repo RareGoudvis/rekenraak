@@ -553,7 +553,7 @@ export const WEEGSCHAAL_KIOSK = descriptor<WeegschaalExercise>({
 });
 
 // Labelled sides only ('gegeven'): measuring with a ruler on a scaled card is not to size.
-// lengte-meten asks juist / fout about the stated length; omtrek the perimeter (round1, cm).
+// omtrek asks the perimeter (round1, cm); lengte-meten (juist / fout about a stated length) is no longer offered.
 const round1 = (v: number) => Math.round(v * 10) / 10;   // SYNC: MetenViewer round1
 const isGegeven = (c: Record<string, unknown>) => c.measureModel === 'gegeven';
 export const LENGTE_KIOSK = descriptor<MeetExercise>({
@@ -561,7 +561,8 @@ export const LENGTE_KIOSK = descriptor<MeetExercise>({
     choices: ['juist', 'fout'],
     answerOf: (ex) => [ex.claimCorrect ? 'juist' : 'fout'],
     display: (ex) => `lengte = ${showNum(round1(ex.claim ?? 0))} cm: juist of fout?`,
-    supported: isGegeven,
+    // A bare line "lengte = 4 cm: juist of fout?" has nothing to measure on a screen: kept for old links, never offered.
+    supported: () => false,
 });
 export const OMTREK_KIOSK = descriptor<MeetExercise>({
     input: 'number',
