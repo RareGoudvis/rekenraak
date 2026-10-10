@@ -87,3 +87,25 @@ describe('K2 task 4: herleidingen magnitudes', () => {
         expect(biggest(o)).toBeLessThanOrEqual(99);
     });
 });
+
+describe('K2 task 5: decimal hoofdrekenen defaults are hoofdrekenbaar', () => {
+    const DEC_LEAVES = ['hr-std-optellen-dec', 'hr-std-aftrekken-dec', 'hr-std-vermenigvuldigen-dec', 'hr-std-delen-dec', 'hr-std-gemengd-dec'];
+    const dp = (v: number) => (String(v).split('.')[1] ?? '').length;
+    type Eq = { operands: number[]; operator: string; answer: number };
+    test.each(DEC_LEAVES)('%s: everything up to 100 with 1 decimal, × by a small whole number, : by a 1-digit whole deler', (leafId) => {
+        for (let seed = 1; seed <= 100; seed++) {
+            for (const o of draws(leafId, 6, seed)) {
+                const eq = o.exercise as Eq;
+                const [a, b] = eq.operands;
+                const where = `seed ${seed}: ${a} ${eq.operator} ${b} = ${eq.answer}`;
+                for (const v of [a, b, eq.answer]) { expect(v, where).toBeLessThanOrEqual(100); expect(dp(v), where).toBeLessThanOrEqual(1); }
+                if (eq.operator === 'x') { expect(Number.isInteger(b), where).toBe(true); expect(b, where).toBeLessThanOrEqual(10); }
+                if (eq.operator === ':') {
+                    expect(Number.isInteger(b), where).toBe(true);
+                    expect(b, where).toBeLessThanOrEqual(9);
+                    expect(Math.abs(eq.answer * b - a), where).toBeLessThan(1e-9);
+                }
+            }
+        }
+    });
+});

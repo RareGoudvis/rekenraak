@@ -23,6 +23,8 @@ const TWENTY = ['plaatswaarde-waarde', 'plaatswaarde-plaats', 'plaatswaarde-omci
 // Leaves with a visible max picker whose list starts above 20: leerjaar 1 floors to the
 // list's lowest value. Deliberate (owner rule "add 20 only where it makes sense").
 const L1_FLOOR_GAP: Record<string, number> = {
+    // The decimal hoofdrekenen leaves pin 100 (K2).
+    'hr-std-optellen-dec': 100, 'hr-std-aftrekken-dec': 100, 'hr-std-vermenigvuldigen-dec': 100, 'hr-std-delen-dec': 100, 'hr-std-gemengd-dec': 100,
     'afronden-dec-rooster': 100, 'afronden-dec-simpel': 100, 'afronden-nat-rooster': 100, 'afronden-nat-simpel': 100,
     'controleren-negenproef': 1000, 'controleren-omgekeerde': 1000,
     'deelbaarheid-tabel': 100, 'handig-rekenvolgorde': 100, 'patronen-dec': 100, 'patronen-geh': 100,
