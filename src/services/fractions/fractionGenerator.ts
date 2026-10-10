@@ -188,15 +188,25 @@ export function generateFractionExercisesNoted(block: MathBlock): { items: Fract
     return { items: generateFractionExercises(block), note };
 }
 
+const SHAPE_RETRIES = 40;
+
 export function generateFractionExercises(block: MathBlock): FractionExercise[] {
     const subType = ((block.constraints as FractionConstraints).subType || 'kleuren') as FractionSubType;
     const count = block.numberOfExercises || 6;
+    // kleuren / herkennen: each breuk once while the range has fresh ones (the default repeated 7/8).
+    const seen = new Set<string>();
+    const freshShape = (st: FractionSubType): FractionExercise => {
+        let ex = makeShapeExercise(st, block);
+        for (let t = 0; t < SHAPE_RETRIES && seen.has(`${ex.numerator}/${ex.denominator}`); t++) ex = makeShapeExercise(st, block);
+        seen.add(`${ex.numerator}/${ex.denominator}`);
+        return ex;
+    };
 
     return Array.from({ length: count }, (): FractionExercise => {
         switch (subType) {
             case 'kleuren':
             case 'herkennen':
-                return makeShapeExercise(subType, block);
+                return freshShape(subType);
             case 'hoeveelheid':
             case 'hoeveelheid-rechthoek':
                 return makeAmountExercise(subType, block);

@@ -36,9 +36,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
 - Empty keys: breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on. 2026-09-27
-- Degenerate defaults: geld-wissel's default already notes 2 doubles; breuken-kleuren /
-  -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
-  10, 2. 2026-09-27
+- Degenerate defaults: geld-wissel's default already notes 2 doubles. 2026-09-27
 
 
 ## Limit audit 2026-10-07
