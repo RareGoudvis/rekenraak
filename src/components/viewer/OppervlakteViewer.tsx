@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
 import type { OppervlakteConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -43,7 +44,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
 
     const blank = (sol: string | null, width = 56) => sol !== null
         ? <span style={{ ...solutionText }}>{sol}</span>
-        : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: ANSWER_LINE_H }} />;
+        : <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: `${width}px`, height: ANSWER_LINE_H }} /></KioskAnswerSlot>;
 
     const pad = 40;
     const geoms = exercises.map(ex => {

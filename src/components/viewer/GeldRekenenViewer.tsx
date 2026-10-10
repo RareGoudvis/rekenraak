@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import type { GeldRekenenConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { ANSWER_ROW_H } from './BlockWidthContext';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -69,7 +70,7 @@ export default function GeldRekenenViewer({ block, showSolutions }: Props) {
     const gridFont: React.CSSProperties = { fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.75)' };
 
     const answer = (text: string) => (
-        <div style={{ ...cell, ...solutionText }}>{showSolutions ? text : ''}</div>
+        <div style={{ ...cell, ...solutionText }}>{showSolutions ? text : <KioskAnswerSlot>{''}</KioskAnswerSlot>}</div>
     );
 
     const row = (ex: GeldRekenenExercise) => {

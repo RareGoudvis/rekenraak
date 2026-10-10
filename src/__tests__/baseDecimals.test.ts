@@ -42,7 +42,9 @@ describe('the base decimals', () => {
     });
 
     test('a numberType type keeps its own precision when the base has none', () => {
-        expect(seedOf('hr-std-optellen-dec', null).decimalPlaces).toBe(2);
+        // The decimal hoofdrekenen leaves pin one decimal (K2); the type's registry default stays 2.
+        expect(seedOf('hr-std-optellen-dec', null).decimalPlaces).toBe(1);
+        expect(seedConstraints({ typeId: 'hr-std-optellen', base: DEFAULT_BASE, override: { numberType: 'decimal' } }).decimalPlaces).toBe(2);
         // ordenen's own default is the 2 the old base always wrote: no visible change there.
         expect(seedOf('getalbegrip-ordenen-dec', null).decimalPlaces).toBe(2);
         expect(seedOf('getalbegrip-ordenen-dec', 4).decimalPlaces).toBe(2);

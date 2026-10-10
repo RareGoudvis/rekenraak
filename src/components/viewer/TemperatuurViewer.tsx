@@ -1,6 +1,7 @@
 import type { MathBlock, TemperatuurExercise, TemperatuurMode } from '../../services/math/types';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useKioskCard, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import KioskAnswerSlot from './KioskAnswerSlot';
 import type { TemperatuurConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { useViewerInteraction, type ViewerInteraction } from './ViewerInteractionContext';
@@ -126,6 +127,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
     const sheetPx = useSheetSizePx('math');
     const ctx = useViewerInteraction();
+    const card = useKioskCard();
     const exercises = block.temperatuurExercises || [];
     const c = block.constraints as TemperatuurConstraints;
     const includeNegatives = !!c.includeNegatives;
@@ -151,12 +153,13 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.87)' }}>
                             <div style={{ display: 'flex', gap: '18px' }}>
-                                <VerschilThermo minT={minT} temp={ex.celsius} mode={ex.mode1 ?? 'gekleurd'} showSolutions={showSolutions} uid={`${ex.id}-1`} />
-                                <VerschilThermo minT={minT} temp={c2} mode={ex.mode2 ?? 'getal'} showSolutions={showSolutions} uid={`${ex.id}-2`} />
+                                {/* The card asks only the verschil: both thermometers are given (value + mercury), nothing to write under them. */}
+                                <VerschilThermo minT={minT} temp={ex.celsius} mode={card ? 'beide' : ex.mode1 ?? 'gekleurd'} showSolutions={showSolutions} uid={`${ex.id}-1`} />
+                                <VerschilThermo minT={minT} temp={c2} mode={card ? 'beide' : ex.mode2 ?? 'getal'} showSolutions={showSolutions} uid={`${ex.id}-2`} />
                             </div>
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                                 <span>verschil =</span>
-                                {showSolutions ? <span style={{ ...solutionText }}>{diff}</span> : answerLine(44)}
+                                {showSolutions ? <span style={{ ...solutionText }}>{diff}</span> : <KioskAnswerSlot>{answerLine(44)}</KioskAnswerSlot>}
                                 <span>°C</span>
                             </div>
                         </div>
@@ -175,7 +178,7 @@ export default function TemperatuurViewer({ block, showSolutions }: Props) {
                             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px' }}>
                                 {showSolutions
                                     ? <span style={{ ...solutionText }}>{ex.celsius}</span>
-                                    : answerLine(40)}
+                                    : <KioskAnswerSlot>{answerLine(40)}</KioskAnswerSlot>}
                                 <span>°C</span>
                             </div>
                         )}

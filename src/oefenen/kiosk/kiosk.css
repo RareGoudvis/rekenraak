@@ -318,6 +318,19 @@ html:has(.oefen-body),
   font: inherit;
   text-align: center;
 }
+/* A typed leaf's answer: the same tinted box as a viewer blank, holding a "?" (the pupil types below the card). */
+.kiosk-card-inner .kiosk-answer-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 2.2em;
+  height: 1.7em;
+  border-bottom: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  color: var(--accent);
+  font-weight: 700;
+}
 /* A ruitje of a cijfer grid (CijferViewer places and sizes it): the grid lines are its border,
    a light tint marks it as one to fill; a carry row cell sits a shade lighter. */
 .kiosk-card-inner .kiosk-cell.is-grid {

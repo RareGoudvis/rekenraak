@@ -7,6 +7,7 @@ import type { WeegschaalConstraints } from '../../services/math/constraintTypes'
 import { SOL, solutionText } from './solutionStyle';
 import { useViewerInteraction, type ViewerInteraction } from './ViewerInteractionContext';
 import { clamp, clockAngle, dragHandleProps, dragSurfaceProps, dragValuesOf } from './kioskDrag';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -193,7 +194,7 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                             ? showSolutions
                                 ? <span style={{ ...solutionText }}>{formatGewicht(ex.grams, notatie)}</span>
                                 : <>
-                                    <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: mathPx(70), height: ANSWER_LINE_H }} />
+                                    <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: mathPx(70), height: ANSWER_LINE_H }} /></KioskAnswerSlot>
                                     <span>{notatie === 'g' ? 'g' : notatie === 'kg-komma' ? 'kg' : ''}</span>
                                 </>
                             // The kiosk header carries the verb ("Sleep de wijzer …"): the card keeps the target only.

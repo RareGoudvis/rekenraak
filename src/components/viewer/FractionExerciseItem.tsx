@@ -6,6 +6,7 @@ import { SOL, SOL_FILL, solutionText } from './solutionStyle';
 import { useViewerInteraction } from './ViewerInteractionContext';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
 import { useSheetSizePx, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 // Object geometry is written as px at the 13pt default and emitted as em, so the drawn
 // hoeveelheid objects follow the Lettergrootte slider.
@@ -232,7 +233,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
 
         const questionLine = (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'Azeret Mono, monospace' }}>
-                {fracLabel}<span>van {total} =</span>{showSolutions ? sol(String(coloredCount)) : blank()}
+                {fracLabel}<span>van {total} =</span>{showSolutions ? sol(String(coloredCount)) : <KioskAnswerSlot>{blank()}</KioskAnswerSlot>}
             </div>
         );
 
@@ -344,7 +345,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
 
         const questionLine = (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'Azeret Mono, monospace', flexWrap: 'wrap' }}>
-                {vertFrac(ex.numerator, ex.denominator)}<span> van {total} is</span>{showSolutions ? sol(String(coloredCount)) : blank(36)}
+                {vertFrac(ex.numerator, ex.denominator)}<span> van {total} is</span>{showSolutions ? sol(String(coloredCount)) : <KioskAnswerSlot>{blank(36)}</KioskAnswerSlot>}
             </div>
         );
         if (!scaffold) return questionLine;

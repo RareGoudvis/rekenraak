@@ -10,7 +10,11 @@ import FIXTURE from './fixtures/oefenen/links-2026-10-09.json';
 
 // Accepted drift: "leafId.field" pairs whose live default moved after the snapshot on purpose and
 // whose new links may keep diffing against V1 (they only get longer). Empty on 2026-10-09.
-const ACCEPTED_DRIFT: readonly string[] = [];
+const ACCEPTED_DRIFT: readonly string[] = [
+    'geld-wissel.exerciseBills', 'herleidingen-oppervlakte.maxWaarde',
+    // K2: decimal hoofdrekenen starts at 100 with one decimal.
+    ...['optellen', 'aftrekken', 'vermenigvuldigen', 'delen', 'gemengd'].flatMap(op => [`hr-std-${op}-dec.maxGetal`, `hr-std-${op}-dec.decimalPlaces`]),
+];
 
 const LEAVES = new Map(flattenLeaves().map(l => [l.id, l]));
 

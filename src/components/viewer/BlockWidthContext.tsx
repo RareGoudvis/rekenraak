@@ -33,6 +33,16 @@ export function useShowScaffold(): boolean {
 
 export const ScaffoldProvider = ScaffoldContext.Provider;
 
+// True only inside the Oefenmodus card: a typed leaf's paper answer line becomes the "?" slot
+// (KioskAnswerSlot) there. The sheet, thumbnails and the board have no provider, so nothing changes.
+const KioskCardContext = createContext<boolean>(false);
+
+export function useKioskCard(): boolean {
+    return useContext(KioskCardContext);
+}
+
+export const KioskCardProvider = KioskCardContext.Provider;
+
 // Printable width of a grid cell that spans `units` of the 4-unit page grid, given the
 // grid's column gap. A spanning cell also swallows the gaps it covers, which is why this
 // is not simply units x unit. One definition, used by the sheet and by the tests.

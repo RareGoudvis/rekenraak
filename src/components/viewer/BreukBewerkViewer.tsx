@@ -3,6 +3,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
 import { SOL } from './solutionStyle';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -24,7 +25,7 @@ const ITEM_MIN_FALLBACK_PX = 140;
 // Writing line the pupil writes the answer on (works for both a fraction and a mixed number).
 function AnswerSlot({ ex, index, showSolutions }: { ex: BreukBewerkExercise; index: number; showSolutions: boolean }) {
     if (showSolutions) return <VerticalFraction value={ex.answers[index]} color={SOL} fontSize={16} mono />;
-    return <span style={{ display: 'inline-block', width: '80px', borderBottom: '1.5px solid #000', height: ANSWER_LINE_H }} />;
+    return <KioskAnswerSlot><span style={{ display: 'inline-block', width: '80px', borderBottom: '1.5px solid #000', height: ANSWER_LINE_H }} /></KioskAnswerSlot>;
 }
 
 export default function BreukBewerkViewer({ block, showSolutions }: Props) {

@@ -410,6 +410,8 @@ export type DeelbaarheidConstraints = {
     base: number;
     terms: number;
     givenCount: number;
+    // Kiosk only (prepare): the multiple the single row starts at, so the draws differ.
+    startFrom?: number;
 };
 
 export type DeelbaarheidKleurConstraints = {
@@ -571,6 +573,8 @@ export type HerleidingenConstraints = {
     tableCellW: number;
     tableCellH: number;
     maxGetal?: number;
+    // No number on either side of the '=' exceeds this (leerjaar seed 10 000; oppervlakte leaf 999 999). No picker: set by the leaf / the leerjaar.
+    maxWaarde?: number;
 };
 
 export type MaateenheidConstraints = {

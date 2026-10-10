@@ -553,7 +553,7 @@ export const WEEGSCHAAL_KIOSK = descriptor<WeegschaalExercise>({
 });
 
 // Labelled sides only ('gegeven'): measuring with a ruler on a scaled card is not to size.
-// lengte-meten asks juist / fout about the stated length; omtrek the perimeter (round1, cm).
+// omtrek asks the perimeter (round1, cm); lengte-meten (juist / fout about a stated length) is no longer offered.
 const round1 = (v: number) => Math.round(v * 10) / 10;   // SYNC: MetenViewer round1
 const isGegeven = (c: Record<string, unknown>) => c.measureModel === 'gegeven';
 export const LENGTE_KIOSK = descriptor<MeetExercise>({
@@ -561,7 +561,8 @@ export const LENGTE_KIOSK = descriptor<MeetExercise>({
     choices: ['juist', 'fout'],
     answerOf: (ex) => [ex.claimCorrect ? 'juist' : 'fout'],
     display: (ex) => `lengte = ${showNum(round1(ex.claim ?? 0))} cm: juist of fout?`,
-    supported: isGegeven,
+    // A bare line "lengte = 4 cm: juist of fout?" has nothing to measure on a screen: kept for old links, never offered.
+    supported: () => false,
 });
 export const OMTREK_KIOSK = descriptor<MeetExercise>({
     input: 'number',
@@ -799,6 +800,13 @@ export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
         ? `${showNum(ex.number ?? 0)} deelbaar door ${divisorsOf(c).join(', ')}: ?`
         : (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – ')),
     supported: (c) => c.layout === 'veelvouden' || isTabel(c),
+    // A kiosk block holds one row, which would always read "0 – 9 – …": draw the deler (the teacher's base or one of
+    // the divisors) and the start multiple per exercise.
+    prepare: (c, rng) => {
+        if (c.layout !== 'veelvouden') return c;
+        const pool = [...new Set([Number(c.base ?? 9), ...divisorsOf(c)])];
+        return { ...c, base: pool[Math.floor(rng() * pool.length)], startFrom: Math.floor(rng() * 11) };
+    },
 });
 
 // Kleuren / omcirkelen / kleurraster: tap every multiple of the divisor. Each row has ONE

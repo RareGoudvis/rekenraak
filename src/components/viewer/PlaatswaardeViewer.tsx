@@ -9,6 +9,7 @@ import type { PlaatswaardeConstraints } from '../../services/math/constraintType
 import { SOL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props {
     block: MathBlock;
@@ -62,7 +63,7 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
     }
 
-    const blank = (w = 80) => <span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', verticalAlign: 'bottom' }} />;
+    const blank = (w = 80) => <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', minWidth: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', verticalAlign: 'bottom' }} /></KioskAnswerSlot>;
     const sol = (t: string) => <span style={{ ...solutionText, whiteSpace: 'nowrap' }}>{t}</span>;
 
     // The underlined number: 1.04 × the math token plus 1px letter-spacing per glyph and the

@@ -91,7 +91,9 @@ function randInt(min: number, max: number) {
 
 function buildNatural(maxGetal: number, numberMask: Record<string, boolean>): number {
     const active = getMaskPlaces(maxGetal, 'natural').filter(p => numberMask[p.key]);
-    if (!active.length) return randInt(1, maxGetal);
+    // From 5: a smaller number rounds to 0 on the tiental ("2 ≈ 0") and teaches nothing.
+    const floor = Math.min(5, maxGetal);
+    if (!active.length) return randInt(floor, maxGetal);
     // Retry the masked build until it fits (a top place near maxGetal can overshoot);
     // only an impossible mask drops to a free number, so the mask is honored whenever
     // it can produce an in-range value (was: silently random on the first overshoot).
@@ -100,7 +102,7 @@ function buildNatural(maxGetal: number, numberMask: Record<string, boolean>): nu
         for (const p of active) n += randInt(1, 9) * p.weight;
         if (n <= maxGetal) return n;
     }
-    return randInt(1, maxGetal);
+    return randInt(floor, maxGetal);
 }
 
 // Decimal number with `decimalPlaces` digits after the comma, in [0.1, maxGetal].
@@ -136,8 +138,11 @@ export function generateAfrondenExercises(block: MathBlock): AfrondenExercise[] 
         let attempts = 0;
         while (out.length < count && attempts < 20000) {
             attempts++;
-            const number = newNumber();
             const targetKey = pool[randInt(0, pool.length - 1)];
+            const weight = all.find(t => t.key === targetKey)?.weight ?? 1;
+            // A number that rounds to 0 on this target shows nothing: redraw it (a few tries, a mask may allow no other).
+            let number = newNumber();
+            for (let t = 0; t < 50 && roundTo(number, weight) === 0; t++) number = newNumber();
             const key = `${number}-${targetKey}`;
             if (seen.has(key)) continue;
             seen.add(key);

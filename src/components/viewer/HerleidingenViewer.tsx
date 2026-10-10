@@ -8,6 +8,7 @@ import type { HerleidingenConstraints } from '../../services/math/constraintType
 import { solutionText } from './solutionStyle';
 import { ANSWER_LINE_H, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
 import { monoTextPx } from '../../services/layout/blockLayout';
+import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
@@ -28,8 +29,8 @@ const HINT_FACTOR = 0.82, HINT_GAP_PX = 8, HINT_EM = 0.5;
 const hintText = (unit: string) => `(in ${unit})`;
 
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
-const numLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: ANSWER_LINE_H, display: 'inline-block' }} />;
-const unitLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '34px', height: ANSWER_LINE_H, display: 'inline-block' }} />;
+const numLine = () => <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskAnswerSlot>;
+const unitLine = () => <KioskAnswerSlot><span style={{ borderBottom: '1.5px solid #000', minWidth: '34px', height: ANSWER_LINE_H, display: 'inline-block' }} /></KioskAnswerSlot>;
 
 // Click a given number → inline input; click a given unit → dropdown of valid ladder units.
 function EditableNumber({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {

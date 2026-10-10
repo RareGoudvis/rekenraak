@@ -98,6 +98,10 @@ const schattendInstruction: InstructionFn = (c) => c.scaffolding === 'tussenstap
 // ── placeholder helper (only the hidden vraagstukken domain still uses it) ───
 const ph = (id: string, label: string): ExerciseType => ({ id, label, placeholder: true });
 
+// Decimal hoofdrekenen starts hoofdrekenbaar (owner 2026-10-10: "432,36 : 0,6" is not): up to 100, one decimal.
+// The max picker still offers more; 100 is its middle stop.
+const DEC_HR_DEFAULTS = { numberType: 'decimal', maxGetal: 100, decimalPlaces: 1 };
+
 export const APP_STRUCTURE: Domain[] = [
     {
         id: 'getallenkennis',
@@ -301,7 +305,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Optellen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-optellen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-optellen-dec', label: 'Decimale getallen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-optellen-dec', label: 'Decimale getallen', typeId: 'hr-std-optellen', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     {
@@ -309,7 +313,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Aftrekken (standaardprocedure)',
                         children: [
                             { id: 'hr-std-aftrekken-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-aftrekken-dec', label: 'Decimale getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-aftrekken-dec', label: 'Decimale getallen', typeId: 'hr-std-aftrekken', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     {
@@ -317,7 +321,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Vermenigvuldigen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-vermenigvuldigen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-vermenigvuldigen-dec', label: 'Decimale getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-vermenigvuldigen-dec', label: 'Decimale getallen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     {
@@ -325,7 +329,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Delen (standaardprocedure)',
                         children: [
                             { id: 'hr-std-delen-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-delen-dec', label: 'Decimale getallen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-delen-dec', label: 'Decimale getallen', typeId: 'hr-std-delen', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                     // Last of the family on purpose: one block that mixes the four operations
@@ -335,7 +339,7 @@ export const APP_STRUCTURE: Domain[] = [
                         label: 'Gemengd',
                         children: [
                             { id: 'hr-std-gemengd-nat', label: 'Natuurlijke getallen', typeId: 'hr-std-gemengd', defaultConstraints: { numberType: 'natural' }, instruction: 'Reken uit.' },
-                            { id: 'hr-std-gemengd-dec', label: 'Decimale getallen', typeId: 'hr-std-gemengd', defaultConstraints: { numberType: 'decimal' }, instruction: 'Reken uit.' },
+                            { id: 'hr-std-gemengd-dec', label: 'Decimale getallen', typeId: 'hr-std-gemengd', defaultConstraints: { ...DEC_HR_DEFAULTS }, instruction: 'Reken uit.' },
                         ],
                     },
                 ],
@@ -551,7 +555,7 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'herleidingen-lengte', shortLabel: 'Herleiden · lengte', label: 'Lengte', typeId: 'herleidingen', defaultConstraints: { measure: 'lengte', units: ['m', 'dm', 'cm', 'mm'] }, instruction: 'Zet om.' },
                     { id: 'herleidingen-inhoud', shortLabel: 'Herleiden · inhoud', label: 'Inhoud', typeId: 'herleidingen', defaultConstraints: { measure: 'inhoud', units: ['l', 'dl', 'cl', 'ml'] }, instruction: 'Zet om.' },
                     { id: 'herleidingen-massa', shortLabel: 'Herleiden · massa', label: 'Massa', typeId: 'herleidingen', defaultConstraints: { measure: 'massa', units: ['kg', 'dag', 'g', 'dg'] }, instruction: 'Zet om.' },
-                    { id: 'herleidingen-oppervlakte', shortLabel: 'Herleiden · oppervlakte', label: 'Oppervlakte', typeId: 'herleidingen', defaultConstraints: { measure: 'oppervlakte', units: ['m²', 'dm²', 'cm²', 'a', 'ca', 'ha'] }, instruction: 'Zet om.' },
+                    { id: 'herleidingen-oppervlakte', shortLabel: 'Herleiden · oppervlakte', label: 'Oppervlakte', typeId: 'herleidingen', defaultConstraints: { measure: 'oppervlakte', units: ['m²', 'dm²', 'cm²', 'a', 'ca', 'ha'], maxWaarde: 999_999 }, instruction: 'Zet om.' },
                 ],
             },
         ],

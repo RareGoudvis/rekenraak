@@ -11,6 +11,7 @@ export function generateDeelbaarheidExercises(block: MathBlock): DeelbaarheidExe
         base = 9,
         terms = 6,                 // veelvouden: how many numbers in the row (incl 0)
         givenCount = 2,            // veelvouden: how many filled before the blanks
+        startFrom,                 // veelvouden: the kiosk pins the first row's start multiple (the sheet starts it at 0)
     } = block.constraints as DeelbaarheidConstraints;
 
     const n = block.numberOfExercises;
@@ -29,7 +30,7 @@ export function generateDeelbaarheidExercises(block: MathBlock): DeelbaarheidExe
             [starts[k], starts[j]] = [starts[j], starts[k]];
         }
         for (let i = 0; i < n; i++) {
-            const from = i === 0 ? 0 : starts[i - 1];
+            const from = i === 0 ? (startFrom ?? 0) : starts[i - 1];
             const sequence = Array.from({ length: terms }, (_, k) => base * (from + k));
             results.push({ id: rndId(), base, sequence, givenCount: given, isManuallyEdited: false });
         }
