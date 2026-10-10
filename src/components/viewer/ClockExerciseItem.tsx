@@ -55,8 +55,14 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
 
     const blankLine = scaffold ? <div style={{ borderBottom: '1.5px solid #000', width: '90%', height: ANSWER_LINE_H }} /> : null;
     // isMath: digitalText ("03:15") reads as math, timeText ("kwart over 3") reads as words
+    // The key sits in the SAME slot the pupil writes in (the line for words, the __:__ box for digits), so it
+    // lines up with the writing line instead of hugging the clock above it.
     const sol = (text: string, isMath = false) => (
-        <span style={{ ...solutionText, fontSize: isMath ? 'calc(var(--sheet-size-math) * 0.7)' : 'calc(var(--sheet-size-text) * 0.6)' }}>{text}</span>
+        <div style={isMath
+            ? { width: mathPx(65), height: mathPx(28), display: 'flex', alignItems: 'center', justifyContent: 'center' }
+            : { width: '90%', height: ANSWER_LINE_H, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+            <span style={{ ...solutionText, fontSize: isMath ? 'calc(var(--sheet-size-math) * 0.7)' : 'calc(var(--sheet-size-text) * 0.6)', lineHeight: 1.2, textAlign: 'center' }}>{text}</span>
+        </div>
     );
     // Empty digital display for the pupil to fill in (matches the omzetten __:__ box).
     // 84x40 (was 65x32, owner review R3): the old box's edges sat too close to the digits

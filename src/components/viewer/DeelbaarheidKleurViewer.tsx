@@ -2,7 +2,7 @@ import type { MathBlock, DeelbaarheidKleurExercise } from '../../services/math/t
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
 import type { DeelbaarheidKleurConstraints } from '../../services/math/constraintTypes';
-import { SOL, solutionText } from './solutionStyle';
+import { SOL, SOL_FILL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 import { kioskNumbers } from '../../services/deelbaarheid/deelbaarheidKleurGenerator';
 
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const mono = "'Azeret Mono', monospace";
-const FILL = '#93c5fd';
+const FILL = SOL_FILL;
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 // SYNC: same "px measured at the 13pt default, scaled by the slider" convention as
 // GetallenasViewer / ClockViewer / MabViewer.

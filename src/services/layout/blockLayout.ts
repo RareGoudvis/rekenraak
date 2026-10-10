@@ -174,7 +174,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "mab-herkennen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
     // A single drawn place-value figure has no glyph table to read, so it can go to ¼ —
     // unlike mab-herkennen, whose numeral/glyph pairing needs the ½ floor (SETTINGS_FLOOR).
-    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 1 },
+    "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
     // S5 (2026-10-10): default count 6 → 2 and the 12 px figure padding (21.42 → 8.54).
     "omtrek": { rowUnits: 8.54, perRowFull: 1, minWidth: 4 },
     // S5 (2026-10-10): measured off the rooster leaf at its 2 exercises (18.07 → 11.83).
@@ -278,10 +278,10 @@ type FloorRule = (block: MathBlock) => WidthUnits;
 // on how wide ONE exercise's number/blank row prints, so this is the single function both
 // read — SYNC: OrdenenViewer.tsx imports it rather than re-deriving the estimate by hand.
 // Numbers print in Azeret Mono at 1 × the math token, estimated at the sheet default (13pt =
-// 17.33px); `+8` is per-number breathing room (the underline's own padding), `SEP_PX` is the
-// comma/operator glyph plus its flex gap.
+// 17.33px). Between two numbers the viewer prints one ","/";" glyph inside the number's cell and
+// then a 22px grid track (OrdenenViewer gridTemplateColumns), so a gap costs 22px + one glyph.
 const ORDENEN_DEFAULT_MATH_PX = 17.33;
-const ORDENEN_SEP_PX = 20;
+const ORDENEN_SEP_TRACK_PX = 22; // SYNC: OrdenenViewer gridTemplateColumns separator track
 
 /** Widest printed value's character count, estimated from SETTINGS rather than exercises
  *  (this runs before any exercise exists — first paint / the Inspector). */
@@ -312,7 +312,8 @@ export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): num
 /** Estimated px width of ONE exercise's row of `count` numbers/blanks, at the sheet default. */
 export function ordenenRowPx(typeId: string, c: Record<string, unknown>, count: number): number {
     const maxChars = ordenenMaxChars(typeId, c);
-    return count * (monoTextPx(maxChars, 1, ORDENEN_DEFAULT_MATH_PX) + 8) + Math.max(0, count - 1) * ORDENEN_SEP_PX;
+    const gap = ORDENEN_SEP_TRACK_PX + monoTextPx(1, 1, ORDENEN_DEFAULT_MATH_PX);
+    return count * monoTextPx(maxChars, 1, ORDENEN_DEFAULT_MATH_PX) + Math.max(0, count - 1) * gap;
 }
 
 // A row that does not fit a half cell (330px, minus one column-gap reserved for a possible
@@ -335,6 +336,38 @@ export const MONO_ADVANCE_EM = 0.65;
 /** Rendered px of `chars` Azeret Mono glyphs set at `fontFactor` × the math token (`mathPx`). */
 export function monoTextPx(chars: number, fontFactor: number, mathPx: number): number {
     return chars * MONO_ADVANCE_EM * fontFactor * mathPx;
+}
+
+/** Font factor (<= 1, never below `floor`) at which `chars` mono glyphs still fit `budgetPx`. */
+export function fitMonoFactor(chars: number, fontFactor: number, mathPx: number, budgetPx: number, floor = 0.7): number {
+    const need = monoTextPx(chars, fontFactor, mathPx);
+    return need <= budgetPx ? 1 : Math.max(floor, budgetPx / need);
+}
+
+// ── Getallenrijen pill fit ──────────────────────────────────────────────────
+export interface RijFit { fontPx: number; padX: number; gapPx: number; cellMin: number }
+
+/** Width of one framed/unframed number row at `fit` (px, with `scale` = math token / 13pt default). */
+export function getallenrijWidth(fit: RijFit, count: number, maxChars: number, scale: number, framed: boolean): number {
+    const cell = Math.max(fit.cellMin, monoTextPx(maxChars, 1, fit.fontPx * scale) + 4);
+    return count * cell + Math.max(0, count - 1) * fit.gapPx + (framed ? 2 * fit.padX + 3 : 0);
+}
+
+/** First step that fits: the font ladder 18 to 12 px at the roomy padding, then a tight pill (padding, gaps,
+ *  cell floor shrink) with the font down to 8 px, so neither the first nor the last number crosses the oval. */
+export function getallenrijFit(count: number, maxChars: number, availableWidth: number, scale: number, framed: boolean): RijFit {
+    const steps: Array<{ pad: number; gap: number; min: number; floor: number }> = [
+        { pad: 22, gap: 14, min: 44, floor: 12 },
+        { pad: 10, gap: 8, min: 0, floor: 8 },
+    ];
+    let fit: RijFit = { fontPx: 12, padX: 22, gapPx: 14, cellMin: 44 };
+    for (const s of steps) {
+        for (let fontPx = 18; fontPx >= s.floor; fontPx--) {
+            fit = { fontPx, padX: s.pad, gapPx: s.gap, cellMin: s.min };
+            if (getallenrijWidth(fit, count, maxChars, scale, framed) <= availableWidth) return fit;
+        }
+    }
+    return fit;
 }
 
 /** A fixed-px column that grows only when its widest text (+ `padPx`) no longer fits it.
@@ -386,9 +419,9 @@ const SETTINGS_FLOOR: Record<string, FloorRule> = {
     },
     // MAB is sized by its glyphs rather than by its share of the block: mab-herkennen
     // pairs a numeral with a glyph table, which stops reading at a quarter; mab-tekenen
-    // draws ONE place-value figure, which has no such pairing and can go to a quarter.
+    // needs room to draw in the D/H/T/E table (~75 px at a quarter leaves none), so both floor at a half.
     'mab-herkennen': () => 2,
-    'mab-tekenen': () => 1,
+    'mab-tekenen': () => 2,
     // Relation sentences ("rechte a staat ___ op rechte b") never fit a quarter.
     'vormleer-punt-lijn': (block) => {
         const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;

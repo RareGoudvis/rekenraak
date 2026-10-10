@@ -1,10 +1,10 @@
 import type { MathBlock, VergelijkenExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
-import type { RepKind } from '../../services/vergelijken/representations';
+import { repText, type RepKind } from '../../services/vergelijken/representations';
 import RepValue from './RepValue';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx } from './BlockWidthContext';
-import { grownColumn, monoTextPx, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
+import { grownColumn, monoTextPx, fitMonoFactor, MONO_ADVANCE_EM } from '../../services/layout/blockLayout';
 import type { VergelijkenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
@@ -106,6 +106,20 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
         // several lines in a 2-up track — keep those comparisons full width (1-up).
         const hasWoorden = leftRep === 'woorden' || rightRep === 'woorden';
         const repCols = hasWoorden ? 1 : fitCols(availableWidth, 230, 2);
+        // A code side (1H2T7E5t) cannot wrap: it takes the font step that fits its share of the row
+        // (row = two 12px gaps + the 34px box; woorden keeps the larger share for its own wrapping).
+        const ROW_FONT = 1.04;
+        const woordenSide = leftRep === 'woorden' ? leftRep : rightRep;
+        const longestWord = hasWoorden ? Math.max(0, ...exercises.flatMap(ex => [ex.a ?? 0, ex.b ?? 0]).flatMap(v => repText(v, woordenSide as Exclude<RepKind, 'breuk'>).split(' ').map(w => w.length))) : 0;
+        const repFit = (rep: RepKind): number => {
+            if (rep === 'breuk' || rep === 'woorden') return 1;
+            const chars = Math.max(0, ...exercises.flatMap(ex => [repText(ex.a ?? 0, rep).length, repText(ex.b ?? 0, rep).length]));
+            // woorden can only wrap between words, so its longest word is the part of the row that never shrinks.
+            const wordPx = hasWoorden ? monoTextPx(longestWord, ROW_FONT, mathPx) : 0;
+            const budget = hasWoorden ? availableWidth - 58 - wordPx : (availableWidth - 58) / (repCols === 1 ? 2 : 4);
+            return fitMonoFactor(chars, ROW_FONT, mathPx, budget, 0.6);
+        };
+        const leftFit = repFit(leftRep), rightFit = repFit(rightRep);
         return (
             <FragmentableGrid
                 cols={repCols}
@@ -115,8 +129,8 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                     const a = ex.a ?? 0, b = ex.b ?? 0;
                     return (
                         // 1-up: centre the row in the cell instead of hugging the left edge.
-                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: repCols === 1 ? 'center' : 'flex-start', gap: '12px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
-                            <span style={{ minWidth: '80px', display: 'inline-flex', justifyContent: 'flex-end', alignItems: 'center' }}><RepValue value={a} rep={leftRep} frac={ex.aFrac} /></span>
+                        <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', justifyContent: repCols === 1 ? 'center' : 'flex-start', gap: '12px', fontFamily: mono, fontSize: `calc(var(--sheet-size-math) * ${ROW_FONT})` }}>
+                            <span style={{ minWidth: '80px', display: 'inline-flex', justifyContent: 'flex-end', alignItems: 'center', flexShrink: leftRep === 'woorden' ? 1 : 0 }}><RepValue value={a} rep={leftRep} frac={ex.aFrac} fit={leftFit} /></span>
                             <span style={{
                                 width: '34px', height: '34px', border: '1px solid #000', borderRadius: '4px',
                                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -124,7 +138,7 @@ export default function VergelijkenViewer({ block, showSolutions }: Props) {
                             }}>
                                 {showSolutions ? op(a, b) : ''}
                             </span>
-                            <span style={{ minWidth: '80px', display: 'inline-flex', alignItems: 'center' }}><RepValue value={b} rep={rightRep} frac={ex.bFrac} /></span>
+                            <span style={{ minWidth: '80px', display: 'inline-flex', alignItems: 'center', flexShrink: rightRep === 'woorden' ? 1 : 0 }}><RepValue value={b} rep={rightRep} frac={ex.bFrac} fit={rightFit} /></span>
                         </div>
                     );
                 })}

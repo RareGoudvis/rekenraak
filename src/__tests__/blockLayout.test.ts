@@ -201,8 +201,8 @@ describe('minWidthUnits — settings-shaped editorial floors (C1 step 0)', () =>
         expect(minWidthUnits(lijnstuk, measure(10, 1))).toBe(1);
     });
 
-    test('mab-tekenen can go to a quarter, mab-herkennen stays at a half', () => {
-        expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(1);
+    test('mab-tekenen and mab-herkennen both floor at a half (the D/H/T/E table needs room to draw)', () => {
+        expect(minWidthUnits(makeBlock('mab-tekenen'), measure(10, 1))).toBe(2);
         expect(minWidthUnits(makeBlock('mab-herkennen'), measure(10, 1))).toBe(2);
     });
 
@@ -251,9 +251,13 @@ describe('getalbegrip width helpers', () => {
         expect(monoTextPx(10, 0.81, 20)).toBeCloseTo(10 * 0.65 * 0.81 * 20);
     });
 
-    test('ordenenRowPx charges each number its 0.65em mono width at the sheet default', () => {
-        // Five numbers under 10 000 ("9 999", 5 glyphs) + 8px air each, and four 20px separators.
-        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 10000 }, 5)).toBeCloseTo(5 * (5 * 0.65 * 17.33 + 8) + 4 * 20);
+    test('ordenenRowPx counts every printed glyph: each number, the "," or ";" after it and the 22px separator track', () => {
+        // Five numbers under 10 000 (5 glyphs each); four gaps, each a 22px track + one separator glyph.
+        const glyph = 0.65 * 17.33;
+        expect(ordenenRowPx('ordenen', { numberType: 'natural', maxGetal: 10000 }, 5)).toBeCloseTo(5 * 5 * glyph + 4 * (22 + glyph));
+        // pw017 {decimal, 3 dp, 100 000}, 4 numbers: the old estimate (8px air + 20px per gap) was 8px short.
+        const c = { numberType: 'decimal', maxGetal: 100000, decimalPlaces: 3 };
+        expect(ordenenRowPx('ordenen', c, 4)).toBeCloseTo(4 * 10 * glyph + 3 * (22 + glyph));
     });
 
     // The draw stays under the max (call 1, 2026-10-09), so the widest value is one step below it.

@@ -10,29 +10,14 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept
-  every glyph count). 2026-09-27
 - Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
   part is a blank to fill or should be dropped). 2026-09-27
 - lengte-meten / omtrek with Lengte max 10-18 (pairwise rows): a figure wider than its column is now
   drawn scaled down with "niet op ware grootte" (2026-10-10), so in the 'meten' model the child
   measures a smaller figure than the key's length. Owner call: cap the generated span to the column's
   cm width instead (generator). 2026-10-10
-- mab-tekenen at width ¼ (default leaf, the packer keeps w1): the D/H/T/E table is ~75 px wide, no
-  room to draw. Fix: minWidth 2 for mab-tekenen (owner call: it reverses the C1 rule pinned by
-  blockLayout.test "mab-tekenen can go to a quarter"). 2026-09-27
-- Narrow-width wrapping: vergelijken representaties woorden vs plaatswaarde at ½ / ¼ (pw021): the
-  "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
-- Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
-  too; geld-tekenen's key only repeats the prompt amount (~7 px); colouring keys (breuken hoeveelheid /
-  veelhoek, deelbaarheid, even-oneven) use the light-blue fill, not red (owner call). 2026-09-27
 
 
-- HerleidingenViewer: the right-aligned left side is sized from a char-count estimate (`leftW`, ~9.5 px/char)
-  that undershoots a compound given side ("856 dm²  36 cm²" at 13pt), so it overflows the box to the LEFT;
-  the Oefenmodus card (which crops at x = 0) then cuts its first digit ("56 dm² 36 cm² ="), seen at 1280 x 800
-  (~/Downloads/clean-sweep/s3/after-number-unit/herleidingen-oppervlakte-writeunits.png). Fix: measure the
-  side or nowrap + min-width: max-content on the left box. Found by S3. 2026-10-09
 
 ## Config
 
@@ -48,7 +33,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   in a mental-arithmetic block (owner call). 2026-09-27
 - Hoofdrekenen breuken keys print big numerators without spaces ("36000004/5", VerticalFraction); an
   {M, E} operand mask at max 1 000 yields "9 000 001 × 8/10" (the mask overrides the max, pw021). 2026-09-27
-- Empty keys: breuken-hoeveelheid DEFAULT leaves its ": / × / =" lines empty with solutions on. 2026-09-27
 - Degenerate defaults: geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
   10, 2. 2026-09-27
@@ -87,5 +71,3 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Bordmodus
 
-- getallenrijen (seen on getalbegrip-getallenrijen-dec in a 298 px board card at 200 %): the first and last
-  numbers of each row sit across the oval's left / right outline ("8|35", "86|0"); the viewer, not the card. 2026-10-09

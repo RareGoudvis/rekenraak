@@ -2,7 +2,7 @@ import type { FractionExercise, MathBlock } from '../../services/math/types';
 import FractionShapeSVG from './FractionShapeSVG';
 import VerticalFraction from './VerticalFraction';
 import type { FractionConstraints } from '../../services/math/constraintTypes';
-import { SOL, solutionText } from './solutionStyle';
+import { SOL, SOL_FILL, solutionText } from './solutionStyle';
 import { useViewerInteraction } from './ViewerInteractionContext';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
 import { useSheetSizePx, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
@@ -57,6 +57,11 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
     const figureFont = (figureUnits: number): React.CSSProperties =>
         ({ fontSize: `${Math.min(sheetSizePx, (columnWidth / Math.max(1, figureUnits)) * PX_PER_EM_AT_DEFAULT)}px` });
     const sol = (text: string) => <span style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>{text}</span>;
+    // The hoeveelheid key fills the same lines the pupil writes on: total : parts = one part, then parts-taken × one part = answer.
+    const hTotal = ex.total ?? 0;
+    const hGroup = parseFloat((hTotal / Math.max(1, ex.denominator)).toFixed(4));
+    const hCount = parseFloat((hGroup * ex.numerator).toFixed(4));
+    const fillIn = (v: number, w: number) => showSolutions ? sol(String(v)) : blank(w);
     const blank = (w = 40) => <div style={{ borderBottom: '1.5px solid #000', width: `${w}px`, height: ANSWER_LINE_H, display: 'inline-block', margin: '0 2px' }} />;
     // lijnstuk's calc rows (cm : denominator = part, numerator × part = arc) size their blanks
     // in em so they scale with the row's own font, and the row wraps instead of overflowing
@@ -99,6 +104,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                 shape={ex.shape ?? 'rectangle'} coloredIndices={ex.coloredIndices ?? []}
                 gridRows={ex.gridRows ?? 1} gridCols={gridCols}
                 showColored={showColored} cellSize={cappedCell}
+                fillColor={subType === 'kleuren' ? SOL_FILL : undefined}
                 physicalSize={!!c.staticSize}
                 ix={subType === 'kleuren' ? ix : null}
                 style={c.staticSize ? undefined : figureFont(shapeUnitsW)}
@@ -189,8 +195,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         const rowSizes = groupRows(total, ex.denominator, groupingMode);
 
         const objEl = (idx: number, colored: boolean) => ex.objectShape === 'circle'
-            ? <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><circle cx={objSize/2} cy={objSize/2} r={objSize/2-1.5} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>
-            : <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><rect x={1.5} y={1.5} width={objSize-3} height={objSize-3} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>;
+            ? <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><circle cx={objSize/2} cy={objSize/2} r={objSize/2-1.5} fill={colored ? SOL_FILL : 'white'} stroke="#000" strokeWidth={1.5}/></svg>
+            : <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><rect x={1.5} y={1.5} width={objSize-3} height={objSize-3} fill={colored ? SOL_FILL : 'white'} stroke="#000" strokeWidth={1.5}/></svg>;
 
         const simpleGrid = (
             // One font-size wrapper per figure: the object svgs and the gaps between them are
@@ -250,8 +256,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, auto)', columnGap: '3px', rowGap: `${Math.min(gap, 10)}px`, alignItems: 'center', width: '100%' }}>
                     <div style={{ gridColumn: '1 / -1' }}>{taskLine}</div>
                     <div style={{ gridColumn: '1 / -1', minHeight: '52px', display: 'flex', alignItems: 'center' }}>{simpleGrid}</div>
-                    {blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}
-                    {blank(24)}<span>×</span>{blank(28)}<span>=</span>{blank(28)}
+                    {fillIn(hTotal, 28)}<span>:</span>{fillIn(ex.denominator, 24)}<span>=</span>{fillIn(hGroup, 28)}
+                    {fillIn(ex.numerator, 24)}<span>×</span>{fillIn(hGroup, 28)}<span>=</span>{fillIn(hCount, 28)}
                 </div>
             );
         }
@@ -270,14 +276,14 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                         {gridWrap}
                     </div>
                     <div style={{ flex: 1, marginTop: '18px' }}>
-                        {qRow('Hoe groot is het geheel?', blank())}
-                        {qRow('In hoeveel gelijke delen verdeel ik?', blank())}
-                        {qRow('Hoe groot is één deel?', <>{blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}</>)}
-                        {qRow('Hoeveel gelijke delen neem ik?', blank())}
-                        {qRow('Hoeveel is dat samen?', <>{blank(24)}<span>×</span>{blank(28)}<span>=</span>{blank(28)}</>)}
+                        {qRow('Hoe groot is het geheel?', fillIn(hTotal, 40))}
+                        {qRow('In hoeveel gelijke delen verdeel ik?', fillIn(ex.denominator, 40))}
+                        {qRow('Hoe groot is één deel?', <>{fillIn(hTotal, 28)}<span>:</span>{fillIn(ex.denominator, 24)}<span>=</span>{fillIn(hGroup, 28)}</>)}
+                        {qRow('Hoeveel gelijke delen neem ik?', fillIn(ex.numerator, 40))}
+                        {qRow('Hoeveel is dat samen?', <>{fillIn(ex.numerator, 24)}<span>×</span>{fillIn(hGroup, 28)}<span>=</span>{fillIn(hCount, 28)}</>)}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
                             {showSolutions ? vertFrac(ex.numerator, ex.denominator, SOL) : vertFrac(ex.numerator, ex.denominator)}
-                            <span> van </span>{blank(28)}<span> is </span>{blank(28)}
+                            <span> van </span>{fillIn(hTotal, 28)}<span> is </span>{fillIn(hCount, 28)}
                         </div>
                     </div>
                 </div>
@@ -304,17 +310,17 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         const rectCalcLines = (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace', marginTop: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    {blank(28)}<span>:</span>{blank(24)}<span>=</span>{blank(28)}
+                    {fillIn(hTotal, 28)}<span>:</span>{fillIn(ex.denominator, 24)}<span>=</span>{fillIn(hGroup, 28)}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    {blank(24)}<span>×</span>{blank(28)}<span>=</span>{blank(28)}
+                    {fillIn(ex.numerator, 24)}<span>×</span>{fillIn(hGroup, 28)}<span>=</span>{fillIn(hCount, 28)}
                 </div>
             </div>
         );
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontFamily: 'Azeret Mono, monospace' }}>
-                    {vertFrac(ex.numerator, ex.denominator)}<span> van {total} =</span>{blank()}
+                    {vertFrac(ex.numerator, ex.denominator)}<span> van {total} =</span>{fillIn(hCount, 40)}
                 </div>
                 {/* Draw box sized to handwriting needs. 1cm ≈ 37.8px; default ≈ 3cm (≈113px). */}
                 <div style={{
@@ -349,10 +355,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                     {questionLine}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
-                            {blank(56)}<span>:</span>{blank(56)}<span>=</span>{blank(72)}
+                            {fillIn(hTotal, 56)}<span>:</span>{fillIn(ex.denominator, 56)}<span>=</span>{fillIn(hGroup, 72)}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'calc(var(--sheet-size-math) * 0.75)', fontFamily: 'Azeret Mono, monospace' }}>
-                            {blank(56)}<span>×</span>{blank(56)}<span>=</span>{blank(72)}
+                            {fillIn(ex.numerator, 56)}<span>×</span>{fillIn(hGroup, 56)}<span>=</span>{fillIn(hCount, 72)}
                         </div>
                     </div>
                 </div>
@@ -492,7 +498,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                             <div key={i} style={{
                                 width: `${cellSize}px`, height: `${cellSize}px`,
                                 border: showGrid ? '0.5px solid #93c5fd' : 'none', boxSizing: 'border-box',
-                                backgroundColor: showSolutions && i < cellsPerPart * ex.numerator ? '#93c5fd' : 'white',
+                                backgroundColor: showSolutions && i < cellsPerPart * ex.numerator ? SOL_FILL : 'white',
                             }} />
                         ))}
                     </div>
