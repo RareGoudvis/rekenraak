@@ -837,6 +837,40 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: [a, b], operator: 'x', answer: a * b, isManuallyEdited: false, missingTerm });
         }
     }
+    // Sub-scenario B2a: kommagetal × natuurlijk getal (minimumdoelen 2.2, "3 × 0,4"), the decimal
+    // default; "Kommagetal × kommagetal" (decimalTimesDecimal) falls through to B2.
+    else if (numberType === 'decimal' && !constraints.decimalTimesDecimal) {
+        const scale = Math.pow(10, decimalPlaces);
+        // Both factors stay near √max, as in B2, so the product is hoofdrekenbaar.
+        const rootMax = Math.max(2, Math.floor(Math.sqrt(maxGetal)));
+        const mask1On = Object.values(operand1Mask).some(v => v);
+        // Factor 2 is whole: a mask place behind the comma does not apply to it.
+        const wholeMask2 = Object.fromEntries(Object.entries(operand2Mask).filter(([k, on]) => on && (PLACE_VALUES.find(p => p.key === k)?.weight ?? 0) >= 1));
+        const mask2On = Object.keys(wholeMask2).length > 0;
+
+        while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
+            attempts++;
+            const maskA = mask1On ? generateMaskedInt(operand1Mask) : null;
+            const a = maskA !== null
+                ? Math.round((maskA / INTERNAL_SCALE) * scale) / scale
+                : withDecimals(randInt(1, rootMax * scale), rootMax * scale, scale) / scale;
+            const bHi = Math.min(rootMax, Math.floor(maxGetal / a));
+            const maskB = mask2On ? generateMaskedInt(wholeMask2) : null;
+            if (maskB === null && bHi < 2) continue;
+            const b = maskB !== null ? Math.round(maskB / INTERNAL_SCALE) : randInt(2, bHi);
+
+            if (a <= 0 || b < 2 || a * b > maxGetal + 1e-9) continue;
+            if (breaksOperandMax(constraints, [a, b])) continue;
+            const comboId = `${a}*${b}`;
+            if (usedCombinations.has(comboId)) continue;
+            usedCombinations.add(comboId);
+
+            const answer = Math.round(a * b * scale) / scale;
+            const eqType = constraints.equationType || 'normal';
+            const missingTerm = eqType === 'puntoefening' ? (Math.random() < 0.5 ? 'operand1' : 'operand2') : 'result';
+            exercises.push({ id: Math.random().toString(36).substring(2, 9), operands: [a, b], operator: 'x', answer, isManuallyEdited: false, missingTerm });
+        }
+    }
     // Sub-scenario B2: Willekeurige getallen (met of zonder maskers)
     else {
         const displayScale = numberType === 'decimal' ? Math.pow(10, decimalPlaces) : 1;

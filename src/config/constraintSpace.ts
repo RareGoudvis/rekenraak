@@ -112,6 +112,8 @@ const hrMixed: OptionSpace = {
         ['+', '+:compenseren', '-', '-:compenseren', 'x', 'x:tienvoud', ':', ':tienvoud'],
     ],
     mix: ['random', 'cycle'],
+    // The x tab's multiplication/DecimalSettings toggle, read through the shared bag.
+    decimalTimesDecimal: [false, true],
     // Sparse tab overrides: only what a teacher changed inside one variant's tab.
     perVariant: [
         {},
@@ -549,7 +551,8 @@ const layoutSpace: Record<string, OptionSpace> = {
 export const CONSTRAINT_SPACE: Record<string, OptionSpace> = {
     'hr-std-optellen': hrAddSub,
     'hr-std-aftrekken': hrAddSub,
-    'hr-std-vermenigvuldigen': hrMulDiv,
+    // multiplication/DecimalSettings 'Kommagetal × kommagetal' (× only).
+    'hr-std-vermenigvuldigen': { ...hrMulDiv, decimalTimesDecimal: [false, true] },
     'hr-std-delen': hrMulDiv,
     'hr-std-gemengd': hrMixed,
 

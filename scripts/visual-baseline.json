@@ -1838,33 +1838,33 @@
   },
   "hr-std-gemengd-dec-w1-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 321,
+   "intrinsicPx": 298,
    "textHash": "c135de357670e33d"
   },
   "hr-std-gemengd-dec-w1-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 308,
-   "textHash": "ac6ef9a5f416c1c1"
+   "intrinsicPx": 285,
+   "textHash": "2df037dd796bc2c4"
   },
   "hr-std-gemengd-dec-w2-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 321,
+   "intrinsicPx": 298,
    "textHash": "c135de357670e33d"
   },
   "hr-std-gemengd-dec-w2-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 308,
-   "textHash": "ac6ef9a5f416c1c1"
+   "intrinsicPx": 285,
+   "textHash": "2df037dd796bc2c4"
   },
   "hr-std-gemengd-dec-w4-s0": {
-   "cellHeightPx": 564,
-   "intrinsicPx": 321,
+   "cellHeightPx": 314,
+   "intrinsicPx": 647,
    "textHash": "c135de357670e33d"
   },
   "hr-std-gemengd-dec-w4-s1": {
-   "cellHeightPx": 564,
-   "intrinsicPx": 308,
-   "textHash": "ac6ef9a5f416c1c1"
+   "cellHeightPx": 314,
+   "intrinsicPx": 619,
+   "textHash": "2df037dd796bc2c4"
   },
   "hr-std-gemengd-nat-w1-s0": {
    "cellHeightPx": 564,
@@ -1988,33 +1988,33 @@
   },
   "hr-std-vermenigvuldigen-dec-w1-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 299,
+   "intrinsicPx": 276,
    "textHash": "dc483bcf20ed870d"
   },
   "hr-std-vermenigvuldigen-dec-w1-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 286,
-   "textHash": "e8e39bd9f11d1f27"
+   "intrinsicPx": 263,
+   "textHash": "3ab554cf5da35578"
   },
   "hr-std-vermenigvuldigen-dec-w2-s0": {
    "cellHeightPx": 564,
-   "intrinsicPx": 299,
+   "intrinsicPx": 276,
    "textHash": "dc483bcf20ed870d"
   },
   "hr-std-vermenigvuldigen-dec-w2-s1": {
    "cellHeightPx": 564,
-   "intrinsicPx": 286,
-   "textHash": "e8e39bd9f11d1f27"
+   "intrinsicPx": 263,
+   "textHash": "3ab554cf5da35578"
   },
   "hr-std-vermenigvuldigen-dec-w4-s0": {
-   "cellHeightPx": 564,
-   "intrinsicPx": 299,
+   "cellHeightPx": 314,
+   "intrinsicPx": 603,
    "textHash": "dc483bcf20ed870d"
   },
   "hr-std-vermenigvuldigen-dec-w4-s1": {
-   "cellHeightPx": 564,
-   "intrinsicPx": 286,
-   "textHash": "e8e39bd9f11d1f27"
+   "cellHeightPx": 314,
+   "intrinsicPx": 575,
+   "textHash": "3ab554cf5da35578"
   },
   "hr-std-vermenigvuldigen-nat-w1-s0": {
    "cellHeightPx": 564,
