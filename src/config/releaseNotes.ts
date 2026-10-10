@@ -188,6 +188,31 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'gewijzigd',
+                text: 'Kommagetallen vermenigvuldigen: standaard kommagetal × natuurlijk getal, zoals de minimumdoelen vragen. “Kommagetal × kommagetal” zet je aan als je wil.',
+                example: { leafId: 'hr-std-vermenigvuldigen-dec', grade: 5, count: 3, before: '“4,89 × 100,12”', after: '“4,89 × 3”' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Meten: elke figuur staat op ware grootte, ook in een smalle kolom. Herleidingen: de sleutel laat nul-delen weg (“71 dl”).',
+                example: { leafId: 'lengte-meten', grade: 3, count: 2, before: 'soms verkleind met een nota', after: 'altijd op ware grootte' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Klok: “Richting” kiest nu over · voor half · over half · voor, zodat “5 voor half 2” onder de juiste knop zit.',
+                example: { leafId: 'klok-analoog-lezen', constraints: { timeTypes: ['nauwkeurig_5'], minuteDirection: 'half-voor' }, grade: 3, count: 2, after: 'enkel :21 tot :29' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Kettingsommen: in leerjaar 1 en 2 staan de tussenresultaten erbij, vanaf leerjaar 3 niet meer. Afronden en ordenen houden de nullen (“4,10”).',
+                example: { leafId: 'patronen-kettingsommen', grade: 2, count: 2, after: 'tussenresultaten zichtbaar' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oplossingen: ingekleurde delen zijn rood, geld tekenen toont de munten en biljetten, en de bovenbalk past ook op een smal scherm.',
+                example: { leafId: 'geld-tekenen', grade: 2, count: 3, before: 'sleutel herhaalde het bedrag', after: 'munten en biljetten getekend' },
+            },
+            {
+                kind: 'gewijzigd',
                 text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
             },
             {
