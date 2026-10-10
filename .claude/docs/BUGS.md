@@ -22,11 +22,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   cm width instead (generator). 2026-10-10
 
 
-- HerleidingenViewer: the right-aligned left side is sized from a char-count estimate (`leftW`, ~9.5 px/char)
-  that undershoots a compound given side ("856 dm²  36 cm²" at 13pt), so it overflows the box to the LEFT;
-  the Oefenmodus card (which crops at x = 0) then cuts its first digit ("56 dm² 36 cm² ="), seen at 1280 x 800
-  (~/Downloads/clean-sweep/s3/after-number-unit/herleidingen-oppervlakte-writeunits.png). Fix: measure the
-  side or nowrap + min-width: max-content on the left box. Found by S3. 2026-10-09
 
 ## Config
 

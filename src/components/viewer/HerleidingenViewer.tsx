@@ -152,7 +152,8 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
                 const lf = leftIsFrom(ex);
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: `calc(var(--sheet-size-math) * ${factor})` }}>
-                        <span style={{ display: 'inline-block', width: `${leftW}px`, textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{lf ? renderFrom(ex) : renderTo(ex)}</span>
+                        {/* leftW is an estimate that undershoots a compound given side (unit glyphs, gaps); max-content keeps it from overflowing LEFT, where the kiosk card crops at x = 0. */}
+                        <span style={{ display: 'inline-block', width: `${leftW}px`, minWidth: 'max-content', textAlign: 'right', whiteSpace: 'nowrap', flexShrink: 0 }}>{lf ? renderFrom(ex) : renderTo(ex)}</span>
                         <span style={{ flexShrink: 0 }}>=</span>
                         {/* Wrap the long side onto a second row instead of overflowing the page. */}
                         <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', columnGap: '10px', rowGap: '6px', minWidth: 0 }}>{lf ? renderTo(ex) : renderFrom(ex)}</span>
