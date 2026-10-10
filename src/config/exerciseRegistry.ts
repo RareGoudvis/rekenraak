@@ -208,7 +208,7 @@ const geldDefaults = (typeId: string): GeldConstraints => ({
 });
 
 const geldWisselDefaults = (): GeldWisselConstraints => ({
-    exerciseBills: [500, 1000], exercisesPerRow: 2, boxHeight: 100,
+    exerciseBills: [500, 1000, 2000, 5000], exercisesPerRow: 2, boxHeight: 100,
 });
 
 const geldTeruggevenDefaults = (): GeldTeruggevenConstraints => ({

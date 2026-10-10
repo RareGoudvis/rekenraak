@@ -38,3 +38,21 @@ describe('K2 task 1: deelbaarheid-veelvouden kiosk varies', () => {
         }
     });
 });
+
+describe('K2 task 2: omtrek (gegeven) varies, geld-wissel offers four bills', () => {
+    test('6 omtrek draws give at least 4 distinct perimeters, over 30 seeds', () => {
+        for (let seed = 1; seed <= 30; seed++) {
+            const got = draws('omtrek', 6, seed, { measureModel: 'gegeven' }).map(o => (o.exercise as { perimeter: number }).perimeter);
+            expect(new Set(got).size, `seed ${seed}: ${got.join(' ')}`).toBeGreaterThanOrEqual(4);
+        }
+    });
+    test('geld-wissel defaults to the bills 5, 10, 20 and 50 (sheet and kiosk)', () => {
+        const leaf = LEAVES.get('geld-wissel')!;
+        const c = seedConstraints({ typeId: leaf.typeId, base: DEFAULT_BASE, override: leaf.defaultConstraints, grade: null, leafId: leaf.id });
+        expect(c.exerciseBills).toEqual([500, 1000, 2000, 5000]);
+    });
+    test('geld-wissel draws reach every default bill', () => {
+        const got = new Set(draws('geld-wissel', 40, 3).map(o => (o.exercise as { billValueCents: number }).billValueCents));
+        expect([...got].sort((a, b) => a - b)).toEqual([500, 1000, 2000, 5000]);
+    });
+});
