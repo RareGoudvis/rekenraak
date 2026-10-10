@@ -1032,9 +1032,9 @@
    "textHash": "acf84014a38a6d31"
   },
   "geld-tekenen-w1-s1": {
-   "cellHeightPx": 541,
-   "intrinsicPx": 140,
-   "textHash": "358b52c0e0dbdafa"
+   "cellHeightPx": 665,
+   "intrinsicPx": 186,
+   "textHash": "dd5884b3893b7864"
   },
   "geld-tekenen-w2-s0": {
    "cellHeightPx": 484,
@@ -1042,9 +1042,9 @@
    "textHash": "acf84014a38a6d31"
   },
   "geld-tekenen-w2-s1": {
-   "cellHeightPx": 541,
-   "intrinsicPx": 140,
-   "textHash": "358b52c0e0dbdafa"
+   "cellHeightPx": 665,
+   "intrinsicPx": 186,
+   "textHash": "dd5884b3893b7864"
   },
   "geld-tekenen-w4-s0": {
    "cellHeightPx": 344,
@@ -1052,9 +1052,9 @@
    "textHash": "acf84014a38a6d31"
   },
   "geld-tekenen-w4-s1": {
-   "cellHeightPx": 382,
-   "intrinsicPx": 219,
-   "textHash": "358b52c0e0dbdafa"
+   "cellHeightPx": 430,
+   "intrinsicPx": 288,
+   "textHash": "dd5884b3893b7864"
   },
   "geld-teruggeven-w1-s0": {
    "cellHeightPx": 798,
@@ -2172,7 +2172,7 @@
    "textHash": "444900e6f49912cf"
   },
   "klok-analoog-lezen-w1-s1": {
-   "cellHeightPx": 1768,
+   "cellHeightPx": 1788,
    "intrinsicPx": 126,
    "textHash": "2366a06d40ec8d51"
   },
@@ -2182,7 +2182,7 @@
    "textHash": "444900e6f49912cf"
   },
   "klok-analoog-lezen-w2-s1": {
-   "cellHeightPx": 904,
+   "cellHeightPx": 914,
    "intrinsicPx": 270,
    "textHash": "2366a06d40ec8d51"
   },
@@ -2192,7 +2192,7 @@
    "textHash": "444900e6f49912cf"
   },
   "klok-analoog-lezen-w4-s1": {
-   "cellHeightPx": 736,
+   "cellHeightPx": 744,
    "intrinsicPx": 414,
    "textHash": "2366a06d40ec8d51"
   },
@@ -2202,7 +2202,7 @@
    "textHash": "f2828a9f8b1db944"
   },
   "klok-analoog-omzetten-w1-s1": {
-   "cellHeightPx": 1768,
+   "cellHeightPx": 1888,
    "intrinsicPx": 126,
    "textHash": "f8a37ceb61c1710a"
   },
@@ -2212,7 +2212,7 @@
    "textHash": "f2828a9f8b1db944"
   },
   "klok-analoog-omzetten-w2-s1": {
-   "cellHeightPx": 904,
+   "cellHeightPx": 964,
    "intrinsicPx": 270,
    "textHash": "f8a37ceb61c1710a"
   },
@@ -2222,7 +2222,7 @@
    "textHash": "f2828a9f8b1db944"
   },
   "klok-analoog-omzetten-w4-s1": {
-   "cellHeightPx": 736,
+   "cellHeightPx": 784,
    "intrinsicPx": 414,
    "textHash": "f8a37ceb61c1710a"
   },
@@ -2262,7 +2262,7 @@
    "textHash": "943ec45fc0894795"
   },
   "klok-digitaal-lezen-w1-s1": {
-   "cellHeightPx": 1018,
+   "cellHeightPx": 1038,
    "intrinsicPx": 114,
    "textHash": "66daf945eb926e9c"
   },
@@ -2272,7 +2272,7 @@
    "textHash": "943ec45fc0894795"
   },
   "klok-digitaal-lezen-w2-s1": {
-   "cellHeightPx": 529,
+   "cellHeightPx": 539,
    "intrinsicPx": 245,
    "textHash": "66daf945eb926e9c"
   },
@@ -2282,7 +2282,7 @@
    "textHash": "943ec45fc0894795"
   },
   "klok-digitaal-lezen-w4-s1": {
-   "cellHeightPx": 436,
+   "cellHeightPx": 444,
    "intrinsicPx": 377,
    "textHash": "66daf945eb926e9c"
   },

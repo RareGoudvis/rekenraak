@@ -6,6 +6,8 @@ import FragmentableGrid from './FragmentableGrid';
 import type { GeldConstraints } from '../../services/math/constraintTypes';
 import { solutionText } from './solutionStyle';
 import { fitCols, useBlockWidth } from './BlockWidthContext';
+import { geldMakeUp } from '../../services/geld/geldMakeUp';
+import { DENOMINATION_CATALOGUE } from '../../services/geld/geldGenerator';
 
 // 132px = 35mm at 96dpi (1cm ≈ 37.8px) — the narrowest a draw-the-amount box can go and
 // still be usable (owner review R3); + 16px for the cell's own 8px side padding.
@@ -24,10 +26,14 @@ function TekenenCell({ ex, block, showSolutions, laid }: { ex: GeldExercise; blo
 
     const amountText = formatAmount(ex.amountCents, format);
 
+    // The key draws one valid make-up of the amount from the ticked coins and notes (any exact one is right).
+    const allowed = c.allowedDenominations ?? DENOMINATION_CATALOGUE.map(d => d.valueCents);
+    const keyBuild = showSolutions && !laid ? geldMakeUp(ex.amountCents, allowed) : null;
+    const shown = laid ?? (keyBuild && keyBuild.length > 0 ? keyBuild : null);
     // Kiosk: the laid money fills the draw box, which grows with it (euros above cents when verdeeld).
-    const laidBox = laid && (scaffolding === 'verdeeld' ? (
+    const laidBox = shown && (scaffolding === 'verdeeld' ? (
         <div style={{ width: '100%', minHeight: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
-            {([['€', laid.filter(b => Number(b.key) >= 100)], ['cent', laid.filter(b => Number(b.key) < 100)]] as const).map(([unit, part], i) => (
+            {([['€', shown.filter(b => Number(b.key) >= 100)], ['cent', shown.filter(b => Number(b.key) < 100)]] as const).map(([unit, part], i) => (
                 <div key={unit} style={{ flex: 1, minHeight: `${boxHeight / 2}px`, display: 'flex', alignItems: 'center', paddingLeft: '4px', ...(i === 0 && { borderBottom: '1.5px solid #000' }) }}>
                     <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>{unit}</span>
                     <div style={{ flex: 1, minWidth: 0 }}><LaidMoney build={part} /></div>
@@ -36,7 +42,7 @@ function TekenenCell({ ex, block, showSolutions, laid }: { ex: GeldExercise; blo
         </div>
     ) : (
         <div style={{ width: '100%', minHeight: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <LaidMoney build={laid} />
+            <LaidMoney build={shown} />
         </div>
     ));
 

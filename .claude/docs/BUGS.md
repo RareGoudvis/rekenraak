@@ -20,8 +20,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   drawn scaled down with "niet op ware grootte" (2026-10-10), so in the 'meten' model the child
   measures a smaller figure than the key's length. Owner call: cap the generated span to the column's
   cm width instead (generator). 2026-10-10
-- Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
-  too; geld-tekenen's key only repeats the prompt amount (~7 px). 2026-09-27
 
 
 - HerleidingenViewer: the right-aligned left side is sized from a char-count estimate (`leftW`, ~9.5 px/char)

@@ -97,6 +97,7 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
     const showRight  = sol || scaffolding === 'ingevuld' || scaffolding === 'basis';
     const showLabel1 = sol || scaffolding === 'ingevuld';
     const showLabel2 = sol || scaffolding === 'ingevuld';
+    // Only the pupil's answers (waypoint, step labels) turn red; the given price and paid amount stay black.
     const col = sol ? SOL : '#000';
 
     const label1Sol = `+ ${ex.step1Cents} cent`;
@@ -120,8 +121,8 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
             <path d="M 205,75 C 250,28 345,28 376,75"
                 fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
 
-            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.priceCents)}</text>}
-            {showRight && <text x="415" y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.payWithCents)}</text>}
+            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="#000">{fmtCents(ex.priceCents)}</text>}
+            {showRight && <text x="415" y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="#000">{fmtCents(ex.payWithCents)}</text>}
 
             {/* Middle node: solution shows amount; otherwise € + blank line for student */}
             {showMiddle && (sol
