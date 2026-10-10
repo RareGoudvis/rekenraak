@@ -95,7 +95,5 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Bordmodus
 
-- No answer overlay on the board for breuken-kleuren: 👁 toggles nothing visible.
-  Same gap as the sheet (see Generators › "Empty keys"); fixing the viewers fixes both. 2026-10-08
 - getallenrijen (seen on getalbegrip-getallenrijen-dec in a 298 px board card at 200 %): the first and last
   numbers of each row sit across the oval's left / right outline ("8|35", "86|0"); the viewer, not the card. 2026-10-09
