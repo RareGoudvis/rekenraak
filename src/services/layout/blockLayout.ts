@@ -338,6 +338,12 @@ export function monoTextPx(chars: number, fontFactor: number, mathPx: number): n
     return chars * MONO_ADVANCE_EM * fontFactor * mathPx;
 }
 
+/** Font factor (<= 1, never below `floor`) at which `chars` mono glyphs still fit `budgetPx`. */
+export function fitMonoFactor(chars: number, fontFactor: number, mathPx: number, budgetPx: number, floor = 0.7): number {
+    const need = monoTextPx(chars, fontFactor, mathPx);
+    return need <= budgetPx ? 1 : Math.max(floor, budgetPx / need);
+}
+
 /** A fixed-px column that grows only when its widest text (+ `padPx`) no longer fits it.
  *  `css` is the untouched `${defaultPx}px` while the text fits, so tuned sheets print as
  *  before; a grown column follows the Cijfers slider like the text inside it. */
