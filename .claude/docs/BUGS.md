@@ -108,6 +108,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Limit audit 2026-10-07
 
+- hr-std-gemengd never draws the compenseren tussenstap: the mixed block has no top-level `preset`, so
+  MathBlockRenderer's shape test never sees a compenseren row there (S2 2026-10-10). 2026-10-10
 All [L1]-[L21], [E1]-[E11], [N1]-[N2] and [T1] are fixed on rc (fix campaign 2026-10-07/08, see
 UpdateState). Left over, found while fixing:
 

@@ -136,6 +136,57 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 },
             },
             {
+                kind: 'opgelost',
+                text: 'Klok in woorden: “5 voor half 2” en “5 over half 2” zoals in de klas; vroeger stond er “25 over 1”.',
+                example: { leafId: 'klok-analoog-lezen', constraints: { timeTypes: ['nauwkeurig_5'] }, grade: 3, count: 2, before: '“25 over 1”', after: '“5 voor half 2”' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Getallen in woorden krijgen een spatie na “duizend”: “duizend tweehonderd”.',
+                example: { leafId: 'splitsen-positietabel', grade: 4, count: 2, before: '“duizendtweehonderd”', after: '“duizend tweehonderd”' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Kettingsommen: alleen het startgetal staat er, de leerling rekent de hele ketting. “Tussenresultaten tonen” zet ze terug.',
+                example: { leafId: 'patronen-kettingsommen', grade: 3, count: 2, before: 'elke tussenuitkomst gedrukt', after: 'enkel het startgetal' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Veelvouden: zes verschillende reeksen in plaats van zes keer dezelfde. Kalender “rekenen met dagen” en “datumnotatie” starten met 4 oefeningen.',
+                example: { leafId: 'deelbaarheid-veelvouden', grade: 4, count: 3, before: 'zes keer “veelvouden van 9”', after: 'elke rij een eigen reeks' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oplossingen: breuken met uitkomst een geheel getal tonen “6”, niet “6/1”; afronden op tienden toont “56,0”; ordenen schrijft duizendtallen met een spatie.',
+                example: { leafId: 'hr-std-delen-rat', grade: 5, count: 2, before: '“= 6/1”', after: '“= 6”' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oplossingen: breuken kleuren toont de ingekleurde delen, de te tekenen klokwijzers zijn rood, en de rest bij delen met kommagetallen is exact.',
+                example: { leafId: 'breuken-kleuren', grade: 3, count: 2, before: 'sleutel leeg', after: 'delen ingekleurd' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Compenseren: de tussenstap verschijnt alleen bij een som die er om vraagt (385 − 29), niet meer bij 385 − 30.',
+                example: { leafId: 'hr-std-aftrekken-nat', constraints: { preset: 'compenseren' }, grade: 3, count: 2, before: '“385 − 30 = 385 − 30 + 0”', after: 'geen tussenstap' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Oefenmodus: herleidingen met “eenheid schrijven” kan nu op het toestel: getal typen, eenheid tikken. Elke juiste omzetting telt (1 m 20 = 120 cm).',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Oefenmodus: de kaart toont geen papier-hulp meer (tussenstappen, schrijflijnen), koppen zeggen “Typ …”, en het MAB-bakje telt wat je legde.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Bordmodus: brede hulpmiddelen krimpen in hun kaart, geld wisselen toont een voorbeeldwissel, en Ctrl+P met Mijn bladen open drukt het blad af.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Lange getallen en bedragen breken nergens meer middenin; op 1920 px toont de bovenbalk weer alle knopteksten.',
+            },
+            {
                 kind: 'gewijzigd',
                 text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
             },

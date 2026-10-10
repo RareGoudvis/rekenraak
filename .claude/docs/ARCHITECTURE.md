@@ -230,7 +230,7 @@ one exercise array **per family** (only one is populated per block, keyed by
 | `mabExercises` | `MabExercise` | `mab-herkennen`, `mab-tekenen` |
 | `ordenenExercises` | `OrdenenExercise` | `ordenen`, `breuken-rangschikken` (reuses field + OrdenenViewer) |
 | `breukBewerkExercises` | `BreukBewerkExercise` | `breuken-bewerken` |
-| `deelbaarheidExercises` | `DeelbaarheidExercise` | `deelbaarheid` |
+| `deelbaarheidExercises` | `DeelbaarheidExercise` (veelvouden: the first row starts at 0, every other row at its own multiple) | `deelbaarheid` |
 | `getallenasExercises` | `GetallenasExercise` | `getallenas`, `getallenrijen` (reuses field, own generator/viewer) |
 | `meetExercises` | `MeetExercise` | `lengte-meten`, `omtrek` (cm-scale geometry) |
 | `patroonExercises` | `PatroonExercise` | `getalpatronen` |
@@ -239,7 +239,7 @@ one exercise array **per family** (only one is populated per block, keyed by
 | `plaatswaardeExercises` | `PlaatswaardeExercise` | `plaatswaarde` |
 | `evenOnevenExercises` | `EvenOnevenExercise` | `even-oneven` |
 | `vergelijkenExercises` | `VergelijkenExercise` | `vergelijken` |
-| `afrondenExercises` | `AfrondenExercise` | `afronden` |
+| `afrondenExercises` | `AfrondenExercise` (key through `roundedText`: a whole result keeps the target's decimals, "56,0") | `afronden` |
 | `romeinseExercises` | `RomeinseExercise` | `romeinse-cijfers` |
 | `herleidingExercises` | `HerleidingExercise` | `herleidingen` |
 | `schattendExercises` | `SchattendExercise` | `schattend` |
@@ -489,15 +489,15 @@ only.
 | typeId | MathBlock field | Generator (export) | Viewer | Config plugin | Key constraint keys |
 |---|---|---|---|---|---|
 | `hr-std-optellen` | `exercises` | `generateAdditionExercises` (mathEngine) | `MathBlockRenderer` | `AdditionConfig` | `AddSubConstraints` via `addSubDefaults`: numberType, maxGetal, bridges, operand1/2Mask, equationType |
-| `hr-std-aftrekken` | `exercises` | `generateSubtractionExercises` | `MathBlockRenderer` | `SubtractionConfig` | same as optellen (`addSubDefaults`) |
+| `hr-std-aftrekken` | `exercises` | `generateSubtractionExercises` | `MathBlockRenderer` | `SubtractionConfig` | same as optellen (`addSubDefaults`) MathBlockRenderer draws the compenseren tussenstap from the exercise's own shape (2nd operand 1-2 under a round number), never from the block's stored `preset` |
 | `hr-std-vermenigvuldigen` | `exercises` | `generateMultiplicationExercises` | `MathBlockRenderer` | `MultiplicationConfig` | `MulDivConstraints` via `mulDivDefaults`: multiplicationMode, selectedTables, tableLimit, fractionMultMode |
-| `hr-std-delen` | `exercises` | `generateDivisionExercises` | `MathBlockRenderer` | `DivisionConfig` | `mulDivDefaults`: divisionLevel, metRestLevel, selectedTables, tableLimit |
+| `hr-std-delen` | `exercises` | `generateDivisionExercises` | `MathBlockRenderer` | `DivisionConfig` | `mulDivDefaults`: divisionLevel, metRestLevel, selectedTables, tableLimit Rational whole answers print as the whole number (`wholeOrFraction`, 2026-10-10); 'andere' spreads the quotient at every max |
 | `hr-std-gemengd` | `exercises` | `math/mixedGenerator.ts` (per exercise: pick a VARIANT, build the effective hr-std block, run `mathEngine` + `relax`) | `MathBlockRenderer` | `GemengdConfig` (per-variant tabs mount the four hr-std plugins under a `ConstraintScope`) | `MixedConstraints`: shared AddSub bag + `variants` (8 ids in `MIXED_VARIANTS` = operator × optional preset compenseren/tienvoud), `mix` random/cycle, `perVariant[id]` sparse tab overrides merged by `effectiveBlockFor` (shared → preset defaults → tab). Two leaves (natural / decimal), last under Hoofdrekenen. Per-exercise switch: `regenerateExercise` (§3) |
 | `cijferen-optellen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` (**no fallback**: when the asked bruggen / masks / terms cannot be met — e.g. a REQUIRED brug on the list's top place — it returns fewer or zero exercises with the shared note; mask / brug keys outside `getMaskPlaces(max)` are ignored) | `CijferViewer` (key: a carry is drawn over the column it goes INTO (`col − 1`), × partial products units-first, the staartdeling writes dividend / divisor with their own decimals never rounded and sizes the quotient row by `divQuotientInt` — all SYNC with cijferCells.ts; default 4 exercises, 4 per row at full / 2 at ½ / 1 at ¼ — decimal × 3, decimal : 2; ruitje size = `cijferGrid.ts`, a factor of `--sheet-size-math` × the `gridCellSize` multiplier; grid lines on the half-stroke; ≤3 per row measured from the exercises themselves) | `CijferConfig` | operator, numberType, maxRange, numberOfTerms, bridges, operand0-3Mask; each exercise carries `decimalPlaces` (own-data rule) |
 | `cijferen-aftrekken-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-vermenigvuldigen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-delen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above + withRemainder |
-| `klok-kloklezen` | `clockExercises` | `generateClockExercises` | `ClockExerciseItem` | `ClockConfig` | clockType, is24hour, timeTypes, minuteDirection, handChoice — each exercise carries its own `clockType/exerciseMode/is24hour/handChoice` (own-data rule, 2026-09-13) |
+| `klok-kloklezen` | `clockExercises` | `generateClockExercises` | `ClockExerciseItem` | `ClockConfig` | clockType, is24hour, timeTypes, minuteDirection, handChoice — each exercise carries its own `clockType/exerciseMode/is24hour/handChoice` (own-data rule, 2026-09-13) Written time follows the Flemish rule: 20 over · 21-29 voor half · 31-39 over half · 40+ voor (`formatTimeText`, SYNC clockMath) |
 | `breuken` | `BREUKEN_KIOSK` | only kleuren / herkennen / hoeveelheid(-abstract): kleuren **tap** n of the d parts (a square of d ≥ 5 is a wider rows × cols grid in the kiosk so every part is ≥ 44 px, `kioskSquareGrid`); else a breuk, a count, or the two counting questions |
 | `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: **fill** the partners, the tree's blank or the positietabel on the card |
 | `geld-herkennen` | `geldExercises` | `generateGeldExercises` | `GeldViewer` | `GeldConfig` | maxGetal, format, allowedDenominations, geldLayout |
@@ -506,7 +506,7 @@ only.
 | `geld-teruggeven` | `geldTeruggevenExercises` | `generateGeldTeruggevenExercises` | `GeldTeruggevenViewer` | `GeldTeruggevenConfig` | min/maxPriceEuros, payWithOptions, centenDeel, antwoordType |
 | `mab-herkennen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=herkennen) | `MabConfig` (stijl = inline 3-card row of `ExercisePreview`s, hidden for tekenen) | maxNumber, operand1Mask, mabStyle, scaffolding |
 | `mab-tekenen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=tekenen) | `MabConfig` | maxNumber, operand1Mask, mabStyle, scaffolding |
-| `ordenen` | `ordenenExercises` | `generateOrdenenExercises` | `OrdenenViewer` (click-to-edit; one CSS grid per exercise so blanks sit under their numbers, never wraps) | `OrdenenConfig` + StyleConfig `answerStyle` (lijn/vak) | numberType, count(2–8), operatorMode, maxGetal, minGetal, decimalPlaces, numberMask, min/maxDenominator, unitFractionsOnly, allowMixed |
+| `ordenen` | `ordenenExercises` | `generateOrdenenExercises` | `OrdenenViewer` (click-to-edit; one CSS grid per exercise so blanks sit under their numbers, never wraps) | `OrdenenConfig` + StyleConfig `answerStyle` (lijn/vak) | numberType, count(2–8), operatorMode, maxGetal, minGetal, decimalPlaces, numberMask, min/maxDenominator, unitFractionsOnly, allowMixed Draws strictly under the max (a teacher lower bound stays inclusive) so the width tier never meets "1 000,00"; the key is red + bold; thousands as the app's space, decimals separated by ";" |
 | `breuken-bewerken` | `breukBewerkExercises` | `generateBreukBewerkExercises` | `BreukBewerkViewer` (answer = writing line) | `BreukBewerkConfig` | subType (gemengd/gelijknamig/vereenvoudigen — sidebar leaf), direction (gemengd), gemengd+vereenvoudigen getalopbouw via `FractionMaxField` (`maxNumerator`/`maxDenominator`); vereenvoudigen presets (`tablesOnly`) + `allowIrreducible`; gelijknamig min/maxDenominator range + optional `targetDen` (fixed common noemer, else KGV). Reuses `gcd`/`simplifyFraction`/`toMixedNumber` (exported from mathEngine) |
 | `breuken-rangschikken` | `ordenenExercises` | `generateBreukenRangschikkenExercises` | `OrdenenViewer` (reused) | `BreukenRangschikkenConfig` | fractionMode (stambreuken/gelijknamige/gelijknamig-te-maken/speciale), count(2–5), operatorMode, min/maxDenominator |
 | `getallenrijen` | `getallenasExercises` | `generateGetallenrijExercises` | `GetallenrijenViewer` | `GetallenrijenConfig` | numberType (natural/decimal/rational/geheel — sidebar leaf), maxGetal, step (+custom jump all types), direction (stijgend/dalend/beide), numberMask (anchor; decimal mask dp = step decimals), rational getalopbouw via `FractionMaxField` (noemer=fractionStep, teller=maxTeller), ticks, `showFrame` (Differentiatie toggle, rounded pill on/off); getallenas without the axis line |
@@ -516,7 +516,7 @@ only.
 | `deelbaarheid-kleuren` | `DEELBAARHEID_KLEUR_KIOSK` | rooster / omcirkelen / kleurraster: **tap** every number divisible by the divisor (card shows ≤ 20 numbers) |
 | `getalpatronen` | `patroonExercises` | `generatePatroonExercises` | `PatroonViewer` | `PatroonConfig` | numberType (nat/dec/geheel — leaf), maxGetal, minGetal, ticks, **steps** (1–4 repeating cycle), **ops** (`+ − × :`), **opSettings** per op `{max,mask}` (+/− mask spans the block place range incl. decimals), `maxDecimals` (decimal). Differentiatie (Inspector): `showArrows`, `showOperators`, `operatorsShown`, `operatorStyle` (symbol/full). No frame; `–`/arrow connectors |
 | `deelbaarheid-kleuren` | `deelbaarheidKleurExercises` | `generateDeelbaarheidKleurExercises` | `DeelbaarheidKleurViewer` | `DeelbaarheidKleurConfig` | viewMode (strip/markeren; legacy `raster` still loads and renders as strip+rechthoek), `rasterVorm` (lijn/rechthoek — the old kleurraster is the rechthoek form of the strip, cells in `em` so they follow the font sliders, last row padded to a full rectangle), `divisors[]` (2–12, rotated per row), maxGetal/perRow or rasterCount/rasterCols, `showRest` |
-| `splitsen` (positie-*) | `splitsenExercises` | `generateSplitsenExercises` | `SplitsenViewer` | `SplitsenConfig` | layout positie-tabel/-benen/-math (sidebar leaf), maxGetal(≤1e9), decimalPlaces, operand1Mask, benenVariants[], mathForms[], mathDirection, `mathOrder` (volgorde/gehusseld — the generator shuffles once per exercise into `ex.placeOrder`); columns follow width + maxGetal (benen), positie-math is always 1-up |
+| `splitsen` (positie-*) | `splitsenExercises` | `generateSplitsenExercises` | `SplitsenViewer` | `SplitsenConfig` | layout positie-tabel/-benen/-math (sidebar leaf), maxGetal(≤1e9), decimalPlaces, operand1Mask, benenVariants[], mathForms[], mathDirection, `mathOrder` (volgorde/gehusseld — the generator shuffles once per exercise into `ex.placeOrder`); columns follow width + maxGetal (benen), positie-math is always 1-up Number words put a space after "duizend" ("duizend tweehonderd") |
 | `getallenas` | `getallenasExercises` | `generateGetallenasExercises` | `GetallenasViewer` | `GetallenasConfig` | numberType (natural/decimal/rational/geheel), maxGetal, minGetal, step, fractionStep, direction(+beide), allowMixed, gelijknamig, hardMode, ticks |
 | `temperatuur` | `temperatuurExercises` | `generateTemperatuurExercises` | `TemperatuurViewer` | `TemperatuurConfig` | variant (kleuren/aflezen/verschil — sidebar leaf), mode1/mode2 (verschil), includeNegatives, perRow |
 | `plaatswaarde` | `PLAATSWAARDE_KIOSK` | waarde: a number; plaats: pick the place; omcirkelen: **tap** the place chip; tabel: **fill** the plaatswaardetabel |
@@ -532,10 +532,10 @@ only.
 | `maateenheid` | `MAATEENHEID_KIOSK` | omcirkelen: **tap** a chip; schrijven: type the unit (not schatten + schrijven) |
 | `geld-rekenen` | `geldRekenenExercises` | `generateGeldRekenenExercises` | `GeldRekenenViewer` | `GeldRekenenConfig` | subType (korting/winst/intrest — leaf), percents[] (pool differs per variant), maxEuro, wholeEuros, halfYear (intrest pro rata); cents internal, whole-cent answers guaranteed, `formatEuro` |
 | `rekenvolgorde` | `rekenvolgordeExercises` | `generateRekenvolgordeExercises` | `RekenvolgordeViewer` (reads `useBlockWidth()`; digits at the `*1` math factor, SYNC with MathBlockRenderer) | `RekenvolgordeConfig` + `RekenvolgordeStyleConfig` (Kort / Lang / Stappen → `layoutPreset` inline-short 2-up / inline-long 1-up full-width line / stepped N `steppedLines`, 2-up while two rows keep the writing room, like hoofdrekenen) | operators[] (≥1 ×/: enforced), opsCount (2/3), maxGetal, haakjes (only planted when they change the outcome); tokens rendered verbatim |
-| `kettingsommen` | `patroonExercises` (reused) | `generateKettingExercises` | `PatroonViewer` (reused) | `KettingConfig` | ops[] (no two equal in a row), opSettings per op, chainLength (3–5; cycle length = ticks−1), maxGetal, blankMiddle; defaults force showArrows/showOperators + operatorStyle 'full' |
+| `kettingsommen` | `patroonExercises` (reused) | `generateKettingExercises` | `PatroonViewer` (reused) | `KettingConfig` | ops[] (no two equal in a row), opSettings per op, chainLength (3–5; cycle length = ticks−1), maxGetal, blankMiddle; defaults force showArrows/showOperators + operatorStyle 'full' Every value after the start is blank by default; `showIntermediates` ("Tussenresultaten tonen") prints them; the start goes up to max/5 |
 | `getalfunctie` | `GETALFUNCTIE_KIOSK` | aankruisen: **tap** the functie; schrijven: text |
 | `tijdsduur` | `tijdsduurExercises` | `generateTijdsduurExercises` | `TijdsduurViewer` | `TijdsduurConfig` | granularity[] (heel-uur/kwartier/vijf-min/een-min), blanks[] (duur/einde/begin, rotates), maxDuurMin (60/240/720), overMidnight (einde prints "(volgende dag)") |
-| `kalender` | `kalenderExercises` | `generateKalenderExercises` | `KalenderViewer` | `KalenderConfig` | subType (maandrooster/datum-rekenen/notatie — leaf), questionTypes[] + questionCount (rooster), month (random/0–11), year (pinned 2026 for stable regeneration); ma-first CSS-grid month |
+| `kalender` | `kalenderExercises` | `generateKalenderExercises` | `KalenderViewer` | `KalenderConfig` | subType (maandrooster/datum-rekenen/notatie — leaf), questionTypes[] + questionCount (rooster), month (random/0–11), year (pinned 2026 for stable regeneration); ma-first CSS-grid month Leaves datum-rekenen / notatie carry `defaultCount: 4`; maandrooster stays 1 |
 | `controleren` | `CONTROLEREN_KIOSK` | **tap** juist or fout on the card |
 | `oppervlakte` | `meetExercises` (reused, + `area`) | `generateOppervlakteExercises` | `OppervlakteViewer` | `OppervlakteConfig` | subType (rooster = 1 cm grid count, whole-cm rect/L-figuur / berekenen = l×b, ½·b·h for rechth. driehoek — leaf), shapes[], min/maxLength sliders, scaffoldFormule (`opp = ___ × ___ = ___`), askOmtrek; SYNC cm→px 37.8 with MetenViewer |
 | `weegschaal` | `weegschaalExercises` | `generateWeegschaalExercises` | `WeegschaalViewer` | `WeegschaalConfig` | mode (aflezen = black needle / kleuren = no needle, the pupil shades the dial from 0 to the value, solution paints that wedge in `SOL` — leaf; a legacy `tekenen` loads as kleuren), bereikGram (1000/2000/5000) with dependent stepGram (BEREIK_STEPS), notatie (g/kg-komma/kg-g), exercisesPerRow, boxHeight; values snap to the schaalverdeling; each exercise carries its own `bereikGram/stepGram/notatie/mode` (own-data rule) |
@@ -1306,7 +1306,7 @@ src/
 │   ├── useBoardStore.tsx        # the second Zustand store: pages, widgets, ink, drawOptions, instruments (toggle / update / remove / hide all / select), tools, selection/inspector; addWidget merges mijn standaard; module-init hydration + 1.5 s autosave (§3, §14)
 │   ├── boardBlocks.ts           # exercise cards: makeBoardBlock (seedConstraints) + sheetSeedContext, regenerateBoardBlock (generateForBlock), resizeBoardBlock (generateExtra), withFreshIds
 │   ├── boardPersistence.ts      # BOARD_FORMAT_VERSION 2 (reads 1), strict parseBoardFile (+ cleanWidgetProps, instrument parsing), autosave, "Mijn borden" presets (cap 30, false on quota), file export
-│   ├── widgetSizing.ts          # NATURAL_W / titles / KINDS_WITH_SETTINGS (every kind) + the older normalisers (klok, weer, datum, groepjes + makeGroups, …), class-list key; re-exports dobbelProps / ademProps
+│   ├── widgetSizing.ts          # NATURAL_W / titles / KINDS_WITH_SETTINGS (every kind) / cardFitZoom + the older normalisers (klok, weer, datum, groepjes + makeGroups, …), class-list key; re-exports dobbelProps / ademProps
 │   ├── addWidgets.ts            # staggerSlot / staggerPos (first free slot) + addBasicWidget
 │   ├── toolCatalog.ts           # TOOL_CATALOG (Wiskunde-gereedschap / Klasmanagement / Organisatie tiles), runTool, ★ favorites (max 6)
 │   ├── backgrounds.ts           # page backgrounds: pattern × white/black × size, pure CSS gradients; backgroundStyle(bg, zoom) for preview tiles
@@ -1316,7 +1316,7 @@ src/
 │   ├── settings/                # widget ⚙ system (§14 "Widget settings")
 │   │   ├── registry.ts          # WIDGET_SETTINGS: one panel per kind (20)
 │   │   ├── BaselineSettings.tsx # Kaart (titel, titelbalk, tekstgrootte, accentkleur) + Standaard (save / reset) under every panel
-│   │   ├── baseProps.ts         # FONT_SIZES, fontScale, SELF_SCALED_FONT, ACCENT_PALETTE, widgetAccent, useSetProps (live merge)
+│   │   ├── baseProps.ts         # FONT_SIZES, fontScale, SELF_SCALED_FONT, ACCENT_PALETTE, widgetAccent, useSetProps (live merge), cardTextScale / cardLayoutWidth (shared by the frame fit and positietabel)
 │   │   ├── controls.tsx         # the shared kit: Section, Row, Toggle, Segmented, Slider, fields, ColorSwatches / ColorDot, IconPicker, ListEditor, ResetRow, SaveDefaultRow
 │   │   ├── mathControls.tsx     # NumberField (half-typed values), PaletteRow (pastel fills)
 │   │   ├── ChoiceButtons.tsx    # wrapping one-of-many buttons (tones)
@@ -1333,7 +1333,7 @@ src/
 │   └── components/
 │       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'; board Ctrl+Z / Ctrl+Y → ink undo / redo
 │       ├── BoardPageCanvas.tsx  # one page: background, isolated widget layer, ink layer, instrument layer, geld dock; text-tool placement, 🔄 / 👁 wiring
-│       ├── WidgetFrame.tsx      # window-card chrome: title bar drag, actions, accent dot, headerless pill, resize grip, zoom = w / NATURAL_W × font size, height cap
+│       ├── WidgetFrame.tsx      # window-card chrome: title bar drag, actions, accent dot, headerless pill, resize grip, zoom = w / NATURAL_W × font size, height cap; a third wrapper `[data-widget-fit]` at `cardLayoutWidth` zooms content wider than the body down (`cardFitZoom`, 0.97 margin, 0.01 dead-band against font-rounding loops)
 │       ├── BoardBottomBar.tsx   # Toevoegen + favorites, board settings, achtergrond, tools (L / V keys), Meetinstrumenten popover + Vastklikken, ink undo/redo, pages, save/presets/import, Bordmodus verlaten; popups close on Escape/outside
 │       ├── BackgroundPicker.tsx # achtergrond popover: live preview tiles for pattern / size / board colour, arrow-key grid
 │       ├── BoardAddModal.tsx    # "RekenRaak blok…" single-add picker: exerciseCatalog + ExercisePreview, search over variants/typeIds/tools
@@ -2058,7 +2058,7 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 
 | Field | Contract |
 |---|---|
-| `input` | the typical input: `number` · `number+rest` (quotiënt + rest, both must match) · `choice` · `missing-operand` (the blank of a puntoefening) · `text` (a word on the device keyboard: Romeins, a unit) · `time` (uur + min) · `multi-number` (one field per blank) · `interactive` (Phase C: the pupil answers ON the exercise, see `interact`) |
+| `input` | the typical input: `number` · `number+rest` (quotiënt + rest, both must match) · `choice` · `missing-operand` (the blank of a puntoefening) · `text` (a word on the device keyboard: Romeins, a unit) · `time` (uur + min) · `multi-number` (one field per blank) · `number+unit` (herleidingen with writeUnits: keypad number + the measure's WHOLE unit ladder as choice buttons from the settings; checked by VALUE through `unitFactors` with exact scaled integers, so 1 m 20 = 120 cm = 12 dm; typing the given quantity back in its own unit counts as wrong - the copy guard) · `interactive` (Phase C: the pupil answers ON the exercise, see `interact`) |
 | `inputOf(ex, c)?` | per-exercise refinement (a puntoefening or met-rest row in an hr block, a unit-blank herleiding) |
 | `choices?` / `choicesOf(ex, c)?` | the buttons, in order; `choicesOf` for per-exercise buttons (the row's numbers in vergelijken kiezen) |
 | `labels(ex, c)?` | multi-number field names (kg / g, euro / cent); named fields get a caption, numeric ones read left to right |
@@ -2077,6 +2077,8 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 | `extraKeys?(ex, c)` / `KioskExtraKey` | fill-cells action keys beside the character keys: `{ id, label, hotkeys?, hint?, apply(state, activeCell, ex, c) }`; `apply` returns the new card state or `null` (no change). The Keypad draws each, `Kiosk` maps the hotkeys while a card cell is active, `pressExtra(id)` runs it. From the operator / settings, never the answer. Cijferen aftrekken: Lenen |
 | `kioskInstruction?` | the card header when the paper instruction names a pen verb (omcirkel, kleur, vul in) or a paper-only answer ("in woorden") but the kiosk asks a tap or a typed cell (klok analoog lezen: "Lees de klok en typ de tijd (uu:mm)."; breuken kleuren: "Kleur 3/6 in." and the card hides its own prompt under the context); string or `(ex, c) => string \| undefined`. A teacher's own wording wins; the leaf's default gives way to this (`kioskInstructionOf`) |
 | `interact?` / `interactOf(c)?` | required whenever `input` / `inputOf` can be `interactive`: `{ kind, answerOf, fromState, keys?, cellOf?, show? }` (rows below). `interactOf` picks per SETTINGS (plaatswaarde: tap a letter or fill the tabel; undefined falls back to `interact`); read both through `kioskInteractOf(d, c)` |
+| `unitFactors?(c)` | number+unit: the ladder's factors to the base unit (massa stops at kg: the generator has no ton) |
+| `showAnswer?(ex, c)` | stats error-row text when `display` would read as a riddle: "analoge klok toont 4:45: hoe laat?", "hoek van 120°: welke soort?", geld "€ 2,65" |
 | `supported(c)?` | settings this descriptor can check (splitsen: four layouts; breuken: kleuren / herkennen / hoeveelheid); `kioskSupports` evaluates it over the registry defaults + the leaf's; the builder excludes an unsupported row with a hint |
 
 [check.ts](../../src/services/oefenen/check.ts) normalises before comparing: numbers drop
@@ -2287,6 +2289,15 @@ on the end screen; rows are named by `kioskLabel` (domain · type · detail) and
 the session title. Mijn bladen › Oefensessies: Delen / Bewerken / hernoemen / **Dupliceren**
 (`duplicateOefenSessie`, new id, " (kopie)") / verwijderen. Builder-reachable settings that generate
 nothing are pinned per leaf in `oefenen.zeroOutput.test.ts` (DEAD table; a new one fails the gate).
+
+### Card content rules (clean sweep 2026-10-10)
+
+- Headers: `kioskInstructionOf` turns "Schrijf …" into "Typ …"; the instruction test bans "schrijf" and "in woorden".
+- Under `ScaffoldProvider(false)` the card also hides: the schattend tussenstap, geld-teruggeven's sprong + "__ euro en __ cent", breuken-hoeveelheid's ": × =" rows, oppervlakte's "opp = __ × __", and the klok / vormleer / MAB writing line (`oefenen.cardScaffold.test.tsx`; sheet byte-identical).
+- Tray: every piece shows "gelegd: n" with -/+, a help line under it, scrolls from its top when tall; the kiosk duizendtal is a labelled "1000" cube (`MabBlocksSVG` optional `kiosk` prop; sheet and board unchanged).
+- Breuken kleuren with a prime noemer ≥ 11 draws two rows of equal-area parts (every part ≥ 44 px on 844×390).
+- A leaf index past `KIOSK_LEAF_TABLE_V1` → "Werk de app bij" (reload hint), not "ongeldig".
+- Met rest: deeltafels the mode does not list show greyed with a note; no deler > 1 picked → warning (config).
 
 ### Harnesses
 
