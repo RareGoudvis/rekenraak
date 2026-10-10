@@ -324,7 +324,9 @@ describe('MAB herkennen (symbolic): pieces are big enough to count and still fit
 const CM_PX = 96 / 2.54;
 const NOT_TRUE_SIZE = 'niet op ware grootte';
 
-describe('real-size figures: true size when they fit, else scaled down and labelled', () => {
+// Owner decision 2A (2026-10-10): the generators cap every figure to its column, so the viewers
+// always draw true size and never scale one down (the "niet op ware grootte" path is gone).
+describe('real-size figures: always true size', () => {
     const meten = (typeId: string, exs: unknown[]) => ({ id: 'b', typeId, constraints: { measureModel: 'meten', answerMode: 'single', answerUnit: 'cm' }, meetExercises: exs }) as unknown as MathBlock;
     const square = (cm: number) => ({ id: `s${cm}`, kind: 'veelhoek', shape: 'vierkant', points: [{ x: 0, y: 0 }, { x: cm, y: 0 }, { x: cm, y: cm }, { x: 0, y: cm }], sides: [cm, cm, cm, cm], perimeter: 4 * cm, isManuallyEdited: false });
     const line = (cm: number) => ({ id: `l${cm}`, kind: 'lijn', points: [{ x: 0, y: 0 }, { x: cm, y: 0 }], sides: [cm], perimeter: cm, isManuallyEdited: false });
@@ -332,14 +334,12 @@ describe('real-size figures: true size when they fit, else scaled down and label
         const xs = el.getAttribute('points')!.split(' ').map(pt => Number(pt.split(',')[0]));
         return Math.max(...xs) - Math.min(...xs);
     };
-    test.each([['omtrek', W.full], ['omtrek', W.half], ['lengte-meten', W.full]])('%s 18 cm in %ipx', (typeId, width) => {
+    test.each([['omtrek', W.full], ['omtrek', W.half], ['lengte-meten', W.full]])('%s 18 cm in %ipx: drawn 18 cm, no note', (typeId, width) => {
         const ex = typeId === 'omtrek' ? square(18) : line(18);
         const { container } = at(width, <MetenViewer block={meten(typeId, [ex])} showSolutions />);
-        for (const svg of container.querySelectorAll('svg')) expect(Number(svg.getAttribute('width'))).toBeLessThanOrEqual(width);
         const shape = container.querySelector('polygon, polyline')!;
-        expect(polygonWidth(shape)).toBeLessThan(18 * CM_PX);
-        expect(container.textContent).toContain(NOT_TRUE_SIZE);
-        // The key still states the real length.
+        expect(polygonWidth(shape)).toBeCloseTo(18 * CM_PX, 0);
+        expect(container.textContent).not.toContain(NOT_TRUE_SIZE);
         expect(container.textContent).toContain(typeId === 'omtrek' ? '72' : '18');
     });
     test('a 6 cm square is drawn true size, without the note', () => {
@@ -361,9 +361,9 @@ describe('real-size figures: true size when they fit, else scaled down and label
         expect(segmentPx(container)).toBeCloseTo(12 * CM_PX, 0);
         expect(container.textContent).not.toContain(NOT_TRUE_SIZE);
     });
-    test('breuken-lijnstuk 12 cm in a quarter is scaled and says so', () => {
+    test('breuken-lijnstuk 12 cm in a quarter is still drawn 12 cm, without a note', () => {
         const { container } = at(W.quarter, <FractionViewer block={lijnstuk(12)} showSolutions />);
-        expect(segmentPx(container)).toBeLessThan(W.quarter);
-        expect(container.textContent).toContain(NOT_TRUE_SIZE);
+        expect(segmentPx(container)).toBeCloseTo(12 * CM_PX, 0);
+        expect(container.textContent).not.toContain(NOT_TRUE_SIZE);
     });
 });

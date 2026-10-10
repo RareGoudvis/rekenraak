@@ -399,25 +399,18 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         const partLength = parseFloat((cm / ex.denominator).toFixed(2));
         const arcLength  = parseFloat((partLength * ex.numerator).toFixed(2));
 
-        // True size (1 cm at 96 dpi) whenever the segment fits the column: the child measures
-        // it and the key says "12 cm : 6". It used to cap at half the column, so a 12 cm
-        // segment was drawn ~8.9 cm under a 12 cm key. Too long for the column → scaled down
-        // and labelled, the key keeps the real length.
-        const trueWidth = cm * CM_PX;
-        const lineWidth = Math.min(trueWidth, columnWidth);
-        const notTrueSize = lineWidth < trueWidth - 0.5;
+        // Always true size (1 cm at 96 dpi): the child measures it against a "12 cm : 6" key, and
+        // the generator caps the length to the column it prints in (owner decision 2A, trueSize.ts).
+        const lineWidth = cm * CM_PX;
 
         // Borders (not background-color) so the segment line always prints, even with
         // the print dialog's "Background graphics" off.
         const lineEl = (
-            <>
-                <div style={{ width: `${lineWidth}px`, display: 'flex', alignItems: 'center', margin: '10px 0' }}>
-                    <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
-                    <div style={{ flex: 1, height: 0, borderTop: '2px solid #000' }} />
-                    <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
-                </div>
-                {notTrueSize && <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.6)', fontStyle: 'italic' }}>niet op ware grootte</span>}
-            </>
+            <div style={{ width: `${lineWidth}px`, display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+                <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
+                <div style={{ flex: 1, height: 0, borderTop: '2px solid #000' }} />
+                <div style={{ width: 0, height: '16px', borderLeft: '2px solid #000' }} />
+            </div>
         );
 
         const instructions = (
