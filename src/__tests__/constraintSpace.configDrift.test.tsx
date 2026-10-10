@@ -26,3 +26,25 @@ describe('constraintSpace matches the Config buttons', () => {
         expect(constraintSpaceFor(typeId)[key]).toEqual(offered);
     });
 });
+
+// One row per hand-listed option the Config offers as a range slider: the sweep stays inside
+// the slider and reaches both ends.
+const SLIDERS: { typeId: string; key: string; label: RegExp; constraints?: Record<string, unknown> }[] = [
+    { typeId: 'kalender', key: 'questionCount', label: /^Aantal vragen per rooster/, constraints: { subType: 'maandrooster' } },
+];
+
+describe('constraintSpace stays inside the Config sliders', () => {
+    test.each(SLIDERS)('$typeId $key', ({ typeId, key, label, constraints }) => {
+        const { Config } = EXERCISE_UI[typeId];
+        const { container } = render(<Config block={makeBlock(typeId, { id: 'b', constraints })} />);
+        const lbl = [...container.querySelectorAll('label')].find(l => label.test((l.textContent ?? '').trim()));
+        const slider = lbl?.parentElement?.querySelector<HTMLInputElement>('input[type="range"]');
+        expect(slider, `${typeId}: no "${label}" slider rendered`).toBeTruthy();
+        const [min, max] = [Number(slider!.min), Number(slider!.max)];
+        const values = constraintSpaceFor(typeId)[key] as number[];
+        for (const v of values) expect(v).toBeGreaterThanOrEqual(min);
+        for (const v of values) expect(v).toBeLessThanOrEqual(max);
+        expect(values).toContain(min);
+        expect(values).toContain(max);
+    });
+});

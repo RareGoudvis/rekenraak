@@ -67,8 +67,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Tooling
 
-- `constraintSpace` lists kalender `questionCount` [1, 5, 10] while KalenderConfig's slider offers 3-8
-  (split off the kalender defaultCount line, fixed by S1 2026-10-09). 2026-09-27
 
 ## Bordmodus
 

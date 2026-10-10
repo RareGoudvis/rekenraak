@@ -491,7 +491,8 @@ const tijdsduurSpace: OptionSpace = {
 const kalenderSpace: OptionSpace = {
     subType: ['maandrooster', 'datum-rekenen', 'notatie'],
     questionTypes: [['dag-van-datum'], ['datum-van-dag'], ['tellen'], ['dag-van-datum', 'datum-van-dag', 'tellen']],
-    questionCount: [1, 5, 10],
+    // KalenderConfig's slider: 3-8 vragen per rooster (configDrift pins it).
+    questionCount: [3, 5, 8],
     month: ['random', 0, 1, 11],
     year: [2024, 2026],
 };
