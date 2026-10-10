@@ -34,10 +34,9 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   maxLineLength to the column's cm width instead of scaling one segment. 2026-09-27
 - Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept
   every glyph count). 2026-09-27
-- Getalpatronen at its max (100 000): every five-digit term breaks at its thousands space ("97 /
-  055") at every width, w4 included. Fix: nowrap per number, column width from monoTextPx. 2026-09-27
-- patronen-geh DEFAULT: the en-dash separator next to negative terms reads "-53 – -43 – -33".
-  Fix: another separator (or a wider gap) when a term is negative. 2026-09-27
+- getalpatronen pw009 {decimal, max 10 000, 2 decimals, 10 ticks}: ten 8-glyph terms need ~780 px
+  even at the 0.7 term-font floor, so the row runs past a full-width cell (it wrapped inside its
+  terms before 2026-10-10). Fix: wrap the chain onto a second line below the floor. 2026-10-10
 - Herleidingen: the red answer wraps inside its slot, splitting a number ("977 a 445 cm² = 977 000 /
   445 cm²" at the herleidingen-oppervlakte DEFAULT, every width; "92 189 / 777 dg" pw008). Compound
   answers print zero parts ("71 dl 0 cl 0 ml"). Fix: size the slot from the answer (nowrap). 2026-09-27

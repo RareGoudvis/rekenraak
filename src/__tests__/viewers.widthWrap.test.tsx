@@ -5,7 +5,9 @@ import type { ReactElement } from 'react';
 import { BlockWidthProvider, cellWidthPx } from '../components/viewer/BlockWidthContext';
 import GetallenasViewer from '../components/viewer/GetallenasViewer';
 import EvenOnevenViewer from '../components/viewer/EvenOnevenViewer';
+import PatroonViewer from '../components/viewer/PatroonViewer';
 import { monoTextPx } from '../services/layout/blockLayout';
+import { formatMathNumber } from '../services/math/formatters';
 import type { MathBlock, GetallenasExercise } from '../services/math/types';
 
 // Sweep S5 (width & wrap): jsdom has no layout, so these read the px the viewers put in
@@ -65,5 +67,44 @@ describe('even-oneven rooster: cells hold their number on one line and share bor
         // One track per cell, one px narrower than the cell: neighbours overlap on the shared border.
         const track = /repeat\(\d+, (.+)\)$/.exec(grid.style.gridTemplateColumns)![1];
         expect(mathCalcPx(track)).toBeCloseTo(mathCalcPx(cells[0].style.width) - 1, 3);
+    });
+});
+
+describe('getalpatronen: terms never break and the row fits its column', () => {
+    const block = (values: number[][], c: Record<string, unknown> = {}) => ({
+        id: 'b', typeId: 'getalpatronen', constraints: c,
+        patroonExercises: values.map((v, i) => ({ id: `p${i}`, values: v, blankMask: v.map((_, j) => j >= v.length - 2), cycle: [{ op: '+', operand: 10 }], isManuallyEdited: false })),
+    }) as unknown as MathBlock;
+    // The row's own font factor, from the grid's `calc(var(--sheet-size-math) * f)`.
+    const factorOf = (el: HTMLElement) => Number(/\* ([\d.]+)\)/.exec(el.style.fontSize)![1]);
+    test.each([
+        ['five-digit terms, 6 ticks', [[97_055, 97_065, 97_075, 97_085, 97_095, 97_105]], W.full],
+        ['four-digit terms, 6 ticks, half', [[9_055, 9_065, 9_075, 9_085, 9_095, 9_105]], W.half],
+        ['five-digit terms, 10 ticks', [Array.from({ length: 10 }, (_, i) => 90_005 + 1_000 * i)], W.full],
+    ])('%s', (_n, values, width) => {
+        const { container } = at(width, <PatroonViewer block={block(values)} showSolutions />);
+        const row = container.querySelector('.print-exercise') as HTMLElement;
+        const f = factorOf(row);
+        const chars = Math.max(...values.flat().map(v => formatMathNumber(v).length));
+        const numberCells = [...row.children].filter((_, i) => i % 2 === 0) as HTMLElement[];
+        for (const cell of numberCells) expect(cell.style.whiteSpace).toBe('nowrap');
+        // Track minimums: every number track holds the widest term at the row's factor ...
+        const mins = [...row.style.gridTemplateColumns.matchAll(/minmax\(([\d.]+)px/g)].map(m => Number(m[1]));
+        expect(mins.length).toBe(values[0].length * 2 - 1);
+        expect(mins[0]).toBeGreaterThanOrEqual(monoTextPx(chars, f, MATH_PX));
+        // ... and the whole row, gaps included, fits the column.
+        const gaps = (mins.length - 1) * px(row.style.columnGap);
+        expect(mins.reduce((a, b) => a + b, 0) + gaps).toBeLessThanOrEqual(width);
+    });
+    test('negative terms are separated by a semicolon, with a true minus', () => {
+        const { container } = at(W.full, <PatroonViewer block={block([[-53, -43, -33, -23]])} showSolutions />);
+        const text = container.textContent!;
+        expect(text).not.toContain('–');
+        expect(text).toContain('−53;');
+        expect(text).not.toMatch(/-\d/);
+    });
+    test('a block without negatives keeps the dash', () => {
+        const { container } = at(W.full, <PatroonViewer block={block([[3, 13, 23]])} showSolutions />);
+        expect(container.textContent).toContain('–');
     });
 });
