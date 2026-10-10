@@ -13,6 +13,7 @@ import RekenvolgordeViewer from '../components/viewer/RekenvolgordeViewer';
 import RomeinseViewer from '../components/viewer/RomeinseViewer';
 import ProcentenViewer from '../components/viewer/ProcentenViewer';
 import CijferViewer from '../components/viewer/CijferViewer';
+import OrdenenViewer from '../components/viewer/OrdenenViewer';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
@@ -238,5 +239,21 @@ describe('narrow cells: an equation never breaks inside its sentence or a number
         const { container } = at(W.quarter, <CijferViewer block={block} showSolutions={false} />);
         expect(container.textContent).toContain('3 120 + 1 445 + 28 + 2 906 =');
         groupedNumbersNowrap(container);
+    });
+});
+
+describe('ordenen: the key is red AND bold (viewer rule 3)', () => {
+    test.each([
+        ['natural', [305, 42, 1_250]],
+        ['rational', [{ n: 1, d: 4 }, { n: 1, d: 2 }, { n: 3, d: 4 }]],
+    ])('%s', (numberType, values) => {
+        const block = { id: 'b', typeId: 'ordenen', constraints: { numberType, count: 3 }, ordenenExercises: [{ id: 'o', values, display: values, operator: '<', isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <OrdenenViewer block={block} showSolutions />);
+        const red = [...container.querySelectorAll<HTMLElement>('[style*="--ink-solution"]')];
+        expect(red.length).toBeGreaterThan(0);
+        for (const el of red) {
+            const weight = el.style.fontWeight || (el.closest('[style*="font-weight"]') as HTMLElement | null)?.style.fontWeight;
+            expect(weight, el.textContent ?? '').toBe('700');
+        }
     });
 });
