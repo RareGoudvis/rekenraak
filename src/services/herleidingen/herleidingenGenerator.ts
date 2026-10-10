@@ -25,6 +25,7 @@ export function ladderFor(measure: string): Unit[] {
 
 const ALL_FORMATS = ['enkel-getal', 'enkel-eenheid', 'samengesteld-enkel', 'enkel-samengesteld'] as const;
 const MAX_ATTEMPTS = 20000;
+const CAP_PATIENCE = 2000;
 
 const ri = (n: number) => 1 + Math.floor(Math.random() * Math.max(1, n)); // 1..n
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -162,13 +163,18 @@ export function generateHerleidingExercisesNoted(block: MathBlock): { items: Her
         return bF <= Number.MAX_SAFE_INTEGER && bF === baseOf(ex.toParts);
     };
 
+    // The biggest number either side of the '=' shows (maxWaarde); a settings combination that can never fit
+    // (km → mm under 10 000) drops the cap rather than return an empty block.
+    const capOn = () => c.maxWaarde !== undefined && !(out.length === 0 && attempts >= CAP_PATIENCE);
+    const tooBig = (ex: HerleidingExercise) => c.maxWaarde !== undefined && ex.fromParts.concat(ex.toParts).some(p => p.value > c.maxWaarde!);
+
     const out: HerleidingExercise[] = [];
     const seen = new Set<string>();
     let attempts = 0;
     while (out.length < count && attempts < MAX_ATTEMPTS) {
         attempts++;
         const ex = build(pick(formats));
-        if (!ex || !isExact(ex)) continue;
+        if (!ex || !isExact(ex) || (capOn() && tooBig(ex))) continue;
         const key = `${ex.format}|${ex.fromParts.map(p => p.key + p.value).join(',')}=${ex.toParts.map(p => p.key + p.value).join(',')}|${ex.blank}`;
         if (seen.has(key)) continue;
         seen.add(key);

@@ -551,7 +551,7 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'herleidingen-lengte', shortLabel: 'Herleiden · lengte', label: 'Lengte', typeId: 'herleidingen', defaultConstraints: { measure: 'lengte', units: ['m', 'dm', 'cm', 'mm'] }, instruction: 'Zet om.' },
                     { id: 'herleidingen-inhoud', shortLabel: 'Herleiden · inhoud', label: 'Inhoud', typeId: 'herleidingen', defaultConstraints: { measure: 'inhoud', units: ['l', 'dl', 'cl', 'ml'] }, instruction: 'Zet om.' },
                     { id: 'herleidingen-massa', shortLabel: 'Herleiden · massa', label: 'Massa', typeId: 'herleidingen', defaultConstraints: { measure: 'massa', units: ['kg', 'dag', 'g', 'dg'] }, instruction: 'Zet om.' },
-                    { id: 'herleidingen-oppervlakte', shortLabel: 'Herleiden · oppervlakte', label: 'Oppervlakte', typeId: 'herleidingen', defaultConstraints: { measure: 'oppervlakte', units: ['m²', 'dm²', 'cm²', 'a', 'ca', 'ha'] }, instruction: 'Zet om.' },
+                    { id: 'herleidingen-oppervlakte', shortLabel: 'Herleiden · oppervlakte', label: 'Oppervlakte', typeId: 'herleidingen', defaultConstraints: { measure: 'oppervlakte', units: ['m²', 'dm²', 'cm²', 'a', 'ca', 'ha'], maxWaarde: 999_999 }, instruction: 'Zet om.' },
                 ],
             },
         ],

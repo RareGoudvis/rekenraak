@@ -626,6 +626,21 @@ const fitAxisSpan = (c: Record<string, unknown>): Record<string, unknown> => {
 const fitKettingGrade = (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>): Record<string, unknown> =>
     grade != null && grade <= 2 && !(override && 'showIntermediates' in override) ? { ...c, showIntermediates: true } : c;
 
+// Herleidingen (minimumdoelen): until leerjaar 3 no number passes 10 000, and square-unit compounds
+// (dm² + cm²) only start in leerjaar 5. The cap only ever lowers; an author's own formats win.
+const HERLEID_L3_MAX = 10_000;
+const COMPOUND_FORMATS = ['samengesteld-enkel', 'enkel-samengesteld'];
+const fitHerleidingenGrade = (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>): Record<string, unknown> => {
+    if (grade == null) return c;
+    const next = { ...c };
+    if (grade <= 3) next.maxWaarde = Math.min(Number(c.maxWaarde ?? Infinity), HERLEID_L3_MAX);
+    if (grade < 5 && c.measure === 'oppervlakte' && !(override && 'formats' in override)) {
+        const formats = ((c.formats as string[] | undefined) ?? []).filter(f => !COMPOUND_FORMATS.includes(f));
+        next.formats = formats.length ? formats : ['enkel-getal'];
+    }
+    return next;
+};
+
 // (merged constraints, the picked leerjaar, the leaf / author override) → the fitted seed.
 export const SEED_FIT: Record<string, (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>) => Record<string, unknown>> = {
     'afronden': fitRoundTargets,
@@ -633,6 +648,7 @@ export const SEED_FIT: Record<string, (c: Record<string, unknown>, grade?: numbe
     'getallenas': fitAxisSpan,
     'getallenrijen': fitAxisSpan,
     'kettingsommen': fitKettingGrade,
+    'herleidingen': fitHerleidingenGrade,
 };
 
 // An old save or share link can hold a max its picker no longer lists (the 1e10 leerjaar-6
