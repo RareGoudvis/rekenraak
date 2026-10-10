@@ -278,10 +278,10 @@ type FloorRule = (block: MathBlock) => WidthUnits;
 // on how wide ONE exercise's number/blank row prints, so this is the single function both
 // read — SYNC: OrdenenViewer.tsx imports it rather than re-deriving the estimate by hand.
 // Numbers print in Azeret Mono at 1 × the math token, estimated at the sheet default (13pt =
-// 17.33px); `+8` is per-number breathing room (the underline's own padding), `SEP_PX` is the
-// comma/operator glyph plus its flex gap.
+// 17.33px). Between two numbers the viewer prints one ","/";" glyph inside the number's cell and
+// then a 22px grid track (OrdenenViewer gridTemplateColumns), so a gap costs 22px + one glyph.
 const ORDENEN_DEFAULT_MATH_PX = 17.33;
-const ORDENEN_SEP_PX = 20;
+const ORDENEN_SEP_TRACK_PX = 22; // SYNC: OrdenenViewer gridTemplateColumns separator track
 
 /** Widest printed value's character count, estimated from SETTINGS rather than exercises
  *  (this runs before any exercise exists — first paint / the Inspector). */
@@ -312,7 +312,8 @@ export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): num
 /** Estimated px width of ONE exercise's row of `count` numbers/blanks, at the sheet default. */
 export function ordenenRowPx(typeId: string, c: Record<string, unknown>, count: number): number {
     const maxChars = ordenenMaxChars(typeId, c);
-    return count * (monoTextPx(maxChars, 1, ORDENEN_DEFAULT_MATH_PX) + 8) + Math.max(0, count - 1) * ORDENEN_SEP_PX;
+    const gap = ORDENEN_SEP_TRACK_PX + monoTextPx(1, 1, ORDENEN_DEFAULT_MATH_PX);
+    return count * monoTextPx(maxChars, 1, ORDENEN_DEFAULT_MATH_PX) + Math.max(0, count - 1) * gap;
 }
 
 // A row that does not fit a half cell (330px, minus one column-gap reserved for a possible
