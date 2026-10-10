@@ -1,5 +1,7 @@
 import type { MathBlock, MeetExercise, MeetPoint } from '../math/types';
 import type { MetenConstraints } from '../math/constraintTypes';
+import { formatMathNumber } from '../math/formatters';
+import { MAX_MATH_PX, monoPx, trueSizeBudgetCm } from '../layout/trueSize';
 
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -19,8 +21,67 @@ function pickLen(min: number, max: number, precision: string): number {
 
 const dist = (a: MeetPoint, b: MeetPoint) => Math.hypot(b.x - a.x, b.y - a.y);
 
+// ── true size (owner 2026-10-10) ─────────────────────────────────────────────
+// Every figure prints at true size, so it must fit its column: the drawn span (width AND height)
+// is capped to the column's cm budget. SYNC: MetenViewer pad — OFFSET 22 + the widest side label
+// ("99,9 cm" at 0.7 of the math font) + 4 a side, 42 bare / 64 with per-side blanks; judged at the
+// largest Cijfers font (16pt) so a bigger font never pushes a true-size figure out.
+const LABEL_FONT = 0.7;
+function figurePadPx(c: MetenConstraints, scaffoldBlanks: boolean): number {
+    const labeled = (c.measureModel ?? 'meten') === 'gegeven';
+    const sideScaffold = scaffoldBlanks && (c.perSideScaffold ?? false);
+    const labelPx = labeled ? monoPx('99,9 cm'.length, LABEL_FONT, MAX_MATH_PX)
+        : sideScaffold ? 38 + 3 + monoPx(2, LABEL_FONT, MAX_MATH_PX) : 0;
+    return Math.max(sideScaffold ? 64 : 42, Math.ceil(22 + labelPx + 4));
+}
+const figureBudgetCm = (block: MathBlock, scaffoldBlanks: boolean) =>
+    trueSizeBudgetCm(block, 2 * figurePadPx(block.constraints as MetenConstraints, scaffoldBlanks));
+
+function spanCm(ex: MeetExercise): number {
+    if (ex.kind === 'cirkel') return 2 * (ex.radius ?? 0);
+    const pts = ex.points ?? [];
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+}
+
+// Draws until a figure fits `budget`, lowering the longest length 1 cm every few misses (and the
+// shortest with it once they meet); the last draw stands if even the shortest does not fit.
+const FIT_TRIES = 240, MISSES_PER_STEP = 12;
+function fitted(draw: (lo: number, hi: number) => MeetExercise, min: number, max: number, budget: number): { ex: MeetExercise; shrunk: boolean } {
+    let hi = Math.max(1, Math.min(max, budget)), ex = draw(Math.min(min, hi), hi);
+    for (let t = 1; t < FIT_TRIES && spanCm(ex) > budget + 1e-9; t++) {
+        if (t % MISSES_PER_STEP === 0) hi = Math.max(1, hi - 1);
+        ex = draw(Math.min(min, hi), hi);
+    }
+    return { ex, shrunk: Math.min(max, budget) < max || hi < Math.min(max, budget) };
+}
+
+const trueSizeNote = (budget: number) =>
+    `Op ware grootte past in deze kolom een figuur van hoogstens ${formatMathNumber(budget)} cm: de lengtes zijn daarop afgestemd.`;
+
 // ── lengte meten ──────────────────────────────────────────────────────────────
+// A path of `corners` + 1 segments of lo..hi cm, walking generally rightward; each turn picks a
+// readable angle so the path doesn't fold back.
+function lijnPath(corners: number, lo: number, hi: number, precision: string): MeetExercise {
+    const pts: MeetPoint[] = [{ x: 0, y: 0 }];
+    const sides: number[] = [];
+    let heading = corners === 0 ? 0 : randInt(-30, 30);
+    for (let i = 0; i <= corners; i++) {
+        if (i > 0) heading += [-50, -35, 35, 50][randInt(0, 3)];
+        heading = Math.max(-75, Math.min(75, heading));
+        const len = pickLen(lo, hi, precision);
+        sides.push(len);
+        const prev = pts[pts.length - 1];
+        pts.push({ x: round1(prev.x + len * Math.cos(rad(heading))), y: round1(prev.y + len * Math.sin(rad(heading))) });
+    }
+    return { id: rndId(), kind: 'lijn', points: pts, sides, perimeter: sum(sides), isManuallyEdited: false };
+}
+
 export function generateLengteMetenExercises(block: MathBlock): MeetExercise[] {
+    return generateLengteMetenExercisesNoted(block).items;
+}
+
+export function generateLengteMetenExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
     const c = block.constraints as MetenConstraints;
     const precision: string = c.precision ?? 'cm';
     const measureModel: string = c.measureModel ?? 'meten';
@@ -28,25 +89,20 @@ export function generateLengteMetenExercises(block: MathBlock): MeetExercise[] {
     const maxL: number = c.maxLength ?? 10;
     const maxCorners: number = Math.min(4, Math.max(0, c.maxCorners ?? 0));
     const n = block.numberOfExercises;
+    const budget = figureBudgetCm(block, false);
+    let shrunk = false;
 
-    return Array.from({ length: n }, () => {
-        const corners = randInt(0, maxCorners);
-        const segs = corners + 1;
-        const pts: MeetPoint[] = [{ x: 0, y: 0 }];
-        const sides: number[] = [];
-        // Walk generally rightward; each turn picks a readable angle so the path doesn't fold back.
-        let heading = corners === 0 ? 0 : randInt(-30, 30);
-        for (let i = 0; i < segs; i++) {
-            if (i > 0) heading += [-50, -35, 35, 50][randInt(0, 3)];
-            heading = Math.max(-75, Math.min(75, heading));
-            const len = pickLen(minL, maxL, precision);
-            sides.push(len);
-            const prev = pts[pts.length - 1];
-            pts.push({ x: round1(prev.x + len * Math.cos(rad(heading))), y: round1(prev.y + len * Math.sin(rad(heading))) });
+    const items = Array.from({ length: n }, () => {
+        let corners = randInt(0, maxCorners);
+        let fit = fitted((lo, hi) => lijnPath(corners, lo, hi, precision), minL, maxL, budget);
+        // Short segments that still zigzag out of the column: fewer hoeken, down to a straight line.
+        while (spanCm(fit.ex) > budget + 1e-9 && corners > 0) {
+            corners--;
+            fit = fitted((lo, hi) => lijnPath(corners, lo, hi, precision), minL, maxL, budget);
         }
-        const perimeter = sum(sides);
-
-        const ex: MeetExercise = { id: rndId(), kind: 'lijn', points: pts, sides, perimeter, isManuallyEdited: false };
+        shrunk ||= fit.shrunk;
+        const ex = fit.ex;
+        const perimeter = ex.perimeter;
         // 'gegeven' → a juist/fout claim: ~50% correct, else off by a precision step.
         if (measureModel === 'gegeven') {
             const correct = Math.random() < 0.5;
@@ -56,6 +112,7 @@ export function generateLengteMetenExercises(block: MathBlock): MeetExercise[] {
         }
         return ex;
     });
+    return { items, note: shrunk ? trueSizeNote(budget) : null };
 }
 
 // ── omtrek shape constructors (cm coordinates + exact side lengths) ──────────────
@@ -215,8 +272,20 @@ function shapeNote(shapes: string[], min: number, max: number, precision: string
 
 export function generateOmtrekExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
     const c = block.constraints as MetenConstraints;
+    const precision: string = c.precision ?? 'cm';
+    const minL: number = c.minLength ?? 3;
+    const maxL: number = c.maxLength ?? 10;
     const shapes: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['driehoek', 'rechthoek', 'vierkant'];
-    return { items: generateOmtrekExercises(block), note: shapeNote(shapes, c.minLength ?? 3, c.maxLength ?? 10, c.precision ?? 'cm', false) };
+    const budget = figureBudgetCm(block, true);
+    let shrunk = false;
+    const items = Array.from({ length: block.numberOfExercises }, () => {
+        const shape = shapes[randInt(0, shapes.length - 1)];
+        const fit = fitted((lo, hi) => buildShape(shape, lo, hi, precision), minL, maxL, budget);
+        shrunk ||= fit.shrunk;
+        return fit.ex;
+    });
+    const notes = [shapeNote(shapes, minL, maxL, precision, false), shrunk ? trueSizeNote(budget) : null].filter(Boolean);
+    return { items, note: notes.length ? notes.join(' ') : null };
 }
 
 export function generateOppervlakteExercisesNoted(block: MathBlock): { items: MeetExercise[]; note: string | null } {
@@ -227,12 +296,5 @@ export function generateOppervlakteExercisesNoted(block: MathBlock): { items: Me
 }
 
 export function generateOmtrekExercises(block: MathBlock): MeetExercise[] {
-    const c = block.constraints as MetenConstraints;
-    const precision: string = c.precision ?? 'cm';
-    const minL: number = c.minLength ?? 3;
-    const maxL: number = c.maxLength ?? 10;
-    const enabled: string[] = Array.isArray(c.shapes) && c.shapes.length ? c.shapes : ['driehoek', 'rechthoek', 'vierkant'];
-    const n = block.numberOfExercises;
-
-    return Array.from({ length: n }, () => buildShape(enabled[randInt(0, enabled.length - 1)], minL, maxL, precision));
+    return generateOmtrekExercisesNoted(block).items;
 }
