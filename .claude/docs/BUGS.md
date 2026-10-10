@@ -104,8 +104,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   oefeningen komen dubbel voor"); geld-wissel's default already notes 2 doubles; breuken-kleuren /
   -herkennen defaults repeat 7/8 and 2/5; deelbaarheid-rooster's title says "2, 5 en 10" over rows 10,
   10, 2. 2026-09-27
-- schattend-nat mixes "=" and "≈" for the final result within one block. 2026-09-27
-  (The getallenas step-over-max half of this line moved to [L1] below.)
 
 - `loadWorksheet` doesn't reset `staleBlocks`: the previous sheet's "verouderd" flags linger in the
   map (harmless ids, but it grows). Fix: `staleBlocks: {}` in documentSlice.loadWorksheet. 2026-09-27
