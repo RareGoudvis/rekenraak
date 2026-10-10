@@ -186,8 +186,23 @@ export function generateHerleidingExercisesNoted(block: MathBlock): { items: Her
 }
 
 function mk(format: string, fromParts: HerleidingPart[], toParts: HerleidingPart[], blank: 'number' | 'unit'): HerleidingExercise {
-    return { id: `herl-${Math.random().toString(36).slice(2, 9)}`, format: format as HerleidingExercise['format'], fromParts, toParts, blank, isManuallyEdited: false };
+    const ex: HerleidingExercise = { id: `herl-${Math.random().toString(36).slice(2, 9)}`, format: format as HerleidingExercise['format'], fromParts, toParts, blank, isManuallyEdited: false };
+    const target = singleTarget(ex);
+    return target ? { ...ex, targetUnit: target } : ex;
 }
+
+// Decision 7 (2026-10-10): a single-quantity number blank names its unit, so with writeUnits the
+// pupil still writes the unit but knows which one. A compound answer (dm² + cm²) or a unit blank has none.
+const singleTarget = (ex: HerleidingExercise): string | undefined =>
+    (ex.blank === 'number' && ex.toParts.length === 1 ? ex.toParts[0].key : undefined);
+
+// Exercises saved before the field fall back to their answer unit.
+export const targetUnitOf = (ex: HerleidingExercise): string | undefined =>
+    (singleTarget(ex) ? ex.targetUnit ?? singleTarget(ex) : undefined);
+
+// writeUnits + "Doeleenheid tonen" (absent = on): the target the sheet and the kiosk header name.
+export const shownTargetUnit = (ex: HerleidingExercise, c: { writeUnits?: unknown; showTargetUnit?: unknown }): string | undefined =>
+    (c.writeUnits && c.showTargetUnit !== false ? targetUnitOf(ex) : undefined);
 
 // Owner 2026-10-10: a compound answer's zero parts stay blanks on the sheet but leave the key
 // ("71 dl", not "71 dl 0 cl 0 ml"), and the kiosk takes them typed as 0 or left empty.
@@ -219,5 +234,5 @@ export function recomputeHerleiding(measure: string, ex: HerleidingExercise): He
         const match = ladder.find(u => u.factor === target);
         toParts = [{ key: match ? match.key : ex.toParts[0].key, value: ex.toParts[0].value }];
     }
-    return { ...ex, toParts, isManuallyEdited: true };
+    return { ...ex, toParts, targetUnit: singleTarget({ ...ex, toParts }), isManuallyEdited: true };
 }

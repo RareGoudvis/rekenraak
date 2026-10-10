@@ -424,6 +424,7 @@ const herleidingenSpace: OptionSpace = {
     compoundMode: ['2', 'volledig'],
     areMode: ['enkel', 'samengesteld'],
     writeUnits: [false, true],
+    showTargetUnit: [true, false],
     scaffolding: ['geen', 'tabel-headers', 'tabel-blanco'],
     herleidingLayout: ['uitlijnen', 'vrij'],
 };

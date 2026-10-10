@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { MathBlock, HerleidingExercise, HerleidingPart } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
-import { isZeroAnswerPart, ladderFor, recomputeHerleiding } from '../../services/herleidingen/herleidingenGenerator';
+import { isZeroAnswerPart, ladderFor, recomputeHerleiding, shownTargetUnit } from '../../services/herleidingen/herleidingenGenerator';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import type { HerleidingenConstraints } from '../../services/math/constraintTypes';
@@ -18,6 +18,14 @@ const SALMON = '#f4cbb8';
 const ROW_FACTORS = [0.92, 0.85, 0.78, 0.7];
 // SYNC: numLine / unitLine minWidth below.
 const NUM_LINE_PX = 60, UNIT_LINE_PX = 34;
+
+// Decision 7: the target unit as a grey hint after the blank ("(in mm)"); a per-exercise
+// "Zet om naar mm:" line was tried and repeated itself on every row and broke the 2-up rhythm.
+const TARGET_HINT: React.CSSProperties = { color: '#666', fontFamily: 'var(--font-sheet-text)', fontSize: 'var(--sheet-size-small)', marginLeft: '3px' };
+// SYNC: TARGET_HINT fontSize (--sheet-size-small = 0.82 × math) and marginLeft + the 5px pair gap.
+// Ubuntu averages ≈ 0.5 em a glyph on "(in mm²)" (measured 53.8 px at 14.2 px), narrower than the mono.
+const HINT_FACTOR = 0.82, HINT_GAP_PX = 8, HINT_EM = 0.5;
+const hintText = (unit: string) => `(in ${unit})`;
 
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const numLine = () => <span style={{ borderBottom: '1.5px solid #000', minWidth: '60px', height: ANSWER_LINE_H, display: 'inline-block' }} />;
@@ -77,7 +85,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     // Recompute the answer and persist after any teacher edit to a shown field.
     const commit = (ex: HerleidingExercise, edited: HerleidingExercise) => {
         const re = recomputeHerleiding(measure, edited);
-        patchExercise(block.id, 'herleidingExercises', ex.id, { fromParts: re.fromParts, toParts: re.toParts, isManuallyEdited: true });
+        patchExercise(block.id, 'herleidingExercises', ex.id, { fromParts: re.fromParts, toParts: re.toParts, targetUnit: re.targetUnit, isManuallyEdited: true });
     };
     const editFrom = (ex: HerleidingExercise, i: number, patch: Partial<HerleidingPart>) =>
         commit(ex, { ...ex, fromParts: ex.fromParts.map((p, idx) => idx === i ? { ...p, ...patch } : p) });
@@ -91,10 +99,12 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
         </span>
     ));
 
+    const targetOf = (ex: HerleidingExercise) => shownTargetUnit(ex, c);
     const renderTo = (ex: HerleidingExercise) => ex.toParts.map((p, i) => {
         const numBlank = ex.blank === 'number';
         const unitBlank = ex.blank === 'unit' || (writeUnits && ex.blank === 'number');
         if (showSolutions && isZeroAnswerPart(ex, p)) return null;
+        const target = targetOf(ex);
         return (
             <span key={i} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '5px', whiteSpace: 'nowrap' }}>
                 {numBlank
@@ -103,6 +113,7 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
                 {unitBlank
                     ? (showSolutions ? <span style={{ ...solutionText }}>{p.key}</span> : unitLine())
                     : <EditableUnit value={p.key} measure={measure} onCommit={k => editTo(ex, i, { key: k })} />}
+                {target && <span data-target-unit="" style={TARGET_HINT}>{hintText(target)}</span>}
             </span>
         );
     });
@@ -114,20 +125,23 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     // Width estimates in Azeret Mono at the row's font `f`; a BLANK side renders as fixed
     // lines (numLine 60 + unitLine 34 + gaps ≈ 100px/part) regardless of its value.
     const givenPx = (ps: HerleidingPart[], f: number) => monoTextPx(sideLen(ps), f, mathPx);
-    const blankPx = (ps: HerleidingPart[]) => ps.length * 100;
+    const hintPx = (ex: HerleidingExercise) => { const t = targetOf(ex); return t ? HINT_GAP_PX + hintText(t).length * HINT_EM * HINT_FACTOR * mathPx : 0; };
+    const blankPx = (ex: HerleidingExercise) => ex.toParts.length * 100 + hintPx(ex);
     // In 'compact' the single-part (shorter) side anchors the left; in 'uitlijnen' the given
     // is always left. The long compound therefore always lands on the (wrapping) right side.
     const leftIsFrom = (ex: HerleidingExercise) => layout === 'uitlijnen' || ex.fromParts.length <= ex.toParts.length;
-    const leftPx = (ex: HerleidingExercise, f: number) => leftIsFrom(ex) ? givenPx(ex.fromParts, f) : blankPx(ex.toParts);
+    const leftPx = (ex: HerleidingExercise, f: number) => leftIsFrom(ex) ? givenPx(ex.fromParts, f) : blankPx(ex);
     // Left box sized to the widest left side so every '=' column stays aligned.
-    const leftWAt = (f: number) => Math.max(150, Math.round(Math.max(...exercises.map(ex => leftPx(ex, f)))) + 12);
+    // The 150 px floor gives way to 110 when target hints are printed, so the default sheet stays two-up.
+    const leftFloor = exercises.some(ex => targetOf(ex)) ? 110 : 150;
+    const leftWAt = (f: number) => Math.max(leftFloor, Math.round(Math.max(...exercises.map(ex => leftPx(ex, f)))) + 12);
     // The right side wraps between number/unit pairs only, so its widest PAIR (a blank, or the
     // value/answer it may show) is what the row needs beside the left box and the "=".
     const pairPx = (ex: HerleidingExercise, p: HerleidingPart, onTo: boolean, f: number) => {
         const numBlank = onTo && ex.blank === 'number';
         const unitBlank = onTo && (ex.blank === 'unit' || (writeUnits && ex.blank === 'number'));
         return Math.max(numBlank ? NUM_LINE_PX : 0, monoTextPx(formatMathNumber(p.value).length, f, mathPx)) + 5
-            + Math.max(unitBlank ? UNIT_LINE_PX : 0, monoTextPx(p.key.length, f, mathPx));
+            + Math.max(unitBlank ? UNIT_LINE_PX : 0, monoTextPx(p.key.length, f, mathPx)) + (onTo ? hintPx(ex) : 0);
     };
     const rightPx = (f: number) => Math.max(...exercises.map(ex => {
         const onTo = leftIsFrom(ex);
@@ -137,7 +151,9 @@ export default function HerleidingenViewer({ block, showSolutions }: Props) {
     // Auto single-column when exercises get wide (long compounds / big numbers) so they don't
     // overflow into the block controls. Two-up may take ONE font step to stay two-up (keeps the
     // default oppervlakte sheet at four rows); otherwise the font steps within the one column.
-    const twoUp = Math.max(...exercises.map(ex => sideLen(ex.fromParts) + 3 + sideLen(ex.toParts))) <= 38
+    // The hint in mono-glyph units (its small Ubuntu is ≈ 0.7 of a sheet mono glyph).
+    const hintLen = (ex: HerleidingExercise) => { const t = targetOf(ex); return t ? Math.ceil(hintText(t).length * 0.7) + 1 : 0; };
+    const twoUp = Math.max(...exercises.map(ex => sideLen(ex.fromParts) + 3 + sideLen(ex.toParts) + hintLen(ex))) <= 38
         && rowPx(ROW_FACTORS[1]) <= (width - 28) / 2;
     const cols = twoUp ? 2 : 1;
     const colPx = twoUp ? (width - 28) / 2 : width;

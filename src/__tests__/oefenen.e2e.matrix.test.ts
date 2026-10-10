@@ -61,11 +61,19 @@ const tally = { variants: 0, unreachable: 0, excluded: 0, dead: 0, chains: 0 };
 // Chains per input kind (interactive ones by their interaction kind), for the summary line.
 const kinds: Record<string, number> = {};
 
+// Settings that only mean something together, run as one variant each on top of the one-option sweep.
+const COMBOS: Array<{ leaf: RegExp; over: Record<string, unknown> }> = [
+    // Decision 7: "Doeleenheid tonen" on and off under writeUnits.
+    { leaf: /^herleidingen-/, over: { writeUnits: true, showTargetUnit: true } },
+    { leaf: /^herleidingen-/, over: { writeUnits: true, showTargetUnit: false } },
+];
+
 function variantsOf(leaf: OefenLeaf): Variant[] {
     const out: Variant[] = [{ name: 'default', over: {} }];
     for (const [key, options] of Object.entries(constraintSpaceFor(leaf.typeId))) {
         for (const v of options) out.push({ name: `${key}=${JSON.stringify(v)}`, over: { [key]: v } });
     }
+    for (const c of COMBOS) if (c.leaf.test(leaf.id)) out.push({ name: JSON.stringify(c.over), over: c.over });
     return out;
 }
 
