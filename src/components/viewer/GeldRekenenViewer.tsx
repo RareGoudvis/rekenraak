@@ -18,6 +18,8 @@ const SALMON = '#f4cbb8';
 const cell: React.CSSProperties = {
     border: '1px solid #000', minHeight: ANSWER_ROW_H, display: 'flex', alignItems: 'center',
     justifyContent: 'center', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.75)', boxSizing: 'border-box', padding: '2px 6px',
+    // An amount never breaks at its thousands space ("€ 9 / 028,60"); its column holds it.
+    whiteSpace: 'nowrap',
 };
 
 export default function GeldRekenenViewer({ block, showSolutions }: Props) {
@@ -54,13 +56,13 @@ export default function GeldRekenenViewer({ block, showSolutions }: Props) {
     };
     // Column width in `ch` (mono, so exact) off the widest value THIS rep actually prints —
     // was a fixed 160-220px split that could only ever be full width (owner review R3).
-    // 'winst' has one fewer, wordier column so its cap is looser than the 4-column tables.
-    // 3-column 'winst' can afford the same 14ch cap as VerbandenViewer's table (measured to
-    // fit a half); the 4-column tables need a tighter cap or their sum overflows a half.
+    // A value always gets its full width (+2ch for the 6px padding either side): the old 10/14ch
+    // cap split "€ 9 028,60" and "verlies € 404". Only the header words, which may wrap, are
+    // capped — 'winst' has one fewer, wordier column so its cap is looser than the 4-column tables.
     const CH_CAP = subType === 'winst' ? 14 : 10;
     const grid = headers.map((h, i) => {
-        const chars = Math.max(2, h.length, ...exercises.map(ex => cellText(ex)[i]?.length ?? 0));
-        return `${Math.min(CH_CAP, chars + 2)}ch`;
+        const valueChars = Math.max(2, ...exercises.map(ex => cellText(ex)[i]?.length ?? 0));
+        return `${Math.max(valueChars + 2, Math.min(CH_CAP, h.length + 2))}ch`;
     }).join(' ');
     // `ch` in gridTemplateColumns resolves against the GRID CONTAINER's own font, not the
     // cells inside it (see VerbandenViewer) — match the cells' own mono/size here.
@@ -112,7 +114,7 @@ export default function GeldRekenenViewer({ block, showSolutions }: Props) {
             rowGap={0}
             items={[
                 <div key="head" className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content', ...gridFont }}>
-                    {headers.map(h => <div key={h} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)' }}>{h}</div>)}
+                    {headers.map(h => <div key={h} style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold', fontSize: 'calc(var(--sheet-size-text) * 0.6)', whiteSpace: 'normal' }}>{h}</div>)}
                 </div>,
                 ...exercises.map(ex => (
                     <div key={ex.id} className="print-exercise" style={{ display: 'grid', gridTemplateColumns: grid, width: 'fit-content', ...gridFont, marginBottom: `${Math.max(0, gap - 14)}px` }}>

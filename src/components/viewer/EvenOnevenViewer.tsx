@@ -5,6 +5,7 @@ import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWi
 import type { EvenOnevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 
 interface Props {
     block: MathBlock;
@@ -16,7 +17,10 @@ const FILL = '#93c5fd';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 // SYNC: same convention as GetallenasViewer / ClockViewer / MabViewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
-const em = (px: number) => `${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)}em`;
+// Rooster lengths against the math token itself, not `em`: an `em` track resolved against the
+// grid's inherited font and an `em` cell against its own 0.81 font, so cells and tracks disagreed.
+const mathLen = (px: number, minusPx = 0) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)}${minusPx ? ` - ${minusPx}px` : ''})`;
+const NUM_FACTOR = 0.81;
 const KIOSK_COLS = 5;
 
 export default function EvenOnevenViewer({ block, showSolutions }: Props) {
@@ -84,13 +88,18 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
 
     // ── ROOSTER: colour the even (or oneven) numbers ──────────────────────────
     // A `perRow`-column grid, clamped to whatever the column actually fits so a narrow
-    // block reflows to more rows instead of running the row off the page. `em`-sized
-    // cells so they follow the Lettergrootte slider; marginLeft/-Top:-1 collapse shared borders.
-    const cellW = 46, cellH = 34;
+    // block reflows to more rows instead of running the row off the page. Cells are sized off
+    // the math token so they follow the Lettergrootte slider; the widest number sets the
+    // width (46 px floor) so "9 029" no longer wraps inside a cell.
+    const chars = Math.max(1, ...(exercises.flatMap(ex => ex.numbers || [])).map(n => formatMathNumber(n).length));
+    const cellW = Math.max(46, monoTextPx(chars, NUM_FACTOR, PX_PER_EM_AT_DEFAULT) + 10), cellH = 34;
     const cellWPx = cellW * mathScale;
+    // Tracks one px narrower than the cells: each cell's left border lands on its
+    // neighbour's right border (likewise rows), so shared borders print as one line.
+    const track = mathLen(cellW, 1), rowTrack = mathLen(cellH, 1);
     // Kiosk (tap context): rows of at most 5, so the card scales the cells up to thumb size
     // (≥ 44 px on a landscape phone); a 10-wide row would keep them ~38 px tall.
-    const cols = Math.max(1, Math.min(perRow, ix ? KIOSK_COLS : perRow, Math.floor((availableWidth + 1) / (cellWPx + 1))));
+    const cols = Math.max(1, Math.min(perRow, ix ? KIOSK_COLS : perRow, Math.floor((availableWidth - 1) / (cellWPx - 1))));
     return (
         <FragmentableGrid
             cols={1}
@@ -107,14 +116,14 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
             rowGap={gap}
             items={exercises.map(ex => (
                 <div key={ex.id} className="print-exercise" style={{
-                    display: 'grid', gridTemplateColumns: `repeat(${cols}, ${em(cellW)})`, width: 'fit-content',
+                    display: 'grid', gridTemplateColumns: `repeat(${cols}, ${track})`, gridAutoRows: rowTrack,
+                    width: 'fit-content', paddingRight: 1, paddingBottom: 1,
                 }}>
                     {(ex.numbers || []).map((num, i) => (
                         <div key={i} {...interactionProps(ix, String(i))} style={{
-                            width: em(cellW), height: em(cellH), display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.81)',
-                            // collapse with left neighbour (same row) and the row above
-                            marginLeft: i % cols === 0 ? 0 : -1, marginTop: i >= cols ? -1 : 0,
+                            width: mathLen(cellW), height: mathLen(cellH), display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            border: '1px solid #000', boxSizing: 'border-box', fontFamily: mono, fontSize: `calc(var(--sheet-size-math) * ${NUM_FACTOR})`,
+                            whiteSpace: 'nowrap',
                             backgroundColor: showSolutions && isTarget(num) ? FILL : 'white',
                         }}>
                             {formatMathNumber(num)}

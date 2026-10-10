@@ -8,77 +8,29 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- Switching Blad › koptekst/voettekst style at runtime logs React's "Updating/Removing a style
-  property during rerender … when a conflicting property is set" (dev only): SheetHeader mixes
-  `borderWidth`/`borderColor`/`borderStyle` shorthands with `borderBottom*` longhands despite its
-  "all-longhand" comment, and SheetFooter's `kader` spreads `borderStyle` over `borderTopStyle`.
-  Repro: set headerStyle kader → onderstreept, footerStyle kader → lijn. Fix: write all four sides
-  as longhands (changes no pixels). 2026-09-27
-
-- Getallenas at its 1e5 top (all numberTypes, every width): the first tick label hangs 5–15 px
-  outside the cell's left edge (`npm run bignum:audit -- --only getalbegrip-getallenassen-nat`).
-  Fix: inset the axis by half the widest label. 2026-09-27
-- Even-oneven rooster at its 1e4 top, width ½ / ¼: four-digit numbers wrap inside the 46 px cells
-  and the lines overlap. Fix: size cells from the character count (46 px floor). 2026-09-27
-  (Full sweep: they wrap ("9 / 029") at full width too; only ½ / ¼ trip the overlap check.)
 - TopBar below a ~915 px window: stage 3 is the last stage, so the Meer button and the right group
   overlap (2 px at 915, ~90 px at 840; Chromium, 2026-10-09). Fix: a stage 4 (Genereer alles into
   Meer) or a min-width on the app shell. 2026-10-09
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Blocks taller than one A4 page at their sidebar DEFAULTS, full width (clipped on paper): omtrek,
-  oppervlakte-rooster, oppervlakte-berekenen (real-size figures, one or two per row), breuken-lijnstuk,
-  breuken-veelhoek, cijferen-delen-dec (1 028 px: four 14-row grids). The teacher gets the red banner on
-  the first click. Fix: fewer default exercises or smaller default figures. 2026-09-27
-- lengte-meten / omtrek: real-size polylines and circles run off the cell when Lengte max 10-18 meets
-  2-4 hoeken or "cirkel" (pairwise pw003/005/013/014/016/017: 35-912 px te breed, every width).
-  "Verklein" is no fix for a ruler task. Fix: the generator caps the drawn span to the column's cm
-  width. 2026-09-27
-- breuken-lijnstuk DEFAULT, w4: 10-12 cm segments are drawn clamped to ~8,9 cm (335 px) while the key
-  says "12 cm : 6 = 2 cm": the child measures a different length than the key. Fix: cap
-  maxLineLength to the column's cm width instead of scaling one segment. 2026-09-27
 - Ordenen pw017 {decimal, 3 dp, 100 000} is 8 px te breed (the space / ";" fix of 2026-10-09 kept
   every glyph count). 2026-09-27
-- Getalpatronen at its max (100 000): every five-digit term breaks at its thousands space ("97 /
-  055") at every width, w4 included. Fix: nowrap per number, column width from monoTextPx. 2026-09-27
-- patronen-geh DEFAULT: the en-dash separator next to negative terms reads "-53 – -43 – -33".
-  Fix: another separator (or a wider gap) when a term is negative. 2026-09-27
-- Herleidingen: the red answer wraps inside its slot, splitting a number ("977 a 445 cm² = 977 000 /
-  445 cm²" at the herleidingen-oppervlakte DEFAULT, every width; "92 189 / 777 dg" pw008). Compound
-  answers print zero parts ("71 dl 0 cl 0 ml"). Fix: size the slot from the answer (nowrap). 2026-09-27
-- geld-rekenen tables: narrow fixed columns split amounts at the thousands space ("€ 9 / 028,60",
-  intrest pw007 maxEuro 10 000) and "verlies € / 404"; the table uses under half of a w4 block. 2026-09-27
-- Weegschaal (massa-weegschaal-aflezen DEFAULT): the needle is drawn over the scale label it points
-  at ("700", "800" crossed out). Fix: stop the needle short of the label ring. 2026-09-27
-- MAB herkennen DEFAULT: pieces are tiny in big cells (hundreds ~8 px squares, units 4 px dots, tens
-  ~2 px apart: nine tens read as one solid block). mab-tekenen at width ¼ (default leaf, the packer keeps
-  w1): the D/H/T/E table is ~75 px wide, no room to draw. Fix: bigger pieces; minWidth 2 for
-  mab-tekenen. 2026-09-27
-- Narrow-width wrapping: procenten-nemen / -welk DEFAULT at ¼ split "452 van / de 904 / ="; cijferen
-  headers with 3-4 terms at ¼ wrap inside a number ("… + 1 / 445 + 28 ="); vergelijken representaties
-  woorden vs plaatswaarde at ½ / ¼ (pw021): the "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
-- Hoofdrekenen natural at 1e6 with an operand mask (pw059-061 optellen/aftrekken, gemengd pw052-058):
-  the two-per-row layout ends 11 px past the full-width cell (te breed at every width); hrRowLayout
-  picks 2 columns the row does not fit. 2026-09-27
+- Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
+  part is a blank to fill or should be dropped). 2026-09-27
+- lengte-meten / omtrek with Lengte max 10-18 (pairwise rows): a figure wider than its column is now
+  drawn scaled down with "niet op ware grootte" (2026-10-10), so in the 'meten' model the child
+  measures a smaller figure than the key's length. Owner call: cap the generated span to the column's
+  cm width instead (generator). 2026-10-10
+- mab-tekenen at width ¼ (default leaf, the packer keeps w1): the D/H/T/E table is ~75 px wide, no
+  room to draw. Fix: minWidth 2 for mab-tekenen (owner call: it reverses the C1 rule pinned by
+  blockLayout.test "mab-tekenen can go to a quarter"). 2026-09-27
+- Narrow-width wrapping: vergelijken representaties woorden vs plaatswaarde at ½ / ¼ (pw021): the
+  "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
 - Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
   too; geld-tekenen's key only repeats the prompt amount (~7 px); colouring keys (breuken hoeveelheid /
   veelhoek, deelbaarheid, even-oneven) use the light-blue fill, not red (owner call). 2026-09-27
-- deelbaarheid at its max (100 000) prints "70344" without the thousands space. 2026-09-27
 
-- RekenvolgordeViewer (`CHAR_PX = 11.1`, ~:39) and RomeinseViewer (12.7 px per char, ~:36/38) still size
-  text with fixed px that don't follow the Lettergrootte slider; move to `monoTextPx`. 2026-09-27
-- HerleidingenViewer: a long given number on the answer side of a unit-blank row breaks at its
-  thousands spaces ("24 ha = 2 / 400 / 000 / 000 ___", "93 dl = 9 / 300 ___"): `formatMathNumber`
-  joins groups with a plain space and `EditableNumber`'s span has no `white-space: nowrap`. Seen in
-  the Oefenmodus card (340 px = a half-width cell, 390×844 and 844×390); a narrow sheet column can
-  hit it too. Fix: nowrap on the number span (or U+202F). 2026-10-08
-- EvenOnevenViewer rooster: the cells do not share borders as the "marginLeft/-Top:-1 collapse
-  shared borders" comment intends; there is a ~5 px gap between columns. The grid's
-  `gridTemplateColumns` uses `em(cellW)` against the container's inherited 16 px, the cells
-  `em(cellW)` against their own `--sheet-size-math * 0.81` (42.5 px tracks, 37.3 px cells at the
-  defaults). Rows do touch. Fix: size the track with the cell's font factor (sheet change: visual
-  baseline). 2026-10-08
 
 - HerleidingenViewer: the right-aligned left side is sized from a char-count estimate (`leftW`, ~9.5 px/char)
   that undershoots a compound given side ("856 dm²  36 cm²" at 13pt), so it overflows the box to the LEFT;

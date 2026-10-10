@@ -2,6 +2,7 @@ import type { MathBlock, WeegschaalExercise } from '../../services/math/types';
 import { formatGewicht } from '../../services/weegschaal/weegschaalGenerator';
 import FragmentableGrid from './FragmentableGrid';
 import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 import type { WeegschaalConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
 import { useViewerInteraction, type ViewerInteraction } from './ViewerInteractionContext';
@@ -21,6 +22,26 @@ const mono = "'Azeret Mono', monospace";
 // then follows the teacher's Lettergrootte slider. SYNC: same divisor in every viewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
 const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)})`;
+// Dial labels in viewBox units, and the room the needle keeps from them.
+const LABEL_FONT = 0.64 * PX_PER_EM_AT_DEFAULT;
+const NEEDLE_CLEAR = 2;
+
+// Distance along the ray from the centre at `ang` to the first label box it enters (slab test),
+// or Infinity. A needle pointing AT a major value used to run straight through its label.
+function rayEntry(ang: number, boxes: { x: number; y: number; w: number; h: number }[]): number {
+    const dx = Math.cos(ang), dy = Math.sin(ang);
+    let best = Infinity;
+    for (const b of boxes) {
+        let t0 = 0, t1 = Infinity;
+        for (const [d, c, half] of [[dx, b.x, b.w], [dy, b.y, b.h]] as const) {
+            if (Math.abs(d) < 1e-9) { if (Math.abs(c) >= half) { t0 = Infinity; break; } continue; }
+            const a = (c - half) / d, z = (c + half) / d;
+            t0 = Math.max(t0, Math.min(a, z)); t1 = Math.min(t1, Math.max(a, z));
+        }
+        if (t0 <= t1) best = Math.min(best, t0);
+    }
+    return best;
+}
 
 // Dial geometry mirrors AnalogClockSVG's polar math: ticks around the rim,
 // labels at the majors, a red needle from the centre.
@@ -36,6 +57,7 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
     const rOuter = size / 2 - 6;
     const angleOf = (v: number) => (v / bereik) * 2 * Math.PI - Math.PI / 2;   // 0 g at top, clockwise
     const ticks: React.ReactNode[] = [];
+    const labelBoxes: { x: number; y: number; w: number; h: number }[] = [];
     const majorEvery = bereik / 10;   // 10 labelled majors round the dial
     const total = bereik / step;
     for (let i = 0; i < total; i++) {
@@ -52,9 +74,10 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
         if (isMajor) {
             const rl = rOuter - 24;
             const label = bereik >= 2000 ? `${value / 1000}`.replace('.', ',') : String(value);
+            labelBoxes.push({ x: rl * Math.cos(ang), y: rl * Math.sin(ang), w: monoTextPx(label.length, 1, LABEL_FONT) / 2 + 1, h: LABEL_FONT / 2 + 1 });
             ticks.push(
                 <text key={`t${i}`} x={cx + rl * Math.cos(ang)} y={cy + rl * Math.sin(ang)}
-                    textAnchor="middle" dominantBaseline="central" fontSize={0.64 * PX_PER_EM_AT_DEFAULT} fontFamily={mono}>{label}</text>
+                    textAnchor="middle" dominantBaseline="central" fontSize={LABEL_FONT} fontFamily={mono}>{label}</text>
             );
         }
     }
@@ -62,7 +85,8 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
     const set = ctx ? dragValuesOf(ctx).g : undefined;
     const needleAt = ctx ? (set ?? 0) : grams;
     const needleAng = angleOf(needleAt);
-    const rn = rOuter - 16;
+    // The needle reaches toward the ticks but stops short of a label in its way.
+    const rn = Math.min(rOuter - 16, rayEntry(needleAng, labelBoxes) - NEEDLE_CLEAR);
     // The kiosk needle reaches the tick ring, so its knob sits past the labels, not on them.
     const rk = rOuter - 7;
     // A press anywhere on the dial points the needle there, snapped to the dial's step; once
@@ -99,7 +123,7 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
             {wedge}
             {ticks}
             {/* Unit in the dial face; kg dials label in kg to keep numbers readable. */}
-            <text x={cx} y={cy + rOuter * 0.45} textAnchor="middle" fontSize={0.64 * PX_PER_EM_AT_DEFAULT} fontFamily={mono} fill="#555">
+            <text x={cx} y={cy + rOuter * 0.45} textAnchor="middle" fontSize={LABEL_FONT} fontFamily={mono} fill="#555">
                 {bereik >= 2000 ? 'kg' : 'g'}
             </text>
             {needleColor && (

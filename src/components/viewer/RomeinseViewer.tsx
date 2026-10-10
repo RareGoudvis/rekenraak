@@ -1,7 +1,8 @@
 import type { MathBlock, RomeinseExercise } from '../../services/math/types';
 import { formatMathNumber } from '../../services/math/formatters';
 import FragmentableGrid from './FragmentableGrid';
-import { fitCols, useBlockWidth, ANSWER_LINE_H } from './BlockWidthContext';
+import { fitCols, useBlockWidth, useSheetSizePx, ANSWER_LINE_H } from './BlockWidthContext';
+import { monoTextPx } from '../../services/layout/blockLayout';
 import type { RomeinseConstraints } from '../../services/math/constraintTypes';
 import { solutionText, centerWhenSingle } from './solutionStyle';
 
@@ -12,10 +13,13 @@ interface Props {
 
 const mono = "'Azeret Mono', monospace";
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
-// promptW/answerMin stay raw px (shrink-to-fit geometry measured against a fixed 18px char width, not a static style).
+// Row text is 1.04 x the math token with 1px letter-spacing; the column widths are derived from it.
+const ROW_FONT = 1.04;
+const COL_GAP = 28;
 
 export default function RomeinseViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();
+    const mathPx = useSheetSizePx('math');
     const exercises: RomeinseExercise[] = block.romeinseExercises || [];
     const c = block.constraints as RomeinseConstraints;
     const subType: string = c.subType ?? 'herkennen';
@@ -28,27 +32,30 @@ export default function RomeinseViewer({ block, showSolutions }: Props) {
     // herkennen: Roman → number ; schrijven: number → Roman.
     const herkennen = subType !== 'schrijven';
 
-    // Size the prompt column to the block's actual longest prompt/answer (18px mono
-    // ≈ 11.7px/char + 1px letter-spacing) so niveau-4 numerals like MMMCMXCIX don't
-    // push the fixed 150px+150px row past the 2-up column (~300px inside the block).
+    // Size the prompt column to the block's actual longest prompt/answer (mono at the row
+    // font + 1px letter-spacing per glyph) so niveau-4 numerals like MMMCMXCIX don't push
+    // the 150px+150px row past the 2-up column.
+    const glyphPx = monoTextPx(1, ROW_FONT, mathPx) + 1;
     const maxPromptChars = Math.max(1, ...exercises.map(ex => (herkennen ? ex.roman : formatMathNumber(ex.value)).length));
     const maxAnswerChars = Math.max(1, ...exercises.map(ex => (herkennen ? formatMathNumber(ex.value) : ex.roman).length));
-    const promptW = Math.min(150, Math.max(60, Math.ceil(maxPromptChars * 12.7) + 4));
-    // Answer line: fill what's left of the 2-up column, at least the longest answer.
-    const answerMin = Math.max(Math.ceil(maxAnswerChars * 12.7) + 4, Math.min(150, 297 - promptW - 32));
+    const promptW = Math.max(60, Math.ceil(maxPromptChars * glyphPx) + 4);
 
     const romCols = fitCols(availableWidth, 250, 2);
+    // Answer line: fill what's left of the column (less the arrow and its two 10px gaps and
+    // ~13px of air), at least the longest answer. 297 at the default 2-up full width.
+    const colPx = (availableWidth - COL_GAP * (romCols - 1)) / romCols;
+    const answerMin = Math.max(Math.ceil(maxAnswerChars * glyphPx) + 4, Math.min(150, colPx - 33 - promptW - 32));
     return (
         <FragmentableGrid
             cols={romCols}
-            columnGap={28}
+            columnGap={COL_GAP}
             rowGap={gap + 2}
             justifyItems={centerWhenSingle(romCols)}
             items={exercises.map(ex => {
                 const prompt = herkennen ? ex.roman : formatMathNumber(ex.value);
                 const answer = herkennen ? formatMathNumber(ex.value) : ex.roman;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1.04)' }}>
+                    <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', fontFamily: mono, fontSize: `calc(var(--sheet-size-math) * ${ROW_FONT})` }}>
                         {/* Fixed width + right-align pins the prompt's right edge so the arrow
                            and answer line align in a column regardless of numeral length. */}
                         <span style={{ width: `${promptW}px`, textAlign: 'right', whiteSpace: 'nowrap', letterSpacing: '1px', flexShrink: 0 }}>{prompt}</span>

@@ -4,7 +4,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import FragmentableGrid from './FragmentableGrid';
 import { useBlockWidth, fitCols, ANSWER_LINE_H } from './BlockWidthContext';
 import VerticalFraction from './VerticalFraction';
-import { SOL, centerWhenSingle } from './solutionStyle';
+import { SOL, solutionText, centerWhenSingle } from './solutionStyle';
 import { ordenenRowPx } from '../../services/layout/blockLayout';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 import { formatMathNumber } from '../../services/math/formatters';
@@ -40,9 +40,10 @@ function parseValue(text: string): number | Fraction | null {
     return Number.isFinite(num) ? num : null;
 }
 
-function renderVal(v: number | Fraction, color?: string) {
-    if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={15} mono />;
-    return <span style={{ color, fontWeight: 'normal' }}>{formatMathNumber(v)}</span>;
+// `solution`: the key, red and bold (viewer rule 3: a b/w printer only sees the bold).
+function renderVal(v: number | Fraction, solution = false) {
+    if (isFrac(v)) return <span style={{ display: 'inline-flex', fontWeight: solution ? solutionText.fontWeight : 'normal' }}><VerticalFraction value={v} color={solution ? SOL : undefined} fontSize={15} mono /></span>;
+    return <span style={solution ? solutionText : { fontWeight: 'normal' }}>{formatMathNumber(v)}</span>;
 }
 
 // Click a prompt number to edit it; commit re-sorts the answer.
@@ -151,7 +152,7 @@ export default function OrdenenViewer({ block, showSolutions }: Props) {
                             return (
                                 <div key={`a${i}`} style={{ gridRow: 2, gridColumn: 2 * i + 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
                                     {showSolutions
-                                        ? renderVal(v, SOL)
+                                        ? renderVal(v, true)
                                         : ix
                                             // Kiosk: the tapped value lands on its line (or in its box). A hidden copy of a
                                             // value keeps the slot's size from the start, so the card does not rescale mid-order.

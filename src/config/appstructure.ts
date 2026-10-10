@@ -40,6 +40,8 @@ export interface ExerciseType {
     gradeSetsMax?: true;
     // Oefenmodus name when kioskLabel()'s derived one ("Optellen · natuurlijk") does not fit.
     shortLabel?: string;
+    // Same as LeafExercise.defaultCount, for a type that is itself the leaf.
+    defaultCount?: number;
 }
 
 export interface Subdomain {
@@ -204,7 +206,8 @@ export const APP_STRUCTURE: Domain[] = [
                     // answerFormat must be set here: the registry default ('fraction-questions') is a
                     // herkennen value, and defaultsFor() only runs on a variant switch, not on block add.
                     { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid', answerFormat: 'met-hulp', maxDenominator: 5, maxTotal: 20 }, instruction: 'Bereken de breuk van de hoeveelheid.' },
-                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' }, instruction: 'Duid de breuk aan op het lijnstuk.' },
+                    // Four, not the row's six: one true-size segment per row, six ran past one A4 page.
+                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' }, defaultCount: 4, instruction: 'Duid de breuk aan op het lijnstuk.' },
                     { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' }, instruction: 'Kleur de breuk van de veelhoek.' },
                     { id: 'breuken-rangschikken', label: 'Breuken rangschikken', typeId: 'breuken-rangschikken', instruction: breukenRangschikkenInstruction },
                 ],
@@ -668,6 +671,7 @@ export function flattenLeaves(): AppLeaf[] {
                         defaultConstraints: type.defaultConstraints,
                         instruction: type.instruction,
                         gradeSetsMax: type.gradeSetsMax,
+                        defaultCount: type.defaultCount,
                         shortLabel: type.shortLabel,
                     });
                 } else {

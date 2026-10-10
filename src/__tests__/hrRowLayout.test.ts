@@ -97,6 +97,29 @@ describe('hrRowLayout — the fit ladder', () => {
         expect(hrRowLayout(input(LANG, 2, 3, 3)).gridCols).toBe(1);
         expect(hrRowLayout(input(KORT, 2, 3, 3, { widthPx: 163 })).gridCols).toBe(1);
     });
+
+    // Sweep 2026-09-27: natural 1e6 (pw059-061, gemengd pw052-058) picked 2-up on the estimate
+    // while the drawn row ran 11px past its half. A 2-up row must fit its column as drawn.
+    const twoUpGrid = [3, 5, 7, 9].flatMap(maxChars => [5, 7, 9].flatMap(ans => [0, 3].flatMap(labelChars =>
+        [false, true].map(anyMissingTerm => input(KORT, 2, maxChars, ans, { labelChars, anyMissingTerm })))));
+    test('2-up Kort fits its column as drawn', () => {
+        const over = twoUpGrid.map(inp => ({ inp, r: hrRowLayout(inp) }))
+            .filter(({ inp, r }) => r.gridCols === 2 && drawnRowPx(r, inp) > (FULL - r.colGap) / 2)
+            .map(({ inp, r }) => `${inp.maxChars}/${inp.maxAnswerChars} label ${inp.labelChars} missing ${inp.anyMissingTerm}: ${drawnRowPx(r, inp).toFixed(1)} > ${(FULL - r.colGap) / 2}`);
+        expect(over).toEqual([]);
+    });
+    test('the 1e6 row (pw060) stays 2-up with the column gap its drawn row leaves', () => {
+        const inp = input(KORT, 2, 7, 7);
+        const r = hrRowLayout(inp);
+        expect(r.gridCols).toBe(2);
+        expect(r.fontScale).toBe(1);
+        expect(drawnRowPx(r, inp)).toBeLessThanOrEqual((FULL - r.colGap) / 2);
+    });
+    test('a numbered 1e4 row a few px too wide keeps 2-up by stepping its font, as the chain fit does', () => {
+        const r = hrRowLayout(input(KORT, 2, 5, 7, { labelChars: 3 }));
+        expect(r.gridCols).toBe(2);
+        expect(r.fontScale).toBe(0.95);
+    });
 });
 
 describe('hrRowStats', () => {

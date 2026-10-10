@@ -62,14 +62,13 @@ describe('weegschaal renders from its own bereik/step/notatie/mode', () => {
         // expected angle from the exercise's own bereik and compare to what's drawn.
         const needleLine = document.querySelector('svg line[stroke="#000"][stroke-linecap="round"]');
         expect(needleLine).toBeTruthy();
+        // The DIRECTION is what bereik decides; the length may stop short of a label (S5).
         const size = Math.max(120, Math.min(220, 170));
-        const rOuter = size / 2 - 6;
-        const rn = rOuter - 16;
         const expectedAngle = (first.grams / first.bereikGram!) * 2 * Math.PI - Math.PI / 2;
-        const expectedX2 = size / 2 + rn * Math.cos(expectedAngle);
-        const expectedY2 = size / 2 + rn * Math.sin(expectedAngle);
-        expect(Number(needleLine!.getAttribute('x2'))).toBeCloseTo(expectedX2, 3);
-        expect(Number(needleLine!.getAttribute('y2'))).toBeCloseTo(expectedY2, 3);
+        const dx = Number(needleLine!.getAttribute('x2')) - size / 2, dy = Number(needleLine!.getAttribute('y2')) - size / 2;
+        const len = Math.hypot(dx, dy);
+        expect(dx / len).toBeCloseTo(Math.cos(expectedAngle), 3);
+        expect(dy / len).toBeCloseTo(Math.sin(expectedAngle), 3);
     });
 });
 

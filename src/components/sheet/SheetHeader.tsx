@@ -1,5 +1,5 @@
 import { styles } from '../../styles/appStyles';
-import { overlayRegionStyle } from '../../services/regionStyle';
+import { overlayRegionStyle, borderSides } from '../../services/regionStyle';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField, type HeaderData, type DocSettings } from '../../store/useWorksheetStore';
 
 // Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
@@ -47,13 +47,14 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
       // a centred one, which is the one thing the old per-h1 sizes were saying.
       fontSize: (docSettings.titlePosition === 'left' || docSettings.titlePosition === 'right') ? '22px' : '24px',
       // 'onderstreept' = one line under the whole header (separates it from the body);
-      // 'kader' = full box. All-longhand borders avoid the shorthand/longhand React warning.
+      // 'kader' = full box. Per-side longhands only (borderSides): mixing them with the
+      // borderWidth/borderColor shorthands made React warn on every style switch.
       borderRadius: docSettings.headerStyle === 'onderstreept' ? 0 : '6px',
-      borderStyle: 'solid',
-      borderWidth: docSettings.headerStyle === 'kader' ? '1.5px' : '1px',
-      borderColor: docSettings.headerStyle === 'kader' ? '#000' : 'transparent',
-      borderBottomWidth: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '1.5px' : '1px',
-      borderBottomColor: (docSettings.headerStyle === 'kader' || docSettings.headerStyle === 'onderstreept') ? '#000' : 'transparent',
+      ...(() => {
+        const side = docSettings.headerStyle === 'kader' ? { width: '1.5px', color: '#000' } : { width: '1px', color: 'transparent' };
+        const bottom = docSettings.headerStyle === 'geen' ? side : { width: '1.5px', color: '#000' };
+        return borderSides({ Top: side, Right: side, Bottom: bottom, Left: side });
+      })(),
     }, docSettings.headerCustom)}>
       {(() => {
         const showScore = docSettings.showScores && totalScore > 0;

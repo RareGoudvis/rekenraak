@@ -98,6 +98,9 @@ interface LayoutFacts {
     // single exercise there is nothing to sit beside, so they can go narrower — MAB is the
     // clear case: one place-value drawing fits a half, four do not.
     minWidthSingle?: WidthUnits;
+    // The ordenen row prints stacked fractions (numerator over denominator), so its widest
+    // value is the widest denominator rather than a formatted number (ordenenMaxChars).
+    stackedFractions?: true;
 }
 
 const LAYOUT: Record<string, LayoutFacts> = {
@@ -120,7 +123,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // C3 (2026-09-13 seeded rerun, grid alignment): rowUnits 5.04 → 3.79, minWidth 1 → 2 —
     // a quarter now measures overflow 1.20 (SETTINGS_FLOOR floors it to 2 or 4 anyway,
     // since the viewer never wraps a row onto a second line).
-    "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2 },
+    "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2, stackedFractions: true },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
     // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
     // perRowFull 3 since 2026-09-13: CijferViewer measures the grid of the exercises it was
@@ -140,7 +143,8 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "deelbaarheid-kleuren": { rowUnits: 3.33, perRowFull: 1, minWidth: 1 },
     // C1 step 7: the rooster's perRow now clamps to the column, so it never overflows —
     // SETTINGS_FLOOR (2) is what actually keeps it off a quarter, not this table.
-    "even-oneven": { rowUnits: 1.9, perRowFull: 1, minWidth: 2 },
+    // S5 (2026-10-10): rooster cells back at the intended 46 x 34 px, so a row grew 1.9 → 2.17.
+    "even-oneven": { rowUnits: 2.17, perRowFull: 1, minWidth: 2 },
     "geld-herkennen": { rowUnits: 10.08, perRowFull: 3, minWidth: 1 },
     "geld-rekenen": { rowUnits: 1.58, perRowFull: 1, minWidth: 2 },
     "geld-tekenen": { rowUnits: 5.83, perRowFull: 3, minWidth: 2 },
@@ -164,14 +168,17 @@ const LAYOUT: Record<string, LayoutFacts> = {
     "kalender": { rowUnits: 14.65, perRowFull: 1, minWidth: 2 },
     "kettingsommen": { rowUnits: 2.29, perRowFull: 1, minWidth: 2 },
     "klok-kloklezen": { rowUnits: 7.08, perRowFull: 2.5, minWidth: 1 },
-    "lengte-meten": { rowUnits: 5.67, perRowFull: 1, minWidth: 4 },
+    // S5 (2026-10-10): a bare figure keeps 12 px above/below instead of 42 (5.67 → 3.17).
+    "lengte-meten": { rowUnits: 3.17, perRowFull: 1, minWidth: 4 },
     "maateenheid": { rowUnits: 1.58, perRowFull: 1, minWidth: 1 },
     "mab-herkennen": { rowUnits: 6.63, perRowFull: 2, minWidth: 2 },
     // A single drawn place-value figure has no glyph table to read, so it can go to ¼ —
     // unlike mab-herkennen, whose numeral/glyph pairing needs the ½ floor (SETTINGS_FLOOR).
     "mab-tekenen": { rowUnits: 6.63, perRowFull: 2, minWidth: 1 },
-    "omtrek": { rowUnits: 21.42, perRowFull: 1, minWidth: 4 },
-    "oppervlakte": { rowUnits: 18.07, perRowFull: 1, minWidth: 4 },
+    // S5 (2026-10-10): default count 6 → 2 and the 12 px figure padding (21.42 → 8.54).
+    "omtrek": { rowUnits: 8.54, perRowFull: 1, minWidth: 4 },
+    // S5 (2026-10-10): measured off the rooster leaf at its 2 exercises (18.07 → 11.83).
+    "oppervlakte": { rowUnits: 11.83, perRowFull: 1, minWidth: 4 },
     // C3 (2026-09-13 seeded rerun): rowUnits unchanged; minWidth 1 → 2 — a quarter now
     // measures overflow 1.03 (SETTINGS_FLOOR floors it to 2 or 4 anyway, see below).
     "ordenen": { rowUnits: 3.08, perRowFull: 2, minWidth: 2 },
@@ -279,7 +286,7 @@ const ORDENEN_SEP_PX = 20;
 /** Widest printed value's character count, estimated from SETTINGS rather than exercises
  *  (this runs before any exercise exists — first paint / the Inspector). */
 export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): number {
-    if (typeId === 'breuken-rangschikken') {
+    if (layoutFacts(typeId).stackedFractions) {
         // Rendered as a stacked fraction — the wider of numerator/denominator is the denominator.
         const maxDenominator = typeof c.maxDenominator === 'number' ? c.maxDenominator : 10;
         return String(maxDenominator).length;

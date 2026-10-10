@@ -270,6 +270,13 @@ describe('getalbegrip width helpers', () => {
         expect(ordenenMaxChars('ordenen', c)).toBe(printed.length);
     });
 
+    // The stacked-fraction row is a LAYOUT-table flag, not a typeId branch: only the
+    // denominator's width counts, whatever natural-number settings ride along.
+    test('ordenenMaxChars: breuken-rangschikken counts its widest denominator', () => {
+        expect(ordenenMaxChars('breuken-rangschikken', { maxDenominator: 12, numberType: 'natural', maxGetal: 100000 })).toBe(2);
+        expect(ordenenMaxChars('breuken-rangschikken', {})).toBe(2);
+    });
+
     test('the decimal ordenen default (max 1 000, 2 decimals) fits a half again: "999,99", never "1 000,00"', () => {
         const c = { numberType: 'decimal', maxGetal: 1000, decimalPlaces: 2, count: 3 };
         expect(ordenenRowPx('ordenen', c, 3)).toBeLessThanOrEqual(330 - 28);

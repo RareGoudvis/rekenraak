@@ -69,15 +69,18 @@ function computeEstimation(ex: CijferExercise): string {
 
 // The clickable "1 234 + 567 =" line above the grid. Module level because the width
 // estimate needs it too — the header can be wider than the grid for small operands.
-function headerTextOf(ex: CijferExercise, dp: number): string {
-    const opStr = ex.operator === 'x' ? '×' : ex.operator;
+function headerTermsOf(ex: CijferExercise, dp: number): string[] {
     return ex.operands.map((o, i) => {
         // divisor and multiplier are normally integers; use dp only when they are decimal
         if ((ex.operator === ':' && i === 1) || (ex.operator === 'x' && i > 0)) {
             return fmtDisplay(o, Number.isInteger(o) ? 0 : dp);
         }
         return fmtDisplay(o, dp);
-    }).join(` ${opStr} `) + ' =';
+    });
+}
+const headerOpOf = (ex: CijferExercise) => (ex.operator === 'x' ? '×' : ex.operator);
+function headerTextOf(ex: CijferExercise, dp: number): string {
+    return headerTermsOf(ex, dp).join(` ${headerOpOf(ex)} `) + ' =';
 }
 
 // Grid col = digit col + 1 (operator at col 0).
@@ -546,7 +549,6 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
     const extraRows = cells ? 0 : c.extraRows || 0;
 
     const opStr = ex.operator === 'x' ? '×' : ex.operator;
-    const headerText = headerTextOf(ex, dp);
 
     const confirmEdit = () => {
         const operands = editValues.map(v => parseFloat(v.replace(',', '.')));
@@ -592,7 +594,10 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                     title="Klik om te bewerken"
                     style={{ border: '0.5px solid #aaa', padding: '4px 8px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'Azeret Mono, monospace', backgroundColor: '#fff', cursor: 'pointer', userSelect: 'none' }}
                 >
-                    {headerText}
+                    {/* A narrow box breaks the line between terms, never inside "1 445". */}
+                    {headerTermsOf(ex, dp).map((t, i) => (
+                        <React.Fragment key={i}>{i > 0 && ` ${headerOpOf(ex)} `}<span style={{ whiteSpace: 'nowrap' }}>{t}</span></React.Fragment>
+                    ))}{' ='}
                 </div>
             )}
             {c.withEstimation && scaffold && (
