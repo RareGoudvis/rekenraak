@@ -15,6 +15,7 @@ import ProcentenViewer from '../components/viewer/ProcentenViewer';
 import CijferViewer from '../components/viewer/CijferViewer';
 import OrdenenViewer from '../components/viewer/OrdenenViewer';
 import WeegschaalViewer from '../components/viewer/WeegschaalViewer';
+import MabViewer from '../components/viewer/MabViewer';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
@@ -277,5 +278,31 @@ describe('weegschaal: the needle never crosses the label it points at', () => {
         }
         // ...and it still points: at least half way to the label ring.
         expect(Math.hypot(x2 - x1, y2 - y1)).toBeGreaterThan(Math.hypot(boxes[0].x - x1, boxes[0].y - y1) / 2);
+    });
+});
+
+describe('MAB herkennen (symbolic): pieces are big enough to count and still fit their cell', () => {
+    // em on the glyph svgs, at the 13pt default where 1em = 17.33px.
+    const emPx = (v: string | null) => Number.parseFloat(v ?? '0') * MATH_PX;
+    test('nine hundreds, tens and units', () => {
+        const block = { id: 'b', typeId: 'mab-herkennen', constraints: { maxNumber: 1000, mabStyle: 'symbolic' }, mabExercises: [{ id: 'm', value: 999, thousands: 0, hundreds: 9, tens: 9, units: 9, isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <MabViewer block={block} showSolutions={false} />);
+        const svgs = [...container.querySelectorAll('svg')];
+        const dot = svgs.find(s => s.querySelector('circle'))!;
+        const bar = svgs.find(s => s.querySelector('rect') && emPx(s.getAttribute('width')) > 2 * emPx(s.getAttribute('height')))!;
+        const square = svgs.find(s => s.querySelector('rect[fill="none"]'))!;
+        expect(emPx(dot.getAttribute('width'))).toBeGreaterThanOrEqual(7);
+        expect(emPx(square.getAttribute('width'))).toBeGreaterThanOrEqual(14);
+        expect(emPx(bar.getAttribute('height'))).toBeGreaterThanOrEqual(3.5);
+        // Nine tens stacked with their gap still fit the 70px box less its 2 x 6px padding,
+        // with a visible gap between bars.
+        const tensCol = bar.parentElement as HTMLElement;
+        const gap = emPx(tensCol.style.gap);
+        expect(gap).toBeGreaterThanOrEqual(3);
+        expect(9 * emPx(bar.getAttribute('height')) + 8 * gap).toBeLessThanOrEqual(58);
+        // Three hundreds across fit the column's inner width (64 - 2 x 6).
+        expect(3 * emPx(square.getAttribute('width')) + 2 * 3).toBeLessThanOrEqual(52);
+        // Units: five dots across (nine in two rows) fit too.
+        expect(5 * emPx(dot.getAttribute('width')) + 4 * 3).toBeLessThanOrEqual(52);
     });
 });

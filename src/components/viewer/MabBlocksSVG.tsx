@@ -64,7 +64,7 @@ export function MabPlaceColumn({ count, place, style, color = '#000', fill }: Co
             flexWrap: 'nowrap',
             justifyContent: 'flex-start',
             alignItems: 'center',
-            gap: em(2),
+            gap: em(style === 'symbolic' ? SYM_TENS_GAP : 2),
             width: '100%',
             height: '100%',
         }}>
@@ -130,9 +130,14 @@ function Glyph({ place, style, color, fill: fillOverride }: { place: MabPlace; s
 }
 
 // ── Symbolic glyphs ──────────────────────────────────────────────────────────
+// Sized to fill the sheet's place cell (64 x 70px, 6px padding) at the most a digit can ask:
+// nine 7px dots in two rows, nine 14px squares 3 across, nine 3.5px bars 3px apart (58px).
+// At 5px dots / 3px bars 2px apart, nine tens read as one solid block (sweep 2026-09-27).
+// SYNC: MabViewer's column width (HUNDRED_GLYPH_PX) and default boxHeight (70).
+const SYM_DOT = 7, SYM_BAR_W = 40, SYM_BAR_H = 3.5, SYM_SQ = 14, SYM_TENS_GAP = 3;
 
 function SymbolicUnits({ color }: { color: string }) {
-    const r = 2.5;
+    const r = SYM_DOT / 2;
     return (
         <svg width={em(r * 2)} height={em(r * 2)} viewBox={`0 0 ${r * 2} ${r * 2}`}>
             <circle cx={r} cy={r} r={r} fill={color} />
@@ -142,7 +147,7 @@ function SymbolicUnits({ color }: { color: string }) {
 
 // Horizontal bar — stacked vertically inside the T column by MabPlaceColumn.
 function SymbolicTens({ color }: { color: string }) {
-    const W = 22, H = 3;
+    const W = SYM_BAR_W, H = SYM_BAR_H;
     return (
         <svg width={em(W)} height={em(H)} viewBox={`0 0 ${W} ${H}`}>
             <rect width={W} height={H} fill={color} />
@@ -151,7 +156,7 @@ function SymbolicTens({ color }: { color: string }) {
 }
 
 function SymbolicHundreds({ color }: { color: string }) {
-    const SQ = 10;
+    const SQ = SYM_SQ;
     return (
         <svg width={em(SQ)} height={em(SQ)} viewBox={`0 0 ${SQ} ${SQ}`}>
             <rect width={SQ} height={SQ} stroke={color} strokeWidth={1} fill="none" />
@@ -160,7 +165,7 @@ function SymbolicHundreds({ color }: { color: string }) {
 }
 
 function SymbolicThousands({ color }: { color: string }) {
-    const SQ = 10, GAP = 2;
+    const SQ = SYM_SQ, GAP = 2;
     const total = SQ * 2 + GAP;
     return (
         <svg width={em(total)} height={em(total)} viewBox={`0 0 ${total} ${total}`}>

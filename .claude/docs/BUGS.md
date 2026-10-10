@@ -32,10 +32,9 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   terms before 2026-10-10). Fix: wrap the chain onto a second line below the floor. 2026-10-10
 - Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
   part is a blank to fill or should be dropped). 2026-09-27
-- MAB herkennen DEFAULT: pieces are tiny in big cells (hundreds ~8 px squares, units 4 px dots, tens
-  ~2 px apart: nine tens read as one solid block). mab-tekenen at width ¼ (default leaf, the packer keeps
-  w1): the D/H/T/E table is ~75 px wide, no room to draw. Fix: bigger pieces; minWidth 2 for
-  mab-tekenen. 2026-09-27
+- mab-tekenen at width ¼ (default leaf, the packer keeps w1): the D/H/T/E table is ~75 px wide, no
+  room to draw. Fix: minWidth 2 for mab-tekenen (owner call: it reverses the C1 rule pinned by
+  blockLayout.test "mab-tekenen can go to a quarter"). 2026-09-27
 - Narrow-width wrapping: vergelijken representaties woorden vs plaatswaarde at ½ / ¼ (pw021): the
   "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
 - Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
