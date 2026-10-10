@@ -253,7 +253,7 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
     deelbaarheid: (d: T.DeelbaarheidExercise, c) => {
         // tabel: the divisor columns the number divides, smallest first (tapped cells).
         if (c.layout !== 'veelvouden') return { set: (c.divisors as number[]).filter(x => d.number! % x === 0).sort((a, b) => a - b).map(x => formatMathNumber(x)) };
-        d.sequence!.forEach((v, k) => expect(v).toBe(d.base! * k));
+        d.sequence!.forEach((v, k) => expect(v).toBe(d.base! * (Number(c.startFrom ?? 0) + k)));
         return { multi: d.sequence!.slice(d.givenCount ?? 2) };
     },
     'deelbaarheid-kleuren': (k: T.DeelbaarheidKleurExercise) => {

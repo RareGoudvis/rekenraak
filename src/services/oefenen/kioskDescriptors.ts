@@ -799,6 +799,13 @@ export const VEELVOUDEN_KIOSK = descriptor<DeelbaarheidExercise>({
         ? `${showNum(ex.number ?? 0)} deelbaar door ${divisorsOf(c).join(', ')}: ?`
         : (ex.sequence ?? []).map((v, i) => (i < (ex.givenCount ?? 2) ? String(v) : '?')).join(' – ')),
     supported: (c) => c.layout === 'veelvouden' || isTabel(c),
+    // A kiosk block holds one row, which would always read "0 – 9 – …": draw the deler (the teacher's base or one of
+    // the divisors) and the start multiple per exercise.
+    prepare: (c, rng) => {
+        if (c.layout !== 'veelvouden') return c;
+        const pool = [...new Set([Number(c.base ?? 9), ...divisorsOf(c)])];
+        return { ...c, base: pool[Math.floor(rng() * pool.length)], startFrom: Math.floor(rng() * 11) };
+    },
 });
 
 // Kleuren / omcirkelen / kleurraster: tap every multiple of the divisor. Each row has ONE

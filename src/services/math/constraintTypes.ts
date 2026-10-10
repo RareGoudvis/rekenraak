@@ -410,6 +410,8 @@ export type DeelbaarheidConstraints = {
     base: number;
     terms: number;
     givenCount: number;
+    // Kiosk only (prepare): the multiple the single row starts at, so the draws differ.
+    startFrom?: number;
 };
 
 export type DeelbaarheidKleurConstraints = {
