@@ -32,8 +32,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
   terms before 2026-10-10). Fix: wrap the chain onto a second line below the floor. 2026-10-10
 - Herleidingen: compound answers print zero parts ("71 dl 0 cl 0 ml"; owner call whether a zero
   part is a blank to fill or should be dropped). 2026-09-27
-- Weegschaal (massa-weegschaal-aflezen DEFAULT): the needle is drawn over the scale label it points
-  at ("700", "800" crossed out). Fix: stop the needle short of the label ring. 2026-09-27
 - MAB herkennen DEFAULT: pieces are tiny in big cells (hundreds ~8 px squares, units 4 px dots, tens
   ~2 px apart: nine tens read as one solid block). mab-tekenen at width ¼ (default leaf, the packer keeps
   w1): the D/H/T/E table is ~75 px wide, no room to draw. Fix: bigger pieces; minWidth 2 for

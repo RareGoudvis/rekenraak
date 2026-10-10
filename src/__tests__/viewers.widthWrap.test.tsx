@@ -14,6 +14,7 @@ import RomeinseViewer from '../components/viewer/RomeinseViewer';
 import ProcentenViewer from '../components/viewer/ProcentenViewer';
 import CijferViewer from '../components/viewer/CijferViewer';
 import OrdenenViewer from '../components/viewer/OrdenenViewer';
+import WeegschaalViewer from '../components/viewer/WeegschaalViewer';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { monoTextPx } from '../services/layout/blockLayout';
 import { formatMathNumber } from '../services/math/formatters';
@@ -255,5 +256,26 @@ describe('ordenen: the key is red AND bold (viewer rule 3)', () => {
             const weight = el.style.fontWeight || (el.closest('[style*="font-weight"]') as HTMLElement | null)?.style.fontWeight;
             expect(weight, el.textContent ?? '').toBe('700');
         }
+    });
+});
+
+describe('weegschaal: the needle never crosses the label it points at', () => {
+    test.each([[700, 1000, 50], [800, 1000, 50], [750, 1000, 50], [3000, 5000, 100], [0, 1000, 50]])('%i g on a %i g dial', (grams, bereik, step) => {
+        const block = { id: 'b', typeId: 'weegschaal', constraints: { mode: 'aflezen' }, weegschaalExercises: [{ id: 'w', grams, bereikGram: bereik, stepGram: step, notatie: 'g', mode: 'aflezen', isManuallyEdited: false }] } as unknown as MathBlock;
+        const { container } = at(W.full, <WeegschaalViewer block={block} showSolutions={false} />);
+        const needle = [...container.querySelectorAll('line')].find(l => l.getAttribute('stroke-width') === '2.5')!;
+        const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => Number(needle.getAttribute(a)));
+        // Label boxes from the glyph advance at their viewBox font size (+1 unit of air).
+        const boxes = [...container.querySelectorAll('text')].filter(t => t.getAttribute('dominant-baseline') === 'central').map(t => {
+            const fs = Number(t.getAttribute('font-size'));
+            return { x: Number(t.getAttribute('x')), y: Number(t.getAttribute('y')), w: monoTextPx(t.textContent!.length, 1, fs) / 2 + 1, h: fs / 2 + 1 };
+        });
+        expect(boxes.length).toBe(10);
+        for (let k = 0; k <= 100; k++) {
+            const x = x1 + (x2 - x1) * k / 100, y = y1 + (y2 - y1) * k / 100;
+            for (const b of boxes) expect(Math.abs(x - b.x) < b.w && Math.abs(y - b.y) < b.h, `needle at ${k}% inside label at ${b.x},${b.y}`).toBe(false);
+        }
+        // ...and it still points: at least half way to the label ring.
+        expect(Math.hypot(x2 - x1, y2 - y1)).toBeGreaterThan(Math.hypot(boxes[0].x - x1, boxes[0].y - y1) / 2);
     });
 });
