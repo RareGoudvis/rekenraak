@@ -56,20 +56,26 @@ export default function PatroonViewer({ block, showSolutions }: Props) {
     const negatives = exercises.some(ex => ex.values.some(v => v < 0));
     const fmt = (v: number) => formatSignedInt(v);
     const sep = showArrows ? '→' : negatives ? ';' : '–';
-    // Every term column holds the block's widest term on one line, so columns still align
-    // across rows; the font steps down until the whole row fits the column it is in.
+    // Every term column holds the widest term (or blank) in that position across the block on
+    // one line, so columns still align across rows; the font steps down until the whole row
+    // fits the column it is in.
     const nVals = Math.max(1, ...exercises.map(ex => ex.values.length));
-    const termChars = Math.max(2, ...exercises.flatMap(ex => ex.values.map(v => fmt(v).length)));
     const opChars = Math.max(1, ...exercises.flatMap(ex => ex.cycle.map((_, i) => opText(ex, i).length)));
     const blankPxAt = (f: number) => Math.round(BLANK_PX * f / TERM_FACTORS[0]);
-    const connPxAt = (f: number) => Math.ceil(Math.max(monoTextPx(1, f * GLYPH_RATIO, mathPx), stacked ? Math.max(showArrows ? 26 : 0, monoTextPx(opChars, 0.7, mathPx)) : 0)) + 4;
-    // The blank line may spill into the connector columns beside it (as it always has), so
-    // only the term text sets the column floor.
-    const termPxAt = (f: number) => Math.ceil(monoTextPx(termChars, f, mathPx)) + 2;
-    const rowPxAt = (f: number) => nVals * termPxAt(f) + (nVals - 1) * connPxAt(f) + (2 * nVals - 2) * COL_GAP_PX;
+    const connPxAt = (f: number) => Math.ceil(Math.max(monoTextPx(1, f * GLYPH_RATIO, mathPx), stacked ? Math.max(showArrows ? 26 : 0, monoTextPx(opChars, 0.7, mathPx)) : 0)) + 2;
+    // A blank position needs its writing line as well as the answer it may show, whatever
+    // Toon oplossingen says, so the layout does not jump when the key is switched on.
+    const termPxAt = (f: number, i: number) => Math.ceil(Math.max(monoTextPx(2, f, mathPx), ...exercises.map(ex => {
+        const v = ex.values[i];
+        if (v === undefined) return 0;
+        const text = monoTextPx(fmt(v).length, f, mathPx);
+        return ex.blankMask[i] ? Math.max(text, blankPxAt(f)) : text;
+    }))) + 1;
+    const rowPxAt = (f: number) => Array.from({ length: nVals }, (_, i) => termPxAt(f, i)).reduce((a, b) => a + b, 0)
+        + (nVals - 1) * connPxAt(f) + (2 * nVals - 2) * COL_GAP_PX;
     const factor = TERM_FACTORS.find(f => rowPxAt(f) <= width) ?? TERM_FACTORS[TERM_FACTORS.length - 1];
-    const termPx = termPxAt(factor), connPx = connPxAt(factor), blankPx = blankPxAt(factor);
-    const columns = (n: number) => Array.from({ length: n * 2 - 1 }, (_, i) => `minmax(${i % 2 === 0 ? termPx : connPx}px, 1fr)`).join(' ');
+    const connPx = connPxAt(factor), blankPx = blankPxAt(factor);
+    const columns = (n: number) => Array.from({ length: n * 2 - 1 }, (_, i) => `minmax(${i % 2 === 0 ? termPxAt(factor, i / 2) : connPx}px, 1fr)`).join(' ');
 
     return (
         <FragmentableGrid
