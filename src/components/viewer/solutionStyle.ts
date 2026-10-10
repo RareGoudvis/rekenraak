@@ -4,6 +4,10 @@ import type { CSSProperties } from 'react';
 // printout still separates the answer from the exercise.
 export const SOL = 'var(--ink-solution)';
 
+// The colouring keys (breuken, deelbaarheid, even-oneven) fill with the same red at low opacity, so the key
+// stays one colour and the numbers/outlines on top remain readable.
+export const SOL_FILL = 'color-mix(in srgb, var(--ink-solution) 35%, transparent)';
+
 export const solutionText: CSSProperties = { color: SOL, fontWeight: 700 };
 
 // SVG viewers colour paths instead of text.

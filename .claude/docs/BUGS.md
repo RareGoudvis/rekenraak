@@ -25,8 +25,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Narrow-width wrapping: vergelijken representaties woorden vs plaatswaarde at ½ / ¼ (pw021): the
   "1H2T7E5t" code runs 5-14 px out of the cell. 2026-09-27
 - Solution styling: klok lezen / omzetten answers are ~8 px under each clock; geld-teruggeven turns the GIVEN price and paid amount red
-  too; geld-tekenen's key only repeats the prompt amount (~7 px); colouring keys (breuken hoeveelheid /
-  veelhoek, deelbaarheid, even-oneven) use the light-blue fill, not red (owner call). 2026-09-27
+  too; geld-tekenen's key only repeats the prompt amount (~7 px). 2026-09-27
 
 
 - HerleidingenViewer: the right-aligned left side is sized from a char-count estimate (`leftW`, ~9.5 px/char)

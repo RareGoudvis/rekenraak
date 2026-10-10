@@ -2,7 +2,7 @@ import type { FractionExercise, MathBlock } from '../../services/math/types';
 import FractionShapeSVG from './FractionShapeSVG';
 import VerticalFraction from './VerticalFraction';
 import type { FractionConstraints } from '../../services/math/constraintTypes';
-import { SOL, solutionText } from './solutionStyle';
+import { SOL, SOL_FILL, solutionText } from './solutionStyle';
 import { useViewerInteraction } from './ViewerInteractionContext';
 import { SHAPE_BUDGET_AT_DEFAULT, PX_PER_EM_AT_DEFAULT } from './FractionShapeSVG';
 import { useSheetSizePx, useShowScaffold, ANSWER_LINE_H } from './BlockWidthContext';
@@ -99,6 +99,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                 shape={ex.shape ?? 'rectangle'} coloredIndices={ex.coloredIndices ?? []}
                 gridRows={ex.gridRows ?? 1} gridCols={gridCols}
                 showColored={showColored} cellSize={cappedCell}
+                fillColor={subType === 'kleuren' ? SOL_FILL : undefined}
                 physicalSize={!!c.staticSize}
                 ix={subType === 'kleuren' ? ix : null}
                 style={c.staticSize ? undefined : figureFont(shapeUnitsW)}
@@ -189,8 +190,8 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         const rowSizes = groupRows(total, ex.denominator, groupingMode);
 
         const objEl = (idx: number, colored: boolean) => ex.objectShape === 'circle'
-            ? <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><circle cx={objSize/2} cy={objSize/2} r={objSize/2-1.5} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>
-            : <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><rect x={1.5} y={1.5} width={objSize-3} height={objSize-3} fill={colored ? '#93c5fd' : 'white'} stroke="#000" strokeWidth={1.5}/></svg>;
+            ? <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><circle cx={objSize/2} cy={objSize/2} r={objSize/2-1.5} fill={colored ? SOL_FILL : 'white'} stroke="#000" strokeWidth={1.5}/></svg>
+            : <svg key={idx} width={em(objSize)} height={em(objSize)} viewBox={`0 0 ${objSize} ${objSize}`}><rect x={1.5} y={1.5} width={objSize-3} height={objSize-3} fill={colored ? SOL_FILL : 'white'} stroke="#000" strokeWidth={1.5}/></svg>;
 
         const simpleGrid = (
             // One font-size wrapper per figure: the object svgs and the gaps between them are
@@ -492,7 +493,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                             <div key={i} style={{
                                 width: `${cellSize}px`, height: `${cellSize}px`,
                                 border: showGrid ? '0.5px solid #93c5fd' : 'none', boxSizing: 'border-box',
-                                backgroundColor: showSolutions && i < cellsPerPart * ex.numerator ? '#93c5fd' : 'white',
+                                backgroundColor: showSolutions && i < cellsPerPart * ex.numerator ? SOL_FILL : 'white',
                             }} />
                         ))}
                     </div>
