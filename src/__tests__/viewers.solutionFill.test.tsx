@@ -39,3 +39,20 @@ describe('colouring keys use the solution red fill', () => {
         expect(out).not.toContain('rgb(147, 197, 253)');
     });
 });
+
+// The hoeveelheid key fills every line the pupil writes on (the ": / × / =" rows were left empty).
+describe('breuken hoeveelheid key has no empty writing line', () => {
+    test.each([
+        ['met-hulp', 'hoeveelheid'], ['met-breukvragen', 'hoeveelheid'],
+        ['berekeningslijnen', 'hoeveelheid-abstract'], ['structuurlijnen', 'hoeveelheid-abstract'],
+    ])('%s (%s)', (mode, subType) => {
+        const leaf = flattenLeaves().find((l) => l.id === 'breuken-hoeveelheid')!;
+        const constraints = { ...leaf.defaultConstraints, subType, answerFormat: mode, answerMode: mode };
+        const block = makeBlock('breuken', { constraints, leafId: 'breuken-hoeveelheid' });
+        (block as unknown as Record<string, unknown>)[REGISTRY['breuken'].exerciseField] = REGISTRY['breuken'].generate(block);
+        const { Viewer } = EXERCISE_UI['breuken'];
+        const { container } = render(<BlockWidthProvider value={FULL_BLOCK_WIDTH_PX}><Viewer block={block} showSolutions /></BlockWidthProvider>);
+        const blanks = [...container.querySelectorAll('div')].filter((d) => d.style.borderBottom.startsWith('1.5px solid') && d.children.length === 0);
+        expect(blanks.length).toBe(0);
+    });
+});
