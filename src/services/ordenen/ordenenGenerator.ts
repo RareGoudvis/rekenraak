@@ -96,7 +96,8 @@ export function generateOrdenenExercisesNoted(block: MathBlock): { items: Ordene
         const ordered = [...values].sort((a, b) => (operator === '<' ? val(a) - val(b) : val(b) - val(a)));
         const display = [...values].sort(() => Math.random() - 0.5);
 
-        results.push({ id: rndId(), values: ordered, display, operator, isManuallyEdited: false });
+        // The printed decimals travel with the numbers: 544,30 keeps its zero beside 127,49.
+        results.push({ id: rndId(), values: ordered, display, operator, ...(decimalPlaces ? { decimalPlaces } : {}), isManuallyEdited: false });
     }
 
     const note = relaxed > 0 ? `De getalopbouw past niet bij dit maximum; voor ${countOefeningen(relaxed)} is ze losgelaten.` : null;

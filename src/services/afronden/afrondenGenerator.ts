@@ -127,6 +127,8 @@ export function generateAfrondenExercises(block: MathBlock): AfrondenExercise[] 
 
     const newNumber = () => (numberType === 'decimal' ? buildDecimal(maxGetal, decimalPlaces) : buildNatural(maxGetal, numberMask));
     const count = block.numberOfExercises || 6;
+    // The printed decimals travel with the numbers, so 4,10 keeps its zero beside 70,34.
+    const dp = numberType === 'decimal' ? { decimalPlaces } : {};
 
     if (subType === 'simpel') {
         const out: AfrondenExercise[] = [];
@@ -139,7 +141,7 @@ export function generateAfrondenExercises(block: MathBlock): AfrondenExercise[] 
             const key = `${number}-${targetKey}`;
             if (seen.has(key)) continue;
             seen.add(key);
-            out.push({ id: Math.random().toString(36).substring(2, 9), number, targetKey, isManuallyEdited: false });
+            out.push({ id: Math.random().toString(36).substring(2, 9), number, targetKey, ...dp, isManuallyEdited: false });
         }
         return out;
     }
@@ -149,6 +151,6 @@ export function generateAfrondenExercises(block: MathBlock): AfrondenExercise[] 
         const nums = new Set<number>();
         let g = 0;
         while (nums.size < roosterSize && g++ < roosterSize * 60) nums.add(newNumber());
-        return { id: Math.random().toString(36).substring(2, 9), numbers: [...nums], isManuallyEdited: false };
+        return { id: Math.random().toString(36).substring(2, 9), numbers: [...nums], ...dp, isManuallyEdited: false };
     });
 }

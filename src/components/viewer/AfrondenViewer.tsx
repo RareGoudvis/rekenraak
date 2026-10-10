@@ -43,9 +43,8 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     if (subType === 'simpel') {
         // Both columns keep their tuned minimum and grow to the block's widest value, so "≈"
         // stays aligned down the column once numbers outgrow 60px.
-        const nums = exercises.map(ex => ex.number ?? 0);
         const targetOf = (ex: AfrondenExercise) => all.find(x => x.key === ex.targetKey) ?? all[0];
-        const numCol = grownColumn(60, Math.max(0, ...nums.map(n => formatMathNumber(n).length)), 0.92, mathPx, 0);
+        const numCol = grownColumn(60, Math.max(0, ...exercises.map(ex => formatMathNumber(ex.number ?? 0, ex.decimalPlaces).length)), 0.92, mathPx, 0);
         const ansCol = grownColumn(58, Math.max(0, ...exercises.map(ex => roundedText(ex.number ?? 0, targetOf(ex)).length)), 0.92, mathPx, 0);
         // One row = number, "≈", answer and the "(H)" label (mono at 0.6 × the text token), three 8px flex gaps.
         const labelChars = Math.max(0, ...exercises.map(ex => targetHeading(targetOf(ex)).length + 2));
@@ -61,7 +60,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                     const t = targetOf(ex);
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>
-                            <span style={{ minWidth: numCol.css, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number ?? 0)}</span>
+                            <span style={{ minWidth: numCol.css, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number ?? 0, ex.decimalPlaces)}</span>
                             <span>≈</span>
                             {showSolutions
                                 ? <span style={{ ...solutionText, minWidth: ansCol.css, whiteSpace: 'nowrap' }}>{roundedText(ex.number ?? 0, t)}</span>
@@ -88,8 +87,10 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
     // 3+ targets get the roomier 104px and fall back to 1-up. Both grow past a million, where
     // "1 000 000 000" no longer fits them (a centred cell hides that spill from the width probe).
     const allNumbers = exercises.flatMap(ex => ex.numbers || []);
+    // A decimal block's printed decimals (4,10 keeps its zero beside 70,34).
+    const allTexts = exercises.flatMap(ex => (ex.numbers || []).map(n => formatMathNumber(n, ex.decimalPlaces)));
     const widest = (texts: string[]) => Math.max(0, ...texts.map(t => t.length));
-    const numberCol = grownColumn(numberType === 'decimal' ? 90 : 104, widest(allNumbers.map(n => formatMathNumber(n))), CELL_FONT, mathPx, CELL_PAD_PX);
+    const numberCol = grownColumn(numberType === 'decimal' ? 90 : 104, widest(allTexts), CELL_FONT, mathPx, CELL_PAD_PX);
     // Sized from every rounded answer whether or not solutions show, so toggling them never reflows.
     const targetCol = grownColumn(targets.length <= 2 ? 96 : 104, widest(allNumbers.flatMap(n => targets.map(t => roundedText(n, t)))), CELL_FONT, mathPx, CELL_PAD_PX);
     // A rooster wider than the cell repeats its number column over stacked tables of fewer targets.
@@ -115,7 +116,7 @@ export default function AfrondenViewer({ block, showSolutions }: Props) {
                 </div>
                 {(ex.numbers || []).map((num, i) => (
                     <div key={i} style={{ display: 'grid', gridTemplateColumns: grid }}>
-                        <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{formatMathNumber(num)}</div>
+                        <div style={{ ...cell, backgroundColor: SALMON, fontWeight: 'bold' }}>{formatMathNumber(num, ex.decimalPlaces)}</div>
                         {ts.map(t => (
                             <div key={t.key} style={{ ...cell, ...solutionText }}>
                                 {/* Oefenmodus: the empty cell is the pupil's (kiosk.css is-box; flex + width 0 keep the column). */}
