@@ -98,6 +98,9 @@ interface LayoutFacts {
     // single exercise there is nothing to sit beside, so they can go narrower — MAB is the
     // clear case: one place-value drawing fits a half, four do not.
     minWidthSingle?: WidthUnits;
+    // The ordenen row prints stacked fractions (numerator over denominator), so its widest
+    // value is the widest denominator rather than a formatted number (ordenenMaxChars).
+    stackedFractions?: true;
 }
 
 const LAYOUT: Record<string, LayoutFacts> = {
@@ -120,7 +123,7 @@ const LAYOUT: Record<string, LayoutFacts> = {
     // C3 (2026-09-13 seeded rerun, grid alignment): rowUnits 5.04 → 3.79, minWidth 1 → 2 —
     // a quarter now measures overflow 1.20 (SETTINGS_FLOOR floors it to 2 or 4 anyway,
     // since the viewer never wraps a row onto a second line).
-    "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2 },
+    "breuken-rangschikken": { rowUnits: 3.79, perRowFull: 2, minWidth: 2, stackedFractions: true },
     // Cijferen (column arithmetic) sat on FALLBACK; the width matrix shows the grid fits a
     // quarter cell at its default 2-up count, so it is one of the few types that can go ¼.
     // perRowFull 3 since 2026-09-13: CijferViewer measures the grid of the exercises it was
@@ -279,7 +282,7 @@ const ORDENEN_SEP_PX = 20;
 /** Widest printed value's character count, estimated from SETTINGS rather than exercises
  *  (this runs before any exercise exists — first paint / the Inspector). */
 export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): number {
-    if (typeId === 'breuken-rangschikken') {
+    if (layoutFacts(typeId).stackedFractions) {
         // Rendered as a stacked fraction — the wider of numerator/denominator is the denominator.
         const maxDenominator = typeof c.maxDenominator === 'number' ? c.maxDenominator : 10;
         return String(maxDenominator).length;
