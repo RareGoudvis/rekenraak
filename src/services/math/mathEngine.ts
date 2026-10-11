@@ -1346,9 +1346,10 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             } else if (numberType === 'decimal' && !useDividendMask && !useDivisorMask) {
                 // Same spread for decimals: a 1-digit divisor shifted j places (6 / 0,6 / 0,06) and a
                 // quotient with the dp - j decimals left, so the dividend keeps ≤ dp decimals, exact.
-                // The shift stops one place short of dp: one decimal means a whole divisor (kommagetal : natuurlijk getal).
+                // Owner 2026-10-11: a decimal deler (0,6) is the usual case and a whole one the exception, so
+                // "48,6 : 0,6" is what the default shows; the quotient stays whole when the shift is dp.
                 const d = spreadDivisor();
-                const j = randInt(0, Math.max(0, decimalPlaces - 1));
+                const j = Math.random() < 0.75 ? randInt(1, decimalPlaces) : 0;
                 const qScale = Math.pow(10, decimalPlaces - j);
                 const qHi = Math.min(Math.floor((maxGetal * displayScale) / d), maxGetal * qScale);
                 if (qHi < 2) continue;
