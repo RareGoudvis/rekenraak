@@ -53,10 +53,14 @@ describe('kiosk instruction wording', () => {
 
     // Pupil-play pass 2026-10-10: a right result without the needed onthoud- / leencijfer is Fout (owner
     // rule), so the header says so: one text on every cijferen card, whatever the exercise needs.
-    test('cijferen asks for the carries in one generic header', () => {
+    test('cijferen header is one text per operator (never tells whether this exercise has a carry)', () => {
         const cijfer = ALL.filter(h => h.leafId.startsWith('cijferen-'));
         expect(new Set(cijfer.map(h => h.leafId)).size).toBe(8);
-        for (const h of cijfer) expect(h.shown, `${h.leafId} L${h.grade}`).toBe('Cijfer uit. Typ ook je onthoud- en leencijfers.');
+        const WANT: Record<string, string> = {
+            '+': 'Cijfer uit. Typ ook je onthoudcijfers.', 'x': 'Cijfer uit. Typ ook je onthoudcijfers.',
+            '-': 'Cijfer uit. Typ ook je leencijfers.', ':': 'Cijfer uit.',
+        };
+        for (const h of cijfer) expect(h.shown, `${h.leafId} L${h.grade}`).toBe(WANT[(h.exercise as { operator: string }).operator]);
     });
 
     test('klok analoog lezen asks for a typed time, the only answer the card takes', () => {

@@ -129,11 +129,11 @@ describe('Resultaten row names the target (triage item 2)', () => {
         const r = row(ex([[235, 'cm']], [[2350, 'mm']]), '235');
         expect(r.exercise).toBe('235 cm = ? mm');
         expect(r.given).toBe('235 mm');
-        expect(r.expected).toBe('2 350 mm');
+        expect(r.expected).toBe('2\u202f350 mm');
     });
     test('eenheid: "2 350 mm = 235 ?", the answers carry the number', () => {
         const r = row(ex([[2350, 'mm']], [[235, 'cm']], 'unit', 'enkel-eenheid'), 'dm');
-        expect(r.exercise).toBe('2 350 mm = 235 ?');
+        expect(r.exercise).toBe('2\u202f350 mm = 235 ?');
         expect(r.given).toBe('235 dm');
         expect(r.expected).toBe('235 cm');
     });

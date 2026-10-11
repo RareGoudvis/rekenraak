@@ -231,6 +231,8 @@ const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { leng
 // the new top digits; it exchanges whether or not the column needs it (cijferLenen).
 const LENEN_KEY: KioskExtraKey<CijferExercise> = {
     id: 'lenen', label: 'Lenen', hotkeys: ['l', 'L', '-'],
+    // One line for every subtraction, so it explains the key without saying whether this exercise needs it.
+    hint: 'Lenen: wissel een tiental',
     apply: (state, active, ex, c) => cijferLenen(ex, cijferDp(ex, c), state, active),
 };
 
@@ -250,8 +252,9 @@ export function cijferKiosk({ strictCarries = true }: CijferKioskOptions = {}): 
         keys: (c) => (numberTypeOf(c) === 'decimal' && c.operator === ':' ? [','] : []),
         extraKeys: (ex) => (ex.operator === '-' ? [LENEN_KEY] : []),
         // A needed carry left blank is Fout (owner rule), so the card says the carries count; one text
-        // on every cijferen card (pupil-play pass 2026-10-10), so it never tells whether this one has any.
-        kioskInstruction: 'Cijfer uit. Typ ook je onthoud- en leencijfers.',
+        // per operator (÷ has no carry row), so it never tells whether this exercise has any.
+        kioskInstruction: (ex) => (ex.operator === ':' ? 'Cijfer uit.'
+            : ex.operator === '-' ? 'Cijfer uit. Typ ook je leencijfers.' : 'Cijfer uit. Typ ook je onthoudcijfers.'),
         interact: {
             kind: 'fill-cells',
             keys: (ex, c) => cijferKioskGrid(ex, cijferDp(ex, c)).cells.map(k => k.key),
@@ -340,8 +343,8 @@ export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     rowLabel: (label, c) => (c.subType !== 'plaats' && c.subType !== 'omcirkelen' ? label
         : c.plaatsAnswer === 'waarde' ? `${label.split(' · ')[0]} · waarde van cijfer`
         : c.plaatsAnswer === 'plaats-shuffle' ? `${label} (door elkaar)` : label),
-    // A new builder row asks the value: on a screen the place in the digits' order is only counting (owner 2026-10-10).
-    kioskSeed: (c) => (c.subType === 'plaats' || c.subType === 'omcirkelen' ? { plaatsAnswer: 'waarde' } : undefined),
+    // Each leaf plays as its name says: waarde types the value; plaats and omcirkelen mix the places (in the digits' order a screen only counts along).
+    kioskSeed: (c) => (c.subType === 'waarde' ? { plaatsAnswer: 'waarde' } : c.subType === 'plaats' || c.subType === 'omcirkelen' ? { plaatsAnswer: 'plaats-shuffle' } : undefined),
     choicesOf: (ex, c) => shownPlaatsen(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
     // Keys are chip positions (SYNC: PlaatswaardeViewer omcirkelen chips); the answer is the letter.
     interact: {

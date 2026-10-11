@@ -4,6 +4,7 @@ import FragmentableGrid from './FragmentableGrid';
 import type { DeelbaarheidKleurConstraints } from '../../services/math/constraintTypes';
 import { SOL, SOL_FILL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
+import { useShowScaffold } from './BlockWidthContext';
 import { kioskNumbers } from '../../services/deelbaarheid/deelbaarheidKleurGenerator';
 
 interface Props {
@@ -22,6 +23,8 @@ const em = (px: number) => `${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)}em`;
 export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props) {
     // Oefenmodus: null on the sheet; in the kiosk the pupil taps every multiple.
     const ix = useViewerInteraction();
+    // The card's header already names the divisor; the paper prompt line stays on the sheet only.
+    const scaffold = useShowScaffold();
     const exercises: DeelbaarheidKleurExercise[] = block.deelbaarheidKleurExercises || [];
     const c = block.constraints as DeelbaarheidKleurConstraints;
     const viewModeRaw: string = c.viewMode ?? 'strip';
@@ -67,7 +70,7 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                     const cols = ix ? Math.min(ex.cols ?? 10, 5) : (ex.cols ?? 10);
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
+                            {scaffold && <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>}
                             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, ${em(42)})`, width: 'fit-content' }}>
                                 {numbers.map((num, i) => (
                                     <div key={i} {...interactionProps(ix, String(i))} style={{
@@ -86,7 +89,7 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                 if (viewMode === 'markeren') {
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Omcirkel de veelvouden van {ex.divisor}:</span>
+                            {scaffold && <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Omcirkel de veelvouden van {ex.divisor}:</span>}
                             {/* `perRow` columns forced via a fixed grid squeezed the numbers into
                                overlapping text at ½/¼ instead of wrapping (BUGS.md). A flex item's
                                default min-width is its content size, so a flex-basis of 100%/perRow
@@ -111,7 +114,7 @@ export default function DeelbaarheidKleurViewer({ block, showSolutions }: Props)
                 // ── STRIP / LIJN: colour the multiples in a labelled number strip ──
                 return (
                     <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>
+                        {scaffold && <span style={{ fontFamily: mono, fontSize: 'calc(var(--sheet-size-text) * 0.7)' }}>Kleur de veelvouden van {ex.divisor}:</span>}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: showRest ? '4px' : '0', alignItems: 'flex-start' }}>
                             {numbers.map((num, i) => (
                                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: showRest || i === 0 ? 0 : -1 }}>

@@ -67,9 +67,9 @@ export default function EvenOnevenViewer({ block, showSolutions }: Props) {
                                 {Array.from({ length: cols }, (_, c) => {
                                     const idx = c * 2 + 1;    // bottom-row circle (the pair partner)
                                     const missing = idx >= n;
-                                    // the lone leftover (odd number) is highlighted in the solution
+                                    // the lone leftover (odd number) is highlighted in the solution; the kiosk draws no extra circle (a pupil counts them)
                                     const leftover = missing && (c * 2) < n;
-                                    if (missing && !leftover) return <span key={c} style={{ width: objSize, height: objSize, display: 'inline-block' }} />;
+                                    if (missing && (!leftover || ix)) return <span key={c} style={{ width: objSize, height: objSize, display: 'inline-block' }} />;
                                     return <Circle key={c} size={objSize} ghost={false} solved={showSolutions} highlight={showSolutions && leftover} />;
                                 })}
                             </div>

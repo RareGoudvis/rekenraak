@@ -1,3 +1,7 @@
+// A plain space is a full cell wide in the mono card font ("7  400"); the pupil page swaps in a narrow one.
+let thousandsSeparator = ' ';
+export const setThousandsSeparator = (sep: string): void => { thousandsSeparator = sep; };
+
 /**
  * Zet een getal om naar een string met decimale komma en spaties per duizendtal.
  * Voorbeeld: 1234.56 -> "1 234,56"
@@ -9,7 +13,7 @@ export const formatMathNumber = (num: number | string | undefined, decimalPlaces
     const [integerPart, decimalPart] = str.split('.');
 
     // 1. Duizendtal-spaties toevoegen
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousandsSeparator);
 
     // 2. Decimale komma toevoegen (als er decimalen zijn)
     if (decimalPart !== undefined) {

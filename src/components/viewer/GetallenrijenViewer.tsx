@@ -7,6 +7,7 @@ import type { GetallenrijConstraints } from '../../services/math/constraintTypes
 import { SOL } from './solutionStyle';
 import { getallenrijFit } from '../../services/layout/blockLayout';
 import KioskCell from './KioskCell';
+import { useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
     block: MathBlock;
@@ -48,6 +49,8 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
     const gap = block.verticalSpacing || 14;
     const c = block.constraints as GetallenrijConstraints;
     const showFrame = c.showFrame !== false;
+    // Oefenmodus only: lets the card's extent measure include the pill's own border (null on the sheet).
+    const ix = useViewerInteraction();
 
     if (exercises.length === 0) {
         return <div className="no-print" style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: '14px', padding: '8px 0' }}>(Nog geen oefeningen — klik Genereer)</div>;
@@ -66,7 +69,7 @@ export default function GetallenrijenViewer({ block, showSolutions }: Props) {
                 const fit = getallenrijFit(vals.length, maxChars, availableWidth, scale, showFrame);
                 const fontSize = fit.fontPx * scale;
                 return (
-                    <div key={ex.id} className="print-exercise" style={{
+                    <div key={ex.id} className="print-exercise" {...(ix && showFrame ? { 'data-card-extent': '' } : {})} style={{
                         ...(showFrame ? { border: '1.5px solid #000', borderRadius: '22px', padding: `10px ${fit.padX}px` } : { padding: '6px 0' }),
                         // One pill per row (perRowFull: 1) so it centres rather than hugging
                         // the left edge in a narrow column.

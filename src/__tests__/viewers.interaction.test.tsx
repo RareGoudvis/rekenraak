@@ -399,6 +399,22 @@ describe('kiosk flow: answer on the card', () => {
         expect(st().lastCorrect).toBe(true);
     });
 
+    test('the Lenen key explains itself with one static line, and only the Lenen key does', () => {
+        const LINE = 'Lenen: wissel een tiental';
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-aftrekken-nat')] })));
+        st().start();
+        const aftrekken = render(<OefenApp />);
+        expect(screen.getByRole('button', { name: 'Lenen' })).toBeTruthy();
+        expect(screen.getAllByText(LINE)).toHaveLength(1);
+        aftrekken.unmount();
+        resetKiosk();
+        st().load(hashOf(starterSessie({ types: [leafType('cijferen-optellen-nat')] })));
+        st().start();
+        render(<OefenApp />);
+        expect(screen.queryByRole('button', { name: 'Lenen' })).toBeNull();
+        expect(screen.queryByText(LINE)).toBeNull();
+    });
+
     test('cijferen aftrekken: Lenen exchanges the units, strikes the 5 and 2, then 5 and 3 are juist', () => {
         st().load(hashOf(starterSessie({ types: [leafType('cijferen-aftrekken-nat')] })));
         st().start();

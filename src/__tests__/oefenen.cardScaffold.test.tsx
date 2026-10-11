@@ -58,6 +58,12 @@ const CASES: Case[] = [
     ['vormleer herkennen writing line', 'vormleer-hoeken-herkennen', {}, lines, 0],
     ['vormleer vierhoeken writing line', 'vormleer-vierhoeken', {}, lines, 0],
     ['mab herkennen writing line', 'mab-herkennen', {}, lines, 0],
+    // R1 2026-10-11: paper prompts the card header already says, and the __:__ box the panel fields replace.
+    ['klok omzetten __:__ box', 'klok-analoog-omzetten', {}, r => count(r, '__:__'), 0],
+    ['klok digitaal tekenen __:__ box', 'klok-digitaal-tekenen', {}, r => count(r, '__:__'), 0],
+    ['deelbaarheid rooster prompt line', 'deelbaarheid-rooster', {}, r => count(r, 'Kleur de veelvouden'), 0],
+    ['deelbaarheid kleurraster prompt line', 'deelbaarheid-kleurraster', {}, r => count(r, 'Kleur de veelvouden'), 0],
+    ['deelbaarheid omcirkelen prompt line', 'deelbaarheid-omcirkelen', {}, r => count(r, 'Omcirkel de veelvouden'), 0],
 ];
 
 describe('the kiosk card hides the scaffold the kiosk does not ask (call 10)', () => {
