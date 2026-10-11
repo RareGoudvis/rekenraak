@@ -36,8 +36,6 @@ UpdateState). Left over, found while fixing:
 - Builder row label still says "plaats omcirkelen" when the row's `plaatsAnswer` is `'waarde'` (K1 2026-10-11). 2026-10-11
 - `oefen-smoke` reads the store through in-page imports and fails with "phase start" after an HMR reload: use a fresh
   dev server per run (K1). 2026-10-11
-- Kiosk mab-herkennen: the tens bars are hard to count at card scale (K3 pupil-play misread 2 of 3); pairs with the
-  classroom MAB note above. 2026-10-11
 - Several leaves listed from leerjaar 1–2 default to leerjaar-3+ numbers in the builder (K3); the builder row could
   seed from the sidebar's leerjaar instead of the registry default — owner call. 2026-10-11
 
