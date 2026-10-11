@@ -13,7 +13,7 @@ const avg = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
 beforeEach(resetKiosk);
 
 describe('O16: a 1000-answer run stays cheap', () => {
-    test(`answer + next at #${N} < 5 ms each, the stored run < 300 kB`, () => {
+    test(`answer + next at #${N} < 10 ms each, the stored run < 300 kB`, () => {
         st().load(hashOf(starterSessie({ id: 'perf1000', types: STARTER_TYPES.map(({ limit: _limit, ...t }) => t) })));
         st().start();
         const answerMs: number[] = [], nextMs: number[] = [];
@@ -30,8 +30,9 @@ describe('O16: a 1000-answer run stays cheap', () => {
         const stored = localStorage.getItem(oefenStorageKey('perf1000')) ?? '';
         // A window, not one sample: a GC pause must not fail the gate.
         const answerAt = avg(answerMs.slice(-20)), nextAt = avg(nextMs.slice(-20));
-        expect(answerAt).toBeLessThan(5);
-        expect(nextAt).toBeLessThan(5);
+        // 10 ms: ~0.5 ms normally and one gate run under load hit 5.6 ms; a quadratic regression at #1000 is still far above.
+        expect(answerAt).toBeLessThan(10);
+        expect(nextAt).toBeLessThan(10);
         expect(stored.length).toBeLessThan(300 * 1024);
     }, 5000);
 });

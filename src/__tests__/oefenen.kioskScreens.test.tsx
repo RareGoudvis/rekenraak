@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup, screen, fireEvent, act } from '@testing-library/react';
 import OefenApp from '../oefenen/OefenApp';
@@ -344,5 +345,38 @@ describe('kiosk screens', () => {
         expect(screen.queryByRole('button', { name: 'Wissen' })).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
         expect(screen.getByRole('heading', { name: 'Klaar!' })).toBeTruthy();
+    });
+});
+
+describe('choice grid', () => {
+    // Pin a herleidingen "Welke eenheid?" card with these unit buttons (m and dm are always among them).
+    const withUnits = (units: string[]) => {
+        st().load(hashOf(starterSessie({ types: [leafType('herleidingen-lengte')] })));
+        st().start();
+        const shown = st().shown!;
+        const exercise = { ...(shown.exercise as object), blank: 'unit', fromParts: [{ key: 'm', value: 1 }], toParts: [{ key: 'dm', value: 10 }] };
+        useOefenStore.setState({ shown: { ...shown, exercise, constraints: { ...shown.constraints, measure: 'lengte', units } } });
+        return render(<OefenApp />).container.querySelector<HTMLElement>('.kiosk-choices')!;
+    };
+    const rule = (sel: string) => {
+        const css = readFileSync('src/oefenen/kiosk/kiosk.css', 'utf8');
+        return css.slice(css.indexOf(sel)).split('}')[0];
+    };
+
+    test.each([[['km', 'm', 'dm', 'cm', 'mm']], [['km', 'hm', 'm', 'dm', 'cm', 'mm']]])('%j: 3 columns, 2 rows, capped at the keypad key height', units => {
+        const grid = withUnits(units);
+        expect(grid.querySelectorAll('[role=radio]')).toHaveLength(units.length);
+        expect(grid.className).toContain('is-grid');
+        expect(grid.style.gridTemplateColumns).toBe('repeat(3, minmax(0, 1fr))');
+        expect(Math.ceil(units.length / 3)).toBe(2);
+        // jsdom has no layout: the cap is the rule's row height, the same as .kiosk-keypad's.
+        const keypadRows = /grid-template-rows:[^;]*?(\d+px)\)/.exec(rule('.kiosk-keypad {'))![1];
+        expect(rule('.kiosk-choices.is-grid {')).toContain(`grid-auto-rows: minmax(var(--kiosk-tap), ${keypadRows})`);
+    });
+
+    test('4 choices keep the 2-column layout', () => {
+        const grid = withUnits(['m', 'dm', 'cm', 'mm']);
+        expect(grid.className).not.toContain('is-grid');
+        expect(grid.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
     });
 });

@@ -214,14 +214,6 @@ function enter(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string
         const wrong = choices.find(x => !accepted.includes(x));
         return { right, wrong: wrong ?? null };
     }
-    if (input === 'number+unit') {
-        // The keypad types the number, a unit button (the measure's whole ladder) gives the unit.
-        const choices = d.choicesOf?.(ex, c) ?? d.choices ?? [];
-        if (!choices.includes(accepted[1])) return `number+unit: unit ${accepted[1]} not among the buttons [${choices}]`;
-        const n = typeable([accepted[0]], keys, 'number');
-        if (n === null) return `number+unit: ${accepted[0]} not typeable with keys [${keys}]`;
-        return { right: [n, accepted[1]], wrong: [wrongOf(n), accepted[1]] };
-    }
     if (input === 'fraction') {
         // Two keypad fields, noemer first: the first accepted breuk split into [noemer, teller].
         const m = /^(\d+)\/(\d+)$/.exec(accepted[0] ?? '');

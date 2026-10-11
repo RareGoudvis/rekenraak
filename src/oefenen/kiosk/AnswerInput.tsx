@@ -63,10 +63,12 @@ export default function AnswerInput() {
         const choiceClass = choiceSizeOf(info.choices);
         // A long word (honderdtallen, parallellogram) or number (12 345,67) needs half the panel.
         const longWord = info.choices.some(c => c.length > (choiceClass === ' is-numbers' ? 6 : 9));
-        const cols = info.choices.length === 2 || info.choices.length === 4 || longWord ? 2 : 3;
+        // 5-6 short choices (ha a m² dm² cm²) are a fixed 3x2 grid of keypad-sized buttons, not two tall rows.
+        const compact = !longWord && (info.choices.length === 5 || info.choices.length === 6);
+        const cols = compact ? 3 : info.choices.length === 2 || info.choices.length === 4 || longWord ? 2 : 3;
         return (
             <div className="kiosk-answer">
-                <div className={`kiosk-choices${choiceClass}`} role="radiogroup" aria-label="Kies het antwoord"
+                <div className={`kiosk-choices${choiceClass}${compact ? ' is-grid' : ''}`} role="radiogroup" aria-label="Kies het antwoord"
                     // --chars: the longest choice, so the number size fits every button alike (kiosk.css).
                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, '--chars': Math.max(...info.choices.map(c => c.length)) } as React.CSSProperties}>
                     {info.choices.map(c => (
@@ -77,32 +79,6 @@ export default function AnswerInput() {
                     ))}
                 </div>
                 <button type="button" className="kiosk-check-wide" onClick={answer} disabled={!canCheck}>Controleer</button>
-            </div>
-        );
-    }
-
-    // number+unit (herleidingen writeUnits): the number field, the picked unit beside it, the
-    // measure's unit ladder as buttons (no native select: a pupil taps, like every kiosk choice), the keypad.
-    if (info.kind === 'number+unit') {
-        const unitCols = info.choices.length <= 7 ? info.choices.length : Math.ceil(info.choices.length / 2);
-        return (
-            <div className="kiosk-answer">
-                <div className="kiosk-fields">
-                    <label className="kiosk-field-bare">
-                        <input aria-label={info.labels[0]} placeholder={info.labels[0]} ref={el => { refs.current[0] = el; }}
-                            className="kiosk-field" inputMode="none" autoCapitalize="off" autoComplete="off" spellCheck={false}
-                            value={input[0] ?? ''} onChange={e => setField(0, e.target.value)} onFocus={() => focusField(0)} />
-                    </label>
-                    <span className={`kiosk-field-unit${input[1] ? '' : ' is-empty'}`} aria-hidden>{input[1] || '?'}</span>
-                </div>
-                <div className="kiosk-choices is-units" role="radiogroup" aria-label="Kies de eenheid"
-                    style={{ '--unit-cols': unitCols } as React.CSSProperties}>
-                    {info.choices.map(u => (
-                        <button key={u} type="button" role="radio" aria-checked={input[1] === u}
-                            className={`kiosk-choice${input[1] === u ? ' is-picked' : ''}`} onClick={() => choose(u)}>{u}</button>
-                    ))}
-                </div>
-                <Keypad extras={info.keys} onKey={press} onCheck={answer} canCheck={canCheck} />
             </div>
         );
     }

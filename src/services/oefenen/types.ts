@@ -66,11 +66,10 @@ export const attemptsOf = (s: Pick<OefenSessie, 'attempts' | 'testMode'>): Oefen
 // missing-operand = one typed answer that fills a puntoefening's blank operand;
 // text = a word typed on the device keyboard (Romeinse cijfers, a unit); time = uur + minuten
 // fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair);
-// number+unit = a typed number plus a unit tapped from `choicesOf` (herleidingen writeUnits), right by
-// value through `unitFactors`; fraction = a breuk as two fields, noemer typed first, then teller,
+// fraction = a breuk as two fields, noemer typed first, then teller,
 // drawn stacked (breuken herkennen), checked as 'teller/noemer' against `answerOf`; interactive = the
 // pupil answers ON the exercise (Phase C: tap, fill its cells, order), see `interact`.
-export type KioskInput = 'number' | 'number+rest' | 'number+unit' | 'fraction' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
+export type KioskInput = 'number' | 'number+rest' | 'fraction' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
 
 // Separator of the parts in an interactive answer string ('12 · 48 · 7'): never part of a number.
 export const INTERACT_SEP = ' · ';
@@ -167,16 +166,12 @@ export interface KioskDescriptor<E = unknown> {
     // settings, never its answer.
     extraKeys?(ex: E, c: Record<string, unknown>): KioskExtraKey<E>[];
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
-    // number+rest: exactly [quotiënt, rest]. number+unit: exactly [number, unit], one right
-    // quantity (any other spelling of its value counts, see unitFactors). time: every accepted 'h:mm' (8:05 and 20:05).
+    // number+rest: exactly [quotiënt, rest]. time: every accepted 'h:mm' (8:05 and 20:05).
     // fraction: the accepted breuk spellings ('2/6'); the pupil's [noemer, teller] is read as 'teller/noemer'.
     // multi-number: one entry per field, alternatives within a field joined by '|'.
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
     display(ex: E, c: Record<string, unknown>): string;
-    // number+unit: the size of each unit the pupil may answer in, in one shared smallest unit
-    // (powers of ten); check compares number × factor exactly. A unit left out is never right.
-    unitFactors?(ex: E, c: Record<string, unknown>): Record<string, number>;
     // The builder row's and the pupil's stats name when a row setting changes what the leaf asks
     // (plaatswaarde Antwoord); `label` is the leaf's kiosk label. Absent = that label.
     rowLabel?(label: string, c: Record<string, unknown>): string;
