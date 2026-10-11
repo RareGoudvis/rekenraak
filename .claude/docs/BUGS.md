@@ -33,9 +33,6 @@ UpdateState). Left over, found while fixing:
 - lengte-meten: the builder no longer offers it, but an OLD link still opens the unsolvable card (k3b
   `shots/oldlink-lengte-meten.png`). Fix: a type whose descriptor `supported()` is false at load → ErrorScreen
   "Deze oefening kan niet op het toestel" / the slot is retired. 2026-10-11
-- The shared cijferen header "Typ ook je onthoud- en leencijfers" shows on grids without a carry row
-  (vermenigvuldigen-dec, delen). Fix: header per operator (+ onthoud, − leen, × / : plain "Cijfer uit.");
-  still the same text for every exercise of that operator. 2026-10-11
 - Kiosk paper leftovers still on some cards: "Kleur …" prompt (breuken kleuren variant?), a "< <" and a
   "__:__" (klok digitaal) — k3b verdict.md "odd" column names the leaves. Hide under the card context. 2026-10-11
 - getallenrijen frame is clipped at the card edges on the kiosk (the sheet pill fix of 2026-10-11 did not reach
