@@ -109,8 +109,6 @@ export const typedReady = (input: readonly string[], blankFieldsOk: boolean): bo
 
 const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
     'number+rest': ['quotiënt', 'rest'], time: ['uur', 'min'], 'missing-operand': ['Wat ontbreekt?'], text: ['Antwoord'],
-    // number+unit: the number is typed in field 0, the unit button fills field 1.
-    'number+unit': ['Getal', 'Eenheid'],
     // fraction: field 0 is the noemer, typed first (the pupil counts the parts before the coloured ones).
     fraction: ['noemer', 'teller'],
 };
@@ -349,13 +347,11 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 return;
             }
             if (info.kind === 'interactive') { pressCell(key); return; }
-            // number+unit: the keypad only ever types the number; the unit is a button.
-            const at = info.kind === 'number+unit' ? 0 : field;
-            const value = input[at] ?? '';
+            const value = input[field] ?? '';
             const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys, info.kind);
             // Two digits of uur typed: the keypad moves on to the minutes, like a digital clock.
             const advance = info.kind === 'time' && key !== 'back' && field === 0 && nextValue.length === 2;
-            set({ input: input.map((v, i) => (i === at ? nextValue : v)), ...(advance && { field: 1 }) });
+            set({ input: input.map((v, i) => (i === field ? nextValue : v)), ...(advance && { field: 1 }) });
         },
 
         setField(i, raw) {
@@ -376,7 +372,6 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const info = currentInput(sessie, shown);
             if (!info?.choices.includes(choice)) return;
             if (info.kind === 'choice') set({ input: [choice] });
-            else if (info.kind === 'number+unit') set({ input: [get().input[0] ?? '', choice] });
         },
 
         skipFlash() {

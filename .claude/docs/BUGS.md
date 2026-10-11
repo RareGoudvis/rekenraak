@@ -35,8 +35,6 @@ UpdateState). Left over, found while fixing:
 - `vergelijken.representaties.test.ts` "the sheet block draws the same spread" is flaky (0.604 vs a 0.6 bound,
   unseeded Math.random); `oefenen.perf` O16 flaked once at 5.6 ms under load. Seed / widen. 2026-10-11
 
-- The `number+unit` kiosk input (AnswerInput, useOefenStore, check `sameQuantity`, stats, `unitFactors`) has no user
-  since herleidingen `vraag` (M1 2026-10-11) and no test left: remove it or keep it on purpose. 2026-10-11
 
 
 - Kiosk verbanden-paren ("Getallenkennis › Omzettingen"): the owner's preview (2026-10-10) showed no exercise; NOT
