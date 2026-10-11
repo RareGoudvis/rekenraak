@@ -30,6 +30,29 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
+- herleidingen-oppervlakte is listed from leerjaar 2 but every card at the L3 seed asks dm² / a / ha / m² / cm²
+  (L5–6 content; pupil-play k3b `shots/herleidingen-oppervlakte-e1.png`). Fix: `minLeerjaar: 5` on the leaf. 2026-10-11
+- even-oneven-cirkels on the kiosk: the circles are the paper colour-in frame rounded up to PAIRS, so "3 is …" sits
+  next to 4 circles and "7" next to 8 — a pupil who counts answers wrong (k3b `shots/even-oneven-cirkels-e1.png`).
+  Fix: the kiosk card draws exactly n circles (or none). 2026-10-11
+- lengte-meten: the builder no longer offers it, but an OLD link still opens the unsolvable card (k3b
+  `shots/oldlink-lengte-meten.png`). Fix: a type whose descriptor `supported()` is false at load → ErrorScreen
+  "Deze oefening kan niet op het toestel" / the slot is retired. 2026-10-11
+- plaatswaarde-plaats and -omcirkelen play exactly like -waarde on the kiosk (all three seed `plaatsAnswer:
+  'waarde'`): three catalogue entries, one exercise. Fix: kioskSeed per leaf — waarde → waarde, plaats →
+  plaats-shuffle (words), omcirkelen → plaats-shuffle (tap). 2026-10-11
+- The shared cijferen header "Typ ook je onthoud- en leencijfers" shows on grids without a carry row
+  (vermenigvuldigen-dec, delen). Fix: header per operator (+ onthoud, − leen, × / : plain "Cijfer uit.");
+  still the same text for every exercise of that operator. 2026-10-11
+- Kiosk paper leftovers still on some cards: "Kleur …" prompt (breuken kleuren variant?), a "< <" and a
+  "__:__" (klok digitaal) — k3b verdict.md "odd" column names the leaves. Hide under the card context. 2026-10-11
+- getallenrijen frame is clipped at the card edges on the kiosk (the sheet pill fix of 2026-10-11 did not reach
+  the card). Fix: card extent / pill width from the card. 2026-10-11
+- Kiosk cards render the thousands thin space wide ("7  400") in the card font. Cosmetic; use a narrower
+  no-break space on the card. 2026-10-11
+- Kiosk Lenen key has no explanation at all (k3 + k3b). Owner call: a static one-line label under the keypad
+  ("Lenen: wissel een tiental") — same text always, leaks nothing per exercise — or leave. 2026-10-11
+
 
 
 
