@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { makeBlock, generateFor } from './helpers/makeBlock';
+import { generateForBlock } from '../services/generateDispatch';
 import { LEAF_BY_ID, flattenLeaves } from '../config/appstructure';
 import type { DeelbaarheidKleurExercise, FractionExercise } from '../services/math/types';
 
@@ -30,5 +31,17 @@ describe('deelbaarheid-rooster default ("Kleur de veelvouden van 2, 5 en 10")', 
         const seen = new Set<number>();
         for (let s = 0; s < 200; s++) seen.add((generateFor(leafBlock('deelbaarheid-rooster', 1)) as DeelbaarheidKleurExercise[])[0].divisor);
         expect([...seen].sort((a, b) => a - b)).toEqual([2, 5, 10]);
+    });
+});
+
+describe('geld-wissel default', () => {
+    // The wissel pool is small; the leaf's own count keeps a default block free of doubles and of the note.
+    test('no "komen dubbel voor" note over 50 seeds at the leaf count', () => {
+        const leaf = LEAF_BY_ID['geld-wissel'];
+        expect(leaf.defaultCount).toBe(4);
+        for (let s = 0; s < 50; s++) {
+            const block = leafBlock('geld-wissel', leaf.defaultCount);
+            expect(generateForBlock(block, true).note ?? '').not.toMatch(/dubbel/);
+        }
     });
 });

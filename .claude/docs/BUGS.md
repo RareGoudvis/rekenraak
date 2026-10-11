@@ -24,7 +24,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Degenerate defaults: geld-wissel's default already notes 2 doubles. 2026-09-27
 
 
 ## Limit audit 2026-10-07
