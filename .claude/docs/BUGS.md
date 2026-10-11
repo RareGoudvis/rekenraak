@@ -8,7 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- Kiosk Resultaten row for a writeUnits herleiding reads "= ? (getal en eenheid)" without the target unit. 2026-10-10
 - `blockLayout.minWidthUnits` reads only the top-level `preset`, so a gemengd compenseren block's first-paint
   width misses the tussenstap (the measured clamp corrects it on screen). 2026-10-10
 

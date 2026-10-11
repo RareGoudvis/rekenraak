@@ -641,6 +641,8 @@ function herleidUnits(ex: HerleidingExercise, c: Record<string, unknown>): strin
         .map(u => u.key);
 }
 const partsText = (ps: HerleidingPart[]) => ps.map(p => `${showNum(p.value)} ${p.key}`).join(' ');
+// A typed whole number in the sheet's spacing (2350 → 2 350); anything else as typed.
+const showTyped = (t: string) => (/^\d+$/.test(t.trim()) ? showNum(Number(t)) : t.trim());
 export const HERLEIDINGEN_KIOSK = descriptor<HerleidingExercise>({
     input: 'number',
     kioskInstruction: (ex) => (ex.blank === 'unit' ? 'Welke eenheid?' : ex.toParts.length === 1 ? `Zet om naar ${ex.toParts[0].key}.` : undefined),
@@ -658,6 +660,11 @@ export const HERLEIDINGEN_KIOSK = descriptor<HerleidingExercise>({
     display: (ex) => (ex.blank === 'unit'
         ? `${partsText(ex.fromParts)} = ${showNum(ex.toParts[0].value)} ?`
         : `${partsText(ex.fromParts)} = ${ex.toParts.map(p => `? ${p.key}`).join(' ')}`),
+    // An answer reads as a quantity: "235 dm" for a tapped unit, "2 m 35 cm" for the fields; a zero part
+    // left empty or typed 0 is left out, like the key ("71 dl").
+    showAnswer: (parts, ex) => (ex.blank === 'unit'
+        ? `${showNum(ex.toParts[0].value)} ${parts[0] ?? ''}`
+        : ex.toParts.flatMap((p, i) => (!parts[i] || (isZeroAnswerPart(ex, p) && /^0+$/.test(parts[i])) ? [] : [`${showTyped(parts[i])} ${p.key}`])).join(' ')),
 });
 
 // ── Geld ─────────────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import { generateHerleidingExercises, vraagOf } from '../services/herleidingen/h
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInstructionOf } from '../services/oefenen/kiosk';
 import { decodeSessie, encodeSessie } from '../services/oefenen/session';
+import { emptyStats, recordAnswer } from '../services/oefenen/stats';
 import { nextExercise } from '../services/oefenen/scheduler';
 import { kioskDefaultV1 } from '../services/oefenen/kioskDefaults';
 import { currentInput, useOefenStore } from '../oefenen/useOefenStore';
@@ -118,6 +119,35 @@ describe('kiosk: one field, exact', () => {
         const choices = d.choicesOf!(e, opp);
         expect(choices).toEqual(['ha', 'a', 'm²', 'dm²', 'cm²']);
         expect(checkAnswer(d, e, opp, 'm²')).toBe(true);
+    });
+});
+
+describe('Resultaten row names the target (triage item 2)', () => {
+    const row = (e: HerleidingExercise, given: string | string[]) =>
+        recordAnswer(emptyStats({ types: [] } as never, 0), 0, 'herleidingen', e, given, false, 1, LENGTE, 1).perType[0].errors[0];
+    test('getal: "235 cm = ? mm", the answers carry the unit', () => {
+        const r = row(ex([[235, 'cm']], [[2350, 'mm']]), '235');
+        expect(r.exercise).toBe('235 cm = ? mm');
+        expect(r.given).toBe('235 mm');
+        expect(r.expected).toBe('2 350 mm');
+    });
+    test('eenheid: "2 350 mm = 235 ?", the answers carry the number', () => {
+        const r = row(ex([[2350, 'mm']], [[235, 'cm']], 'unit', 'enkel-eenheid'), 'dm');
+        expect(r.exercise).toBe('2 350 mm = 235 ?');
+        expect(r.given).toBe('235 dm');
+        expect(r.expected).toBe('235 cm');
+    });
+    test('compound: each part with its unit, an empty part left out', () => {
+        const r = row(COMPOUND, ['2', '']);
+        expect(r.exercise).toBe('235 cm = ? m ? cm');
+        expect(r.given).toBe('2 m');
+        expect(r.expected).toBe('2 m 35 cm');
+    });
+    test('a zero part reads like the key: "71 dl"', () => {
+        const zero = ex([[7100, 'ml']], [[71, 'dl'], [0, 'cl'], [0, 'ml']], 'number', 'enkel-samengesteld');
+        const r = row(zero, ['70', '0', '']);
+        expect(r.given).toBe('70 dl');
+        expect(r.expected).toBe('71 dl');
     });
 });
 
