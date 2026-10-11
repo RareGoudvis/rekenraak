@@ -249,6 +249,9 @@ export function cijferKiosk({ strictCarries = true }: CijferKioskOptions = {}): 
         // The grid takes digits only; a decimal rest (0,03) needs the comma.
         keys: (c) => (numberTypeOf(c) === 'decimal' && c.operator === ':' ? [','] : []),
         extraKeys: (ex) => (ex.operator === '-' ? [LENEN_KEY] : []),
+        // A needed carry left blank is Fout (owner rule), so the card says the carries count; one text
+        // on every cijferen card (pupil-play pass 2026-10-10), so it never tells whether this one has any.
+        kioskInstruction: 'Cijfer uit. Typ ook je onthoud- en leencijfers.',
         interact: {
             kind: 'fill-cells',
             keys: (ex, c) => cijferKioskGrid(ex, cijferDp(ex, c)).cells.map(k => k.key),
