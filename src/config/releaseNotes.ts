@@ -218,6 +218,15 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'gewijzigd',
+                text: 'Kommagetallen bij hoofdrekenen starten eenvoudiger: tot 100 met 1 decimaal, deler altijd een heel getal. Het maximum kan nog steeds hoger.',
+                example: { leafId: 'hr-std-delen-dec', grade: 5, count: 3, before: '“432,36 : 0,6”', after: '“48,6 : 6”' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: de kaart toont een “?”-vakje waar het antwoord komt, veelvouden en wisselgeld variëren, en herleidingen blijven binnen de leerstof van het leerjaar.',
+            },
+            {
+                kind: 'gewijzigd',
                 text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
             },
             {
