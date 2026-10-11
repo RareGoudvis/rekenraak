@@ -638,8 +638,10 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
     expect(ok(right), where).toBe(true);
     const last = keys.length - 1;
     expect(ok({ ...right, [keys[last]]: wrongNumber(want[last]) }), where).toBe(false);
-    // Controleer waits for every cell.
-    expect(fill({ ...right, [keys[0]]: '' }), where).toBe('');
+    // Controleer waits for every cell but those that may stay blank (a positietabel's leading zero).
+    const wants = ia.answerOf(ex, c).split(INTERACT_SEP);
+    const required = keys.find((_, i) => !wants[i].split('|').includes(''))!;
+    expect(fill({ ...right, [required]: '' }), where).toBe('');
 }
 
 const gcdOf = (a: number, b: number): number => (b ? gcdOf(b, a % b) : a);

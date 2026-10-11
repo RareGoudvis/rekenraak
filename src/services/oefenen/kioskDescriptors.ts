@@ -69,8 +69,9 @@ const showValue = (v: number | Fraction): string => {
     return v.whole ? `${v.whole} ${n}` : n;
 };
 
-// Phase C2: the pupil fills the blanks ON the card. Every cell is required; the answer is
-// the cells in key order, each with its accepted spellings.
+// Phase C2: the pupil fills the blanks ON the card. Every cell is required, except where a want
+// holds an empty alternative ('0|', a leading zero that may stay blank); the answer is the cells in
+// key order, each with its accepted spellings.
 function cellsInteract<E>(keysOf: (ex: E, c: Record<string, unknown>) => string[], wantsOf: (ex: E, c: Record<string, unknown>) => string[],
     cellOf?: (key: string, ex: E, c: Record<string, unknown>) => KioskCellSpec): KioskInteract<E> {
     return {
@@ -80,7 +81,9 @@ function cellsInteract<E>(keysOf: (ex: E, c: Record<string, unknown>) => string[
         answerOf: (ex, c) => wantsOf(ex, c).join(INTERACT_SEP),
         fromState: (st, ex, c) => {
             const v = keysOf(ex, c).map(k => (st.cells[k] ?? '').trim());
-            return v.some(x => x === '') ? '' : v.join(INTERACT_SEP);
+            const wants = wantsOf(ex, c);
+            const missing = v.some((x, i) => x === '' && !(wants[i] ?? '').split('|').includes(''));
+            return missing || v.every(x => x === '') ? '' : v.join(INTERACT_SEP);
         },
     };
 }
@@ -861,7 +864,12 @@ const splitsLayout = (c: Record<string, unknown>) => (c.layout as string | undef
 const isPlaceTable = (c: Record<string, unknown>) => splitsLayout(c) === 'positie-tabel';
 const splitsWants = (ex: SplitsenExercise, c: Record<string, unknown>): string[] => {
     const layout = splitsLayout(c);
-    if (layout === 'positie-tabel') return (ex.placeBreakdown ?? []).map(p => String(p.digit));
+    if (layout === 'positie-tabel') {
+        // A column above the number's first digit may stay blank (24 in D H T E): nobody writes 0024.
+        const places = ex.placeBreakdown ?? [];
+        const first = places.findIndex(p => p.digit !== 0);
+        return places.map((p, i) => (i < first ? '0|' : String(p.digit)));
+    }
     if (layout === 'splitsboom') {
         const p = ex.pairs[0];
         const pos = ex.blankPos ?? 'right';
