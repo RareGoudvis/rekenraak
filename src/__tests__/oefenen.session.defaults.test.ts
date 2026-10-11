@@ -17,6 +17,9 @@ const ACCEPTED_DRIFT: readonly string[] = [
     // 2026-10-10: the title follows the new Antwoord setting (plaatsAnswer 'waarde'); the seed's title is
     // unchanged, a link with Antwoord 'waarde' ships the title as text.
     'plaatswaarde-plaats.dynInstruction', 'plaatswaarde-omcirkelen.dynInstruction',
+    // 2026-10-11: herleidingen ask by `vraag`; the registry no longer seeds writeUnits: false (an old
+    // link keeps it from V1 and reads getal, a new row ships it removed and reads afwisselend).
+    ...['lengte', 'inhoud', 'massa', 'oppervlakte'].map(m => `herleidingen-${m}.writeUnits`),
 ];
 
 const LEAVES = new Map(flattenLeaves().map(l => [l.id, l]));

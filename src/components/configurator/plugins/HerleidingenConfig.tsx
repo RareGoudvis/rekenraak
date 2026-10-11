@@ -3,7 +3,7 @@ import Switch from '../../ui/Switch';
 import { F } from './shared/fieldStyles';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
-import { ladderFor } from '../../../services/herleidingen/herleidingenGenerator';
+import { ladderFor, vraagOf } from '../../../services/herleidingen/herleidingenGenerator';
 import type { MathBlock } from '../../../services/math/types';
 import type { HerleidingenConstraints } from '../../../services/math/constraintTypes';
 import { RANGES, HERLEIDINGEN_ENKEL } from '../../../config/numberRanges';
@@ -20,6 +20,7 @@ const OPP_FORMATS = [
     { key: 'are-vierkant', label: 'Are → vierkant' },
 ];
 const SAM_STOPS = RANGES.herleidingenSamengesteld;
+const VRAAG = [['getal', 'Getal'], ['eenheid', 'Eenheid'], ['afwisselend', 'Afwisselend']] as const;
 
 export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<HerleidingenConstraints>(block);
@@ -31,6 +32,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
     const maxSam: number = c.maxSamengesteld ?? 1000;
     const compoundMode: string = c.compoundMode ?? '2';
     const areMode: string = c.areMode ?? 'samengesteld';
+    const vraag = vraagOf(c);
     const hasAre = formats.some(f => f === 'vierkant-are' || f === 'are-vierkant');
     const allFormats = measure === 'oppervlakte' ? [...FORMATS, ...OPP_FORMATS] : FORMATS;
 
@@ -106,19 +108,14 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 </div>
             )}
 
-            <div style={styles.onOffRow}>
-                <span style={styles.onOffLabel}>Leerling schrijft de eenheden zelf</span>
-                <button onClick={() => set('writeUnits', !c.writeUnits)} style={styles.onOffBtn(!!c.writeUnits)}>{c.writeUnits ? 'Aan' : 'Uit'}</button>
-            </div>
-            {c.writeUnits && (
-                <div style={styles.onOffRow}>
-                    <span style={styles.onOffLabel}>Doeleenheid tonen</span>
-                    {/* Absent = on (decision 7): links and sheets made before the toggle name their target too. */}
-                    <button aria-label="Doeleenheid tonen" aria-pressed={c.showTargetUnit !== false}
-                        onClick={() => set('showTargetUnit', c.showTargetUnit === false)}
-                        style={styles.onOffBtn(c.showTargetUnit !== false)}>{c.showTargetUnit !== false ? 'Aan' : 'Uit'}</button>
+            <div style={styles.section}>
+                <SettingLabel text="Vraag:" info="Bij een antwoord in één eenheid. Getal: de eenheid staat er, de leerling vult het getal in (235 cm = ___ m). Eenheid: het getal staat er, de leerling vult de eenheid in (235 cm = 2,35 ___). Samengestelde antwoorden zijn altijd getallen; 'Eenheid invullen' vraagt altijd de eenheid." />
+                <div className="seg-group">
+                    {VRAAG.map(([v, lbl]) => (
+                        <button key={v} className="seg-btn" aria-pressed={vraag === v} onClick={() => set('vraag', v)}>{lbl}</button>
+                    ))}
                 </div>
-            )}
+            </div>
         </div>
     );
 }

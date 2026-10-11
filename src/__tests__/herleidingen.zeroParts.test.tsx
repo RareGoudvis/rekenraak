@@ -35,9 +35,9 @@ describe('sheet: zero parts', () => {
         expect(container.textContent).toContain('dl');
         expect(container.textContent).not.toContain('cl');
     });
-    test('writeUnits: the key prints the unit of the kept part only', () => {
+    test('a legacy writeUnits block: a compound answer still blanks its numbers only', () => {
         const { container } = render(<HerleidingenViewer block={block(ZERO, { writeUnits: true })} showSolutions />);
-        expect(solutionTexts(container)).toEqual(['71', 'dl']);
+        expect(solutionTexts(container)).toEqual(['71']);
     });
     test('the sheet keeps a blank for every part', () => {
         const { container } = render(<HerleidingenViewer block={block(ZERO)} showSolutions={false} />);

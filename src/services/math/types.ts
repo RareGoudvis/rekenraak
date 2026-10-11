@@ -161,8 +161,6 @@ export interface HerleidingExercise {
     fromParts: HerleidingPart[];
     toParts: HerleidingPart[];
     blank: 'number' | 'unit';
-    // The unit a single-quantity number blank asks for ("Zet om naar m"); printed only with writeUnits.
-    targetUnit?: string;
     isManuallyEdited: boolean;
 }
 

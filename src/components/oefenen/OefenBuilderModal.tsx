@@ -14,7 +14,7 @@ import { MAX_TITLE, MAX_TYPES, newSessieId } from '../../services/oefenen/sessio
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
-    EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowsFromSessie,
+    EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowLabelOf, rowsFromSessie, seedRowConstraints,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -71,7 +71,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         if (rows.length >= MAX_TYPES) return;
         const key = `r${nextKey.current++}`;
         const st = useWorksheetStore.getState();
-        st.setDraftBlocks([...st.draftBlocks, makeDraftBlock(leaf.typeId, leaf.constraints, draftIdOf(key))]);
+        // Seeded at the sidebar's leerjaar when the row is added: a later leerjaar change leaves it be.
+        st.setDraftBlocks([...st.draftBlocks, makeDraftBlock(leaf.typeId, seedRowConstraints(leaf, st.selectedGrade), draftIdOf(key))]);
         setRows(rs => [...rs, { key, leaf, weight: 50 }]);
     };
     const removeRow = (key: string) => {
@@ -198,12 +199,13 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             const isDead = dead.has(r.key);
                             const pct = percentOf(r.key);
                             const formDefault = constraints ? exactFormDefaultOf({ leaf: r.leaf, constraints }) : undefined;
+                            const label = constraints ? rowLabelOf({ leaf: r.leaf, constraints }) : r.leaf.label;
                             return (
-                                <section key={r.key} style={isDead ? { ...S.card, border: '1px solid var(--danger)' } : S.card} aria-label={r.leaf.label}>
+                                <section key={r.key} style={isDead ? { ...S.card, border: '1px solid var(--danger)' } : S.card} aria-label={label}>
                                     <div style={S.rowHead}>
                                         <div style={S.rowTitle}>
                                             <span style={{ ...S.domDot, background: `var(${r.leaf.accentVar})` }} aria-hidden />
-                                            <span style={S.rowLabel}>{r.leaf.label}</span>
+                                            <span style={S.rowLabel}>{label}</span>
                                             <span style={S.rowDomain}>{r.leaf.domainLabel}</span>
                                         </div>
                                         <button className="ui-hover" style={S.removeBtn} onClick={() => removeRow(r.key)}>

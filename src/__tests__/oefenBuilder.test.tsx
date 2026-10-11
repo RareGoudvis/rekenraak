@@ -473,6 +473,18 @@ describe('OefenBuilderModal catalogue search + leerjaar (O17)', () => {
         expect(useWorksheetStore.getState().selectedGrade).toBe(4);
     });
 
+    test('a new row seeds at the sidebar leerjaar; a later leerjaar change seeds only new rows (triage item 4)', () => {
+        useWorksheetStore.setState({ selectedGrade: 1 });
+        render(<OefenBuilderModal onClose={() => { }} />);
+        const maxOf = (i: number) => (useWorksheetStore.getState().draftBlocks[i].constraints as Record<string, unknown>).maxGetal;
+        fireEvent.click(addBtn('hr-std-optellen-nat'));
+        expect(maxOf(0)).toBe(20);
+        act(() => { useWorksheetStore.setState({ selectedGrade: 3 }); });
+        fireEvent.click(addBtn('hr-std-optellen-nat'));
+        expect(maxOf(0)).toBe(20);
+        expect(maxOf(1)).toBe(1000);
+    });
+
     test('filterOefenLeaves: same leerjaar rule as the sidebar (leafAllowedForGrade)', () => {
         const all = listOefenLeaves();
         for (const g of LEERJAREN) {

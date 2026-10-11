@@ -1,5 +1,6 @@
 import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
+import { seedLeafConstraints } from '../../config/baseSettings';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
@@ -56,6 +57,11 @@ export function listOefenLeaves(): OefenLeaf[] {
     return out;
 }
 
+/** A new row: a sidebar click on the leaf at `grade` (the sheet's seed path) under the leaf's own start (kioskSeed). */
+export function seedRowConstraints(leaf: Pick<OefenLeaf, 'id' | 'constraints'>, grade: Leerjaar | null): Record<string, unknown> {
+    return seedLeafConstraints(leaf.id, grade, leaf.constraints)?.constraints ?? leaf.constraints;
+}
+
 export interface BuilderRow {
     key: string;                              // stable row id; the draft block is `draft-oefen-<key>`
     leaf: OefenLeaf;
@@ -64,6 +70,10 @@ export interface BuilderRow {
     weight: number;                           // raw slider value 1-100, normalised on build
     exactForm?: boolean;                      // the teacher's "Antwoord" pick; absent = the descriptor default
 }
+
+/** The row's name in the builder, the link and the pupil's stats: the leaf's, unless a row setting renames it. */
+export const rowLabelOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): string =>
+    kioskFor(row.leaf.typeId)?.rowLabel?.(row.leaf.label, row.constraints) ?? row.leaf.label;
 
 /** The row's breuk-answer default (exactFormDefault), or undefined where the row asks no breuk. */
 export const exactFormDefaultOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): boolean | undefined =>
@@ -114,7 +124,7 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
         types: shipped.map((r, i) => ({
             typeId: r.leaf.typeId,
             leafId: r.leaf.id,
-            label: r.leaf.label,
+            label: rowLabelOf(r),
             // Frozen to plain text now: a function-valued instruction cannot ride in the link.
             instruction: resolveInstruction(r.leaf.instruction, r.leaf.typeId, LEAF_BY_ID[r.leaf.id]?.label ?? r.leaf.label, r.constraints as BlockConstraints),
             constraints: r.constraints,

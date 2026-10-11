@@ -8,9 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- Herleidingen writeUnits with "Zet om naar cm": the kiosk check is value-equal, so "30 dm" counts as juist when the
-  header asked for cm; owner call whether the target unit should be enforced when shown (F4 2026-10-10). 2026-10-10
-- Kiosk Resultaten row for a writeUnits herleiding reads "= ? (getal en eenheid)" without the target unit. 2026-10-10
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -33,9 +30,13 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- Builder row label still says "plaats omcirkelen" when the row's `plaatsAnswer` is `'waarde'` (K1 2026-10-11). 2026-10-11
-- Several leaves listed from leerjaar 1–2 default to leerjaar-3+ numbers in the builder (K3); the builder row could
-  seed from the sidebar's leerjaar instead of the registry default — owner call. 2026-10-11
+- Kiosk choice grid with 5–6 short choices (herleidingen oppervlakte "Welke eenheid?": ha a m² dm² cm²) stretches
+  into tall 3-column buttons with small labels at 1024×768 (AnswerInput `cols`); more frequent now vraag defaults to
+  afwisselend. Shot: ~/Downloads/triage-calls/m1/after-kiosk-eenheid-opp.png. 2026-10-11
+- The `number+unit` kiosk input (AnswerInput, useOefenStore, check `sameQuantity`, stats, `unitFactors`) has no user
+  since herleidingen `vraag` (M1 2026-10-11) and no test left: remove it or keep it on purpose. 2026-10-11
+- Kiosk mab-herkennen: the tens bars are hard to count at card scale (K3 pupil-play misread 2 of 3); pairs with the
+  classroom MAB note above. 2026-10-11
 
 
 - Kiosk verbanden-paren ("Getallenkennis › Omzettingen"): the owner's preview (2026-10-10) showed no exercise; NOT

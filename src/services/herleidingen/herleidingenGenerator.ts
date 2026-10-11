@@ -43,6 +43,7 @@ export function generateHerleidingExercisesNoted(block: MathBlock): { items: Her
     const compoundMode: string = c.compoundMode ?? '2';
     const count: number = block.numberOfExercises || 8;
     const formats: string[] = (c.formats?.length ? c.formats : ALL_FORMATS) as string[];
+    const vraag = vraagOf(c);
 
     const ladder = ladderFor(measure);
     let units: Unit[] = ladder.filter(u => (c.units ?? ladder.map(x => x.key)).includes(u.key));
@@ -173,7 +174,8 @@ export function generateHerleidingExercisesNoted(block: MathBlock): { items: Her
     let attempts = 0;
     while (out.length < count && attempts < MAX_ATTEMPTS) {
         attempts++;
-        const ex = build(pick(formats));
+        const built = build(pick(formats));
+        const ex = built && asks(built, vraag);
         if (!ex || !isExact(ex) || (capOn() && tooBig(ex))) continue;
         const key = `${ex.format}|${ex.fromParts.map(p => p.key + p.value).join(',')}=${ex.toParts.map(p => p.key + p.value).join(',')}|${ex.blank}`;
         if (seen.has(key)) continue;
@@ -192,23 +194,27 @@ export function generateHerleidingExercisesNoted(block: MathBlock): { items: Her
 }
 
 function mk(format: string, fromParts: HerleidingPart[], toParts: HerleidingPart[], blank: 'number' | 'unit'): HerleidingExercise {
-    const ex: HerleidingExercise = { id: `herl-${Math.random().toString(36).slice(2, 9)}`, format: format as HerleidingExercise['format'], fromParts, toParts, blank, isManuallyEdited: false };
-    const target = singleTarget(ex);
-    return target ? { ...ex, targetUnit: target } : ex;
+    return { id: `herl-${Math.random().toString(36).slice(2, 9)}`, format: format as HerleidingExercise['format'], fromParts, toParts, blank, isManuallyEdited: false };
 }
 
-// Decision 7 (2026-10-10): a single-quantity number blank names its unit, so with writeUnits the
-// pupil still writes the unit but knows which one. A compound answer (dm² + cm²) or a unit blank has none.
-const singleTarget = (ex: HerleidingExercise): string | undefined =>
-    (ex.blank === 'number' && ex.toParts.length === 1 ? ex.toParts[0].key : undefined);
+export type HerleidingVraag = 'getal' | 'eenheid' | 'afwisselend';
 
-// Exercises saved before the field fall back to their answer unit.
-export const targetUnitOf = (ex: HerleidingExercise): string | undefined =>
-    (singleTarget(ex) ? ex.targetUnit ?? singleTarget(ex) : undefined);
+// Owner 2026-10-11: what a one-quantity answer asks. Saved before the setting, writeUnits (number
+// AND unit) reads afwisselend and writeUnits: false (the registry default then) reads getal, so an
+// old sheet or link keeps its form; a block made since has neither and reads the default.
+export const vraagOf = (c: { vraag?: unknown; writeUnits?: unknown }): HerleidingVraag =>
+    (c.vraag === 'getal' || c.vraag === 'eenheid' || c.vraag === 'afwisselend' ? c.vraag : c.writeUnits === false ? 'getal' : 'afwisselend');
 
-// writeUnits + "Doeleenheid tonen" (absent = on): the target the sheet and the kiosk header name.
-export const shownTargetUnit = (ex: HerleidingExercise, c: { writeUnits?: unknown; showTargetUnit?: unknown }): string | undefined =>
-    (c.writeUnits && c.showTargetUnit !== false ? targetUnitOf(ex) : undefined);
+// The are formats keep their number blank: "500 m² = 5 __" would take a and dam² alike.
+const ARE_FORMATS = new Set(['vierkant-are', 'are-vierkant']);
+
+// A one-quantity number blank becomes a unit blank in eenheid (half of them in afwisselend);
+// compound answers stay numbers, and an explicit 'enkel-eenheid' exercise is a unit blank already.
+function asks(ex: HerleidingExercise, vraag: HerleidingVraag): HerleidingExercise {
+    if (ex.blank !== 'number' || ex.toParts.length !== 1 || ARE_FORMATS.has(ex.format)) return ex;
+    const unit = vraag === 'eenheid' || (vraag === 'afwisselend' && Math.random() < 0.5);
+    return unit ? { ...ex, blank: 'unit' } : ex;
+}
 
 // Owner 2026-10-10: a compound answer's zero parts stay blanks on the sheet but leave the key
 // ("71 dl", not "71 dl 0 cl 0 ml"), and the kiosk takes them typed as 0 or left empty.
@@ -240,5 +246,5 @@ export function recomputeHerleiding(measure: string, ex: HerleidingExercise): He
         const match = ladder.find(u => u.factor === target);
         toParts = [{ key: match ? match.key : ex.toParts[0].key, value: ex.toParts[0].value }];
     }
-    return { ...ex, toParts, targetUnit: singleTarget({ ...ex, toParts }), isManuallyEdited: true };
+    return { ...ex, toParts, isManuallyEdited: true };
 }
