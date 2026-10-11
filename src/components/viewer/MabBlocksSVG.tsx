@@ -1,4 +1,5 @@
 import type { MabStyle } from '../../services/math/types';
+import { kioskMabLayout, type KioskRect } from './mabKioskLayout';
 
 // Renders place-value blocks for one MAB exercise. Three visual conventions:
 //   symbolic:   units = dot, tens = horizontal bar, hundreds = small outlined square,
@@ -31,6 +32,8 @@ interface ColumnProps {
     fill?: string;
     // Oefenmodus card: a duizendtal is drawn as a labelled cube (KioskThousands). The sheet never passes it.
     kiosk?: boolean;
+    // Oefenmodus card: the place cell's box in px; the column then draws at a scale derived from it.
+    cell?: { w: number; h: number };
 }
 
 // 'mab-color' palette per place (fill). Strokes stay black for readability.
@@ -49,8 +52,11 @@ function resolveFill(style: MabStyle, place: MabPlace, color: string): string {
     return 'white';
 }
 
-export function MabPlaceColumn({ count, place, style, color = '#000', fill, kiosk }: ColumnProps) {
+export function MabPlaceColumn({ count, place, style, color = '#000', fill, kiosk, cell }: ColumnProps) {
     if (count === 0) return null;
+
+    // Oefenmodus card: one SVG per place cell, pieces sized from the cell's own box.
+    if (kiosk && cell) return <KioskColumn count={count} place={place} style={style} color={color} fill={fill} cellW={cell.w} cellH={cell.h} />;
 
     // Kiosk thousands: two labelled cubes fit the D column side by side, five high.
     if (kiosk && place === 'thousands') {
@@ -106,9 +112,57 @@ export function MabPlaceColumn({ count, place, style, color = '#000', fill, kios
     );
 }
 
-/** One block of a place, as the columns draw it (the kiosk's build tray). */
-export function MabGlyph({ place, style, kiosk }: { place: MabPlace; style: MabStyle; kiosk?: boolean }) {
-    return <Glyph place={place} style={style} color="#000" kiosk={kiosk} />;
+// One piece of a place at a rect. Bw/colour pieces show their cells (a flat is 10 x 10, a rod 10 long).
+function KioskPieceShape({ place, style, color, fill: fillOverride, r }: { place: MabPlace; style: MabStyle; color: string; fill?: string; r: KioskRect }) {
+    const stroke = color, line = Math.max(0.6, r.w * 0.04);
+    if (place === 'thousands') return <KioskThousands stroke={stroke} fill={style === 'symbolic' ? 'white' : fillOverride ?? resolveFill(style, place, color)} at={{ x: r.x, y: r.y, size: r.w }} />;
+    if (style === 'symbolic') {
+        const mark = fillOverride ?? color;
+        if (place === 'units') return <circle cx={r.x + r.w / 2} cy={r.y + r.h / 2} r={r.w / 2} fill={mark} />;
+        if (place === 'tens') return <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={mark} />;
+        return <rect x={r.x} y={r.y} width={r.w} height={r.h} fill="white" stroke={mark} strokeWidth={Math.max(1, r.w * 0.05)} />;
+    }
+    const fill = fillOverride ?? resolveFill(style, place, color);
+    const cuts = place === 'units' ? 0 : 9;
+    return (
+        <g>
+            <rect x={r.x} y={r.y} width={r.w} height={r.h} fill={fill} stroke={stroke} strokeWidth={line * 1.5} />
+            {Array.from({ length: cuts }, (_, j) => place === 'tens'
+                ? <line key={j} x1={r.x} x2={r.x + r.w} y1={r.y + (j + 1) * r.h / 10} y2={r.y + (j + 1) * r.h / 10} stroke={stroke} strokeWidth={line} />
+                : <g key={j}>
+                    <line x1={r.x + (j + 1) * r.w / 10} x2={r.x + (j + 1) * r.w / 10} y1={r.y} y2={r.y + r.h} stroke={stroke} strokeWidth={line} />
+                    <line y1={r.y + (j + 1) * r.h / 10} y2={r.y + (j + 1) * r.h / 10} x1={r.x} x2={r.x + r.w} stroke={stroke} strokeWidth={line} />
+                </g>)}
+        </g>
+    );
+}
+
+function KioskColumn({ count, place, style, color, fill, cellW, cellH }: { count: number; place: MabPlace; style: MabStyle; color: string; fill?: string; cellW: number; cellH: number }) {
+    const { size, pieces } = kioskMabLayout(place, count, cellW, cellH);
+    const shape = (r: KioskRect, i: number) => (
+        <g key={i} data-mab-piece="" {...(place === 'hundreds' && { 'data-mab-hundred': '', 'data-row': Math.round(r.y) })}>
+            <KioskPieceShape place={place} style={style} color={color} fill={fill} r={r} />
+        </g>
+    );
+    // Tens sit in groups of five so 2 vs 3 rods read at a glance.
+    const groups = place === 'tens' ? Array.from({ length: Math.ceil(pieces.length / 5) }, (_, g) => pieces.slice(g * 5, g * 5 + 5)) : null;
+    return (
+        <svg width={cellW} height={cellH} viewBox={`0 0 ${cellW} ${cellH}`} style={{ display: 'block' }} data-mab-kiosk-col={place} data-piece-px={size.toFixed(2)}>
+            {groups
+                ? groups.map((g, gi) => <g key={gi} data-mab-tens-group="">{g.map((r, i) => shape(r, i))}</g>)
+                : pieces.map(shape)}
+        </svg>
+    );
+}
+
+/** One piece for the build tray, drawn like the card's (upright rod, flat with its grid); `px` = its long side. */
+export function MabKioskTrayGlyph({ place, style, px }: { place: MabPlace; style: MabStyle; px: number }) {
+    const w = place === 'tens' ? px / 10 : px;
+    return (
+        <svg width={em(w + 2)} height={em(px + 2)} viewBox={`-1 -1 ${w + 2} ${px + 2}`} data-mab-tray-glyph={place}>
+            <KioskPieceShape place={place} style={style} color="#000" r={{ x: 0, y: 0, w, h: px }} />
+        </svg>
+    );
 }
 
 function PatternedGrid({ count, maxRows, place, style, color, fill, kiosk, rowFirst }: {
@@ -258,10 +312,10 @@ function RealisticHundreds({ stroke, fill }: { stroke: string; fill: string }) {
 // Oefenmodus: pupils read the symbolic stamp (four squares) as four hundreds, so the card and the
 // tray draw a duizendtal as a heavy-outlined cube with its value on the front face.
 // 35 px wide: two side by side still fit the D column (74 px).
-function KioskThousands({ stroke, fill }: { stroke: string; fill: string }) {
+function KioskThousands({ stroke, fill, at }: { stroke: string; fill: string; at?: { x: number; y: number; size: number } }) {
     const S = 30, OFFSET = 5, total = S + OFFSET;
     return (
-        <svg width={em(total)} height={em(total)} viewBox={`0 0 ${total} ${total}`} data-mab-thousand="">
+        <svg {...(at ? { x: at.x, y: at.y, width: at.size, height: at.size } : { width: em(total), height: em(total) })} viewBox={`0 0 ${total} ${total}`} data-mab-thousand="">
             <path d={`M 0 ${OFFSET} L ${OFFSET} 0 L ${total} 0 L ${total} ${S} L ${S} ${total}`} fill="none" stroke={stroke} strokeWidth={1.5} strokeLinejoin="round" />
             <line x1={S} y1={OFFSET} x2={total} y2={0} stroke={stroke} strokeWidth={1.5} />
             <rect x={0} y={OFFSET} width={S} height={S} fill={fill} stroke={stroke} strokeWidth={2.5} />

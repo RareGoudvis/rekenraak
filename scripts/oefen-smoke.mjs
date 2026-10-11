@@ -41,6 +41,7 @@ const HEADED = argv.includes('--headed');
 // names a second case on the same leaf; `header` = what the card's instruction must read.
 const CASES = [
     { kind: 'number', leafId: 'hr-std-optellen-nat', over: {} },
+    { kind: 'number', id: 'mab-herkennen', leafId: 'mab-herkennen', over: {} },
     { kind: 'number+rest', leafId: 'hr-std-delen-nat', over: { multiplicationMode: 'met_rest' } },
     // Herleidingen vraag: getal = the number for the shown unit (the header names it), eenheid = a unit button.
     { kind: 'number', id: 'herleidingen-lengte-getal', leafId: 'herleidingen-lengte', over: { vraag: 'getal', formats: ['enkel-getal'] }, header: /^Zet om naar (km|hm|dam|m|dm|cm|mm)\.$/ },
@@ -54,6 +55,7 @@ const CASES = [
     { kind: 'order', leafId: 'getalbegrip-ordenen-nat', over: {} },
     { kind: 'fill-cells', leafId: 'cijferen-optellen-nat', over: {} },
     { kind: 'build', leafId: 'geld-tekenen', over: {} },
+    { kind: 'build', id: 'mab-tekenen', leafId: 'mab-tekenen', over: {} },
     { kind: 'drag', leafId: 'temperatuur-kleuren', over: {} },
 ].filter(c => !ONLY.length || ONLY.includes(c.kind));
 

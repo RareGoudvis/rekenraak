@@ -5,6 +5,8 @@ import { EXERCISE_UI } from '../config/exerciseUI';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { flattenLeaves } from '../config/appstructure';
 import { BlockWidthProvider, ScaffoldProvider } from '../components/viewer/BlockWidthContext';
+import type { MabPlace } from '../components/viewer/MabBlocksSVG';
+import { kioskCellBox, kioskMabLayout } from '../components/viewer/mabKioskLayout';
 import type { MathBlock } from '../services/math/types';
 import { makeBlock } from './helpers/makeBlock';
 
@@ -105,22 +107,85 @@ describe('the kiosk card groups MAB tens in fives and lays hundreds as a block',
     });
 
     test('five hundreds fill the bottom row of three first, the sheet keeps its column-first grid', () => {
-        const rowsOf = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('[data-mab-hundred]')].map(c => Number(c.style.gridRow));
+        const rowsOf = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('[data-mab-hundred]')].map(c => Number(c.getAttribute('data-row')));
         const block = withDigits(5, 0, 0);
         expect(rowsOf(html(block, false))).toEqual([]);
         cleanup();
         const rows = rowsOf(html(block, true));
-        expect(rows.filter(r => r === 2)).toHaveLength(3);
-        expect(rows.filter(r => r === 1)).toHaveLength(2);
+        const bottom = Math.max(...rows);
+        expect(rows.filter(r => r === bottom)).toHaveLength(3);
+        expect(rows.filter(r => r < bottom)).toHaveLength(2);
+    });
+});
+
+// Triage M2b (classroom: pupils could not count the pieces): on the card each place draws at a size
+// derived from its cell's box, so the figure grows with the card and always stays inside the cell.
+describe('the kiosk card scales MAB pieces with the place cell', () => {
+    const PLACES: MabPlace[] = ['thousands', 'hundreds', 'tens', 'units'];
+    const bbox = (rs: { x: number; y: number; w: number; h: number }[]) => ({
+        x0: Math.min(...rs.map(r => r.x)), y0: Math.min(...rs.map(r => r.y)),
+        x1: Math.max(...rs.map(r => r.x + r.w)), y1: Math.max(...rs.map(r => r.y + r.h)),
     });
 
-    test('the card box grows for nine tens instead of clipping the top bar', () => {
-        const block = withDigits(0, 9, 0);
-        const box = (root: HTMLElement) => root.querySelector<HTMLElement>('.print-exercise > div:first-child > div:last-child')!;
-        expect(box(html(block, false)).style.height).not.toBe('');
-        cleanup();
-        const card = box(html(block, true));
-        expect(card.style.height).toBe('');
-        expect(card.style.minHeight).not.toBe('');
+    test('the cell box grows with the card width', () => {
+        expect(kioskCellBox(680, 4).w).toBeGreaterThan(kioskCellBox(340, 4).w * 1.9);
     });
+
+    test.each(PLACES)('%s: piece size doubles with the cell', (place) => {
+        const small = kioskMabLayout(place, 9, 82, 107).size, big = kioskMabLayout(place, 9, 164, 214).size;
+        expect(big / small).toBeCloseTo(2, 1);
+    });
+
+    test('a flat is a real figure, not a speck, at the 4-place cell on a 1.6x card', () => {
+        const { w, h } = kioskCellBox(340, 4);
+        expect(kioskMabLayout('hundreds', 5, w, h).size * 1.6).toBeGreaterThanOrEqual(30);
+        expect(kioskMabLayout('units', 1, w, h).size * 1.6).toBeGreaterThanOrEqual(16);
+    });
+
+    test.each([[0, 3, 0], [5, 2, 1], [3, 8, 9], [9, 9, 9]])('%iH %iT %iE stays inside its cell', (h, t, e) => {
+        for (const places of [3, 4]) {
+            const cell = kioskCellBox(340, places);
+            for (const [place, n] of [['hundreds', h], ['tens', t], ['units', e]] as const) {
+                if (n === 0) continue;
+                const b = bbox(kioskMabLayout(place, n, cell.w, cell.h).pieces);
+                expect(b.x0).toBeGreaterThanOrEqual(0); expect(b.y0).toBeGreaterThanOrEqual(0);
+                expect(b.x1).toBeLessThanOrEqual(cell.w); expect(b.y1).toBeLessThanOrEqual(cell.h);
+            }
+        }
+    });
+
+    test('the nine-piece figure fills about 80 % of the cell in its limiting direction', () => {
+        const cell = kioskCellBox(340, 4);
+        for (const place of ['hundreds', 'tens', 'units'] as const) {
+            const b = bbox(kioskMabLayout(place, 9, cell.w, cell.h).pieces);
+            const fill = Math.max((b.x1 - b.x0) / cell.w, (b.y1 - b.y0) / cell.h);
+            expect(fill).toBeGreaterThan(0.6); expect(fill).toBeLessThanOrEqual(0.801);
+        }
+    });
+
+    test('tens are upright rods in groups of five, units rows of five', () => {
+        const cell = kioskCellBox(340, 4);
+        const tens = kioskMabLayout('tens', 8, cell.w, cell.h).pieces;
+        expect(tens[0].h).toBeGreaterThan(tens[0].w);
+        expect(tens[5].x - (tens[4].x + tens[4].w)).toBeGreaterThan(tens[1].x - (tens[0].x + tens[0].w));
+        const units = kioskMabLayout('units', 7, cell.w, cell.h).pieces;
+        expect(units.filter(u => u.y === units[0].y)).toHaveLength(5);
+    });
+
+    test.each([['symbolic'], ['mab-bw']])('%s: the rendered card draws SVG columns from the cell box', (mabStyle) => {
+        const block = withDigits(mabStyle, 5, 2, 1);
+        const card = html(block, true);
+        const cols = [...card.querySelectorAll<SVGElement>('[data-mab-kiosk-col]')];
+        expect(cols.map(c => c.getAttribute('data-mab-kiosk-col'))).toEqual(['hundreds', 'tens', 'units']);
+        const cell = kioskCellBox(340, 3);
+        for (const c of cols) { expect(c.getAttribute('width')).toBe(String(cell.w)); expect(c.getAttribute('height')).toBe(String(cell.h)); }
+        cleanup();
+        expect(html(block, false).querySelector('[data-mab-kiosk-col]')).toBeNull();
+    });
+
+    function withDigits(mabStyle: string, hundreds: number, tens: number, units: number) {
+        const block = blockOf('mab-herkennen', { maxNumber: 999, mabStyle });
+        (block as unknown as { mabExercises: unknown[] }).mabExercises = [{ id: 'm', value: hundreds * 100 + tens * 10 + units, thousands: 0, hundreds, tens, units, isManuallyEdited: false }];
+        return block;
+    }
 });
