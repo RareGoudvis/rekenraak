@@ -14,6 +14,9 @@ const ACCEPTED_DRIFT: readonly string[] = [
     'geld-wissel.exerciseBills', 'herleidingen-oppervlakte.maxWaarde',
     // K2: decimal hoofdrekenen starts at 100 with one decimal.
     ...['optellen', 'aftrekken', 'vermenigvuldigen', 'delen', 'gemengd'].flatMap(op => [`hr-std-${op}-dec.maxGetal`, `hr-std-${op}-dec.decimalPlaces`]),
+    // 2026-10-10: the title follows the new Antwoord setting (plaatsAnswer 'waarde'); the seed's title is
+    // unchanged, a link with Antwoord 'waarde' ships the title as text.
+    'plaatswaarde-plaats.dynInstruction', 'plaatswaarde-omcirkelen.dynInstruction',
 ];
 
 const LEAVES = new Map(flattenLeaves().map(l => [l.id, l]));

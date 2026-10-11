@@ -371,6 +371,7 @@ const plaatswaardeSpace: OptionSpace = {
     maxGetal: union(RANGES.plaatswaarde),
     numberMask: MASKS,
     decimalPlaces: [0, 1, 2, 3],
+    plaatsAnswer: ['plaats', 'plaats-shuffle', 'waarde'],
 };
 
 const evenOnevenSpace: OptionSpace = {

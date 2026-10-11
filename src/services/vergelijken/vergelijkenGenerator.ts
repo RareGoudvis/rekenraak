@@ -2,6 +2,9 @@ import type { MathBlock, VergelijkenExercise, Fraction } from '../math/types';
 import { getMaskPlaces } from '../math/mathEngine';
 import type { VergelijkenConstraints } from '../math/constraintTypes';
 
+// Representaties: the share of equal pairs, so "=" is a real answer (getallen uses ~15 %).
+const EQUAL_SHARE = 0.2;
+
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -68,6 +71,30 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
         const scale = Math.pow(10, dp);
         return Math.round(randInt(1, Math.max(1, maxGetal * scale - 1))) / scale;
     };
+    // The decimals a non-whole value needs within maxDp (0,4 → 1; 1/3 or 2 → null).
+    const decimalsOf = (v: number): number | null => {
+        for (let dp = 1; dp <= maxDp; dp++) {
+            const scaled = v * 10 ** dp;
+            if (Math.abs(scaled - Math.round(scaled)) < 1e-9) return Number.isInteger(Math.round(v * 1e9) / 1e9) ? null : dp;
+        }
+        return null;
+    };
+    // A kommagetal near `anchor`: its exact value (when `equal` and it has one), else the same whole
+    // part with other decimals, never a whole number.
+    const nearValue = (anchor: number, equal: boolean): number => {
+        const dpEq = decimalsOf(anchor);
+        if (equal && dpEq !== null) return Number(anchor.toFixed(dpEq));
+        const dp = randInt(1, maxDp);
+        const scale = 10 ** dp;
+        // An anchor at the max itself (a masked 10 at max 10) gets its partner just under it.
+        const whole = Math.min(Math.floor(anchor + 1e-9), Math.max(0, Math.ceil(maxGetal) - 1));
+        let v = whole + 1 / scale;
+        for (let t = 0; t < 20; t++) {
+            v = Number((whole + randInt(1, scale - 1) / scale).toFixed(dp));
+            if (Math.abs(v - anchor) > 1e-9) break;
+        }
+        return v;
+    };
     // A breuk side → an actual fraction within the teller/noemer caps.
     const buildFrac = (maxN: number, maxD: number): Fraction => {
         const d = randInt(2, Math.max(2, maxD));
@@ -82,8 +109,28 @@ export function generateVergelijkenExercises(block: MathBlock): VergelijkenExerc
                 if (rep === 'breuk') { const f = buildFrac(fN, fD); return { value: f.n / f.d, frac: f }; }
                 return { value: buildRepMasked(mask) };
             };
-            const left = buildSide(leftRep, leftMask, c.leftFracN ?? 4, c.leftFracD ?? 8);
-            const right = buildSide(rightRep, rightMask, c.rightFracN ?? 4, c.rightFracD ?? 8);
+            let left: { value: number; frac?: Fraction }, right: { value: number; frac?: Fraction };
+            if (leftRep === 'breuk' && rightRep === 'breuk') {
+                // Two breuken under the same teller/noemer caps already share one range.
+                left = buildSide(leftRep, leftMask, c.leftFracN ?? 4, c.leftFracD ?? 8);
+                right = buildSide(rightRep, rightMask, c.rightFracN ?? 4, c.rightFracD ?? 8);
+            } else {
+                // Independent sides put a breuk under 2 against 0,1–9,9: "<" nearly always (kiosk triage
+                // 2026-10-10). The breuk side (else the left) is the anchor; the other side gets its whole
+                // part, and EQUAL_SHARE of the pairs its exact value, so <, = and > all occur.
+                const anchorLeft = leftRep === 'breuk' || rightRep !== 'breuk';
+                const drawAnchor = () => (anchorLeft
+                    ? buildSide(leftRep, leftMask, c.leftFracN ?? 4, c.leftFracD ?? 8)
+                    : buildSide(rightRep, rightMask, c.rightFracN ?? 4, c.rightFracD ?? 8));
+                const equal = Math.random() < EQUAL_SHARE;
+                let anchor = drawAnchor();
+                // An equal pair needs an anchor with a tienden / honderdsten form (2/5, not 1/3).
+                for (let t = 0; equal && t < 40 && decimalsOf(anchor.value) === null; t++) anchor = drawAnchor();
+                const otherMask = anchorLeft ? rightMask : leftMask;
+                // A teacher's getalopbouw on the other side still decides its digits.
+                const other = { value: Object.values(otherMask).some(Boolean) ? buildRepMasked(otherMask) : nearValue(anchor.value, equal) };
+                [left, right] = anchorLeft ? [anchor, other] : [other, anchor];
+            }
             const key = `${left.value}|${left.frac?.n}/${left.frac?.d}|${right.value}|${right.frac?.n}/${right.frac?.d}`;
             if (seen.has(key)) continue;
             seen.add(key);

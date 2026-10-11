@@ -22,6 +22,8 @@ export function answerText(d: KioskDescriptor, ex: unknown, c: Record<string, un
     if (input !== 'interactive' && d.showAnswer) return d.showAnswer(parts, ex, c);
     if (input === 'number+rest') return `${parts[0] ?? ''} r ${parts[1] ?? ''}`;
     if (input === 'number+unit') return `${parts[0] ?? ''} ${parts[1] ?? ''}`;
+    // fraction: typed noemer first, read teller over noemer.
+    if (input === 'fraction') return `${parts[1] ?? ''}/${parts[0] ?? ''}`;
     if (input === 'time') return `${parts[0] ?? ''}:${(parts[1] ?? '').padStart(2, '0')}`;
     if (input === 'multi-number') return parts.join(' ; ');
     const ia = input === 'interactive' ? kioskInteractOf(d, c) : undefined;

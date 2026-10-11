@@ -67,9 +67,10 @@ export const attemptsOf = (s: Pick<OefenSessie, 'attempts' | 'testMode'>): Oefen
 // text = a word typed on the device keyboard (Romeinse cijfers, a unit); time = uur + minuten
 // fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair);
 // number+unit = a typed number plus a unit tapped from `choicesOf` (herleidingen writeUnits), right by
-// value through `unitFactors`; interactive = the pupil answers ON the exercise (Phase C: tap, fill its
-// cells, order), see `interact`.
-export type KioskInput = 'number' | 'number+rest' | 'number+unit' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
+// value through `unitFactors`; fraction = a breuk as two fields, noemer typed first, then teller,
+// drawn stacked (breuken herkennen), checked as 'teller/noemer' against `answerOf`; interactive = the
+// pupil answers ON the exercise (Phase C: tap, fill its cells, order), see `interact`.
+export type KioskInput = 'number' | 'number+rest' | 'number+unit' | 'fraction' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
 
 // Separator of the parts in an interactive answer string ('12 · 48 · 7'): never part of a number.
 export const INTERACT_SEP = ' · ';
@@ -157,6 +158,10 @@ export interface KioskDescriptor<E = unknown> {
     // empty field is right where its answerOf alternatives hold '' (a herleiding's zero part).
     // From the exercise's shape, never its values, so the button does not hint at the answer.
     blankFields?(ex: E, c: Record<string, unknown>): boolean;
+    // multi-number: when the right answer is a relation between the fields, not one spelling per field
+    // (gelijknamig: one shared noemer, each breuk equal to its own). `exact` = the row's exactForm.
+    // true / false decides; undefined = the per-field compare against answerOf.
+    checkFields?(given: readonly string[], ex: E, c: Record<string, unknown>, exact: boolean): boolean | undefined;
     keys?(c: Record<string, unknown>): KioskKey[];
     // fill-cells: action keys for this exercise (see KioskExtraKey); from its operator or
     // settings, never its answer.
@@ -164,6 +169,7 @@ export interface KioskDescriptor<E = unknown> {
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
     // number+rest: exactly [quotiënt, rest]. number+unit: exactly [number, unit], one right
     // quantity (any other spelling of its value counts, see unitFactors). time: every accepted 'h:mm' (8:05 and 20:05).
+    // fraction: the accepted breuk spellings ('2/6'); the pupil's [noemer, teller] is read as 'teller/noemer'.
     // multi-number: one entry per field, alternatives within a field joined by '|'.
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
@@ -181,6 +187,10 @@ export interface KioskDescriptor<E = unknown> {
     // the form IS the exercise (vereenvoudigen, gelijknamig), false where any equal value counts
     // (Reken uit.). undefined = these settings never answer with a breuk (no row option).
     exactFormDefault?(c: Record<string, unknown>): boolean | undefined;
+    // Settings a new oefen-builder row starts with on top of the leaf's, where the kiosk wants
+    // another default than the sheet (plaatswaarde plaats: the value, not the place). From the
+    // leaf's constraints; undefined = none. Only the builder reads it: a link carries the result.
+    kioskSeed?(c: Record<string, unknown>): Record<string, unknown> | undefined;
     // Settings this descriptor can check (afronden: simpel only). Absent = always.
     supported?(c: Record<string, unknown>): boolean;
     // The kiosk's own constraints for the next exercise, drawn with `rng` (the scheduler's seeded
@@ -195,7 +205,8 @@ export interface KioskDescriptor<E = unknown> {
     interactOf?(c: Record<string, unknown>): KioskInteract<E> | undefined;
 }
 
-// What the pupil handed in: one string, or one string per field (number+rest, time, multi-number).
+// What the pupil handed in: one string, or one string per field (number+rest, time, multi-number;
+// fraction = [noemer, teller], the order they are typed in).
 export type KioskAnswer = string | string[];
 
 // ── Stats (pupil device, localStorage) ───────────────────────────────────────

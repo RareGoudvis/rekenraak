@@ -6,7 +6,7 @@ import FragmentableGrid from './FragmentableGrid';
 import { OP_GLYPH as GLYPH } from '../../services/math/formatters';
 import type { ControlerenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
-import { ANSWER_LINE_H } from './BlockWidthContext';
+import { ANSWER_LINE_H, useShowScaffold } from './BlockWidthContext';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 
 interface Props {
@@ -54,6 +54,8 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
 export default function ControlerenViewer({ block, showSolutions }: Props) {
     // Oefenmodus: null on the sheet; in the kiosk the pupil taps the juist / fout pill.
     const ix = useViewerInteraction();
+    // Oefenmodus card: no cells for the kruis or the controle line, the pupil only taps juist / fout.
+    const scaffold = useShowScaffold();
     const exercises: ControleExercise[] = block.controleExercises || [];
     const c = block.constraints as ControlerenConstraints;
     const subType: string = c.subType ?? 'negenproef';
@@ -102,7 +104,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                             <span>{sumOf(ex)}</span>
                             {juistFout(ex)}
                         </div>
-                        {showKruis && <NegenproefKruis ex={ex} showSolutions={showSolutions} />}
+                        {showKruis && scaffold && <NegenproefKruis ex={ex} showSolutions={showSolutions} />}
                     </div>
                 ))}
             />
@@ -139,6 +141,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                             <span>{formatMathNumber(ex.a)} {GLYPH[ex.operator]} {formatMathNumber(ex.b)} = {formatMathNumber(ex.shownAnswer)}</span>
                             {juistFout(ex)}
                         </div>
+                        {scaffold && <>
                         {/* 1.4em of line, not 15px: the pupil writes the check BY HAND on
                             this line, so it has to grow with the Lettergrootte slider like
                             the sum above it. */}
@@ -161,6 +164,7 @@ export default function ControlerenViewer({ block, showSolutions }: Props) {
                                         </>
                                         : <span style={{ ...writeLine, minWidth: undefined }} />}
                         </div>
+                        </>}
                     </div>
                 );
             })}

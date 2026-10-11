@@ -220,6 +220,14 @@ function enter(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string
         if (n === null) return `number+unit: ${accepted[0]} not typeable with keys [${keys}]`;
         return { right: [n, accepted[1]], wrong: [wrongOf(n), accepted[1]] };
     }
+    if (input === 'fraction') {
+        // Two keypad fields, noemer first: the first accepted breuk split into [noemer, teller].
+        const m = /^(\d+)\/(\d+)$/.exec(accepted[0] ?? '');
+        if (!m) return `fraction: ${accepted[0]} is no teller/noemer`;
+        const [n, den] = [typeable([m[1]], keys, 'number'), typeable([m[2]], keys, 'number')];
+        if (n === null || den === null) return `fraction: ${accepted[0]} not typeable with keys [${keys}]`;
+        return { right: [den, n], wrong: [den, String(Number(n) + 1)] };
+    }
     if (input === 'number+rest') {
         const q = typeable([accepted[0]], keys, 'number'), r = typeable([accepted[1]], keys, 'number');
         if (q === null || r === null) return `number+rest: ${accepted} not typeable with keys [${keys}]`;

@@ -51,6 +51,14 @@ describe('kiosk instruction wording', () => {
         expect(kioskInstructionOf('maateenheid', {}, { answerMode: 'schrijven' }, 'Schrijf de passende maateenheid.')).toBe('Typ de passende maateenheid.');
     });
 
+    // Pupil-play pass 2026-10-10: a right result without the needed onthoud- / leencijfer is Fout (owner
+    // rule), so the header says so: one text on every cijferen card, whatever the exercise needs.
+    test('cijferen asks for the carries in one generic header', () => {
+        const cijfer = ALL.filter(h => h.leafId.startsWith('cijferen-'));
+        expect(new Set(cijfer.map(h => h.leafId)).size).toBe(8);
+        for (const h of cijfer) expect(h.shown, `${h.leafId} L${h.grade}`).toBe('Cijfer uit. Typ ook je onthoud- en leencijfers.');
+    });
+
     test('klok analoog lezen asks for a typed time, the only answer the card takes', () => {
         const lezen = ALL.filter(h => h.leafId === 'klok-analoog-lezen');
         expect(lezen.length).toBeGreaterThan(0);

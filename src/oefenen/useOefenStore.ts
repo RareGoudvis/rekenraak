@@ -111,6 +111,8 @@ const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
     'number+rest': ['quotiënt', 'rest'], time: ['uur', 'min'], 'missing-operand': ['Wat ontbreekt?'], text: ['Antwoord'],
     // number+unit: the number is typed in field 0, the unit button fills field 1.
     'number+unit': ['Getal', 'Eenheid'],
+    // fraction: field 0 is the noemer, typed first (the pupil counts the parts before the coloured ones).
+    fraction: ['noemer', 'teller'],
 };
 
 /** The input kind, extra keypad keys, choices and field labels for the exercise on the card. */

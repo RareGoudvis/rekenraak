@@ -45,6 +45,12 @@ const CASES: Case[] = [
     ['breuken-hoeveelheid met-breukvragen', 'breuken-hoeveelheid', { answerFormat: 'met-breukvragen' }, r => count(r, '×') + count(r, 'Hoe groot'), 0],
     ['breuken-hoeveelheid zonder-hulp working lines', 'breuken-hoeveelheid', { answerFormat: 'zonder-hulp' }, lines, 1],
     ['breuken-hoeveelheid-abstract calc row', 'breuken-hoeveelheid', { subType: 'hoeveelheid-abstract' }, r => count(r, '×') + count(r, ':'), 0],
+    // Kiosk triage 2026-10-10: the breuk is typed in the answer panel (fraction input), not under the figure.
+    ['breuken-herkennen questions', 'breuken-herkennen', {}, r => count(r, 'gelijke delen'), 0],
+    ['breuken-herkennen phrase', 'breuken-herkennen', { answerFormat: 'phrase' }, r => count(r, 'gekleurd'), 0],
+    // The kiosk has no cells for the negenproef cross nor the controle line: the pupil only taps juist / fout.
+    ['controleren negenproef cross', 'controleren-negenproef', {}, r => r.querySelectorAll('svg').length, 0],
+    ['controleren omgekeerde controle line', 'controleren-omgekeerde', {}, r => count(r, 'controle:'), 0],
     ['oppervlakte berekenen "opp = __ × __"', 'oppervlakte-berekenen', { scaffoldFormule: true }, r => count(r, '×'), 0],
     ['klok lezen writing line', 'klok-analoog-lezen', {}, lines, 0],
     ['vormleer herkennen writing line', 'vormleer-hoeken-herkennen', {}, lines, 0],

@@ -10,6 +10,7 @@ import { SOL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
 import KioskAnswerSlot from './KioskAnswerSlot';
+import { placeOrder, plaatsView } from '../../services/plaatswaarde/plaatswaardeGenerator';
 
 interface Props {
     block: MathBlock;
@@ -54,7 +55,8 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
     const tight = availableWidth < 200;
     const exercises: PlaatswaardeExercise[] = block.plaatswaardeExercises || [];
     const c = block.constraints as PlaatswaardeConstraints;
-    const subType: string = c.subType ?? 'waarde';
+    // Antwoord 'waarde' on a plaats / omcirkelen block draws the waarde row.
+    const subType: string = plaatsView(c);
     const maxGetal: number = c.maxGetal ?? 1000;
     const decimalPlaces: number = c.decimalPlaces ?? 0;
     const gap = block.verticalSpacing || 14;
@@ -187,7 +189,8 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                             <span style={chipsWrap
                                 ? { display: 'inline-grid', gridTemplateColumns: `repeat(${chipCols}, auto)`, gap: '2px 6px' }
                                 : { display: 'inline-flex', gap: tight ? '2px' : '6px' }}>
-                                {places.map((p, i) => {
+                                {/* Keys are chip positions (SYNC: PLAATSWAARDE_KIOSK), in the Antwoord's order. */}
+                                {placeOrder(places.length, ex, c).map(j => places[j]).map((p, i) => {
                                     const isAns = showSolutions && p.key === ex.placeKey;
                                     return (
                                         <span key={p.key} {...interactionProps(ix, String(i))} style={{

@@ -107,6 +107,29 @@ export default function AnswerInput() {
         );
     }
 
+    // fraction (breuken herkennen): a stacked breuk, teller over the bar over noemer. The keypad starts
+    // in the noemer (field 0); its wide key reads Verder and moves up to the teller until that is filled.
+    if (info.kind === 'fraction') {
+        const toTeller = field === 0 && (input[1] ?? '') === '';
+        const box = (i: number) => (
+            <input aria-label={info.labels[i]} placeholder={info.labels[i]} ref={el => { refs.current[i] = el; }}
+                className={`kiosk-field${field === i ? ' is-active' : ''}`} inputMode="none" autoCapitalize="off" autoComplete="off" spellCheck={false}
+                value={input[i] ?? ''} onChange={e => setField(i, e.target.value)} onFocus={() => focusField(i)} />
+        );
+        return (
+            <div className="kiosk-answer">
+                <div className="kiosk-fraction">
+                    <label className="kiosk-field-bare">{box(1)}</label>
+                    <span className="kiosk-fraction-bar" aria-hidden />
+                    <label className="kiosk-field-bare">{box(0)}</label>
+                </div>
+                <p className="kiosk-keypad-hint">Typ eerst de noemer, dan de teller.</p>
+                <Keypad extras={info.keys} onKey={press} canCheck={toTeller ? (input[0] ?? '') !== '' : canCheck}
+                    onCheck={toTeller ? () => focusField(1) : answer} checkLabel={toTeller ? 'Verder' : undefined} />
+            </div>
+        );
+    }
+
     const text = info.kind === 'text';
     const many = info.labels.length > 2;
     const sep = SEPARATOR[info.kind] ?? info.separator;

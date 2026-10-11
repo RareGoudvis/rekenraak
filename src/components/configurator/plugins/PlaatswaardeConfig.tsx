@@ -21,9 +21,25 @@ export default function PlaatswaardeConfig({ block }: Props) {
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
     const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
 
-    // subType (view) is chosen by the sidebar leaf — not repeated here.
+    // subType (view) is chosen by the sidebar leaf — not repeated here; plaats / omcirkelen pick how
+    // the pupil answers (in the digits' order the place is only counted along, owner 2026-10-10).
+    const asksPlace = c.subType === 'plaats' || c.subType === 'omcirkelen';
     return (
         <div style={styles.container}>
+            {asksPlace && <div style={styles.section}>
+                <SettingLabel text="Antwoord:" info="Plaats: de leerling noemt de plaats van het onderstreepte cijfer (H, T, E op volgorde of door elkaar). Waarde: de leerling schrijft wat het cijfer waard is (128 → 20)." />
+                <PopupSelect
+                    value={c.plaatsAnswer ?? 'plaats'}
+                    options={[
+                        { value: 'plaats', label: 'Plaats (op volgorde)' },
+                        { value: 'plaats-shuffle', label: 'Plaats (door elkaar)' },
+                        { value: 'waarde', label: 'Waarde van het cijfer' },
+                    ]}
+                    onChange={(v) => set('plaatsAnswer', v)}
+                    ariaLabel="Antwoord"
+                />
+            </div>}
+
             {range && <div style={styles.section}>
                 <SettingLabel text="Maximum getal:" info="Het grootste getal dat in de oefeningen mag voorkomen." />
                 <PopupSelect

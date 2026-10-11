@@ -9,6 +9,8 @@ interface Props {
     onKey(key: string): void;
     onCheck(): void;
     canCheck: boolean;
+    // The wide key's word when it moves on instead of checking (a breuk: "Verder" from noemer to teller).
+    checkLabel?: string;
 }
 
 const EXTRA_LABEL: Record<string, string> = { ' ': 'spatie', '-': '−' };
@@ -20,7 +22,7 @@ const keepFocus = (e: React.MouseEvent) => e.preventDefault();
 // Phone-style 7-8-9 on top. The right column holds ⌫ and the extra keys, ⌫ growing into
 // the rows the extras leave free; 0 and a two-wide Controleer share the bottom row (a
 // one-wide column is too narrow for the word at kiosk size on a landscape phone).
-export default function Keypad({ extras, actions = [], onAction, onKey, onCheck, canCheck }: Props) {
+export default function Keypad({ extras, actions = [], onAction, onKey, onCheck, canCheck, checkLabel = 'Controleer' }: Props) {
     const shownActions = actions.slice(0, Math.max(0, 2 - extras.length));
     const shown = extras.slice(0, 2 - shownActions.length);
     const slots = shown.length + shownActions.length;
@@ -46,7 +48,7 @@ export default function Keypad({ extras, actions = [], onAction, onKey, onCheck,
             ))}
             {key('0', ' kiosk-key-zero')}
             <button type="button" className="kiosk-key kiosk-key-check" onMouseDown={keepFocus} onClick={onCheck} disabled={!canCheck}>
-                Controleer
+                {checkLabel}
             </button>
         </div>
     );

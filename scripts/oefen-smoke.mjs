@@ -42,6 +42,8 @@ const CASES = [
     // the target unit ("Doeleenheid tonen", default on), or not when the teacher turned it off.
     { kind: 'number+unit', leafId: 'herleidingen-lengte', over: { writeUnits: true, formats: ['enkel-getal'] }, header: /^Zet om naar (km|hm|dam|m|dm|cm|mm)\.$/ },
     { kind: 'number+unit', id: 'herleidingen-lengte-vrij', leafId: 'herleidingen-lengte', over: { writeUnits: true, showTargetUnit: false, formats: ['enkel-getal'] }, header: /^Zet om\.$/ },
+    // Breuken herkennen: a stacked breuk, the keypad types the noemer, Verder, then the teller.
+    { kind: 'fraction', leafId: 'breuken-herkennen', over: {}, header: /^Welk deel is gekleurd\? Typ de breuk zoals je ze ziet\.$/ },
     { kind: 'time', leafId: 'klok-analoog-lezen', over: {} },
     { kind: 'choice', leafId: 'vergelijken-getallen', over: {} },
     { kind: 'tap', leafId: 'vergelijken-kiezen', over: {} },
@@ -204,6 +206,14 @@ async function enter(page, card) {
             await fields.nth(i).click();
             await pressKeys(page, card.input === 'time' ? values[i] : typeableSpelling([values[i]], card.keys));
         }
+    } else if (card.input === 'fraction') {
+        // The keypad starts in the noemer; its wide key reads Verder until the teller is reached.
+        const [teller, noemer] = card.accepted[0].split('/');
+        await pressKeys(page, noemer);
+        const verder = page.locator('.kiosk-key-check');
+        if ((await verder.innerText()).trim() !== 'Verder') throw new Error('no Verder key after the noemer');
+        await verder.click();
+        await pressKeys(page, teller);
     } else if (card.input === 'number+unit') {
         await page.locator('.kiosk-fields input').first().click();
         await pressKeys(page, typeableSpelling([card.accepted[0]], card.keys));

@@ -52,8 +52,11 @@ function useKioskKeys() {
                 // The next cell to fill, Controleer after the last one.
                 if (cells) { st.enterCell(); return; }
                 // quotiënt typed, rest still empty: Enter moves on to the rest field (a unit is a button, not a field).
-                const unitPick = currentInput(st.sessie, st.shown)?.kind === 'number+unit';
-                if (!unitPick && st.input.length > 1 && st.field < st.input.length - 1 && st.input[st.field + 1] === '') st.focusField(st.field + 1);
+                const kind = currentInput(st.sessie, st.shown)?.kind;
+                // A breuk typed teller first still needs its noemer: Enter goes back down to it.
+                const emptyPart = kind === 'fraction' ? st.input.findIndex((v, i) => i !== st.field && v === '') : -1;
+                if (emptyPart >= 0 && st.input[st.field] !== '') st.focusField(emptyPart);
+                else if (kind !== 'number+unit' && st.input.length > 1 && st.field < st.input.length - 1 && st.input[st.field + 1] === '') st.focusField(st.field + 1);
                 else st.answer();
                 return;
             }

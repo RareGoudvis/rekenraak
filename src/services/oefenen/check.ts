@@ -166,9 +166,16 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
     }
     if (input === 'time') return Array.isArray(given) && given.length === 2 && sameTime(given, accepted);
     if (input === 'number+unit') return Array.isArray(given) && given.length === 2 && accepted.length === 2 && sameQuantity(given, accepted, d.unitFactors?.(ex, c) ?? {});
+    if (input === 'fraction') {
+        // [noemer, teller] as typed; whole numbers only in each field (a '3/' or '1,5' noemer is no breuk).
+        if (!Array.isArray(given) || given.length !== 2 || !given.every(g => /^\s*\d+\s*$/.test(g))) return false;
+        return sameValue(`${given[1].trim()}/${given[0].trim()}`, accepted, exact);
+    }
     if (input === 'multi-number') {
         // Every field must hold its own blank's value, in order; an empty field only where '' is accepted.
         const parts = Array.isArray(given) ? given : [given];
+        const related = parts.length === accepted.length ? d.checkFields?.(parts, ex, c, exact) : undefined;
+        if (related !== undefined) return related;
         return parts.length === accepted.length && parts.some(g => g.trim() !== '')
             && parts.every((g, i) => (g.trim() === '' ? accepted[i].split('|').includes('') : sameValue(g, accepted[i].split('|'), exact)));
     }

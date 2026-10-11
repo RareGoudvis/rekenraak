@@ -83,6 +83,8 @@ function roundHalfUp(n: number, weight: number): number {
 // What the pupil must give: a number, [quotiënt, rest], a choice, accepted words, accepted
 // times or one number per field.
 type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] } | { count: number }
+    // fraction: [teller, noemer] as drawn.
+    | { fraction: [number, number] }
     // build: the value to lay, and the coins / blocks the tray may hold (absent = any).
     | BuildTruth;
 type BuildTruth = { build: number; allowed?: number[]; digits?: Record<string, number> };
@@ -304,9 +306,8 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
             expect(f.numerator).toBeLessThanOrEqual(f.denominator);
             return { count: f.numerator };
         }
-        if (c.subType === 'herkennen') {
-            return (c.answerFormat ?? 'fraction-questions') === 'fraction-questions' ? { multi: [f.denominator, f.numerator] } : f.numerator / f.denominator;
-        }
+        // herkennen: the drawn parts as a breuk, whatever the sheet's answer format (kiosk triage 2026-10-10).
+        if (c.subType === 'herkennen') return { fraction: [f.numerator, f.denominator] };
         if (c.subType === 'hoeveelheid-abstract') return Math.round((f.total! / f.denominator) * f.numerator * 1e4) / 1e4;
         // Concreet objects: n/d of the total is a whole number of them.
         expect(Number.isInteger((f.total! * f.numerator) / f.denominator), JSON.stringify(f)).toBe(true);
@@ -636,8 +637,10 @@ function checkCells(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<s
     expect(ok(right), where).toBe(true);
     const last = keys.length - 1;
     expect(ok({ ...right, [keys[last]]: wrongNumber(want[last]) }), where).toBe(false);
-    // Controleer waits for every cell.
-    expect(fill({ ...right, [keys[0]]: '' }), where).toBe('');
+    // Controleer waits for every cell but those that may stay blank (a positietabel's leading zero).
+    const wants = ia.answerOf(ex, c).split(INTERACT_SEP);
+    const required = keys.find((_, i) => !wants[i].split('|').includes(''))!;
+    expect(fill({ ...right, [required]: '' }), where).toBe('');
 }
 
 const gcdOf = (a: number, b: number): number => (b ? gcdOf(b, a % b) : a);
@@ -740,6 +743,14 @@ function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map
                 expect(checkAnswer(d, ex, c, [` 0${accepted[0]} `, accepted[1]]), where).toBe(true);
                 expect(checkAnswer(d, ex, c, [accepted[0], String(r + 1)]), where).toBe(false);
                 expect(checkAnswer(d, ex, c, accepted[0]), where).toBe(false);
+            } else if (input === 'fraction') {
+                // Breuken herkennen: the drawn form, typed [noemer, teller]; swapped is wrong.
+                const { fraction: [n, den] } = truth as { fraction: [number, number] };
+                expect(accepted, where).toEqual([`${n}/${den}`]);
+                expect(checkAnswer(d, ex, c, [String(den), String(n)]), where).toBe(true);
+                expect(checkAnswer(d, ex, c, [String(den), String(n + 1)]), where).toBe(false);
+                expect(checkAnswer(d, ex, c, [String(n), String(den)]), where).toBe(n === den);
+                expect(checkAnswer(d, ex, c, [String(den), '']), where).toBe(false);
             } else if (input === 'number+unit') {
                 // Herleidingen writeUnits: one quantity equal to the given side, any unit of the whole ladder.
                 const h = ex as T.HerleidingExercise;

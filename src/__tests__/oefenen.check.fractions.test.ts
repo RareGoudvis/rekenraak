@@ -29,7 +29,9 @@ const LEAVES: RationalLeaf[] = [
     { leafId: 'hr-std-delen-rat', exactDefault: false, allFraction: true },
     { leafId: 'getalbegrip-getallenassen-rat', exactDefault: false, allFraction: true },
     { leafId: 'getalbegrip-getallenrijen-rat', exactDefault: false, allFraction: true },
-    { leafId: 'breuken-herkennen', extra: { answerFormat: 'blank-fraction' }, exactDefault: false, allFraction: true },
+    // The drawn parts are the answer (2/6, not 1/3): exact unless the row takes any equal value.
+    { leafId: 'breuken-herkennen', exactDefault: true, allFraction: true },
+    { leafId: 'breuken-herkennen', extra: { answerFormat: 'blank-fraction' }, exactDefault: true, allFraction: true },
     { leafId: 'verbanden-tabel', exactDefault: false, allFraction: false },
     { leafId: 'verbanden-paren', exactDefault: false, allFraction: false },
     { leafId: 'procenten-verbanden', exactDefault: false, allFraction: false },
@@ -95,6 +97,13 @@ function fieldsOf(d: KioskDescriptor, ex: unknown, c: Record<string, unknown>): 
         return { fields: ia.answerOf(ex, c).split(INTERACT_SEP), join: fs => fs.join(INTERACT_SEP) };
     }
     if (input === 'multi-number') return { fields: d.answerOf(ex, c), join: fs => fs };
+    // fraction: a teller/noemer spelling goes in as [noemer, teller]; anything else (a decimal) fills no field.
+    if (input === 'fraction') {
+        return { fields: [d.answerOf(ex, c).join('|')], join: fs => {
+            const m = /^\s*(\d+)\s*\/\s*(\d+)\s*$/.exec(fs[0]);
+            return m ? [m[2], m[1]] : ['', fs[0]];
+        } };
+    }
     expect(['number', 'missing-operand']).toContain(input);
     return { fields: [d.answerOf(ex, c).join('|')], join: fs => fs[0] };
 }
