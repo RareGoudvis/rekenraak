@@ -174,6 +174,8 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
     if (input === 'multi-number') {
         // Every field must hold its own blank's value, in order; an empty field only where '' is accepted.
         const parts = Array.isArray(given) ? given : [given];
+        const related = parts.length === accepted.length ? d.checkFields?.(parts, ex, c, exact) : undefined;
+        if (related !== undefined) return related;
         return parts.length === accepted.length && parts.some(g => g.trim() !== '')
             && parts.every((g, i) => (g.trim() === '' ? accepted[i].split('|').includes('') : sameValue(g, accepted[i].split('|'), exact)));
     }

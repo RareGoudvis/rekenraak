@@ -158,6 +158,10 @@ export interface KioskDescriptor<E = unknown> {
     // empty field is right where its answerOf alternatives hold '' (a herleiding's zero part).
     // From the exercise's shape, never its values, so the button does not hint at the answer.
     blankFields?(ex: E, c: Record<string, unknown>): boolean;
+    // multi-number: when the right answer is a relation between the fields, not one spelling per field
+    // (gelijknamig: one shared noemer, each breuk equal to its own). `exact` = the row's exactForm.
+    // true / false decides; undefined = the per-field compare against answerOf.
+    checkFields?(given: readonly string[], ex: E, c: Record<string, unknown>, exact: boolean): boolean | undefined;
     keys?(c: Record<string, unknown>): KioskKey[];
     // fill-cells: action keys for this exercise (see KioskExtraKey); from its operator or
     // settings, never its answer.

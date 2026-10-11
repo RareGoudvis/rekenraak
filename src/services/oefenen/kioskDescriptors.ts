@@ -918,6 +918,22 @@ function bewerkSpellings(ex: BreukBewerkExercise, f: Fraction): string[] {
     if (n === 0) return [String(whole)];
     return [...new Set([`${whole} ${n}/${f.d}`, fracText(reduce({ whole, n, d: f.d }))])];
 }
+// gelijknamig: any COMMON noemer counts (6/14 en 7/14 for 3/7 en 2/4, not only the kgv's 12/28 en
+// 14/28; pupil-play pass 2026-10-10): one shared noemer, each breuk equal to its own. A noemer the
+// teacher fixed (targetDen, when the generator could use it) is the one asked.
+function gelijknamigOk(given: readonly string[], ex: BreukBewerkExercise, c: Record<string, unknown>): boolean {
+    const parts = given.map(g => /^(\d+)\/(\d+)$/.exec(g.replace(/\s+/g, '')));
+    if (parts.length !== ex.inputs.length || parts.some(m => !m)) return false;
+    const dens = parts.map(m => Number(m![2]));
+    if (dens[0] === 0 || dens.some(x => x !== dens[0])) return false;
+    const fixed = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
+    if (fixed !== null && ex.answers[0]?.d === fixed && dens[0] !== fixed) return false;
+    // BigInt cross products, as check.ts compares breuken.
+    return parts.every((m, i) => {
+        const f = ex.inputs[i];
+        return BigInt(m![1]) * BigInt(f.d) === BigInt((f.whole ?? 0) * f.d + f.n) * BigInt(m![2]);
+    });
+}
 export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
     input: 'number',
     inputOf: (ex) => (ex.subType === 'gelijknamig' ? 'multi-number' : 'number'),
@@ -927,6 +943,8 @@ export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
     answerOf: (ex) => (ex.subType === 'gelijknamig'
         ? ex.answers.map(a => bewerkSpellings(ex, a).join('|'))
         : bewerkSpellings(ex, ex.answers[0])),
+    // The row's "any equal value" (exact false) keeps the per-field value compare.
+    checkFields: (given, ex, c, exact) => (ex.subType === 'gelijknamig' && exact ? gelijknamigOk(given, ex, c) : undefined),
     display: (ex) => `${ex.inputs.map(fracText).join(' en ')} → ${ex.answers.map(() => '?').join(' en ')}`,
 });
 
