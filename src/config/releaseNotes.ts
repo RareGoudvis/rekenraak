@@ -213,8 +213,13 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'gewijzigd',
-                text: 'Herleidingen met “eenheid schrijven”: elke oefening zegt naar welke eenheid (“(in mm)” op papier, “Zet om naar mm” op het toestel). Toggle “Doeleenheid tonen”.',
-                example: { leafId: 'herleidingen-lengte', constraints: { writeUnits: true }, grade: 4, count: 2, after: '“53 cm = ____ ____ (in mm)”' },
+                text: 'Herleidingen: kies “Vraag: getal, eenheid of afwisselend” — de eenheid staat er en je vult het getal in, of het getal staat er en je vult de eenheid in.',
+                example: { leafId: 'herleidingen-lengte', constraints: { vraag: 'afwisselend' }, grade: 4, count: 2, after: '“235 cm = ____ m” of “235 cm = 2,35 ____”' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: MAB-materiaal is op het toestel echt te tellen (platen met rooster, staven per vijf, blokjes per vijf). De bouwer start op jouw leerjaar.',
+                example: { leafId: 'mab-herkennen', grade: 2, count: 2, after: 'leesbare platen, staven en blokjes' },
             },
             {
                 kind: 'gewijzigd',
