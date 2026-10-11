@@ -53,8 +53,8 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const setTool = useBoardStore((s) => s.setTool);
     const undoStroke = useBoardStore((s) => s.undoStroke);
     const redoStroke = useBoardStore((s) => s.redoStroke);
-    const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
-    const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
+    const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0 || s._undoInk.length > 0);
+    const canRedoInk = useBoardStore((s) => s._redoInk.length > 0);
 
     const compact = useCompactBar();
     const instrumentKinds = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).map(i => i.kind).join(','));

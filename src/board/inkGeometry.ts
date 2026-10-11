@@ -119,3 +119,47 @@ export function strokeHit(s: Stroke, x: number, y: number, radius: number): bool
 export function splitSubpaths(path: string): string[] {
     return path.split(/(?=M)/).map(p => p.trim()).filter(Boolean);
 }
+
+// Absolute-coordinate slots per path command: [index within the group, axis 0 = x / 1 = y].
+// Arc radii, rotation and flags never move; relative (lowercase) commands move with their start.
+const PATH_PARAMS: Record<string, { n: number; xy: (0 | 1 | null)[] }> = {
+    M: { n: 2, xy: [0, 1] }, L: { n: 2, xy: [0, 1] }, T: { n: 2, xy: [0, 1] },
+    H: { n: 1, xy: [0] }, V: { n: 1, xy: [1] },
+    Q: { n: 4, xy: [0, 1, 0, 1] }, S: { n: 4, xy: [0, 1, 0, 1] },
+    C: { n: 6, xy: [0, 1, 0, 1, 0, 1] },
+    A: { n: 7, xy: [null, null, null, null, null, 0, 1] },
+};
+
+// The same path shifted by (dx, dy): what a moved selection stores, so the exact line / shape /
+// arc geometry survives the move instead of being redrawn from samples.
+export function translatePath(d: string, dx: number, dy: number): string {
+    const out: string[] = [];
+    for (const [, cmd, args] of d.matchAll(/([a-zA-Z])([^a-zA-Z]*)/g)) {
+        const nums = (args.match(/-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi) ?? []).map(Number);
+        const spec = PATH_PARAMS[cmd];
+        const moved = spec
+            ? nums.map((v, i) => {
+                const axis = spec.xy[i % spec.n];
+                return axis === null ? v : r1(v + (axis === 0 ? dx : dy));
+            })
+            : nums;
+        out.push(moved.length ? `${cmd} ${moved.join(' ')}` : cmd);
+    }
+    return out.join(' ');
+}
+
+export function translateStroke(s: Stroke, dx: number, dy: number): Stroke {
+    return { ...s, path: translatePath(s.path, dx, dy), pts: (s.pts ?? []).map((v, i) => r1(v + (i % 2 ? dy : dx))) };
+}
+
+// The box of a stroke's sample points (its geometry, not its ink width); none without pts.
+export function strokeBounds(s: Stroke): { x: number; y: number; w: number; h: number } | null {
+    const pts = s.pts ?? [];
+    if (pts.length < 2) return null;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let i = 0; i + 1 < pts.length; i += 2) {
+        x0 = Math.min(x0, pts[i]); x1 = Math.max(x1, pts[i]);
+        y0 = Math.min(y0, pts[i + 1]); y1 = Math.max(y1, pts[i + 1]);
+    }
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}

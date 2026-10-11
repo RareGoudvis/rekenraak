@@ -27,7 +27,7 @@ beforeAll(() => {
 beforeEach(() => {
     st().resetBoard();
     useBoardStore.setState({
-        tool: 'select', _redoStrokes: [], gridSnap: false, gridSize: 40,
+        tool: 'select', _redoInk: [], gridSnap: false, gridSize: 40,
         drawOptions: { arrow: 'none', dashed: false, shape: 'rect', fill: false },
     });
     st().setInkSetting('line', { color: '#111827', width: 4 });

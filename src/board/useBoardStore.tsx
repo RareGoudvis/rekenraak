@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground, DrawOptions, InkSettings, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
+import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground, DrawOptions, InkOp, InkSettings, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
 import { DEFAULT_BOARD_SETTINGS, emptyPage, inkColor, rndId } from './boardTypes';
 import { defaultInstrument } from './instrumentGeometry';
+import { translateStroke } from './inkGeometry';
 import { loadBoardAutosave, loadInkSettings, saveBoardAutosave, saveInkSettings } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
 import { loadWidgetDefaults } from './settings/widgetDefaults';
@@ -53,10 +54,17 @@ interface BoardState {
 
     // ink (always the active page)
     addStroke: (s: Stroke) => void;
-    removeStrokes: (ids: string[]) => void;
+    // The eraser removes without history (as it always did); the Selecteren tool's Delete is undoable.
+    removeStrokes: (ids: string[], opts?: { undoable?: boolean }) => void;
+    moveStrokes: (ids: string[], dx: number, dy: number) => void;
     undoStroke: () => void;
     redoStroke: () => void;
-    _redoStrokes: Stroke[];    // in-memory only (cleared on page switch / erase)
+    // In-memory ink history of the active page (cleared on page switch, load, reset, clear).
+    _undoInk: InkOp[];
+    _redoInk: InkOp[];
+    // Selecteren tool: the selected strokes of the active page (UI-only; cleared on tool / page change).
+    selectedStrokeIds: string[];
+    selectStrokes: (ids: string[]) => void;
 
     // meetinstrumenten (active page; at most one per kind, so a toggle adds or removes it)
     selectedInstrumentId: string | null;
@@ -78,6 +86,30 @@ interface BoardState {
 // Immutable helper: apply fn to the active page only.
 function withActivePage(state: BoardState, fn: (p: BoardPage) => BoardPage): Pick<BoardState, 'pages'> {
     return { pages: state.pages.map((p, i) => (i === state.activePageIdx ? fn(p) : p)) };
+}
+
+// A page change (or a load / reset / clear) starts a fresh ink history and selection: the
+// history holds the stroke ids of one page.
+const freshInk = { selectedStrokeIds: [] as string[], _undoInk: [] as InkOp[], _redoInk: [] as InkOp[] };
+
+// One history step applied (forward) to a page's strokes.
+function applyInk(p: BoardPage, op: InkOp): BoardPage {
+    if (op.kind === 'add') return { ...p, strokes: [...p.strokes, op.stroke] };
+    if (op.kind === 'move') return { ...p, strokes: p.strokes.map(s => (op.ids.includes(s.id) ? translateStroke(s, op.dx, op.dy) : s)) };
+    const gone = op.removed.map(r => r.stroke.id);
+    return { ...p, strokes: p.strokes.filter(s => !gone.includes(s.id)) };
+}
+
+// The page with op taken back, or null when the strokes it touched are gone (the eraser got them).
+function revertInk(p: BoardPage, op: InkOp): BoardPage | null {
+    const present = new Set(p.strokes.map(s => s.id));
+    if (op.kind === 'add') return present.has(op.stroke.id) ? { ...p, strokes: p.strokes.filter(s => s.id !== op.stroke.id) } : null;
+    if (op.kind === 'move') return op.ids.some(id => present.has(id)) ? applyInk(p, { ...op, dx: -op.dx, dy: -op.dy }) : null;
+    if (op.removed.some(r => present.has(r.stroke.id))) return null;
+    // Back in their old places: ascending indexes rebuild the original order.
+    const strokes = [...p.strokes];
+    for (const r of [...op.removed].sort((a, b) => a.index - b.index)) strokes.splice(Math.min(r.index, strokes.length), 0, r.stroke);
+    return { ...p, strokes };
 }
 
 // Hydrate the last board from localStorage at module init so bordmodus reopens
@@ -151,6 +183,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         activePageIdx: state.pages.length,
         selectedWidgetId: null,
         selectedInstrumentId: null,
+        ...freshInk,
     })),
 
     duplicatePage: () => set((state) => {
@@ -163,32 +196,33 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         copy.instruments?.forEach(i => { i.id = rndId(); });
         const pages = [...state.pages];
         pages.splice(state.activePageIdx + 1, 0, copy);
-        return { pages, activePageIdx: state.activePageIdx + 1, selectedWidgetId: null, selectedInstrumentId: null };
+        return { pages, activePageIdx: state.activePageIdx + 1, selectedWidgetId: null, selectedInstrumentId: null, ...freshInk };
     }),
 
     removePage: () => set((state) => {
         if (state.pages.length <= 1) {
             // Last page: clear it instead of leaving a page-less board.
-            return { pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null };
+            return { pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null, ...freshInk };
         }
         const pages = state.pages.filter((_, i) => i !== state.activePageIdx);
-        return { pages, activePageIdx: Math.min(state.activePageIdx, pages.length - 1), selectedWidgetId: null, selectedInstrumentId: null };
+        return { pages, activePageIdx: Math.min(state.activePageIdx, pages.length - 1), selectedWidgetId: null, selectedInstrumentId: null, ...freshInk };
     }),
 
     gotoPage: (idx) => {
         const n = get().pages.length;
-        set({ activePageIdx: Math.max(0, Math.min(n - 1, idx)), selectedWidgetId: null, selectedInstrumentId: null, _redoStrokes: [] });
+        set({ activePageIdx: Math.max(0, Math.min(n - 1, idx)), selectedWidgetId: null, selectedInstrumentId: null, ...freshInk });
     },
 
     // Mass delete on the current page (background and instruments stay: they are tools, not content).
     clearActivePage: () => set((state) => ({
         ...withActivePage(state, (p) => ({ ...p, widgets: [], strokes: [] })),
         selectedWidgetId: null,
+        ...freshInk,
     })),
 
     setBackground: (bg) => set((state) => withActivePage(state, (p) => ({ ...p, background: bg }))),
 
-    setTool: (t) => set({ tool: t, selectedWidgetId: t === 'select' ? get().selectedWidgetId : null }),
+    setTool: (t) => set({ tool: t, selectedWidgetId: t === 'select' ? get().selectedWidgetId : null, selectedStrokeIds: [] }),
     setGridSnap: (on) => set({ gridSnap: on }),
     setGridSize: (px) => set({ gridSize: px }),
 
@@ -199,31 +233,60 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     drawOptions: { arrow: 'none', dashed: false, shape: 'rect', fill: false },
     setDrawOptions: (patch) => set((state) => ({ drawOptions: { ...state.drawOptions, ...patch } })),
 
-    _redoStrokes: [],
+    _undoInk: [],
+    _redoInk: [],
+    selectedStrokeIds: [],
+    selectStrokes: (ids) => set({ selectedStrokeIds: ids }),
+
     addStroke: (s) => set((state) => ({
         ...withActivePage(state, (p) => ({ ...p, strokes: [...p.strokes, s] })),
-        _redoStrokes: [],
+        _undoInk: [...state._undoInk, { kind: 'add', stroke: s }],
+        _redoInk: [],
     })),
-    // Eraser delete: redo history becomes ambiguous, so it clears.
-    removeStrokes: (ids) => set((state) => ({
-        ...withActivePage(state, (p) => ({ ...p, strokes: p.strokes.filter(st => !ids.includes(st.id)) })),
-        _redoStrokes: [],
-    })),
+    // Any removal makes the redo history ambiguous, so it clears.
+    removeStrokes: (ids, opts) => set((state) => {
+        const page = state.pages[state.activePageIdx];
+        const removed = page.strokes.flatMap((stroke, index) => (ids.includes(stroke.id) ? [{ stroke, index }] : []));
+        return {
+            ...withActivePage(state, (p) => ({ ...p, strokes: p.strokes.filter(st => !ids.includes(st.id)) })),
+            ...(opts?.undoable && removed.length ? { _undoInk: [...state._undoInk, { kind: 'remove' as const, removed }] } : {}),
+            _redoInk: [],
+            selectedStrokeIds: state.selectedStrokeIds.filter(id => !ids.includes(id)),
+        };
+    }),
+    moveStrokes: (ids, dx, dy) => set((state) => {
+        if (!dx && !dy) return state;
+        const op: InkOp = { kind: 'move', ids, dx, dy };
+        return { ...withActivePage(state, (p) => applyInk(p, op)), _undoInk: [...state._undoInk, op], _redoInk: [] };
+    }),
+    // Walks the history back. An entry the eraser made stale (its strokes are gone) is skipped;
+    // with no history left (a loaded board) the last stroke goes, as before the history existed.
     undoStroke: () => set((state) => {
         const page = state.pages[state.activePageIdx];
-        if (!page.strokes.length) return state;
+        const log = [...state._undoInk];
+        while (log.length) {
+            const op = log.pop()!;
+            const back = revertInk(page, op);
+            if (!back) continue;
+            // An add is redone with the stroke as it is now (a later move was already taken back).
+            const redo: InkOp = op.kind === 'add' ? { kind: 'add', stroke: page.strokes.find(s => s.id === op.stroke.id) ?? op.stroke } : op;
+            return { ...withActivePage(state, () => back), _undoInk: log, _redoInk: [...state._redoInk, redo] };
+        }
+        if (!page.strokes.length) return state._undoInk.length ? { _undoInk: [] } : state;
         const last = page.strokes[page.strokes.length - 1];
         return {
             ...withActivePage(state, (p) => ({ ...p, strokes: p.strokes.slice(0, -1) })),
-            _redoStrokes: [...state._redoStrokes, last],
+            _undoInk: [],
+            _redoInk: [...state._redoInk, { kind: 'add', stroke: last }],
         };
     }),
     redoStroke: () => set((state) => {
-        if (!state._redoStrokes.length) return state;
-        const s = state._redoStrokes[state._redoStrokes.length - 1];
+        if (!state._redoInk.length) return state;
+        const op = state._redoInk[state._redoInk.length - 1];
         return {
-            ...withActivePage(state, (p) => ({ ...p, strokes: [...p.strokes, s] })),
-            _redoStrokes: state._redoStrokes.slice(0, -1),
+            ...withActivePage(state, (p) => applyInk(p, op)),
+            _undoInk: [...state._undoInk, op],
+            _redoInk: state._redoInk.slice(0, -1),
         };
     }),
 
@@ -263,10 +326,11 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         activePageIdx: Math.max(0, Math.min(pages.length - 1, activeIdx)),
         selectedWidgetId: null,
         selectedInstrumentId: null,
+        ...freshInk,
         ...(settings ? { boardSettings: settings } : {}),
     }),
 
-    resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null }),
+    resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null, ...freshInk }),
 }));
 
 // Debounced autosave — 1.5s after the last board mutation (same cadence as the
