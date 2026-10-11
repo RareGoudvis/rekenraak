@@ -7,6 +7,7 @@ import { BlockWidthProvider, ScaffoldProvider } from '../../components/viewer/Bl
 import { ViewerInteractionProvider, type ViewerInteraction } from '../../components/viewer/ViewerInteractionContext';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../../services/oefenen/kiosk';
 import { useOefenStore } from '../useOefenStore';
+import { usedExtent } from './cardExtent';
 
 interface Props {
     typeId: string;
@@ -26,33 +27,6 @@ const MAX_ZOOM = 3.2;
 // fill-cells: a cell never draws under a thumb's target (WCAG 2.5.8 + room for the digit); a
 // grid too tall for that at the card's size scrolls inside the card instead of shrinking.
 const MIN_CELL_PX = 40;
-
-// Horizontal extent of the drawn content (leaf elements), in layout px, so a short sum is
-// centred and scaled to the card instead of a 340 px box it fills only partly (a viewer may
-// left-align or centre it). Width-100% leaves count as full width, which keeps those whole.
-function usedExtent(inner: HTMLElement): { x: number; w: number } {
-    const outer = inner.getBoundingClientRect();
-    // Rects are post-transform; the layout width is not, so their ratio is the live scale.
-    const scale = inner.offsetWidth ? outer.width / inner.offsetWidth : 0;
-    let left = Infinity, right = -Infinity;
-    inner.querySelectorAll<HTMLElement | SVGElement>('*').forEach((el) => {
-        // A parent with its own text ("Een pil weegt ongeveer 500 <blank>.") is measured too,
-        // or only its blank would count and the card would crop the sentence off.
-        const ownText = [...el.childNodes].some(n => n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== '');
-        // A tappable part (Phase C) counts whole: its padding carries the selection ring.
-        if (el.children.length > 0 && !ownText && !(el instanceof SVGSVGElement) && !el.hasAttribute('data-kiosk-key')) return;
-        const r = el.getBoundingClientRect();
-        if (r.width <= 0 && r.height <= 0) return;
-        left = Math.min(left, r.left - outer.left);
-        right = Math.max(right, r.right - outer.left);
-    });
-    if (!(scale > 0) || right <= left) return { x: 0, w: VIRTUAL_W };
-    // 4 px slack each side: italic glyphs and blank lines can draw past their box.
-    const x = Math.max(0, Math.floor(left / scale) - 4);
-    // Not capped at VIRTUAL_W: a fixed-width table (getalfunctie's tick columns) overflows the
-    // 340 px box, and the card scales it down whole instead of cutting its last columns off.
-    return { x, w: Math.ceil(right / scale) + 4 - x };
-}
 
 export default function ExerciseCard({ typeId, exercise, constraints, instruction, exerciseKey }: Props) {
     const boxRef = useRef<HTMLDivElement>(null);
@@ -87,8 +61,7 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
         if (!box || !inner) return;
         const measure = () => {
             const boxW = box.clientWidth, boxH = box.clientHeight;
-            const { x, w } = usedExtent(inner);
-            const h = inner.offsetHeight;
+            const { x, w, h } = usedExtent(inner, VIRTUAL_W);
             if (!boxW || !boxH || !h) return;
             let k = Math.max(0.5, Math.min(MAX_ZOOM, boxW / w, boxH / h));
             const cellH = Math.min(...[...inner.querySelectorAll<HTMLElement>('input[data-kiosk-cell]')].map(el => el.offsetHeight).filter(x => x > 0));
