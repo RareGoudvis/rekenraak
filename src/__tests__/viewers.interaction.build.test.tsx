@@ -124,7 +124,8 @@ function greedy(target: number, pieces: KioskPiece[]): BuildEntry[] {
 const tile = (key: string) => document.querySelector<HTMLButtonElement>(`[data-tray-key="${key}"]`)!;
 const controleer = () => screen.getByRole('button', { name: 'Controleer' }) as HTMLButtonElement;
 const wissen = () => screen.getByRole('button', { name: 'Wissen' }) as HTMLButtonElement;
-const cardSvgs = (c: HTMLElement) => c.querySelectorAll('.kiosk-card-inner svg').length;
+// Pieces as drawn: one svg each, except MAB's per-cell svg whose pieces are its [data-mab-piece] groups.
+const cardSvgs = (c: HTMLElement) => c.querySelectorAll('.kiosk-card-inner svg:not([data-mab-kiosk-col])').length + c.querySelectorAll('.kiosk-card-inner [data-mab-piece]').length;
 
 describe('kiosk flow: lay the answer from the tray', () => {
     test.each<[string, Record<string, unknown>]>([

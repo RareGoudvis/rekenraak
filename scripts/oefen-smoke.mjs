@@ -41,6 +41,7 @@ const HEADED = argv.includes('--headed');
 // names a second case on the same leaf; `header` = what the card's instruction must read.
 const CASES = [
     { kind: 'number', leafId: 'hr-std-optellen-nat', over: {} },
+    { kind: 'number', id: 'mab-herkennen', leafId: 'mab-herkennen', over: {} },
     { kind: 'number+rest', leafId: 'hr-std-delen-nat', over: { multiplicationMode: 'met_rest' } },
     // Herleidingen with "eenheden zelf schrijven": keypad number + a unit button; the header names
     // the target unit ("Doeleenheid tonen", default on), or not when the teacher turned it off.
@@ -55,6 +56,7 @@ const CASES = [
     { kind: 'order', leafId: 'getalbegrip-ordenen-nat', over: {} },
     { kind: 'fill-cells', leafId: 'cijferen-optellen-nat', over: {} },
     { kind: 'build', leafId: 'geld-tekenen', over: {} },
+    { kind: 'build', id: 'mab-tekenen', leafId: 'mab-tekenen', over: {} },
     { kind: 'drag', leafId: 'temperatuur-kleuren', over: {} },
 ].filter(c => !ONLY.length || ONLY.includes(c.kind));
 

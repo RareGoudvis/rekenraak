@@ -1,5 +1,6 @@
 import type { MathBlock, MabExercise, MabStyle, MabScaffolding } from '../../services/math/types';
-import { MabGlyph, MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
+import { MabKioskTrayGlyph, MabPlaceColumn, type MabPlace } from './MabBlocksSVG';
+import { kioskCellBox } from './mabKioskLayout';
 import { builtCount, useViewerInteraction, type InteractionState } from './ViewerInteractionContext';
 import type { KioskPiece } from '../../services/oefenen/types';
 import FragmentableGrid from './FragmentableGrid';
@@ -118,6 +119,7 @@ export default function MabViewer({ block, showSolutions }: Props) {
                     showSolutions={showSolutions}
                     mode={mode}
                     laid={laid}
+                    cardW={availableWidth}
                 />
             ))}
         />
@@ -135,9 +137,10 @@ interface ItemProps {
     showSolutions: boolean;
     mode: 'herkennen' | 'tekenen';
     laid: InteractionState | null;
+    cardW: number;
 }
 
-function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figureFontPx, showSolutions, mode, laid }: ItemProps) {
+function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figureFontPx, showSolutions, mode, laid, cardW }: ItemProps) {
     const digits: Record<MabPlace, number> = {
         thousands: ex.thousands,
         hundreds: ex.hundreds,
@@ -154,7 +157,10 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
     // separate grids, and any flexible track resolves differently in each, so the H/T/E
     // labels drift out of line with the blocks underneath them. Fixed also means the
     // exercise never resizes — a narrow block simply fits fewer per row (as the clocks do).
-    const gridCols = `repeat(${cols.length}, ${em(mabColWidth(cols))})`;
+    const scaffold = useShowScaffold();
+    // Oefenmodus card: the cells fill the card's width and the pieces scale from the cell's box.
+    const cell = scaffold ? null : kioskCellBox(cardW, cols.length);
+    const gridCols = `repeat(${cols.length}, ${cell ? `${cell.w}px` : em(mabColWidth(cols))})`;
     const hasBorder = scaffolding === 'positietabel' || scaffolding === 'kader';
     const hasHeader = scaffolding === 'positietabel';
     const hasDividers = scaffolding === 'positietabel';
@@ -165,7 +171,6 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
     const showNumberOnLine = mode === 'tekenen' || showSolutions;
     // Oefenmodus card (no scaffold): herkennen's number is typed in the kiosk panel, so its
     // write-on line goes, and a duizendtal gets its labelled kiosk cube.
-    const scaffold = useShowScaffold();
     const answerLine = showNumberOnLine || scaffold;
 
     return (
@@ -207,14 +212,14 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                     // em, not px: the drawing area has to grow with the glyphs it holds,
                     // otherwise a bigger font clips them against `overflow: hidden`.
                     // Kiosk (build tray or card): nine rods, grouped in fives with a gap, outgrow the sheet's box, so it grows instead.
-                    ...(laid || !scaffold ? { minHeight: em(boxHeight) } : { height: em(boxHeight) }),
+                    ...(cell ? { height: cell.h } : laid || !scaffold ? { minHeight: em(boxHeight) } : { height: em(boxHeight) }),
                 }}>
                     {cols.map((col, i) => (
                         <div key={col.key} style={{
                             display: 'flex',
                             alignItems: 'flex-end',
                             justifyContent: 'center',
-                            padding: em(6),
+                            padding: cell ? 0 : em(6),
                             borderRight: hasDividers && i < cols.length - 1 ? '1.5px solid #000' : 'none',
                             overflow: 'hidden',
                             boxSizing: 'border-box',
@@ -225,6 +230,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                                 style={style}
                                 color={mode === 'tekenen' && showSolutions ? SOL : '#000'}
                                 kiosk={!scaffold}
+                                cell={cell ?? undefined}
                             />
                         </div>
                     ))}
@@ -250,14 +256,13 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
     );
 }
 
-// Kiosk tray: each place's block at a size that shows the places' relative size (a unit small,
-// a thousand cube big) and still fits a tile. Target px at the 13pt em base.
-const TRAY_GLYPH_PX: Record<string, { place: MabPlace; px: number; glyph: Record<'symbolic' | 'real', number> }> = {
-    // The tray draws the kiosk cube (KioskThousands, 35 px) whatever the style.
-    D: { place: 'thousands', px: 34, glyph: { symbolic: 35, real: 35 } },
-    H: { place: 'hundreds', px: 26, glyph: { symbolic: 10, real: 14 } },
-    T: { place: 'tens', px: 52, glyph: { symbolic: 22, real: HUNDRED_GLYPH_PX } },
-    E: { place: 'units', px: 14, glyph: { symbolic: 5, real: 6 } },
+// Kiosk tray: each place's block drawn like the card's (upright rod, flat with its grid) at a long
+// side that shows the places' relative size and still fits a tile. px at the 13pt em base.
+const TRAY_GLYPH_PX: Record<string, { place: MabPlace; px: number }> = {
+    D: { place: 'thousands', px: 34 },
+    H: { place: 'hundreds', px: 22 },
+    T: { place: 'tens', px: 34 },
+    E: { place: 'units', px: 12 },
 };
 
 /** A tray tile's picture (EXERCISE_UI TrayPiece): the place letter over one block of that place. */
@@ -266,12 +271,11 @@ export function MabTrayPiece({ piece, constraints }: { piece: KioskPiece; constr
     if (!row) return <>{piece.key}</>;
     const c = constraints as Partial<MabConstraints>;
     const style: MabStyle = (c.mabStyle === 'realistic' ? 'mab-bw' : c.mabStyle) || 'symbolic';
-    const glyphPx = row.glyph[style === 'symbolic' ? 'symbolic' : 'real'];
     return (
         <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '0.15em' }}>
             <span style={{ fontWeight: 700, lineHeight: 1, fontSize: 'calc(var(--sheet-size-math) * 1.2)' }}>{piece.key}</span>
-            <span style={{ display: 'inline-flex', fontSize: `calc(var(--sheet-size-math) * ${(row.px / glyphPx).toFixed(3)})` }}>
-                <MabGlyph place={row.place} style={style} kiosk />
+            <span style={{ display: 'inline-flex', fontSize: 'var(--sheet-size-math)' }}>
+                <MabKioskTrayGlyph place={row.place} style={style} px={row.px} />
             </span>
         </span>
     );
