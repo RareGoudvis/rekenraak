@@ -14,7 +14,7 @@ import { MAX_TITLE, MAX_TYPES, newSessieId } from '../../services/oefenen/sessio
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
-    EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowLabelOf, rowsFromSessie,
+    EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowLabelOf, rowsFromSessie, seedRowConstraints,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -71,7 +71,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         if (rows.length >= MAX_TYPES) return;
         const key = `r${nextKey.current++}`;
         const st = useWorksheetStore.getState();
-        st.setDraftBlocks([...st.draftBlocks, makeDraftBlock(leaf.typeId, leaf.constraints, draftIdOf(key))]);
+        // Seeded at the sidebar's leerjaar when the row is added: a later leerjaar change leaves it be.
+        st.setDraftBlocks([...st.draftBlocks, makeDraftBlock(leaf.typeId, seedRowConstraints(leaf, st.selectedGrade), draftIdOf(key))]);
         setRows(rs => [...rs, { key, leaf, weight: 50 }]);
     };
     const removeRow = (key: string) => {

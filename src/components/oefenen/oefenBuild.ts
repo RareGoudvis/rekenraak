@@ -1,5 +1,6 @@
 import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
+import { seedLeafConstraints } from '../../config/baseSettings';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
@@ -54,6 +55,11 @@ export function listOefenLeaves(): OefenLeaf[] {
         }
     }
     return out;
+}
+
+/** A new row: a sidebar click on the leaf at `grade` (the sheet's seed path) under the leaf's own start (kioskSeed). */
+export function seedRowConstraints(leaf: Pick<OefenLeaf, 'id' | 'constraints'>, grade: Leerjaar | null): Record<string, unknown> {
+    return seedLeafConstraints(leaf.id, grade, leaf.constraints)?.constraints ?? leaf.constraints;
 }
 
 export interface BuilderRow {
