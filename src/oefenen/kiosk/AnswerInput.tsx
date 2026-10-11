@@ -63,10 +63,12 @@ export default function AnswerInput() {
         const choiceClass = choiceSizeOf(info.choices);
         // A long word (honderdtallen, parallellogram) or number (12 345,67) needs half the panel.
         const longWord = info.choices.some(c => c.length > (choiceClass === ' is-numbers' ? 6 : 9));
-        const cols = info.choices.length === 2 || info.choices.length === 4 || longWord ? 2 : 3;
+        // 5-6 short choices (ha a m² dm² cm²) are a fixed 3x2 grid of keypad-sized buttons, not two tall rows.
+        const compact = !longWord && (info.choices.length === 5 || info.choices.length === 6);
+        const cols = compact ? 3 : info.choices.length === 2 || info.choices.length === 4 || longWord ? 2 : 3;
         return (
             <div className="kiosk-answer">
-                <div className={`kiosk-choices${choiceClass}`} role="radiogroup" aria-label="Kies het antwoord"
+                <div className={`kiosk-choices${choiceClass}${compact ? ' is-grid' : ''}`} role="radiogroup" aria-label="Kies het antwoord"
                     // --chars: the longest choice, so the number size fits every button alike (kiosk.css).
                     style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, '--chars': Math.max(...info.choices.map(c => c.length)) } as React.CSSProperties}>
                     {info.choices.map(c => (

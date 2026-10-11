@@ -580,6 +580,16 @@ html:has(.oefen-body),
   overflow-wrap: break-word;
   hyphens: auto;
 }
+/* 5-6 short choices: a 3x2 grid whose buttons stop at the keypad key height (88 px) and read at keypad size. */
+.kiosk-choices.is-grid {
+  flex: none;
+  max-height: none;
+  grid-auto-rows: minmax(var(--kiosk-tap), 88px);
+}
+.kiosk-choices.is-grid .kiosk-choice {
+  padding: 0 var(--sp-1);
+  font-size: var(--kiosk-text-lg);
+}
 /* number+unit: the unit ladder as one or two rows of compact buttons above the keypad. */
 .kiosk-choices.is-units {
   flex: none;
