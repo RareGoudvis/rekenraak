@@ -8,6 +8,10 @@ import { ViewerInteractionProvider, type ViewerInteraction } from '../../compone
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../../services/oefenen/kiosk';
 import { useOefenStore } from '../useOefenStore';
 import { usedExtent } from './cardExtent';
+import { setThousandsSeparator } from '../../services/math/formatters';
+
+// Only the pupil page loads this module, so the sheet and the editor keep their plain space; U+202F = narrow no-break space.
+setThousandsSeparator(' ');
 
 interface Props {
     typeId: string;

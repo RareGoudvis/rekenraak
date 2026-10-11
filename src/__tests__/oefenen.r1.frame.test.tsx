@@ -44,3 +44,10 @@ describe('R1 getallenrijen: the pill frame is part of the card extent', () => {
         expect(w).toBeGreaterThanOrEqual(340);
     });
 });
+
+import { formatMathNumber } from '../services/math/formatters';
+describe('R1 the sheet keeps its plain thousands space', () => {
+    test('formatMathNumber without the pupil card loaded', () => {
+        expect(formatMathNumber(7400)).toBe('7 400');
+    });
+});
