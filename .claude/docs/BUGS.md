@@ -36,22 +36,20 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- Kiosk triage 2026-10-10 (gallery under ~/Downloads/kiosk-gallery/, REVIEW.local §J): controleren kiosk never
-  shows a wrong sum (12/12 juist) and draws the unusable negenproef cross; vergelijken-representaties always "<"
-  (breuk < 1 vs decimal 2–9); deelbaarheid-veelvouden draws "van 9" every time; omtrek-gegeven 5/6 identical;
-  geld-wissel default bills [5,10] repeat; lengte-meten-gegeven unmeasurable on a screen; herleidingen L3 seed
-  gives 7–10-digit answers ("68 ha = ? cm²"); hoofdrekenen -dec defaults aren't mental maths ("432,36 : 0,6");
-  afronden draws 2 → 0; typed cards keep the paper "____" line. 2026-10-10
+- Builder row label still says "plaats omcirkelen" when the row's `plaatsAnswer` is `'waarde'` (K1 2026-10-11). 2026-10-11
+- `oefen-smoke` reads the store through in-page imports and fails with "phase start" after an HMR reload: use a fresh
+  dev server per run (K1). 2026-10-11
+- Kiosk mab-herkennen: the tens bars are hard to count at card scale (K3 pupil-play misread 2 of 3); pairs with the
+  classroom MAB note above. 2026-10-11
+- Several leaves listed from leerjaar 1–2 default to leerjaar-3+ numbers in the builder (K3); the builder row could
+  seed from the sidebar's leerjaar instead of the registry default — owner call. 2026-10-11
 
-- Kiosk verbanden-paren ("Getallenkennis › Omzettingen"): the session shows no exercise at all (owner, 2026-10-10
+
+- Kiosk verbanden-paren ("Getallenkennis › Omzettingen"): the owner's preview (2026-10-10) showed no exercise; NOT
+  reproduced on 3851873 (gallery, the full builder path, 160 setting combos, 5 viewports all render; paren became
+  interactive in f2a4782, so an older preview build is the suspect). Needs the owner's device + link. 2026-10-11
   preview). Suspect: the row dies in the pre-flight / `nextExercise` returns null at the builder defaults.
   Reproduce via a single-row session; see the kiosk-gallery `gen-fail` flag. 2026-10-10
-- Kiosk plaatswaarde "plaats omcirkelen" (128, the 2 underlined, tap H / T / E): pointless as built — the H T E
-  buttons sit in the same order as the digits, so the pupil just counts. Owner: make it a setting — e.g. shuffle
-  the choice order, or ask the VALUE of the digit ("20", typed) instead of its place. 2026-10-10
-- Kiosk breuken herkennen: asks "gelijke delen / aantal delen" instead of the fraction — pedagogically wrong.
-  Owner: either the breukvragen path (teacher toggle) filling the fraction step by step, or better a `fraction`
-  input kind where the pupil types noemer first, then teller, drawn as a real stacked fraction. 2026-10-10
 
 ## Oefenmodus beta audit 2026-10-09
 

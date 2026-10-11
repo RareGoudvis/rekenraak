@@ -226,6 +226,16 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 text: 'Oefenmodus: de kaart toont een “?”-vakje waar het antwoord komt, veelvouden en wisselgeld variëren, en herleidingen blijven binnen de leerstof van het leerjaar.',
             },
             {
+                kind: 'nieuw',
+                text: 'Oefenmodus: breuken herkennen vraagt een echte breuk (eerst noemer, dan teller). Plaatswaarde krijgt de keuze “Antwoord”: waarde, plaats, plaats door elkaar.',
+                example: { leafId: 'plaatswaarde-plaats', constraints: { plaatsAnswer: 'waarde' }, grade: 3, count: 2, after: 'de leerling typt de waarde (“20”)' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: controleren toont ook foute sommen, breuk-kommagetal vergelijken is niet altijd “<”, en het onderstreepte cijfer bij plaatswaarde is zichtbaar.',
+                example: { leafId: 'vergelijken-representaties', grade: 5, count: 3, before: 'altijd “<”', after: '<, = en > komen voor' },
+            },
+            {
                 kind: 'gewijzigd',
                 text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
             },
