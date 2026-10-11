@@ -36,6 +36,23 @@ describe('minWidthUnits — fallback (no measurement)', () => {
         expect(minWidthUnits(block)).toBe(1);
     });
 
+    // The gemengd tussenstap lives in perVariant (or in a compenseren variant chip), not in the
+    // top-level preset: reading only that one made the block paint a quarter-wide then reflow.
+    test('gemengd with a compenseren tussenstap variant needs a half on the first paint', () => {
+        const viaOverride = makeBlock('hr-std-gemengd', {
+            constraints: { numberType: 'natural', maxGetal: 100, variants: ['+', '-'], mix: 'random', perVariant: { '-': { preset: 'compenseren' } } },
+        });
+        const viaChip = makeBlock('hr-std-gemengd', {
+            constraints: { numberType: 'natural', maxGetal: 100, variants: ['+', '-:compenseren'], mix: 'random' },
+        });
+        const plain = makeBlock('hr-std-gemengd', {
+            constraints: { numberType: 'natural', maxGetal: 100, variants: ['+', '-'], mix: 'random' },
+        });
+        expect(minWidthUnits(viaOverride)).toBe(2);
+        expect(minWidthUnits(viaChip)).toBe(2);
+        expect(minWidthUnits(plain)).toBe(1);
+    });
+
     test('delen met rest needs a half — the rest blank does not fit beside the quotient', () => {
         const block = makeBlock('hr-std-delen', {
             constraints: { numberType: 'natural', maxGetal: 100, multiplicationMode: 'met_rest', selectedTables: [3, 4], metRestLevel: 1 },
