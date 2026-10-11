@@ -231,6 +231,8 @@ const CIJFER_CELL: Record<string, KioskCellSpec> = { a: { length: 1 }, p: { leng
 // the new top digits; it exchanges whether or not the column needs it (cijferLenen).
 const LENEN_KEY: KioskExtraKey<CijferExercise> = {
     id: 'lenen', label: 'Lenen', hotkeys: ['l', 'L', '-'],
+    // One line for every subtraction, so it explains the key without saying whether this exercise needs it.
+    hint: 'Lenen: wissel een tiental',
     apply: (state, active, ex, c) => cijferLenen(ex, cijferDp(ex, c), state, active),
 };
 
