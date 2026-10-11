@@ -65,6 +65,10 @@ export interface BuilderRow {
     exactForm?: boolean;                      // the teacher's "Antwoord" pick; absent = the descriptor default
 }
 
+/** The row's name in the builder, the link and the pupil's stats: the leaf's, unless a row setting renames it. */
+export const rowLabelOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): string =>
+    kioskFor(row.leaf.typeId)?.rowLabel?.(row.leaf.label, row.constraints) ?? row.leaf.label;
+
 /** The row's breuk-answer default (exactFormDefault), or undefined where the row asks no breuk. */
 export const exactFormDefaultOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): boolean | undefined =>
     kioskFor(row.leaf.typeId)?.exactFormDefault?.(row.constraints);
@@ -114,7 +118,7 @@ export function buildSessie(rows: BuilderRow[], s: BuilderSettings): { sessie: O
         types: shipped.map((r, i) => ({
             typeId: r.leaf.typeId,
             leafId: r.leaf.id,
-            label: r.leaf.label,
+            label: rowLabelOf(r),
             // Frozen to plain text now: a function-valued instruction cannot ride in the link.
             instruction: resolveInstruction(r.leaf.instruction, r.leaf.typeId, LEAF_BY_ID[r.leaf.id]?.label ?? r.leaf.label, r.constraints as BlockConstraints),
             constraints: r.constraints,

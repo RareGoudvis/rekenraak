@@ -33,7 +33,6 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- Builder row label still says "plaats omcirkelen" when the row's `plaatsAnswer` is `'waarde'` (K1 2026-10-11). 2026-10-11
 - `oefen-smoke` reads the store through in-page imports and fails with "phase start" after an HMR reload: use a fresh
   dev server per run (K1). 2026-10-11
 - Kiosk mab-herkennen: the tens bars are hard to count at card scale (K3 pupil-play misread 2 of 3); pairs with the

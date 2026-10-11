@@ -336,6 +336,10 @@ export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     interactOf: (c) => (isPwTabel(c) ? pwTabelInteract : undefined),
     kioskInstruction: (_ex, c) => (isOmcirkelen(c) ? 'Tik op de plaats van het onderstreepte cijfer.'
         : pwSub(c) === 'waarde' && c.subType !== 'waarde' ? 'Wat is de waarde van het onderstreepte cijfer?' : undefined),
+    // A plaats / omcirkelen row answering the value is named like the waarde leaf; door elkaar says so.
+    rowLabel: (label, c) => (c.subType !== 'plaats' && c.subType !== 'omcirkelen' ? label
+        : c.plaatsAnswer === 'waarde' ? `${label.split(' · ')[0]} · waarde van cijfer`
+        : c.plaatsAnswer === 'plaats-shuffle' ? `${label} (door elkaar)` : label),
     // A new builder row asks the value: on a screen the place in the digits' order is only counting (owner 2026-10-10).
     kioskSeed: (c) => (c.subType === 'plaats' || c.subType === 'omcirkelen' ? { plaatsAnswer: 'waarde' } : undefined),
     choicesOf: (ex, c) => shownPlaatsen(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),

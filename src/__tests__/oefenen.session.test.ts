@@ -5,7 +5,7 @@ import { LEAF_BY_ID } from '../config/appstructure';
 import { mulberry32 } from './helpers/limitHarness';
 import { KIOSK_KEY_TABLE_V1, KIOSK_LEAF_TABLE_V1, kioskCapableLeaves, kioskLabel } from '../services/oefenen/kiosk';
 import { flattenLeaves } from '../config/appstructure';
-import { buildSessie, listOefenLeaves, type BuilderRow } from '../components/oefenen/oefenBuild';
+import { buildSessie, listOefenLeaves, rowLabelOf, type BuilderRow } from '../components/oefenen/oefenBuild';
 import { qrMatrixOrNull, qrVersionOf } from '../services/qr';
 import {
     MAX_SESSIE_BYTES, MAX_SESSIE_JSON, MAX_TITLE, MAX_TYPES, decodeSessie, encodeSessie, newSessieId, packText, packWire, parseSessie, sessieLink, toWire,
@@ -262,7 +262,10 @@ describe('kioskLabel', () => {
     });
     test('a builder session ships no labels: they come back from the leaf', () => {
         const s = sessieOf(4, 0);
-        expect(s.types.map(t => t.label)).toEqual(s.types.map(t => label(t.leafId)));
+        // A row its settings rename (plaatswaarde Antwoord: waarde) ships its name, like a dynamic instruction.
+        const renamed = (t: OefenType) => rowLabelOf({ leaf: leaves.find(l => l.id === t.leafId)!, constraints: t.constraints });
+        expect(s.types.map(t => t.label)).toEqual(s.types.map(renamed));
+        expect(s.types.filter(t => t.label === label(t.leafId)).length).toBeGreaterThan(0);
         expect(roundTrip(s).types.map(t => t.label)).toEqual(s.types.map(t => t.label));
     });
 });

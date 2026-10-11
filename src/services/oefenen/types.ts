@@ -177,6 +177,9 @@ export interface KioskDescriptor<E = unknown> {
     // number+unit: the size of each unit the pupil may answer in, in one shared smallest unit
     // (powers of ten); check compares number × factor exactly. A unit left out is never right.
     unitFactors?(ex: E, c: Record<string, unknown>): Record<string, number>;
+    // The builder row's and the pupil's stats name when a row setting changes what the leaf asks
+    // (plaatswaarde Antwoord); `label` is the leaf's kiosk label. Absent = that label.
+    rowLabel?(label: string, c: Record<string, unknown>): string;
     // Stats text of a typed answer, one entry per field (the pupil's or the first accepted
     // spellings): euro + cent fields read "€ 2,65". Absent = the fields joined as typed.
     showAnswer?(parts: string[], ex: E, c: Record<string, unknown>): string;
