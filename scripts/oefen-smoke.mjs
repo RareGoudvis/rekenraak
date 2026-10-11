@@ -1,10 +1,11 @@
 // Oefenmodus kiosk smoke (O24): one leaf per input kind, answered right through the real kiosk
-// UI at two viewports, all the way to the Resultaten screen. Not in the gate: it needs a dev
-// server (the in-page imports below resolve to the kiosk's own module instances).
+// UI at two viewports, all the way to the Resultaten screen. Not in the gate. It starts its own
+// Vite dev server on a free port (a fresh one, so the in-page imports below resolve to the kiosk's
+// own module instances, never a HMR-reloaded copy) and kills it at the end.
 //
 // Usage:
-//   npx vite --port 5478 --strictPort                       # another terminal; kill it afterwards
-//   node scripts/oefen-smoke.mjs --url http://localhost:5478/ --out C:/Users/ruben/Downloads/oefen-check/smoke
+//   node scripts/oefen-smoke.mjs --out C:/Users/ruben/Downloads/oefen-check/smoke
+//   node scripts/oefen-smoke.mjs --url http://localhost:5478/   # use a server you already run instead
 //   options: --only number,drag (kinds)  --viewports 1280x800,1024x768  --seed 1234  --headed
 //
 // Per case: the link is made the way the builder makes it (listOefenLeaves → buildSessie, one
@@ -20,13 +21,16 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
+import { startDevServer } from './lib/devServer.mjs';
 
 const argv = process.argv.slice(2);
 const arg = (name, fallback) => {
     const i = argv.indexOf(`--${name}`);
     return i >= 0 && argv[i + 1] ? argv[i + 1] : fallback;
 };
-const URL = arg('url', 'http://localhost:5173/').replace(/\/+$/, '');
+const EXTERNAL_URL = arg('url', '');
+const own = EXTERNAL_URL ? null : await startDevServer();
+const URL = (EXTERNAL_URL || own.url).replace(/\/+$/, '');
 const OUT = arg('out', join('.', 'oefen-smoke-out'));
 const SEED = Number(arg('seed', 1234));
 const VIEWPORTS = arg('viewports', '1280x800,1024x768').split(',').map(v => v.split('x').map(Number));
@@ -314,6 +318,7 @@ for (const [w, h] of VIEWPORTS) {
     for (let i = 0; i < CASES.length; i++) rows.push(...await runCase(CASES[i], links[i], [w, h]));
 }
 await browser.close();
+own?.stop();
 
 const failed = rows.filter(r => r.error);
 writeFileSync(join(OUT, 'index.json'), JSON.stringify({ url: URL, seed: SEED, widths: VIEWPORTS.map(([w]) => w), viewports: VIEWPORTS.map(v => v.join('x')), leafCount: CASES.length, rows }, null, 2));
