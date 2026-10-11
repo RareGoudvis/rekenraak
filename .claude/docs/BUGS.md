@@ -30,11 +30,6 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- herleidingen-oppervlakte is listed from leerjaar 2 but every card at the L3 seed asks dm² / a / ha / m² / cm²
-  (L5–6 content; pupil-play k3b `shots/herleidingen-oppervlakte-e1.png`). Fix: `minLeerjaar: 5` on the leaf. 2026-10-11
-- even-oneven-cirkels on the kiosk: the circles are the paper colour-in frame rounded up to PAIRS, so "3 is …" sits
-  next to 4 circles and "7" next to 8 — a pupil who counts answers wrong (k3b `shots/even-oneven-cirkels-e1.png`).
-  Fix: the kiosk card draws exactly n circles (or none). 2026-10-11
 - lengte-meten: the builder no longer offers it, but an OLD link still opens the unsolvable card (k3b
   `shots/oldlink-lengte-meten.png`). Fix: a type whose descriptor `supported()` is false at load → ErrorScreen
   "Deze oefening kan niet op het toestel" / the slot is retired. 2026-10-11
