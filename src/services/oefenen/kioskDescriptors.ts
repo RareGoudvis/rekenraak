@@ -15,6 +15,7 @@ import { ROUND_SCALE, roundTo, targetsFor, usableTargets } from '../afronden/afr
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
+import { placeOrder, plaatsView } from '../plaatswaarde/plaatswaardeGenerator';
 import type { GeldWisselExercise } from '../math/types';
 import type { KioskDescriptor as AnyKioskDescriptor } from './types';
 import type { KioskPiece } from './types';
@@ -295,7 +296,13 @@ function plaatsenOf(ex: PlaatswaardeExercise, c: Record<string, unknown>) {
     return (start < 0 ? all.slice(-1) : all.slice(start)).map(p => ({ ...p, digit: digitAtPlace(ex.number, p.weight) }));
 }
 const plaatsOf = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => plaatsenOf(ex, c).find(p => p.key === ex.placeKey);
-const pwSub = (c: Record<string, unknown>) => (c.subType as string | undefined) ?? 'waarde';
+// What the block asks: Antwoord 'waarde' turns a plaats / omcirkelen block into a waarde one.
+const pwSub = (c: Record<string, unknown>) => plaatsView(c);
+// The place choices as shown: mixed for Antwoord 'plaats-shuffle' (SYNC: PlaatswaardeViewer chips).
+const shownPlaatsen = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => {
+    const ps = plaatsenOf(ex, c);
+    return placeOrder(ps.length, ex, c).map(i => ps[i]);
+};
 const isPwTabel = (c: Record<string, unknown>) => pwSub(c) === 'tabel';
 // SYNC: PlaatswaardeViewer tabel placesOf — the block's max and decimals, from the first non-zero place.
 function tabelPlaces(ex: PlaatswaardeExercise, c: Record<string, unknown>) {
@@ -321,14 +328,17 @@ export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     keys: (c) => (Number(c.decimalPlaces ?? 0) > 0 && !isPwTabel(c) ? [','] : []),
     // tabel fills cells (C2); omcirkelen taps a chip through `interact` below (C1a).
     interactOf: (c) => (isPwTabel(c) ? pwTabelInteract : undefined),
-    kioskInstruction: (_ex, c) => (isOmcirkelen(c) ? 'Tik op de plaats van het onderstreepte cijfer.' : undefined),
-    choicesOf: (ex, c) => plaatsenOf(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
+    kioskInstruction: (_ex, c) => (isOmcirkelen(c) ? 'Tik op de plaats van het onderstreepte cijfer.'
+        : pwSub(c) === 'waarde' && c.subType !== 'waarde' ? 'Wat is de waarde van het onderstreepte cijfer?' : undefined),
+    // A new builder row asks the value: on a screen the place in the digits' order is only counting (owner 2026-10-10).
+    kioskSeed: (c) => (c.subType === 'plaats' || c.subType === 'omcirkelen' ? { plaatsAnswer: 'waarde' } : undefined),
+    choicesOf: (ex, c) => shownPlaatsen(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
     // Keys are chip positions (SYNC: PlaatswaardeViewer omcirkelen chips); the answer is the letter.
     interact: {
         kind: 'tap',
-        keys: (ex, c) => plaatsenOf(ex, c).map((_, i) => String(i)),
+        keys: (ex, c) => shownPlaatsen(ex, c).map((_, i) => String(i)),
         answerOf: (ex, c) => plaatsOf(ex, c)?.key ?? '',
-        fromState: (st, ex, c) => (st.selected.length ? plaatsenOf(ex, c)[Number(st.selected[0])]?.key ?? '' : ''),
+        fromState: (st, ex, c) => (st.selected.length ? shownPlaatsen(ex, c)[Number(st.selected[0])]?.key ?? '' : ''),
     },
     answerOf: (ex, c) => {
         if (isPwTabel(c)) return [pwTabelInteract.answerOf(ex, c)];

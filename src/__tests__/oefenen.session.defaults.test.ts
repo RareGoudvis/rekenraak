@@ -10,7 +10,11 @@ import FIXTURE from './fixtures/oefenen/links-2026-10-09.json';
 
 // Accepted drift: "leafId.field" pairs whose live default moved after the snapshot on purpose and
 // whose new links may keep diffing against V1 (they only get longer). Empty on 2026-10-09.
-const ACCEPTED_DRIFT: readonly string[] = [];
+const ACCEPTED_DRIFT: readonly string[] = [
+    // 2026-10-10: the title follows the new Antwoord setting (plaatsAnswer 'waarde'); the seed's title is
+    // unchanged, a link with Antwoord 'waarde' ships the title as text.
+    'plaatswaarde-plaats.dynInstruction', 'plaatswaarde-omcirkelen.dynInstruction',
+];
 
 const LEAVES = new Map(flattenLeaves().map(l => [l.id, l]));
 

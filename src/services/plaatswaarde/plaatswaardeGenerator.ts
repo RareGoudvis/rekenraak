@@ -2,6 +2,32 @@ import type { MathBlock, PlaatswaardeExercise } from '../math/types';
 import { getMaskPlaces, digitAtPlace } from '../math/mathEngine';
 import type { PlaatswaardeConstraints } from '../math/constraintTypes';
 
+// What a block asks: a plaats / omcirkelen block whose Antwoord is 'waarde' asks the digit's value,
+// exactly like a waarde block (same number + underlined place).
+export function plaatsView(c: Partial<PlaatswaardeConstraints>): PlaatswaardeConstraints['subType'] {
+    const sub = c.subType ?? 'waarde';
+    return (sub === 'plaats' || sub === 'omcirkelen') && c.plaatsAnswer === 'waarde' ? 'waarde' : sub;
+}
+
+/** The place choices' display order (indices into the number's places, high to low): mixed for 'plaats-shuffle', else as printed. */
+export function placeOrder(count: number, ex: Pick<PlaatswaardeExercise, 'number' | 'placeKey'>, c: Partial<PlaatswaardeConstraints>): number[] {
+    const order = Array.from({ length: count }, (_, i) => i);
+    if (c.plaatsAnswer !== 'plaats-shuffle' || count < 2) return order;
+    // Seeded by the exercise itself (FNV-1a of number + place), so the sheet, its key, a kiosk reload
+    // and the stats row all see one order without storing it.
+    let h = 2166136261;
+    for (const ch of `${ex.number}|${ex.placeKey}`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    const next = () => { h = Math.imul(h ^ (h >>> 13), 2246822507) >>> 0; h = (h ^ (h >>> 16)) >>> 0; return h; };
+    for (let i = count - 1; i > 0; i--) {
+        const j = next() % (i + 1);
+        [order[i], order[j]] = [order[j], order[i]];
+    }
+    // Three or more places never keep the digits' order (the pupil would count along again);
+    // two may, or "always reversed" would be a rule to learn.
+    if (count >= 3 && order.every((v, i) => v === i)) order.push(order.shift()!);
+    return order;
+}
+
 function randInt(min: number, max: number) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }

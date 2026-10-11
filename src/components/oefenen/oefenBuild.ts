@@ -46,7 +46,7 @@ export function listOefenLeaves(): OefenLeaf[] {
                 domainId: dom.id,
                 domainLabel: dom.label,
                 accentVar: dom.accentVar,
-                constraints: leaf.defaultConstraints ?? {},
+                constraints: { ...leaf.defaultConstraints, ...kioskFor(leaf.typeId)?.kioskSeed?.(leaf.defaultConstraints ?? {}) },
                 instruction: leaf.instruction,
                 searchText: [label, leaf.label, ...(t.children ? [t.label] : []), sub.label, dom.label].map(s => s.toLowerCase()),
                 minGrade: LEERJAREN.find(g => leafAllowedForGrade(leaf, g)) ?? 6,

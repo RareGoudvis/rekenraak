@@ -183,6 +183,10 @@ export interface KioskDescriptor<E = unknown> {
     // the form IS the exercise (vereenvoudigen, gelijknamig), false where any equal value counts
     // (Reken uit.). undefined = these settings never answer with a breuk (no row option).
     exactFormDefault?(c: Record<string, unknown>): boolean | undefined;
+    // Settings a new oefen-builder row starts with on top of the leaf's, where the kiosk wants
+    // another default than the sheet (plaatswaarde plaats: the value, not the place). From the
+    // leaf's constraints; undefined = none. Only the builder reads it: a link carries the result.
+    kioskSeed?(c: Record<string, unknown>): Record<string, unknown> | undefined;
     // Settings this descriptor can check (afronden: simpel only). Absent = always.
     supported?(c: Record<string, unknown>): boolean;
     // The kiosk's own constraints for the next exercise, drawn with `rng` (the scheduler's seeded

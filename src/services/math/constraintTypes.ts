@@ -356,6 +356,9 @@ export type PlaatswaardeConstraints = {
     maxGetal: number;
     numberMask: PlaceMask;
     decimalPlaces: number;
+    // plaats / omcirkelen only: 'plaats' (default) names the place, the choices in the digits' order;
+    // 'plaats-shuffle' the same in a mixed order (no counting along); 'waarde' asks the digit's value.
+    plaatsAnswer?: 'plaats' | 'plaats-shuffle' | 'waarde';
 };
 
 export type EvenOnevenConstraints = {

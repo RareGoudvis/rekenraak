@@ -123,8 +123,9 @@ export const APP_STRUCTURE: Domain[] = [
                             // viewer marks the digit with an underline (never bold), so the title should
                             // name what the pupil actually sees.
                             { id: 'plaatswaarde-waarde', label: 'Waarde van cijfer', typeId: 'plaatswaarde', defaultConstraints: { subType: 'waarde' }, instruction: 'Wat is de waarde van het onderstreepte cijfer?' },
-                            { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' }, instruction: 'Op welke plaats staat het onderstreepte cijfer?' },
-                            { id: 'plaatswaarde-omcirkelen', label: 'Plaats omcirkelen', typeId: 'plaatswaarde', defaultConstraints: { subType: 'omcirkelen' }, instruction: 'Omcirkel de plaats van het onderstreepte cijfer.' },
+                            // Antwoord 'waarde' (plaatsAnswer) turns these two into a waarde exercise: the title follows.
+                            { id: 'plaatswaarde-plaats', label: 'Plaats benoemen',    typeId: 'plaatswaarde', defaultConstraints: { subType: 'plaats' }, instruction: (c) => (c.plaatsAnswer === 'waarde' ? 'Wat is de waarde van het onderstreepte cijfer?' : 'Op welke plaats staat het onderstreepte cijfer?') },
+                            { id: 'plaatswaarde-omcirkelen', label: 'Plaats omcirkelen', typeId: 'plaatswaarde', defaultConstraints: { subType: 'omcirkelen' }, instruction: (c) => (c.plaatsAnswer === 'waarde' ? 'Wat is de waarde van het onderstreepte cijfer?' : 'Omcirkel de plaats van het onderstreepte cijfer.') },
                             { id: 'plaatswaarde-tabel',  label: 'Tabel invullen',     typeId: 'plaatswaarde', defaultConstraints: { subType: 'tabel' }, instruction: 'Vul de plaatswaardetabel in.' },
                         ],
                     },
