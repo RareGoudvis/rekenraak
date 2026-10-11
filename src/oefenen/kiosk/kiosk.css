@@ -602,6 +602,24 @@ html:has(.oefen-body),
   color: var(--kiosk-ink);
 }
 .kiosk-field-unit.is-empty { color: var(--text-muted); }
+/* breuken herkennen: teller over a bar over noemer, narrow like a written breuk, not two wide fields. */
+.kiosk-fraction {
+  flex: none;
+  align-self: center;
+  width: min(100%, 7em);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-1);
+}
+.kiosk-fraction .kiosk-field { flex: none; text-align: center; }
+/* The field the keypad types into, also while a keypad key holds the focus. */
+.kiosk-fraction .kiosk-field.is-active { border-color: var(--accent); }
+.kiosk-fraction-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--kiosk-ink);
+}
 .kiosk-choice.is-picked {
   border-color: var(--accent);
   background: var(--accent-soft);

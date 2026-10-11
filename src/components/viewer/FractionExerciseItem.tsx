@@ -131,6 +131,9 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             );
         }
 
+        // Oefenmodus card: the breuk is typed in the answer panel, so the paper's questions and blanks stay off it.
+        if (!scaffold) return <div style={{ minHeight: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{shape}</div>;
+
         // herkennen — build answer area based on format
         let answerArea: React.ReactNode;
         if (answerFormat === 'fraction-questions') {

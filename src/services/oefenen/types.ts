@@ -67,9 +67,10 @@ export const attemptsOf = (s: Pick<OefenSessie, 'attempts' | 'testMode'>): Oefen
 // text = a word typed on the device keyboard (Romeinse cijfers, a unit); time = uur + minuten
 // fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair);
 // number+unit = a typed number plus a unit tapped from `choicesOf` (herleidingen writeUnits), right by
-// value through `unitFactors`; interactive = the pupil answers ON the exercise (Phase C: tap, fill its
-// cells, order), see `interact`.
-export type KioskInput = 'number' | 'number+rest' | 'number+unit' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
+// value through `unitFactors`; fraction = a breuk as two fields, noemer typed first, then teller,
+// drawn stacked (breuken herkennen), checked as 'teller/noemer' against `answerOf`; interactive = the
+// pupil answers ON the exercise (Phase C: tap, fill its cells, order), see `interact`.
+export type KioskInput = 'number' | 'number+rest' | 'number+unit' | 'fraction' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
 
 // Separator of the parts in an interactive answer string ('12 · 48 · 7'): never part of a number.
 export const INTERACT_SEP = ' · ';
@@ -164,6 +165,7 @@ export interface KioskDescriptor<E = unknown> {
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
     // number+rest: exactly [quotiënt, rest]. number+unit: exactly [number, unit], one right
     // quantity (any other spelling of its value counts, see unitFactors). time: every accepted 'h:mm' (8:05 and 20:05).
+    // fraction: the accepted breuk spellings ('2/6'); the pupil's [noemer, teller] is read as 'teller/noemer'.
     // multi-number: one entry per field, alternatives within a field joined by '|'.
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
@@ -195,7 +197,8 @@ export interface KioskDescriptor<E = unknown> {
     interactOf?(c: Record<string, unknown>): KioskInteract<E> | undefined;
 }
 
-// What the pupil handed in: one string, or one string per field (number+rest, time, multi-number).
+// What the pupil handed in: one string, or one string per field (number+rest, time, multi-number;
+// fraction = [noemer, teller], the order they are typed in).
 export type KioskAnswer = string | string[];
 
 // ── Stats (pupil device, localStorage) ───────────────────────────────────────

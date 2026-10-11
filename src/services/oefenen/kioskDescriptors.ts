@@ -944,10 +944,11 @@ export const VERBANDEN_KIOSK = descriptor<VerbandExercise>({
     display: (ex, c) => `${verbandAnswer(ex.fraction, ex.given)[0]}${ex.given === 'procent' ? ' %' : ''} = ${verbandFields(ex, c).map(r => `? (${REP_LABEL[r]})`).join(' = ')}`,
 });
 
-// herkennen: the coloured part as a breuk (or the two counting questions); hoeveelheid: how
+// herkennen: the coloured part as a breuk, typed noemer first then teller (the `fraction` input; owner
+// 2026-10-10: the sheet's two counting questions are scaffold, not the answer); hoeveelheid: how
 // many objects n/d of the total is. The shapes to colour or a line to divide are drawing.
 const fracSub = (c: Record<string, unknown>) => (c.subType as string | undefined) ?? 'kleuren';
-const isQuestions = (c: Record<string, unknown>) => fracSub(c) === 'herkennen' && (c.answerFormat ?? 'fraction-questions') === 'fraction-questions';
+const isHerkennen = (c: Record<string, unknown>) => fracSub(c) === 'herkennen';
 // SYNC: FractionExerciseItem coloredCount (concreet: rounded; abstract: 4 places).
 const deelVan = (ex: FractionExercise) => (ex.subType === 'hoeveelheid-abstract'
     ? parseFloat((parseFloat(((ex.total ?? 0) / ex.denominator).toFixed(4)) * ex.numerator).toFixed(4))
@@ -956,9 +957,11 @@ const deelVan = (ex: FractionExercise) => (ex.subType === 'hoeveelheid-abstract'
 const isKleuren = (c: Record<string, unknown>) => fracSub(c) === 'kleuren';
 export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     input: 'number',
-    inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isQuestions(c) ? 'multi-number' : 'number'),
-    // The fraction only: "tik 3 van de 6 delen" gave the answer away (owner, O22).
-    kioskInstruction: (ex, c) => (isKleuren(c) ? `Kleur ${ex.numerator}/${ex.denominator} in.` : undefined),
+    inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isHerkennen(c) ? 'fraction' : 'number'),
+    // The fraction only: "tik 3 van de 6 delen" gave the answer away (owner, O22). herkennen counts
+    // the drawn form, so its header says so.
+    kioskInstruction: (ex, c) => (isKleuren(c) ? `Kleur ${ex.numerator}/${ex.denominator} in.`
+        : isHerkennen(c) ? 'Welk deel is gekleurd? Typ de breuk zoals je ze ziet.' : undefined),
     interact: {
         kind: 'tap-multi',
         // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included).
@@ -966,19 +969,17 @@ export const BREUKEN_KIOSK = descriptor<FractionExercise>({
         answerOf: (ex) => String(ex.numerator),
         fromState: (st) => (st.selected.length ? String(st.selected.length) : ''),
     },
-    keys: (c) => (fracSub(c) === 'herkennen' && !isQuestions(c) ? ['/'] : fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
-    // herkennen as a breuk: any equal breuk names the coloured part (2/4 for 1/2).
-    exactFormDefault: (c) => (fracSub(c) === 'herkennen' && !isQuestions(c) ? false : undefined),
-    labels: () => ['gelijke delen', 'ingekleurd'],
+    keys: (c) => (fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
+    // herkennen: the drawn parts (2/6 for two of six, not 1/3); the row's Antwoord may take any equal breuk.
+    exactFormDefault: (c) => (isHerkennen(c) ? true : undefined),
     answerOf: (ex, c) => {
         if (isKleuren(c)) return [String(ex.numerator)];
-        if (isQuestions(c)) return [String(ex.denominator), String(ex.numerator)];
-        if (fracSub(c) === 'herkennen') return [...new Set([`${ex.numerator}/${ex.denominator}`, fracText(reduce({ n: ex.numerator, d: ex.denominator }))])];
+        if (isHerkennen(c)) return [`${ex.numerator}/${ex.denominator}`];
         return numberSpellings(deelVan(ex));
     },
     display: (ex, c) => (isKleuren(c)
         ? `kleur ${ex.numerator}/${ex.denominator}: ?`
-        : fracSub(c) === 'herkennen'
+        : isHerkennen(c)
         ? `gekleurd deel van ${ex.denominator} delen: ?`
         : `${ex.numerator}/${ex.denominator} van ${ex.total ?? 0} = ?`),
     supported: (c) => ['kleuren', 'herkennen', 'hoeveelheid', 'hoeveelheid-abstract'].includes(fracSub(c)),
