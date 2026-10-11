@@ -30,10 +30,6 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
-- `viewers.interaction.build.test.tsx` `cardSvgs` counts `[data-mab-piece]` groups (MAB draws one SVG per column
-  since M2b); a duizendtal's nested svg counts twice there — tighten the selector. 2026-10-11
-- `vergelijken.representaties.test.ts` "the sheet block draws the same spread" is flaky (0.604 vs a 0.6 bound,
-  unseeded Math.random); `oefenen.perf` O16 flaked once at 5.6 ms under load. Seed / widen. 2026-10-11
 
 
 
@@ -53,7 +49,7 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 - **O16** D12 (note, no fix, pinned by `oefenen.perf.test.ts`): every answer copies the history and
   stringifies the whole run, `saveRun` reloads all runs, `next` rebuilds the seen-keys set:
-  quadratic per run, ~0.5 ms per answer and ~170 kB stored at #1000 (test: < 5 ms, < 300 kB). Only
+  quadratic per run, ~0.5 ms per answer and ~170 kB stored at #1000 (test: < 10 ms, < 300 kB). Only
   an endless run far past 1000 answers would feel it. 2026-10-09
 
 ### WP-H test infra

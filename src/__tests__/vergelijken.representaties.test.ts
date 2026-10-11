@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, afterEach } from 'vitest';
 import type { VergelijkenExercise } from '../services/math/types';
 import type { OefenSessie, OefenType } from '../services/oefenen/types';
 import { listOefenLeaves } from '../components/oefenen/oefenBuild';
@@ -46,7 +46,12 @@ describe('vergelijken representaties: <, = and > all occur', () => {
         }
     });
 
+    afterEach(() => { vi.restoreAllMocks(); });
+
     test('the sheet block draws the same spread', () => {
+        // The sheet generator draws with Math.random: seed it so a 0.6 bound cannot flake on a rare draw.
+        const rng = mulberry32(20261011);
+        vi.spyOn(Math, 'random').mockImplementation(() => rng());
         const exs: VergelijkenExercise[] = [];
         for (let i = 0; i < 40; i++) {
             const block = makeBlock('vergelijken', { constraints: { subType: 'representaties', leftRep: 'breuk', rightRep: 'kommagetal', maxGetal: 10, decimalPlaces: 1 } });
