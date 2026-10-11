@@ -340,8 +340,8 @@ export const PLAATSWAARDE_KIOSK = descriptor<PlaatswaardeExercise>({
     rowLabel: (label, c) => (c.subType !== 'plaats' && c.subType !== 'omcirkelen' ? label
         : c.plaatsAnswer === 'waarde' ? `${label.split(' · ')[0]} · waarde van cijfer`
         : c.plaatsAnswer === 'plaats-shuffle' ? `${label} (door elkaar)` : label),
-    // A new builder row asks the value: on a screen the place in the digits' order is only counting (owner 2026-10-10).
-    kioskSeed: (c) => (c.subType === 'plaats' || c.subType === 'omcirkelen' ? { plaatsAnswer: 'waarde' } : undefined),
+    // Each leaf plays as its name says: waarde types the value; plaats and omcirkelen mix the places (in the digits' order a screen only counts along).
+    kioskSeed: (c) => (c.subType === 'waarde' ? { plaatsAnswer: 'waarde' } : c.subType === 'plaats' || c.subType === 'omcirkelen' ? { plaatsAnswer: 'plaats-shuffle' } : undefined),
     choicesOf: (ex, c) => shownPlaatsen(ex, c).map(p => (pwSub(c) === 'plaats' ? p.label.toLowerCase() : p.key)),
     // Keys are chip positions (SYNC: PlaatswaardeViewer omcirkelen chips); the answer is the letter.
     interact: {

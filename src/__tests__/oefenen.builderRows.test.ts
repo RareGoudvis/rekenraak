@@ -31,9 +31,9 @@ describe('item 3: the row label follows plaatsAnswer', () => {
         expect(decodeSessie(encodeSessie(sessie)!).types[0].label).toBe(want);
     });
 
-    test('a new plaats row starts on waarde (kioskSeed) and is named so', () => {
+    test('a new plaats row starts shuffled (kioskSeed) and is named so', () => {
         const l = leaf('plaatswaarde-plaats');
-        expect(rowLabelOf({ leaf: l, constraints: l.constraints })).toBe(WAARDE);
+        expect(rowLabelOf({ leaf: l, constraints: l.constraints })).toBe('Plaatswaarde benoemen · plaats benoemen (door elkaar)');
     });
 
     test('the waarde leaf, the tabel and every other leaf keep their own label', () => {
@@ -66,8 +66,8 @@ describe('item 4: a new row seeds from the sidebar leerjaar (the sheet seed path
         for (const g of [null, ...LEERJAREN]) {
             expect(seedRowConstraints(leaf('hr-std-aftrekken-nat'), g)).toEqual(seedLeafConstraints('hr-std-aftrekken-nat', g)!.constraints);
             const pw = seedRowConstraints(leaf('plaatswaarde-plaats'), g);
-            expect(pw.plaatsAnswer, `L${g}`).toBe('waarde');
-            expect(pw).toEqual(seedLeafConstraints('plaatswaarde-plaats', g, { plaatsAnswer: 'waarde' })!.constraints);
+            expect(pw.plaatsAnswer, `L${g}`).toBe('plaats-shuffle');
+            expect(pw).toEqual(seedLeafConstraints('plaatswaarde-plaats', g, { plaatsAnswer: 'plaats-shuffle' })!.constraints);
         }
     });
     test('every leaf the leerjaar shows seeds a row the kiosk can play', () => {

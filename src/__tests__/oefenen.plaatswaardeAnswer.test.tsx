@@ -18,7 +18,7 @@ import PlaatswaardeConfig from '../components/configurator/plugins/PlaatswaardeC
 // Plaatswaarde "plaats omcirkelen" / "plaats benoemen" (owner, kiosk triage 2026-10-10): with H T E
 // in the digits' own order the pupil only counts. The leaf setting "Antwoord" (plaatsAnswer):
 // 'plaats' = today (the sheet default), 'plaats-shuffle' = the places in a mixed order, 'waarde' =
-// type the underlined digit's value (128 with the 2 underlined → 20). The oefen builder starts these
+// type the underlined digit's value (128 with the 2 underlined → 20). The oefen builder starts waarde on waarde, plaats + omcirkelen shuffled;
 // rows on 'waarde'; the sheet default stays 'plaats'.
 
 afterEach(cleanup);
@@ -28,8 +28,8 @@ const ex = (number: number, placeKey: string): PlaatswaardeExercise => ({ id: 'p
 const OMC = { subType: 'omcirkelen', maxGetal: 1000, decimalPlaces: 0 };
 const PLAATS = { subType: 'plaats', maxGetal: 1000, decimalPlaces: 0 };
 
-describe('the oefen builder starts plaats rows on "waarde"', () => {
-    test.each([['plaatswaarde-omcirkelen', 'waarde'], ['plaatswaarde-plaats', 'waarde'], ['plaatswaarde-waarde', undefined], ['plaatswaarde-tabel', undefined]])('%s', (leafId, want) => {
+describe('the oefen builder starts each plaatswaarde leaf on its own Antwoord', () => {
+    test.each([['plaatswaarde-omcirkelen', 'plaats-shuffle'], ['plaatswaarde-plaats', 'plaats-shuffle'], ['plaatswaarde-waarde', 'waarde'], ['plaatswaarde-tabel', undefined]])('%s', (leafId, want) => {
         const leaf = listOefenLeaves().find(l => l.id === leafId)!;
         expect(leaf.constraints.plaatsAnswer).toBe(want);
         // The sheet leaf itself keeps its own default.
