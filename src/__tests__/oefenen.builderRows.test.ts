@@ -1,14 +1,17 @@
 import { describe, test, expect } from 'vitest';
-import { buildSessie, listOefenLeaves, rowLabelOf, rowYields, seedRowConstraints, type BuilderSettings } from '../components/oefenen/oefenBuild';
+import { buildSessie, filterOefenLeaves, listOefenLeaves, rowLabelOf, rowYields, seedRowConstraints, type BuilderSettings } from '../components/oefenen/oefenBuild';
 import { decodeSessie, encodeSessie } from '../services/oefenen/session';
 import { kioskSupports } from '../services/oefenen/kiosk';
 import { seedLeafConstraints } from '../config/baseSettings';
-import { LEERJAREN, type Leerjaar } from '../config/gradePresets';
+import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../config/gradePresets';
+import { APP_STRUCTURE } from '../config/appstructure';
 
 // Triage calls 2026-10-11 (M1): what a builder row is called.
 
 const SETTINGS: BuilderSettings = { id: 'rows', createdAt: 0, title: '', mode: 'afwisselen', allowRepeatType: false, testMode: false, statsLocked: false };
 const leaf = (id: string) => listOefenLeaves().find(l => l.id === id)!;
+// The raw sidebar node of a leaf: what the sidebar's leerjaar filter reads.
+const leafNode = (id: string) => APP_STRUCTURE.flatMap(d => d.subdomains.flatMap(s => s.types.flatMap(t => [t, ...(t.children ?? [])]))).find(l => l.id === id)!;
 
 describe('item 3: the row label follows plaatsAnswer', () => {
     const WAARDE = 'Plaatswaarde benoemen · waarde van cijfer';
@@ -37,6 +40,21 @@ describe('item 3: the row label follows plaatsAnswer', () => {
         for (const l of listOefenLeaves().filter(x => x.id !== 'plaatswaarde-plaats' && x.id !== 'plaatswaarde-omcirkelen')) {
             expect(rowLabelOf({ leaf: l, constraints: l.constraints }), l.id).toBe(l.label);
         }
+    });
+});
+
+describe('item 5: × and : with breuken from leerjaar 5', () => {
+    const RAT = ['hr-std-vermenigvuldigen-rat', 'hr-std-delen-rat'];
+    const shown = (g: Leerjaar) => new Set(filterOefenLeaves(listOefenLeaves(), '', g).map(l => l.id));
+    test('hidden at L4 (+ and − with breuken stay), shown at L5', () => {
+        for (const id of RAT) {
+            expect(shown(4).has(id), `${id} L4`).toBe(false);
+            expect(shown(5).has(id), `${id} L5`).toBe(true);
+            expect(leafAllowedForGrade(leafNode(id), 4), `${id} sidebar L4`).toBe(false);
+            expect(leaf(id).minGrade).toBe(5);
+        }
+        expect(shown(4).has('hr-std-optellen-rat')).toBe(true);
+        expect(shown(4).has('hr-std-aftrekken-rat')).toBe(true);
     });
 });
 

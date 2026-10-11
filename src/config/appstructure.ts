@@ -413,11 +413,11 @@ export const APP_STRUCTURE: Domain[] = [
                 id: 'bewerkingen-breuken',
                 label: 'Bewerkingen met breuken',
                 types: [
-                    // Fraction arithmetic (+ − × :) — leerplan "Bewerkingen met breuken", introduced L4.
+                    // Fraction arithmetic — leerplan "Bewerkingen met breuken": + and − from L4, × and : from L5 (owner 2026-10-11).
                     { id: 'hr-std-optellen-rat', label: 'Optellen', typeId: 'hr-std-optellen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
                     { id: 'hr-std-aftrekken-rat', label: 'Aftrekken', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
-                    { id: 'hr-std-vermenigvuldigen-rat', label: 'Vermenigvuldigen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
-                    { id: 'hr-std-delen-rat', label: 'Delen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
+                    { id: 'hr-std-vermenigvuldigen-rat', label: 'Vermenigvuldigen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 5, instruction: 'Reken uit.' },
+                    { id: 'hr-std-delen-rat', label: 'Delen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 5, instruction: 'Reken uit.' },
                     { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' }, instruction: (c) => c.direction === 'naar-breuk' ? 'Schrijf als breuk.' : 'Schrijf als gemengd getal.' },
                     { id: 'breuken-gelijknamig', label: 'Gelijknamig maken', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gelijknamig' }, instruction: 'Maak gelijknamig.' },
                     { id: 'breuken-vereenvoudigen', label: 'Vereenvoudigen', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'vereenvoudigen' }, instruction: 'Vereenvoudig.' },
