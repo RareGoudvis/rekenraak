@@ -218,8 +218,8 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'gewijzigd',
-                text: 'Kommagetallen bij hoofdrekenen starten eenvoudiger: tot 100 met 1 decimaal, deler altijd een heel getal. Het maximum kan nog steeds hoger.',
-                example: { leafId: 'hr-std-delen-dec', grade: 5, count: 3, before: '“432,36 : 0,6”', after: '“48,6 : 6”' },
+                text: 'Kommagetallen bij hoofdrekenen starten eenvoudiger: tot 100 met 1 decimaal; delen meestal door 0,x. Het maximum kan nog steeds hoger.',
+                example: { leafId: 'hr-std-delen-dec', grade: 5, count: 3, before: '“432,36 : 0,6”', after: '“48,6 : 0,6”' },
             },
             {
                 kind: 'opgelost',

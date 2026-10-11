@@ -441,7 +441,8 @@ the retry loop and build exactly `n` items directly.
 > masks / bridges / plaatswaarde reach the miljarden; `getMaskPlaces(max)` only exposes places ≤ max.
 > Above 1e6 (only): compenseren rounds to 10^(digits−2) (… 299 999 999); tienvoud's base is capped at
 > 10 000. **Hoofdrekenen -dec defaults** (2026-10-11, owner: "432,36 : 0,6 is not mental maths"): hr-std-*-dec and
-> gemengd-dec default to max 100 with 1 decimal; × = kommagetal × whole number; : has a whole deler (the
+> gemengd-dec default to max 100 with 1 decimal; × = kommagetal × whole number; : has a DECIMAL deler 0,x 75 % of the
+> time and a whole one otherwise (owner 2026-10-11: pupils must learn 0,x delers; the old note said whole — the
 > divisor shift stops one place short of the decimals); the max picker still allows more.
 > Delen 'andere' (every max since 2026-10-09): the quotient is drawn over the range and the
 > dividend derived, divisor ≤ half the max's digits (decimal: shifted 0..dp places; masked dividend:
@@ -1092,7 +1093,7 @@ multi-item viewers go through `FragmentableGrid`.
 
 - `SOL_FILL` (solutionStyle.ts) = `color-mix(var(--ink-solution) 35%, transparent)`: the one solution red at low opacity for every coloured key (breuken kleuren / hoeveelheid, deelbaarheid, even-oneven).
 - geld-tekenen's key draws a fewest-pieces make-up (`services/geld/geldMakeUp.ts`); geld-teruggeven keeps the given price / paid amount black; klok keys sit in the pupil's writing slot.
-- blockLayout: `fitMonoFactor` (vergelijken code sides nowrap + step), `getallenrijFit` / `getallenrijWidth` (tighter pill once the roomy ladder fails), the ordenen row estimate = 22 px track + one ",/;" glyph per gap, mab-tekenen floor ½.
+- blockLayout `minWidthUnits` also sees a compenseren preset inside gemengd's `perVariant` (or a `-:compenseren` chip), so such a block paints at width 2 first time instead of reflowing. `fitMonoFactor` (vergelijken code sides nowrap + step), `getallenrijFit` / `getallenrijWidth` (tighter pill once the roomy ladder fails), the ordenen row estimate = 22 px track + one ",/;" glyph per gap, mab-tekenen floor ½.
 
 ## 10. Persistence & sharing — [persistence.ts](../../src/services/persistence.ts)
 
