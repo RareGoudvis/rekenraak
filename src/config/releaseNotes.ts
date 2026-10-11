@@ -236,6 +236,10 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 example: { leafId: 'vergelijken-representaties', grade: 5, count: 3, before: 'altijd “<”', after: '<, = en > komen voor' },
             },
             {
+                kind: 'nieuw',
+                text: 'Bordmodus: met “Selecteren” (S) tik of omcirkel je inkt, sleep je ze naar een andere plek of wis je ze. Ongedaan maken werkt ook hier.',
+            },
+            {
                 kind: 'gewijzigd',
                 text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
             },

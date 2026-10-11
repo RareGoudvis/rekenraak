@@ -1330,7 +1330,8 @@ src/
 │   ├── addWidgets.ts            # staggerSlot / staggerPos (first free slot) + addBasicWidget
 │   ├── toolCatalog.ts           # TOOL_CATALOG (Wiskunde-gereedschap / Klasmanagement / Organisatie tiles), runTool, ★ favorites (max 6)
 │   ├── backgrounds.ts           # page backgrounds: pattern × white/black × size, pure CSS gradients; backgroundStyle(bg, zoom) for preview tiles
-│   ├── inkGeometry.ts           # pure: snapToGrid, snapAngle (Shift 45°), linePath (arrowheads), dragBox, shapeGeometry, strokeHit (segment distance), splitSubpaths
+│   ├── inkGeometry.ts           # pure: snapToGrid, snapAngle (Shift 45°), linePath (arrowheads), translatePath / translateStroke / strokeBounds (Selecteren), dragBox, shapeGeometry, strokeHit (segment distance), splitSubpaths
+│   ├── selectTool.ts            # pure Selecteren engine: tap / Shift-tap / rectangle lasso / move with grid snap / cancel (§14 Ink)
 │   ├── drawTools.ts             # ToolEngines createLineTool / createShapeTool (shared dragEngine: 4 px tap rule, preview, cancel), SOFT_FILL_OPACITY
 │   ├── instrumentGeometry.ts    # pure meetinstrumenten maths: BOARD_CM_PX, LAT / GEO / PASSER sizes, toWorld/toLocal, snapping + Vastklikken, strokeEndpoints, edges, startGuidedLine, openPasser, arcPath / arcPts, defaultInstrument
 │   ├── settings/                # widget ⚙ system (§14 "Widget settings")
@@ -1625,8 +1626,8 @@ A second Zustand store, separate from `useWorksheetStore` so neither can corrupt
 `geldPaletOpen` (UI-only), `tool`, `gridSnap` / `gridSize`, `inkSettings` per stroke tool
 (`pen | marker | line | shape`), `drawOptions` (lijn / vormen options, below),
 `selectedInstrumentId` + `toggleInstrument` / `updateInstrument` / `removeInstrument` /
-`hideAllInstruments` / `selectInstrument` (instruments, below), `_redoStrokes`.
-`BoardTool` = `select | hand | text | pen | marker | eraser | line | shape | instrument`
+`hideAllInstruments` / `selectInstrument` (instruments, below), `selectedStrokeIds` + `selectStrokes` / `moveStrokes` / `removeStrokes(ids, { undoable })`, and the ink history `_undoInk` / `_redoInk` (time-ordered `InkOp` add / move / remove; entries the eraser made stale are skipped; cleared on page change, load, reset, clear).
+`BoardTool` = `select | hand | text | pen | marker | eraser | line | shape | lasso | instrument`
 (`instrument` is typed but never set: the ruler button opens a popover, the active tool stays);
 `hand` drags widgets without selecting, `text` places a tekst widget at the tap point and hops
 back to `select`. `addWidget` merges the teacher's saved standaard for that kind under the
@@ -1840,7 +1841,7 @@ An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
 ### Bottom bar — [BoardBottomBar.tsx](../../src/board/components/BoardBottomBar.tsx)
 
 `[+ Toevoegen][★ favorites ≤ 6][⚙ board settings][🎨 achtergrond] | [select][hand][T][pen][marker][eraser]
-[lijn][vormen][📏 meetinstrumenten][ink undo][ink redo][page clear] | [◀][page options][▶][+ page] | [save] | [Bordmodus verlaten]`.
+[lijn][vormen][selecteren][📏 meetinstrumenten][ink undo][ink redo][page clear] | [◀][page options][▶][+ page] | [save] | [Bordmodus verlaten]`.
 Toevoegen = RekenRaak blok · Wiskunde-gereedschap · Klasmanagement · Organisatie, the last
 three as tile panels from [toolCatalog.ts](../../src/board/toolCatalog.ts) with a ★ per tile
 (favorites in `rekenraak_board_favorites_v1`). Board settings = "Uitlijnen" grid snap and
@@ -1893,6 +1894,14 @@ never crashes (fix 0dd1cd5).
   only the FIRST subpath (`splitSubpaths`), heads stay solid. Shapes: rect / triangle
   (isosceles, apex up) as exact `L` outlines, ellipse as two `A` half-arcs; `fill` +
   `fillOpacity` 0.18 (`SOFT_FILL_OPACITY`) for the soft fill. Coordinates rounded to 0.1 px.
+- **Selecteren (`lasso`, key `S`, "Selecteren (S)"; the cursor tool is now "Aanwijzen (kaarten)")** —
+  [selectTool.ts](../../src/board/selectTool.ts), a pure engine: tap on a stroke selects it (`strokeHit`,
+  14 px, last-drawn wins), Shift-tap adds / removes, a drag on empty board or an unselected stroke draws a
+  rectangle lasso selecting every stroke whose `pts` box lies fully inside; a drag inside the dashed
+  `var(--accent)` selection box (8 px outside the ink) moves the selection as a live transform and commits one
+  undo step on release (`gridSnap` snaps the box corner); Delete / Backspace removes (undoable); Escape, a
+  tool switch or a page change clears; a cancelled pointer drops the drag. Widgets and instruments ignore the
+  pointer while it is active. Pen / marker / eraser are untouched.
 - **Hit-test** — [inkGeometry.ts](../../src/board/inkGeometry.ts) `strokeHit` measures the
   distance to every **segment** of the `pts` polyline (`segDist2`), so a two-point line is
   hittable along its whole length and a shape only on its outline (an ellipse is 48 chords);
