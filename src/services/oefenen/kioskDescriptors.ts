@@ -455,6 +455,9 @@ const controleAnswer = (ex: ControleExercise) => (ex.shownAnswer === ex.correctA
 export const CONTROLEREN_KIOSK = descriptor<ControleExercise>({
     input: 'interactive',
     kioskInstruction: (_ex, c) => `Controleer met de ${c.subType === 'omgekeerde' ? 'omgekeerde bewerking' : 'negenproef'}: tik op juist of fout.`,
+    // The sheet plants its slips on the odd rows ('helft'), and a one-exercise kiosk block is always
+    // row 0 (12 of 12 "juist" in class): each kiosk exercise flips its own coin instead.
+    prepare: (c, rng) => ((c.foutAandeel ?? 'helft') === 'helft' ? { ...c, foutAandeel: rng() < 0.5 ? 'alles' : 'geen' } : c),
     interact: {
         kind: 'tap',
         keys: () => ['0', '1'],
