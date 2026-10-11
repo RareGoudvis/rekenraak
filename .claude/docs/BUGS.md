@@ -73,7 +73,4 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Bordmodus
 
-- Bordmodus: ink cannot be selected and moved. Owner (2026-10-10): wanted, probably as its own tool / setting —
-  a lasso or tap-select on strokes (hit-test exists: `strokeHit`), then drag / delete the selection; keep the
-  pen's draw-only behaviour by default. 2026-10-10
 

@@ -27,7 +27,7 @@ beforeAll(() => {
 
 beforeEach(() => {
     st().resetBoard();
-    useBoardStore.setState({ tool: 'select', gridSnap: false, gridSize: 40, _redoStrokes: [], boardSettings: { keepHandles: true } });
+    useBoardStore.setState({ tool: 'select', gridSnap: false, gridSize: 40, _redoInk: [], boardSettings: { keepHandles: true } });
 });
 
 afterEach(() => {

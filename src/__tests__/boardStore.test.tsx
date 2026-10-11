@@ -32,7 +32,7 @@ beforeAll(() => {
 
 beforeEach(() => {
     st().resetBoard();
-    useBoardStore.setState({ tool: 'select', inspectorOpen: false, geldPaletOpen: false, _redoStrokes: [], gridSnap: false, gridSize: 40 });
+    useBoardStore.setState({ tool: 'select', inspectorOpen: false, geldPaletOpen: false, _redoInk: [], gridSnap: false, gridSize: 40 });
 });
 
 afterEach(() => {
@@ -187,10 +187,10 @@ describe('pages', () => {
         st().addPage();
         st().addStroke(stroke('s'));
         st().undoStroke();
-        expect(st()._redoStrokes).toHaveLength(1);
+        expect(st()._redoInk).toHaveLength(1);
         st().gotoPage(-4);
         expect(st().activePageIdx).toBe(0);
-        expect(st()._redoStrokes).toHaveLength(0);
+        expect(st()._redoInk).toHaveLength(0);
         st().gotoPage(99);
         expect(st().activePageIdx).toBe(2);
     });
@@ -286,10 +286,10 @@ describe('ink undo/redo', () => {
         st().addStroke(stroke('b'));
         st().undoStroke();
         st().addStroke(stroke('c'));
-        expect(st()._redoStrokes).toEqual([]);
+        expect(st()._redoInk).toEqual([]);
         st().undoStroke();
         st().removeStrokes(['a']);
-        expect(st()._redoStrokes).toEqual([]);
+        expect(st()._redoInk).toEqual([]);
         expect(page().strokes).toEqual([]);
     });
 });

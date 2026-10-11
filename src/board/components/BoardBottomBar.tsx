@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cursor, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
+import { Cursor, Selection, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
 import { addBasicWidget } from '../addWidgets';
@@ -26,8 +26,8 @@ function useCompactBar(): boolean {
     return compact;
 }
 
-// Single-letter tool shortcuts (shown in each tooltip). Only the draw tools have one so far.
-const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape' };
+// Single-letter tool shortcuts (shown in each tooltip): the ink tools.
+const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape', s: 'lasso' };
 
 interface Props {
     onOpenWiskunde: () => void;
@@ -53,8 +53,8 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const setTool = useBoardStore((s) => s.setTool);
     const undoStroke = useBoardStore((s) => s.undoStroke);
     const redoStroke = useBoardStore((s) => s.redoStroke);
-    const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0);
-    const canRedoInk = useBoardStore((s) => s._redoStrokes.length > 0);
+    const canUndoInk = useBoardStore((s) => s.pages[s.activePageIdx].strokes.length > 0 || s._undoInk.length > 0);
+    const canRedoInk = useBoardStore((s) => s._redoInk.length > 0);
 
     const compact = useCompactBar();
     const instrumentKinds = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).map(i => i.kind).join(','));
@@ -141,7 +141,8 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     };
 
     const tools = [
-        { key: 'select' as const, icon: Cursor, label: 'Selecteren', enabled: true },
+        // Two "select" tools would read the same: the cursor points at cards, Selecteren takes ink.
+        { key: 'select' as const, icon: Cursor, label: 'Aanwijzen (kaarten)', enabled: true },
         { key: 'hand' as const, icon: HandGrabbing, label: 'Verplaatsen (hand)', enabled: true },
         { key: 'text' as const, icon: TextT, label: 'Tekst (tik op het bord)', enabled: true },
         { key: 'pen' as const, icon: PenNib, label: 'Pen', enabled: true },
@@ -149,6 +150,7 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         { key: 'eraser' as const, icon: Eraser, label: 'Gom', enabled: true },
         { key: 'line' as const, icon: ArrowUpRight, label: 'Lijn / pijl (L) — Shift: 45°-stappen', enabled: true },
         { key: 'shape' as const, icon: Shapes, label: 'Vormen (V) — Shift: vierkant / cirkel', enabled: true },
+        { key: 'lasso' as const, icon: Selection, label: 'Selecteren (S)', enabled: true },
         { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten', enabled: true },
     ];
 

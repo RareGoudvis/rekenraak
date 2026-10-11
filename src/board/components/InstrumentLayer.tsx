@@ -37,8 +37,9 @@ export default function InstrumentLayer() {
     const [arcDraft, setArcDraft] = useState<Stroke | null>(null);
     const passThrough = tool === 'pen' || tool === 'marker' || tool === 'eraser';
     // P3's line and shape tools ignore the instruments entirely: no guiding, and a drag that
-    // starts on an instrument still draws (every grip goes pointer-transparent).
-    const inert = tool === 'line' || tool === 'shape';
+    // starts on an instrument still draws (every grip goes pointer-transparent). Selecteren
+    // reaches ink only, so a lasso drawn across an instrument never grabs it.
+    const inert = tool === 'line' || tool === 'shape' || tool === 'lasso';
 
     const toBoard = (e: React.PointerEvent): [number, number] => {
         const r = svgRef.current!.getBoundingClientRect();

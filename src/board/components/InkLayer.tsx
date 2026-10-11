@@ -4,6 +4,7 @@ import { rndId } from '../boardTypes';
 import type { BoardTool, Stroke, ToolContext, ToolEngine } from '../boardTypes';
 import { splitSubpaths, strokeHit } from '../inkGeometry';
 import { createLineTool, createShapeTool } from '../drawTools';
+import { createSelectTool, selectionBox, type SelectEngine, type SelectPreview } from '../selectTool';
 import { pageInstrumentGeometry, startGuidedLine, type GuidedLine, type GuidedSegment } from '../instrumentGeometry';
 import { ReadoutLabel } from './InstrumentLayer';
 
@@ -40,11 +41,22 @@ const toolCtx = (shift: boolean): ToolContext => {
     return { gridSnap, gridSize, shift };
 };
 
+const selectCtx = (shift: boolean) => {
+    const b = useBoardStore.getState();
+    return { strokes: b.pages[b.activePageIdx].strokes, selected: b.selectedStrokeIds, shift, gridSnap: b.gridSnap, gridSize: b.gridSize };
+};
+
+const isTyping = (t: EventTarget | null) => {
+    const el = t as HTMLElement | null;
+    return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+};
+
 export default function InkLayer({ active }: { active: boolean }) {
     const strokes = useBoardStore((s) => s.pages[s.activePageIdx].strokes);
     const tool = useBoardStore((s) => s.tool);
     const addStroke = useBoardStore((s) => s.addStroke);
     const removeStrokes = useBoardStore((s) => s.removeStrokes);
+    const selectedIds = useBoardStore((s) => s.selectedStrokeIds);
 
     const drawing = useRef<number[] | null>(null);
     const [draft, setDraft] = useState<Stroke | null>(null);
@@ -57,6 +69,31 @@ export default function InkLayer({ active }: { active: boolean }) {
     // Live preview of a line/shape drag: a temporary element, never a stroke in the store.
     const [preview, setPreview] = useState<Stroke | null>(null);
     const [dragging, setDragging] = useState(false);
+    // Selecteren: one engine per layer; a press runs from pointerdown to pointerup / cancel.
+    const selectEngine = useRef<SelectEngine | null>(null);
+    const selecting = useRef(false);
+    const [selPreview, setSelPreview] = useState<SelectPreview>(null);
+    const [overSelection, setOverSelection] = useState(false);
+
+    // Selecteren keys: Delete / Backspace remove the selection (undoable), Escape drops it.
+    useEffect(() => {
+        if (tool !== 'lasso') return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
+            const board = useBoardStore.getState();
+            if (e.key === 'Escape') {
+                selectEngine.current?.cancel();
+                selecting.current = false;
+                setSelPreview(null);
+                board.selectStrokes([]);
+            } else if ((e.key === 'Delete' || e.key === 'Backspace') && board.selectedStrokeIds.length) {
+                e.preventDefault();
+                board.removeStrokes(board.selectedStrokeIds, { undoable: true });
+            }
+        };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [tool]);
 
     // While a line/shape drag runs: Escape drops it, and pressing / releasing Shift re-shapes
     // the preview at once instead of waiting for the next pointer move.
@@ -98,6 +135,13 @@ export default function InkLayer({ active }: { active: boolean }) {
         (e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId);
         const [x, y] = toLocal(e);
         if (tool === 'eraser') { erase(x, y); return; }
+        if (tool === 'lasso') {
+            selectEngine.current ??= createSelectTool();
+            selectEngine.current.onPointerDown(x, y, selectCtx(e.shiftKey));
+            selecting.current = true;
+            setSelPreview(null);
+            return;
+        }
         const eng = engineFor(tool);
         if (eng) {
             engine.current = eng;
@@ -129,6 +173,17 @@ export default function InkLayer({ active }: { active: boolean }) {
         if (!active) return;
         const [x, y] = toLocal(e);
         if (tool === 'eraser') { if (e.buttons) erase(x, y); return; }
+        if (tool === 'lasso') {
+            if (selecting.current && selectEngine.current) {
+                selectEngine.current.onPointerMove(x, y, selectCtx(e.shiftKey));
+                setSelPreview(selectEngine.current.preview());
+            } else {
+                // Hover feedback: inside the selection box a press moves, so show the move cursor.
+                const b = selectionBox(strokes, selectedIds);
+                setOverSelection(!!b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+            }
+            return;
+        }
         if (engine.current) {
             lastPos.current = [x, y];
             engine.current.onPointerMove(x, y, toolCtx(e.shiftKey));
@@ -150,6 +205,19 @@ export default function InkLayer({ active }: { active: boolean }) {
     };
 
     const onPointerUp = (e: React.PointerEvent) => {
+        if (selecting.current && selectEngine.current) {
+            const sel = selectEngine.current;
+            selecting.current = false;
+            setSelPreview(null);
+            // A cancelled pointer (palm, lost capture) drops a lasso or move half-way.
+            if (e.type === 'pointercancel') { sel.cancel(); return; }
+            const [x, y] = toLocal(e);
+            const done = sel.onPointerUp(x, y, selectCtx(e.shiftKey));
+            const board = useBoardStore.getState();
+            if (done?.kind === 'select') board.selectStrokes(done.ids);
+            else if (done?.kind === 'move') board.moveStrokes(done.ids, done.dx, done.dy);
+            return;
+        }
         const eng = engine.current;
         if (eng) {
             engine.current = null;
@@ -206,13 +274,17 @@ export default function InkLayer({ active }: { active: boolean }) {
         );
     };
 
+    const moving = selPreview && 'offset' in selPreview ? selPreview : null;
+    const box = tool === 'lasso' ? selectionBox(strokes, selectedIds) : null;
+    const cursor = !active ? 'default' : tool === 'eraser' ? 'cell' : tool === 'lasso' ? (moving || overSelection ? 'move' : 'default') : 'crosshair';
+
     return (
         <svg
             ref={svgRef}
             style={{
                 position: 'absolute', inset: 0, width: '100%', height: '100%',
                 pointerEvents: active ? 'auto' : 'none', touchAction: 'none',
-                cursor: active ? (tool === 'eraser' ? 'cell' : 'crosshair') : 'default',
+                cursor,
                 zIndex: 10,
             }}
             onPointerDown={onPointerDown}
@@ -220,7 +292,25 @@ export default function InkLayer({ active }: { active: boolean }) {
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
         >
-            {strokes.map(s => strokeEl(s))}
+            {strokes.map(s => (moving && moving.ids.includes(s.id) ? null : strokeEl(s)))}
+            {/* A move rides along as a transform; the store changes once, on release (one undo step). */}
+            {moving && (
+                <g data-ink-moving transform={`translate(${moving.offset[0]} ${moving.offset[1]})`}>
+                    {strokes.filter(s => moving.ids.includes(s.id)).map(s => strokeEl(s))}
+                </g>
+            )}
+            {box && (
+                <rect
+                    data-ink-selection pointerEvents="none" fill="none" stroke="var(--accent)" strokeWidth={2} strokeDasharray="8 5"
+                    x={box.x + (moving?.offset[0] ?? 0)} y={box.y + (moving?.offset[1] ?? 0)} width={box.w} height={box.h}
+                />
+            )}
+            {selPreview && 'marquee' in selPreview && (
+                <rect
+                    data-ink-marquee pointerEvents="none" fill="var(--accent-soft)" stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="5 4"
+                    x={selPreview.marquee.x} y={selPreview.marquee.y} width={selPreview.marquee.w} height={selPreview.marquee.h}
+                />
+            )}
             {draft && strokeEl(draft)}
             {preview && strokeEl(preview, { 'data-ink-preview': '', pointerEvents: 'none' } as React.SVGProps<SVGPathElement & SVGGElement>)}
             {guideReadout && <ReadoutLabel {...guideReadout} />}

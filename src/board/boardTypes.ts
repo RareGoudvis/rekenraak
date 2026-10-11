@@ -73,8 +73,16 @@ export interface DrawOptions {
 }
 
 // 'select' = normal cursor (select + edit); 'hand' = drag/drop everything, select
-// nothing; 'text' = tap the board to place a text widget there.
-export type BoardTool = 'select' | 'hand' | 'text' | 'pen' | 'marker' | 'eraser' | 'line' | 'shape' | 'instrument';
+// nothing; 'text' = tap the board to place a text widget there; 'lasso' = Selecteren: select
+// ink (tap / lasso), drag it, delete it — widgets and instruments are out of its reach.
+export type BoardTool = 'select' | 'hand' | 'text' | 'pen' | 'marker' | 'eraser' | 'line' | 'shape' | 'lasso' | 'instrument';
+
+// One step of the ink history. Strokes on a page used to be the only undo stack; moving and
+// deleting a selection need entries of their own, interleaved with the adds in time order.
+export type InkOp =
+    | { kind: 'add'; stroke: Stroke }
+    | { kind: 'move'; ids: string[]; dx: number; dy: number }
+    | { kind: 'remove'; removed: { stroke: Stroke; index: number }[] };
 
 // ToolEngine contract (implemented in P2): pointer stream in board coordinates →
 // a finished stroke. ctx will carry the active instrument geometry (P4) so

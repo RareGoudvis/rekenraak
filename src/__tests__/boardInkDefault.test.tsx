@@ -21,7 +21,7 @@ beforeAll(() => {
 
 beforeEach(() => {
     st().resetBoard();
-    useBoardStore.setState({ tool: 'pen', _redoStrokes: [], inkSettings: loadInkSettings() });
+    useBoardStore.setState({ tool: 'pen', _redoInk: [], inkSettings: loadInkSettings() });
 });
 
 afterEach(() => {
