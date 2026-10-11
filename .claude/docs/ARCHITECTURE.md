@@ -2146,6 +2146,13 @@ type — limits, weights, `perType` stats, history entries — is keyed by **slo
 - **Pool** = slots under their limit and not **dead**. A slot is dead when its settings generate
   nothing: each slot is tried once per session object with a fixed seed (cached, the caller's
   `Math.random` untouched), and a `null` from `nextExercise` retires it too; `deadSlots(s)` exposes
+  the set. **Unsupported** slots (descriptor `supported(c)` false, or no descriptor — an OLD link to a type the
+  kiosk since dropped, e.g. lengte-meten) are retired at load as well: `unsupportedSlots(s)` /
+  `retiredSlots(s)` = dead ∪ unsupported feed the pool, `viableTypes` and `viablePlannedTotal`; the start screen
+  says "1 soort kan niet op dit toestel en wordt overgeslagen." (plural form), Resultaten hides retired rows
+  with 0 made, and a session with ONLY unsupported types shows the ErrorScreen ("Deze oefeningen kunnen niet op
+  het toestel. Vraag je leerkracht om een nieuwe link.", `UNSUPPORTED_ONLY`). `deadSlots` alone keeps driving
+  the builder pre-flight. (Was: `deadSlots(s)` exposes
   the set (stats.ts `viableTypes` / `viablePlannedTotal` feed the start screen and the headline).
   `plannedTotal` = the sum of the limits when every type has one (capped by `total`), else `total`,
   else `null` = endless (the timer or the pupil ends it).
@@ -2350,6 +2357,8 @@ nothing are pinned per leaf in `oefenen.zeroOutput.test.ts` (DEAD table; a new o
   runs): ~0,5 ms per answer and ~170 kB stored at answer #1000, quadratic per run — pinned by `oefenen.perf.test.ts`;
   only an endless run far past 1 000 answers would feel it. Owner 2026-10-11: documented, not a bug.
 - Every device generates its own exercises from the seed in the link: two pupils never see the same sums.
+- Old links outlive the kiosk's leaf list: a type the kiosk no longer supports is skipped with a note, never
+  served; the stored runs for that slot stay untouched.
 
 ### Harnesses
 
