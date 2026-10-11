@@ -86,3 +86,41 @@ describe('the kiosk card draws a duizendtal as a labelled cube', () => {
         expect(cube[0].textContent).toBe('1000');
     });
 });
+
+// Triage 2026-10-11 (pupil play misread 2 vs 3 tens): the card draws tens in groups of five with a
+// gap (MAB convention) and lays hundreds in rows from the bottom; the sheet keeps its plain stack.
+describe('the kiosk card groups MAB tens in fives and lays hundreds as a block', () => {
+    const withDigits = (hundreds: number, tens: number, units: number) => {
+        const block = blockOf('mab-herkennen', { maxNumber: 1000, mabStyle: 'symbolic' });
+        (block as unknown as { mabExercises: unknown[] }).mabExercises = [{ id: 'm', value: hundreds * 100 + tens * 10 + units, thousands: 0, hundreds, tens, units, isManuallyEdited: false }];
+        return block;
+    };
+    const groups = (root: HTMLElement) => [...root.querySelectorAll('[data-mab-tens-group]')].map(g => g.children.length);
+
+    test.each([[2, [2]], [5, [5]], [8, [5, 3]], [9, [5, 4]]] as const)('%i tens -> groups %j on the card, none on the sheet', (tens, want) => {
+        const block = withDigits(1, tens, 0);
+        expect(groups(html(block, false))).toEqual([]);
+        cleanup();
+        expect(groups(html(block, true))).toEqual(want);
+    });
+
+    test('five hundreds fill the bottom row of three first, the sheet keeps its column-first grid', () => {
+        const rowsOf = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('[data-mab-hundred]')].map(c => Number(c.style.gridRow));
+        const block = withDigits(5, 0, 0);
+        expect(rowsOf(html(block, false))).toEqual([]);
+        cleanup();
+        const rows = rowsOf(html(block, true));
+        expect(rows.filter(r => r === 2)).toHaveLength(3);
+        expect(rows.filter(r => r === 1)).toHaveLength(2);
+    });
+
+    test('the card box grows for nine tens instead of clipping the top bar', () => {
+        const block = withDigits(0, 9, 0);
+        const box = (root: HTMLElement) => root.querySelector<HTMLElement>('.print-exercise > div:first-child > div:last-child')!;
+        expect(box(html(block, false)).style.height).not.toBe('');
+        cleanup();
+        const card = box(html(block, true));
+        expect(card.style.height).toBe('');
+        expect(card.style.minHeight).not.toBe('');
+    });
+});

@@ -11,8 +11,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Herleidingen writeUnits with "Zet om naar cm": the kiosk check is value-equal, so "30 dm" counts as juist when the
   header asked for cm; owner call whether the target unit should be enforced when shown (F4 2026-10-10). 2026-10-10
 - Kiosk Resultaten row for a writeUnits herleiding reads "= ? (getal en eenheid)" without the target unit. 2026-10-10
-- `blockLayout.minWidthUnits` reads only the top-level `preset`, so a gemengd compenseren block's first-paint
-  width misses the tussenstap (the measured clamp corrects it on screen). 2026-10-10
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -26,7 +24,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
-- Degenerate defaults: geld-wissel's default already notes 2 doubles. 2026-09-27
 
 
 ## Limit audit 2026-10-07
@@ -37,10 +34,6 @@ UpdateState). Left over, found while fixing:
 ## Oefenmodus (first classroom test, 2026-10-09)
 
 - Builder row label still says "plaats omcirkelen" when the row's `plaatsAnswer` is `'waarde'` (K1 2026-10-11). 2026-10-11
-- `oefen-smoke` reads the store through in-page imports and fails with "phase start" after an HMR reload: use a fresh
-  dev server per run (K1). 2026-10-11
-- Kiosk mab-herkennen: the tens bars are hard to count at card scale (K3 pupil-play misread 2 of 3); pairs with the
-  classroom MAB note above. 2026-10-11
 - Several leaves listed from leerjaar 1–2 default to leerjaar-3+ numbers in the builder (K3); the builder row could
   seed from the sidebar's leerjaar instead of the registry default — owner call. 2026-10-11
 

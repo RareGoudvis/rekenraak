@@ -206,8 +206,8 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                     gridTemplateColumns: gridCols,
                     // em, not px: the drawing area has to grow with the glyphs it holds,
                     // otherwise a bigger font clips them against `overflow: hidden`.
-                    // Kiosk build: nine laid rods outgrow the sheet's box, so it grows instead.
-                    ...(laid ? { minHeight: em(boxHeight) } : { height: em(boxHeight) }),
+                    // Kiosk (build tray or card): nine rods, grouped in fives with a gap, outgrow the sheet's box, so it grows instead.
+                    ...(laid || !scaffold ? { minHeight: em(boxHeight) } : { height: em(boxHeight) }),
                 }}>
                     {cols.map((col, i) => (
                         <div key={col.key} style={{

@@ -785,8 +785,8 @@ list, which keeps running their sample variants). `oefenen.kioskInstruction.test
 ### The kiosk smoke (`scripts/oefen-smoke.mjs`, `npm run oefen:smoke`, out of the gate)
 
 ```bash
-npx vite --port 5478 --strictPort                                    # own port, kill it afterwards
-node scripts/oefen-smoke.mjs --url http://localhost:5478/ --out ~/Downloads/oefen-check/smoke
+node scripts/oefen-smoke.mjs --out ~/Downloads/oefen-check/smoke    # starts + kills its own Vite on a free port (scripts/lib/devServer.mjs)
+# --url http://localhost:5478/ uses a server you already run instead
 # options: --only number,drag (kinds)  --viewports 1280x800,1024x768  --seed 1234  --headed
 ```
 

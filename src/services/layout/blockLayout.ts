@@ -1,4 +1,6 @@
 import type { MathBlock } from '../math/types';
+import type { MixedVariantId } from '../math/constraintTypes';
+import { mixedVariant } from '../math/constraintTypes';
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { cellWidthPx, ANSWER_SPACE_DEFAULT_PX, ANSWER_REGEL } from '../../components/viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from '../../components/viewer/scaledBlockFit';
@@ -554,6 +556,18 @@ export function pickerMinWidthUnits(block: MathBlock, measured?: WidthMeasure | 
 // Pre-measurement tiers: the hand-measured per-type table plus the settings that were
 // known to outgrow it. Kept only for the frames (and the unit tests) where nothing has
 // been rendered yet — a measurement supersedes all of it.
+// Gemengd keeps its presets per variant (a chip or a perVariant override), never in the top-level
+// `preset`; PRESET_BASE in mixedGenerator gives a compenseren variant the tussenstap by default.
+function mixedHasTussenstap(c: Record<string, unknown>): boolean {
+    const variants = Array.isArray(c.variants) ? (c.variants as MixedVariantId[]) : [];
+    const per = (c.perVariant ?? {}) as Record<string, { preset?: string; compenserenScaffold?: string } | undefined>;
+    return variants.some(id => {
+        const o = per[id];
+        const preset = o?.preset ?? mixedVariant(id).preset;
+        return preset === 'compenseren' && (o?.compenserenScaffold ?? 'tussenstap') === 'tussenstap';
+    });
+}
+
 function fallbackMinWidth(block: MathBlock): WidthUnits {
     const facts = layoutFacts(block.typeId);
     // A single exercise has no neighbours to fit beside it, so a type that only needs the
@@ -574,6 +588,7 @@ function fallbackMinWidth(block: MathBlock): WidthUnits {
     if (block.typeId.startsWith('hr-std-')) {
         if (c.numberType === 'decimal') return Math.max(base, 2) as WidthUnits;
         if (c.preset === 'compenseren' && (c.compenserenScaffold ?? 'tussenstap') === 'tussenstap') return Math.max(base, 2) as WidthUnits;
+        if (mixedHasTussenstap(c)) return Math.max(base, 2) as WidthUnits;
         // 'Delen met rest' carries a second answer ("= ___ r ___") next to the first, which
         // is ~30px more than a quarter has left after the division itself.
         if (c.multiplicationMode === 'met_rest') return Math.max(base, 2) as WidthUnits;

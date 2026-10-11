@@ -18,6 +18,10 @@ export type MabPlace = 'thousands' | 'hundreds' | 'tens' | 'units';
 const PX_PER_EM_AT_DEFAULT = 17.33;
 const em = (px: number): string => `${px / PX_PER_EM_AT_DEFAULT}em`;
 
+// Kiosk tens: five to a group is the MAB convention for counting a rod stack; the symbolic bar is
+// thicker there because 3.5px bars two apart read as an equals sign on a pupil's screen.
+const TENS_GROUP = 5, KIOSK_TENS_GROUP_GAP = 9, KIOSK_TENS_GAP = 4, KIOSK_BAR_H = 5.5;
+
 interface ColumnProps {
     count: number;
     place: MabPlace;
@@ -58,6 +62,26 @@ export function MabPlaceColumn({ count, place, style, color = '#000', fill, kios
         return <PatternedGrid count={count} maxRows={2} place="units" style={style} color={color} fill={fill} />;
     }
 
+    // Kiosk hundreds: rows of three filled from the bottom, so 5 reads as a full row plus two on top
+    // instead of the sheet's ragged column-first stack.
+    if (kiosk && place === 'hundreds') {
+        return <PatternedGrid count={count} maxRows={3} place="hundreds" style={style} color={color} fill={fill} kiosk rowFirst />;
+    }
+
+    // Kiosk tens: groups of five with a gap (MAB convention), so 2 vs 3 bars read at a glance.
+    if (kiosk && place === 'tens') {
+        const groups = Array.from({ length: Math.ceil(count / TENS_GROUP) }, (_, g) => Math.min(TENS_GROUP, count - g * TENS_GROUP));
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: em(KIOSK_TENS_GROUP_GAP), width: '100%', height: '100%' }}>
+                {groups.map((n, g) => (
+                    <div key={g} data-mab-tens-group style={{ display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: em(style === 'symbolic' ? KIOSK_TENS_GAP : 2) }}>
+                        {Array.from({ length: n }, (_, i) => <Glyph key={i} place="tens" style={style} color={color} fill={fill} chunky />)}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
     // Hundreds: 3-column × 3-row grid (column-first top-down) — up to 9 fit in the cell.
     if (place === 'hundreds') {
         return <PatternedGrid count={count} maxRows={3} place="hundreds" style={style} color={color} fill={fill} />;
@@ -87,18 +111,21 @@ export function MabGlyph({ place, style, kiosk }: { place: MabPlace; style: MabS
     return <Glyph place={place} style={style} color="#000" kiosk={kiosk} />;
 }
 
-function PatternedGrid({ count, maxRows, place, style, color, fill, kiosk }: {
+function PatternedGrid({ count, maxRows, place, style, color, fill, kiosk, rowFirst }: {
     count: number; maxRows: number; place: MabPlace; style: MabStyle; color: string; fill?: string; kiosk?: boolean;
+    // Fill rows of `maxRows` cells from the bottom up (kiosk hundreds) instead of columns top-down.
+    rowFirst?: boolean;
 }) {
-    const cols = Math.ceil(count / maxRows);
+    const cols = rowFirst ? Math.min(count, maxRows) : Math.ceil(count / maxRows);
+    const rows = rowFirst ? Math.ceil(count / maxRows) : maxRows;
     const cells: React.ReactNode[] = [];
     // Fill column by column, top-down within each column.
     for (let k = 0; k < cols; k++) {
-        for (let r = 0; r < maxRows; r++) {
-            const idx = k * maxRows + r;
+        for (let r = 0; r < (rowFirst ? rows : maxRows); r++) {
+            const idx = rowFirst ? r * maxRows + k : k * maxRows + r;
             if (idx >= count) break;
             cells.push(
-                <div key={`${k}-${r}`} style={{ gridColumn: k + 1, gridRow: r + 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div key={`${k}-${r}`} {...(rowFirst && { 'data-mab-hundred': true })} style={{ gridColumn: k + 1, gridRow: rowFirst ? rows - r : r + 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Glyph place={place} style={style} color={color} fill={fill} kiosk={kiosk} />
                 </div>
             );
@@ -108,7 +135,7 @@ function PatternedGrid({ count, maxRows, place, style, color, fill, kiosk }: {
         <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${cols}, auto)`,
-            gridTemplateRows: `repeat(${maxRows}, auto)`,
+            gridTemplateRows: `repeat(${rows}, auto)`,
             columnGap: em(3),
             rowGap: em(2),
             justifyContent: 'center',
@@ -120,14 +147,14 @@ function PatternedGrid({ count, maxRows, place, style, color, fill, kiosk }: {
     );
 }
 
-function Glyph({ place, style, color, fill: fillOverride, kiosk }: { place: MabPlace; style: MabStyle; color: string; fill?: string; kiosk?: boolean }) {
+function Glyph({ place, style, color, fill: fillOverride, kiosk, chunky }: { place: MabPlace; style: MabStyle; color: string; fill?: string; kiosk?: boolean; chunky?: boolean }) {
     if (kiosk && place === 'thousands') return <KioskThousands stroke={color} fill={style === 'symbolic' ? 'white' : fillOverride ?? resolveFill(style, place, color)} />;
     if (style === 'symbolic') {
         // Symbolic glyphs are single-colour marks, so a picked fill recolours the whole mark.
         const mark = fillOverride ?? color;
         if (place === 'thousands') return <SymbolicThousands color={mark} />;
         if (place === 'hundreds')  return <SymbolicHundreds color={mark} />;
-        if (place === 'tens')      return <SymbolicTens color={mark} />;
+        if (place === 'tens')      return <SymbolicTens color={mark} h={chunky ? KIOSK_BAR_H : SYM_BAR_H} />;
         return <SymbolicUnits color={mark} />;
     }
     const fill = fillOverride ?? resolveFill(style, place, color);
@@ -154,8 +181,8 @@ function SymbolicUnits({ color }: { color: string }) {
 }
 
 // Horizontal bar — stacked vertically inside the T column by MabPlaceColumn.
-function SymbolicTens({ color }: { color: string }) {
-    const W = SYM_BAR_W, H = SYM_BAR_H;
+function SymbolicTens({ color, h }: { color: string; h: number }) {
+    const W = SYM_BAR_W, H = h;
     return (
         <svg width={em(W)} height={em(H)} viewBox={`0 0 ${W} ${H}`}>
             <rect width={W} height={H} fill={color} />

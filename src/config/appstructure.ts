@@ -503,7 +503,7 @@ export const APP_STRUCTURE: Domain[] = [
                 types: [
                     { id: 'geld-herkennen',   shortLabel: 'Geld herkennen', label: 'Herkennen',      typeId: 'geld-herkennen', instruction: 'Hoeveel geld is dit?' },
                     { id: 'geld-tekenen',     label: 'Bedrag tekenen', typeId: 'geld-tekenen', instruction: 'Teken het bedrag.' },
-                    { id: 'geld-wissel',      label: 'Wissel',         typeId: 'geld-wissel', instruction: 'Wissel het bedrag.' },
+                    { id: 'geld-wissel',      label: 'Wissel',         typeId: 'geld-wissel', defaultCount: 4, instruction: 'Wissel het bedrag.' },
                     { id: 'geld-teruggeven',  shortLabel: 'Geld teruggeven', label: 'Teruggeven',     typeId: 'geld-teruggeven', instruction: 'Hoeveel krijg je terug?' },
                     { id: 'geld-rekenen-korting', shortLabel: 'Korting berekenen', label: 'Korting', typeId: 'geld-rekenen', defaultConstraints: { subType: 'korting', percents: [10, 25, 50] }, minLeerjaar: 5, instruction: 'Bereken de korting en de nieuwe prijs.' },
                     { id: 'geld-rekenen-intrest', shortLabel: 'Intrest berekenen', label: 'Intrest', typeId: 'geld-rekenen', defaultConstraints: { subType: 'intrest', percents: [1, 2, 5], maxEuro: 10000 }, minLeerjaar: 6, instruction: 'Bereken de intrest.' },
