@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { attemptsOf, type KioskAnswer, type KioskExtraKey, type KioskInput, type KioskPiece, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
-import { isDone, nextExercise, nextType } from '../services/oefenen/scheduler';
+import { isDone, nextExercise, nextType, unsupportedSlots } from '../services/oefenen/scheduler';
 import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
@@ -22,6 +22,9 @@ export const FLASH_MS = { juist: 700, fout: 1200, retry: 1000 } as const;
 // The exercise on screen plus the constraints it was generated with: answerOf / display /
 // checkAnswer must get exactly those, and a reload must too, so they travel in the run.
 export type KioskCurrent = OefenCurrent & { constraints: Record<string, unknown> };
+
+// An old link whose every type this device can no longer check: re-sharing it would not help, a new one does.
+export const UNSUPPORTED_ONLY = 'Deze oefeningen kunnen niet op het toestel. Vraag je leerkracht om een nieuwe link.';
 
 // Typed answers stay short: no answer the starter types ask for is longer, and a longer
 // string would overflow the answer field on a phone.
@@ -289,6 +292,9 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 return;
             }
             clearFlash();
+            const unsupported = unsupportedSlots(s);
+            // Nothing left to serve: the stored runs stay as they are, only the screen changes.
+            if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
             set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
             const runs = loadRuns(s.id);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
@@ -298,7 +304,9 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const now = Date.now();
             if (timeUp(last, now)) { set({ run: last }); finish(last, now); return; }
             set({ run: last });
-            const cur = currentOf(last);
+            // A run saved on a card of a now unsupported type: drop that card (its stats stay) and draw from the rest.
+            const saved = currentOf(last);
+            const cur = saved && !unsupported.has(saved.slot) ? saved : null;
             // A reload mid-retry comes back on the second try (cur.wrongFirst is kept).
             if (cur) set({ shown: cur, phase: 'exercise', input: fieldsFor(currentInput(s, cur)), field: 0, activeCell: firstCell(s, cur) });
             else get().next();

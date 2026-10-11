@@ -3,6 +3,7 @@ import type { OefenHistoryEntry, OefenSessie, OefenStats, OefenType } from './ty
 import { REGISTRY } from '../../config/exerciseRegistry';
 import { DEFAULT_BASE, seedConstraints } from '../../config/baseSettings';
 import { exerciseKeyOf, generateForBlock } from '../generateDispatch';
+import { kioskSupports } from './kiosk';
 
 // Which type comes next, which exercise, and when a run is over. Pure: the RNG is injected
 // so the tests (and a resumed run) are deterministic.
@@ -54,10 +55,23 @@ export function deadSlots(s: OefenSessie): ReadonlySet<number> {
     return new Set(s.types.map((_, i) => i).filter(i => isDead(s, i)));
 }
 
-/** Slots that can still serve: under their limit and not dead. */
+/** Slots this device cannot check: no descriptor, or its `supported` says no (an old link, lengte-meten). */
+export function unsupportedSlots(s: OefenSessie): ReadonlySet<number> {
+    return new Set(s.types.map((_, i) => i).filter(i => !kioskSupports(s.types[i].typeId, s.types[i].constraints)));
+}
+
+// Kept apart from deadSlots: the builder's pre-flight reads deadSlots, and an unsupported row is already dropped there.
+/** Slots never served this run: dead or unsupported. */
+export function retiredSlots(s: OefenSessie): ReadonlySet<number> {
+    const unsupported = unsupportedSlots(s);
+    return new Set(s.types.map((_, i) => i).filter(i => unsupported.has(i) || isDead(s, i)));
+}
+
+/** Slots that can still serve: under their limit and not retired. */
 export function poolOf(s: OefenSessie, history: readonly OefenHistoryEntry[]): number[] {
     const made = madePerSlot(s, history);
-    return s.types.map((_, i) => i).filter(i => (s.types[i].limit === undefined || made[i] < (s.types[i].limit as number)) && !isDead(s, i));
+    const retired = retiredSlots(s);
+    return s.types.map((_, i) => i).filter(i => (s.types[i].limit === undefined || made[i] < (s.types[i].limit as number)) && !retired.has(i));
 }
 
 /** The run's length when it has one: `total`, else the sum of the limits when every type has one. */
