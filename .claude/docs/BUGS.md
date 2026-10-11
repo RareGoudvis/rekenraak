@@ -33,8 +33,6 @@ UpdateState). Left over, found while fixing:
 - lengte-meten: the builder no longer offers it, but an OLD link still opens the unsolvable card (k3b
   `shots/oldlink-lengte-meten.png`). Fix: a type whose descriptor `supported()` is false at load → ErrorScreen
   "Deze oefening kan niet op het toestel" / the slot is retired. 2026-10-11
-- Kiosk paper leftovers still on some cards: "Kleur …" prompt (breuken kleuren variant?), a "< <" and a
-  "__:__" (klok digitaal) — k3b verdict.md "odd" column names the leaves. Hide under the card context. 2026-10-11
 - getallenrijen frame is clipped at the card edges on the kiosk (the sheet pill fix of 2026-10-11 did not reach
   the card). Fix: card extent / pill width from the card. 2026-10-11
 - Kiosk cards render the thousands thin space wide ("7  400") in the card font. Cosmetic; use a narrower

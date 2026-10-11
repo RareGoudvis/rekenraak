@@ -80,7 +80,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
             // Digitaal + tekenen = "tijd in woorden → digitale klok invullen": show the
             // time in words as the prompt and an EMPTY digital box to complete (was showing
             // the filled answer box + an analog clock — that's the omzetten exercise).
-            inner = <>{timeLabel}{emptyDigitalBox}</>;
+            inner = <>{timeLabel}{scaffold || showSolutions ? emptyDigitalBox : null}</>;
         } else if (ctx?.kind === 'drag') {
             inner = <>{timeLabel}<ClockDragFace ex={ex} c={block.constraints as Record<string, unknown>} ctx={ctx} is24hour={is24hour} size={CLOCK_SIZE} /></>;
         } else {
@@ -102,6 +102,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
                     {clock(true, true)}
                     {showSolutions
                         ? sol(ex.digitalText, true)
+                        : !scaffold ? null   // the card types uu:mm in the panel fields; a paper box would duplicate them
                         : <div style={{ border: '1.5px solid #000', width: mathPx(65), height: mathPx(28), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.7)', color: '#aaa' }}>__:__</div>
                     }
                 </>
