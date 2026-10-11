@@ -33,7 +33,7 @@ describe('E4b no empty or short blocks', () => {
         for (const ex of items) expect(ex.values.length).toBeGreaterThan(0);
     });
     test('herleidingen hm + dam enkel-getal at max 20 fills 40', () => {
-        expect(gen('herleidingen', { measure: 'lengte', units: ['hm', 'dam'], maxEnkel: 20, formats: ['enkel-getal'] }, 40).length).toBe(40);
+        expect(gen('herleidingen', { measure: 'lengte', units: ['hm', 'dam'], maxEnkel: 20, formats: ['enkel-getal'], vraag: 'getal' }, 40).length).toBe(40);
     });
     test('maateenheid temperatuur only fills 40', () => {
         expect(gen('maateenheid', { grootheden: ['temperatuur'] }, 40).length).toBe(40);
@@ -93,7 +93,7 @@ describe('generation notes (never silently change what the teacher picked)', () 
     });
     test('repeat fills carry the duplicate note', () => {
         expect(noted('maateenheid', { grootheden: ['temperatuur'] }, 40).note).toMatch(/^Kleine reeks: \d+ oefeningen komen dubbel voor\.$/);
-        expect(noted('herleidingen', { measure: 'lengte', units: ['hm', 'dam'], maxEnkel: 20, formats: ['enkel-getal'] }, 40).note).toMatch(/^Kleine reeks: 20 oefeningen komen dubbel voor\.$/);
+        expect(noted('herleidingen', { measure: 'lengte', units: ['hm', 'dam'], maxEnkel: 20, formats: ['enkel-getal'], vraag: 'getal' }, 40).note).toMatch(/^Kleine reeks: 20 oefeningen komen dubbel voor\.$/);
         expect(noted('geld-teruggeven', { payWithOptions: [500], centenDeel: 'vijfentwintig' }, 40).note).toMatch(/^Kleine reeks: 28 oefeningen komen dubbel voor\.$/);
     });
     test('dispatch keeps its Kleine reeks wording (single source in generationNotes)', () => {

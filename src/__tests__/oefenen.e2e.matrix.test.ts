@@ -63,9 +63,11 @@ const kinds: Record<string, number> = {};
 
 // Settings that only mean something together, run as one variant each on top of the one-option sweep.
 const COMBOS: Array<{ leaf: RegExp; over: Record<string, unknown> }> = [
-    // Decision 7: "Doeleenheid tonen" on and off under writeUnits.
-    { leaf: /^herleidingen-/, over: { writeUnits: true, showTargetUnit: true } },
-    { leaf: /^herleidingen-/, over: { writeUnits: true, showTargetUnit: false } },
+    // Herleidingen vraag on the one-quantity formats (getal: the number field, eenheid: the unit buttons),
+    // and a legacy writeUnits row (reads afwisselend).
+    { leaf: /^herleidingen-/, over: { vraag: 'getal', formats: ['enkel-getal', 'samengesteld-enkel'] } },
+    { leaf: /^herleidingen-/, over: { vraag: 'eenheid', formats: ['enkel-getal', 'samengesteld-enkel'] } },
+    { leaf: /^herleidingen-/, over: { writeUnits: true } },
 ];
 
 function variantsOf(leaf: OefenLeaf): Variant[] {

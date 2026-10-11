@@ -565,9 +565,11 @@ export type HerleidingenConstraints = {
     formats: string[];
     compoundMode: string;
     areMode: 'enkel' | 'samengesteld';
-    writeUnits: boolean;
-    // With writeUnits: name each exercise's target unit ("naar m"). Absent = on; false = the pupil picks freely.
-    showTargetUnit?: boolean;
+    // What a one-quantity answer asks: getal = the number for the shown unit, eenheid = the unit for
+    // the shown number, afwisselend = per exercise. Absent = read through vraagOf (legacy writeUnits).
+    vraag?: 'getal' | 'eenheid' | 'afwisselend';
+    // Legacy (before vraag): true = number AND unit → afwisselend, false = getal. Never written any more.
+    writeUnits?: boolean;
     /** The conversion-table scaffold printed with the exercise. */
     scaffolding: 'geen' | 'tabel-headers' | 'tabel-blanco';
     herleidingLayout: 'uitlijnen' | 'compact';

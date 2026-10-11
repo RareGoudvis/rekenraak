@@ -299,10 +299,12 @@ const romeinseDefaults = (): RomeinseConstraints => ({
 });
 
 // measure + units come from the appstructure leaf's defaultConstraints (lengte/inhoud/massa).
+// No vraag here: the kiosk merges these under an old link's settings, which must keep reading
+// their writeUnits (vraagOf); absent both, a block asks afwisselend.
 const herleidingenDefaults = (): HerleidingenConstraints => ({
     measure: 'lengte', units: ['m', 'dm', 'cm', 'mm'], maxEnkel: 100, maxSamengesteld: 1000,
     formats: ['enkel-getal', 'enkel-eenheid', 'samengesteld-enkel', 'enkel-samengesteld'],
-    compoundMode: '2', areMode: 'samengesteld', writeUnits: false, scaffolding: 'geen', herleidingLayout: 'uitlijnen',
+    compoundMode: '2', areMode: 'samengesteld', scaffolding: 'geen', herleidingLayout: 'uitlijnen',
     tablePrompt: false, tableAnswer: 'blank', tableCellW: 60, tableCellH: 30,
 });
 

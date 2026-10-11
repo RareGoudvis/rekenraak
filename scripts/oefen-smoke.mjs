@@ -38,10 +38,9 @@ const HEADED = argv.includes('--headed');
 const CASES = [
     { kind: 'number', leafId: 'hr-std-optellen-nat', over: {} },
     { kind: 'number+rest', leafId: 'hr-std-delen-nat', over: { multiplicationMode: 'met_rest' } },
-    // Herleidingen with "eenheden zelf schrijven": keypad number + a unit button; the header names
-    // the target unit ("Doeleenheid tonen", default on), or not when the teacher turned it off.
-    { kind: 'number+unit', leafId: 'herleidingen-lengte', over: { writeUnits: true, formats: ['enkel-getal'] }, header: /^Zet om naar (km|hm|dam|m|dm|cm|mm)\.$/ },
-    { kind: 'number+unit', id: 'herleidingen-lengte-vrij', leafId: 'herleidingen-lengte', over: { writeUnits: true, showTargetUnit: false, formats: ['enkel-getal'] }, header: /^Zet om\.$/ },
+    // Herleidingen vraag: getal = the number for the shown unit (the header names it), eenheid = a unit button.
+    { kind: 'number', id: 'herleidingen-lengte-getal', leafId: 'herleidingen-lengte', over: { vraag: 'getal', formats: ['enkel-getal'] }, header: /^Zet om naar (km|hm|dam|m|dm|cm|mm)\.$/ },
+    { kind: 'choice', id: 'herleidingen-lengte-eenheid', leafId: 'herleidingen-lengte', over: { vraag: 'eenheid', formats: ['enkel-getal'] }, header: /^Welke eenheid\?$/ },
     // Breuken herkennen: a stacked breuk, the keypad types the noemer, Verder, then the teller.
     { kind: 'fraction', leafId: 'breuken-herkennen', over: {}, header: /^Welk deel is gekleurd\? Typ de breuk zoals je ze ziet\.$/ },
     { kind: 'time', leafId: 'klok-analoog-lezen', over: {} },

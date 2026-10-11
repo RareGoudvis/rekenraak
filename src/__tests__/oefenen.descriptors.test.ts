@@ -359,12 +359,6 @@ const UNIT: Record<string, number> = {
     'km²': 1e6, 'hm²': 1e4, 'dam²': 100, 'm²': 1, 'dm²': 0.01, 'cm²': 1e-4, 'mm²': 1e-6, ha: 1e4, a: 100, ca: 1,
 };
 
-// Each measure's whole ladder, largest first (oppervlakte with its are units): the unit buttons.
-const LADDER: Record<string, string[]> = {
-    lengte: ['km', 'hm', 'dam', 'm', 'dm', 'cm', 'mm'], inhoud: ['kl', 'hl', 'dal', 'l', 'dl', 'cl', 'ml'],
-    massa: ['kg', 'hg', 'dag', 'g', 'dg', 'cg', 'mg'], oppervlakte: ['km²', 'hm²', 'ha', 'dam²', 'a', 'm²', 'ca', 'dm²', 'cm²', 'mm²'],
-};
-
 // Written from scratch: subtractive Roman numerals (IV, XC, CM).
 function fromRoman(s: string): number {
     const v: Record<string, number> = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
@@ -464,11 +458,13 @@ describe('descriptor answers agree with the generators', () => {
         ['maateenheid-kiezen', { subType: 'schatten' }, 'interactive'],
         ['herleidingen-massa', { formats: ['enkel-samengesteld'], compoundMode: 'volledig' }, 'multi-number'],
         ['herleidingen-lengte', { formats: ['enkel-eenheid'] }, 'choice'],
-        // writeUnits: number + a unit from the whole ladder, right by value.
-        ['herleidingen-lengte', { writeUnits: true }, 'number+unit'],
-        ['herleidingen-massa', { writeUnits: true, formats: ['enkel-samengesteld'], compoundMode: 'volledig' }, 'number+unit'],
-        ['herleidingen-oppervlakte', { writeUnits: true }, 'number+unit'],
-        ['herleidingen-inhoud', { writeUnits: true, formats: ['samengesteld-enkel'] }, 'number+unit'],
+        // vraag (owner 2026-10-11): getal = the number field, eenheid = the unit buttons; legacy writeUnits = afwisselend.
+        ['herleidingen-lengte', { vraag: 'getal', formats: ['enkel-getal'] }, 'number'],
+        ['herleidingen-lengte', { vraag: 'eenheid', formats: ['enkel-getal'] }, 'choice'],
+        ['herleidingen-oppervlakte', { vraag: 'eenheid' }, 'choice'],
+        ['herleidingen-inhoud', { vraag: 'eenheid', formats: ['samengesteld-enkel'] }, 'choice'],
+        ['herleidingen-massa', { vraag: 'eenheid', formats: ['enkel-samengesteld'], compoundMode: 'volledig' }, 'multi-number'],
+        ['herleidingen-lengte', { writeUnits: true, formats: ['enkel-getal'] }, 'choice'],
         ['geld-herkennen', { format: 'decimaal' }, 'number'],
         ['geld-teruggeven', { antwoordFormat: 'decimaal' }, 'number'],
         ['geld-rekenen-korting', { wholeEuros: false }, 'multi-number'],
@@ -751,28 +747,6 @@ function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map
                 expect(checkAnswer(d, ex, c, [String(den), String(n + 1)]), where).toBe(false);
                 expect(checkAnswer(d, ex, c, [String(n), String(den)]), where).toBe(n === den);
                 expect(checkAnswer(d, ex, c, [String(den), '']), where).toBe(false);
-            } else if (input === 'number+unit') {
-                // Herleidingen writeUnits: one quantity equal to the given side, any unit of the whole ladder.
-                const h = ex as T.HerleidingExercise;
-                const base = (ps: T.HerleidingPart[]) => ps.reduce((s, p) => s + p.value * UNIT[p.key], 0);
-                const choices = d.choicesOf!(ex, c);
-                expect(choices, where).toEqual(LADDER[c.measure as string]);
-                expect(accepted, where).toHaveLength(2);
-                expect(scaled(valueOf(accepted[0]) * UNIT[accepted[1]]), where).toBe(scaled(base(h.fromParts)));
-                typeable(accepted[0]);
-                expect(checkAnswer(d, ex, c, accepted), where).toBe(true);
-                const copied = h.fromParts.length === 1 ? h.fromParts[0].key : null;
-                // Every unit that holds the value as a whole number counts (exact, in the smallest unit).
-                const smallest = Math.min(...choices.map(u => UNIT[u]));
-                const ratio = (u: string) => BigInt(Math.round(UNIT[u] / smallest));
-                const total = h.fromParts.reduce((s, p) => s + BigInt(p.value) * ratio(p.key), 0n);
-                for (const u of choices) {
-                    if (total % ratio(u) !== 0n || total / ratio(u) === 0n) continue;
-                    const n = String(total / ratio(u));
-                    expect(checkAnswer(d, ex, c, [n, u]), `${where} ${n} ${u}`).toBe(u !== copied);
-                }
-                expect(checkAnswer(d, ex, c, [wrongNumber(valueOf(accepted[0])), accepted[1]]), where).toBe(false);
-                expect(checkAnswer(d, ex, c, [accepted[0], '']), where).toBe(false);
             } else if (input === 'choice') {
                 const choices = d.choicesOf?.(ex, c) ?? d.choices ?? [];
                 expect(accepted, where).toEqual([truth]);
