@@ -245,6 +245,10 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 text: 'Bordmodus: met “Selecteren” (S) tik of omcirkel je inkt, sleep je ze naar een andere plek of wis je ze. Ongedaan maken werkt ook hier.',
             },
             {
+                kind: 'opgelost',
+                text: 'Oefenmodus: even/oneven toont precies zoveel bolletjes als het getal, en een oude link slaat een oefening over die niet op het toestel kan.',
+            },
+            {
                 kind: 'gewijzigd',
                 text: 'Bladen die je met deze versie bewaart of deelt, openen niet meer op de vorige versie van RekenRaak (nieuw bestandsformaat).',
             },
