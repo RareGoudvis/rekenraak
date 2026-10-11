@@ -33,6 +33,11 @@ UpdateState). Left over, found while fixing:
 
 ## Oefenmodus (first classroom test, 2026-10-09)
 
+- Kiosk choice grid with 5–6 short choices (herleidingen oppervlakte "Welke eenheid?": ha a m² dm² cm²) stretches
+  into tall 3-column buttons with small labels at 1024×768 (AnswerInput `cols`); more frequent now vraag defaults to
+  afwisselend. Shot: ~/Downloads/triage-calls/m1/after-kiosk-eenheid-opp.png. 2026-10-11
+- The `number+unit` kiosk input (AnswerInput, useOefenStore, check `sameQuantity`, stats, `unitFactors`) has no user
+  since herleidingen `vraag` (M1 2026-10-11) and no test left: remove it or keep it on purpose. 2026-10-11
 - `oefen-smoke` reads the store through in-page imports and fails with "phase start" after an HMR reload: use a fresh
   dev server per run (K1). 2026-10-11
 - Kiosk mab-herkennen: the tens bars are hard to count at card scale (K3 pupil-play misread 2 of 3); pairs with the
