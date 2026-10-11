@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useOefenStore } from '../useOefenStore';
 import StorageBanner from './StorageBanner';
 import { loadRuns, summary, viablePlannedTotal } from '../../services/oefenen/stats';
+import { retiredSlots } from '../../services/oefenen/scheduler';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
 
 // The pupil's answer(s) in a Foutjes row: the first try, and what came of the second one.
@@ -14,7 +15,9 @@ function givenText(e: OefenError): string {
 // right one: one run, read-only. With 2 kansen, Juist splits into "Juist in één keer" and
 // "Juist na 2e kans" (a retry still counts as juist).
 function RunTables({ run, sessie }: { run: OefenRun; sessie: OefenSessie }) {
-    const rows = summary(run.stats, sessie);
+    const retired = retiredSlots(sessie);
+    // A retired type is not listed unless this run made some of it (an old run, before the type was retired).
+    const rows = summary(run.stats, sessie).filter(r => r.made > 0 || !retired.has(r.slot));
     const errors = rows.flatMap(r => r.errors.map(e => ({ ...e, label: r.label })));
     const retries = attemptsOf(sessie) === 2 || rows.some(r => r.secondTry > 0);
     return (
