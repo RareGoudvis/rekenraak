@@ -2342,6 +2342,16 @@ nothing are pinned per leaf in `oefenen.zeroOutput.test.ts` (DEAD table; a new o
 - A leaf index past `KIOSK_LEAF_TABLE_V1` → "Werk de app bij" (reload hint), not "ongeldig".
 - Met rest: deeltafels the mode does not list show greyed with a note; no deler > 1 picked → warning (config).
 
+### Known limitations (by design — no backend, no accounts)
+
+- Results live only on the pupil's device (`localStorage`, last 5 runs); a cleared browser or a private window loses
+  them, the StorageBanner says so. No cross-device view for the teacher.
+- A session is the link: a content edit is a new link; the teacher cannot change a session pupils already opened.
+- Per-answer cost grows with the run (every answer copies the history and stringifies the run; `saveRun` reloads all
+  runs): ~0,5 ms per answer and ~170 kB stored at answer #1000, quadratic per run — pinned by `oefenen.perf.test.ts`;
+  only an endless run far past 1 000 answers would feel it. Owner 2026-10-11: documented, not a bug.
+- Every device generates its own exercises from the seed in the link: two pupils never see the same sums.
+
 ### Harnesses
 
 `oefenen.e2e.matrix.test.ts` (gate, ~2 s): every table leaf × its constraintSpace options × 3 seeds →

@@ -56,10 +56,6 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ### WP-F session format
 
-- **O16** D12 (note, no fix, pinned by `oefenen.perf.test.ts`): every answer copies the history and
-  stringifies the whole run, `saveRun` reloads all runs, `next` rebuilds the seen-keys set:
-  quadratic per run, ~0.5 ms per answer and ~170 kB stored at #1000 (test: < 5 ms, < 300 kB). Only
-  an endless run far past 1000 answers would feel it. 2026-10-09
 
 ### WP-H test infra
 
