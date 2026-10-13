@@ -165,7 +165,7 @@ describe('frozen link tables (append only)', () => {
         'leftMask', 'rightMask', 'leftFracN', 'leftFracD', 'rightFracN', 'rightFracD', 'numberType', 'roundTargets',
         'roosterSize', 'percents', 'scaffold', 'bridges', 'operand1Mask', 'operand2Mask', 'fractionDifficulty',
         'mixedNumber1', 'mixedNumber2', 'maxNumerator1', 'maxDenominator1', 'maxNumerator2', 'maxDenominator2',
-        'linkFractions', 'multiplicationMode', 'selectedTables', 'tableLimit',
+        'linkFractions', 'multiplicationMode', 'selectedTables', 'tableLimit', 'klokAnswer',
     ];
     test('existing entries never move', () => {
         expect(KIOSK_LEAF_TABLE_V1.slice(0, LEAVES_V1.length)).toEqual(LEAVES_V1);

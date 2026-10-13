@@ -598,12 +598,32 @@ describe('builder stays within the link bounds (item 8)', () => {
 
 describe('klok description says what the kiosk asks (O21)', () => {
     // ClockConfig serves the sheet too, where lezen IS written in words: both answers are named.
-    test('analoge klok lezen: uu:mm typen in de oefenmodus; tekenen: wijzers slepen', () => {
+    test('analoge klok lezen: in woorden in de oefenmodus; tekenen: wijzers slepen', () => {
         render(<OefenBuilderModal onClose={() => { }} />);
         fireEvent.click(addBtn('klok-analoog-lezen'));
         fireEvent.click(addBtn('klok-analoog-tekenen'));
-        expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd typen als uu:mm)')).toBeTruthy();
+        expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd in woorden)')).toBeTruthy();
         expect(screen.getByText('Analoog · Tijd in woorden → wijzers tekenen op klok (oefenmodus: wijzers slepen)')).toBeTruthy();
+    });
+
+    test('the lezen row\'s Antwoord control: in woorden by default, als uu:mm renames the row and the hint follows', () => {
+        render(<OefenBuilderModal onClose={() => { }} />);
+        fireEvent.click(addBtn('klok-analoog-lezen'));
+        fireEvent.click(addBtn('klok-analoog-tekenen'));
+        // Only the lezen row offers it.
+        const groups = screen.getAllByRole('group', { name: 'Antwoord' });
+        expect(groups).toHaveLength(1);
+        const woorden = within(groups[0]).getByRole('button', { name: 'In woorden' });
+        const digitaal = within(groups[0]).getByRole('button', { name: 'Als uu:mm' });
+        expect(woorden.getAttribute('aria-pressed')).toBe('true');
+        expect(digitaal.getAttribute('aria-pressed')).toBe('false');
+        fireEvent.click(digitaal);
+        expect(digitaal.getAttribute('aria-pressed')).toBe('true');
+        expect(screen.getByText('Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd typen als uu:mm)')).toBeTruthy();
+        expect(screen.getByRole('region', { name: 'Analoge klok · lezen · uu:mm' })).toBeTruthy();
+        expect(useWorksheetStore.getState().draftBlocks[0].constraints).toMatchObject({ klokAnswer: 'digitaal' });
+        fireEvent.click(woorden);
+        expect(screen.getByRole('region', { name: 'Analoge klok · lezen' })).toBeTruthy();
     });
 });
 

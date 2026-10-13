@@ -16,6 +16,7 @@ import { rightCells } from './helpers/fillCells';
 import { mulberry32 } from './helpers/limitHarness';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { flattenLeaves } from '../config/appstructure';
+import { KWART, TIME_WORDS } from '../services/clock/timeWords';
 
 // O24 end-to-end matrix: every KIOSK_LEAF_TABLE_V1 leaf × its constraintSpace one-option
 // variants × SEEDS seeds, through the pupil's whole chain with no browser: the builder's
@@ -68,6 +69,9 @@ const COMBOS: Array<{ leaf: RegExp; over: Record<string, unknown> }> = [
     { leaf: /^herleidingen-/, over: { vraag: 'getal', formats: ['enkel-getal', 'samengesteld-enkel'] } },
     { leaf: /^herleidingen-/, over: { vraag: 'eenheid', formats: ['enkel-getal', 'samengesteld-enkel'] } },
     { leaf: /^herleidingen-/, over: { writeUnits: true } },
+    // Klok lezen: a new row answers in words (kioskSeed); als uu:mm stays a builder pick (and every older link).
+    { leaf: /^klok-analoog-lezen$/, over: { klokAnswer: 'digitaal' } },
+    { leaf: /^klok-analoog-lezen$/, over: { klokAnswer: 'digitaal', timeTypes: ['nauwkeurig_1'] } },
 ];
 
 function variantsOf(leaf: OefenLeaf): Variant[] {
@@ -221,6 +225,14 @@ function enter(typeId: string, d: KioskDescriptor, ex: unknown, c: Record<string
         const [n, den] = [typeable([m[1]], keys, 'number'), typeable([m[2]], keys, 'number')];
         if (n === null || den === null) return `fraction: ${accepted[0]} not typeable with keys [${keys}]`;
         return { right: [den, n], wrong: [den, String(Number(n) + 1)] };
+    }
+    if (input === 'time-words') {
+        // [uur, minuten, woord]: the hour and minutes on the keypad (or the kwart key), the word a chip.
+        const [hour = '', minute = '', word = ''] = accepted;
+        if (!(TIME_WORDS as readonly string[]).includes(word)) return `time-words: '${word}' is no chip`;
+        if (sanitizeAnswer(hour, keys, 'time') !== hour) return `time-words: hour '${hour}' not typeable`;
+        if (minute !== '' && minute !== KWART && sanitizeAnswer(minute, keys, 'time-words') !== minute) return `time-words: minutes '${minute}' not typeable`;
+        return { right: [hour, minute, word], wrong: [String((Number(hour) % 12) + 1), minute, word] };
     }
     if (input === 'number+rest') {
         const q = typeable([accepted[0]], keys, 'number'), r = typeable([accepted[1]], keys, 'number');

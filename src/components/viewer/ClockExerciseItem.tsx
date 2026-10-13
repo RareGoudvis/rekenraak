@@ -33,7 +33,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     const handChoice = (ex.handChoice ?? c.handChoice ?? 'beide') as HandChoice;
     // Oefenmodus: the pupil sets the hands on the card (kiosk only; null on the sheet).
     const ctx = useViewerInteraction();
-    // Oefenmodus card: the time is typed as uu:mm, the line for it in words is not asked.
+    // Oefenmodus card: the time is answered in the panel (words or uu:mm), so no writing line is drawn.
     const scaffold = useShowScaffold();
 
     const clock = (showH: boolean, showM: boolean, redH = false, redM = false) => (

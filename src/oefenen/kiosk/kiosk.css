@@ -618,6 +618,32 @@ html:has(.oefen-body),
   border-radius: 2px;
   background: var(--kiosk-ink);
 }
+/* Klok lezen in woorden: four word chips in one row, the phrase below in spoken order ("kwart over 3"). */
+.kiosk-tw-chips {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+.kiosk-choice.kiosk-tw-chip {
+  min-height: max(var(--kiosk-tap), 52px);
+  padding: 0 var(--sp-1);
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 600;
+}
+.kiosk-tw-phrase { justify-content: center; }
+/* Both fields one width ("kwart" fits the minutes), so picking a word or kwart never shifts the row. */
+.kiosk-tw-phrase .kiosk-field { flex: 0 1 calc(var(--kiosk-text-xl) * 3); }
+.kiosk-tw-phrase .kiosk-field.is-active { border-color: var(--accent); }
+.kiosk-tw-phrase .kiosk-field.is-word { font-family: var(--font-ui); font-size: var(--kiosk-text-lg); }
+.kiosk-tw-word {
+  font-family: var(--font-ui);
+  font-size: var(--kiosk-text-lg);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.kiosk-key:disabled { opacity: 0.45; cursor: default; }
 .kiosk-choice.is-picked {
   border-color: var(--accent);
   background: var(--accent-soft);

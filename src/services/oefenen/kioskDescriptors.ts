@@ -21,6 +21,7 @@ import type { KioskDescriptor as AnyKioskDescriptor } from './types';
 import type { KioskPiece } from './types';
 import { DENOMINATION_CATALOGUE } from '../geld/geldGenerator';
 import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
+import { timeWords, timeWordsFields } from '../clock/timeWords';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
 import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
@@ -1056,26 +1057,45 @@ const klokType = (ex: ClockExercise, c: Record<string, unknown>) => ex.clockType
 // the answer is the face as 'h:mm', 3:15 and 15:15 one position (check.ts drag).
 const isKlokDrag = (ex: ClockExercise, c: Record<string, unknown>) => klokMode(ex, c) === 'tekenen' && klokType(ex, c) === 'analoog';
 const KLOK_HAND_WORDS: Record<string, string> = { m: 'de grote wijzer', h: 'de kleine wijzer', hm: 'de wijzers' };
+const isKlokLezenAnaloog = (c: Record<string, unknown>) =>
+    ((c.exerciseMode as string | undefined) ?? 'lezen') === 'lezen' && ((c.clockType as string | undefined) ?? 'analoog') === 'analoog';
+// Absent = 'digitaal': a link from before the setting keeps its uu:mm; a new builder row starts on woorden (kioskSeed).
+const klokAnswerOf = (c: Record<string, unknown>) => (c.klokAnswer === 'woorden' ? 'woorden' : 'digitaal');
 const klokDrag: KioskInteract<ClockExercise> = {
     kind: 'drag',
     keys: klokDragHands,
     answerOf: (ex) => klokText(ex.hours, ex.minutes),
     fromState: (st, ex, c) => klokGiven(ex, c, st.drag ?? {}),
 };
+// Read an analoge klok in words on the card: a chip (uur · half · voor · over) + the hour (+ minutes or kwart),
+// checked by value in the four-word grammar (timeWords.ts), never the sheet's "voor half" / "over half" forms.
+const isKlokWoorden = (ex: ClockExercise, c: Record<string, unknown>) =>
+    klokMode(ex, c) === 'lezen' && klokType(ex, c) === 'analoog' && klokAnswerOf(c) === 'woorden';
 export const KLOK_KIOSK = descriptor<ClockExercise>({
     input: 'time',
-    inputOf: (ex, c) => (isKlokDrag(ex, c) ? 'interactive' : 'time'),
+    inputOf: (ex, c) => (isKlokDrag(ex, c) ? 'interactive' : isKlokWoorden(ex, c) ? 'time-words' : 'time'),
     interact: klokDrag,
     answerOf: (ex, c) => {
         if (isKlokDrag(ex, c)) return [klokDrag.answerOf(ex, c)];
+        if (isKlokWoorden(ex, c)) return timeWordsFields(timeWords(ex.hours, ex.minutes));
         const h12 = ex.hours % 12;
         return (h12 === 0 ? [0, 12] : [h12, h12 + 12]).map(h => hm(h, ex.minutes));
     },
     display: (ex, c) => (klokMode(ex, c) === 'lezen' ? `${klokType(ex, c) === 'analoog' ? `analoge klok toont ${hm(ex.hours % 12 || 12, ex.minutes)}` : `digitale klok toont ${ex.digitalText}`}: hoe laat?`
         : isKlokDrag(ex, c) ? `${ex.timeText}: wijzers op ?` : `${ex.timeText} = ? : ??`),
-    // Owner call 13: the paper's lezen asks the time in words (a writing line under the clock); the card takes uu:mm only.
+    // Owner call 13: the paper's lezen asks the time in words on a writing line; the card builds it from
+    // the word chips, or (klokAnswer 'digitaal', older links) takes uu:mm.
     kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.`
+        : isKlokWoorden(ex, c) ? 'Lees de klok en zeg hoe laat het is.'
         : klokMode(ex, c) === 'lezen' && klokType(ex, c) === 'analoog' ? 'Lees de klok en typ de tijd (uu:mm).' : undefined),
+    // Owner 2026-10-13: a new row reads the clock in words, like the sheet; the link carries the key as a row diff.
+    kioskSeed: (c) => (isKlokLezenAnaloog(c) ? { klokAnswer: 'woorden' } : undefined),
+    rowSetting: (c) => (isKlokLezenAnaloog(c) ? {
+        key: 'klokAnswer', label: 'Antwoord', value: klokAnswerOf(c),
+        options: [{ value: 'woorden', label: 'In woorden' }, { value: 'digitaal', label: 'Als uu:mm' }],
+    } : undefined),
+    // Only an explicit uu:mm pick renames the row: an older link (no key) keeps its name and its content hash.
+    rowLabel: (label, c) => (isKlokLezenAnaloog(c) && c.klokAnswer === 'digitaal' ? `${label} · uu:mm` : label),
     supported: (c) => {
         const type = (c.clockType as string | undefined) ?? 'analoog';
         // No tijdstype ticked: the generator has no minutes to draw from (clockGenerator returns []).

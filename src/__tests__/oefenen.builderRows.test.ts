@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { buildSessie, filterOefenLeaves, listOefenLeaves, rowLabelOf, rowYields, seedRowConstraints, type BuilderSettings } from '../components/oefenen/oefenBuild';
+import { buildSessie, filterOefenLeaves, listOefenLeaves, rowLabelOf, rowSettingOf, rowYields, seedRowConstraints, type BuilderSettings } from '../components/oefenen/oefenBuild';
 import { decodeSessie, encodeSessie } from '../services/oefenen/session';
 import { kioskSupports } from '../services/oefenen/kiosk';
 import { seedLeafConstraints } from '../config/baseSettings';
@@ -78,5 +78,41 @@ describe('item 4: a new row seeds from the sidebar leerjaar (the sheet seed path
                 expect(rowYields({ leaf: l, constraints }), `${l.id} L${g}`).toBe(true);
             }
         }
+    });
+});
+
+describe('klok lezen: Antwoord in woorden / als uu:mm (owner 2026-10-13)', () => {
+    test('a new analoog lezen row starts on woorden, the link carries it and decodes it back', () => {
+        const l = leaf('klok-analoog-lezen');
+        const constraints = seedRowConstraints(l, null);
+        expect(constraints.klokAnswer).toBe('woorden');
+        expect(rowLabelOf({ leaf: l, constraints })).toBe('Analoge klok · lezen');
+        const { sessie } = buildSessie([{ key: 'r0', leaf: l, constraints, weight: 50 }], SETTINGS);
+        const back = decodeSessie(encodeSessie(sessie)!);
+        expect(back.types[0].constraints.klokAnswer).toBe('woorden');
+        expect(back.types[0].label).toBe('Analoge klok · lezen');
+    });
+
+    test('als uu:mm ships as the explicit key and names the row; a row without the key keeps its name', () => {
+        const l = leaf('klok-analoog-lezen');
+        const digitaal = { ...l.constraints, klokAnswer: 'digitaal' };
+        const { sessie } = buildSessie([{ key: 'r0', leaf: l, constraints: digitaal, weight: 50 }], SETTINGS);
+        const back = decodeSessie(encodeSessie(sessie)!);
+        expect(back.types[0].constraints.klokAnswer).toBe('digitaal');
+        expect(back.types[0].label).toBe('Analoge klok · lezen · uu:mm');
+        const old = { ...l.constraints };
+        delete old.klokAnswer;
+        expect(rowLabelOf({ leaf: l, constraints: old })).toBe('Analoge klok · lezen');
+    });
+
+    test('the other klok leaves get no klokAnswer and no Antwoord control', () => {
+        for (const id of ['klok-analoog-tekenen', 'klok-analoog-omzetten', 'klok-digitaal-tekenen']) {
+            const l = leaf(id);
+            expect(seedRowConstraints(l, null).klokAnswer, id).toBeUndefined();
+            expect(rowSettingOf({ leaf: l, constraints: l.constraints }), id).toBeUndefined();
+        }
+        const lezen = leaf('klok-analoog-lezen');
+        expect(rowSettingOf({ leaf: lezen, constraints: lezen.constraints })?.value).toBe('woorden');
+        expect(rowSettingOf({ leaf: lezen, constraints: { clockType: 'analoog', exerciseMode: 'lezen' } })?.value).toBe('digitaal');
     });
 });

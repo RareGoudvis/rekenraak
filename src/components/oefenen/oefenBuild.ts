@@ -2,7 +2,7 @@ import { APP_STRUCTURE, LEAF_BY_ID, flattenLeaves, type InstructionFn } from '..
 import { resolveInstruction } from '../../config/instructionPresets';
 import { seedLeafConstraints } from '../../config/baseSettings';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
-import { OEFEN_VERSION, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
+import { OEFEN_VERSION, type KioskRowSetting, type OefenAttempts, type OefenMode, type OefenSessie, type OefenType } from '../../services/oefenen/types';
 import { kioskCapableLeaves, kioskFor, kioskLabel, kioskSupports } from '../../services/oefenen/kiosk';
 import { deadSlots, nextExercise, type Rng } from '../../services/oefenen/scheduler';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
@@ -74,6 +74,10 @@ export interface BuilderRow {
 /** The row's name in the builder, the link and the pupil's stats: the leaf's, unless a row setting renames it. */
 export const rowLabelOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): string =>
     kioskFor(row.leaf.typeId)?.rowLabel?.(row.leaf.label, row.constraints) ?? row.leaf.label;
+
+/** The kiosk-only setting the row offers (klok lezen: in woorden / als uu:mm), or undefined. */
+export const rowSettingOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): KioskRowSetting | undefined =>
+    kioskFor(row.leaf.typeId)?.rowSetting?.(row.constraints);
 
 /** The row's breuk-answer default (exactFormDefault), or undefined where the row asks no breuk. */
 export const exactFormDefaultOf = (row: Pick<BuilderRow, 'leaf' | 'constraints'>): boolean | undefined =>

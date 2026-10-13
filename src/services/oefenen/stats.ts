@@ -3,6 +3,7 @@ import { kioskFor, kioskInputOf, kioskInteractOf } from './kiosk';
 import { exerciseKeyOf } from '../generateDispatch';
 import { plannedTotal, retiredSlots } from './scheduler';
 import { sessieContentHash } from './session';
+import { timeWordsOfFields, timeWordsText } from '../clock/timeWords';
 
 // The pupil's results: accumulated per slot during a run, kept in this device's localStorage
 // per session id (never the worksheet autosave), last MAX_RUNS runs.
@@ -25,6 +26,8 @@ export function answerText(d: KioskDescriptor, ex: unknown, c: Record<string, un
     // fraction: typed noemer first, read teller over noemer.
     if (input === 'fraction') return `${parts[1] ?? ''}/${parts[0] ?? ''}`;
     if (input === 'time') return `${parts[0] ?? ''}:${(parts[1] ?? '').padStart(2, '0')}`;
+    // The words as the pupil built them ("15 over 3"), the expected one in the same grammar ("kwart over 3").
+    if (input === 'time-words') return timeWordsText(timeWordsOfFields(parts));
     if (input === 'multi-number') return parts.join(' ; ');
     const ia = input === 'interactive' ? kioskInteractOf(d, c) : undefined;
     if (ia?.show) return ia.show(parts.join(' '), ex, c);
@@ -36,7 +39,7 @@ export function expectedText(d: KioskDescriptor, ex: unknown, c: Record<string, 
     const accepted = d.answerOf(ex, c);
     const input = kioskInputOf(d, ex, c);
     if (input !== 'interactive' && d.showAnswer) return d.showAnswer(input === 'multi-number' ? accepted.map(a => a.split('|')[0]) : accepted.slice(0, input === 'number+rest' || input === 'time' ? 2 : 1), ex, c);
-    if (input === 'number+rest') return answerText(d, ex, c, accepted);
+    if (input === 'number+rest' || input === 'time-words') return answerText(d, ex, c, accepted);
     // One field each, its first spelling.
     if (input === 'multi-number') return accepted.map(a => a.split('|')[0]).join(' ; ');
     const ia = input === 'interactive' ? kioskInteractOf(d, c) : undefined;

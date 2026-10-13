@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
-import { currentInput, interactionAnswer, typedReady, useOefenStore } from '../useOefenStore';
+import { currentInput, interactionAnswer, timeWordsNext, typedReady, useOefenStore } from '../useOefenStore';
+import { KWART } from '../../services/clock/timeWords';
 import Keypad from './Keypad';
 import Tray from './Tray';
 
@@ -35,12 +36,14 @@ export default function AnswerInput() {
     const { press, pressExtra, setField, focusField, choose, answer, clearBuild } = useOefenStore.getState();
     const refs = useRef<(HTMLInputElement | null)[]>([]);
     const info = currentInput(sessie, shown);
-    const canCheck = typedReady(input, info?.blankFieldsOk ?? false);
+    const canCheck = typedReady(input, info?.blankFieldsOk ?? false, info?.kind);
 
+    // A time-words chip re-lays the phrase (the hour field moves): focus follows it there too.
+    const chip = info?.kind === 'time-words' ? input[2] : undefined;
     // Focus lands in the answer field on every new exercise and follows the active field.
     useEffect(() => {
         if (phase === 'exercise') refs.current[field]?.focus({ preventScroll: true });
-    }, [shown, field, phase]);
+    }, [shown, field, phase, chip]);
 
     useLayoutEffect(() => {
         refs.current.forEach(fitField);
@@ -118,6 +121,44 @@ export default function AnswerInput() {
                 <p className="kiosk-keypad-hint">Typ eerst de noemer, dan de teller.</p>
                 <Keypad extras={info.keys} onKey={press} canCheck={toTeller ? (input[0] ?? '') !== '' : canCheck}
                     onCheck={toTeller ? () => focusField(1) : answer} checkLabel={toTeller ? 'Verder' : undefined} />
+            </div>
+        );
+    }
+
+    // time-words (klok lezen in woorden): pick uur · half · voor · over, type the hour, and for voor / over the
+    // minutes or kwart. The fields stand in spoken order ("kwart over 3", "3 uur", "half 4") so the
+    // pupil sees the sentence they build; only these four words exist (no "voor half" / "over half").
+    if (info.kind === 'time-words') {
+        const [, minute = '', word = ''] = input;
+        const withMinutes = word === 'voor' || word === 'over';
+        const next = timeWordsNext(input, field);
+        const box = (i: 0 | 1, label: string) => (
+            // No placeholder: "uur" in the hour box would read like the uur chip.
+            <input aria-label={label} ref={el => { refs.current[i] = el; }}
+                className={`kiosk-field${field === i ? ' is-active' : ''}${i === 1 && minute === KWART ? ' is-word' : ''}`}
+                inputMode="none" autoCapitalize="off" autoComplete="off" spellCheck={false}
+                value={input[i] ?? ''} onChange={e => setField(i, e.target.value)} onFocus={() => focusField(i)} />
+        );
+        const hourBox = box(0, 'Uur');
+        const wordText = <span className="kiosk-tw-word" aria-hidden>{word}</span>;
+        return (
+            <div className="kiosk-answer">
+                <div className="kiosk-tw-chips" role="radiogroup" aria-label="Kies het woord">
+                    {info.choices.map(c => (
+                        <button key={c} type="button" role="radio" aria-checked={word === c}
+                            className={`kiosk-choice kiosk-tw-chip${word === c ? ' is-picked' : ''}`} onClick={() => choose(c)}>
+                            {c}
+                        </button>
+                    ))}
+                </div>
+                <div className="kiosk-fields kiosk-tw-phrase">
+                    {withMinutes && <>{box(1, 'Minuten')}{wordText}{hourBox}</>}
+                    {word === 'uur' && <>{hourBox}{wordText}</>}
+                    {word === 'half' && <>{wordText}{hourBox}</>}
+                    {word === '' && hourBox}
+                </div>
+                <Keypad extras={[]} actions={[{ id: KWART, label: KWART, disabled: !withMinutes }]} onAction={press} onKey={press}
+                    canCheck={next !== null || canCheck} onCheck={next !== null ? () => focusField(next) : answer} checkLabel={next !== null ? 'Verder' : undefined} />
             </div>
         );
     }
