@@ -36,6 +36,14 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         summary: 'Elke oefening blijft nu binnen het maximum dat je kiest.',
         items: [
             {
+                kind: 'nieuw',
+                text: 'Oefenmodus: een sessie zonder limiet en zonder timer heeft nu een knop Stoppen. Na “Ja, stoppen” ziet de leerling meteen het eindscherm. Werkt ook in testmodus.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: andere oefeningen kiezen en opnieuw delen gaf dezelfde link, zodat leerlingen oude resultaten zagen. Elke inhoud krijgt nu een eigen link.',
+            },
+            {
                 kind: 'opgelost',
                 text: 'Oefenmodus: lange breukantwoorden (bv. 19600/15394639) worden niet meer afgeknipt. Het vak neemt tot 24 tekens en verkleint de tekst zodat je alles ziet.',
                 example: { leafId: 'hr-std-delen-rat', constraints: { fractionMultMode: 'decimal_fraction', fractionOrderMode: 'BA', decimalPlaces: 3 } },

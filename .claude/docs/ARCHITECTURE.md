@@ -1184,7 +1184,8 @@ src/
 │   └── kiosk/
 │       ├── Kiosk.tsx            # running layout (card left, answer panel right; portrait stacks) + physical-keyboard routing + 1 s clock
 │       ├── TopBar.tsx           # title, progress n / total, countdown (red < 1 min), Resultaten (hidden while resultsHidden: statsLocked or testMode, run not done)
-│       ├── ExerciseCard.tsx     # ONE exercise through the registry Viewer at 340 px, scaled to the card; inert; ScaffoldProvider false
+│       ├── StopButton.tsx       # Stoppen for an endless run (canStop): two-tap Ja, stoppen / Annuleer, 3 s disarm → store.stop()
+│       ├── ExerciseCard.tsx     # ONE exercise through the registry Viewer at 340 px, scaled to the card, keyed per exercise (scroll reset); inert; ScaffoldProvider false
 │       ├── AnswerInput.tsx      # fields (number / two / time / multi-number / text) + Keypad, or the choice buttons
 │       ├── Keypad.tsx           # 7-8-9 keypad, ⌫, up to two extra keys from descriptor.keys(c), the descriptor's action keys (Lenen) and Controleer
 │       ├── Tray.tsx             # build kind: one tile per KioskPiece (picture from EXERCISE_UI[typeId].TrayPiece), tap lays one, the count badge takes one back; never shows the running total
@@ -2068,8 +2069,10 @@ OefenBuilderModal ── OefenCatalogue (Zoek oefening… + leerjaar chips, the 
    │ draft block (store.draftBlocks, real Config) + limit + kans + Antwoord (exactForm, breuk rows only)
    │ pre-flight per row: rowYields / deadRows (one draw through nextExercise) → red note, Delen off; ≤ 20 rows
    │ buildSessie (oefenBuild.ts): drop rows whose descriptor.supported(c) is false, weights → whole %
-   │ that sum to 100, instruction frozen to text, createdAt floored to the minute; a CONTENT edit of a saved
-   │ session gets a new id (Hernoemen keeps it), so pupils' stored runs never bleed into the new link
+   │ that sum to 100, instruction frozen to text, createdAt floored to the minute; ONE id per content for the
+   │ modal's lifetime (`idsByContent`, keyed by `sessieContentHash`: types, mode, flags, timer, total, attempts —
+   │ not the title): an edit ships a new id, a revert gets the earlier id back, Opslaan keeps one library row
+   │ (it deletes the rows under the map's other ids), so pupils' stored runs never bleed into another link
    ▼
 OefenSessie ── toWire (positional) → JSON → DEFLATE → base32 ── sessieLink → origin/oefenen.html#oefen=…
    │                                      (Opslaan → rekenraak_oefen_sessies_v1, §10)
@@ -2079,7 +2082,7 @@ OefenShareModal: summary chips (soorten · oefeningen / onbeperkt, timer, toets,
    ▼  pupil scans / opens
 decodeSessie → fromWire → parseSessie (strict, Dutch errors, version gate)
    ▼
-useOefenStore.load → latest stored run? (done → locked stats · timer passed → finish · current → same exercise)
+useOefenStore.load → latest stored run of THIS content (`loadRunsFor`: run.hash = sessieContentHash(s) or none)? (done → locked stats · timer passed → finish · current → same exercise)
    ▼ Start
 next(): nextType (scheduler) → nextExercise (generator on a throwaway block) → ExerciseCard + AnswerInput
    ▼ Controleer
@@ -2171,7 +2174,11 @@ type — limits, weights, `perType` stats, history entries — is keyed by **slo
 
 ### Stats storage ([stats.ts](../../src/services/oefenen/stats.ts), pupil device)
 
-`rekenraak_oefen_<sessionId>` → `{ v: 1, runs: OefenRun[] }`, the **last 5 runs** by index.
+`rekenraak_oefen_<sessionId>` → `{ v: 1, runs: OefenRun[] }`, the **last 5 runs** by index. A run also
+carries `hash?` (`sessieContentHash` at `newRun`): `loadRunsFor(s)` keeps the runs whose hash matches (or
+that have none, pre-hash runs) for resume and Vorige keren; `nextRunIndex` / `saveRun` see every run, so a
+new run never overwrites a hidden one; Wissen = `clearRunsFor` (other content's runs stay). Runs of other
+content under the same id (an older link) are hidden, never deleted, but still count toward the 5.
 A run = `{ index, stats: { startedAt, finishedAt?, perType[slot]: { made, correct, wrong,
 secondTry?, errors[{ exercise, given, expected, at, secondTry?, second? }] }, history[{ slot, typeId, exerciseKey, correct, ms, secondTry? }] },
 timerEndsAt?, current?, done }`. `current` (exercise + the constraints it was generated with)
@@ -2241,9 +2248,13 @@ Landscape-first: card left, answer panel right; portrait stacks (fallback). Top 
 builder shows the Statistieken toggle forced on under Testmodus). Start tries `requestFullscreen`.
 Feedback is juist / fout only, never the right answer; `testMode` skips it and goes straight on
 (one try). Start screen counts viable types only ("1 soort · 1 oefening" singular). Mid-run Resultaten
-is a peek with only **Verder oefenen**: `restart()` / `clear()` are no-ops outside the locked end screen,
-so a timed run cannot be escaped. Mid-run Resultaten is a peek
-(Verder oefenen); the end screen is locked and survives a reload.
+is a peek with **Verder oefenen**: `restart()` / `clear()` are no-ops outside the locked end screen,
+so a timed or counted run cannot be cut short. An ENDLESS run (`canStop`: no timer and `plannedTotal === null`)
+shows **Stoppen** (`StopButton.tsx`) in the top bar and beside Verder oefenen on the peek, also under
+testmodus / statsLocked: two taps ("Ja, stoppen" / "Annuleer", auto-disarm after `STOP_DISARM_MS` 3 s,
+Resultaten hidden while armed, arming focuses Annuleer so a habitual Enter cannot stop; it sits in the Tab
+order before the panel), then `stop()` → `finish(run)`: the card on screen is dropped uncounted, the run is
+locked and survives a reload. The end screen is locked and survives a reload.
 
 ### Phase C: answering on the exercise (`interact`)
 
