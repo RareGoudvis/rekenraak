@@ -8,6 +8,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
+- Inspector at 900 / 820 px wide: the block's floating button rail sits on top of the Inspector controls and the sheet column shrinks to ~250 / 170 px (the TopBar itself folds fine). Repro: resize to 900 px with a block selected (`Downloads/review-triage/sheet/I-06-topbar-900.png`). 2026-10-13 review agent.
+- vormleer-hoeken-meten at its defaults can exceed one page (3 of 8 seeds: 1 115 / 1 068 / 1 061 px vs 998) → "groter dan één pagina" banner. Repro: `seed(3*7919)`. Fix direction: lower `defaultCount` or the figure budget. 2026-10-13.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -16,6 +18,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
+- Afronden decimaal rooster with targets t + h at 2 decimals: the title says "Rond af op t en h." but the table has only a t column (either drop h from the title or add the column). 2026-10-13 review agent.
 - Config pills: many option buttons carry no `aria-pressed` / selected state (the tester's accessibility snapshot showed selection by styling only; `seg-btn` in BreukenRangschikkenConfig / ControlerenConfig do it right). Sweep the plugins + `sharedPluginStyles` pill helper and add `aria-pressed` everywhere (2026-10-13 tester report).
 
 ## Generators
@@ -61,5 +64,7 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 ## Bordmodus
+
+- Honderdveld 20 kolommen + XL widens its card to ~909 px; on a 900 px board it is placed at x = 140 and runs past the right edge (the `data-widget-fit` zoom never kicks in because the card widens instead). Clamp the placement or zoom when the card is wider than the board. 2026-10-13 review agent.
 
 

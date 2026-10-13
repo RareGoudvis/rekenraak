@@ -1632,7 +1632,7 @@ A second Zustand store, separate from `useWorksheetStore` so neither can corrupt
 `geldPaletOpen` (UI-only), `tool`, `gridSnap` / `gridSize`, `inkSettings` per stroke tool
 (`pen | marker | line | shape`), `drawOptions` (lijn / vormen options, below),
 `selectedInstrumentId` + `toggleInstrument` / `updateInstrument` / `removeInstrument` /
-`hideAllInstruments` / `selectInstrument` (instruments, below), `selectedStrokeIds` + `selectStrokes` / `moveStrokes` / `removeStrokes(ids, { undoable })`, and the ink history `_undoInk` / `_redoInk` (time-ordered `InkOp` add / move / remove; entries the eraser made stale are skipped; cleared on page change, load, reset, clear).
+`hideAllInstruments` / `selectInstrument` (instruments, below), `selectedStrokeIds` + `selectStrokes` / `moveStrokes` / `removeStrokes(ids, { undoable })`, and the ink history `_undoInk` / `_redoInk` (time-ordered `InkOp` add / move / remove; entries the eraser made stale are skipped; cleared on page change, load, reset, clear — with an empty log, Ongedaan maken still pops the newest stroke of the page, so Ctrl+Z right after a load removes a loaded stroke).
 `BoardTool` = `select | hand | text | pen | marker | eraser | line | shape | lasso | instrument`
 (`instrument` is typed but never set: the ruler button opens a popover, the active tool stays);
 `hand` drags widgets without selecting, `text` places a tekst widget at the tap point and hops
