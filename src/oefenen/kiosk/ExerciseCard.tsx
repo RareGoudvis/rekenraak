@@ -35,6 +35,7 @@ const MIN_CELL_PX = 40;
 export default function ExerciseCard({ typeId, exercise, constraints, instruction, exerciseKey }: Props) {
     const boxRef = useRef<HTMLDivElement>(null);
     const innerRef = useRef<HTMLDivElement>(null);
+    const sizerRef = useRef<HTMLDivElement>(null);
     const [fit, setFit] = useState({ k: 1, x: 0, w: VIRTUAL_W, h: 0, scroll: false });
     const Viewer = EXERCISE_UI[typeId]?.Viewer;
     const interaction = useOefenStore(s => s.interaction);
@@ -61,8 +62,8 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
     }, [typeId, exercise, constraints]);
 
     useLayoutEffect(() => {
-        const box = boxRef.current, inner = innerRef.current;
-        if (!box || !inner) return;
+        const box = boxRef.current, inner = innerRef.current, sizer = sizerRef.current;
+        if (!box || !inner || !sizer) return;
         const measure = () => {
             const boxW = box.clientWidth, boxH = box.clientHeight;
             const { x, w, h } = usedExtent(inner, VIRTUAL_W);
@@ -72,6 +73,10 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
             if (cellH * k < MIN_CELL_PX) k = Math.min(MAX_ZOOM, MIN_CELL_PX / cellH);
             // Raised to MIN_CELL_PX, the grid outgrows the card: it scrolls from its top-left.
             const scroll = w * k > boxW + 1 || h * k > boxH + 1;
+            // The sizer clips with overflow:hidden but still scrolls programmatically (focus, scrollIntoView
+            // against a stale fit); a leftover offset would show only a slice of the exercise.
+            sizer.scrollLeft = 0; sizer.scrollTop = 0;
+            if (!scroll) { box.scrollLeft = 0; box.scrollTop = 0; }
             setFit(f => (f.k === k && f.x === x && f.w === w && f.h === h && f.scroll === scroll ? f : { k, x, w, h, scroll }));
         };
         measure();
@@ -84,8 +89,8 @@ export default function ExerciseCard({ typeId, exercise, constraints, instructio
     return (
         <div className="kiosk-card">
             <p className="kiosk-instruction">{instruction}</p>
-            <div ref={boxRef} className={`kiosk-card-body${fit.scroll ? ' is-scrolling' : ''}`}>
-                <div className="kiosk-card-sizer" style={{ width: fit.w * fit.k, height: fit.h * fit.k }}>
+            <div ref={boxRef} className={`kiosk-card-body${fit.scroll ? ' is-scrolling' : ''}`} data-kiosk-scroll={fit.scroll ? '' : undefined}>
+                <div ref={sizerRef} className="kiosk-card-sizer" style={{ width: fit.w * fit.k, height: fit.h * fit.k }}>
                     {/* inert: the sheet viewers draw operands as editable inputs (teacher edits on the sheet);
                         here they must not take focus, keys or taps — unless the pupil answers ON the card. */}
                     <div ref={innerRef} className={`kiosk-card-inner${ctx ? ' is-interactive' : ''}`} inert={!ctx}

@@ -125,7 +125,7 @@ export default function Kiosk() {
                 <main className="kiosk-main">
                     <section className="kiosk-card-col" aria-label="Oefening">
                         {shown && type && (
-                            <ExerciseCard typeId={type.typeId} exercise={shown.exercise} constraints={shown.constraints}
+                            <ExerciseCard key={shown.exerciseKey} typeId={type.typeId} exercise={shown.exercise} constraints={shown.constraints}
                                 instruction={instruction} exerciseKey={shown.exerciseKey} />
                         )}
                     </section>
