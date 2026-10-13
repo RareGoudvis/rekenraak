@@ -1,7 +1,9 @@
 import { describe, test, expect } from 'vitest';
+import type { Equation } from '../services/math/types';
 import type { OefenHistoryEntry, OefenSessie, OefenStats, OefenType } from '../services/oefenen/types';
 import { deadSlots, isDone, nextExercise, nextType, plannedTotal, poolOf } from '../services/oefenen/scheduler';
 import { mulberry32 } from './helpers/limitHarness';
+import { REGISTRY } from '../config/exerciseRegistry';
 
 const type = (over: Partial<OefenType> = {}): OefenType => ({
     typeId: 'hr-std-optellen', leafId: 'hr-std-optellen-nat', label: 'Optellen',
@@ -224,6 +226,42 @@ describe('descriptor prepare (kiosk-only settings per exercise)', () => {
         expect([...seen.keys()].sort((a, b) => a - b)).toEqual(bills);
         // The row's own settings are left alone.
         expect(t.constraints.exerciseBills).toEqual([...bills, 5]);
+    });
+});
+
+describe('gemengd "om de beurt" takes turns per slot', () => {
+    const gemengd = (mix: 'cycle' | 'random') => type({ typeId: 'hr-std-gemengd', leafId: 'hr-std-gemengd-nat', label: 'Gemengd', constraints: { numberType: 'natural', maxGetal: 100, variants: ['+', '-', 'x', ':'], mix } });
+    const variantOf = (t: OefenType, made: number, seed = made + 1) => (nextExercise(sessie([t]), t, new Set(), mulberry32(seed), made)!.exercise as Equation).variant;
+
+    test('made 0..7 serves + − × : + − × :', () => {
+        const t = gemengd('cycle');
+        expect(Array.from({ length: 8 }, (_, made) => variantOf(t, made))).toEqual(['+', '-', 'x', ':', '+', '-', 'x', ':']);
+    });
+    test('the served constraints name the one variant; the row keeps its list', () => {
+        const t = gemengd('cycle');
+        const got = nextExercise(sessie([t]), t, new Set(), mulberry32(3), 6)!;
+        expect(got.constraints.variants).toEqual(['x']);
+        expect(t.constraints.variants).toEqual(['+', '-', 'x', ':']);
+    });
+    test('willekeurig still varies, whatever the count', () => {
+        const t = gemengd('random');
+        expect(new Set(Array.from({ length: 40 }, (_, i) => variantOf(t, 0, i + 1))).size).toBeGreaterThan(1);
+    });
+    test("a prepared setting that yields nothing falls back to the row's own settings", () => {
+        const t = type({ typeId: 'klok-kloklezen', leafId: 'klok-analoog-lezen', label: 'Klok', constraints: { clockType: 'analoog', exerciseMode: 'lezen' } });
+        const d = REGISTRY['klok-kloklezen'].kiosk!;
+        const before = d.prepare;
+        // Every tijdstype unticked: the clock generator returns [].
+        d.prepare = (c) => ({ ...c, timeTypes: [] });
+        try {
+            const s = sessie([t]);
+            const got = nextExercise(s, t, new Set(), mulberry32(2));
+            expect(got).not.toBeNull();
+            expect(got!.constraints.timeTypes).not.toEqual([]);
+            expect([...deadSlots(s)]).toEqual([]);
+        } finally {
+            d.prepare = before;
+        }
     });
 });
 

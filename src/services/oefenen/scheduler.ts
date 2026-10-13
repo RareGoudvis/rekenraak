@@ -146,15 +146,15 @@ export interface OefenExercise {
     repeat: boolean;
 }
 
-/** One fresh exercise of this type, avoiding `seenKeys`; null when the generator yields nothing (the type is then retired). */
-export function nextExercise(s: OefenSessie, type: OefenType, seenKeys: ReadonlySet<string>, rng?: Rng): OefenExercise | null {
-    const made = generateOne(type, seenKeys, rng);
+/** One fresh exercise of this type, avoiding `seenKeys`; null when the generator yields nothing (the type is then retired). `made` = this slot's exercises so far. */
+export function nextExercise(s: OefenSessie, type: OefenType, seenKeys: ReadonlySet<string>, rng?: Rng, made = 0): OefenExercise | null {
+    const got = generateOne(type, seenKeys, rng, made);
     const slot = s.types.indexOf(type);
-    if (!made && slot >= 0) verdicts(s).set(slot, false);
-    return made;
+    if (!got && slot >= 0) verdicts(s).set(slot, false);
+    return got;
 }
 
-function generateOne(type: OefenType, seenKeys: ReadonlySet<string>, rng?: Rng): OefenExercise | null {
+function generateOne(type: OefenType, seenKeys: ReadonlySet<string>, rng: Rng | undefined, made: number): OefenExercise | null {
     const def = REGISTRY[type.typeId];
     if (!def) return null;
     const block = blockFor(type);
@@ -162,20 +162,28 @@ function generateOne(type: OefenType, seenKeys: ReadonlySet<string>, rng?: Rng):
     const realRandom = Math.random;
     // Generators call Math.random directly; swapping it is the only way to seed them.
     if (rng) Math.random = rng;
+    const draw = (c: Record<string, unknown>): OefenExercise | null => {
+        let items: unknown[];
+        try { items = generateForBlock(c === constraints ? block : { ...block, constraints: c } as MathBlock).items; } catch { items = []; }
+        const exercise = items[0];
+        if (exercise === undefined) return null;
+        const key = exerciseKeyOf(type.typeId, exercise);
+        return { exercise, key, constraints: c, repeat: seenKeys.has(key) };
+    };
     try {
         let last: OefenExercise | null = null;
+        let prepared = false;
         for (let attempt = 0; attempt <= MAX_REDRAWS; attempt++) {
             // A descriptor may adjust the settings per kiosk exercise (a random bill); the sheet's generator is untouched.
-            const c = def.kiosk?.prepare?.(constraints, Math.random) ?? constraints;
-            let items: unknown[];
-            try { items = generateForBlock(c === constraints ? block : { ...block, constraints: c } as MathBlock).items; } catch { items = []; }
-            const exercise = items[0];
-            if (exercise === undefined) continue;
-            const key = exerciseKeyOf(type.typeId, exercise);
-            last = { exercise, key, constraints: c, repeat: seenKeys.has(key) };
+            const c = def.kiosk?.prepare?.(constraints, Math.random, { made }) ?? constraints;
+            if (c !== constraints) prepared = true;
+            const got = draw(c);
+            if (!got) continue;
+            last = got;
             if (!last.repeat) return last;
         }
-        return last;
+        // A prepared setting that cannot generate (a forced gemengd variant under the max) must not retire the slot.
+        return last ?? (prepared ? draw(constraints) : null);
     } finally {
         Math.random = realRandom;
     }

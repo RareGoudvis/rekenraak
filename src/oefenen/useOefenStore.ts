@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { attemptsOf, type KioskAnswer, type KioskExtraKey, type KioskInput, type KioskPiece, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
-import { isDone, nextExercise, nextType, unsupportedSlots } from '../services/oefenen/scheduler';
+import { isDone, madePerSlot, nextExercise, nextType, unsupportedSlots } from '../services/oefenen/scheduler';
 import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
@@ -340,12 +340,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (run.done) { set({ phase: 'locked' }); return; }
             if (timeUp(run, now) || isDone(s, run.stats, now)) { finish(run, now); return; }
             const seen = new Set(run.stats.history.map(h => h.exerciseKey));
+            // Per slot: a descriptor's prepare may take turns by it (gemengd "om de beurt").
+            const madeBy = madePerSlot(s, run.stats.history);
             let pick = nextType(s, run.stats.history);
-            let made = pick && nextExercise(s, pick.type, seen);
+            let made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
             // A type that yields nothing is retired by the scheduler: draw again from the rest (bounded by the slot count).
             for (let tries = 0; pick && !made && tries < s.types.length; tries++) {
                 pick = nextType(s, run.stats.history);
-                made = pick && nextExercise(s, pick.type, seen);
+                made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
             }
             if (!pick || !made) { finish(run, now); return; }
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };

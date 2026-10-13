@@ -193,8 +193,9 @@ export interface KioskDescriptor<E = unknown> {
     supported?(c: Record<string, unknown>): boolean;
     // The kiosk's own constraints for the next exercise, drawn with `rng` (the scheduler's seeded
     // random): what the sheet spreads over a block, one kiosk exercise picks from (geld-wissel:
-    // one of the teacher's bills). The result is what answerOf / display / check receive.
-    prepare?(c: Record<string, unknown>, rng: () => number): Record<string, unknown>;
+    // one of the teacher's bills). `draw.made` = exercises of this slot made so far (gemengd "om de
+    // beurt" serves variant made % n); absent = 0. The result is what answerOf / display / check receive.
+    prepare?(c: Record<string, unknown>, rng: () => number, draw?: { made: number }): Record<string, unknown>;
     // Required when input / inputOf can be 'interactive'; answerOf then returns [interact.answerOf].
     interact?: KioskInteract<E>;
     // A type whose settings answer in different ways on the card (plaatswaarde: tap a letter,
