@@ -608,7 +608,7 @@ describe('klok description says what the kiosk asks (O21)', () => {
 });
 
 describe('OefenBuilderModal endless-session hint (O18)', () => {
-    const ENDLESS = 'Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.';
+    const ENDLESS = 'Zonder limiet en zonder timer stopt de sessie pas als de leerling zelf op Stoppen tikt.';
 
     test('an unlimited row without a timer says when the run stops; a timer or limits on every row clear it', () => {
         render(<OefenBuilderModal onClose={() => { }} />);

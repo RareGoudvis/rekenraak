@@ -269,7 +269,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             );
                         })}
 
-                        {endless && <p style={S.note} role="note">Zonder limiet en zonder timer stopt de sessie pas als de leerling op Resultaten tikt.</p>}
+                        {endless && <p style={S.note} role="note">Zonder limiet en zonder timer stopt de sessie pas als de leerling zelf op Stoppen tikt.</p>}
                     </div>
                 </div>
 

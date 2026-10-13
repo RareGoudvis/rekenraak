@@ -1,6 +1,7 @@
 import { ChartBar, Timer } from '@phosphor-icons/react';
 import { resultsHidden, useOefenStore } from '../useOefenStore';
 import { viablePlannedTotal } from '../../services/oefenen/stats';
+import StopButton from './StopButton';
 
 interface Props {
     now: number;
@@ -11,7 +12,7 @@ function formatClock(ms: number): string {
     return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-// Progress, the countdown and the Stats button above the exercise.
+// Progress, the countdown, Stoppen (endless sessions) and the Stats button above the exercise.
 export default function TopBar({ now }: Props) {
     const sessie = useOefenStore(s => s.sessie);
     const run = useOefenStore(s => s.run);
@@ -41,8 +42,10 @@ export default function TopBar({ now }: Props) {
                         <Timer aria-hidden /> {formatClock(left)}
                     </span>
                 )}
+                {/* On the Resultaten peek Stoppen sits beside Verder oefenen instead. */}
+                {phase !== 'stats' && <StopButton />}
                 {!statsHidden && phase !== 'stats' && (
-                    <button type="button" className="kiosk-btn kiosk-btn-quiet" onClick={openStats}>
+                    <button type="button" className="kiosk-btn kiosk-btn-quiet kiosk-stats-btn" onClick={openStats}>
                         <ChartBar aria-hidden /> Resultaten
                     </button>
                 )}

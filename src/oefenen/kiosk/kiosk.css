@@ -166,6 +166,15 @@ html:has(.oefen-body),
   justify-content: flex-end;
   gap: var(--sp-2);
 }
+/* Stoppen and its two-tap confirm (StopButton): one unit, so the armed pair never splits across a wrap. */
+.kiosk-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.kiosk-stop .kiosk-btn { white-space: nowrap; }
+/* While Stoppen asks "Ja, stoppen?" the top bar holds only that question (a phone in landscape has no room for more). */
+.kiosk-topbar-right:has(.kiosk-stop.is-armed) .kiosk-stats-btn { display: none; }
 .kiosk-timer {
   display: inline-flex;
   align-items: center;
@@ -837,6 +846,12 @@ html:has(.oefen-body),
 }
 .kiosk-run-score { font-weight: 400; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
+.kiosk-stats-head-btns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
 .kiosk-stats-actions {
   display: flex;
   flex-wrap: wrap;

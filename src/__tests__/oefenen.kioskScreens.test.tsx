@@ -5,7 +5,8 @@ import { render, cleanup, screen, fireEvent, act } from '@testing-library/react'
 import OefenApp from '../oefenen/OefenApp';
 import { FLASH_MS, useOefenStore } from '../oefenen/useOefenStore';
 import { fillAnswer, hashOf, resetKiosk, starterSessie, STARTER_TYPES } from './helpers/oefenKiosk';
-import type { OefenType } from '../services/oefenen/types';
+import type { OefenSessie, OefenType } from '../services/oefenen/types';
+import { STOP_DISARM_MS } from '../oefenen/kiosk/StopButton';
 import { emptyStats, saveRun } from '../services/oefenen/stats';
 import { flattenLeaves } from '../config/appstructure';
 import { makeDraftBlock } from '../components/curriculum/draftBlock';
@@ -344,6 +345,87 @@ describe('kiosk screens', () => {
         expect(screen.queryByRole('button', { name: 'Opnieuw' })).toBeNull();
         expect(screen.queryByRole('button', { name: 'Wissen' })).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
+        expect(screen.getByRole('heading', { name: 'Klaar!' })).toBeTruthy();
+    });
+});
+
+describe('Stoppen (endless sessions)', () => {
+    const endless = (over: Partial<OefenSessie> = {}) => starterSessie({ types: STARTER_TYPES.map(t => ({ ...t, limit: undefined })), ...over });
+    const stopBtn = () => screen.queryByRole('button', { name: 'Stoppen' });
+
+    test('only an endless session shows Stoppen: not with limits, not with a timer', () => {
+        for (const s of [starterSessie(), endless({ timerMin: 5 })]) {
+            resetKiosk();
+            st().load(hashOf(s));
+            st().start();
+            const { unmount } = render(<OefenApp />);
+            expect(stopBtn()).toBeNull();
+            unmount();
+        }
+        resetKiosk();
+        st().load(hashOf(endless()));
+        st().start();
+        render(<OefenApp />);
+        expect(stopBtn()).toBeTruthy();
+    });
+
+    test('two taps: Stoppen arms (Ja, stoppen / Annuleer, focus on Annuleer), Ja, stoppen ends on the end screen', () => {
+        st().load(hashOf(endless()));
+        st().start();
+        act(() => { fillAnswer(true); st().answer(); st().next(); });
+        render(<OefenApp />);
+        fireEvent.click(stopBtn()!);
+        expect(st().phase).toBe('exercise');
+        expect(stopBtn()).toBeNull();
+        expect(document.activeElement?.textContent).toBe('Annuleer');
+        fireEvent.click(screen.getByRole('button', { name: 'Ja, stoppen' }));
+        expect(st().phase).toBe('locked');
+        expect(screen.getByRole('heading', { name: 'Klaar!' })).toBeTruthy();
+        expect(screen.getByText('1 van 1 juist')).toBeTruthy();
+        expect(stopBtn()).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Ja, stoppen' })).toBeNull();
+    });
+
+    test('Annuleer and a 3 s wait both disarm, the focus back on Stoppen', () => {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+        st().load(hashOf(endless()));
+        st().start();
+        render(<OefenApp />);
+        fireEvent.click(stopBtn()!);
+        fireEvent.click(screen.getByRole('button', { name: 'Annuleer' }));
+        expect(stopBtn()).toBeTruthy();
+        expect(document.activeElement).toBe(stopBtn());
+
+        fireEvent.click(stopBtn()!);
+        act(() => { vi.advanceTimersByTime(STOP_DISARM_MS - 1); });
+        expect(screen.getByRole('button', { name: 'Ja, stoppen' })).toBeTruthy();
+        act(() => { vi.advanceTimersByTime(1); });
+        expect(screen.queryByRole('button', { name: 'Ja, stoppen' })).toBeNull();
+        expect(stopBtn()).toBeTruthy();
+        expect(st().phase).toBe('exercise');
+    });
+
+    test('present under testmodus and statsLocked, where Resultaten is hidden', () => {
+        st().load(hashOf(endless({ testMode: true, statsLocked: true })));
+        st().start();
+        render(<OefenApp />);
+        expect(screen.queryByRole('button', { name: /Resultaten/ })).toBeNull();
+        fireEvent.click(stopBtn()!);
+        fireEvent.click(screen.getByRole('button', { name: 'Ja, stoppen' }));
+        expect(st().phase).toBe('locked');
+    });
+
+    test('the Resultaten peek offers Stoppen beside Verder oefenen (once: not in the top bar too)', () => {
+        st().load(hashOf(endless()));
+        st().start();
+        render(<OefenApp />);
+        fireEvent.click(screen.getByRole('button', { name: /Resultaten/ }));
+        expect(screen.getByRole('button', { name: 'Verder oefenen' })).toBeTruthy();
+        expect(screen.getAllByRole('button', { name: 'Stoppen' })).toHaveLength(1);
+        expect(stopBtn()!.closest('.kiosk-stats-head')).not.toBeNull();
+        fireEvent.click(stopBtn()!);
+        fireEvent.click(screen.getByRole('button', { name: 'Ja, stoppen' }));
+        expect(st().phase).toBe('locked');
         expect(screen.getByRole('heading', { name: 'Klaar!' })).toBeTruthy();
     });
 });
