@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Trash, ArrowCounterClockwise, Eye, EyeSlash, GearSix, CopySimple } from '@phosphor-icons/react';
 import { useBoardStore } from '../useBoardStore';
-import { cardFitZoom, naturalWidth, widgetTitle, KINDS_WITH_SETTINGS } from '../widgetSizing';
+import { cardFitZoom, capWidenedWidth, naturalWidth, widgetTitle, KINDS_WITH_SETTINGS } from '../widgetSizing';
 import { cardLayoutWidth, cardNaturalWidth, cardTextScale, widgetAccent } from '../settings/baseProps';
 import type { BoardWidget } from '../boardTypes';
 
@@ -30,6 +30,19 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     const gridSnap = useBoardStore((s) => s.gridSnap);
     const gridSize = useBoardStore((s) => s.gridSize);
     const tool = useBoardStore((s) => s.tool);
+
+    const frameRef = useRef<HTMLDivElement>(null);
+    // Width of the widget layer (the board); 0 until measured (jsdom stays 0 = no cap).
+    const [boardW, setBoardW] = useState(0);
+    useLayoutEffect(() => {
+        const layer = frameRef.current?.parentElement;
+        if (!layer) return;
+        const read = () => setBoardW(layer.clientWidth);
+        read();
+        const ro = new ResizeObserver(read);
+        ro.observe(layer);
+        return () => ro.disconnect();
+    }, []);
 
     const [editingTitle, setEditingTitle] = useState(false);
     // Headerless cards reveal their controls on hover or keyboard focus (selection covers touch).
@@ -74,7 +87,8 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
     // drawn `widenFactor` wider at the SAME zoom, instead of zooming its content down.
     const naturalW = cardNaturalWidth(widget);
     const widenFactor = naturalW / naturalWidth(widget.kind);
-    const outerW = widget.w * widenFactor;
+    // A widened card never runs past the board's right edge: it shrinks (uniform zoom) to the room left.
+    const outerW = capWidenedWidth(widget.w * widenFactor, widenFactor > 1, widget.x, boardW);
     const innerW = outerW - 2;   // 1px card border each side
     const frameZoom = innerW / naturalW;
     // Extra content zoom: exercise tekstgrootte × the baseline font size (kinds that scale their
@@ -147,6 +161,7 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
 
     return (
         <div
+            ref={frameRef}
             data-widget-frame
             style={{
                 position: 'absolute', left: widget.x, top: widget.y, width: outerW, zIndex: widget.z,

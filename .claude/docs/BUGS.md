@@ -64,6 +64,5 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Bordmodus
 
-- Honderdveld 20 kolommen + XL widens its card to ~909 px; on a 900 px board it is placed at x = 140 and runs past the right edge (the `data-widget-fit` zoom never kicks in because the card widens instead). Clamp the placement or zoom when the card is wider than the board. 2026-10-13 review agent.
 
 
