@@ -1087,7 +1087,9 @@ export const TIJDSDUUR_KIOSK = descriptor<TijdsduurExercise>({
     },
     display: (ex) => {
         const cell = (k: 'begin' | 'einde' | 'duur', v: string) => (ex.blank === k ? '?' : v);
-        return `begin ${cell('begin', clock24(ex.startMin))} · einde ${cell('einde', clock24(ex.endMin))} · duur ${cell('duur', `${ex.endMin - ex.startMin} min`)}`;
+        // clock24 wraps past midnight; a given einde must still say it is the next day (as the sheet does).
+        const nextDay = ex.endMin >= 1440 ? ' (volgende dag)' : '';
+        return `begin ${cell('begin', clock24(ex.startMin))} · einde ${cell('einde', clock24(ex.endMin) + (ex.blank === 'einde' ? '' : nextDay))} · duur ${cell('duur', `${ex.endMin - ex.startMin} min`)}`;
     },
 });
 

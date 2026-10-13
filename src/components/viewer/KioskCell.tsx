@@ -20,7 +20,9 @@ export default function KioskCell({ cellKey, children, style, variant, label }: 
     useEffect(() => {
         if (!active || !ref.current) return;
         if (document.activeElement !== ref.current) ref.current.focus({ preventScroll: true });
-        // A grid taller than the card scrolls: bring the cell the keypad moved to into view.
+        // Only a card that really scrolls needs the cell brought into view; on a fitted card it would
+        // scroll the overflow:hidden sizer against a stale fit and crop the exercise.
+        if (!ref.current.closest('[data-kiosk-scroll]')) return;
         ref.current.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     }, [active]);
     if (!ctx || ctx.kind !== 'fill-cells') return <>{children}</>;
