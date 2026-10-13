@@ -8,7 +8,7 @@ import { flattenLeaves } from '../config/appstructure';
 import { buildSessie, listOefenLeaves, rowLabelOf, type BuilderRow } from '../components/oefenen/oefenBuild';
 import { qrMatrixOrNull, qrVersionOf } from '../services/qr';
 import {
-    MAX_SESSIE_BYTES, MAX_SESSIE_JSON, MAX_TITLE, MAX_TYPES, decodeSessie, encodeSessie, newSessieId, packText, packWire, parseSessie, sessieLink, toWire,
+    MAX_SESSIE_BYTES, MAX_SESSIE_JSON, MAX_TITLE, MAX_TYPES, decodeSessie, encodeSessie, newSessieId, packText, packWire, parseSessie, sessieContentHash, sessieLink, toWire,
 } from '../services/oefenen/session';
 
 const ORIGIN = 'https://www.rekenraak.be';
@@ -384,5 +384,61 @@ describe('exactForm (row slot 8, appended)', () => {
         s.types = s.types.map((t, i) => ({ ...t, exactForm: i % 2 === 0 }));
         expect(qrVersion(s)).toBeLessThanOrEqual(20);
         expect(roundTrip(s)).toEqual(json(s));
+    });
+});
+
+describe('sessieContentHash (pupil runs per content, builder id per content)', () => {
+    const base = () => sessieOf(3, 2);
+    const h = sessieContentHash;
+    // Rebuilt with every object's keys in reverse order: the same content.
+    const reversed = (v: unknown): unknown => (Array.isArray(v) ? v.map(reversed)
+        : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).reverse().map(([k, x]) => [k, reversed(x)])) : v);
+
+    test('8 lowercase hex characters, the same for the same content', () => {
+        expect(h(base())).toMatch(/^[0-9a-f]{8}$/);
+        expect(h(base())).toBe(h(base()));
+    });
+
+    test('stable under key order, id, title, createdAt, and a link round trip', () => {
+        const s = base();
+        expect(h(reversed(s) as OefenSessie)).toBe(h(s));
+        expect(h({ ...s, id: 'anderid', title: 'Andere titel', createdAt: 12 })).toBe(h(s));
+        const extras = sessieOf(3, 2, true);
+        expect(h(roundTrip(extras))).toBe(h(extras));
+        expect(h(roundTrip(s))).toBe(h(s));
+    });
+
+    test('attempts as the kiosk reads them: 1 = absent, and testmodus forces 1', () => {
+        const s = base();
+        expect(h({ ...s, attempts: 1 })).toBe(h(s));
+        expect(h({ ...s, testMode: true, attempts: 2 })).toBe(h({ ...s, testMode: true }));
+    });
+
+    test('differs on any constraint, limit, weight, label, exactForm, type, attempts, mode, timer, flag or total', () => {
+        const s = base();
+        const row = (i: number, patch: Partial<OefenSessie['types'][number]>) => ({ ...s, types: s.types.map((t, j) => (j === i ? { ...t, ...patch } : t)) });
+        const firstKey = Object.keys(s.types[0].constraints)[0];
+        const variants: [string, OefenSessie][] = [
+            ['constraint', row(0, { constraints: { ...s.types[0].constraints, [firstKey]: 'iets anders' } })],
+            ['extra constraint', row(1, { constraints: { ...s.types[1].constraints, nieuw: 1 } })],
+            ['limit', row(2, { limit: 5 })],
+            ['weight', row(0, { weight: s.types[0].weight + 1 })],
+            ['label', row(0, { label: 'Ander label' })],
+            ['exactForm', row(0, { exactForm: true })],
+            ['order of the types', { ...s, types: [...s.types].reverse() }],
+            ['one type fewer', { ...s, types: s.types.slice(1) }],
+            ['attempts', { ...s, attempts: 2 }],
+            ['mode', { ...s, mode: 'willekeurig' }],
+            ['allowRepeatType', { ...s, allowRepeatType: true }],
+            ['timer', { ...s, timerMin: 10 }],
+            ['testMode', { ...s, testMode: true }],
+            ['statsLocked', { ...s, statsLocked: true }],
+            ['total', { ...s, total: 30 }],
+        ];
+        const seen = new Map([[h(s), 'base']]);
+        for (const [what, v] of variants) {
+            expect(seen.get(h(v)), what).toBeUndefined();
+            seen.set(h(v), what);
+        }
     });
 });

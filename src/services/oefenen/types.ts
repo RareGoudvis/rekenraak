@@ -271,6 +271,9 @@ export interface OefenRun {
     timerEndsAt?: number;
     current?: OefenCurrent;
     done: boolean;
+    // sessieContentHash of the session the run was made for: a reused id with other content never
+    // resumes or lists it (loadRunsFor). Absent = a run from before the hash, always shown.
+    hash?: string;
 }
 
 // summary(): one row per slot for the stats screen.

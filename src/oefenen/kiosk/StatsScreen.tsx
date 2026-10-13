@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useOefenStore } from '../useOefenStore';
 import StorageBanner from './StorageBanner';
 import StopButton from './StopButton';
-import { loadRuns, summary, viablePlannedTotal } from '../../services/oefenen/stats';
+import { loadRunsFor, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { retiredSlots } from '../../services/oefenen/scheduler';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
 
@@ -100,7 +100,7 @@ export default function StatsScreen() {
 
     const locked = phase === 'locked';
     // Earlier runs of this session on this device, newest first (the current one is the screen itself).
-    const earlier = locked ? loadRuns(sessie.id).filter(r => r.index !== run.index).reverse() : [];
+    const earlier = locked ? loadRunsFor(sessie).filter(r => r.index !== run.index).reverse() : [];
     const planned = viablePlannedTotal(sessie);
 
     if (viewing) {

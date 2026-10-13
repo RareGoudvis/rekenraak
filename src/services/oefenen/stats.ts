@@ -2,6 +2,7 @@ import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor, type OefenRun, ty
 import { kioskFor, kioskInputOf, kioskInteractOf } from './kiosk';
 import { exerciseKeyOf } from '../generateDispatch';
 import { plannedTotal, retiredSlots } from './scheduler';
+import { sessieContentHash } from './session';
 
 // The pupil's results: accumulated per slot during a run, kept in this device's localStorage
 // per session id (never the worksheet autosave), last MAX_RUNS runs.
@@ -121,7 +122,16 @@ export function loadRuns(sessionId: string): OefenRun[] {
     } catch { return []; }
 }
 
-/** Index for a fresh run ("Opnieuw"). */
+// A run made for other content under the same id (an older link) stays stored, only out of sight.
+const madeFor = (s: OefenSessie) => {
+    const hash = sessieContentHash(s);
+    return (r: OefenRun) => r.hash === undefined || r.hash === hash;
+};
+
+/** This device's runs for the session's content, oldest first: what resume and Vorige keren read. */
+export const loadRunsFor = (s: OefenSessie): OefenRun[] => loadRuns(s.id).filter(madeFor(s));
+
+/** Index for a fresh run ("Opnieuw"); reads every stored run, so a new run never overwrites a hidden one. */
 export const nextRunIndex = (runs: readonly OefenRun[]) => runs.reduce((m, r) => Math.max(m, r.index + 1), 0);
 
 /** Stores the run (replacing the one with its index), keeping the last MAX_RUNS. False when storage refused it. */
@@ -142,4 +152,12 @@ export function saveRun(sessionId: string, run: OefenRun): boolean {
 
 export function clearRuns(sessionId: string): void {
     try { localStorage.removeItem(oefenStorageKey(sessionId)); } catch { /* storage blocked: nothing to clear */ }
+}
+
+/** Wissen: this content's runs go; a hidden run of other content under the same id stays. */
+export function clearRunsFor(s: OefenSessie): void {
+    const mine = madeFor(s);
+    const keep = loadRuns(s.id).filter(r => !mine(r));
+    if (keep.length === 0) { clearRuns(s.id); return; }
+    try { localStorage.setItem(oefenStorageKey(s.id), JSON.stringify({ v: 1, runs: keep } satisfies StoredRuns)); } catch { /* storage blocked: nothing to clear */ }
 }

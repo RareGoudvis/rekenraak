@@ -10,7 +10,7 @@ import ModalShell from '../ui/ModalShell';
 import Switch from '../ui/Switch';
 import OefenShareModal from './OefenShareModal';
 import OefenCatalogue from './OefenCatalogue';
-import { MAX_TITLE, MAX_TYPES, newSessieId } from '../../services/oefenen/session';
+import { MAX_TITLE, MAX_TYPES, newSessieId, sessieContentHash } from '../../services/oefenen/session';
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
@@ -20,7 +20,7 @@ import {
 
 interface Props {
     onClose: () => void;
-    // Reopen a saved session for editing ("Opslaan" replaces it; a content edit gets a new id).
+    // Reopen a saved session for editing ("Opslaan" replaces it; a content edit gets a new id, a revert the old one).
     initial?: OefenSessie;
 }
 
@@ -51,8 +51,9 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
     const nextKey = useRef(rows.length);
     // Whole minutes: the share link then carries createdAt as a 8-digit minute count.
     const [meta] = useState(() => ({ id: initial?.id ?? newSessieId(), createdAt: initial?.createdAt ?? Math.floor(Date.now() / 60_000) * 60_000 }));
-    // The id an edited session ships under once its content differs from `initial`.
-    const [editedId] = useState(newSessieId);
+    // One id per content for the modal's lifetime: pupils' runs are stored per id with per-slot stats, so
+    // other content must never ship under an id already handed out; reverting an edit finds its id again.
+    const [idsByContent] = useState(() => new Map<string, string>(initial ? [[sessieContentHash(initial), initial.id]] : []));
 
     // Seed drafts for a reopened session; always tear them down on close (they are off-sheet).
     useEffect(() => {
@@ -88,9 +89,15 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         return constraints ? [{ ...r, constraints }] : [];
     });
     const { sessie: built, excluded } = buildSessie(buildable, { ...meta, title, mode, allowRepeatType, timerMin, testMode, statsLocked, attempts });
-    // Pupils' runs are stored per session id with per-slot stats, so changed content must not reopen
-    // (or mislabel) old runs: a content edit is a new session, a rename keeps the id.
-    const sessie = initial && !sameContent(built, initial) ? { ...built, id: editedId } : built;
+    // A content edit is a new session, a rename keeps the id (the title is not part of the content).
+    const contentKey = sessieContentHash(built);
+    let id = idsByContent.get(contentKey);
+    if (id === undefined) {
+        // A fresh composer's first content takes the id it opened with.
+        id = idsByContent.size === 0 ? meta.id : newSessieId();
+        idsByContent.set(contentKey, id);
+    }
+    const sessie = { ...built, id };
     const percents = normaliseWeights(sessie.types.map(t => t.weight));
     const percentOf = (key: string): number | null => {
         const i = buildable.filter(r => kioskSupports(r.leaf.typeId, r.constraints)).findIndex(r => r.key === key);
@@ -110,8 +117,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         if (!title.trim()) setTitle(titled.title ?? '');
         const entry = saveOefenSessie(titled, name);
         if (!entry) { window.alert('Opslaan mislukt: de opslag van je browser is vol.'); return; }
-        // One library row per edited session: drop the version saved under the other id of this edit.
-        if (initial) for (const id of [initial.id, editedId]) if (id !== titled.id) deleteOefenSessie(id);
+        // One library row per session in this modal: drop versions saved under its other contents' ids.
+        for (const other of new Set(idsByContent.values())) if (other !== titled.id) deleteOefenSessie(other);
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };
@@ -300,17 +307,6 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
             {shareOf && <OefenShareModal sessie={shareOf} onClose={() => setShareOf(null)} />}
         </>
     );
-}
-
-// Key-order-independent JSON, so two equal sessions compare equal however they were built.
-const stable = (v: unknown): string => JSON.stringify(v, (_, x: unknown) => (x && typeof x === 'object' && !Array.isArray(x)
-    ? Object.fromEntries(Object.entries(x as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)))
-    : x));
-
-// Everything but the name: id, title and createdAt do not change what a pupil practises.
-function sameContent(a: OefenSessie, b: OefenSessie): boolean {
-    const strip = ({ id: _id, title: _title, createdAt: _createdAt, ...rest }: OefenSessie) => rest;
-    return stable(strip(a)) === stable(strip(b));
 }
 
 function SwitchRow({ label, checked, onChange, disabled, note }: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; note?: string }) {

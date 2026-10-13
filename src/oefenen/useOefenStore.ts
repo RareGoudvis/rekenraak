@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { attemptsOf, type KioskAnswer, type KioskExtraKey, type KioskInput, type KioskPiece, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
-import { decodeSessie } from '../services/oefenen/session';
+import { decodeSessie, sessieContentHash } from '../services/oefenen/session';
 import { isDone, madePerSlot, nextExercise, nextType, plannedTotal, unsupportedSlots } from '../services/oefenen/scheduler';
-import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
+import { clearRunsFor, emptyStats, loadRuns, loadRunsFor, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
@@ -277,7 +277,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
     const newRun = (s: OefenSessie, now: number): OefenRun => {
         return {
-            index: nextRunIndex(loadRuns(s.id)), done: false,
+            index: nextRunIndex(loadRuns(s.id)), done: false, hash: sessieContentHash(s),
             stats: emptyStats(s, now),
             ...(s.timerMin ? { timerEndsAt: now + s.timerMin * 60_000 } : {}),
         };
@@ -312,7 +312,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // Nothing left to serve: the stored runs stay as they are, only the screen changes.
             if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
             set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
-            const runs = loadRuns(s.id);
+            // Only runs made for this content: an id shipped earlier with other content never resumes (or mislabels) them.
+            const runs = loadRunsFor(s);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
             if (!last) return;
             // A finished run reopens on its end screen: reloading must not hide the stats.
@@ -468,7 +469,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const s = get().sessie;
             if (!s || get().phase !== 'locked') return;
             clearFlash();
-            clearRuns(s.id);
+            clearRunsFor(s);
             set({ run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null });
         },
 
