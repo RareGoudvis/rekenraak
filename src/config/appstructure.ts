@@ -418,7 +418,7 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'hr-std-aftrekken-rat', label: 'Aftrekken', typeId: 'hr-std-aftrekken', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 4, instruction: 'Reken uit.' },
                     { id: 'hr-std-vermenigvuldigen-rat', label: 'Vermenigvuldigen', typeId: 'hr-std-vermenigvuldigen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 5, instruction: 'Reken uit.' },
                     { id: 'hr-std-delen-rat', label: 'Delen', typeId: 'hr-std-delen', defaultConstraints: { numberType: 'rational' }, minLeerjaar: 5, instruction: 'Reken uit.' },
-                    { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' }, instruction: (c) => c.direction === 'naar-breuk' ? 'Schrijf als breuk.' : 'Schrijf als gemengd getal.' },
+                    { id: 'breuken-gemengd', label: 'Gemengd getal ↔ breuk', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gemengd', direction: 'naar-gemengd' }, instruction: (c) => c.direction === 'naar-breuk' ? 'Schrijf als breuk.' : c.direction === 'beide' ? 'Schrijf als gemengd getal of als breuk.' : 'Schrijf als gemengd getal.' },
                     { id: 'breuken-gelijknamig', label: 'Gelijknamig maken', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'gelijknamig' }, instruction: 'Maak gelijknamig.' },
                     { id: 'breuken-vereenvoudigen', label: 'Vereenvoudigen', typeId: 'breuken-bewerken', defaultConstraints: { subType: 'vereenvoudigen' }, instruction: 'Vereenvoudig.' },
                 ],

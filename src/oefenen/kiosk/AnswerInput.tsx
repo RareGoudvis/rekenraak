@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
 import { currentInput, interactionAnswer, typedReady, useOefenStore } from '../useOefenStore';
 import Keypad from './Keypad';
 import Tray from './Tray';
@@ -10,6 +10,18 @@ const SEPARATOR: Record<string, string> = { 'number+rest': 'r', time: ':' };
 function choiceSizeOf(choices: readonly string[]): '' | ' is-numbers' | ' is-words' {
     if (choices.every(c => c.length <= 2)) return '';
     return choices.some(c => /\p{L}/u.test(c)) ? ' is-words' : ' is-numbers';
+}
+
+// A long answer (a breuk takes 24 characters) shrinks to fit its field, at most to half size,
+// and shows its end: a keypad tap sets the value without moving the field's own scroll.
+function fitField(el: HTMLInputElement | null) {
+    if (!el) return;
+    el.style.fontSize = '';
+    if (el.scrollWidth > el.clientWidth) {
+        const base = parseFloat(getComputedStyle(el).fontSize);
+        el.style.fontSize = `${Math.max(base / 2, Math.floor(base * el.clientWidth / el.scrollWidth))}px`;
+    }
+    el.scrollLeft = el.scrollWidth;
 }
 
 // The answer side of the kiosk: typed field(s) + keypad, the choice buttons, or a word field.
@@ -29,6 +41,10 @@ export default function AnswerInput() {
     useEffect(() => {
         if (phase === 'exercise') refs.current[field]?.focus({ preventScroll: true });
     }, [shown, field, phase]);
+
+    useLayoutEffect(() => {
+        refs.current.forEach(fitField);
+    }, [input, shown]);
 
     if (!info) return null;
 

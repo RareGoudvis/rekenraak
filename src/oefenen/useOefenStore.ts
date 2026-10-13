@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { attemptsOf, type KioskAnswer, type KioskExtraKey, type KioskInput, type KioskPiece, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
 import { decodeSessie } from '../services/oefenen/session';
-import { isDone, nextExercise, nextType, unsupportedSlots } from '../services/oefenen/scheduler';
+import { isDone, madePerSlot, nextExercise, nextType, unsupportedSlots } from '../services/oefenen/scheduler';
 import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
@@ -26,11 +26,17 @@ export type KioskCurrent = OefenCurrent & { constraints: Record<string, unknown>
 // An old link whose every type this device can no longer check: re-sharing it would not help, a new one does.
 export const UNSUPPORTED_ONLY = 'Deze oefeningen kunnen niet op het toestel. Vraag je leerkracht om een nieuwe link.';
 
-// Typed answers stay short: no answer the starter types ask for is longer, and a longer
-// string would overflow the answer field on a phone.
+// A number field holds 12 characters: the longest typed number at the pickers' tops (1e9 sums,
+// 3 decimals) fits, and a longer string would overflow the answer field on a phone.
 const MAX_CHARS = 12;
-// The longest word answer is 'hoeveelheidsgetal' (17); the text field is a full row wide.
-const MAX_WORD_CHARS = 24;
+// A breuk ('20000/20000000000', '3 999/1000') and a word ('hoeveelheidsgetal', 17) need more room.
+const MAX_LONG_CHARS = 24;
+
+/** The most characters a field may hold, from its kind and the keypad's keys (never the exercise: that would hint at the answer). */
+export function capOf(kind: KioskInput, keys: readonly string[]): number {
+    if (kind === 'time') return 2;
+    return kind === 'text' || keys.includes('/') ? MAX_LONG_CHARS : MAX_CHARS;
+}
 
 interface OefenState {
     sessie: OefenSessie | null;
@@ -176,16 +182,21 @@ const flowAfter = (plan: CellPlan, key: string | null): string | null => {
 
 const fieldsFor = (info: CurrentInput | null) => (info?.kind === 'choice' ? [''] : (info?.labels ?? ['']).map(() => ''));
 
-// Keeps what the field may hold: digits plus this type's extra keys; '.' types as ','.
-// A text field takes letters, digits, spaces and ° (°C, m²); a time field two digits.
-export function sanitizeAnswer(raw: string, keys: readonly string[], kind: KioskInput = 'number'): string {
-    if (kind === 'text') return raw.replace(/[^\p{L}\p{N}\s°]/gu, '').slice(0, MAX_WORD_CHARS);
+// The characters the field takes, uncapped: digits plus this type's extra keys; '.' types as ','.
+// A text field takes letters, digits, spaces and ° (°C, m²); a time field digits only.
+function filterAnswer(raw: string, keys: readonly string[], kind: KioskInput): string {
+    if (kind === 'text') return raw.replace(/[^\p{L}\p{N}\s°]/gu, '');
     let out = '';
     for (const ch0 of raw) {
         const ch = ch0 === '.' && keys.includes(',') ? ',' : ch0;
         if ((ch >= '0' && ch <= '9') || (kind !== 'time' && keys.includes(ch))) out += ch;
     }
-    return out.slice(0, kind === 'time' ? 2 : MAX_CHARS);
+    return out;
+}
+
+/** Keeps what the field may hold: the characters it takes, up to `capOf` (a paste is clamped). */
+export function sanitizeAnswer(raw: string, keys: readonly string[], kind: KioskInput = 'number'): string {
+    return filterAnswer(raw, keys, kind).slice(0, capOf(kind, keys));
 }
 
 export const useOefenStore = create<OefenState>()((set, get) => {
@@ -329,12 +340,14 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (run.done) { set({ phase: 'locked' }); return; }
             if (timeUp(run, now) || isDone(s, run.stats, now)) { finish(run, now); return; }
             const seen = new Set(run.stats.history.map(h => h.exerciseKey));
+            // Per slot: a descriptor's prepare may take turns by it (gemengd "om de beurt").
+            const madeBy = madePerSlot(s, run.stats.history);
             let pick = nextType(s, run.stats.history);
-            let made = pick && nextExercise(s, pick.type, seen);
+            let made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
             // A type that yields nothing is retired by the scheduler: draw again from the rest (bounded by the slot count).
             for (let tries = 0; pick && !made && tries < s.types.length; tries++) {
                 pick = nextType(s, run.stats.history);
-                made = pick && nextExercise(s, pick.type, seen);
+                made = pick && nextExercise(s, pick.type, seen, undefined, madeBy[pick.slot]);
             }
             if (!pick || !made) { finish(run, now); return; }
             const current: KioskCurrent = { slot: pick.slot, exercise: made.exercise, exerciseKey: made.key, shownAt: now, constraints: made.constraints };
@@ -356,6 +369,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             }
             if (info.kind === 'interactive') { pressCell(key); return; }
             const value = input[field] ?? '';
+            // A full field refuses the key instead of cutting the answer short.
+            if (key !== 'back' && filterAnswer(value + key, info.keys, info.kind).length > capOf(info.kind, info.keys)) return;
             const nextValue = key === 'back' ? value.slice(0, -1) : sanitizeAnswer(value + key, info.keys, info.kind);
             // Two digits of uur typed: the keypad moves on to the minutes, like a digital clock.
             const advance = info.kind === 'time' && key !== 'back' && field === 0 && nextValue.length === 2;

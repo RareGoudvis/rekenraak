@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import type { OefenSessie, OefenType } from '../services/oefenen/types';
 import type { BlockConstraints } from '../services/math/constraintTypes';
-import type { FractionExercise } from '../services/math/types';
+import type { BreukBewerkExercise, FractionExercise } from '../services/math/types';
 import { seedConstraints } from '../config/baseSettings';
 import { resolveInstruction } from '../config/instructionPresets';
 import { kioskCapableLeaves, kioskInstructionOf } from '../services/oefenen/kiosk';
@@ -67,6 +67,24 @@ describe('kiosk instruction wording', () => {
         const lezen = ALL.filter(h => h.leafId === 'klok-analoog-lezen');
         expect(lezen.length).toBeGreaterThan(0);
         for (const h of lezen) expect(h.shown, `L${h.grade}`).toBe('Lees de klok en typ de tijd (uu:mm).');
+    });
+
+    // 'beide' mixes both ways in one block: the paper says "gemengd getal of als breuk", each card names its own way.
+    test('gemengd getal ↔ breuk under beide: the header follows the exercise on the card', () => {
+        const leaf = kioskCapableLeaves().find(l => l.id === 'breuken-gemengd')!;
+        const type: OefenType = { typeId: leaf.typeId, leafId: leaf.id, label: leaf.label, constraints: { ...leaf.defaultConstraints, direction: 'beide' }, weight: 1 };
+        const sessie: OefenSessie = { v: 1, id: 't', createdAt: 0, types: [type], mode: 'afwisselen', allowRepeatType: true, testMode: false, statsLocked: false };
+        const ways = new Set<string>();
+        for (let seed = 1; seed <= 8; seed++) {
+            const got = nextExercise(sessie, type, new Set(), mulberry32(seed))!;
+            const ex = got.exercise as BreukBewerkExercise;
+            const paper = resolveInstruction(leaf.instruction, leaf.typeId, leaf.label, got.constraints as BlockConstraints);
+            expect(paper).toBe('Schrijf als gemengd getal of als breuk.');
+            expect(kioskInstructionOf(leaf.typeId, ex, got.constraints, paper), `seed ${seed}`)
+                .toBe(ex.direction === 'naar-breuk' ? 'Typ als breuk.' : 'Typ als gemengd getal.');
+            ways.add(ex.direction!);
+        }
+        expect([...ways].sort()).toEqual(['naar-breuk', 'naar-gemengd']);
     });
 
     test('breuken kleuren names only the fraction, never how many parts to tap (O22)', () => {

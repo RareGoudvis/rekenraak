@@ -24,6 +24,7 @@ import { klokDragHands, klokGiven, klokText } from '../clock/clockDrag';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
 import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
+import { MIXED_VARIANTS } from '../math/constraintTypes';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -115,11 +116,20 @@ const hrKeys = (c: Record<string, unknown>): KioskKey[] => {
     return [];
 };
 
+const MIXED_IDS: ReadonlySet<string> = new Set(MIXED_VARIANTS.map(v => v.id));
+
 export const HR_KIOSK = descriptor<Equation>({
     input: 'number',
     inputOf: hrInput,
     keys: hrKeys,
     exactFormDefault: valueWhenRational,
+    // Gemengd "om de beurt": the sheet gives exercise i variant i % n, but a one-exercise kiosk
+    // block would always get the first; the slot's own count picks the turn instead.
+    prepare: (c, _rng, draw) => {
+        if (c.mix !== 'cycle' || !Array.isArray(c.variants)) return c;
+        const variants = (c.variants as string[]).filter(v => MIXED_IDS.has(v));
+        return variants.length > 1 ? { ...c, variants: [variants[(draw?.made ?? 0) % variants.length]] } : c;
+    },
     answerOf: (eq) => {
         if (hasRest(eq)) return [plain(eq.answer as number), String(eq.remainder ?? 0)];
         const idx = missingIndexOf(eq);
@@ -954,6 +964,8 @@ export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
     inputOf: (ex) => (ex.subType === 'gelijknamig' ? 'multi-number' : 'number'),
     keys: (c) => (c.subType === 'gemengd' ? ['/', ' '] : ['/']),
     exactFormDefault: () => true,
+    // 'beide' mixes both ways in one block; the card shows one exercise, so its header names that one's way.
+    kioskInstruction: (ex) => (ex.subType !== 'gemengd' ? undefined : ex.direction === 'naar-breuk' ? 'Typ als breuk.' : 'Typ als gemengd getal.'),
     labels: () => ['1ste breuk', '2de breuk'],
     answerOf: (ex) => (ex.subType === 'gelijknamig'
         ? ex.answers.map(a => bewerkSpellings(ex, a).join('|'))
