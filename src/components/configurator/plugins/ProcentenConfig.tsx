@@ -31,7 +31,7 @@ export default function ProcentenConfig({ block }: Props) {
                 <SettingLabel text="Percenten:" info="Welke percenten in de oefeningen voorkomen." />
                 <div style={styles.buttonGroup}>
                     {PERCENTS.map(p => (
-                        <button key={p} onClick={() => togglePercent(p)} style={styles.pill(percents.includes(p))}>{p} %</button>
+                        <button key={p} onClick={() => togglePercent(p)} aria-pressed={percents.includes(p)} style={styles.pill(percents.includes(p))}>{p} %</button>
                     ))}
                 </div>
             </div>
@@ -50,7 +50,7 @@ export default function ProcentenConfig({ block }: Props) {
             {subType === 'nemen' && (
                 <div style={styles.onOffRow}>
                     <SettingLabel text="Tussenstap 10 % / 1 %" info="Toont een hulplijn die eerst 10 % (of 1 %) laat berekenen." />
-                    <button onClick={() => set('scaffold', !scaffold)} style={styles.onOffBtn(scaffold)}>{scaffold ? 'Aan' : 'Uit'}</button>
+                    <button onClick={() => set('scaffold', !scaffold)} aria-pressed={!!scaffold} style={styles.onOffBtn(scaffold)}>{scaffold ? 'Aan' : 'Uit'}</button>
                 </div>
             )}
         </div>

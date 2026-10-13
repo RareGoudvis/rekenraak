@@ -36,7 +36,7 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
                 <SettingLabel text="Soort breuken:" info="Welk type breuken er gerangschikt wordt." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {MODES.map(m => (
-                        <button key={m.key} onClick={() => set('fractionMode', m.key)} style={styles.radioBtn(fractionMode === m.key)}>{m.label}</button>
+                        <button key={m.key} onClick={() => set('fractionMode', m.key)} aria-pressed={fractionMode === m.key} style={styles.radioBtn(fractionMode === m.key)}>{m.label}</button>
                     ))}
                 </div>
             </div>
@@ -44,9 +44,9 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Volgorde:" info="Rangschikken van klein naar groot, omgekeerd, of beide." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('operatorMode', 'oplopend')} style={styles.radioBtn(operatorMode === 'oplopend')}>Oplopend (&lt;)</button>
-                    <button onClick={() => set('operatorMode', 'aflopend')} style={styles.radioBtn(operatorMode === 'aflopend')}>Aflopend (&gt;)</button>
-                    <button onClick={() => set('operatorMode', 'beide')} style={styles.radioBtn(operatorMode === 'beide')}>Beide</button>
+                    <button onClick={() => set('operatorMode', 'oplopend')} aria-pressed={operatorMode === 'oplopend'} style={styles.radioBtn(operatorMode === 'oplopend')}>Oplopend (&lt;)</button>
+                    <button onClick={() => set('operatorMode', 'aflopend')} aria-pressed={operatorMode === 'aflopend'} style={styles.radioBtn(operatorMode === 'aflopend')}>Aflopend (&gt;)</button>
+                    <button onClick={() => set('operatorMode', 'beide')} aria-pressed={operatorMode === 'beide'} style={styles.radioBtn(operatorMode === 'beide')}>Beide</button>
                 </div>
             </div>
 

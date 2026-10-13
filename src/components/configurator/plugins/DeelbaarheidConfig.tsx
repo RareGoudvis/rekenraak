@@ -42,7 +42,7 @@ export default function DeelbaarheidConfig({ block }: Props) {
                         <SettingLabel text="Deelbaar door:" info="Welke delers in de oefening gecontroleerd worden." />
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                             {DIVISOR_OPTIONS.map(d => (
-                                <button key={d} onClick={() => toggleDivisor(d)} style={styles.radioBtn(divisors.includes(d))}>{d}</button>
+                                <button key={d} onClick={() => toggleDivisor(d)} aria-pressed={divisors.includes(d)} style={styles.radioBtn(divisors.includes(d))}>{d}</button>
                             ))}
                         </div>
                     </div>

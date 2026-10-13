@@ -28,10 +28,10 @@ export default function DivisionConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Type oefening:" info="Gewone som (a : b = …) of puntoefening (a : … = c)." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => updateConstraint('equationType', 'normal')} style={styles.radioBtn(equationType === 'normal' || !equationType)}>
+                    <button onClick={() => updateConstraint('equationType', 'normal')} aria-pressed={equationType === 'normal' || !equationType} style={styles.radioBtn(equationType === 'normal' || !equationType)}>
                         Gewone  (a : b = …)
                     </button>
-                    <button onClick={() => updateConstraint('equationType', 'puntoefening')} style={styles.radioBtn(equationType === 'puntoefening')}>
+                    <button onClick={() => updateConstraint('equationType', 'puntoefening')} aria-pressed={equationType === 'puntoefening'} style={styles.radioBtn(equationType === 'puntoefening')}>
                         Punt  (a : · = c)
                     </button>
                 </div>

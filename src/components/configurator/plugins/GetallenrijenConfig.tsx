@@ -70,9 +70,9 @@ export default function GetallenrijenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Richting:" info="Loopt de reeks stijgend, dalend of beide." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('direction', 'right')} style={styles.radioBtn(direction === 'right')}>↑ Stijgend</button>
-                    <button onClick={() => set('direction', 'left')} style={styles.radioBtn(direction === 'left')}>↓ Dalend</button>
-                    <button onClick={() => set('direction', 'beide')} style={styles.radioBtn(direction === 'beide')}>Beide</button>
+                    <button onClick={() => set('direction', 'right')} aria-pressed={direction === 'right'} style={styles.radioBtn(direction === 'right')}>↑ Stijgend</button>
+                    <button onClick={() => set('direction', 'left')} aria-pressed={direction === 'left'} style={styles.radioBtn(direction === 'left')}>↓ Dalend</button>
+                    <button onClick={() => set('direction', 'beide')} aria-pressed={direction === 'beide'} style={styles.radioBtn(direction === 'beide')}>Beide</button>
                 </div>
             </div>
 
@@ -80,8 +80,8 @@ export default function GetallenrijenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Moeilijkheid:" info="Bepaalt hoeveel vakjes leeg blijven." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('hardMode', false)} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
-                    <button onClick={() => set('hardMode', true)} style={styles.radioBtn(hardMode)}>Moeilijk</button>
+                    <button onClick={() => set('hardMode', false)} aria-pressed={!hardMode} style={styles.radioBtn(!hardMode)}>Makkelijk</button>
+                    <button onClick={() => set('hardMode', true)} aria-pressed={!!hardMode} style={styles.radioBtn(hardMode)}>Moeilijk</button>
                 </div>
             </div>
 
@@ -91,10 +91,10 @@ export default function GetallenrijenConfig({ block }: Props) {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {isRational
                         ? FRACTION_STEPS.map(d => (
-                            <button key={d} onClick={() => set('fractionStep', d)} style={styles.radioBtn(fractionStep === d)}>1/{d}</button>
+                            <button key={d} onClick={() => set('fractionStep', d)} aria-pressed={fractionStep === d} style={styles.radioBtn(fractionStep === d)}>1/{d}</button>
                         ))
                         : (isDecimal ? DECIMAL_STEPS : STEP_PRESETS).map(s => (
-                            <button key={s} onClick={() => set('step', s)} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
+                            <button key={s} onClick={() => set('step', s)} aria-pressed={step === s} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
                         ))}
                 </div>
                 {!isRational && (
@@ -149,11 +149,11 @@ export default function GetallenrijenConfig({ block }: Props) {
                     <SettingLabel text="Breuken:" info="Weergave-opties voor breuken in de reeks." />
                     <div style={styles.onOffRow}>
                         <span style={styles.onOffLabel}>Gemengde getallen (1 1/4 i.p.v. 5/4)</span>
-                        <button onClick={() => set('allowMixed', !allowMixed)} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('allowMixed', !allowMixed)} aria-pressed={!!allowMixed} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
                     </div>
                     <div style={styles.onOffRow}>
                         <span style={styles.onOffLabel}>Gelijknamige breuken (niet vereenvoudigen)</span>
-                        <button onClick={() => set('gelijknamig', !gelijknamig)} style={styles.onOffBtn(gelijknamig)}>{gelijknamig ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('gelijknamig', !gelijknamig)} aria-pressed={!!gelijknamig} style={styles.onOffBtn(gelijknamig)}>{gelijknamig ? 'Aan' : 'Uit'}</button>
                     </div>
                 </div>
             )}
@@ -164,7 +164,7 @@ export default function GetallenrijenConfig({ block }: Props) {
                     <SettingLabel text="Specifieke getalopbouw:" info="Welke posities in de getallen mogen voorkomen." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!numberMask[p.key]} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                         ))}
                     </div>
                     <p style={styles.hint}>Leeg = vrije opbouw.</p>

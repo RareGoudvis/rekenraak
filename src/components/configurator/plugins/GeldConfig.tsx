@@ -79,8 +79,8 @@ export default function GeldConfig({ block }: { block: MathBlock }) {
                 <div style={S.section}>
                     <SettingLabel text="Geldlayout" info="Toont het geld samen of gescheiden per soort." />
                     <div style={S.buttonGroup}>
-                        <button style={S.radioBtn(geldLayout !== 'gescheiden')} onClick={() => set('geldLayout', 'samen')}>Samen</button>
-                        <button style={S.radioBtn(geldLayout === 'gescheiden')} onClick={() => set('geldLayout', 'gescheiden')}>Gescheiden</button>
+                        <button aria-pressed={geldLayout !== 'gescheiden'} style={S.radioBtn(geldLayout !== 'gescheiden')} onClick={() => set('geldLayout', 'samen')}>Samen</button>
+                        <button aria-pressed={geldLayout === 'gescheiden'} style={S.radioBtn(geldLayout === 'gescheiden')} onClick={() => set('geldLayout', 'gescheiden')}>Gescheiden</button>
                     </div>
                 </div>
             )}

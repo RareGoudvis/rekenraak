@@ -89,7 +89,7 @@ export default function PatroonConfig({ block }: Props) {
                     <SettingLabel text="Max decimalen:" info="Hoeveel cijfers er na de komma mogen staan." />
                     <div style={styles.buttonGroup}>
                         {[1, 2, 3].map(d => (
-                            <button key={d} onClick={() => set('maxDecimals', d)} style={styles.radioBtn(dp === d)}>{d}</button>
+                            <button key={d} onClick={() => set('maxDecimals', d)} aria-pressed={dp === d} style={styles.radioBtn(dp === d)}>{d}</button>
                         ))}
                     </div>
                 </div>
@@ -114,7 +114,7 @@ export default function PatroonConfig({ block }: Props) {
                 <SettingLabel text="Bewerkingen:" info="Welke bewerkingen het patroon mag gebruiken (+ − × :)." />
                 <div style={styles.buttonGroup}>
                     {OPS.map(o => (
-                        <button key={o.key} onClick={() => toggleOp(o.key)} style={styles.pill(ops.includes(o.key))}>{o.label}</button>
+                        <button key={o.key} onClick={() => toggleOp(o.key)} aria-pressed={ops.includes(o.key)} style={styles.pill(ops.includes(o.key))}>{o.label}</button>
                     ))}
                 </div>
             </div>
@@ -134,7 +134,7 @@ export default function PatroonConfig({ block }: Props) {
                         {isAddSub && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
                                 {maskPlaces.map(p => (
-                                    <button key={p.key} onClick={() => toggleOpMask(o.key, p.key)} style={styles.maskBtn(!!s.mask?.[p.key])} title={p.label}>{p.key}</button>
+                                    <button key={p.key} onClick={() => toggleOpMask(o.key, p.key)} aria-pressed={!!s.mask?.[p.key]} style={styles.maskBtn(!!s.mask?.[p.key])} title={p.label}>{p.key}</button>
                                 ))}
                             </div>
                         )}

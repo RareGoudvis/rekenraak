@@ -24,7 +24,7 @@ export default function RomeinseConfig({ block }: Props) {
                         const isActive = niveau === n;
                         return (
                             <button key={n} onClick={() => set('niveau', n)}
-                                style={{ ...styles.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                aria-pressed={isActive} style={{ ...styles.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                 <span style={{ fontWeight: 'bold' }}>N{n}</span>
                                 <span style={{ fontSize: '10px', opacity: 0.8 }}>{NIVEAU_HINT[n]}</span>
                             </button>

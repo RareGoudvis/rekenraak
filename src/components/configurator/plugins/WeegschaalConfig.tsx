@@ -30,8 +30,8 @@ export default function WeegschaalConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Opdracht:" info="Wijzer aflezen en het gewicht noteren, of het gewicht krijgen en de weegschaal kleuren." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('mode', 'aflezen')} style={styles.radioBtn(mode === 'aflezen')}>Aflezen</button>
-                    <button onClick={() => set('mode', 'kleuren')} style={styles.radioBtn(mode === 'kleuren')}>Weegschaal kleuren</button>
+                    <button onClick={() => set('mode', 'aflezen')} aria-pressed={mode === 'aflezen'} style={styles.radioBtn(mode === 'aflezen')}>Aflezen</button>
+                    <button onClick={() => set('mode', 'kleuren')} aria-pressed={mode === 'kleuren'} style={styles.radioBtn(mode === 'kleuren')}>Weegschaal kleuren</button>
                 </div>
             </div>
 
@@ -53,7 +53,7 @@ export default function WeegschaalConfig({ block }: Props) {
                 <SettingLabel text="Schaalverdeling:" info="Afstand tussen twee streepjes op de wijzerplaat." />
                 <div style={styles.buttonGroup}>
                     {allowed.map(s => (
-                        <button key={s} onClick={() => set('stepGram', s)} style={styles.radioBtn(stepGram === s)}>per {s} g</button>
+                        <button key={s} onClick={() => set('stepGram', s)} aria-pressed={stepGram === s} style={styles.radioBtn(stepGram === s)}>per {s} g</button>
                     ))}
                 </div>
             </div>
@@ -61,9 +61,9 @@ export default function WeegschaalConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Antwoordnotatie:" info="Hoe het gewicht genoteerd wordt: in gram, als kommagetal in kg, of samengesteld." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('notatie', 'g')} style={styles.radioBtn(notatie === 'g')}>g</button>
-                    <button onClick={() => set('notatie', 'kg-komma')} style={styles.radioBtn(notatie === 'kg-komma')}>kg (komma)</button>
-                    <button onClick={() => set('notatie', 'kg-g')} style={styles.radioBtn(notatie === 'kg-g')}>kg + g</button>
+                    <button onClick={() => set('notatie', 'g')} aria-pressed={notatie === 'g'} style={styles.radioBtn(notatie === 'g')}>g</button>
+                    <button onClick={() => set('notatie', 'kg-komma')} aria-pressed={notatie === 'kg-komma'} style={styles.radioBtn(notatie === 'kg-komma')}>kg (komma)</button>
+                    <button onClick={() => set('notatie', 'kg-g')} aria-pressed={notatie === 'kg-g'} style={styles.radioBtn(notatie === 'kg-g')}>kg + g</button>
                 </div>
             </div>
 

@@ -38,7 +38,7 @@ export default function SchattendConfig({ block }: Props) {
                 <SettingLabel text="Bewerkingen:" info="Welke bewerkingen geschat worden. Bij × en : blijft één factor klein." />
                 <div style={styles.buttonGroup}>
                     {OPS.map(op => (
-                        <button key={op.key} onClick={() => toggleIn('operators', operators, op.key)} style={styles.pill(operators.includes(op.key))}>{op.label}</button>
+                        <button key={op.key} onClick={() => toggleIn('operators', operators, op.key)} aria-pressed={operators.includes(op.key)} style={styles.pill(operators.includes(op.key))}>{op.label}</button>
                     ))}
                 </div>
             </div>
@@ -58,7 +58,7 @@ export default function SchattendConfig({ block }: Props) {
                 <SettingLabel text="Afronden op:" info="Op welke positie de getallen eerst afgerond worden." />
                 <div style={styles.buttonGroup}>
                     {offeredTargets.map(t => (
-                        <button key={t.key} onClick={() => toggleIn('roundTargets', roundTargets, t.key)} style={styles.pill(roundTargets.includes(t.key))}>op {t.label}</button>
+                        <button key={t.key} onClick={() => toggleIn('roundTargets', roundTargets, t.key)} aria-pressed={roundTargets.includes(t.key)} style={styles.pill(roundTargets.includes(t.key))}>op {t.label}</button>
                     ))}
                 </div>
             </div>
@@ -66,16 +66,16 @@ export default function SchattendConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Ondersteuning:" info="Met tussenstappen schrijft de leerling eerst de afgeronde getallen op." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('scaffolding', 'tussenstappen')} style={styles.radioBtn(scaffolding === 'tussenstappen')}>Met tussenstappen</button>
-                    <button onClick={() => set('scaffolding', 'enkel-schatting')} style={styles.radioBtn(scaffolding === 'enkel-schatting')}>Enkel schatting</button>
+                    <button onClick={() => set('scaffolding', 'tussenstappen')} aria-pressed={scaffolding === 'tussenstappen'} style={styles.radioBtn(scaffolding === 'tussenstappen')}>Met tussenstappen</button>
+                    <button onClick={() => set('scaffolding', 'enkel-schatting')} aria-pressed={scaffolding === 'enkel-schatting'} style={styles.radioBtn(scaffolding === 'enkel-schatting')}>Enkel schatting</button>
                 </div>
             </div>
 
             <div style={styles.section}>
                 <SettingLabel text="Antwoordlijn:" info="Een lange lijn loopt tot het einde van de rij; er past dan één oefening per rij." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('answerLine', 'kort')} style={styles.radioBtn(answerLine === 'kort')}>Kort</button>
-                    <button onClick={() => set('answerLine', 'lang')} style={styles.radioBtn(answerLine === 'lang')}>Lang</button>
+                    <button onClick={() => set('answerLine', 'kort')} aria-pressed={answerLine === 'kort'} style={styles.radioBtn(answerLine === 'kort')}>Kort</button>
+                    <button onClick={() => set('answerLine', 'lang')} aria-pressed={answerLine === 'lang'} style={styles.radioBtn(answerLine === 'lang')}>Lang</button>
                 </div>
             </div>
         </div>

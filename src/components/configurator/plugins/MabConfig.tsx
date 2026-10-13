@@ -124,7 +124,7 @@ export default function MabConfig({ block }: Props) {
                 <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer (1 tot 9) krijgen; de andere posities worden 0. Niets aangeduid = vrij." />
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {keys.map(k => (
-                        <button key={k} onClick={() => toggleMask(k)} style={styles.maskBtn(!!operand1Mask?.[k])}>
+                        <button key={k} onClick={() => toggleMask(k)} aria-pressed={!!operand1Mask?.[k]} style={styles.maskBtn(!!operand1Mask?.[k])}>
                             {k}
                         </button>
                     ))}

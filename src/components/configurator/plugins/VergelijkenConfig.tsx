@@ -46,7 +46,7 @@ export default function VergelijkenConfig({ block }: Props) {
                 <SettingLabel text="Decimalen:" info="Hoeveel cijfers er na de komma staan." />
                 <div style={styles.buttonGroup}>
                     {(isRep ? [1, 2] : [0, 1, 2, 3]).map(dp => (
-                        <button key={dp} onClick={() => set('decimalPlaces', dp)} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
+                        <button key={dp} onClick={() => set('decimalPlaces', dp)} aria-pressed={decimalPlaces === dp} style={styles.radioBtn(decimalPlaces === dp)}>{dp === 0 ? 'Geen' : dp}</button>
                     ))}
                 </div>
             </div>
@@ -62,7 +62,7 @@ export default function VergelijkenConfig({ block }: Props) {
                             <SettingLabel text={`${col.title}:`} info="In welke vorm deze kant getoond wordt (breuk, kommagetal, ...)." />
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
                                 {REP_OPTIONS.map(o => (
-                                    <button key={o.key} onClick={() => set(col.repKey, o.key)} style={styles.radioBtn(col.rep === o.key)}>{o.label}</button>
+                                    <button key={o.key} onClick={() => set(col.repKey, o.key)} aria-pressed={col.rep === o.key} style={styles.radioBtn(col.rep === o.key)}>{o.label}</button>
                                 ))}
                             </div>
                             <SettingLabel text="Getalopbouw:" info="Welke posities (eenheden, tienden, ...) het getal mag bevatten." />
@@ -79,7 +79,7 @@ export default function VergelijkenConfig({ block }: Props) {
                             ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                     {repPlaces.map(p => (
-                                        <button key={p.key} onClick={() => toggleSideMask(col.maskKey, col.mask, p.key)} style={styles.maskBtn(!!col.mask[p.key])} title={p.label}>{p.key}</button>
+                                        <button key={p.key} onClick={() => toggleSideMask(col.maskKey, col.mask, p.key)} aria-pressed={!!col.mask[p.key]} style={styles.maskBtn(!!col.mask[p.key])} title={p.label}>{p.key}</button>
                                     ))}
                                 </div>
                             )}
@@ -93,8 +93,8 @@ export default function VergelijkenConfig({ block }: Props) {
                     <div style={styles.section}>
                         <SettingLabel text="Omcirkel het:" info="Of de leerling het grootste of het kleinste getal kiest." />
                         <div style={styles.buttonGroup}>
-                            <button onClick={() => set('chooseTarget', 'grootste')} style={styles.radioBtn(chooseTarget === 'grootste')}>Grootste</button>
-                            <button onClick={() => set('chooseTarget', 'kleinste')} style={styles.radioBtn(chooseTarget === 'kleinste')}>Kleinste</button>
+                            <button onClick={() => set('chooseTarget', 'grootste')} aria-pressed={chooseTarget === 'grootste'} style={styles.radioBtn(chooseTarget === 'grootste')}>Grootste</button>
+                            <button onClick={() => set('chooseTarget', 'kleinste')} aria-pressed={chooseTarget === 'kleinste'} style={styles.radioBtn(chooseTarget === 'kleinste')}>Kleinste</button>
                         </div>
                     </div>
                     <div style={styles.section}>
@@ -111,7 +111,7 @@ export default function VergelijkenConfig({ block }: Props) {
                     <SettingLabel text="Specifieke getalopbouw:" info="Welke posities de getallen mogen bevatten. Leeg = vrije opbouw." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {places.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!numberMask[p.key]} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                         ))}
                     </div>
                     <p style={styles.hint}>Leeg = vrije opbouw.</p>

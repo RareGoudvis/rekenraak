@@ -34,7 +34,7 @@ export default function RekenvolgordeConfig({ block }: Props) {
                 <SettingLabel text="Bewerkingen:" info="Minstens één × of : blijft altijd aan, anders is er geen rekenvolgorde te oefenen." />
                 <div style={styles.buttonGroup}>
                     {OPS.map(op => (
-                        <button key={op.key} onClick={() => toggleOp(op.key)} style={styles.pill(operators.includes(op.key))}>{op.label}</button>
+                        <button key={op.key} onClick={() => toggleOp(op.key)} aria-pressed={operators.includes(op.key)} style={styles.pill(operators.includes(op.key))}>{op.label}</button>
                     ))}
                 </div>
             </div>
@@ -43,7 +43,7 @@ export default function RekenvolgordeConfig({ block }: Props) {
                 <SettingLabel text="Aantal bewerkingen:" info="Bij 3–4 bewerkingen zit er altijd een handig paar in (150 + 50, 750 − 250, 4 × 25)." />
                 <div style={styles.buttonGroup}>
                     {[2, 3, 4].map(n => (
-                        <button key={n} onClick={() => set('opsCount', n)} style={styles.radioBtn(opsCount === n)}>{n}</button>
+                        <button key={n} onClick={() => set('opsCount', n)} aria-pressed={opsCount === n} style={styles.radioBtn(opsCount === n)}>{n}</button>
                     ))}
                 </div>
             </div>
@@ -63,7 +63,7 @@ export default function RekenvolgordeConfig({ block }: Props) {
                 <SettingLabel text="Haakjes:" info="Geen = nooit haakjes · Mag = bij ongeveer de helft · Moet = bij elke oefening. Haakjes veranderen altijd echt de uitkomst." />
                 <div style={styles.buttonGroup}>
                     {(['GEEN', 'MAG', 'MOET'] as const).map(m => (
-                        <button key={m} onClick={() => set('haakjesMode', m)} style={styles.bridgeBtn(haakjesMode === m)}>{m}</button>
+                        <button key={m} onClick={() => set('haakjesMode', m)} aria-pressed={haakjesMode === m} style={styles.bridgeBtn(haakjesMode === m)}>{m}</button>
                     ))}
                 </div>
             </div>

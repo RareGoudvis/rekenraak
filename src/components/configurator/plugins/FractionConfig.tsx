@@ -89,6 +89,7 @@ export default function FractionConfig({ block }: Props) {
                             <button
                                 key={label}
                                 onClick={() => handleSubTypeChange(value)}
+                                aria-pressed={isActive}
                                 style={{
                                     ...styles.radioBtn(isActive),
                                     display: 'flex', flexDirection: 'column', width: '100%',
@@ -115,7 +116,7 @@ export default function FractionConfig({ block }: Props) {
                                 { val: 'square',    label: 'Vierkant' },
                                 { val: 'circle',    label: 'Cirkel' },
                             ] as const).map(({ val, label }) => (
-                                <button key={val} onClick={() => toggleShape(val)} style={styles.radioBtn(selectedShapes.includes(val))}>
+                                <button key={val} onClick={() => toggleShape(val)} aria-pressed={selectedShapes.includes(val)} style={styles.radioBtn(selectedShapes.includes(val))}>
                                     {label}
                                 </button>
                             ))}
@@ -127,7 +128,7 @@ export default function FractionConfig({ block }: Props) {
                         <div style={styles.section}>
                             <div style={styles.onOffRow}>
                                 <span style={styles.onOffLabel}>Vaste grootte</span>
-                                <button onClick={() => updateConstraint('staticSize', !c.staticSize)} style={styles.onOffBtn(!!c.staticSize)}>
+                                <button onClick={() => updateConstraint('staticSize', !c.staticSize)} aria-pressed={!!c.staticSize} style={styles.onOffBtn(!!c.staticSize)}>
                                     {c.staticSize ? 'AAN' : 'UIT'}
                                 </button>
                             </div>
@@ -144,8 +145,8 @@ export default function FractionConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Objectvorm:" info="De vorm van de te verdelen objecten." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => updateConstraint('objectShape', 'circle')} style={styles.radioBtn(c.objectShape === 'circle')}>Cirkels</button>
-                        <button onClick={() => updateConstraint('objectShape', 'square')} style={styles.radioBtn(c.objectShape === 'square')}>Vierkanten</button>
+                        <button onClick={() => updateConstraint('objectShape', 'circle')} aria-pressed={c.objectShape === 'circle'} style={styles.radioBtn(c.objectShape === 'circle')}>Cirkels</button>
+                        <button onClick={() => updateConstraint('objectShape', 'square')} aria-pressed={c.objectShape === 'square'} style={styles.radioBtn(c.objectShape === 'square')}>Vierkanten</button>
                     </div>
                 </div>
             )}
@@ -241,7 +242,7 @@ export default function FractionConfig({ block }: Props) {
                     {/* Achtergrondrooster aan/uit — uit = enkel omtrek + gekleurd gebied, vakjes van 1 cm */}
                     <div style={{ ...styles.onOffRow, marginTop: '12px' }}>
                         <span style={styles.onOffLabel}>Achtergrondrooster</span>
-                        <button onClick={() => updateConstraint('showGrid', c.showGrid === false)} style={styles.onOffBtn(c.showGrid !== false)}>
+                        <button onClick={() => updateConstraint('showGrid', c.showGrid === false)} aria-pressed={c.showGrid !== false} style={styles.onOffBtn(c.showGrid !== false)}>
                             {c.showGrid !== false ? 'AAN' : 'UIT'}
                         </button>
                     </div>
@@ -291,7 +292,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             const isActive = (c.level ?? 1) === n;
                             return (
                                 <button key={n} onClick={() => patch({ level: n })}
-                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    aria-pressed={isActive} style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                     <span style={{ fontWeight: 'bold' }}>N{n}</span>
                                     <span style={{ fontSize: '10px', opacity: 0.8 }}>{hint}</span>
                                 </button>
@@ -324,7 +325,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             { val: 'blank-line',         label: 'Blanco lijn' },
                         ] as const).map(({ val, label }) => (
                             <button key={val} onClick={() => patch({ answerFormat: val })}
-                                style={{ ...F.radioBtn((c.answerFormat ?? 'fraction-questions') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                                aria-pressed={(c.answerFormat ?? 'fraction-questions') === val} style={{ ...F.radioBtn((c.answerFormat ?? 'fraction-questions') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
                                 {label}
                             </button>
                         ))}
@@ -343,7 +344,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             { val: 'zonder-hulp',     label: 'Zonder hulp' },
                         ] as const).map(({ val, label }) => (
                             <button key={val} onClick={() => patch({ answerFormat: val })}
-                                style={{ ...F.radioBtn((c.answerFormat ?? 'met-hulp') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                                aria-pressed={(c.answerFormat ?? 'met-hulp') === val} style={{ ...F.radioBtn((c.answerFormat ?? 'met-hulp') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
                                 {label}
                             </button>
                         ))}
@@ -360,7 +361,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             const isActive = (c.groupingMode ?? 'standaard') === val;
                             return (
                                 <button key={val} onClick={() => patch({ groupingMode: val })}
-                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    aria-pressed={isActive} style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                     <span style={{ fontWeight: isActive ? 'bold' : 'normal' }}>{label}</span>
                                     <span style={{ fontSize: '10px', opacity: 0.8 }}>{hint}</span>
                                 </button>
@@ -395,7 +396,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                             const isActive = (c.answerMode ?? 'berekeningslijnen') === val;
                             return (
                                 <button key={val} onClick={() => patch({ answerMode: val })}
-                                    style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
+                                    aria-pressed={isActive} style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                     <span style={{ fontWeight: isActive ? 'bold' : 'normal' }}>{label}</span>
                                     <span style={{ fontSize: '10px', opacity: 0.8, fontFamily: 'Azeret Mono, monospace' }}>{hint}</span>
                                 </button>

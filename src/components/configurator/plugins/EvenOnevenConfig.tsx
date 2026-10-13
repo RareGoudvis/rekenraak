@@ -23,8 +23,8 @@ export default function EvenOnevenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Kleur de:" info="Welke getallen de leerling moet inkleuren (even of oneven)." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('target', 'even')} style={styles.radioBtn(target === 'even')}>Even getallen</button>
-                    <button onClick={() => set('target', 'oneven')} style={styles.radioBtn(target === 'oneven')}>Oneven getallen</button>
+                    <button onClick={() => set('target', 'even')} aria-pressed={target === 'even'} style={styles.radioBtn(target === 'even')}>Even getallen</button>
+                    <button onClick={() => set('target', 'oneven')} aria-pressed={target === 'oneven'} style={styles.radioBtn(target === 'oneven')}>Oneven getallen</button>
                 </div>
             </div>
 

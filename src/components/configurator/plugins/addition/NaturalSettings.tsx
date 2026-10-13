@@ -66,7 +66,7 @@ export default function NaturalSettings({ block }: Props) {
                         <span style={{ fontSize: 'var(--text-xs)', width: '50px' }}>Getal {i + 1}:</span>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {maskPlaces.map(p => (
-                                <button key={p.key} onClick={() => toggleMaskAt(i, p.key)} style={styles.maskBtn(!!maskAt(i)[p.key])}>{p.key}</button>
+                                <button key={p.key} onClick={() => toggleMaskAt(i, p.key)} aria-pressed={!!maskAt(i)[p.key]} style={styles.maskBtn(!!maskAt(i)[p.key])}>{p.key}</button>
                             ))}
                         </div>
                     </div>

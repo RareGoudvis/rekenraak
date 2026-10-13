@@ -56,7 +56,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
                 <SettingLabel text="Prijsbereik" info="Bereik van de prijs waarover teruggegeven wordt." />
                 <div style={S.buttonGroup}>
                     {PRICE_PRESETS.map(p => (
-                        <button key={p.max} style={S.radioBtn(activePreset?.max === p.max)}
+                        <button key={p.max} aria-pressed={activePreset?.max === p.max} style={S.radioBtn(activePreset?.max === p.max)}
                             onClick={() => applyPreset(p)}>
                             {p.label}
                         </button>
@@ -70,7 +70,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {CENTEN_OPTIES.map(opt => (
                         <button key={opt.value}
-                            style={{ ...S.radioBtn(centenDeel === opt.value), textAlign: 'left', display: 'flex', justifyContent: 'space-between' } as React.CSSProperties}
+                            aria-pressed={centenDeel === opt.value} style={{ ...S.radioBtn(centenDeel === opt.value), textAlign: 'left', display: 'flex', justifyContent: 'space-between' } as React.CSSProperties}
                             onClick={() => set('centenDeel', opt.value)}>
                             <span>{opt.label}</span>
                             <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'normal' }}>{opt.hint}</span>
@@ -96,8 +96,8 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
             <div style={S.section}>
                 <SettingLabel text="Antwoord invullen" info="Hoe de leerling het wisselgeld noteert." />
                 <div style={S.buttonGroup}>
-                    <button style={S.radioBtn(antwoordType === 'schrijven')} onClick={() => set('antwoordType', 'schrijven')}>Schrijven</button>
-                    <button style={S.radioBtn(antwoordType === 'tekenen-schrijven')} onClick={() => set('antwoordType', 'tekenen-schrijven')}>Tekenen + schrijven</button>
+                    <button aria-pressed={antwoordType === 'schrijven'} style={S.radioBtn(antwoordType === 'schrijven')} onClick={() => set('antwoordType', 'schrijven')}>Schrijven</button>
+                    <button aria-pressed={antwoordType === 'tekenen-schrijven'} style={S.radioBtn(antwoordType === 'tekenen-schrijven')} onClick={() => set('antwoordType', 'tekenen-schrijven')}>Tekenen + schrijven</button>
                 </div>
             </div>
 
@@ -111,7 +111,7 @@ export default function GeldTeruggevenConfig({ block }: { block: MathBlock }) {
                         { value: 'beide',     label: 'Beide' },
                     ].map(opt => (
                         <button key={opt.value}
-                            style={{ ...S.radioBtn(antwoordFormat === opt.value), justifyContent: 'flex-start', textAlign: 'left' }}
+                            aria-pressed={antwoordFormat === opt.value} style={{ ...S.radioBtn(antwoordFormat === opt.value), justifyContent: 'flex-start', textAlign: 'left' }}
                             onClick={() => set('antwoordFormat', opt.value)}>
                             {opt.label}
                         </button>
@@ -146,7 +146,7 @@ export function GeldTeruggevenStyleConfig({ block }: { block: MathBlock }) {
                 ] as const).map(opt => (
                     <button key={opt.value}
                         onClick={() => patch({ scaffolding: opt.value })}
-                        style={{ ...F.radioBtn(scaffolding === opt.value), justifyContent: 'flex-start', textAlign: 'left' }}>
+                        aria-pressed={scaffolding === opt.value} style={{ ...F.radioBtn(scaffolding === opt.value), justifyContent: 'flex-start', textAlign: 'left' }}>
                         {opt.label}
                     </button>
                 ))}
