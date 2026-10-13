@@ -964,6 +964,8 @@ export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
     inputOf: (ex) => (ex.subType === 'gelijknamig' ? 'multi-number' : 'number'),
     keys: (c) => (c.subType === 'gemengd' ? ['/', ' '] : ['/']),
     exactFormDefault: () => true,
+    // 'beide' mixes both ways in one block; the card shows one exercise, so its header names that one's way.
+    kioskInstruction: (ex) => (ex.subType !== 'gemengd' ? undefined : ex.direction === 'naar-breuk' ? 'Typ als breuk.' : 'Typ als gemengd getal.'),
     labels: () => ['1ste breuk', '2de breuk'],
     answerOf: (ex) => (ex.subType === 'gelijknamig'
         ? ex.answers.map(a => bewerkSpellings(ex, a).join('|'))

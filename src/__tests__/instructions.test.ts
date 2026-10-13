@@ -57,6 +57,7 @@ describe('function-valued instructions cover every setting branch', () => {
         { leafId: 'schattend-nat', overrides: { scaffolding: 'enkel-schatting' }, expectContains: 'Schat het antwoord' },
         { leafId: 'breuken-gemengd', overrides: { direction: 'naar-gemengd' }, expectContains: 'gemengd getal' },
         { leafId: 'breuken-gemengd', overrides: { direction: 'naar-breuk' }, expectContains: 'als breuk' },
+        { leafId: 'breuken-gemengd', overrides: { direction: 'beide' }, expectContains: 'Schrijf als gemengd getal of als breuk.' },
         { leafId: 'vormleer-driehoeken', overrides: { mode: 'herkennen' }, expectContains: 'driehoek' },
         { leafId: 'vormleer-driehoeken', overrides: { mode: 'eigenschappen' }, expectContains: 'eigenschappen' },
         { leafId: 'lengte-meten', overrides: { measureModel: 'meten' }, expectContains: 'Meet' },
