@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { attemptsOf, type KioskAnswer, type KioskExtraKey, type KioskInput, type KioskPiece, type OefenCurrent, type OefenRun, type OefenSessie } from '../services/oefenen/types';
-import { decodeSessie } from '../services/oefenen/session';
-import { isDone, madePerSlot, nextExercise, nextType, unsupportedSlots } from '../services/oefenen/scheduler';
-import { clearRuns, emptyStats, loadRuns, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
+import { decodeSessie, sessieContentHash } from '../services/oefenen/session';
+import { isDone, madePerSlot, nextExercise, nextType, plannedTotal, unsupportedSlots } from '../services/oefenen/scheduler';
+import { clearRunsFor, emptyStats, loadRuns, loadRunsFor, nextRunIndex, recordAnswer, saveRun } from '../services/oefenen/stats';
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
@@ -12,7 +12,7 @@ import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState }
 
 // start = confirm screen · exercise = answering · feedback = juist/fout flashes, then the next
 // exercise follows by itself · retry = "fout, probeer nog eens" flashes (2 kansen), then the same
-// exercise again · stats = Stats opened mid-run · locked = the run ended (timer or done).
+// exercise again · stats = Stats opened mid-run · locked = the run ended (timer, done or Stoppen).
 export type OefenPhase = 'start' | 'exercise' | 'feedback' | 'retry' | 'stats' | 'locked';
 
 // How long each flash stays before the kiosk moves on by itself (Enter or a tap skips it):
@@ -74,6 +74,8 @@ interface OefenState {
     closeStats(): void;
     restart(): void;
     clear(): void;
+    // Endless run only (no timer, no limit): the pupil ends it, the card on screen uncounted.
+    stop(): void;
     tick(now?: number): void;
     setInteraction(next: InteractionState): void;
     focusCell(key: string | null): void;
@@ -91,6 +93,9 @@ interface OefenState {
 
 // A test shows nothing about juist/fout until the end, so it hides the results like statsLocked does.
 export const resultsHidden = (s: OefenSessie, run: OefenRun) => (s.statsLocked || s.testMode) && !run.done;
+
+// Without a timer or a limit nothing else ends the run; a timed or counted run (a toets) cannot be cut short.
+export const canStop = (s: OefenSessie, run: OefenRun | null): boolean => !!run && !run.done && !s.timerMin && plannedTotal(s) === null;
 
 const currentOf = (run: OefenRun | null): KioskCurrent | null => (run?.current as KioskCurrent | undefined) ?? null;
 
@@ -230,7 +235,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         if (s) set({ storageFailed: !saveRun(s.id, run) });
     };
 
-    // Ends the run: the timer ran out or every exercise is made. The end screen is the stats.
+    // Ends the run: the timer ran out, every exercise is made or the pupil stopped. The end screen is the stats.
     const finish = (run: OefenRun, now = Date.now()) => {
         clearFlash();
         const done: OefenRun = { ...run, done: true, current: undefined, stats: { ...run.stats, finishedAt: run.stats.finishedAt ?? now } };
@@ -272,7 +277,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
 
     const newRun = (s: OefenSessie, now: number): OefenRun => {
         return {
-            index: nextRunIndex(loadRuns(s.id)), done: false,
+            index: nextRunIndex(loadRuns(s.id)), done: false, hash: sessieContentHash(s),
             stats: emptyStats(s, now),
             ...(s.timerMin ? { timerEndsAt: now + s.timerMin * 60_000 } : {}),
         };
@@ -307,7 +312,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // Nothing left to serve: the stored runs stay as they are, only the screen changes.
             if (unsupported.size === s.types.length) { set({ sessie: null, run: null, shown: null, error: UNSUPPORTED_ONLY }); return; }
             set({ sessie: s, error: null, run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null, interaction: EMPTY_INTERACTION, activeCell: null, storageFailed: false });
-            const runs = loadRuns(s.id);
+            // Only runs made for this content: an id shipped earlier with other content never resumes (or mislabels) them.
+            const runs = loadRunsFor(s);
             const last = runs.length ? runs.reduce((a, b) => (b.index > a.index ? b : a)) : null;
             if (!last) return;
             // A finished run reopens on its end screen: reloading must not hide the stats.
@@ -463,8 +469,15 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const s = get().sessie;
             if (!s || get().phase !== 'locked') return;
             clearFlash();
-            clearRuns(s.id);
+            clearRunsFor(s);
             set({ run: null, shown: null, phase: 'start', input: [''], field: 0, lastCorrect: null });
+        },
+
+        stop() {
+            const { phase, sessie: s, run } = get();
+            if (!s || !run || !canStop(s, run)) return;
+            if (phase !== 'exercise' && phase !== 'feedback' && phase !== 'retry' && phase !== 'stats') return;
+            finish(run);
         },
 
         tick(now = Date.now()) {

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useOefenStore } from '../useOefenStore';
 import StorageBanner from './StorageBanner';
-import { loadRuns, summary, viablePlannedTotal } from '../../services/oefenen/stats';
+import StopButton from './StopButton';
+import { loadRunsFor, summary, viablePlannedTotal } from '../../services/oefenen/stats';
 import { retiredSlots } from '../../services/oefenen/scheduler';
 import { attemptsOf, type OefenError, type OefenRun, type OefenSessie } from '../../services/oefenen/types';
 
@@ -86,7 +87,7 @@ function durationText(run: OefenRun): string | null {
     return sec < 60 ? `${sec} s` : `${Math.round(sec / 60)} min`;
 }
 
-// Mid-run it is a peek (Verder oefenen); after the timer or the last exercise it is the
+// Mid-run it is a peek (Verder oefenen, Stoppen when endless); after the timer, the last exercise or Stoppen it is the
 // locked end screen the teacher reads, with the earlier runs of this device below.
 export default function StatsScreen() {
     const sessie = useOefenStore(s => s.sessie);
@@ -99,7 +100,7 @@ export default function StatsScreen() {
 
     const locked = phase === 'locked';
     // Earlier runs of this session on this device, newest first (the current one is the screen itself).
-    const earlier = locked ? loadRuns(sessie.id).filter(r => r.index !== run.index).reverse() : [];
+    const earlier = locked ? loadRunsFor(sessie).filter(r => r.index !== run.index).reverse() : [];
     const planned = viablePlannedTotal(sessie);
 
     if (viewing) {
@@ -132,7 +133,10 @@ export default function StatsScreen() {
                     <p className="kiosk-stats-total">{made === 0 ? 'Nog geen oefeningen gemaakt.' : scoreText(made, correct, planned)}</p>
                 </div>
                 {!locked && (
-                    <button type="button" className="kiosk-btn kiosk-btn-primary" onClick={closeStats}>Verder oefenen</button>
+                    <div className="kiosk-stats-head-btns">
+                        <StopButton />
+                        <button type="button" className="kiosk-btn kiosk-btn-primary" onClick={closeStats}>Verder oefenen</button>
+                    </div>
                 )}
             </div>
 
