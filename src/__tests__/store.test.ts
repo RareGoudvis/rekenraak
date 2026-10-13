@@ -3,6 +3,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { regenerateBlock } from '../services/generateDispatch';
+import { LEAF_BY_ID } from '../config/appstructure';
 
 // The store touches localStorage (autosave, sidebar-preview) on import, hence jsdom.
 //
@@ -497,5 +498,36 @@ describe('addBlockFromType opens the new block', () => {
         const s = useWorksheetStore.getState();
         expect(s.activeBlockId).toBe(s.blocks[0].id);
         expect(s.inspectorTab).toBe('oefening');
+    });
+});
+
+describe('a settings-dependent default title follows a later setting change', () => {
+    const add = () => {
+        useWorksheetStore.getState().clearBlocks();
+        useWorksheetStore.getState().addBlockFromType('breuken-bewerken', 'Gemengd getal ↔ breuk', { subType: 'gemengd', direction: 'naar-gemengd' }, { leafId: 'breuken-gemengd', instruction: LEAF_BY_ID['breuken-gemengd'].instruction });
+        return useWorksheetStore.getState().blocks[0];
+    };
+    const block = () => useWorksheetStore.getState().blocks[0];
+
+    test('Richting beide swaps the default title for the beide wording, and back', () => {
+        const b = add();
+        expect(b.instructionText).toBe('Schrijf als gemengd getal.');
+        useWorksheetStore.getState().updateBlockSettings(b.id, { constraints: { ...b.constraints, direction: 'beide' } });
+        expect(block().instructionText).toBe('Schrijf als gemengd getal of als breuk.');
+        useWorksheetStore.getState().updateBlockSettings(b.id, { constraints: { ...block().constraints, direction: 'naar-breuk' } });
+        expect(block().instructionText).toBe('Schrijf als breuk.');
+    });
+
+    test("a teacher's own title is left alone", () => {
+        const b = add();
+        useWorksheetStore.getState().updateBlockInstruction(b.id, 'Mijn eigen opdracht.');
+        useWorksheetStore.getState().updateBlockSettings(b.id, { constraints: { ...b.constraints, direction: 'beide' } });
+        expect(block().instructionText).toBe('Mijn eigen opdracht.');
+    });
+
+    test('a count-only update keeps the title', () => {
+        const b = add();
+        useWorksheetStore.getState().updateBlockSettings(b.id, { numberOfExercises: 3 });
+        expect(block().instructionText).toBe('Schrijf als gemengd getal.');
     });
 });

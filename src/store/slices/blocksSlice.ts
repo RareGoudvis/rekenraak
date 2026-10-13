@@ -11,6 +11,19 @@ import type { BlocksSlice, WorksheetState } from '../types';
 import { commitBlocks } from './historySlice';
 import { classifyUpdate, filterLockedUpdates } from '../blockRules';
 
+// A settings-dependent default title (Richting 'beide' → "… of als breuk") follows a later
+// setting change as long as the teacher has not typed their own: the old default is swapped
+// for the new one, any other text is left alone.
+function followInstruction(prev: MathBlock, merged: MathBlock): MathBlock {
+    if (merged.constraints === prev.constraints || !prev.leafId) return merged;
+    const leaf = LEAF_BY_ID[prev.leafId];
+    if (!leaf || typeof leaf.instruction !== 'function') return merged;
+    const before = resolveInstruction(leaf.instruction, prev.typeId, leaf.label, prev.constraints);
+    if (prev.instructionText !== before) return merged;
+    const after = resolveInstruction(leaf.instruction, prev.typeId, leaf.label, merged.constraints);
+    return after === before ? merged : { ...merged, instructionText: after };
+}
+
 export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice> = (set) => ({
     blocks: [],
     staleBlocks: {},
@@ -123,7 +136,7 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
         // Curriculum-builder draft blocks live off-sheet — edit them directly, no
         // history, no lock gate (authoring runs unlocked).
         if (state.draftBlocks.some(b => b.id === id)) {
-            return { draftBlocks: state.draftBlocks.map(b => b.id === id ? { ...b, ...updates } : b) };
+            return { draftBlocks: state.draftBlocks.map(b => b.id === id ? followInstruction(b, { ...b, ...updates }) : b) };
         }
         const prevConstraints = state.blocks.find(b => b.id === id)?.constraints;
         let next = updates;
@@ -135,7 +148,7 @@ export const createBlocksSlice: StateCreator<WorksheetState, [], [], BlocksSlice
         const { countOnly, marksStale } = classifyUpdate(next, prevConstraints);
         const nb = state.blocks.map(b => {
             if (b.id !== id) return b;
-            const merged = { ...b, ...next } as MathBlock;
+            const merged = followInstruction(b, { ...b, ...next } as MathBlock);
             if (!countOnly) return merged;
             const def = REGISTRY[b.typeId];
             if (!def) return merged;

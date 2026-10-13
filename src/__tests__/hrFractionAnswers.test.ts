@@ -98,6 +98,8 @@ describe('hoofdrekenen breuken: a mixed operand keeps a proper breukdeel', () =>
                 const flagged = i === 0 ? constraints.mixedNumber1 : i === 1 ? constraints.mixedNumber2 : false;
                 if (flagged) expect(o.whole, `operand ${i + 1} is mixed`).toBeGreaterThan(0);
                 if ((o.whole ?? 0) > 0) expect(o.n, `${JSON.stringify(o)} breukdeel`).toBeLessThan(o.d);
+                // A Gemengd chain keeps its extra terms (3-4) proper too: no 40/5 next to 2 3/8.
+                if (i >= 2 && (constraints.mixedNumber1 || constraints.mixedNumber2)) expect(o.n, `${JSON.stringify(o)} term ${i + 1}`).toBeLessThan(o.d);
             });
             const vals = eq.operands.map(value);
             const want = vals.slice(1).reduce((acc, v) => (eq.operator === '+' ? acc + v : acc - v), vals[0]);

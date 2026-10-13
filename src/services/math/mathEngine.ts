@@ -269,8 +269,14 @@ const generateFractionChain = (block: MathBlock, op: '+' | '-'): Equation[] => {
         const fracs: Fraction[] = Array.from({ length: N }, (_, i) => {
             const maxN = i === 0 ? maxNumerator1 : maxNumerator2;
             if (!mixedAt(i)) {
-                const n = randInt(1, maxN);
-                return { n, d: denOf(i) };
+                // Terms 1-2 draw as the 2-term path does (an unflagged first term may be improper: a
+                // "−" chain needs it to stay positive); a "Gemengd" chain keeps its extra terms proper.
+                if (i < 2 || (!mixedNumber1 && !mixedNumber2)) {
+                    const n = randInt(1, maxN);
+                    return { n, d: denOf(i) };
+                }
+                const d = denOf(i);
+                return { n: operandNumerator(maxN, d, true), d };
             }
             // A mixed term needs its noemer first: the breukdeel stays below it.
             const d = denOf(i);
