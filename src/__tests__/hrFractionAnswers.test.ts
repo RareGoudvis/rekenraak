@@ -82,12 +82,13 @@ describe('hoofdrekenen breuken: whole results print as whole numbers', () => {
 // "Gemengd getal" operands are true mixed numbers: the report saw "2 38/27 − ? = 17/27".
 describe('hoofdrekenen breuken: a mixed operand keeps a proper breukdeel', () => {
     const flagPairs: [boolean, boolean][] = [[true, false], [false, true], [true, true]];
-    const cases = ['hr-std-optellen', 'hr-std-aftrekken'].flatMap(typeId =>
+    // termCount 3-4 is the breuk chain, which ignored the Gemengd flags before.
+    const cases = ['hr-std-optellen', 'hr-std-aftrekken'].flatMap(typeId => [2, 3, 4].flatMap(termCount =>
         ['same', 'one_step', 'multi_step'].flatMap(fractionDifficulty =>
             flagPairs.map(([mixedNumber1, mixedNumber2]): [string, Record<string, unknown>] => [typeId, {
-                numberType: 'rational', fractionDifficulty, mixedNumber1, mixedNumber2, linkFractions: false,
+                numberType: 'rational', termCount, fractionDifficulty, mixedNumber1, mixedNumber2, linkFractions: false,
                 maxNumerator1: 40, maxNumerator2: 40, maxDenominator1: 30, maxDenominator2: 30,
-            }])));
+            }]))));
     test.each(cases)('%s %j', (typeId, constraints) => {
         const eqs = answers(typeId, constraints);
         expect(eqs.length).toBeGreaterThan(0);
@@ -101,6 +102,22 @@ describe('hoofdrekenen breuken: a mixed operand keeps a proper breukdeel', () =>
             const vals = eq.operands.map(value);
             const want = vals.slice(1).reduce((acc, v) => (eq.operator === '+' ? acc + v : acc - v), vals[0]);
             expect(value(eq.answer)).toBeCloseTo(want, 9);
+            // A flagged block answers as a mixed number, like the 2-term path.
+            if (isFraction(eq.answer)) expect(eq.answer.n).toBeLessThan(eq.answer.d);
+        }
+    });
+
+    // 'Eén stap' in a chain: two noemers at most, one a multiple of the other (one conversion).
+    test.each([3, 4])('one_step chain of %i terms keeps a single conversion step', (termCount) => {
+        for (const typeId of ['hr-std-optellen', 'hr-std-aftrekken']) {
+            const eqs = answers(typeId, { numberType: 'rational', termCount, fractionDifficulty: 'one_step', linkFractions: false,
+                maxNumerator1: 10, maxNumerator2: 10, maxDenominator1: 12, maxDenominator2: 12 });
+            expect(eqs.length).toBeGreaterThan(0);
+            for (const eq of eqs) {
+                const ds = [...new Set(eq.operands.map(o => (typeof o === 'number' ? 1 : o.d)))].sort((a, b) => a - b);
+                expect(ds.length, JSON.stringify(eq.operands)).toBe(2);
+                expect(ds[1] % ds[0], JSON.stringify(eq.operands)).toBe(0);
+            }
         }
     });
 });
