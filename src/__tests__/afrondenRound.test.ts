@@ -1,5 +1,7 @@
 import { describe, test, expect } from 'vitest';
-import { roundTo, targetsFor } from '../services/afronden/afrondenGenerator';
+import { roundTo, targetsFor, columnTargets } from '../services/afronden/afrondenGenerator';
+import type { AfrondenConstraints } from '../services/math/constraintTypes';
+import { APP_STRUCTURE } from '../config/appstructure';
 
 // roundTo against a string/integer reference: the value is built from its digit string,
 // the expected result is round-half-up on the integer count of the smallest place, and
@@ -78,5 +80,17 @@ describe('afronden roundTo rounds half up in every place', () => {
         expect(roundTo(0.15, 0.1)).toBe(0.2);
         expect(roundTo(1.45, 0.1)).toBe(1.5);
         expect(roundTo(97.04, 0.1)).toBe(97);
+    });
+});
+
+describe('afronden title names only the targets that get a column', () => {
+    test('t + h at 2 decimals: no h column, so the title says only t', () => {
+        const leaf = APP_STRUCTURE.flatMap(d => d.subdomains).flatMap(s => s.types)
+            .flatMap(t => t.children ?? []).find(l => l.id === 'afronden-dec-rooster')!;
+        const title = leaf.instruction as (c: unknown) => string;
+        const c = { ...leaf.defaultConstraints, decimalPlaces: 2, roundTargets: ['t', 'h'] };
+        expect(columnTargets(c as AfrondenConstraints).map(t => t.key)).toEqual(['t']);
+        expect(title(c)).toBe('Rond af op t.');
+        expect(title({ ...c, decimalPlaces: 3 })).toBe('Rond af op t en h.');
     });
 });

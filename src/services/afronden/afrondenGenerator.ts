@@ -53,6 +53,16 @@ export function usableTargets(numberType: string, maxGetal: number, decimalPlace
     ));
 }
 
+// The columns a block really prints: usable targets, else the first one (viewer, generator and title agree).
+export function columnTargets(c: AfrondenConstraints): RoundTarget[] {
+    const numberType = c.numberType ?? 'natural';
+    const maxGetal = c.maxGetal ?? (numberType === 'decimal' ? 100 : 1000);
+    const decimalPlaces = c.decimalPlaces ?? 2;
+    const selected = c.roundTargets ?? (numberType === 'decimal' ? ['E', 't'] : ['T', 'H']);
+    const usable = usableTargets(numberType, maxGetal, decimalPlaces, selected);
+    return usable.length ? usable : [targetsFor(numberType)[0]];
+}
+
 // SYNC: AfrondenConfig offers exactly these pills for a natural block.
 export function naturalTargetOffered(t: RoundTarget, maxGetal: number): boolean {
     return t.inclusive ? t.weight <= maxGetal : t.weight < maxGetal;

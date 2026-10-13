@@ -18,7 +18,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
-- Afronden decimaal rooster with targets t + h at 2 decimals: the title says "Rond af op t en h." but the table has only a t column (either drop h from the title or add the column). 2026-10-13 review agent.
 - Config pills: many option buttons carry no `aria-pressed` / selected state (the tester's accessibility snapshot showed selection by styling only; `seg-btn` in BreukenRangschikkenConfig / ControlerenConfig do it right). Sweep the plugins + `sharedPluginStyles` pill helper and add `aria-pressed` everywhere (2026-10-13 tester report).
 
 ## Generators
