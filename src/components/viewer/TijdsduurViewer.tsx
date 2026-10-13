@@ -33,18 +33,21 @@ export default function TijdsduurViewer({ block, showSolutions }: Props) {
         const value = col === 'begin' ? clock(ex.startMin)
             : col === 'einde' ? clock(ex.endMin)
             : formatDuur(ex.endMin - ex.startMin);
-        if (ex.blank !== col) {
-            // Passing midnight: mark the end time as next-day so the row stays solvable.
-            const nextDay = col === 'einde' && ex.endMin >= 1440 ? ' (volgende dag)' : '';
-            return <span>{value}{nextDay}</span>;
-        }
-        return showSolutions ? <span style={{ ...solutionText }}>{value}</span> : '';
+        // Passing midnight: mark the end time as next-day so the row stays solvable. Own small line
+        // (not inline text): the 7ch column cannot hold "(volgende" and it spilled over the begin cell.
+        const nextDay = col === 'einde' && ex.endMin >= 1440;
+        const marker = nextDay && (
+            <span data-testid="volgende-dag" style={{ display: 'block', fontFamily: 'var(--font-sheet-text)', fontSize: 'calc(var(--sheet-size-text) * 0.5)', lineHeight: 1.1 }}>volgende dag</span>
+        );
+        if (ex.blank !== col) return <span style={{ textAlign: 'center' }}>{value}{marker}</span>;
+        if (!showSolutions) return '';
+        return <span style={{ textAlign: 'center' }}><span style={{ ...solutionText }}>{value}</span>{marker}</span>;
     };
 
     // Column width in `ch` (mono, so exact) off the widest value THIS rep actually prints —
     // was a fixed 180/230/190px split that could only ever be full width (owner review R3).
-    // "einde" is sized off "HH:MM" only: "(volgende dag)" is left to wrap onto its own line
-    // rather than widen the column for a suffix that only some rows print.
+    // "einde" is sized off "HH:MM" only: the "volgende dag" marker is its own small line
+    // rather than widening the column for a suffix that only some rows print.
     const HHMM_CHARS = 5;
     const duurChars = Math.max(...exercises.map(ex => formatDuur(ex.endMin - ex.startMin).length));
     const COLS: Array<{ label: string; chars: number }> = [
