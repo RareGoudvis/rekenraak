@@ -18,6 +18,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
+- Rational × / : (`mathEngine.ts` natural_fraction / decimal_fraction, ~705 and ~1013): the breuk operand `n2/d2` is drawn unreduced and can be a whole number ("6/6 : 80,183", "9/3 : 72,859" seen on the kiosk card 2026-10-13, WP-B).
+
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
