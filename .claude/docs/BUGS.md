@@ -16,6 +16,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
+- Config pills: many option buttons carry no `aria-pressed` / selected state (the tester's accessibility snapshot showed selection by styling only; `seg-btn` in BreukenRangschikkenConfig / ControlerenConfig do it right). Sweep the plugins + `sharedPluginStyles` pill helper and add `aria-pressed` everywhere (2026-10-13 tester report).
+
 ## Generators
 
 - Rational × / : (`mathEngine.ts` natural_fraction / decimal_fraction, ~705 and ~1013): the breuk operand `n2/d2` is drawn unreduced and can be a whole number ("6/6 : 80,183", "9/3 : 72,859" seen on the kiosk card 2026-10-13, WP-B).

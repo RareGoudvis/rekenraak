@@ -36,6 +36,51 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         summary: 'Elke oefening blijft nu binnen het maximum dat je kiest.',
         items: [
             {
+                kind: 'opgelost',
+                text: 'Oefenmodus: lange breukantwoorden (bv. 19600/15394639) worden niet meer afgeknipt. Het vak neemt tot 24 tekens en verkleint de tekst zodat je alles ziet.',
+                example: { leafId: 'hr-std-delen-rat', constraints: { fractionMultMode: 'decimal_fraction', fractionOrderMode: 'BA', decimalPlaces: 3 } },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: Gemengd met “Om de beurt” wisselt nu echt af (+, −, ×, :) in plaats van altijd de eerste bewerking te geven.',
+                example: { leafId: 'hr-std-gemengd-nat', constraints: { variants: ['+', '-', 'x', ':'], mix: 'cycle' }, count: 4, before: 'altijd +', after: '+ − × : om de beurt' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Oefenmodus: de verliefde harten werden soms maar half getoond, bv. na een smalle oefening. Nu staat het hart altijd helemaal op de kaart.',
+                example: { leafId: 'splitsen-harten' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Getallenassen en getallenrijen tonen altijd minstens twee gegeven getallen, ook in de moeilijke modus, zodat de sprong te vinden is.',
+                example: { leafId: 'getalbegrip-getallenassen-nat', constraints: { hardMode: true, ticks: 10 }, before: '50, _, _, _, _, _, _, _, _, _', after: '50, _, _, _, _, _, _, _, 130, _' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Breuken: een gemengd getal is nu echt gemengd, het breukdeel is altijd kleiner dan 1.',
+                example: { leafId: 'hr-std-aftrekken-rat', constraints: { mixedNumber1: true, mixedNumber2: true, maxNumerator1: 40, maxDenominator1: 30 }, before: '2 38/27 − … = 17/27', after: '2 11/27 − … = 17/27' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Breuksommen met 3 of 4 termen volgen nu ook “Gemengd (Breuk 1/2)” en “Eén stap gelijknamig maken”.',
+                example: { leafId: 'hr-std-optellen-rat', constraints: { termCount: 3, mixedNumber1: true, mixedNumber2: true, fractionDifficulty: 'one_step' }, before: '3/4 + 5/7 + 2/9 = …', after: '2 3/8 + 1 1/4 + 7/4 = 5 3/8' },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Tijdsduur: na middernacht stond “(volgende dag)” over de begintijd. Nu staat het klein onder de eindtijd; in Oefenmodus leest de leerling het ook.',
+                example: { leafId: 'tijdsduur-berekenen', constraints: { overMidnight: true, blanks: ['duur'] }, count: 2 },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Gemengd getal ↔ breuk met “Beide”: de opdracht zegt nu “Schrijf als gemengd getal of als breuk.” In Oefenmodus zegt elke oefening wat je typt.',
+                example: { leafId: 'breuken-gemengd', constraints: { direction: 'beide' }, before: 'Schrijf als gemengd getal.', after: 'Schrijf als gemengd getal of als breuk.' },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Kommagetallen × en : : de keuze “Aantal factoren” is weg. Kettingen van 3 of 4 factoren bestaan enkel bij natuurlijke getallen; een nota zegt dat nu.',
+                example: { leafId: 'hr-std-vermenigvuldigen-dec' },
+            },
+            {
                 kind: 'nieuw',
                 text: 'Oefenmodus: kies een paar soorten oefeningen en deel een link of QR-code. Je leerlingen oefenen op hun eigen toestel, en de resultaten blijven op dat toestel.',
             },
