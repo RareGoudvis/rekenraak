@@ -590,7 +590,7 @@ build / drag** = the pupil answers ON the exercise through `interact` (§15 Phas
 | `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: the partners, the tree's blank, or a digit per place |
 | `breuken-bewerken` | `BREUK_BEWERK_KIOSK` | the asked FORM (gemengd / improper / reduced); gelijknamig = two fields |
 | `breuken` | `BREUKEN_KIOSK` | only herkennen / hoeveelheid(-abstract): a breuk, a count, or the two counting questions |
-| `klok-kloklezen` | `KLOK_KIOSK` | uur + min (analoog lezen / omzetten, digitaal tekenen); 3:15 and 15:15 both count; analoog tekenen: **drag** the wijzer(s) the pupil would draw (`handChoice`), 5-minute steps unless nauwkeurig |
+| `klok-kloklezen` | `KLOK_KIOSK` | analoog lezen: the time **in words** (`time-words`, default via `kioskSeed`; "Lees de klok en zeg hoe laat het is.") or uu:mm when the row says `klokAnswer: 'digitaal'`; uur + min for omzetten / digitaal tekenen; 3:15 and 15:15 both count; analoog tekenen: **drag** the wijzer(s) the pupil would draw (`handChoice`), 5-minute steps unless nauwkeurig |
 | `tijdsduur` | `TIJDSDUUR_KIOSK` | begin / einde as a time, duur as uur + min |
 
 No descriptor (cannot be practised yet): `kalender`, `vormleer-punt-lijn`, the `layout-*` furniture.
@@ -1276,6 +1276,7 @@ src/
 │   ├── layout/trueSize.ts       # pure cm budget per width tier for the real-size figures (no blockLayout import: that pulls the store into a cycle)
 │   ├── geld/geldMakeUp.ts       # fewest-pieces make-up of an amount (geld-tekenen key)
 │   ├── clock/minuteDirection.ts # Richting zones: directionAllows(d, minute), directionZones; legacy over/voor/beide mapped
+│   ├── clock/timeWords.ts       # the kiosk's four-word time grammar (uur · half · voor · over + kwart): timeWords, parseTimeWords, timeWordsText
 │   ├── regionStyle.ts           # overlayRegionStyle(base, RegionStyle): custom-wins style overlay for header/footer/titel + borderSides(): per-side longhands only (no shorthand/longhand mix → no React style warning)
 │   ├── layout/pagePacker.ts     # PURE packer: blocks in, pages out — rows, page breaks, spans; no DOM (§9)
 │   ├── layout/blockLayout.ts    # page grid (COL_UNITS × ROW_BUDGET) + per-type rowUnits/minWidth FALLBACK + VETO_MIN + cost fns (§9) — moved from config/ 2026-09-13
@@ -2097,7 +2098,7 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 
 | Field | Contract |
 |---|---|
-| `input` | the typical input: `number` · `number+rest` (quotiënt + rest, both must match) · `choice` · `missing-operand` (the blank of a puntoefening) · `text` (a word on the device keyboard: Romeins, a unit) · `time` (uur + min) · `multi-number` (one field per blank) · `fraction` (breuken herkennen: two keypad fields typed NOEMER first, then TELLER, drawn teller-over-bar-over-noemer in the panel; the wide key reads "Verder" until the teller field; `answerOf` = breuk spellings compared as "teller/noemer" under `exactForm` — the drawn form 2/6 by default, any equal value with the row toggle; stats show "3/6") · `interactive` (Phase C: the pupil answers ON the exercise, see `interact`) |
+| `input` | the typical input: `number` · `number+rest` (quotiënt + rest, both must match) · `choice` · `missing-operand` (the blank of a puntoefening) · `text` (a word on the device keyboard: Romeins, a unit) · `time` (uur + min) · `multi-number` (one field per blank) · `fraction` (breuken herkennen: two keypad fields typed NOEMER first, then TELLER, drawn teller-over-bar-over-noemer in the panel; the wide key reads "Verder" until the teller field; `answerOf` = breuk spellings compared as "teller/noemer" under `exactForm` — the drawn form 2/6 by default, any equal value with the row toggle; stats show "3/6") · `time-words` (analoge klok lezen in words, fields `[uur, minuten, woord]`: chips uur · half · voor · over, the hour field, a minute field + **kwart** key for voor / over; checked by value in the four-word grammar of `clock/timeWords.ts` — 0 "3 uur", 30 "half 4", 1–29 "m over 3", 31–59 "(60−m) voor 4", 15 only as kwart, so "15 over 3" / "35 over 3" are fout; stats show the words as built) · `interactive` (Phase C: the pupil answers ON the exercise, see `interact`) |
 | `inputOf(ex, c)?` | per-exercise refinement (a puntoefening or met-rest row in an hr block, a unit-blank herleiding) |
 | `choices?` / `choicesOf(ex, c)?` | the buttons, in order; `choicesOf` for per-exercise buttons (the row's numbers in vergelijken kiezen) |
 | `labels(ex, c)?` | multi-number field names (kg / g, euro / cent); named fields get a caption, numeric ones read left to right |
@@ -2117,8 +2118,9 @@ finish(): locked StatsScreen (De tijd is om! / Klaar!) — reload stays there; O
 | `kioskInstruction?` | the card header when the paper instruction names a pen verb (omcirkel, kleur, vul in) or a paper-only answer ("in woorden") but the kiosk asks a tap or a typed cell (klok analoog lezen: "Lees de klok en typ de tijd (uu:mm)."; breuken kleuren: "Kleur 3/6 in." and the card hides its own prompt under the context), or when the leaf's instruction cannot follow the exercise (breuken-gemengd under 'beide': the paper says "… of als breuk", each card "Typ als breuk." / "Typ als gemengd getal." from `ex.direction`); string or `(ex, c) => string \| undefined`. A teacher's own wording wins; the leaf's default gives way to this (`kioskInstructionOf`) |
 | `interact?` / `interactOf(c)?` | required whenever `input` / `inputOf` can be `interactive`: `{ kind, answerOf, fromState, keys?, cellOf?, show? }` (rows below). `interactOf` picks per SETTINGS (plaatswaarde: tap a letter or fill the tabel; undefined falls back to `interact`); read both through `kioskInteractOf(d, c)` |
 | `blankFields?(ex, c)` | multi-number: fields that may stay empty (a zero part in a compound herleiding); Controleer runs with one field filled (`typedReady`); `''` in `answerOf` marks the accepted empty alternative |
-| `rowLabel?(label, c)` | the builder row's name when it depends on a setting (plaatswaarde: "… · waarde van cijfer" / "… · plaats benoemen/omcirkelen (door elkaar)"), read via `rowLabelOf(row)`; a renamed row ships its label as text so old links keep their names |
-| `kioskSeed?(c)` | the kiosk's own starting settings for a leaf, read by `listOefenLeaves` (plaatswaarde rows start on `plaatsAnswer: 'waarde'` while the sheet default stays `'plaats'`) |
+| `rowLabel?(label, c)` | the builder row's name when it depends on a setting (plaatswaarde: "… · waarde van cijfer" / "… · plaats benoemen/omcirkelen (door elkaar)"; klok lezen: an explicit uu:mm pick adds " · uu:mm"), read via `rowLabelOf(row)`; a renamed row ships its label as text so old links keep their names |
+| `rowSetting?(c)` / `KioskRowSetting` | a kiosk-only setting the builder row shows beside limit / kans (klok lezen: "Antwoord: In woorden / Als uu:mm" → `klokAnswer`), read via `rowSettingOf`; it writes into the draft block's constraints, so the link carries it like any setting |
+| `kioskSeed?(c)` | the kiosk's own starting settings for a leaf, read by `listOefenLeaves` (plaatswaarde rows start on `plaatsAnswer: 'waarde'` while the sheet default stays `'plaats'`; analoge klok lezen rows start on `klokAnswer: 'woorden'` — a link without the key keeps uu:mm) |
 | `checkFields?(ex, c, given)` | multi-number: a cross-field rule beside the per-field check (gelijknamig: both answers must share a noemer and equal the given fractions — any common noemer counts; a teacher-fixed `targetDen` is still required) |
 | `showAnswer?(ex, c)` | stats error-row text when `display` would read as a riddle: "analoge klok toont 4:45: hoe laat?", "hoek van 120°: welke soort?", geld "€ 2,65" |
 | `supported(c)?` | settings this descriptor can check (splitsen: four layouts; breuken: kleuren / herkennen / hoeveelheid); `kioskSupports` evaluates it over the registry defaults + the leaf's; the builder excludes an unsupported row with a hint |
@@ -2136,7 +2138,7 @@ uur/min; for multi-number only the COUNT of `answerOf` is read) and `sanitizeAns
 a field may hold (`capOf(kind, keys)`: 12 chars, 24 with a `/` key or for a word, time fields 2
 digits — from the keys, never the exercise; the keypad refuses a key past the cap (`press`), a paste
 is clamped; a long value shrinks to fit its field, at most to half size, and shows its end
-(AnswerInput `fitField`); `.` types as `,`; the keypad moves uur → min). Physical keyboard (`useKioskKeys`): digits and the extra keys type, Backspace,
+(AnswerInput `fitField`); `.` types as `,`; the keypad moves uur → min). Physical keyboard (`useKioskKeys`): digits and the extra keys type, Backspace, time-words: u / h / v / o pick the word, k types kwart, Enter moves minuten → uur then checks;
 Enter = Controleer then Volgende (Enter in a multi-field moves to the next empty field), a key
 equal to a choice (`<` `=` `>`) picks it. Number fields use `inputMode="none"` (the keypad is the
 touch input), text fields the device keyboard.

@@ -37,6 +37,11 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         items: [
             {
                 kind: 'nieuw',
+                text: 'Oefenmodus: bij Analoge klok · lezen zegt de leerling de tijd in woorden (uur, half, voor, over; bij voor/over de minuten of “kwart”). Of uu:mm, per rij.',
+                example: { leafId: 'klok-analoog-lezen', before: 'typ 3:15', after: 'kwart over 3' },
+            },
+            {
+                kind: 'nieuw',
                 text: 'Oefenmodus: een sessie zonder limiet en zonder timer heeft nu een knop Stoppen. Na “Ja, stoppen” ziet de leerling meteen het eindscherm. Werkt ook in testmodus.',
             },
             {
