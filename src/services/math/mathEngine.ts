@@ -325,6 +325,11 @@ const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[
     return exercises;
 };
 
+// A "Gemengd getal" operand keeps its breukdeel proper (2 38/27 is no mixed number); one draw
+// either way, so rows without the flag keep their random sequence.
+const operandNumerator = (maxN: number, d: number, mixed: boolean): number =>
+    randInt(1, mixed ? Math.max(1, Math.min(maxN, d - 1)) : maxN);
+
 // 'multi_step' noemers: neither equals, divides nor is a multiple of the other. Null when the
 // drawn d1 has no such partner in [2, maxD2] (max noemer 2, or d1 = 6 at max 3): the
 // rejection draw would never end, so the caller redraws d1 within its bounded attempts.
@@ -369,23 +374,22 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
 
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let d1: number, d2: number, n1: number, n2: number;
+        let d1: number, d2: number;
 
         if (fractionDifficulty === 'same') {
             const maxD = Math.min(maxDenominator1, maxDenominator2);
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
             const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) break;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
             const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) continue;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
+        const n1 = operandNumerator(maxNumerator1, d1, mixedNumber1);
+        const n2 = operandNumerator(maxNumerator2, d2, mixedNumber2);
 
         const w1 = mixedNumber1 ? randInt(1, 3) : 0;
         const w2 = mixedNumber2 ? randInt(1, 3) : 0;
@@ -494,23 +498,22 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
 
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let d1: number, d2: number, n1: number, n2: number;
+        let d1: number, d2: number;
 
         if (fractionDifficulty === 'same') {
             const maxD = Math.min(maxDenominator1, maxDenominator2);
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
             const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) break;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
             const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) continue;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
+        let n1 = operandNumerator(maxNumerator1, d1, mixedNumber1);
+        let n2 = operandNumerator(maxNumerator2, d2, mixedNumber2);
 
         let w1 = mixedNumber1 ? randInt(1, 3) : 0;
         let w2 = mixedNumber2 ? randInt(1, 3) : 0;

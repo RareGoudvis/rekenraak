@@ -102,6 +102,8 @@ function checkHr(e: Equation, c: C, mode: HrMode, ctx: CheckContext, push: Push)
                 const perSlot = addSub || fmm === 'fraction_fraction' || e.operands.length > 2;
                 const maxD = perSlot ? n(i === 0 ? c.maxDenominator1 : c.maxDenominator2, 10) : n(c.maxDenominator2, 10);
                 if (o.d > maxD) push('denominator>max', o.d, maxD, ex);
+                // "Gemengd getal" promises a mixed number: its breukdeel is proper (2 38/27 is not one).
+                if ((o.whole ?? 0) > 0 && o.n >= o.d) push('mixed-improper-part', fmtF(o), 'n < d', ex);
             } else if (fmm === 'decimal_fraction' && !addSub && !(o > 0)) {
                 push('decimal-operand<=0', o, 0, ex);
             }

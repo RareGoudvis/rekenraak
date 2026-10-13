@@ -78,3 +78,29 @@ describe('hoofdrekenen breuken: whole results print as whole numbers', () => {
         expectNoWholeFractions(answers(typeId, constraints));
     });
 });
+
+// "Gemengd getal" operands are true mixed numbers: the report saw "2 38/27 − ? = 17/27".
+describe('hoofdrekenen breuken: a mixed operand keeps a proper breukdeel', () => {
+    const flagPairs: [boolean, boolean][] = [[true, false], [false, true], [true, true]];
+    const cases = ['hr-std-optellen', 'hr-std-aftrekken'].flatMap(typeId =>
+        ['same', 'one_step', 'multi_step'].flatMap(fractionDifficulty =>
+            flagPairs.map(([mixedNumber1, mixedNumber2]): [string, Record<string, unknown>] => [typeId, {
+                numberType: 'rational', fractionDifficulty, mixedNumber1, mixedNumber2, linkFractions: false,
+                maxNumerator1: 40, maxNumerator2: 40, maxDenominator1: 30, maxDenominator2: 30,
+            }])));
+    test.each(cases)('%s %j', (typeId, constraints) => {
+        const eqs = answers(typeId, constraints);
+        expect(eqs.length).toBeGreaterThan(0);
+        for (const eq of eqs) {
+            eq.operands.forEach((o, i) => {
+                if (typeof o === 'number') return;
+                const flagged = i === 0 ? constraints.mixedNumber1 : i === 1 ? constraints.mixedNumber2 : false;
+                if (flagged) expect(o.whole, `operand ${i + 1} is mixed`).toBeGreaterThan(0);
+                if ((o.whole ?? 0) > 0) expect(o.n, `${JSON.stringify(o)} breukdeel`).toBeLessThan(o.d);
+            });
+            const vals = eq.operands.map(value);
+            const want = vals.slice(1).reduce((acc, v) => (eq.operator === '+' ? acc + v : acc - v), vals[0]);
+            expect(value(eq.answer)).toBeCloseTo(want, 9);
+        }
+    });
+});
