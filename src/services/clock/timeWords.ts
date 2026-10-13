@@ -37,8 +37,8 @@ const whole = (raw: string) => (/^\d{1,2}$/.test(raw.trim()) ? Number(raw.trim()
 /** Minutes past 12:00 on the face (0–719) a wording names, or null when it breaks the grammar ("15 over 3", "35 over 3", "30 over 3"). */
 export function parseTimeWords(p: TimeWordsParts): number | null {
     const hour = whole(p.hour);
-    // 0–23: a 24-hour reading of the face is fine (15 uur), anything past it names no hour.
-    if (hour === null || hour > 23) return null;
+    // 0–24: a 24-hour reading of the face is fine (15 uur; the sheet's 24h midnight says "24 uur"), past it names no hour.
+    if (hour === null || hour > 24) return null;
     const at = (hour % 12) * 60;
     const minute = p.minute.trim().toLowerCase();
     const onFace = (n: number) => ((n % MINUTES_ON_FACE) + MINUTES_ON_FACE) % MINUTES_ON_FACE;
@@ -50,6 +50,11 @@ export function parseTimeWords(p: TimeWordsParts): number | null {
     if (n === null || n < 1 || n > 29 || (n === 15 && minute !== KWART)) return null;
     return onFace(p.word === 'over' ? at + n : at - n);
 }
+
+// The Oefenmodus answer fields hold a wording as [uur, minuten, woord]: the keypad's two fields first,
+// so a new exercise starts in the hour field (field 0), then the chip.
+export const timeWordsFields = (p: TimeWordsParts): string[] => [p.hour, p.minute, p.word];
+export const timeWordsOfFields = (f: readonly string[]): TimeWordsParts => ({ hour: f[0] ?? '', minute: f[1] ?? '', word: f[2] ?? '' });
 
 /** The wording as one line: "kwart over 3", "3 uur", "half 4", "25 voor 4"; missing parts stay out. */
 export function timeWordsText(p: TimeWordsParts): string {

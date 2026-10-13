@@ -20,6 +20,7 @@ import { cijferKiosk } from '../services/oefenen/kioskDescriptors';
 import { cijferKioskGrid } from '../services/cijferen/cijferCells';
 import { divideToDecimals } from '../services/cijferen/cijferGenerator';
 import { sanitizeAnswer } from '../oefenen/useOefenStore';
+import { timeWordsOfFields, timeWordsText } from '../services/clock/timeWords';
 import type * as T from '../services/math/types';
 import { PLACE_VALUES } from '../services/math/mathEngine';
 import { CONCEPT_NAMES } from '../services/vormleer/vormleerGenerator';
@@ -85,6 +86,8 @@ function roundHalfUp(n: number, weight: number): number {
 type Truth = number | [number, number] | string | { text: string[] } | { time: Array<[number, number]> } | { multi: number[] } | { set: string[] } | { count: number }
     // fraction: [teller, noemer] as drawn.
     | { fraction: [number, number] }
+    // time-words: the one wording in the four-word grammar ("kwart over 3").
+    | { words: string }
     // build: the value to lay, and the coins / blocks the tray may hold (absent = any).
     | BuildTruth;
 type BuildTruth = { build: number; allowed?: number[]; digits?: Record<string, number> };
@@ -313,8 +316,15 @@ const TRUTH: Record<string, (ex: never, c: Record<string, unknown>) => Truth> = 
         expect(Number.isInteger((f.total! * f.numerator) / f.denominator), JSON.stringify(f)).toBe(true);
         return (f.total! * f.numerator) / f.denominator;
     },
-    'klok-kloklezen': (k: T.ClockExercise) => {
+    'klok-kloklezen': (k: T.ClockExercise, c) => {
         expect(k.digitalText).toBe(`${String(k.hours).padStart(2, '0')}:${String(k.minutes).padStart(2, '0')}`);
+        // Read in words (owner 2026-10-13): uur · half · voor · over, kwart for 15, spelled out here on its own.
+        if (c.klokAnswer === 'woorden' && (c.exerciseMode ?? 'lezen') === 'lezen' && (c.clockType ?? 'analoog') === 'analoog') {
+            const m = k.minutes, h = k.hours % 12 || 12, next = (k.hours + 1) % 12 || 12;
+            const words = m === 0 ? `${h} uur` : m === 30 ? `half ${next}` : m === 15 ? `kwart over ${h}` : m === 45 ? `kwart voor ${next}`
+                : m < 30 ? `${m} over ${h}` : `${60 - m} voor ${next}`;
+            return { words };
+        }
         // Both halves of the day: a clock face (and "kwart over 3") does not say which.
         const h = k.hours % 12;
         return { time: [[h === 0 ? 12 : h, k.minutes], [h === 0 ? 0 : h + 12, k.minutes]] };
@@ -470,6 +480,12 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-rekenen-korting', { wholeEuros: false }, 'multi-number'],
         ['geld-rekenen-intrest', { halfYear: true }, 'number'],
         ['klok-analoog-lezen', { is24hour: true }, 'time'],
+        // klokAnswer (owner 2026-10-13): woorden = the four-word chips, digitaal / absent = uu:mm.
+        ['klok-analoog-lezen', { klokAnswer: 'digitaal' }, 'time'],
+        ['klok-analoog-lezen', { klokAnswer: 'woorden' }, 'time-words'],
+        ['klok-analoog-lezen', { klokAnswer: 'woorden', is24hour: true }, 'time-words'],
+        ['klok-analoog-lezen', { klokAnswer: 'woorden', timeTypes: ['nauwkeurig_1'] }, 'time-words'],
+        ['klok-analoog-lezen', { klokAnswer: 'woorden', timeTypes: ['nauwkeurig_5'], minuteDirection: 'half-voor' }, 'time-words'],
         ['klok-analoog-tekenen', { is24hour: true, timeTypes: ['nauwkeurig_1', 'uren'] }, 'interactive'],
         ['klok-analoog-tekenen', { handChoice: 'minuut', timeTypes: ['nauwkeurig_5'] }, 'interactive'],
         ['klok-analoog-tekenen', { handChoice: 'uur' }, 'interactive'],
@@ -773,6 +789,19 @@ function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map
                     expect(checkAnswer(d, ex, c, [String(h), String((m + 1) % 60)]), where).toBe(false);
                 }
                 for (const a of accepted) expect(time.some(([h, m]) => a === hm(h, m)), `${where} extra ${a}`).toBe(true);
+            } else if (input === 'time-words') {
+                // [uur, minuten, woord]: the wording as the pupil builds it; 15 typed for kwart and another hour are wrong.
+                const { words } = truth as { words: string };
+                const [hour, minute, word] = accepted;
+                expect(accepted.length, where).toBe(3);
+                expect(timeWordsText(timeWordsOfFields(accepted)), where).toBe(words);
+                expect(checkAnswer(d, ex, c, accepted), where).toBe(true);
+                expect(checkAnswer(d, ex, c, [String((Number(hour) % 12) + 12), minute, word]), where).toBe(true);
+                expect(checkAnswer(d, ex, c, [String((Number(hour) % 12) + 1), minute, word]), where).toBe(false);
+                if (minute === 'kwart') expect(checkAnswer(d, ex, c, [hour, '15', word]), where).toBe(false);
+                expect(checkAnswer(d, ex, c, [hour, minute, '']), where).toBe(false);
+                expect(sanitizeAnswer(hour, keys, 'time'), where).toBe(hour);
+                expect(sanitizeAnswer(minute, keys, input), where).toBe(minute);
             } else if (input === 'multi-number') {
                 const { multi } = truth as { multi: number[] };
                 expect(accepted.length, where).toBe(multi.length);

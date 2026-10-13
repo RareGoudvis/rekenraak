@@ -1,6 +1,7 @@
 import { INTERACT_SEP, type KioskAnswer, type KioskDescriptor } from './types';
 import type { InteractionKind } from '../../components/viewer/ViewerInteractionContext';
 import { kioskInputOf, kioskInteractOf } from './kiosk';
+import { parseTimeWords, timeWordsOfFields } from '../clock/timeWords';
 
 // Is the pupil's answer right? Typed answers are normalised (spaces, comma/dot, leading and
 // trailing zeros, minus glyphs) and compared with every spelling the descriptor accepts; a breuk
@@ -149,6 +150,12 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
         return sameValue(given[0], [accepted[0]]) && sameValue(given[1], [accepted[1]]);
     }
     if (input === 'time') return Array.isArray(given) && given.length === 2 && sameTime(given, accepted);
+    if (input === 'time-words') {
+        // By value in the four-word grammar: it has one wording per time, so "15 over 3" (not kwart) is refused.
+        if (!Array.isArray(given) || given.length !== 3) return false;
+        const g = parseTimeWords(timeWordsOfFields(given)), want = parseTimeWords(timeWordsOfFields(accepted));
+        return g !== null && g === want;
+    }
     if (input === 'fraction') {
         // [noemer, teller] as typed; whole numbers only in each field (a '3/' or '1,5' noemer is no breuk).
         if (!Array.isArray(given) || given.length !== 2 || !given.every(g => /^\s*\d+\s*$/.test(g))) return false;

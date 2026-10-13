@@ -49,6 +49,8 @@ export function fillAnswer(right: boolean) {
     else if (kind === 'choice') st.choose(right ? answer[0] : choices.find(c => c !== answer[0])!);
     else if (kind === 'number+rest') { st.setField(0, right ? answer[0] : '999'); st.setField(1, right ? answer[1] : '9'); }
     else if (kind === 'time') { const [h, m] = answer[0].split(':'); st.setField(0, h); st.setField(1, right ? m : String((Number(m) + 1) % 60)); }
+    // [uur, minuten, woord]: the chip, then the fields; a wrong run names the next hour.
+    else if (kind === 'time-words') { const [h, m, w] = answer; st.choose(w); if (m) st.setField(1, m); st.setField(0, right ? h : String((Number(h) % 12) + 1)); }
     // One field per blank; a wrong run spoils the last one.
     else if (kind === 'multi-number') answer.forEach((a, i) => st.setField(i, right || i < answer.length - 1 ? a.split('|')[0] : '99999'));
     else if (kind === 'text') st.setField(0, right ? answer[0] : 'xyz');

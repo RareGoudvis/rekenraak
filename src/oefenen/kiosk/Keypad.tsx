@@ -4,7 +4,8 @@ interface Props {
     // Extra keys for this type's settings (',' '-' '/' ' '), from descriptor.keys(c).
     extras: string[];
     // Descriptor action keys (Lenen): a word key in the same column, after the extras.
-    actions?: { id: string; label: string }[];
+    // `disabled`: the key stays in place but does nothing yet (kwart before voor / over is picked).
+    actions?: { id: string; label: string; disabled?: boolean }[];
     onAction?(id: string): void;
     onKey(key: string): void;
     onCheck(): void;
@@ -42,7 +43,7 @@ export default function Keypad({ extras, actions = [], onAction, onKey, onCheck,
             {shown.map((k, i) => key(k, ` kiosk-key-extra${k === ' ' ? ' kiosk-key-word' : ''}`, { gridRow: 4 - slots + i }))}
             {shownActions.map((a, i) => (
                 <button key={`action-${a.id}`} type="button" className="kiosk-key kiosk-key-extra kiosk-key-word" style={{ gridRow: 4 - slots + shown.length + i }}
-                    onMouseDown={keepFocus} onClick={() => onAction?.(a.id)} data-kiosk-action={a.id}>
+                    onMouseDown={keepFocus} onClick={() => onAction?.(a.id)} data-kiosk-action={a.id} disabled={a.disabled}>
                     {a.label}
                 </button>
             ))}

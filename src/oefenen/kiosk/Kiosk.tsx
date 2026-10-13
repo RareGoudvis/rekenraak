@@ -3,7 +3,8 @@ import { LEAF_BY_ID } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { kioskInstructionOf } from '../../services/oefenen/kiosk';
-import { cellPlanOf, currentInput, useOefenStore } from '../useOefenStore';
+import { cellPlanOf, currentInput, timeWordsNext, useOefenStore } from '../useOefenStore';
+import { KWART } from '../../services/clock/timeWords';
 import TopBar from './TopBar';
 import ExerciseCard from './ExerciseCard';
 import AnswerInput from './AnswerInput';
@@ -17,6 +18,9 @@ import StorageBanner from './StorageBanner';
 // Shift+Tab step through every cell and leave the grid at either end; Escape jumps to the keypad.
 // A focused answer field types natively (its onChange), so only keys that reach the page
 // outside a field are routed here; a focused button handles its own Enter.
+// Klok in woorden on a physical keyboard: the first letter picks the word (u, h, v, o) or types kwart (k).
+const TIME_WORD_HOTKEYS: Record<string, string> = { u: 'uur', h: 'half', v: 'voor', o: 'over', k: KWART };
+
 function useKioskKeys() {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -53,6 +57,12 @@ function useKioskKeys() {
                 if (cells) { st.enterCell(); return; }
                 // quotiënt typed, rest still empty: Enter moves on to the rest field (a unit is a button, not a field).
                 const kind = currentInput(st.sessie, st.shown)?.kind;
+                // Klok in woorden: from the minutes to an empty hour (or back), else Controleer.
+                if (kind === 'time-words') {
+                    const to = timeWordsNext(st.input, st.field);
+                    if (to !== null) st.focusField(to); else st.answer();
+                    return;
+                }
                 // A breuk typed teller first still needs its noemer: Enter goes back down to it.
                 const emptyPart = kind === 'fraction' ? st.input.findIndex((v, i) => i !== st.field && v === '') : -1;
                 if (emptyPart >= 0 && st.input[st.field] !== '') st.focusField(emptyPart);
@@ -68,6 +78,13 @@ function useKioskKeys() {
             if (extra) { e.preventDefault(); if (!e.repeat) st.pressExtra(extra.id); return; }
             if (info.kind === 'choice') {
                 if (info.choices.includes(e.key)) { e.preventDefault(); st.choose(e.key); }
+                return;
+            }
+            // Klok in woorden: a chip or kwart by its first letter, also from inside a field (before it types there).
+            const tw = info.kind === 'time-words' ? TIME_WORD_HOTKEYS[e.key.toLowerCase()] : undefined;
+            if (tw) {
+                e.preventDefault();
+                if (!e.repeat) { if (tw === KWART) st.press(KWART); else st.choose(tw); }
                 return;
             }
             if (inField) return;

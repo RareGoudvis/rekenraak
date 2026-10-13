@@ -69,6 +69,16 @@ describe('kiosk instruction wording', () => {
         for (const h of lezen) expect(h.shown, `L${h.grade}`).toBe('Lees de klok en typ de tijd (uu:mm).');
     });
 
+    test('klok analoog lezen in woorden (a new row, owner 2026-10-13): no pen verb, no uu:mm', () => {
+        const lezen = ALL.filter(h => h.leafId === 'klok-analoog-lezen');
+        for (const h of lezen) {
+            const shown = kioskInstructionOf('klok-kloklezen', h.exercise, { clockType: 'analoog', exerciseMode: 'lezen', klokAnswer: 'woorden' }, 'Hoe laat is het?');
+            expect(shown).toBe('Lees de klok en zeg hoe laat het is.');
+            expect(shown).not.toMatch(PEN_VERB);
+            expect(shown).not.toMatch(WRITE_VERB);
+        }
+    });
+
     // 'beide' mixes both ways in one block: the paper says "gemengd getal of als breuk", each card names its own way.
     test('gemengd getal ↔ breuk under beide: the header follows the exercise on the card', () => {
         const leaf = kioskCapableLeaves().find(l => l.id === 'breuken-gemengd')!;

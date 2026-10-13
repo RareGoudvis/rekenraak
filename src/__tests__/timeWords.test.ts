@@ -35,6 +35,8 @@ describe('parseTimeWords: right wordings count by value, others are null', () =>
         expect(parseTimeWords(w('', 'uur', '3'))).toBe(face(3, 0));
         expect(parseTimeWords(w('', 'uur', '12'))).toBe(0);
         expect(parseTimeWords(w('', 'uur', '0'))).toBe(0);
+        expect(parseTimeWords(w('', 'uur', '24'))).toBe(0);
+        expect(parseTimeWords(w('', 'half', '24'))).toBe(face(23, 30));
         expect(parseTimeWords(w('', 'half', '4'))).toBe(face(3, 30));
         expect(parseTimeWords(w('', 'half', '1'))).toBe(face(12, 30));
         expect(parseTimeWords(w('05', 'over', '03'))).toBe(face(3, 5));
@@ -51,7 +53,7 @@ describe('parseTimeWords: right wordings count by value, others are null', () =>
         ['kwart with half', w('kwart', 'half', '4')],
         ['no minutes with over', w('', 'over', '3')],
         ['no hour', w('', 'uur', '')],
-        ['hour 24', w('', 'uur', '24')],
+        ['hour 25', w('', 'uur', '25')],
         ['three digits', w('', 'uur', '100')],
         ['no word', w('5', '', '3')],
         ['voor half is not a word here', w('5', 'voor half', '4')],

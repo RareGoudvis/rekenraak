@@ -6,6 +6,7 @@ import { clearRunsFor, emptyStats, loadRuns, loadRunsFor, nextRunIndex, recordAn
 import { checkAnswer } from '../services/oefenen/check';
 import { kioskFor, kioskInputOf, kioskInteractOf } from '../services/oefenen/kiosk';
 import { EMPTY_INTERACTION, built, type InteractionKind, type InteractionState } from '../components/viewer/ViewerInteractionContext';
+import { KWART, TIME_WORDS } from '../services/clock/timeWords';
 
 // The pupil kiosk's own store. It never imports the worksheet store or autosave: the only
 // thing it writes is this session's runs, through saveRun (localStorage per session id).
@@ -34,7 +35,7 @@ const MAX_LONG_CHARS = 24;
 
 /** The most characters a field may hold, from its kind and the keypad's keys (never the exercise: that would hint at the answer). */
 export function capOf(kind: KioskInput, keys: readonly string[]): number {
-    if (kind === 'time') return 2;
+    if (kind === 'time' || kind === 'time-words') return 2;
     return kind === 'text' || keys.includes('/') ? MAX_LONG_CHARS : MAX_CHARS;
 }
 
@@ -117,14 +118,29 @@ export interface CurrentInput {
     blankFieldsOk: boolean;
 }
 
-/** Whether Controleer may take these typed fields: all filled, or one when the fields may stay empty. */
-export const typedReady = (input: readonly string[], blankFieldsOk: boolean): boolean =>
-    blankFieldsOk ? input.some(v => v.trim() !== '') : input.every(v => v.trim() !== '');
+// time-words [uur, minuten, woord]: voor / over carry minutes (a number or kwart), uur / half none.
+const wordTakesMinutes = (word: string | undefined) => word === 'voor' || word === 'over';
+
+/** Whether Controleer may take these typed fields: all filled, or one when the fields may stay empty; time-words: a word, the hour, and the minutes where the word has them. */
+export const typedReady = (input: readonly string[], blankFieldsOk: boolean, kind?: KioskInput): boolean => {
+    if (kind === 'time-words') return (input[2] ?? '') !== '' && (input[0] ?? '').trim() !== '' && (!wordTakesMinutes(input[2]) || (input[1] ?? '').trim() !== '');
+    return blankFieldsOk ? input.some(v => v.trim() !== '') : input.every(v => v.trim() !== '');
+};
+
+/** time-words: the field Enter (or the keypad's Verder) moves to before checking — the hour after the minutes, the minutes after the hour — or null to check. */
+export function timeWordsNext(input: readonly string[], field: number): number | null {
+    const [hour = '', minute = '', word = ''] = input;
+    if (field === 1 && minute !== '' && hour === '') return 0;
+    if (field === 0 && hour !== '' && wordTakesMinutes(word) && minute === '') return 1;
+    return null;
+}
 
 const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
     'number+rest': ['quotiënt', 'rest'], time: ['uur', 'min'], 'missing-operand': ['Wat ontbreekt?'], text: ['Antwoord'],
     // fraction: field 0 is the noemer, typed first (the pupil counts the parts before the coloured ones).
     fraction: ['noemer', 'teller'],
+    // time-words: the keypad's two fields first (a new exercise starts in the hour), the chip's word last.
+    'time-words': ['uur', 'minuten', 'woord'],
 };
 
 /** The input kind, extra keypad keys, choices and field labels for the exercise on the card. */
@@ -133,7 +149,8 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
     const d = kioskFor(s.types[cur.slot]?.typeId ?? '');
     if (!d) return null;
     const kind = kioskInputOf(d, cur.exercise, cur.constraints);
-    const choices = d.choicesOf?.(cur.exercise, cur.constraints) ?? d.choices ?? [];
+    // time-words: the four chips are the input kind's own, the same on every exercise.
+    const choices = kind === 'time-words' ? [...TIME_WORDS] : d.choicesOf?.(cur.exercise, cur.constraints) ?? d.choices ?? [];
     let labels = FIXED_LABELS[kind] ?? ['Antwoord'];
     if (kind === 'multi-number') {
         // Only the field COUNT is read from the answer, never a value.
@@ -194,13 +211,14 @@ function filterAnswer(raw: string, keys: readonly string[], kind: KioskInput): s
     let out = '';
     for (const ch0 of raw) {
         const ch = ch0 === '.' && keys.includes(',') ? ',' : ch0;
-        if ((ch >= '0' && ch <= '9') || (kind !== 'time' && keys.includes(ch))) out += ch;
+        if ((ch >= '0' && ch <= '9') || (kind !== 'time' && kind !== 'time-words' && keys.includes(ch))) out += ch;
     }
     return out;
 }
 
-/** Keeps what the field may hold: the characters it takes, up to `capOf` (a paste is clamped). */
+/** Keeps what the field may hold: the characters it takes, up to `capOf` (a paste is clamped); a time-words minute field also holds "kwart". */
 export function sanitizeAnswer(raw: string, keys: readonly string[], kind: KioskInput = 'number'): string {
+    if (kind === 'time-words' && raw.trim().toLowerCase() === KWART) return KWART;
     return filterAnswer(raw, keys, kind).slice(0, capOf(kind, keys));
 }
 
@@ -265,6 +283,29 @@ export const useOefenStore = create<OefenState>()((set, get) => {
         const value = interaction.cells[activeCell] ?? '';
         if (key === 'back') writeCell(activeCell, value.slice(0, -1), false);
         else writeCell(activeCell, value + key, true);
+    };
+
+    // time-words: digits into the hour (0) or minute (1) field, kwart into the minutes of voor / over.
+    // Two minute digits or kwart hand the keypad on to an empty hour; nothing else moves on by
+    // itself, so a wrong "35 over 3" can still be typed (and judged).
+    const pressTimeWords = (key: string) => {
+        const { input, field } = get();
+        const [hour = '', minute = '', word = ''] = input;
+        const write = (h: string, m: string, to: number) => set({ input: [h, m, word], field: to });
+        if (key === KWART) {
+            if (wordTakesMinutes(word)) write(hour, KWART, hour === '' ? 0 : field);
+            return;
+        }
+        if (field === 1 && wordTakesMinutes(word)) {
+            const digits = minute === KWART ? '' : minute;
+            if (key === 'back') { write(hour, digits.slice(0, -1), 1); return; }
+            if (!/^\d$/.test(key) || digits.length >= 2) return;
+            const next = digits + key;
+            write(hour, next, next.length === 2 && hour === '' ? 0 : 1);
+            return;
+        }
+        if (key === 'back') { write(hour.slice(0, -1), minute, 0); return; }
+        if (/^\d$/.test(key) && hour.length < 2) write(hour + key, minute, 0);
     };
 
     // The cell the keypad starts in: the first one on the Enter path.
@@ -374,6 +415,7 @@ export const useOefenStore = create<OefenState>()((set, get) => {
                 return;
             }
             if (info.kind === 'interactive') { pressCell(key); return; }
+            if (info.kind === 'time-words') { pressTimeWords(key); return; }
             const value = input[field] ?? '';
             // A full field refuses the key instead of cutting the answer short.
             if (key !== 'back' && filterAnswer(value + key, info.keys, info.kind).length > capOf(info.kind, info.keys)) return;
@@ -388,7 +430,10 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             if (phase !== 'exercise') return;
             const info = currentInput(sessie, shown);
             if (!info) return;
-            set({ input: input.map((v, j) => (j === i ? sanitizeAnswer(raw, info.keys, info.kind) : v)), field: i });
+            // time-words: the hour field takes digits only, the word field only a chip (choose).
+            if (info.kind === 'time-words' && i === 2) return;
+            const kind = info.kind === 'time-words' && i === 0 ? 'time' : info.kind;
+            set({ input: input.map((v, j) => (j === i ? sanitizeAnswer(raw, info.keys, kind) : v)), field: i });
         },
 
         focusField(i) {
@@ -401,6 +446,13 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             const info = currentInput(sessie, shown);
             if (!info?.choices.includes(choice)) return;
             if (info.kind === 'choice') set({ input: [choice] });
+            if (info.kind === 'time-words') {
+                const { input, field } = get();
+                const [hour = '', minute = ''] = input;
+                // uur / half carry no minutes: those go, the keypad stays on the hour. voor / over want them first.
+                if (!wordTakesMinutes(choice)) set({ input: [hour, '', choice], field: 0 });
+                else set({ input: [hour, minute, choice], field: minute === '' ? 1 : field });
+            }
         },
 
         skipFlash() {
@@ -417,7 +469,8 @@ export const useOefenStore = create<OefenState>()((set, get) => {
             // The clock ticks once a second: an answer in the gap after the deadline ends the run uncounted.
             if (timeUp(run, now)) { finish(run, now); return; }
             const interactive = interactionAnswer(s, cur, get().interaction);
-            if (interactive ? !interactive.ready : !typedReady(input, currentInput(s, cur)?.blankFieldsOk ?? false)) return;
+            const typedInfo = interactive ? null : currentInput(s, cur);
+            if (interactive ? !interactive.ready : !typedReady(input, typedInfo?.blankFieldsOk ?? false, typedInfo?.kind)) return;
             const type = s.types[cur.slot];
             const d = type && kioskFor(type.typeId);
             if (!d) return;
