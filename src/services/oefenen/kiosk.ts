@@ -111,4 +111,6 @@ export const KIOSK_KEY_TABLE_V1: readonly string[] = [
     'roosterSize', 'percents', 'scaffold', 'bridges', 'operand1Mask', 'operand2Mask', 'fractionDifficulty',
     'mixedNumber1', 'mixedNumber2', 'maxNumerator1', 'maxDenominator1', 'maxNumerator2', 'maxDenominator2',
     'linkFractions', 'multiplicationMode', 'selectedTables', 'tableLimit',
+    // 2026-10-13
+    'klokAnswer',
 ];

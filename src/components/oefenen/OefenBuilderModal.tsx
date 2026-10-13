@@ -14,7 +14,7 @@ import { MAX_TITLE, MAX_TYPES, newSessieId, sessieContentHash } from '../../serv
 import { kioskSupports } from '../../services/oefenen/kiosk';
 import { plannedTotal } from '../../services/oefenen/scheduler';
 import {
-    EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowLabelOf, rowsFromSessie, seedRowConstraints,
+    EMPTY_PREVIEW, LIMIT_MAX, TIMER_STEPS, buildSessie, deadRows, draftIdOf, exactFormDefaultOf, listOefenLeaves, normaliseWeights, rowLabelOf, rowSettingOf, rowsFromSessie, seedRowConstraints,
     type BuilderRow, type OefenLeaf,
 } from './oefenBuild';
 
@@ -82,6 +82,12 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
         setRows(rs => rs.filter(r => r.key !== key));
     };
     const patchRow = (key: string, patch: Partial<Row>) => setRows(rs => rs.map(r => r.key === key ? { ...r, ...patch } : r));
+    // A kiosk-only setting lives in the draft's constraints like any Config setting, so the link carries it.
+    const setRowConstraint = (key: string, name: string, value: string) => {
+        const st = useWorksheetStore.getState();
+        const draft = st.draftBlocks.find(b => b.id === draftIdOf(key));
+        if (draft) st.updateBlockSettings(draft.id, { constraints: { ...draft.constraints, [name]: value } });
+    };
 
     // Rows whose draft block has not landed in the store yet (first render after add) are skipped.
     const buildable: BuilderRow[] = rows.flatMap(r => {
@@ -207,6 +213,7 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                             const pct = percentOf(r.key);
                             const formDefault = constraints ? exactFormDefaultOf({ leaf: r.leaf, constraints }) : undefined;
                             const label = constraints ? rowLabelOf({ leaf: r.leaf, constraints }) : r.leaf.label;
+                            const rowSetting = constraints ? rowSettingOf({ leaf: r.leaf, constraints }) : undefined;
                             return (
                                 <section key={r.key} style={isDead ? { ...S.card, border: '1px solid var(--danger)' } : S.card} aria-label={label}>
                                     <div style={S.rowHead}>
@@ -253,6 +260,19 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                                                             <button key={String(exact)} className="seg-btn" style={S.formBtn} aria-pressed={(r.exactForm ?? formDefault) === exact}
                                                                 onClick={() => patchRow(r.key, { exactForm: exact === formDefault ? undefined : exact })}>
                                                                 {exact ? 'Enkel de gevraagde vorm' : 'Gelijkwaardig goedrekenen'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {rowSetting && (
+                                                <div style={S.field}>
+                                                    <span style={S.label}>{rowSetting.label}</span>
+                                                    <div className="seg-group" role="group" aria-label={rowSetting.label} style={S.formGroup}>
+                                                        {rowSetting.options.map(o => (
+                                                            <button key={o.value} className="seg-btn" style={S.formBtn} aria-pressed={rowSetting.value === o.value}
+                                                                onClick={() => setRowConstraint(r.key, rowSetting.key, o.value)}>
+                                                                {o.label}
                                                             </button>
                                                         ))}
                                                     </div>

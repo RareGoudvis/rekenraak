@@ -17,6 +17,11 @@ const TIME_TYPE_LABELS: Record<TimeCategory, string> = {
     nauwkeurig_1: "Tot 1' nauwkeurig  (23 over 3)",
 };
 
+const KLOK_ANSWER_HINT: Record<string, string> = {
+    woorden: ' (oefenmodus: tijd in woorden)',
+    digitaal: ' (oefenmodus: tijd typen als uu:mm)',
+};
+
 export default function ClockConfig({ block }: Props) {
     const [c, patch] = useConstraints<ClockConstraints>(block);
     const {
@@ -48,7 +53,8 @@ export default function ClockConfig({ block }: Props) {
             {/* Activity + clock type come from the sidebar leaf; show the current mode as a hint. */}
             <div style={{ ...styles.section, fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
                 {/* Also the Oefenmodus builder's hint, where the pupil types / drags instead of writing / drawing. */}
-                {clockType === 'analoog' && exerciseMode === 'lezen' && 'Analoog · Klok zien → tijd in woorden schrijven (oefenmodus: tijd typen als uu:mm)'}
+                {/* klokAnswer only exists on an oefen-builder row; the sheet has none and names no kiosk answer. */}
+                {clockType === 'analoog' && exerciseMode === 'lezen' && `Analoog · Klok zien → tijd in woorden schrijven${KLOK_ANSWER_HINT[c.klokAnswer ?? ''] ?? ''}`}
                 {clockType === 'analoog' && exerciseMode === 'tekenen' && 'Analoog · Tijd in woorden → wijzers tekenen op klok (oefenmodus: wijzers slepen)'}
                 {clockType === 'analoog' && exerciseMode === 'omzetten' && 'Analoog · Klok zien → digitale tijd invullen'}
                 {clockType === 'digitaal' && exerciseMode === 'lezen' && 'Digitaal · Digitale tijd zien → tijd in woorden schrijven'}

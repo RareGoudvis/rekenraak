@@ -1056,6 +1056,10 @@ const klokType = (ex: ClockExercise, c: Record<string, unknown>) => ex.clockType
 // the answer is the face as 'h:mm', 3:15 and 15:15 one position (check.ts drag).
 const isKlokDrag = (ex: ClockExercise, c: Record<string, unknown>) => klokMode(ex, c) === 'tekenen' && klokType(ex, c) === 'analoog';
 const KLOK_HAND_WORDS: Record<string, string> = { m: 'de grote wijzer', h: 'de kleine wijzer', hm: 'de wijzers' };
+const isKlokLezenAnaloog = (c: Record<string, unknown>) =>
+    ((c.exerciseMode as string | undefined) ?? 'lezen') === 'lezen' && ((c.clockType as string | undefined) ?? 'analoog') === 'analoog';
+// Absent = 'digitaal': a link from before the setting keeps its uu:mm; a new builder row starts on woorden (kioskSeed).
+const klokAnswerOf = (c: Record<string, unknown>) => (c.klokAnswer === 'woorden' ? 'woorden' : 'digitaal');
 const klokDrag: KioskInteract<ClockExercise> = {
     kind: 'drag',
     keys: klokDragHands,
@@ -1076,6 +1080,14 @@ export const KLOK_KIOSK = descriptor<ClockExercise>({
     // Owner call 13: the paper's lezen asks the time in words (a writing line under the clock); the card takes uu:mm only.
     kioskInstruction: (ex, c) => (isKlokDrag(ex, c) ? `Zet ${KLOK_HAND_WORDS[klokDragHands(ex, c).join('')]} op ${ex.timeText}.`
         : klokMode(ex, c) === 'lezen' && klokType(ex, c) === 'analoog' ? 'Lees de klok en typ de tijd (uu:mm).' : undefined),
+    // Owner 2026-10-13: a new row reads the clock in words, like the sheet; the link carries the key as a row diff.
+    kioskSeed: (c) => (isKlokLezenAnaloog(c) ? { klokAnswer: 'woorden' } : undefined),
+    rowSetting: (c) => (isKlokLezenAnaloog(c) ? {
+        key: 'klokAnswer', label: 'Antwoord', value: klokAnswerOf(c),
+        options: [{ value: 'woorden', label: 'In woorden' }, { value: 'digitaal', label: 'Als uu:mm' }],
+    } : undefined),
+    // Only an explicit uu:mm pick renames the row: an older link (no key) keeps its name and its content hash.
+    rowLabel: (label, c) => (isKlokLezenAnaloog(c) && c.klokAnswer === 'digitaal' ? `${label} · uu:mm` : label),
     supported: (c) => {
         const type = (c.clockType as string | undefined) ?? 'analoog';
         // No tijdstype ticked: the generator has no minutes to draw from (clockGenerator returns []).

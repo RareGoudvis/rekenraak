@@ -197,6 +197,9 @@ export type ClockConstraints = {
     timeTypes: TimeCategory[];
     minuteDirection: MinuteDirection;
     handChoice: HandChoice;
+    // Oefenmodus only (the sheet never reads it), analoog lezen: 'woorden' = build the time from
+    // uur / half / voor / over chips; 'digitaal' or absent (a link from before 2026-10-13) = type uu:mm.
+    klokAnswer?: 'woorden' | 'digitaal';
 };
 
 // ── Breuken ──────────────────────────────────────────────────────────────────

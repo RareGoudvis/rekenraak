@@ -67,9 +67,11 @@ export const attemptsOf = (s: Pick<OefenSessie, 'attempts' | 'testMode'>): Oefen
 // text = a word typed on the device keyboard (Romeinse cijfers, a unit); time = uur + minuten
 // fields; multi-number = one field per blank (a getallenrij, a gelijknamig pair);
 // fraction = a breuk as two fields, noemer typed first, then teller,
-// drawn stacked (breuken herkennen), checked as 'teller/noemer' against `answerOf`; interactive = the
+// drawn stacked (breuken herkennen), checked as 'teller/noemer' against `answerOf`; time-words = a clock
+// read in words: a chip (uur · half · voor · over), the hour and for voor / over the minutes or kwart,
+// checked by value in the four-word grammar (clock/timeWords.ts); interactive = the
 // pupil answers ON the exercise (Phase C: tap, fill its cells, order), see `interact`.
-export type KioskInput = 'number' | 'number+rest' | 'fraction' | 'choice' | 'missing-operand' | 'text' | 'time' | 'multi-number' | 'interactive';
+export type KioskInput = 'number' | 'number+rest' | 'fraction' | 'choice' | 'missing-operand' | 'text' | 'time' | 'time-words' | 'multi-number' | 'interactive';
 
 // Separator of the parts in an interactive answer string ('12 · 48 · 7'): never part of a number.
 export const INTERACT_SEP = ' · ';
@@ -114,6 +116,15 @@ export interface KioskPiece {
     value: number;
     // The most of this piece the pupil can lay (MAB: 9 per place, a positietabel digit).
     max?: number;
+}
+
+// A kiosk-only row setting the oefen-builder shows beside Aantal (klok lezen: in woorden / als uu:mm).
+// `key` is the constraint it writes; `value` the current one (an absent key reads as the link's default).
+export interface KioskRowSetting {
+    key: string;
+    label: string;
+    value: string;
+    options: { value: string; label: string }[];
 }
 
 export interface KioskCellSpec {
@@ -168,6 +179,7 @@ export interface KioskDescriptor<E = unknown> {
     // number / missing-operand / choice / text: every accepted spelling ('2,5' and '2.5').
     // number+rest: exactly [quotiënt, rest]. time: every accepted 'h:mm' (8:05 and 20:05).
     // fraction: the accepted breuk spellings ('2/6'); the pupil's [noemer, teller] is read as 'teller/noemer'.
+    // time-words: the one wording as the fields hold it, [uur, minuten, woord] (['3', 'kwart', 'over']).
     // multi-number: one entry per field, alternatives within a field joined by '|'.
     answerOf(ex: E, c: Record<string, unknown>): string[];
     // Plain-text rendering for stats and error rows, e.g. "47 + 38 = ?".
@@ -189,6 +201,8 @@ export interface KioskDescriptor<E = unknown> {
     // another default than the sheet (plaatswaarde plaats: the value, not the place). From the
     // leaf's constraints; undefined = none. Only the builder reads it: a link carries the result.
     kioskSeed?(c: Record<string, unknown>): Record<string, unknown> | undefined;
+    // A kiosk-only choice the builder row offers for these settings (KioskRowSetting); undefined = none.
+    rowSetting?(c: Record<string, unknown>): KioskRowSetting | undefined;
     // Settings this descriptor can check (afronden: simpel only). Absent = always.
     supported?(c: Record<string, unknown>): boolean;
     // The kiosk's own constraints for the next exercise, drawn with `rng` (the scheduler's seeded
@@ -205,7 +219,7 @@ export interface KioskDescriptor<E = unknown> {
 }
 
 // What the pupil handed in: one string, or one string per field (number+rest, time, multi-number;
-// fraction = [noemer, teller], the order they are typed in).
+// fraction = [noemer, teller], the order they are typed in; time-words = [uur, minuten, woord]).
 export type KioskAnswer = string | string[];
 
 // ── Stats (pupil device, localStorage) ───────────────────────────────────────
