@@ -1,5 +1,6 @@
 import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
 import type { GetallenasConstraints } from '../math/constraintTypes';
+import { ensureTwoGivens } from './blankMask';
 
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
@@ -123,8 +124,10 @@ export function generateGetallenasExercisesNoted(block: MathBlock): { items: Get
         }
 
         const ratio = hardMode ? 0.6 : 0.4;
-        const blankMask = Array.from({ length: ticks }, (_, k) => k !== 0 && Math.random() < ratio);
-        if (!blankMask.some(Boolean)) blankMask[ticks - 1] = true;
+        // SYNC: keep the blank-mask draw aligned with getallenrijGenerator.ts.
+        const drawnMask = Array.from({ length: ticks }, (_, k) => k !== 0 && Math.random() < ratio);
+        if (!drawnMask.some(Boolean)) drawnMask[ticks - 1] = true;
+        const blankMask = ensureTwoGivens(drawnMask);
 
         results.push({ id: rndId(), start, step: usedStep, tickCount: ticks, blankMask, direction, values, numberType, isManuallyEdited: false });
     }

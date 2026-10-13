@@ -240,52 +240,78 @@ export const numberMatchesMask = (
 // 4. OPTELLEN (ADDITION)
 // ============================================================================
 
-// 2-4 fraction chains for + and −. 'same' difficulty shares one denominator; anything
-// else accumulates the common denominator pairwise (answers stay exact integers).
+// 2-4 fraction chains for + and −. 'same' shares one noemer, 'one_step' uses a noemer and one
+// multiple of it (like the 2-term path), 'multi_step' draws freely; the common denominator
+// accumulates pairwise (answers stay exact integers). "Gemengd" applies to terms 1 and 2.
 const generateFractionChain = (block: MathBlock, op: '+' | '-'): Equation[] => {
     const { numberOfExercises } = block;
     const constraints = block.constraints as MulDivConstraints;
     const {
-        fractionDifficulty = 'same',
+        fractionDifficulty = 'same', mixedNumber1 = false, mixedNumber2 = false,
         maxNumerator1 = 10, maxDenominator1 = 10, maxNumerator2 = 10, maxDenominator2 = 10,
     } = constraints;
     const N = termCountOf(constraints);
+    const mixedAt = (i: number) => (i === 0 ? mixedNumber1 : i === 1 && mixedNumber2);
     const exercises: Equation[] = [];
     const usedCombinations = new Set<string>();
     let attempts = 0;
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
         const sameD = fractionDifficulty === 'same';
-        const d0 = randInt(2, Math.max(2, sameD ? Math.min(maxDenominator1, maxDenominator2) : maxDenominator1));
-        const fracs: Fraction[] = Array.from({ length: N }, (_, i) => ({
-            n: randInt(1, i === 0 ? maxNumerator1 : maxNumerator2),
-            d: sameD ? d0 : (i === 0 ? d0 : randInt(2, Math.max(2, maxDenominator2))),
-        }));
-        // Accumulate: ansN/ansD ± n_i/d_i.
-        let ansN = fracs[0].n, ansD = fracs[0].d;
+        let dens: number[] | null = null;
+        if (fractionDifficulty === 'one_step') {
+            const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
+            if (!pair) break;
+            dens = oneStepChainDenominators(pair, maxDenominator2, N);
+        }
+        const d0 = dens ? dens[0] : randInt(2, Math.max(2, sameD ? Math.min(maxDenominator1, maxDenominator2) : maxDenominator1));
+        const denOf = (i: number) => (dens ? dens[i] : sameD || i === 0 ? d0 : randInt(2, Math.max(2, maxDenominator2)));
+        const fracs: Fraction[] = Array.from({ length: N }, (_, i) => {
+            const maxN = i === 0 ? maxNumerator1 : maxNumerator2;
+            if (!mixedAt(i)) {
+                const n = randInt(1, maxN);
+                return { n, d: denOf(i) };
+            }
+            // A mixed term needs its noemer first: the breukdeel stays below it.
+            const d = denOf(i);
+            const n = operandNumerator(maxN, d, true);
+            return { whole: randInt(1, 3), n, d };
+        });
+        // Accumulate: ansN/ansD ± (whole·d + n)/d per term.
+        const tn = (f: Fraction) => (f.whole ?? 0) * f.d + f.n;
+        let ansN = tn(fracs[0]), ansD = fracs[0].d;
         let ok = true;
         for (let i = 1; i < N; i++) {
-            const next = op === '+' ? ansN * fracs[i].d + fracs[i].n * ansD : ansN * fracs[i].d - fracs[i].n * ansD;
+            const next = op === '+' ? ansN * fracs[i].d + tn(fracs[i]) * ansD : ansN * fracs[i].d - tn(fracs[i]) * ansD;
             ansD = ansD * fracs[i].d;
             ansN = next;
             if (op === '-' && ansN <= 0) { ok = false; break; }
             if (ansD > 100000) { ok = false; break; }   // keep denominators leerplan-sized
         }
         if (!ok) continue;
-        const comboId = fracs.map(f => `${f.n}/${f.d}`).join(op);
+        const comboId = fracs.map(f => `${f.whole ? `${f.whole} ` : ''}${f.n}/${f.d}`).join(op);
         if (usedCombinations.has(comboId)) continue;
         usedCombinations.add(comboId);
         const eqType = constraints.equationType || 'normal';
         const missingIndex = eqType === 'puntoefening' ? randInt(0, N - 1) : undefined;
+        const exact = mixedNumber1 || mixedNumber2 ? toMixedNumber(ansN, ansD) : simplifyFraction(ansN, ansD);
         exercises.push({
             id: Math.random().toString(36).substring(2, 9), operands: fracs, operator: op,
-            answer: wholeOrFraction(simplifyFraction(ansN, ansD)), isManuallyEdited: false,
+            answer: wholeOrFraction(exact), isManuallyEdited: false,
             missingTerm: eqType === 'puntoefening' ? (missingIndex === 0 ? 'operand1' : 'operand2') : 'result',
             missingIndex,
         });
     }
     return exercises;
 };
+
+// A one_step chain uses the pair's two noemers only (one a multiple of the other), so a single
+// conversion reaches the common noemer; term 1 keeps the pair's first, later terms mix both.
+function oneStepChainDenominators([a, b]: [number, number], maxD2: number, N: number): number[] {
+    const rest = Array.from({ length: N - 1 }, () => (a <= maxD2 && randInt(0, 1) === 1 ? a : b));
+    if (!rest.includes(b)) rest[rest.length - 1] = b;
+    return [a, ...rest];
+}
 
 // 3-4 fraction ×/: chains — all-fraction terms (the natural/decimal mixed modes stay
 // 2-term). Division works via reciprocals; answers simplified like the 2-term path.
@@ -324,6 +350,11 @@ const generateFractionMulDivChain = (block: MathBlock, op: 'x' | ':'): Equation[
     }
     return exercises;
 };
+
+// A "Gemengd getal" operand keeps its breukdeel proper (2 38/27 is no mixed number); one draw
+// either way, so rows without the flag keep their random sequence.
+const operandNumerator = (maxN: number, d: number, mixed: boolean): number =>
+    randInt(1, mixed ? Math.max(1, Math.min(maxN, d - 1)) : maxN);
 
 // 'multi_step' noemers: neither equals, divides nor is a multiple of the other. Null when the
 // drawn d1 has no such partner in [2, maxD2] (max noemer 2, or d1 = 6 at max 3): the
@@ -369,23 +400,22 @@ const generateFractionAddition = (block: MathBlock): Equation[] => {
 
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let d1: number, d2: number, n1: number, n2: number;
+        let d1: number, d2: number;
 
         if (fractionDifficulty === 'same') {
             const maxD = Math.min(maxDenominator1, maxDenominator2);
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
             const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) break;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
             const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) continue;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
+        const n1 = operandNumerator(maxNumerator1, d1, mixedNumber1);
+        const n2 = operandNumerator(maxNumerator2, d2, mixedNumber2);
 
         const w1 = mixedNumber1 ? randInt(1, 3) : 0;
         const w2 = mixedNumber2 ? randInt(1, 3) : 0;
@@ -494,23 +524,22 @@ const generateFractionSubtraction = (block: MathBlock): Equation[] => {
 
     while (exercises.length < numberOfExercises && attempts < MAX_ATTEMPTS) {
         attempts++;
-        let d1: number, d2: number, n1: number, n2: number;
+        let d1: number, d2: number;
 
         if (fractionDifficulty === 'same') {
             const maxD = Math.min(maxDenominator1, maxDenominator2);
             d1 = randInt(2, Math.max(2, maxD)); d2 = d1;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else if (fractionDifficulty === 'one_step') {
             const pair = oneStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) break;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         } else {
             const pair = multiStepDenominators(maxDenominator1, maxDenominator2);
             if (!pair) continue;
             [d1, d2] = pair;
-            n1 = randInt(1, maxNumerator1); n2 = randInt(1, maxNumerator2);
         }
+        let n1 = operandNumerator(maxNumerator1, d1, mixedNumber1);
+        let n2 = operandNumerator(maxNumerator2, d2, mixedNumber2);
 
         let w1 = mixedNumber1 ? randInt(1, 3) : 0;
         let w2 = mixedNumber2 ? randInt(1, 3) : 0;

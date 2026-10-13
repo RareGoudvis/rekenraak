@@ -2,6 +2,7 @@ import type { MathBlock, GetallenasExercise, Fraction } from '../math/types';
 import { numberMatchesMask, getMaskPlaces } from '../math/mathEngine';
 import type { GetallenrijConstraints } from '../math/constraintTypes';
 import { fitLine } from '../getallenas/getallenasGenerator';
+import { ensureTwoGivens } from '../getallenas/blankMask';
 import { joinNotes, repeatNote, repeatsIn } from '../generationNotes';
 
 // Getallenrijen = number sequences (start ± k·step) shown in a pill, some cells blank.
@@ -155,8 +156,10 @@ export function generateGetallenrijExercisesNoted(block: MathBlock): { items: Ge
         }
 
         const ratio = hardMode ? 0.6 : 0.4;
-        const blankMask = Array.from({ length: ticks }, (_, k) => k !== 0 && Math.random() < ratio);
-        if (!blankMask.some(Boolean)) blankMask[ticks - 1] = true;
+        // SYNC: keep the blank-mask draw aligned with getallenasGenerator.ts.
+        const drawnMask = Array.from({ length: ticks }, (_, k) => k !== 0 && Math.random() < ratio);
+        if (!drawnMask.some(Boolean)) drawnMask[ticks - 1] = true;
+        const blankMask = ensureTwoGivens(drawnMask);
 
         results.push({ id: rndId(), start, step: usedStep, tickCount: ticks, blankMask, direction: arrowLeft ? 'left' : 'right', values, numberType, isManuallyEdited: false });
     }

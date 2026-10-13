@@ -102,6 +102,8 @@ function checkHr(e: Equation, c: C, mode: HrMode, ctx: CheckContext, push: Push)
                 const perSlot = addSub || fmm === 'fraction_fraction' || e.operands.length > 2;
                 const maxD = perSlot ? n(i === 0 ? c.maxDenominator1 : c.maxDenominator2, 10) : n(c.maxDenominator2, 10);
                 if (o.d > maxD) push('denominator>max', o.d, maxD, ex);
+                // "Gemengd getal" promises a mixed number: its breukdeel is proper (2 38/27 is not one).
+                if ((o.whole ?? 0) > 0 && o.n >= o.d) push('mixed-improper-part', fmtF(o), 'n < d', ex);
             } else if (fmm === 'decimal_fraction' && !addSub && !(o > 0)) {
                 push('decimal-operand<=0', o, 0, ex);
             }
@@ -419,6 +421,9 @@ const asSpec = (isRij: boolean): TypeSpec<GetallenasExercise> => ({
         const max = n(c.maxGetal, 100);
         const vals = e.values ?? [];
         const ex = `${vals.slice(0, 8).map(fmtV).join(', ')}`;
+        // One given number fixes no sprong: 3+ ticks show at least two (owner rule 2026-10-13).
+        const givens = (e.blankMask ?? []).filter(b => !b).length;
+        if (e.tickCount > 2 && givens < 2) push('givens', givens, 2, ex);
         // A line shortened (or a step shrunk) to fit its bounds is intended only when the note says so.
         if (!ctx.note && (e.tickCount < n(c.ticks, 6) || (nt !== 'rational' && !sameNum(e.step, n(c.step, 5) || 1)))) {
             push('line-shrunk-silently', `${e.tickCount} × +${e.step}`, `${n(c.ticks, 6)} × +${n(c.step, 5)}`, ex);

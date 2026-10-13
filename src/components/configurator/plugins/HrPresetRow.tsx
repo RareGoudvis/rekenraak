@@ -28,6 +28,7 @@ export default function HrPresetRow({ block, variant }: Props) {
     const presetFactors: number[] = c.presetFactors ?? [10, 100, 1000];
     const isRest = c.multiplicationMode === 'met_rest';
     const isPreset = preset === 'compenseren' || preset === 'tienvoud';
+    const decimalMulDiv = variant === 'muldiv' && c.numberType === 'decimal';
 
     const set = (key: keyof MulDivConstraints, value: unknown) => patch({ [key]: value } as Partial<MulDivConstraints>);
     const toggleFactor = (f: number) => {
@@ -89,11 +90,14 @@ export default function HrPresetRow({ block, variant }: Props) {
             {!isPreset && !isRest && (
                 <div style={styles.section}>
                     <SettingLabel text={termLabel} info="Kettingen van 3 of 4 getallen in één som (a + b + c = …)." />
-                    <div style={styles.buttonGroup}>
-                        {[2, 3, 4].map(n => (
-                            <button key={n} onClick={() => set('termCount', n)} style={styles.radioBtn(termCount === n)}>{n}</button>
-                        ))}
-                    </div>
+                    {/* The engine chains ×/: on natural numbers only; decimal ×/: stays 2 factors. */}
+                    {decimalMulDiv
+                        ? <p style={styles.hint}>Kettingen van 3 of 4 factoren enkel bij natuurlijke getallen.</p>
+                        : <div style={styles.buttonGroup}>
+                            {[2, 3, 4].map(n => (
+                                <button key={n} onClick={() => set('termCount', n)} style={styles.radioBtn(termCount === n)}>{n}</button>
+                            ))}
+                        </div>}
                 </div>
             )}
         </>

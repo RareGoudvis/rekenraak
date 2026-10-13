@@ -6,6 +6,7 @@ import { generatePatroonExercisesNoted } from '../services/patroon/patroonGenera
 import { generateKettingExercisesNoted } from '../services/patroon/kettingGenerator';
 import { makeBlock, generateFor } from './helpers/makeBlock';
 import { numberMatchesMask } from '../services/math/mathEngine';
+import { ensureTwoGivens } from '../services/getallenas/blankMask';
 
 // Limit-audit WP2: every value a row/pattern generator prints stays within the block's
 // bounds, also on the settings that used to overrun them. Seeded so a failure reproduces;
@@ -241,5 +242,42 @@ describe('[E10] getallenrijen honour the getalopbouw of the first value', () => 
         const { items, note } = generateGetallenrijExercisesNoted(block('getallenrijen', { numberType: 'natural', maxGetal: 10000, step: 100, ticks: 8, numberMask: { H: true, E: true } }));
         expect(items).toHaveLength(20);
         expect(note).toBe('De getalopbouw (H, E) van het eerste getal past niet bij sprong +100 tot 10.000 en is genegeerd.');
+    });
+});
+
+describe('[H] getallenas / getallenrijen show at least two given numbers', () => {
+    // Hard mode blanks 60 % of the ticks: the report saw a line with only its first number given.
+    const cases: Record<string, unknown>[] = [
+        { numberType: 'natural', maxGetal: 100, step: 5, ticks: 6, hardMode: true, direction: 'beide' },
+        { numberType: 'natural', maxGetal: 1000, step: 10, ticks: 10, hardMode: true, direction: 'beide' },
+        { numberType: 'rational', fractionStep: 4, ticks: 10, hardMode: true, direction: 'right' },
+    ];
+    for (const typeId of ['getallenas', 'getallenrijen']) for (const c of cases) {
+        test(`${typeId} 500 draws ${JSON.stringify(c)}`, () => {
+            let drawn = 0;
+            for (let seed = 1; seed <= 25; seed++) {
+                seeded(seed * 7919);
+                for (const ex of lines(typeId, c)) {
+                    drawn++;
+                    const givens = ex.blankMask.filter(b => !b).length;
+                    expect(ex.blankMask).toHaveLength(ex.tickCount);
+                    expect(givens, JSON.stringify(ex.blankMask)).toBeGreaterThanOrEqual(2);
+                    expect(ex.blankMask[0]).toBe(false);
+                    expect(ex.blankMask.some(Boolean)).toBe(true);
+                }
+            }
+            expect(drawn).toBe(500);
+        });
+    }
+
+    test('ensureTwoGivens draws only when a tick must be revealed', () => {
+        let calls = 0;
+        Math.random = () => { calls++; return 0.99; };
+        const ok = [false, true, false, true];
+        expect(ensureTwoGivens(ok)).toBe(ok);
+        expect(ensureTwoGivens([false, true])).toEqual([false, true]);
+        expect(calls).toBe(0);
+        expect(ensureTwoGivens([false, true, true, true])).toEqual([false, true, true, false]);
+        expect(calls).toBe(1);
     });
 });
