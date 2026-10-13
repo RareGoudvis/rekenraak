@@ -421,6 +421,9 @@ const asSpec = (isRij: boolean): TypeSpec<GetallenasExercise> => ({
         const max = n(c.maxGetal, 100);
         const vals = e.values ?? [];
         const ex = `${vals.slice(0, 8).map(fmtV).join(', ')}`;
+        // One given number fixes no sprong: 3+ ticks show at least two (owner rule 2026-10-13).
+        const givens = (e.blankMask ?? []).filter(b => !b).length;
+        if (e.tickCount > 2 && givens < 2) push('givens', givens, 2, ex);
         // A line shortened (or a step shrunk) to fit its bounds is intended only when the note says so.
         if (!ctx.note && (e.tickCount < n(c.ticks, 6) || (nt !== 'rational' && !sameNum(e.step, n(c.step, 5) || 1)))) {
             push('line-shrunk-silently', `${e.tickCount} × +${e.step}`, `${n(c.ticks, 6)} × +${n(c.step, 5)}`, ex);
