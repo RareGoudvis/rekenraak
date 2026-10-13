@@ -16,6 +16,8 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
+- Settings-dependent opdracht-titels do not follow a later setting change: `instructionText` is resolved once in `addBlockFromType` (`blocksSlice.ts:34`), so sidebar → Gemengd getal ↔ breuk → Richting Beide → Genereer keeps "Schrijf als gemengd getal." (same for splitsen 'beide', afronden targets, herleidingen …; the new text is only the first Opmaak › Standaardtekst option, and the oefen builder / curriculum freeze it right). Fix direction: in `updateBlockSettings`, when the title still equals the leaf's instruction for the OLD constraints, re-resolve it for the new ones (a teacher's own text stays). Found by the 2026-10-13 verifier.
+
 - Config pills: many option buttons carry no `aria-pressed` / selected state (the tester's accessibility snapshot showed selection by styling only; `seg-btn` in BreukenRangschikkenConfig / ControlerenConfig do it right). Sweep the plugins + `sharedPluginStyles` pill helper and add `aria-pressed` everywhere (2026-10-13 tester report).
 
 ## Generators
