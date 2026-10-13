@@ -37,6 +37,17 @@ export function cardFitZoom(scrollW: number, clientW: number): number {
     return (clientW / scrollW) * SAFETY;
 }
 
+// Room kept right of a widened card, and the narrowest it is squeezed to (its title bar + grip stay usable).
+const BOARD_RIGHT_GAP_PX = 8;
+const MIN_WIDENED_PX = 240;
+
+// A widened card (20-column honderdveld at XL) wider than the room right of its x shrinks to that room;
+// the frame zoom follows, so the content scales instead of running off the board. boardW 0 = unmeasured.
+export function capWidenedWidth(outerW: number, widened: boolean, x: number, boardW: number): number {
+    if (!widened || !(boardW > 0)) return outerW;
+    return Math.min(outerW, Math.max(MIN_WIDENED_PX, boardW - x - BOARD_RIGHT_GAP_PX));
+}
+
 export function naturalWidth(kind: WidgetKind): number {
     return NATURAL_W[kind] ?? 400;
 }

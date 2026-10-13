@@ -18,8 +18,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
-- Afronden decimaal rooster with targets t + h at 2 decimals: the title says "Rond af op t en h." but the table has only a t column (either drop h from the title or add the column). 2026-10-13 review agent.
-- Config pills: many option buttons carry no `aria-pressed` / selected state (the tester's accessibility snapshot showed selection by styling only; `seg-btn` in BreukenRangschikkenConfig / ControlerenConfig do it right). Sweep the plugins + `sharedPluginStyles` pill helper and add `aria-pressed` everywhere (2026-10-13 tester report).
 
 ## Generators
 
@@ -65,6 +63,5 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 ## Bordmodus
 
-- Honderdveld 20 kolommen + XL widens its card to ~909 px; on a 900 px board it is placed at x = 140 and runs past the right edge (the `data-widget-fit` zoom never kicks in because the card widens instead). Clamp the placement or zoom when the card is wider than the board. 2026-10-13 review agent.
 
 

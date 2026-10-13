@@ -118,8 +118,8 @@ export default function GemengdConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Volgorde:" info="Willekeurig = elke oefening trekt een bewerking. Om de beurt = de gekozen bewerkingen komen op vaste beurt aan bod." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => patch({ mix: 'random' })} style={styles.radioBtn(mix === 'random')}>Willekeurig</button>
-                    <button onClick={() => patch({ mix: 'cycle' })} style={styles.radioBtn(mix === 'cycle')}>Om de beurt</button>
+                    <button onClick={() => patch({ mix: 'random' })} aria-pressed={mix === 'random'} style={styles.radioBtn(mix === 'random')}>Willekeurig</button>
+                    <button onClick={() => patch({ mix: 'cycle' })} aria-pressed={mix === 'cycle'} style={styles.radioBtn(mix === 'cycle')}>Om de beurt</button>
                 </div>
             </div>
 

@@ -54,9 +54,9 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Moeilijkheidsgraad (Combinatie):" info="Welke soorten getallen je combineert (natuurlijk, breuk of kommagetal)." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <button onClick={() => updateConstraint('fractionMultMode', 'natural_fraction')} style={radioListBtnStyle(fractionMultMode === 'natural_fraction')}>Natuurlijk getal {isDivision ? '÷' : '×'} Breuk</button>
-                    <button onClick={() => updateConstraint('fractionMultMode', 'fraction_fraction')} style={radioListBtnStyle(fractionMultMode === 'fraction_fraction')}>Breuk {isDivision ? '÷' : '×'} Breuk</button>
-                    <button onClick={() => updateConstraint('fractionMultMode', 'decimal_fraction')} style={radioListBtnStyle(fractionMultMode === 'decimal_fraction')}>Kommagetal {isDivision ? '÷' : '×'} Breuk</button>
+                    <button onClick={() => updateConstraint('fractionMultMode', 'natural_fraction')} aria-pressed={fractionMultMode === 'natural_fraction'} style={radioListBtnStyle(fractionMultMode === 'natural_fraction')}>Natuurlijk getal {isDivision ? '÷' : '×'} Breuk</button>
+                    <button onClick={() => updateConstraint('fractionMultMode', 'fraction_fraction')} aria-pressed={fractionMultMode === 'fraction_fraction'} style={radioListBtnStyle(fractionMultMode === 'fraction_fraction')}>Breuk {isDivision ? '÷' : '×'} Breuk</button>
+                    <button onClick={() => updateConstraint('fractionMultMode', 'decimal_fraction')} aria-pressed={fractionMultMode === 'decimal_fraction'} style={radioListBtnStyle(fractionMultMode === 'decimal_fraction')}>Kommagetal {isDivision ? '÷' : '×'} Breuk</button>
                 </div>
             </div>
 
@@ -74,7 +74,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
                         <SettingLabel text={isDivision ? 'Deeltal / Deler:' : 'Volgorde:'} info="In welke volgorde het getal en de breuk staan." />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             {options.map(opt => (
-                                <button key={opt.key} onClick={() => updateConstraint('fractionOrderMode', opt.key)} style={radioListBtnStyle(fractionOrderMode === opt.key || (!fractionOrderMode && opt.key === 'AB'))}>
+                                <button key={opt.key} onClick={() => updateConstraint('fractionOrderMode', opt.key)} aria-pressed={fractionOrderMode === opt.key || (!fractionOrderMode && opt.key === 'AB')} style={radioListBtnStyle(fractionOrderMode === opt.key || (!fractionOrderMode && opt.key === 'AB'))}>
                                     {opt.label}
                                 </button>
                             ))}
@@ -123,7 +123,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
                                 {fractionMultMode === 'decimal_fraction' && (
                                     <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
                                         {[1, 2, 3].map(val => (
-                                            <button key={val} onClick={() => updateConstraint('decimalPlaces', val)} style={smallTabBtn(decimalPlaces === val)}>
+                                            <button key={val} onClick={() => updateConstraint('decimalPlaces', val)} aria-pressed={decimalPlaces === val} style={smallTabBtn(decimalPlaces === val)}>
                                                 {val} dec
                                             </button>
                                         ))}
@@ -131,7 +131,7 @@ export default function RationalSettings({ block, isDivision = false }: Props) {
                                 )}
                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
                                     {availablePlaces.map(place => (
-                                        <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(place.key)} style={styles.maskBtn(operand1Mask[place.key])} title={place.label}>
+                                        <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(place.key)} aria-pressed={!!operand1Mask[place.key]} style={styles.maskBtn(operand1Mask[place.key])} title={place.label}>
                                             {place.key}
                                         </button>
                                     ))}

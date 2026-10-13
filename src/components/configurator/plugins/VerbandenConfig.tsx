@@ -35,7 +35,7 @@ export default function VerbandenConfig({ block }: Props) {
                 <SettingLabel text="Voorstellingen:" info="Welke schrijfwijzen in de oefening voorkomen (minstens twee)." />
                 <div style={styles.buttonGroup}>
                     {REPS.map(r => (
-                        <button key={r.key} onClick={() => toggleRep(r.key)} style={styles.pill(reps.includes(r.key))}>{r.label}</button>
+                        <button key={r.key} onClick={() => toggleRep(r.key)} aria-pressed={reps.includes(r.key)} style={styles.pill(reps.includes(r.key))}>{r.label}</button>
                     ))}
                 </div>
             </div>
@@ -44,7 +44,7 @@ export default function VerbandenConfig({ block }: Props) {
                 <SettingLabel text="Noemers:" info="Alleen noemers met een exacte komma- en procentwaarde. Bij 8 verschijnen halve procenten (12,5 %)." />
                 <div style={styles.buttonGroup}>
                     {DENOMINATORS.map(d => (
-                        <button key={d} onClick={() => toggleDen(d)} style={styles.pill(denominators.includes(d))}>{d}</button>
+                        <button key={d} onClick={() => toggleDen(d)} aria-pressed={denominators.includes(d)} style={styles.pill(denominators.includes(d))}>{d}</button>
                     ))}
                 </div>
             </div>
@@ -52,9 +52,9 @@ export default function VerbandenConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Gegeven voorstelling:" info="Welke schrijfwijze al ingevuld staat." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('given', 'random')} style={styles.radioBtn(given === 'random')}>Willekeurig</button>
+                    <button onClick={() => set('given', 'random')} aria-pressed={given === 'random'} style={styles.radioBtn(given === 'random')}>Willekeurig</button>
                     {REPS.filter(r => reps.includes(r.key)).map(r => (
-                        <button key={r.key} onClick={() => set('given', r.key)} style={styles.radioBtn(given === r.key)}>{r.label}</button>
+                        <button key={r.key} onClick={() => set('given', r.key)} aria-pressed={given === r.key} style={styles.radioBtn(given === r.key)}>{r.label}</button>
                     ))}
                 </div>
             </div>

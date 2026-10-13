@@ -40,7 +40,7 @@ export default function TemperatuurConfig({ block }: Props) {
                     <SettingLabel text={`${t.label}:`} info="Wat er op deze thermometer gegeven is (kleur, getal of beide)." />
                     <div style={styles.buttonGroup}>
                         {MODES.map(m => (
-                            <button key={m.val} onClick={() => set(t.key, m.val)} style={styles.radioBtn(t.value === m.val)}>{m.label}</button>
+                            <button key={m.val} onClick={() => set(t.key, m.val)} aria-pressed={t.value === m.val} style={styles.radioBtn(t.value === m.val)}>{m.label}</button>
                         ))}
                     </div>
                 </div>
@@ -50,8 +50,8 @@ export default function TemperatuurConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Negatieve temperaturen:" info="Of er ook temperaturen onder nul mogen voorkomen." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('includeNegatives', false)} style={styles.radioBtn(!includeNegatives)}>Nee (0…25°)</button>
-                    <button onClick={() => set('includeNegatives', true)} style={styles.radioBtn(includeNegatives)}>Ja (−15…25°)</button>
+                    <button onClick={() => set('includeNegatives', false)} aria-pressed={!includeNegatives} style={styles.radioBtn(!includeNegatives)}>Nee (0…25°)</button>
+                    <button onClick={() => set('includeNegatives', true)} aria-pressed={!!includeNegatives} style={styles.radioBtn(includeNegatives)}>Ja (−15…25°)</button>
                 </div>
             </div>
 

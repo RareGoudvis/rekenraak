@@ -47,8 +47,8 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Soort:" info="De weergave: rooster of omcirkelen." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('viewMode', 'strip')} style={styles.radioBtn(viewMode === 'strip')}>Rooster</button>
-                    <button onClick={() => set('viewMode', 'markeren')} style={styles.radioBtn(viewMode === 'markeren')}>Omcirkelen</button>
+                    <button onClick={() => set('viewMode', 'strip')} aria-pressed={viewMode === 'strip'} style={styles.radioBtn(viewMode === 'strip')}>Rooster</button>
+                    <button onClick={() => set('viewMode', 'markeren')} aria-pressed={viewMode === 'markeren'} style={styles.radioBtn(viewMode === 'markeren')}>Omcirkelen</button>
                 </div>
             </div>
 
@@ -56,8 +56,8 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Vorm:" info="Lijn: een doorlopende strook. Rechthoek: een vast raster met kolommen." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('rasterVorm', 'lijn')} style={styles.radioBtn(vorm === 'lijn')}>Lijn</button>
-                        <button onClick={() => set('rasterVorm', 'rechthoek')} style={styles.radioBtn(vorm === 'rechthoek')}>Rechthoek</button>
+                        <button onClick={() => set('rasterVorm', 'lijn')} aria-pressed={vorm === 'lijn'} style={styles.radioBtn(vorm === 'lijn')}>Lijn</button>
+                        <button onClick={() => set('rasterVorm', 'rechthoek')} aria-pressed={vorm === 'rechthoek'} style={styles.radioBtn(vorm === 'rechthoek')}>Rechthoek</button>
                     </div>
                 </div>
             )}
@@ -67,7 +67,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                 <SettingLabel text="Delers:" info="Welke veelvouden gekleurd of gemarkeerd worden." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {DIVISORS.map(d => (
-                        <button key={d} onClick={() => toggleDivisor(d)} style={styles.pill(divisors.includes(d))}>{d}</button>
+                        <button key={d} onClick={() => toggleDivisor(d)} aria-pressed={divisors.includes(d)} style={styles.pill(divisors.includes(d))}>{d}</button>
                     ))}
                 </div>
             </div>
@@ -121,7 +121,7 @@ export default function DeelbaarheidKleurConfig({ block }: Props) {
                     <div style={styles.section}>
                         <div style={styles.onOffRow}>
                             <span style={styles.onOffLabel}>Rest berekenen</span>
-                            <button onClick={() => set('showRest', !showRest)} style={styles.onOffBtn(showRest)}>{showRest ? 'Aan' : 'Uit'}</button>
+                            <button onClick={() => set('showRest', !showRest)} aria-pressed={!!showRest} style={styles.onOffBtn(showRest)}>{showRest ? 'Aan' : 'Uit'}</button>
                         </div>
                     </div>
                 </>

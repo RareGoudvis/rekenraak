@@ -28,7 +28,7 @@ function HrStdStyleConfig({ block, withFractionDifficulty }: { block: MathBlock;
                         ] as const).map(({ val, label }) => (
                             <button key={val}
                                 onClick={() => patch({ fractionDifficulty: val })}
-                                style={{ ...F.radioBtn((c.fractionDifficulty ?? 'same') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
+                                aria-pressed={(c.fractionDifficulty ?? 'same') === val} style={{ ...F.radioBtn((c.fractionDifficulty ?? 'same') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
                                 {label}
                             </button>
                         ))}

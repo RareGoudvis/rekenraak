@@ -109,21 +109,21 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
                 <button
                     onClick={() => updateConstraint('multiplicationMode', 'tafels')}
-                    style={styles.radioBtn(multiplicationMode === 'tafels')}
+                    aria-pressed={multiplicationMode === 'tafels'} style={styles.radioBtn(multiplicationMode === 'tafels')}
                 >
                     {isDivision ? 'Deeltafels' : 'Tafels'}
                 </button>
                 {isDivision && (
                     <button
                         onClick={enterMetRest}
-                        style={styles.radioBtn(multiplicationMode === 'met_rest')}
+                        aria-pressed={multiplicationMode === 'met_rest'} style={styles.radioBtn(multiplicationMode === 'met_rest')}
                     >
                         Met rest
                     </button>
                 )}
                 <button
                     onClick={() => updateConstraint('multiplicationMode', 'andere')}
-                    style={styles.radioBtn(multiplicationMode === 'andere')}
+                    aria-pressed={multiplicationMode === 'andere'} style={styles.radioBtn(multiplicationMode === 'andere')}
                 >
                     Andere
                 </button>
@@ -135,7 +135,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                     <SettingLabel text={isDivision ? 'Selecteer delers:' : 'Selecteer tafels:'} info={isDivision ? 'Kies de deeltafels die in de oefeningen mogen voorkomen.' : 'Kies de tafels die in de oefeningen mogen voorkomen.'} />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                         {AVAILABLE_TABLES.map(t => (
-                            <button key={t} onClick={() => toggleTable(t)} style={styles.maskBtn(selectedTables.includes(t))}>
+                            <button key={t} onClick={() => toggleTable(t)} aria-pressed={selectedTables.includes(t)} style={styles.maskBtn(selectedTables.includes(t))}>
                                 {t}
                             </button>
                         ))}
@@ -156,7 +156,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                     <SettingLabel text="Selecteer delers:" info="Kies de delers die in de oefeningen met rest mogen voorkomen." />
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
                         {MET_REST_TABLES.map(t => (
-                            <button key={t} onClick={() => toggleTable(t)} style={styles.maskBtn(selectedTables.includes(t))}>
+                            <button key={t} onClick={() => toggleTable(t)} aria-pressed={selectedTables.includes(t)} style={styles.maskBtn(selectedTables.includes(t))}>
                                 {t}
                             </button>
                         ))}
@@ -264,7 +264,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                                     </span>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                         {availablePlaces.map(place => (
-                                            <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(1, place.key)} style={styles.maskBtn(operand1Mask[place.key])} title={place.label}>
+                                            <button key={`op1-${place.key}`} onClick={() => handleMaskToggle(1, place.key)} aria-pressed={!!operand1Mask[place.key]} style={styles.maskBtn(operand1Mask[place.key])} title={place.label}>
                                                 {place.key}
                                             </button>
                                         ))}
@@ -277,7 +277,7 @@ export default function NaturalSettings({ block, isDivision = false }: Props) {
                                     </span>
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                         {availablePlaces.map(place => (
-                                            <button key={`op2-${place.key}`} onClick={() => handleMaskToggle(2, place.key)} style={styles.maskBtn(operand2Mask[place.key])} title={place.label}>
+                                            <button key={`op2-${place.key}`} onClick={() => handleMaskToggle(2, place.key)} aria-pressed={!!operand2Mask[place.key]} style={styles.maskBtn(operand2Mask[place.key])} title={place.label}>
                                                 {place.key}
                                             </button>
                                         ))}

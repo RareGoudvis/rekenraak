@@ -58,7 +58,7 @@ export default function DecimalSettings({ block }: Props) {
                         <span style={{ fontSize: 'var(--text-xs)', width: '50px' }}>Getal {idx + 1}:</span>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {maskPlaces.map(p => (
-                                <button key={p.key} onClick={() => toggleMask(op, p.key)} style={styles.maskBtn(c[op]?.[p.key])}>{p.key}</button>
+                                <button key={p.key} onClick={() => toggleMask(op, p.key)} aria-pressed={!!(c[op]?.[p.key])} style={styles.maskBtn(c[op]?.[p.key])}>{p.key}</button>
                             ))}
                         </div>
                     </div>

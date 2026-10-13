@@ -61,7 +61,7 @@ export default function AfrondenConfig({ block }: Props) {
                 <SettingLabel text="Afronden op:" info="Op welke posities (tiental, honderdtal, ...) afgerond mag worden." />
                 <div style={styles.buttonGroup}>
                     {usableTargets.map(t => (
-                        <button key={t.key} onClick={() => toggleTarget(t.key)} style={styles.pill(roundTargets.includes(t.key))}>op {t.label}</button>
+                        <button key={t.key} onClick={() => toggleTarget(t.key)} aria-pressed={roundTargets.includes(t.key)} style={styles.pill(roundTargets.includes(t.key))}>op {t.label}</button>
                     ))}
                 </div>
             </div>
@@ -83,7 +83,7 @@ export default function AfrondenConfig({ block }: Props) {
                     <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         {places.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!numberMask[p.key]} style={styles.maskBtn(!!numberMask[p.key])} title={p.label}>{p.key}</button>
                         ))}
                     </div>
                     <p style={styles.hint}>Leeg = vrije opbouw.</p>

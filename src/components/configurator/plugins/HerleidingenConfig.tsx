@@ -63,7 +63,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 <SettingLabel text="Maateenheden:" info="Tussen welke eenheden er omgerekend wordt." />
                 <div style={styles.buttonGroup}>
                     {ladder.map(u => (
-                        <button key={u.key} onClick={() => toggleUnit(u.key)} style={styles.pill(units.includes(u.key))}>{u.key}</button>
+                        <button key={u.key} onClick={() => toggleUnit(u.key)} aria-pressed={units.includes(u.key)} style={styles.pill(units.includes(u.key))}>{u.key}</button>
                     ))}
                 </div>
                 <p style={styles.hint}>Kies minstens twee eenheden.</p>
@@ -73,7 +73,7 @@ export default function HerleidingenConfig({ block }: { block: MathBlock }) {
                 <SettingLabel text="Soorten oefeningen" info="Welke vraagvormen er gebruikt worden (getal/eenheid invullen, samengesteld)." />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {allFormats.map(f => (
-                        <button key={f.key} onClick={() => toggleFormat(f.key)} style={{ ...styles.pill(formats.includes(f.key)), width: '100%', textAlign: 'left' }}>{f.label}</button>
+                        <button key={f.key} onClick={() => toggleFormat(f.key)} aria-pressed={formats.includes(f.key)} style={{ ...styles.pill(formats.includes(f.key)), width: '100%', textAlign: 'left' }}>{f.label}</button>
                     ))}
                 </div>
             </div>

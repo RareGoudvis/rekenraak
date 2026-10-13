@@ -71,8 +71,8 @@ export default function VormleerConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Opdracht:" info="Benoemen: figuur → naam. Eigenschappen: aankruistabel per kenmerk." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('mode', 'benoemen')} style={styles.radioBtn(mode === 'benoemen')}>Benoemen</button>
-                        <button onClick={() => set('mode', 'eigenschappen')} style={styles.radioBtn(mode === 'eigenschappen')}>Eigenschappen</button>
+                        <button onClick={() => set('mode', 'benoemen')} aria-pressed={mode === 'benoemen'} style={styles.radioBtn(mode === 'benoemen')}>Benoemen</button>
+                        <button onClick={() => set('mode', 'eigenschappen')} aria-pressed={mode === 'eigenschappen'} style={styles.radioBtn(mode === 'eigenschappen')}>Eigenschappen</button>
                     </div>
                 </div>
             )}
@@ -84,13 +84,13 @@ export default function VormleerConfig({ block }: Props) {
                     <label style={styles.miniLabel}>Volgens hoeken</label>
                     <div style={styles.buttonGroup}>
                         {DRIEHOEK_HOEKEN.map(p => (
-                            <button key={p.key} onClick={() => toggleConcept(p.key)} style={styles.pill(concepts.includes(p.key))}>{p.label}</button>
+                            <button key={p.key} onClick={() => toggleConcept(p.key)} aria-pressed={concepts.includes(p.key)} style={styles.pill(concepts.includes(p.key))}>{p.label}</button>
                         ))}
                     </div>
                     <label style={{ ...styles.miniLabel, marginTop: '6px' }}>Volgens zijden</label>
                     <div style={styles.buttonGroup}>
                         {DRIEHOEK_ZIJDEN.map(p => (
-                            <button key={p.key} onClick={() => toggleConcept(p.key)} style={styles.pill(concepts.includes(p.key))}>{p.label}</button>
+                            <button key={p.key} onClick={() => toggleConcept(p.key)} aria-pressed={concepts.includes(p.key)} style={styles.pill(concepts.includes(p.key))}>{p.label}</button>
                         ))}
                     </div>
                 </div>
@@ -99,14 +99,14 @@ export default function VormleerConfig({ block }: Props) {
                     <SettingLabel text={kind === 'hoek' ? 'Hoeken:' : kind === 'figuur' ? 'Figuren:' : 'Begrippen:'} info="Wat er op het blad voorkomt." />
                     <div style={styles.buttonGroup}>
                         {pool.map(p => (
-                            <button key={p.key} onClick={() => toggleConcept(p.key)} style={styles.pill(concepts.includes(p.key))}>{p.label}</button>
+                            <button key={p.key} onClick={() => toggleConcept(p.key)} aria-pressed={concepts.includes(p.key)} style={styles.pill(concepts.includes(p.key))}>{p.label}</button>
                         ))}
                         {/* Stand-pills: same row as the begrippen, because they qualify them
                             ("horizontale rechte"). Both off = elke lijn staat schuin/vrij. */}
                         {kind === 'punt-lijn' && (
                             <>
-                                <button onClick={() => set('allowHorizontaal', !allowHorizontaal)} style={styles.pill(allowHorizontaal)}>Horizontaal</button>
-                                <button onClick={() => set('allowVerticaal', !allowVerticaal)} style={styles.pill(allowVerticaal)}>Verticaal</button>
+                                <button onClick={() => set('allowHorizontaal', !allowHorizontaal)} aria-pressed={!!allowHorizontaal} style={styles.pill(allowHorizontaal)}>Horizontaal</button>
+                                <button onClick={() => set('allowVerticaal', !allowVerticaal)} aria-pressed={!!allowVerticaal} style={styles.pill(allowVerticaal)}>Verticaal</button>
                             </>
                         )}
                     </div>
@@ -117,9 +117,9 @@ export default function VormleerConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Moeilijkheid:" info="Zelfde niveaus in beide opdrachten. 1: één benoemd element. 2: twee elementen in één relatie. 3: een opdracht in drie stappen." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('niveau', 1)} style={styles.radioBtn(niveau === 1)}>1 · één element</button>
-                        <button onClick={() => set('niveau', 2)} style={styles.radioBtn(niveau === 2)}>2 · één relatie</button>
-                        <button onClick={() => set('niveau', 3)} style={styles.radioBtn(niveau === 3)}>3 · drie stappen</button>
+                        <button onClick={() => set('niveau', 1)} aria-pressed={niveau === 1} style={styles.radioBtn(niveau === 1)}>1 · één element</button>
+                        <button onClick={() => set('niveau', 2)} aria-pressed={niveau === 2} style={styles.radioBtn(niveau === 2)}>2 · één relatie</button>
+                        <button onClick={() => set('niveau', 3)} aria-pressed={niveau === 3} style={styles.radioBtn(niveau === 3)}>3 · drie stappen</button>
                     </div>
                 </div>
             )}
@@ -128,8 +128,8 @@ export default function VormleerConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Antwoordvorm:" info="Met woordbank staan de namen bovenaan om uit te kiezen." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('answerMode', 'woordbank')} style={styles.radioBtn(answerMode === 'woordbank')}>Woordbank</button>
-                        <button onClick={() => set('answerMode', 'schrijven')} style={styles.radioBtn(answerMode === 'schrijven')}>Zelf schrijven</button>
+                        <button onClick={() => set('answerMode', 'woordbank')} aria-pressed={answerMode === 'woordbank'} style={styles.radioBtn(answerMode === 'woordbank')}>Woordbank</button>
+                        <button onClick={() => set('answerMode', 'schrijven')} aria-pressed={answerMode === 'schrijven'} style={styles.radioBtn(answerMode === 'schrijven')}>Zelf schrijven</button>
                     </div>
                 </div>
             )}
@@ -137,7 +137,7 @@ export default function VormleerConfig({ block }: Props) {
             {isMeten && (
                 <div style={styles.onOffRow}>
                     <SettingLabel text="Hulplijn 0-180°" info="Een lichte stippellijn door het hoekpunt, in lijn met één been." />
-                    <button onClick={() => set('showHulplijn', !showHulplijn)} style={styles.onOffBtn(showHulplijn)}>{showHulplijn ? 'Aan' : 'Uit'}</button>
+                    <button onClick={() => set('showHulplijn', !showHulplijn)} aria-pressed={!!showHulplijn} style={styles.onOffBtn(showHulplijn)}>{showHulplijn ? 'Aan' : 'Uit'}</button>
                 </div>
             )}
 
@@ -145,18 +145,18 @@ export default function VormleerConfig({ block }: Props) {
                 <>
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Gedraaide hoeken" info="Uit: het basisbeen ligt horizontaal (makkelijker herkennen)." />
-                        <button onClick={() => set('randomRotation', !randomRotation)} style={styles.onOffBtn(randomRotation)}>{randomRotation ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('randomRotation', !randomRotation)} aria-pressed={!!randomRotation} style={styles.onOffBtn(randomRotation)}>{randomRotation ? 'Aan' : 'Uit'}</button>
                     </div>
                     {isTekenen && (
                         <div style={styles.onOffRow}>
                             <SettingLabel text="Hoeken benoemen" info="Zet de naam van de hoek (hoek ABC, met het hoekpunt in het midden) in de opdracht en in de oplossing." />
-                            <button onClick={() => set('nameAngles', !nameAngles)} style={styles.onOffBtn(nameAngles)}>{nameAngles ? 'Aan' : 'Uit'}</button>
+                            <button onClick={() => set('nameAngles', !nameAngles)} aria-pressed={!!nameAngles} style={styles.onOffBtn(nameAngles)}>{nameAngles ? 'Aan' : 'Uit'}</button>
                         </div>
                     )}
                     {!isMeten && (
                         <div style={styles.onOffRow}>
                             <SettingLabel text="Hoekboog tonen" info="Tekent het boogje (of vierkantje bij een rechte hoek) in elke hoek." />
-                            <button onClick={() => set('showBoog', !showBoog)} style={styles.onOffBtn(showBoog)}>{showBoog ? 'Aan' : 'Uit'}</button>
+                            <button onClick={() => set('showBoog', !showBoog)} aria-pressed={!!showBoog} style={styles.onOffBtn(showBoog)}>{showBoog ? 'Aan' : 'Uit'}</button>
                         </div>
                     )}
                 </>
@@ -166,28 +166,28 @@ export default function VormleerConfig({ block }: Props) {
                 <>
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Gelijke lengtes aanduiden" info="Streepjes op zijden met dezelfde lengte." />
-                        <button onClick={() => set('showEqualSides', !showEqualSides)} style={styles.onOffBtn(showEqualSides)}>{showEqualSides ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('showEqualSides', !showEqualSides)} aria-pressed={!!showEqualSides} style={styles.onOffBtn(showEqualSides)}>{showEqualSides ? 'Aan' : 'Uit'}</button>
                     </div>
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Rechte hoeken aanduiden" info="Een teken in elke rechte hoek." />
-                        <button onClick={() => set('showRightAngles', !showRightAngles)} style={styles.onOffBtn(showRightAngles)}>{showRightAngles ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('showRightAngles', !showRightAngles)} aria-pressed={!!showRightAngles} style={styles.onOffBtn(showRightAngles)}>{showRightAngles ? 'Aan' : 'Uit'}</button>
                     </div>
                     {showRightAngles && (
                         <div style={styles.section}>
                             <SettingLabel text="Teken voor rechte hoek:" info="Vierkantje in de hoek, of het losse haakje." />
                             <div style={styles.buttonGroup}>
-                                <button onClick={() => set('rightAngleStyle', 'vierkantje')} style={styles.radioBtn(rightAngleStyle === 'vierkantje')}>Vierkantje</button>
-                                <button onClick={() => set('rightAngleStyle', 'haakje')} style={styles.radioBtn(rightAngleStyle === 'haakje')}>Haakje</button>
+                                <button onClick={() => set('rightAngleStyle', 'vierkantje')} aria-pressed={rightAngleStyle === 'vierkantje'} style={styles.radioBtn(rightAngleStyle === 'vierkantje')}>Vierkantje</button>
+                                <button onClick={() => set('rightAngleStyle', 'haakje')} aria-pressed={rightAngleStyle === 'haakje'} style={styles.radioBtn(rightAngleStyle === 'haakje')}>Haakje</button>
                             </div>
                         </div>
                     )}
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Evenwijdige zijden tonen" info="Pijltjes op evenwijdige zijden (één pijltje per paar, twee bij een tweede paar)." />
-                        <button onClick={() => set('showParallel', !showParallel)} style={styles.onOffBtn(showParallel)}>{showParallel ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('showParallel', !showParallel)} aria-pressed={!!showParallel} style={styles.onOffBtn(showParallel)}>{showParallel ? 'Aan' : 'Uit'}</button>
                     </div>
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Gedraaide figuren" info="Figuren staan licht gedraaid zodat herkenning niet aan de stand hangt." />
-                        <button onClick={() => set('randomRotation', !randomRotation)} style={styles.onOffBtn(randomRotation)}>{randomRotation ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('randomRotation', !randomRotation)} aria-pressed={!!randomRotation} style={styles.onOffBtn(randomRotation)}>{randomRotation ? 'Aan' : 'Uit'}</button>
                     </div>
                 </>
             )}
@@ -195,7 +195,7 @@ export default function VormleerConfig({ block }: Props) {
             {(isTekenen || isMeten) && (
                 <div style={styles.onOffRow}>
                     <SettingLabel text="Rasterlijnen" info="Een licht 1 cm-raster in het tekenvak." />
-                    <button onClick={() => set('raster', !raster)} style={styles.onOffBtn(raster)}>{raster ? 'Aan' : 'Uit'}</button>
+                    <button onClick={() => set('raster', !raster)} aria-pressed={!!raster} style={styles.onOffBtn(raster)}>{raster ? 'Aan' : 'Uit'}</button>
                 </div>
             )}
 

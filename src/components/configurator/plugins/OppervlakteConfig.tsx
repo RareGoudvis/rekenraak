@@ -40,7 +40,7 @@ export default function OppervlakteConfig({ block }: Props) {
                 <SettingLabel text="Figuren:" info={isRooster ? 'Figuren op het 1 cm-rooster; hokjes tellen geeft de oppervlakte.' : 'Figuren met zijden op ware grootte; oppervlakte via de formule.'} />
                 <div style={styles.buttonGroup}>
                     {pool.map(s => (
-                        <button key={s.key} onClick={() => toggleShape(s.key)} style={styles.pill(shapes.includes(s.key))}>{s.label}</button>
+                        <button key={s.key} onClick={() => toggleShape(s.key)} aria-pressed={shapes.includes(s.key)} style={styles.pill(shapes.includes(s.key))}>{s.label}</button>
                     ))}
                 </div>
             </div>
@@ -60,11 +60,11 @@ export default function OppervlakteConfig({ block }: Props) {
                 <>
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Formule-hulp" info="Toont 'opp = ___ × ___ = ___' in plaats van één antwoordlijn." />
-                        <button onClick={() => set('scaffoldFormule', !scaffoldFormule)} style={styles.onOffBtn(scaffoldFormule)}>{scaffoldFormule ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('scaffoldFormule', !scaffoldFormule)} aria-pressed={!!scaffoldFormule} style={styles.onOffBtn(scaffoldFormule)}>{scaffoldFormule ? 'Aan' : 'Uit'}</button>
                     </div>
                     <div style={styles.onOffRow}>
                         <SettingLabel text="Ook omtrek vragen" info="Voegt onder elke figuur een tweede vraag naar de omtrek toe." />
-                        <button onClick={() => set('askOmtrek', !askOmtrek)} style={styles.onOffBtn(askOmtrek)}>{askOmtrek ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('askOmtrek', !askOmtrek)} aria-pressed={!!askOmtrek} style={styles.onOffBtn(askOmtrek)}>{askOmtrek ? 'Aan' : 'Uit'}</button>
                     </div>
                 </>
             )}

@@ -34,9 +34,9 @@ export default function BreukBewerkConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Richting:" info="Van breuk naar gemengd getal, omgekeerd, of beide." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('direction', 'naar-gemengd')} style={styles.radioBtn(direction === 'naar-gemengd')}>Breuk → gemengd</button>
-                        <button onClick={() => set('direction', 'naar-breuk')} style={styles.radioBtn(direction === 'naar-breuk')}>Gemengd → breuk</button>
-                        <button onClick={() => set('direction', 'beide')} style={styles.radioBtn(direction === 'beide')}>Beide</button>
+                        <button onClick={() => set('direction', 'naar-gemengd')} aria-pressed={direction === 'naar-gemengd'} style={styles.radioBtn(direction === 'naar-gemengd')}>Breuk → gemengd</button>
+                        <button onClick={() => set('direction', 'naar-breuk')} aria-pressed={direction === 'naar-breuk'} style={styles.radioBtn(direction === 'naar-breuk')}>Gemengd → breuk</button>
+                        <button onClick={() => set('direction', 'beide')} aria-pressed={direction === 'beide'} style={styles.radioBtn(direction === 'beide')}>Beide</button>
                     </div>
                 </div>
             )}
@@ -47,14 +47,14 @@ export default function BreukBewerkConfig({ block }: Props) {
                     <div style={styles.section}>
                         <SettingLabel text="Voorinstelling:" info="Snelkeuze voor de moeilijkheidsgraad van de breuken." />
                         <div style={styles.buttonGroup}>
-                            <button onClick={() => setMany({ maxNumerator: 20, maxDenominator: 24, tablesOnly: true })} style={styles.radioBtn(tablesOnly)}>Binnen de maaltafels</button>
-                            <button onClick={() => setMany({ maxNumerator: 60, maxDenominator: 100, tablesOnly: false })} style={styles.radioBtn(!tablesOnly)}>Grotere breuken</button>
+                            <button onClick={() => setMany({ maxNumerator: 20, maxDenominator: 24, tablesOnly: true })} aria-pressed={!!tablesOnly} style={styles.radioBtn(tablesOnly)}>Binnen de maaltafels</button>
+                            <button onClick={() => setMany({ maxNumerator: 60, maxDenominator: 100, tablesOnly: false })} aria-pressed={!tablesOnly} style={styles.radioBtn(!tablesOnly)}>Grotere breuken</button>
                         </div>
                     </div>
                     <div style={styles.section}>
                         <div style={styles.onOffRow}>
                             <span style={styles.onOffLabel}>Ook niet-vereenvoudigbare breuken</span>
-                            <button onClick={() => set('allowIrreducible', !allowIrreducible)} style={styles.onOffBtn(allowIrreducible)}>{allowIrreducible ? 'Aan' : 'Uit'}</button>
+                            <button onClick={() => set('allowIrreducible', !allowIrreducible)} aria-pressed={!!allowIrreducible} style={styles.onOffBtn(allowIrreducible)}>{allowIrreducible ? 'Aan' : 'Uit'}</button>
                         </div>
                     </div>
                 </>

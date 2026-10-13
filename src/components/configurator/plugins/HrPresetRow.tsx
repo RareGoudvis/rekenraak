@@ -45,10 +45,10 @@ export default function HrPresetRow({ block, variant }: Props) {
                     ? 'Vrij = gewone sommen. Compenseren = het tweede getal ligt net onder een tienvoud (47 + 29).'
                     : 'Vrij = gewone sommen. Met 10, 100, 1000 = kommaverschuiving met een tienvoud.'} />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => set('preset', 'vrij')} style={styles.radioBtn(!isPreset)}>Vrij</button>
+                    <button onClick={() => set('preset', 'vrij')} aria-pressed={!isPreset} style={styles.radioBtn(!isPreset)}>Vrij</button>
                     {variant === 'addsub'
-                        ? <button onClick={() => set('preset', 'compenseren')} style={styles.radioBtn(preset === 'compenseren')}>Compenseren</button>
-                        : <button onClick={() => set('preset', 'tienvoud')} style={styles.radioBtn(preset === 'tienvoud')}>Met 10, 100, 1000</button>}
+                        ? <button onClick={() => set('preset', 'compenseren')} aria-pressed={preset === 'compenseren'} style={styles.radioBtn(preset === 'compenseren')}>Compenseren</button>
+                        : <button onClick={() => set('preset', 'tienvoud')} aria-pressed={preset === 'tienvoud'} style={styles.radioBtn(preset === 'tienvoud')}>Met 10, 100, 1000</button>}
                 </div>
             </div>}
 
@@ -56,8 +56,8 @@ export default function HrPresetRow({ block, variant }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Afstand tot het tienvoud:" info="29 = afstand 1, 28 = afstand 2." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => set('presetDistance', 1)} style={styles.radioBtn(presetDistance === 1)}>1</button>
-                        <button onClick={() => set('presetDistance', 2)} style={styles.radioBtn(presetDistance === 2)}>1 – 2</button>
+                        <button onClick={() => set('presetDistance', 1)} aria-pressed={presetDistance === 1} style={styles.radioBtn(presetDistance === 1)}>1</button>
+                        <button onClick={() => set('presetDistance', 2)} aria-pressed={presetDistance === 2} style={styles.radioBtn(presetDistance === 2)}>1 – 2</button>
                     </div>
                 </div>
             )}
@@ -68,7 +68,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                         <SettingLabel text="Tienvoud:" info="Met welke factoren gerekend wordt." />
                         <div style={styles.buttonGroup}>
                             {[10, 100, 1000].map(f => (
-                                <button key={f} onClick={() => toggleFactor(f)} style={styles.pill(presetFactors.includes(f))}>{f.toLocaleString('nl-BE')}</button>
+                                <button key={f} onClick={() => toggleFactor(f)} aria-pressed={presetFactors.includes(f)} style={styles.pill(presetFactors.includes(f))}>{f.toLocaleString('nl-BE')}</button>
                             ))}
                         </div>
                     </div>
@@ -95,7 +95,7 @@ export default function HrPresetRow({ block, variant }: Props) {
                         ? <p style={styles.hint}>Kettingen van 3 of 4 factoren enkel bij natuurlijke getallen.</p>
                         : <div style={styles.buttonGroup}>
                             {[2, 3, 4].map(n => (
-                                <button key={n} onClick={() => set('termCount', n)} style={styles.radioBtn(termCount === n)}>{n}</button>
+                                <button key={n} onClick={() => set('termCount', n)} aria-pressed={termCount === n} style={styles.radioBtn(termCount === n)}>{n}</button>
                             ))}
                         </div>}
                 </div>

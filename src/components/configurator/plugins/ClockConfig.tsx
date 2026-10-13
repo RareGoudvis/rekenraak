@@ -66,8 +66,8 @@ export default function ClockConfig({ block }: Props) {
             <div style={styles.section}>
                 <SettingLabel text="Tijdssysteem:" info="12-uurnotatie (1–12) of 24-uurnotatie (0–23)." />
                 <div style={styles.buttonGroup}>
-                    <button onClick={() => updateConstraint('is24hour', false)} style={styles.radioBtn(!is24hour)}>12 uur  (1–12)</button>
-                    <button onClick={() => updateConstraint('is24hour', true)} style={styles.radioBtn(is24hour)}>24 uur  (0–23)</button>
+                    <button onClick={() => updateConstraint('is24hour', false)} aria-pressed={!is24hour} style={styles.radioBtn(!is24hour)}>12 uur  (1–12)</button>
+                    <button onClick={() => updateConstraint('is24hour', true)} aria-pressed={!!is24hour} style={styles.radioBtn(is24hour)}>24 uur  (0–23)</button>
                 </div>
             </div>
 
@@ -96,9 +96,9 @@ export default function ClockConfig({ block }: Props) {
                     <div style={{ ...styles.buttonGroup, flexWrap: 'wrap' }}>
                         {DIRECTION_CHOICES.map((ch) => (
                             <button key={ch.value} onClick={() => updateConstraint('minuteDirection', ch.value)}
-                                style={styles.radioBtn(minuteDirection !== 'beide' && directionZones(minuteDirection).includes(ch.value))}>{ch.label}</button>
+                                aria-pressed={minuteDirection !== 'beide' && directionZones(minuteDirection).includes(ch.value)} style={styles.radioBtn(minuteDirection !== 'beide' && directionZones(minuteDirection).includes(ch.value))}>{ch.label}</button>
                         ))}
-                        <button onClick={() => updateConstraint('minuteDirection', 'beide')} style={styles.radioBtn(minuteDirection === 'beide')}>Alle</button>
+                        <button onClick={() => updateConstraint('minuteDirection', 'beide')} aria-pressed={minuteDirection === 'beide'} style={styles.radioBtn(minuteDirection === 'beide')}>Alle</button>
                     </div>
                 </div>
             )}
@@ -108,9 +108,9 @@ export default function ClockConfig({ block }: Props) {
                 <div style={styles.section}>
                     <SettingLabel text="Te tekenen wijzer(s):" info="Welke wijzer(s) de leerling zelf moet tekenen." />
                     <div style={styles.buttonGroup}>
-                        <button onClick={() => updateConstraint('handChoice', 'uur')} style={styles.radioBtn(handChoice === 'uur')}>Uurwijzer</button>
-                        <button onClick={() => updateConstraint('handChoice', 'minuut')} style={styles.radioBtn(handChoice === 'minuut')}>Minutenwijzer</button>
-                        <button onClick={() => updateConstraint('handChoice', 'beide')} style={styles.radioBtn(handChoice === 'beide')}>Beide</button>
+                        <button onClick={() => updateConstraint('handChoice', 'uur')} aria-pressed={handChoice === 'uur'} style={styles.radioBtn(handChoice === 'uur')}>Uurwijzer</button>
+                        <button onClick={() => updateConstraint('handChoice', 'minuut')} aria-pressed={handChoice === 'minuut'} style={styles.radioBtn(handChoice === 'minuut')}>Minutenwijzer</button>
+                        <button onClick={() => updateConstraint('handChoice', 'beide')} aria-pressed={handChoice === 'beide'} style={styles.radioBtn(handChoice === 'beide')}>Beide</button>
                     </div>
                 </div>
             )}

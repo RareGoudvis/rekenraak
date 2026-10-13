@@ -52,7 +52,7 @@ export default function OrdenenConfig({ block }: Props) {
                 <SettingLabel text="Volgorde:" info="Of de reeksen oplopend, aflopend of door elkaar staan." />
                 <div style={styles.buttonGroup}>
                     {OPERATORS.map(o => (
-                        <button key={o.val} onClick={() => set('operatorMode', o.val)} style={styles.radioBtn(operatorMode === o.val)}>
+                        <button key={o.val} onClick={() => set('operatorMode', o.val)} aria-pressed={operatorMode === o.val} style={styles.radioBtn(operatorMode === o.val)}>
                             {o.label}
                         </button>
                     ))}
@@ -119,7 +119,7 @@ export default function OrdenenConfig({ block }: Props) {
                     <SettingLabel text="Specifieke getalopbouw:" info="Kies welke posities een cijfer mogen bevatten. Leeg = vrij." />
                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                         {maskPlaces.map(p => (
-                            <button key={p.key} onClick={() => toggleMask(p.key)} style={styles.maskBtn(!!numberMask?.[p.key])}>{p.key}</button>
+                            <button key={p.key} onClick={() => toggleMask(p.key)} aria-pressed={!!numberMask?.[p.key]} style={styles.maskBtn(!!numberMask?.[p.key])}>{p.key}</button>
                         ))}
                     </div>
                     <p style={styles.hint}>Leeg = vrije opbouw.</p>
@@ -138,11 +138,11 @@ export default function OrdenenConfig({ block }: Props) {
                     </div>
                     <div style={{ ...styles.onOffRow, marginTop: '8px' }}>
                         <span style={styles.onOffLabel}>Enkel stambreuken (teller = 1)</span>
-                        <button onClick={() => set('unitFractionsOnly', !unitFractionsOnly)} style={styles.onOffBtn(unitFractionsOnly)}>{unitFractionsOnly ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('unitFractionsOnly', !unitFractionsOnly)} aria-pressed={!!unitFractionsOnly} style={styles.onOffBtn(unitFractionsOnly)}>{unitFractionsOnly ? 'Aan' : 'Uit'}</button>
                     </div>
                     <div style={styles.onOffRow}>
                         <span style={styles.onOffLabel}>Gemengde getallen (bv. 1 1/4)</span>
-                        <button onClick={() => set('allowMixed', !allowMixed)} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
+                        <button onClick={() => set('allowMixed', !allowMixed)} aria-pressed={!!allowMixed} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
                     </div>
                 </div>
             )}

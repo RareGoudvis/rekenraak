@@ -37,7 +37,7 @@ export default function KettingConfig({ block }: Props) {
                 <SettingLabel text="Bewerkingen:" info="Welke stappen in de ketting voorkomen; opeenvolgende stappen verschillen altijd." />
                 <div style={styles.buttonGroup}>
                     {OPS.map(op => (
-                        <button key={op.key} onClick={() => toggleOp(op.key)} style={styles.pill(ops.includes(op.key))}>{op.label}</button>
+                        <button key={op.key} onClick={() => toggleOp(op.key)} aria-pressed={ops.includes(op.key)} style={styles.pill(ops.includes(op.key))}>{op.label}</button>
                     ))}
                 </div>
             </div>
@@ -58,7 +58,7 @@ export default function KettingConfig({ block }: Props) {
                 <SettingLabel text="Lengte van de ketting:" info="Aantal stappen tussen start en einde." />
                 <div style={styles.buttonGroup}>
                     {[3, 4, 5].map(n => (
-                        <button key={n} onClick={() => set('chainLength', n)} style={styles.radioBtn(chainLength === n)}>{n} stappen</button>
+                        <button key={n} onClick={() => set('chainLength', n)} aria-pressed={chainLength === n} style={styles.radioBtn(chainLength === n)}>{n} stappen</button>
                     ))}
                 </div>
             </div>
@@ -76,12 +76,12 @@ export default function KettingConfig({ block }: Props) {
 
             <div style={styles.onOffRow}>
                 <SettingLabel text="Tussenresultaten tonen" info="Uit: de leerling rekent elke stap zelf uit. Aan: de tussenresultaten staan er al, alleen het eindresultaat is open." />
-                <button onClick={() => set('showIntermediates', !showIntermediates)} style={styles.onOffBtn(showIntermediates)}>{showIntermediates ? 'Aan' : 'Uit'}</button>
+                <button onClick={() => set('showIntermediates', !showIntermediates)} aria-pressed={!!showIntermediates} style={styles.onOffBtn(showIntermediates)}>{showIntermediates ? 'Aan' : 'Uit'}</button>
             </div>
 
             {showIntermediates && <div style={styles.onOffRow}>
                 <SettingLabel text="Ook tussenstap blanco" info="Naast het eindresultaat wordt ook één tussenwaarde opengelaten." />
-                <button onClick={() => set('blankMiddle', !blankMiddle)} style={styles.onOffBtn(blankMiddle)}>{blankMiddle ? 'Aan' : 'Uit'}</button>
+                <button onClick={() => set('blankMiddle', !blankMiddle)} aria-pressed={!!blankMiddle} style={styles.onOffBtn(blankMiddle)}>{blankMiddle ? 'Aan' : 'Uit'}</button>
             </div>}
         </div>
     );
