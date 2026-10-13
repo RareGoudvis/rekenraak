@@ -48,7 +48,10 @@ const CASES = [
     { kind: 'choice', id: 'herleidingen-lengte-eenheid', leafId: 'herleidingen-lengte', over: { vraag: 'eenheid', formats: ['enkel-getal'] }, header: /^Welke eenheid\?$/ },
     // Breuken herkennen: a stacked breuk, the keypad types the noemer, Verder, then the teller.
     { kind: 'fraction', leafId: 'breuken-herkennen', over: {}, header: /^Welk deel is gekleurd\? Typ de breuk zoals je ze ziet\.$/ },
-    { kind: 'time', leafId: 'klok-analoog-lezen', over: {} },
+    // Klok lezen: a new row answers in words (chip + hour + minutes or kwart); als uu:mm is the row's other pick.
+    { kind: 'time-words', leafId: 'klok-analoog-lezen', over: {}, header: /^Lees de klok en zeg hoe laat het is\.$/ },
+    { kind: 'time-words', id: 'klok-analoog-lezen-nauwkeurig', leafId: 'klok-analoog-lezen', over: { timeTypes: ['nauwkeurig_5'] } },
+    { kind: 'time', id: 'klok-analoog-lezen-uumm', leafId: 'klok-analoog-lezen', over: { klokAnswer: 'digitaal' }, header: /^Lees de klok en typ de tijd \(uu:mm\)\.$/ },
     { kind: 'choice', leafId: 'vergelijken-getallen', over: {} },
     { kind: 'tap', leafId: 'vergelijken-kiezen', over: {} },
     { kind: 'tap-multi', leafId: 'even-oneven-rooster', over: {} },
@@ -219,6 +222,20 @@ async function enter(page, card) {
         if ((await verder.innerText()).trim() !== 'Verder') throw new Error('no Verder key after the noemer');
         await verder.click();
         await pressKeys(page, teller);
+    } else if (card.input === 'time-words') {
+        // [uur, minuten, woord]: the chip, then in spoken order the minutes (keypad or kwart, Verder after one digit), the hour.
+        const [hour, minute, word] = card.accepted;
+        await page.getByRole('radiogroup', { name: 'Kies het woord' }).getByRole('radio', { name: word, exact: true }).click();
+        if (minute === 'kwart') await page.locator('.kiosk-keypad [data-kiosk-action="kwart"]').click();
+        else if (minute) {
+            await pressKeys(page, minute);
+            if (minute.length === 1) {
+                const verder = page.locator('.kiosk-key-check');
+                if ((await verder.innerText()).trim() !== 'Verder') throw new Error('no Verder key after one minute digit');
+                await verder.click();
+            }
+        }
+        await pressKeys(page, hour);
     } else if (card.input === 'number+unit') {
         await page.locator('.kiosk-fields input').first().click();
         await pressKeys(page, typeableSpelling([card.accepted[0]], card.keys));
