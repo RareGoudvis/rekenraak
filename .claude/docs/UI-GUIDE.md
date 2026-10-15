@@ -156,7 +156,7 @@ Reference: `addition/NaturalSettings.tsx`, `SplitsenConfig.tsx`. Mask data and h
 [mathEngine.ts](../../src/services/math/mathEngine.ts).
 
 ### THE selected-state rule (one look, everywhere)
-Every toggle — segmented `radioBtn`, `maskBtn`, `bridgeBtn`, `pill`, the Inspector segments,
+Every toggle carries `aria-pressed={selected}` beside its style (the style helpers are plain style functions, so the attribute is the button's own; `configPills.ariaPressed.test.tsx` fails a selected-styled button without it). Every toggle — segmented `radioBtn`, `maskBtn`, `bridgeBtn`, `pill`, the Inspector segments,
 bespoke list-rows — shows the **same** selected treatment: **`--accent-soft` fill +
 `--accent` text + a 1px `--accent` ring.** Never a solid accent fill, never `white`/`#fff`
 text, never a domain hue (rule 6). The 1px ring is load-bearing — it is what keeps the

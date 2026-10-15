@@ -36,6 +36,15 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         summary: 'Elke oefening blijft nu binnen het maximum dat je kiest.',
         items: [
             {
+                kind: 'opgelost',
+                text: 'Afronden (kommagetallen, rooster): de titel noemt alleen nog de kolommen die er echt zijn, bv. “Rond af op t.” bij 2 decimalen.',
+                example: { leafId: 'afronden-dec-rooster', constraints: { decimalPlaces: 2, roundTargets: ['t', 'h'] } },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Bordmodus: een breed honderdveld (20 kolommen, grote tekst) schuift niet meer voorbij de rechterrand van het bord, maar krimpt mee.',
+            },
+            {
                 kind: 'nieuw',
                 text: 'Oefenmodus: bij Analoge klok · lezen zegt de leerling de tijd in woorden (uur, half, voor, over; bij voor/over de minuten of “kwart”). Of uu:mm, per rij.',
                 example: { leafId: 'klok-analoog-lezen', before: 'typ 3:15', after: 'kwart over 3' },

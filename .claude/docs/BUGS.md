@@ -18,6 +18,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
+- Geld configs: the denomination / betalen-met / bill pills in `GeldConfig`, `GeldTeruggevenConfig`, `GeldWisselConfig` are `<span onClick>`, not buttons — no keyboard, no `aria-pressed` (exempt from `configPills.ariaPressed.test.tsx`). Convert to buttons without shifting the layout. 2026-10-13.
 
 ## Generators
 

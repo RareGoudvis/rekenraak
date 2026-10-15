@@ -1342,7 +1342,7 @@ src/
 │   ├── settings/                # widget ⚙ system (§14 "Widget settings")
 │   │   ├── registry.ts          # WIDGET_SETTINGS: one panel per kind (20)
 │   │   ├── BaselineSettings.tsx # Kaart (titel, titelbalk, tekstgrootte, accentkleur) + Standaard (save / reset) under every panel
-│   │   ├── baseProps.ts         # FONT_SIZES, fontScale, SELF_SCALED_FONT, ACCENT_PALETTE, widgetAccent, useSetProps (live merge), cardTextScale / cardLayoutWidth (shared by the frame fit and positietabel), cardNaturalWidth(widget) (per-kind table: a 20-column honderdveld widens its card instead of shrinking below Normaal; the resize grip divides by the factor)
+│   │   ├── baseProps.ts         # FONT_SIZES, fontScale, SELF_SCALED_FONT, ACCENT_PALETTE, widgetAccent, useSetProps (live merge), cardTextScale / cardLayoutWidth (shared by the frame fit and positietabel), cardNaturalWidth(widget) (per-kind table: a 20-column honderdveld widens its card instead of shrinking below Normaal; the resize grip divides by the factor; a widened card is capped to the room left on the board — `widgetSizing.ts` `capWidenedWidth(outerW, widened, x, boardW)`, 240 px floor, 8 px gap, measured by WidgetFrame's ResizeObserver — and the frame zoom shrinks the content with it)
 │   │   ├── controls.tsx         # the shared kit: Section, Row, Toggle, Segmented, Slider, fields, ColorSwatches / ColorDot, IconPicker, ListEditor, ResetRow, SaveDefaultRow
 │   │   ├── mathControls.tsx     # NumberField (half-typed values), PaletteRow (pastel fills)
 │   │   ├── ChoiceButtons.tsx    # wrapping one-of-many buttons (tones)
