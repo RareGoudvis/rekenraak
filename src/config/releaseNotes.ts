@@ -36,6 +36,16 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         summary: 'Elke oefening blijft nu binnen het maximum dat je kiest.',
         items: [
             {
+                kind: 'nieuw',
+                text: 'Teruggeven: ook tot €1 en tot €2, betaald met een munt van €1 of €2 — voor de jongste groepen.',
+                example: { leafId: 'geld-teruggeven', constraints: { minPriceEuros: 0, maxPriceEuros: 1, payWithOptions: [200], centenDeel: 'tien' }, count: 2, height: 200 },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Teruggeven: is het betaalde bedrag precies de volgende euro (€9,35 met €10), dan tekent het sprongetje nog één boog in plaats van een lege “+ €0”.',
+                example: { leafId: 'geld-teruggeven', constraints: { minPriceEuros: 0, maxPriceEuros: 0, payWithOptions: [100] }, before: 'twee bogen, de tweede “+ €0”', after: 'één boog van de prijs naar €1' },
+            },
+            {
                 kind: 'opgelost',
                 text: 'Afronden (kommagetallen, rooster): de titel noemt alleen nog de kolommen die er echt zijn, bv. “Rond af op t.” bij 2 decimalen.',
                 example: { leafId: 'afronden-dec-rooster', constraints: { decimalPlaces: 2, roundTargets: ['t', 'h'] } },

@@ -1,5 +1,5 @@
 import type { MathBlock, GeldTeruggevenExercise } from '../../services/math/types';
-import { Bill, LaidMoney } from './GeldViewer';
+import { Bill, EuroCoin, LaidMoney } from './GeldViewer';
 import { useViewerInteraction, type BuildEntry } from './ViewerInteractionContext';
 import type { GeldTeruggevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
@@ -92,11 +92,14 @@ const DIAG_FS_SMALL = 12.13;
 
 function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenExercise; scaffolding: string; showSolutions: boolean }) {
     const sol = showSolutions;
+    // Paid amount = the next whole euro (€0,35 → €1, €9,35 → €10): one jump, so only the
+    // cent arc is drawn and the paid amount takes the waypoint's place.
+    const single = ex.step2Cents === 0;
     const showLeft   = sol || scaffolding === 'ingevuld' || scaffolding === 'basis';
-    const showMiddle = sol || scaffolding === 'ingevuld';
+    const showMiddle = !single && (sol || scaffolding === 'ingevuld');
     const showRight  = sol || scaffolding === 'ingevuld' || scaffolding === 'basis';
     const showLabel1 = sol || scaffolding === 'ingevuld';
-    const showLabel2 = sol || scaffolding === 'ingevuld';
+    const showLabel2 = !single && (sol || scaffolding === 'ingevuld');
     // Only the pupil's answers (waypoint, step labels) turn red; the given price and paid amount stay black.
     const col = sol ? SOL : '#000';
 
@@ -118,11 +121,11 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
                 fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
 
             {/* Arc 2: large, above baseline — long euro-step, middle node is at x≈150-198 */}
-            <path d="M 205,75 C 250,28 345,28 376,75"
-                fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
+            {!single && <path d="M 205,75 C 250,28 345,28 376,75"
+                fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />}
 
             {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="#000">{fmtCents(ex.priceCents)}</text>}
-            {showRight && <text x="415" y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="#000">{fmtCents(ex.payWithCents)}</text>}
+            {showRight && <text x={single ? 173 : 415} y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="#000">{fmtCents(ex.payWithCents)}</text>}
 
             {/* Middle node: solution shows amount; otherwise € + blank line for student */}
             {showMiddle && (sol
@@ -191,7 +194,7 @@ function TeruggevenCell({ ex, block, showSolutions, laid }: { ex: GeldTeruggeven
                 {betalenMetTekening ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span>Je betaalt met:</span>
-                        <Bill valueCents={ex.payWithCents} />
+                        {ex.payWithCents < 500 ? <EuroCoin valueCents={ex.payWithCents} /> : <Bill valueCents={ex.payWithCents} />}
                     </div>
                 ) : (
                     <div>Je betaalt met {fmtCents(ex.payWithCents)}.</div>

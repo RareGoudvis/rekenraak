@@ -163,7 +163,8 @@ export function generateGeldWisselExercises(block: MathBlock): GeldWisselExercis
     }));
 }
 
-const BILL_DENOMINATIONS = [500, 1000, 2000, 5000, 10000, 20000, 50000];
+// What the customer can pay with: the bills, plus the €1 / €2 coins for the 'Tot €1' / 'Tot €2' ranges
+const PAY_DENOMINATIONS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
 
 // Belgian prices are rounded to 5ct, so only multiples of 5 are used
 const CENTEN_POOLS: Record<string, number[]> = {
@@ -195,14 +196,17 @@ export function generateGeldTeruggevenExercisesNoted(block: MathBlock): { items:
     let attempts = 0;
     while (exercises.length < n && attempts < 20000) {
         attempts++;
-        const options = (payWithOptions as number[]).filter(v => BILL_DENOMINATIONS.includes(v));
+        const options = (payWithOptions as number[]).filter(v => PAY_DENOMINATIONS.includes(v));
         if (options.length === 0) break;
         const payWithCents = options[Math.floor(rng() * options.length)];
         const maxPriceForPayWith = Math.floor(payWithCents / 100) - 1;
         const effectiveMax = Math.min(maxPriceEuros, maxPriceForPayWith);
-        if (effectiveMax < minPriceEuros) continue;
+        if (effectiveMax < 0) continue;
+        // A €1 / €2 coin under the teacher's min price (default €1) lowers the floor: paying with
+        // €1 means a price under €1, otherwise the block would come out empty.
+        const effectiveMin = Math.min(minPriceEuros, effectiveMax);
 
-        const priceEuros = Math.floor(rng() * (effectiveMax - minPriceEuros + 1)) + minPriceEuros;
+        const priceEuros = Math.floor(rng() * (effectiveMax - effectiveMin + 1)) + effectiveMin;
         const centsPart = cenPool[Math.floor(rng() * cenPool.length)];
         const priceCents = priceEuros * 100 + centsPart;
         const key = `${priceCents}-${payWithCents}`;

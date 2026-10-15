@@ -207,9 +207,10 @@ const geldWisselSpace: OptionSpace = {
 };
 
 const geldTeruggevenSpace: OptionSpace = {
-    minPriceEuros: [1],
-    maxPriceEuros: [9, 49, 99, 999],
-    payWithOptions: [[500], [1000], [1000, 2000, 5000], [5000, 10000, 20000, 50000]],
+    // min 0 only: a min of 1 with the €1 preset (max 0) can produce nothing, by design
+    minPriceEuros: [0],
+    maxPriceEuros: [0, 1, 9, 49, 99, 999],
+    payWithOptions: [[100], [200], [500], [1000], [1000, 2000, 5000], [5000, 10000, 20000, 50000]],
     centenDeel: ['vijfentwintig', 'tien', 'vijf'],
     scaffolding: ['ingevuld', 'leeg'],
     antwoordType: ['schrijven', 'tekenen-schrijven'],

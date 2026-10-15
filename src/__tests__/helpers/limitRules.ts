@@ -799,7 +799,9 @@ const geldTeruggevenSpec: TypeSpec<GeldTeruggevenExercise> = {
         const ex = `prijs ${e.priceCents}c, betaald ${e.payWithCents}c, terug ${e.changeCents}c`;
         const maxP = n(c.maxPriceEuros, 49), minP = n(c.minPriceEuros, 1);
         if (Math.floor(e.priceCents / 100) > maxP) push('value>max', e.priceCents, maxP * 100 + 99, ex);
-        if (e.priceCents < minP * 100) push('value<min', e.priceCents, minP * 100, ex);
+        // SYNC geldGenerator: a coin under the min price lowers the floor to the coin's whole euros - 1
+        const floorP = Math.min(minP, Math.floor(e.payWithCents / 100) - 1);
+        if (e.priceCents < floorP * 100) push('value<min', e.priceCents, floorP * 100, ex);
         const opts = (c.payWithOptions as number[] | undefined) ?? [];
         if (opts.length && !opts.includes(e.payWithCents)) push('bill-not-chosen', e.payWithCents, opts.join(','), ex);
         if (e.payWithCents <= e.priceCents) push('answer-key', e.payWithCents, `> ${e.priceCents}`, ex);
