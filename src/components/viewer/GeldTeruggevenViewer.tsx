@@ -185,9 +185,10 @@ function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExerci
 
     const tekenen = antwoordType === 'tekenen-schrijven';
     const blockWidth = useBlockWidth();
-    // Draw box + diagram side by side only when both fit (left column ≥ 220 px, diagram ≥ 220 px, gap);
-    // narrower cells fall back to the wrapping row below.
-    const gridLayout = tekenen && diagramBeside && blockWidth >= 500;
+    // Text and scaffold side by side only when both fit (left column ≥ 220 px, scaffold ≥ 220 px, gap);
+    // narrower cells stack: question, scaffold, answer line last.
+    const wide = blockWidth >= 500;
+    const gridLayout = wide && tekenen && diagramBeside;
 
     const question = (
         <div style={{ fontSize: FS_TEXT, fontFamily: 'inherit', lineHeight: 1.5 }}>
@@ -224,10 +225,21 @@ function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExerci
         );
     }
 
+    if (!wide) {
+        return (
+            <div className="print-exercise" style={{ padding: '6px 4px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {question}
+                {diagramBeside && <div style={{ display: 'flex', justifyContent: 'flex-end' }}>{diagram}</div>}
+                {drawBox}
+                <div style={{ alignSelf: tekenen ? 'center' : 'flex-start' }}>{answer}</div>
+            </div>
+        );
+    }
+
     return (
         <div className="print-exercise" style={{ padding: '6px 4px', boxSizing: 'border-box' }}>
-            {/* Two columns: text + boxes + answer on the left, the arrow diagram top-right (it wraps below at narrow widths) */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', columnGap: em(40), rowGap: '6px' }}>
+            {/* Two columns: text + answer on the left, the scaffold top-right */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', columnGap: em(40) }}>
                 <div style={{ flex: `1 1 ${em(220)}`, minWidth: 0, alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {question}
                     {drawBox}
