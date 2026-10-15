@@ -127,7 +127,8 @@ export function generateGeldWisselExercises(block: MathBlock): GeldWisselExercis
     }));
 }
 
-const BILL_DENOMINATIONS = [500, 1000, 2000, 5000, 10000, 20000, 50000];
+// What the customer can pay with: the bills, plus the €1 / €2 coins for the 'Tot €1' / 'Tot €2' ranges
+const PAY_DENOMINATIONS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
 
 // Belgian prices are rounded to 5ct, so only multiples of 5 are used
 const CENTEN_POOLS: Record<string, number[]> = {
@@ -155,7 +156,7 @@ export function generateGeldTeruggevenExercises(block: MathBlock): GeldTeruggeve
     let attempts = 0;
     while (exercises.length < n && attempts < 20000) {
         attempts++;
-        const options = (payWithOptions as number[]).filter(v => BILL_DENOMINATIONS.includes(v));
+        const options = (payWithOptions as number[]).filter(v => PAY_DENOMINATIONS.includes(v));
         if (options.length === 0) break;
         const payWithCents = options[Math.floor(rng() * options.length)];
         const maxPriceForPayWith = Math.floor(payWithCents / 100) - 1;
@@ -184,6 +185,12 @@ export function generateGeldTeruggevenExercises(block: MathBlock): GeldTeruggeve
             step2Cents,
             isManuallyEdited: false,
         });
+    }
+    // Small ranges have few distinct pairs (Tot €1 with 25-cent prices: three), so repeat them
+    // rather than hand the teacher a short block.
+    const distinct = exercises.length;
+    for (let i = 0; distinct > 0 && exercises.length < n; i++) {
+        exercises.push({ ...exercises[i % distinct], id: `geld-tg-${Date.now()}-${exercises.length}` });
     }
     return exercises;
 }

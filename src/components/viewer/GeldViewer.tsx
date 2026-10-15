@@ -39,7 +39,7 @@ export function Bill({ valueCents, width = 56, height = 32 }: BillProps) {
     );
 }
 
-function EuroCoin({ valueCents, size = 36 }: CoinProps) {
+export function EuroCoin({ valueCents, size = 36 }: CoinProps) {
     return (
         <svg width={em(size)} height={em(size)} viewBox="0 0 44 44" style={FIGURE_FONT}>
             <circle cx="22" cy="22" r="20" fill="white" stroke="#000" strokeWidth="2" />
