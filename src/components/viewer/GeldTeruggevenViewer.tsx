@@ -2,6 +2,7 @@ import type { MathBlock, GeldTeruggevenExercise } from '../../services/math/type
 import { Bill, EuroCoin } from './GeldViewer';
 import type { GeldTeruggevenConstraints } from '../../services/math/constraintTypes';
 import { SOL, solutionText } from './solutionStyle';
+import { useBlockWidth } from './BlockWidthContext';
 
 // ── Amount formatting ─────────────────────────────────────────────────────────
 
@@ -106,7 +107,7 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
     // maxWidth keeps the SVG at 400px on a 13pt sheet and grows it with the slider
     // All arc endpoints at y=75 so arrows meet the text nodes at a consistent height
     return (
-        <svg viewBox="0 0 440 114" style={{ fontSize: 'var(--sheet-size-math)', width: '100%', maxWidth: em(400), overflow: 'visible' }}>
+        <svg viewBox={single ? '15 60 210 54' : '0 0 440 114'} style={{ fontSize: 'var(--sheet-size-math)', width: '100%', maxWidth: em(single ? 191 : 400), overflow: 'visible' }}>
             <defs>
                 <marker id="tg-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                     <path d="M 0,0 L 6,3 L 0,6 z" fill="#000" />
@@ -179,33 +180,66 @@ function TeruggevenCell({ ex, block, showSolutions }: { ex: GeldTeruggevenExerci
     const antwoordFormat: string     = c.antwoordFormat   ?? 'euro-cent';
     const betalenMetTekening: boolean = c.betalenMetTekening ?? false;
     const boxHeight: number          = c.boxHeight        ?? 120;
+    // The scaffold (arrow diagram or the lege-ruimte box) goes beside the text, in the same right-hand slot.
+    const diagramBeside = scaffolding !== 'leeg';
+
+    const tekenen = antwoordType === 'tekenen-schrijven';
+    const blockWidth = useBlockWidth();
+    // Draw box + diagram side by side only when both fit (left column ≥ 220 px, diagram ≥ 220 px, gap);
+    // narrower cells fall back to the wrapping row below.
+    const gridLayout = tekenen && diagramBeside && blockWidth >= 500;
+
+    const question = (
+        <div style={{ fontSize: FS_TEXT, fontFamily: 'inherit', lineHeight: 1.5 }}>
+            <div>Je moet {fmtCents(ex.priceCents)} betalen.</div>
+            {betalenMetTekening ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Je betaalt met:</span>
+                    {ex.payWithCents < 500 ? <EuroCoin valueCents={ex.payWithCents} /> : <Bill valueCents={ex.payWithCents} />}
+                </div>
+            ) : (
+                <div>Je betaalt met {fmtCents(ex.payWithCents)}.</div>
+            )}
+        </div>
+    );
+    const drawBox = tekenen && (
+        <div style={{ width: '100%', height: `${boxHeight}px`, border: '1px solid #000', boxSizing: 'border-box', borderRadius: '3px', padding: '4px' }}>
+            <span style={{ fontSize: FS_LABEL, fontStyle: 'italic', color: '#666' }}>Teken dit bedrag.</span>
+        </div>
+    );
+    const answer = <AnswerLine ex={ex} antwoordFormat={antwoordFormat} showSolutions={showSolutions} />;
+    const diagram = diagramBeside && <ScaffoldingArea ex={ex} scaffolding={scaffolding} showSolutions={showSolutions} boxHeight={boxHeight} />;
+
+    if (gridLayout) {
+        // The diagram shares the draw box's row and is centred on it; the answer line is centred under the box.
+        return (
+            <div className="print-exercise" style={{ padding: '6px 4px', boxSizing: 'border-box' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `minmax(0, 1fr) minmax(${em(220)}, ${em(400)})`, columnGap: em(40), rowGap: '6px', alignItems: 'start' }}>
+                    <div style={{ gridColumn: 1, gridRow: 1 }}>{question}</div>
+                    <div style={{ gridColumn: 1, gridRow: 2 }}>{drawBox}</div>
+                    <div style={{ gridColumn: 1, gridRow: 3, justifySelf: 'center' }}>{answer}</div>
+                    <div style={{ gridColumn: 2, gridRow: 2, alignSelf: 'center', justifySelf: 'end', width: '100%', display: 'flex', justifyContent: 'flex-end' }}>{diagram}</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '6px 4px', boxSizing: 'border-box' }}>
-            {/* Question */}
-            <div style={{ fontSize: FS_TEXT, fontFamily: 'inherit', lineHeight: 1.5 }}>
-                <div>Je moet {fmtCents(ex.priceCents)} betalen.</div>
-                {betalenMetTekening ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>Je betaalt met:</span>
-                        {ex.payWithCents < 500 ? <EuroCoin valueCents={ex.payWithCents} /> : <Bill valueCents={ex.payWithCents} />}
-                    </div>
-                ) : (
-                    <div>Je betaalt met {fmtCents(ex.payWithCents)}.</div>
-                )}
-            </div>
-
-            {/* Diagram / scaffolding */}
-            <ScaffoldingArea ex={ex} scaffolding={scaffolding} showSolutions={showSolutions} boxHeight={boxHeight} />
-
-            {/* Answer */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '2px' }}>
-                {antwoordType === 'tekenen-schrijven' && (
-                    <div style={{ width: '100%', height: `${boxHeight}px`, border: '1px solid #000', boxSizing: 'border-box', borderRadius: '3px', padding: '4px' }}>
-                        <span style={{ fontSize: FS_LABEL, fontStyle: 'italic', color: '#666' }}>Teken dit bedrag.</span>
+        <div className="print-exercise" style={{ padding: '6px 4px', boxSizing: 'border-box' }}>
+            {/* Two columns: text + boxes + answer on the left, the arrow diagram top-right (it wraps below at narrow widths) */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', columnGap: em(40), rowGap: '6px' }}>
+                <div style={{ flex: `1 1 ${em(220)}`, minWidth: 0, alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {question}
+                    {drawBox}
+                    {/* Under a draw box the answer line is centred beneath it; otherwise it sits at the left like the text */}
+                    {/* Without a draw box the answer line drops to the bottom of the row, level with the diagram */}
+                    <div style={{ alignSelf: tekenen ? 'center' : 'flex-start', marginTop: tekenen ? 0 : 'auto', paddingTop: tekenen ? 0 : em(8) }}>{answer}</div>
+                </div>
+                {diagramBeside && (
+                    <div style={{ flex: `0 1 ${em(400)}`, minWidth: em(220), marginLeft: 'auto', display: 'flex', justifyContent: 'flex-end' }}>
+                        {diagram}
                     </div>
                 )}
-                <AnswerLine ex={ex} antwoordFormat={antwoordFormat} showSolutions={showSolutions} />
             </div>
         </div>
     );
