@@ -161,9 +161,12 @@ export function generateGeldTeruggevenExercises(block: MathBlock): GeldTeruggeve
         const payWithCents = options[Math.floor(rng() * options.length)];
         const maxPriceForPayWith = Math.floor(payWithCents / 100) - 1;
         const effectiveMax = Math.min(maxPriceEuros, maxPriceForPayWith);
-        if (effectiveMax < minPriceEuros) continue;
+        if (effectiveMax < 0) continue;
+        // A €1 / €2 coin under the teacher's min price (default €1) lowers the floor: paying with
+        // €1 means a price under €1, otherwise the block would come out empty.
+        const effectiveMin = Math.min(minPriceEuros, effectiveMax);
 
-        const priceEuros = Math.floor(rng() * (effectiveMax - minPriceEuros + 1)) + minPriceEuros;
+        const priceEuros = Math.floor(rng() * (effectiveMax - effectiveMin + 1)) + effectiveMin;
         const centsPart = cenPool[Math.floor(rng() * cenPool.length)];
         const priceCents = priceEuros * 100 + centsPart;
         const key = `${priceCents}-${payWithCents}`;

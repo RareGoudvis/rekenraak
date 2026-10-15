@@ -61,6 +61,14 @@ describe('geld-teruggeven small ranges', () => {
         expect(seen).toEqual(new Set([0, 100]));
     });
 
+    test('a €1 coin ticked under a min price of €1 still makes exercises: the floor drops to the coin', () => {
+        for (let seed = 1; seed <= 20; seed++) {
+            const exs = gen({ minPriceEuros: 1, maxPriceEuros: 9, payWithOptions: [100], centenDeel: 'vijf' }, seed);
+            expect(exs.length).toBe(6);
+            for (const ex of exs) { expect(ex.payWithCents).toBe(100); expect(ex.priceCents).toBeLessThan(100); }
+        }
+    });
+
     test('a pool with fewer pairs than the count repeats them instead of coming up short', () => {
         // 25-cent prices under €1 paid with €1: exactly three distinct pairs
         const exs = gen({ minPriceEuros: 0, maxPriceEuros: 0, payWithOptions: [100], centenDeel: 'vijfentwintig' }, 7, 8);
