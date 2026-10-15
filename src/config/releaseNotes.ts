@@ -41,6 +41,11 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
                 example: { leafId: 'geld-teruggeven', constraints: { minPriceEuros: 0, maxPriceEuros: 1, payWithOptions: [200], centenDeel: 'tien' }, count: 2, height: 200 },
             },
             {
+                kind: 'gewijzigd',
+                text: 'Teruggeven: het sprongetje (of de lege ruimte) staat nu rechts naast de opgave; met een tekenvak staat het sprongetje er in het midden naast.',
+                example: { leafId: 'geld-teruggeven', constraints: { maxPriceEuros: 49, payWithOptions: [5000], antwoordType: 'tekenen-schrijven' }, height: 200 },
+            },
+            {
                 kind: 'opgelost',
                 text: 'Teruggeven: is het betaalde bedrag precies de volgende euro (€9,35 met €10), dan tekent het sprongetje nog één boog in plaats van een lege “+ €0”.',
                 example: { leafId: 'geld-teruggeven', constraints: { minPriceEuros: 0, maxPriceEuros: 0, payWithOptions: [100] }, before: 'twee bogen, de tweede “+ €0”', after: 'één boog van de prijs naar €1' },
