@@ -1025,8 +1025,9 @@ export const BREUKEN_KIOSK = descriptor<FractionExercise>({
         : isHerkennen(c) ? 'Welk deel is gekleurd? Typ de breuk zoals je ze ziet.' : undefined),
     interact: {
         kind: 'tap-multi',
-        // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included).
-        keys: (ex) => Array.from({ length: ex.denominator }, (_, i) => String(i)),
+        // Key = the part's position in the figure (every shape draws denominator parts, circle d=1 included);
+        // an improper breuk's second whole continues at denominator.
+        keys: (ex) => Array.from({ length: (ex.wholes ?? 1) * ex.denominator }, (_, i) => String(i)),
         answerOf: (ex) => String(ex.numerator),
         fromState: (st) => (st.selected.length ? String(st.selected.length) : ''),
     },

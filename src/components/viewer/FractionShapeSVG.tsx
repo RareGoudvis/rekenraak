@@ -22,6 +22,8 @@ interface Props {
     physicalSize?: boolean;
     // Oefenmodus: set by the kleuren item so the pupil taps the parts to colour; null on the sheet.
     ix?: ViewerInteraction | null;
+    // Kiosk key of part 0: the second whole of an improper breuk continues at denominator.
+    keyOffset?: number;
     // Bordmodus breukviz: a teacher-picked fill; the sheet never passes it.
     fillColor?: string;
 }
@@ -83,7 +85,7 @@ function kioskSquareCells(d: number, side: number): { width: number; cells: Kios
 export default function FractionShapeSVG({
     denominator, shape, coloredIndices,
     gridRows, gridCols, showColored = true, cellSize = 35, style,
-    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false, ix = null, fillColor = FILL_COLOR,
+    fixedWidthPx, fixedHeightPx, fixedSidePx, fixedDiameterPx, physicalSize = false, ix = null, fillColor = FILL_COLOR, keyOffset = 0,
 }: Props) {
     // The viewBox always keeps the geometry below in its own units; only the element size
     // switches between physical px and font-relative em.
@@ -99,12 +101,12 @@ export default function FractionShapeSVG({
         return (
             <svg width={size(svgSize)} height={size(svgSize)} viewBox={`0 0 ${svgSize} ${svgSize}`} style={shapeStyle}>
                 {denominator === 1 ? (
-                    <circle {...interactionProps(ix, '0')} cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? fillColor : 'white'} stroke={STROKE} strokeWidth={1.5} />
+                    <circle {...interactionProps(ix, String(keyOffset))} cx={cx} cy={cy} r={r} fill={showColored && coloredIndices.includes(0) ? fillColor : 'white'} stroke={STROKE} strokeWidth={1.5} />
                 ) : (
                     Array.from({ length: denominator }, (_, i) => (
                         <path
                             key={i}
-                            {...interactionProps(ix, String(i))}
+                            {...interactionProps(ix, String(keyOffset + i))}
                             d={piePath(cx, cy, r, i * sliceDeg, (i + 1) * sliceDeg)}
                             fill={showColored && coloredIndices.includes(i) ? fillColor : 'white'}
                             stroke={STROKE}
@@ -131,7 +133,7 @@ export default function FractionShapeSVG({
                 {Array.from({ length: denominator }, (_, i) => (
                     <rect
                         key={i}
-                        {...interactionProps(ix, String(i))}
+                        {...interactionProps(ix, String(keyOffset + i))}
                         x={grid ? grid.cells[i].x : i * stripW}
                         y={grid ? grid.cells[i].y : 0}
                         width={grid ? grid.cells[i].w : stripW}
@@ -159,7 +161,7 @@ export default function FractionShapeSVG({
                     return (
                         <rect
                             key={idx}
-                            {...interactionProps(ix, String(idx))}
+                            {...interactionProps(ix, String(keyOffset + idx))}
                             x={col * cw}
                             y={row * ch}
                             width={cw}

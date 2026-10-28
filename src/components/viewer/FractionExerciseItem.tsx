@@ -13,6 +13,8 @@ import KioskAnswerSlot from './KioskAnswerSlot';
 const em = (px: number): string => `${px / PX_PER_EM_AT_DEFAULT}em`;
 // 1 cm at 96 dpi: the lijnstuk is a ruler task, drawn to true size.
 const CM_PX = 96 / 2.54;
+// Gap between the wholes of an improper breuk, in viewBox units at the 13pt default.
+const WHOLE_GAP = 10;
 
 interface Props {
     ex: FractionExercise;
@@ -90,7 +92,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         // shrink their cells instead of running off the page; grids ≤ 6 columns keep the
         // classic 38px cell. SYNC: FractionViewer sizes its columns from the same budget.
         const gridCols = ex.gridCols ?? ex.denominator;
-        const cappedCell = Math.min(38, Math.floor(SHAPE_BUDGET_AT_DEFAULT / Math.max(1, gridCols)));
+        // An improper breuk draws its wholes side by side: together they share the one budget.
+        const wholes = Math.max(1, ex.wholes ?? 1);
+        const gapUnits = (wholes - 1) * WHOLE_GAP;
+        const cappedCell = Math.min(38, Math.floor((SHAPE_BUDGET_AT_DEFAULT - gapUnits) / Math.max(1, gridCols * wholes)));
         // When width-capped, pin the height back to the classic 38px per row so narrow
         // strip cells stay tall enough to color in.
         const heightProp = cappedCell < 38 && !c.staticSize
@@ -99,19 +104,28 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
         const shapeUnitsW = ex.shape === 'circle' ? (staticProps.fixedDiameterPx ?? 88) + 12
             : ex.shape === 'square' ? (staticProps.fixedSidePx ?? 90)
             : (staticProps.fixedWidthPx ?? gridCols * cappedCell);
-        const shape = (
+        const figureStyle = c.staticSize ? undefined : figureFont(wholes * shapeUnitsW + gapUnits);
+        const d = ex.denominator;
+        const shapeOf = (w: number) => (
             <FractionShapeSVG
-                numerator={ex.numerator} denominator={ex.denominator}
-                shape={ex.shape ?? 'rectangle'} coloredIndices={ex.coloredIndices ?? []}
+                key={w}
+                numerator={ex.numerator} denominator={d}
+                shape={ex.shape ?? 'rectangle'} coloredIndices={(ex.coloredIndices ?? []).filter(i => Math.floor(i / d) === w).map(i => i - w * d)}
                 gridRows={ex.gridRows ?? 1} gridCols={gridCols}
                 showColored={showColored} cellSize={cappedCell}
                 fillColor={subType === 'kleuren' ? SOL_FILL : undefined}
                 physicalSize={!!c.staticSize}
                 ix={subType === 'kleuren' ? ix : null}
-                style={c.staticSize ? undefined : figureFont(shapeUnitsW)}
+                keyOffset={w * d}
+                style={figureStyle}
                 {...heightProp}
                 {...staticProps}
             />
+        );
+        const shape = wholes === 1 ? shapeOf(0) : (
+            <div data-wholes={wholes} style={{ display: 'flex', alignItems: 'center', gap: c.staticSize ? `${WHOLE_GAP}px` : `${WHOLE_GAP / PX_PER_EM_AT_DEFAULT}em`, ...figureStyle }}>
+                {Array.from({ length: wholes }, (_, w) => shapeOf(w))}
+            </div>
         );
 
         if (subType === 'kleuren') {
@@ -150,7 +164,7 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
                         {shape}
                     </div>
                     <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', fontFamily: 'var(--font-sheet-math)', width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        {qLine('In hoeveel gelijke delen is de figuur verdeeld?', showSolutions ? sol(String(ex.denominator)) : blank(28))}
+                        {qLine(wholes > 1 ? 'In hoeveel gelijke delen is elke figuur verdeeld?' : 'In hoeveel gelijke delen is de figuur verdeeld?', showSolutions ? sol(String(ex.denominator)) : blank(28))}
                         {qLine('Hoeveel gelijke delen zijn ingekleurd?', showSolutions ? sol(String(ex.numerator)) : blank(28))}
                     </div>
                 </div>
@@ -159,8 +173,10 @@ export default function FractionExerciseItem({ ex, block, showSolutions, columnW
             answerArea = (
                 <div style={{ fontSize: 'calc(var(--sheet-size-math) * 0.7)', fontFamily: 'var(--font-sheet-math)', lineHeight: '2', marginTop: '6px' }}>
                     <div>
-                        Er zijn {showSolutions ? sol(String(ex.numerator)) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '24px' }}>&nbsp;</span>} van de{' '}
-                        {ex.denominator} gelijke delen gekleurd. Dat is{' '}
+                        {/* Over two wholes "7 van de 4 delen" reads wrong: name the parts per figure instead. */}
+                        {wholes > 1 && <>Elke figuur heeft {ex.denominator} gelijke delen. </>}
+                        Er zijn {showSolutions ? sol(String(ex.numerator)) : <span style={{ borderBottom: '1.5px solid #000', display: 'inline-block', width: '24px' }}>&nbsp;</span>}{' '}
+                        {wholes > 1 ? 'delen' : <>van de{' '}{ex.denominator} gelijke delen</>} gekleurd. Dat is{' '}
                         {showSolutions ? vertFrac(ex.numerator, ex.denominator, SOL)
                             : <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.75)', verticalAlign: 'middle' }}>
                                 <div style={{ borderBottom: '1.5px solid #000', minWidth: '24px', height: ANSWER_LINE_H }} />
