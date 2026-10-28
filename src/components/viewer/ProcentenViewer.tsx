@@ -12,7 +12,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // Row font steps: 0.92 is the sheet size; a narrow cell steps down so the sentence stays on one line.
 const ROW_FACTORS = [0.92, 0.85, 0.78, 0.7];
 const COL_GAP = 24;

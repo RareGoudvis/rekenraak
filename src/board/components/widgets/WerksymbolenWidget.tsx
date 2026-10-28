@@ -49,7 +49,7 @@ export default function WerksymbolenWidget({ widget }: { widget: BoardWidget }) 
                             border: active ? `2px solid ${color ? `color-mix(in srgb, ${color} 80%, #000)` : ACTIVE_BORDER}` : '1px solid rgba(0,0,0,0.15)',
                             background: active ? (color ?? ACTIVE_BG) : 'rgba(0,0,0,0.03)',
                             color: active ? '#fff' : (color ?? '#444'),
-                            fontFamily: "'Azeret Mono', monospace", fontSize: `${sz.font * fs}px`, fontWeight: active ? 700 : 400,
+                            fontFamily: 'var(--font-sheet-math)', fontSize: `${sz.font * fs}px`, fontWeight: active ? 700 : 400,
                             transition: 'background 120ms',
                         }}
                     >

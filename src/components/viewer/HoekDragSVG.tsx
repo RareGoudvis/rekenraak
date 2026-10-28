@@ -7,7 +7,7 @@ import { dragHandleProps, dragSurfaceProps, dragValuesOf } from './kioskDrag';
 // SYNC: VormleerViewer's divisor (13pt = 17.33 px): the figure follows the Lettergrootte token.
 const PX_PER_EM_AT_DEFAULT = 17.33;
 const mathPx = (px: number) => `calc(var(--sheet-size-math) * ${(px / PX_PER_EM_AT_DEFAULT).toFixed(3)})`;
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 
 // viewBox geometry: the hoekpunt low in the middle so every opening up to a gestrekte hoek
 // (the free been pointing left) and the letters past the been ends fit.

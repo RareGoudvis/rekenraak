@@ -12,7 +12,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const THERMO_ITEM_MIN_PX = 140;   // one thermometer item (84px glass + labels + gap) at 13pt
 const MAX_T = 25;          // top labelled tick
 const HEAD = 12;           // glass headroom above MAX_T (no ticks)

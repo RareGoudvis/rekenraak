@@ -12,7 +12,7 @@ import KioskAnswerSlot from './KioskAnswerSlot';
 
 interface Props { block: MathBlock; showSolutions: boolean; }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 // Exercise font steps: 0.92 is the sheet size; a row whose widest number/unit pair does not
 // fit its column steps down rather than break a number across lines.

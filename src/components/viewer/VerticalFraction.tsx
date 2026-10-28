@@ -22,7 +22,7 @@ export default function VerticalFraction({ value, color, fontSize = 15, mono = f
     // the numbers grew and their box did not — the bar stopped clearing the digits and two
     // fractions in one row no longer had the same width.
     const cellMin = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize + 9)})`;
-    const fontFamily = mono ? 'Azeret Mono, monospace' : undefined;
+    const fontFamily = mono ? 'var(--font-sheet-math)' : undefined;
     const digitFontSize = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize)})`;
     const wholeFontSize = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize * 1.2)})`;
     return (

@@ -34,7 +34,7 @@ function Die({ m, idx, color, locked, onTap }: { m: DobbelModel; idx: number; co
                     ))}
                 </div>
             ) : (
-                <span style={{ fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: txt.length > 3 ? '18px' : '32px', textAlign: 'center', color: ink, wordBreak: 'break-word' }}>{txt}</span>
+                <span style={{ fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: txt.length > 3 ? '18px' : '32px', textAlign: 'center', color: ink, wordBreak: 'break-word' }}>{txt}</span>
             )}
             {locked && <LockSimple size={16} weight="fill" style={{ position: 'absolute', top: 3, right: 3, color: 'var(--accent-purple)' }} />}
         </div>
@@ -95,7 +95,7 @@ export default function DobbelsteenWidget({ widget }: { widget: BoardWidget }) {
                 ))}
             </div>
             {m.showSum && numeric && m.count > 1 && (
-                <div data-dobbel-sum style={{ fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: '26px', color: '#111' }}>
+                <div data-dobbel-sum style={{ fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: '26px', color: '#111' }}>
                     Som: {spin ? '…' : sum}
                 </div>
             )}
@@ -104,12 +104,12 @@ export default function DobbelsteenWidget({ widget }: { widget: BoardWidget }) {
                 style={{
                     height: '44px', padding: '0 20px', borderRadius: '10px', cursor: 'pointer',
                     border: '1px solid var(--accent-purple)', background: 'var(--bg-active)',
-                    color: 'var(--text-main)', fontSize: '14px', fontFamily: "'Azeret Mono', monospace",
+                    color: 'var(--text-main)', fontSize: '14px', fontFamily: 'var(--font-sheet-math)',
                 }}>
                 🎲 Rol
             </button>
             {m.showHistory && m.history.length > 0 && (
-                <ol data-dobbel-history reversed style={{ margin: 0, padding: '0 0 0 28px', width: '100%', boxSizing: 'border-box', maxHeight: '150px', overflowY: 'auto', fontFamily: "'Azeret Mono', monospace", fontSize: '14px', color: '#111' }}>
+                <ol data-dobbel-history reversed style={{ margin: 0, padding: '0 0 0 28px', width: '100%', boxSizing: 'border-box', maxHeight: '150px', overflowY: 'auto', fontFamily: 'var(--font-sheet-math)', fontSize: '14px', color: '#111' }}>
                     {[...m.history].reverse().map((r, i) => (
                         <li key={i} style={{ padding: '2px 0', opacity: i ? 0.65 : 1 }}>
                             {r.join(' · ')}{numeric && r.length > 1 ? ` = ${r.reduce((a, s) => a + Number(s), 0)}` : ''}

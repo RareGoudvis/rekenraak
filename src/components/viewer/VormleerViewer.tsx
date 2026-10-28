@@ -15,7 +15,7 @@ interface Props {
 
 // SYNC: same to-scale convention as MetenViewer (1 cm ≈ 37.8 px), scaled down for minis.
 const CM = 37.8;
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 

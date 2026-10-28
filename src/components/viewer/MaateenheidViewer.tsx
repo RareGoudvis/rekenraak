@@ -51,7 +51,7 @@ export default function MaateenheidViewer({ block, showSolutions }: Props) {
                             {sentence.split('___')[1]}
                         </span>
                         {ex.choices && (
-                            <span style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6em', paddingLeft: '24px', fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
+                            <span style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6em', paddingLeft: '24px', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.81)' }}>
                                 {ex.choices.map((u, i) => (
                                     // Solutions circle the right chip in red (print-safe ring).
                                     <span key={u} {...interactionProps(ix, String(i))} style={{

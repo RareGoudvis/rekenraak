@@ -2,7 +2,7 @@ import { positietabelProps, POSITIE_PLAATSEN, SALMON, digitAt, type PlaceColumn,
 import { cardLayoutWidth, useSetProps, widgetAccent } from '../../settings/baseProps';
 import type { BoardWidget } from '../../boardTypes';
 
-const MONO = "'Azeret Mono', monospace";
+const MONO = 'var(--font-sheet-math)';
 // Soft hyphens after the prefixes so long names wrap inside a narrow column (honderd-duizend).
 const breakable = (name: string) => name.replace(/^(honderd|tien|duizend)(?=\w)/, '$1­');
 

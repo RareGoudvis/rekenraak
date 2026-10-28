@@ -17,7 +17,7 @@ export const styles = {
   a4Sheet: { backgroundColor: '#ffffff', color: '#000000', width: '100%', maxWidth: '920px', minHeight: '1130px', height: 'auto', flex: '0 0 auto', marginTop: 'var(--sp-3)', padding: '34px 50px 45px', boxShadow: 'var(--shadow-3)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', position: 'relative', boxSizing: 'border-box' } as React.CSSProperties,
   sheetHeaderLabel: { fontSize: '13px', fontWeight: 700 as const, marginRight: '6px', color: '#000', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
   sheetHeaderLine: { flex: 1, borderBottom: '1.5px solid #000', height: '16px' } as React.CSSProperties,
-  scoreBox: { border: '2px solid #000', padding: '8px 14px', fontSize: 'calc(var(--sheet-size-math) * 0.87)', fontWeight: 'bold', borderRadius: '4px', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
+  scoreBox: { border: '2px solid #000', padding: '8px 14px', fontSize: 'calc(var(--sheet-size-math) * 0.87)', fontWeight: 'bold', borderRadius: '4px', fontFamily: 'var(--font-sheet-math)' } as React.CSSProperties,
   // Selection is screen-only (cleared before print). Apple-style: soft accent-soft
   // fill + a clean 1px accent ring, not a dashed outline. The #e5e5e5 inter-block
   // divider is left intact — it lives on the white sheet and prints.
@@ -65,7 +65,7 @@ export const styles = {
   // Blad tab's "Tekengrootte" slider writes — a size of its own here silently beat the
   // slider. The container's default is the same var(--sheet-size-text) it used to set.
   instructionDisplay: { fontSize: 'inherit', fontWeight: 700, color: '#000', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
-  pointsText: { fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontWeight: 'bold', fontFamily: 'Azeret Mono, monospace', marginRight: '24px', color: '#000' } as React.CSSProperties,
+  pointsText: { fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontWeight: 'bold', fontFamily: 'var(--font-sheet-math)', marginRight: '24px', color: '#000' } as React.CSSProperties,
   emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
   // Cold-load hero shown only when blocks.length === 0. Lives ON the white A4 sheet, so
   // it uses ink colors (not theme --text-* tokens, which go white-on-white in dark mode);

@@ -16,7 +16,7 @@ interface Props {
 
 // Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
 // stays fixed px; VerticalFraction's numeric fontSize prop converts itself internally).
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 const valOf = (v: number | Fraction): number => isFrac(v) ? (v.whole ?? 0) + v.n / v.d : v;
 

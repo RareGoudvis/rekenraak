@@ -14,7 +14,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 // SYNC: same convention as GetallenasViewer / ClockViewer / MabViewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;

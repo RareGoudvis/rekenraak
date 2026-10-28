@@ -45,7 +45,7 @@ const S = {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 14px', borderBottom: '1px solid var(--border-color)', flexShrink: 0,
     } as React.CSSProperties,
-    title: { fontSize: '14px', fontWeight: 600, fontFamily: "'Azeret Mono', monospace", color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 } as React.CSSProperties,
+    title: { fontSize: '14px', fontWeight: 600, fontFamily: 'var(--font-sheet-math)', color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 } as React.CSSProperties,
     closeBtn: {
         width: '36px', height: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: '8px', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer',

@@ -14,7 +14,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 

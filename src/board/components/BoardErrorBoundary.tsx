@@ -16,7 +16,7 @@ export default class BoardErrorBoundary extends Component<Props, State> {
                 <div style={{
                     padding: '14px 16px', borderRadius: '10px', background: '#fef2f2',
                     border: '1px solid #fca5a5', color: '#991b1b',
-                    fontFamily: "'Azeret Mono', monospace", fontSize: '12px', maxWidth: '420px',
+                    fontFamily: 'var(--font-sheet-math)', fontSize: '12px', maxWidth: '420px',
                 }}>
                     <strong>{this.props.label ?? 'Onderdeel'} crashte:</strong>
                     <div style={{ margin: '6px 0', wordBreak: 'break-word' }}>{this.state.error}</div>

@@ -19,7 +19,7 @@ interface Props {
 
 // Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
 // stays fixed px).
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 
 // Digits of `n` from its highest non-zero place down to the smallest place (E, or 10^-dp).

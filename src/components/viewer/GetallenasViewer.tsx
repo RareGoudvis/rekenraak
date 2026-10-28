@@ -17,7 +17,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const isFrac = (v: number | Fraction): v is Fraction => typeof v !== 'number';
 // SYNC: same "px measured at the 13pt default, scaled by the slider" convention as
 // ClockViewer / MabViewer / FractionExerciseItem (see BlockWidthContext.tsx).

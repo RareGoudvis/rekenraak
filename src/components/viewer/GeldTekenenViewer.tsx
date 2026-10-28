@@ -35,7 +35,7 @@ function TekenenCell({ ex, block, showSolutions, laid }: { ex: GeldExercise; blo
         <div style={{ width: '100%', minHeight: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', display: 'flex', flexDirection: 'column' }}>
             {([['€', shown.filter(b => Number(b.key) >= 100)], ['cent', shown.filter(b => Number(b.key) < 100)]] as const).map(([unit, part], i) => (
                 <div key={unit} style={{ flex: 1, minHeight: `${boxHeight / 2}px`, display: 'flex', alignItems: 'center', paddingLeft: '4px', ...(i === 0 && { borderBottom: '1.5px solid #000' }) }}>
-                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>{unit}</span>
+                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: 'var(--font-sheet-math)' }}>{unit}</span>
                     <div style={{ flex: 1, minWidth: 0 }}><LaidMoney build={part} /></div>
                 </div>
             ))}
@@ -49,10 +49,10 @@ function TekenenCell({ ex, block, showSolutions, laid }: { ex: GeldExercise; blo
     const drawingBox = laidBox || (scaffolding === 'verdeeld' ? (
         <div style={{ width: '100%', height: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ flex: 1, borderBottom: '1.5px solid #000', display: 'flex', alignItems: 'center', paddingLeft: '4px' }}>
-                <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>€</span>
+                <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: 'var(--font-sheet-math)' }}>€</span>
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: '4px' }}>
-                <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: "'Azeret Mono', monospace" }}>cent</span>
+                <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.58)', color: '#999', fontFamily: 'var(--font-sheet-math)' }}>cent</span>
             </div>
         </div>
     ) : (
@@ -61,12 +61,12 @@ function TekenenCell({ ex, block, showSolutions, laid }: { ex: GeldExercise; blo
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '8px', boxSizing: 'border-box' }}>
-            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: "'Azeret Mono', monospace", textAlign: 'center', color: '#000' }}>
+            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'var(--font-sheet-math)', textAlign: 'center', color: '#000' }}>
                 {amountText}
             </div>
             {drawingBox}
             {showSolutions && (
-                <div style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: "'Azeret Mono', monospace", textAlign: 'center' }}>
+                <div style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'var(--font-sheet-math)', textAlign: 'center' }}>
                     {amountText}
                 </div>
             )}

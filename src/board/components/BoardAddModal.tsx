@@ -169,7 +169,7 @@ const S = {
         border: 'none', borderRadius: '8px', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer', flexShrink: 0,
     } as React.CSSProperties,
     head: { display: 'flex', alignItems: 'center', gap: '16px', padding: '4px 4px 10px' } as React.CSSProperties,
-    title: { margin: 0, fontSize: '18px', fontFamily: "'Azeret Mono', monospace", color: 'var(--text-main)', flex: 1 } as React.CSSProperties,
+    title: { margin: 0, fontSize: '18px', fontFamily: 'var(--font-sheet-math)', color: 'var(--text-main)', flex: 1 } as React.CSSProperties,
     search: {
         width: '220px', height: '38px', padding: '0 12px', borderRadius: '10px',
         border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-main)',

@@ -70,7 +70,7 @@ export default function NamenWidget({ widget }: { widget: BoardWidget }) {
             )}
             <div style={{
                 minHeight: `${52 * fs}px`, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '4px 18px', textAlign: 'center',
-                fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: `${(shown.length > 1 ? 26 : 34) * fs}px`,
+                fontFamily: 'var(--font-sheet-math)', fontWeight: 700, fontSize: `${(shown.length > 1 ? 26 : 34) * fs}px`,
                 color: accent ?? '#111',
                 opacity: spinning && p.mode === 'een' ? 0.55 : 1,
             }}>
@@ -91,7 +91,7 @@ export default function NamenWidget({ widget }: { widget: BoardWidget }) {
             {p.showPicked && p.picked.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }} aria-label="Al gekozen">
                     {p.picked.map((n, i) => (
-                        <span key={i} style={{ fontFamily: "'Azeret Mono', monospace", fontSize: `${13 * fs}px`, color: '#111', opacity: 0.6, textDecoration: 'line-through' }}>{n}</span>
+                        <span key={i} style={{ fontFamily: 'var(--font-sheet-math)', fontSize: `${13 * fs}px`, color: '#111', opacity: 0.6, textDecoration: 'line-through' }}>{n}</span>
                     ))}
                 </div>
             )}
@@ -115,7 +115,7 @@ function Wheel({ names, out, rot, animate, accent, fs }: { names: string[]; out:
                     return (
                         <g key={i}>
                             <path d={d} fill={colors[i % colors.length]} fillOpacity={out.includes(name) ? 0.25 : 1} stroke="#fff" strokeWidth={1.5} />
-                            <text x={tx} y={ty} fill="#fff" fontSize={Math.max(7, Math.min(16, 220 / n))} fontFamily="Azeret Mono, monospace" fontWeight={700}
+                            <text x={tx} y={ty} fill="#fff" fontSize={Math.max(7, Math.min(16, 220 / n))} style={{ fontFamily: 'var(--font-sheet-math)' }} fontWeight={700}
                                 textAnchor="middle" dominantBaseline="central" transform={`rotate(${mid > 180 ? mid + 90 : mid - 90} ${tx} ${ty})`}>
                                 {name.length > 12 ? `${name.slice(0, 11)}…` : name}
                             </text>
@@ -135,5 +135,5 @@ function Wheel({ names, out, rot, animate, accent, fs }: { names: string[]; out:
 const btn: React.CSSProperties = {
     display: 'inline-flex', alignItems: 'center', gap: '8px', height: '44px', padding: '0 18px',
     borderRadius: '10px', borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--accent-purple)', background: 'var(--bg-active)',
-    color: 'var(--text-main)', fontSize: '14px', cursor: 'pointer', fontFamily: "'Azeret Mono', monospace", whiteSpace: 'nowrap',
+    color: 'var(--text-main)', fontSize: '14px', cursor: 'pointer', fontFamily: 'var(--font-sheet-math)', whiteSpace: 'nowrap',
 };

@@ -398,7 +398,7 @@ export function FractionStyleConfig({ block }: { block: MathBlock }) {
                                 <button key={val} onClick={() => patch({ answerMode: val })}
                                     aria-pressed={isActive} style={{ ...F.radioBtn(isActive), display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', padding: '7px 12px' }}>
                                     <span style={{ fontWeight: isActive ? 'bold' : 'normal' }}>{label}</span>
-                                    <span style={{ fontSize: '10px', opacity: 0.8, fontFamily: 'Azeret Mono, monospace' }}>{hint}</span>
+                                    <span style={{ fontSize: '10px', opacity: 0.8, fontFamily: 'var(--font-sheet-math)' }}>{hint}</span>
                                 </button>
                             );
                         })}

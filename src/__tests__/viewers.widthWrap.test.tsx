@@ -193,7 +193,7 @@ describe('deelbaarheid: numbers print with the thousands space, never split', ()
         groupedNumbersNowrap(container);
         // The number column is sized in `ch` of the grid's own font, which must be the cells' mono.
         const row = container.querySelector('.print-exercise') as HTMLElement;
-        expect(row.style.fontFamily).toContain('Azeret Mono');
+        expect(row.style.fontFamily).toBe('var(--font-sheet-math)');
     });
     test('veelvouden at 1e4', () => {
         const block = { id: 'b', typeId: 'deelbaarheid', constraints: { layout: 'veelvouden' }, deelbaarheidExercises: [{ id: 'd', base: 1_250, sequence: [1_250, 2_500, 3_750, 5_000, 6_250], givenCount: 2, isManuallyEdited: false }] } as unknown as MathBlock;

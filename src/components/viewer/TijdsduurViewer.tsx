@@ -10,7 +10,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text), not fixed px

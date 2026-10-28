@@ -6,7 +6,7 @@ import { breukvizProps, coloredParts, wholesFor, type BreukItem, type BreukvizPr
 import { useSetProps, fontScale, widgetAccent } from '../../settings/baseProps';
 import type { BoardWidget } from '../../boardTypes';
 
-const MONO = "'Azeret Mono', monospace";
+const MONO = 'var(--font-sheet-math)';
 // Content width of the 300-wide card minus its 14px padding each side.
 const BUDGET = 272;
 

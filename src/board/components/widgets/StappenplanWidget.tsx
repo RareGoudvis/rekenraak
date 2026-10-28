@@ -31,7 +31,7 @@ export default function StappenplanWidget({ widget }: { widget: BoardWidget }) {
     };
 
     return (
-        <div style={{ padding: '12px 16px', fontFamily: "'Azeret Mono', monospace" }}>
+        <div style={{ padding: '12px 16px', fontFamily: 'var(--font-sheet-math)' }}>
             {p.items.map((item, i) => {
                 const line = item.text.trimEnd();
                 if (!line.trim()) return null;

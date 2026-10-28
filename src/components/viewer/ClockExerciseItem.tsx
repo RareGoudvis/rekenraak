@@ -42,13 +42,13 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     );
 
     const digitalBox = (
-        <div style={{ border: '2px solid #000', padding: '5px 10px', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 1.04)', fontWeight: 'normal', letterSpacing: '3px' }}>
+        <div style={{ border: '2px solid #000', padding: '5px 10px', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 1.04)', fontWeight: 'normal', letterSpacing: '3px' }}>
             {ex.digitalText}
         </div>
     );
 
     const timeLabel = (
-        <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', fontWeight: 'normal', fontFamily: 'Azeret Mono, monospace', textAlign: 'center' }}>
+        <span style={{ fontSize: 'calc(var(--sheet-size-text) * 0.65)', fontWeight: 'normal', fontFamily: 'var(--font-sheet-math)', textAlign: 'center' }}>
             {ex.timeText}
         </span>
     );
@@ -68,7 +68,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
     // 84x40 (was 65x32, owner review R3): the old box's edges sat too close to the digits
     // for a pupil to write inside — bigger so the box itself has margin, not just the text.
     const emptyDigitalBox = (
-        <div style={{ border: '2px solid #000', width: mathPx(84), height: mathPx(40), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.92)', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
+        <div style={{ border: '2px solid #000', width: mathPx(84), height: mathPx(40), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.92)', letterSpacing: '2px', ...(showSolutions ? solutionText : { color: '#aaa' }) }}>
             {showSolutions ? ex.digitalText : '__:__'}
         </div>
     );
@@ -103,7 +103,7 @@ export default function ClockExerciseItem({ ex, block, showSolutions }: Props) {
                     {showSolutions
                         ? sol(ex.digitalText, true)
                         : !scaffold ? null   // the card types uu:mm in the panel fields; a paper box would duplicate them
-                        : <div style={{ border: '1.5px solid #000', width: mathPx(65), height: mathPx(28), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.7)', color: '#aaa' }}>__:__</div>
+                        : <div style={{ border: '1.5px solid #000', width: mathPx(65), height: mathPx(28), display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.7)', color: '#aaa' }}>__:__</div>
                     }
                 </>
             );

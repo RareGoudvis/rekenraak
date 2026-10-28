@@ -120,7 +120,7 @@ const S = {
         boxShadow: '0 8px 30px rgba(0,0,0,0.25)', zIndex: 45, overflow: 'hidden',
     } as React.CSSProperties,
     head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 6px 6px 10px' } as React.CSSProperties,
-    title: { fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: '13px', color: 'var(--text-main)' } as React.CSSProperties,
+    title: { fontFamily: 'var(--font-sheet-math)', fontWeight: 700, fontSize: '13px', color: 'var(--text-main)' } as React.CSSProperties,
     closeBtn: {
         width: '30px', height: '30px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: '8px', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer',
@@ -129,7 +129,7 @@ const S = {
     sum: {
         display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 8px 8px', padding: '6px 4px',
         borderRadius: '10px', background: 'var(--bg-active)', color: 'var(--text-main)',
-        fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: '16px',
+        fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: '16px',
     } as React.CSSProperties,
     list: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '4px 6px 10px' } as React.CSSProperties,
     item: {

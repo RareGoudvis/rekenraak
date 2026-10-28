@@ -32,7 +32,7 @@ const blank = (w = 28): React.CSSProperties => ({
 const FS = 'calc(var(--sheet-size-math) * 0.75)';
 const FS_TEXT = 'calc(var(--sheet-size-text) * 0.65)';
 const FS_LABEL = 'calc(var(--sheet-size-text) * 0.55)';
-const FONT = "'Azeret Mono', monospace";
+const FONT = 'var(--font-sheet-math)';
 
 // SYNC: same divisor as GeldViewer.tsx (it cannot export it next to its components).
 // 13pt = 17.33px, so em over it is today's px on a default sheet.

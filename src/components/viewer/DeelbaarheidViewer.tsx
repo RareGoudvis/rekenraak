@@ -13,7 +13,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const SALMON = '#f4cbb8';
 // The tabel cells' size, a factor of the math token.
 const CELL_FONT = 0.87;

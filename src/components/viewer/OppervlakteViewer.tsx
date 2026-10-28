@@ -13,7 +13,7 @@ interface Props {
 
 // SYNC: keep CM/label geometry aligned with MetenViewer (same to-scale convention).
 const CM = 37.8;
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));

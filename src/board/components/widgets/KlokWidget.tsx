@@ -92,14 +92,14 @@ export default function KlokWidget({ widget }: { widget: BoardWidget }) {
             )}
             {k.showDigital && (
                 <div style={{
-                    fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: `${34 * fs}px`, color: '#111',
+                    fontFamily: 'var(--font-sheet-math)', fontWeight: 700, fontSize: `${34 * fs}px`, color: '#111',
                     background: 'rgba(0,0,0,0.05)', borderRadius: '10px', padding: '4px 16px',
                 }}>
                     {digitalTime(hours, minutes, seconds, k.clock24)}
                 </div>
             )}
             {k.showText && (
-                <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: `${20 * fs}px`, color: '#111' }}>
+                <div style={{ fontFamily: 'var(--font-sheet-math)', fontSize: `${20 * fs}px`, color: '#111' }}>
                     {/* The carry runs the hours 0-23; the written time reads the 1-12 of the face ("kwart over 1", not "13"). */}
                     {k.textStyle === 'tekst' ? formatTimeText(hours % 12 || 12, minutes, false) : digitalTime(hours, minutes, null, k.clock24)}
                 </div>

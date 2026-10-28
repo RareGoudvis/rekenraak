@@ -12,7 +12,7 @@ interface Props {
 
 // The row's own fontSize is a factor of --sheet-size-math; VerticalFraction's numeric
 // fontSize prop is unchanged — it converts itself to the same token internally.
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // 13pt (the --sheet-size-math default) is 17.33 CSS px: the item minimums below are the px
 // an item needs at that default, scaled with the token because the fractions are.
 const PX_PER_EM_AT_DEFAULT = 17.33;

@@ -75,7 +75,7 @@ export default function WeerWidget({ widget }: { widget: BoardWidget }) {
 
     const textColor = '#111';
     const muted = 'rgba(0,0,0,0.6)';
-    const mono = "'Azeret Mono', monospace";
+    const mono = 'var(--font-sheet-math)';
     const deg = p.unit === 'F' ? '°F' : '°C';
     const icon = (code: number, px: number) => {
         const w = describe(code);

@@ -22,7 +22,7 @@ function RealBill({ denom }: { denom: number }) {
             background: `linear-gradient(120deg, ${c.bg}, #ffffff 130%)`,
             border: `2px solid ${c.border}`, position: 'relative',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: '18px', color: c.border,
+            fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: '18px', color: c.border,
         }}>
             <span style={{ position: 'absolute', left: '6px', top: '2px', fontSize: '9px' }}>EURO</span>
             {denom / 100}
@@ -42,7 +42,7 @@ function RealCoin({ denom }: { denom: number }) {
             background: `radial-gradient(circle, ${inner} 55%, ${outer} 56%)`,
             border: '1.5px solid rgba(0,0,0,0.4)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'Azeret Mono', monospace", fontWeight: 800,
+            fontFamily: 'var(--font-sheet-math)', fontWeight: 800,
             fontSize: denom >= 100 ? '20px' : '15px', color: '#3e2c12',
             boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
         }}>
@@ -64,7 +64,7 @@ export default function GeldItemWidget({ widget }: { widget: BoardWidget }) {
                 : g.type === 'euro-coin' ? <EuroCoin valueCents={g.denom} size={60} />
                 : <CentCoin valueCents={g.denom} size={52} />}
             {g.showLabel && (
-                <span data-geld-label style={{ marginTop: '4px', fontFamily: "'Azeret Mono', monospace", fontWeight: 700, fontSize: '15px', color: '#111' }}>
+                <span data-geld-label style={{ marginTop: '4px', fontFamily: 'var(--font-sheet-math)', fontWeight: 700, fontSize: '15px', color: '#111' }}>
                     {formatAmount(g.denom, 'euros')}
                 </span>
             )}

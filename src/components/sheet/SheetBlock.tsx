@@ -128,7 +128,7 @@ function SheetBlock({
         )}
 
         {block.pageBreakBefore && (
-          <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'Azeret Mono, monospace', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>
+          <div className="no-print" style={{ fontSize: '10px', color: 'var(--accent-purple)', fontFamily: 'var(--font-sheet-math)', marginBottom: '6px', letterSpacing: '0.5px' }}>↡ nieuwe pagina</div>
         )}
 
         {/* Body zoom: scales the opdracht-titel + exercise viewer together (text AND

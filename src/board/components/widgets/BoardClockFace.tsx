@@ -66,15 +66,15 @@ export default function BoardClockFace({ hours, minutes, seconds, showHourHand, 
                 const pm = pt(i * 30, outerNumR);
                 return (
                     <Fragment key={i}>
-                        <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={hourFont} fontFamily="Azeret Mono, monospace"
+                        <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={hourFont} style={{ fontFamily: 'var(--font-sheet-math)' }}
                             fontWeight={kid ? 800 : undefined} fill={hourColor(i)}>{label}</text>
                         {ring24 && (
-                            <text x={p24.x} y={p24.y} textAnchor="middle" dominantBaseline="central" fontSize={smallFont} fontFamily="Azeret Mono, monospace" fill={INK} fontWeight="bold">
+                            <text x={p24.x} y={p24.y} textAnchor="middle" dominantBaseline="central" fontSize={smallFont} style={{ fontFamily: 'var(--font-sheet-math)' }} fill={INK} fontWeight="bold">
                                 {label + 12}
                             </text>
                         )}
                         {minuteNumbers && (
-                            <text x={pm.x} y={pm.y} textAnchor="middle" dominantBaseline="central" fontSize={smallFont} fontFamily="Azeret Mono, monospace" fill={color || kid ? RED : INK}>
+                            <text x={pm.x} y={pm.y} textAnchor="middle" dominantBaseline="central" fontSize={smallFont} style={{ fontFamily: 'var(--font-sheet-math)' }} fill={color || kid ? RED : INK}>
                                 {i === 0 ? 60 : i * 5}
                             </text>
                         )}

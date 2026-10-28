@@ -7,7 +7,7 @@ import { mabmatProps, wisselUp, wisselDown, expandedForm, MAB_KEYS, MAB_LABEL, M
 import type { BoardWidget } from '../../boardTypes';
 
 const PLACE: Record<MabKey, MabPlace> = { d: 'thousands', h: 'hundreds', t: 'tens', e: 'units' };
-const MONO = "'Azeret Mono', monospace";
+const MONO = 'var(--font-sheet-math)';
 // How long the "wissel" pulse plays on the columns that changed.
 const FLASH_MS = 700;
 

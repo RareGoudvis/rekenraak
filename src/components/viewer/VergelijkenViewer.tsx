@@ -16,7 +16,7 @@ interface Props {
 
 // Printed digit/mono sizes below are factors of --sheet-size-math (empty-state chrome
 // stays fixed px).
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 
 export default function VergelijkenViewer({ block, showSolutions }: Props) {
     const availableWidth = useBlockWidth();

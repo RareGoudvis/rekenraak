@@ -14,7 +14,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` em
 // reproduces its old pixels at the default slider and grows with the text from there.
 const PX_PER_EM_AT_DEFAULT = 17.33;

@@ -220,7 +220,7 @@ export function ReadoutLabel({ x, y, text }: Readout) {
     return (
         <g data-instrument-readout transform={`translate(${round1(x)} ${round1(y)})`} style={NO_POINTER}>
             <rect x={-w / 2} y={-15} width={w} height={30} rx={15} style={{ fill: IC.handle }} />
-            <text textAnchor="middle" dy="0.35em" fontSize={18} fontWeight={700} fontFamily="var(--font-ui)" style={{ fill: IC.handleOn }}>{text}</text>
+            <text textAnchor="middle" dy="0.35em" fontSize={18} fontWeight={700} style={{ fontFamily: 'var(--font-ui)', fill: IC.handleOn }}>{text}</text>
         </g>
     );
 }

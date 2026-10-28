@@ -80,20 +80,20 @@ export default function TimerWidget({ widget }: { widget: BoardWidget }) {
     const small: React.CSSProperties = {
         height: '36px', minWidth: '44px', padding: '0 10px', borderRadius: '10px', cursor: 'pointer',
         border: '1px solid rgba(0,0,0,0.2)', background: 'rgba(0,0,0,0.03)', color: '#111',
-        fontFamily: "'Azeret Mono', monospace", fontSize: '14px', fontWeight: 700,
+        fontFamily: 'var(--font-sheet-math)', fontSize: '14px', fontWeight: 700,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     };
 
     const flashStyle: React.CSSProperties = { animation: endFlash ? 'rk-blink 0.8s step-start infinite' : undefined };
     const textEl = (y: number, size = 30) => label && (
-        <text x={C} y={y} textAnchor="middle" fontFamily="'Azeret Mono', monospace" fontWeight="700" fontSize={size} fill="#111">{label}</text>
+        <text x={C} y={y} textAnchor="middle" style={{ fontFamily: 'var(--font-sheet-math)' }} fontWeight="700" fontSize={size} fill="#111">{label}</text>
     );
 
     let face: React.ReactNode;
     if (p.progress === 'balk') {
         face = (
             <div data-timer-face="balk" style={{ width: '260px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center', ...flashStyle }}>
-                {label && <div style={{ fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: '44px', color: '#111' }}>{label}</div>}
+                {label && <div style={{ fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: '44px', color: '#111' }}>{label}</div>}
                 <div style={{ width: '100%', height: '38px', borderRadius: '10px', border: '2px solid rgba(0,0,0,0.25)', background: endFlash ? '#fecaca' : 'rgba(0,0,0,0.05)', overflow: 'hidden' }}>
                     <div style={{ width: `${frac * 100}%`, height: '100%', background: fill, opacity: 0.85, transition: 'width 250ms linear' }} />
                 </div>

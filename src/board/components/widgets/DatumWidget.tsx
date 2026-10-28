@@ -33,7 +33,7 @@ export default function DatumWidget({ widget }: { widget: BoardWidget }) {
         <div style={{
             margin: '12px', padding: '14px 20px', borderRadius: '10px', textAlign: 'center',
             background: m.tint ? c.bg : 'transparent', border: `1px solid ${m.tint ? c.border : 'transparent'}`,
-            fontFamily: "'Azeret Mono', monospace",
+            fontFamily: 'var(--font-sheet-math)',
         }}>
             {m.showWeekday && <div style={{ fontSize: `${30 * fs}px`, fontWeight: 700, textTransform: caseOf(true), color: c.text }}>{weekday}</div>}
             {m.showDate && <div style={{ fontSize: `${22 * fs}px`, marginTop: '4px', color: '#111', textTransform: caseOf(false) }}>{formatDate(now, m)}</div>}

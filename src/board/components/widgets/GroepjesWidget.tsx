@@ -43,7 +43,7 @@ export default function GroepjesWidget({ widget }: { widget: BoardWidget }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px' }}>
             {names.length < 2 && (
-                <div style={{ textAlign: 'center', fontFamily: "'Azeret Mono', monospace", fontSize: `${14 * fs}px`, color: '#444' }}>Voeg namen toe via ⚙</div>
+                <div style={{ textAlign: 'center', fontFamily: 'var(--font-sheet-math)', fontSize: `${14 * fs}px`, color: '#444' }}>Voeg namen toe via ⚙</div>
             )}
             {groups && (
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${120 * fs}px, 1fr))`, gap: '10px', opacity: preview ? 0.6 : 1 }}>
@@ -53,7 +53,7 @@ export default function GroepjesWidget({ widget }: { widget: BoardWidget }) {
                         const label = groupLabel(m, i);
                         return (
                             <div key={i} style={{
-                                position: 'relative', borderRadius: '10px', padding: '8px 10px', fontFamily: "'Azeret Mono', monospace",
+                                position: 'relative', borderRadius: '10px', padding: '8px 10px', fontFamily: 'var(--font-sheet-math)',
                                 border: `${locked ? 2 : 1}px solid color-mix(in srgb, ${c} ${locked ? 70 : 30}%, transparent)`,
                                 background: `color-mix(in srgb, ${c} ${m.colored ? 12 : 6}%, transparent)`,
                             }}>
@@ -75,7 +75,7 @@ export default function GroepjesWidget({ widget }: { widget: BoardWidget }) {
                 </div>
             )}
             {!ok && !preview && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#b45309', fontSize: '12px', fontFamily: "'Azeret Mono', monospace" }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#b45309', fontSize: '12px', fontFamily: 'var(--font-sheet-math)' }}>
                     <Warning size={16} /> Niet alle regels konden gevolgd worden.
                 </div>
             )}
@@ -85,7 +85,7 @@ export default function GroepjesWidget({ widget }: { widget: BoardWidget }) {
                     alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: '8px',
                     height: '44px', padding: '0 20px', borderRadius: '10px', cursor: 'pointer',
                     border: '1px solid var(--accent-purple)', background: 'var(--bg-active)',
-                    color: 'var(--text-main)', fontSize: '14px', fontFamily: "'Azeret Mono', monospace",
+                    color: 'var(--text-main)', fontSize: '14px', fontFamily: 'var(--font-sheet-math)',
                 }}>
                 <Shuffle size={18} /> {m.result ? 'Opnieuw verdelen' : 'Maak groepen'}
             </button>

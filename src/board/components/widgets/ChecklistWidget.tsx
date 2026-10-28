@@ -48,7 +48,7 @@ export default function ChecklistWidget({ widget }: { widget: BoardWidget }) {
                             {on && <Check size={box * 0.66} weight="bold" color="#fff" />}
                         </span>
                         <span style={{
-                            fontFamily: "'Azeret Mono', monospace", fontSize: `${(p.bigTap ? 24 : 19) * fs}px`, color: '#111',
+                            fontFamily: 'var(--font-sheet-math)', fontSize: `${(p.bigTap ? 24 : 19) * fs}px`, color: '#111',
                             textDecoration: on && p.checkStyle === 'doorstreep' ? 'line-through' : 'none',
                             opacity: on && p.checkStyle !== 'vink' ? (p.checkStyle === 'vervaag' ? 0.4 : 0.55) : 1,
                         }}>
