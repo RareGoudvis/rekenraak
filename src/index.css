@@ -137,7 +137,8 @@
 .page-sheet-foot .print-tfoot-inner {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
   padding-top: 6px;
-  font-family: var(--font-sheet-text); font-size: 9pt; color: #666;
+  /* SYNC: the print rule for .page-sheet-foot .print-tfoot-inner (same face on paper). */
+  font-family: var(--font-sheet-footer); font-size: 9pt; color: #666;
 }
 .page-sheet-foot .print-tfoot-inner > span { flex: 1 1 0; min-width: 0; }
 .page-sheet-foot .print-tfoot-inner > span:nth-child(2) { text-align: center; }
@@ -772,7 +773,7 @@ textarea:focus-visible,
     width: 100% !important;
     /* SYNC: must match the screen rule for .print-tfoot-inner above — the preview IS the
        print, so a font that differs between them would make the preview lie. */
-    font-family: var(--font-sheet-text) !important;
+    font-family: var(--font-sheet-footer) !important;
     /* No !important on font-size/color: lets the inline footerCustom override them. */
     font-size: 9pt;
     color: #666;

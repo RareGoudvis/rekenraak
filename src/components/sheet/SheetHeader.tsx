@@ -1,9 +1,10 @@
+import type { CSSProperties } from 'react';
 import { styles } from '../../styles/appStyles';
 import { overlayRegionStyle, borderSides } from '../../services/regionStyle';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField, type HeaderData, type DocSettings } from '../../store/useWorksheetStore';
 
 // Name-field row (Naam/Klas/Nr/Datum). Null if no field is enabled.
-function renderFields(headerData: HeaderData | undefined, align: 'left' | 'right' = 'left') {
+function renderFields(headerData: HeaderData | undefined, align: 'left' | 'right' = 'left', labelStyle: CSSProperties = styles.sheetHeaderLabel) {
   const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
   const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
   const LABELS: Record<HeaderField, string> = { naam: 'Naam:', klas: 'Klas:', nummer: 'Nr:', datum: 'Datum:' };
@@ -13,7 +14,7 @@ function renderFields(headerData: HeaderData | undefined, align: 'left' | 'right
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', rowGap: '8px', width: '100%', justifyContent: align === 'right' ? 'flex-end' : 'flex-start' }}>
       {visibleFields.map(f => (
         <div key={f} style={{ display: 'flex', alignItems: 'flex-end', width: `${widths[f] ?? DEFAULT_FIELD_WIDTHS[f]}px` }}>
-          <span style={styles.sheetHeaderLabel}>{LABELS[f]}</span>
+          <span style={labelStyle}>{LABELS[f]}</span>
           <div style={styles.sheetHeaderLine}></div>
         </div>
       ))}
@@ -29,6 +30,9 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
   const fieldsData = continuation && !headerData?.repeatHeader ? undefined : headerData;
   const showScore = !continuation && docSettings.showScores && totalScore > 0;
   if (continuation && !hasTitle && !renderFields(fieldsData)) return null;
+  // Naam/Klas/Nr/Datum labels: their own face and style (Vormgeving veldlabels), 13px bold
+  // by default; the colour still follows the koptekst unless the labels set their own.
+  const labelStyle = overlayRegionStyle({ ...styles.sheetHeaderLabel, fontSize: '13px', fontWeight: 700, color: 'inherit', fontFamily: 'var(--font-sheet-velden)' }, docSettings.headerVeldenCustom);
   // Weight, slant and underline style the TITLE only: on the container they would reach the
   // name fields and the score box too (text-decoration cannot be undone by a child).
   const { bold, italic, underline, ...boxCustom } = docSettings.headerCustom ?? {};
@@ -64,12 +68,12 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
         const gap = docSettings.titleFieldsGap ?? 16;
         // Fields align opposite the title: title-left → fields flush right, title-right → fields left.
         const fieldsRowAligned = (align: 'left' | 'right') => {
-          const f = renderFields(fieldsData, align);
+          const f = renderFields(fieldsData, align, labelStyle);
           return f ? <div>{f}</div> : null;
         };
         const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
-            {hasTitle && <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', ...titleType, textAlign: align }}>{headerData!.titel}</h1>}
+            {hasTitle && <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-header)', ...titleType, textAlign: align }}>{headerData!.titel}</h1>}
             {showScore && <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
           </div>
         ) : null;
@@ -86,7 +90,7 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
           // Fields hug the sheet's right edge as a block with a straight LEFT edge
           // (left-aligned rows inside a right-pushed fit-content wrapper) — plain
           // renderFields('right') right-justified each wrapped row raggedly.
-          const fr = renderFields(fieldsData, 'left');
+          const fr = renderFields(fieldsData, 'left', labelStyle);
           return (
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: `${gap}px`, rowGap: '8px' }}>
               {titleScore('left')}
@@ -114,7 +118,7 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
             {/* The gap only separates the title from the fields/score row above it;
                 with every field off there is nothing to separate it from and the gap
                 is paper margin pretending to be layout. */}
-            {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? `${docSettings.titleFieldsVerticalGap ?? 8}px 0 0` : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', ...titleType, textAlign: 'center' }}>{headerData!.titel}</h1>}
+            {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? `${docSettings.titleFieldsVerticalGap ?? 8}px 0 0` : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-header)', ...titleType, textAlign: 'center' }}>{headerData!.titel}</h1>}
           </>
         );
       })()}

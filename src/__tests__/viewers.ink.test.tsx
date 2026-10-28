@@ -7,6 +7,8 @@ import { flattenLeaves } from '../config/appstructure';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 import { makeBlock } from './helpers/makeBlock';
 import { SheetInk } from './helpers/sheetInk';
+import SheetBlock, { type SheetBlockProps } from '../components/sheet/SheetBlock';
+import { useWorksheetStore } from '../store/useWorksheetStore';
 
 // Sheet ink comes from the page: text inherits `color`, SVG figures draw in currentColor.
 // A hard-coded black left in a viewer would stay black when a teacher picks another ink,
@@ -52,5 +54,29 @@ describe.each(leaves)('%s', (leafId, typeId, constraints) => {
         );
         spy.mockRestore();
         expect(blackPaint(container, typeId)).toEqual([]);
+    });
+});
+
+// The same sweep through the real sheet path: a teacher's Vormgeving oefeningen colour on
+// docSettings.oefeningenCustom reaches the ScaledBlock wrapper of every SheetBlock.
+describe('oefeningenCustom.color through SheetBlock', () => {
+    const sample = leaves.filter((_, i) => i % 7 === 0);
+    test.each(sample)('%s', (leafId, typeId, constraints) => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => { });
+        const def = REGISTRY[typeId];
+        const block = makeBlock(typeId, { constraints, leafId });
+        (block as unknown as Record<string, unknown>)[def.exerciseField] = def.generate(block);
+        const props: SheetBlockProps = {
+            block, index: 1, leftPx: 0, topPx: 0, cellWidthPx: FULL_BLOCK_WIDTH_PX, widthUnits: 4, availableWidthPx: FULL_BLOCK_WIDTH_PX,
+            colGapPx: 0, columnDivider: false, hOverflowPx: 0, isActive: false, isDragging: false,
+            showDropZones: false, dropZone: null, dropNoop: false, showSolutions: true,
+            docSettings: { ...useWorksheetStore.getState().docSettings, oefeningenCustom: { color: '#0000ff' } },
+            blockProps: () => ({ onPointerDown: () => { } }), onFitWidth: () => { }, onWiden: () => { },
+        };
+        const { container } = render(<SheetBlock {...props} />);
+        spy.mockRestore();
+        const inner = container.querySelector('[data-scaled-inner]') as HTMLElement;
+        expect(inner.style.color).toBe('rgb(0, 0, 255)');
+        expect(blackPaint(inner, typeId)).toEqual([]);
     });
 });

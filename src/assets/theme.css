@@ -43,6 +43,14 @@
        within one line of arithmetic. */
     --font-sheet-text: 'Ubuntu', system-ui, sans-serif;
     --font-sheet-math: 'Azeret Mono', monospace;
+    /* One face per printed region, each its own document setting (DocSettings.fontFamily*,
+       set on .print-area-shell): the koptekst title, the opdracht titles, the Naam/Klas/Nr/
+       Datum labels and the footer. Literal defaults, not var(--font-sheet-text): picking a
+       text font must not drag the other regions along. */
+    --font-sheet-header: 'Ubuntu', system-ui, sans-serif;
+    --font-sheet-titel: 'Ubuntu', system-ui, sans-serif;
+    --font-sheet-velden: 'Ubuntu', system-ui, sans-serif;
+    --font-sheet-footer: 'Ubuntu', system-ui, sans-serif;
 
     /* Worksheet ink sizes (pt, not px — teachers think in pt from Word/Docs habits).
        Every viewer that sets a literal px size is meant to become a factor of one of

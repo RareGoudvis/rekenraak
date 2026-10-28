@@ -65,7 +65,10 @@ export function usePrint(beforeFirstPrint?: (proceed: () => void) => void) {
         // Deselecting a block changes its height, which remeasures and repacks. Two frames
         // is one to lay the new state out and one to let the repack land, so the dialog
         // sees the same pagination the screen shows.
-        requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+        // A just-picked self-hosted font may still be loading; printing before it lands puts
+        // the fallback face on paper (and measures against it).
+        const fontsReady = document.fonts?.ready ?? Promise.resolve();
+        void fontsReady.then(() => requestAnimationFrame(() => requestAnimationFrame(() => window.print())));
     };
 
     // A print can also start outside the app: the browser's own Ctrl+P, the menu, or

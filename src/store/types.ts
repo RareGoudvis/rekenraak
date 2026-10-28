@@ -98,6 +98,19 @@ export interface DocSettings {
     // hardcoded before the token). Per-block override: constraints.answerSpace.
     // NOT verticalSpacing, which is the gap BETWEEN exercises.
     answerSpace?: number;    // px at 13pt, 14-32, default 18
+    // Sheet font families (CSS font-family values from config/fontOptions.ts), set onto
+    // .print-area-shell as the --font-sheet-* tokens. Optional → back-compat; absent = the
+    // token's own default (Ubuntu / Azeret Mono). Math stays monospace-only in the picker.
+    fontFamilyText?: string;          // --font-sheet-text: opdrachttekst and words in viewers
+    fontFamilyMath?: string;          // --font-sheet-math: digits
+    fontFamilyHeader?: string;        // --font-sheet-header: the koptekst title
+    fontFamilyTitel?: string;         // --font-sheet-titel: the opdracht titles
+    fontFamilyHeaderVelden?: string;  // --font-sheet-velden: Naam/Klas/Nr/Datum labels
+    fontFamilyFooter?: string;        // --font-sheet-footer: the voettekst
+    // Naam/Klas/Nr/Datum labels' own style (size 8-20 px, default 13; colour, fill, B/I/U).
+    headerVeldenCustom?: RegionStyle;
+    // Exercise bodies: ink colour, fill, B/I/U on every block's ScaledBlock wrapper.
+    oefeningenCustom?: RegionStyle;
 }
 
 // Which full-screen view is active. 'editor' = normal 3-panel editor; the others are

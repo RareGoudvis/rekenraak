@@ -1,6 +1,7 @@
 import { useWorksheetStore, type RegionStyle } from '../../store/useWorksheetStore';
 import { STYLE_BOUNDS } from '../../config/printPalette';
 import FontStyleFields, { Field } from './FontStyleFields';
+import { TEXT_FONT_OPTIONS } from '../../config/fontOptions';
 import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
 
 // Look-and-feel controls for one printed region. These used to live in a "Stijl
@@ -12,6 +13,8 @@ export type StyleRegion = 'header' | 'titel' | 'footer';
 const REGION_KEY = { header: 'headerCustom', titel: 'titelCustom', footer: 'footerCustom' } as const;
 // Sizes the sheet falls back to when a region carries no custom style.
 const DEFAULT_SIZE: Record<StyleRegion, number> = { header: 22, titel: 16, footer: 9 };
+// Each region has its own face (DocSettings.fontFamily*), independent of the opdrachttekst.
+const FONT_KEY = { header: 'fontFamilyHeader', titel: 'fontFamilyTitel', footer: 'fontFamilyFooter' } as const;
 // The title and the opdracht line print bold until the teacher says otherwise.
 const DEFAULT_BOLD: Record<StyleRegion, boolean> = { header: true, titel: true, footer: false };
 
@@ -27,6 +30,7 @@ export default function RegionStyleFields({ region }: { region: StyleRegion }) {
     return (
         <>
             <FontStyleFields
+                fontFamily={{ label: 'Lettertype', value: docSettings[FONT_KEY[region]], options: TEXT_FONT_OPTIONS, onChange: (v) => updateDocSettings({ [FONT_KEY[region]]: v }) }}
                 fontSize={{ label: 'Tekengrootte', value: cur.fontSize ?? DEFAULT_SIZE[region], min: bounds.fontMin, max: bounds.fontMax, onChange: (v) => patch({ fontSize: v }) }}
                 color={cur.color} onColorChange={(v) => patch({ color: v })}
                 background={cur.background} onBackgroundChange={(v) => patch({ background: v })}
@@ -69,6 +73,9 @@ export function ResetAllStylesButton() {
             headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, titleFieldsVerticalGap: undefined,
             headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1, answerSpace: ANSWER_SPACE_DEFAULT_PX,
             headerCustom: undefined, titelCustom: undefined, footerCustom: undefined,
+            headerVeldenCustom: undefined, oefeningenCustom: undefined,
+            fontFamilyText: undefined, fontFamilyMath: undefined, fontFamilyHeader: undefined,
+            fontFamilyTitel: undefined, fontFamilyHeaderVelden: undefined, fontFamilyFooter: undefined,
         });
         blocks.forEach((blk) => {
             if (blk.constraints?.bodyFontScale !== undefined || blk.constraints?.answerSpace !== undefined) {

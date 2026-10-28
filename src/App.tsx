@@ -30,6 +30,17 @@ import { useSheetZoom } from './hooks/useSheetZoom';
 import { useBootLoad } from './hooks/useBootLoad';
 import { useOnboarding } from './hooks/useOnboarding';
 import { isBordPage } from './bootEntry';
+import { ensureFontLoaded } from './config/fontOptions';
+
+// docSettings font keys → the theme.css token each one overrides on .print-area-shell.
+const SHEET_FONT_TOKENS = [
+  ['fontFamilyText', '--font-sheet-text'],
+  ['fontFamilyMath', '--font-sheet-math'],
+  ['fontFamilyHeader', '--font-sheet-header'],
+  ['fontFamilyTitel', '--font-sheet-titel'],
+  ['fontFamilyHeaderVelden', '--font-sheet-velden'],
+  ['fontFamilyFooter', '--font-sheet-footer'],
+] as const;
 
 export default function App() {
   const a4Ref = useRef<HTMLDivElement>(null);
@@ -63,12 +74,20 @@ export default function App() {
   // budget and then repacks on the heights the sheet actually rendered. Estimating alone
   // ended pages early (blank tails) or overran them; measuring alone could not run before
   // the first paint.
+  // A self-hosted face is fetched the first time a sheet uses it: picked in the Inspector,
+  // or carried by a loaded / shared / autosaved sheet.
+  const fontKey = SHEET_FONT_TOKENS.map(([key]) => docSettings[key] ?? '').join('|');
+  useEffect(() => {
+    for (const value of fontKey.split('|')) void ensureFontLoaded(value);
+  }, [fontKey]);
+
   // Everything that sizes a continuation page's header (SheetHeader continuation).
   const continuationKey = useMemo(() => JSON.stringify([
     headerData?.repeatHeader, headerData?.repeatTitle, headerData?.repeatTitle ? headerData.titel : '',
     headerData?.repeatHeader ? [headerData.naam, headerData.klas, headerData.nummer, headerData.datum, headerData.fieldOrder, headerData.fieldWidths] : null,
     docSettings.headerStyle, docSettings.titlePosition, docSettings.titleFieldsGap, docSettings.headerCustom,
-  ]), [headerData, docSettings.headerStyle, docSettings.titlePosition, docSettings.titleFieldsGap, docSettings.headerCustom]);
+    docSettings.headerVeldenCustom, fontKey,
+  ]), [headerData, docSettings.headerStyle, docSettings.titlePosition, docSettings.titleFieldsGap, docSettings.headerCustom, docSettings.headerVeldenCustom, fontKey]);
   const measured = useMeasuredHeights(blocks, continuationKey);
   // Drag a block from its handle onto another block: top half inserts before it, bottom
   // half swaps the two.
@@ -187,6 +206,8 @@ export default function App() {
             // slider like every other sheet size. At the 18px default this is byte-identical
             // to the token's own value in theme.css.
             ...(docSettings.answerSpace != null ? { ['--sheet-answer-h' as string]: answerSpaceVar(docSettings.answerSpace) } : {}),
+            // Teacher-picked faces, same rule: absent keeps the theme.css default.
+            ...Object.fromEntries(SHEET_FONT_TOKENS.flatMap(([key, token]) => (docSettings[key] ? [[token, docSettings[key]]] : []))),
           }}
         >
 

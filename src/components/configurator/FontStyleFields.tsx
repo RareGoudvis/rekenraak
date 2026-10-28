@@ -2,10 +2,19 @@ import type { CSSProperties, ReactNode } from 'react';
 import Switch from '../ui/Switch';
 import { SwatchRow } from '../ui/Swatch';
 import { PRINT_PALETTE, PRINT_FILLS } from '../../config/printPalette';
+import FontFamilyPicker from './FontFamilyPicker';
+import type { FontOption } from '../../config/fontOptions';
 
-// One reusable font-style block: optional size slot, then text/fill colour and
+// One reusable font-style block: optional size and family slots, then text/fill colour and
 // bold/italic/underline. RegionStyleFields passes the size; a card with its own size
 // controls (the veldlabels, the oefeningen) omits it and gets only the shared rows.
+export interface FontFamilySlot {
+    label: string;
+    value: string | undefined;
+    options: FontOption[];
+    onChange: (value: string | undefined) => void;
+}
+
 export interface FontSizeSlot {
     label: string;
     value: number;
@@ -15,6 +24,7 @@ export interface FontSizeSlot {
 }
 
 interface Props {
+    fontFamily?: FontFamilySlot;
     fontSize?: FontSizeSlot;
     color?: string;
     onColorChange: (value: string) => void;
@@ -29,7 +39,7 @@ interface Props {
 }
 
 export default function FontStyleFields({
-    fontSize, color, onColorChange, background, onBackgroundChange,
+    fontFamily, fontSize, color, onColorChange, background, onBackgroundChange,
     bold, onBoldChange, italic, onItalicChange, underline, onUnderlineChange,
 }: Props) {
     return (
@@ -38,6 +48,12 @@ export default function FontStyleFields({
                 <Field label={`${fontSize.label}: ${fontSize.value}px`}>
                     <input type="range" min={fontSize.min} max={fontSize.max} value={fontSize.value}
                         onChange={(e) => fontSize.onChange(Number(e.target.value))} style={range} />
+                </Field>
+            )}
+
+            {fontFamily && (
+                <Field label={fontFamily.label}>
+                    <FontFamilyPicker value={fontFamily.value} options={fontFamily.options} onChange={fontFamily.onChange} ariaLabel={fontFamily.label} />
                 </Field>
             )}
 

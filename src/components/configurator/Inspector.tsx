@@ -16,6 +16,10 @@ import GenerationNote from './GenerationNote';
 import { suggestionsFor } from '../../config/instructionPresets';
 import { BODY_FONT_PX } from '../../config/printPalette';
 import RegionStyleFields, { ResetAllStylesButton } from './RegionStyleFields';
+import FontStyleFields from './FontStyleFields';
+import FontFamilyPicker from './FontFamilyPicker';
+import { TEXT_FONT_OPTIONS, MATH_FONT_OPTIONS } from '../../config/fontOptions';
+import type { RegionStyle } from '../../store/useWorksheetStore';
 import Switch from '../ui/Switch';
 import { F } from './plugins/shared/fieldStyles';
 import { ANSWER_SPACE_DEFAULT_PX } from '../viewer/BlockWidthContext';
@@ -214,6 +218,27 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     <h4 style={S.cardTitle}>Vormgeving koptekst</h4>
                     <RegionStyleFields region="header" />
                 </div>
+
+                {/* Naam/Klas/Nr/Datum labels: their own face and style, so the title above
+                    (Vormgeving koptekst) can change without the labels following along. */}
+                <div style={S.card}>
+                    <h4 style={S.cardTitle}>Vormgeving veldlabels</h4>
+                    {(() => {
+                        const cur: RegionStyle = docSettings.headerVeldenCustom ?? {};
+                        const patch = (p: Partial<RegionStyle>) => updateDocSettings({ headerVeldenCustom: { ...cur, ...p } });
+                        return (
+                            <FontStyleFields
+                                fontFamily={{ label: 'Lettertype', value: docSettings.fontFamilyHeaderVelden, options: TEXT_FONT_OPTIONS, onChange: (v) => updateDocSettings({ fontFamilyHeaderVelden: v }) }}
+                                fontSize={{ label: 'Tekengrootte', value: cur.fontSize ?? 13, min: 8, max: 20, onChange: (v) => patch({ fontSize: v }) }}
+                                color={cur.color} onColorChange={(v) => patch({ color: v })}
+                                background={cur.background} onBackgroundChange={(v) => patch({ background: v })}
+                                bold={cur.bold ?? true} onBoldChange={(v) => patch({ bold: v })}
+                                italic={cur.italic} onItalicChange={(v) => patch({ italic: v })}
+                                underline={cur.underline} onUnderlineChange={(v) => patch({ underline: v })}
+                            />
+                        );
+                    })()}
+                </div>
         </>),
         opdrachten: (<>
                 {/* ── Opdrachten — how every exercise block is presented ── */}
@@ -279,19 +304,25 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                 </div>
 
                 <div style={S.card}>
-                    <h4 style={S.cardTitle}>Lettergrootte</h4>
-                    {/* Sheet-wide base sizes (pt), fed onto .print-area-shell as CSS tokens
-                        --sheet-size-math / --sheet-size-text (theme.css). Distinct from the
-                        zoom slider below: these are the BASE every viewer px scales from,
-                        bodyFontScale is a multiplier on top of the result. */}
+                    <h4 style={S.cardTitle}>Lettertype en -grootte</h4>
+                    {/* Sheet-wide base faces and sizes (pt), fed onto .print-area-shell as CSS
+                        tokens --font-sheet-math/-text and --sheet-size-math/-text (theme.css).
+                        Distinct from the zoom slider below: these are the BASE every viewer px
+                        scales from, bodyFontScale is a multiplier on top of the result. */}
                     <div style={S.col}>
-                        <label style={S.label}>Cijfers: {docSettings.fontSizeMath ?? 13}pt</label>
+                        <label style={S.label}>Lettertype cijfers</label>
+                        <FontFamilyPicker value={docSettings.fontFamilyMath} options={MATH_FONT_OPTIONS}
+                            onChange={(v) => updateDocSettings({ fontFamilyMath: v })} ariaLabel="Lettertype cijfers" />
+                        <label style={{ ...S.label, marginTop: '10px' }}>Cijfers: {docSettings.fontSizeMath ?? 13}pt</label>
                         <input type="range" min={11} max={16} step={1}
                             value={docSettings.fontSizeMath ?? 13}
                             onChange={(e) => updateDocSettings({ fontSizeMath: Number(e.target.value) })}
                             style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
                         <p style={S.hintText}>Alle getallen en rekenwerk.</p>
 
+                        <label style={{ ...S.label, marginTop: '10px' }}>Lettertype tekst</label>
+                        <FontFamilyPicker value={docSettings.fontFamilyText} options={TEXT_FONT_OPTIONS}
+                            onChange={(v) => updateDocSettings({ fontFamilyText: v })} ariaLabel="Lettertype tekst" />
                         <label style={{ ...S.label, marginTop: '10px' }}>Opdrachttekst: {docSettings.fontSizeText ?? 15}pt</label>
                         <input type="range" min={12} max={18} step={1}
                             value={docSettings.fontSizeText ?? 15}
@@ -323,10 +354,29 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 {bigText && (
                                     <p style={S.hintText}>Grote tekst kan brede oefeningen automatisch verkleinen om op de pagina te passen.</p>
                                 )}
-                                <div style={{ marginTop: 'var(--sp-4)' }}><ResetAllStylesButton /></div>
                             </>
                         );
                     })()}
+                </div>
+
+                {/* docSettings.oefeningenCustom, on every block's ScaledBlock wrapper. */}
+                <div style={S.card}>
+                    <h4 style={S.cardTitle}>Vormgeving oefeningen</h4>
+                    {(() => {
+                        const cur: RegionStyle = docSettings.oefeningenCustom ?? {};
+                        const patch = (p: Partial<RegionStyle>) => updateDocSettings({ oefeningenCustom: { ...cur, ...p } });
+                        return (
+                            <FontStyleFields
+                                color={cur.color} onColorChange={(v) => patch({ color: v })}
+                                background={cur.background} onBackgroundChange={(v) => patch({ background: v })}
+                                bold={cur.bold} onBoldChange={(v) => patch({ bold: v })}
+                                italic={cur.italic} onItalicChange={(v) => patch({ italic: v })}
+                                underline={cur.underline} onUnderlineChange={(v) => patch({ underline: v })}
+                            />
+                        );
+                    })()}
+                    <p style={S.hintText}>Geldt voor alle oefeningen. Een opdracht-titel zonder eigen kleur kleurt mee.</p>
+                    <div style={{ marginTop: 'var(--sp-4)' }}><ResetAllStylesButton /></div>
                 </div>
         </>),
         voettekst: (<>
