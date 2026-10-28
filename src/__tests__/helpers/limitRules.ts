@@ -575,6 +575,13 @@ const breukenSpec: TypeSpec<FractionExercise> = {
     },
 };
 
+// "Ook onechte breuken": off = every teller below its noemer; on = never d/d and below 2d.
+function properRule(f: Fraction, improper: boolean, push: Push, ex: string): void {
+    if (f.whole) return;
+    if (!improper && (f.n < 1 || f.n >= f.d)) push('numerator-range', fmtF(f), `1..${f.d - 1}`, ex);
+    if (improper && (f.n < 1 || f.n === f.d || f.n >= 2 * f.d)) push('numerator-range', fmtF(f), `1..${2 * f.d - 1}, not ${f.d}`, ex);
+}
+
 const breukBewerkSpec: TypeSpec<BreukBewerkExercise> = {
     extract: e => ex4(e.inputs.flatMap(fracParts), e.answers.flatMap(fracParts)),
     item: (e, ctx, push) => {
@@ -591,6 +598,7 @@ const breukBewerkSpec: TypeSpec<BreukBewerkExercise> = {
             if (i.n > maxN) push('numerator>max', i.n, maxN, ex);
             if (i.d > maxD) push('denominator>max', i.d, maxD, ex);
             if (!c.allowIrreducible && gcd(a.n, a.d) !== 1) push('answer-key', fmtF(a), 'lowest terms', ex);
+            properRule(i, c.allowImproper === true, push, ex);
         } else {
             for (const f of e.inputs) {
                 // Two different noemers need room: min = max pulls the second one below the min, max 2 adds 3 (both WITH the note).
@@ -600,6 +608,7 @@ const breukBewerkSpec: TypeSpec<BreukBewerkExercise> = {
             const target = c.targetDen;
             if (target !== '' && target !== undefined && target !== null && e.answers[0]?.d !== Number(target) && !/veelvoud|maar één noemer|noemer 3 wordt/.test(ctx.note ?? '')) push('targetDen-ignored', e.answers[0]?.d, Number(target), ex);
             if (e.answers.length === 2 && e.answers[0].d !== e.answers[1].d) push('answer-key', ex, 'equal denominators', ex);
+            for (const f of e.inputs) properRule(f, c.allowImproper === true, push, ex);
         }
         e.inputs.forEach((f, i) => {
             const a = e.answers[i];
@@ -621,6 +630,9 @@ const rangschikkenSpec: TypeSpec<OrdenenExercise> = {
             for (const v of e.values) if (isFraction(v) && (v.d > hi || v.d < Math.min(lo, hi))) push('denominator>max', v.d, `${lo}-${hi}`, ex);
         }
         if (mode === 'stambreuken') for (const v of e.values) if (isFraction(v) && v.n !== 1) push('not-unit-fraction', fmtF(v), '1/d', ex);
+        // Only the free-teller modes read the flag; stambreuken and speciale stay proper.
+        const improper = c.allowImproper === true && (mode === 'gelijknamige' || mode === 'gelijknamig-te-maken');
+        for (const v of e.values) if (isFraction(v)) properRule(v, improper, push, ex);
         const vals = e.values.map(numValue);
         for (let i = 1; i < vals.length; i++) {
             const ok = e.operator === '<' ? vals[i] >= vals[i - 1] : vals[i] <= vals[i - 1];

@@ -249,6 +249,7 @@ const breukBewerkSpace: OptionSpace = {
     allowIrreducible: [false, true],
     // 'Vaste gemeenschappelijke noemer' ('' = the KGV).
     targetDen: ['', 2, 7, 12],
+    allowImproper: [false, true],
 };
 
 const breukenRangschikkenSpace: OptionSpace = {
@@ -257,6 +258,7 @@ const breukenRangschikkenSpace: OptionSpace = {
     operatorMode: ['oplopend', 'aflopend', 'beide'],
     minDenominator: [2, 3],
     maxDenominator: [6, 10, 20],
+    allowImproper: [false, true],
     answerStyle: ['lijn', 'vak'],
 };
 
