@@ -25,9 +25,11 @@ interface Props {
 // Oefenmodus/Bordmodus live in the sidebar foot, not here: in the bar they pushed stage 0 past 1920 px.
 // Table + flags: topBarStages.ts.
 
-// Autosave refused the write (browser storage full): the only way out is an explicit
-// file export, so the tooltip says that instead of a generic failure.
-const SAVE_FAILED_TEXT = 'Kon niet bewaren (opslag vol?) — bewaar als bestand.';
+// The autosave is a recovery copy in this browser, not the teacher's file or a Mijn bladen
+// entry: calling it "bewaard" made teachers think their sheet was saved somewhere. When the
+// write is refused (storage full) the only way out is a file, so the tooltip says that.
+const SAVE_FAILED_TEXT = 'Herstelkopie in deze browser mislukt (opslag vol?). Bewaar het blad als bestand.';
+const timeOf = (ms: number) => new Date(ms).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
 
 // Shared between the centre-track (stage 0-1) and the under-bar line (stage 2-3) so the
 // save-status colour/tooltip logic isn't duplicated.
@@ -36,10 +38,10 @@ function SaveIndicator({ saveState, lastSavedAt, showText }: { saveState: SaveSt
         <div
             style={S.saveChip}
             title={saveState === 'error' ? SAVE_FAILED_TEXT
-                : lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
+                : lastSavedAt ? `Herstelkopie in deze browser om ${timeOf(lastSavedAt)}` : 'Er wordt automatisch een herstelkopie in deze browser bewaard'}
         >
             <span style={{ ...S.saveDot, background: saveState === 'error' ? 'var(--danger)' : saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
-            {showText && <span>{saveState === 'error' ? 'Niet bewaard' : saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>}
+            {showText && <span>{saveState === 'error' ? 'Geen herstelkopie' : saveState === 'saving' ? 'Herstelkopie maken…' : 'Herstelkopie in browser'}</span>}
         </div>
     );
 }
