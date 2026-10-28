@@ -97,7 +97,9 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 | `inspectorTab` | `'blad' \| 'weergave' \| 'oefening'` | Which inspector tab is open. Labels read Oefeningen / Opmaak / Blad (content first); default `oefening` |
 | `bladSection` | `'koptekst' \| 'opdrachten' \| 'voettekst'` | Which Blad sub-tab shows. Set by its own tab strip AND by clicking the header/footer **on the sheet**, so both routes land in the same place |
 | `_history` / `_historyIndex` | `MathBlock[][]` / `number` | Undo/redo, max `MAX_HISTORY = 50` |
-| `saveState` / `lastSavedAt` | `'idle' \| 'saving' \| 'saved' \| 'error'` / `number \| null` | Autosave status for the TopBar dot. `'error'` = the last write was refused (`saveAutosave` returned false, storage full); `lastSavedAt` stays at the last successful write. TopBar shows a `--danger` dot + "Kon niet bewaren (opslag vol?) — bewaar als bestand." |
+| `saveState` / `lastSavedAt` | `'idle' \| 'saving' \| 'saved' \| 'error'` / `number \| null` | Autosave status for the TopBar pill ("Herstelkopie in browser"). `'error'` = the last write was refused (`saveAutosave` returned false, storage full); `lastSavedAt` stays at the last successful write. TopBar shows a `--danger` dot + "Herstelkopie in deze browser mislukt (opslag vol?). Bewaar het blad als bestand." |
+| `savedPresetId` | `string \| null` | The Mijn bladen entry this sheet was opened from (2026-10-28, Geert port): "Bewaren" then **updates** that entry (`updatePreset`) instead of asking a name; set by `loadWorksheet(file, presetId)` / `setSavedPresetId`, cleared by a new sheet, by opening a file and by deleting that preset. Rides in the autosave record (`AutosaveRecord.presetId`, written at once by `writeAutosaveNow`), never in files or share links |
+| `fileHandle` | `WorksheetFileHandle \| null` | The File System Access handle "Bewaar bestand" writes back into (Chromium only). Never persisted, never autosaved; cleared by every `loadWorksheet` and by a new sheet; set by "Open bestand…" / the first "Bewaar (als) bestand…" |
 
 **`undo`/`redo` return a value:** both hand back the id of the block that step actually
 changed (or `null`), so the caller can scroll to it and flash it — an undo whose block is
@@ -221,7 +223,7 @@ one exercise array **per family** (only one is populated per block, keyed by
 |---|---|---|
 | `exercises` | `Equation` | optellen / aftrekken / vermenigvuldigen / delen (mental math) |
 | `clockExercises` | `ClockExercise` | `klok-*` |
-| `fractionExercises` | `FractionExercise` | `breuken` |
+| `fractionExercises` | `FractionExercise` (`wholes?` = figures drawn side by side for an onechte breuk; `coloredIndices` then span `wholes × denominator` cells) | `breuken` |
 | `splitsenExercises` | `SplitsenExercise` | `splitsen` |
 | `cijferExercises` | `CijferExercise` | `cijferen-*` |
 | `geldExercises` | `GeldExercise` | `geld-herkennen`, `geld-tekenen` |
@@ -299,7 +301,7 @@ The four consumers are now **table lookups, not branches**:
 | Consumer | File | Reads |
 |---|---|---|
 | Generate | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generate` + `.exerciseField` |
-| Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches. A Config may mount OTHER families' plugins for a sub-bag through `ConstraintScope` (gemengd's per-variant tabs) — the plugin code stays unaware |
+| Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AppearanceConfig` = extra rows in the Opdrachtblok card under "Aantal oefeningen", hidden under a lock (MAB "Oefeningen per rij" popup, 2026-10-28), `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches. A Config may mount OTHER families' plugins for a sub-bag through `ConstraintScope` (gemengd's per-variant tabs) — the plugin code stays unaware |
 | Viewer routing | [SheetBlock.tsx](../../src/components/sheet/SheetBlock.tsx) | `EXERCISE_UI[typeId].Viewer` |
 | Block defaults | [blocksSlice.ts](../../src/store/slices/blocksSlice.ts) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `LEAF_BY_ID[leafId]?.defaultCount ?? .defaultCount` (a leaf may carry its own count; only oppervlakte-rooster does, = 2) |
 | Seed fit | [baseSettings.ts](../../src/config/baseSettings.ts) `seedConstraints` | `SEED_FIT[typeId](c, grade, override)` (exerciseRegistry.ts) — runs last, only when the max came from the seed (not pinned by the override): schattend/afronden drop rounding targets that can't round at the seeded max; getallenas/-rijen lower ticks (min 4), then the step, so a default never needs a note |
@@ -414,7 +416,12 @@ the retry loop and build exactly `n` items directly.
 
 - **`INTERNAL_SCALE = 1_000_000`** ([mathEngine.ts](../../src/services/math/mathEngine.ts)) —
   all arithmetic is done as scaled integers to avoid JS float rounding, divided
-  back at display time.
+  back at display time. **Integer-safety rule (2026-10-28):** 1e9 × INTERNAL_SCALE (1e15) is safe for
+  ONE scaled value only; a product of two scaled values is not (2^53 ≈ 9e15). Form products on the
+  display grid (≤ 3 decimals: `Math.round(x · 10^dp) × factor / 10^dp`) or in BigInt, never
+  `Number((a * b).toFixed(6))`. `safeIntegers.test.ts` proves printed answers exact at every type's
+  top preset with its max decimals (and the stale off-list 1e9 max on the decimal paths, which can reach a
+  generator for one tick when the teacher switches preset / numberType).
 - **`operandNMask`** (`operand1Mask`, `operand2Mask`, …) — `Record<placeKey,
   boolean>` forcing which place-values must be non-zero. Place keys:
   `E`=eenheden (units), `T`=tientallen, `H`=honderdtallen, `D`=duizendtallen,
@@ -436,7 +443,7 @@ the retry loop and build exactly `n` items directly.
 > [numberRanges.ts](../../src/config/numberRanges.ts). Lists capped by the old global 1 000 000
 > (hr natural + / − / gemengd, ×/: 'andere', cijferen natural, afronden natural, plaatswaarde,
 > splitsen positie-*, vergelijken getallen/kiezen, base) grow to 1 000 000 000; every other list
-> keeps its own didactic ceiling (MAB 1 000, geld 1 000, deelbaarheid / getallenas / ordenen /
+> keeps its own didactic ceiling (MAB 9 999 since 2026-10-28, geld 1 000, deelbaarheid / getallenas / ordenen /
 > patronen / schattend 100 000, …). `PLACE_VALUES` (mathEngine.ts) runs Mrd · HM · TM · M … td, so
 > masks / bridges / plaatswaarde reach the miljarden; `getMaskPlaces(max)` only exposes places ≤ max.
 > Above 1e6 (only): compenseren rounds to 10^(digits−2) (… 299 999 999); tienvoud's base is capped at
@@ -503,17 +510,17 @@ only.
 | `cijferen-vermenigvuldigen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above |
 | `cijferen-delen-{nat,dec}` | `cijferExercises` | `generateCijferExercises` | `CijferViewer` | `CijferConfig` | as above + withRemainder |
 | `klok-kloklezen` | `clockExercises` | `generateClockExercises` | `ClockExerciseItem` | `ClockConfig` | clockType, is24hour, timeTypes, minuteDirection, handChoice — each exercise carries its own `clockType/exerciseMode/is24hour/handChoice` (own-data rule, 2026-09-13) Written time follows the Flemish rule: 20 over · 21-29 voor half · 31-39 over half · 40+ voor (`formatTimeText`, SYNC clockMath) Richting = zones `uur-over` (1–20) · `half-voor` (21–29) · `half-over` (31–39) · `uur-voor` (40–59) + legacy over/voor/beide (`minuteDirection.ts` `directionAllows`); the Config shows Over · Voor half · Over half · Voor · Alle |
-| `breuken` | `BREUKEN_KIOSK` | only kleuren / herkennen / hoeveelheid(-abstract): kleuren **tap** n of the d parts (a square of d ≥ 5 is a wider rows × cols grid in the kiosk so every part is ≥ 44 px, `kioskSquareGrid`); else a breuk, a count, or the two counting questions |
+| `breuken` | `BREUKEN_KIOSK` | only kleuren / herkennen / hoeveelheid(-abstract): kleuren **tap** n of the d parts (a square of d ≥ 5 is a wider rows × cols grid in the kiosk so every part is ≥ 44 px, `kioskSquareGrid`); else a breuk, a count, or the two counting questions. `allowImproper` (kleuren / herkennen only, off by default, 2026-10-28): about half the draws take a teller d+1..2d−1 (never d/d), drawn over two figures (`wholes`, first whole filled, the rest scattered over the second); kiosk tap keys span `wholes × d`, herkennen answers the drawn n/d |
 | `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: **fill** the partners, the tree's blank or the positietabel on the card |
 | `geld-herkennen` | `geldExercises` | `generateGeldExercises` | `GeldViewer` | `GeldConfig` | maxGetal, format, allowedDenominations, geldLayout |
 | `geld-tekenen` | `geldExercises` | `generateGeldExercises` | `GeldTekenenViewer` | `GeldConfig` | maxGetal, scaffolding, allowedDenominations |
 | `geld-wissel` | `geldWisselExercises` | `generateGeldWisselExercises` | `GeldWisselViewer` | `GeldWisselConfig` | exerciseBills, exercisesPerRow default bills [5, 10, 20, 50] (was [5, 10]) so the kiosk draw varies |
 | `geld-teruggeven` | `geldTeruggevenExercises` | `generateGeldTeruggevenExercises` | `GeldTeruggevenViewer` | `GeldTeruggevenConfig` | min/maxPriceEuros (presets Tot €1 … €1000; a €1/€2 coin lowers the floor), payWithOptions (bills + €1/€2), centenDeel, antwoordType; one arc when step2 = 0 |
 | `mab-herkennen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=herkennen) | `MabConfig` (stijl = inline 3-card row of `ExercisePreview`s, hidden for tekenen) | maxNumber, operand1Mask, mabStyle, scaffolding kiosk card (2026-10-11, `viewer/mabKioskLayout.ts`): `kioskCellBox(cardW, places)` = (cardW−16)/places wide × 1.3 tall; `kioskMabLayout` draws each place at the largest size where its fullest digit (9) fills ≤ 80 % of the cell — hundreds as flats 3 per row with the 10×10 grid, tens as upright rods with a gap after every fifth, units as cubes (dots when symbolic) 5 per row; the tray draws the same glyphs (`MabKioskTrayGlyph`); sheet untouched |
-| `mab-tekenen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=tekenen) | `MabConfig` | maxNumber, operand1Mask, mabStyle, scaffolding floor ½ (never a quarter: the D/H/T/E table needs the room) |
+| `mab-tekenen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=tekenen) | `MabConfig` + `MabAppearanceConfig` (Oefeningen per rij 1–4 popup) | maxNumber (10 … 9 999 since 2026-10-28), operand1Mask, mabStyle, scaffolding floor ½ up to 1 000, full above (`mabFloor`, blockLayout). **Square pattern** (herkennen always, every style above 1 000): each place laid in 2 rows as squares of four with upright rods, column width + box floor from the `PATTERN_GLYPH` table (SYNC MabViewer ↔ MabBlocksSVG, `mab.squarePattern.test.tsx`); `mabColWidth(cols, mode, maxNumber, style)` sizes for the fullest digit the max allows. Owner check: at 9 999 the b/w table scales ~0.89 (BUGS.md) |
 | `ordenen` | `ordenenExercises` | `generateOrdenenExercises` | `OrdenenViewer` (click-to-edit; one CSS grid per exercise so blanks sit under their numbers, never wraps) | `OrdenenConfig` + StyleConfig `answerStyle` (lijn/vak) | numberType, count(2–8), operatorMode, maxGetal, minGetal, decimalPlaces, numberMask, min/maxDenominator, unitFractionsOnly, allowMixed Draws strictly under the max (a teacher lower bound stays inclusive) so the width tier never meets "1 000,00"; the key is red + bold; thousands as the app's space, decimals separated by ";" |
-| `breuken-bewerken` | `breukBewerkExercises` | `generateBreukBewerkExercises` | `BreukBewerkViewer` (answer = writing line) | `BreukBewerkConfig` | subType (gemengd/gelijknamig/vereenvoudigen — sidebar leaf), direction (gemengd), gemengd+vereenvoudigen getalopbouw via `FractionMaxField` (`maxNumerator`/`maxDenominator`); vereenvoudigen presets (`tablesOnly`) + `allowIrreducible`; gelijknamig min/maxDenominator range + optional `targetDen` (fixed common noemer, else KGV). Reuses `gcd`/`simplifyFraction`/`toMixedNumber` (exported from mathEngine) |
-| `breuken-rangschikken` | `ordenenExercises` | `generateBreukenRangschikkenExercises` | `OrdenenViewer` (reused) | `BreukenRangschikkenConfig` | fractionMode (stambreuken/gelijknamige/gelijknamig-te-maken/speciale), count(2–5), operatorMode, min/maxDenominator |
+| `breuken-bewerken` | `breukBewerkExercises` | `generateBreukBewerkExercises` | `BreukBewerkViewer` (answer = writing line) | `BreukBewerkConfig` | subType (gemengd/gelijknamig/vereenvoudigen — sidebar leaf), direction (gemengd), gemengd+vereenvoudigen getalopbouw via `FractionMaxField` (`maxNumerator`/`maxDenominator`); vereenvoudigen presets (`tablesOnly`) + `allowIrreducible`; gelijknamig min/maxDenominator range + optional `targetDen` (fixed common noemer, else KGV); `allowImproper` (gelijknamig / vereenvoudigen, off by default, 2026-10-28: `drawNumerator` takes d+1..2d−1 on about half the draws, never d/d; off makes the same random calls as before; `properRule` in LIMIT_SPECS). Reuses `gcd`/`simplifyFraction`/`toMixedNumber` (exported from mathEngine) |
+| `breuken-rangschikken` | `ordenenExercises` | `generateBreukenRangschikkenExercises` | `OrdenenViewer` (reused) | `BreukenRangschikkenConfig` | fractionMode (stambreuken/gelijknamige/gelijknamig-te-maken/speciale), count(2–5), operatorMode, min/maxDenominator, `allowImproper` (gelijknamige / gelijknamig-te-maken only; gelijknamige's distinctness rule d−1 ≥ count relaxes to 2d−2) |
 | `getallenrijen` | `getallenasExercises` | `generateGetallenrijExercises` | `GetallenrijenViewer` | `GetallenrijenConfig` | numberType (natural/decimal/rational/geheel — sidebar leaf), maxGetal, step (+custom jump all types), direction (stijgend/dalend/beide), numberMask (anchor; decimal mask dp = step decimals), rational getalopbouw via `FractionMaxField` (noemer=fractionStep, teller=maxTeller), ticks, `showFrame` (Differentiatie toggle, rounded pill on/off); getallenas without the axis line. Blank mask as getallenas: tick 0 given, the rest blanked at the hardMode ratio, then `ensureTwoGivens` (blankMask.ts, SYNC both generators) reveals one random tick when fewer than 2 are given on 3+ ticks (one given fixes no step) |
 | `lengte-meten` | `meetExercises` | `generateLengteMetenExercises` | `MetenViewer` | `MetenConfig` | measureModel: **meten** (write the length) or **gegeven** = juist/fout (stated `claim` ±, pupil circles juist/fout); precision (cm/mm), min/maxLength, maxCorners (0–4 → polyline segments). Drawn to scale (1cm≈37.8px). Scaffold/answer keys (`perSideScaffold`, `answerMode` single/sum, `answerUnit` cm/plain) live in the Inspector **Differentiatie** card |
 | `omtrek` | `meetExercises` | `generateOmtrekExercises` | `MetenViewer` | `MetenConfig` | measureModel (op-schaal/gegeven), precision, length-per-side, `shapes[]` (driehoek · vierkant/rechthoek/ruit/parallellogram/trapezium/vierhoek · vijf-/zes-/zeven-/achthoek · cirkel met middelpunt) + the Differentiatie scaffold/answer keys. Constructors return exact `sides[]` (hele cm never drifts); perimeter = Σ sides or π·d |
@@ -588,8 +595,8 @@ build / drag** = the pupil answers ON the exercise through `interact` (§15 Phas
 | `deelbaarheid` | `VEELVOUDEN_KIOSK` | only the veelvouden layout: the multiples after the given ones |
 | `ordenen` · `breuken-rangschikken` | `ORDENEN_KIOSK` | **tap** the numbers / breuken in order (groot→klein or klein→groot; 1, 2, 3 appear beside them) |
 | `splitsen` | `SPLITSEN_KIOSK` | only basic / splitsboom / harten / positie-tabel: the partners, the tree's blank, or a digit per place |
-| `breuken-bewerken` | `BREUK_BEWERK_KIOSK` | the asked FORM (gemengd / improper / reduced); gelijknamig = two fields |
-| `breuken` | `BREUKEN_KIOSK` | only herkennen / hoeveelheid(-abstract): a breuk, a count, or the two counting questions |
+| `breuken-bewerken` | `BREUK_BEWERK_KIOSK` | the asked FORM (gemengd / improper / reduced); gelijknamig = two fields; a whole lowest-terms vereenvoudigen result (6/3) counts as "2" or "2/1" |
+| `breuken` | `BREUKEN_KIOSK` | only herkennen / hoeveelheid(-abstract): a breuk, a count, or the two counting questions; with `allowImproper` the herkennen answer is the drawn onechte breuk (7/4; the `fraction` input has no mixed form) |
 | `klok-kloklezen` | `KLOK_KIOSK` | analoog lezen: the time **in words** (`time-words`, default via `kioskSeed`; "Lees de klok en zeg hoe laat het is.") or uu:mm when the row says `klokAnswer: 'digitaal'`; uur + min for omzetten / digitaal tekenen; 3:15 and 15:15 both count; analoog tekenen: **drag** the wijzer(s) the pupil would draw (`handChoice`), 5-minute steps unless nauwkeurig |
 | `tijdsduur` | `TIJDSDUUR_KIOSK` | begin / einde as a time, duur as uur + min |
 
@@ -608,6 +615,15 @@ viewers lay their items out through
   viewer. When true, answers render in **`#e11d48` (red, bold)**; when false they
   render as blanks / dotted lines / empty boxes. This colour is the convention
   across all viewers (some declare it as a local `SOL`/`SOL_COLOR` const).
+- **Ink and font come from the sheet, not the viewer (2026-10-28, Geert port A1):** text ink is
+  `color: 'inherit'` (inputs explicitly), SVG figures draw `fill` / `stroke` as `currentColor`, the
+  maths face is `var(--font-sheet-math)` everywhere (JS measurement code reads the one
+  `SHEET_MATH_FONT` constant in `config/fontOptions.ts`, SYNC with theme.css). SVG `<text>` sets the
+  family through `style`, never a presentation attribute (CSS variables don't resolve there).
+  Semantic colours stay: solution red, grey placeholders / unit labels, grid greys, MAB place-value
+  colours, coin art, white knockouts; `MabBlocksSVG` keeps `'#000'` as its "no tint" sentinel.
+  Guards: `fontTokens.test.ts` (no literal Azeret outside theme.css / fontOptions.ts, no
+  `fontFamily="var(`), `viewers.ink.test.tsx` (every leaf under a blue ink keeps no black paint).
 - **[MathBlockRenderer.tsx](../../src/components/viewer/MathBlockRenderer.tsx)** — the
   standard equation renderer. `block.itemNumbering` prepends a fixed-width `1)` / `a)` label column
   (shared [itemNumbering.ts](../../src/components/viewer/itemNumbering.ts), also used by
@@ -1106,7 +1122,7 @@ All localStorage; nothing leaves the browser except share links the user copies.
   sheet, any 1 or 3, and every block are kept. A v4 file opened by a v3 app (today's main) is refused
   ("nieuwere versie") — release-note item when rc ships.
 - **Format gate:** `WORKSHEET_FORMAT_VERSION = 4`. `parseWorksheetFile` validates
-  version + required fields (blocks/header/footer/docSettings) + the optional
+  version (a safe integer ≥ 1; 2026-10-28) + required fields (blocks/header/footer/docSettings) + the optional
   `curriculum` shape, and rejects future/invalid files. v2 added optional
   `baseSettings` + `curriculum` (absent → defaults, so v1 files still load).
 - **v2 → v3 migration:** the page grid went 6 units → 4, and the same NUMBER means a
@@ -1122,12 +1138,24 @@ All localStorage; nothing leaves the browser except share links the user copies.
   recipient configures-then-Genereer to populate.
 - **`CurriculumLock`** (`{ locked, allowedTypes: [{typeId, label, lockedConstraints}] }`)
   rides in the payload for locked curriculum share links (§13).
-- **Autosave** — single slot `rekenraak_autosave_v1`; `saveAutosave` (returns `false` on a refused write → `saveState: 'error'`) /
-  `loadAutosave` / `clearAutosave`. `hooks/useBootLoad.ts` offers to restore on boot if the
-  current sheet is empty.
+- **Autosave** — single slot `rekenraak_autosave_v1`; `saveAutosave(state, curriculum?, presetId?)` (returns `false` on a refused write → `saveState: 'error'`) /
+  `loadAutosave` / `clearAutosave`. The record carries the optional `presetId` the sheet is linked to
+  (§3 `savedPresetId`); `setSavedPresetId` writes it at once (`writeAutosaveNow`). `hooks/useBootLoad.ts`
+  offers to restore on boot if the current sheet is empty and restores the link.
 - **Presets** — named library `rekenraak_presets_v1`, `MAX_PRESETS = 20`. CRUD via
-  `loadPresets` / `savePreset` / `deletePreset` / `renamePreset`. Managed in
-  `PresetModal.tsx` (removed; replaced by [library/](../../src/components/library/)).
+  `loadPresets` / `savePreset` (→ `Preset | null`, null = write refused) / `updatePreset(id, state)`
+  (→ `'ok' | 'missing' | 'failed'`; 'missing' = deleted in another tab, the caller asks a name) /
+  `deletePreset` / `renamePreset`; `savePresetFromFile` and `duplicatePreset` also return `null` on a
+  refused write. `persistPresets` returns success, so a full storage is an alert, never a green
+  "bewaard" (`library/saveToLibrary.ts` `saveCurrentToLibrary` is the one path TopBar and Mijn bladen
+  share). Managed in [library/](../../src/components/library/) ("Mijn bladen (deze browser)").
+- **Page-design templates (2026-10-28)** — `rekenraak_page_designs_v1`: an array of
+  `{ id, name, savedAt, docSettings }` (a `DocSettings` snapshot, no blocks, no images),
+  `MAX_PAGE_DESIGNS = 20` (oldest dropped); `loadPageDesigns` / `savePageDesign` (null on a refused
+  write) / `renamePageDesign` (false on a refused write) / `deletePageDesign`. Meer › "Pagina-ontwerp
+  sjablonen" ([PageDesignsModal.tsx](../../src/components/layout/PageDesignsModal.tsx)): apply = confirm,
+  then the template REPLACES docSettings (keys it never set are cleared, not merged); not historied,
+  like every docSettings change.
 - **Share link** — `encodeShareLink` → JSON → **lz-string**
   `compressToEncodedURIComponent` → `#share=…` in the URL hash (never sent to a
   server). `MAX_SHARE_BYTES = 30000` (worksheet JSON compresses ~8×, so this covers
@@ -1136,7 +1164,12 @@ All localStorage; nothing leaves the browser except share links the user copies.
   wording differs for full / template / locked-curriculum links. `opts.curriculum`
   embeds a `CurriculumLock` (used by the curriculum builder, §13).
 - **File export/import** — `exportWorksheet` (JSON blob,
-  `werkbundel-<slug>-<YYYYMMDD>.json`) / `parseWorksheetFile`.
+  `werkbundel-<slug>-<YYYYMMDD>.rekenraak`) / `parseWorksheetFile`. **Save to the same file
+  (2026-10-28):** `openWorksheetFromPicker()` and `saveWorksheetToFile(state, handle?)` on the File
+  System Access API (`hasFilePickers()`; `isPickerAbort()` = the user cancelled, not an error); the
+  handle lives in the store (§3 `fileHandle`). Meer menu: "Open bestand…", "Bewaar bestand" (handle →
+  write back; none → save picker; no API → download), "Bewaar als bestand…" (always the picker, hidden
+  without the API). Firefox / Safari keep the `<input type=file>` + download route.
 - **Oefensessies library** (teacher device) — `rekenraak_oefen_sessies_v1`: an array of
   `{ id, name, savedAt, sessie: OefenSessie }`, `MAX_OEFEN_SESSIES = 50` (oldest dropped);
   `loadOefenSessies` / `saveOefenSessie` (same `sessie.id` replaces: that is Bewerken → Opslaan;
@@ -1207,6 +1240,7 @@ src/
 │   ├── instructionPresets.ts    # quick-pick opdracht-titel texts + defaultInstructionFor()
 │   ├── gradePresets.ts          # Leerjaar 1–6: base-difficulty seed (L6 = 1 000 000 000) + leaf grade-gate (soft starting point)
 │   ├── numberRanges.ts          # every max-number option list once: NAT_CEILING, NAT_STEPS, RANGES, floorToPreset, presetLabel (§5, §13)
+│   ├── fontOptions.ts           # SHEET_MATH_FONT (SYNC theme.css --font-sheet-math) for JS measurement code; the teacher font lists (§8)
 │   ├── printPalette.ts          # curated print-safe swatches + STYLE_BOUNDS clamps (style builder)
 │   ├── rekenmethodes.ts         # rekenmethode metadata (bibliotheek)
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
@@ -1248,6 +1282,9 @@ src/
 │  (repo root) src/__tests__/helpers/fillCells.ts, oefenKiosk.ts, dragCheck.ts  # fill-cells answers written from the exercise itself; starter session + tap helpers for the kiosk suites; dragCheck = right / wrong drag values per family from the generator's truth
 │  (repo root) src/__tests__/oefenen.kioskInstruction.test.ts  # every kioskInstruction names a tap / fill, never a pen verb
 │  (repo root) src/__tests__/helpers/limitRules.ts, limitHarness.ts, answerKeys.ts  # the limit rule book (LIMIT_SPECS per typeId), case runner, shared answer-key arithmetic
+│  (repo root) src/__tests__/fontTokens.test.ts, viewers.ink.test.tsx + helpers/sheetInk.tsx  # 2026-10-28: no literal maths font / no fontFamily attribute; every leaf under a blue ink keeps no black paint
+│  (repo root) src/__tests__/safeIntegers.test.ts  # every type at its top preset × max decimals: finite, safe, print round-trip, BigInt-exact answers (§6)
+│  (repo root) src/__tests__/breukenOnecht.test.ts, breukenFigurenOnecht.test.tsx, mab.squarePattern.test.tsx, mab.appearance.test.tsx  # onechte breuken (5 leaves), MAB square pattern + Appearance slot
 │  (repo root) src/__tests__/limits.matrix.test.ts + limits.knownBugs.ts  # gate: every leaf × leerjaar, pairwise, trigger cases vs the rule book; open bugs listed by BUGS id, stale entries fail
 │  (repo root) src/__tests__/audit/limits.audit.test.ts  # the full limit diagnosis behind npm run limits:audit (cartesian / pairwise / random, seeds, dumps)
 │  (repo root) scripts/visual-baseline.json  # committed: per leaf × width × solutions {height, intrinsic px, text hash} at seed 1234 — the gate's reference
@@ -1392,9 +1429,11 @@ src/
     │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg/Bordmodus fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈2040px of viewport (≈1900 before the Bordmodus button) because the bar spans only the centre column.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
-    │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay + "Wat is er nieuw" link
+    │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay + "Wat is er nieuw" link; the saving sections (herstelkopie / Mijn bladen / bestand)
+    │   ├── PageDesignsModal.tsx # Meer › Pagina-ontwerp sjablonen: docSettings templates, in-app name step, apply = confirm + replace (§10)
     │   ├── ReleaseNotesModal.tsx  # "Wat is er nieuw": releaseNotes items grouped, live example per exercise item (§10)
     ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx); Mijn bladen also lists the Oefensessies (Delen / Bewerken / hernoemen / verwijderen)
+    ├── library/saveToLibrary.ts  # saveCurrentToLibrary: update the linked preset or ask a name; a refused write alerts (TopBar + Mijn bladen share it)
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
     ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video)
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
@@ -1511,7 +1550,7 @@ list once, inside the load's single history entry, with no stale flag.
 `REGISTRY[typeId].maxPresets(ctx)` where `baseRangeFor` builds `ctx` from registry defaults →
 the base's numberType → the leaf override (so a decimal base or leaf picks the decimal list), and
 `floorToPreset` takes the largest preset ≤ base (below the lowest → lowest). No list →
-`min(base, NAT_CEILING)`. So leerjaar 5/6 seeds land on each type's own top (MAB 1 000,
+`min(base, NAT_CEILING)`. So leerjaar 4/5/6 seeds land on each type's own top (MAB 9 999,
 deelbaarheid 100 000, …) instead of an unlisted value. Safety nets for old saves / share links:
 `loadWorksheet` clamps `baseMaxGetal` > `NAT_CEILING` (1e9); `generateForBlock` generates from a
 clamped copy (`withinCeiling`, 1e10 × INTERNAL_SCALE would pass 2^53); `PopupSelect`'s

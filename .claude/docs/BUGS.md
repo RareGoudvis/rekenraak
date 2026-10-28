@@ -23,6 +23,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
+- MAB herkennen at 9 999 (mab-bw / mab-color): the table scales to ~0.89 at full width, unit cubes ~5 px and the 12 px hundreds plate reads as a small empty square in black-and-white (`~/Downloads/geert-port/b2/after/her-mab-bw-9999-*`). Owner call: larger glyphs with one exercise per row, or accept. 2026-10-28 WP B2.
 - Flaky test `viewers.solutionPlacement.test.tsx` "geld-teruggeven key" (unseeded generator): failed once in the pre-commit run (`given.length` 2, want 3), 5 reruns green. Fix direction: seed Math.random in the test. 2026-10-28 WP B3.
 - Rational × / : (`mathEngine.ts` natural_fraction / decimal_fraction, ~705 and ~1013): the breuk operand `n2/d2` is drawn unreduced and can be a whole number ("6/6 : 80,183", "9/3 : 72,859" seen on the kiosk card 2026-10-13, WP-B).
 - Rational × / 'Natuurlijk getal × breuk' / 'Kommagetal × breuk' (`mathEngine.ts` natural_fraction / decimal_fraction): the factor is drawn up to `maxGetal`, which the rational config never shows (it only feeds the mask places), so a 1e9 max set under natural rides along hidden: "173 942 149 × 7/20". Integer-safe (safeIntegers.test.ts), not didactic. Fix direction: a max picker for those modes or a fixed cap. 2026-10-28 WP B2b.

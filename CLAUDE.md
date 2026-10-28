@@ -15,7 +15,7 @@ Guidance for Claude Code (claude.ai/code) working in this repository. This file 
 | [.claude/docs/UpdateState.md](.claude/docs/UpdateState.md) | Session log, newest first |
 | `.claude/docs/REVIEW.local.md` | The owner review list (local, gitignored via `*.local.md`): what Ruben still checks on screen/print, deliberate non-fixes, open items. Agents read it, only the owner deletes rows |
 | [.claude/docs/klascement.md](.claude/docs/klascement.md) | Teacher-facing intro (Dutch): what it does, what's in it, why, free-forever ethos |
-| [src/components/viewer/README.md](src/components/viewer/README.md) | The six rules every viewer must follow |
+| [src/components/viewer/README.md](src/components/viewer/README.md) | The seven rules every viewer must follow |
 
 ---
 
@@ -128,7 +128,7 @@ structural source files changed without these docs.
 Types are declared in a **central registry** keyed by exact `typeId`:
 [exerciseRegistry.ts](src/config/exerciseRegistry.ts) (pure data — generator, exercise
 field, typed defaults) + [exerciseUI.tsx](src/config/exerciseUI.tsx) (Viewer, Config,
-optional StyleConfig / AdvancedConfig). Dispatch / Inspector / App / `addBlockFromType` are
+optional StyleConfig / AppearanceConfig / AdvancedConfig). Dispatch / Inspector / App / `addBlockFromType` are
 **registry lookups, not if-else branches**. Full contract: [ARCHITECTURE §5](.claude/docs/ARCHITECTURE.md);
 the per-typeId table is §7.
 
