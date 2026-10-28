@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import {
     WORKSHEET_FORMAT_VERSION,
     parseWorksheetFile,
@@ -8,6 +8,11 @@ import {
     isPickerAbort,
     encodeShareLink,
     decodeShareHash,
+    loadPageDesigns,
+    savePageDesign,
+    renamePageDesign,
+    deletePageDesign,
+    MAX_PAGE_DESIGNS,
     type SerialisableState,
     type CurriculumLock,
 } from '../services/persistence';
@@ -373,5 +378,79 @@ describe('share link', () => {
             return { ...block, exercises: generateFor(block) as typeof block.exercises };
         });
         expect(encodeShareLink({ ...s, blocks: many })).toBeNull();
+    });
+});
+
+describe('page-design templates', () => {
+    // This suite runs in node: a Map-backed stand-in for localStorage, with a switch that
+    // makes every write throw the way a full browser storage does.
+    let store: Map<string, string>;
+    let full: boolean;
+    const g = globalThis as unknown as Record<string, unknown>;
+    beforeEach(() => {
+        store = new Map();
+        full = false;
+        g.localStorage = {
+            getItem: (k: string) => store.get(k) ?? null,
+            setItem: (k: string, v: string) => { if (full) throw new DOMException('full', 'QuotaExceededError'); store.set(k, v); },
+            removeItem: (k: string) => { store.delete(k); },
+        };
+    });
+    afterEach(() => { delete g.localStorage; vi.useRealTimers(); });
+
+    const design = (over: Partial<DocSettings> = {}) => ({ ...state().docSettings, ...over });
+
+    test('save then load round-trips the docSettings, never blocks', () => {
+        const saved = savePageDesign('  Kader-blad  ', design({ headerStyle: 'kader', blockSpacing: 20 }));
+        expect(saved).not.toBeNull();
+        const list = loadPageDesigns();
+        expect(list).toHaveLength(1);
+        expect(list[0].name).toBe('Kader-blad');
+        expect(list[0].docSettings).toMatchObject({ headerStyle: 'kader', blockSpacing: 20 });
+        expect(Object.keys(list[0]).sort()).toEqual(['docSettings', 'id', 'name', 'savedAt']);
+    });
+
+    test('an empty name becomes Naamloos, a long one is cut at 80', () => {
+        savePageDesign('   ', design());
+        savePageDesign('x'.repeat(120), design());
+        const names = loadPageDesigns().map(d => d.name);
+        expect(names).toContain('Naamloos');
+        expect(names.some(n => n.length === 80)).toBe(true);
+    });
+
+    test('rename and delete touch only their own entry', () => {
+        const a = savePageDesign('A', design())!;
+        const b = savePageDesign('B', design())!;
+        expect(renamePageDesign(a.id, 'A2')).toBe(true);
+        expect(loadPageDesigns().map(d => d.name).sort()).toEqual(['A2', 'B']);
+        deletePageDesign(a.id);
+        expect(loadPageDesigns().map(d => d.id)).toEqual([b.id]);
+    });
+
+    test(`keeps the newest ${MAX_PAGE_DESIGNS}`, () => {
+        vi.useFakeTimers();
+        for (let i = 0; i < MAX_PAGE_DESIGNS + 3; i++) {
+            vi.setSystemTime(new Date(Date.UTC(2026, 9, 1, 0, i)));
+            savePageDesign(`D${i}`, design());
+        }
+        const names = loadPageDesigns().map(d => d.name);
+        expect(names).toHaveLength(MAX_PAGE_DESIGNS);
+        expect(names[0]).toBe('D3');
+        expect(names[names.length - 1]).toBe(`D${MAX_PAGE_DESIGNS + 2}`);
+    });
+
+    test('a full storage returns null and keeps the list as it was', () => {
+        savePageDesign('Bestaand', design());
+        full = true;
+        expect(savePageDesign('Nieuw', design())).toBeNull();
+        expect(renamePageDesign(loadPageDesigns()[0].id, 'Anders')).toBe(false);
+        expect(loadPageDesigns().map(d => d.name)).toEqual(['Bestaand']);
+    });
+
+    test('garbage in storage loads as an empty or filtered list', () => {
+        store.set('rekenraak_page_designs_v1', '{not json');
+        expect(loadPageDesigns()).toEqual([]);
+        store.set('rekenraak_page_designs_v1', JSON.stringify([{ id: 'x', name: 'ok', savedAt: '', docSettings: {} }, { id: 1 }, null]));
+        expect(loadPageDesigns().map(d => d.id)).toEqual(['x']);
     });
 });

@@ -405,6 +405,58 @@ export function savePresetFromFile(file: WorksheetFile, name: string): Preset | 
     return persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS)) ? entry : null;
 }
 
+// ── Page-design templates (docSettings only, no blocks, max 20) ───────────────
+
+// docSettings holds no exercise content, only how the page looks (header/footer/opdracht
+// style, spacing, numbering, font sizes), so a snapshot of it is a reusable page design.
+export interface PageDesign {
+    id: string;
+    name: string;
+    savedAt: string;
+    docSettings: DocSettings;
+}
+
+const PAGE_DESIGNS_KEY = 'rekenraak_page_designs_v1';
+export const MAX_PAGE_DESIGNS = 20;
+
+export function loadPageDesigns(): PageDesign[] {
+    try {
+        const raw = localStorage.getItem(PAGE_DESIGNS_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) return [];
+        return arr.filter(d => d && typeof d.id === 'string' && typeof d.name === 'string' && d.docSettings && typeof d.docSettings === 'object');
+    } catch { return []; }
+}
+
+// False = the browser refused the write (quota full); same contract as persistPresets.
+function persistPageDesigns(list: PageDesign[]): boolean {
+    try { localStorage.setItem(PAGE_DESIGNS_KEY, JSON.stringify(list)); return true; } catch { return false; }
+}
+
+/** null = the write was refused (storage full). */
+export function savePageDesign(name: string, docSettings: DocSettings): PageDesign | null {
+    const entry: PageDesign = {
+        id: newPresetId(),
+        name: ((name || '').trim() || 'Naamloos').slice(0, 80),
+        savedAt: new Date().toISOString(),
+        docSettings: { ...docSettings },
+    };
+    // Drop the oldest past the cap so the most recent 20 survive.
+    const next = [...loadPageDesigns(), entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PAGE_DESIGNS);
+    return persistPageDesigns(next) ? entry : null;
+}
+
+export function deletePageDesign(id: string): void {
+    persistPageDesigns(loadPageDesigns().filter(d => d.id !== id));
+}
+
+/** false = the write was refused (storage full). */
+export function renamePageDesign(id: string, name: string): boolean {
+    const trimmed = (name || '').trim().slice(0, 80) || 'Naamloos';
+    return persistPageDesigns(loadPageDesigns().map(d => d.id === id ? { ...d, name: trimmed } : d));
+}
+
 // ── Oefenmodus sessions (teacher library, keyed by OefenSessie.id) ────────────
 
 export interface OefenSessieEntry {
