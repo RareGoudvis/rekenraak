@@ -25,6 +25,7 @@
 // Prints a table and a one-line verdict per systematic error. Writes nothing.
 
 import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
 
 const argv = process.argv.slice(2);
 const arg = (name, fallback) => {
@@ -39,6 +40,13 @@ const VIEWPORT_W = Number(arg('width', 1600));
 // The token widens every answer line, so this is how the packer is checked against a sheet
 // whose blocks are all taller than the calibrated rowUnits.
 const ANSWER_SPACE = argv.includes('--answer-space') ? Number(arg('answer-space')) : null;
+// --doc '<json>' | file.json: a docSettings patch (e.g. the sheet fonts) applied before the plan,
+// the check that the packer still agrees with the paper under a wider face.
+const DOC_ARG = arg('doc', '');
+const DOC = DOC_ARG ? JSON.parse(DOC_ARG.trim().startsWith('{') ? DOC_ARG : readFileSync(DOC_ARG, 'utf8')) : null;
+// --switch: apply --doc only AFTER the plan has measured, the teacher picking a font on a full
+// sheet. Proves the old font's heights and widths do not outlive the switch.
+const SWITCH = argv.includes('--switch');
 
 // Ten mixed blocks: two-column arithmetic, a drawing type, a grid type, a sentence type
 // and one that is taller than a row on its own, so the audit sees more than one shape of
@@ -72,11 +80,13 @@ await page.evaluate(() => { try { localStorage.setItem('rekenraak_tour_seen_v1',
 await page.reload();
 await page.waitForFunction(() => !!window.__rekenraak);
 
-await page.evaluate(async ({ plan, seed, answerSpace }) => {
+await page.evaluate(async ({ plan, seed, answerSpace, doc, docAfter }) => {
     const r = window.__rekenraak;
     r.clearBlocks();
     r.seed(seed);
     if (answerSpace != null) r.getState().updateDocSettings({ answerSpace });
+    const applyDoc = async () => { r.updateDocSettings(doc); await new Promise((res) => setTimeout(res, 300)); await document.fonts.ready; };
+    if (doc && !docAfter) await applyDoc();
     for (const p of plan) {
         // Through the typeId's first sidebar leaf, as the catalogue adds it: a bare typeId
         // missed the leaf's own defaultCount (oppervlakte-rooster = 2, not 10).
@@ -89,6 +99,11 @@ await page.evaluate(async ({ plan, seed, answerSpace }) => {
     // Let the measure -> repack -> remeasure chain reach its fixed point before reading.
     for (let i = 0; i < 8; i++) await new Promise((res) => requestAnimationFrame(res));
     await new Promise((res) => setTimeout(res, 400));
+    if (doc && docAfter) {
+        await applyDoc();
+        for (let i = 0; i < 8; i++) await new Promise((res) => requestAnimationFrame(res));
+        await new Promise((res) => setTimeout(res, 400));
+    }
     // Then wait out any breaker cooldown and force ONE more measure pass, the way a
     // teacher touching anything would. A height that is only right because the breaker
     // froze the sheet before the wrong value could be written is not right.
@@ -100,7 +115,7 @@ await page.evaluate(async ({ plan, seed, answerSpace }) => {
     r.getState().setActiveSelection(null);
     for (let i = 0; i < 6; i++) await new Promise((res) => requestAnimationFrame(res));
     await new Promise((res) => setTimeout(res, 400));
-}, { plan: PLAN, seed: SEED, answerSpace: ANSWER_SPACE });
+}, { plan: PLAN, seed: SEED, answerSpace: ANSWER_SPACE, doc: DOC, docAfter: SWITCH });
 
 const audit = await page.evaluate(() => {
     const MM = 96 / 25.4;                       // 1mm at 96dpi
