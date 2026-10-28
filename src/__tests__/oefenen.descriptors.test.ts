@@ -511,6 +511,8 @@ describe('descriptor answers agree with the generators', () => {
         ['geld-wissel', { exerciseBills: [200, 5000] }, 'interactive'],
         ['mab-tekenen', { maxNumber: 1000, mabStyle: 'mab-color', operand1Mask: { H: true, E: true } }, 'interactive'],
         ['mab-tekenen', { maxNumber: 10 }, 'interactive'],
+        // Up to 9 999: the tray offers a D piece, nine of each at most.
+        ['mab-tekenen', { maxNumber: 9999, operand1Mask: { D: true, H: true, T: true, E: true } }, 'interactive'],
         ['geld-teruggeven', { antwoordType: 'tekenen-schrijven' }, 'interactive'],
         ['geld-teruggeven', { antwoordType: 'tekenen-schrijven', payWithOptions: [5000, 10000, 20000, 50000], maxPriceEuros: 999, centenDeel: 'vijf' }, 'interactive'],
     ])('%s + %j → %s', (leafId, extra, want) => {

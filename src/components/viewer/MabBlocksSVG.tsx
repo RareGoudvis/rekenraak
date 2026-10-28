@@ -2,11 +2,13 @@ import type { MabStyle } from '../../services/math/types';
 import { kioskMabLayout, type KioskRect } from './mabKioskLayout';
 
 // Renders place-value blocks for one MAB exercise. Three visual conventions:
-//   symbolic:   units = dot, tens = horizontal bar, hundreds = small outlined square,
+//   symbolic:   units = dot, tens = bar, hundreds = small outlined square,
 //               thousands = stacked-square stamp. Compact textbook abbreviation.
-//   mab-bw:     Dienes blocks — units = 1×1 cube, tens = 1×10 rod (horizontal),
+//   mab-bw:     Dienes blocks — units = 1×1 cube, tens = 1×10 rod,
 //               hundreds = 10×10 flat, thousands = 10×10×10 cube.
 //   mab-color:  Same as mab-bw but coloured per place value (yellow/green/red/blue).
+// Square pattern (herkennen, and every sheet above 1000): every place in 2-row domino pairs
+// with upright rods, so nine of any piece (nine duizendtallen too) fit their column.
 
 export type MabPlace = 'thousands' | 'hundreds' | 'tens' | 'units';
 
@@ -34,6 +36,8 @@ interface ColumnProps {
     kiosk?: boolean;
     // Oefenmodus card: the place cell's box in px; the column then draws at a scale derived from it.
     cell?: { w: number; h: number };
+    // Sheet: lay every place in the 2-row square pattern (PATTERN_GLYPH). The kiosk card ignores it.
+    squarePattern?: boolean;
 }
 
 // 'mab-color' palette per place (fill). Strokes stay black for readability.
@@ -52,11 +56,13 @@ function resolveFill(style: MabStyle, place: MabPlace, color: string): string {
     return 'white';
 }
 
-export function MabPlaceColumn({ count, place, style, color = '#000', fill, kiosk, cell }: ColumnProps) {
+export function MabPlaceColumn({ count, place, style, color = '#000', fill, kiosk, cell, squarePattern }: ColumnProps) {
     if (count === 0) return null;
 
     // Oefenmodus card: one SVG per place cell, pieces sized from the cell's own box.
     if (kiosk && cell) return <KioskColumn count={count} place={place} style={style} color={color} fill={fill} cellW={cell.w} cellH={cell.h} />;
+
+    if (squarePattern && !kiosk) return <SquarePatternGrid count={count} place={place} style={style} color={color} fill={fill} />;
 
     // Kiosk thousands: two labelled cubes fit the D column side by side, five high.
     if (kiosk && place === 'thousands') {
@@ -208,7 +214,7 @@ function Glyph({ place, style, color, fill: fillOverride, kiosk, chunky }: { pla
         const mark = fillOverride ?? color;
         if (place === 'thousands') return <SymbolicThousands color={mark} />;
         if (place === 'hundreds')  return <SymbolicHundreds color={mark} />;
-        if (place === 'tens')      return <SymbolicTens color={mark} h={chunky ? KIOSK_BAR_H : SYM_BAR_H} />;
+        if (place === 'tens')      return <SymbolicTens color={mark} w={SYM_BAR_W} h={chunky ? KIOSK_BAR_H : SYM_BAR_H} />;
         return <SymbolicUnits color={mark} />;
     }
     const fill = fillOverride ?? resolveFill(style, place, color);
@@ -234,9 +240,9 @@ function SymbolicUnits({ color }: { color: string }) {
     );
 }
 
-// Horizontal bar — stacked vertically inside the T column by MabPlaceColumn.
-function SymbolicTens({ color, h }: { color: string; h: number }) {
-    const W = SYM_BAR_W, H = h;
+// A bar: horizontal (stacked in the T column) or upright in the square pattern.
+function SymbolicTens({ color, w, h }: { color: string; w: number; h: number }) {
+    const W = w, H = h;
     return (
         <svg width={em(W)} height={em(H)} viewBox={`0 0 ${W} ${H}`}>
             <rect width={W} height={H} fill={color} />
@@ -244,8 +250,8 @@ function SymbolicTens({ color, h }: { color: string; h: number }) {
     );
 }
 
-function SymbolicHundreds({ color }: { color: string }) {
-    const SQ = SYM_SQ;
+function SymbolicHundreds({ color, sq = SYM_SQ }: { color: string; sq?: number }) {
+    const SQ = sq;
     return (
         <svg width={em(SQ)} height={em(SQ)} viewBox={`0 0 ${SQ} ${SQ}`}>
             <rect width={SQ} height={SQ} stroke={color} strokeWidth={1} fill="none" />
@@ -253,8 +259,8 @@ function SymbolicHundreds({ color }: { color: string }) {
     );
 }
 
-function SymbolicThousands({ color }: { color: string }) {
-    const SQ = SYM_SQ, GAP = 2;
+function SymbolicThousands({ color, sq = SYM_SQ }: { color: string; sq?: number }) {
+    const SQ = sq, GAP = 2;
     const total = SQ * 2 + GAP;
     return (
         <svg width={em(total)} height={em(total)} viewBox={`0 0 ${total} ${total}`}>
@@ -264,6 +270,73 @@ function SymbolicThousands({ color }: { color: string }) {
             <rect x={SQ + GAP} y={SQ + GAP} width={SQ} height={SQ} stroke={color} strokeWidth={1} fill="none" />
         </svg>
     );
+}
+
+// ── Square pattern ───────────────────────────────────────────────────────────
+// Piece sizes (px at the 13pt default) and gaps: 2 rows, pairs of columns with
+// PATTERN_GROUP_GAP between pairs, so 4 reads as a square and 9 as two squares plus one.
+// SYNC: MabViewer.tsx PATTERN_GLYPH (column widths and the box-height floor derive from these).
+const PATTERN_GROUP_GAP = 3;
+// Columns n pieces take: two per full square of four, then the bottom pair of the next.
+const patternCols = (n: number) => 2 * Math.floor(n / 4) + Math.min(n % 4, 2);
+const PATTERN_GLYPH: Record<'symbolic' | 'mab', Record<MabPlace, { w: number; h: number; colGap: number; rowGap: number }>> = {
+    symbolic: {
+        units:     { w: SYM_DOT, h: SYM_DOT, colGap: 2, rowGap: 5 },
+        // Bars four apart: at two, a pair reads as one thick stroke.
+        tens:      { w: 3.5, h: 28, colGap: 4, rowGap: 6 },
+        hundreds:  { w: 12, h: 12, colGap: 2, rowGap: 2 },
+        thousands: { w: 26, h: 26, colGap: 4, rowGap: 4 },   // stamp of four 12px squares, 2 apart
+    },
+    mab: {
+        units:     { w: 6, h: 6, colGap: 2, rowGap: 5 },
+        tens:      { w: 5, h: 30, colGap: 2, rowGap: 6 },     // rod of ten 3px cells; rows 6 apart so a square of rods is not two long ones
+        hundreds:  { w: 12, h: 12, colGap: 2, rowGap: 2 },
+        thousands: { w: 34, h: 34, colGap: 4, rowGap: 4 },   // 10 x 3px front face + 4px depth
+    },
+};
+
+function SquarePatternGrid({ count, place, style, color, fill: fillOverride }: { count: number; place: MabPlace; style: MabStyle; color: string; fill?: string }) {
+    const g = PATTERN_GLYPH[style === 'symbolic' ? 'symbolic' : 'mab'][place];
+    const cols = patternCols(count);
+    // Squares of four, each filled bottom pair first: 2 lie side by side (two rods stacked would
+    // read as one long rod), 4 is a square, 9 is two squares and one.
+    const cells = Array.from({ length: count }, (_, i) => {
+        const k = 2 * Math.floor(i / 4) + (i % 2);
+        return (
+            <div key={i} data-mab-pattern={place} style={{ gridColumn: k + 1, gridRow: i % 4 < 2 ? 2 : 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginLeft: k > 0 && k % 2 === 0 ? em(PATTERN_GROUP_GAP) : undefined }}>
+                <PatternGlyph place={place} style={style} color={color} fill={fillOverride} w={g.w} h={g.h} />
+            </div>
+        );
+    });
+    return (
+        <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, auto)`,
+            gridTemplateRows: 'repeat(2, auto)',
+            columnGap: em(g.colGap),
+            rowGap: em(g.rowGap),
+            justifyContent: 'center',
+            alignContent: 'end',
+            height: '100%',
+        }}>
+            {cells}
+        </div>
+    );
+}
+
+function PatternGlyph({ place, style, color, fill: fillOverride, w, h }: { place: MabPlace; style: MabStyle; color: string; fill?: string; w: number; h: number }) {
+    if (style === 'symbolic') {
+        const mark = fillOverride ?? color;
+        if (place === 'thousands') return <SymbolicThousands color={mark} sq={(w - 2) / 2} />;
+        if (place === 'hundreds')  return <SymbolicHundreds color={mark} sq={w} />;
+        if (place === 'tens')      return <SymbolicTens color={mark} w={w} h={h} />;
+        return <SymbolicUnits color={mark} />;
+    }
+    const fill = fillOverride ?? resolveFill(style, place, color);
+    if (place === 'thousands') return <RealisticThousands stroke={color} fill={fill} cell={(w - 4) / 10} />;
+    if (place === 'hundreds')  return <RealisticHundreds stroke={color} fill={fill} sq={w} />;
+    if (place === 'tens')      return <RealisticTens stroke={color} fill={fill} vertical={{ w, h }} />;
+    return <RealisticUnits stroke={color} fill={fill} />;
 }
 
 // ── Realistic Dienes glyphs (used by both mab-bw and mab-color) ──────────────
@@ -285,9 +358,20 @@ function RealisticUnits({ stroke, fill }: { stroke: string; fill: string }) {
     );
 }
 
-// Tens rendered as a horizontal bar (CELL*10 wide × CELL tall). Stacked vertically
-// by MabPlaceColumn so the T column always has a fixed width.
-function RealisticTens({ stroke, fill }: { stroke: string; fill: string }) {
+// Tens rendered as a horizontal bar (CELL*10 wide × CELL tall), stacked vertically by
+// MabPlaceColumn so the T column keeps a fixed width; `vertical` = the square pattern's upright rod.
+function RealisticTens({ stroke, fill, vertical }: { stroke: string; fill: string; vertical?: { w: number; h: number } }) {
+    if (vertical) {
+        const { w: W, h: H } = vertical, step = H / 10;
+        return (
+            <svg width={em(W)} height={em(H)} viewBox={`0 0 ${W} ${H}`}>
+                <rect x={STROKE / 2} y={STROKE / 2} width={W - STROKE} height={H - STROKE} fill={fill} stroke={stroke} strokeWidth={STROKE} />
+                {Array.from({ length: 9 }).map((_, j) => (
+                    <line key={j} x1={0} y1={(j + 1) * step} x2={W} y2={(j + 1) * step} stroke={stroke} strokeWidth={STROKE} />
+                ))}
+            </svg>
+        );
+    }
     const W = CELL * 10;
     return (
         <svg width={em(W)} height={em(CELL)} viewBox={`0 0 ${W} ${CELL}`}>
@@ -301,10 +385,10 @@ function RealisticTens({ stroke, fill }: { stroke: string; fill: string }) {
 
 // One hundred = a single filled square (larger than the unit cube). Multiple
 // hundreds get tiled by MabPlaceColumn into a 2×5 grid so up to 9 fit.
-function RealisticHundreds({ stroke, fill }: { stroke: string; fill: string }) {
+function RealisticHundreds({ stroke, fill, sq = HUNDREDS_SQ }: { stroke: string; fill: string; sq?: number }) {
     return (
-        <svg width={em(HUNDREDS_SQ)} height={em(HUNDREDS_SQ)} viewBox={`0 0 ${HUNDREDS_SQ} ${HUNDREDS_SQ}`}>
-            <rect width={HUNDREDS_SQ} height={HUNDREDS_SQ} fill={fill} stroke={stroke} strokeWidth={STROKE} />
+        <svg width={em(sq)} height={em(sq)} viewBox={`0 0 ${sq} ${sq}`}>
+            <rect width={sq} height={sq} fill={fill} stroke={stroke} strokeWidth={STROKE} />
         </svg>
     );
 }
@@ -325,8 +409,8 @@ function KioskThousands({ stroke, fill, at }: { stroke: string; fill: string; at
     );
 }
 
-function RealisticThousands({ stroke, fill }: { stroke: string; fill: string }) {
-    const C = CELL_THOUSANDS;
+function RealisticThousands({ stroke, fill, cell = CELL_THOUSANDS }: { stroke: string; fill: string; cell?: number }) {
+    const C = cell;
     const S = C * 10;
     const OFFSET = 4;
     const total = S + OFFSET;

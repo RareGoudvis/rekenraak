@@ -63,7 +63,7 @@ describe('(b) leerjaar 5 floors into each type\'s own list', () => {
         ['hoofdrekenen decimaal', 'hr-std-optellen', { numberType: 'decimal' }, 'maxGetal', 1000],
         ['gemengd decimaal', 'hr-std-gemengd', { numberType: 'decimal' }, 'maxGetal', 1000],
         ['deelbaarheid', 'deelbaarheid', undefined, 'maxGetal', 100_000],
-        ['MAB', 'mab-herkennen', undefined, 'maxNumber', 1000],
+        ['MAB', 'mab-herkennen', undefined, 'maxNumber', 9999],
         ['geld', 'geld-herkennen', undefined, 'maxGetal', 1000],
         ['kettingsommen', 'kettingsommen', undefined, 'maxGetal', 1000],
         ['controleren', 'controleren', undefined, 'maxGetal', 10_000],

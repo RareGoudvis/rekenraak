@@ -302,21 +302,25 @@ describe('MAB herkennen (symbolic): pieces are big enough to count and still fit
         const { container } = at(W.full, <MabViewer block={block} showSolutions={false} />);
         const svgs = [...container.querySelectorAll('svg')];
         const dot = svgs.find(s => s.querySelector('circle'))!;
-        const bar = svgs.find(s => s.querySelector('rect') && emPx(s.getAttribute('width')) > 2 * emPx(s.getAttribute('height')))!;
+        const bar = svgs.find(s => s.querySelector('rect') && emPx(s.getAttribute('height')) > 2 * emPx(s.getAttribute('width')))!;
         const square = svgs.find(s => s.querySelector('rect[fill="none"]'))!;
         expect(emPx(dot.getAttribute('width'))).toBeGreaterThanOrEqual(7);
-        expect(emPx(square.getAttribute('width'))).toBeGreaterThanOrEqual(14);
-        expect(emPx(bar.getAttribute('height'))).toBeGreaterThanOrEqual(3.5);
-        // Nine tens stacked with their gap still fit the 70px box less its 2 x 6px padding,
-        // with a visible gap between bars.
-        const tensCol = bar.parentElement as HTMLElement;
-        const gap = emPx(tensCol.style.gap);
-        expect(gap).toBeGreaterThanOrEqual(3);
-        expect(9 * emPx(bar.getAttribute('height')) + 8 * gap).toBeLessThanOrEqual(58);
-        // Three hundreds across fit the column's inner width (64 - 2 x 6).
-        expect(3 * emPx(square.getAttribute('width')) + 2 * 3).toBeLessThanOrEqual(52);
-        // Units: five dots across (nine in two rows) fit too.
-        expect(5 * emPx(dot.getAttribute('width')) + 4 * 3).toBeLessThanOrEqual(52);
+        expect(emPx(square.getAttribute('width'))).toBeGreaterThanOrEqual(12);
+        expect(emPx(bar.getAttribute('width'))).toBeGreaterThanOrEqual(3.5);
+        // Square pattern: every place in two rows, so nine pieces = five columns.
+        for (const place of ['hundreds', 'tens', 'units']) {
+            const cells = [...container.querySelectorAll(`[data-mab-pattern="${place}"]`)] as HTMLElement[];
+            expect(cells.length, place).toBe(9);
+            expect(new Set(cells.map(c => c.style.gridRow)).size, place).toBe(2);
+        }
+        // Nine of each, in five columns with their gaps (and 3px between squares), fit the 80px
+        // column less its 2 x 2px padding and 1px air each side; bars stay visibly apart.
+        const grid = (el: Element) => el.parentElement!.parentElement as HTMLElement;
+        const across = (svg: Element) => 5 * emPx(svg.getAttribute('width')) + 4 * emPx(grid(svg).style.columnGap) + 2 * 3;
+        expect(emPx(grid(bar).style.columnGap)).toBeGreaterThanOrEqual(3);
+        for (const svg of [dot, bar, square]) expect(across(svg)).toBeLessThanOrEqual(74.1);
+        // Two rows of upright bars fit the 70px box less its padding.
+        expect(2 * emPx(bar.getAttribute('height')) + emPx(grid(bar).style.rowGap)).toBeLessThanOrEqual(66);
     });
 });
 
