@@ -42,7 +42,7 @@ npm run prepare        # after a clone: git config core.hooksPath .githooks
 ```
 
 The dev build exposes `window.__rekenraak` (typeIds, leaves, seed, measured, addBlockFromType,
-updateBlockSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses.
+updateBlockSettings, updateDocSettings, clearBlocks, setIgnoreMinWidth, getState) for the harnesses.
 
 `oefenen.html` is an **extra Vite entry** (`vite.config.ts` rollupOptions.input `oefenen`): the
 Oefenmodus pupil kiosk, its own React root under `src/oefenen/`. The dev server serves it at

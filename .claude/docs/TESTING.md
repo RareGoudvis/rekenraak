@@ -838,8 +838,10 @@ One leaf per input kind (number `hr-std-optellen-nat`, number+rest `hr-std-delen
 time `klok-analoog-lezen`, choice `vergelijken-getallen`, tap `vergelijken-kiezen`, tap-multi
 `even-oneven-rooster`, order `getalbegrip-ordenen-nat`, fill-cells `cijferen-optellen-nat`,
 build `geld-tekenen`, drag `temperatuur-kleuren`) × 1280×800 and 1024×768, plus the 2026-10-28
-cases `breuken-herkennen-onecht` / `breuken-kleuren-onecht` (tap-multi takes the first n parts when
-the answer is a count) and `mab-herkennen-9999` / `mab-tekenen-9999` (nine cubes laid). Per case: the link
+cases `breuken-herkennen-onecht` (answered as a gemengd getal through the three-field fraction input) /
+`breuken-kleuren-onecht` (tap-multi takes the first n parts when the answer is a count) /
+`breuken-vereenvoudigen-onecht` (answered mixed), `mab-herkennen-9999` / `mab-tekenen-9999` (nine cubes
+laid); `--seed-onecht` (default 4) picks a seed whose first draw is onecht. Per case: the link
 is made in-page through `listOefenLeaves` → `buildSessie` (one row, limit 1) → `encodeSessie`; a
 fresh context seeds `Math.random` (mulberry32, `--seed`) so two runs show the same exercises;
 Start; the expected answer is read in the page (`kioskFor(typeId).answerOf`, `kioskInteractOf`,

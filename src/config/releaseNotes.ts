@@ -37,6 +37,15 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         items: [
             // ── 2026-10-28: Geert-fork ports + onechte breuken ──
             {
+                kind: 'gewijzigd',
+                text: 'Onechte breuken mag je ook als gemengd getal schrijven (7/4 of 1 3/4), op papier en in de Oefenmodus; de oplossing toont beide.',
+                example: { leafId: 'breuken-herkennen', constraints: { allowImproper: true }, count: 2, height: 160 },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Na het kiezen van een ander lettertype of een andere lettergrootte voor het blad bleef een blok soms onnodig breed staan; het past zich nu meteen aan.',
+            },
+            {
                 kind: 'nieuw',
                 text: 'Kies het lettertype van je blad, apart voor tekst, cijfers, titel, opdrachttitels, naamvelden en voettekst (o.a. Andika, Lexend, Atkinson Hyperlegible).',
             },
