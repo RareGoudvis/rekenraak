@@ -137,7 +137,8 @@
 .page-sheet-foot .print-tfoot-inner {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
   padding-top: 6px;
-  font-family: var(--font-sheet-text); font-size: 9pt; color: #666;
+  /* SYNC: the print rule for .page-sheet-foot .print-tfoot-inner (same face on paper). */
+  font-family: var(--font-sheet-footer); font-size: 9pt; color: #666;
 }
 .page-sheet-foot .print-tfoot-inner > span { flex: 1 1 0; min-width: 0; }
 .page-sheet-foot .print-tfoot-inner > span:nth-child(2) { text-align: center; }
@@ -752,12 +753,6 @@ textarea:focus-visible,
      spacer element, not a ::before (pseudo-elements on table-internal boxes are flaky). */
   .print-area > thead.print-thead { display: table-header-group !important; }
   .print-thead-spacer { display: block !important; height: 16mm; }
-  /* Repeating name strip — hidden unless the "herhaal koptekst" toggle is on. */
-  .print-repeat-fields { display: none !important; }
-  .print-area.repeat-header .print-repeat-fields { display: block !important; padding: 0 16mm 4mm !important; box-sizing: border-box; }
-  .print-area.repeat-header .print-thead-spacer { height: 6mm; }
-  /* When the strip repeats up top, drop the page-1 body copy so it isn't duplicated. */
-  .print-area.repeat-header .print-body-fields { display: none !important; }
 
   /* Content cell. A real <td> honours its own padding, so the 16mm side margins live here. */
   .print-area > tbody.print-body { display: table-row-group !important; }
@@ -778,7 +773,7 @@ textarea:focus-visible,
     width: 100% !important;
     /* SYNC: must match the screen rule for .print-tfoot-inner above — the preview IS the
        print, so a font that differs between them would make the preview lie. */
-    font-family: var(--font-sheet-text) !important;
+    font-family: var(--font-sheet-footer) !important;
     /* No !important on font-size/color: lets the inline footerCustom override them. */
     font-size: 9pt;
     color: #666;

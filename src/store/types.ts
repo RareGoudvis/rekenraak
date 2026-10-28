@@ -23,7 +23,10 @@ export interface HeaderData {
     titel: string;
     fieldOrder?: HeaderField[];
     fieldWidths?: Record<HeaderField, number>;
-    repeatHeader?: boolean;   // print only: repeat the name fields strip at the top of every page
+    // Continuation pages (2+) draw the header too, in page 1's style, on screen and on paper:
+    // repeatHeader brings the name fields, repeatTitle the title. Absent = page 1 only.
+    repeatHeader?: boolean;
+    repeatTitle?: boolean;
 }
 
 export const DEFAULT_FIELD_ORDER: HeaderField[] = ['naam', 'klas', 'nummer', 'datum'];
@@ -35,6 +38,8 @@ export const DEFAULT_FIELD_WIDTHS: Record<HeaderField, number> = { naam: 240, kl
 export interface RegionStyle {
     fontSize?: number;
     bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
     color?: string;         // text color (from the curated print palette)
     background?: string;    // fill color ('' / undefined = none)
     align?: 'left' | 'center' | 'right';
@@ -61,6 +66,9 @@ export interface DocSettings {
     footerStyle?: 'geen' | 'lijn' | 'kader';
     titlePosition: 'left' | 'center' | 'right';
     titleFieldsGap: number;
+    // Centred title only: px between the fields/score row and the title under it.
+    // Optional → back-compat; absent = 8 (the gap it always had). Slider 0–40, step 2.
+    titleFieldsVerticalGap?: number;
     headerContentGap: number;
     blockSpacing: number;   // vertical gap between exercise sets (blocks)
     // How the packer places blocks on a page: 'aansluitend' lets a block fill the space
@@ -90,6 +98,19 @@ export interface DocSettings {
     // hardcoded before the token). Per-block override: constraints.answerSpace.
     // NOT verticalSpacing, which is the gap BETWEEN exercises.
     answerSpace?: number;    // px at 13pt, 14-32, default 18
+    // Sheet font families (CSS font-family values from config/fontOptions.ts), set onto
+    // .print-area-shell as the --font-sheet-* tokens. Optional → back-compat; absent = the
+    // token's own default (Ubuntu / Azeret Mono). Math stays monospace-only in the picker.
+    fontFamilyText?: string;          // --font-sheet-text: opdrachttekst and words in viewers
+    fontFamilyMath?: string;          // --font-sheet-math: digits
+    fontFamilyHeader?: string;        // --font-sheet-header: the koptekst title
+    fontFamilyTitel?: string;         // --font-sheet-titel: the opdracht titles
+    fontFamilyHeaderVelden?: string;  // --font-sheet-velden: Naam/Klas/Nr/Datum labels
+    fontFamilyFooter?: string;        // --font-sheet-footer: the voettekst
+    // Naam/Klas/Nr/Datum labels' own style (size 8-20 px, default 13; colour, fill, B/I/U).
+    headerVeldenCustom?: RegionStyle;
+    // Exercise bodies: ink colour, fill, B/I/U on every block's ScaledBlock wrapper.
+    oefeningenCustom?: RegionStyle;
 }
 
 // Which full-screen view is active. 'editor' = normal 3-panel editor; the others are

@@ -15,7 +15,7 @@ import { ROUND_SCALE, roundTo, targetsFor, usableTargets } from '../afronden/afr
 import { digitAtPlace, getMaskPlaces } from '../math/mathEngine';
 import { CONCEPT_NAMES } from '../vormleer/vormleerGenerator';
 import { kioskNumbers } from '../deelbaarheid/deelbaarheidKleurGenerator';
-import { placeOrder, plaatsView } from '../plaatswaarde/plaatswaardeGenerator';
+import { placeOrder, plaatsView, tabelPlaces } from '../plaatswaarde/plaatswaardeGenerator';
 import type { GeldWisselExercise } from '../math/types';
 import type { KioskDescriptor as AnyKioskDescriptor } from './types';
 import type { KioskPiece } from './types';
@@ -25,7 +25,7 @@ import { timeWords, timeWordsFields } from '../clock/timeWords';
 import { HOEK_DRAG_CONCEPTS, hoekTarget } from '../vormleer/hoekDrag';
 import { formatGewicht } from '../weegschaal/weegschaalGenerator';
 import { isZeroAnswerPart, ladderFor } from '../herleidingen/herleidingenGenerator';
-import { MIXED_VARIANTS } from '../math/constraintTypes';
+import { MIXED_VARIANTS, type PlaatswaardeConstraints } from '../math/constraintTypes';
 
 // Kiosk descriptors for the exercise registry (row field `kiosk`): pure data + pure functions,
 // imported by exerciseRegistry.ts. A type without a descriptor cannot be practised on screen.
@@ -324,17 +324,12 @@ const shownPlaatsen = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => 
     return placeOrder(ps.length, ex, c).map(i => ps[i]);
 };
 const isPwTabel = (c: Record<string, unknown>) => pwSub(c) === 'tabel';
-// SYNC: PlaatswaardeViewer tabel placesOf — the block's max and decimals, from the first non-zero place.
-function tabelPlaces(ex: PlaatswaardeExercise, c: Record<string, unknown>) {
-    const dp = Number(c.decimalPlaces ?? 0);
-    const all = getMaskPlaces(Number(c.maxGetal ?? 1000), dp > 0 ? 'decimal' : 'natural', dp);
-    const start = all.findIndex(p => digitAtPlace(ex.number, p.weight) !== 0);
-    return (start < 0 ? all.slice(-1) : all.slice(start)).map(p => ({ key: p.key, digit: digitAtPlace(ex.number, p.weight) }));
-}
+// The viewer's own columns (tabelPlaces, incl. a teacher's tablePlaces), so the cells match.
+const tabelCells = (ex: PlaatswaardeExercise, c: Record<string, unknown>) => tabelPlaces(ex, c as Partial<PlaatswaardeConstraints>);
 // tabel: the digit under every place, keyed by the place (one-digit cells hand the keypad on).
 const pwTabelInteract = cellsInteract<PlaatswaardeExercise>(
-    (ex, c) => tabelPlaces(ex, c).map(p => p.key),
-    (ex, c) => tabelPlaces(ex, c).map(p => String(p.digit)),
+    (ex, c) => tabelCells(ex, c).map(p => p.key),
+    (ex, c) => tabelCells(ex, c).map(p => String(p.digit)),
     () => ({ length: 1 }),
 );
 

@@ -7,7 +7,7 @@ import { cellWidthPx } from '../viewer/BlockWidthContext';
 import { WIDTH_FIT_FLOOR } from '../viewer/scaledBlockFit';
 import type { MeasuredHeights } from '../../hooks/useMeasuredHeights';
 import type { SheetDnd } from '../../hooks/useSheetDnd';
-import SheetHeader, { SheetRepeatFields } from './SheetHeader';
+import SheetHeader from './SheetHeader';
 import SheetFooter from './SheetFooter';
 import EmptySheetHero from './EmptySheetHero';
 import SheetBlock from './SheetBlock';
@@ -113,9 +113,7 @@ export default function SheetPages({ packedPages, blockOrder, measured, dnd, onO
           })()}
           onFitBlock={fitBlockToPage}
           onSplitBlock={(blockId, anchor) => onOpenSplit(blockId, anchor)}
-          header={pi === 0
-            ? <SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} />
-            : (headerData?.repeatHeader ? <SheetRepeatFields header={headerData} /> : null)}
+          header={<SheetHeader header={headerData} docSettings={docSettings} totalScore={totalScore} continuation={pi > 0} />}
           footer={<SheetFooter footer={footerData} docSettings={docSettings} pageIndex={pi} pageCount={packedPages.length} />}
         >
           {blocks.length === 0 && pi === 0 && (

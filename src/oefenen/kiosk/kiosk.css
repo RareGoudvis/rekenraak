@@ -265,6 +265,9 @@ html:has(.oefen-body),
 }
 .kiosk-card-inner {
   transform-origin: top left;
+  /* The pupil card stays exact black: viewers inherit their ink now, and the kiosk
+     chrome around the card is --text-main. */
+  color: #000;
   pointer-events: none;
   /* SYNC: the sheet's inherited size (body 16px). Viewers size some boxes in plain em (the
      even-oneven rooster columns); inheriting --kiosk-text instead made those device-dependent
@@ -349,7 +352,7 @@ html:has(.oefen-body),
   border: none;
   border-radius: 0;
   background: color-mix(in srgb, var(--accent) 7%, transparent);
-  font-family: 'Azeret Mono', monospace;
+  font-family: var(--font-sheet-math);
   line-height: 1;
 }
 /* A viewer's blank box (splitsen, positietabel) as a cell: the box's own border stays the frame. */
