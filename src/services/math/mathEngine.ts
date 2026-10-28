@@ -30,7 +30,8 @@ export const PLACE_VALUES = [
 // JavaScript afrondingsfouten vermijden door intern alles met integers te berekenen
 const INTERNAL_SCALE = 1000000;
 // The tienvoud preset's own ceiling, the top of its picker list. Gemengd shares one max
-// with its other variants, so at 1e9 the base would otherwise reach 1e9 × 1000.
+// with its other variants (and a stale max outlives a switch to the preset), so at 1e9 the
+// base would otherwise reach 1e9 × 1000, natural or decimal.
 const TIENVOUD_BASE_MAX = Math.max(...RANGES.hrTienvoud);
 const MAX_ATTEMPTS = 20000;
 
@@ -788,9 +789,10 @@ export const generateMultiplicationExercises = (block: MathBlock): Equation[] =>
             attempts++;
             const factor = pool[randInt(0, pool.length - 1)];
             const base =numberType === 'decimal'
-                ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                ? Number((randInt(1, room ? room(factor) : Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX) * scale - 1)) / scale).toFixed(decimalPlaces))
                 : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
-            const answer = Number((base * factor).toFixed(6));
+            // On the display grid: base × factor in floats printed 98 437 323 910,09999 once the base passed 1e8.
+            const answer = (Math.round(base * scale) * factor) / scale;
             if (breaksOperandMax(constraints, [base, factor])) continue;
             const comboId = `${base}*${factor}`;
             if (usedCombinations.has(comboId)) continue;
@@ -1133,9 +1135,10 @@ export const generateDivisionExercises = (block: MathBlock): Equation[] => {
             attempts++;
             const factor = pool[randInt(0, pool.length - 1)];
             const quotient =numberType === 'decimal'
-                ? Number((randInt(1, room ? room(factor) : Math.max(2, maxGetal * scale - 1)) / scale).toFixed(decimalPlaces))
+                ? Number((randInt(1, room ? room(factor) : Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX) * scale - 1)) / scale).toFixed(decimalPlaces))
                 : randInt(2, Math.max(2, Math.min(maxGetal, TIENVOUD_BASE_MAX, room ? room(factor) : Infinity)));
-            const dividend = Number((quotient * factor).toFixed(6));
+            // SYNC: the × tienvoud branch above (display-grid product).
+            const dividend = (Math.round(quotient * scale) * factor) / scale;
             if (breaksOperandMax(constraints, [dividend, factor])) continue;
             const comboId = `${dividend}:${factor}`;
             if (usedCombinations.has(comboId)) continue;
