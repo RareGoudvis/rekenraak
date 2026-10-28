@@ -150,6 +150,8 @@ function SheetBlock({
           // SYNC with appStyles.instructionDisplay, which inherits it: the size
           // has to sit on the container the "Tekengrootte" slider writes to.
           fontSize: 'var(--sheet-size-text)',
+          // The title's weight sits here too, so the titel "Vet" switch can turn it off.
+          fontWeight: 700,
           ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
           ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
         }, docSettings.titelCustom)}>

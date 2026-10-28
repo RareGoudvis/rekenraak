@@ -35,6 +35,8 @@ export const DEFAULT_FIELD_WIDTHS: Record<HeaderField, number> = { naam: 240, kl
 export interface RegionStyle {
     fontSize?: number;
     bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
     color?: string;         // text color (from the curated print palette)
     background?: string;    // fill color ('' / undefined = none)
     align?: 'left' | 'center' | 'right';

@@ -29,6 +29,10 @@ export function SheetRepeatFields({ header: headerData }: { header: HeaderData |
 
 // Page-1 header: title, name fields and score box, rendered per page by PageSheet.
 export default function SheetHeader({ header: headerData, docSettings, totalScore }: { header: HeaderData | undefined; docSettings: DocSettings; totalScore: number }) {
+  // Weight, slant and underline style the TITLE only: on the container they would reach the
+  // name fields and the score box too (text-decoration cannot be undone by a child).
+  const { bold, italic, underline, ...boxCustom } = docSettings.headerCustom ?? {};
+  const titleType = { fontWeight: bold === false ? 400 : 700, fontStyle: italic ? 'italic' : undefined, textDecoration: underline ? 'underline' : undefined } as const;
   return (
     /* ── HEADER ── (enum base style + optional style-builder overlay; custom wins) */
     <div style={overlayRegionStyle({
@@ -55,7 +59,7 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
         const bottom = docSettings.headerStyle === 'geen' ? side : { width: '1.5px', color: '#000' };
         return borderSides({ Top: side, Right: side, Bottom: bottom, Left: side });
       })(),
-    }, docSettings.headerCustom)}>
+    }, docSettings.headerCustom ? boxCustom : undefined)}>
       {(() => {
         const showScore = docSettings.showScores && totalScore > 0;
         const hasTitle = !!headerData?.titel;
@@ -68,7 +72,7 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
         };
         const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
-            {hasTitle && <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: align }}>{headerData!.titel}</h1>}
+            {hasTitle && <h1 style={{ margin: 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', ...titleType, textAlign: align }}>{headerData!.titel}</h1>}
             {showScore && <div style={styles.scoreBox}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
           </div>
         ) : null;
@@ -113,7 +117,7 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
             {/* The 8px only separates the title from the fields/score row above it;
                 with every field off there is nothing to separate it from and the gap
                 is paper margin pretending to be layout. */}
-            {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? '8px 0 0' : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', fontWeight: 700, textAlign: 'center' }}>{headerData!.titel}</h1>}
+            {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? '8px 0 0' : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', ...titleType, textAlign: 'center' }}>{headerData!.titel}</h1>}
           </>
         );
       })()}

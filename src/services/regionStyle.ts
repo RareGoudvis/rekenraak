@@ -21,13 +21,15 @@ export function borderSides(sides: Partial<Record<Side, { width: string; color: 
 
 // Overlay a power-user RegionStyle onto a region's base/default style object.
 // Custom keys win; absent keys leave the base untouched. Intentionally only touches
-// in-region properties (size/weight/color/fill/border/padding/align) — never width,
+// in-region properties (size/weight/slant/underline/color/fill/border/padding/align) — never width,
 // margin, or position, so the dialog-proof A4 print layout stays intact.
 export function overlayRegionStyle(base: CSSProperties, rs?: RegionStyle): CSSProperties {
     if (!rs) return base;
     const out: CSSProperties = { ...base };
     if (rs.fontSize != null) out.fontSize = `${rs.fontSize}px`;
     if (rs.bold != null) out.fontWeight = rs.bold ? 700 : 400;
+    if (rs.italic) out.fontStyle = 'italic';
+    if (rs.underline) out.textDecoration = 'underline';
     if (rs.color) out.color = rs.color;
     if (rs.background) out.background = rs.background;
     if (rs.align) out.textAlign = rs.align;

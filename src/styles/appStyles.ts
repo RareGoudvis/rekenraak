@@ -64,7 +64,7 @@ export const styles = {
   // fontSize is INHERITED from the .print-opdracht container (App.tsx), which is where the
   // Blad tab's "Tekengrootte" slider writes — a size of its own here silently beat the
   // slider. The container's default is the same var(--sheet-size-text) it used to set.
-  instructionDisplay: { fontSize: 'inherit', fontWeight: 700, color: 'inherit', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
+  instructionDisplay: { fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit', fontFamily: 'var(--font-sheet-text)' } as React.CSSProperties,
   pointsText: { fontSize: 'calc(var(--sheet-size-math) * 0.81)', fontWeight: 'bold', fontFamily: 'var(--font-sheet-math)', marginRight: '24px', color: 'inherit' } as React.CSSProperties,
   emptyStateText: { padding: '8px 0', fontStyle: 'italic', color: '#999', fontSize: '14px' } as React.CSSProperties,
   // Cold-load hero shown only when blocks.length === 0. Lives ON the white A4 sheet, so
