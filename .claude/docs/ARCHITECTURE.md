@@ -84,9 +84,9 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 |---|---|---|
 | `blocks` | `MathBlock[]` | Ordered exercise blocks on the sheet |
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector context. `setActiveSelection` with a real block id ALSO sets `inspectorTab: 'oefening'` (content first), and so does `addBlockFromType` for the block it creates; `'document'`/`null` leave the tab alone, since the block tabs are disabled without a selection |
-| `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths** |
+| `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths**, `repeatHeader` (name fields on every page) + `repeatTitle` (title on every page; 2026-10-28) — both on screen AND print; a continuation page renders `SheetHeader continuation` (page 1's header box with only the repeated parts, never the score) and `useMeasuredHeights(blocks, continuationKey)` drops the stale "rest" body when that header changes |
 | `footer` | `FooterData` | three configurable slots (`slotLeft`/`slotCenter`/`slotRight` + their texts) and `brandSlot` — where the "Gemaakt met RekenRaak.be" credit sits; the credit always prints, only its position is a choice |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten"), uniqueExercises (default and absent = true — Blad › Opdrachten › "Geen dubbele oefeningen"; read by `generateForBlock` in generateDispatch.ts, see §6) |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten"), uniqueExercises (default and absent = true — Blad › Opdrachten › "Geen dubbele oefeningen"; read by `generateForBlock` in generateDispatch.ts, see §6), **2026-10-28 (Geert port B1):** `titleFieldsVerticalGap` (0–40, default 8, centred title only), `fontFamilyText / fontFamilyMath / fontFamilyHeader / fontFamilyTitel / fontFamilyHeaderVelden / fontFamilyFooter` (optional CSS font-family values from `config/fontOptions.ts`, written onto `.print-area-shell` as the six `--font-sheet-*` tokens by `SHEET_FONT_TOKENS` in App.tsx; an App effect `ensureFontLoaded`s the self-hosted @fontsource faces on first use; absent = Ubuntu / Azeret Mono), `headerVeldenCustom` (RegionStyle for Naam/Klas/Nr/Datum labels, size 8–20 default 13) and `oefeningenCustom` (RegionStyle applied on every `ScaledBlock` inner wrapper through `overlayRegionStyle`, so it also tints the opdracht-titel). `RegionStyle` itself gained `italic` / `underline` (→ `fontStyle` / `textDecoration`) |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
 | `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point (base max L1 20 · L2 100 · L3 1 000 · L4 10 000 · L5 1 000 000 · L6 1 000 000 000, floored per type — §13): seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
@@ -1023,8 +1023,9 @@ both `onCellMeasure` and the tail measurement it depends on.
   Geen") and prints on "Begrepen"; the button and the intercepted Ctrl+P both pass that gate.
   `handlePrint(withSolutions)`: deselects the
   active block, optionally flips `showSolutions`, injects a dynamic `<style>` that blanks the
-  browser's `@page` header/footer margin boxes, then `window.print()` after **two** animation
-  frames — deselecting changes a block's height, so the dialog must not open before the
+  browser's `@page` header/footer margin boxes, awaits `document.fonts.ready` (a freshly picked
+  @fontsource face must not print as its fallback; 2026-10-28), then `window.print()` after **two**
+  animation frames — deselecting changes a block's height, so the dialog must not open before the
   remeasure-and-repack has landed. Restores prior state on `afterprint`. A mount-once
   effect intercepts Ctrl/Cmd+P and routes it through `handlePrint`, and `beforeprint` /
   `afterprint` listeners are the net for menu or extension prints: they can only clean the DOM
@@ -1044,9 +1045,12 @@ both `onCellMeasure` and the tail measurement it depends on.
   row; **center always stacks**: the wrapping field row (score box at its end) on top, the
   title on its own line beneath, the way a real worksheet reads. The former inline-flank
   layout (half the fields on each side of the title, chosen by a width estimate) is gone.
-- **Repeating header toggle** — `header.repeatHeader`: when off, only page 1 draws the
-  Naam/Klas/Nr/Datum strip; when on, every page does (each page owns its header, so this is
-  now a plain conditional, not a `<thead>` trick).
+- **Repeating header toggles** — `header.repeatHeader` (name fields) and `header.repeatTitle`
+  (title, 2026-10-28): when off, only page 1 draws them; when on, every page does, on screen and
+  in print alike (each page owns its header: `SheetHeader continuation` draws page 1's box with
+  only the repeated parts; the old print-only `.print-repeat-fields` strip is gone — it never
+  printed, a leftover `@media print { display: none }` hid it). The footer's family is
+  `--font-sheet-footer` in the screen rule AND the print rule (SYNC).
 - **[FragmentableGrid](../../src/components/viewer/FragmentableGrid.tsx)** — a single CSS
   `grid`/`flex` container does **not** fragment across pages in Chrome (a too-tall block
   jumps whole). This shared component lays items out as a **block stack of per-row grids**,
@@ -1240,7 +1244,7 @@ src/
 │   ├── instructionPresets.ts    # quick-pick opdracht-titel texts + defaultInstructionFor()
 │   ├── gradePresets.ts          # Leerjaar 1–6: base-difficulty seed (L6 = 1 000 000 000) + leaf grade-gate (soft starting point)
 │   ├── numberRanges.ts          # every max-number option list once: NAT_CEILING, NAT_STEPS, RANGES, floorToPreset, presetLabel (§5, §13)
-│   ├── fontOptions.ts           # SHEET_MATH_FONT (SYNC theme.css --font-sheet-math) for JS measurement code; the teacher font lists (§8)
+│   ├── fontOptions.ts           # SHEET_MATH_FONT (SYNC theme.css --font-sheet-math); TEXT_FONT_OPTIONS / MATH_FONT_OPTIONS (self-hosted @fontsource faces lazy-loaded by ensureFontLoaded; system stacks labelled "(als geïnstalleerd)"; maths monospace only) (§3, §8)
 │   ├── printPalette.ts          # curated print-safe swatches + STYLE_BOUNDS clamps (style builder)
 │   ├── rekenmethodes.ts         # rekenmethode metadata (bibliotheek)
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
@@ -1257,8 +1261,8 @@ src/
 │       ├── uiSlice.ts           # selection, tabs, view, sidebar preview, save state, block pages, debug flag
 │       └── historySlice.ts      # undo/redo, pushHistory, commitBlocks
 ├── hooks/
-│   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (waits 2 rAF for the repack)
-│   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9)
+│   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (awaits document.fonts.ready, then 2 rAF for the repack)
+│   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9); continuationKey drops the stale page-2+ body when the repeated header changes
 │   ├── useSheetZoom.ts          # sheet zoom-to-fit (ResizeObserver, floor 55%)
 │   ├── useBootLoad.ts           # boot order: share link → autosave restore → release-banner check
 │   ├── useOnboarding.ts         # welcome / tour / help / video modal state + localStorage keys
@@ -1414,7 +1418,7 @@ src/
     ├── sheet/                  # the A4 sheet surface, split out of App.tsx (R1)
     │   ├── SheetPages.tsx      # PageSheet loop: cell width/left, tail + split wiring, fit/widen handlers
     │   ├── SheetBlock.tsx      # React.memo cell: positioned wrapper, opdracht-titel row, registry Viewer, "te breed" banner
-    │   ├── SheetHeader.tsx     # page-1 header region + repeating name-field strip
+    │   ├── SheetHeader.tsx     # header region; `continuation` = page 2+ with only the repeated title / name fields (§9)
     │   ├── SheetFooter.tsx     # three footer slots + credit
     │   ├── SheetBanners.tsx    # release + tryout banners
     │   ├── SheetControlsRail.tsx # picks hovered ?? selected block, wires BlockControlsRail
@@ -1450,7 +1454,9 @@ src/
     ├── configurator/
     │   ├── Inspector.tsx       # mounts EXERCISE_UI[typeId].Config; locked-mode gating
     │   ├── GenerationNote.tsx  # the "versoepeld / slechts N / kon geen oefeningen maken" callout under Genereer, shared by the sheet Inspector and BoardInspector
-    │   ├── RegionStyleFields.tsx  # per-region look-and-feel (size/bold/colour/fill/padding) + ResetAllStylesButton
+    │   ├── RegionStyleFields.tsx  # per-region look-and-feel (family/size/bold/italic/underline/colour/fill/padding) + ResetAllStylesButton
+    │   ├── FontStyleFields.tsx    # the reusable family / size / colour / fill / bold / italic / underline block (RegionStyleFields, veldlabels, oefeningen cards)
+    │   ├── FontFamilyPicker.tsx   # PopupSelect over TEXT_FONT_OPTIONS / MATH_FONT_OPTIONS + the "(als geïnstalleerd)" note
     │   ├── BridgeControl.tsx   # carry-arrow ('bruggetje') diagram: per-place geen/mag/moet via tappable gap arrows
     │   ├── useMaxPresets.ts  # the block's max list = REGISTRY.maxPresets over the constraints the plugin sees (gemengd tabs → variant row) (§5)
     │   ├── sharedPluginStyles.ts  # radioBtn + pill + onOff + divider/sectionBox/select + hint/label text tiers

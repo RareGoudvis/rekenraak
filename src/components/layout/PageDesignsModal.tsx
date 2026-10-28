@@ -38,7 +38,7 @@ export default function PageDesignsModal({ onClose }: Props) {
     };
     const handleApply = (d: PageDesign) => {
         if (!window.confirm(`Sjabloon "${d.name}" toepassen?\nVervangt de vormgeving van dit blad, de oefeningen blijven.`)) return;
-        // TODO(B1): ensureFontLoaded for the template fonts
+        // Fonts the template names load through App's docSettings font effect (ensureFontLoaded).
         updateDocSettings(replacementFor(useWorksheetStore.getState().docSettings, d.docSettings));
         setApplied(d.id);
     };

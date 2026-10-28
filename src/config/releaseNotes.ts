@@ -38,6 +38,49 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             // ── 2026-10-28: Geert-fork ports + onechte breuken ──
             {
                 kind: 'nieuw',
+                text: 'Kies het lettertype van je blad, apart voor tekst, cijfers, titel, opdrachttitels, naamvelden en voettekst (o.a. Andika, Lexend, Atkinson Hyperlegible).',
+            },
+            {
+                kind: 'nieuw',
+                text: '“Titel op elke pagina herhalen”: de titel komt ook bovenaan pagina 2, 3, … “Ruimte titel–velden” regelt de afstand bij een gecentreerde titel.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Vormgeving veldlabels (Naam / Klas / Nr / Datum) en vormgeving oefeningen: eigen lettertype, grootte, kleur, vet, cursief, onderstreept.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Plaatswaardetabel: kies zelf welke kolommen (D, H, T, E, t, …) in de tabel staan, los van het maximum.',
+                example: { leafId: 'plaatswaarde-tabel', constraints: { maxGetal: 100, tablePlaces: ['D', 'H', 'T', 'E'] }, before: 'kolommen H T E bij “tot 100”', after: 'D H T E, zelf gekozen' },
+            },
+            {
+                kind: 'nieuw',
+                text: 'Sjablonen voor pagina-ontwerp (Meer → Pagina-ontwerp sjablonen): bewaar de vormgeving van een blad en pas ze met één klik toe op een ander blad.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'MAB tot 9 999: tot negen duizendtallen in de D-kolom, in vierkantjes van vier zodat je sneller telt.',
+                example: { leafId: 'mab-tekenen', constraints: { maxNumber: 9999 }, height: 170 },
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'MAB: “Oefeningen per rij” staat nu als keuzelijst onder “Aantal oefeningen”; bij herkennen liggen de blokjes in vierkantjes van vier.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: '“Koptekst op elke pagina herhalen” heet nu “Naamvelden op elke pagina herhalen” en werkt ook op het scherm, niet enkel op papier.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Herhaalde naamvelden kwamen niet mee op papier; en “Vet” uitzetten bij de titel of de opdracht-titel deed niets.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Plaatswaarde en getallen vergelijken: het maximum zelf kan nu ook voorkomen (“tot 20” kan 20 geven), zoals bij de andere oefeningen.',
+                example: { leafId: 'vergelijken-getallen', constraints: { maxGetal: 20 }, count: 3 },
+            },
+            {
+                kind: 'nieuw',
                 text: 'Bewaren werkt nu je geopende blad uit Mijn bladen bij in plaats van een kopie te maken. Ook na een herstart van de browser.',
             },
             {
