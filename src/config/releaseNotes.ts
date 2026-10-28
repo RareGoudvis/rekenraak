@@ -35,6 +35,52 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         date: '2026-11',
         summary: 'Elke oefening blijft nu binnen het maximum dat je kiest.',
         items: [
+            // ── 2026-10-28: Geert-fork ports + onechte breuken ──
+            {
+                kind: 'nieuw',
+                text: 'Bewaren werkt nu je geopende blad uit Mijn bladen bij in plaats van een kopie te maken. Ook na een herstart van de browser.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'In Chrome en Edge bewaar je je wijzigingen terug in hetzelfde .rekenraak-bestand (Meer → Bewaar bestand). Andere browsers downloaden zoals vroeger.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Het bolletje bovenaan heet nu “Herstelkopie in browser”, Mijn bladen toont dat het in deze browser bewaard is, en de uitleg over bewaren is herschreven.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Een volle browseropslag meldt nu dat Bewaren mislukt is, in plaats van stil niets te bewaren.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Breuken kleuren: ook onechte breuken (bv. 7/4), getekend over twee figuren. Zet “Ook onechte breuken” aan.',
+                example: { leafId: 'breuken-kleuren', constraints: { allowImproper: true }, count: 2, height: 160 },
+            },
+            {
+                kind: 'nieuw',
+                text: 'Breuken herkennen: ook onechte breuken; de figuur toont twee gehelen en het antwoord is de onechte breuk (7/4).',
+                example: { leafId: 'breuken-herkennen', constraints: { allowImproper: true }, count: 2, height: 160 },
+            },
+            {
+                kind: 'nieuw',
+                text: 'Breuken rangschikken: met “Ook onechte breuken” staan er ook breuken groter dan 1 tussen (zoals 5/4).',
+                example: { leafId: 'breuken-rangschikken', constraints: { fractionMode: 'gelijknamige', allowImproper: true } },
+            },
+            {
+                kind: 'nieuw',
+                text: 'Gelijknamig maken: met “Ook onechte breuken” kunnen de gegeven breuken ook groter dan 1 zijn.',
+                example: { leafId: 'breuken-gelijknamig', constraints: { allowImproper: true }, count: 2 },
+            },
+            {
+                kind: 'nieuw',
+                text: 'Vereenvoudigen: met “Ook onechte breuken” komen er ook breuken als 10/4 → 5/2.',
+                example: { leafId: 'breuken-vereenvoudigen', constraints: { allowImproper: true }, count: 2 },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Kommagetallen × of : 10, 100, 1 000: na het omschakelen van een groot maximum kon de oplossing fout afgerond zijn (bv. …910,09999). Nu exact.',
+            },
             {
                 kind: 'nieuw',
                 text: 'Teruggeven: ook tot €1 en tot €2, betaald met een munt van €1 of €2 — voor de jongste groepen.',
