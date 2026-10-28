@@ -1,18 +1,19 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, beforeAll, afterAll, vi } from 'vitest';
-import { render, cleanup, act } from '@testing-library/react';
+import { render, cleanup, act, within, fireEvent } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import TopBar from '../components/layout/TopBar';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 
 // jsdom has no layout, so the three zone columns get the widths a real 1920 px window
-// measured (Playwright, 2026-10-09): [left group, name track, right group] per stage.
+// measured (Playwright, 2026-10-28, after the "?" went icon-only and Bewaren joined): [left group,
+// name track, right group] per stage.
 const ZONE_WIDTHS: Record<number, [number, number, number]> = {
-    0: [393, 321, 498],
-    1: [138, 149, 226],
-    2: [138, 0, 226],
-    3: [54, 0, 226],
+    0: [454, 330, 498],
+    1: [180, 149, 226],
+    2: [180, 0, 226],
+    3: [138, 0, 226],
 };
 // jsdom leaves var() unresolved, so the bar padding and zone gap the components really set
 // are resolved against theme.css: a padding change shows up here instead of in a stub.
@@ -73,16 +74,16 @@ const stageAt = (width: number) => {
 };
 
 describe('TopBar shedding', () => {
-    // Why (owner call 3): a 1920 px screen is the common classroom size; at 20 px side padding
-    // its inner width fell 16 px short of the full labels and the whole bar went icon-only.
-    test('1920 px window: every label fits the inner width', () => {
-        expect(stageAt(1268)).toBe(0);
+    // Why: the Bewaren label adds ~60 px at stage 0 (the "?" lost its label, the save button
+    // gained one), so full labels need a ~1975 px window now.
+    test('a wide window: every label fits the inner width', () => {
+        expect(stageAt(1338)).toBe(0);
     });
 
     // Why: the bar's padding is not room the row gets; counting it kept stage 0 at 1920 px
     // while the right group ran over "Automatisch bewaard".
-    test('a window just under 1920 px sheds to icons once the inner width is short', () => {
-        expect(stageAt(1260)).toBe(1);
+    test('a window just under that sheds to icons once the inner width is short', () => {
+        expect(stageAt(1326)).toBe(1);
     });
 
     // Why: the name centres in the space the groups leave, not dead centre of the bar, so
@@ -101,5 +102,28 @@ describe('TopBar shedding', () => {
 
     test('a bar wide enough for everything keeps every label', () => {
         expect(stageAt(2000)).toBe(0);
+    });
+});
+
+describe('TopBar help and save buttons', () => {
+    test('stage 0: "?" is icon-only, Bewaren is labelled and lists the file rows', () => {
+        barWidth = 2000;
+        const { container } = render(<TopBar onPrint={() => {}} onOpenHelp={() => {}} />);
+        const bar = within(container.querySelector('.topbar') as HTMLElement);
+        const help = bar.getByRole('button', { name: 'Uitleg en rondleiding' });
+        expect(help.textContent?.trim()).toBe('');
+        const save = bar.getByRole('button', { name: 'Bewaren' });
+        expect(save.textContent).toContain('Bewaren');
+        fireEvent.click(save);
+        for (const name of [/Bewaar in Mijn bladen/, /^Mijn bladen/, /Open bestand/, /^Bewaar bestand/]) {
+            expect(bar.getByRole('button', { name })).toBeTruthy();
+        }
+        // Escape closes it, like every bar menu.
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(bar.queryByText(/Open bestand/)).toBeNull();
+        // The Menu no longer carries the file rows.
+        fireEvent.click(bar.getByRole('button', { name: /^Menu/ }));
+        expect(bar.queryByText(/Open bestand/)).toBeNull();
+        expect(bar.queryByText('Uitleg')).toBeNull();
     });
 });

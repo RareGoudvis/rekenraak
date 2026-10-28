@@ -56,9 +56,9 @@ export default function EmptySheetHero() {
       </ol>
       <p style={styles.heroTipsTitle}>Goed om te weten</p>
       <ul style={styles.heroTips}>
-        <li>Je blad wordt automatisch bewaard in deze browser. Wil je het meenemen of bijhouden, bewaar het dan als bestand via "Meer".</li>
+        <li>Je blad wordt automatisch bewaard in deze browser. Wil je het meenemen of bijhouden, bewaar het dan als bestand via "Bewaren".</li>
         <li>Een deellink opent bij een collega exact dit blad; een sjabloonlink geeft alleen de instellingen door, zodat elke klas andere getallen krijgt.</li>
-        <li>Geen tijd? Onder "Meer" staan kant-en-klare bladen per leerjaar om van te vertrekken.</li>
+        <li>Geen tijd? Onder "Menu" staan kant-en-klare bladen per leerjaar om van te vertrekken.</li>
         <li>Met "Geen dubbele oefeningen" komt een opgave nergens op het blad twee keer voor.</li>
         <li>De rondleiding en de video vind je terug achter de knop met het vraagteken.</li>
       </ul>

@@ -21,7 +21,8 @@ interface Props {
 
 // 0 = every label + centred sheet name/autosave; 1 = secondary buttons go icon-only
 // (name stays); 2 = name+dot leave the row for a thin line under the bar; 3 = the two
-// least-used buttons (Toevoegen, Uitleg) fold into the Meer menu; 4 = "Genereer alles" folds too.
+// least-used button (Toevoegen) folds into the Menu; 4 = "Genereer alles" folds too; 5 = undo/redo;
+// 6 = the "?" and Bewaren buttons fold into the Menu (at ~820 px the four icons overlapped).
 // Each stage strictly sheds width relative to the last, which is what lets useShedStages' hysteresis work.
 // Oefenmodus/Bordmodus live in the sidebar foot, not here: in the bar they pushed stage 0 past 1920 px.
 // Table + flags: topBarStages.ts.
@@ -179,7 +180,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     };
 
     const [massAddOpen, setMassAddOpen] = useState(false);
-    const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu'>(null);
+    const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu' | 'save'>(null);
     // One confirmation line beside the bar's actions: link copied, sheet saved, file written.
     const [flash, setFlash] = useState<string | null>(null);
     const showFlash = (text: string) => { setFlash(text); window.setTimeout(() => setFlash(null), 2000); };
@@ -195,7 +196,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const contentRef = useRef<HTMLDivElement>(null);
     // Keyed on the committed name, not the edit box: a shed mid-edit would unmount the input.
     const stage = useShedStages(barRef, contentRef, TOPBAR_STAGE_COUNT, headerTitle);
-    const { iconOnly, nameInRow, quickFolded: foldedIntoMenu, generateFolded, historyFolded } = topBarStageFlags(stage);
+    const { iconOnly, nameInRow, quickFolded: foldedIntoMenu, generateFolded, historyFolded, helpSaveFolded } = topBarStageFlags(stage);
 
     // Close any open dropdown on outside click / Escape. A fixed backdrop can't be used here:
     // the `.mac-vibrant` bar has backdrop-filter, which traps position:fixed to the bar instead
@@ -233,7 +234,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
         const st = useWorksheetStore.getState();
         const link = encodeShareLink({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings }, { template: mode === 'template' });
         if (!link) {
-            window.alert('Werkbundel te groot voor een deelbare link. Bewaar het als bestand (Meer → Bewaar bestand).');
+            window.alert('Werkbundel te groot voor een deelbare link. Bewaar het als bestand (Bewaren → Bewaar bestand).');
             return;
         }
         try {
@@ -243,6 +244,32 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             window.prompt('Kopieer deze link:', link);
         }
     };
+
+    // Shared by the Bewaren dropdown and, at stage 6, the Menu (where the button itself has folded).
+    const saveRows = (
+        <>
+            <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); handleSaveToLibrary(); }}>
+                <FloppyDisk size={15} /> {savedPresetId ? 'Bijwerken in Mijn bladen' : 'Bewaar in Mijn bladen…'}
+            </button>
+            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('mijn-bladen'); }}>
+                <FolderOpen size={15} /> Mijn bladen
+            </button>
+
+            <div style={S.menuDivider} />
+            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleOpenFile(); }}>
+                <UploadSimple size={15} /> Open bestand…
+            </button>
+            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(false); }}>
+                <DownloadSimple size={15} />
+                {fileHandle ? <span>Bewaar bestand<br /><span style={S.menuHint}>{fileHandle.name}</span></span> : 'Bewaar bestand'}
+            </button>
+            {hasFilePickers() && (
+                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(true); }}>
+                    <DownloadSimple size={15} /> Bewaar als bestand…
+                </button>
+            )}
+        </>
+    );
 
     return (
         <div ref={barRef} className="mac-vibrant topbar" style={S.bar} data-stage={stage}>
@@ -257,7 +284,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             <div ref={contentRef} style={S.zones}>
               <div style={S.groupLeft}>
                 {/* Toevoegen first: it is the sidebar's twin, so it sits hard against it.
-                    Folds into the Meer menu at stage 3 — see the menu body below. */}
+                    Folds into the Menu at stage 3 — see the menu body below. */}
                 {!foldedIntoMenu && (
                     <IconButton
                         icon={LayoutGrid}
@@ -268,15 +295,15 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     />
                 )}
 
-                {/* One "Meer" menu instead of a ≡ and a ⚙ side by side: two unlabelled
+                {/* One "Menu" instead of a ≡ and a ⚙ side by side: two unlabelled
                     icons that both opened a list of app-level things was a guess the
                     teacher had to make. Everything app-level now lives behind one word.
                     Never folds itself — it's the fold target for stage 3. */}
                 <div style={S.menuWrap}>
                     <IconButton
                         icon={List}
-                        label="Meer: werkbladen, bestand, delen, instellingen"
-                        visibleLabel={iconOnly ? undefined : 'Meer'}
+                        label="Menu: werkbladen, delen, instellingen"
+                        visibleLabel={iconOnly ? undefined : 'Menu'}
                         onClick={() => setMenu(menu === 'menu' ? null : 'menu')}
                         dataTour="menu"
                     />
@@ -289,9 +316,11 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setMassAddOpen(true); }}>
                                             <LayoutGrid size={15} /> Oefeningen toevoegen
                                         </button>
-                                        <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
-                                            <HelpIcon size={15} /> Uitleg
-                                        </button>
+                                        {helpSaveFolded && (
+                                            <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); onOpenHelp?.(); }}>
+                                                <HelpIcon size={15} /> Uitleg en rondleiding
+                                            </button>
+                                        )}
                                         {generateFolded && (
                                             <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); if (hasBlocks) generateAllBlocks(); }}>
                                                 <Sparkles size={15} /> Genereer alles
@@ -310,34 +339,20 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                         <div style={S.menuDivider} />
                                     </>
                                 )}
+                                {helpSaveFolded && (
+                                    <>
+                                        <div style={S.sectionLabel}>Bewaren</div>
+                                        {saveRows}
+                                        <div style={S.menuDivider} />
+                                    </>
+                                )}
                                 <div style={S.sectionLabel}>Werkbladen</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('mijn-bladen'); }}>
-                                    <FolderOpen size={15} /> Mijn bladen
-                                </button>
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('bibliotheek'); }}>
                                     <BookOpen size={15} /> Kant-en-klare bladen
                                 </button>
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setPageDesignsOpen(true); }}>
                                     <LayoutTemplate size={15} /> Pagina-ontwerp sjablonen
                                 </button>
-                                <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); handleSaveToLibrary(); }}>
-                                    <FloppyDisk size={15} /> {savedPresetId ? 'Bijwerken in Mijn bladen' : 'Bewaar in Mijn bladen…'}
-                                </button>
-
-                                <div style={S.menuDivider} />
-                                <div style={S.sectionLabel}>Bestand</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleOpenFile(); }}>
-                                    <UploadSimple size={15} /> Open bestand…
-                                </button>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(false); }}>
-                                    <DownloadSimple size={15} />
-                                    {fileHandle ? <span>Bewaar bestand<br /><span style={S.menuHint}>{fileHandle.name}</span></span> : 'Bewaar bestand'}
-                                </button>
-                                {hasFilePickers() && (
-                                    <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(true); }}>
-                                        <DownloadSimple size={15} /> Bewaar als bestand…
-                                    </button>
-                                )}
 
                                 <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Delen</div>
@@ -391,9 +406,24 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     )}
                 </div>
 
-                {!foldedIntoMenu && (
-                    <IconButton icon={HelpIcon} label="Uitleg en rondleiding" visibleLabel={iconOnly ? undefined : 'Uitleg'} onClick={() => onOpenHelp?.()} />
-                )}
+                {/* Icon-only at every stage: a "?" needs no word, and it never folds. */}
+                {!helpSaveFolded && <IconButton icon={HelpIcon} label="Uitleg en rondleiding" onClick={() => onOpenHelp?.()} />}
+
+                {/* Everything about keeping the sheet (Mijn bladen, files) in one place, next to the "?". */}
+                {!helpSaveFolded && <div style={S.menuWrap}>
+                    <IconButton
+                        icon={FloppyDisk}
+                        label="Bewaren"
+                        visibleLabel={iconOnly ? undefined : 'Bewaren'}
+                        onClick={() => setMenu(menu === 'save' ? null : 'save')}
+                        dataTour="save"
+                    />
+                    {menu === 'save' && (
+                        <div className="ui-menu" style={{ ...S.menu, left: 0, right: 'auto', minWidth: '230px' }} role="menu" aria-label="Bewaren en bestanden">
+                            {saveRows}
+                        </div>
+                    )}
+                </div>}
 
               </div>
 
