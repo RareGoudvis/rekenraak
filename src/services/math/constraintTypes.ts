@@ -244,6 +244,8 @@ export type BreukBewerkConstraints = {
     tablesOnly: boolean;
     allowIrreducible: boolean;
     targetDen: number | '';
+    // Also improper fractions (teller in d+1..2d-1, never d/d) in gelijknamig / vereenvoudigen; off = proper only.
+    allowImproper?: boolean;
 };
 
 export type BreukenRangschikkenConstraints = {
@@ -252,6 +254,8 @@ export type BreukenRangschikkenConstraints = {
     operatorMode: string;
     minDenominator: number;
     maxDenominator: number;
+    // Also improper fractions (teller in d+1..2d-1, never d/d) in gelijknamige / gelijknamig-te-maken; off = proper only.
+    allowImproper?: boolean;
     // 'lijn' = underline blank (default), 'vak' = bordered box — Differentiatie choice.
     answerStyle?: 'lijn' | 'vak';
 };

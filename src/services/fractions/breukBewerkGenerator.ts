@@ -5,6 +5,13 @@ import type { BreukBewerkConstraints } from '../math/constraintTypes';
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min;
 const rndId = () => Math.random().toString(36).substring(2, 9);
 const lcm = (a: number, b: number): number => (a * b) / gcd(a, b);
+// A teller for noemer d: proper 1..d-1, or (improper on, half the draws) d+1..min(2d-1, cap) — never d/d.
+// Off draws exactly as before (one randInt), so seeded sheets stay byte-identical.
+function drawNumerator(d: number, improper: boolean, cap = Infinity): number {
+    const hi = Math.min(2 * d - 1, cap);
+    if (improper && hi > d && Math.random() < 0.5) return randInt(d + 1, hi);
+    return randInt(1, Math.max(1, Math.min(d - 1, cap)));
+}
 
 // gemengd: improper↔mixed. direction set per item ('beide' randomises).
 // maxNumerator/maxDenominator cap the improper fraction (getalopbouw widget).
@@ -38,7 +45,7 @@ function divisorsInRange(target: number, lo: number, hi: number): number[] {
 
 // gelijknamig: two fractions with different denominators → a common denominator.
 // targetDen (when it has ≥2 divisors in range) fixes the common denominator; else the LCM.
-function makeGelijknamig(minD: number, maxD: number, targetDen: number | null): BreukBewerkExercise {
+function makeGelijknamig(minD: number, maxD: number, targetDen: number | null, improper: boolean): BreukBewerkExercise {
     // Two different denominators need a range of ≥2 values: when min ≥ max pull lo down
     // so the cap holds (tot 20 → 19 & 20); only maxD = 2 has no room and must reach 3.
     const hi = Math.max(maxD, 2) < 3 ? 3 : Math.max(2, maxD);
@@ -57,19 +64,19 @@ function makeGelijknamig(minD: number, maxD: number, targetDen: number | null): 
         do { d2 = randInt(lo, hi); } while (d1 === d2 && guard++ < 40);
         L = lcm(d1, d2);
     }
-    const n1 = randInt(1, d1 - 1);
-    const n2 = randInt(1, d2 - 1);
+    const n1 = drawNumerator(d1, improper);
+    const n2 = drawNumerator(d2, improper);
     const inputs: Fraction[] = [{ n: n1, d: d1 }, { n: n2, d: d2 }];
     const answers: Fraction[] = [{ n: n1 * (L / d1), d: L }, { n: n2 * (L / d2), d: L }];
     return { id: rndId(), subType: 'gelijknamig', inputs, answers, isManuallyEdited: false };
 }
 
-// A coprime proper fraction with denominator ≤ maxDen, numerator ≤ maxNum.
-function coprimeBase(maxNum: number, maxDen: number): Fraction {
+// A coprime fraction with denominator ≤ maxDen, numerator ≤ maxNum; proper unless improper is on.
+function coprimeBase(maxNum: number, maxDen: number, improper: boolean): Fraction {
     let guard = 0;
     while (guard++ < 60) {
         const d = randInt(2, Math.max(2, maxDen));
-        const n = randInt(1, Math.max(1, Math.min(d - 1, maxNum)));
+        const n = drawNumerator(d, improper, maxNum);
         const s = simplifyFraction(n, d);
         if (s.n === n && s.d === d) return s;   // already coprime
     }
@@ -81,23 +88,23 @@ const canReduce = (maxNum: number, maxDen: number) => maxNum >= 2 && maxDen >= 4
 // vereenvoudigen: a reducible fraction → its lowest-terms form. tablesOnly keeps the
 // base denominator and the scale factor within the times tables (≤10). allowIrreducible
 // occasionally emits an already-coprime fraction (answer = input) so pupils must judge.
-function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean, allowIrreducible: boolean): BreukBewerkExercise {
+function makeVereenvoudigen(maxNum: number, maxDen: number, tablesOnly: boolean, allowIrreducible: boolean, improper: boolean): BreukBewerkExercise {
     if (allowIrreducible && Math.random() < 0.3) {
-        const f = coprimeBase(maxNum, maxDen);
+        const f = coprimeBase(maxNum, maxDen, improper);
         return { id: rndId(), subType: 'vereenvoudigen', inputs: [f], answers: [f], isManuallyEdited: false };
     }
 
     // A reducible proper fraction needs at least 2/4: under tighter caps the closest valid
     // output is an irreducible fraction within the caps (see noteFor).
     if (!canReduce(maxNum, maxDen)) {
-        const f = coprimeBase(maxNum, tablesOnly ? Math.min(10, maxDen) : maxDen);
+        const f = coprimeBase(maxNum, tablesOnly ? Math.min(10, maxDen) : maxDen, improper);
         return { id: rndId(), subType: 'vereenvoudigen', inputs: [f], answers: [f], isManuallyEdited: false };
     }
 
     let guard = 0;
     while (guard++ < 80) {
         const baseDenCap = tablesOnly ? Math.min(10, maxDen) : maxDen;
-        const base = coprimeBase(maxNum, baseDenCap);
+        const base = coprimeBase(maxNum, baseDenCap, improper);
         const kCap = Math.min(
             Math.floor(maxNum / base.n),
             Math.floor(maxDen / base.d),
@@ -146,11 +153,12 @@ export function generateBreukBewerkExercises(block: MathBlock): BreukBewerkExerc
     const tablesOnly: boolean = c.tablesOnly ?? true;
     const allowIrreducible: boolean = c.allowIrreducible ?? false;
     const targetDen: number | null = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
+    const improper: boolean = c.allowImproper === true;
     const n = block.numberOfExercises;
 
     return Array.from({ length: n }, () => {
-        if (subType === 'gelijknamig') return makeGelijknamig(minD, maxD, targetDen);
-        if (subType === 'vereenvoudigen') return makeVereenvoudigen(maxN, maxD, tablesOnly, allowIrreducible);
+        if (subType === 'gelijknamig') return makeGelijknamig(minD, maxD, targetDen, improper);
+        if (subType === 'vereenvoudigen') return makeVereenvoudigen(maxN, maxD, tablesOnly, allowIrreducible, improper);
         return makeGemengd(maxN, maxD, dirMode);
     });
 }

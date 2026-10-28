@@ -934,6 +934,8 @@ const reduce = (f: Fraction): Fraction => {
 // (the fraction part simplified or not), naar-breuk an improper fraction (idem),
 // vereenvoudigen the lowest terms, gelijknamig the two fractions over the common noemer.
 function bewerkSpellings(ex: BreukBewerkExercise, f: Fraction): string[] {
+    // A whole lowest-terms value (6/3 → 2) reads as the integer; "2/1" is the same lowest form.
+    if (ex.subType === 'vereenvoudigen' && !f.whole && f.n % f.d === 0) return [String(f.n / f.d), fracText(f)];
     if (ex.subType === 'gelijknamig' || ex.subType === 'vereenvoudigen') return [fracText(f)];
     const whole = (f.whole ?? 0) + Math.floor(f.n / f.d);
     const n = f.n % f.d;
