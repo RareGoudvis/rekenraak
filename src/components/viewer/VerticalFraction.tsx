@@ -29,7 +29,7 @@ export default function VerticalFraction({ value, color, fontSize = 15, mono = f
         <div style={{ display: 'inline-flex', alignItems: 'center', fontFamily, ...(color ? { color } : {}) }}>
             {hasWhole && <span style={{ fontSize: wholeFontSize, marginRight: '4px', ...(color ? { color } : {}) }}>{formatMathNumber(value.whole)}</span>}
             <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: digitFontSize, lineHeight: 1.1 }}>
-                <span style={{ borderBottom: `1.5px solid ${color || '#000'}`, minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.n)}</span>
+                <span style={{ borderBottom: `1.5px solid ${color || 'currentColor'}`, minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.n)}</span>
                 <span style={{ minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.d)}</span>
             </div>
         </div>

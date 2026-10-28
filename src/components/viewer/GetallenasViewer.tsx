@@ -27,7 +27,7 @@ function label(v: number | Fraction, fontSize: number, scale: number, color?: st
     // Fraction glyphs get cramped sooner than plain digits, so they cap at the middle
     // shrink step (13px at the 13pt default) rather than following the top step.
     if (isFrac(v)) return <VerticalFraction value={v} color={color} fontSize={Math.min(13 * scale, fontSize)} mono />;
-    return <span style={{ fontSize: `${fontSize}px`, fontWeight: 'normal', color: color || '#000', fontFamily: mono, whiteSpace: 'nowrap' }}>{formatMathNumber(v)}</span>;
+    return <span style={{ fontSize: `${fontSize}px`, fontWeight: 'normal', color: color || 'inherit', fontFamily: mono, whiteSpace: 'nowrap' }}>{formatMathNumber(v)}</span>;
 }
 
 function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutions: boolean }) {

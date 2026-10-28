@@ -161,7 +161,7 @@ function computeExPerRow(exercises: CijferExercise[], c: CijferConstraints, CELL
 // attrs: kiosk-only data attributes (a struck top digit after Lenen); empty on the sheet.
 interface DCProps { col: number; row: number; char: string; CELL: number; rowH?: number; color?: string; small?: boolean; attrs?: Record<string, string>; }
 
-function DC({ col, row, char, CELL, rowH, color = '#000', small = false, attrs }: DCProps) {
+function DC({ col, row, char, CELL, rowH, color = 'inherit', small = false, attrs }: DCProps) {
     const H = rowH ?? CELL;
     return (
         <div {...attrs} style={{
@@ -580,7 +580,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                                 value={editValues[i] ?? ''}
                                 onChange={e => setEditValues(prev => { const next = [...prev]; next[i] = e.target.value; return next; })}
                                 onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') setEditing(false); }}
-                                style={{ width: 70, fontSize: 11, fontFamily: 'var(--font-sheet-math)', textAlign: 'right', border: '1px solid #4a90d9', borderRadius: 3, padding: '1px 4px' }}
+                                style={{ width: 70, fontSize: 11, fontFamily: 'var(--font-sheet-math)', textAlign: 'right', border: '1px solid #4a90d9', borderRadius: 3, padding: '1px 4px', color: 'inherit' }}
                             />
                         </React.Fragment>
                     ))}

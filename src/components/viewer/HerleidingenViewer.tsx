@@ -35,7 +35,7 @@ function EditableNumber({ value, onCommit }: { value: number; onCommit: (v: numb
                 onChange={e => setText(e.target.value)}
                 onBlur={() => { const n = Number(text.replace(',', '.')); if (!isNaN(n)) onCommit(n); setEditing(false); }}
                 onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
-                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', border: '1px solid var(--accent)', borderRadius: '4px', padding: '0 4px' }} />
+                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 0.92)', border: '1px solid var(--accent)', borderRadius: '4px', padding: '0 4px', color: 'inherit' }} />
         );
     }
     return <span onClick={e => { e.stopPropagation(); setText(String(value)); setEditing(true); }} style={{ cursor: 'text', whiteSpace: 'nowrap' }} title="Klik om aan te passen">{formatMathNumber(value)}</span>;

@@ -35,7 +35,7 @@ export default function LayoutBlockViewer({ block }: Props) {
                 {title && (
                     <div style={{
                         fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-text) * 0.7)', fontWeight: 700,
-                        color: '#000', marginTop: rule === 'geen' ? 0 : '6px',
+                        color: 'inherit', marginTop: rule === 'geen' ? 0 : '6px',
                     }}>{title}</div>
                 )}
             </div>
@@ -95,7 +95,7 @@ export default function LayoutBlockViewer({ block }: Props) {
                 border: emphasis === 'geen' ? 'none' : '2px solid #000',
                 borderRadius: emphasis === 'rond' ? '10px' : 0,
                 background: emphasis === 'grijs' ? '#f2f2f2' : 'transparent',
-                fontFamily: 'var(--font-sheet-math)', color: '#000',
+                fontFamily: 'var(--font-sheet-math)', color: 'inherit',
             }}>
                 {/* Title at the opdracht-titel size, body near the digit size — the old 0.65/0.6
                     caption-sized factors read too small next to the sheet's other text. */}

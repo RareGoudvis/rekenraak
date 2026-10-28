@@ -61,7 +61,7 @@ function TekenenCell({ ex, block, showSolutions, laid }: { ex: GeldExercise; blo
 
     return (
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '8px', boxSizing: 'border-box' }}>
-            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'var(--font-sheet-math)', textAlign: 'center', color: '#000' }}>
+            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1)', fontFamily: 'var(--font-sheet-math)', textAlign: 'center', color: 'inherit' }}>
                 {amountText}
             </div>
             {drawingBox}

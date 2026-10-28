@@ -59,7 +59,7 @@ function EditableValue({ value, onCommit, dp }: { value: number | Fraction; onCo
                 onChange={(e) => setText(e.target.value)}
                 onBlur={() => { const p = parseValue(text); if (p !== null) onCommit(p); setEditing(false); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditing(false); }}
-                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)', fontWeight: 'normal', border: '1px solid var(--accent-purple, #ac29e9)', borderRadius: '4px', padding: '1px 4px' }}
+                style={{ width: '70px', fontFamily: mono, fontSize: 'calc(var(--sheet-size-math) * 1)', fontWeight: 'normal', border: '1px solid var(--accent-purple, #ac29e9)', borderRadius: '4px', padding: '1px 4px', color: 'inherit' }}
             />
         );
     }

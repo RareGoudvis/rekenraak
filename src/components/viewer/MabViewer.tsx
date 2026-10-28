@@ -248,7 +248,7 @@ function MabItem({ ex, style, cols, scaffolding, boxHeight, answerHeight, figure
                 boxSizing: 'border-box',
             }}>
                 {showNumberOnLine
-                    ? <span style={{ ...(showSolutions && mode === 'herkennen' ? solutionText : { color: '#000' }), fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{fmt(ex.value)}</span>
+                    ? <span style={{ ...(showSolutions && mode === 'herkennen' ? solutionText : { color: 'inherit' }), fontSize: 'calc(var(--sheet-size-math) * 0.92)' }}>{fmt(ex.value)}</span>
                     : <div style={{ width: '70%', borderBottom: '1.5px solid #000' }} />
                 }
             </div>}
