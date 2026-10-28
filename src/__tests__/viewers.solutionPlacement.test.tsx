@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, test, expect, afterEach } from 'vitest';
+import { mulberry32 } from './helpers/limitHarness';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
 import { EXERCISE_UI } from '../config/exerciseUI';
 import { REGISTRY } from '../config/exerciseRegistry';
@@ -31,6 +32,11 @@ describe('klok keys sit in the pupil\'s writing slot', () => {
 });
 
 describe('geld-teruggeven key', () => {
+    // Seeded: when the paid amount is the next whole euro the diagram draws one arc and only two
+    // amounts, so an unseeded draw flipped this test (BUGS 2026-10-28).
+    const realRandom = Math.random;
+    beforeEach(() => { Math.random = mulberry32(1); });
+    afterEach(() => { Math.random = realRandom; });
     test('only the answers are red: the given price and paid amount stay black', () => {
         const c = draw('geld-teruggeven', true, (block) => {
             (block.constraints as Record<string, unknown>).scaffolding = 'ingevuld';
