@@ -22,6 +22,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Generators
 
+- Flaky test `viewers.solutionPlacement.test.tsx` "geld-teruggeven key" (unseeded generator): failed once in the pre-commit run (`given.length` 2, want 3), 5 reruns green. Fix direction: seed Math.random in the test. 2026-10-28 WP B3.
 - Rational × / : (`mathEngine.ts` natural_fraction / decimal_fraction, ~705 and ~1013): the breuk operand `n2/d2` is drawn unreduced and can be a whole number ("6/6 : 80,183", "9/3 : 72,859" seen on the kiosk card 2026-10-13, WP-B).
 
 

@@ -23,12 +23,15 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
         operatorMode = 'oplopend',
         minDenominator = 2,
         maxDenominator = 10,
+        allowImproper = false,
     } = c;
 
     const set = (key: string, value: unknown) =>
         patch({ [key]: value } as Partial<BreukenRangschikkenConstraints>);
 
     const showDenoms = fractionMode !== 'speciale';
+    // Stambreuken are 1/n by definition and speciale is a fixed pool: only the free-teller modes take improper ones.
+    const showImproper = fractionMode === 'gelijknamige' || fractionMode === 'gelijknamig-te-maken';
 
     return (
         <div style={styles.container}>
@@ -56,6 +59,15 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
                     onChange={(e) => set('count', Number(e.target.value))}
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
             </div>
+
+            {showImproper && (
+                <div style={styles.section}>
+                    <div style={styles.onOffRow}>
+                        <span style={styles.onOffLabel}>Ook onechte breuken</span>
+                        <button onClick={() => set('allowImproper', !allowImproper)} aria-pressed={!!allowImproper} style={styles.onOffBtn(allowImproper)}>{allowImproper ? 'Aan' : 'Uit'}</button>
+                    </div>
+                </div>
+            )}
 
             {showDenoms && (
                 <div style={styles.section}>

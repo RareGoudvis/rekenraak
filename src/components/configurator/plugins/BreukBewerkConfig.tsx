@@ -20,6 +20,7 @@ export default function BreukBewerkConfig({ block }: Props) {
         tablesOnly = true,
         allowIrreducible = false,
         targetDen = '',
+        allowImproper = false,
     } = c;
 
     const set = (key: string, value: unknown) =>
@@ -29,6 +30,16 @@ export default function BreukBewerkConfig({ block }: Props) {
 
     return (
         <div style={styles.container}>
+            {/* GELIJKNAMIG + VEREENVOUDIGEN — improper tellers (gemengd is improper already) */}
+            {(subType === 'gelijknamig' || subType === 'vereenvoudigen') && (
+                <div style={styles.section}>
+                    <div style={styles.onOffRow}>
+                        <span style={styles.onOffLabel}>Ook onechte breuken</span>
+                        <button onClick={() => set('allowImproper', !allowImproper)} aria-pressed={!!allowImproper} style={styles.onOffBtn(allowImproper)}>{allowImproper ? 'Aan' : 'Uit'}</button>
+                    </div>
+                </div>
+            )}
+
             {/* GEMENGD — conversion direction */}
             {subType === 'gemengd' && (
                 <div style={styles.section}>
