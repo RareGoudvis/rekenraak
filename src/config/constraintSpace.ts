@@ -171,6 +171,7 @@ const fractionSpace: OptionSpace = {
     maxLineLength: [8, 12, 20],
     staticSize: [false, true],
     showGrid: [true, false],
+    allowImproper: [false, true],
 };
 
 // SplitsenConfig — 'splitsen' = decomposing a number into parts (7 → 3 + 4).
