@@ -6,7 +6,7 @@
 // Usage:
 //   node scripts/oefen-smoke.mjs --out C:/Users/ruben/Downloads/oefen-check/smoke
 //   node scripts/oefen-smoke.mjs --url http://localhost:5478/   # use a server you already run instead
-//   options: --only number,drag (kinds)  --viewports 1280x800,1024x768  --seed 1234  --headed
+//   options: --only number,drag (kinds)  --viewports 1280x800,1024x768  --seed 1234  --seed-onecht 4  --headed
 //
 // Per case: the link is made the way the builder makes it (listOefenLeaves → buildSessie, one
 // row, limit 1 → encodeSessie), opened in a fresh context with Math.random seeded, Start, then
@@ -36,6 +36,8 @@ const SEED = Number(arg('seed', 1234));
 const VIEWPORTS = arg('viewports', '1280x800,1024x768').split(',').map(v => v.split('x').map(Number));
 const ONLY = arg('only', '').split(',').filter(Boolean);
 const HEADED = argv.includes('--headed');
+// The onechte cases need an onechte first draw: their own seed (kept when --seed changes the rest).
+const SEED_ONECHT = Number(arg('seed-onecht', 4));
 
 // One leaf per input kind; `over` = settings the teacher would pick in the builder row; `id`
 // names a second case on the same leaf; `header` = what the card's instruction must read.
@@ -50,11 +52,14 @@ const CASES = [
     { kind: 'choice', id: 'herleidingen-lengte-eenheid', leafId: 'herleidingen-lengte', over: { vraag: 'eenheid', formats: ['enkel-getal'] }, header: /^Welke eenheid\?$/ },
     // Breuken herkennen: a stacked breuk, the keypad types the noemer, Verder, then the teller.
     { kind: 'fraction', leafId: 'breuken-herkennen', over: {}, header: /^Welk deel is gekleurd\? Typ de breuk zoals je ze ziet\.$/ },
-    { kind: 'fraction', id: 'breuken-herkennen-onecht', leafId: 'breuken-herkennen', over: { allowImproper: true } },
+    // Onechte breuken: a geheel field first; answered as the gemengd getal (seed 4 draws an onechte breuk).
+    { kind: 'fraction', id: 'breuken-herkennen-onecht', leafId: 'breuken-herkennen', over: { allowImproper: true }, mixed: true, seed: SEED_ONECHT },
     // Klok lezen: a new row answers in words (chip + hour + minutes or kwart); als uu:mm is the row's other pick.
     { kind: 'time-words', leafId: 'klok-analoog-lezen', over: {}, header: /^Lees de klok en zeg hoe laat het is\.$/ },
     { kind: 'time-words', id: 'klok-analoog-lezen-nauwkeurig', leafId: 'klok-analoog-lezen', over: { timeTypes: ['nauwkeurig_5'] } },
     { kind: 'time', id: 'klok-analoog-lezen-uumm', leafId: 'klok-analoog-lezen', over: { klokAnswer: 'digitaal' }, header: /^Lees de klok en typ de tijd \(uu:mm\)\.$/ },
+    // Vereenvoudigen with onechte breuken, typed as gemengd getal with the space key (2 1/2 for 10/4).
+    { kind: 'number', id: 'breuken-vereenvoudigen-onecht', leafId: 'breuken-vereenvoudigen', over: { allowImproper: true }, mixed: true, seed: SEED_ONECHT },
     { kind: 'choice', leafId: 'vergelijken-getallen', over: {} },
     { kind: 'tap', leafId: 'vergelijken-kiezen', over: {} },
     { kind: 'tap-multi', leafId: 'even-oneven-rooster', over: {} },
@@ -208,7 +213,7 @@ async function dragTo(page, key, want) {
     throw new Error(`no drag along the handle reaches ${want} (last ${await value()})`);
 }
 
-async function enter(page, card) {
+async function enter(page, card, c) {
     const check = page.locator('.kiosk-key-check, .kiosk-check-wide').first();
     if (card.input === 'choice') {
         const right = card.accepted.find(a => card.choices.includes(a));
@@ -223,12 +228,22 @@ async function enter(page, card) {
             await pressKeys(page, card.input === 'time' ? values[i] : typeableSpelling([values[i]], card.keys));
         }
     } else if (card.input === 'fraction') {
-        // The keypad starts in the noemer; its wide key reads Verder until the teller is reached.
-        const [teller, noemer] = card.accepted[0].split('/');
-        await pressKeys(page, noemer);
+        // The keypad starts in the noemer (onecht: in the geheel); its wide key reads Verder until the teller is reached.
+        const spelling = (c.mixed && card.accepted.find(a => a.includes(' '))) || card.accepted[0];
+        if (c.mixed && !spelling.includes(' ')) throw new Error(`no gemengd getal among [${card.accepted}]`);
+        const [whole, frac] = spelling.includes(' ') ? spelling.split(' ') : ['', spelling];
+        const [teller, noemer] = frac.split('/');
         const verder = page.locator('.kiosk-key-check');
-        if ((await verder.innerText()).trim() !== 'Verder') throw new Error('no Verder key after the noemer');
-        await verder.click();
+        const next = async (after) => {
+            if ((await verder.innerText()).trim() !== 'Verder') throw new Error(`no Verder key after the ${after}`);
+            await verder.click();
+        };
+        if (await page.locator('.kiosk-fraction-mixed input[aria-label="geheel"]').count()) {
+            await pressKeys(page, whole);
+            await next('geheel');
+        } else if (whole) throw new Error('a gemengd getal but no geheel field');
+        await pressKeys(page, noemer);
+        await next('noemer');
         await pressKeys(page, teller);
     } else if (card.input === 'time-words') {
         // [uur, minuten, woord]: the chip, then in spoken order the minutes (keypad or kwart, Verder after one digit), the hour.
@@ -270,7 +285,10 @@ async function enter(page, card) {
         } else throw new Error(`no recipe for ${card.interact}`);
     } else {
         await page.locator('.kiosk-fields input').first().click();
-        await pressKeys(page, typeableSpelling(card.accepted, card.keys));
+        // mixed: the gemengd getal spelling (2 1/2) where the case asks for it.
+        const mixed = c.mixed ? card.accepted.filter(a => a.includes(' ')) : [];
+        if (c.mixed && !mixed.length) throw new Error(`no gemengd getal among [${card.accepted}]`);
+        await pressKeys(page, typeableSpelling(c.mixed ? mixed : card.accepted, card.keys));
     }
     if (await check.isDisabled()) throw new Error('Controleer stays disabled after the answer');
     return check;
@@ -291,7 +309,7 @@ async function runCase(c, link, [w, h]) {
             t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
             return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         };
-    }, SEED);
+    }, c.seed ?? SEED);
     const page = await context.newPage();
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     page.on('pageerror', e => errors.push(String(e)));
@@ -313,7 +331,7 @@ async function runCase(c, link, [w, h]) {
         if (kind !== c.kind) throw new Error(`expected input kind ${c.kind}, the card asks ${kind}`);
         const header = (await page.locator('.kiosk-instruction').innerText()).trim();
         if (c.header && !c.header.test(header)) throw new Error(`header "${header}" does not match ${c.header}`);
-        const check = await enter(page, card);
+        const check = await enter(page, card, c);
         rows.push(await shot(0, page.locator('.oefen-app')));
         await check.click();
         const verdict = (await page.locator('.kiosk-feedback-text').innerText()).trim();
