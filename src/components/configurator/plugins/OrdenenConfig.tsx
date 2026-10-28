@@ -7,6 +7,8 @@ import PopupSelect from '../../ui/PopupSelect';
 import { presetLabel } from '../../../config/numberRanges';
 import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
+import { ordenenMixedMode } from '../../../services/ordenen/ordenenGenerator';
 import type { OrdenenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -18,8 +20,6 @@ const OPERATORS = [
     { val: 'aflopend', label: 'Aflopend (>)' },
     { val: 'beide', label: 'Beide' },
 ];
-
-const numInput: React.CSSProperties = { width: '70px', padding: '6px 8px', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-main)', fontSize: '13px' };
 
 export default function OrdenenConfig({ block }: Props) {
     const [c, patch] = useConstraints<OrdenenConstraints>(block);
@@ -35,8 +35,8 @@ export default function OrdenenConfig({ block }: Props) {
         minDenominator = 2,
         maxDenominator = 10,
         unitFractionsOnly = false,
-        allowMixed = false,
     } = c;
+    const mixedMode = ordenenMixedMode(c);
 
     const set = (key: string, value: unknown) =>
         patch({ [key]: value } as Partial<OrdenenConstraints>);
@@ -126,24 +126,19 @@ export default function OrdenenConfig({ block }: Props) {
                 </div>
             )}
 
-            {/* RATIONALE GETALLEN — denominator range + stambreuk / gemengd */}
+            {/* RATIONALE GETALLEN — the shared Breuken block */}
             {numberType === 'rational' && (
                 <div style={styles.section}>
-                    <SettingLabel text="Specifieke getalopbouw:" info="Stel het bereik van de noemers en het soort breuken in." />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Noemer van</span>
-                        <input type="number" min={2} max={20} value={minDenominator} onChange={(e) => set('minDenominator', Math.max(2, Number(e.target.value)))} style={numInput} />
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>tot</span>
-                        <input type="number" min={2} max={20} value={maxDenominator} onChange={(e) => set('maxDenominator', Math.max(2, Number(e.target.value)))} style={numInput} />
-                    </div>
-                    <div style={{ ...styles.onOffRow, marginTop: '8px' }}>
-                        <span style={styles.onOffLabel}>Enkel stambreuken (teller = 1)</span>
-                        <button onClick={() => set('unitFractionsOnly', !unitFractionsOnly)} aria-pressed={!!unitFractionsOnly} style={styles.onOffBtn(unitFractionsOnly)}>{unitFractionsOnly ? 'Aan' : 'Uit'}</button>
-                    </div>
-                    <div style={styles.onOffRow}>
-                        <span style={styles.onOffLabel}>Gemengde getallen (bv. 1 1/4)</span>
-                        <button onClick={() => set('allowMixed', !allowMixed)} aria-pressed={!!allowMixed} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
-                    </div>
+                    <BreukenSettings
+                        noemer={{ shape: 'range', min: minDenominator, max: maxDenominator, onChange: (min, max) => patch({ minDenominator: min, maxDenominator: max }) }}
+                        // A teller-1 breuk can be drawn either way, so Stambreuken stays lit; Echte off = only stambreuken.
+                        kinds={[
+                            { kind: 'stam', on: true, locked: true },
+                            { kind: 'echt', on: !unitFractionsOnly, onToggle: (v) => set('unitFractionsOnly', !v) },
+                        ]}
+                        kindsHint="Zet Echte breuken uit voor enkel stambreuken (teller = 1)."
+                        mixed={{ value: mixedMode, onChange: (m) => patch({ mixedMode: m, allowMixed: m === 'all' }) }}
+                    />
                 </div>
             )}
         </div>

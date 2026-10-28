@@ -18,9 +18,17 @@ interface OrdConstraints {
     maxDenominator?: number;
     unitFractionsOnly?: boolean;       // 'stambreuken' — numerator fixed to 1
     allowMixed?: boolean;              // 'gemengde getallen' — add a whole part
+    mixedMode?: OrdenenMixedMode;
 }
 
-function genValue(numberType: string, c: OrdConstraints): number | Fraction {
+export type OrdenenMixedMode = 'none' | 'some' | 'all';
+
+// A sheet saved before the tri-state only has allowMixed: true read as "alleen", false as "geen".
+export const ordenenMixedMode = (c: { mixedMode?: OrdenenMixedMode; allowMixed?: boolean }): OrdenenMixedMode =>
+    c.mixedMode ?? (c.allowMixed ? 'all' : 'none');
+
+// slot = the value's place in its set: under 'some' the first is gemengd and the second plain, so a set always mixes both.
+function genValue(numberType: string, c: OrdConstraints, slot = 0): number | Fraction {
     const maxGetal = c.maxGetal ?? 100;
     // SYNC: blockLayout.ts ordenenMaxChars. The max itself is never drawn (owner call 1, 2026-10-09):
     // "1 000,00" at max 1 000 came up ~1 in 100 000 yet forced the decimal default to one per row.
@@ -42,7 +50,10 @@ function genValue(numberType: string, c: OrdConstraints): number | Fraction {
         const d = randInt(minD, maxD);
         const n = c.unitFractionsOnly ? 1 : randInt(1, Math.max(1, d - 1));   // proper fraction part
         const f: Fraction = { n, d };
-        if (c.allowMixed) f.whole = randInt(1, 5);
+        const mixed = ordenenMixedMode(c);
+        // 'none' and 'all' make the same random calls as before the tri-state, so old sheets regenerate alike.
+        const whole = mixed === 'all' || (mixed === 'some' && (slot === 0 || (slot > 1 && Math.random() < 0.5)));
+        if (whole) f.whole = randInt(1, 5);
         return f;
     }
     return randInt(0, maxGetal - 1); // natural
@@ -65,7 +76,7 @@ export function generateOrdenenExercisesNoted(block: MathBlock): { items: Ordene
 
     const oc: OrdConstraints = {
         maxGetal, minGetal: c.minGetal, decimalPlaces, minDenominator: c.minDenominator,
-        maxDenominator: c.maxDenominator, unitFractionsOnly: c.unitFractionsOnly, allowMixed: c.allowMixed,
+        maxDenominator: c.maxDenominator, unitFractionsOnly: c.unitFractionsOnly, allowMixed: c.allowMixed, mixedMode: c.mixedMode,
     };
 
     const n = block.numberOfExercises;
@@ -81,7 +92,7 @@ export function generateOrdenenExercisesNoted(block: MathBlock): { items: Ordene
         while (values.length < count && attempts < 4000) {
             attempts++;
             if (maskOn && attempts > 2000) { maskOn = false; relaxed++; }
-            const v = genValue(numberType, oc);
+            const v = genValue(numberType, oc, values.length);
             if (maskOn && typeof v === 'number' && !numberMatchesMask(v, numberMask, maxGetal, numberType as 'natural' | 'decimal', decimalPlaces)) continue;
             const key = val(v);
             if (seen.has(key)) continue;

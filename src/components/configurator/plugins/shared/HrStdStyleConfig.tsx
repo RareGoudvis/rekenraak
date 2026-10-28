@@ -5,37 +5,14 @@ import ItemNumberingRow from './ItemNumberingRow';
 import type { MathBlock } from '../../../../services/math/types';
 import type { AddSubConstraints } from '../../../../services/math/constraintTypes';
 
-/**
- * The Differentiatie rows shared by the four hoofdrekenen leaves (optellen, aftrekken,
- * vermenigvuldigen, delen). One file rather than four copies: the rows are identical and
- * only the fraction-difficulty block is +/−-only, which is what the two exported variants
- * below select. Mounted by Inspector through EXERCISE_UI[typeId].StyleConfig.
- */
-function HrStdStyleConfig({ block, withFractionDifficulty }: { block: MathBlock; withFractionDifficulty: boolean }) {
+// The Differentiatie rows shared by the four hoofdrekenen leaves, mounted through
+// EXERCISE_UI[typeId].StyleConfig. The + − breuk difficulty (gelijknamig / ongelijknamig) is
+// content, so it moved to the Oefeningen tab's Breuken block (addition/RationalSettings).
+function HrStdStyleConfig({ block }: { block: MathBlock }) {
     const [c, patch] = useConstraints<AddSubConstraints>(block);
     const updateBlockLayout = useWorksheetStore((s) => s.updateBlockLayout);
     return (
         <>
-            {/* ── Moeilijkheidsgraad (rational optellen/aftrekken) ── */}
-            {withFractionDifficulty && c.numberType === 'rational' && (
-                <>
-                    <label style={{ ...F.label, marginTop: '12px' }}>Moeilijkheidsgraad</label>
-                    <div style={F.optionCol}>
-                        {([
-                            { val: 'same',       label: 'Gelijknamige breuken' },
-                            { val: 'one_step',   label: 'Ongelijknamige breuken (eenvoudig)' },
-                            { val: 'multi_step', label: 'Ongelijknamige breuken (moeilijk)' },
-                        ] as const).map(({ val, label }) => (
-                            <button key={val}
-                                onClick={() => patch({ fractionDifficulty: val })}
-                                aria-pressed={(c.fractionDifficulty ?? 'same') === val} style={{ ...F.radioBtn((c.fractionDifficulty ?? 'same') === val), justifyContent: 'flex-start', textAlign: 'left' }}>
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                </>
-            )}
-
             {/* ── Compenseren-preset: tussenstap aan/uit ── */}
             {c.preset === 'compenseren' && (
                 <>
@@ -85,12 +62,10 @@ function HrStdStyleConfig({ block, withFractionDifficulty }: { block: MathBlock;
     );
 }
 
-/** optellen + aftrekken: fractions can be un-like, so they get the difficulty row. */
 export function AddSubStyleConfig({ block }: { block: MathBlock }) {
-    return <HrStdStyleConfig block={block} withFractionDifficulty />;
+    return <HrStdStyleConfig block={block} />;
 }
 
-/** vermenigvuldigen + delen: same rows minus the fraction-difficulty choice. */
 export function MulDivStyleConfig({ block }: { block: MathBlock }) {
-    return <HrStdStyleConfig block={block} withFractionDifficulty={false} />;
+    return <HrStdStyleConfig block={block} />;
 }

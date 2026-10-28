@@ -353,7 +353,10 @@ export type OrdenenConstraints = {
     maxGetal: number;
     decimalPlaces: number;
     unitFractionsOnly: boolean;
+    // true = every breuk is a gemengd getal (the old toggle); read only when mixedMode is absent.
     allowMixed: boolean;
+    // Gemengde getallen: 'none' geen · 'some' ook (mixed with plain breuken in one set) · 'all' alleen.
+    mixedMode?: 'none' | 'some' | 'all';
     minGetal?: number;
     numberMask?: PlaceMask;
     minDenominator?: number;

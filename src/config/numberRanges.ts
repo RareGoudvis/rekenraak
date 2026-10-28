@@ -107,6 +107,12 @@ export const AXIS_FALLBACK_STEPS = {
     decimal: [0.001, 0.01, 0.1, 0.5, 1] as readonly number[],
 } as const;
 
+// One noemer list for every breuk panel (owner call 2026-10-28): 2..20. A leaf whose figure
+// cannot hold more parts passes a lower ceiling (lijnstuk 8, hoeveelheid / veelhoek 10, kleuren 16).
+export const NOEMER_CEILING = 20;
+export const noemerOptions = (ceiling: number = NOEMER_CEILING): number[] =>
+    Array.from({ length: Math.max(0, ceiling - 1) }, (_, i) => i + 2);
+
 // maxEnkel is a free slider (step 10), not a list; the matrix samples min / default / max.
 export const HERLEIDINGEN_ENKEL = { min: 10, max: 1_000, step: 10 } as const;
 

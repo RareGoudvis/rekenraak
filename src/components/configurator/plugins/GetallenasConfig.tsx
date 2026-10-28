@@ -7,6 +7,7 @@ import PopupSelect from '../../ui/PopupSelect';
 import { presetLabel } from '../../../config/numberRanges';
 import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
 import type { GetallenasConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -67,17 +68,13 @@ export default function GetallenasConfig({ block }: Props) {
                 </div>
             </div>
 
-            {/* STEP — preset set depends on numberType */}
-            <div style={styles.section}>
+            {/* STEP — natural / decimal; a rational step is the Breuken block's noemer */}
+            {!isRational && <div style={styles.section}>
                 <SettingLabel text="Sprong:" info="De afstand tussen twee streepjes op de as." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {isRational
-                        ? FRACTION_STEPS.map(d => (
-                            <button key={d} onClick={() => set('fractionStep', d)} aria-pressed={fractionStep === d} style={styles.radioBtn(fractionStep === d)}>1/{d}</button>
-                        ))
-                        : (isDecimal ? DECIMAL_STEPS : STEP_PRESETS).map(s => (
-                            <button key={s} onClick={() => set('step', s)} aria-pressed={step === s} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
-                        ))}
+                    {(isDecimal ? DECIMAL_STEPS : STEP_PRESETS).map(s => (
+                        <button key={s} onClick={() => set('step', s)} aria-pressed={step === s} style={styles.radioBtn(step === s)}>+{s.toLocaleString('nl-BE')}</button>
+                    ))}
                 </div>
                 {isDecimal && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
@@ -93,7 +90,20 @@ export default function GetallenasConfig({ block }: Props) {
                         <button onClick={commitCustom} disabled={!customValid} style={{ ...styles.radioBtn(false), opacity: customValid ? 1 : 0.5, cursor: customValid ? 'pointer' : 'not-allowed', flex: '0 0 auto' }}>Zet</button>
                     </div>
                 )}
-            </div>
+            </div>}
+
+            {/* RATIONALE GETALLEN — the shared Breuken block: the sprong is the noemer, the rest is notation */}
+            {isRational && (
+                <div style={styles.section}>
+                    <BreukenSettings
+                        noemer={{ shape: 'step', value: fractionStep, options: FRACTION_STEPS, onChange: (d) => set('fractionStep', d) }}
+                        notation={[
+                            { label: 'Schrijf als gemengd getal (1 1/4 i.p.v. 5/4)', on: !!allowMixed, onChange: (v) => set('allowMixed', v) },
+                            { label: 'Niet vereenvoudigen (2/4 blijft 2/4)', on: !!gelijknamig, onChange: (v) => set('gelijknamig', v) },
+                        ]}
+                    />
+                </div>
+            )}
 
             {/* MAX — not for rationals (range driven by step + ticks) */}
             {range && (
@@ -122,21 +132,6 @@ export default function GetallenasConfig({ block }: Props) {
                     {lowerBound < -maxGetal && (
                         <p style={styles.hint}>{`Ondergrens valt buiten het bereik (${formatSignedInt(-maxGetal)} tot ${formatSignedInt(maxGetal)}). Pas ze aan; nieuwe oefeningen gebruiken anders nog de oude grens.`}</p>
                     )}
-                </div>
-            )}
-
-            {/* RATIONALE GETALLEN — fraction display toggles */}
-            {isRational && (
-                <div style={styles.section}>
-                    <SettingLabel text="Breuken:" info="Weergave-opties voor breuken op de as." />
-                    <div style={styles.onOffRow}>
-                        <span style={styles.onOffLabel}>Gemengde getallen (1 1/4 i.p.v. 5/4)</span>
-                        <button onClick={() => set('allowMixed', !allowMixed)} aria-pressed={!!allowMixed} style={styles.onOffBtn(allowMixed)}>{allowMixed ? 'Aan' : 'Uit'}</button>
-                    </div>
-                    <div style={styles.onOffRow}>
-                        <span style={styles.onOffLabel}>Gelijknamige breuken (niet vereenvoudigen)</span>
-                        <button onClick={() => set('gelijknamig', !gelijknamig)} aria-pressed={!!gelijknamig} style={styles.onOffBtn(gelijknamig)}>{gelijknamig ? 'Aan' : 'Uit'}</button>
-                    </div>
                 </div>
             )}
 

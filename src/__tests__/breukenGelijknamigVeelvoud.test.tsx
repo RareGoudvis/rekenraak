@@ -123,7 +123,7 @@ describe('config: "Noemers"', () => {
         expect((after.constraints as Record<string, unknown>).denominatorRelation).toBe('multiple');
         cleanup();
         render(<BreukBewerkConfig block={configBlock({ denominatorRelation: 'multiple', allowImproper: true })} />);
-        expect(pressed()).toEqual(expect.arrayContaining(['De ene een veelvoud van de andere', 'Aan']));
+        expect(pressed()).toEqual(expect.arrayContaining(['De ene een veelvoud van de andere', 'Onechte breuken']));
         expect((screen.getByLabelText('Doelnoemer') as HTMLInputElement).disabled).toBe(true);
         expect(screen.getByText('Niet bij veelvoud-noemers.')).toBeTruthy();
     });

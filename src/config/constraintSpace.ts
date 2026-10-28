@@ -236,6 +236,10 @@ const ordenenSpace: OptionSpace = {
     numberMask: [{}, { E: true }, { D: true }, { T: true, t: true }],
     unitFractionsOnly: [false, true],
     allowMixed: [false, true],
+    // Breuken block: 'some' mixes gemengd and plain breuken in one set; absent = derived from allowMixed.
+    mixedMode: ['none', 'some', 'all'],
+    minDenominator: [2, 3, 6],
+    maxDenominator: [6, 10, 20],
     answerStyle: ['lijn', 'vak'],
 };
 

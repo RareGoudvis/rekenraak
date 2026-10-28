@@ -4,7 +4,7 @@ import { getMaskPlaces } from '../../../services/math/mathEngine';
 import { REP_OPTIONS } from '../../../services/vergelijken/representations';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
-import FractionMaxField from './FractionMaxField';
+import BreukenSettings from './shared/BreukenSettings';
 import PopupSelect from '../../ui/PopupSelect';
 import { presetLabel } from '../../../config/numberRanges';
 import { useMaxPresets } from '../useMaxPresets';
@@ -65,23 +65,25 @@ export default function VergelijkenConfig({ block }: Props) {
                                     <button key={o.key} onClick={() => set(col.repKey, o.key)} aria-pressed={col.rep === o.key} style={styles.radioBtn(col.rep === o.key)}>{o.label}</button>
                                 ))}
                             </div>
-                            <SettingLabel text="Getalopbouw:" info="Welke posities (eenheden, tienden, ...) het getal mag bevatten." />
-                            {/* A breuk side uses the teller/noemer widget; other reps use the place mask. */}
+                            {/* A breuk side caps its noemer and teller; other reps use the place mask. */}
                             {col.rep === 'breuk' ? (
-                                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                    <FractionMaxField
-                                        numerator={col.fn}
-                                        denominator={col.fd}
-                                        onNumerator={(v) => set(col.fnKey, v)}
-                                        onDenominator={(v) => set(col.fdKey, v)}
+                                <>
+                                    <SettingLabel text="Breuk:" info="De grootste noemer en teller van de breuk aan deze kant." />
+                                    <BreukenSettings
+                                        title={null}
+                                        noemer={{ shape: 'max', value: col.fd, onChange: (v) => set(col.fdKey, v) }}
+                                        teller={{ value: col.fn, onChange: (v) => set(col.fnKey, v) }}
                                     />
-                                </div>
+                                </>
                             ) : (
+                                <>
+                                <SettingLabel text="Getalopbouw:" info="Welke posities (eenheden, tienden, ...) het getal mag bevatten." />
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                     {repPlaces.map(p => (
                                         <button key={p.key} onClick={() => toggleSideMask(col.maskKey, col.mask, p.key)} aria-pressed={!!col.mask[p.key]} style={styles.maskBtn(!!col.mask[p.key])} title={p.label}>{p.key}</button>
                                     ))}
                                 </div>
+                                </>
                             )}
                         </div>
                     ))}

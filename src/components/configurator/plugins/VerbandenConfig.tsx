@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
 import type { VerbandenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -24,10 +25,6 @@ export default function VerbandenConfig({ block }: Props) {
         const next = reps.includes(k) ? reps.filter(x => x !== k) : [...reps, k];
         if (next.length >= 2) set('reps', next);   // need ≥2 to have something to fill in
     };
-    const toggleDen = (d: number) => {
-        const next = denominators.includes(d) ? denominators.filter(x => x !== d) : [...denominators, d];
-        if (next.length) set('denominators', next);
-    };
 
     return (
         <div style={styles.container}>
@@ -41,12 +38,9 @@ export default function VerbandenConfig({ block }: Props) {
             </div>
 
             <div style={styles.section}>
-                <SettingLabel text="Noemers:" info="Alleen noemers met een exacte komma- en procentwaarde. Bij 8 verschijnen halve procenten (12,5 %)." />
-                <div style={styles.buttonGroup}>
-                    {DENOMINATORS.map(d => (
-                        <button key={d} onClick={() => toggleDen(d)} aria-pressed={denominators.includes(d)} style={styles.pill(denominators.includes(d))}>{d}</button>
-                    ))}
-                </div>
+                <BreukenSettings
+                    noemer={{ shape: 'set', values: denominators, options: DENOMINATORS, onChange: (next) => set('denominators', next), info: 'Alleen noemers met een exacte komma- en procentwaarde. Bij 8 verschijnen halve procenten (12,5 %).' }}
+                />
             </div>
 
             <div style={styles.section}>
