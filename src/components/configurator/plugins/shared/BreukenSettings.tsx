@@ -49,6 +49,8 @@ export interface BreukenSettingsProps {
     info?: string;
     noemer?: NoemerRow;
     teller?: { value: number; onChange: (v: number) => void };
+    // One line under the noemer / teller caps (vereenvoudigen: what a big noemer gives).
+    capsHint?: string;
     // A FractionMaxField-style picture that replaces the noemer + teller rows (gemengd ↔ breuk).
     picture?: ReactNode;
     kinds?: KindPill[];
@@ -162,7 +164,7 @@ function MixedControl({ row }: { row: MixedRow }) {
     );
 }
 
-export default function BreukenSettings({ title = 'Breuken', info, noemer, teller, picture, kinds, kindsHint, mixed, notation, children }: BreukenSettingsProps) {
+export default function BreukenSettings({ title = 'Breuken', info, noemer, teller, capsHint, picture, kinds, kindsHint, mixed, notation, children }: BreukenSettingsProps) {
     const mixedRows = mixed ? (Array.isArray(mixed) ? mixed : [mixed]) : [];
     const shownKinds = kinds ?? [];
     const onCount = shownKinds.filter(k => k.on).length;
@@ -181,6 +183,7 @@ export default function BreukenSettings({ title = 'Breuken', info, noemer, telle
                                 style={numberField} />
                         </div>
                     )}
+                    {capsHint && <p style={{ ...styles.hint, marginTop: 'calc(-1 * var(--sp-3))', marginBottom: 'var(--sp-4)' }}>{capsHint}</p>}
                 </>
             )}
 

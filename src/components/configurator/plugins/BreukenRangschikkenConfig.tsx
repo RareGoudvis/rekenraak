@@ -2,6 +2,7 @@ import { useConstraints } from '../useConstraints';
 import type { MathBlock } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
+import BreukenSettings from './shared/BreukenSettings';
 import type { BreukenRangschikkenConstraints } from '../../../services/math/constraintTypes';
 
 interface Props {
@@ -36,7 +37,7 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
     return (
         <div style={styles.container}>
             <div style={styles.section}>
-                <SettingLabel text="Soort breuken:" info="Welk type breuken er gerangschikt wordt." />
+                <SettingLabel text="Soort reeks:" info="Welk soort reeks er gerangschikt wordt: stambreuken, gelijknamige, gelijknamig te maken of speciale breuken." />
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {MODES.map(m => (
                         <button key={m.key} onClick={() => set('fractionMode', m.key)} aria-pressed={fractionMode === m.key} style={styles.radioBtn(fractionMode === m.key)}>{m.label}</button>
@@ -60,29 +61,15 @@ export default function BreukenRangschikkenConfig({ block }: Props) {
                     style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
             </div>
 
-            {showImproper && (
-                <div style={styles.section}>
-                    <div style={styles.onOffRow}>
-                        <span style={styles.onOffLabel}>Ook onechte breuken</span>
-                        <button onClick={() => set('allowImproper', !allowImproper)} aria-pressed={!!allowImproper} style={styles.onOffBtn(allowImproper)}>{allowImproper ? 'Aan' : 'Uit'}</button>
-                    </div>
-                </div>
-            )}
-
+            {/* The shared Breuken block: no noemer for the fixed speciale pool, Onechte only where tellers are free. */}
             {showDenoms && (
-                <div style={styles.section}>
-                    <SettingLabel text="Noemer:" info="Bereik van de noemer van de breuken." />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>van</span>
-                        <input type="number" min={2} max={maxDenominator} value={minDenominator}
-                            onChange={(e) => set('minDenominator', Math.max(2, Math.min(Number(e.target.value), maxDenominator)))}
-                            style={inputStyle} />
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>tot</span>
-                        <input type="number" min={minDenominator} max={20} value={maxDenominator}
-                            onChange={(e) => set('maxDenominator', Math.max(minDenominator, Math.min(Number(e.target.value), 20)))}
-                            style={inputStyle} />
-                    </div>
-                </div>
+                <BreukenSettings
+                    noemer={{ shape: 'range', min: minDenominator, max: maxDenominator, onChange: (min, max) => patch({ minDenominator: min, maxDenominator: max }) }}
+                    kinds={showImproper ? [
+                        { kind: 'echt', on: true, locked: true },
+                        { kind: 'onecht', on: !!allowImproper, onToggle: (v) => set('allowImproper', v) },
+                    ] : undefined}
+                />
             )}
         </div>
     );
@@ -103,9 +90,3 @@ export function BreukenRangschikkenStyleConfig({ block }: Props) {
         </div>
     );
 }
-
-const inputStyle: React.CSSProperties = {
-    width: '64px', padding: '8px 10px', backgroundColor: 'var(--bg-input)',
-    border: '1px solid var(--border-color)', borderRadius: '6px',
-    color: 'var(--text-main)', outline: 'none', fontSize: '13px', boxSizing: 'border-box',
-};
