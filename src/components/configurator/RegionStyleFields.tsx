@@ -66,7 +66,7 @@ export function ResetAllStylesButton() {
     const resetAll = () => {
         updateDocSettings({
             showScores: false, opdrachtTitelStyle: 'regular', showDividers: false,
-            headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16,
+            headerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, titleFieldsVerticalGap: undefined,
             headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1, answerSpace: ANSWER_SPACE_DEFAULT_PX,
             headerCustom: undefined, titelCustom: undefined, footerCustom: undefined,
         });

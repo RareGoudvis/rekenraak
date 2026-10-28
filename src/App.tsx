@@ -63,7 +63,13 @@ export default function App() {
   // budget and then repacks on the heights the sheet actually rendered. Estimating alone
   // ended pages early (blank tails) or overran them; measuring alone could not run before
   // the first paint.
-  const measured = useMeasuredHeights(blocks);
+  // Everything that sizes a continuation page's header (SheetHeader continuation).
+  const continuationKey = useMemo(() => JSON.stringify([
+    headerData?.repeatHeader, headerData?.repeatTitle, headerData?.repeatTitle ? headerData.titel : '',
+    headerData?.repeatHeader ? [headerData.naam, headerData.klas, headerData.nummer, headerData.datum, headerData.fieldOrder, headerData.fieldWidths] : null,
+    docSettings.headerStyle, docSettings.titlePosition, docSettings.titleFieldsGap, docSettings.headerCustom,
+  ]), [headerData, docSettings.headerStyle, docSettings.titlePosition, docSettings.titleFieldsGap, docSettings.headerCustom]);
+  const measured = useMeasuredHeights(blocks, continuationKey);
   // Drag a block from its handle onto another block: top half inserts before it, bottom
   // half swaps the two.
   const dnd = useSheetDnd();

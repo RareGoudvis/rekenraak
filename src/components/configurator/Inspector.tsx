@@ -107,7 +107,15 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             ))}
                         </div>
 
-                        {(docSettings.titlePosition === 'left' || docSettings.titlePosition === 'right') && (
+                        {(docSettings.titlePosition ?? 'center') === 'center' ? (
+                            <>
+                                <label style={{ ...S.label, marginTop: '12px' }}>Ruimte titel–velden: {docSettings.titleFieldsVerticalGap ?? 8}px</label>
+                                <input type="range" min="0" max="40" step="2"
+                                    value={docSettings.titleFieldsVerticalGap ?? 8}
+                                    onChange={(e) => updateDocSettings({ titleFieldsVerticalGap: Number(e.target.value) })}
+                                    style={{ width: '100%', accentColor: 'var(--accent-purple)', cursor: 'pointer' }} />
+                            </>
+                        ) : (
                             <>
                                 <label style={{ ...S.label, marginTop: '12px' }}>Marge titel–velden: {docSettings.titleFieldsGap ?? 16}px</label>
                                 <input type="range" min="4" max="64" step="2"
@@ -192,10 +200,13 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         })()}
 
                         <div style={{ ...S.switchRow, marginTop: '12px' }}>
-                            <span style={S.switchText}>Koptekst op elke pagina herhalen</span>
-                            <Switch checked={!!headerData.repeatHeader} onChange={(v) => updateHeader({ repeatHeader: v })} aria-label="Koptekst op elke pagina herhalen" />
+                            <span style={S.switchText}>Naamvelden op elke pagina herhalen</span>
+                            <Switch checked={!!headerData.repeatHeader} onChange={(v) => updateHeader({ repeatHeader: v })} aria-label="Naamvelden op elke pagina herhalen" />
                         </div>
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '2px 0 0 0' }}>Enkel bij afdrukken: de naamvelden komen bovenaan elke pagina.</p>
+                        <div style={S.switchRow}>
+                            <span style={S.switchText}>Titel op elke pagina herhalen</span>
+                            <Switch checked={!!headerData.repeatTitle} onChange={(v) => updateHeader({ repeatTitle: v })} aria-label="Titel op elke pagina herhalen" />
+                        </div>
                     </div>
                 </div>
 

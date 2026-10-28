@@ -23,7 +23,10 @@ export interface HeaderData {
     titel: string;
     fieldOrder?: HeaderField[];
     fieldWidths?: Record<HeaderField, number>;
-    repeatHeader?: boolean;   // print only: repeat the name fields strip at the top of every page
+    // Continuation pages (2+) draw the header too, in page 1's style, on screen and on paper:
+    // repeatHeader brings the name fields, repeatTitle the title. Absent = page 1 only.
+    repeatHeader?: boolean;
+    repeatTitle?: boolean;
 }
 
 export const DEFAULT_FIELD_ORDER: HeaderField[] = ['naam', 'klas', 'nummer', 'datum'];
@@ -63,6 +66,9 @@ export interface DocSettings {
     footerStyle?: 'geen' | 'lijn' | 'kader';
     titlePosition: 'left' | 'center' | 'right';
     titleFieldsGap: number;
+    // Centred title only: px between the fields/score row and the title under it.
+    // Optional → back-compat; absent = 8 (the gap it always had). Slider 0–40, step 2.
+    titleFieldsVerticalGap?: number;
     headerContentGap: number;
     blockSpacing: number;   // vertical gap between exercise sets (blocks)
     // How the packer places blocks on a page: 'aansluitend' lets a block fill the space

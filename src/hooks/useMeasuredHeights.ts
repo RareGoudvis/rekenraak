@@ -144,7 +144,10 @@ export interface MeasuredHeights {
     version: number;
 }
 
-export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
+// `continuationKey` describes the header a continuation page draws (repeatTitle /
+// repeatHeader and whatever sizes it); when it changes, the page-2 body measurement is
+// stale until a page 2 renders again.
+export function useMeasuredHeights(blocks: MathBlock[], continuationKey = ''): MeasuredHeights {
     // Key is `${blockId}:${widthUnits}`: the same block is a different height at a
     // different width, and both versions stay valid while the teacher toggles between them.
     const cells = useRef<Map<string, number>>(new Map());
@@ -255,6 +258,18 @@ export function useMeasuredHeights(blocks: MathBlock[]): MeasuredHeights {
         }
         if (changed) bump(changed);
     }, [bump]);
+
+    // A one-page sheet keeps the 'rest' body it measured under the OLD continuation header;
+    // packing a block onto page 2 against it would overrun a repeated title. Drop it and fall
+    // back to page 1's body (the taller header: never too optimistic) until page 2 measures.
+    const lastContinuationKey = useRef(continuationKey);
+    useEffect(() => {
+        if (lastContinuationKey.current === continuationKey) return;
+        lastContinuationKey.current = continuationKey;
+        if (body.current.rest === undefined) return;
+        body.current = { first: body.current.first };
+        bump('continuation header changed');
+    }, [continuationKey, bump]);
 
     const onBodyMeasure = useCallback((pageIndex: number, px: number) => {
         if (!(px > 0) || paused()) return;

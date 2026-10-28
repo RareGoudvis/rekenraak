@@ -2,8 +2,7 @@ import { styles } from '../../styles/appStyles';
 import { overlayRegionStyle, borderSides } from '../../services/regionStyle';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type HeaderField, type HeaderData, type DocSettings } from '../../store/useWorksheetStore';
 
-// Name-field row (Naam/Klas/Nr/Datum). Reused by the page-1 body header and the
-// optional repeating print header (.print-repeat-fields). Null if no field is enabled.
+// Name-field row (Naam/Klas/Nr/Datum). Null if no field is enabled.
 function renderFields(headerData: HeaderData | undefined, align: 'left' | 'right' = 'left') {
   const order: HeaderField[] = headerData?.fieldOrder ?? DEFAULT_FIELD_ORDER;
   const widths = headerData?.fieldWidths ?? DEFAULT_FIELD_WIDTHS;
@@ -22,13 +21,14 @@ function renderFields(headerData: HeaderData | undefined, align: 'left' | 'right
   );
 }
 
-// Pages after the first: only the name fields, and only when the teacher asked to repeat them.
-export function SheetRepeatFields({ header: headerData }: { header: HeaderData | undefined }) {
-  return <div className="print-repeat-fields">{renderFields(headerData)}</div>;
-}
-
-// Page-1 header: title, name fields and score box, rendered per page by PageSheet.
-export default function SheetHeader({ header: headerData, docSettings, totalScore }: { header: HeaderData | undefined; docSettings: DocSettings; totalScore: number }) {
+// Rendered per page by PageSheet. Page 1 carries title, name fields and score box; a
+// continuation page draws the same header box with only what repeatTitle / repeatHeader
+// ask for (never the score: it is written once), or nothing at all.
+export default function SheetHeader({ header: headerData, docSettings, totalScore, continuation = false }: { header: HeaderData | undefined; docSettings: DocSettings; totalScore: number; continuation?: boolean }) {
+  const hasTitle = !!headerData?.titel && (!continuation || !!headerData.repeatTitle);
+  const fieldsData = continuation && !headerData?.repeatHeader ? undefined : headerData;
+  const showScore = !continuation && docSettings.showScores && totalScore > 0;
+  if (continuation && !hasTitle && !renderFields(fieldsData)) return null;
   // Weight, slant and underline style the TITLE only: on the container they would reach the
   // name fields and the score box too (text-decoration cannot be undone by a child).
   const { bold, italic, underline, ...boxCustom } = docSettings.headerCustom ?? {};
@@ -61,14 +61,11 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
       })(),
     }, docSettings.headerCustom ? boxCustom : undefined)}>
       {(() => {
-        const showScore = docSettings.showScores && totalScore > 0;
-        const hasTitle = !!headerData?.titel;
         const gap = docSettings.titleFieldsGap ?? 16;
-        // Wrapped so print CSS can hide this page-1 copy when repeatHeader moves the strip to .print-thead.
         // Fields align opposite the title: title-left → fields flush right, title-right → fields left.
         const fieldsRowAligned = (align: 'left' | 'right') => {
-          const f = renderFields(headerData, align);
-          return f ? <div className="print-body-fields">{f}</div> : null;
+          const f = renderFields(fieldsData, align);
+          return f ? <div>{f}</div> : null;
         };
         const titleScore = (align: 'left' | 'right') => (hasTitle || showScore) ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'right' ? 'flex-end' : 'flex-start', justifyContent: (hasTitle && showScore) ? 'space-between' : (!showScore) ? 'center' : 'flex-end', flexShrink: 0, gridColumn: align === 'right' ? '2' : '1', gridRow: '1' }}>
@@ -89,13 +86,13 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
           // Fields hug the sheet's right edge as a block with a straight LEFT edge
           // (left-aligned rows inside a right-pushed fit-content wrapper) — plain
           // renderFields('right') right-justified each wrapped row raggedly.
-          const fr = renderFields(headerData, 'left');
+          const fr = renderFields(fieldsData, 'left');
           return (
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: `${gap}px`, rowGap: '8px' }}>
               {titleScore('left')}
               {fr && (
                 <div style={{ gridColumn: '2', gridRow: '1', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
-                  <div className="print-body-fields" style={{ width: 'fit-content', maxWidth: '100%' }}>{fr}</div>
+                  <div style={{ width: 'fit-content', maxWidth: '100%' }}>{fr}</div>
                 </div>
               )}
             </div>
@@ -114,10 +111,10 @@ export default function SheetHeader({ header: headerData, docSettings, totalScor
                 {showScore && <div style={{ ...styles.scoreBox, flexShrink: 0 }}>Score: &nbsp; &nbsp; &nbsp; / {totalScore}</div>}
               </div>
             )}
-            {/* The 8px only separates the title from the fields/score row above it;
+            {/* The gap only separates the title from the fields/score row above it;
                 with every field off there is nothing to separate it from and the gap
                 is paper margin pretending to be layout. */}
-            {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? '8px 0 0' : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', ...titleType, textAlign: 'center' }}>{headerData!.titel}</h1>}
+            {hasTitle && <h1 style={{ margin: (centerFields || showScore) ? `${docSettings.titleFieldsVerticalGap ?? 8}px 0 0` : 0, fontSize: 'inherit', fontFamily: 'var(--font-sheet-text)', ...titleType, textAlign: 'center' }}>{headerData!.titel}</h1>}
           </>
         );
       })()}
