@@ -137,6 +137,14 @@ export default function FractionConfig({ block }: Props) {
                             </p>
                         </div>
                     )}
+
+                    {/* An improper teller is drawn over two wholes side by side. */}
+                    <div style={styles.section}>
+                        <div style={styles.onOffRow}>
+                            <span style={styles.onOffLabel}>Ook onechte breuken</span>
+                            <button onClick={() => updateConstraint('allowImproper', !c.allowImproper)} aria-pressed={!!c.allowImproper} style={styles.onOffBtn(!!c.allowImproper)}>{c.allowImproper ? 'Aan' : 'Uit'}</button>
+                        </div>
+                    </div>
                 </>
             )}
 

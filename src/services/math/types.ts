@@ -53,6 +53,8 @@ export interface FractionExercise {
     coloredIndices?: number[];
     gridRows?: number;
     gridCols?: number;
+    // kleuren / herkennen with an improper breuk: shapes side by side (coloredIndices span wholes × denominator); absent = 1.
+    wholes?: number;
     // Amount-based (hoeveelheid, hoeveelheid-rechthoek)
     total?: number;
     objectShape?: 'circle' | 'square';

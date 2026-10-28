@@ -562,7 +562,13 @@ const breukenSpec: TypeSpec<FractionExercise> = {
         if (e.denominator > hi) push('denominator>max', e.denominator, hi, ex);
         // maxTotal below the minimum noemer: the total wins, WITH the note saying so.
         if (e.denominator < Math.min(lo, hi) && !/kleinere noemer/.test(ctx.note ?? '')) push('denominator<min', e.denominator, lo, ex);
-        if (e.numerator < 1 || e.numerator >= e.denominator) push('numerator-range', e.numerator, `1..${e.denominator - 1}`, ex);
+        // "Ook onechte breuken" (kleuren / herkennen only): never d/d and below 2d; else every teller below its noemer.
+        const improper = c.allowImproper === true && (e.subType === 'kleuren' || e.subType === 'herkennen');
+        if (!improper && (e.numerator < 1 || e.numerator >= e.denominator)) push('numerator-range', e.numerator, `1..${e.denominator - 1}`, ex);
+        if (improper && (e.numerator < 1 || e.numerator === e.denominator || e.numerator >= 2 * e.denominator)) push('numerator-range', e.numerator, `1..${2 * e.denominator - 1}, not ${e.denominator}`, ex);
+        // The coloured parts are distinct cells of the drawn wholes.
+        if (e.coloredIndices && (new Set(e.coloredIndices).size !== e.coloredIndices.length
+            || e.coloredIndices.some(i => i < 0 || i >= (e.wholes ?? 1) * e.denominator))) push('answer-key', e.coloredIndices.join(','), `distinct 0..${(e.wholes ?? 1) * e.denominator - 1}`, ex);
         if ((e.subType === 'hoeveelheid' || e.subType === 'hoeveelheid-rechthoek') && e.total !== undefined) {
             if (over(e.total, n(c.maxTotal, 20))) push('total>maxTotal', e.total, n(c.maxTotal, 20), ex);
         }

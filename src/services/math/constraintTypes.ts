@@ -208,6 +208,8 @@ export type FractionConstraints = {
     subType: FractionSubType;
     shape: FractionShape;
     shapes?: FractionShape[];          // kleuren/herkennen: included shapes (≥1, mixed per exercise)
+    // kleuren / herkennen: also improper breuken (teller d+1..2d-1, never d/d) over two wholes; off = proper only.
+    allowImproper?: boolean;
     staticSize?: boolean;              // keep shape size constant across denominators (only when 1 shape)
     staticW?: number;                  // rectangle width (cm) when staticSize
     staticH?: number;                  // rectangle height (cm) when staticSize

@@ -32,7 +32,7 @@ function randInt(min: number, max: number) {
 }
 
 function makeShapeExercise(subType: FractionSubType, block: MathBlock): FractionExercise {
-    const { shape = 'rectangle', shapes, minDenominator = 2, maxDenominator = 8 } = block.constraints as FractionConstraints;
+    const { shape = 'rectangle', shapes, minDenominator = 2, maxDenominator = 8, allowImproper } = block.constraints as FractionConstraints;
     // Teacher may enable several shapes; pick one per exercise (back-compat: fall back to single `shape`).
     const shapeOptions: FractionShape[] = Array.isArray(shapes) && shapes.length ? shapes : [shape as FractionShape];
     const chosenShape = shapeOptions[randInt(0, shapeOptions.length - 1)];
@@ -41,17 +41,25 @@ function makeShapeExercise(subType: FractionSubType, block: MathBlock): Fraction
     // that silently substituted 4 for ranges like 7-7 or 13-16 — outside the range.)
     const lo = Math.max(2, minDenominator), hi = Math.max(lo, maxDenominator);
     const denominator = randInt(lo, hi);
-    const numerator = randInt(1, denominator - 1);
+    // "Ook onechte breuken": half the draws take a teller d+1..2d-1 (never d/d), drawn over two wholes.
+    // Off short-circuits before Math.random, so seeded sheets stay byte-identical.
+    const numerator = allowImproper === true && Math.random() < 0.5
+        ? randInt(denominator + 1, 2 * denominator - 1) : randInt(1, denominator - 1);
     // Square = single row of `denominator` vertical strips; rectangle uses the per-denominator grid.
     const { rows, cols } = chosenShape === 'square' ? { rows: 1, cols: denominator } : getGridLayout(denominator);
-    const coloredIndices = shuffle(Array.from({ length: denominator }, (_, i) => i))
-        .slice(0, numerator).sort((a, b) => a - b);
+    // An improper breuk fills the first whole and scatters the rest over the second, as a proper one does.
+    const wholes = Math.ceil(numerator / denominator);
+    const rest = numerator - (wholes - 1) * denominator;
+    const full = Array.from({ length: (wholes - 1) * denominator }, (_, i) => i);
+    const coloredIndices = [...full, ...shuffle(Array.from({ length: denominator }, (_, i) => full.length + i))
+        .slice(0, rest).sort((a, b) => a - b)];
     return {
         id: Math.random().toString(36).substring(2, 9),
         subType,
         numerator, denominator,
         shape: chosenShape,
         coloredIndices, gridRows: rows, gridCols: cols,
+        ...(wholes > 1 && { wholes }),
         isManuallyEdited: false,
     };
 }
