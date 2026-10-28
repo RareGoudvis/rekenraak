@@ -295,7 +295,9 @@ export function ordenenMaxChars(typeId: string, c: Record<string, unknown>): num
     }
     if (c.numberType === 'rational') {
         const maxDenominator = typeof c.maxDenominator === 'number' ? c.maxDenominator : 10;
-        return String(maxDenominator).length + (c.allowMixed ? 2 : 0); // + whole number and its gap
+        // SYNC: ordenenMixedMode (ordenenGenerator.ts): any gemengd getal in the set widens it.
+        const mixed = (c.mixedMode ?? (c.allowMixed ? 'all' : 'none')) !== 'none';
+        return String(maxDenominator).length + (mixed ? 2 : 0); // + whole number and its gap
     }
     const maxGetal = typeof c.maxGetal === 'number' ? c.maxGetal : 100;
     const decimalPlaces = c.numberType === 'decimal' ? (typeof c.decimalPlaces === 'number' ? c.decimalPlaces : 1) : 0;
