@@ -10,7 +10,7 @@ import { SOL, solutionText } from './solutionStyle';
 import { interactionProps, useViewerInteraction } from './ViewerInteractionContext';
 import KioskCell from './KioskCell';
 import KioskAnswerSlot from './KioskAnswerSlot';
-import { placeOrder, plaatsView } from '../../services/plaatswaarde/plaatswaardeGenerator';
+import { placeOrder, plaatsView, tabelPlaces } from '../../services/plaatswaarde/plaatswaardeGenerator';
 
 interface Props {
     block: MathBlock;
@@ -111,7 +111,8 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
         };
         // Two-up when a row is narrow enough (default maxGetal 1000 = 4 places ≈ 266px),
         // so small place-value tables don't waste the right half of the page.
-        const placeCount = placesOf(maxGetal, maxGetal, decimalPlaces).length;
+        // A teacher's own column set (tablePlaces) fixes the count; else the max's places.
+        const placeCount = c.tablePlaces?.length ? tabelPlaces({ number: maxGetal }, c).length : placesOf(maxGetal, maxGetal, decimalPlaces).length;
         const numCol = grownColumn(90, Math.max(0, ...exercises.map(ex => formatMathNumber(ex.number).length)), NUM_FACTOR, mathPx, 0);
         const rowW = numCol.px + 16 + placeCount * 40;
         const tabCols = !tight && rowW * 2 + 24 <= availableWidth ? 2 : 1;
@@ -123,7 +124,8 @@ export default function PlaatswaardeViewer({ block, showSolutions }: Props) {
                 columnGap={24}
                 rowGap={gap + 4}
                 items={exercises.map(ex => {
-                    const places = placesOf(ex.number, maxGetal, decimalPlaces);
+                    // SYNC: the kiosk's tabel cells read the same tabelPlaces.
+                    const places = tabelPlaces(ex, c);
                     return (
                         <div key={ex.id} className="print-exercise" style={{ display: 'flex', alignItems: 'center', gap: tight ? '6px' : rowWraps ? '4px 16px' : '16px', ...(rowWraps && { flexWrap: 'wrap' }) }}>
                             <span style={{ fontFamily: mono, fontSize: tight ? 'calc(var(--sheet-size-math) * 0.87)' : 'calc(var(--sheet-size-math) * 1.04)', minWidth: tight ? undefined : numCol.css, whiteSpace: 'nowrap' }}>{formatMathNumber(ex.number)}</span>

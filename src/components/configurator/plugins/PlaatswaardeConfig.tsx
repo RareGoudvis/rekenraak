@@ -7,6 +7,7 @@ import { presetLabel } from '../../../config/numberRanges';
 import { useMaxPresets } from '../useMaxPresets';
 import SettingLabel from './SettingLabel';
 import type { PlaatswaardeConstraints } from '../../../services/math/constraintTypes';
+import { TABLE_PLACES_TOP } from '../../../services/plaatswaarde/plaatswaardeGenerator';
 
 interface Props { block: MathBlock; }
 
@@ -20,6 +21,14 @@ export default function PlaatswaardeConfig({ block }: Props) {
 
     const toggleMask = (k: string) => set('numberMask', { ...numberMask, [k]: !numberMask[k] });
     const places = getMaskPlaces(maxGetal, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
+    // Tabel columns: any place, independent of the max (a teacher may want an empty HD column
+    // above numbers to 1000). Unset = the max's own places; at least one stays selected.
+    const tableOptions = getMaskPlaces(TABLE_PLACES_TOP, decimalPlaces > 0 ? 'decimal' : 'natural', decimalPlaces);
+    const shownPlaces = (c.tablePlaces ?? places.map(p => p.key)).filter(k => tableOptions.some(p => p.key === k));
+    const toggleTablePlace = (key: string) => {
+        const next = shownPlaces.includes(key) ? shownPlaces.filter(k => k !== key) : tableOptions.map(p => p.key).filter(k => k === key || shownPlaces.includes(k));
+        if (next.length > 0) set('tablePlaces', next);
+    };
 
     // subType (view) is chosen by the sidebar leaf — not repeated here; plaats / omcirkelen pick how
     // the pupil answers (in the digits' order the place is only counted along, owner 2026-10-10).
@@ -70,6 +79,15 @@ export default function PlaatswaardeConfig({ block }: Props) {
                 </div>
                 <p style={styles.hint}>Leeg = vrije opbouw.</p>
             </div>
+
+            {c.subType === 'tabel' && <div style={styles.section}>
+                <SettingLabel text="Kolommen in de tabel:" info="Kies welke plaatswaarden als kolom in de tabel staan, los van het maximum getal." />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {tableOptions.map(p => (
+                        <button key={p.key} type="button" onClick={() => toggleTablePlace(p.key)} aria-pressed={shownPlaces.includes(p.key)} style={styles.maskBtn(shownPlaces.includes(p.key))} title={p.label}>{p.key}</button>
+                    ))}
+                </div>
+            </div>}
         </div>
     );
 }

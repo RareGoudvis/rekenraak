@@ -366,6 +366,9 @@ export type PlaatswaardeConstraints = {
     // plaats / omcirkelen only: 'plaats' (default) names the place, the choices in the digits' order;
     // 'plaats-shuffle' the same in a mixed order (no counting along); 'waarde' asks the digit's value.
     plaatsAnswer?: 'plaats' | 'plaats-shuffle' | 'waarde';
+    // tabel only: the place columns drawn (keys 'Mrd' … 'E', 't', 'h', …), chosen independently
+    // of maxGetal. Absent = each number's own places from its first non-zero digit.
+    tablePlaces?: string[];
 };
 
 export type EvenOnevenConstraints = {

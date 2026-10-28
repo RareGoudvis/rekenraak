@@ -375,6 +375,8 @@ const plaatswaardeSpace: OptionSpace = {
     numberMask: MASKS,
     decimalPlaces: [0, 1, 2, 3],
     plaatsAnswer: ['plaats', 'plaats-shuffle', 'waarde'],
+    // tabel columns: [] = the numbers' own places; a narrow set, a wide one, one with decimals.
+    tablePlaces: [[], ['H', 'T', 'E'], ['HD', 'TD', 'D', 'H', 'T', 'E'], ['E', 't', 'h']],
 };
 
 const evenOnevenSpace: OptionSpace = {
