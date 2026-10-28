@@ -140,7 +140,7 @@ function Circle({ size, ghost, solved, highlight }: { size: number; ghost: boole
     const fill = highlight ? SOL : (solved ? FILL : 'white');
     return (
         <svg width={size} height={size}>
-            <circle cx={size / 2} cy={size / 2} r={size / 2 - 1.5} fill={fill} stroke="#000" strokeWidth={1.5} />
+            <circle cx={size / 2} cy={size / 2} r={size / 2 - 1.5} fill={fill} stroke="currentColor" strokeWidth={1.5} />
         </svg>
     );
 }

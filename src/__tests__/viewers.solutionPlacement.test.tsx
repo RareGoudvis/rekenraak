@@ -40,8 +40,8 @@ describe('geld-teruggeven key', () => {
         const given = texts.filter((t) => /^€\d+,\d\d$/.test(t.textContent ?? ''));
         expect(given.length).toBe(3);
         const fills = given.map((t) => t.getAttribute('fill'));
-        // price + paid amount (black) and the waypoint (red): exactly one red among the three amounts.
-        expect(fills.filter((f) => f === '#000').length).toBe(2);
+        // price + paid amount (page ink) and the waypoint (red): exactly one red among the three amounts.
+        expect(fills.filter((f) => f === 'currentColor').length).toBe(2);
         expect(fills.filter((f) => f === 'var(--ink-solution)').length).toBe(1);
     });
 });

@@ -254,7 +254,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                 {scaffolding <= 2 && (
                     <>
                         <line x1={0} y1={1 * CELL} x2={gridW} y2={1 * CELL} stroke="#ccc" strokeWidth={1} />
-                        <line x1={0} y1={lineRow * CELL} x2={gridW} y2={lineRow * CELL} stroke="#222" strokeWidth={2} />
+                        <line x1={0} y1={lineRow * CELL} x2={gridW} y2={lineRow * CELL} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
@@ -358,8 +358,8 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                 {scaffolding <= 2 && (
                     <>
                         <line x1={0} y1={1 * CELL} x2={gridW} y2={1 * CELL} stroke="#ccc" strokeWidth={1} />
-                        <line x1={0} y1={lineRow1 * CELL} x2={gridW} y2={lineRow1 * CELL} stroke="#222" strokeWidth={2} />
-                        <line x1={0} y1={lineRow2 * CELL} x2={gridW} y2={lineRow2 * CELL} stroke="#222" strokeWidth={2} />
+                        <line x1={0} y1={lineRow1 * CELL} x2={gridW} y2={lineRow1 * CELL} stroke="currentColor" strokeWidth={2} />
+                        <line x1={0} y1={lineRow2 * CELL} x2={gridW} y2={lineRow2 * CELL} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
@@ -483,11 +483,11 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
                 {scaffolding <= 2 && (
                     <>
                         {/* Vertical separator: left section | right section (full height) */}
-                        <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="currentColor" strokeWidth={2} />
                         {/* Divisor box top (right section only) */}
-                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="currentColor" strokeWidth={2} />
                         {/* Divisor box bottom = quotient separator */}
-                        <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>

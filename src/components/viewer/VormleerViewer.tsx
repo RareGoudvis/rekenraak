@@ -136,7 +136,7 @@ function FigureSVG({ ex, size, marks: opt, toScale }: { ex: VormleerExercise; si
                     <line key={`tick${i}-${t}`}
                         x1={g.mid.x + g.ux * off - nx * 4} y1={g.mid.y + g.uy * off - ny * 4}
                         x2={g.mid.x + g.ux * off + nx * 4} y2={g.mid.y + g.uy * off + ny * 4}
-                        stroke="#000" strokeWidth={1.4} />
+                        stroke="currentColor" strokeWidth={1.4} />
                 );
             }
         });
@@ -165,7 +165,7 @@ function FigureSVG({ ex, size, marks: opt, toScale }: { ex: VormleerExercise; si
                         marks.push(
                             <polyline key={`par${s}-${t}`}
                                 points={`${cx - dir * g.ux * 4 + nx * 4},${cy - dir * g.uy * 4 + ny * 4} ${cx + dir * g.ux * 4},${cy + dir * g.uy * 4} ${cx - dir * g.ux * 4 - nx * 4},${cy - dir * g.uy * 4 - ny * 4}`}
-                                fill="none" stroke="#000" strokeWidth={1.3} />
+                                fill="none" stroke="currentColor" strokeWidth={1.3} />
                         );
                     }
                 });
@@ -190,13 +190,13 @@ function FigureSVG({ ex, size, marks: opt, toScale }: { ex: VormleerExercise; si
                 marks.push(
                     <polyline key={`ra${i}`}
                         points={`${c.x + u1.x * 0.6},${c.y + u1.y * 0.6} ${c.x},${c.y} ${c.x + u2.x * 0.6},${c.y + u2.y * 0.6}`}
-                        fill="none" stroke="#000" strokeWidth={1.2} />
+                        fill="none" stroke="currentColor" strokeWidth={1.2} />
                 );
             } else {
                 marks.push(
                     <polyline key={`ra${i}`}
                         points={`${p.x + u1.x},${p.y + u1.y} ${p.x + u1.x + u2.x},${p.y + u1.y + u2.y} ${p.x + u2.x},${p.y + u2.y}`}
-                        fill="none" stroke="#000" strokeWidth={1.2} />
+                        fill="none" stroke="currentColor" strokeWidth={1.2} />
                 );
             }
         });
@@ -204,7 +204,7 @@ function FigureSVG({ ex, size, marks: opt, toScale }: { ex: VormleerExercise; si
 
     return (
         <svg {...svgBox(size, toScale)} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
-            <polygon points={pts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={1.8} />
+            <polygon points={pts.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={1.8} />
             {marks}
         </svg>
     );
@@ -312,15 +312,15 @@ function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number
     const arrow = (tip: MeetPoint, dirX: number, dirY: number, key: string) => {
         const s = 7;
         const nx = -dirY, ny = dirX;
-        return <polyline key={key} points={`${tip.x - dirX * s + nx * s * 0.6},${tip.y - dirY * s + ny * s * 0.6} ${tip.x},${tip.y} ${tip.x - dirX * s - nx * s * 0.6},${tip.y - dirY * s - ny * s * 0.6}`} fill="none" stroke="#000" strokeWidth={1.5} />;
+        return <polyline key={key} points={`${tip.x - dirX * s + nx * s * 0.6},${tip.y - dirY * s + ny * s * 0.6} ${tip.x},${tip.y} ${tip.x - dirX * s - nx * s * 0.6},${tip.y - dirY * s - ny * s * 0.6}`} fill="none" stroke="currentColor" strokeWidth={1.5} />;
     };
-    const dot = (p: MeetPoint, key: string) => <circle key={key} cx={p.x} cy={p.y} r={2.5} fill="#000" />;
+    const dot = (p: MeetPoint, key: string) => <circle key={key} cx={p.x} cy={p.y} r={2.5} fill="currentColor" />;
     const text = (p: MeetPoint, s: string, key: string, dy = -8) =>
         <text key={key} x={p.x} y={p.y + dy} textAnchor="middle" fontSize={0.7 * PX_PER_EM_AT_DEFAULT} fontFamily={mono} fontStyle="italic">{s}</text>;
 
     const parts: React.ReactNode[] = [];
     const line = (a: MeetPoint, b: MeetPoint, key: string, dash = false) =>
-        <line key={key} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#000" strokeWidth={1.8} strokeDasharray={dash ? '4 3' : undefined} />;
+        <line key={key} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={1.8} strokeDasharray={dash ? '4 3' : undefined} />;
 
     if (ex.concept === 'punt') {
         parts.push(dot({ x: cx, y: cy }, 'p'), text({ x: cx, y: cy }, labels[0] ?? 'A', 't'));
@@ -356,7 +356,7 @@ function PuntLijnSVG({ ex, size, toScale }: { ex: VormleerExercise; size: number
             parts.push(line(A, B, 'l1'), line(C, D, 'l2'));
             if (ex.concept === 'loodrecht') {
                 const s = 9;
-                parts.push(<polyline key="ra" points={`${cx + ux * s},${cy + uy * s} ${cx + ux * s + vx * s},${cy + uy * s + vy * s} ${cx + vx * s},${cy + vy * s}`} fill="none" stroke="#000" strokeWidth={1.2} />);
+                parts.push(<polyline key="ra" points={`${cx + ux * s},${cy + uy * s} ${cx + ux * s + vx * s},${cy + uy * s + vy * s} ${cx + vx * s},${cy + vy * s}`} fill="none" stroke="currentColor" strokeWidth={1.2} />);
             }
             if (showRelationLabels) {
                 parts.push(text(A, (labels[0] ?? 'a').toLowerCase(), 't1'), text(C, (labels[1] ?? 'b').toLowerCase(), 't2'));
@@ -416,10 +416,10 @@ function HoekMetenSVG({ ex, raster, hulplijn }: { ex: VormleerExercise; raster: 
         <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ overflow: 'visible' }}>
             {grid}
             {hulp}
-            <line x1={V.x} y1={V.y} x2={E1.x} y2={E1.y} stroke="#000" strokeWidth={2} />
-            <line x1={V.x} y1={V.y} x2={E2.x} y2={E2.y} stroke="#000" strokeWidth={2} />
-            <path d={`M ${V.x + r * Math.cos(a1)} ${V.y + r * Math.sin(a1)} A ${r} ${r} 0 0 1 ${V.x + r * Math.cos(a2)} ${V.y + r * Math.sin(a2)}`} fill="none" stroke="#000" strokeWidth={1.2} />
-            <circle cx={V.x} cy={V.y} r={2.5} fill="#000" />
+            <line x1={V.x} y1={V.y} x2={E1.x} y2={E1.y} stroke="currentColor" strokeWidth={2} />
+            <line x1={V.x} y1={V.y} x2={E2.x} y2={E2.y} stroke="currentColor" strokeWidth={2} />
+            <path d={`M ${V.x + r * Math.cos(a1)} ${V.y + r * Math.sin(a1)} A ${r} ${r} 0 0 1 ${V.x + r * Math.cos(a2)} ${V.y + r * Math.sin(a2)}`} fill="none" stroke="currentColor" strokeWidth={1.2} />
+            <circle cx={V.x} cy={V.y} r={2.5} fill="currentColor" />
         </svg>
     );
 }

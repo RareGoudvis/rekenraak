@@ -36,7 +36,7 @@ export const PX_PER_EM_AT_DEFAULT = 17.33;
 export const SHAPE_BUDGET_AT_DEFAULT = 265;
 
 const FILL_COLOR = '#93c5fd';
-const STROKE = '#000';
+const STROKE = 'currentColor';
 
 function polarToXY(cx: number, cy: number, r: number, angleDeg: number) {
     const rad = (angleDeg - 90) * Math.PI / 180;

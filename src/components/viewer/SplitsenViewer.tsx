@@ -269,7 +269,7 @@ function PositieBenenItem({ ex, showSolutions, geom }: { ex: SplitsenExercise; s
             {stagger ? (
                 <div style={{ position: 'relative', width: W, height: svgH + rowPx }}>
                     <svg width={W} height={svgH} style={{ display: 'block' }}>
-                        {xs.map((x, i) => <polyline key={i} points={`${W / 2},2 ${x},24 ${x},${legEnd(i)}`} fill="none" stroke="#000" strokeWidth="1.5" />)}
+                        {xs.map((x, i) => <polyline key={i} points={`${W / 2},2 ${x},24 ${x},${legEnd(i)}`} fill="none" stroke="currentColor" strokeWidth="1.5" />)}
                     </svg>
                     {places.map((p, i) => (
                         <div key={i} style={{ position: 'absolute', left: xs[i], top: legEnd(i) + 2, transform: 'translateX(-50%)', display: 'flex', alignItems: 'baseline', gap: '2px', whiteSpace: 'nowrap' }}>
@@ -281,7 +281,7 @@ function PositieBenenItem({ ex, showSolutions, geom }: { ex: SplitsenExercise; s
                 <>
                     {/* legs */}
                     <svg width={W} height="26" style={{ display: 'block' }}>
-                        {xs.map((x, i) => <line key={i} x1={W / 2} y1="2" x2={x} y2="24" stroke="#000" strokeWidth="1.5" />)}
+                        {xs.map((x, i) => <line key={i} x1={W / 2} y1="2" x2={x} y2="24" stroke="currentColor" strokeWidth="1.5" />)}
                     </svg>
                     {/* place boxes — 'value' shows the whole value (30); 'letters' shows digit + key (3T) */}
                     <div style={{ display: 'flex', justifyContent: 'space-around', width: W }}>
@@ -432,8 +432,8 @@ function SplitsboomItem({ ex, showSolutions, boxMinWidth }: { ex: SplitsenExerci
         <div className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0' }}>
             {box(ex.total, blank === 'top')}
             <svg width="92" height="26" style={{ display: 'block' }}>
-                <line x1="46" y1="2" x2="16" y2="24" stroke="#000" strokeWidth="1.5" />
-                <line x1="46" y1="2" x2="76" y2="24" stroke="#000" strokeWidth="1.5" />
+                <line x1="46" y1="2" x2="16" y2="24" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="46" y1="2" x2="76" y2="24" stroke="currentColor" strokeWidth="1.5" />
             </svg>
             <div style={{ display: 'flex', gap: '18px' }}>
                 {box(left, blank === 'left')}
@@ -495,8 +495,8 @@ function HeartItem({ pairId, cellKey, total, given, answer, showSolutions }: {
                     </defs>
                     <path d={HEART_PATH} fill="#bfdbfe" clipPath={`url(#${leftId})`} />
                     <path d={HEART_PATH} fill={showSolutions ? '#fecaca' : 'white'} clipPath={`url(#${rightId})`} />
-                    <path d={HEART_PATH} fill="none" stroke="#000" strokeWidth="1.5" />
-                    <line x1="50" y1="36" x2="50" y2="78" stroke="#000" strokeWidth="1.5" />
+                    <path d={HEART_PATH} fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    <line x1="50" y1="36" x2="50" y2="78" stroke="currentColor" strokeWidth="1.5" />
                 </svg>
                 {/* Left half number — positioned at heart visual centroid (~43% from top) */}
                 <div style={{

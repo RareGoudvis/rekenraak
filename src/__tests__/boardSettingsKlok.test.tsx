@@ -30,7 +30,8 @@ describe('klok model', () => {
         const strip = (el: Element) => el.outerHTML.replace(/ data-face-style="[^"]*"/, '');
         const sheet = render(<AnalogClockSVG hours={9} minutes={35} showHourHand showMinuteHand is24hour={false} size={240} />).container.firstElementChild!;
         const board = render(<BoardClockFace hours={9} minutes={35} seconds={null} showHourHand showMinuteHand ring24={false} minuteNumbers={false} faceStyle="klassiek" size={240} accent={null} />).container.firstElementChild!;
-        expect(strip(board)).toBe(strip(sheet));
+        // The sheet clock draws in the inherited page ink (black there); the board keeps its own black.
+        expect(strip(board)).toBe(strip(sheet).replace(/currentColor/g, '#000'));
     });
 
     test('junk keys read as defaults after a load', () => {

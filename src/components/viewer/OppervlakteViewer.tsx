@@ -108,7 +108,7 @@ export default function OppervlakteViewer({ block, showSolutions }: Props) {
                                         <g clipPath={`url(#${clipId})`}>{gridLines}</g>
                                     </>
                                 )}
-                                <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
+                                <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
                             </svg>
                             {labels}
                         </div>

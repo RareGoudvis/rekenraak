@@ -12,6 +12,9 @@ import { useWorksheetStore } from '../store/useWorksheetStore';
 import { SOL } from '../components/viewer/solutionStyle';
 import type { Equation, FractionExercise, MathBlock } from '../services/math/types';
 
+// The given hands draw in the page ink (black on the sheet), the pupil's in solution red.
+const INK = 'currentColor';
+
 // Clean sweep S2: sheet-renderer fixes, each one a repro from BUGS.md.
 
 afterEach(cleanup);
@@ -107,17 +110,17 @@ describe('klok tekenen key: the hands the pupil draws are in the solution red', 
     });
 
     test('minuut asked: the given hour hand stays black, the minute hand is red', () => {
-        expect(hands(renderClock(clockBlock('minuut'), true))).toEqual(['#000', SOL]);
+        expect(hands(renderClock(clockBlock('minuut'), true))).toEqual([INK, SOL]);
         cleanup();
-        expect(hands(renderClock(clockBlock('minuut'), false))).toEqual(['#000']);
+        expect(hands(renderClock(clockBlock('minuut'), false))).toEqual([INK]);
     });
 
     test('uur asked: the given minute hand stays black, the hour hand is red', () => {
-        expect(hands(renderClock(clockBlock('uur'), true))).toEqual([SOL, '#000']);
+        expect(hands(renderClock(clockBlock('uur'), true))).toEqual([SOL, INK]);
     });
 
     test('klok lezen: the printed clock is the question, its hands stay black', () => {
-        expect(hands(renderClock(clockBlock('beide', 'lezen'), true))).toEqual(['#000', '#000']);
+        expect(hands(renderClock(clockBlock('beide', 'lezen'), true))).toEqual([INK, INK]);
     });
 });
 

@@ -69,13 +69,13 @@ function NumberLine({ ex, showSolutions }: { ex: GetallenasExercise; showSolutio
     return (
         <div style={{ position: 'relative', width: W, height: H, fontFamily: mono }}>
             <svg width={W} height={H} style={{ display: 'block', position: 'absolute', inset: 0 }}>
-                <line x1={pad - 12} y1={axisY} x2={W - pad + 12} y2={axisY} stroke="#000" strokeWidth="1.5" />
+                <line x1={pad - 12} y1={axisY} x2={W - pad + 12} y2={axisY} stroke="currentColor" strokeWidth="1.5" />
                 {arrowLeft
-                    ? <polygon points={`${pad - 12},${axisY} ${pad - 4},${axisY - 5} ${pad - 4},${axisY + 5}`} fill="#000" />
-                    : <polygon points={`${W - pad + 12},${axisY} ${W - pad + 4},${axisY - 5} ${W - pad + 4},${axisY + 5}`} fill="#000" />}
+                    ? <polygon points={`${pad - 12},${axisY} ${pad - 4},${axisY - 5} ${pad - 4},${axisY + 5}`} fill="currentColor" />
+                    : <polygon points={`${W - pad + 12},${axisY} ${W - pad + 4},${axisY - 5} ${W - pad + 4},${axisY + 5}`} fill="currentColor" />}
                 {Array.from({ length: tickCount }, (_, i) => {
                     const x = tickX(i);
-                    return <line key={i} x1={x} y1={axisY - 7} x2={x} y2={axisY + 7} stroke="#000" strokeWidth="1.5" />;
+                    return <line key={i} x1={x} y1={axisY - 7} x2={x} y2={axisY + 7} stroke="currentColor" strokeWidth="1.5" />;
                 })}
             </svg>
             {/* HTML label layer (so fractions can render vertically) */}

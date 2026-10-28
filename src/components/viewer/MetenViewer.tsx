@@ -178,13 +178,13 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                             <svg width={W} height={figH} style={{ display: 'block', overflow: 'visible' }}>
                                 {g.isCircle ? (
                                     <>
-                                        <circle cx={centroid.x} cy={centroid.y} r={g.rpx} fill="none" stroke="#000" strokeWidth={2} />
-                                        <circle cx={centroid.x} cy={centroid.y} r={2.5} fill="#000" />
+                                        <circle cx={centroid.x} cy={centroid.y} r={g.rpx} fill="none" stroke="currentColor" strokeWidth={2} />
+                                        <circle cx={centroid.x} cy={centroid.y} r={2.5} fill="currentColor" />
                                     </>
                                 ) : (
                                     closed
-                                        ? <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
-                                        : <polyline points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
+                                        ? <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
+                                        : <polyline points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
                                 )}
                             </svg>
                             {labels}
