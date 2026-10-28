@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, FloppyDisk, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { SaveState } from '../../store/useWorksheetStore';
 import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
@@ -7,6 +7,7 @@ import IconButton from '../ui/IconButton';
 import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
+import { saveCurrentToLibrary } from '../library/saveToLibrary';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import { Info } from '@phosphor-icons/react';
 import { useShedStages } from '../../hooks/useShedStages';
@@ -98,6 +99,8 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const sidebarPreview = useWorksheetStore((s) => s.sidebarPreview);
     const setSidebarPreview = useWorksheetStore((s) => s.setSidebarPreview);
     const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
+    const savedPresetId = useWorksheetStore((s) => s.savedPresetId);
+    const setSavedPresetId = useWorksheetStore((s) => s.setSavedPresetId);
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
@@ -144,13 +147,21 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const handleNewSheet = () => {
         if (!hasBlocks || window.confirm('Nieuw blad starten? De huidige werkbundel wordt gewist.')) {
             clearBlocks();
+            setSavedPresetId(null);
             clearAutosave();
         }
     };
 
     const [massAddOpen, setMassAddOpen] = useState(false);
     const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu'>(null);
-    const [shareFlash, setShareFlash] = useState<'full' | 'template' | null>(null);
+    // One confirmation line beside the bar's actions: link copied, sheet saved, file written.
+    const [flash, setFlash] = useState<string | null>(null);
+    const showFlash = (text: string) => { setFlash(text); window.setTimeout(() => setFlash(null), 2000); };
+
+    const handleSaveToLibrary = () => {
+        const outcome = saveCurrentToLibrary();
+        if (outcome === 'updated' || outcome === 'saved') showFlash('Bewaard in Mijn bladen');
+    };
     const barRef = useRef<HTMLDivElement>(null);
     // The row that actually holds the shedable content — separate from barRef because the
     // bar itself grows a second (fixed 28px) line at stage 2+, which must NOT count toward
@@ -201,8 +212,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
         }
         try {
             await navigator.clipboard.writeText(link);
-            setShareFlash(mode);
-            setTimeout(() => setShareFlash(null), 2000);
+            showFlash('Link gekopieerd');
         } catch {
             window.prompt('Kopieer deze link:', link);
         }
@@ -280,6 +290,9 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                 </button>
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('bibliotheek'); }}>
                                     <BookOpen size={15} /> Kant-en-klare bladen
+                                </button>
+                                <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); handleSaveToLibrary(); }}>
+                                    <FloppyDisk size={15} /> {savedPresetId ? 'Bijwerken in Mijn bladen' : 'Bewaar in Mijn bladen…'}
                                 </button>
 
                                 <div style={S.menuDivider} />
@@ -388,7 +401,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     />
                 )}
 
-                {shareFlash && <span style={S.shareFlash}><Check size={14} /> Link gekopieerd</span>}
+                {flash && <span style={S.flashLine} role="status"><Check size={14} /> {flash}</span>}
 
                 {/* Labelled: an eye alone doesn't say whether it shows or hides answers. */}
                 <IconButton
@@ -523,7 +536,7 @@ const S = {
     } as React.CSSProperties,
     menuDivider: { height: '1px', background: 'var(--separator)', margin: '4px 6px' } as React.CSSProperties,
     sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
-    shareFlash: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
+    flashLine: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
     betaChip: {
         padding: '2px 8px', borderRadius: 'var(--radius-pill)', flexShrink: 0,
         border: '1px solid var(--separator)', color: 'var(--text-muted)',

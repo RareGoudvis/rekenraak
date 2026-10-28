@@ -4,11 +4,12 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import Wordmark from '../ui/Wordmark';
 import SheetThumbnail from '../shared/SheetThumbnail';
 import {
-    loadPresets, savePreset, renamePreset, deletePreset, duplicatePreset,
+    loadPresets, renamePreset, deletePreset, duplicatePreset,
     exportWorksheetFile, savePresetFromFile, parseWorksheetFile, clearAutosave,
     loadOefenSessies, deleteOefenSessie, renameOefenSessie, duplicateOefenSessie,
     type Preset, type OefenSessieEntry,
 } from '../../services/persistence';
+import { saveCurrentToLibrary, LIBRARY_FULL_TEXT } from './saveToLibrary';
 import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 import OefenShareModal from '../oefenen/OefenShareModal';
 import { deadRowsOf } from '../oefenen/oefenBuild';
@@ -27,6 +28,8 @@ export default function MijnBladenView() {
     const setView = useWorksheetStore((s) => s.setView);
     const loadWorksheet = useWorksheetStore((s) => s.loadWorksheet);
     const clearBlocks = useWorksheetStore((s) => s.clearBlocks);
+    const savedPresetId = useWorksheetStore((s) => s.savedPresetId);
+    const setSavedPresetId = useWorksheetStore((s) => s.setSavedPresetId);
 
     const [refresh, setRefresh] = useState(0);
     const [search, setSearch] = useState('');
@@ -57,19 +60,18 @@ export default function MijnBladenView() {
     const close = () => setView('editor');
 
     const handleSaveCurrent = () => {
-        const st = useWorksheetStore.getState();
-        if (st.blocks.length === 0) { window.alert('Het huidige blad is leeg.'); return; }
-        const name = window.prompt('Naam voor dit blad:', st.header.titel || 'Mijn blad');
-        if (name === null) return;
-        savePreset(name, { blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings, selectedGrade: st.selectedGrade });
-        bump();
+        const outcome = saveCurrentToLibrary();
+        if (outcome === 'updated' || outcome === 'saved') bump();
     };
 
-    const handleOpen = (p: Preset) => { loadWorksheet(p.payload); close(); };
+    const handleOpen = (p: Preset) => { loadWorksheet(p.payload, p.id); close(); };
+    // The open sheet's entry may have been deleted in another tab; then Bewaren makes a new one.
+    const linked = !!savedPresetId && presets.some(p => p.id === savedPresetId);
 
     const handleNew = () => {
         if (useWorksheetStore.getState().blocks.length > 0 && !window.confirm('Nieuw blad starten? Het huidige (niet-bewaarde) blad wordt gewist.')) return;
         clearBlocks();
+        setSavedPresetId(null);
         clearAutosave();
         close();
     };
@@ -82,7 +84,16 @@ export default function MijnBladenView() {
     };
 
     const handleDelete = (p: Preset) => {
-        if (window.confirm(`"${p.name}" verwijderen?`)) { deletePreset(p.id); bump(); }
+        if (!window.confirm(`"${p.name}" verwijderen?`)) return;
+        deletePreset(p.id);
+        // The open sheet no longer has an entry to update: the next Bewaren asks a name again.
+        if (useWorksheetStore.getState().savedPresetId === p.id) setSavedPresetId(null);
+        bump();
+    };
+
+    const handleDuplicate = (p: Preset) => {
+        if (!duplicatePreset(p.id)) { window.alert(LIBRARY_FULL_TEXT); return; }
+        bump();
     };
 
     const handleOefenRename = (e: OefenSessieEntry) => {
@@ -118,7 +129,7 @@ export default function MijnBladenView() {
             try {
                 const parsed = parseWorksheetFile(String(reader.result));
                 const name = file.name.replace(/\.(rekenraak|json)$/i, '');
-                savePresetFromFile(parsed, name);
+                if (!savePresetFromFile(parsed, name)) { window.alert(LIBRARY_FULL_TEXT); return; }
                 bump();
             } catch (err) {
                 window.alert(`Importeren mislukt: ${(err as Error).message}`);
@@ -138,7 +149,7 @@ export default function MijnBladenView() {
                     <span style={S.crumb}>Menu / <b>Mijn bladen</b></span>
                 </div>
                 <div style={S.topActions}>
-                    <button style={S.ghostBtn} onClick={handleSaveCurrent}><FloppyDisk size={15} /> Huidig blad bewaren</button>
+                    <button style={S.ghostBtn} onClick={handleSaveCurrent}><FloppyDisk size={15} /> {linked ? 'Huidig blad bijwerken' : 'Huidig blad bewaren'}</button>
                     <button style={S.ghostBtn} onClick={() => fileRef.current?.click()}><UploadSimple size={15} /> Importeer…</button>
                     <button style={S.closeBtn} onClick={close} aria-label="Sluiten"><X size={18} /></button>
                 </div>
@@ -177,7 +188,7 @@ export default function MijnBladenView() {
                                 <div style={S.cardMeta}>Gewijzigd {formatDate(p.savedAt)} · {p.blockCount} {p.blockCount === 1 ? 'blok' : 'blokken'}</div>
                                 <div style={S.cardActions}>
                                     <button style={S.iconBtn} title="Hernoemen" onClick={() => handleRename(p)}><PencilSimple size={15} /></button>
-                                    <button style={S.iconBtn} title="Dupliceren" onClick={() => { duplicatePreset(p.id); bump(); }}><Copy size={15} /></button>
+                                    <button style={S.iconBtn} title="Dupliceren" onClick={() => handleDuplicate(p)}><Copy size={15} /></button>
                                     <button style={S.iconBtn} title="Exporteren (.rekenraak)" onClick={() => exportWorksheetFile(p.payload, p.name)}><DownloadSimple size={15} /></button>
                                     <button style={{ ...S.iconBtn, color: '#e11d48' }} title="Verwijderen" onClick={() => handleDelete(p)}><Trash size={15} /></button>
                                     <button style={S.openBtn} onClick={() => handleOpen(p)}>Openen <ArrowRight size={14} /></button>

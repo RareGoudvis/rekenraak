@@ -8,6 +8,15 @@ import type { WorksheetState } from './types';
 let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 let installed = false;
 
+// One write + status update, shared by the debounced subscription and the immediate write
+// after the sheet is linked to a Mijn bladen entry (a reload right after must keep the link).
+export function writeAutosaveNow(store: StoreApi<WorksheetState>): void {
+    const state = store.getState();
+    const ok = saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings, baseSettings: state.baseSettings, selectedGrade: state.selectedGrade }, state.curriculum, state.savedPresetId);
+    // lastSavedAt stays put on failure — it dates the last snapshot that really is on disk.
+    store.setState(ok ? { saveState: 'saved', lastSavedAt: Date.now() } : { saveState: 'error' });
+}
+
 // Called once from useWorksheetStore.tsx right after the store is created.
 export function installAutosave(store: StoreApi<WorksheetState>): void {
     // A second subscription would double every write and race the saveState flag.
@@ -28,10 +37,6 @@ export function installAutosave(store: StoreApi<WorksheetState>): void {
         // the watched-ref check above is false for a saveState-only change → no loop.
         if (state.saveState !== 'saving') store.setState({ saveState: 'saving' });
         if (autoSaveTimer) clearTimeout(autoSaveTimer);
-        autoSaveTimer = setTimeout(() => {
-            const ok = saveAutosave({ blocks: state.blocks, header: state.header, footer: state.footer, docSettings: state.docSettings, baseSettings: state.baseSettings, selectedGrade: state.selectedGrade }, state.curriculum);
-            // lastSavedAt stays put on failure — it dates the last snapshot that really is on disk.
-            store.setState(ok ? { saveState: 'saved', lastSavedAt: Date.now() } : { saveState: 'error' });
-        }, 1500);
+        autoSaveTimer = setTimeout(() => writeAutosaveNow(store), 1500);
     });
 }

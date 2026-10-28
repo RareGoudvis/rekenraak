@@ -4,6 +4,7 @@ import { useWorksheetStore } from '../store/useWorksheetStore';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { regenerateBlock } from '../services/generateDispatch';
 import { LEAF_BY_ID } from '../config/appstructure';
+import { loadAutosave, loadPresets, savePreset, updatePreset } from '../services/persistence';
 
 // The store touches localStorage (autosave, sidebar-preview) on import, hence jsdom.
 //
@@ -415,6 +416,43 @@ describe('autosave status', () => {
 
         expect(useWorksheetStore.getState().saveState).toBe('error');
         expect(useWorksheetStore.getState().lastSavedAt).toBe(savedAt);
+    });
+});
+
+// "Bewaren" on a sheet opened from Mijn bladen must update that entry, like Word, instead
+// of piling up copies; and a full storage must never be reported as a successful save.
+describe('named worksheet saves', () => {
+    beforeEach(() => { localStorage.clear(); seed(1); });
+    afterEach(() => vi.restoreAllMocks());
+
+    test('saving an opened sheet overwrites the same library entry and keeps its name', () => {
+        const saved = savePreset('Mijn blad', useWorksheetStore.getState())!;
+        expect(saved).not.toBeNull();
+        useWorksheetStore.getState().loadWorksheet(saved.payload, saved.id);
+        expect(useWorksheetStore.getState().savedPresetId).toBe(saved.id);
+        useWorksheetStore.getState().updateHeader({ titel: 'Nieuwe titel' });
+
+        expect(updatePreset(saved.id, useWorksheetStore.getState())).toBe('ok');
+        expect(loadPresets()).toHaveLength(1);
+        expect(loadPresets()[0]).toMatchObject({ id: saved.id, name: 'Mijn blad', payload: { header: { titel: 'Nieuwe titel' } } });
+    });
+
+    test('the link survives autosave and clears when another sheet is loaded', () => {
+        const saved = savePreset('Mijn blad', useWorksheetStore.getState())!;
+        useWorksheetStore.getState().setSavedPresetId(saved.id);
+        expect(loadAutosave()?.presetId).toBe(saved.id);
+
+        useWorksheetStore.getState().loadWorksheet(saved.payload);
+        expect(useWorksheetStore.getState().savedPresetId).toBeNull();
+    });
+
+    test('a deleted entry or a refused write is never reported as saved', () => {
+        const current = useWorksheetStore.getState();
+        expect(updatePreset('missing', current)).toBe('missing');
+        const saved = savePreset('Mijn blad', current)!;
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError'); });
+        expect(updatePreset(saved.id, current)).toBe('failed');
+        expect(savePreset('Tweede', current)).toBeNull();
     });
 });
 

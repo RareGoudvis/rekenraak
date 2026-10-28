@@ -81,6 +81,9 @@ export interface SerialisableState {
 export interface AutosaveRecord {
     savedAt: string;
     payload: WorksheetFile;
+    // The Mijn bladen entry this sheet was opened from, so "Bewaren" after a reload still
+    // updates that entry instead of asking for a name and making a copy.
+    presetId?: string;
 }
 
 export interface Preset {
@@ -215,7 +218,8 @@ export function parseWorksheetFile(json: string): WorksheetFile {
     }
     if (!parsed || typeof parsed !== 'object') throw new Error('Bestand heeft geen geldig formaat.');
     const obj = parsed as Record<string, unknown>;
-    if (typeof obj.version !== 'number') throw new Error('Versie-veld ontbreekt of is ongeldig.');
+    // A fractional, negative or NaN-ish version would slip past the `>` gate and the migration.
+    if (typeof obj.version !== 'number' || !Number.isSafeInteger(obj.version) || obj.version < 1) throw new Error('Versie-veld ontbreekt of is ongeldig.');
     if (obj.version > WORKSHEET_FORMAT_VERSION) {
         throw new Error(`Bestand komt uit een nieuwere versie (v${obj.version}). Werk de app bij om dit te openen.`);
     }
@@ -237,9 +241,9 @@ export function parseWorksheetFile(json: string): WorksheetFile {
 
 /** Returns false when the write failed (quota full, storage unavailable) so the top bar
     can say so instead of showing a green "bewaard" dot over a sheet that was never saved. */
-export function saveAutosave(state: SerialisableState, curriculum?: CurriculumLock | null): boolean {
+export function saveAutosave(state: SerialisableState, curriculum?: CurriculumLock | null, presetId?: string | null): boolean {
     try {
-        const record: AutosaveRecord = { savedAt: new Date().toISOString(), payload: buildPayload(state, 'full', curriculum ?? undefined) };
+        const record: AutosaveRecord = { savedAt: new Date().toISOString(), payload: buildPayload(state, 'full', curriculum ?? undefined), ...(presetId ? { presetId } : {}) };
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(record));
         return true;
     } catch { return false; }
@@ -252,7 +256,8 @@ export function loadAutosave(): AutosaveRecord | null {
         const parsed = JSON.parse(raw) as AutosaveRecord;
         // Sanity check — bail if the embedded payload is unreadable.
         if (!parsed?.payload || !Array.isArray(parsed.payload.blocks)) return null;
-        return { ...parsed, payload: migrateWorksheetFile(parsed.payload) };
+        const presetId = typeof parsed.presetId === 'string' ? parsed.presetId : undefined;
+        return { savedAt: parsed.savedAt, payload: migrateWorksheetFile(parsed.payload), ...(presetId ? { presetId } : {}) };
     } catch { return null; }
 }
 
@@ -274,11 +279,14 @@ export function loadPresets(): Preset[] {
     } catch { return []; }
 }
 
-function persistPresets(list: Preset[]): void {
-    try { localStorage.setItem(PRESETS_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+// False when the browser refused the write (quota full): the caller must say so, because
+// the next loadPresets() re-reads storage and the entry would silently not be there.
+function persistPresets(list: Preset[]): boolean {
+    try { localStorage.setItem(PRESETS_KEY, JSON.stringify(list)); return true; } catch { return false; }
 }
 
-export function savePreset(name: string, state: SerialisableState): Preset {
+/** null = the write was refused (storage full). */
+export function savePreset(name: string, state: SerialisableState): Preset | null {
     const list = loadPresets();
     const trimmed = (name || '').trim() || (state.header.titel || 'Naamloos').trim() || 'Naamloos';
     const entry: Preset = {
@@ -291,8 +299,20 @@ export function savePreset(name: string, state: SerialisableState): Preset {
     const next = [...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt));
     // Drop oldest when exceeding the cap so the most recent 20 survive.
     const trimmedList = next.slice(-MAX_PRESETS);
-    persistPresets(trimmedList);
-    return entry;
+    return persistPresets(trimmedList) ? entry : null;
+}
+
+export type UpdatePresetResult = 'ok' | 'missing' | 'failed';
+
+// Overwrite an existing entry with the current sheet, keeping its id and name: what
+// "Bewaren" means for a sheet opened from Mijn bladen. 'missing' = deleted meanwhile
+// (another tab), so the caller can fall back to saving a new entry.
+export function updatePreset(id: string, state: SerialisableState): UpdatePresetResult {
+    const list = loadPresets();
+    const index = list.findIndex(p => p.id === id);
+    if (index === -1) return 'missing';
+    list[index] = { ...list[index], savedAt: new Date().toISOString(), blockCount: state.blocks.length, payload: buildPayload(state) };
+    return persistPresets(list) ? 'ok' : 'failed';
 }
 
 export function deletePreset(id: string): void {
@@ -315,13 +335,12 @@ export function duplicatePreset(id: string): Preset | null {
     const src = list.find(p => p.id === id);
     if (!src) return null;
     const entry: Preset = { ...src, id: newPresetId(), name: `${src.name} (kopie)`.slice(0, 80), savedAt: new Date().toISOString() };
-    persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS));
-    return entry;
+    return persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS)) ? entry : null;
 }
 
 // Add an imported .rekenraak payload to the library, preserving its exercises (no
-// SerialisableState round-trip). Used by Mijn bladen "Importeer…".
-export function savePresetFromFile(file: WorksheetFile, name: string): Preset {
+// SerialisableState round-trip). Used by Mijn bladen "Importeer…". null = write refused.
+export function savePresetFromFile(file: WorksheetFile, name: string): Preset | null {
     const list = loadPresets();
     const trimmed = (name || '').trim() || (file.header?.titel || 'Naamloos').trim() || 'Naamloos';
     const entry: Preset = {
@@ -331,8 +350,7 @@ export function savePresetFromFile(file: WorksheetFile, name: string): Preset {
         blockCount: Array.isArray(file.blocks) ? file.blocks.length : 0,
         payload: file,
     };
-    persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS));
-    return entry;
+    return persistPresets([...list, entry].sort((a, b) => a.savedAt.localeCompare(b.savedAt)).slice(-MAX_PRESETS)) ? entry : null;
 }
 
 // ── Oefenmodus sessions (teacher library, keyed by OefenSessie.id) ────────────

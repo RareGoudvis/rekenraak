@@ -128,6 +128,9 @@ describe('worksheet file', () => {
     test.each([
         ['not json at all', 'geen geldige JSON'],
         [JSON.stringify({ blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: 0, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: 2.5, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: -1, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
         [JSON.stringify({ version: 2, header: {}, footer: {}, docSettings: {} }), 'blocks-veld'],
         [JSON.stringify({ version: 2, blocks: [], footer: {}, docSettings: {} }), 'header-veld'],
         [JSON.stringify({ version: 2, blocks: [], header: {}, docSettings: {} }), 'footer-veld'],
