@@ -17,6 +17,7 @@ import { suggestionsFor } from '../../config/instructionPresets';
 import { BODY_FONT_PX } from '../../config/printPalette';
 import RegionStyleFields, { ResetAllStylesButton } from './RegionStyleFields';
 import FontStyleFields from './FontStyleFields';
+import InspectorAccordion from './InspectorAccordion';
 import FontFamilyPicker from './FontFamilyPicker';
 import { TEXT_FONT_OPTIONS, MATH_FONT_OPTIONS } from '../../config/fontOptions';
 import type { RegionStyle } from '../../store/useWorksheetStore';
@@ -298,13 +299,13 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                     </div>
                 </div>
 
-                <div style={S.card}>
-                    <h4 style={S.cardTitle}>Vormgeving opdracht-titel</h4>
+                <InspectorAccordion title="Vormgeving opdracht-titel" card={S.card} cardTitle={S.cardTitle}
+                    forceOpen={hasStyle(docSettings.titelCustom) || !!docSettings.fontFamilyTitel}>
                     <RegionStyleFields region="titel" />
-                </div>
+                </InspectorAccordion>
 
                 <div style={S.card}>
-                    <h4 style={S.cardTitle}>Lettertype en -grootte</h4>
+                    <h4 style={S.cardTitle}>Oefeningen</h4>
                     {/* Sheet-wide base faces and sizes (pt), fed onto .print-area-shell as CSS
                         tokens --font-sheet-math/-text and --sheet-size-math/-text (theme.css).
                         Distinct from the zoom slider below: these are the BASE every viewer px
@@ -330,13 +331,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }} />
                         <p style={S.hintText}>Opdrachten en woorden.</p>
                     </div>
-                </div>
 
-                <div style={S.card}>
-                    <h4 style={S.cardTitle}>Tekstgrootte oefeningen</h4>
                     {/* Sheet-wide, not per region: scales every block's exercise body and its
                         opdracht-titel together. Shown in px against the base; stored as a zoom
                         factor. From 16px up, wide blocks start getting auto-shrunk to fit. */}
+                    <div style={{ marginTop: 'var(--sp-3)' }}>
                     {(() => {
                         const px = Math.round((docSettings.bodyFontScale ?? 1) * BODY_FONT_PX.base);
                         const bigText = px >= 16;
@@ -357,11 +356,12 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                             </>
                         );
                     })()}
-                </div>
 
-                {/* docSettings.oefeningenCustom, on every block's ScaledBlock wrapper. */}
-                <div style={S.card}>
-                    <h4 style={S.cardTitle}>Vormgeving oefeningen</h4>
+                    </div>
+
+                    {/* docSettings.oefeningenCustom, on every block's ScaledBlock wrapper. */}
+                    <InspectorAccordion title="Vormgeving oefeningen" card={{ marginTop: 'var(--sp-3)' }} cardTitle={{ ...S.label, marginBottom: 0 }}
+                        forceOpen={hasStyle(docSettings.oefeningenCustom)}>
                     {(() => {
                         const cur: RegionStyle = docSettings.oefeningenCustom ?? {};
                         const patch = (p: Partial<RegionStyle>) => updateDocSettings({ oefeningenCustom: { ...cur, ...p } });
@@ -376,8 +376,11 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         );
                     })()}
                     <p style={S.hintText}>Geldt voor alle oefeningen. Een opdracht-titel zonder eigen kleur kleurt mee.</p>
-                    <div style={{ marginTop: 'var(--sp-4)' }}><ResetAllStylesButton /></div>
+                        <p style={S.hintText}>Geldt voor alle oefeningen. Een opdracht-titel zonder eigen kleur kleurt mee.</p>
+                    </InspectorAccordion>
                 </div>
+
+                <div style={S.card}><ResetAllStylesButton /></div>
         </>),
         voettekst: (<>
                 {/* ── Voettekst — everything printed at the bottom of the page ── */}
@@ -909,6 +912,9 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
         </aside>
     );
 }
+
+// True when a region style carries any explicit value (i.e. differs from the default look)
+const hasStyle = (r?: RegionStyle) => !!r && Object.values(r).some((v) => v !== undefined && v !== false && v !== '');
 
 const S = {
     // Embedded in the left panel's Instellingen tab: no own width or edge, just fill the tab.

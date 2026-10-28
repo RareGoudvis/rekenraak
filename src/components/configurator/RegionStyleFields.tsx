@@ -16,6 +16,8 @@ const DEFAULT_SIZE: Record<StyleRegion, number> = { header: 22, titel: 16, foote
 // Each region has its own face (DocSettings.fontFamily*), independent of the opdrachttekst.
 const FONT_KEY = { header: 'fontFamilyHeader', titel: 'fontFamilyTitel', footer: 'fontFamilyFooter' } as const;
 // The title and the opdracht line print bold until the teacher says otherwise.
+// Three pickers can sit in one inspector tab, so each names its region
+const FONT_LABEL: Record<StyleRegion, string> = { header: 'Lettertype koptekst', titel: 'Lettertype titel', footer: 'Lettertype voettekst' };
 const DEFAULT_BOLD: Record<StyleRegion, boolean> = { header: true, titel: true, footer: false };
 
 export default function RegionStyleFields({ region }: { region: StyleRegion }) {
@@ -30,7 +32,7 @@ export default function RegionStyleFields({ region }: { region: StyleRegion }) {
     return (
         <>
             <FontStyleFields
-                fontFamily={{ label: 'Lettertype', value: docSettings[FONT_KEY[region]], options: TEXT_FONT_OPTIONS, onChange: (v) => updateDocSettings({ [FONT_KEY[region]]: v }) }}
+                fontFamily={{ label: FONT_LABEL[region], value: docSettings[FONT_KEY[region]], options: TEXT_FONT_OPTIONS, onChange: (v) => updateDocSettings({ [FONT_KEY[region]]: v }) }}
                 fontSize={{ label: 'Tekengrootte', value: cur.fontSize ?? DEFAULT_SIZE[region], min: bounds.fontMin, max: bounds.fontMax, onChange: (v) => patch({ fontSize: v }) }}
                 color={cur.color} onColorChange={(v) => patch({ color: v })}
                 background={cur.background} onBackgroundChange={(v) => patch({ background: v })}
