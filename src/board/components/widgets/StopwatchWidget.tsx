@@ -77,7 +77,7 @@ export default function StopwatchWidget({ widget }: { widget: BoardWidget }) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: p.bigDigits ? '6px' : '12px', padding: p.bigDigits ? '10px 18px 14px' : '18px' }}>
-            <div data-stopwatch-digits style={{ fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: `${digitPx}px`, lineHeight: 1.1, color: ink, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+            <div data-stopwatch-digits style={{ fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: `${digitPx}px`, lineHeight: 1.1, color: ink, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
                 {main}{sub && <span style={{ fontSize: '0.58em', opacity: 0.55 }}>{sub}</span>}
             </div>
             <div style={{ display: 'flex', gap: '8px' }} onPointerDown={(e) => e.stopPropagation()}>
@@ -94,7 +94,7 @@ export default function StopwatchWidget({ widget }: { widget: BoardWidget }) {
                 </button>
             </div>
             {p.showLaps && p.laps.length > 0 && (
-                <ol data-stopwatch-laps style={{ margin: 0, padding: 0, listStyle: 'none', width: '100%', maxHeight: '180px', overflowY: 'auto', fontFamily: "'Azeret Mono', monospace", fontSize: '15px', color: '#111' }}>
+                <ol data-stopwatch-laps style={{ margin: 0, padding: 0, listStyle: 'none', width: '100%', maxHeight: '180px', overflowY: 'auto', fontFamily: 'var(--font-sheet-math)', fontSize: '15px', color: '#111' }}>
                     {p.laps.map((t, i) => {
                         const split = formatElapsed(t - (i ? p.laps[i - 1] : 0), p.precision);
                         const total = formatElapsed(t, p.precision);

@@ -106,7 +106,7 @@ export function ScaledBlock({ scale, availableWidthPx = FULL_BLOCK_WIDTH_PX, fit
             {shrunk && fitToWidth && (
                 <div className="no-print" style={{
                     position: 'absolute', top: '2px', right: 0, pointerEvents: 'none',
-                    fontSize: '10px', fontFamily: 'Azeret Mono, monospace', letterSpacing: '0.5px',
+                    fontSize: '10px', fontFamily: 'var(--font-sheet-math)', letterSpacing: '0.5px',
                     color: 'var(--accent-purple)',
                 }}>
                     verkleind tot {Math.round((applied / scale) * 100)} %

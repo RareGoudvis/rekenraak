@@ -12,7 +12,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 // Row text is 1.04 x the math token with 1px letter-spacing; the column widths are derived from it.
 const ROW_FONT = 1.04;

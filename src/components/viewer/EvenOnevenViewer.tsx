@@ -12,7 +12,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const FILL = SOL_FILL;
 // Sizes below are factors of the sheet tokens (--sheet-size-math / --sheet-size-text) so print scales with the docSettings sliders.
 // SYNC: same convention as GetallenasViewer / ClockViewer / MabViewer.
@@ -140,7 +140,7 @@ function Circle({ size, ghost, solved, highlight }: { size: number; ghost: boole
     const fill = highlight ? SOL : (solved ? FILL : 'white');
     return (
         <svg width={size} height={size}>
-            <circle cx={size / 2} cy={size / 2} r={size / 2 - 1.5} fill={fill} stroke="#000" strokeWidth={1.5} />
+            <circle cx={size / 2} cy={size / 2} r={size / 2 - 1.5} fill={fill} stroke="currentColor" strokeWidth={1.5} />
         </svg>
     );
 }

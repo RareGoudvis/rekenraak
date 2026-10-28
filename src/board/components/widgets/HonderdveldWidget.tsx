@@ -46,7 +46,7 @@ export default function HonderdveldWidget({ widget }: { widget: BoardWidget }) {
                             style={{
                                 aspectRatio: '1', border: '0.5px solid rgba(0,0,0,0.35)', cursor: 'pointer',
                                 background: p.marks[String(n)] ?? highlightColor(n, p.highlights) ?? '#fff',
-                                fontFamily: "'Azeret Mono', monospace", fontSize: '14px', color: ink, padding: 0,
+                                fontFamily: 'var(--font-sheet-math)', fontSize: '14px', color: ink, padding: 0,
                             }}
                         >
                             {hidden ? '' : String(n).replace('-', '−')}

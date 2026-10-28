@@ -24,7 +24,7 @@ interface Props {
 // then follows the teacher's Lettergrootte slider. SYNC: same divisor in every viewer.
 const PX_PER_EM_AT_DEFAULT = 17.33;
 
-export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinuteHand, is24hour, size = 130, style, hourAngleDeg, hourHandColor = '#000', minuteHandColor = '#000', surfaceProps, children }: Props) {
+export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinuteHand, is24hour, size = 130, style, hourAngleDeg, hourHandColor = 'currentColor', minuteHandColor = 'currentColor', surfaceProps, children }: Props) {
     // In 24h mode the SVG canvas grows by 24px so the outer 13-24 ring fits without shrinking the clock circle.
     const svgSize = is24hour ? size + 24 : size;
     const cx = svgSize / 2;
@@ -52,7 +52,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
         // `size` stays the internal viewBox geometry; only the rendered box follows the token,
         // so numerals, ticks and hand widths scale with it without any further arithmetic.
         <svg width={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} height={`${svgSize / PX_PER_EM_AT_DEFAULT}em`} viewBox={`0 0 ${svgSize} ${svgSize}`} style={style} {...surfaceProps}>
-            <circle cx={cx} cy={cy} r={r} fill="white" stroke="#000" strokeWidth="2" />
+            <circle cx={cx} cy={cy} r={r} fill="white" stroke="currentColor" strokeWidth="2" />
 
             {is24hour ? (
                 // 24h mode: same 60 minute ticks as 12h + 1-12 inside + 13-24 outside the rim
@@ -67,7 +67,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
                             <line key={`tick-${i}`}
                                 x1={innerEdge.x} y1={innerEdge.y}
                                 x2={outerEdge.x} y2={outerEdge.y}
-                                stroke="#000"
+                                stroke="currentColor"
                                 strokeWidth={isQuarter ? 2 : isHour ? 1.5 : 0.75}
                             />
                         );
@@ -81,11 +81,11 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
                         return (
                             <React.Fragment key={i}>
                                 <text x={numInner.x} y={numInner.y} textAnchor="middle" dominantBaseline="central"
-                                    fontSize={hourFontSize} fontFamily="Azeret Mono, monospace" fill="#000">
+                                    fontSize={hourFontSize} style={{ fontFamily: 'var(--font-sheet-math)' }} fill="currentColor">
                                     {label12}
                                 </text>
                                 <text x={numOuter.x} y={numOuter.y} textAnchor="middle" dominantBaseline="central"
-                                    fontSize={smallFontSize} fontFamily="Azeret Mono, monospace" fill="#000" fontWeight="bold">
+                                    fontSize={smallFontSize} style={{ fontFamily: 'var(--font-sheet-math)' }} fill="currentColor" fontWeight="bold">
                                     {label24}
                                 </text>
                             </React.Fragment>
@@ -105,7 +105,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
                             <line key={i}
                                 x1={innerEdge.x} y1={innerEdge.y}
                                 x2={outerEdge.x} y2={outerEdge.y}
-                                stroke="#000"
+                                stroke="currentColor"
                                 strokeWidth={isQuarter ? 2 : isHour ? 1.5 : 0.75}
                             />
                         );
@@ -118,7 +118,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
                             <text key={i}
                                 x={numPos.x} y={numPos.y}
                                 textAnchor="middle" dominantBaseline="central"
-                                fontSize={hourFontSize} fontFamily="Azeret Mono, monospace" fill="#000">
+                                fontSize={hourFontSize} style={{ fontFamily: 'var(--font-sheet-math)' }} fill="currentColor">
                                 {label}
                             </text>
                         );
@@ -138,7 +138,7 @@ export default function AnalogClockSVG({ hours, minutes, showHourHand, showMinut
                     stroke={minuteHandColor} strokeWidth={Math.max(1.5, size * 0.015)} strokeLinecap="round"
                 />
             )}
-            <circle cx={cx} cy={cy} r={Math.max(2.5, size * 0.022)} fill="#000" />
+            <circle cx={cx} cy={cy} r={Math.max(2.5, size * 0.022)} fill="currentColor" />
             {children}
         </svg>
     );

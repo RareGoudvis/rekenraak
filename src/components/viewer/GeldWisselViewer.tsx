@@ -36,7 +36,7 @@ function WisselCell({ ex, boxHeight, laid, showSolutions }: { ex: GeldWisselExer
             <div style={{ flexShrink: 0 }}>
                 <Bill valueCents={ex.billValueCents} />
             </div>
-            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1.38)', fontWeight: 'bold', fontFamily: "'Azeret Mono', monospace", flexShrink: 0 }}>
+            <div style={{ fontSize: 'calc(var(--sheet-size-math) * 1.38)', fontWeight: 'bold', fontFamily: 'var(--font-sheet-math)', flexShrink: 0 }}>
                 =
             </div>
             {laid ? (
@@ -46,7 +46,7 @@ function WisselCell({ ex, boxHeight, laid, showSolutions }: { ex: GeldWisselExer
             ) : key.length ? (
                 <div style={{ flex: 1, minHeight: `${boxHeight}px`, border: '2px solid #000', boxSizing: 'border-box', borderRadius: '6px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                     <LaidMoney build={key} />
-                    <div data-wissel-key="" style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: "'Azeret Mono', monospace", textAlign: 'center', paddingBottom: '4px' }}>
+                    <div data-wissel-key="" style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'var(--font-sheet-math)', textAlign: 'center', paddingBottom: '4px' }}>
                         {key.flatMap(b => Array.from({ length: b.count }, () => pieceLabel(Number(b.key)))).join(' + ')}
                     </div>
                 </div>

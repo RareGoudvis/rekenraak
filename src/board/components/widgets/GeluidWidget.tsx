@@ -34,11 +34,11 @@ function Poster({ widget, m }: { widget: BoardWidget; m: GeluidModel }) {
                         <span style={{
                             width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
                             background: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                            fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: '24px', color: '#111',
+                            fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: '24px', color: '#111',
                             border: '2px solid rgba(0,0,0,0.35)',
                         }}>{n}</span>
                         <span>
-                            <span style={{ display: 'block', fontFamily: "'Azeret Mono', monospace", fontWeight: 800, fontSize: '19px', color: '#111' }}>{l.title}</span>
+                            <span style={{ display: 'block', fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: '19px', color: '#111' }}>{l.title}</span>
                             {m.showDesc && l.desc && <span style={{ display: 'block', fontSize: '12px', fontStyle: 'italic', color: 'rgba(0,0,0,0.75)' }}>{l.desc}</span>}
                         </span>
                     </button>
@@ -148,7 +148,7 @@ function NoiseMeter({ widget, m }: { widget: BoardWidget; m: GeluidModel }) {
             {m.display === 'verkeerslicht' ? <TrafficLight band={listening ? band : null} m={m} />
                 : m.display === 'smiley' ? <Smiley band={band} color={listening ? col : '#d1d5db'} />
                     : <Bar level={listening ? level : 0} peak={m.peakHold && listening ? Math.max(0, peak - m.calibration) : null} m={m} color={col} />}
-            <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: '13px', color: 'rgba(0,0,0,0.6)', minHeight: '18px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-sheet-math)', fontSize: '13px', color: 'rgba(0,0,0,0.6)', minHeight: '18px', textAlign: 'center' }}>
                 {calibrating ? 'Kalibreren… (stilte)' : error}
             </div>
             <button
@@ -158,7 +158,7 @@ function NoiseMeter({ widget, m }: { widget: BoardWidget; m: GeluidModel }) {
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
                     height: '44px', padding: '0 20px', borderRadius: '10px', cursor: 'pointer',
                     border: '1px solid var(--accent-purple)', background: 'var(--bg-active)',
-                    color: 'var(--text-main)', fontSize: '14px', fontFamily: "'Azeret Mono', monospace",
+                    color: 'var(--text-main)', fontSize: '14px', fontFamily: 'var(--font-sheet-math)',
                 }}>
                 {listening ? <><MicrophoneSlash size={18} /> Stop meten</> : <><Microphone size={18} /> Start meten</>}
             </button>

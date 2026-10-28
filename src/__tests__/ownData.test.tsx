@@ -60,7 +60,7 @@ describe('weegschaal renders from its own bereik/step/notatie/mode', () => {
 
         // Needle endpoint follows bereik = 5000, not the drifted 1000: recompute the
         // expected angle from the exercise's own bereik and compare to what's drawn.
-        const needleLine = document.querySelector('svg line[stroke="#000"][stroke-linecap="round"]');
+        const needleLine = document.querySelector('svg line[stroke="currentColor"][stroke-linecap="round"]');
         expect(needleLine).toBeTruthy();
         // The DIRECTION is what bereik decides; the length may stop short of a label (S5).
         const size = Math.max(120, Math.min(220, 170));

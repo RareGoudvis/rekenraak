@@ -79,11 +79,11 @@ const S = {
     root: { display: 'flex', flexDirection: 'column', gap: '4px' } as React.CSSProperties,
     title: {
         padding: '4px 6px 2px', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-main)',
-        fontFamily: "'Azeret Mono', monospace", userSelect: 'none',
+        fontFamily: 'var(--font-sheet-math)', userSelect: 'none',
     } as React.CSSProperties,
     section: {
         padding: '6px 6px 0', fontSize: '10px', letterSpacing: '0.8px', textTransform: 'uppercase',
-        color: 'var(--text-muted)', fontFamily: "'Azeret Mono', monospace", userSelect: 'none',
+        color: 'var(--text-muted)', fontFamily: 'var(--font-sheet-math)', userSelect: 'none',
     } as React.CSSProperties,
     grid: { display: 'grid', gridTemplateColumns: `repeat(${COLS}, 106px)`, gap: '6px', padding: '2px' } as React.CSSProperties,
     tile: {

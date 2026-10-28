@@ -282,11 +282,11 @@ const S = {
     } as React.CSSProperties,
     dot: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-purple)', flexShrink: 0 } as React.CSSProperties,
     title: {
-        fontFamily: "'Azeret Mono', monospace", fontSize: '13px', fontWeight: 600, color: '#111',
+        fontFamily: 'var(--font-sheet-math)', fontSize: '13px', fontWeight: 600, color: '#111',
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text',
     } as React.CSSProperties,
     titleInput: {
-        fontFamily: "'Azeret Mono', monospace", fontSize: '13px', fontWeight: 600, color: '#111',
+        fontFamily: 'var(--font-sheet-math)', fontSize: '13px', fontWeight: 600, color: '#111',
         border: '1px solid var(--accent-purple)', borderRadius: '6px', padding: '2px 6px',
         outline: 'none', background: '#fff', minWidth: 0, flex: 1,
     } as React.CSSProperties,

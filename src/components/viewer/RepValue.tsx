@@ -2,7 +2,7 @@ import type { Fraction } from '../../services/math/types';
 import VerticalFraction from './VerticalFraction';
 import { asFraction, repText, type RepKind } from '../../services/vergelijken/representations';
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 
 // One value rendered in a chosen representation (breuk / kommagetal / plaatswaarde / woorden).
 // `frac` overrides the breuk rendering with an explicit fraction (teller/noemer getalopbouw).

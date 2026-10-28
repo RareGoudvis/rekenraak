@@ -14,7 +14,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // 13pt (the --sheet-size-math default) is 17.33 CSS px, so a figure sized `px / 17.33` em
 // reproduces its old pixels at the default slider and grows with the text from there.
 const PX_PER_EM_AT_DEFAULT = 17.33;
@@ -41,8 +41,8 @@ function NegenproefKruis({ ex, showSolutions }: { ex: ControleExercise; showSolu
             height={`${size / PX_PER_EM_AT_DEFAULT}em`}
             style={{ flexShrink: 0, fontSize: 'var(--sheet-size-math)' }}
         >
-            <line x1={8} y1={8} x2={size - 8} y2={size - 8} stroke="#000" strokeWidth={1.5} />
-            <line x1={size - 8} y1={8} x2={8} y2={size - 8} stroke="#000" strokeWidth={1.5} />
+            <line x1={8} y1={8} x2={size - 8} y2={size - 8} stroke="currentColor" strokeWidth={1.5} />
+            <line x1={size - 8} y1={8} x2={8} y2={size - 8} stroke="currentColor" strokeWidth={1.5} />
             {num(size / 2, 12, rA)}
             {num(size / 2, size - 12, rB)}
             {num(12, size / 2, rProduct)}

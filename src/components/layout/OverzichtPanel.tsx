@@ -219,7 +219,7 @@ const S = {
     header: { fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '4px 6px 8px' } as React.CSSProperties,
     empty: { fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 6px' } as React.CSSProperties,
     list: { display: 'flex', flexDirection: 'column', gap: '4px' } as React.CSSProperties,
-    pageBreak: { fontSize: '10px', color: 'var(--accent-purple)', textAlign: 'center', letterSpacing: '0.05em', margin: '6px 0 2px', pointerEvents: 'none', fontFamily: 'Azeret Mono, monospace' } as React.CSSProperties,
+    pageBreak: { fontSize: '10px', color: 'var(--accent-purple)', textAlign: 'center', letterSpacing: '0.05em', margin: '6px 0 2px', pointerEvents: 'none', fontFamily: 'var(--font-sheet-math)' } as React.CSSProperties,
     // userSelect: none unconditionally, not only while dragIndex is set: the browser starts
     // selecting on the first pointer move, which is the same move that crosses the drag
     // threshold, so a state-gated rule always arrives one render too late and the labels of

@@ -320,7 +320,7 @@ function KioskThousands({ stroke, fill, at }: { stroke: string; fill: string; at
             <line x1={S} y1={OFFSET} x2={total} y2={0} stroke={stroke} strokeWidth={1.5} />
             <rect x={0} y={OFFSET} width={S} height={S} fill={fill} stroke={stroke} strokeWidth={2.5} />
             <text x={S / 2} y={OFFSET + S / 2} textAnchor="middle" dominantBaseline="central" fontSize={9.5} fontWeight={700}
-                fontFamily="'Azeret Mono', monospace" fill={stroke}>1000</text>
+                style={{ fontFamily: 'var(--font-sheet-math)' }} fill={stroke}>1000</text>
         </svg>
     );
 }

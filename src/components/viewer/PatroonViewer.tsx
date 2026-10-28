@@ -13,7 +13,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 // Term font steps: the default 1.04, then smaller until the row fits its column. 0.7 (12px)
 // is the legibility floor; a row that does not fit even then wraps onto a second line.
 const TERM_FACTORS = [1.04, 0.92, 0.8, 0.7];

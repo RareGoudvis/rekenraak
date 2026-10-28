@@ -14,7 +14,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 
@@ -70,7 +70,7 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
             <line key={i}
                 x1={cx + r1 * Math.cos(ang)} y1={cy + r1 * Math.sin(ang)}
                 x2={cx + rOuter * Math.cos(ang)} y2={cy + rOuter * Math.sin(ang)}
-                stroke="#000" strokeWidth={isMajor ? 1.8 : 1} />
+                stroke="currentColor" strokeWidth={isMajor ? 1.8 : 1} />
         );
         if (isMajor) {
             const rl = rOuter - 24;
@@ -120,7 +120,7 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
         // `size` stays the viewBox geometry (ticks, labels, needle/wedge are all in those
         // units); only the rendered box follows the token, so the dial scales as one.
         <svg width={mathPx(size)} height={mathPx(size)} viewBox={`0 0 ${size} ${size}`} {...surface}>
-            <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="#000" strokeWidth={2} />
+            <circle cx={cx} cy={cy} r={rOuter} fill="none" stroke="currentColor" strokeWidth={2} />
             {wedge}
             {ticks}
             {/* Unit in the dial face; kg dials label in kg to keep numbers readable. */}
@@ -141,7 +141,7 @@ function Dial({ grams, bereik, step, needleColor, arcColor, size, ctx }: {
                     <circle cx={cx + rk * Math.cos(needleAng)} cy={cy + rk * Math.sin(needleAng)} r={6} className={`kiosk-knob${set === undefined ? ' is-unset' : ''}`} />
                 </g>
             </>}
-            <circle cx={cx} cy={cy} r={4} fill="#000" />
+            <circle cx={cx} cy={cy} r={4} fill="currentColor" />
         </svg>
     );
 }
@@ -185,7 +185,7 @@ export default function WeegschaalViewer({ block, showSolutions }: Props) {
                 <div key={ex.id} className="print-exercise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                     {mode === 'aflezen'
                         // aflezen: needle printed black, pupil writes the weight.
-                        ? <Dial grams={ex.grams} bereik={bereik} step={step} needleColor="#000" size={size} />
+                        ? <Dial grams={ex.grams} bereik={bereik} step={step} needleColor="currentColor" size={size} />
                         // kleuren: no needle at all — pupil colours the dial, red wedge only in solutions.
                         // Oefenmodus: the pupil drags a needle round instead (kiosk only).
                         : <Dial grams={ex.grams} bereik={bereik} step={step} arcColor={showSolutions ? SOL : undefined} size={size} ctx={ctx?.kind === 'drag' ? ctx : undefined} />}

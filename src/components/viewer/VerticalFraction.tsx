@@ -22,14 +22,14 @@ export default function VerticalFraction({ value, color, fontSize = 15, mono = f
     // the numbers grew and their box did not — the bar stopped clearing the digits and two
     // fractions in one row no longer had the same width.
     const cellMin = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize + 9)})`;
-    const fontFamily = mono ? 'Azeret Mono, monospace' : undefined;
+    const fontFamily = mono ? 'var(--font-sheet-math)' : undefined;
     const digitFontSize = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize)})`;
     const wholeFontSize = `calc(var(--sheet-size-math) * ${toMathFactor(fontSize * 1.2)})`;
     return (
         <div style={{ display: 'inline-flex', alignItems: 'center', fontFamily, ...(color ? { color } : {}) }}>
             {hasWhole && <span style={{ fontSize: wholeFontSize, marginRight: '4px', ...(color ? { color } : {}) }}>{formatMathNumber(value.whole)}</span>}
             <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', fontSize: digitFontSize, lineHeight: 1.1 }}>
-                <span style={{ borderBottom: `1.5px solid ${color || '#000'}`, minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.n)}</span>
+                <span style={{ borderBottom: `1.5px solid ${color || 'currentColor'}`, minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.n)}</span>
                 <span style={{ minWidth: cellMin, textAlign: 'center', padding: '0 4px' }}>{formatMathNumber(value.d)}</span>
             </div>
         </div>

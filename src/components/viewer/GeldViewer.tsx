@@ -32,9 +32,9 @@ export function Bill({ valueCents, width = 56, height = 32 }: BillProps) {
     const ty = Math.round(height * 0.62);
     return (
         <svg width={em(width)} height={em(height)} viewBox="0 0 70 40" style={FIGURE_FONT}>
-            <rect x="1.5" y="1.5" width="67" height="37" rx="4" ry="4" fill="white" stroke="#000" strokeWidth="2" />
+            <rect x="1.5" y="1.5" width="67" height="37" rx="4" ry="4" fill="white" stroke="currentColor" strokeWidth="2" />
             <text x="35" y={(40 * ty) / height} textAnchor="middle" fontSize={(40 * fs) / height} fontWeight="bold"
-                fontFamily="'Azeret Mono', monospace" fill="#000">
+                style={{ fontFamily: 'var(--font-sheet-math)' }} fill="currentColor">
                 {billText(valueCents)}
             </text>
         </svg>
@@ -44,10 +44,10 @@ export function Bill({ valueCents, width = 56, height = 32 }: BillProps) {
 export function EuroCoin({ valueCents, size = 36 }: CoinProps) {
     return (
         <svg width={em(size)} height={em(size)} viewBox="0 0 44 44" style={FIGURE_FONT}>
-            <circle cx="22" cy="22" r="20" fill="white" stroke="#000" strokeWidth="2" />
-            <circle cx="22" cy="22" r="14" fill="white" stroke="#000" strokeWidth="1.5" />
+            <circle cx="22" cy="22" r="20" fill="white" stroke="currentColor" strokeWidth="2" />
+            <circle cx="22" cy="22" r="14" fill="white" stroke="currentColor" strokeWidth="1.5" />
             <text x="22" y="27" textAnchor="middle" fontSize="13" fontWeight="bold"
-                fontFamily="'Azeret Mono', monospace" fill="#000">
+                style={{ fontFamily: 'var(--font-sheet-math)' }} fill="currentColor">
                 {coinText(valueCents)}
             </text>
         </svg>
@@ -57,9 +57,9 @@ export function EuroCoin({ valueCents, size = 36 }: CoinProps) {
 export function CentCoin({ valueCents, size = 30 }: CoinProps) {
     return (
         <svg width={em(size)} height={em(size)} viewBox="0 0 36 36" style={FIGURE_FONT}>
-            <circle cx="18" cy="18" r="16" fill="white" stroke="#000" strokeWidth="1.5" />
+            <circle cx="18" cy="18" r="16" fill="white" stroke="currentColor" strokeWidth="1.5" />
             <text x="18" y="23" textAnchor="middle" fontSize="11" fontWeight="bold"
-                fontFamily="'Azeret Mono', monospace" fill="#000">
+                style={{ fontFamily: 'var(--font-sheet-math)' }} fill="currentColor">
                 {coinText(valueCents)}
             </text>
         </svg>
@@ -118,7 +118,7 @@ export function VoorbeeldenBar({ allowedDenominations, voorbeeldTypes }: { allow
                     {d.type === 'bill' && <Bill valueCents={d.valueCents} width={42} height={24} />}
                     {d.type === 'euro-coin' && <EuroCoin valueCents={d.valueCents} size={26} />}
                     {d.type === 'cent-coin' && <CentCoin valueCents={d.valueCents} size={22} />}
-                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.52)', fontFamily: "'Azeret Mono', monospace", color: '#555' }}>
+                    <span style={{ fontSize: 'calc(var(--sheet-size-math) * 0.52)', fontFamily: 'var(--font-sheet-math)', color: '#555' }}>
                         {denominationLabel(d.valueCents)}
                     </span>
                 </div>
@@ -136,11 +136,11 @@ function HerkennenCell({ ex, block, showSolutions }: { ex: GeldExercise; block: 
     const geldLayout: string = c.geldLayout ?? 'samen';
 
     const answerArea = showSolutions ? (
-        <div style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontFamily: "'Azeret Mono', monospace", marginTop: '6px' }}>
+        <div style={{ ...solutionText, fontSize: 'calc(var(--sheet-size-math) * 0.92)', fontFamily: 'var(--font-sheet-math)', marginTop: '6px' }}>
             {formatAmount(ex.amountCents, format)}
         </div>
     ) : scaffolding === 'invullen' ? (
-        <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: 'calc(var(--sheet-size-math) * 0.81)', marginTop: '6px' }}>
+        <div style={{ fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.81)', marginTop: '6px' }}>
             {format === 'decimaal' ? '€ ___ , ___' : '€ _______'}
         </div>
     ) : (

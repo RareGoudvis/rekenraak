@@ -12,7 +12,7 @@ interface Props {
     showSolutions: boolean;
 }
 
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const THERMO_ITEM_MIN_PX = 140;   // one thermometer item (84px glass + labels + gap) at 13pt
 const MAX_T = 25;          // top labelled tick
 const HEAD = 12;           // glass headroom above MAX_T (no ticks)
@@ -84,7 +84,7 @@ function Thermometer({ minT, fillTo, uid, ctx }: { minT: number; fillTo: number 
                 return (
                     <g key={t}>
                         <line x1={cx + tubeW / 2} y1={y(t)} x2={cx + tubeW / 2 + len} y2={y(t)} stroke="#5b6b73" strokeWidth={major ? 1.2 : 0.8} />
-                        {major && <text x={cx + tubeW / 2 + len + 3} y={y(t) + 3.5} fontSize={0.55 * PX_PER_EM_AT_DEFAULT} fill="#333">{t}</text>}
+                        {major && <text x={cx + tubeW / 2 + len + 3} y={y(t) + 3.5} fontSize={0.55 * PX_PER_EM_AT_DEFAULT} fill="currentColor">{t}</text>}
                     </g>
                 );
             })}

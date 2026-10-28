@@ -161,7 +161,7 @@ function computeExPerRow(exercises: CijferExercise[], c: CijferConstraints, CELL
 // attrs: kiosk-only data attributes (a struck top digit after Lenen); empty on the sheet.
 interface DCProps { col: number; row: number; char: string; CELL: number; rowH?: number; color?: string; small?: boolean; attrs?: Record<string, string>; }
 
-function DC({ col, row, char, CELL, rowH, color = '#000', small = false, attrs }: DCProps) {
+function DC({ col, row, char, CELL, rowH, color = 'inherit', small = false, attrs }: DCProps) {
     const H = rowH ?? CELL;
     return (
         <div {...attrs} style={{
@@ -173,7 +173,7 @@ function DC({ col, row, char, CELL, rowH, color = '#000', small = false, attrs }
             // matching MathBlockRenderer's font size and avoiding the "cijferen looks
             // smaller than mental math" regression.
             fontSize: small ? CELL * 0.48 : CELL * 0.68,
-            fontFamily: 'Azeret Mono, monospace',
+            fontFamily: 'var(--font-sheet-math)',
             fontWeight: 'normal',
             color, userSelect: 'none', boxSizing: 'border-box', pointerEvents: 'none',
         }}>{char}</div>
@@ -192,7 +192,7 @@ function CommaEdge({ afterGridCol, row, CELL, rowH }: { afterGridCol: number; ro
             display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
             paddingBottom: CELL * 0.04,
             fontSize: CELL * 0.60,
-            fontFamily: 'Azeret Mono, monospace',
+            fontFamily: 'var(--font-sheet-math)',
             color: '#888888',
             userSelect: 'none', pointerEvents: 'none',
         }}>,</div>
@@ -254,7 +254,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                 {scaffolding <= 2 && (
                     <>
                         <line x1={0} y1={1 * CELL} x2={gridW} y2={1 * CELL} stroke="#ccc" strokeWidth={1} />
-                        <line x1={0} y1={lineRow * CELL} x2={gridW} y2={lineRow * CELL} stroke="#222" strokeWidth={2} />
+                        <line x1={0} y1={lineRow * CELL} x2={gridW} y2={lineRow * CELL} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
@@ -268,7 +268,7 @@ function AddSubGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, extra
                         position: 'absolute', left: c * CELL, top: 0,
                         width: CELL, height: CELL,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: CELL * 0.44, fontFamily: 'Azeret Mono, monospace',
+                        fontSize: CELL * 0.44, fontFamily: 'var(--font-sheet-math)',
                         color: '#888', userSelect: 'none', pointerEvents: 'none',
                     }}>{label}</div>
                 );
@@ -358,8 +358,8 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                 {scaffolding <= 2 && (
                     <>
                         <line x1={0} y1={1 * CELL} x2={gridW} y2={1 * CELL} stroke="#ccc" strokeWidth={1} />
-                        <line x1={0} y1={lineRow1 * CELL} x2={gridW} y2={lineRow1 * CELL} stroke="#222" strokeWidth={2} />
-                        <line x1={0} y1={lineRow2 * CELL} x2={gridW} y2={lineRow2 * CELL} stroke="#222" strokeWidth={2} />
+                        <line x1={0} y1={lineRow1 * CELL} x2={gridW} y2={lineRow1 * CELL} stroke="currentColor" strokeWidth={2} />
+                        <line x1={0} y1={lineRow2 * CELL} x2={gridW} y2={lineRow2 * CELL} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
@@ -373,7 +373,7 @@ function MultiplicationGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCol
                         position: 'absolute', left: c * CELL, top: 0,
                         width: CELL, height: CELL,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: CELL * 0.44, fontFamily: 'Azeret Mono, monospace',
+                        fontSize: CELL * 0.44, fontFamily: 'var(--font-sheet-math)',
                         color: '#888', userSelect: 'none', pointerEvents: 'none',
                     }}>{label}</div>
                 );
@@ -483,11 +483,11 @@ function DivisionGrid({ ex, CELL, dp, scaffolding, showSolutions, extraCols, ext
                 {scaffolding <= 2 && (
                     <>
                         {/* Vertical separator: left section | right section (full height) */}
-                        <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={0} x2={leftCols * CELL} y2={gridH} stroke="currentColor" strokeWidth={2} />
                         {/* Divisor box top (right section only) */}
-                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={1} x2={gridW} y2={1} stroke="currentColor" strokeWidth={2} />
                         {/* Divisor box bottom = quotient separator */}
-                        <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="#222" strokeWidth={2} />
+                        <line x1={leftCols * CELL} y1={ROW_H} x2={gridW} y2={ROW_H} stroke="currentColor" strokeWidth={2} />
                     </>
                 )}
             </svg>
@@ -574,17 +574,17 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                 <div style={{ border: '0.5px solid #4a90d9', padding: '4px 8px', backgroundColor: '#f0f8ff', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {ex.operands.map((_, i) => (
                         <React.Fragment key={i}>
-                            {i > 0 && <span style={{ fontSize: 11, fontFamily: 'Azeret Mono, monospace' }}>{opStr}</span>}
+                            {i > 0 && <span style={{ fontSize: 11, fontFamily: 'var(--font-sheet-math)' }}>{opStr}</span>}
                             <input
                                 type="number"
                                 value={editValues[i] ?? ''}
                                 onChange={e => setEditValues(prev => { const next = [...prev]; next[i] = e.target.value; return next; })}
                                 onKeyDown={e => { if (e.key === 'Enter') confirmEdit(); if (e.key === 'Escape') setEditing(false); }}
-                                style={{ width: 70, fontSize: 11, fontFamily: 'Azeret Mono, monospace', textAlign: 'right', border: '1px solid #4a90d9', borderRadius: 3, padding: '1px 4px' }}
+                                style={{ width: 70, fontSize: 11, fontFamily: 'var(--font-sheet-math)', textAlign: 'right', border: '1px solid #4a90d9', borderRadius: 3, padding: '1px 4px', color: 'inherit' }}
                             />
                         </React.Fragment>
                     ))}
-                    <span style={{ fontSize: 11, fontFamily: 'Azeret Mono, monospace' }}>=</span>
+                    <span style={{ fontSize: 11, fontFamily: 'var(--font-sheet-math)' }}>=</span>
                     <button onClick={confirmEdit} style={{ fontSize: 11, padding: '1px 6px', cursor: 'pointer', border: '1px solid #aaa', borderRadius: 3 }}>✓</button>
                     <button onClick={() => setEditing(false)} style={{ fontSize: 11, padding: '1px 6px', cursor: 'pointer', border: '1px solid #aaa', borderRadius: 3 }}>✗</button>
                 </div>
@@ -592,7 +592,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                 <div
                     onClick={() => { setEditValues(ex.operands.map(o => String(o))); setEditing(true); }}
                     title="Klik om te bewerken"
-                    style={{ border: '0.5px solid #aaa', padding: '4px 8px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'Azeret Mono, monospace', backgroundColor: '#fff', cursor: 'pointer', userSelect: 'none' }}
+                    style={{ border: '0.5px solid #aaa', padding: '4px 8px', textAlign: 'center', fontSize: 'calc(var(--sheet-size-math) * 0.64)', fontFamily: 'var(--font-sheet-math)', backgroundColor: '#fff', cursor: 'pointer', userSelect: 'none' }}
                 >
                     {/* A narrow box breaks the line between terms, never inside "1 445". */}
                     {headerTermsOf(ex, dp).map((t, i) => (
@@ -601,7 +601,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                 </div>
             )}
             {c.withEstimation && scaffold && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '2px 8px 4px', borderBottom: '0.5px solid #aaa', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span>≈</span>
                     {showSolutions
                         ? <span style={{ ...solutionText, marginLeft: '4px' }}>{computeEstimation(ex)}</span>
@@ -617,14 +617,14 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                 : <AddSubGrid ex={ex} CELL={CELL} dp={dp} scaffolding={scaffolding} showSolutions={showSolutions} extraCols={extraCols} extraRows={extraRows} cells={cells} />
             }
             {isDivision && cells && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: CELL * 0.3, marginTop: CELL * 0.3, fontFamily: 'Azeret Mono, monospace', fontSize: CELL * 0.68 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: CELL * 0.3, marginTop: CELL * 0.3, fontFamily: 'var(--font-sheet-math)', fontSize: CELL * 0.68 }}>
                     <span>r</span>
                     <KioskCell cellKey="r" label="Rest" variant="is-grid is-rest" style={{ position: 'relative', width: CELL * 3, height: CELL, fontSize: CELL * 0.68 }} />
                 </div>
             )}
             {/* Controle via de omgekeerde bewerking (add/sub only): write-line under the sum. */}
             {!isDivision && !isMultiplication && scaffold && !!(c as { omgekeerdeControle?: boolean }).omgekeerdeControle && (
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', padding: '4px 8px', borderTop: '0.5px solid #aaa', fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.64)' }}>
                     <span style={{ flexShrink: 0 }}>controle:</span>
                     {showSolutions
                         ? <span style={{ ...solutionText, marginLeft: '4px' }}>
@@ -639,7 +639,7 @@ function CijferExercisePreview({ ex, c, CELL, showSolutions, blockId }: ExProps)
                 </div>
             )}
             {isDivision && scaffold && (c.showQR !== false) && (
-                <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'Azeret Mono, monospace', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ border: '0.5px solid #aaa', backgroundColor: '#e8e8e8', padding: '4px 8px', marginTop: 8, fontFamily: 'var(--font-sheet-math)', fontSize: 'calc(var(--sheet-size-math) * 0.58)', display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {showSolutions ? (
                         <>
                             <span>q  <span style={solutionText}>{fmtDisplay(ex.answer, dp)}</span></span>

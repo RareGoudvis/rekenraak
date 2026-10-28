@@ -68,7 +68,7 @@ export default function AdemWidget({ widget }: { widget: BoardWidget }) {
             <div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {shape}
             </div>
-            <div style={{ fontFamily: "'Azeret Mono', monospace", fontSize: '22px', fontWeight: 700, color: ink, minHeight: '28px', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--font-sheet-math)', fontSize: '22px', fontWeight: 700, color: ink, minHeight: '28px', textAlign: 'center' }}>
                 {running && p.guideText ? label : finished ? 'Klaar!' : ''}
                 {running && p.cycles > 0 && (
                     <span style={{ display: 'block', fontSize: '14px', opacity: 0.7 }}>{Math.min(done + 1, p.cycles)} / {p.cycles}</span>
@@ -81,7 +81,7 @@ export default function AdemWidget({ widget }: { widget: BoardWidget }) {
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
                     height: '44px', padding: '0 20px', borderRadius: '10px', cursor: 'pointer',
                     border: '1px solid var(--accent-purple)', background: 'var(--bg-active)',
-                    color: 'var(--text-main)', fontSize: '14px', fontFamily: "'Azeret Mono', monospace",
+                    color: 'var(--text-main)', fontSize: '14px', fontFamily: 'var(--font-sheet-math)',
                 }}>
                 {running ? <><Stop size={18} /> Stop</> : <><Play size={18} /> Start</>}
             </button>

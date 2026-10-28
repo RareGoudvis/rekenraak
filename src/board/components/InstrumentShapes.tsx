@@ -75,9 +75,9 @@ export function LatShape(p: ShapeProps) {
                 <path d={LAT_TICKS.cm} strokeWidth={2} style={{ stroke: IC.tick }} />
                 {Array.from({ length: LAT.cm + 1 }, (_, i) => (
                     <text key={i} x={round1(i * BOARD_CM_PX)} y={round1(1.18 * BOARD_CM_PX)} textAnchor="middle"
-                        fontSize={18} fontWeight={600} fontFamily="var(--font-ui)" style={{ fill: IC.tick }}>{i}</text>
+                        fontSize={18} fontWeight={600} style={{ fontFamily: 'var(--font-ui)', fill: IC.tick }}>{i}</text>
                 ))}
-                <text x={round1(0.15 * BOARD_CM_PX)} y={round1(2.1 * BOARD_CM_PX)} fontSize={14} fontFamily="var(--font-ui)" style={{ fill: IC.faint }}>cm</text>
+                <text x={round1(0.15 * BOARD_CM_PX)} y={round1(2.1 * BOARD_CM_PX)} fontSize={14} style={{ fontFamily: 'var(--font-ui)', fill: IC.faint }}>cm</text>
             </g>
             <RotateHandle {...(p.handle ?? { at: rotateHandleSpots('lat')[0], chip: false })} onGrip={p.onGrip} />
         </Body>
@@ -113,7 +113,7 @@ function DegLabel({ d, r, label, size }: { d: number; r: number; label: number; 
     const c = Math.cos(d * Math.PI / 180), s = Math.sin(d * Math.PI / 180);
     return (
         <text transform={`translate(${round1(r * c)} ${round1(r * s)}) rotate(${d - 90})`} textAnchor="middle" dy="0.35em"
-            fontSize={size} fontWeight={600} fontFamily="var(--font-ui)" style={{ fill: IC.tick }}>{label}</text>
+            fontSize={size} fontWeight={600} style={{ fontFamily: 'var(--font-ui)', fill: IC.tick }}>{label}</text>
     );
 }
 
@@ -127,7 +127,7 @@ export function GeodriehoekShape(p: ShapeProps) {
                 <path d={GEO_SCALE.cm} strokeWidth={2} style={{ stroke: IC.tick }} />
                 {Array.from({ length: 13 }, (_, i) => i - 6).map(c => (
                     <text key={c} x={round1(c * BOARD_CM_PX)} y={round1(0.92 * BOARD_CM_PX)} textAnchor="middle"
-                        fontSize={15} fontWeight={600} fontFamily="var(--font-ui)" style={{ fill: IC.tick }}>{Math.abs(c)}</text>
+                        fontSize={15} fontWeight={600} style={{ fontFamily: 'var(--font-ui)', fill: IC.tick }}>{Math.abs(c)}</text>
                 ))}
                 {/* protractor */}
                 <path d={`M ${round1(GEO_R)} 0 A ${round1(GEO_R)} ${round1(GEO_R)} 0 0 1 ${round1(-GEO_R)} 0`} fill="none" strokeWidth={1.4} style={{ stroke: IC.tick }} />
@@ -187,7 +187,7 @@ export function PasserShape({ inst, selected, onGrip, passer }: ShapeProps) {
                 <line x1={0} y1={0} x2={r} y2={0} strokeWidth={1.5} strokeDasharray="6 5" style={{ stroke: IC.edge }} />
                 <g data-passer-radius transform={`translate(${round1(r / 2)} ${hy < 0 ? 26 : -26}) rotate(${-inst.rotation})`}>
                     <rect x={-40} y={-14} width={80} height={28} rx={14} strokeWidth={1.5} style={{ fill: IC.label, stroke: IC.edge }} />
-                    <text textAnchor="middle" dy="0.35em" fontSize={16} fontWeight={700} fontFamily="var(--font-ui)" style={{ fill: IC.edge }}>{formatCm(r)}</text>
+                    <text textAnchor="middle" dy="0.35em" fontSize={16} fontWeight={700} style={{ fontFamily: 'var(--font-ui)', fill: IC.edge }}>{formatCm(r)}</text>
                 </g>
             </g>
             {/* needle leg + steel pin */}

@@ -25,6 +25,6 @@ export const tekstProps = (w: BoardWidget): TekstModel => readProps(TEKST_SCHEMA
 
 export const TEKST_LINE_HEIGHT = 1.4;
 export const TEKST_FONTS: Record<TekstModel['font'], string> = {
-    mono: "'Azeret Mono', monospace",
+    mono: 'var(--font-sheet-math)',
     sans: "'Ubuntu', system-ui, sans-serif",
 };

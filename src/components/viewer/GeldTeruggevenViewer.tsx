@@ -32,7 +32,7 @@ const blank = (w = 28): React.CSSProperties => ({
 const FS = 'calc(var(--sheet-size-math) * 0.75)';
 const FS_TEXT = 'calc(var(--sheet-size-text) * 0.65)';
 const FS_LABEL = 'calc(var(--sheet-size-text) * 0.55)';
-const FONT = "'Azeret Mono', monospace";
+const FONT = 'var(--font-sheet-math)';
 
 // SYNC: same divisor as GeldViewer.tsx (it cannot export it next to its components).
 // 13pt = 17.33px, so em over it is today's px on a default sheet.
@@ -101,7 +101,7 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
     const showLabel1 = sol || scaffolding === 'ingevuld';
     const showLabel2 = !single && (sol || scaffolding === 'ingevuld');
     // Only the pupil's answers (waypoint, step labels) turn red; the given price and paid amount stay black.
-    const col = sol ? SOL : '#000';
+    const col = sol ? SOL : 'currentColor';
 
     const label1Sol = `+ ${ex.step1Cents} cent`;
     const label2Sol = `+ €${ex.step2Cents / 100}`;
@@ -112,27 +112,27 @@ function ArrowDiagram({ ex, scaffolding, showSolutions }: { ex: GeldTeruggevenEx
         <svg viewBox={single ? '15 60 210 54' : '0 0 440 114'} style={{ fontSize: 'var(--sheet-size-math)', width: '100%', maxWidth: em(single ? 191 : 400), overflow: 'visible' }}>
             <defs>
                 <marker id="tg-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                    <path d="M 0,0 L 6,3 L 0,6 z" fill="#000" />
+                    <path d="M 0,0 L 6,3 L 0,6 z" fill="currentColor" />
                 </marker>
             </defs>
 
             {/* Arc 1: small, below baseline — short cent-step */}
             <path d="M 87,75 C 95,103 130,103 141,75"
-                fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
+                fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />
 
             {/* Arc 2: large, above baseline — long euro-step, middle node is at x≈150-198 */}
             {!single && <path d="M 205,75 C 250,28 345,28 376,75"
-                fill="none" stroke="#000" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />}
+                fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd="url(#tg-arrow)" />}
 
-            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="#000">{fmtCents(ex.priceCents)}</text>}
-            {showRight && <text x={single ? 173 : 415} y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="#000">{fmtCents(ex.payWithCents)}</text>}
+            {showLeft  && <text x="50"  y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="currentColor">{fmtCents(ex.priceCents)}</text>}
+            {showRight && <text x={single ? 173 : 415} y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill="currentColor">{fmtCents(ex.payWithCents)}</text>}
 
             {/* Middle node: solution shows amount; otherwise € + blank line for student */}
             {showMiddle && (sol
                 ? <text x="173" y="80" textAnchor="middle" fontSize={DIAG_FS} fontFamily={FONT} fill={col}>{fmtCents(ex.waypointCents)}</text>
                 : <g>
-                    <text x="150" y="80" fontSize={DIAG_FS} fontFamily={FONT} fill="#000" textAnchor="start">€</text>
-                    <line x1="164" y1="81" x2="198" y2="81" stroke="#000" strokeWidth="1" />
+                    <text x="150" y="80" fontSize={DIAG_FS} fontFamily={FONT} fill="currentColor" textAnchor="start">€</text>
+                    <line x1="164" y1="81" x2="198" y2="81" stroke="currentColor" strokeWidth="1" />
                   </g>
             )}
 

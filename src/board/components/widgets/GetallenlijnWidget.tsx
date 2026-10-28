@@ -6,7 +6,7 @@ import type { BoardWidget } from '../../boardTypes';
 
 // Length of the drawn axis in the 600-wide drawing (also the vertical line's height).
 const W = 600, PAD = 30;
-const MONO = "'Azeret Mono', monospace";
+const MONO = 'var(--font-sheet-math)';
 
 const signed = (d: number, g: GetallenlijnProps): string => {
     const t = tickLabel(Math.abs(d), g);

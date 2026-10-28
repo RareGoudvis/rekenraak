@@ -511,7 +511,7 @@ const S = {
     toolDisabled: { opacity: 0.35, cursor: 'not-allowed' } as React.CSSProperties,
     sep: { width: '1px', alignSelf: 'stretch', margin: '6px 2px', background: 'var(--border-color)' } as React.CSSProperties,
     pageLabel: {
-        fontFamily: "'Azeret Mono', monospace", fontSize: '13px', color: 'var(--text-main)',
+        fontFamily: 'var(--font-sheet-math)', fontSize: '13px', color: 'var(--text-main)',
         minWidth: '52px', textAlign: 'center', userSelect: 'none',
     } as React.CSSProperties,
     exitBtn: {
@@ -519,14 +519,14 @@ const S = {
         height: '44px', padding: '0 16px', borderRadius: '10px',
         border: '1px solid var(--border-color)', background: 'transparent',
         color: 'var(--text-main)', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-        fontSize: '13px', fontFamily: "'Azeret Mono', monospace",
+        fontSize: '13px', fontFamily: 'var(--font-sheet-math)',
     } as React.CSSProperties,
     addBtn: {
         display: 'inline-flex', alignItems: 'center', gap: '8px',
         height: '44px', padding: '0 18px', borderRadius: '10px',
         border: '1px solid var(--accent-purple)', background: 'var(--bg-active)',
         color: 'var(--text-main)', cursor: 'pointer', fontWeight: 600,
-        fontSize: '13px', fontFamily: "'Azeret Mono', monospace",
+        fontSize: '13px', fontFamily: 'var(--font-sheet-math)',
     } as React.CSSProperties,
     popup: {
         position: 'absolute', bottom: '52px', left: 0, minWidth: '170px',
@@ -564,7 +564,7 @@ const S = {
     popupSection: {
         display: 'flex', alignItems: 'center',
         padding: '8px 12px 2px', fontSize: '10px', letterSpacing: '0.8px', textTransform: 'uppercase',
-        color: 'var(--text-muted)', fontFamily: "'Azeret Mono', monospace", userSelect: 'none',
+        color: 'var(--text-muted)', fontFamily: 'var(--font-sheet-math)', userSelect: 'none',
     } as React.CSSProperties,
     snapBox: {
         display: 'flex', flexDirection: 'column', gap: '2px', margin: '2px 6px 6px', padding: '6px 8px',

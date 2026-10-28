@@ -14,7 +14,7 @@ interface Props {
 // Sizes below are factors of the sheet token (--sheet-size-math), not fixed px
 const CM = 37.8;            // 1 cm at 96dpi — keeps the drawing genuinely to scale
 const OFFSET = 22;          // how far side labels sit outside the figure
-const mono = "'Azeret Mono', monospace";
+const mono = 'var(--font-sheet-math)';
 const round1 = (v: number) => Math.round(v * 10) / 10;
 const fmt = (v: number) => formatMathNumber(round1(v));
 
@@ -178,13 +178,13 @@ export default function MetenViewer({ block, showSolutions }: Props) {
                             <svg width={W} height={figH} style={{ display: 'block', overflow: 'visible' }}>
                                 {g.isCircle ? (
                                     <>
-                                        <circle cx={centroid.x} cy={centroid.y} r={g.rpx} fill="none" stroke="#000" strokeWidth={2} />
-                                        <circle cx={centroid.x} cy={centroid.y} r={2.5} fill="#000" />
+                                        <circle cx={centroid.x} cy={centroid.y} r={g.rpx} fill="none" stroke="currentColor" strokeWidth={2} />
+                                        <circle cx={centroid.x} cy={centroid.y} r={2.5} fill="currentColor" />
                                     </>
                                 ) : (
                                     closed
-                                        ? <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
-                                        : <polyline points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#000" strokeWidth={2} />
+                                        ? <polygon points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
+                                        : <polyline points={cs.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="currentColor" strokeWidth={2} />
                                 )}
                             </svg>
                             {labels}
