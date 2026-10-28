@@ -18,6 +18,7 @@ import TourOverlay from './components/onboarding/TourOverlay';
 import WelcomeModal from './components/onboarding/WelcomeModal';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
+import { useFontEpoch } from './hooks/useFontEpoch';
 import { useSheetDnd } from './hooks/useSheetDnd';
 import { SheetDragHint } from './components/layout/SheetDropZones';
 import { styles } from './styles/appStyles';
@@ -90,15 +91,8 @@ export default function App() {
   ]), [headerData, docSettings.headerStyle, docSettings.titlePosition, docSettings.titleFieldsGap, docSettings.headerCustom, docSettings.headerVeldenCustom, fontKey]);
   // A self-hosted face lands after the render that picked it; its new widths only reach the
   // probe when something re-renders, and a width change inside a fixed-width cell fires no
-  // ResizeObserver. Each finished font load is therefore a new sheet signature.
-  const [fontEpoch, setFontEpoch] = useState(0);
-  useEffect(() => {
-    const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
-    if (!fonts?.addEventListener) return;
-    const onDone = () => setFontEpoch(e => e + 1);
-    fonts.addEventListener('loadingdone', onDone);
-    return () => fonts.removeEventListener('loadingdone', onDone);
-  }, []);
+  // ResizeObserver. Each newly loaded face is therefore a new sheet signature.
+  const fontEpoch = useFontEpoch();
   // Everything on .print-area-shell that sizes a block's content without being in the block.
   const sheetKey = useMemo(() => JSON.stringify([
     fontKey, docSettings.fontSizeMath, docSettings.fontSizeText, docSettings.answerSpace, fontEpoch,
