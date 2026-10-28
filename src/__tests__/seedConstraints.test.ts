@@ -2,7 +2,8 @@
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { flattenLeaves, LEAF_BY_ID } from '../config/appstructure';
-import { DEFAULT_BASE, seedConstraints, type BaseSettings } from '../config/baseSettings';
+import { DEFAULT_BASE, seedConstraints, seedLeafConstraints, type BaseSettings } from '../config/baseSettings';
+import { seedRowConstraints } from '../components/oefenen/oefenBuild';
 import { GRADE_PRESETS, type Leerjaar } from '../config/gradePresets';
 import { makeBlock } from './helpers/makeBlock';
 
@@ -86,5 +87,30 @@ describe('a picked leerjaar sets the max where a leaf pins one (gradeSetsMax)', 
         useWorksheetStore.getState().addBlockFromType('afronden', 'Rooster', lockedConstraints, { leafId: 'afronden-nat-rooster' });
         const blocks = useWorksheetStore.getState().blocks;
         expect((blocks[blocks.length - 1].constraints as Record<string, unknown>).maxGetal).toBe(1000);
+    });
+});
+
+describe('gelijknamig maken: leerjaar 4 and below seed the multiple noemers', () => {
+    const want: Record<string, string | undefined> = { null: undefined, 1: 'multiple', 2: 'multiple', 3: 'multiple', 4: 'multiple', 5: 'any', 6: 'any' };
+    const grades: Array<Leerjaar | null> = [null, 1, 2, 3, 4, 5, 6];
+
+    test.each(grades)('leerjaar %s: sidebar click, seedLeafConstraints and the Oefenmodus row agree', (grade) => {
+        useWorksheetStore.getState().setSelectedGrade(grade);
+        const leaf = leaves.find((l) => l.id === 'breuken-gelijknamig')!;
+        expect((addLeaf(leaf.id).constraints as Record<string, unknown>).denominatorRelation).toBe(want[String(grade)]);
+        expect(seedLeafConstraints(leaf.id, grade)!.constraints.denominatorRelation).toBe(want[String(grade)]);
+        expect(seedRowConstraints({ id: leaf.id, constraints: leaf.defaultConstraints ?? {} }, grade).denominatorRelation).toBe(want[String(grade)]);
+    });
+
+    test('only gelijknamig: gemengd and vereenvoudigen stay without the key', () => {
+        useWorksheetStore.getState().setSelectedGrade(4);
+        for (const id of ['breuken-gemengd', 'breuken-vereenvoudigen']) {
+            expect('denominatorRelation' in (addLeaf(id).constraints as Record<string, unknown>), id).toBe(false);
+        }
+    });
+
+    test('an author\'s pick wins over the leerjaar', () => {
+        expect(seedLeafConstraints('breuken-gelijknamig', 4, { denominatorRelation: 'any' })!.constraints.denominatorRelation).toBe('any');
+        expect(seedLeafConstraints('breuken-gelijknamig', 6, { denominatorRelation: 'multiple' })!.constraints.denominatorRelation).toBe('multiple');
     });
 });

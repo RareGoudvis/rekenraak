@@ -951,7 +951,8 @@ function gelijknamigOk(given: readonly string[], ex: BreukBewerkExercise, c: Rec
     if (parts.length !== ex.inputs.length || parts.some(m => !m)) return false;
     const dens = parts.map(m => Number(m![2]));
     if (dens[0] === 0 || dens.some(x => x !== dens[0])) return false;
-    const fixed = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
+    // A multiple pair ignores the doelnoemer (the generator does too), so it never narrows the answer.
+    const fixed = c.targetDen === '' || c.targetDen == null || c.denominatorRelation === 'multiple' ? null : Number(c.targetDen);
     if (fixed !== null && ex.answers[0]?.d === fixed && dens[0] !== fixed) return false;
     // BigInt cross products, as check.ts compares breuken.
     return parts.every((m, i) => {
