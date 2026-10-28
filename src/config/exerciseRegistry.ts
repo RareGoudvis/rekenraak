@@ -643,6 +643,13 @@ const fitHerleidingenGrade = (c: Record<string, unknown>, grade?: number | null,
     return next;
 };
 
+// Gelijknamig maken (leerplan): in leerjaar 4 and below one noemer is a multiple of the other;
+// from leerjaar 5 any pair. No leerjaar leaves it absent ('any'); an author's own pick wins.
+const fitBreukBewerkGrade = (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>): Record<string, unknown> =>
+    grade == null || c.subType !== 'gelijknamig' || (override && 'denominatorRelation' in override)
+        ? c
+        : { ...c, denominatorRelation: grade <= 4 ? 'multiple' : 'any' };
+
 // (merged constraints, the picked leerjaar, the leaf / author override) → the fitted seed.
 export const SEED_FIT: Record<string, (c: Record<string, unknown>, grade?: number | null, override?: Record<string, unknown>) => Record<string, unknown>> = {
     'afronden': fitRoundTargets,
@@ -651,6 +658,7 @@ export const SEED_FIT: Record<string, (c: Record<string, unknown>, grade?: numbe
     'getallenrijen': fitAxisSpan,
     'kettingsommen': fitKettingGrade,
     'herleidingen': fitHerleidingenGrade,
+    'breuken-bewerken': fitBreukBewerkGrade,
 };
 
 // An old save or share link can hold a max its picker no longer lists (the 1e10 leerjaar-6

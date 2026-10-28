@@ -21,7 +21,9 @@ export default function BreukBewerkConfig({ block }: Props) {
         allowIrreducible = false,
         targetDen = '',
         allowImproper = false,
+        denominatorRelation = 'any',
     } = c;
+    const multiple = denominatorRelation === 'multiple';
 
     const set = (key: string, value: unknown) =>
         patch({ [key]: value } as Partial<BreukBewerkConstraints>);
@@ -104,11 +106,23 @@ export default function BreukBewerkConfig({ block }: Props) {
                         </div>
                     </div>
                     <div style={styles.section}>
+                        <SettingLabel text="Noemers:" info="Willekeurige noemers, of de ene noemer een veelvoud van de andere." />
+                        <div style={styles.buttonGroup}>
+                            <button onClick={() => set('denominatorRelation', 'any')} aria-pressed={!multiple} style={styles.radioBtn(!multiple)}>Willekeurig</button>
+                            <button onClick={() => set('denominatorRelation', 'multiple')} aria-pressed={multiple} style={styles.radioBtn(multiple)}>De ene een veelvoud van de andere</button>
+                        </div>
+                        <p style={styles.hint}>Veelvoud: bv. 3 en 6, 4 en 12; de gemene noemer is dan de grootste (leerjaar 4).</p>
+                    </div>
+                    <div style={styles.section}>
                         <SettingLabel text="Doelnoemer (leeg = automatisch KGV):" info="Vaste gemeenschappelijke noemer; leeg laat het KGV automatisch kiezen." />
+                        {/* The multiple pair fixes the common noemer (the larger one), so a doelnoemer has no say. */}
                         <input type="number" min={2} max={100} value={targetDen}
                             placeholder="bv. 12"
+                            disabled={multiple}
+                            aria-label="Doelnoemer"
                             onChange={(e) => set('targetDen', e.target.value === '' ? '' : Math.max(2, Number(e.target.value)))}
-                            style={{ ...inputStyle, width: '90px' }} />
+                            style={{ ...inputStyle, width: '90px', opacity: multiple ? 0.5 : 1, cursor: multiple ? 'not-allowed' : undefined }} />
+                        {multiple && <p style={styles.hint}>Niet bij veelvoud-noemers.</p>}
                     </div>
                 </>
             )}
