@@ -159,21 +159,33 @@ export function MabStyleConfig({ block }: Props) {
     );
 }
 
+// ── Weergave (under Aantal oefeningen): how many exercises share a row. A short list, not a
+// slider buried in Geavanceerd: teachers set it as often as the count. Mounted by Inspector
+// through EXERCISE_UI[typeId].AppearanceConfig.
+const PER_ROW_OPTIONS = [1, 2, 3, 4].map(value => ({ value, label: `${value} ${value === 1 ? 'oefening' : 'oefeningen'}` }));
+export function MabAppearanceConfig({ block }: Props) {
+    const [c, patch] = useConstraints<MabConstraints>(block);
+    return (
+        <>
+            <label style={{ ...F.label, marginTop: '14px' }}>Oefeningen per rij</label>
+            <PopupSelect
+                value={c.exercisesPerRow ?? 3}
+                options={PER_ROW_OPTIONS}
+                onChange={value => patch({ exercisesPerRow: value })}
+                ariaLabel="Oefeningen per rij"
+            />
+        </>
+    );
+}
+
 // ── Geavanceerd: the printed geometry of one MAB exercise.
 export function MabAdvancedConfig({ block }: Props) {
     const [c, patch] = useConstraints<MabConstraints>(block);
-    const perRow       = c.exercisesPerRow ?? 3;
     const boxHeight    = c.boxHeight       ?? 70;
     const answerHeight = c.answerHeight    ?? 36;
     return (
         <>
-            <label style={F.label}>Oefeningen per rij ({perRow})</label>
-            <input
-                type="range" min={1} max={4} value={perRow}
-                onChange={e => patch({ exercisesPerRow: Number(e.target.value) })}
-                style={F.range}
-            />
-            <label style={{ ...F.label, marginTop: '10px' }}>Tekenvak hoogte ({boxHeight}px)</label>
+            <label style={F.label}>Tekenvak hoogte ({boxHeight}px)</label>
             <input
                 type="range" min={40} max={200} step={5} value={boxHeight}
                 onChange={e => patch({ boxHeight: Number(e.target.value) })}

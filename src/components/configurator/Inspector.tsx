@@ -426,6 +426,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
     // The family owns its own Opmaak sections; the registry says which ones this block gets.
     const ui = activeBlock ? EXERCISE_UI[activeBlock.typeId] : undefined;
     const StyleConfig = ui?.StyleConfig;
+    const AppearanceConfig = ui?.AppearanceConfig;
     const AdvancedConfig = ui?.AdvancedConfig;
     const advancedApplies = ui?.advancedApplies;
 
@@ -493,6 +494,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                                 }}
                                 style={sliderStyle(true)}
                             />
+                            {!locked && AppearanceConfig && <AppearanceConfig block={activeBlock} />}
                             </>}
 
                             {/* Breedte op de pagina — the page grid is 4 units wide, so a block

@@ -74,7 +74,7 @@ describe('the lists', () => {
             ['controleren', [1000, 10000]],
             ['geld', [10, 20, 100, 1000]],
             ['geldRekenen', [100, 1000, 10000]],
-            ['mab', [10, 20, 100, 1000]],
+            ['mab', [10, 20, 100, 1000, 9999]],
             ['ketting', [20, 100, 1000]],
             ['rekenvolgorde', [100, 1000]],
             ['herleidingenSamengesteld', [10, 100, 1000, 10000, 100000, 1000000]],

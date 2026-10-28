@@ -79,7 +79,8 @@ export const RANGES = {
     geld: TO_1E3_FROM_10,
     // maxEuro, not a base-seeded key: euros with a percent on top.
     geldRekenen: TO_1E4_FROM_100,
-    mab: TO_1E3_FROM_10,
+    // MAB has four place columns (D H T E), so 9 999 is its top, not 10 000 (owner call 2026-10-28).
+    mab: [...TO_1E3_FROM_10, 9_999] as readonly number[],
     ketting: [20, 100, 1_000] as readonly number[],
     rekenvolgorde: [100, 1_000] as readonly number[],
     // Herleidingen are unit-based (km² ≥ 1e4 already overflows), so they never grow.

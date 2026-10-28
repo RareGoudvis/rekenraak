@@ -74,7 +74,7 @@ export function baseApply(
     if (range !== null) {
         if ('maxGetal' in registryDefaults) out.maxGetal = range?.key === 'maxGetal' ? floored : capped;
         if ('maxRange' in registryDefaults) out.maxRange = range?.key === 'maxRange' ? floored : capped;
-        // maxNumber is MAB-only, and MAB draws place-value blocks up to 1000 — never hand it
+        // maxNumber is MAB-only, and MAB draws place-value blocks up to 9 999 — never hand it
         // the five/ten-digit base seeds the other types accept.
         if ('maxNumber' in registryDefaults) out.maxNumber = range?.key === 'maxNumber' ? floored : Math.min(base.baseMaxGetal, 9999);
     }

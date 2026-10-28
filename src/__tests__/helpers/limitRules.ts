@@ -274,6 +274,7 @@ const splitsenSpec: TypeSpec<SplitsenExercise> = {
     },
 };
 
+const MAB_CEILING = 9999;
 const mabSpec: TypeSpec<MabExercise> = {
     extract: e => ex4([e.value], [e.thousands, e.hundreds, e.tens, e.units]),
     item: (e, ctx, push) => {
@@ -281,6 +282,10 @@ const mabSpec: TypeSpec<MabExercise> = {
         const ex = `${e.value}`;
         if (over(e.value, max)) push('value>max', e.value, max, ex);
         if (e.value < 1) push('value<min', e.value, 1, ex);
+        // Four place columns (D H T E): 9 999 is the didactic ceiling whatever max a seed hands it.
+        if (e.value > MAB_CEILING) push('value>ceiling', e.value, MAB_CEILING, ex);
+        // A column holds one digit's worth: ten pieces of a place are the next place.
+        for (const d of [e.thousands, e.hundreds, e.tens, e.units]) if (d < 0 || d > 9) push('digit>9', d, 9, ex);
         if (e.thousands * 1000 + e.hundreds * 100 + e.tens * 10 + e.units !== e.value) push('answer-key', `${e.thousands}D${e.hundreds}H${e.tens}T${e.units}E`, e.value, ex);
     },
 };

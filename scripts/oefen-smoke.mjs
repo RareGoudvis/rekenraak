@@ -42,6 +42,8 @@ const HEADED = argv.includes('--headed');
 const CASES = [
     { kind: 'number', leafId: 'hr-std-optellen-nat', over: {} },
     { kind: 'number', id: 'mab-herkennen', leafId: 'mab-herkennen', over: {} },
+    // MAB to 9 999 (2026-10-28): four places, up to nine duizendtallen on the card / in the tray.
+    { kind: 'number', id: 'mab-herkennen-9999', leafId: 'mab-herkennen', over: { maxNumber: 9999 } },
     { kind: 'number+rest', leafId: 'hr-std-delen-nat', over: { multiplicationMode: 'met_rest' } },
     // Herleidingen vraag: getal = the number for the shown unit (the header names it), eenheid = a unit button.
     { kind: 'number', id: 'herleidingen-lengte-getal', leafId: 'herleidingen-lengte', over: { vraag: 'getal', formats: ['enkel-getal'] }, header: /^Zet om naar (km|hm|dam|m|dm|cm|mm)\.$/ },
@@ -62,6 +64,7 @@ const CASES = [
     { kind: 'fill-cells', leafId: 'cijferen-optellen-nat', over: {} },
     { kind: 'build', leafId: 'geld-tekenen', over: {} },
     { kind: 'build', id: 'mab-tekenen', leafId: 'mab-tekenen', over: {} },
+    { kind: 'build', id: 'mab-tekenen-9999', leafId: 'mab-tekenen', over: { maxNumber: 9999, operand1Mask: { D: true, H: true, T: true, E: true } } },
     { kind: 'drag', leafId: 'temperatuur-kleuren', over: {} },
 ].filter(c => !ONLY.length || ONLY.includes(c.kind));
 

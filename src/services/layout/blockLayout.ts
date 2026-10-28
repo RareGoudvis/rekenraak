@@ -322,6 +322,8 @@ export function ordenenRowPx(typeId: string, c: Record<string, unknown>, count: 
 // neighbour) needs the full page; it never drops to a quarter (owner rule: ordenen/
 // rangschikken/breuken-rangschikken never wrap, so a row too wide for its column has no
 // fallback but a wider column).
+const mabFloor: FloorRule = (block) => (Number((block.constraints ?? {}).maxNumber ?? 100) > 1000 ? 4 : 2);
+
 const ordenenFloor: FloorRule = (block) => {
     const c = (block.constraints ?? {}) as Record<string, unknown>;
     const count = typeof c.count === 'number' ? c.count : 3;
@@ -422,8 +424,9 @@ const SETTINGS_FLOOR: Record<string, FloorRule> = {
     // MAB is sized by its glyphs rather than by its share of the block: mab-herkennen
     // pairs a numeral with a glyph table, which stops reading at a quarter; mab-tekenen
     // needs room to draw in the D/H/T/E table (~75 px at a quarter leaves none), so both floor at a half.
-    'mab-herkennen': () => 2,
-    'mab-tekenen': () => 2,
+    // Above 1000 a D column holds up to nine cubes (a ~750 px table): a half would shrink it to ~40 %.
+    'mab-herkennen': mabFloor,
+    'mab-tekenen': mabFloor,
     // Relation sentences ("rechte a staat ___ op rechte b") never fit a quarter.
     'vormleer-punt-lijn': (block) => {
         const c = (block.constraints ?? {}) as Partial<import('../math/constraintTypes').VormleerConstraints>;
