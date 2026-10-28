@@ -146,8 +146,9 @@ export interface MeasuredHeights {
 
 // `continuationKey` describes the header a continuation page draws (repeatTitle /
 // repeatHeader and whatever sizes it); when it changes, the page-2 body measurement is
-// stale until a page 2 renders again.
-export function useMeasuredHeights(blocks: MathBlock[], continuationKey = ''): MeasuredHeights {
+// stale until a page 2 renders again. `sheetKey` is everything sheet-wide that sizes a block's
+// content without being in the block (faces, size sliders, a web font that just loaded).
+export function useMeasuredHeights(blocks: MathBlock[], continuationKey = '', sheetKey = ''): MeasuredHeights {
     // Key is `${blockId}:${widthUnits}`: the same block is a different height at a
     // different width, and both versions stay valid while the teacher toggles between them.
     const cells = useRef<Map<string, number>>(new Map());
@@ -210,7 +211,9 @@ export function useMeasuredHeights(blocks: MathBlock[], continuationKey = ''): M
         // and kept telling the clamp a quarter was fine. No version bump either way: the
         // remeasure that follows is what changes the layout, and it bumps.
         for (const b of blocks) {
-            const sig = JSON.stringify(b);
+            // A sheet font or size switch changes every block's content width without touching
+            // the block: an Azeret entry kept a Courier block promoted (2026-10-28 font audit).
+            const sig = `${sheetKey}|${JSON.stringify(b)}`;
             if (measuredOf.get(b.id) === sig) continue;
             measuredOf.set(b.id, sig);
             // Heights are not dropped: they are only ever READ at the width the block
@@ -228,7 +231,7 @@ export function useMeasuredHeights(blocks: MathBlock[], continuationKey = ''): M
                 if (!alive.has(id)) map.delete(key);
             }
         }
-    }, [blocks]);
+    }, [blocks, sheetKey]);
 
     const onCellMeasure = useCallback((blockId: string, width: number, px: number, intrinsicWidthPx?: number, reflows?: boolean) => {
         if (paused()) return;
