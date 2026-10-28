@@ -452,6 +452,9 @@ describe('descriptor answers agree with the generators', () => {
         ['deelbaarheid-omcirkelen', { divisors: [2], perRow: 5 }, 'interactive'],
         ['breuken-kleuren', { shapes: ['circle'], maxDenominator: 12 }, 'interactive'],
         ['breuken-kleuren', { shapes: ['square', 'rectangle'], minDenominator: 2, maxDenominator: 10 }, 'interactive'],
+        // Onechte breuken: 7/4 or 1 3/4 (a geheel field; vereenvoudigen types the space).
+        ['breuken-herkennen', { allowImproper: true, maxDenominator: 10 }, 'fraction'],
+        ['breuken-vereenvoudigen', { allowImproper: true, maxNumerator: 20, maxDenominator: 24 }, 'number'],
         ['deelbaarheid-rooster', { divisors: [3, 4, 6, 9, 25, 50, 100], maxGetal: 1000 }, 'interactive'],
         ['plaatswaarde-waarde', { decimalPlaces: 3 }, 'number'],
         ['plaatswaarde-plaats', { decimalPlaces: 2, maxGetal: 1000000 }, 'choice'],
@@ -760,11 +763,21 @@ function agreeOverSeeds(leaf: AppLeaf, extra: Record<string, unknown> = {}): Map
             } else if (input === 'fraction') {
                 // Breuken herkennen: the drawn form, typed [noemer, teller]; swapped is wrong.
                 const { fraction: [n, den] } = truth as { fraction: [number, number] };
-                expect(accepted, where).toEqual([`${n}/${den}`]);
+                // Onechte breuken: the gemengd getal over the same noemer counts too, a geheel field in front.
+                const mixed = n > den && n % den !== 0;
+                expect(accepted, where).toEqual(mixed ? [`${n}/${den}`, `${Math.floor(n / den)} ${n % den}/${den}`] : [`${n}/${den}`]);
+                expect(d.labels?.(ex, c) ?? ['noemer', 'teller'], where).toEqual(c.allowImproper === true ? ['geheel', 'noemer', 'teller'] : ['noemer', 'teller']);
                 expect(checkAnswer(d, ex, c, [String(den), String(n)]), where).toBe(true);
                 expect(checkAnswer(d, ex, c, [String(den), String(n + 1)]), where).toBe(false);
                 expect(checkAnswer(d, ex, c, [String(n), String(den)]), where).toBe(n === den);
                 expect(checkAnswer(d, ex, c, [String(den), '']), where).toBe(false);
+                if (c.allowImproper === true) {
+                    expect(checkAnswer(d, ex, c, ['', String(den), String(n)]), where).toBe(true);
+                    if (mixed) {
+                        expect(checkAnswer(d, ex, c, [String(Math.floor(n / den)), String(den), String(n % den)]), where).toBe(true);
+                        expect(checkAnswer(d, ex, c, [String(Math.floor(n / den) + 1), String(den), String(n % den)]), where).toBe(false);
+                    }
+                }
             } else if (input === 'choice') {
                 const choices = d.choicesOf?.(ex, c) ?? d.choices ?? [];
                 expect(accepted, where).toEqual([truth]);

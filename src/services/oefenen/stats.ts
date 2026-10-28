@@ -23,8 +23,11 @@ export function answerText(d: KioskDescriptor, ex: unknown, c: Record<string, un
     const input = kioskInputOf(d, ex, c);
     if (input !== 'interactive' && d.showAnswer) return d.showAnswer(parts, ex, c);
     if (input === 'number+rest') return `${parts[0] ?? ''} r ${parts[1] ?? ''}`;
-    // fraction: typed noemer first, read teller over noemer.
-    if (input === 'fraction') return `${parts[1] ?? ''}/${parts[0] ?? ''}`;
+    // fraction: typed noemer first, read teller over noemer; a typed geheel leads ('1 3/4', the pupil's own form).
+    if (input === 'fraction') {
+        const [whole, noemer = '', teller = ''] = parts.length === 3 ? parts : ['', ...parts];
+        return `${whole ? `${whole} ` : ''}${teller}/${noemer}`;
+    }
     if (input === 'time') return `${parts[0] ?? ''}:${(parts[1] ?? '').padStart(2, '0')}`;
     // The words as the pupil built them ("15 over 3"), the expected one in the same grammar ("kwart over 3").
     if (input === 'time-words') return timeWordsText(timeWordsOfFields(parts));

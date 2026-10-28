@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef } from 'react';
-import { currentInput, interactionAnswer, timeWordsNext, typedReady, useOefenStore } from '../useOefenStore';
+import { currentInput, fractionNext, interactionAnswer, timeWordsNext, typedReady, useOefenStore } from '../useOefenStore';
 import { KWART } from '../../services/clock/timeWords';
 import Keypad from './Keypad';
 import Tray from './Tray';
@@ -104,23 +104,30 @@ export default function AnswerInput() {
 
     // fraction (breuken herkennen): a stacked breuk, teller over the bar over noemer. The keypad starts
     // in the noemer (field 0); its wide key reads Verder and moves up to the teller until that is filled.
+    // Onechte breuken on: a geheel field stands before the breuk and comes first (empty for 7/4, 1 for 1 3/4).
     if (info.kind === 'fraction') {
-        const toTeller = field === 0 && (input[1] ?? '') === '';
+        const mixed = info.labels.length === 3;
+        const noemer = info.labels.length - 2;
+        const next = fractionNext(input, field);
+        const forward = next !== null && next > field;
         const box = (i: number) => (
             <input aria-label={info.labels[i]} placeholder={info.labels[i]} ref={el => { refs.current[i] = el; }}
                 className={`kiosk-field${field === i ? ' is-active' : ''}`} inputMode="none" autoCapitalize="off" autoComplete="off" spellCheck={false}
                 value={input[i] ?? ''} onChange={e => setField(i, e.target.value)} onFocus={() => focusField(i)} />
         );
+        const breuk = (
+            <div className="kiosk-fraction">
+                <label className="kiosk-field-bare">{box(noemer + 1)}</label>
+                <span className="kiosk-fraction-bar" aria-hidden />
+                <label className="kiosk-field-bare">{box(noemer)}</label>
+            </div>
+        );
         return (
             <div className="kiosk-answer">
-                <div className="kiosk-fraction">
-                    <label className="kiosk-field-bare">{box(1)}</label>
-                    <span className="kiosk-fraction-bar" aria-hidden />
-                    <label className="kiosk-field-bare">{box(0)}</label>
-                </div>
-                <p className="kiosk-keypad-hint">Typ eerst de noemer, dan de teller.</p>
-                <Keypad extras={info.keys} onKey={press} canCheck={toTeller ? (input[0] ?? '') !== '' : canCheck}
-                    onCheck={toTeller ? () => focusField(1) : answer} checkLabel={toTeller ? 'Verder' : undefined} />
+                {mixed ? <div className="kiosk-fraction-mixed"><label className="kiosk-field-bare">{box(0)}</label>{breuk}</div> : breuk}
+                <p className="kiosk-keypad-hint">{mixed ? 'Een gemengd getal? Typ eerst het geheel. Dan de noemer, dan de teller.' : 'Typ eerst de noemer, dan de teller.'}</p>
+                <Keypad extras={info.keys} onKey={press} canCheck={forward ? field < noemer || (input[field] ?? '') !== '' : canCheck}
+                    onCheck={forward ? () => focusField(next) : answer} checkLabel={forward ? 'Verder' : undefined} />
             </div>
         );
     }

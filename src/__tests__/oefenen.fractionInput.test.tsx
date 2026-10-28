@@ -138,4 +138,56 @@ describe('kiosk: noemer first, then teller, as a stacked breuk', () => {
         fireEvent.keyDown(document.body, { key: 'Enter' });
         expect(st().lastCorrect).toBe(true);
     });
+
+    // Onechte breuken (owner 2026-10-28): a geheel field first, so 7/4 may also be typed as 1 3/4.
+    const onechtType = (): OefenType => ({ ...herkennenType(), constraints: { ...herkennenType().constraints, allowImproper: true } });
+    // The seeded draw may be proper or onecht: answer it as gemengd getal when it is one.
+    const parts = () => {
+        const { numerator: n, denominator: den } = shownEx();
+        return n > den ? { whole: String(Math.floor(n / den)), teller: String(n % den), den: String(den) } : { whole: '', teller: String(n), den: String(den) };
+    };
+
+    test('onecht: geheel, noemer, teller; Verder over an empty geheel; Controleer after the teller', () => {
+        st().load(hashOf(starterSessie({ types: [onechtType()] })));
+        st().start();
+        const { container } = render(<OefenApp />);
+        expect(currentInput(st().sessie, st().shown)!.labels).toEqual(['geheel', 'noemer', 'teller']);
+        expect(st().input).toEqual(['', '', '']);
+        const geheel = screen.getByRole('textbox', { name: 'geheel' });
+        expect(geheel.className).toContain('is-active');
+        // The geheel stands beside the stacked breuk, not in it.
+        const mixed = container.querySelector('.kiosk-fraction-mixed')!;
+        expect(mixed.querySelector('.kiosk-fraction input[aria-label="geheel"]')).toBeNull();
+        expect(mixed.querySelector('input[aria-label="geheel"]')).toBeTruthy();
+        const { whole, teller, den } = parts();
+        for (const ch of whole) fireEvent.click(screen.getByRole('button', { name: ch }));
+        const verder = () => screen.getByRole('button', { name: 'Verder' }) as HTMLButtonElement;
+        expect(verder().disabled).toBe(false);
+        fireEvent.click(verder());
+        expect(st().field).toBe(1);
+        expect(verder().disabled).toBe(true);
+        for (const ch of den) fireEvent.click(screen.getByRole('button', { name: ch }));
+        fireEvent.click(verder());
+        expect(st().field).toBe(2);
+        for (const ch of teller) fireEvent.click(screen.getByRole('button', { name: ch }));
+        const check = screen.getByRole('button', { name: 'Controleer' }) as HTMLButtonElement;
+        expect(check.disabled).toBe(false);
+        fireEvent.click(check);
+        expect(st().lastCorrect).toBe(true);
+    });
+
+    test('onecht: the improper form with the geheel left empty, by Enter', () => {
+        st().load(hashOf(starterSessie({ types: [onechtType()] })));
+        st().start();
+        render(<OefenApp />);
+        const { numerator: n, denominator: den } = shownEx();
+        fireEvent.keyDown(document.body, { key: 'Enter' });
+        expect(st().field).toBe(1);
+        st().setField(1, String(den));
+        fireEvent.keyDown(document.body, { key: 'Enter' });
+        expect(st().field).toBe(2);
+        st().setField(2, String(n));
+        fireEvent.keyDown(document.body, { key: 'Enter' });
+        expect(st().lastCorrect).toBe(true);
+    });
 });

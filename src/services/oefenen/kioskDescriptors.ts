@@ -931,6 +931,8 @@ const reduce = (f: Fraction): Fraction => {
 function bewerkSpellings(ex: BreukBewerkExercise, f: Fraction): string[] {
     // A whole lowest-terms value (6/3 → 2) reads as the integer; "2/1" is the same lowest form.
     if (ex.subType === 'vereenvoudigen' && !f.whole && f.n % f.d === 0) return [String(f.n / f.d), fracText(f)];
+    // An onechte breuk may also be written as a gemengd getal of the same lowest terms (5/2 or 2 1/2; owner 2026-10-28).
+    if (ex.subType === 'vereenvoudigen' && !f.whole && f.n > f.d) return [fracText(f), fracText({ whole: Math.floor(f.n / f.d), n: f.n % f.d, d: f.d })];
     if (ex.subType === 'gelijknamig' || ex.subType === 'vereenvoudigen') return [fracText(f)];
     const whole = (f.whole ?? 0) + Math.floor(f.n / f.d);
     const n = f.n % f.d;
@@ -960,7 +962,8 @@ function gelijknamigOk(given: readonly string[], ex: BreukBewerkExercise, c: Rec
 export const BREUK_BEWERK_KIOSK = descriptor<BreukBewerkExercise>({
     input: 'number',
     inputOf: (ex) => (ex.subType === 'gelijknamig' ? 'multi-number' : 'number'),
-    keys: (c) => (c.subType === 'gemengd' ? ['/', ' '] : ['/']),
+    // The space types a gemengd getal: gemengd itself, and an onechte vereenvoudigen answer (2 1/2).
+    keys: (c) => (c.subType === 'gemengd' || (c.subType === 'vereenvoudigen' && c.allowImproper === true) ? ['/', ' '] : ['/']),
     exactFormDefault: () => true,
     // 'beide' mixes both ways in one block; the card shows one exercise, so its header names that one's way.
     kioskInstruction: (ex) => (ex.subType !== 'gemengd' ? undefined : ex.direction === 'naar-breuk' ? 'Typ als breuk.' : 'Typ als gemengd getal.'),
@@ -1011,6 +1014,9 @@ const deelVan = (ex: FractionExercise) => (ex.subType === 'hoeveelheid-abstract'
     : Math.round(((ex.total ?? 0) * ex.numerator) / ex.denominator));
 // kleuren: tap n of the d parts ON the figure; the answer is HOW MANY are tapped (any parts count).
 const isKleuren = (c: Record<string, unknown>) => fracSub(c) === 'kleuren';
+// herkennen's drawn form; an onechte breuk also as a gemengd getal over the same noemer (7/4, 1 3/4; 14/8 only by value).
+const drawnSpellings = (n: number, d: number): string[] =>
+    (n > d && n % d !== 0 ? [`${n}/${d}`, `${Math.floor(n / d)} ${n % d}/${d}`] : [`${n}/${d}`]);
 export const BREUKEN_KIOSK = descriptor<FractionExercise>({
     input: 'number',
     inputOf: (_ex, c) => (isKleuren(c) ? 'interactive' : isHerkennen(c) ? 'fraction' : 'number'),
@@ -1027,11 +1033,13 @@ export const BREUKEN_KIOSK = descriptor<FractionExercise>({
         fromState: (st) => (st.selected.length ? String(st.selected.length) : ''),
     },
     keys: (c) => (fracSub(c) === 'hoeveelheid-abstract' ? [','] : []),
+    // Onechte breuken on: a whole field before the breuk, so 7/4 may also be typed as 1 3/4 (geheel left empty for 7/4).
+    labels: (_ex, c) => (isHerkennen(c) && c.allowImproper === true ? ['geheel', 'noemer', 'teller'] : ['noemer', 'teller']),
     // herkennen: the drawn parts (2/6 for two of six, not 1/3); the row's Antwoord may take any equal breuk.
     exactFormDefault: (c) => (isHerkennen(c) ? true : undefined),
     answerOf: (ex, c) => {
         if (isKleuren(c)) return [String(ex.numerator)];
-        if (isHerkennen(c)) return [`${ex.numerator}/${ex.denominator}`];
+        if (isHerkennen(c)) return drawnSpellings(ex.numerator, ex.denominator);
         return numberSpellings(deelVan(ex));
     },
     display: (ex, c) => (isKleuren(c)

@@ -24,7 +24,18 @@ const ITEM_MIN_FALLBACK_PX = 140;
 
 // Writing line the pupil writes the answer on (works for both a fraction and a mixed number).
 function AnswerSlot({ ex, index, showSolutions }: { ex: BreukBewerkExercise; index: number; showSolutions: boolean }) {
-    if (showSolutions) return <VerticalFraction value={ex.answers[index]} color={SOL} fontSize={16} mono />;
+    const a = ex.answers[index];
+    if (showSolutions && ex.subType === 'vereenvoudigen' && !a.whole) {
+        // A whole lowest-terms value is that integer (6/3 = 2, not 2/1); an onechte one also as gemengd getal (5/2 = 2 1/2).
+        if (a.n % a.d === 0) return <span style={{ color: SOL }}>{a.n / a.d}</span>;
+        if (a.n > a.d) return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', columnGap: '8px', color: SOL }}>
+                <VerticalFraction value={a} color={SOL} fontSize={16} mono /><span>=</span>
+                <VerticalFraction value={{ whole: Math.floor(a.n / a.d), n: a.n % a.d, d: a.d }} color={SOL} fontSize={16} mono />
+            </span>
+        );
+    }
+    if (showSolutions) return <VerticalFraction value={a} color={SOL} fontSize={16} mono />;
     return <KioskAnswerSlot><span style={{ display: 'inline-block', width: '80px', borderBottom: '1.5px solid #000', height: ANSWER_LINE_H }} /></KioskAnswerSlot>;
 }
 

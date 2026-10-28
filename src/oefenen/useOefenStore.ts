@@ -124,6 +124,8 @@ const wordTakesMinutes = (word: string | undefined) => word === 'voor' || word =
 /** Whether Controleer may take these typed fields: all filled, or one when the fields may stay empty; time-words: a word, the hour, and the minutes where the word has them. */
 export const typedReady = (input: readonly string[], blankFieldsOk: boolean, kind?: KioskInput): boolean => {
     if (kind === 'time-words') return (input[2] ?? '') !== '' && (input[0] ?? '').trim() !== '' && (!wordTakesMinutes(input[2]) || (input[1] ?? '').trim() !== '');
+    // fraction: noemer and teller (the last two fields); a geheel field in front may stay empty (7/4 typed as is).
+    if (kind === 'fraction') return input.length >= 2 && input.slice(-2).every(v => v.trim() !== '');
     return blankFieldsOk ? input.some(v => v.trim() !== '') : input.every(v => v.trim() !== '');
 };
 
@@ -133,6 +135,17 @@ export function timeWordsNext(input: readonly string[], field: number): number |
     if (field === 1 && minute !== '' && hour === '') return 0;
     if (field === 0 && hour !== '' && wordTakesMinutes(word) && minute === '') return 1;
     return null;
+}
+
+/** fraction: the field Enter (or the keypad's Verder) moves to — the next empty noemer / teller, else back to an empty one once this one is typed — or null to check. */
+export function fractionNext(input: readonly string[], field: number): number | null {
+    const noemer = input.length - 2;
+    const empty = (i: number) => (input[i] ?? '').trim() === '';
+    const required = [noemer, noemer + 1];
+    const ahead = required.find(i => i > field && empty(i));
+    if (ahead !== undefined) return ahead;
+    const behind = required.find(i => i !== field && empty(i));
+    return behind !== undefined && !empty(field) ? behind : null;
 }
 
 const FIXED_LABELS: Partial<Record<KioskInput, string[]>> = {
@@ -152,6 +165,7 @@ export function currentInput(s: OefenSessie | null, cur: KioskCurrent | null): C
     // time-words: the four chips are the input kind's own, the same on every exercise.
     const choices = kind === 'time-words' ? [...TIME_WORDS] : d.choicesOf?.(cur.exercise, cur.constraints) ?? d.choices ?? [];
     let labels = FIXED_LABELS[kind] ?? ['Antwoord'];
+    if (kind === 'fraction') labels = d.labels?.(cur.exercise, cur.constraints) ?? labels;
     if (kind === 'multi-number') {
         // Only the field COUNT is read from the answer, never a value.
         const n = d.answerOf(cur.exercise, cur.constraints).length;
