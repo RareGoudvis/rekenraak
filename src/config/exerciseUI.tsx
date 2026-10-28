@@ -98,7 +98,7 @@ import { FractionStyleConfig, FractionAdvancedConfig, fractionAdvancedApplies } 
 import { SplitsenAdvancedConfig } from '../components/configurator/plugins/SplitsenConfig';
 import { GeldStyleConfig, GeldAdvancedConfig } from '../components/configurator/plugins/GeldConfig';
 import { GeldTeruggevenStyleConfig } from '../components/configurator/plugins/GeldTeruggevenConfig';
-import { MabStyleConfig, MabAdvancedConfig } from '../components/configurator/plugins/MabConfig';
+import { MabStyleConfig, MabAppearanceConfig, MabAdvancedConfig } from '../components/configurator/plugins/MabConfig';
 import { GetallenrijenStyleConfig } from '../components/configurator/plugins/GetallenrijenConfig';
 import { PatroonStyleConfig } from '../components/configurator/plugins/PatroonConfig';
 import { MetenStyleConfig } from '../components/configurator/plugins/MetenConfig';
@@ -118,6 +118,8 @@ export interface ExerciseUIDef {
     Config: ConfigComponent;
     /** Differentiatie rows that belong to this family (Inspector mounts them; no typeId branch). */
     StyleConfig?: ConfigComponent;
+    /** Opdrachtblok rows under Aantal oefeningen (how the block's exercises are laid out). */
+    AppearanceConfig?: ConfigComponent;
     /** Body of the Geavanceerd accordion for this family. Its presence is what shows the accordion. */
     AdvancedConfig?: ConfigComponent;
     /** Optional extra test: the accordion is only worth opening when this returns true. */
@@ -155,8 +157,8 @@ export const EXERCISE_UI: Record<string, ExerciseUIDef> = {
     // only appears for rows that register one.
     'geld-teruggeven': { Viewer: GeldTeruggevenViewer, Config: GeldTeruggevenConfig, StyleConfig: GeldTeruggevenStyleConfig, TrayPiece: GeldTrayPiece },
 
-    'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig },
-    'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AdvancedConfig: MabAdvancedConfig, TrayPiece: MabTrayPiece },
+    'mab-herkennen': { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AppearanceConfig: MabAppearanceConfig, AdvancedConfig: MabAdvancedConfig },
+    'mab-tekenen':   { Viewer: MabViewer, Config: MabConfig, StyleConfig: MabStyleConfig, AppearanceConfig: MabAppearanceConfig, AdvancedConfig: MabAdvancedConfig, TrayPiece: MabTrayPiece },
 
     'ordenen':      { Viewer: OrdenenViewer,      Config: OrdenenConfig, StyleConfig: OrdenenStyleConfig },
     'breuken-bewerken':     { Viewer: BreukBewerkViewer, Config: BreukBewerkConfig },
