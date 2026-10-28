@@ -48,6 +48,7 @@ const CASES = [
     { kind: 'choice', id: 'herleidingen-lengte-eenheid', leafId: 'herleidingen-lengte', over: { vraag: 'eenheid', formats: ['enkel-getal'] }, header: /^Welke eenheid\?$/ },
     // Breuken herkennen: a stacked breuk, the keypad types the noemer, Verder, then the teller.
     { kind: 'fraction', leafId: 'breuken-herkennen', over: {}, header: /^Welk deel is gekleurd\? Typ de breuk zoals je ze ziet\.$/ },
+    { kind: 'fraction', id: 'breuken-herkennen-onecht', leafId: 'breuken-herkennen', over: { allowImproper: true } },
     // Klok lezen: a new row answers in words (chip + hour + minutes or kwart); als uu:mm is the row's other pick.
     { kind: 'time-words', leafId: 'klok-analoog-lezen', over: {}, header: /^Lees de klok en zeg hoe laat het is\.$/ },
     { kind: 'time-words', id: 'klok-analoog-lezen-nauwkeurig', leafId: 'klok-analoog-lezen', over: { timeTypes: ['nauwkeurig_5'] } },
@@ -55,6 +56,8 @@ const CASES = [
     { kind: 'choice', leafId: 'vergelijken-getallen', over: {} },
     { kind: 'tap', leafId: 'vergelijken-kiezen', over: {} },
     { kind: 'tap-multi', leafId: 'even-oneven-rooster', over: {} },
+    // Breuken kleuren answers a COUNT: any n parts, over two figures for an onechte breuk.
+    { kind: 'tap-multi', id: 'breuken-kleuren-onecht', leafId: 'breuken-kleuren', over: { allowImproper: true } },
     { kind: 'order', leafId: 'getalbegrip-ordenen-nat', over: {} },
     { kind: 'fill-cells', leafId: 'cijferen-optellen-nat', over: {} },
     { kind: 'build', leafId: 'geld-tekenen', over: {} },
@@ -112,7 +115,9 @@ async function readCard(page) {
         if (ia.kind === 'tap') out.tap = [parts.find(k => from({ selected: [k] }) === want)];
         if (ia.kind === 'tap-multi') {
             const wanted = want.split(' · ').map(s => s.trim()).filter(Boolean);
-            out.tap = parts.filter(k => wanted.includes(from({ selected: [k] })));
+            // A count answer (breuken kleuren: two taps read "2") takes the first n parts.
+            const isCount = parts.length > 1 && from({ selected: parts.slice(0, 2) }) === '2';
+            out.tap = isCount ? parts.slice(0, Number(want)) : parts.filter(k => wanted.includes(from({ selected: [k] })));
         }
         if (ia.kind === 'order') {
             // ordenen: its display values sorted the way the operator reads.

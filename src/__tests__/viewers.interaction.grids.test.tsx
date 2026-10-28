@@ -209,3 +209,36 @@ describe('deelbaarheid kleuren', () => {
 
     test.each(['deelbaarheid-rooster', 'deelbaarheid-omcirkelen', 'deelbaarheid-kleurraster'])('%s: kiosk flow, juist and fout', leaf => cardFlow(leaf, null));
 });
+
+// "Ook onechte breuken": 5/4 is drawn over two wholes, and the pupil taps across both of them.
+describe('breuken kleuren, onechte breuk 5/4', () => {
+    const fiveFourths = (shape: 'rectangle' | 'square' | 'circle'): MathBlock => {
+        const block = makeBlock('breuken', { constraints: { subType: 'kleuren', shapes: [shape], shape, allowImproper: true } });
+        const grid = shape === 'rectangle' ? { gridRows: 2, gridCols: 2 } : { gridRows: 1, gridCols: 4 };
+        block.fractionExercises = [{ id: 'x', subType: 'kleuren', numerator: 5, denominator: 4, shape, coloredIndices: [0, 1, 2, 3, 6], ...grid, wholes: 2, isManuallyEdited: false }];
+        return block;
+    };
+
+    test.each(['rectangle', 'square', 'circle'] as const)('%s: keys 0..7 over two figures, five taps are right', (shape) => {
+        const block = fiveFourths(shape);
+        let last: InteractionState = EMPTY_INTERACTION;
+        const { container } = render(<Harness block={block} kind="tap-multi" onState={s => { last = s; }} />);
+        expect(container.querySelectorAll('svg[viewBox]')).toHaveLength(2);
+        const ps = parts(container);
+        expect(ps.map(p => p.getAttribute('data-kiosk-key'))).toEqual(['0', '1', '2', '3', '4', '5', '6', '7']);
+        for (const i of [0, 1, 2, 3, 5]) fireEvent.click(ps[i]);
+        expect(picked(container)).toEqual(['0', '1', '2', '3', '5']);
+        const d = kioskFor('breuken')!;
+        const ex = block.fractionExercises![0];
+        expect(d.interact!.keys!(ex, block.constraints)).toHaveLength(8);
+        expect(d.interact!.fromState(last, ex, block.constraints)).toBe(d.interact!.answerOf(ex, block.constraints));
+    });
+
+    test('the sheet draws the same two figures without kiosk marks', () => {
+        const block = fiveFourths('rectangle');
+        const { Viewer } = EXERCISE_UI[block.typeId];
+        const { container } = render(<BlockWidthProvider value={340}><Viewer block={block} showSolutions={false} /></BlockWidthProvider>);
+        expect(container.querySelectorAll('svg[viewBox]')).toHaveLength(2);
+        expect(container.innerHTML).not.toMatch(/data-kiosk-|aria-pressed/);
+    });
+});
