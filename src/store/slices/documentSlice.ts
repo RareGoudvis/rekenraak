@@ -25,12 +25,14 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
     curriculum: null,
     draftBlocks: [],
     savedPresetId: null,
+    fileHandle: null,
 
     setSavedPresetId: (id) => {
         set({ savedPresetId: id });
         // Same rule as the subscription: an empty sheet never overwrites a populated autosave.
         if (get().blocks.length > 0) writeAutosaveNow(api);
     },
+    setFileHandle: (handle) => set({ fileHandle: handle }),
     setDraftBlocks: (blocks) => set({ draftBlocks: blocks }),
     clearDraftBlocks: () => set({ draftBlocks: [] }),
     loadWorksheet: (file, presetId) => set(() => {
@@ -60,6 +62,9 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
             // NOT re-run setSelectedGrade's preset seeding here.
             selectedGrade: file.selectedGrade ?? null,
             savedPresetId: presetId ?? null,
+            // Whatever is loaded now is not the file that was open before; a file open
+            // sets its own handle right after this.
+            fileHandle: null,
             activeBlockId: null,
             staleBlocks: {},
             _history: [blocks],

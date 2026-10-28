@@ -203,6 +203,58 @@ export function exportWorksheet(state: SerialisableState): void {
     downloadJson(`werkbundel-${safeSlug(state.header.titel)}-${todayStamp()}${WORKSHEET_FILE_EXT}`, JSON.stringify(buildPayload(state), null, 2));
 }
 
+// ── Save back to the same file (File System Access API, Chromium only) ─────────
+
+// Only what saving and reopening touch, so tests can hand over a plain object.
+export type WorksheetFileHandle = Pick<FileSystemFileHandle, 'name' | 'getFile' | 'createWritable'>;
+
+// lib.dom has the handle types but not the window pickers (not yet a standard).
+type PickerWindow = Window & {
+    showOpenFilePicker?: (options: object) => Promise<WorksheetFileHandle[]>;
+    showSaveFilePicker?: (options: object) => Promise<WorksheetFileHandle>;
+};
+const pickerWindow = (): PickerWindow | undefined => (typeof window === 'undefined' ? undefined : window as PickerWindow);
+
+const PICKER_TYPES = [{ description: 'RekenRaak-werkblad', accept: { 'application/json': [WORKSHEET_FILE_EXT, '.json'] } }];
+
+// Firefox and Safari have no pickers: they keep the <input type=file> + download route.
+export function hasFilePickers(): boolean {
+    const w = pickerWindow();
+    return typeof w?.showOpenFilePicker === 'function' && typeof w?.showSaveFilePicker === 'function';
+}
+
+// The user cancelling a picker rejects with AbortError; that is a choice, not a failure.
+export function isPickerAbort(error: unknown): boolean {
+    return (error as { name?: string } | null)?.name === 'AbortError';
+}
+
+/** null = no picker API in this browser. Throws on an invalid file, before the handle is kept. */
+export async function openWorksheetFromPicker(): Promise<{ file: WorksheetFile; handle: WorksheetFileHandle } | null> {
+    const picker = pickerWindow()?.showOpenFilePicker;
+    if (!picker) return null;
+    const [handle] = await picker({ multiple: false, types: PICKER_TYPES });
+    const file = await handle.getFile();
+    return { file: parseWorksheetFile(await file.text()), handle };
+}
+
+// With a handle: write back into that file. Without one: ask where (save picker), or fall
+// back to today's download when the browser has no picker. handle = what to reuse next time.
+export async function saveWorksheetToFile(state: SerialisableState, handle?: WorksheetFileHandle | null): Promise<{ handle: WorksheetFileHandle | null; downloaded: boolean }> {
+    let target = handle ?? null;
+    if (!target) {
+        const picker = pickerWindow()?.showSaveFilePicker;
+        if (!picker) {
+            exportWorksheet(state);
+            return { handle: null, downloaded: true };
+        }
+        target = await picker({ suggestedName: `werkbundel-${safeSlug(state.header.titel)}${WORKSHEET_FILE_EXT}`, types: PICKER_TYPES });
+    }
+    const writable = await target.createWritable();
+    await writable.write(JSON.stringify(buildPayload(state), null, 2));
+    await writable.close();
+    return { handle: target, downloaded: false };
+}
+
 // Export an already-built WorksheetFile (e.g. a saved-sheet payload from the library)
 // without a lossy rebuild through SerialisableState.
 export function exportWorksheetFile(file: WorksheetFile, title: string): void {

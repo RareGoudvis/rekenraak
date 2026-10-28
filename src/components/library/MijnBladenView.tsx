@@ -30,6 +30,7 @@ export default function MijnBladenView() {
     const clearBlocks = useWorksheetStore((s) => s.clearBlocks);
     const savedPresetId = useWorksheetStore((s) => s.savedPresetId);
     const setSavedPresetId = useWorksheetStore((s) => s.setSavedPresetId);
+    const setFileHandle = useWorksheetStore((s) => s.setFileHandle);
 
     const [refresh, setRefresh] = useState(0);
     const [search, setSearch] = useState('');
@@ -72,6 +73,7 @@ export default function MijnBladenView() {
         if (useWorksheetStore.getState().blocks.length > 0 && !window.confirm('Nieuw blad starten? Het huidige (niet-bewaarde) blad wordt gewist.')) return;
         clearBlocks();
         setSavedPresetId(null);
+        setFileHandle(null);
         clearAutosave();
         close();
     };

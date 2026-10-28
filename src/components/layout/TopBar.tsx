@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, FloppyDisk, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { SaveState } from '../../store/useWorksheetStore';
-import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
+import { encodeShareLink, clearAutosave, parseWorksheetFile, hasFilePickers, isPickerAbort, openWorksheetFromPicker, saveWorksheetToFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
 import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
@@ -101,13 +101,34 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
     const savedPresetId = useWorksheetStore((s) => s.savedPresetId);
     const setSavedPresetId = useWorksheetStore((s) => s.setSavedPresetId);
+    const fileHandle = useWorksheetStore((s) => s.fileHandle);
+    const setFileHandle = useWorksheetStore((s) => s.setFileHandle);
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
 
-    const handleExport = () => {
+    // saveAs = always ask where (the picker), even when a file is already open.
+    const handleSaveFile = async (saveAs: boolean) => {
         const st = useWorksheetStore.getState();
-        exportWorksheet({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings, selectedGrade: st.selectedGrade });
+        try {
+            const result = await saveWorksheetToFile(st, saveAs ? null : st.fileHandle);
+            if (result.handle) setFileHandle(result.handle);
+            showFlash(result.downloaded ? 'Bestand gedownload' : `Bewaard in ${result.handle?.name ?? 'bestand'}`);
+        } catch (err) {
+            if (!isPickerAbort(err)) window.alert(`Bestand bewaren mislukt: ${(err as Error).message}`);
+        }
+    };
+    const handleOpenFile = async () => {
+        if (!hasFilePickers()) { menuFileRef.current?.click(); return; }
+        try {
+            const opened = await openWorksheetFromPicker();
+            if (!opened) return;
+            if (useWorksheetStore.getState().blocks.length > 0 && !window.confirm('Huidige werkbundel wordt vervangen. Doorgaan?')) return;
+            loadWorksheet(opened.file);
+            setFileHandle(opened.handle);
+        } catch (err) {
+            if (!isPickerAbort(err)) window.alert(`Openen mislukt: ${(err as Error).message}`);
+        }
     };
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -118,7 +139,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             try {
                 const parsed = parseWorksheetFile(String(reader.result));
                 if (window.confirm('Huidige werkbundel wordt vervangen. Doorgaan?')) loadWorksheet(parsed);
-            } catch (err) { window.alert(`Importeren mislukt: ${(err as Error).message}`); }
+            } catch (err) { window.alert(`Openen mislukt: ${(err as Error).message}`); }
         };
         reader.readAsText(file);
     };
@@ -148,6 +169,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
         if (!hasBlocks || window.confirm('Nieuw blad starten? De huidige werkbundel wordt gewist.')) {
             clearBlocks();
             setSavedPresetId(null);
+            setFileHandle(null);
             clearAutosave();
         }
     };
@@ -207,7 +229,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
         const st = useWorksheetStore.getState();
         const link = encodeShareLink({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings }, { template: mode === 'template' });
         if (!link) {
-            window.alert('Werkbundel te groot voor een deelbare link. Gebruik Exporteer i.p.v.');
+            window.alert('Werkbundel te groot voor een deelbare link. Bewaar het als bestand (Meer → Bewaar bestand).');
             return;
         }
         try {
@@ -297,12 +319,18 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
 
                                 <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Bestand</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); menuFileRef.current?.click(); }}>
-                                    <UploadSimple size={15} /> Importeren…
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleOpenFile(); }}>
+                                    <UploadSimple size={15} /> Open bestand…
                                 </button>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); handleExport(); }}>
-                                    <DownloadSimple size={15} /> Exporteren…
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(false); }}>
+                                    <DownloadSimple size={15} />
+                                    {fileHandle ? <span>Bewaar bestand<br /><span style={S.menuHint}>{fileHandle.name}</span></span> : 'Bewaar bestand'}
                                 </button>
+                                {hasFilePickers() && (
+                                    <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(true); }}>
+                                        <DownloadSimple size={15} /> Bewaar als bestand…
+                                    </button>
+                                )}
 
                                 <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Delen</div>

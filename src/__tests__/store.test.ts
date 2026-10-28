@@ -446,6 +446,15 @@ describe('named worksheet saves', () => {
         expect(useWorksheetStore.getState().savedPresetId).toBeNull();
     });
 
+    test('loading another sheet releases the file that was open', () => {
+        const current = useWorksheetStore.getState();
+        current.setFileHandle({ name: 'oud.rekenraak', getFile: vi.fn(), createWritable: vi.fn() });
+        expect(useWorksheetStore.getState().fileHandle?.name).toBe('oud.rekenraak');
+        current.loadWorksheet({ blocks: [], header: current.header, footer: current.footer, docSettings: current.docSettings }, 'p1');
+        expect(useWorksheetStore.getState().fileHandle).toBeNull();
+        expect(useWorksheetStore.getState().savedPresetId).toBe('p1');
+    });
+
     test('a deleted entry or a refused write is never reported as saved', () => {
         const current = useWorksheetStore.getState();
         expect(updatePreset('missing', current)).toBe('missing');
