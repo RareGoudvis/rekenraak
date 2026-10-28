@@ -17,7 +17,7 @@
 // <leafId>-w<width>-s<0|1>.png. A leaf that throws is recorded with its error and skipped —
 // the run does not abort, since one bad leaf must not hide the other ~400 results.
 
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { walkLeaves } from './lib/leafWalk.mjs';
 
@@ -33,12 +33,16 @@ const WIDTHS = arg('widths', '4,2').split(',').map(Number);
 const SEED = Number(arg('seed', 1234));
 // --only leafId,leafId — restricts the walk for a quick smoke run; omitted = every leaf.
 const ONLY = arg('only', '').split(',').filter(Boolean);
+// --doc '<json>' | file.json — a docSettings patch applied before the walk (e.g. the sheet fonts),
+// so a whole run can be compared against the default-font run with font:compare.
+const DOC_ARG = arg('doc', '');
+const DOC = DOC_ARG ? JSON.parse(DOC_ARG.trim().startsWith('{') ? DOC_ARG : readFileSync(DOC_ARG, 'utf8')) : undefined;
 
 const t0 = Date.now();
-const { rows, leaves } = await walkLeaves({ url: URL, out: OUT, widths: WIDTHS, seed: SEED, only: ONLY });
+const { rows, leaves } = await walkLeaves({ url: URL, out: OUT, widths: WIDTHS, seed: SEED, only: ONLY, docSettings: DOC });
 console.log(`${leaves.length} leaves, widths [${WIDTHS.join(',')}], seed ${SEED}`);
 
-writeFileSync(join(OUT, 'index.json'), JSON.stringify({ url: URL, seed: SEED, widths: WIDTHS, leafCount: leaves.length, rows }, null, 2));
+writeFileSync(join(OUT, 'index.json'), JSON.stringify({ url: URL, seed: SEED, widths: WIDTHS, docSettings: DOC ?? null, leafCount: leaves.length, rows }, null, 2));
 
 const skipped = rows.filter(r => r.error);
 const elapsedS = ((Date.now() - t0) / 1000).toFixed(1);

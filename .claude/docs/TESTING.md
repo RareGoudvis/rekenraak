@@ -452,6 +452,12 @@ node scripts/height-audit.mjs --url http://localhost:5174/                    # 
 node scripts/height-audit.mjs --url http://localhost:5174/ --answer-space 28
 ```
 
+`--doc '<json>' | file.json` applies a `docSettings` patch first (through the DEV hook's
+`updateDocSettings`), e.g. the sheet fonts; add `--switch` to apply it only AFTER the ten blocks
+have measured, which is the teacher picking a font on a full sheet and the case where the old
+face's measurements could outlive it. Run both after anything that touches the font tokens or
+the measurement keys (see "Sheet fonts" under the font baseline below).
+
 ### Guarding a writing-space change with font:compare
 
 The recipe branch G used, and the one to reuse for any change to `--sheet-answer-h` or to a
@@ -632,6 +638,28 @@ promote at), or a pixel diff (`pixelmatch` + `pngjs`, top 28px masked so the tit
 expected +4px never trips it) exceeds 0.5%. Writes `report.json` (every row),
 `report.md` (pixel-diff descending), and `contact-sheet.html` (before/after side by side,
 flagged rows only — a clean sweep should produce an almost-empty sheet).
+
+### Sheet fonts (`--doc`)
+
+`font-baseline.mjs --doc '<json>' | file.json` patches `docSettings` once before the walk
+(`window.__rekenraak.updateDocSettings`, then `document.fonts.ready`), so a whole run can be taken
+under another sheet face and diffed against a default run with the same seed. The WP C3 recipe
+(2026-10-28), with the widest text face and a mono face from the pickers in `fontOptions.ts`:
+
+```bash
+node scripts/font-baseline.mjs --url http://localhost:5319/ --out ~/Downloads/fonts/a                       # defaults
+node scripts/font-baseline.mjs --url http://localhost:5319/ --out ~/Downloads/fonts/b --doc verdana.json    # fontFamilyText/Header/Titel/HeaderVelden/Footer
+node scripts/font-baseline.mjs --url http://localhost:5319/ --out ~/Downloads/fonts/c --doc courier.json    # fontFamilyMath
+node scripts/font-compare.mjs --before ~/Downloads/fonts/a --after ~/Downloads/fonts/b --out ~/Downloads/fonts/ab
+```
+
+Here a flag is expected (pixels move): read it as a **reflow** (more rows, fewer columns, a
+narrower or wider tier) or a **clip** (ink outside the cell, text cut by an `overflow:hidden`
+box, a hoverflow / page banner the default run did not have, packer ≠ paper in the height
+audit). Run `--widths 1` too: the quarter column is where a face first wraps. The mono width
+estimates (`monoTextPx`, `MONO_ADVANCE_EM` 0.65) stay on Azeret on purpose: every offered mono
+face advances less (JetBrains Mono / Courier New 0.6, Consolas 0.55), so the estimate can only
+over-reserve. A face that advances more than 0.65 em would have to move that constant first.
 
 ## Before/after review (limit campaign) (`scripts/trigger-shots.mjs`, `scripts/limits-diff.mjs`)
 

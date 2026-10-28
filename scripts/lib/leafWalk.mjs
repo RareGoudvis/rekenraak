@@ -21,7 +21,8 @@ import { join } from 'node:path';
  * leaves a cell out (resume); sidebarOpts passes the leaf's { leafId, instruction } like
  * sidebar.tsx does (not for replace variants: they are type-level, not the leaf); viewport
  * overrides the 1600×1100 window. Opt-ins trigger-shots.mjs uses: keyFor(leaf, variant, width,
- * solutions) renames the cell key (and so the PNG); prepare(page, variant) runs before each cell
+ * solutions) renames the cell key (and so the PNG); docSettings patches the sheet settings once
+ * before the walk (font:baseline --doc, to run every leaf under another sheet font); prepare(page, variant) runs before each cell
  * (e.g. to set the leerjaar); solutionsList narrows the solutions {0,1} axis; onBrowser(browser) hands out the browser so a caller can kill a hung walk.
  * @param {{url:string,out:string,widths:number[],seed:number,only?:string[],
  *          screenshots?:boolean,log?:(s:string)=>void,onRow?:(r:object)=>void,
@@ -38,6 +39,7 @@ export async function walkLeaves(opts) {
         screenshots = true, log = console.log, onRow,
         overrideFor, probe, deselect = false,
         skip, sidebarOpts = false, keyFor, prepare, onBrowser, solutionsList = [0, 1], viewport = { width: 1600, height: 1100 },
+        docSettings,
     } = opts;
 
     mkdirSync(out, { recursive: true });
@@ -66,6 +68,11 @@ export async function walkLeaves(opts) {
         await page.evaluate(() => { try { localStorage.setItem('rekenraak_tour_seen_v1', '1'); } catch { /* ignore */ } });
         await page.reload();
         await page.waitForFunction(() => !!window.__rekenraak);
+        if (docSettings) {
+            await page.evaluate((patch) => window.__rekenraak.updateDocSettings(patch), docSettings);
+            // A self-hosted face loads on first use; measuring before it lands would record the fallback.
+            await page.evaluate(async () => { await new Promise((res) => setTimeout(res, 300)); await document.fonts.ready; });
+        }
 
         let leaves = await page.evaluate(() => window.__rekenraak.leaves);
         if (only.length) leaves = leaves.filter(l => only.includes(l.id) || only.includes(l.typeId));

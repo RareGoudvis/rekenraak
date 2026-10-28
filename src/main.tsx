@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { IconContext } from '@phosphor-icons/react';
 import App from './App.tsx';
 import { useWorksheetStore, type AddBlockOpts } from './store/useWorksheetStore';
+import type { DocSettings } from './store/types';
 import { REGISTRY } from './config/exerciseRegistry';
 import { flattenLeaves } from './config/appstructure';
 import { measuredSnapshot } from './hooks/useMeasuredHeights';
@@ -48,6 +49,8 @@ if (import.meta.env.DEV) {
       useWorksheetStore.getState().addBlockFromType(typeId, label ?? typeId, overrideConstraints, opts),
     updateBlockSettings: (id: string, updates: Record<string, unknown>) =>
       useWorksheetStore.getState().updateBlockSettings(id, updates),
+    // Sheet-wide settings (fonts, answer space) for the font / height harnesses' --doc runs.
+    updateDocSettings: (patch: Partial<DocSettings>) => useWorksheetStore.getState().updateDocSettings(patch),
     setIgnoreMinWidth: (on: boolean) => useWorksheetStore.getState().setIgnoreMinWidth(on),
     clearBlocks: () => useWorksheetStore.getState().clearBlocks(),
     getState: () => useWorksheetStore.getState(),
