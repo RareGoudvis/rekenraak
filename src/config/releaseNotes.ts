@@ -64,7 +64,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
-                text: 'Sjablonen voor pagina-ontwerp (Meer → Pagina-ontwerp sjablonen): bewaar de vormgeving van een blad en pas ze met één klik toe op een ander blad.',
+                text: 'Sjablonen voor pagina-ontwerp (Menu → Pagina-ontwerp sjablonen): bewaar de vormgeving van een blad en pas ze met één klik toe op een ander blad.',
             },
             {
                 kind: 'nieuw',
@@ -94,7 +94,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
-                text: 'In Chrome en Edge bewaar je je wijzigingen terug in hetzelfde .rekenraak-bestand (Meer → Bewaar bestand). Andere browsers downloaden zoals vroeger.',
+                text: 'In Chrome en Edge bewaar je je wijzigingen terug in hetzelfde .rekenraak-bestand (Bewaren → Bewaar bestand). Andere browsers downloaden zoals vroeger.',
             },
             {
                 kind: 'gewijzigd',

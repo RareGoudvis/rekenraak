@@ -70,3 +70,5 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 
+- Visual gate is load-flaky: under CPU load (parallel worktrees) 1-6 random cells flag "[layout] repack loop broken (width ...)" / height deltas (breuken-veelhoek, cijferen-delen-nat, vormleer-hoeken-meten w1); same tree passes on a quiet re-run, also with the old TopBar (seen 2026-10-28, WP E4).
+- viewers.solutionPlacement.test "geld-teruggeven key: only the answers are red" fails rarely (expected 3 got 2) on a random draw; passes on rerun (seen 2026-10-28, WP E4 gate).

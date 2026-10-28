@@ -11,7 +11,7 @@ interface Props {
 type Tab = 'maken' | 'opslaan' | 'delen';
 
 // Step-by-step usage guide in three levels: build a worksheet, save/load worksheets,
-// share worksheets. Kept in sync with the current chrome (topbar "Meer" menu,
+// share worksheets. Kept in sync with the current chrome (topbar "Menu" and "Bewaren" buttons,
 // Oefeningen/Overzicht tabs, Bibliotheek presets). Reuses theme CSS variables.
 export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowReleaseNotes }: Props) {
     const [tab, setTab] = useState<Tab>('maken');
@@ -77,7 +77,7 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                             Het tabblad <strong>Overzicht</strong> (links) toont alle blokken op een rij. Versleep om te herordenen, dupliceer of verwijder een blok, en zie waar de pagina’s eindigen. Klik op een rij om naar dat blok op het blad te springen.
                         </Section>
                         <Section title="6. Voorbeelden bij het zweven">
-                            Onder <strong>Meer</strong> bovenaan zet je <strong>Voorbeeld bij zweven</strong> aan of uit (een voorbeeldkaartje wanneer je over een oefening in de lijst zweeft).
+                            Onder <strong>Menu</strong> bovenaan zet je <strong>Voorbeeld bij zweven</strong> aan of uit (een voorbeeldkaartje wanneer je over een oefening in de lijst zweeft).
                         </Section>
                         <Section title="7. Afdrukken of als PDF">
                             Klik op <strong>Afdrukken</strong> bovenaan (of Ctrl+P) en kies in je browser “Opslaan als PDF”. Met <strong>Oplossingen</strong> druk je de antwoorden mee af. Wat je op het scherm ziet, is precies wat afgedrukt wordt.
@@ -92,13 +92,13 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                             Je werk krijgt automatisch een herstelkopie in deze browser — bovenaan zie je <strong>Herstelkopie in browser</strong>. Sluit je per ongeluk het tabblad, dan staat alles er nog wanneer je terugkomt. Dat is geen bestand op je toestel en het werkt geen geopend bestand of bewaard blad bij.
                         </Section>
                         <Section title="2. Mijn bladen (in deze browser)">
-                            <strong>Meer → Bewaar in Mijn bladen…</strong> bewaart het huidige blad in deze browser, niet als bestand. Heb je het blad uit Mijn bladen geopend, dan werkt <strong>Bijwerken in Mijn bladen</strong> datzelfde blad bij in plaats van een kopie te maken. Via <strong>Meer → Mijn bladen</strong> open, hernoem, dupliceer en verwijder je je bladen, of exporteer je er een als bestand. Je kan tot 20 bladen in deze browser bewaren.
+                            <strong>Bewaren → Bewaar in Mijn bladen…</strong> bewaart het huidige blad in deze browser, niet als bestand. Heb je het blad uit Mijn bladen geopend, dan werkt <strong>Bijwerken in Mijn bladen</strong> datzelfde blad bij in plaats van een kopie te maken. Via <strong>Bewaren → Mijn bladen</strong> open, hernoem, dupliceer en verwijder je je bladen, of exporteer je er een als bestand. Je kan tot 20 bladen in deze browser bewaren.
                         </Section>
                         <Section title="3. Kant-en-klare bladen">
-                            Via <strong>Meer → Kant-en-klare bladen</strong> kies je een kant-en-klaar voorbeeldblad. Filter op leerjaar, rekenmethode of domein. <strong>Gebruik sjabloon</strong> laadt het blad in de editor — daarna pas je het vrij aan en bewaar je het bij Mijn bladen.
+                            Via <strong>Menu → Kant-en-klare bladen</strong> kies je een kant-en-klaar voorbeeldblad. Filter op leerjaar, rekenmethode of domein. <strong>Gebruik sjabloon</strong> laadt het blad in de editor — daarna pas je het vrij aan en bewaar je het bij Mijn bladen.
                         </Section>
                         <Section title="4. Bestand bewaren en openen">
-                            <strong>Meer → Open bestand…</strong> opent een <strong>.rekenraak</strong>-bestand (ook oudere .json-bestanden werken). <strong>Meer → Bewaar bestand</strong> schrijft je wijzigingen terug naar dat bestand als je browser dat kan (Chrome, Edge); anders wordt een nieuw bestand gedownload. <strong>Bewaar als bestand…</strong> kiest een andere naam of plek. Zo’n bestand is je back-up buiten de browser, en het bestand dat je doorstuurt.
+                            <strong>Bewaren → Open bestand…</strong> opent een <strong>.rekenraak</strong>-bestand (ook oudere .json-bestanden werken). <strong>Bewaren → Bewaar bestand</strong> schrijft je wijzigingen terug naar dat bestand als je browser dat kan (Chrome, Edge); anders wordt een nieuw bestand gedownload. <strong>Bewaar als bestand…</strong> kiest een andere naam of plek. Zo’n bestand is je back-up buiten de browser, en het bestand dat je doorstuurt.
                         </Section>
                     </>
                 )}
@@ -107,16 +107,16 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                 {tab === 'delen' && (
                     <>
                         <Section title="1. Een link delen">
-                            Via <strong>Meer → Delen</strong> heb je twee opties. <strong>Blad delen</strong> maakt een link met de volledige werkbundel (oefeningen én de gegenereerde getallen). <strong>Sjabloon delen</strong> deelt enkel de instellingen, zonder getallen — wie de link opent, genereert zelf verse oefeningen met dezelfde opbouw.
+                            Via <strong>Menu → Delen</strong> heb je twee opties. <strong>Blad delen</strong> maakt een link met de volledige werkbundel (oefeningen én de gegenereerde getallen). <strong>Sjabloon delen</strong> deelt enkel de instellingen, zonder getallen — wie de link opent, genereert zelf verse oefeningen met dezelfde opbouw.
                         </Section>
                         <Section title="2. Een bestand delen">
-                            Liever offline? <strong>Meer → Bewaar bestand</strong> geeft je een .rekenraak-bestand dat je via mail of een gedeelde map doorstuurt. De ontvanger opent het met <strong>Meer → Open bestand…</strong>.
+                            Liever offline? <strong>Bewaren → Bewaar bestand</strong> geeft je een .rekenraak-bestand dat je via mail of een gedeelde map doorstuurt. De ontvanger opent het met <strong>Bewaren → Open bestand…</strong>.
                         </Section>
                         <Section title="3. Een curriculum delen (leerkrachten)">
-                            Via <strong>Meer → Curriculum samenstellen</strong> kies je welke oefentypes toegestaan zijn en zet je per type de moeilijkheid vast. Klik op <strong>Deel curriculum-link</strong>: wie die link opent, kan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek of klas te delen.
+                            Via <strong>Menu → Curriculum samenstellen</strong> kies je welke oefentypes toegestaan zijn en zet je per type de moeilijkheid vast. Klik op <strong>Deel curriculum-link</strong>: wie die link opent, kan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek of klas te delen.
                         </Section>
                         <Section title="Bugs of suggesties?">
-                            Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (Meer → Feedback geven).
+                            Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (Menu → Feedback geven).
                         </Section>
                     </>
                 )}

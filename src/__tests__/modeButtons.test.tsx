@@ -45,12 +45,12 @@ describe('mode buttons', () => {
         expect(sidebar().getByRole('button', { name: BORD })).toBeTruthy();
     });
 
-    test('the TopBar has neither, also not in the Meer menu', () => {
+    test('the TopBar has neither, also not in the Menu', () => {
         render(<TopBar onPrint={() => { }} />);
         const bar = within(document.querySelector('.topbar') as HTMLElement);
         expect(bar.queryByRole('button', { name: OEFEN })).toBeNull();
         expect(bar.queryByRole('button', { name: BORD })).toBeNull();
-        fireEvent.click(bar.getByRole('button', { name: /^Meer/ }));
+        fireEvent.click(bar.getByRole('button', { name: /^Menu/ }));
         expect(bar.queryByText('Oefenmodus')).toBeNull();
         expect(bar.queryByText('Bordmodus')).toBeNull();
     });
