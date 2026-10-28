@@ -117,6 +117,55 @@ describe('viewer: 7/4 is two figures with seven coloured parts', () => {
     });
 });
 
+describe('herkennen key: an onechte breuk also as gemengd getal', () => {
+    const withFormat = (answerFormat: string, numerator = 7) => {
+        const block = sevenFourths('herkennen');
+        block.constraints = { ...block.constraints, answerFormat };
+        block.fractionExercises = [{ ...block.fractionExercises![0], numerator, coloredIndices: Array.from({ length: numerator }, (_, i) => i) }];
+        return block;
+    };
+    // VerticalFraction reads as whole + teller + noemer in textContent: "1 3/4" → "134".
+    test.each(['phrase', 'blank-fraction', 'blank-line'])('%s: 7/4 and 1 3/4 in the key, neither without it', (fmt) => {
+        const on = sheet(withFormat(fmt), true).textContent!.replace(/\s+/g, '');
+        expect(on).toMatch(/7\/?4\(?=134/);
+        cleanup();
+        const off = sheet(withFormat(fmt), false).textContent!.replace(/\s+/g, '');
+        expect(off).not.toMatch(/134/);
+    });
+    test('a proper breuk keeps its key as it was', () => {
+        for (const fmt of ['phrase', 'blank-fraction', 'blank-line']) {
+            const block = withFormat(fmt, 3);
+            block.fractionExercises = [{ ...block.fractionExercises![0], wholes: undefined }];
+            expect(sheet(block, true).textContent).not.toMatch(/=/);
+            cleanup();
+        }
+    });
+    test('the breukvragen ask counts: unchanged', () => {
+        expect(sheet(withFormat('fraction-questions'), true).textContent).not.toMatch(/=/);
+    });
+});
+
+describe('vereenvoudigen key', () => {
+    const keyOf = (input: { n: number; d: number }, answer: { n: number; d: number }, showSolutions = true) => {
+        const block = makeBlock('breuken-bewerken', { constraints: { subType: 'vereenvoudigen', allowImproper: true } });
+        block.breukBewerkExercises = [{ id: 'v', subType: 'vereenvoudigen', inputs: [input], answers: [answer], isManuallyEdited: false }];
+        const { Viewer } = EXERCISE_UI['breuken-bewerken'];
+        const text = render(<BlockWidthProvider value={700}><Viewer block={block} showSolutions={showSolutions} /></BlockWidthProvider>).container.textContent!.replace(/\s+/g, '');
+        cleanup();
+        return text;
+    };
+    test('an onechte answer: 5/2 = 2 1/2', () => {
+        expect(keyOf({ n: 10, d: 4 }, { n: 5, d: 2 })).toBe('104=52=212');
+        expect(keyOf({ n: 10, d: 4 }, { n: 5, d: 2 }, false)).toBe('104=');
+    });
+    test('a whole answer is the integer, not 2/1', () => {
+        expect(keyOf({ n: 6, d: 3 }, { n: 2, d: 1 })).toBe('63=2');
+    });
+    test('a proper answer is unchanged', () => {
+        expect(keyOf({ n: 6, d: 8 }, { n: 3, d: 4 })).toBe('68=34');
+    });
+});
+
 describe('kiosk', () => {
     const d = kioskFor('breuken')!;
     test('herkennen answers the drawn 7/4; 14/8 only with the row by value', () => {
