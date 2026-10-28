@@ -7,6 +7,7 @@ import IconButton from '../ui/IconButton';
 import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
+import PageDesignsModal from './PageDesignsModal';
 import { saveCurrentToLibrary } from '../library/saveToLibrary';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import { Info } from '@phosphor-icons/react';
@@ -108,6 +109,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
+    const [pageDesignsOpen, setPageDesignsOpen] = useState(false);
 
     // saveAs = always ask where (the picker), even when a file is already open.
     const handleSaveFile = async (saveAs: boolean) => {
@@ -315,6 +317,9 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('bibliotheek'); }}>
                                     <BookOpen size={15} /> Kant-en-klare bladen
                                 </button>
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setPageDesignsOpen(true); }}>
+                                    <LayoutTemplate size={15} /> Pagina-ontwerp sjablonen
+                                </button>
                                 <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); handleSaveToLibrary(); }}>
                                     <FloppyDisk size={15} /> {savedPresetId ? 'Bijwerken in Mijn bladen' : 'Bewaar in Mijn bladen…'}
                                 </button>
@@ -492,6 +497,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             {massAddOpen && <MassAddModal onClose={() => setMassAddOpen(false)} />}
             {baseOpen && <BaseSettingsModal onClose={() => setBaseOpen(false)} />}
             {curriculumOpen && <CurriculumBuilderModal onClose={() => setCurriculumOpen(false)} />}
+            {pageDesignsOpen && <PageDesignsModal onClose={() => setPageDesignsOpen(false)} />}
         </div>
     );
 }
