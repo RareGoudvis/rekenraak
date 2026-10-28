@@ -4,7 +4,9 @@
 // into the list the teacher will actually see. Pure data (no React, no store).
 
 // Highest number any generator is handed: 1e9 × INTERNAL_SCALE (1e6) = 1e15 stays below
-// 2^53, while 1e10 (the old leerjaar-6 seed) does not.
+// 2^53, while 1e10 (the old leerjaar-6 seed) does not. That holds for ONE scaled value: a
+// product of two (1e15 × 1e6) is past it, so products are formed on the display grid
+// (≤ 3 decimals) or in BigInt. safeIntegers.test.ts proves the printed answers exact at 1e9.
 export const NAT_CEILING = 1_000_000_000;
 
 // Every step a natural-number max can take, low to high.
