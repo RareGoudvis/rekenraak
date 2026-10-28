@@ -261,6 +261,8 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
                         <div style={S.switchRow}><span style={S.switchText}>Geen dubbele oefeningen</span><Switch checked={docSettings.uniqueExercises ?? true} onChange={(v) => updateDocSettings({ uniqueExercises: v })} aria-label="Geen dubbele oefeningen" /></div>
                         <p style={S.hintText}>Elke oefening komt hoogstens één keer voor in een blok; bij kleine reeksen (bv. klok op het uur) blijven herhalingen toegestaan.</p>
                         <div style={S.switchRow}><span style={S.switchText}>Opdrachten nummeren</span><Switch checked={docSettings.numberBlocks} onChange={(v) => updateDocSettings({ numberBlocks: v })} aria-label="Opdrachten nummeren" /></div>
+                        <div style={S.switchRow}><span style={S.switchText}>Opdrachtkleur per domein</span><Switch checked={!!docSettings.domainColors} onChange={(v) => updateDocSettings({ domainColors: v })} aria-label="Opdrachtkleur per domein" /></div>
+                        <p style={S.hintText}>Elke opdracht-titel krijgt de kleur van zijn domein (getallenkennis, bewerkingen, meten, …), zoals in de meeste methodes.</p>
 
                         <label style={{ ...S.label, marginTop: '10px' }}>Ruimte tussen oefenreeksen: {docSettings.blockSpacing ?? 12}px</label>
                         <input type="range" min="4" max="48" step="2"

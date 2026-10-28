@@ -611,13 +611,22 @@ const breukBewerkSpec: TypeSpec<BreukBewerkExercise> = {
             if (!c.allowIrreducible && gcd(a.n, a.d) !== 1) push('answer-key', fmtF(a), 'lowest terms', ex);
             properRule(i, c.allowImproper === true, push, ex);
         } else {
+            const multiple = c.denominatorRelation === 'multiple';
+            // A multiple pair that does not fit the range leaves it WITH the note (below the min, or 4 at max ≤ 3).
+            const multipleNoted = multiple && /geen noemer met een veelvoud/.test(ctx.note ?? '');
             for (const f of e.inputs) {
                 // Two different noemers need room: min = max pulls the second one below the min, max 2 adds 3 (both WITH the note).
-                if (f.d > maxD && !/noemer 3 wordt/.test(ctx.note ?? '')) push('denominator>max', f.d, maxD, ex);
-                if (f.d < minD && !/maar één noemer/.test(ctx.note ?? '')) push('denominator<min', f.d, minD, ex);
+                if (f.d > maxD && !multipleNoted && !/noemer 3 wordt/.test(ctx.note ?? '')) push('denominator>max', f.d, maxD, ex);
+                if (f.d < minD && !multipleNoted && !/maar één noemer/.test(ctx.note ?? '')) push('denominator<min', f.d, minD, ex);
+            }
+            if (multiple) {
+                // Leerjaar-4 rule: the larger noemer is a multiple of the smaller, and it is the common noemer.
+                const [a, b] = e.inputs.map(f => f.d).sort((x, y) => x - y);
+                if (a === b || b % a !== 0) push('denominator-relation', `${a} & ${b}`, 'one a multiple of the other', ex);
+                if (e.answers[0]?.d !== b) push('answer-key', e.answers[0]?.d, b, ex);
             }
             const target = c.targetDen;
-            if (target !== '' && target !== undefined && target !== null && e.answers[0]?.d !== Number(target) && !/veelvoud|maar één noemer|noemer 3 wordt/.test(ctx.note ?? '')) push('targetDen-ignored', e.answers[0]?.d, Number(target), ex);
+            if (!multiple && target !== '' && target !== undefined && target !== null && e.answers[0]?.d !== Number(target) && !/veelvoud|maar één noemer|noemer 3 wordt/.test(ctx.note ?? '')) push('targetDen-ignored', e.answers[0]?.d, Number(target), ex);
             if (e.answers.length === 2 && e.answers[0].d !== e.answers[1].d) push('answer-key', ex, 'equal denominators', ex);
             for (const f of e.inputs) properRule(f, c.allowImproper === true, push, ex);
         }

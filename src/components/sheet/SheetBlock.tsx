@@ -9,6 +9,7 @@ import SheetDropZones from '../layout/SheetDropZones';
 import type { DropZone } from '../../hooks/useSheetDnd';
 import { styles } from '../../styles/appStyles';
 import { overlayRegionStyle } from '../../services/regionStyle';
+import { domainFillOf } from '../../config/domainOf';
 import type { MathBlock } from '../../services/math/types';
 import { setHoveredBlockId } from './hoveredBlock';
 
@@ -92,6 +93,10 @@ function SheetBlock({
   const isFurniture = !!REGISTRY[block.typeId]?.isFurniture;
   // dividers between blocks come from the page grid gap now
   const isNotLastBlock = false;
+  // Domain colour is the implicit fill: an explicit titelCustom.background (teacher) wins.
+  const domainFill = docSettings.domainColors ? domainFillOf(block.leafId, block.typeId) : undefined;
+  const domainTitelStyle = domainFill && !docSettings.titelCustom?.background
+    ? { ...docSettings.titelCustom, background: domainFill } : docSettings.titelCustom;
 
   return (
     <div
@@ -156,7 +161,7 @@ function SheetBlock({
           fontFamily: 'var(--font-sheet-titel)',
           ...(docSettings.opdrachtTitelStyle === 'boxed' ? { border: '1.5px solid #000', padding: '4px 8px', borderRadius: '3px' } : {}),
           ...(docSettings.opdrachtTitelStyle === 'underlined' ? { borderBottom: '2px solid #000', paddingBottom: '4px' } : {}),
-        }, docSettings.titelCustom)}>
+        }, domainTitelStyle)}>
           {/* minWidth:0 so the title can actually take the wrap above: a flex
               item's default min-width is its content, which is exactly the
               overflow it was supposed to prevent. */}

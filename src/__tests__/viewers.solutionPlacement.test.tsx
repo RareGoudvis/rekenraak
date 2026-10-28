@@ -7,6 +7,7 @@ import { flattenLeaves } from '../config/appstructure';
 import { BlockWidthProvider, FULL_BLOCK_WIDTH_PX } from '../components/viewer/BlockWidthContext';
 import { makeBlock } from './helpers/makeBlock';
 import { geldMakeUp } from '../services/geld/geldMakeUp';
+import { mulberry32 } from './helpers/limitHarness';
 
 afterEach(cleanup);
 
@@ -32,10 +33,16 @@ describe('klok keys sit in the pupil\'s writing slot', () => {
 
 describe('geld-teruggeven key', () => {
     test('only the answers are red: the given price and paid amount stay black', () => {
-        const c = draw('geld-teruggeven', true, (block) => {
-            (block.constraints as Record<string, unknown>).scaffolding = 'ingevuld';
-            block.geldTeruggevenExercises = block.geldTeruggevenExercises!.slice(0, 1);
-        });
+        // Seeded: a one-hop change (9,45 → 10,00) has no waypoint, so only two amounts show.
+        const realRandom = Math.random;
+        Math.random = mulberry32(7);
+        let c: HTMLElement;
+        try {
+            c = draw('geld-teruggeven', true, (block) => {
+                (block.constraints as Record<string, unknown>).scaffolding = 'ingevuld';
+                block.geldTeruggevenExercises = block.geldTeruggevenExercises!.slice(0, 1);
+            });
+        } finally { Math.random = realRandom; }
         const texts = [...c.querySelectorAll('svg text')];
         const given = texts.filter((t) => /^€\d+,\d\d$/.test(t.textContent ?? ''));
         expect(given.length).toBe(3);

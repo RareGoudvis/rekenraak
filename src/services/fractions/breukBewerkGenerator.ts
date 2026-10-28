@@ -43,17 +43,43 @@ function divisorsInRange(target: number, lo: number, hi: number): number[] {
     return out;
 }
 
+// Noemers in [lo, hi] that have a multiple (×2 or more) still in range — the 'multiple' pair's smaller noemer.
+function multipleBases(lo: number, hi: number): number[] {
+    const out: number[] = [];
+    for (let d = Math.max(2, lo); d * 2 <= hi; d++) out.push(d);
+    return out;
+}
+
+// A noemer pair where one is a multiple of the other (3 & 6), in random order. No pair in range:
+// the largest base under the cap (pulled below the min, see limitNote), or 2 & 4 when the cap is 3.
+function multiplePair(lo: number, hi: number): [number, number] {
+    const bases = multipleBases(lo, hi);
+    let small: number, large: number;
+    if (bases.length > 0) {
+        small = bases[randInt(0, bases.length - 1)];
+        large = small * randInt(2, Math.floor(hi / small));
+    } else {
+        small = Math.max(2, Math.floor(hi / 2));
+        large = small * 2;
+    }
+    return Math.random() < 0.5 ? [small, large] : [large, small];
+}
+
 // gelijknamig: two fractions with different denominators → a common denominator.
 // targetDen (when it has ≥2 divisors in range) fixes the common denominator; else the LCM.
-function makeGelijknamig(minD: number, maxD: number, targetDen: number | null, improper: boolean): BreukBewerkExercise {
+// relation 'multiple' (leerjaar 4): one noemer a multiple of the other, the larger one is the common noemer.
+function makeGelijknamig(minD: number, maxD: number, targetDen: number | null, improper: boolean, multiple: boolean): BreukBewerkExercise {
     // Two different denominators need a range of ≥2 values: when min ≥ max pull lo down
     // so the cap holds (tot 20 → 19 & 20); only maxD = 2 has no room and must reach 3.
     const hi = Math.max(maxD, 2) < 3 ? 3 : Math.max(2, maxD);
     const lo = Math.min(Math.max(2, minD), hi - 1);
 
     let d1: number, d2: number, L: number;
-    const divisors = targetDen && targetDen >= 2 ? divisorsInRange(targetDen, lo, hi) : [];
-    if (targetDen && divisors.length >= 2) {
+    const divisors = !multiple && targetDen && targetDen >= 2 ? divisorsInRange(targetDen, lo, hi) : [];
+    if (multiple) {
+        [d1, d2] = multiplePair(lo, hi);
+        L = Math.max(d1, d2);
+    } else if (targetDen && divisors.length >= 2) {
         d1 = divisors[randInt(0, divisors.length - 1)];
         let guard = 0;
         do { d2 = divisors[randInt(0, divisors.length - 1)]; } while (d2 === d1 && guard++ < 40);
@@ -125,6 +151,12 @@ function limitNote(subType: string, c: BreukBewerkConstraints): string | null {
     const minD = c.minDenominator ?? 2, maxD = c.maxDenominator ?? 10, maxN = c.maxNumerator ?? 10;
     if (subType === 'gemengd' && maxN < 3) return 'Een gemengd getal heeft minstens teller 3 (3/2): de teller loopt hier boven het maximum.';
     if (subType === 'vereenvoudigen' && !canReduce(maxN, maxD)) return 'Bij dit maximum bestaat geen breuk om te vereenvoudigen: de breuken zijn al vereenvoudigd.';
+    if (subType === 'gelijknamig' && c.denominatorRelation === 'multiple') {
+        const hi = Math.max(maxD, 2) < 3 ? 3 : Math.max(2, maxD), lo = Math.min(Math.max(2, minD), hi - 1);
+        if (multipleBases(lo, hi).length > 0) return null;
+        if (hi < 4) return `Bij maximum noemer ${Math.max(2, maxD)} past geen noemer met een veelvoud ervan: noemer 4 wordt ook gebruikt.`;
+        return `Van ${minD} tot ${maxD} past geen noemer met een veelvoud ervan: de kleinste noemer is er onder gekozen.`;
+    }
     if (subType === 'gelijknamig') {
         const targetDen = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
         // A noemer leaves [min, max]: min = max (second one picked just below) or max 2 (3 added).
@@ -154,10 +186,11 @@ export function generateBreukBewerkExercises(block: MathBlock): BreukBewerkExerc
     const allowIrreducible: boolean = c.allowIrreducible ?? false;
     const targetDen: number | null = c.targetDen === '' || c.targetDen == null ? null : Number(c.targetDen);
     const improper: boolean = c.allowImproper === true;
+    const multiple: boolean = c.denominatorRelation === 'multiple';
     const n = block.numberOfExercises;
 
     return Array.from({ length: n }, () => {
-        if (subType === 'gelijknamig') return makeGelijknamig(minD, maxD, targetDen, improper);
+        if (subType === 'gelijknamig') return makeGelijknamig(minD, maxD, targetDen, improper, multiple);
         if (subType === 'vereenvoudigen') return makeVereenvoudigen(maxN, maxD, tablesOnly, allowIrreducible, improper);
         return makeGemengd(maxN, maxD, dirMode);
     });

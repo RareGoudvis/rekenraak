@@ -248,6 +248,8 @@ export type BreukBewerkConstraints = {
     targetDen: number | '';
     // Also improper fractions (teller in d+1..2d-1, never d/d) in gelijknamig / vereenvoudigen; off = proper only.
     allowImproper?: boolean;
+    // 'multiple' = one noemer is a multiple of the other (leerjaar 4 rule); the common noemer is then the larger one. Absent = 'any'.
+    denominatorRelation?: 'any' | 'multiple';
 };
 
 export type BreukenRangschikkenConstraints = {

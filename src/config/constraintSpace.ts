@@ -255,6 +255,7 @@ const breukBewerkSpace: OptionSpace = {
     // 'Vaste gemeenschappelijke noemer' ('' = the KGV).
     targetDen: ['', 2, 7, 12],
     allowImproper: [false, true],
+    denominatorRelation: ['any', 'multiple'],
 };
 
 const breukenRangschikkenSpace: OptionSpace = {

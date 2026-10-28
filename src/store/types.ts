@@ -79,6 +79,9 @@ export interface DocSettings {
     // Optional → back-compat: absent = true (old/shared sheets keep the safer default).
     uniqueExercises?: boolean;
     numberBlocks: boolean;
+    // Opdracht-titel fill by sidebar domain (config/domainOf.ts); a titelCustom.background wins.
+    // Optional → back-compat: absent = off.
+    domainColors?: boolean;
     // Style-builder overrides (custom wins over the enum presets above). Optional → back-compat.
     headerCustom?: RegionStyle;
     titelCustom?: RegionStyle;
