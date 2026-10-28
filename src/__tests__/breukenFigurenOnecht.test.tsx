@@ -7,6 +7,7 @@ import { EXERCISE_UI } from '../config/exerciseUI';
 import { BlockWidthProvider } from '../components/viewer/BlockWidthContext';
 import { kioskFor } from '../services/oefenen/kiosk';
 import { checkAnswer } from '../services/oefenen/check';
+import { answerText, expectedText } from '../services/oefenen/stats';
 import type { FractionExercise, MathBlock } from '../services/math/types';
 
 // "Ook onechte breuken" on breuken kleuren / herkennen: the teller may pass the noemer, drawn over two wholes.
@@ -121,10 +122,39 @@ describe('kiosk', () => {
     test('herkennen answers the drawn 7/4; 14/8 only with the row by value', () => {
         const block = sevenFourths('herkennen');
         const ex = block.fractionExercises![0];
-        expect(d.answerOf(ex, block.constraints)).toEqual(['7/4']);
+        expect(d.answerOf(ex, block.constraints)).toEqual(['7/4', '1 3/4']);
         expect(checkAnswer(d, ex, block.constraints, ['4', '7'])).toBe(true);
         expect(checkAnswer(d, ex, block.constraints, ['8', '14'])).toBe(false);
         expect(checkAnswer(d, ex, block.constraints, ['8', '14'], false)).toBe(true);
+    });
+    test('herkennen with the flag: a geheel field first; 7/4 and 1 3/4 are right, a wrong gemengd getal is wrong', () => {
+        const block = sevenFourths('herkennen');
+        const ex = block.fractionExercises![0];
+        const c = block.constraints as Record<string, unknown>;
+        expect(d.labels!(ex, c)).toEqual(['geheel', 'noemer', 'teller']);
+        expect(d.labels!(ex, { ...c, allowImproper: false })).toEqual(['noemer', 'teller']);
+        const ok = (given: string[], exact?: boolean) => checkAnswer(d, ex, c, given, exact);
+        expect(ok(['', '4', '7'])).toBe(true);
+        expect(ok(['1', '4', '3'])).toBe(true);
+        expect(ok([' 01 ', '4', '3'])).toBe(true);
+        expect(ok(['2', '4', '3'])).toBe(false);
+        expect(ok(['1', '4', '7'])).toBe(false);
+        // The exact form keeps the drawn noemer for the breuk part; by value any equal form counts.
+        expect(ok(['1', '8', '6'])).toBe(false);
+        expect(ok(['1', '8', '6'], false)).toBe(true);
+        expect(ok(['', '8', '14'], false)).toBe(true);
+        expect(ok(['1', '8', '7'], false)).toBe(false);
+        expect(ok(['1', '', '3'])).toBe(false);
+        expect(ok(['x', '4', '3'])).toBe(false);
+    });
+    test("stats show the pupil's own form", () => {
+        const block = sevenFourths('herkennen');
+        const ex = block.fractionExercises![0];
+        const c = block.constraints as Record<string, unknown>;
+        expect(answerText(d, ex, c, ['1', '4', '3'])).toBe('1 3/4');
+        expect(answerText(d, ex, c, ['', '4', '7'])).toBe('7/4');
+        expect(answerText(d, ex, c, ['4', '7'])).toBe('7/4');
+        expect(expectedText(d, ex, c)).toBe('7/4');
     });
     test('kleuren keys span both wholes, the answer is the count', () => {
         const block = sevenFourths('kleuren');

@@ -3,7 +3,7 @@ import { LEAF_BY_ID } from '../../config/appstructure';
 import { resolveInstruction } from '../../config/instructionPresets';
 import type { BlockConstraints } from '../../services/math/constraintTypes';
 import { kioskInstructionOf } from '../../services/oefenen/kiosk';
-import { cellPlanOf, currentInput, timeWordsNext, useOefenStore } from '../useOefenStore';
+import { cellPlanOf, currentInput, fractionNext, timeWordsNext, useOefenStore } from '../useOefenStore';
 import { KWART } from '../../services/clock/timeWords';
 import TopBar from './TopBar';
 import ExerciseCard from './ExerciseCard';
@@ -63,10 +63,13 @@ function useKioskKeys() {
                     if (to !== null) st.focusField(to); else st.answer();
                     return;
                 }
-                // A breuk typed teller first still needs its noemer: Enter goes back down to it.
-                const emptyPart = kind === 'fraction' ? st.input.findIndex((v, i) => i !== st.field && v === '') : -1;
-                if (emptyPart >= 0 && st.input[st.field] !== '') st.focusField(emptyPart);
-                else if (st.input.length > 1 && st.field < st.input.length - 1 && st.input[st.field + 1] === '') st.focusField(st.field + 1);
+                // A breuk: on to the next empty noemer / teller (past an empty geheel), or back down to an empty one.
+                if (kind === 'fraction') {
+                    const to = fractionNext(st.input, st.field);
+                    if (to !== null) st.focusField(to); else st.answer();
+                    return;
+                }
+                if (st.input.length > 1 && st.field < st.input.length - 1 && st.input[st.field + 1] === '') st.focusField(st.field + 1);
                 else st.answer();
                 return;
             }

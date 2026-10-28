@@ -616,6 +616,16 @@ html:has(.oefen-body),
 .kiosk-fraction .kiosk-field { flex: none; text-align: center; }
 /* The field the keypad types into, also while a keypad key holds the focus. */
 .kiosk-fraction .kiosk-field.is-active { border-color: var(--accent); }
+/* Onechte breuken: the geheel field beside the stacked breuk, centred on its bar like a written 1 3/4. */
+.kiosk-fraction-mixed {
+  flex: none;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.kiosk-fraction-mixed > .kiosk-field-bare > .kiosk-field { flex: none; width: 5em; text-align: center; }
+.kiosk-fraction-mixed .kiosk-field.is-active { border-color: var(--accent); }
 .kiosk-fraction-bar {
   height: 4px;
   border-radius: 2px;

@@ -95,6 +95,21 @@ describe('kiosk with improper breuken', () => {
         expect(checkAnswer(d, ex, {}, '5/2')).toBe(true);
         expect(checkAnswer(d, ex, {}, '10/4')).toBe(false);
     });
+    test('vereenvoudigen: an onechte answer also as gemengd getal, typed with the space key', () => {
+        const d = kioskFor('breuken-bewerken')!;
+        const ex: BreukBewerkExercise = { id: 'b', subType: 'vereenvoudigen', inputs: [{ n: 10, d: 4 }], answers: [{ n: 5, d: 2 }], isManuallyEdited: false };
+        const c = { subType: 'vereenvoudigen', allowImproper: true };
+        expect(d.answerOf(ex, c)).toEqual(['5/2', '2 1/2']);
+        expect(checkAnswer(d, ex, c, '2 1/2')).toBe(true);
+        expect(checkAnswer(d, ex, c, '2  1 / 2')).toBe(true);
+        expect(checkAnswer(d, ex, c, '1 1/2')).toBe(false);
+        expect(checkAnswer(d, ex, c, '2 2/4')).toBe(false);
+        expect(checkAnswer(d, ex, c, '1 3/2')).toBe(false);
+        expect(d.keys!(c)).toEqual(['/', ' ']);
+        expect(d.keys!({ subType: 'vereenvoudigen' })).toEqual(['/']);
+        // A proper answer has one form.
+        expect(d.answerOf({ ...ex, inputs: [{ n: 6, d: 8 }], answers: [{ n: 3, d: 4 }] }, c)).toEqual(['3/4']);
+    });
     test('vereenvoudigen: a whole-number answer reads 2 or 2/1', () => {
         const d = kioskFor('breuken-bewerken')!;
         const ex: BreukBewerkExercise = { id: 'b', subType: 'vereenvoudigen', inputs: [{ n: 6, d: 3 }], answers: [{ n: 2, d: 1 }], isManuallyEdited: false };

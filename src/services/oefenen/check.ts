@@ -157,9 +157,12 @@ export function checkAnswer(d: KioskDescriptor, ex: unknown, c: Record<string, u
         return g !== null && g === want;
     }
     if (input === 'fraction') {
-        // [noemer, teller] as typed; whole numbers only in each field (a '3/' or '1,5' noemer is no breuk).
-        if (!Array.isArray(given) || given.length !== 2 || !given.every(g => /^\s*\d+\s*$/.test(g))) return false;
-        return sameValue(`${given[1].trim()}/${given[0].trim()}`, accepted, exact);
+        // [noemer, teller] or [geheel, noemer, teller] as typed; whole numbers only in each field (a '3/' or
+        // '1,5' noemer is no breuk), the geheel may stay empty.
+        if (!Array.isArray(given) || (given.length !== 2 && given.length !== 3)) return false;
+        const [whole, noemer, teller] = given.length === 3 ? given : ['', ...given];
+        if (![noemer, teller].every(g => /^\s*\d+\s*$/.test(g)) || !/^\s*\d*\s*$/.test(whole)) return false;
+        return sameValue(`${whole.trim() ? `${whole.trim()} ` : ''}${teller.trim()}/${noemer.trim()}`, accepted, exact);
     }
     if (input === 'multi-number') {
         // Every field must hold its own blank's value, in order; an empty field only where '' is accepted.
