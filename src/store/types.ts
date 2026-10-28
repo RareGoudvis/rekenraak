@@ -1,5 +1,5 @@
 import type { MathBlock, Equation, CijferExercise, FooterData, LayoutPreset } from '../services/math/types';
-import type { CurriculumLock } from '../services/persistence';
+import type { CurriculumLock, WorksheetFileHandle } from '../services/persistence';
 import type { BaseSettings } from '../config/baseSettings';
 import type { Leerjaar } from '../config/gradePresets';
 import type { InstructionFn } from '../config/appstructure';
@@ -148,9 +148,19 @@ export interface DocumentSlice {
     // plugins can run unchanged (they target updateBlockSettings(block.id)). Not
     // rendered, not autosaved, no history.
     draftBlocks: MathBlock[];
+    // The Mijn bladen entry this sheet came from: "Bewaren" updates it instead of making a
+    // copy. Set by loadWorksheet(file, presetId); rides in the autosave record, not in files.
+    savedPresetId: string | null;
+    setSavedPresetId: (id: string | null) => void;
+    // The .rekenraak file this sheet was opened from or last saved to (Chromium's File System
+    // Access API), so "Bewaar bestand" writes back into it. Never persisted: a handle cannot
+    // be serialised and is only valid in this tab.
+    fileHandle: WorksheetFileHandle | null;
+    setFileHandle: (handle: WorksheetFileHandle | null) => void;
     setDraftBlocks: (blocks: MathBlock[]) => void;
     clearDraftBlocks: () => void;
-    loadWorksheet: (file: { blocks: MathBlock[]; header: HeaderData; footer: FooterData; docSettings: DocSettings; baseSettings?: BaseSettings; curriculum?: CurriculumLock; selectedGrade?: Leerjaar | null }) => void;
+    // presetId = the library entry being opened; absent (file, share, template) clears the link.
+    loadWorksheet: (file: { blocks: MathBlock[]; header: HeaderData; footer: FooterData; docSettings: DocSettings; baseSettings?: BaseSettings; curriculum?: CurriculumLock; selectedGrade?: Leerjaar | null }, presetId?: string) => void;
     updateHeader: (updates: Partial<HeaderData>) => void;
     updateFooter: (updates: Partial<FooterData>) => void;
     updateDocSettings: (updates: Partial<DocSettings>) => void;

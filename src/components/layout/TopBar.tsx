@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
+import { ArrowUUpLeft as Undo2, ArrowUUpRight as Redo2, Sparkle as Sparkles, Eye, EyeSlash as EyeOff, Printer, Check, FloppyDisk, SquaresFour as LayoutGrid, FileText, Layout as LayoutTemplate, Key, FilePlus, Trash as Trash2, List, FolderOpen, BookOpen, DownloadSimple, UploadSimple, SlidersHorizontal, BookBookmark as BookLock, Question as HelpIcon, ChatText } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import type { SaveState } from '../../store/useWorksheetStore';
-import { encodeShareLink, clearAutosave, exportWorksheet, parseWorksheetFile } from '../../services/persistence';
+import { encodeShareLink, clearAutosave, parseWorksheetFile, hasFilePickers, isPickerAbort, openWorksheetFromPicker, saveWorksheetToFile } from '../../services/persistence';
 import IconButton from '../ui/IconButton';
 import Switch from '../ui/Switch';
 import MassAddModal from '../massadd/MassAddModal';
 import BaseSettingsModal from './BaseSettingsModal';
+import { saveCurrentToLibrary } from '../library/saveToLibrary';
 import CurriculumBuilderModal from '../curriculum/CurriculumBuilderModal';
 import { Info } from '@phosphor-icons/react';
 import { useShedStages } from '../../hooks/useShedStages';
@@ -24,9 +25,11 @@ interface Props {
 // Oefenmodus/Bordmodus live in the sidebar foot, not here: in the bar they pushed stage 0 past 1920 px.
 // Table + flags: topBarStages.ts.
 
-// Autosave refused the write (browser storage full): the only way out is an explicit
-// file export, so the tooltip says that instead of a generic failure.
-const SAVE_FAILED_TEXT = 'Kon niet bewaren (opslag vol?) — bewaar als bestand.';
+// The autosave is a recovery copy in this browser, not the teacher's file or a Mijn bladen
+// entry: calling it "bewaard" made teachers think their sheet was saved somewhere. When the
+// write is refused (storage full) the only way out is a file, so the tooltip says that.
+const SAVE_FAILED_TEXT = 'Herstelkopie in deze browser mislukt (opslag vol?). Bewaar het blad als bestand.';
+const timeOf = (ms: number) => new Date(ms).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
 
 // Shared between the centre-track (stage 0-1) and the under-bar line (stage 2-3) so the
 // save-status colour/tooltip logic isn't duplicated.
@@ -35,10 +38,10 @@ function SaveIndicator({ saveState, lastSavedAt, showText }: { saveState: SaveSt
         <div
             style={S.saveChip}
             title={saveState === 'error' ? SAVE_FAILED_TEXT
-                : lastSavedAt ? `Laatst bewaard om ${new Date(lastSavedAt).toLocaleTimeString('nl-BE')}` : 'Wijzigingen worden automatisch lokaal bewaard'}
+                : lastSavedAt ? `Herstelkopie in deze browser om ${timeOf(lastSavedAt)}` : 'Er wordt automatisch een herstelkopie in deze browser bewaard'}
         >
             <span style={{ ...S.saveDot, background: saveState === 'error' ? 'var(--danger)' : saveState === 'saving' ? '#d97706' : saveState === 'saved' ? '#16a34a' : 'var(--text-muted)' }} />
-            {showText && <span>{saveState === 'error' ? 'Niet bewaard' : saveState === 'saving' ? 'Bewaren…' : 'Automatisch bewaard'}</span>}
+            {showText && <span>{saveState === 'error' ? 'Geen herstelkopie' : saveState === 'saving' ? 'Herstelkopie maken…' : 'Herstelkopie in browser'}</span>}
         </div>
     );
 }
@@ -98,13 +101,36 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const sidebarPreview = useWorksheetStore((s) => s.sidebarPreview);
     const setSidebarPreview = useWorksheetStore((s) => s.setSidebarPreview);
     const locked = useWorksheetStore((s) => !!s.curriculum?.locked);
+    const savedPresetId = useWorksheetStore((s) => s.savedPresetId);
+    const setSavedPresetId = useWorksheetStore((s) => s.setSavedPresetId);
+    const fileHandle = useWorksheetStore((s) => s.fileHandle);
+    const setFileHandle = useWorksheetStore((s) => s.setFileHandle);
     const menuFileRef = useRef<HTMLInputElement>(null);
     const [baseOpen, setBaseOpen] = useState(false);
     const [curriculumOpen, setCurriculumOpen] = useState(false);
 
-    const handleExport = () => {
+    // saveAs = always ask where (the picker), even when a file is already open.
+    const handleSaveFile = async (saveAs: boolean) => {
         const st = useWorksheetStore.getState();
-        exportWorksheet({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings, selectedGrade: st.selectedGrade });
+        try {
+            const result = await saveWorksheetToFile(st, saveAs ? null : st.fileHandle);
+            if (result.handle) setFileHandle(result.handle);
+            showFlash(result.downloaded ? 'Bestand gedownload' : `Bewaard in ${result.handle?.name ?? 'bestand'}`);
+        } catch (err) {
+            if (!isPickerAbort(err)) window.alert(`Bestand bewaren mislukt: ${(err as Error).message}`);
+        }
+    };
+    const handleOpenFile = async () => {
+        if (!hasFilePickers()) { menuFileRef.current?.click(); return; }
+        try {
+            const opened = await openWorksheetFromPicker();
+            if (!opened) return;
+            if (useWorksheetStore.getState().blocks.length > 0 && !window.confirm('Huidige werkbundel wordt vervangen. Doorgaan?')) return;
+            loadWorksheet(opened.file);
+            setFileHandle(opened.handle);
+        } catch (err) {
+            if (!isPickerAbort(err)) window.alert(`Openen mislukt: ${(err as Error).message}`);
+        }
     };
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -115,7 +141,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
             try {
                 const parsed = parseWorksheetFile(String(reader.result));
                 if (window.confirm('Huidige werkbundel wordt vervangen. Doorgaan?')) loadWorksheet(parsed);
-            } catch (err) { window.alert(`Importeren mislukt: ${(err as Error).message}`); }
+            } catch (err) { window.alert(`Openen mislukt: ${(err as Error).message}`); }
         };
         reader.readAsText(file);
     };
@@ -144,13 +170,22 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
     const handleNewSheet = () => {
         if (!hasBlocks || window.confirm('Nieuw blad starten? De huidige werkbundel wordt gewist.')) {
             clearBlocks();
+            setSavedPresetId(null);
+            setFileHandle(null);
             clearAutosave();
         }
     };
 
     const [massAddOpen, setMassAddOpen] = useState(false);
     const [menu, setMenu] = useState<null | 'share' | 'print' | 'menu'>(null);
-    const [shareFlash, setShareFlash] = useState<'full' | 'template' | null>(null);
+    // One confirmation line beside the bar's actions: link copied, sheet saved, file written.
+    const [flash, setFlash] = useState<string | null>(null);
+    const showFlash = (text: string) => { setFlash(text); window.setTimeout(() => setFlash(null), 2000); };
+
+    const handleSaveToLibrary = () => {
+        const outcome = saveCurrentToLibrary();
+        if (outcome === 'updated' || outcome === 'saved') showFlash('Bewaard in Mijn bladen');
+    };
     const barRef = useRef<HTMLDivElement>(null);
     // The row that actually holds the shedable content — separate from barRef because the
     // bar itself grows a second (fixed 28px) line at stage 2+, which must NOT count toward
@@ -196,13 +231,12 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
         const st = useWorksheetStore.getState();
         const link = encodeShareLink({ blocks: st.blocks, header: st.header, footer: st.footer, docSettings: st.docSettings, baseSettings: st.baseSettings }, { template: mode === 'template' });
         if (!link) {
-            window.alert('Werkbundel te groot voor een deelbare link. Gebruik Exporteer i.p.v.');
+            window.alert('Werkbundel te groot voor een deelbare link. Bewaar het als bestand (Meer → Bewaar bestand).');
             return;
         }
         try {
             await navigator.clipboard.writeText(link);
-            setShareFlash(mode);
-            setTimeout(() => setShareFlash(null), 2000);
+            showFlash('Link gekopieerd');
         } catch {
             window.prompt('Kopieer deze link:', link);
         }
@@ -281,15 +315,24 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                                 <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); setView('bibliotheek'); }}>
                                     <BookOpen size={15} /> Kant-en-klare bladen
                                 </button>
+                                <button className="ui-hover" style={S.menuItem} disabled={!hasBlocks} onClick={() => { setMenu(null); handleSaveToLibrary(); }}>
+                                    <FloppyDisk size={15} /> {savedPresetId ? 'Bijwerken in Mijn bladen' : 'Bewaar in Mijn bladen…'}
+                                </button>
 
                                 <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Bestand</div>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); menuFileRef.current?.click(); }}>
-                                    <UploadSimple size={15} /> Importeren…
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleOpenFile(); }}>
+                                    <UploadSimple size={15} /> Open bestand…
                                 </button>
-                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); handleExport(); }}>
-                                    <DownloadSimple size={15} /> Exporteren…
+                                <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(false); }}>
+                                    <DownloadSimple size={15} />
+                                    {fileHandle ? <span>Bewaar bestand<br /><span style={S.menuHint}>{fileHandle.name}</span></span> : 'Bewaar bestand'}
                                 </button>
+                                {hasFilePickers() && (
+                                    <button className="ui-hover" style={S.menuItem} onClick={() => { setMenu(null); void handleSaveFile(true); }}>
+                                        <DownloadSimple size={15} /> Bewaar als bestand…
+                                    </button>
+                                )}
 
                                 <div style={S.menuDivider} />
                                 <div style={S.sectionLabel}>Delen</div>
@@ -388,7 +431,7 @@ export default function TopBar({ onPrint, onOpenHelp }: Props) {
                     />
                 )}
 
-                {shareFlash && <span style={S.shareFlash}><Check size={14} /> Link gekopieerd</span>}
+                {flash && <span style={S.flashLine} role="status"><Check size={14} /> {flash}</span>}
 
                 {/* Labelled: an eye alone doesn't say whether it shows or hides answers. */}
                 <IconButton
@@ -523,7 +566,7 @@ const S = {
     } as React.CSSProperties,
     menuDivider: { height: '1px', background: 'var(--separator)', margin: '4px 6px' } as React.CSSProperties,
     sectionLabel: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 10px 2px' } as React.CSSProperties,
-    shareFlash: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
+    flashLine: { display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: 'var(--sp-2)', fontSize: 'var(--text-xs)', color: '#16a34a', whiteSpace: 'nowrap' } as React.CSSProperties,
     betaChip: {
         padding: '2px 8px', borderRadius: 'var(--radius-pill)', flexShrink: 0,
         border: '1px solid var(--separator)', color: 'var(--text-muted)',

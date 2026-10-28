@@ -1,8 +1,11 @@
-import { describe, test, expect, beforeAll } from 'vitest';
+import { describe, test, expect, beforeAll, afterEach, vi } from 'vitest';
 import {
     WORKSHEET_FORMAT_VERSION,
     parseWorksheetFile,
     migrateWorksheetFile,
+    openWorksheetFromPicker,
+    saveWorksheetToFile,
+    isPickerAbort,
     encodeShareLink,
     decodeShareHash,
     type SerialisableState,
@@ -42,6 +45,79 @@ function fileFromShare(link: string | null) {
     const hash = link!.slice(link!.indexOf('#'));
     return decodeShareHash(hash);
 }
+
+// Chromium's File System Access API: "Bewaar bestand" writes back into the file that was
+// opened or saved before, without the picker; other browsers keep the download.
+describe('save to the same worksheet file', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    test('saves to a chosen file, then overwrites the same file without reopening the picker', async () => {
+        const worksheet = state();
+        const written: string[] = [];
+        const write = vi.fn(async (content: string) => { written.push(content); });
+        const close = vi.fn(async () => {});
+        const handle = { name: 'rekenblad.rekenraak', createWritable: vi.fn(async () => ({ write, close })) };
+        const picker = vi.fn(async () => handle);
+        vi.stubGlobal('window', { showSaveFilePicker: picker });
+
+        const first = await saveWorksheetToFile(worksheet);
+        expect(first).toEqual({ handle, downloaded: false });
+        expect(picker).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(written[0]).version).toBe(WORKSHEET_FORMAT_VERSION);
+        expect(JSON.parse(written[0]).blocks).toEqual(JSON.parse(JSON.stringify(worksheet.blocks)));
+        expect(close).toHaveBeenCalledTimes(1);
+
+        await saveWorksheetToFile({ ...worksheet, header: { ...worksheet.header, titel: 'Bijgewerkt' } }, first.handle);
+        expect(picker).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(written[1]).header.titel).toBe('Bijgewerkt');
+    });
+
+    test('a file saved through a handle reopens through the same handle', async () => {
+        const worksheet = state();
+        let contents = '';
+        const handle = {
+            name: 'rekenblad.rekenraak',
+            createWritable: async () => ({ write: async (c: string) => { contents = c; }, close: async () => {} }),
+            getFile: async () => ({ text: async () => contents }),
+        };
+        vi.stubGlobal('window', { showSaveFilePicker: async () => handle, showOpenFilePicker: async () => [handle] });
+
+        await saveWorksheetToFile(worksheet);
+        const opened = await openWorksheetFromPicker();
+        expect(opened?.handle).toBe(handle);
+        expect(opened?.file).toMatchObject({
+            version: WORKSHEET_FORMAT_VERSION,
+            blocks: JSON.parse(JSON.stringify(worksheet.blocks)),
+            header: worksheet.header,
+            baseSettings: worksheet.baseSettings,
+        });
+    });
+
+    test('an invalid file is rejected before its handle is kept', async () => {
+        vi.stubGlobal('window', { showOpenFilePicker: async () => [{ getFile: async () => ({ text: async () => 'not JSON' }) }] });
+        await expect(openWorksheetFromPicker()).rejects.toThrow('Bestand is geen geldige JSON.');
+    });
+
+    test('without the API, open returns null and save downloads', async () => {
+        const click = vi.fn();
+        let blob: Blob | undefined;
+        vi.stubGlobal('window', {});
+        vi.stubGlobal('document', { createElement: () => ({ click, style: {} }), body: { appendChild: vi.fn(), removeChild: vi.fn() } });
+        vi.stubGlobal('URL', { createObjectURL: (b: Blob) => { blob = b; return 'blob:x'; }, revokeObjectURL: vi.fn() });
+        expect(await openWorksheetFromPicker()).toBeNull();
+        expect(await saveWorksheetToFile(state())).toEqual({ handle: null, downloaded: true });
+        expect(click).toHaveBeenCalledOnce();
+        expect(parseWorksheetFile(await blob!.text()).version).toBe(WORKSHEET_FORMAT_VERSION);
+    });
+
+    test('a cancelled picker is an abort, not a failure', async () => {
+        const abort = Object.assign(new Error('The user aborted a request.'), { name: 'AbortError' });
+        vi.stubGlobal('window', { showSaveFilePicker: async () => { throw abort; } });
+        const err = await saveWorksheetToFile(state()).catch(e => e);
+        expect(isPickerAbort(err)).toBe(true);
+        expect(isPickerAbort(new Error('disk full'))).toBe(false);
+    });
+});
 
 describe('worksheet file', () => {
     test('serialise → parse round-trip keeps blocks, header, footer and settings', () => {
@@ -128,6 +204,9 @@ describe('worksheet file', () => {
     test.each([
         ['not json at all', 'geen geldige JSON'],
         [JSON.stringify({ blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: 0, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: 2.5, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
+        [JSON.stringify({ version: -1, blocks: [], header: {}, footer: {}, docSettings: {} }), 'Versie-veld'],
         [JSON.stringify({ version: 2, header: {}, footer: {}, docSettings: {} }), 'blocks-veld'],
         [JSON.stringify({ version: 2, blocks: [], footer: {}, docSettings: {} }), 'header-veld'],
         [JSON.stringify({ version: 2, blocks: [], header: {}, docSettings: {} }), 'footer-veld'],

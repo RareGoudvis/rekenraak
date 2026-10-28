@@ -30,7 +30,7 @@ export function useBootLoad(): { releaseBannerVisible: boolean; dismissReleaseBa
     // picks up where they left off. "Nieuw blad" (TopBar) clears it to start over.
     const auto = loadAutosave();
     if (auto && useWorksheetStore.getState().blocks.length === 0) {
-      loadWorksheet(auto.payload);
+      loadWorksheet(auto.payload, auto.presetId);
     }
     // 3. Release banner: shown until user dismisses this exact version.
     try {

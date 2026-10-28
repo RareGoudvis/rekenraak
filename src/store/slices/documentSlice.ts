@@ -4,6 +4,7 @@ import { GRADE_PRESETS, NO_GRADE_PRESET } from '../../config/gradePresets';
 import { NAT_CEILING } from '../../config/numberRanges';
 import { floorMaxIntoList } from '../../config/exerciseRegistry';
 import type { MathBlock } from '../../services/math/types';
+import { writeAutosaveNow } from '../autosave';
 import { DEFAULT_FIELD_ORDER, DEFAULT_FIELD_WIDTHS, type DocumentSlice, type WorksheetState } from '../types';
 
 // Normalised here, once, so an old 1e10 sheet is right before anyone opens a block: the
@@ -15,7 +16,7 @@ function withListedMax(b: MathBlock): MathBlock {
     return floored === c ? b : { ...b, constraints: floored as MathBlock['constraints'] };
 }
 
-export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentSlice> = (set) => ({
+export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentSlice> = (set, get, api) => ({
     header: { naam: true, klas: true, nummer: false, datum: false, titel: '', fieldOrder: [...DEFAULT_FIELD_ORDER], fieldWidths: { ...DEFAULT_FIELD_WIDTHS }, repeatHeader: false },
     footer: { school: '', klas: '', leerkracht: '', showSchool: false, showKlas: false, showLeerkracht: false, showPagina: false, centerText: '', showCenterText: false },
     docSettings: { showScores: false, opdrachtTitelStyle: 'regular', showDividers: false, showColumnDividers: false, headerStyle: 'geen', footerStyle: 'geen', titlePosition: 'center', titleFieldsGap: 16, headerContentGap: 12, blockSpacing: 12, numberBlocks: true, bodyFontScale: 1, fontSizeMath: 13, fontSizeText: 15, answerSpace: 18 },
@@ -23,10 +24,18 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
     selectedGrade: null,
     curriculum: null,
     draftBlocks: [],
+    savedPresetId: null,
+    fileHandle: null,
 
+    setSavedPresetId: (id) => {
+        set({ savedPresetId: id });
+        // Same rule as the subscription: an empty sheet never overwrites a populated autosave.
+        if (get().blocks.length > 0) writeAutosaveNow(api);
+    },
+    setFileHandle: (handle) => set({ fileHandle: handle }),
     setDraftBlocks: (blocks) => set({ draftBlocks: blocks }),
     clearDraftBlocks: () => set({ draftBlocks: [] }),
-    loadWorksheet: (file) => set(() => {
+    loadWorksheet: (file, presetId) => set(() => {
         // Some callers (library cards, templates) hand over a payload that never passed the
         // versioned migration, so widths from the old 6-unit grid can still arrive here.
         const blocks = file.blocks.map(b => {
@@ -52,6 +61,10 @@ export const createDocumentSlice: StateCreator<WorksheetState, [], [], DocumentS
             // Set the grade value directly — base is already restored above, so we must
             // NOT re-run setSelectedGrade's preset seeding here.
             selectedGrade: file.selectedGrade ?? null,
+            savedPresetId: presetId ?? null,
+            // Whatever is loaded now is not the file that was open before; a file open
+            // sets its own handle right after this.
+            fileHandle: null,
             activeBlockId: null,
             staleBlocks: {},
             _history: [blocks],

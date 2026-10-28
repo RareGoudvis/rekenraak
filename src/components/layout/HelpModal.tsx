@@ -88,17 +88,17 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                 {/* LEVEL 2 — save / load / presets */}
                 {tab === 'opslaan' && (
                     <>
-                        <Section title="1. Automatisch bewaard">
-                            Je werk wordt voortdurend in je browser bewaard — bovenaan zie je de chip <strong>Automatisch bewaard</strong>. Sluit je per ongeluk het tabblad, dan staat alles er nog wanneer je terugkomt.
+                        <Section title="1. Herstelkopie in de browser">
+                            Je werk krijgt automatisch een herstelkopie in deze browser — bovenaan zie je <strong>Herstelkopie in browser</strong>. Sluit je per ongeluk het tabblad, dan staat alles er nog wanneer je terugkomt. Dat is geen bestand op je toestel en het werkt geen geopend bestand of bewaard blad bij.
                         </Section>
-                        <Section title="2. Mijn bladen">
-                            Via <strong>Meer → Mijn bladen</strong> open je je eigen bibliotheek. Bewaar het huidige blad, of open, hernoem, dupliceer en verwijder een bewaard blad. Elk blad krijgt een miniatuur. Je kan tot 50 bladen bewaren.
+                        <Section title="2. Mijn bladen (in deze browser)">
+                            <strong>Meer → Bewaar in Mijn bladen…</strong> bewaart het huidige blad in deze browser, niet als bestand. Heb je het blad uit Mijn bladen geopend, dan werkt <strong>Bijwerken in Mijn bladen</strong> datzelfde blad bij in plaats van een kopie te maken. Via <strong>Meer → Mijn bladen</strong> open, hernoem, dupliceer en verwijder je je bladen, of exporteer je er een als bestand. Je kan tot 20 bladen in deze browser bewaren.
                         </Section>
                         <Section title="3. Kant-en-klare bladen">
                             Via <strong>Meer → Kant-en-klare bladen</strong> kies je een kant-en-klaar voorbeeldblad. Filter op leerjaar, rekenmethode of domein. <strong>Gebruik sjabloon</strong> laadt het blad in de editor — daarna pas je het vrij aan en bewaar je het bij Mijn bladen.
                         </Section>
                         <Section title="4. Bestand bewaren en openen">
-                            <strong>Meer → Exporteren…</strong> bewaart het blad als <strong>.rekenraak</strong>-bestand op je computer (een back-up of om door te sturen). <strong>Importeren…</strong> opent zo’n bestand opnieuw (ook oudere .json-bestanden werken nog).
+                            <strong>Meer → Open bestand…</strong> opent een <strong>.rekenraak</strong>-bestand (ook oudere .json-bestanden werken). <strong>Meer → Bewaar bestand</strong> schrijft je wijzigingen terug naar dat bestand als je browser dat kan (Chrome, Edge); anders wordt een nieuw bestand gedownload. <strong>Bewaar als bestand…</strong> kiest een andere naam of plek. Zo’n bestand is je back-up buiten de browser, en het bestand dat je doorstuurt.
                         </Section>
                     </>
                 )}
@@ -110,7 +110,7 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                             Via <strong>Meer → Delen</strong> heb je twee opties. <strong>Blad delen</strong> maakt een link met de volledige werkbundel (oefeningen én de gegenereerde getallen). <strong>Sjabloon delen</strong> deelt enkel de instellingen, zonder getallen — wie de link opent, genereert zelf verse oefeningen met dezelfde opbouw.
                         </Section>
                         <Section title="2. Een bestand delen">
-                            Liever offline? <strong>Meer → Exporteren…</strong> geeft je een .rekenraak-bestand dat je via mail of een gedeelde map doorstuurt. De ontvanger opent het met <strong>Importeren…</strong>.
+                            Liever offline? <strong>Meer → Bewaar bestand</strong> geeft je een .rekenraak-bestand dat je via mail of een gedeelde map doorstuurt. De ontvanger opent het met <strong>Meer → Open bestand…</strong>.
                         </Section>
                         <Section title="3. Een curriculum delen (leerkrachten)">
                             Via <strong>Meer → Curriculum samenstellen</strong> kies je welke oefentypes toegestaan zijn en zet je per type de moeilijkheid vast. Klik op <strong>Deel curriculum-link</strong>: wie die link opent, kan enkel oefeningen uit jouw lijst toevoegen, het aantal aanpassen en opnieuw genereren — de moeilijkheidsgraad ligt vast. Ideaal om een lijst per handboek of klas te delen.
