@@ -33,7 +33,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
         version: '1.1.0',
         date: '2026-11',
-        summary: 'Elke oefening blijft nu binnen het maximum dat je kiest.',
+        summary: 'Aangepaste breukenoefeningen en extra opmaakinstellingen.',
         items: [
             // ── 2026-10-28: Geert-fork ports + onechte breuken ──
             {
