@@ -278,33 +278,33 @@
   },
   "breuken-lijnstuk-w1-s0": {
    "cellHeightPx": 742,
-   "intrinsicPx": 470,
-   "textHash": "2953705bcdc7e028"
+   "intrinsicPx": 318,
+   "textHash": "cdbd030b3291be64"
   },
   "breuken-lijnstuk-w1-s1": {
    "cellHeightPx": 726,
-   "intrinsicPx": 470,
-   "textHash": "947d7aa87be535d1"
+   "intrinsicPx": 318,
+   "textHash": "abe98d9524bbb801"
   },
   "breuken-lijnstuk-w2-s0": {
    "cellHeightPx": 742,
-   "intrinsicPx": 470,
-   "textHash": "2953705bcdc7e028"
+   "intrinsicPx": 318,
+   "textHash": "cdbd030b3291be64"
   },
   "breuken-lijnstuk-w2-s1": {
    "cellHeightPx": 726,
-   "intrinsicPx": 470,
-   "textHash": "947d7aa87be535d1"
+   "intrinsicPx": 318,
+   "textHash": "abe98d9524bbb801"
   },
   "breuken-lijnstuk-w4-s0": {
    "cellHeightPx": 742,
-   "intrinsicPx": 470,
-   "textHash": "2953705bcdc7e028"
+   "intrinsicPx": 318,
+   "textHash": "cdbd030b3291be64"
   },
   "breuken-lijnstuk-w4-s1": {
    "cellHeightPx": 726,
-   "intrinsicPx": 470,
-   "textHash": "947d7aa87be535d1"
+   "intrinsicPx": 318,
+   "textHash": "abe98d9524bbb801"
   },
   "breuken-rangschikken-w1-s0": {
    "cellHeightPx": 605,
@@ -337,34 +337,34 @@
    "textHash": "27861220e17d68d7"
   },
   "breuken-veelhoek-w1-s0": {
-   "cellHeightPx": 1102,
+   "cellHeightPx": 1134,
    "intrinsicPx": 208,
-   "textHash": "b1abdcfd0254a4a3"
+   "textHash": "b5d5ebc366a2254a"
   },
   "breuken-veelhoek-w1-s1": {
-   "cellHeightPx": 1102,
+   "cellHeightPx": 1134,
    "intrinsicPx": 208,
-   "textHash": "b1abdcfd0254a4a3"
+   "textHash": "b5d5ebc366a2254a"
   },
   "breuken-veelhoek-w2-s0": {
-   "cellHeightPx": 1102,
+   "cellHeightPx": 1134,
    "intrinsicPx": 208,
-   "textHash": "b1abdcfd0254a4a3"
+   "textHash": "b5d5ebc366a2254a"
   },
   "breuken-veelhoek-w2-s1": {
-   "cellHeightPx": 1102,
+   "cellHeightPx": 1134,
    "intrinsicPx": 208,
-   "textHash": "b1abdcfd0254a4a3"
+   "textHash": "b5d5ebc366a2254a"
   },
   "breuken-veelhoek-w4-s0": {
    "cellHeightPx": 759,
    "intrinsicPx": 434,
-   "textHash": "b1abdcfd0254a4a3"
+   "textHash": "b5d5ebc366a2254a"
   },
   "breuken-veelhoek-w4-s1": {
    "cellHeightPx": 759,
    "intrinsicPx": 434,
-   "textHash": "b1abdcfd0254a4a3"
+   "textHash": "b5d5ebc366a2254a"
   },
   "breuken-vereenvoudigen-w1-s0": {
    "cellHeightPx": 553,

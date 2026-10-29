@@ -209,8 +209,8 @@ export const APP_STRUCTURE: Domain[] = [
                     // herkennen value, and defaultsFor() only runs on a variant switch, not on block add.
                     { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid', answerFormat: 'met-hulp', maxDenominator: 5, maxTotal: 20 }, instruction: 'Bereken de breuk van de hoeveelheid.' },
                     // Four, not the row's six: one true-size segment per row, six ran past one A4 page.
-                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk' }, defaultCount: 4, instruction: 'Duid de breuk aan op het lijnstuk.' },
-                    { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek' }, instruction: 'Kleur de breuk van de veelhoek.' },
+                    { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk', maxDenominator: 6, maxLineLength: 8 }, defaultCount: 4, instruction: 'Duid de breuk aan op het lijnstuk.' },
+                    { id: 'breuken-veelhoek', label: 'Breuk van een veelhoek', typeId: 'breuken', defaultConstraints: { subType: 'veelhoek', maxDenominator: 9 }, instruction: 'Kleur de breuk van de veelhoek.' },
                     { id: 'breuken-rangschikken', label: 'Breuken rangschikken', typeId: 'breuken-rangschikken', instruction: breukenRangschikkenInstruction },
                 ],
             },
