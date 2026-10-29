@@ -369,6 +369,19 @@ are caught by the Claude Code PreToolUse hook `.claude/hooks/commit-bypass-guard
 answers `permissionDecision: "ask"` so a human has to approve the bypass in person. It reads
 the command string only, so it cannot see a bypass hidden in a script the command runs.
 
+### The breaker-flake repro (`scripts/gate-flake-repro.mjs`, `npm run gate:repro`)
+
+`npm run gate:repro -- --url http://localhost:<port>/ --runs 10` walks only the breuken leaves
+(veelhoek, kleuren, herkennen, hoeveelheid, lijnstuk; `--leaves a,b` / `--all` for others) with
+the visual gate's exact per-cell sequence (clear-and-wait, seed, add, width 4/2/1, solutions, settle,
+retry once on a breaker trip, element screenshot) and logs every `[layout]` warning with the cell and
+phase it fired in (`#retry`, `#shot`), the `measured()` snapshot taken inside the warn, and every
+`document.fonts` loading event interleaved (`timeline.md` + `runs.json` in `--out`, default
+`~/Downloads/gate-flake/repro/<stamp>/`). A cell counts as gate-flagged exactly as the gate would
+(breaker warning left in the row, or height off `visual-baseline.json`). `--no-shots` drops the
+screenshot step, `--prewarm` loads every FontFace first. Exit 1 on any trip, so "0 trips in 10 runs"
+is the proof a breaker fix holds. ~6-10 s per run without a server of its own (no `--url` starts one).
+
 ## The width matrix (`scripts/width-matrix.mjs`)
 
 Not a vitest suite — it drives a real browser, because the question it answers ("can this

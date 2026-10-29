@@ -11,7 +11,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 - Inspector at 900 / 820 px wide: the block's floating button rail sits on top of the Inspector controls and the sheet column shrinks to ~250 / 170 px (the TopBar itself folds fine). Repro: resize to 900 px with a block selected (`Downloads/review-triage/sheet/I-06-topbar-900.png`). 2026-10-13 review agent.
 - vormleer-hoeken-meten at its defaults can exceed one page (3 of 8 seeds: 1 115 / 1 068 / 1 061 px vs 998) → "groter dan één pagina" banner. Repro: `seed(3*7919)`. Fix direction: lower `defaultCount` or the figure budget. 2026-10-13.
 - mab-herkennen at half width (`widthUnits: 2`), `mabStyle: 'mab-bw'`, `maxNumber: 999`, 6 exercises: the half cell fits one positietabel per row, so six stack to 1 019 px vs a 997 px body (22 px past it alone on a page, 4 px with blocks above; Geert's fork saw ~59 px). The packer never splits (by design) and the "groter dan één pagina" banner + Splitsen show, but the default-ish setup overflows. Fix direction: cap the half-width count or the box height for this style. Repro `seed(3)` (`Downloads/geert-port/a2/bugB-page.png`). From Geert's BUGS.md, confirmed 2026-10-28.
-- Visual gate flake on the breuken-herkennen leaves (breuken-herkennen / -hoeveelheid / -lijnstuk / -veelhoek) at w1 in the full walk: "[layout] repack loop broken" or a height Δ of 65-348 px on a different cell each run (5 runs, 1-4 cells each); a targeted walk (`--files src/components/viewer/FractionShapeSVG.tsx`) on clean 9399322 flags breuken-herkennen s0 at w4/w2/w1 (Δ -30/-60 px) every time. Looks like a measurement oscillation at narrow width. 2026-10-28 WP E3.
 
 ### Full-sweep findings (`npm run sweep` 2026-09-27, shots under ~/Downloads/full-sweep/2026-09-27-rc/)
 
@@ -75,5 +74,4 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 
-- Visual gate is load-flaky: under CPU load (parallel worktrees) 1-6 random cells flag "[layout] repack loop broken (width ...)" / height deltas (breuken-veelhoek, cijferen-delen-nat, vormleer-hoeken-meten w1); same tree passes on a quiet re-run, also with the old TopBar (seen 2026-10-28, WP E4).
 - viewers.solutionPlacement.test "geld-teruggeven key: only the answers are red" fails rarely (expected 3 got 2) on a random draw; passes on rerun (seen 2026-10-28, WP E4 gate).
