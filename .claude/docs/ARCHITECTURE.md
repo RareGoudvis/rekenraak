@@ -86,9 +86,9 @@ delegates the curriculum-lock filter and the stale ("verouderd") classification 
 | `activeBlockId` | `string \| 'document' \| null` | Drives Inspector context. `setActiveSelection` with a real block id ALSO sets `inspectorTab: 'oefening'` (content first), and so does `addBlockFromType` for the block it creates; `'document'`/`null` leave the tab alone, since the block tabs are disabled without a selection |
 | `header` | `HeaderData` | naam/klas/nummer/datum toggles, title, **field order + widths**, `repeatHeader` (name fields on every page) + `repeatTitle` (title on every page; 2026-10-28) — both on screen AND print; a continuation page renders `SheetHeader continuation` (page 1's header box with only the repeated parts, never the score) and `useMeasuredHeights(blocks, continuationKey)` drops the stale "rest" body when that header changes |
 | `footer` | `FooterData` | three configurable slots (`slotLeft`/`slotCenter`/`slotRight` + their texts) and `brandSlot` — where the "Gemaakt met RekenRaak.be" credit sits; the credit always prints, only its position is a choice |
-| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten"), uniqueExercises (default and absent = true — Blad › Opdrachten › "Geen dubbele oefeningen"; read by `generateForBlock` in generateDispatch.ts, see §6), **2026-10-28 (Geert port B1):** `titleFieldsVerticalGap` (0–40, default 8, centred title only), `fontFamilyText / fontFamilyMath / fontFamilyHeader / fontFamilyTitel / fontFamilyHeaderVelden / fontFamilyFooter` (optional CSS font-family values from `config/fontOptions.ts`, written onto `.print-area-shell` as the six `--font-sheet-*` tokens by `SHEET_FONT_TOKENS` in App.tsx; an App effect `ensureFontLoaded`s the self-hosted @fontsource faces on first use; absent = Ubuntu / Azeret Mono), `headerVeldenCustom` (RegionStyle for Naam/Klas/Nr/Datum labels, size 8–20 default 13) and `oefeningenCustom` (RegionStyle applied on every `ScaledBlock` inner wrapper through `overlayRegionStyle`, so it also tints the opdracht-titel). `RegionStyle` itself gained `italic` / `underline` (→ `fontStyle` / `textDecoration`) |
+| `docSettings` | `DocSettings` | titlePosition, headerStyle, opdrachtTitelStyle, showScores, showDividers, showColumnDividers, numberBlocks, gaps, header/titel/footerCustom (`RegionStyle`), bodyFontScale (global exercise-body zoom; per-block override in `constraints.bodyFontScale`), fontSizeMath/fontSizeText (pt; feed `--sheet-size-math` / `--sheet-size-text` on `.print-area-shell`, theme.css; every viewer size is a factor of them — Blad › Opdrachten › Lettergrootte), answerSpace (px at 13pt, 14–32, default 18, absent = 18 — Blad › Opdrachten › Schrijfruimte; feeds `--sheet-answer-h`, per-block override `constraints.answerSpace`), packMode (`aansluitend` = skyline packing, default and absent on old sheets / `rijen` = the old row layout — Blad › Opdrachten › "Blokken aansluiten"), uniqueExercises (default and absent = true — Blad › Opdrachten › "Geen dubbele oefeningen"; read by `generateForBlock` in generateDispatch.ts, see §6), **2026-10-28 (Geert port B1):** `titleFieldsVerticalGap` (0–40, default 8, centred title only), `fontFamilyText / fontFamilyMath / fontFamilyHeader / fontFamilyTitel / fontFamilyHeaderVelden / fontFamilyFooter` (optional CSS font-family values from `config/fontOptions.ts`, written onto `.print-area-shell` as the six `--font-sheet-*` tokens by `SHEET_FONT_TOKENS` in App.tsx; an App effect `ensureFontLoaded`s the self-hosted @fontsource faces on first use; absent = Ubuntu / Azeret Mono), `headerVeldenCustom` (RegionStyle for Naam/Klas/Nr/Datum labels, size 8–20 default 13) and `oefeningenCustom` (RegionStyle applied on every `ScaledBlock` inner wrapper through `overlayRegionStyle`, so it also tints the opdracht-titel). `RegionStyle` itself gained `italic` / `underline` (→ `fontStyle` / `textDecoration`). `domainColors?` (E2, 2026-10-28, default off): every block's opdracht-titel takes the pale fill of its sidebar domain (`config/domainOf.ts`: leafId → domain, typeId fallback; `DOMAIN_FILL` = PRINT_FILLS swatches matching the sidebar accents: getallenkennis red, bewerkingen blue, meten green, meetkunde yellow, vraagstukken grey); an explicit `titelCustom.background` wins; furniture never gets one |
 | `showSolutions` | `boolean` | Global red-solution overlay (preview + print) |
-| `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen/breuk-opties) snapshotted into each new block — see §13 |
+| `baseSettings` | `BaseSettings` | Global default difficulty (max/getalsoort/masks/bridges/decimalen) + the optional `baseBreuken` section (noemer range / soorten / gemengd for the fraction leaves only, F1) snapshotted into each new block — see §13 |
 | `selectedGrade` | `Leerjaar \| null` | Soft leerjaar (1–6) starting point (base max L1 20 · L2 100 · L3 1 000 · L4 10 000 · L5 1 000 000 · L6 1 000 000 000, floored per type — §13): seeds `baseSettings` + filters sidebar leaves (`gradePresets`); persisted in autosave. Not a lock |
 | `curriculum` | `CurriculumLock \| null` | Non-null + `locked` = restricted parent mode (whitelisted sidebar + frozen difficulty) — see §13 |
 | `draftBlocks` | `MathBlock[]` | Off-sheet scratch blocks edited via the real config plugins: by the curriculum builder (§13) and by the Bordmodus inspector, which mirrors the selected board card here (§14); not rendered/autosaved/historied |
@@ -304,9 +304,26 @@ The four consumers are now **table lookups, not branches**:
 | Config mount | [Inspector.tsx](../../src/components/configurator/Inspector.tsx) | `EXERCISE_UI[typeId].Config` (+ optional `StyleConfig` = the family's Differentiatie rows in the Opmaak tab, `AppearanceConfig` = extra rows in the Opdrachtblok card under "Aantal oefeningen", hidden under a lock (MAB "Oefeningen per rij" popup, 2026-10-28), `AdvancedConfig` = the Geavanceerd accordion body whose presence shows the accordion, `advancedApplies` = breuken-only guard). Inspector mounts all by registry lookup; it has no typeId branches. A Config may mount OTHER families' plugins for a sub-bag through `ConstraintScope` (gemengd's per-variant tabs) — the plugin code stays unaware |
 | Viewer routing | [SheetBlock.tsx](../../src/components/sheet/SheetBlock.tsx) | `EXERCISE_UI[typeId].Viewer` |
 | Block defaults | [blocksSlice.ts](../../src/store/slices/blocksSlice.ts) `addBlockFromType` | `REGISTRY[typeId].defaultConstraints()` + `LEAF_BY_ID[leafId]?.defaultCount ?? .defaultCount` (a leaf may carry its own count; only oppervlakte-rooster does, = 2) |
-| Seed fit | [baseSettings.ts](../../src/config/baseSettings.ts) `seedConstraints` | `SEED_FIT[typeId](c, grade, override)` (exerciseRegistry.ts) — runs last, only when the max came from the seed (not pinned by the override): schattend/afronden drop rounding targets that can't round at the seeded max; getallenas/-rijen lower ticks (min 4), then the step, so a default never needs a note |
+| Seed fit | [baseSettings.ts](../../src/config/baseSettings.ts) `seedConstraints` | `SEED_FIT[typeId](c, grade, override)` (exerciseRegistry.ts) — runs last, only when the max came from the seed (not pinned by the override): schattend/afronden drop rounding targets that can't round at the seeded max; getallenas/-rijen lower ticks (min 4), then the step, so a default never needs a note; breuken-bewerken gelijknamig seeds `denominatorRelation` 'multiple' at leerjaar ≤ 4 and 'any' at 5–6 (absent without a leerjaar; a teacher's own value wins; `fitBreukBewerkGrade`, E3) |
 | Generation note | [generateDispatch.ts](../../src/services/generateDispatch.ts) | `REGISTRY[typeId].generateNoted?` → `{ items, note }`; the note lands on the block (`generationNote`, Inspector box, §6) |
 | Oefenmodus | [kiosk.ts](../../src/services/oefenen/kiosk.ts) `kioskFor` / `kioskSupports` / `kioskCapableLeaves` | `REGISTRY[typeId].kiosk` (+ `.supported(c)` over the registry defaults): which leaves the builder lists, how the kiosk asks and checks (§15) |
+
+**Shared Breuken block (F1, 2026-10-28).** Every fraction leaf's Config mounts
+[plugins/shared/BreukenSettings.tsx](../../src/components/configurator/plugins/shared/BreukenSettings.tsx)
+(breuken kleuren / herkennen / hoeveelheid / lijnstuk / veelhoek — noemer capped by `breukenFigureCeiling(subType)` 16 / 10 / 8, `FractionMaxField` keeps visible teller / noemer captions —, breuken-bewerken, breuken-rangschikken, ordenen rat, getallenas / getallenrijen rat,
+vergelijken representaties, verbanden, hoofdrekenen rational + − × :). The block is **controlled** and
+knows no typeId: the Config is the adapter that maps its rows onto the leaf's own saved keys (no key
+renamed, format stays v4). Rows in one order: Noemer in four shapes (`range` van–tot / `max` / `step`
+= the sprong 1/n / `set` = verbanden's fixed noemers), Hoogste teller, `capsHint`, `picture` (the
+FractionMaxField where gemengd ↔ breuk matters), Soort breuken pills (Stambreuken / Echte / Onechte;
+`locked` = inherent, shown on; at least one stays on), Gemengde getallen tri-state (`MixedMode`
+none / some / all, `options` narrows it — hr + − offers Geen / Alleen only), Schrijfwijze, then the
+leaf's extras as children. One noemer list: `noemerOptions(ceiling)` / `NOEMER_CEILING` 20 in
+numberRanges.ts (not a `RANGES` entry: the `maxPresets.sources` guard rejects new RANGES reads in
+configs); a saved value above the list shows as an extra option and is never floored. The former
+hr rational "Moeilijkheidsgraad" (StyleConfig) is the block's "Noemers" row. Tests:
+`breukenSettings.test.tsx` (rows per adapter, locked pills, min ≤ max, above-list value visible),
+`breukenPanels.test.tsx` (every panel mounts it), `ordenenMixedMode.test.ts`.
 
 ### Checklist to add a type
 
@@ -518,10 +535,10 @@ only.
 | `geld-teruggeven` | `geldTeruggevenExercises` | `generateGeldTeruggevenExercises` | `GeldTeruggevenViewer` | `GeldTeruggevenConfig` | min/maxPriceEuros (presets Tot €1 … €1000; a €1/€2 coin lowers the floor), payWithOptions (bills + €1/€2), centenDeel, antwoordType; one arc when step2 = 0 |
 | `mab-herkennen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=herkennen) | `MabConfig` (stijl = inline 3-card row of `ExercisePreview`s, hidden for tekenen) | maxNumber, operand1Mask, mabStyle, scaffolding kiosk card (2026-10-11, `viewer/mabKioskLayout.ts`): `kioskCellBox(cardW, places)` = (cardW−16)/places wide × 1.3 tall; `kioskMabLayout` draws each place at the largest size where its fullest digit (9) fills ≤ 80 % of the cell — hundreds as flats 3 per row with the 10×10 grid, tens as upright rods with a gap after every fifth, units as cubes (dots when symbolic) 5 per row; the tray draws the same glyphs (`MabKioskTrayGlyph`); sheet untouched |
 | `mab-tekenen` | `mabExercises` | `generateMabExercises` | `MabViewer` (mode=tekenen) | `MabConfig` + `MabAppearanceConfig` (Oefeningen per rij 1–4 popup) | maxNumber (10 … 9 999 since 2026-10-28), operand1Mask, mabStyle, scaffolding floor ½ up to 1 000, full above (`mabFloor`, blockLayout). **Square pattern** (herkennen always, every style above 1 000): each place laid in 2 rows as squares of four with upright rods, column width + box floor from the `PATTERN_GLYPH` table (SYNC MabViewer ↔ MabBlocksSVG, `mab.squarePattern.test.tsx`); `mabColWidth(cols, mode, maxNumber, style)` sizes for the fullest digit the max allows. Owner check: at 9 999 the b/w table scales ~0.89 (BUGS.md) |
-| `ordenen` | `ordenenExercises` | `generateOrdenenExercises` | `OrdenenViewer` (click-to-edit; one CSS grid per exercise so blanks sit under their numbers, never wraps) | `OrdenenConfig` + StyleConfig `answerStyle` (lijn/vak) | numberType, count(2–8), operatorMode, maxGetal, minGetal, decimalPlaces, numberMask, min/maxDenominator, unitFractionsOnly, allowMixed Draws strictly under the max (a teacher lower bound stays inclusive) so the width tier never meets "1 000,00"; the key is red + bold; thousands as the app's space, decimals separated by ";" |
-| `breuken-bewerken` | `breukBewerkExercises` | `generateBreukBewerkExercises` | `BreukBewerkViewer` (answer = writing line) | `BreukBewerkConfig` | subType (gemengd/gelijknamig/vereenvoudigen — sidebar leaf), direction (gemengd), gemengd+vereenvoudigen getalopbouw via `FractionMaxField` (`maxNumerator`/`maxDenominator`); vereenvoudigen presets (`tablesOnly`) + `allowIrreducible`; gelijknamig min/maxDenominator range + optional `targetDen` (fixed common noemer, else KGV); `allowImproper` (gelijknamig / vereenvoudigen, off by default, 2026-10-28: `drawNumerator` takes d+1..2d−1 on about half the draws, never d/d; off makes the same random calls as before; `properRule` in LIMIT_SPECS); the vereenvoudigen key shows an onechte answer as "5/2 = 2 1/2" and a whole one as the integer (D1). Reuses `gcd`/`simplifyFraction`/`toMixedNumber` (exported from mathEngine) |
-| `breuken-rangschikken` | `ordenenExercises` | `generateBreukenRangschikkenExercises` | `OrdenenViewer` (reused) | `BreukenRangschikkenConfig` | fractionMode (stambreuken/gelijknamige/gelijknamig-te-maken/speciale), count(2–5), operatorMode, min/maxDenominator, `allowImproper` (gelijknamige / gelijknamig-te-maken only; gelijknamige's distinctness rule d−1 ≥ count relaxes to 2d−2) |
-| `getallenrijen` | `getallenasExercises` | `generateGetallenrijExercises` | `GetallenrijenViewer` | `GetallenrijenConfig` | numberType (natural/decimal/rational/geheel — sidebar leaf), maxGetal, step (+custom jump all types), direction (stijgend/dalend/beide), numberMask (anchor; decimal mask dp = step decimals), rational getalopbouw via `FractionMaxField` (noemer=fractionStep, teller=maxTeller), ticks, `showFrame` (Differentiatie toggle, rounded pill on/off); getallenas without the axis line. Blank mask as getallenas: tick 0 given, the rest blanked at the hardMode ratio, then `ensureTwoGivens` (blankMask.ts, SYNC both generators) reveals one random tick when fewer than 2 are given on 3+ ticks (one given fixes no step) |
+| `ordenen` | `ordenenExercises` | `generateOrdenenExercises` | `OrdenenViewer` (click-to-edit; one CSS grid per exercise so blanks sit under their numbers, never wraps) | `OrdenenConfig` + StyleConfig `answerStyle` (lijn/vak) | numberType, count(2–8), operatorMode, maxGetal, minGetal, decimalPlaces, numberMask, min/maxDenominator, unitFractionsOnly, allowMixed Draws strictly under the max (a teacher lower bound stays inclusive) so the width tier never meets "1 000,00"; the key is red + bold; thousands as the app's space, decimals separated by ";" **Breuken block (F1):** rational ordenen mounts the shared block; `mixedMode?: 'none' \| 'some' \| 'all'` (Geen / Ook / Alleen gemengde getallen; absent → derived from `allowMixed`, true = 'all'; 'some' puts at least one gemengd getal and one plain breuk in every set; 'none' / 'all' make the same random calls as before — `ordenenMixedMode.test.ts`) |
+| `breuken-bewerken` | `breukBewerkExercises` | `generateBreukBewerkExercises` | `BreukBewerkViewer` (answer = writing line) | `BreukBewerkConfig` | subType (gemengd/gelijknamig/vereenvoudigen — sidebar leaf), direction (gemengd), gemengd+vereenvoudigen getalopbouw via `FractionMaxField` (`maxNumerator`/`maxDenominator`); vereenvoudigen presets (`tablesOnly`) + `allowIrreducible`; gelijknamig min/maxDenominator range + optional `targetDen` (fixed common noemer, else KGV); `allowImproper` (gelijknamig / vereenvoudigen, off by default, 2026-10-28: `drawNumerator` takes d+1..2d−1 on about half the draws, never d/d; off makes the same random calls as before; `properRule` in LIMIT_SPECS); the vereenvoudigen key shows an onechte answer as "5/2 = 2 1/2" and a whole one as the integer (D1). Gelijknamig `denominatorRelation?: 'any' | 'multiple'` (E3, 2026-10-28; absent = any): 'multiple' draws one noemer as a k-fold (k ≥ 2) of the other in random order, the gemene noemer is the larger one, `targetDen` is ignored (disabled in the Config), no fitting pair → the closest pair under the max + a Dutch note; combines with `allowImproper`; LIMIT_SPECS `denominator-relation`. Config pill row "Noemers" (Willekeurig / De ene een veelvoud van de andere). Reuses `gcd`/`simplifyFraction`/`toMixedNumber` (exported from mathEngine) **Breuken block (F1):** gelijknamig / vereenvoudigen / gemengd on the shared block; E3's "Noemers" pill sits in its extras slot; the vereenvoudigen presets only pick structure — "Binnen de maaltafels" sets `tablesOnly` and is lit exactly when it is on, the caps sit below with the hint "noemer 100 geeft bv. 8/64"; "Grotere breuken" still writes 60/100 |
+| `breuken-rangschikken` | `ordenenExercises` | `generateBreukenRangschikkenExercises` | `OrdenenViewer` (reused) | `BreukenRangschikkenConfig` | fractionMode (stambreuken/gelijknamige/gelijknamig-te-maken/speciale), count(2–5), operatorMode, min/maxDenominator, `allowImproper` (gelijknamige / gelijknamig-te-maken only; gelijknamige's distinctness rule d−1 ≥ count relaxes to 2d−2) **Breuken block (F1):** noemer range + Soort breuken + Ook onechte on the shared block |
+| `getallenrijen` | `getallenasExercises` | `generateGetallenrijExercises` | `GetallenrijenViewer` | `GetallenrijenConfig` | numberType (natural/decimal/rational/geheel — sidebar leaf), maxGetal, step (+custom jump all types), direction (stijgend/dalend/beide), numberMask (anchor; decimal mask dp = step decimals), rational getalopbouw via `FractionMaxField` (noemer=fractionStep, teller=maxTeller), ticks, `showFrame` (Differentiatie toggle, rounded pill on/off); getallenas without the axis line. Blank mask as getallenas: tick 0 given, the rest blanked at the hardMode ratio, then `ensureTwoGivens` (blankMask.ts, SYNC both generators) reveals one random tick when fewer than 2 are given on 3+ ticks (one given fixes no step) **Breuken block (F1):** the rational sprong is the block's noemer (shape 'step'); the FractionMaxField is gone, one "Hoogste teller" field |
 | `lengte-meten` | `meetExercises` | `generateLengteMetenExercises` | `MetenViewer` | `MetenConfig` | measureModel: **meten** (write the length) or **gegeven** = juist/fout (stated `claim` ±, pupil circles juist/fout); precision (cm/mm), min/maxLength, maxCorners (0–4 → polyline segments). Drawn to scale (1cm≈37.8px). Scaffold/answer keys (`perSideScaffold`, `answerMode` single/sum, `answerUnit` cm/plain) live in the Inspector **Differentiatie** card |
 | `omtrek` | `meetExercises` | `generateOmtrekExercises` | `MetenViewer` | `MetenConfig` | measureModel (op-schaal/gegeven), precision, length-per-side, `shapes[]` (driehoek · vierkant/rechthoek/ruit/parallellogram/trapezium/vierhoek · vijf-/zes-/zeven-/achthoek · cirkel met middelpunt) + the Differentiatie scaffold/answer keys. Constructors return exact `sides[]` (hele cm never drifts); perimeter = Σ sides or π·d |
 | `deelbaarheid` | `VEELVOUDEN_KIOSK` | veelvouden: the multiples after the given ones (typed); tabel: **tap** every number it is divisible by kiosk `prepare(c, rng)` draws the deler (teacher's base or one of the divisors) and a start row (`startFrom`) per exercise, so 6 draws give ≥ 4 distinct rows |
@@ -529,7 +546,7 @@ only.
 | `getalpatronen` | `patroonExercises` | `generatePatroonExercises` | `PatroonViewer` | `PatroonConfig` | numberType (nat/dec/geheel — leaf), maxGetal, minGetal, ticks, **steps** (1–4 repeating cycle), **ops** (`+ − × :`), **opSettings** per op `{max,mask}` (+/− mask spans the block place range incl. decimals), `maxDecimals` (decimal). Differentiatie (Inspector): `showArrows`, `showOperators`, `operatorsShown`, `operatorStyle` (symbol/full). No frame; `–`/arrow connectors |
 | `deelbaarheid-kleuren` | `deelbaarheidKleurExercises` | `generateDeelbaarheidKleurExercises` | `DeelbaarheidKleurViewer` | `DeelbaarheidKleurConfig` | viewMode (strip/markeren; legacy `raster` still loads and renders as strip+rechthoek), `rasterVorm` (lijn/rechthoek — the old kleurraster is the rechthoek form of the strip, cells in `em` so they follow the font sliders, last row padded to a full rectangle), `divisors[]` (2–12, rotated per row), maxGetal/perRow or rasterCount/rasterCols, `showRest` |
 | `splitsen` (positie-*) | `splitsenExercises` | `generateSplitsenExercises` | `SplitsenViewer` | `SplitsenConfig` | layout positie-tabel/-benen/-math (sidebar leaf), maxGetal(≤1e9), decimalPlaces, operand1Mask, benenVariants[], mathForms[], mathDirection, `mathOrder` (volgorde/gehusseld — the generator shuffles once per exercise into `ex.placeOrder`); columns follow width + maxGetal (benen), positie-math is always 1-up Number words put a space after "duizend" ("duizend tweehonderd") |
-| `getallenas` | `getallenasExercises` | `generateGetallenasExercises` | `GetallenasViewer` | `GetallenasConfig` | numberType (natural/decimal/rational/geheel), maxGetal, minGetal, step, fractionStep, direction(+beide), allowMixed, gelijknamig, hardMode (blank ratio 0.4 / 0.6), ticks; the blank mask always keeps ≥ 2 givens on 3+ ticks (`ensureTwoGivens`, see getallenrijen) |
+| `getallenas` | `getallenasExercises` | `generateGetallenasExercises` | `GetallenasViewer` | `GetallenasConfig` | numberType (natural/decimal/rational/geheel), maxGetal, minGetal, step, fractionStep, direction(+beide), allowMixed, gelijknamig, hardMode (blank ratio 0.4 / 0.6), ticks; the blank mask always keeps ≥ 2 givens on 3+ ticks (`ensureTwoGivens`, see getallenrijen) **Breuken block (F1):** rational sprong = the block's noemer (shape 'step') |
 | `temperatuur` | `temperatuurExercises` | `generateTemperatuurExercises` | `TemperatuurViewer` | `TemperatuurConfig` | variant (kleuren/aflezen/verschil — sidebar leaf), mode1/mode2 (verschil), includeNegatives, perRow |
 | `plaatswaarde` | `PLAATSWAARDE_KIOSK` | waarde: a number; plaats: pick the place; omcirkelen: **tap** the place chip; tabel: **fill** the plaatswaardetabel `plaatsAnswer`: `'plaats'` (today's H/T/E in digit order) · `'plaats-shuffle'` (seeded shuffle, never the digit order with 3 places) · `'waarde'` (type the digit's value, "20"); PlaatswaardeConfig "Antwoord" picker; both leaf instructions follow the setting |
 | `even-oneven` | `EVEN_ONEVEN_KIOSK` | cirkels: even / oneven; rooster: **tap** every even (or oneven) number |
@@ -798,6 +815,13 @@ PDF page count.**
 - The repack **breaker counts passes, not cells** — bumps from one measure pass are
   coalesced with a microtask. Counting cells made it a block-count limit: a ten-block sheet
   tripped it on first paint and every block measured after the trip kept its estimate.
+  Since 2026-10-29 (WP G) it also **counts feedback, not input cadence**: a `useLayoutEffect`
+  on `version` marks the commit that applied the hook's own bump, and only a change found in
+  that commit extends the chain; a change in any other commit (a new block, a width pick,
+  solutions, a font) starts a new chain. It trips past `BREAKER_BUMPS` (12) feedback repacks
+  in a row, with a 120-per-second backstop for loops that bypass the hook's version. Before
+  that the visual gate's own pace (a fresh cell every ~65 ms, 2–3 writes per promoted breuken
+  cell) tripped it deterministically (`measureBreaker.test.tsx`, `npm run gate:repro`).
   The packer's fit test carries `FIT_EPSILON` (half a printed pixel), so an exactly-full page
   is not decided by binary rounding.
 - `minWidth` per type is **measured with every clamp disabled** — measuring with tiers
@@ -997,7 +1021,10 @@ table runs as `fallbackMinWidth`. The Inspector width picker subscribes to the i
 kolom biedt 151px." **Width measurements are also dropped when the sheet changes under the
 block (2026-10-28, C3):** `useMeasuredHeights(blocks, continuationKey, sheetKey)` takes a
 `sheetKey` App builds from the six font tokens, `fontSizeMath` / `fontSizeText`, `answerSpace` and a
-counter bumped on `document.fonts` `loadingdone`; it is part of every block's measurement
+counter from `useFontEpoch` (`src/hooks/useFontEpoch.ts`) that bumps only when the signature of the
+*loaded* faces (family / weight / style / stretch / unicodeRange) changed — a bare `loadingdone`
+(Playwright's element screenshot fires ~21 per gate run without loading anything) must not wipe
+the intrinsic map mid-walk (WP G, `fontEpoch.test.tsx`); it is part of every block's measurement
 signature, so a font or size switch (or a self-hosted face finishing its load) re-measures widths
 instead of keeping a block widened by the old face (heights at the current width are kept;
 `sheetFontMeasure.test.tsx`). The Verdana / Courier New runs (`font-baseline --doc`, TESTING.md)
@@ -1102,6 +1129,22 @@ Panels no longer collapse to a hover flyout (teachers on 14" laptops got stuck i
 all). Both are always visible and the **sheet zooms to fit** instead, floored at 55%. The
 TopBar is three zones matching the columns beneath it, and the two panel tab strips render
 there rather than inside their panels.
+
+**TopBar (E4, 2026-10-28):** the help button is a "?" icon at every stage (tooltip "Uitleg en
+rondleiding"); next to it a **Bewaren** button (`data-tour="save"`, labelled at stage 0 only)
+opens its own dropdown with the library and file rows (Bewaar in / Bijwerken in Mijn bladen, Mijn
+bladen, Open bestand…, Bewaar bestand + file-name hint, Bewaar als bestand…); the former "Meer"
+menu is **Menu** and keeps werkbladen (Kant-en-klare bladen, Pagina-ontwerp sjablonen), delen,
+instellingen, feedback. Shed stages are 0–6 (`TOPBAR_STAGE_COUNT` 7): 3 folds Toevoegen, 4
+Genereer alles, 6 the "?" and the Bewaren rows into the Menu (below ≈850 px). Stage 0 zone widths
+`[454, 330, 498]` → ≈1 340 px of bar ≈ a 1 990 px window; 1 280 px lands on stage 1.
+
+**Blad › Opdrachten (E1, 2026-10-28):** the switches, the two gap sliders, Opdracht stijl, then
+the "Vormgeving opdracht-titel" accordion, one "Oefeningen" card (Lettertype cijfers + Cijfers,
+Lettertype tekst + Opdrachttekst, Tekstgrootte oefeningen, the "Vormgeving oefeningen" accordion)
+and "Alle stijlen terugzetten". `InspectorAccordion.tsx` = a disclosure button (`aria-expanded`),
+closed by default, opened automatically while a value in it differs from the default; the region
+font pickers read "Lettertype titel / koptekst / voettekst".
 
 **SYNC rule:** any visual change to a viewer must look right when printed — there's no
 separate PDF file to mirror, but check the print CSS classes above still apply, and that
@@ -1252,6 +1295,7 @@ src/
 │   ├── gradePresets.ts          # Leerjaar 1–6: base-difficulty seed (L6 = 1 000 000 000) + leaf grade-gate (soft starting point)
 │   ├── numberRanges.ts          # every max-number option list once: NAT_CEILING, NAT_STEPS, RANGES, floorToPreset, presetLabel (§5, §13)
 │   ├── fontOptions.ts           # SHEET_MATH_FONT (SYNC theme.css --font-sheet-math); TEXT_FONT_OPTIONS / MATH_FONT_OPTIONS (self-hosted @fontsource faces lazy-loaded by ensureFontLoaded; system stacks labelled "(als geïnstalleerd)"; maths monospace only) (§3, §8)
+│   ├── domainOf.ts              # leafId / typeId → sidebar domain + DOMAIN_FILL for "Opdrachtkleur per domein" (E2)
 │   ├── printPalette.ts          # curated print-safe swatches + STYLE_BOUNDS clamps (style builder)
 │   ├── rekenmethodes.ts         # rekenmethode metadata (bibliotheek)
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
@@ -1269,6 +1313,7 @@ src/
 │       └── historySlice.ts      # undo/redo, pushHistory, commitBlocks
 ├── hooks/
 │   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (awaits document.fonts.ready, then 2 rAF for the repack)
+│   ├── useFontEpoch.ts          # counter that bumps when the set of LOADED faces changes (not per loadingdone) → App's sheetKey (§9)
 │   ├── useMeasuredHeights.ts    # measured cell heights + page-body budget fed back into the packer (§9); continuationKey drops the stale page-2+ body when the repeated header changes
 │   ├── useSheetZoom.ts          # sheet zoom-to-fit (ResizeObserver, floor 55%)
 │   ├── useBootLoad.ts           # boot order: share link → autosave restore → release-banner check
@@ -1296,6 +1341,8 @@ src/
 │  (repo root) src/__tests__/fontTokens.test.ts, viewers.ink.test.tsx + helpers/sheetInk.tsx  # 2026-10-28: no literal maths font / no fontFamily attribute; every leaf under a blue ink keeps no black paint
 │  (repo root) src/__tests__/safeIntegers.test.ts  # every type at its top preset × max decimals: finite, safe, print round-trip, BigInt-exact answers (§6)
 │  (repo root) src/__tests__/breukenOnecht.test.ts, breukenFigurenOnecht.test.tsx, mab.squarePattern.test.tsx, mab.appearance.test.tsx  # onechte breuken (5 leaves), MAB square pattern + Appearance slot
+│  (repo root) src/__tests__/breukenSettings.test.tsx, breukenPanels.test.tsx, ordenenMixedMode.test.ts  # F1 shared Breuken block + ordenen Geen/Ook/Alleen
+│  (repo root) src/__tests__/sheetBlock.domainColors.test.tsx, inspector.opdrachtenAccordions.test.tsx, breukenGelijknamigVeelvoud.test.tsx, sheetFontMeasure.test.tsx  # E1–E3 + C3: domain fills, accordions, veelvoud-noemers, font-switch re-measure
 │  (repo root) src/__tests__/limits.matrix.test.ts + limits.knownBugs.ts  # gate: every leaf × leerjaar, pairwise, trigger cases vs the rule book; open bugs listed by BUGS id, stale entries fail
 │  (repo root) src/__tests__/audit/limits.audit.test.ts  # the full limit diagnosis behind npm run limits:audit (cartesian / pairwise / random, seeds, dumps)
 │  (repo root) scripts/visual-baseline.json  # committed: per leaf × width × solutions {height, intrinsic px, text hash} at seed 1234 — the gate's reference
@@ -1437,7 +1484,7 @@ src/
     │   ├── PageSheet.tsx       # ONE printed page: own header + COL_UNITS-wide grid body + own footer + break-after: page (§9)
     │   ├── BlockControlsRail.tsx  # portalled per-block control rail (lock/duplicate/split/page-break/move/delete); fixed-positioned off the block rect so the page's overflow:hidden can't clip it; visibility = hovered id (`components/sheet/hoveredBlock.ts` external store) ?? activeBlockId, resolved in SheetControlsRail, not CSS :hover
     │   ├── sidebar.tsx         # left panel: source-list nav, locked palette, mode row (Oefenmodus / Bordmodus), wordmark foot
-    │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Uitleg/Bordmodus fold into Meer. `data-stage` on `.topbar`. Stage 0 needs ≈2040px of viewport (≈1900 before the Bordmodus button) because the bar spans only the centre column.
+    │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Bordmodus fold into Menu · 4 Genereer alles · 6 ? + Bewaren rows fold into Menu. `data-stage` on `.topbar`. Stage 0 needs ≈1 990 px of viewport (zone widths [454, 330, 498] since the Bewaren button, E4) because the bar spans only the centre column; stages 0–6, 6 folds the ? and Bewaren into the Menu.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
     │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay + "Wat is er nieuw" link; the saving sections (herstelkopie / Mijn bladen / bestand)
@@ -1459,6 +1506,7 @@ src/
     ├── shared/{ExercisePreview.tsx,SheetThumbnail.tsx}    # §13 fit-to-card live example; mini sheet preview
     ├── ui/{IconButton,Wordmark,Switch,PopupSelect,InfoTip,Swatch,ModalPortal,ModalShell}.tsx
     ├── configurator/
+    │   ├── InspectorAccordion.tsx # disclosure row for the Blad › Opdrachten style cards (closed unless a value is set) (E1)
     │   ├── Inspector.tsx       # mounts EXERCISE_UI[typeId].Config; locked-mode gating
     │   ├── GenerationNote.tsx  # the "versoepeld / slechts N / kon geen oefeningen maken" callout under Genereer, shared by the sheet Inspector and BoardInspector
     │   ├── RegionStyleFields.tsx  # per-region look-and-feel (family/size/bold/italic/underline/colour/fill/padding) + ResetAllStylesButton
@@ -1470,6 +1518,7 @@ src/
     │   ├── useConstraints.ts      # [c, patch] hook: typed read + merge-write of block.constraints for plugins; honours ConstraintScope
     │   ├── ConstraintScope.ts     # context: when set to ['perVariant', id] the hook reads {...root, ...root.perVariant[id]} and writes ONLY into perVariant[id] (sparse); fixedPreset/hidden let a tab pin its preset and hide shared controls
     │   ├── plugins/shared/fieldStyles.ts      # F: Inspector field chrome shared by Inspector + StyleConfigs
+    │   ├── plugins/shared/BreukenSettings.tsx # the one controlled "Breuken" block every fraction leaf mounts (noemer / teller / soorten / gemengd / schrijfwijze / extras) (F1)
     │   ├── plugins/shared/HrStdStyleConfig.tsx # AddSub/MulDiv StyleConfig (niveau, compenseren-tussenstap, nummering, kort/lang/stappen)
     │   ├── plugins/shared/ItemNumberingRow.tsx # Opmaak → Nummering (Geen / 1) / a)) → block.itemNumbering; mounted by HrStd + Rekenvolgorde StyleConfigs
     │   ├── plugins/RekenvolgordeStyleConfig.tsx # rekenvolgorde Kort/Lang/Stappen (own file: HrStdStyleConfig's rows are gated on hoofdrekenen-only settings)
@@ -1575,6 +1624,20 @@ seed 2, and "Alle leerjaren" (`setSelectedGrade(null)`) applies `NO_GRADE_PRESET
 when the base has decimals (else they keep their own precision default, ordenen 2); plaatswaarde and
 vergelijken (no numberType — `decimalPlaces` IS their decimals switch) always get the base value.
 After the merge, `SEED_FIT` (§5) fits rounding targets and axis spans to the seeded max.
+
+**Breuken section (F1 C4, 2026-10-29).** The modal's fraction rows are their own "Breuken" section
+on the shared block (noemer van–tot, Soort breuken, Gemengde getallen Geen / Ook / Alleen,
+"Standaard herstellen"), stored as the optional `baseSettings.baseBreuken` (only the fields the
+teacher touched; absent = untouched; format stays v4). `BREUKEN_SEED[typeId]` (exerciseRegistry.ts,
+beside `SEED_FIT`) maps it onto each fraction leaf's own keys inside `seedConstraints` — breuken
+clamped to `breukenFigureCeiling`, breuken-bewerken / -rangschikken, ordenen rat, hr rational caps
+(gemengd only geen / alleen), getallenas / -rijen rat (sprong = the largest offered noemer ≤ max),
+vergelijken representaties. A key the leaf pins wins; a pinned half of the noemer range keeps the
+other half. `baseApply` no longer writes fraction keys; the old `baseUnitFractionsOnly` /
+`baseAllowMixed` checkboxes still reach ordenen where `baseBreuken` leaves them unset. The
+getallenas / -rijen rat leaves stopped pinning `fractionStep: 4` (generator + registry default) so
+the base reaches them — an ACCEPTED_DRIFT row in `oefenen.session.defaults.test.ts`. Seeding is
+pinned in `seedConstraints.test.ts`.
 
 ### Mass-add modal ("Toevoegen")
 

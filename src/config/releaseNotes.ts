@@ -38,6 +38,43 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             // ── 2026-10-28: Geert-fork ports + onechte breuken ──
             {
                 kind: 'gewijzigd',
+                text: 'Alle breukinstellingen zien er nu hetzelfde uit: noemer van–tot, hoogste teller, soort breuken, gemengde getallen; zelfde volgorde in elk breukenpaneel.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Rangschikken van rationale getallen: kies Geen / Ook / Alleen gemengde getallen (Ook mengt gemengde getallen en gewone breuken in één reeks).',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Vereenvoudigen: “Binnen de maaltafels” verandert de grenzen niet meer; de hoogste teller en noemer staan eronder (noemer 100 geeft bv. 8/64).',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Basisinstellingen › Breuken: één plek voor noemer van–tot, soort breuken en gemengde getallen voor alle breukoefeningen.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Breuk van een lijnstuk start op 8 cm en 6 delen; breuk van een veelhoek start op 9 delen (bestaande bladen veranderen niet).',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Gelijknamig maken: kies “De ene noemer een veelvoud van de andere” (bv. 3 en 6), de regel van het vierde leerjaar; staat vanzelf aan bij leerjaar 4.',
+                example: { leafId: 'breuken-gelijknamig', constraints: { denominatorRelation: 'multiple' }, count: 2 },
+            },
+            {
+                kind: 'nieuw',
+                text: 'Opdrachtkleur per domein: elke opdracht-titel krijgt de kleur van zijn domein, zoals in de methodes (Blad › Opdrachten).',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bovenaan: een ?-knop voor de uitleg en een Bewaren-knop met alles over bewaren en bestanden; het menu Meer heet nu Menu.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Blad › Opdrachten is overzichtelijker: één kaart “Oefeningen” voor lettertypes en groottes; de vormgeving van titel en oefeningen klapt uit.',
+            },
+            {
+                kind: 'gewijzigd',
                 text: 'Onechte breuken mag je ook als gemengd getal schrijven (7/4 of 1 3/4), op papier en in de Oefenmodus; de oplossing toont beide.',
                 example: { leafId: 'breuken-herkennen', constraints: { allowImproper: true }, count: 2, height: 160 },
             },

@@ -19,11 +19,7 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
-- Vereenvoudigen: the "Binnen de maaltafels" preset is lit but not applied — the leaf stores 10/10, re-clicking the lit pill changes the caps to 20/24 (`BreukBewerkConfig.tsx:61`, `exerciseRegistry.ts:233-236`). Owner call: store 20/24 or un-light. 2026-10-28 breuken review.
-- Breuken lijnstuk / veelhoek: the sidebar defaults ignore the intended `defaultsFor` values (12 cm instead of 8, noemer 8 instead of 9; `FractionConfig.tsx:20-28` dead for those subTypes). Owner call. 2026-10-28 breuken review.
-- Breuk van hoeveelheid: switching the variant wipes the teacher's noemer range and other settings (`FractionConfig.tsx:55`). 2026-10-28 breuken review.
-- Ordenen rat: the noemer min is not clamped to max (`OrdenenConfig.tsx:135`); the generator swaps them silently (`ordenenGenerator.ts:37-41`). 2026-10-28 breuken review.
-- Hoofdrekenen rational delen shows "Product te vereenvoudigen" (`multiplication/RationalSettings.tsx:167`), a × wording on :. 2026-10-28 breuken review.
+- Breuk van hoeveelheid: switching the variant wipes the teacher's noemer range and other settings (`FractionConfig.tsx`, variant row). Not touched by F1; `defaultsFor` in FractionConfig stays mostly unused on purpose. 2026-10-28 breuken review.
 - Geld configs: the denomination / betalen-met / bill pills in `GeldConfig`, `GeldTeruggevenConfig`, `GeldWisselConfig` are `<span onClick>`, not buttons — no keyboard, no `aria-pressed` (exempt from `configPills.ariaPressed.test.tsx`). Convert to buttons without shifting the layout. 2026-10-13.
 
 ## Generators

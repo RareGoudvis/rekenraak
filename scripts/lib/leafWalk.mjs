@@ -52,8 +52,8 @@ export async function walkLeaves(opts) {
     // renders something, and that is exactly the regression the gate wants to see.
     let cellErrors = [];
     // The measurer's breaker tripping means the cell's numbers are whatever got frozen, so
-    // the gate must see it as a finding, not a pass. (The softer "N repacks in 1s" warn is
-    // the walk's own cadence — several cells per second — and stays out.)
+    // the gate must see it as a finding, not a pass. (The softer "N repacks in a row" warn
+    // stays out; since the breaker counts feedback only, the walk's cadence cannot trip it.)
     page.on('console', (m) => {
         if (m.type() === 'error') cellErrors.push(m.text());
         else if (m.type() === 'warning' && m.text().includes('repack loop broken')) cellErrors.push(m.text());
@@ -95,9 +95,9 @@ export async function walkLeaves(opts) {
                         cellErrors = [];
                         try {
                             await prepare?.(page, variant ?? null);
-                            // The measurer's breaker (12 repacks/s) can trip on the walk's own cadence
-                            // and then freezes measurements for 1.5 s; a cell caught in that window is
-                            // re-done once after the cooldown instead of being recorded frozen.
+                            // Belt and braces: the breaker (12 feedback repacks in a row) no longer trips
+                            // on the walk's own cadence (WP G), but a cell caught in a cooldown is still
+                            // re-done once instead of being recorded frozen.
                             let measured;
                             for (let attempt = 0; attempt < 2; attempt++) {
                             if (attempt) { await page.waitForTimeout(1700); cellErrors = []; }

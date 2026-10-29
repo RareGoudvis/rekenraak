@@ -324,7 +324,7 @@ thresholds shared with `font-compare.mjs`. Per cell the walk waits for the empty
 land before adding (every cell of a leaf gets the same seeded block id, and the measurer
 prunes the previous cell's intrinsic entries in a passive effect), then waits until the
 applied ScaledBlock zooms and the measurer snapshot are unchanged for two frames (cap 3 s);
-a cell whose measurement the breaker froze is redone once after the cooldown. Two `--all`
+a cell whose measurement the breaker froze is redone once after the cooldown (belt and braces since WP G 2026-10-29: the breaker no longer counts the walk's cadence, see `gate:repro`). Two `--all`
 runs in a row must produce identical rows — that is the determinism check.
 
 | Changed file | Scope |
