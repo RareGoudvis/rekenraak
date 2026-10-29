@@ -166,7 +166,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'getalbegrip-getallenassen-nat', label: 'Natuurlijke getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'natural' }, instruction: 'Vul de getallenas aan.' },
                             { id: 'getalbegrip-getallenassen-dec', label: 'Decimale getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'decimal', step: 0.5, maxGetal: 20 }, instruction: 'Vul de getallenas aan.' },
-                            { id: 'getalbegrip-getallenassen-rat', label: 'Rationale getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'rational', fractionStep: 4, ticks: 6 }, instruction: 'Vul de getallenas aan.' },
+                            { id: 'getalbegrip-getallenassen-rat', label: 'Rationale getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'rational', ticks: 6 }, instruction: 'Vul de getallenas aan.' },
                             { id: 'getalbegrip-getallenassen-geh', label: 'Gehele getallen', typeId: 'getallenas', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 }, instruction: 'Vul de getallenas aan.' },
                         ],
                     },
@@ -176,7 +176,7 @@ export const APP_STRUCTURE: Domain[] = [
                         children: [
                             { id: 'getalbegrip-getallenrijen-nat', label: 'Natuurlijke getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'natural' }, instruction: 'Vul de getallenrij aan.' },
                             { id: 'getalbegrip-getallenrijen-dec', label: 'Decimale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'decimal', step: 0.1, maxGetal: 10 }, instruction: 'Vul de getallenrij aan.' },
-                            { id: 'getalbegrip-getallenrijen-rat', label: 'Rationale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'rational', fractionStep: 4, ticks: 6 }, instruction: 'Vul de getallenrij aan.' },
+                            { id: 'getalbegrip-getallenrijen-rat', label: 'Rationale getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'rational', ticks: 6 }, instruction: 'Vul de getallenrij aan.' },
                             { id: 'getalbegrip-getallenrijen-geh', label: 'Gehele getallen', typeId: 'getallenrijen', defaultConstraints: { numberType: 'geheel', maxGetal: 20, step: 5 }, instruction: 'Vul de getallenrij aan.' },
                         ],
                     },

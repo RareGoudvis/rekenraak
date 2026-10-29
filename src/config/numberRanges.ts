@@ -112,6 +112,9 @@ export const AXIS_FALLBACK_STEPS = {
 export const NOEMER_CEILING = 20;
 export const noemerOptions = (ceiling: number = NOEMER_CEILING): number[] =>
     Array.from({ length: Math.max(0, ceiling - 1) }, (_, i) => i + 2);
+// The breuken figures' own ceiling on that list, by subType (a lijnstuk of 9+ parts is unreadable at true size).
+export const breukenFigureCeiling = (subType: string | undefined): number =>
+    subType === 'lijnstuk' ? 8 : subType === 'veelhoek' || subType?.startsWith('hoeveelheid') ? 10 : 16;
 
 // maxEnkel is a free slider (step 10), not a list; the matrix samples min / default / max.
 export const HERLEIDINGEN_ENKEL = { min: 10, max: 1_000, step: 10 } as const;

@@ -74,4 +74,3 @@ grouped per work package so parallel deletions merge cleanly; fixed lines are de
 
 
 
-- viewers.solutionPlacement.test "geld-teruggeven key: only the answers are red" fails rarely (expected 3 got 2) on a random draw; passes on rerun (seen 2026-10-28, WP E4 gate).

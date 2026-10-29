@@ -6,6 +6,7 @@ import type { MathBlock, FractionSubType } from '../../../services/math/types';
 import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import BreukenSettings from './shared/BreukenSettings';
+import { breukenFigureCeiling } from '../../../config/numberRanges';
 import type { FractionConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -74,8 +75,7 @@ export default function FractionConfig({ block }: Props) {
 
     const minDen = c.minDenominator ?? 2;
     const maxDen = c.maxDenominator ?? 8;
-    // The figure's own limit on the one noemer list: a lijnstuk of 9+ parts is unreadable at true size.
-    const ceiling = isLijnstuk ? 8 : (isHoeveelheidGroep || isVeelhoek) ? 10 : 16;
+    const ceiling = breukenFigureCeiling(subType);
 
     const minLen = c.minLineLength ?? 4;
     const maxLen = c.maxLineLength ?? 12;

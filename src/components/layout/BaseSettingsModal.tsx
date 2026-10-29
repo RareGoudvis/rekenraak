@@ -4,6 +4,8 @@ import type { BaseBridgePolicy, BaseNumberType } from '../../config/baseSettings
 import ModalShell from '../ui/ModalShell';
 import BridgeControl from '../configurator/BridgeControl';
 import { RANGES, presetLabel } from '../../config/numberRanges';
+import type { BaseBreuken } from '../../config/exerciseRegistry';
+import BreukenSettings from '../configurator/plugins/shared/BreukenSettings';
 
 interface Props {
     onClose: () => void;
@@ -28,6 +30,12 @@ export default function BaseSettingsModal({ onClose }: Props) {
         const cur = base[which] || {};
         updateBase({ [which]: { ...cur, [key]: !cur[key] } } as Partial<typeof base>);
     };
+    // Only the fields the teacher touched are stored, so the rest keeps each leaf's own default.
+    const br: BaseBreuken = base.baseBreuken ?? {};
+    const breukenSet = Object.keys(br).length > 0 || base.baseUnitFractionsOnly || base.baseAllowMixed;
+    const unitOnly = br.unitOnly ?? base.baseUnitFractionsOnly;
+    const setBreuken = (patch: BaseBreuken) => updateBase({ baseBreuken: { ...br, ...patch } });
+
     const setBridge = (key: string, opt: BaseBridgePolicy) =>
         updateBase({ baseBridges: { ...base.baseBridges, [key]: opt } });
 
@@ -36,7 +44,7 @@ export default function BaseSettingsModal({ onClose }: Props) {
                 <div style={S.header}>
                     <div>
                         <h2 style={S.title}>Basisinstellingen</h2>
-                        <p style={S.subtitle}>Standaard voor nieuwe oefeningen. Bestaande blokken blijven ongewijzigd. Getalopbouw en bruggetjes gelden enkel voor hoofdrekenen, cijferen en splitsen.</p>
+                        <p style={S.subtitle}>Standaard voor nieuwe oefeningen. Bestaande blokken blijven ongewijzigd. Getalopbouw en bruggetjes gelden enkel voor hoofdrekenen, cijferen en splitsen; Breuken enkel voor de breukoefeningen.</p>
                     </div>
                 </div>
 
@@ -79,19 +87,29 @@ export default function BaseSettingsModal({ onClose }: Props) {
                         </div>
                     )}
 
-                    {base.baseNumberType === 'rational' && (
-                        <div style={S.section}>
-                            <label style={S.label}>Breuken</label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer', marginBottom: '6px' }}>
-                                <input type="checkbox" checked={base.baseUnitFractionsOnly} onChange={(e) => updateBase({ baseUnitFractionsOnly: e.target.checked })} style={{ accentColor: 'var(--accent-purple)', width: '15px', height: '15px' }} />
-                                Enkel stambreuken (teller = 1)
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={base.baseAllowMixed} onChange={(e) => updateBase({ baseAllowMixed: e.target.checked })} style={{ accentColor: 'var(--accent-purple)', width: '15px', height: '15px' }} />
-                                Gemengde getallen (bv. 1 1/4)
-                            </label>
-                        </div>
-                    )}
+                    {/* Breuken: its own section, applied only to the fraction leaves (BREUKEN_SEED). */}
+                    <div style={S.section} data-base-breuken="">
+                        <BreukenSettings
+                            noemer={{ shape: 'range', min: br.minDenominator ?? 2, max: br.maxDenominator ?? 10, onChange: (min, max) => setBreuken({ minDenominator: min, maxDenominator: max }) }}
+                            kinds={[
+                                { kind: 'stam', on: true, locked: true },
+                                { kind: 'echt', on: !unitOnly, onToggle: (v) => setBreuken({ unitOnly: !v }) },
+                                { kind: 'onecht', on: !!br.improper, onToggle: (v) => setBreuken({ improper: v }) },
+                            ]}
+                            kindsHint="Zet Echte breuken uit voor enkel stambreuken (teller = 1)."
+                            mixed={{ value: br.mixed ?? (base.baseAllowMixed ? 'all' : 'none'), onChange: (m) => setBreuken({ mixed: m }) }}
+                        />
+                        <p style={S.hint}>
+                            {breukenSet
+                                ? 'Geldt voor nieuwe breukoefeningen; elke oefening houdt haar eigen grenzen (bv. een lijnstuk tot 8 delen).'
+                                : 'Niet ingesteld: elke breukoefening start met haar eigen standaard.'}
+                        </p>
+                        {breukenSet && (
+                            <button type="button" style={{ ...S.preset(false), marginTop: '8px' }} onClick={() => updateBase({ baseBreuken: {}, baseUnitFractionsOnly: false, baseAllowMixed: false })}>
+                                Standaard herstellen
+                            </button>
+                        )}
+                    </div>
 
                     {showPlaceControls && (
                         <>

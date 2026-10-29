@@ -5,7 +5,7 @@
 // retro-affects existing blocks. Pure data (no React) so the store can import it.
 
 import { NAT_CEILING, floorToPreset, type MaxPresetsFn, type MaxRange } from './numberRanges';
-import { REGISTRY, SEED_FIT } from './exerciseRegistry';
+import { REGISTRY, SEED_FIT, BREUKEN_SEED, type BaseBreuken } from './exerciseRegistry';
 import { LEAF_BY_ID, flattenLeaves } from './appstructure';
 import { GRADE_PRESETS, type Leerjaar } from './gradePresets';
 import { PLACE_VALUES } from '../services/math/mathEngine';
@@ -25,8 +25,11 @@ export interface BaseSettings {
     baseBridges: Record<string, BaseBridgePolicy>;
     // 0 = whole numbers (the default, leerjaar 1-3); 1..3 = decimal precision (leerjaar 4-6 seed 2).
     baseDecimalPlaces: number;
+    // The old rational checkboxes; read (by ordenen only) where baseBreuken leaves them unset.
     baseUnitFractionsOnly: boolean;     // rational: stambreuken
     baseAllowMixed: boolean;            // rational: gemengde getallen
+    // Basisinstellingen › Breuken: absent / {} = untouched, every fraction leaf keeps its own default.
+    baseBreuken?: BaseBreuken;
 }
 
 export const DEFAULT_BASE: BaseSettings = {
@@ -93,9 +96,7 @@ export function baseApply(
     if ('decimalPlaces' in registryDefaults && (base.baseDecimalPlaces > 0 || !('numberType' in registryDefaults))) {
         out.decimalPlaces = base.baseDecimalPlaces;
     }
-    if ('unitFractionsOnly' in registryDefaults) out.unitFractionsOnly = base.baseUnitFractionsOnly;
-    if ('allowMixed' in registryDefaults) out.allowMixed = base.baseAllowMixed;
-
+    // Fraction keys come only from the Breuken section (BREUKEN_SEED in seedConstraints).
     return out;
 }
 
@@ -136,6 +137,18 @@ function trimPlaces<V>(obj: Record<string, V>, max: number, inclusive: boolean):
     }));
 }
 
+// The Breuken section's keys for this type. A key the override pins wins, and a pinned half of
+// the noemer range keeps the other half too, so min never passes a leaf's pinned max.
+function breukenSeed(typeId: string, base: BaseSettings, merged: Record<string, unknown>, override?: Record<string, unknown>): Record<string, unknown> {
+    const fit = BREUKEN_SEED[typeId];
+    if (!fit) return {};
+    const patch = fit(base.baseBreuken ?? {}, { unitOnly: base.baseUnitFractionsOnly, allowMixed: base.baseAllowMixed }, merged);
+    const pinned = (k: string) => !!override && k in override;
+    const rangePinned = pinned('minDenominator') || pinned('maxDenominator');
+    return Object.fromEntries(Object.entries(patch).filter(([k]) =>
+        !pinned(k) && !(rangePinned && (k === 'minDenominator' || k === 'maxDenominator'))));
+}
+
 // A new block's constraints: registry defaults → base snapshot → override, so a leaf that
 // pins a value (splitsen-basis maxGetal:10) wins. The store, the sidebar hover card, the
 // MassAdd preview and the test helper all call this, so a preview is the block it adds.
@@ -152,6 +165,7 @@ export function seedConstraints({ typeId, base, override: leafOverride, grade, l
     }
     const snapshot = baseApply(base, defaults, range);
     const merged: Record<string, unknown> = { ...defaults, ...snapshot, ...(override ?? {}) };
+    Object.assign(merged, breukenSeed(typeId, base, merged, override));
 
     // A leerjaar-6 HM mask on a block whose max is 1 000 (decimal hr, MAB, splitsen basis)
     // asks for a place the block can never show: trim the base's places to the block's own

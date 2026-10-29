@@ -52,7 +52,7 @@ import { generateKalenderExercises, generateKalenderExercisesNoted } from '../se
 import { generateControleExercises } from '../services/controleren/controlerenGenerator';
 import { generateWeegschaalExercises } from '../services/weegschaal/weegschaalGenerator';
 import { generateVormleerExercises } from '../services/vormleer/vormleerGenerator';
-import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, type MaxPresetsFn, type MaxRange } from './numberRanges';
+import { RANGES, floorToPreset, AXIS_FALLBACK_STEPS, breukenFigureCeiling, NOEMER_CEILING, type MaxPresetsFn, type MaxRange } from './numberRanges';
 import type { KioskDescriptor } from '../services/oefenen/types';
 import { HR_KIOSK, PROCENTEN_KIOSK, AFRONDEN_KIOSK, VERGELIJKEN_KIOSK, CIJFER_KIOSK, PLAATSWAARDE_KIOSK, EVEN_ONEVEN_KIOSK, ROMEINSE_KIOSK, GETALFUNCTIE_KIOSK, MAB_KIOSK, SCHATTEND_KIOSK, REKENVOLGORDE_KIOSK, CONTROLEREN_KIOSK, VORMLEER_KIOSK, TEMPERATUUR_KIOSK, WEEGSCHAAL_KIOSK, LENGTE_KIOSK, OMTREK_KIOSK, OPPERVLAKTE_KIOSK, MAATEENHEID_KIOSK, HERLEIDINGEN_KIOSK, GELD_KIOSK, GELD_REKENEN_KIOSK, PATROON_KIOSK, GETALLENAS_KIOSK, VEELVOUDEN_KIOSK, ORDENEN_KIOSK, SPLITSEN_KIOSK, BREUK_BEWERK_KIOSK, VERBANDEN_KIOSK, BREUKEN_KIOSK, KLOK_KIOSK, TIJDSDUUR_KIOSK } from '../services/oefenen/kioskDescriptors';
 
@@ -672,3 +672,67 @@ export function floorMaxIntoList(typeId: string, constraints: Record<string, unk
     if (typeof v !== 'number' || range.presets.includes(v) || v < Math.min(...range.presets)) return constraints;
     return { ...constraints, [range.key]: floorToPreset(v, range.presets) };
 }
+
+// ── Basisinstellingen › Breuken (owner call 2026-10-28) ──
+// The base's own fraction section; each field stays absent until the teacher sets it, so an
+// untouched base changes no fraction leaf. 'some' = ook gemengde getallen, 'all' = alleen.
+export interface BaseBreuken {
+    minDenominator?: number;
+    maxDenominator?: number;
+    improper?: boolean;
+    unitOnly?: boolean;
+    mixed?: 'none' | 'some' | 'all';
+}
+// The old base checkboxes (stambreuken / gemengd), which always reached ordenen.
+export interface LegacyBreukenBase { unitOnly: boolean; allowMixed: boolean }
+
+const clampNoemer = (v: number, ceiling: number) => Math.max(2, Math.min(ceiling, Math.round(v)));
+// min..max from the base, clamped into the leaf's own ceiling.
+const noemerRange = (b: BaseBreuken, ceiling = NOEMER_CEILING): Record<string, number> => {
+    if (b.minDenominator == null || b.maxDenominator == null) return {};
+    const max = clampNoemer(b.maxDenominator, ceiling);
+    return { minDenominator: Math.min(clampNoemer(b.minDenominator, ceiling), max), maxDenominator: max };
+};
+const isRational = (c: Record<string, unknown>) => c.numberType === 'rational';
+// getallenas / -rijen take one exact noemer (the sprong 1/n): the largest offered one ≤ the base max.
+const FRACTION_STEP_OPTIONS = [2, 3, 4, 5, 8, 10];
+const hrCaps = (b: BaseBreuken, _l: LegacyBreukenBase, c: Record<string, unknown>) => (isRational(c) && b.maxDenominator != null
+    ? { maxDenominator1: clampNoemer(b.maxDenominator, NOEMER_CEILING), maxDenominator2: clampNoemer(b.maxDenominator, NOEMER_CEILING) } : {});
+const hrAddSubBreuken = (b: BaseBreuken, _l: LegacyBreukenBase, c: Record<string, unknown>) => ({
+    ...hrCaps(b, _l, c),
+    // A gemengd operand has no "ook" in the + − generator: 'some' leaves the type's own default.
+    ...(isRational(c) && (b.mixed === 'none' || b.mixed === 'all') ? { mixedNumber1: b.mixed === 'all', mixedNumber2: b.mixed === 'all' } : {}),
+});
+const axisBreuken = (b: BaseBreuken, _l: LegacyBreukenBase, c: Record<string, unknown>) => (isRational(c) && b.maxDenominator != null
+    ? { fractionStep: floorToPreset(b.maxDenominator, FRACTION_STEP_OPTIONS) } : {});
+
+// (base Breuken, legacy checkboxes, merged constraints) → the fraction keys this type takes.
+export const BREUKEN_SEED: Record<string, (b: BaseBreuken, legacy: LegacyBreukenBase, c: Record<string, unknown>) => Record<string, unknown>> = {
+    'breuken': (b, _l, c) => ({
+        ...noemerRange(b, breukenFigureCeiling(c.subType as string)),
+        ...(b.improper != null && (c.subType === 'kleuren' || c.subType === 'herkennen') ? { allowImproper: b.improper } : {}),
+    }),
+    'breuken-bewerken': (b, _l, c) => ({
+        ...(c.subType === 'gelijknamig' ? noemerRange(b) : b.maxDenominator != null ? { maxDenominator: clampNoemer(b.maxDenominator, NOEMER_CEILING) } : {}),
+        ...(b.improper != null && c.subType !== 'gemengd' ? { allowImproper: b.improper } : {}),
+    }),
+    'breuken-rangschikken': (b) => ({
+        ...noemerRange(b),
+        ...(b.improper != null ? { allowImproper: b.improper } : {}),
+    }),
+    // Ordenen always took the old checkboxes; the new fields win where set.
+    'ordenen': (b, l, c) => ({
+        ...(isRational(c) ? noemerRange(b) : {}),
+        unitFractionsOnly: b.unitOnly ?? l.unitOnly,
+        allowMixed: b.mixed != null ? b.mixed === 'all' : l.allowMixed,
+        ...(b.mixed != null ? { mixedMode: b.mixed } : {}),
+    }),
+    'hr-std-optellen': hrAddSubBreuken,
+    'hr-std-aftrekken': hrAddSubBreuken,
+    'hr-std-vermenigvuldigen': hrCaps,
+    'hr-std-delen': hrCaps,
+    'getallenas': axisBreuken,
+    'getallenrijen': axisBreuken,
+    'vergelijken': (b, _l, c) => (c.subType === 'representaties' && b.maxDenominator != null
+        ? { leftFracD: clampNoemer(b.maxDenominator, NOEMER_CEILING), rightFracD: clampNoemer(b.maxDenominator, NOEMER_CEILING) } : {}),
+};

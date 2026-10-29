@@ -20,6 +20,9 @@ const ACCEPTED_DRIFT: readonly string[] = [
     // 2026-10-11: herleidingen ask by `vraag`; the registry no longer seeds writeUnits: false (an old
     // link keeps it from V1 and reads getal, a new row ships it removed and reads afwisselend).
     ...['lengte', 'inhoud', 'massa', 'oppervlakte'].map(m => `herleidingen-${m}.writeUnits`),
+    // 2026-10-28 WP F1: the leaf no longer pins sprong 1/4 (the generator's own fallback), so the base's
+    // Breuken noemer can reach it; a new row ships the key removed and still draws quarters.
+    'getalbegrip-getallenassen-rat.fractionStep',
 ];
 
 const LEAVES = new Map(flattenLeaves().map(l => [l.id, l]));
