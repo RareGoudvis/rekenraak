@@ -12,9 +12,10 @@ export function useSheetZoom(scrollRef: RefObject<HTMLDivElement | null>): numbe
     // The page is a real A4 at 96dpi now; the old 920px card is gone, and measuring
     // against it made the sheet shrink long before it needed to.
     const SHEET_PX = 794;
-    const SIDE_PAD = 96;       // .print-scroll horizontal padding
     const fit = () => {
-      const avail = el.clientWidth - SIDE_PAD;
+      // .print-scroll horizontal padding (48px a side, 20px under 1100px — see index.css)
+      const cs = getComputedStyle(el);
+      const avail = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       setSheetZoom(Math.max(0.55, Math.min(1, avail / SHEET_PX)));
     };
     fit();

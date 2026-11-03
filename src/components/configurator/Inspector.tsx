@@ -875,7 +875,7 @@ export default function Inspector({ embedded = false }: { embedded?: boolean } =
 
 
     return (
-        <aside data-tour="inspector" style={rootStyle}>
+        <aside data-tour="inspector" className={embedded ? undefined : 'app-panel-right'} style={rootStyle}>
             {/* Say what is selected before showing controls — otherwise the panel is a
                 pile of settings with no stated subject (UI-GUIDE rule 1). */}
             {(() => {
