@@ -1459,18 +1459,19 @@ src/
 │       ├── BoardPageCanvas.tsx  # one page: background, isolated widget layer, ink layer, instrument layer, geld dock; text-tool placement, 🔄 / 👁 wiring
 │       ├── WidgetFrame.tsx      # window-card chrome: always-on 48 px title bar (dot, title from cardTitle.ts, Nieuw / Oplossing (math), ⚙, Meer: Doorzichtig / Kleiner-Groter / Dupliceren / Verwijderen), transparent cards (bar floats at 55 % while selected), resize grip, zoom = w / NATURAL_W × font size, height cap; a third wrapper `[data-widget-fit]` at `cardLayoutWidth` zooms content wider than the body down (`cardFitZoom`, 0.97 margin, 0.01 dead-band against font-rounding loops)
 │       ├── BoardRail.tsx        # the 72 px LEFT rail (Zijrail, 2026-11-03): ⚙ Bordinstellingen top · tools (select/hand/aanwijzen combo, pen, marker, gom, tekst, lijn+vormen, instrumenten; L / V / S keys) · ink undo/redo · big + Toevoegen at the bottom; flyouts close on Escape/outside
-│       ├── BoardSettingsMenu.tsx # Bordinstellingen popover: BackgroundPicker, Uitlijnen, pages (prev/next/+/leegmaken/remove), Bewaren, Volledig scherm, Bord wissen
-│       ├── BoardTopPill.tsx     # top-right pill: pages ◀ n/m ▶, Bewaren, Volledig scherm, Bordmodus verlaten (icon only)
+│       ├── BoardSettingsMenu.tsx # Bordinstellingen popover, reduced: BackgroundPicker, Raster uitlijnen + size, Bord wissen
+│       ├── BoardTopPill.tsx     # top-right pill: ◀ Pagina n/m ▾ (page actions popover) ▶, Bewaren ▾ (BoardLibraryPopover), Volledig scherm, Bordmodus verlaten (X)
+│       ├── BoardLibraryPopover.tsx # Mijn borden: Bewaren / Bewaren als…, list with Openen / Hernoemen / Dupliceren / Verwijderen, Exporteren / Importeren
 │       ├── BackgroundPicker.tsx # achtergrond popover: live preview tiles for pattern / size / board colour, arrow-key grid
-│       ├── BoardAddPanel.tsx    # Toevoegen panel docked bottom-left: tabs Rekenblad / Rekentool / Klasbeheer / Dagritme / Tekst · beeld, ★ favourites row, search, tiles with variant buttons (no live previews); adding selects + switches to Selecteren
+│       ├── BoardAddPanel.tsx    # Toevoegen panel docked bottom-left (≤ 1100×720): tabs Rekenblok / Rekentool / Klasbeheer / Dagritme / Extra, ★ favourites row, search, exercise tiles with live ExercisePreview + variant buttons; adding selects + switches to Selecteren
 │       ├── BoardInspector.tsx   # exercise card flyout: draftBlocks mirror, Config + StyleConfig + AdvancedConfig, Aantal/Witruimte/Tekstgrootte, GenerationNote
 │       ├── WidgetInspector.tsx  # non-exercise flyout: WIDGET_SETTINGS[kind] + BaselineSettings
 │       ├── InkLayer.tsx         # SVG strokes (pen/marker freehand, line/shape via ToolEngine + preview, guided lines on instruments), dashed shaft, per-stroke eraser
-│       ├── InkFlyout.tsx        # pen/marker/lijn/vormen flyout growing out of the rail beside the active tool: colours (defaults + saved in rekenraak_board_colors_v1), widths, arrowheads / dashed, shape / soft fill; re-tap of the active tool closes it
+│       ├── InkFlyout.tsx        # compact ink strip beside the rail: A / blauw / rood / picker (+ last 4 custom chips, rekenraak_board_colors_v1) / size dot → vertical slider; lijn / vormen rows; EraserFlyout slider (8–40)
 │       ├── InstrumentLayer.tsx  # z 12 SVG: drag / rotate / snap / keyboard per instrument, passer opening + arc strokes, readout pill, snap dot
 │       ├── InstrumentShapes.tsx # LatShape / GeodriehoekShape / PasserShape in local frames, grips (body / rotate / open / draw)
 │       ├── instrumentStyle.ts   # IC token colours (frosted body), NO_POINTER
-│       ├── GeldPalet.tsx        # euro dock (Tekening / Echt), drag-to-create geld-item widgets, ⚙ dock settings, "Tel samen"
+│       ├── GeldPalet.tsx        # euro dock (Tekening / Echt = ECB specimen fronts from public/geld/), drag-to-create geld-item widgets, ⚙ dock settings, "Tel samen"
 │       ├── BoardErrorBoundary.tsx # per-widget + ink-layer + instrument-layer crash guard with a local reset
 │       └── widgets/             # one component per WidgetKind (ExerciseWidget mounts EXERCISE_UI Viewer; KlokWidget on clockMath + BoardClockFace.tsx, the board's own face with styles / rings / seconds; …), each reading its settings model
 └── components/
@@ -1765,7 +1766,7 @@ caller's props (`loadWidgetDefaults`, §14 "Widget settings"). Every page add / 
 remove / goto, `loadBoard` and `resetBoard` clear both selections. Hydrates from autosave at module
 init; a debounced (1.5 s) subscription on `pages` / `activePageIdx` writes
 `rekenraak_board_autosave_v1` (tool state and draw options are not persisted; ink settings are, under
-`rekenraak_board_ink_v1` — `color: null` means "default", resolved by `effectiveInk` to black on a light
+`rekenraak_board_ink_v1`, together with `eraserSize` — `color: null` means "default", resolved by `effectiveInk` to black on a light
 board and white on a dark one, with a Standaard swatch to return to it). Board-level `boardSettings`
 (`keepHandles`, the "Handvatten op het bord houden" toggle in the Meetinstrumenten popover, default on)
 travel with the board file (version stays 2) and autosave; `loadBoard` takes them.
@@ -1841,7 +1842,9 @@ is only the flyout: registry panel + baseline.
   count, must / cannot be together via union-find + shuffle repair, lockable groups),
   honderdveld (tap colour cycle or a picked colour), mabmat (`MabPlaceColumn`), geld-item (a
   dropped coin/bill, titleless). **GeldPalet** ([GeldPalet.tsx](../../src/board/components/GeldPalet.tsx))
-  is a dock with the euro catalogue, Tekening (GeldViewer exports) or Echt style,
+  is a dock with the euro catalogue, Tekening (GeldViewer exports) or Echt style (bills = the ECB's own
+  72 dpi specimen fronts in `public/geld/eur-<denom>-front.jpg`, €5–€200 Europa series + first-series
+  €500, 120 × 62 base, sources + the ECB reproduction rule in `public/geld/README.md`; coins stay drawn),
   drag-to-create with pointer capture; its own ⚙ ([GeldPaletSettings.tsx](../../src/board/settings/GeldPaletSettings.tsx))
   is a **device** setting in `rekenraak_board_geldpalet_v1` (which pieces, style, caption, new
   piece size, grid snap on drop, "Tel samen"), not board content; a dropped piece copies style +
@@ -1971,30 +1974,42 @@ An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
   also offers matching board tools by label or id ("klok" finds the kloklezen variants and the
   Klok tool).
 
-### Rail — [BoardRail.tsx](../../src/board/components/BoardRail.tsx) (Zijrail, 2026-11-03)
+### Rail — [BoardRail.tsx](../../src/board/components/BoardRail.tsx) (Zijrail, 2026-11-03; round 2 same day)
 
 A 72 px **left rail**, full height (the bottom bar is gone). Top → bottom: `[⚙ Bordinstellingen] |
-[select ▾][pen][marker][gom][T][lijn+vormen ▾][📏 instrumenten] | [ink undo][ink redo] … [+ Toevoegen]`.
-Buttons with a corner mark hold several tools (select = Aanwijzen / Selecteren / hand; lijn+vormen =
-line + the three shapes); a tap on the active button opens the choice. Pen / marker / lijn / vormen
-open [InkFlyout.tsx](../../src/board/components/InkFlyout.tsx) **beside the rail** (never floating
-mid-board): colours 2×4 + saved, widths, the lijn / vormen options; re-tapping the active tool
-closes it. **Bordinstellingen** ([BoardSettingsMenu.tsx](../../src/board/components/BoardSettingsMenu.tsx))
-merges what used to be four popups: the BackgroundPicker (`role="group"` now), Uitlijnen, pages
-(prev / next / + / Pagina leegmaken / remove), Bewaren in Mijn borden, Volledig scherm (Fullscreen
-API via [boardChrome.ts](../../src/board/boardChrome.ts); hidden without the API) and Bord wissen.
-**Toevoegen** ([BoardAddPanel.tsx](../../src/board/components/BoardAddPanel.tsx)) docks bottom-left:
-tabs Rekenblad · Rekentool · Klasbeheer · Dagritme · Tekst · beeld (`ToolCategory` /
-`TOOL_CATEGORIES` in [toolCatalog.ts](../../src/board/toolCatalog.ts); dobbelsteen = Rekentool,
-klok = Dagritme), a ★ favourites row on every tab (`rekenraak_board_favorites_v1`), search, tiles
-with a domain dot + variant buttons and **no live previews** (UI-GUIDE rule 2 is waived on the
-board). Adding a widget selects it and switches to Selecteren. The **top-right pill**
-([BoardTopPill.tsx](../../src/board/components/BoardTopPill.tsx)) holds pages ◀ n / m ▶, Bewaren,
-Volledig scherm and Bordmodus verlaten (X icon, label in `aria-label` / `title`); inspectors start at
-top 72 px to clear it. Every popup closes on **Escape** and on a press outside it (capture-phase
-`pointerdown`). **Single-letter shortcuts** `L` = lijn, `V` = vormen, `S` = selecteren (`TOOL_KEYS`),
-ignored while typing and with Ctrl / Meta / Alt or key repeat. The rail does not scroll (scrolling
-would clip its flyouts): it fits 800 px with the beta strip; below ≈700 px its bottom is cut off.
+[select ▾][pen][marker][gom ▾][T][lijn+vormen ▾][📏 instrumenten] … [ink undo][ink redo] | [+ Toevoegen]`
+(undo / redo sit right above the `+`, after the flex spacer). Buttons with a corner mark hold several
+tools (select = Aanwijzen / Selecteren / hand; lijn+vormen = line + the three shapes); a tap on the
+active button opens the choice. Pen / marker / lijn / vormen open the **compact ink strip**
+([InkFlyout.tsx](../../src/board/components/InkFlyout.tsx)) beside the rail, never floating mid-board:
+one row `A` standaard (only `INK_FOLLOWS_BOARD` tools; vormen get zwart instead) · blauw · rood · a
+rainbow picker (native `<input type=color>`, kept on close; the last 4 picks from
+`rekenraak_board_colors_v1` as chips under it) · a size dot that opens a **vertical slider**
+(`INK_WIDTH_RANGE` / `clampInkWidth` in boardTypes: pen / lijn / vorm 2–10, marker 8–32; `InkSettings.width`
+stays a number); lijn / vormen keep their tool + options rows above the strip; re-tapping the active
+tool closes it. **Gom** has its own slider flyout (`ERASER_RANGE` 8–40, `eraserSize` in the store,
+persisted in `rekenraak_board_ink_v1`) and a round SVG data-URL cursor of that radius (`eraserCursor`
+in [inkGeometry.ts](../../src/board/inkGeometry.ts), token colours read at runtime, `crosshair`
+fallback); erasing stays per stroke. **Bordinstellingen**
+([BoardSettingsMenu.tsx](../../src/board/components/BoardSettingsMenu.tsx)) holds only what has no
+other home: the BackgroundPicker (`role="group"`), Raster uitlijnen + size, Bord wissen. The
+**top-right pill** ([BoardTopPill.tsx](../../src/board/components/BoardTopPill.tsx)) is
+`◀ [Pagina n / m ▾] ▶ | Bewaren ▾ | Volledig scherm | X`: the counter opens the page actions
+(toevoegen / dupliceren / leegmaken / verwijderen), Bewaren opens Mijn borden
+([BoardLibraryPopover.tsx](../../src/board/components/BoardLibraryPopover.tsx), "Persistence" below),
+Volledig scherm uses the Fullscreen API via [boardChrome.ts](../../src/board/boardChrome.ts) (hidden
+without it), X = Bordmodus verlaten (label in `aria-label` / `title`); inspectors start at top 72 px to
+clear it. **Toevoegen** ([BoardAddPanel.tsx](../../src/board/components/BoardAddPanel.tsx)) docks
+bottom-left, up to 1100 × 720: tabs **Rekenblok** · Rekentool · Klasbeheer · Dagritme · Extra
+(`ToolCategory` / `TOOL_CATEGORIES` in [toolCatalog.ts](../../src/board/toolCatalog.ts); dobbelsteen =
+Rekentool, klok = Dagritme, Extra = afbeelding only — tekst is the rail's T tool), a ★ favourites row
+on every tab (`rekenraak_board_favorites_v1`; unknown ids are dropped), search, and exercise tiles with
+a **live `ExercisePreview`** (110 px, `previewConstraints` on `seedConstraints`, mounted only for the
+active tab or a search) + variant buttons. Adding a widget selects it and switches to Selecteren.
+Every popup closes on **Escape** and on a press outside it (capture-phase `pointerdown`).
+**Single-letter shortcuts** `L` = lijn, `V` = vormen, `S` = selecteren (`TOOL_KEYS`), ignored while
+typing and with Ctrl / Meta / Alt or key repeat. The rail does not scroll (scrolling would clip its
+flyouts): it fits 800 px with the beta strip; below ≈700 px its bottom is cut off.
 Beta chrome: [WhiteboardView.tsx](../../src/board/components/WhiteboardView.tsx) mounts
 `<BetaStrip module="bordmodus"/>` (thin row above rail + board) and `<FirstRunCard module="bordmodus"/>`
 (beside the rail, once per device; copy in `src/config/firstRun.ts`).
@@ -2150,9 +2165,16 @@ early builds get `pts: []`; P3 `fill` / `fillOpacity` / `dash` are optional), an
 a non-finite x / y / rotation is dropped, a second one of a kind too (first wins); `scale`
 survives only when finite and > 0; each non-boolean `snap` flag reads as on; the passer's
 `radius` is clamped to 0.5–21.5 cm, or 5 cm when junk. Autosave skips silently on quota. "Mijn borden" presets (`rekenraak_board_presets_v1`,
-max 30, newest first): `saveBoardPreset` returns `false` when the write is refused and the
-bottom bar shows a Dutch alert ("Kon het bord niet bewaren (opslag vol?) — bewaar het als
-bestand via Exporteren."). File export/import (`rekenraak-bord.json`). No share link (stroke
+max 30, newest first) are the board's **templates** (browser-local, no backend): `saveBoardPreset`
+returns `false` when the write is refused (Dutch alert "Kon het bord niet bewaren (opslag vol?) —
+bewaar het als bestand via Exporteren."); `updateBoardPreset` ('ok' | 'missing' | 'failed'),
+`renameBoardPreset`, `duplicateBoardPreset` (copy right under its source). The store's `savedBoardId`
+(persisted in `rekenraak_board_saved_id_v1`, like the sheet's `savedPresetId`) links the open board to
+its entry: `promptSaveBoard(asNew)` in boardChrome.ts is save-or-update (mirrors `saveToLibrary.ts`),
+`loadBoard(pages, idx, settings, savedId = null)` sets it, Bord wissen / import / deleting the entry
+clear it. The Bewaren popover lists name · pages · date with one-tap Openen (confirm only when the board
+has content and no `savedBoardId`), Hernoemen, Dupliceren, Verwijderen (confirm), Exporteren /
+Importeren. File export/import (`rekenraak-bord.json`) moves a template between devices. No share link (stroke
 and image payloads exceed URL limits). Backgrounds ([backgrounds.ts](../../src/board/backgrounds.ts)):
 blanco / raster / lijnen / schrijflijnen (2- and 4-line with a light-blue x-height band) /
 cornell × white/black × size (0.75 / 1 / 1.5), pure CSS gradients, per page.

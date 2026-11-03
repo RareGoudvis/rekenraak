@@ -35,6 +35,31 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         date: '2026-11',
         summary: 'Oefenmodus en Bordmodus in bèta, aangepaste breukenoefeningen en extra opmaakinstellingen.',
         items: [
+            // ── 2026-11-03 (2): Bordmodus round 2 after the owner's first try ──
+            {
+                kind: 'gewijzigd',
+                text: 'Bordmodus: de penbalk is klein: drie kleuren, een kleurkiezer en een stip voor de dikte (tik = schuifbalk). Ongedaan maken staat vlak boven de plus.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: de gom heeft een grootte (schuifbalk) en een rond cursortje dat die grootte toont.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bordmodus: Toevoegen › Rekenblok toont weer een voorbeeld per oefening; het paneel is groter. Tekst zit op de balk, dus de laatste tab heet Extra.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: Mijn borden als sjablonen. Bewaren rechtsboven: bewaren of bijwerken, één tik om te openen, hernoemen, dupliceren, exporteren naar een bestand.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bordmodus: pagina\u2019s en bewaren zitten alleen nog rechtsboven; het tandwiel houdt achtergrond, raster en Bord wissen.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus › Geld › Echt toont de echte eurobiljetten (ECB-specimens) zodat leerlingen ze leren herkennen; de munten blijven getekend.',
+            },
             // ── 2026-11-03: public beta of the two modules + Bordmodus Zijrail ──
             {
                 kind: 'nieuw',
