@@ -5,6 +5,8 @@ import BoardPageCanvas from './BoardPageCanvas';
 import BoardAddPanel from './BoardAddPanel';
 import BoardInspector from './BoardInspector';
 import WidgetInspector from './WidgetInspector';
+import BetaStrip from '../../components/ui/BetaStrip';
+import FirstRunCard from '../../components/ui/FirstRunCard';
 import { useBoardStore } from '../useBoardStore';
 
 // Full-screen "Bordmodus" overlay — the digibord whiteboard app. Mounted by App.tsx
@@ -39,9 +41,13 @@ export default function WhiteboardView() {
         // no-print: Ctrl+P or the Afdrukken path with the board open must print the sheet
         // underneath, not this fixed overlay on top of every page.
         <div className="no-print" data-whiteboard style={S.overlay}>
+            {/* Rows above the board, never over it: nothing here may cover ink. */}
+            <BetaStrip module="bordmodus" />
             <div style={S.row}>
                 <BoardRail addOpen={addOpen} onToggleAdd={() => setAddOpen(o => !o)} />
                 <div style={S.main}>
+                    {/* Beside the rail, not above it: the rail keeps its full height (Toevoegen at its foot). */}
+                    <FirstRunCard module="bordmodus" />
                     <BoardPageCanvas />
                     <BoardTopPill />
                     {/* Inspector flyouts — opened via the ⚙ in the widget's title bar. */}
@@ -62,5 +68,5 @@ const S = {
         touchAction: 'none', overscrollBehavior: 'none',
     } as React.CSSProperties,
     row: { flex: 1, minHeight: 0, display: 'flex' } as React.CSSProperties,
-    main: { position: 'relative', flex: 1, minWidth: 0, minHeight: 0, display: 'flex' } as React.CSSProperties,
+    main: { position: 'relative', flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' } as React.CSSProperties,
 };
