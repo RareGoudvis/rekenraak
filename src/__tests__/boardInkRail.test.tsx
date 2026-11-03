@@ -9,8 +9,8 @@ import InkRail from '../board/components/InkRail';
 import InkLayer from '../board/components/InkLayer';
 import BoardRail from '../board/components/BoardRail';
 
-// The rail's ink section (round 3): always visible, a 2×2 grid of standard colours + picker over a
-// vertical size slider; it follows the active ink tool, the gom drives the slider, other tools grey it.
+// The rail's ink section (round 3, column in round 4): always visible, one column of standard colours
+// + picker over a vertical size slider with the dot and number under it; it follows the active ink tool, the gom drives the slider, other tools grey it.
 const st = () => useBoardStore.getState();
 const slider = (name: string) => screen.getByRole('slider', { name }) as HTMLInputElement;
 const section = (c: HTMLElement) => c.querySelector('[data-ink-rail]') as HTMLElement;
@@ -67,12 +67,28 @@ describe('the swatches', () => {
         expect(stripColors('shape')).toEqual({ auto: false, colors: ['#1d4ed8', '#dc2626', '#111827'] });
     });
 
-    test('a 2×2 grid: A, blauw, rood, the picker; vormen get zwart instead of A', () => {
+    test('one column, top to bottom: A, blauw, rood, the picker; vormen get zwart instead of A', () => {
         const { container } = render(<InkRail />);
         expect(swatchLabels(container)).toEqual(['Standaardkleur (volgt het bord)', 'Kleur #1d4ed8', 'Kleur #dc2626', 'Eigen kleur']);
         act(() => { st().setTool('shape'); });
         expect(swatchLabels(container)).toEqual(['Kleur #1d4ed8', 'Kleur #dc2626', 'Kleur #111827', 'Eigen kleur']);
         expect(section(container).getAttribute('data-ink-rail')).toBe('shape');
+        // A single column: the sizes (and its one track) come from the rail height in index.css.
+        expect(container.querySelector('[data-ink-swatches]')!.className).toBe('board-ink-swatches');
+        expect(container.querySelectorAll('[data-ink-swatches] .board-ink-swatch')).toHaveLength(4);
+    });
+
+    test('the size dot and the number sit under the slider, one above the other', () => {
+        const { container } = render(<InkRail />);
+        const kids = [...section(container).children];
+        const part = (k: Element) => k.hasAttribute('data-ink-swatches') ? 'swatches' : k.hasAttribute('data-ink-preview') ? 'preview' : k.getAttribute('type');
+        expect(kids.map(part)).toEqual(['swatches', 'range', 'preview']);
+        const preview = kids[2] as HTMLElement;
+        expect(preview.style.flexDirection).toBe('column');
+        expect(preview.children[0].querySelector('[data-ink-dot]')).toBeTruthy();
+        expect(preview.children[1].textContent).toBe('4');
+        act(() => { st().setTool('eraser'); });
+        expect(preview.children[1].textContent).toBe('14');
     });
 
     test('a swatch sets the active tool\'s colour only', () => {
