@@ -1300,6 +1300,8 @@ src/
 │   ├── rekenmethodes.ts         # rekenmethode metadata (bibliotheek)
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
 │   ├── releaseNotes.ts          # per-version "Wat is er nieuw" list (newest first) behind the banner (§10)
+│   ├── beta.ts                  # BETA_MODULES { oefenmodus, bordmodus } one-boolean beta flags, BETA_TEXT, FEEDBACK_URL (the contact form)
+│   ├── firstRun.ts              # first-run card copy per module (oefenmodus / bordmodus)
 │   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner, derived from releaseNotes[0]
 ├── store/
 │   ├── useWorksheetStore.tsx    # public entry: composes the slices into ONE Zustand store + installs autosave
@@ -1318,6 +1320,7 @@ src/
 │   ├── useSheetZoom.ts          # sheet zoom-to-fit (ResizeObserver, floor 55%)
 │   ├── useBootLoad.ts           # boot order: share link → autosave restore → release-banner check
 │   ├── useOnboarding.ts         # welcome / tour / help / video modal state + localStorage keys
+│   ├── useFirstRun.ts           # useFirstRun(module) once-per-device card (rekenraak_firstrun_<module>_v1), resetFirstRun, resetBetaStrip / betaStripKey (rekenraak_betastrip_<module>_v1)
 │   └── useSheetDnd.ts           # sheet drag-and-drop state: handle + whole-block drag (draggable toggled at mousedown), top/bottom drop zones (§9)
 │  (repo root) scripts/bignum-audit.mjs  # Playwright: every leaf at its max-list top × widths × solutions; fails on overflow (incl. rects outside the cell), NaN/undefined, console errors (TESTING.md)
 │  (repo root) scripts/width-matrix.mjs  # Playwright width/height harness behind the LAYOUT tiers (§9)
@@ -1452,16 +1455,18 @@ src/
 │   │   └── GeldPaletSettings.tsx # the geld dock's own ⚙ (device setting, not in the registry)
 │   ├── mathTools/               # settings models of the wiskunde-gereedschap: getallenlijn, positietabel, honderdveld, breukviz, mabmat, geld (dock key rekenraak_board_geldpalet_v1) + shared.ts validators / TOOL_COLORS / INK_COLORS
 │   └── components/
-│       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'; board Ctrl+Z / Ctrl+Y → ink undo / redo
+│       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'; BetaStrip + FirstRunCard ('bordmodus') above the canvas; board Ctrl+Z / Ctrl+Y → ink undo / redo
 │       ├── BoardPageCanvas.tsx  # one page: background, isolated widget layer, ink layer, instrument layer, geld dock; text-tool placement, 🔄 / 👁 wiring
-│       ├── WidgetFrame.tsx      # window-card chrome: title bar drag, actions, accent dot, headerless pill, resize grip, zoom = w / NATURAL_W × font size, height cap; a third wrapper `[data-widget-fit]` at `cardLayoutWidth` zooms content wider than the body down (`cardFitZoom`, 0.97 margin, 0.01 dead-band against font-rounding loops)
-│       ├── BoardBottomBar.tsx   # Toevoegen + favorites, board settings, achtergrond, tools (L / V keys), Meetinstrumenten popover + Vastklikken, ink undo/redo, pages, save/presets/import, Bordmodus verlaten; popups close on Escape/outside
+│       ├── WidgetFrame.tsx      # window-card chrome: always-on 48 px title bar (dot, title from cardTitle.ts, Nieuw / Oplossing (math), ⚙, Meer: Doorzichtig / Kleiner-Groter / Dupliceren / Verwijderen), transparent cards (bar floats at 55 % while selected), resize grip, zoom = w / NATURAL_W × font size, height cap; a third wrapper `[data-widget-fit]` at `cardLayoutWidth` zooms content wider than the body down (`cardFitZoom`, 0.97 margin, 0.01 dead-band against font-rounding loops)
+│       ├── BoardRail.tsx        # the 72 px LEFT rail (Zijrail, 2026-11-03): ⚙ Bordinstellingen top · tools (select/hand/aanwijzen combo, pen, marker, gom, tekst, lijn+vormen, instrumenten; L / V / S keys) · ink undo/redo · big + Toevoegen at the bottom; flyouts close on Escape/outside
+│       ├── BoardSettingsMenu.tsx # Bordinstellingen popover: BackgroundPicker, Uitlijnen, pages (prev/next/+/leegmaken/remove), Bewaren, Volledig scherm, Bord wissen
+│       ├── BoardTopPill.tsx     # top-right pill: pages ◀ n/m ▶, Bewaren, Volledig scherm, Bordmodus verlaten (icon only)
 │       ├── BackgroundPicker.tsx # achtergrond popover: live preview tiles for pattern / size / board colour, arrow-key grid
-│       ├── BoardAddModal.tsx    # "RekenRaak blok…" single-add picker: exerciseCatalog + ExercisePreview, search over variants/typeIds/tools
+│       ├── BoardAddPanel.tsx    # Toevoegen panel docked bottom-left: tabs Rekenblad / Rekentool / Klasbeheer / Dagritme / Tekst · beeld, ★ favourites row, search, tiles with variant buttons (no live previews); adding selects + switches to Selecteren
 │       ├── BoardInspector.tsx   # exercise card flyout: draftBlocks mirror, Config + StyleConfig + AdvancedConfig, Aantal/Witruimte/Tekstgrootte, GenerationNote
 │       ├── WidgetInspector.tsx  # non-exercise flyout: WIDGET_SETTINGS[kind] + BaselineSettings
 │       ├── InkLayer.tsx         # SVG strokes (pen/marker freehand, line/shape via ToolEngine + preview, guided lines on instruments), dashed shaft, per-stroke eraser
-│       ├── InkSettingsBar.tsx   # pen/marker/lijn/vormen colours (defaults + saved in rekenraak_board_colors_v1), widths, arrowheads / dashed, shape / soft fill
+│       ├── InkFlyout.tsx        # pen/marker/lijn/vormen flyout growing out of the rail beside the active tool: colours (defaults + saved in rekenraak_board_colors_v1), widths, arrowheads / dashed, shape / soft fill; re-tap of the active tool closes it
 │       ├── InstrumentLayer.tsx  # z 12 SVG: drag / rotate / snap / keyboard per instrument, passer opening + arc strokes, readout pill, snap dot
 │       ├── InstrumentShapes.tsx # LatShape / GeodriehoekShape / PasserShape in local frames, grips (body / rotate / open / draw)
 │       ├── instrumentStyle.ts   # IC token colours (frosted body), NO_POINTER
@@ -1487,7 +1492,7 @@ src/
     │   ├── TopBar.tsx          # one row: add/menu/help | sheet name + autosave | undo-redo, genereer, oplossingen, afdrukken Label-shedding is driven by [useShedStages](../../src/hooks/useShedStages.ts) — a ResizeObserver measures the bar's real content width (sum of the children's `scrollWidth`; a squeezed grid column spills into its neighbour, so the row's own scrollWidth lies) and steps through four stages only when it actually overflows (8px slack down, 24px headroom up, reversal breaker): 0 full labels · 1 icon-only + tooltips · 2 sheet name + autosave dot on `.topbar-line2` under the bar · 3 Toevoegen/Bordmodus fold into Menu · 4 Genereer alles · 6 ? + Bewaren rows fold into Menu. `data-stage` on `.topbar`. Stage 0 needs ≈1 990 px of viewport (zone widths [454, 330, 498] since the Bewaren button, E4) because the bar spans only the centre column; stages 0–6, 6 folds the ? and Bewaren into the Menu.
     │   ├── OverzichtPanel.tsx  # Overzicht tab in the left panel (block list + drag reorder)
     │   ├── BaseSettingsModal.tsx  # global base-difficulty modal (§13)
-    │   ├── HelpModal.tsx       # Ouders / Leerkrachten tabs + tour replay + "Wat is er nieuw" link; the saving sections (herstelkopie / Mijn bladen / bestand)
+    │   ├── HelpModal.tsx       # Ouders / Leerkrachten / Oefenmodus / Bordmodus tabs + tour replay + "Wat is er nieuw" link + "Toon de uitleg opnieuw" per module; the saving sections (herstelkopie / Mijn bladen / bestand)
     │   ├── PageDesignsModal.tsx # Meer › Pagina-ontwerp sjablonen: docSettings templates, in-app name step, apply = confirm + replace (§10)
     │   ├── ReleaseNotesModal.tsx  # "Wat is er nieuw": releaseNotes items grouped, live example per exercise item (§10)
     ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx); Mijn bladen also lists the Oefensessies (Delen / Bewerken / hernoemen / verwijderen)
@@ -1505,6 +1510,9 @@ src/
     ├── oefenen/OefenShareModal.tsx                        # §15 summary chips + own-exercises note, link + copy, QR (copy PNG / download), Groot tonen (beamer), Afdrukken (A5)
     ├── shared/{ExercisePreview.tsx,SheetThumbnail.tsx}    # §13 fit-to-card live example; mini sheet preview
     ├── ui/{IconButton,Wordmark,Switch,PopupSelect,InfoTip,Swatch,ModalPortal,ModalShell}.tsx
+    ├── ui/BetaBadge.tsx        # "bèta" pill on the sidebar-foot Oefenmodus / Bordmodus buttons, gated by BETA_MODULES
+    ├── ui/BetaStrip.tsx        # dismissable one-line beta strip per module (BETA_TEXT + FEEDBACK_URL), mounted in OefenBuilderModal and WhiteboardView
+    ├── ui/FirstRunCard.tsx     # once-per-device intro card per module (copy from config/firstRun.ts), replay from Help
     ├── configurator/
     │   ├── InspectorAccordion.tsx # disclosure row for the Blad › Opdrachten style cards (closed unless a value is set) (E1)
     │   ├── Inspector.tsx       # mounts EXERCISE_UI[typeId].Config; locked-mode gating
@@ -1519,6 +1527,7 @@ src/
     │   ├── ConstraintScope.ts     # context: when set to ['perVariant', id] the hook reads {...root, ...root.perVariant[id]} and writes ONLY into perVariant[id] (sparse); fixedPreset/hidden let a tab pin its preset and hide shared controls
     │   ├── plugins/shared/fieldStyles.ts      # F: Inspector field chrome shared by Inspector + StyleConfigs
     │   ├── plugins/shared/BreukenSettings.tsx # the one controlled "Breuken" block every fraction leaf mounts (noemer / teller / soorten / gemengd / schrijfwijze / extras) (F1)
+    │   ├── plugins/shared/fractionVariant.ts  # variantDefaults + constraintsForVariant: a breuken variant switch keeps every key the new variant understands (noemer range, maxTotal), resets per-variant keys
     │   ├── plugins/shared/HrStdStyleConfig.tsx # AddSub/MulDiv StyleConfig (niveau, compenseren-tussenstap, nummering, kort/lang/stappen)
     │   ├── plugins/shared/ItemNumberingRow.tsx # Opmaak → Nummering (Geen / 1) / a)) → block.itemNumbering; mounted by HrStd + Rekenvolgorde StyleConfigs
     │   ├── plugins/RekenvolgordeStyleConfig.tsx # rekenvolgorde Kort/Lang/Stappen (own file: HrStdStyleConfig's rows are gated on hoofdrekenen-only settings)
@@ -1794,15 +1803,18 @@ is only the flyout: registry panel + baseline.
   Tekstgrootte (`fontScale(widget)`), except for the `SELF_SCALED_FONT` kinds, which multiply
   their own type sizes instead (their fixed-size faces would clip under a zoom).
 - **Chrome** ([WidgetFrame.tsx](../../src/board/components/WidgetFrame.tsx)) = a window card:
-  editable title bar (`props.title`) as drag handle, the accent dot in `props.accent`, actions
-  🔄 / 👁 (exercise), ⚙, ⧉ duplicate, 🗑, resize grip bottom-right. `BoardErrorBoundary` wraps
+  an **always-on 48 px title bar** as drag handle (no hover anywhere: a digibord has none): the
+  accent dot (`props.accent`), the title (math cards: [cardTitle.ts](../../src/board/cardTitle.ts),
+  "Optellen · natuurlijk · tot 1 000", follows the max; cards store no `props.title`; tapping the
+  title of a selected card edits it), then 40 px buttons 🔄 Nieuw + 👁 Oplossing (exercise only), ⚙,
+  and **Meer** (Doorzichtig toggle, Kleiner / Groter, Dupliceren, Verwijderen); resize grip
+  bottom-right. `BoardErrorBoundary` wraps
   every widget, the ink layer and the instrument layer.
-- **Headerless pill** — `showHeader: false` → a bare card draggable from its body, with the
-  same action buttons (one `controls` fragment, so bar and pill never drift) in a floating
-  `[data-widget-pill]` toolbar top-right inside the card. Shown on mouse/pen hover (a touch
-  `pointerenter` is ignored so a tap does not flash it), while the card is selected, or while
-  focus is inside it; always mounted (opacity + `pointer-events`) so Tab reaches the buttons.
-  A press on the pill stops propagation, so it never starts a body drag.
+- **Transparent / headerless cards** — `props.transparent` (baseline prop, [baseProps.ts](../../src/board/settings/baseProps.ts)
+  `isTransparent()`, absent = false, board format stays v2) → no background, border or shadow; while
+  selected the card gets a dashed ring and its title bar floats above it at 55 % (below it when the
+  card touches the top edge). `showHeader: false` behaves the same (bar only while selected). The
+  old hover pill is gone.
 - **Height cap** — a card is never taller than the board below its top edge:
   `maxHeight: max(140px, 100% − y − 8px)`; the body scrolls inside (tall omtrek / cijferen
   delen cards keep their resize grip on the board).
@@ -1810,7 +1822,7 @@ is only the flyout: registry panel + baseline.
   (`isolation: isolate`): a card's `z` grows with every bring-to-front, but stays inside the
   widget layer, so ink (z 10) always draws above the cards, the meetinstrumenten (12) above
   the ink, and the geld dock (45), inspectors
-  and bottom-bar popups stay above the whole board.
+  and rail flyouts stay above the whole board.
 - **Placement** — `staggerSlot(k)` ([addWidgets.ts](../../src/board/addWidgets.ts)) is a
   diagonal run of 5 slots 40 px apart, runs 240 px apart, a 20 px lap shift after 4 runs;
   `staggerPos()` takes the first slot no widget still sits on (the old `count % 5` put the 6th
@@ -1935,7 +1947,7 @@ An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
   `sheetSeedContext()` supplies the worksheet's `baseSettings` and leerjaar (none under a
   locked curriculum), so a board card starts from the same numbers as the sheet block the
   teacher knows. Board policy on top: `instructionMode: 'geen'`, `totalPoints: 0`,
-  `numberOfExercises ≤ 6`.
+  `numberOfExercises = 1 (`BOARD_START_COUNT`; Aantal 1–12 grows it)`.
 - **Generate** — `regenerateBoardBlock` calls the sheet's `generateForBlock(block, true)`
   (ceiling clamp, always deduped, failure note) and writes the exercise field and
   `generationNote` itself: board blocks never enter the worksheet store. The note shows in the
@@ -1959,23 +1971,36 @@ An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
   also offers matching board tools by label or id ("klok" finds the kloklezen variants and the
   Klok tool).
 
-### Bottom bar — [BoardBottomBar.tsx](../../src/board/components/BoardBottomBar.tsx)
+### Rail — [BoardRail.tsx](../../src/board/components/BoardRail.tsx) (Zijrail, 2026-11-03)
 
-`[+ Toevoegen][★ favorites ≤ 6][⚙ board settings][🎨 achtergrond] | [select][hand][T][pen][marker][eraser]
-[lijn][vormen][selecteren][📏 meetinstrumenten][ink undo][ink redo][page clear] | [◀][page options][▶][+ page] | [save] | [Bordmodus verlaten]`.
-Toevoegen = RekenRaak blok · Wiskunde-gereedschap · Klasmanagement · Organisatie, the last
-three as tile panels from [toolCatalog.ts](../../src/board/toolCatalog.ts) with a ★ per tile
-(favorites in `rekenraak_board_favorites_v1`). Board settings = "Uitlijnen" grid snap and
-size only. Every popup (add, settings, background, instruments, page, save) closes on
-**Escape** and on a press outside it (capture-phase `pointerdown`, since widgets stop
-propagation). **Single-letter shortcuts** `L` = lijn, `V` = vormen (`TOOL_KEYS`; shown in the
-tooltips), ignored while typing and with Ctrl / Meta / Alt or key repeat, so Ctrl+L keeps its
-browser meaning. Pen / marker / lijn / vormen show
-[InkSettingsBar.tsx](../../src/board/components/InkSettingsBar.tsx) (default + saved colours,
-three widths, plus the lijn / vormen options).
+A 72 px **left rail**, full height (the bottom bar is gone). Top → bottom: `[⚙ Bordinstellingen] |
+[select ▾][pen][marker][gom][T][lijn+vormen ▾][📏 instrumenten] | [ink undo][ink redo] … [+ Toevoegen]`.
+Buttons with a corner mark hold several tools (select = Aanwijzen / Selecteren / hand; lijn+vormen =
+line + the three shapes); a tap on the active button opens the choice. Pen / marker / lijn / vormen
+open [InkFlyout.tsx](../../src/board/components/InkFlyout.tsx) **beside the rail** (never floating
+mid-board): colours 2×4 + saved, widths, the lijn / vormen options; re-tapping the active tool
+closes it. **Bordinstellingen** ([BoardSettingsMenu.tsx](../../src/board/components/BoardSettingsMenu.tsx))
+merges what used to be four popups: the BackgroundPicker (`role="group"` now), Uitlijnen, pages
+(prev / next / + / Pagina leegmaken / remove), Bewaren in Mijn borden, Volledig scherm (Fullscreen
+API via [boardChrome.ts](../../src/board/boardChrome.ts); hidden without the API) and Bord wissen.
+**Toevoegen** ([BoardAddPanel.tsx](../../src/board/components/BoardAddPanel.tsx)) docks bottom-left:
+tabs Rekenblad · Rekentool · Klasbeheer · Dagritme · Tekst · beeld (`ToolCategory` /
+`TOOL_CATEGORIES` in [toolCatalog.ts](../../src/board/toolCatalog.ts); dobbelsteen = Rekentool,
+klok = Dagritme), a ★ favourites row on every tab (`rekenraak_board_favorites_v1`), search, tiles
+with a domain dot + variant buttons and **no live previews** (UI-GUIDE rule 2 is waived on the
+board). Adding a widget selects it and switches to Selecteren. The **top-right pill**
+([BoardTopPill.tsx](../../src/board/components/BoardTopPill.tsx)) holds pages ◀ n / m ▶, Bewaren,
+Volledig scherm and Bordmodus verlaten (X icon, label in `aria-label` / `title`); inspectors start at
+top 72 px to clear it. Every popup closes on **Escape** and on a press outside it (capture-phase
+`pointerdown`). **Single-letter shortcuts** `L` = lijn, `V` = vormen, `S` = selecteren (`TOOL_KEYS`),
+ignored while typing and with Ctrl / Meta / Alt or key repeat. The rail does not scroll (scrolling
+would clip its flyouts): it fits 800 px with the beta strip; below ≈700 px its bottom is cut off.
+Beta chrome: [WhiteboardView.tsx](../../src/board/components/WhiteboardView.tsx) mounts
+`<BetaStrip module="bordmodus"/>` (thin row above rail + board) and `<FirstRunCard module="bordmodus"/>`
+(beside the rail, once per device; copy in `src/config/firstRun.ts`).
 
-**Achtergrond** — its own bar button opens [BackgroundPicker.tsx](../../src/board/components/BackgroundPicker.tsx)
-(`role="dialog"`): three tile grids, Patroon (every pattern) · Grootte (Klein / Normaal /
+**Achtergrond** — inside Bordinstellingen, [BackgroundPicker.tsx](../../src/board/components/BackgroundPicker.tsx)
+(`role="group"`): three tile grids, Patroon (every pattern) · Grootte (Klein / Normaal /
 Groot, previewed on the current pattern, or on raster when it is blanco) · Bord (Licht /
 Donker). Each tile is a live swatch drawn by `backgroundStyle(preview, 0.3)`; a pick applies at
 once and the popover stays open; focus lands on the current pattern, arrows move (Up/Down = one
@@ -2153,9 +2178,12 @@ never the board (§9). The board itself has no print path.
 fill); P4 lat / geodriehoek / passer with snapping and per-instrument Vastklikken (format v2);
 options for all 20 widget kinds + mijn standaard; headerless pill; background picker with
 previews; Ctrl+Z for ink.
-**Still open:** solid-figure stamps and more plane figures, more dagritme / klasmanagement
-widgets, pdf.js backgrounds, a size toggle and multi-touch rotate for the instruments, the
-bottom bar at 1280 px (BUGS.md "Bordmodus").
+**Done (2026-11-03, rc-oefenen):** the Zijrail chrome (rail, flyouts, docked Toevoegen panel, one
+Bordinstellingen menu, top-right pill, fullscreen), always-on card title bar + Meer menu,
+transparent cards, one exercise per new math card, beta strip + first-run card.
+**Still open:** solid-figure stamps and more plane figures, pdf.js backgrounds, a size toggle and
+multi-touch rotate for the instruments, the rail below ≈700 px window height, widget dots all
+`--accent`.
 
 ---
 

@@ -33,8 +33,50 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
     {
         version: '1.1.0',
         date: '2026-11',
-        summary: 'Aangepaste breukenoefeningen en extra opmaakinstellingen.',
+        summary: 'Oefenmodus en Bordmodus in bèta, aangepaste breukenoefeningen en extra opmaakinstellingen.',
         items: [
+            // ── 2026-11-03: public beta of the two modules + Bordmodus Zijrail ──
+            {
+                kind: 'nieuw',
+                text: 'Oefenmodus en Bordmodus zijn open voor iedereen, in bèta: alles werkt, we schaven nog bij. Fouten of ideeën? Mail ons via de bèta-strook.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Eerste keer in Oefenmodus of Bordmodus? Een korte uitleg verschijnt één keer; later terug te vinden onder ? › Oefenmodus / Bordmodus.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bordmodus: de werkbalk staat nu links: instellingen bovenaan, de plus onderaan. Penkleuren schuiven uit de balk, niet meer over het bord.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bordmodus: elke kaart heeft een vaste titelbalk met Nieuw, Oplossing, Instellingen en Meer. Niets verschijnt nog pas bij zweven met de muis.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: kaarten kunnen doorzichtig (Meer › Doorzichtig): geen kader, de oefening staat zo op het bord.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bordmodus: een rekenkaart start met één oefening (Instellingen › Aantal voor meer). Toevoegen heeft tabbladen per soort, met je favorieten bovenaan.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: knop Volledig scherm; Bordmodus verlaten is nu een kruisje rechtsboven.',
+            },
+            {
+                kind: 'opgelost',
+                text: 'Breuk van een hoeveelheid: een andere variant kiezen wist je noemers en andere instellingen niet meer.',
+                example: { leafId: 'breuken-hoeveelheid', count: 2 },
+            },
+            {
+                kind: 'opgelost',
+                text: 'Op een smal scherm (tot 900 px) schuiven de blokknoppen niet meer over het instellingenpaneel en krijgt het blad weer ruimte.',
+            },
+            {
+                kind: 'gewijzigd',
+                text: 'Bladen en links uit de vorige versie openen gewoon; een blad dat je hier bewaart of deelt, opent enkel in deze versie of nieuwer.',
+            },
             // ── 2026-10-28: Geert-fork ports + onechte breuken ──
             {
                 kind: 'gewijzigd',

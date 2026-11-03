@@ -206,7 +206,7 @@ export const APP_STRUCTURE: Domain[] = [
                     { id: 'breuken-kleuren', label: 'Breuken kleuren', typeId: 'breuken', defaultConstraints: { subType: 'kleuren' }, instruction: 'Kleur de breuk.' },
                     { id: 'breuken-herkennen', label: 'Breuken herkennen', typeId: 'breuken', defaultConstraints: { subType: 'herkennen' }, instruction: 'Welk deel is gekleurd? Schrijf de breuk.' },
                     // answerFormat must be set here: the registry default ('fraction-questions') is a
-                    // herkennen value, and defaultsFor() only runs on a variant switch, not on block add.
+                    // herkennen value, and variantDefaults() only runs on a variant switch, not on block add.
                     { id: 'breuken-hoeveelheid', label: 'Breuk van een hoeveelheid', typeId: 'breuken', defaultConstraints: { subType: 'hoeveelheid', answerFormat: 'met-hulp', maxDenominator: 5, maxTotal: 20 }, instruction: 'Bereken de breuk van de hoeveelheid.' },
                     // Four, not the row's six: one true-size segment per row, six ran past one A4 page.
                     { id: 'breuken-lijnstuk', label: 'Breuk van een lijnstuk', typeId: 'breuken', defaultConstraints: { subType: 'lijnstuk', maxDenominator: 6, maxLineLength: 8 }, defaultCount: 4, instruction: 'Duid de breuk aan op het lijnstuk.' },
