@@ -1,10 +1,18 @@
-import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, ArrowsHorizontal, Table, GridNine, ChartPieSlice, Cube, Coins, type Icon } from '@phosphor-icons/react';
+import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, ArrowsHorizontal, Table, GridNine, ChartPieSlice, Cube, Coins, TextT, type Icon } from '@phosphor-icons/react';
 import { addBasicWidget } from './addWidgets';
 import { useBoardStore } from './useBoardStore';
 import type { WidgetKind } from './boardTypes';
 
-// Widget-tool catalog for the Toevoegen category panels + the favorites bar.
-export type ToolCategory = 'wiskunde' | 'klasmanagement' | 'organisatie';
+// Widget-tool catalog for the Toevoegen panel's tabs (Rekenblad is the exercise catalog) + favourites.
+export type ToolCategory = 'rekentool' | 'klasbeheer' | 'dagritme' | 'tekst-beeld';
+
+// Tab order and wording of the Toevoegen panel after "Rekenblad".
+export const TOOL_CATEGORIES: ReadonlyArray<{ id: ToolCategory; label: string }> = [
+    { id: 'rekentool', label: 'Rekentool' },
+    { id: 'klasbeheer', label: 'Klasbeheer' },
+    { id: 'dagritme', label: 'Dagritme' },
+    { id: 'tekst-beeld', label: 'Tekst · beeld' },
+];
 
 export interface BoardToolDef {
     id: string;
@@ -18,29 +26,31 @@ export interface BoardToolDef {
 }
 
 export const TOOL_CATALOG: BoardToolDef[] = [
-    // Wiskunde-gereedschap (manipulatives, geen oefening-generatoren)
-    { id: 'getallenlijn', label: 'Getallenlijn', icon: ArrowsHorizontal, category: 'wiskunde', kind: 'getallenlijn', w: 640 },
-    { id: 'positietabel', label: 'Positietabel', icon: Table, category: 'wiskunde', kind: 'positietabel', w: 480 },
-    { id: 'honderdveld', label: 'Honderdveld', icon: GridNine, category: 'wiskunde', kind: 'honderdveld', w: 470 },
-    { id: 'breukviz', label: 'Breuken', icon: ChartPieSlice, category: 'wiskunde', kind: 'breukviz', w: 300 },
-    { id: 'mabmat', label: 'MAB-materiaal', icon: Cube, category: 'wiskunde', kind: 'mabmat', w: 560 },
-    { id: 'geldpalet', label: 'Geld (palet)', icon: Coins, category: 'wiskunde', kind: 'geld-palet' },
-    // Klasmanagement
-    { id: 'namen', label: 'Namenkiezer', icon: UsersThree, category: 'klasmanagement', kind: 'namen', w: 340 },
-    { id: 'groepjes', label: 'Groepjesmaker', icon: UsersFour, category: 'klasmanagement', kind: 'groepjes', w: 460 },
-    { id: 'werksymbolen', label: 'Werksymbolen', icon: HandPointing, category: 'klasmanagement', kind: 'werksymbolen', w: 440 },
-    { id: 'geluid', label: 'Geluidsniveau', icon: SpeakerHigh, category: 'klasmanagement', kind: 'geluid', w: 360 },
-    { id: 'timer', label: 'Timer', icon: Timer, category: 'klasmanagement', kind: 'timer', w: 300 },
-    { id: 'stopwatch', label: 'Stopwatch', icon: Hourglass, category: 'klasmanagement', kind: 'stopwatch', w: 320 },
-    { id: 'dobbelsteen', label: 'Dobbelstenen', icon: DiceFive, category: 'klasmanagement', kind: 'dobbelsteen', w: 320 },
-    { id: 'adem', label: 'Ademhaling', icon: Wind, category: 'klasmanagement', kind: 'adem', w: 320 },
-    // Organisatie
-    { id: 'datum', label: 'Datum', icon: CalendarBlank, category: 'organisatie', kind: 'datum', w: 340 },
-    { id: 'klok', label: 'Klok', icon: Clock, category: 'organisatie', kind: 'klok', props: { hours: 9, minutes: 0 }, w: 300 },
-    { id: 'weer', label: 'Weer', icon: CloudSun, category: 'organisatie', kind: 'weer', w: 360 },
-    { id: 'checklist', label: 'Checklist', icon: ListChecks, category: 'organisatie', kind: 'checklist', w: 360 },
-    { id: 'stappenplan', label: 'Stappenplan', icon: ListNumbers, category: 'organisatie', kind: 'stappenplan', w: 400 },
-    { id: 'afbeelding', label: 'Afbeelding', icon: Image, category: 'organisatie', kind: 'afbeelding-picker' },
+    // Rekentool: manipulatives, no exercise generators
+    { id: 'getallenlijn', label: 'Getallenlijn', icon: ArrowsHorizontal, category: 'rekentool', kind: 'getallenlijn', w: 640 },
+    { id: 'positietabel', label: 'Positietabel', icon: Table, category: 'rekentool', kind: 'positietabel', w: 480 },
+    { id: 'honderdveld', label: 'Honderdveld', icon: GridNine, category: 'rekentool', kind: 'honderdveld', w: 470 },
+    { id: 'breukviz', label: 'Breuken', icon: ChartPieSlice, category: 'rekentool', kind: 'breukviz', w: 300 },
+    { id: 'mabmat', label: 'MAB-materiaal', icon: Cube, category: 'rekentool', kind: 'mabmat', w: 560 },
+    { id: 'geldpalet', label: 'Geld (palet)', icon: Coins, category: 'rekentool', kind: 'geld-palet' },
+    { id: 'dobbelsteen', label: 'Dobbelstenen', icon: DiceFive, category: 'rekentool', kind: 'dobbelsteen', w: 320 },
+    // Klasbeheer
+    { id: 'namen', label: 'Namenkiezer', icon: UsersThree, category: 'klasbeheer', kind: 'namen', w: 340 },
+    { id: 'groepjes', label: 'Groepjesmaker', icon: UsersFour, category: 'klasbeheer', kind: 'groepjes', w: 460 },
+    { id: 'werksymbolen', label: 'Werksymbolen', icon: HandPointing, category: 'klasbeheer', kind: 'werksymbolen', w: 440 },
+    { id: 'geluid', label: 'Geluidsniveau', icon: SpeakerHigh, category: 'klasbeheer', kind: 'geluid', w: 360 },
+    { id: 'timer', label: 'Timer', icon: Timer, category: 'klasbeheer', kind: 'timer', w: 300 },
+    { id: 'stopwatch', label: 'Stopwatch', icon: Hourglass, category: 'klasbeheer', kind: 'stopwatch', w: 320 },
+    { id: 'checklist', label: 'Checklist', icon: ListChecks, category: 'klasbeheer', kind: 'checklist', w: 360 },
+    { id: 'stappenplan', label: 'Stappenplan', icon: ListNumbers, category: 'klasbeheer', kind: 'stappenplan', w: 400 },
+    // Dagritme
+    { id: 'datum', label: 'Datum', icon: CalendarBlank, category: 'dagritme', kind: 'datum', w: 340 },
+    { id: 'klok', label: 'Klok', icon: Clock, category: 'dagritme', kind: 'klok', props: { hours: 9, minutes: 0 }, w: 300 },
+    { id: 'weer', label: 'Weer', icon: CloudSun, category: 'dagritme', kind: 'weer', w: 360 },
+    { id: 'adem', label: 'Ademhaling', icon: Wind, category: 'dagritme', kind: 'adem', w: 320 },
+    // Tekst · beeld
+    { id: 'tekst', label: 'Tekst', icon: TextT, category: 'tekst-beeld', kind: 'tekst', props: { text: '' }, w: 360 },
+    { id: 'afbeelding', label: 'Afbeelding', icon: Image, category: 'tekst-beeld', kind: 'afbeelding-picker' },
 ];
 
 // Returns false when the tool needs the caller to run the image picker instead.

@@ -5,7 +5,7 @@ import { effectiveInk, useBoardStore } from '../board/useBoardStore';
 import { BOARD_INK_KEY, loadInkSettings } from '../board/boardPersistence';
 import { DEFAULT_INK } from '../board/boardTypes';
 import InkLayer from '../board/components/InkLayer';
-import InkSettingsBar from '../board/components/InkSettingsBar';
+import InkFlyout from '../board/components/InkFlyout';
 
 // Owner call: the pen's default colour follows the board (black on a light board, white on a
 // dark one) until the teacher picks a colour; a picked colour, black included, never changes.
@@ -107,7 +107,7 @@ describe('ink layer', () => {
 describe('settings bar', () => {
     test('Standaard swatch shows the effective default and is pressed while un-customised', () => {
         setDark(true);
-        render(<InkSettingsBar tool="pen" />);
+        render(<InkFlyout tool="pen" />);
         const std = screen.getByRole('button', { name: 'Standaardkleur (volgt het bord)' });
         expect(std.getAttribute('aria-pressed')).toBe('true');
         expect(std.style.background).toBe('rgb(255, 255, 255)');
@@ -121,7 +121,7 @@ describe('settings bar', () => {
     });
 
     test('the marker has no Standaard swatch: its yellow is ringed as before', () => {
-        render(<InkSettingsBar tool="marker" />);
+        render(<InkFlyout tool="marker" />);
         expect(screen.queryByRole('button', { name: 'Standaardkleur (volgt het bord)' })).toBeNull();
         expect(screen.getByRole('button', { name: 'Kleur #fde047' }).style.outline).toContain('solid');
     });

@@ -6,6 +6,8 @@ import { generateForBlock, generateExtra, GENERATION_FAILED } from '../services/
 import { useWorksheetStore } from '../store/useWorksheetStore';
 import { rndId } from './boardTypes';
 
+export const BOARD_START_COUNT = 1;
+
 export interface BoardSeed {
     // The catalog variant's leaf constraints and its leaf id, exactly what a sidebar click passes.
     override?: Record<string, unknown>;
@@ -22,8 +24,8 @@ export function sheetSeedContext(): Pick<BoardSeed, 'base' | 'grade'> {
 }
 
 // MathBlock factory for board widgets. Same registry contract and seed as the worksheet,
-// but board-tuned defaults: no opdracht-titel, no score, and a lower exercise
-// count (a board widget teaches a handful of exercises, not a full page).
+// but board-tuned defaults: no opdracht-titel, no score, and ONE exercise (owner call: a
+// board card is taught one at a time; Instellingen › Aantal adds more).
 export function makeBoardBlock(typeId: string, seed: BoardSeed): MathBlock | null {
     const def = REGISTRY[typeId];
     if (!def) return null;
@@ -35,7 +37,7 @@ export function makeBoardBlock(typeId: string, seed: BoardSeed): MathBlock | nul
         instructionMode: 'geen',
         layoutPreset: 'inline-short',
         steppedLines: 3,
-        numberOfExercises: Math.min(def.defaultCount, 6),
+        numberOfExercises: BOARD_START_COUNT,
         totalPoints: 0,
         verticalSpacing: 14,
         constraints: seedConstraints({ typeId, base: seed.base, override: seed.override, grade: seed.grade, leafId: seed.leafId }) as MathBlock['constraints'],

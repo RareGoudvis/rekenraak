@@ -3,7 +3,7 @@ import { describe, test, expect, beforeAll, beforeEach, afterEach } from 'vitest
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import InkLayer from '../board/components/InkLayer';
-import BoardBottomBar from '../board/components/BoardBottomBar';
+import BoardRail from '../board/components/BoardRail';
 import BoardPageCanvas from '../board/components/BoardPageCanvas';
 import WhiteboardView from '../board/components/WhiteboardView';
 import type { Stroke } from '../board/boardTypes';
@@ -129,7 +129,10 @@ describe('the ink layer with Selecteren', () => {
 describe('bottom bar and routing', () => {
     test('the Selecteren (S) button and the S key pick the tool; another tool clears the selection', () => {
         act(() => { st().setTool('select'); });
-        const { getByLabelText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        const { getByLabelText } = render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
+        // The rail's Selecteren holds Aanwijzen / Selecteren (S) / Verplaatsen: a tap on the
+        // active group opens the choice.
+        fireEvent.click(getByLabelText('Selecteren'));
         fireEvent.click(getByLabelText('Selecteren (S)'));
         expect(st().tool).toBe('lasso');
         act(() => { st().setTool('pen'); });

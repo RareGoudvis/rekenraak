@@ -1,21 +1,24 @@
 import { useEffect, useState } from 'react';
-import BoardBottomBar from './BoardBottomBar';
+import BoardRail from './BoardRail';
+import BoardTopPill from './BoardTopPill';
 import BoardPageCanvas from './BoardPageCanvas';
-import BoardAddModal from './BoardAddModal';
+import BoardAddPanel from './BoardAddPanel';
 import BoardInspector from './BoardInspector';
 import WidgetInspector from './WidgetInspector';
-import InkSettingsBar from './InkSettingsBar';
+import BetaStrip from '../../components/ui/BetaStrip';
+import FirstRunCard from '../../components/ui/FirstRunCard';
 import { useBoardStore } from '../useBoardStore';
 
 // Full-screen "Bordmodus" overlay — the digibord whiteboard app. Mounted by App.tsx
 // when view === 'whiteboard'; the worksheet editor stays mounted underneath so
 // switching back loses nothing. Everything whiteboard lives under src/board/.
+// Layout (Zijrail design): the tool rail on the left, the board filling the rest, the
+// page / exit pill in the board's top-right corner, Toevoegen docked to the rail's foot.
 export default function WhiteboardView() {
     const [addOpen, setAddOpen] = useState(false);
     const selectedWidget = useBoardStore((s) =>
         s.pages[s.activePageIdx].widgets.find(w => w.id === s.selectedWidgetId));
     const inspectorOpen = useBoardStore((s) => s.inspectorOpen);
-    const tool = useBoardStore((s) => s.tool);
 
     // Ink undo/redo only (widget actions have no history). Ignored while typing so a tekst
     // widget or title field keeps its own text undo.
@@ -38,16 +41,21 @@ export default function WhiteboardView() {
         // no-print: Ctrl+P or the Afdrukken path with the board open must print the sheet
         // underneath, not this fixed overlay on top of every page.
         <div className="no-print" data-whiteboard style={S.overlay}>
-            <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex' }}>
-                <BoardPageCanvas />
-                {/* Inspector flyouts — opened via the ⚙ in the widget's title bar. */}
-                {inspectorOpen && selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
-                {inspectorOpen && selectedWidget && selectedWidget.kind !== 'exercise' && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
-                {/* Ink tool settings strip (colors + widths, + line options) while an ink tool is active. */}
-                {(tool === 'pen' || tool === 'marker' || tool === 'line' || tool === 'shape') && <InkSettingsBar tool={tool} />}
+            {/* Rows above the board, never over it: nothing here may cover ink. */}
+            <BetaStrip module="bordmodus" />
+            <div style={S.row}>
+                <BoardRail addOpen={addOpen} onToggleAdd={() => setAddOpen(o => !o)} />
+                <div style={S.main}>
+                    {/* Beside the rail, not above it: the rail keeps its full height (Toevoegen at its foot). */}
+                    <FirstRunCard module="bordmodus" />
+                    <BoardPageCanvas />
+                    <BoardTopPill />
+                    {/* Inspector flyouts — opened via the ⚙ in the widget's title bar. */}
+                    {inspectorOpen && selectedWidget?.kind === 'exercise' && <BoardInspector key={selectedWidget.id} widget={selectedWidget} />}
+                    {inspectorOpen && selectedWidget && selectedWidget.kind !== 'exercise' && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
+                    {addOpen && <BoardAddPanel onClose={() => setAddOpen(false)} />}
+                </div>
             </div>
-            <BoardBottomBar onOpenWiskunde={() => setAddOpen(true)} />
-            {addOpen && <BoardAddModal onClose={() => setAddOpen(false)} />}
         </div>
     );
 }
@@ -59,4 +67,6 @@ const S = {
         // Digibord: never let a stray touch scroll/zoom the page behind the board.
         touchAction: 'none', overscrollBehavior: 'none',
     } as React.CSSProperties,
+    row: { flex: 1, minHeight: 0, display: 'flex' } as React.CSSProperties,
+    main: { position: 'relative', flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' } as React.CSSProperties,
 };

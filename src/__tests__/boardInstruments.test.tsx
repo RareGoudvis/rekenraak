@@ -7,7 +7,7 @@ import { BOARD_CM_PX, LAT, PASSER, pathEndpoints, round1, toWorld } from '../boa
 import type { Instrument, Stroke } from '../board/boardTypes';
 import InstrumentLayer from '../board/components/InstrumentLayer';
 import InkLayer from '../board/components/InkLayer';
-import BoardBottomBar from '../board/components/BoardBottomBar';
+import BoardRail from '../board/components/BoardRail';
 import BoardPageCanvas from '../board/components/BoardPageCanvas';
 import WhiteboardView from '../board/components/WhiteboardView';
 
@@ -578,7 +578,7 @@ describe('smoke', () => {
 describe('bottom bar: Meetinstrumenten popover', () => {
     test('three toggles + Alles verbergen; the pen stays the active tool', () => {
         st().setTool('pen');
-        render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
         act(() => { fireEvent.click(screen.getByLabelText('Meetinstrumenten')); });
         for (const n of ['Lat', 'Geodriehoek', 'Passer']) act(() => { fireEvent.click(screen.getByRole('button', { name: n })); });
         expect(insts().map(i => i.kind)).toEqual(['lat', 'geodriehoek', 'passer']);
@@ -591,7 +591,7 @@ describe('bottom bar: Meetinstrumenten popover', () => {
     });
 
     test('Vastklikken ⚙ per placed instrument: master + four checkboxes write the instrument', () => {
-        render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
         act(() => { fireEvent.click(screen.getByLabelText('Meetinstrumenten')); });
         expect((screen.getByLabelText('Vastklikken Geodriehoek') as HTMLButtonElement).disabled).toBe(true);
         act(() => { fireEvent.click(screen.getByRole('button', { name: 'Geodriehoek' })); });
@@ -610,7 +610,7 @@ describe('bottom bar: Meetinstrumenten popover', () => {
     });
 
     test('Escape closes the popover', () => {
-        render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
         act(() => { fireEvent.click(screen.getByLabelText('Meetinstrumenten')); });
         expect(screen.getByText('Alles verbergen')).toBeTruthy();
         act(() => { fireEvent.keyDown(document, { key: 'Escape' }); });

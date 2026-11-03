@@ -17,7 +17,7 @@ export const FIRST_RUN: Record<FirstRunModule, FirstRunContent> = {
         lines: [
             'Wat is het? Een digibord-canvas met RekenRaak-blokken en tekengereedschap.',
             'De balk links: je gereedschap, het plusje onderaan voegt iets toe en het tandwiel bovenaan opent de instellingen.',
-            'Elke kaart heeft een titelbalk met Nieuw en Instellingen; via Meer maak je een kaart doorzichtig.',
+            'Elke kaart heeft een titelbalk met Instellingen en Meer (een rekenkaart ook met Nieuw en Oplossing); via Meer maak je een kaart doorzichtig.',
         ],
     },
 };

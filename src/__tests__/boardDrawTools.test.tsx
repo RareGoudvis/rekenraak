@@ -3,8 +3,8 @@ import { describe, test, expect, beforeAll, beforeEach, afterEach } from 'vitest
 import { render, cleanup, fireEvent, act } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import InkLayer from '../board/components/InkLayer';
-import InkSettingsBar from '../board/components/InkSettingsBar';
-import BoardBottomBar from '../board/components/BoardBottomBar';
+import InkFlyout from '../board/components/InkFlyout';
+import BoardRail from '../board/components/BoardRail';
 import { createLineTool, createShapeTool, SOFT_FILL_OPACITY } from '../board/drawTools';
 import { dragBox, headLength, linePath, shapeGeometry, snapAngle, snapToGrid, splitSubpaths, strokeHit } from '../board/inkGeometry';
 import { BOARD_FORMAT_VERSION, loadBoardAutosave, parseBoardFile, saveBoardAutosave } from '../board/boardPersistence';
@@ -235,7 +235,7 @@ describe('the ink layer with the line tool', () => {
 
 describe('line options and shortcut', () => {
     test('the settings bar shows the arrow + dashed options for the line tool only', () => {
-        const { getByLabelText, queryByLabelText, rerender } = render(<InkSettingsBar tool="line" />);
+        const { getByLabelText, queryByLabelText, rerender } = render(<InkFlyout tool="line" />);
         fireEvent.click(getByLabelText('Dubbele pijl'));
         expect(st().drawOptions.arrow).toBe('both');
         fireEvent.click(getByLabelText('Stippellijn'));
@@ -243,13 +243,13 @@ describe('line options and shortcut', () => {
         fireEvent.click(getByLabelText('Dikte 7'));
         expect(st().inkSettings.line.width).toBe(7);
         expect(st().inkSettings.pen.width).toBe(4);
-        rerender(<InkSettingsBar tool="pen" />);
+        rerender(<InkFlyout tool="pen" />);
         expect(queryByLabelText('Stippellijn')).toBeNull();
     });
 
     test('L picks the line tool, not while typing or with Ctrl', () => {
-        const { getByLabelText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
-        expect((getByLabelText(/^Lijn \/ pijl \(L\)/) as HTMLButtonElement).disabled).toBe(false);
+        const { getByLabelText } = render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
+        expect((getByLabelText('Lijn en vormen') as HTMLButtonElement).disabled).toBe(false);
         const input = document.createElement('input');
         document.body.appendChild(input);
         act(() => { fireEvent.keyDown(input, { key: 'l' }); });
@@ -371,14 +371,14 @@ describe('the ink layer with the shape tool', () => {
     });
 
     test('the settings bar picks the shape and the soft fill; V picks the tool', () => {
-        const { getByLabelText, queryByLabelText } = render(<InkSettingsBar tool="shape" />);
+        const { getByLabelText, queryByLabelText } = render(<InkFlyout tool="shape" />);
         expect(queryByLabelText('Stippellijn')).toBeNull();
         fireEvent.click(getByLabelText('Driehoek (Shift: gelijkzijdig)'));
         fireEvent.click(getByLabelText('Zachte vulling'));
         expect(st().drawOptions).toMatchObject({ shape: 'triangle', fill: true });
         cleanup();
-        const bar = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
-        expect((bar.getByLabelText(/^Vormen \(V\)/) as HTMLButtonElement).disabled).toBe(false);
+        const bar = render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
+        expect((bar.getByLabelText('Lijn en vormen') as HTMLButtonElement).disabled).toBe(false);
         act(() => { fireEvent.keyDown(document.body, { key: 'v' }); });
         expect(st().tool).toBe('shape');
     });

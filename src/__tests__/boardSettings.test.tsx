@@ -76,8 +76,8 @@ describe('baseline', () => {
         const w: BoardWidget = { id: 'w', kind: 'tekst', x: 0, y: 0, w: 362, z: 1, props: { accent: '#166534', fontSize: 'groot' } };
         expect(SELF_SCALED_FONT.has('tekst')).toBe(false);
         const { container } = render(<WidgetFrame widget={w} selected={false}><p>x</p></WidgetFrame>);
-        const header = container.firstElementChild!.firstElementChild as HTMLElement;
-        expect((header.firstElementChild as HTMLElement).style.background).toBe('rgb(22, 101, 52)');
+        const dot = container.querySelector('[data-card-bar] > span') as HTMLElement;
+        expect(dot.style.background).toBe('rgb(22, 101, 52)');
         const inner = container.querySelector('[data-widget-body] > div > div') as HTMLElement;
         expect(inner.style.zoom).toBe('1.25');
     });

@@ -8,7 +8,7 @@ import {
 } from '../board/instrumentGeometry';
 import type { Instrument } from '../board/boardTypes';
 import InstrumentLayer from '../board/components/InstrumentLayer';
-import BoardBottomBar from '../board/components/BoardBottomBar';
+import BoardRail from '../board/components/BoardRail';
 
 // "Handvatten op het bord houden" (ARCHITECTURE §14 Meetinstrumenten): a board-level setting,
 // default on, that keeps every instrument's grab handles on the board.
@@ -147,7 +147,7 @@ describe('layer', () => {
 
 describe('setting: popover, store, persistence', () => {
     test('the Meetinstrumenten popover toggles "Handvatten op het bord houden" (default on)', () => {
-        render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
         act(() => { fireEvent.click(screen.getByLabelText('Meetinstrumenten')); });
         const box = screen.getByRole('checkbox', { name: 'Handvatten op het bord houden' }) as HTMLInputElement;
         expect(box.checked).toBe(true);

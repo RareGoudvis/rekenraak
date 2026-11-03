@@ -31,9 +31,9 @@ const MODULE_HELP: Record<BetaModule, { title: string; bullets: string[] }> = {
             'Een digibord-canvas met RekenRaak-blokken en hulpmiddelen om op te tekenen en te meten.',
             'Open Bordmodus onderaan de linker zijbalk.',
             'De balk links bevat je gereedschap; het plusje onderaan voegt een kaart of hulpmiddel toe, het tandwiel bovenaan opent de instellingen.',
-            'Elke kaart heeft een titelbalk met Nieuw (nieuwe oefeningen) en Instellingen.',
+            'Elke kaart heeft een titelbalk met Instellingen en Meer; een rekenkaart ook met Nieuw (nieuwe oefeningen) en Oplossing.',
             'Via Meer in de titelbalk maak je een kaart doorzichtig.',
-            'Versleep een kaart om ze te verplaatsen en gebruik de hoek om het formaat aan te passen.',
+            'Versleep een kaart aan haar titelbalk; tik ze aan en gebruik de hoek rechtsonder (of Meer › Groter / Kleiner) om het formaat aan te passen.',
         ],
     },
 };
