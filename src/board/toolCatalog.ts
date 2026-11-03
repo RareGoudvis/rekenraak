@@ -1,17 +1,17 @@
-import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, ArrowsHorizontal, Table, GridNine, ChartPieSlice, Cube, Coins, TextT, type Icon } from '@phosphor-icons/react';
+import { UsersThree, SpeakerHigh, HandPointing, UsersFour, Timer, Hourglass, DiceFive, Wind, CalendarBlank, Clock, CloudSun, ListChecks, ListNumbers, Image, ArrowsHorizontal, Table, GridNine, ChartPieSlice, Cube, Coins, type Icon } from '@phosphor-icons/react';
 import { addBasicWidget } from './addWidgets';
 import { useBoardStore } from './useBoardStore';
 import type { WidgetKind } from './boardTypes';
 
-// Widget-tool catalog for the Toevoegen panel's tabs (Rekenblad is the exercise catalog) + favourites.
-export type ToolCategory = 'rekentool' | 'klasbeheer' | 'dagritme' | 'tekst-beeld';
+// Widget-tool catalog for the Toevoegen panel's tabs (Rekenblok is the exercise catalog) + favourites.
+export type ToolCategory = 'rekentool' | 'klasbeheer' | 'dagritme' | 'extra';
 
-// Tab order and wording of the Toevoegen panel after "Rekenblad".
+// Tab order and wording of the Toevoegen panel after "Rekenblok".
 export const TOOL_CATEGORIES: ReadonlyArray<{ id: ToolCategory; label: string }> = [
     { id: 'rekentool', label: 'Rekentool' },
     { id: 'klasbeheer', label: 'Klasbeheer' },
     { id: 'dagritme', label: 'Dagritme' },
-    { id: 'tekst-beeld', label: 'Tekst · beeld' },
+    { id: 'extra', label: 'Extra' },
 ];
 
 export interface BoardToolDef {
@@ -48,9 +48,8 @@ export const TOOL_CATALOG: BoardToolDef[] = [
     { id: 'klok', label: 'Klok', icon: Clock, category: 'dagritme', kind: 'klok', props: { hours: 9, minutes: 0 }, w: 300 },
     { id: 'weer', label: 'Weer', icon: CloudSun, category: 'dagritme', kind: 'weer', w: 360 },
     { id: 'adem', label: 'Ademhaling', icon: Wind, category: 'dagritme', kind: 'adem', w: 320 },
-    // Tekst · beeld
-    { id: 'tekst', label: 'Tekst', icon: TextT, category: 'tekst-beeld', kind: 'tekst', props: { text: '' }, w: 360 },
-    { id: 'afbeelding', label: 'Afbeelding', icon: Image, category: 'tekst-beeld', kind: 'afbeelding-picker' },
+    // Extra (text is the rail's T tool, so only the picture lives here)
+    { id: 'afbeelding', label: 'Afbeelding', icon: Image, category: 'extra', kind: 'afbeelding-picker' },
 ];
 
 // Returns false when the tool needs the caller to run the image picker instead.
