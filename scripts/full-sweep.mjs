@@ -12,6 +12,9 @@
 //   npm run sweep -- --merge <dirA>,<dirB> --out <dir>  # one report over parallel runs' cells
 //   npm run sweep -- --review-png --out <dir>        # + one PNG strip per type (solutions on, seed 1234)
 //   npm run sweep -- --print                         # the print pass: one mixed sheet per domain → PDF
+//   npm run sweep -- --print --print-shots --out <dir>  # + print-media PNG per page, print/contact-sheet.html, print/summary.json
+//                                                    # (no PDF rasteriser without a new dependency: the print-emulated
+//                                                    # screenshot of each .page-sheet is the accepted proxy for the pixels)
 //
 // Settings per typeId: each sidebar leaf at its defaults (as a sidebar click adds it), every
 // pairwise row of constraintSpaceFor(typeId) over the registry defaults (the matrix's pass c,
@@ -58,6 +61,7 @@ const REVIEW_PNG = has('review-png');
 // --review-kind leaf,max: strips of only the one-click settings (sidebar defaults, max top) → review-<kinds>/.
 const REVIEW_KINDS = arg('review-kind', '').split(',').filter(Boolean);
 const PRINT = has('print');
+const PRINT_SHOTS = has('print-shots');
 // Output dirs of runs made in parallel (one process per domain); their cells.jsonl are joined
 // into --out/cells.jsonl with the screenshot paths made relative to --out.
 const MERGE = arg('merge', '').split(',').filter(Boolean).map(d => pathResolve(d));
@@ -562,6 +566,16 @@ async function printPass(url, plan) {
             await page.emulateMedia({ media: 'print' });
             await page.waitForTimeout(500);
             const print = await layout();
+            const printShots = [];
+            if (PRINT_SHOTS) {
+                // One PNG per page under print media (A4 = 794x1123 CSS px; screenshot of the element, not the viewport).
+                const psheets = page.locator('.page-sheet');
+                for (let i = 0; i < await psheets.count(); i++) {
+                    const f = `${domain}-print-p${i + 1}.png`;
+                    await psheets.nth(i).screenshot({ path: join(dir, f) });
+                    printShots.push(f);
+                }
+            }
             const pdfPath = join(dir, `${domain}.pdf`);
             const pdf = await page.pdf({ path: pdfPath, format: 'A4', margin: { top: '0', right: '0', bottom: '0', left: '0' }, printBackground: true });
             const raw = pdf.toString('latin1');
@@ -574,6 +588,7 @@ async function printPass(url, plan) {
                 screenOrder: screen.map(p => p.ids.map(id => blocks.find(b => b.id === id)?.typeId ?? id)),
                 printOrder: print.map(p => p.ids.map(id => blocks.find(b => b.id === id)?.typeId ?? id)),
                 printPageHeights: print.map(p => p.h), errors, pdf: pdfPath,
+                printShots, screenShots: screen.map((_, i) => `${domain}-screen-p${i + 1}.png`),
                 outsideOnScreen: screen.flatMap(p => p.outside).map(id => blocks.find(b => b.id === id)?.typeId ?? id),
                 outsideInPrint: print.flatMap(p => p.outside).map(id => blocks.find(b => b.id === id)?.typeId ?? id),
                 pageWarnings: await page.evaluate(() => [...document.querySelectorAll('.page-sheet-warn')].map(w => w.textContent.trim())),
@@ -587,7 +602,26 @@ async function printPass(url, plan) {
         await browser.close();
     }
     writeFileSync(join(dir, 'print.json'), JSON.stringify(results, null, 1));
+    if (PRINT_SHOTS) writePrintSheet(dir, results);
     return results;
+}
+
+// summary.json + contact-sheet.html: a thumbnail grid per domain (print pages, click = full size) with the flags beside it.
+function writePrintSheet(dir, results) {
+    const esc = (x) => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    writeFileSync(join(dir, 'summary.json'), JSON.stringify(results.map(r => ({
+        domain: r.domain, ok: r.ok, screenPages: r.screenPages, pdfPages: r.pdfPages, sameOrder: r.sameOrder,
+        outsideInPrint: r.outsideInPrint, outsideOnScreen: r.outsideOnScreen, pageWarnings: r.pageWarnings, errors: r.errors,
+        printPageHeights: r.printPageHeights, printOrder: r.printOrder, screenOrder: r.screenOrder, shots: r.printShots,
+    })), null, 1));
+    const flag = (ok, label) => `<span style="color:${ok ? '#15803d' : '#b91c1c'};font-weight:600">${ok ? 'ok' : 'FAIL'}</span> ${esc(label)}`;
+    const rows = results.map(r => `<section style="border-top:2px solid #333;padding:8px 0">
+<h2 style="margin:0 0 4px;font-size:15px">${esc(r.domain)} ${r.ok ? '' : '<span style="color:#b91c1c">CHECK</span>'}</h2>
+<div style="font-size:12px;line-height:1.5">${flag(r.pdfPages === r.screenPages, `pages: screen ${r.screenPages}, pdf ${r.pdfPages}`)} &middot; ${flag(r.sameOrder, 'block order screen = print')} &middot; ${flag(!r.outsideInPrint.length, `no block outside its page${r.outsideInPrint.length ? ' (' + r.outsideInPrint.join(', ') + ')' : ''}`)} &middot; ${flag(!r.errors.length, 'no console errors')}${r.pageWarnings.length ? ` &middot; warnings: ${esc(r.pageWarnings.join(' / '))}` : ''}</div>
+<div style="font-size:11px;color:#555;margin:2px 0 6px">blocks: ${esc(r.blocks.join(', '))}</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">${r.printShots.map((f, i) => `<a href="${esc(f)}" target="_blank" style="text-decoration:none;color:#333"><div style="font-size:11px">p${i + 1}: ${esc(r.printOrder[i]?.join(', ') ?? '')}</div><img src="${esc(f)}" loading="lazy" style="width:240px;border:1px solid #bbb;display:block"></a>`).join('')}</div></section>`).join('');
+    writeFileSync(join(dir, 'contact-sheet.html'), `<!doctype html><meta charset="utf-8"><title>Print pass</title><body style="margin:0;padding:12px;font-family:system-ui;background:#fff"><h1 style="font-size:18px;margin:0 0 8px">Print pass (print-media screenshots, A4)</h1>${rows}</body>`);
+    console.log(`[sweep:print] ${join(dir, 'contact-sheet.html')}`);
 }
 
 // ---------------------------------------------------------------- main

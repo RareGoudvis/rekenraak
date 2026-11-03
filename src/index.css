@@ -555,6 +555,19 @@ textarea:focus-visible,
 /* Side panels are always visible now — no compact flyout, no pin. A narrow window
    shrinks the sheet (App.tsx sheetZoom) instead of hiding a panel. */
 
+/* Narrow laptops: the three columns shed width in stages so the sheet column keeps room
+   (inline widths on the panels, hence !important). At 820 px the fixed 286 + 366 left the
+   sheet 170 px and the block rail landed on the Inspector. */
+@media screen and (max-width: 1100px) {
+  .app-panel-left { width: 232px !important; min-width: 232px !important; }
+  .app-panel-right { width: 310px !important; min-width: 310px !important; }
+  .print-scroll { padding-left: 20px !important; padding-right: 20px !important; }
+}
+@media screen and (max-width: 900px) {
+  .app-panel-left { width: 208px !important; min-width: 208px !important; }
+  .app-panel-right { width: 288px !important; min-width: 288px !important; }
+}
+
 /* Mobile/tablet block — hidden on large screens, covers everything on small screens.
    When shown it's a teaser: a looping demo of the desktop UI + why-copy + nudge. */
 .mobile-block { display: none; }

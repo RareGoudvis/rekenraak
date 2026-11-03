@@ -7,6 +7,7 @@ import { sharedPluginStyles as styles } from './sharedPluginStyles';
 import SettingLabel from './SettingLabel';
 import BreukenSettings from './shared/BreukenSettings';
 import { breukenFigureCeiling } from '../../../config/numberRanges';
+import { constraintsForVariant } from './shared/fractionVariant';
 import type { FractionConstraints } from '../../../services/math/constraintTypes';
 
 interface Props { block: MathBlock; }
@@ -16,20 +17,6 @@ const HOEVEELHEID_VARIANTS: { value: FractionSubType; label: string; description
     { value: 'hoeveelheid-rechthoek',label: 'Schematisch', description: 'Lege rechthoek om in te delen' },
     { value: 'hoeveelheid-abstract', label: 'Abstract',    description: 'Rekenregel zonder model' },
 ];
-
-function defaultsFor(subType: FractionSubType): Record<string, unknown> {
-    switch (subType) {
-        case 'kleuren':               return { shapes: ['rectangle'], minDenominator: 2, maxDenominator: 8 };
-        case 'herkennen':             return { shapes: ['rectangle'], minDenominator: 2, maxDenominator: 8, answerFormat: 'fraction-questions' };
-        case 'hoeveelheid':           return { objectShape: 'circle', minDenominator: 2, maxDenominator: 5, maxTotal: 20, answerFormat: 'met-hulp' };
-        case 'hoeveelheid-rechthoek': return { minDenominator: 2, maxDenominator: 5, maxTotal: 20, answerFormat: 'met-berekening' };
-        case 'hoeveelheid-abstract':  return { minDenominator: 2, maxDenominator: 9, level: 1, answerMode: 'berekeningslijnen', maxAbstractN3: 1000 };
-        // maxLineLength 12 -> 8 (C1 step 11): past 8cm the to-scale line eats more than
-        // half of even a full-width column, so the default now stays inside that budget.
-        case 'lijnstuk':              return { minDenominator: 2, maxDenominator: 6, minLineLength: 4, maxLineLength: 8, answerMode: 'berekeningslijnen' };
-        case 'veelhoek':              return { minDenominator: 2, maxDenominator: 9, maxWidth: 6, maxHeight: 6 };
-    }
-}
 
 export default function FractionConfig({ block }: Props) {
     const updateBlockSettings = useWorksheetStore((state) => state.updateBlockSettings);
@@ -56,7 +43,7 @@ export default function FractionConfig({ block }: Props) {
     const handleSubTypeChange = (newSubType: FractionSubType) => {
         const isHoeveelheidType = newSubType === 'hoeveelheid' || newSubType === 'hoeveelheid-rechthoek' || newSubType === 'hoeveelheid-abstract';
         const updates: Partial<MathBlock> = {
-            constraints: { subType: newSubType, ...defaultsFor(newSubType) },
+            constraints: constraintsForVariant(c as Record<string, unknown>, newSubType),
             ...(isHoeveelheidType ? { numberOfExercises: 1 } : {}),
         };
         updateBlockSettings(block.id, updates);

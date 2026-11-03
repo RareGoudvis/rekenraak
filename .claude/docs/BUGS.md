@@ -8,7 +8,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Layout / sheet
 
-- Inspector at 900 / 820 px wide: the block's floating button rail sits on top of the Inspector controls and the sheet column shrinks to ~250 / 170 px (the TopBar itself folds fine). Repro: resize to 900 px with a block selected (`Downloads/review-triage/sheet/I-06-topbar-900.png`). 2026-10-13 review agent.
 - vormleer-hoeken-meten at its defaults can exceed one page (3 of 8 seeds: 1 115 / 1 068 / 1 061 px vs 998) → "groter dan één pagina" banner. Repro: `seed(3*7919)`. Fix direction: lower `defaultCount` or the figure budget. 2026-10-13.
 - mab-herkennen at half width (`widthUnits: 2`), `mabStyle: 'mab-bw'`, `maxNumber: 999`, 6 exercises: the half cell fits one positietabel per row, so six stack to 1 019 px vs a 997 px body (22 px past it alone on a page, 4 px with blocks above; Geert's fork saw ~59 px). The packer never splits (by design) and the "groter dan één pagina" banner + Splitsen show, but the default-ish setup overflows. Fix direction: cap the half-width count or the box height for this style. Repro `seed(3)` (`Downloads/geert-port/a2/bugB-page.png`). From Geert's BUGS.md, confirmed 2026-10-28.
 
@@ -19,7 +18,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
-- Breuk van hoeveelheid: switching the variant wipes the teacher's noemer range and other settings (`FractionConfig.tsx`, variant row). Not touched by F1; `defaultsFor` in FractionConfig stays mostly unused on purpose. 2026-10-28 breuken review.
 - Geld configs: the denomination / betalen-met / bill pills in `GeldConfig`, `GeldTeruggevenConfig`, `GeldWisselConfig` are `<span onClick>`, not buttons — no keyboard, no `aria-pressed` (exempt from `configPills.ariaPressed.test.tsx`). Convert to buttons without shifting the layout. 2026-10-13.
 
 ## Generators
