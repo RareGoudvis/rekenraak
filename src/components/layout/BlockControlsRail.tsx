@@ -62,7 +62,11 @@ export default function BlockControlsRail(props: BlockControlsRailProps) {
             if (!anchor || !rail) return;
             const rect = anchor.getBoundingClientRect();
             rail.style.top = `${rect.top}px`;
-            rail.style.left = `${rect.right + GAP_PX}px`;
+            // Never past the sheet column's right edge: a narrow window shrinks the sheet
+            // column and the rail would otherwise float over the Inspector.
+            const bound = (anchor.closest('.print-scroll') as HTMLElement | null)?.getBoundingClientRect().right;
+            const left = rect.right + GAP_PX;
+            rail.style.left = `${bound === undefined ? left : Math.min(left, bound - rail.offsetWidth - 4)}px`;
             setReady(true);
         };
         reposition();

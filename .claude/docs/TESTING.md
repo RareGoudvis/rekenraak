@@ -612,6 +612,13 @@ page is the same under print media as on screen, no cell ends outside its page i
 no console error; `print/<domain>.pdf`, `<domain>-screen.png` and `print.json` stay for a
 human look (the PDF pixels themselves are not compared).
 
+`--print-shots` adds, per printed sheet, one PNG per `.page-sheet` taken under print media
+(`<domain>-print-p<n>.png`, A4 794x1123), plus `print/contact-sheet.html` (thumbnails per
+domain, click = full size, ok/FAIL flags for page count, order, overflow and console errors) and
+`print/summary.json`, so a reviewer judges the pixels without opening PDFs. There is no PDF
+rasteriser in the repo (no pdfjs, no new dependency), so the print-emulated screenshot is the
+accepted proxy.
+
 What it cannot judge: whether the content is RIGHT (wrong answers, a solution drawn in the
 wrong box, odd wrapping that still fits, unreadably small text, Dutch wording). That needs the
 contact sheets, read by a person.

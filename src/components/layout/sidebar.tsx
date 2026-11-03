@@ -161,7 +161,7 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className="mac-vibrant" style={S.aside}>
+        <aside className="mac-vibrant app-panel-left" style={S.aside}>
             <div className="panel-head">
                 <div className="seg-group">
                     <button className="seg-btn" aria-pressed={tab === 'oefeningen'} onClick={() => setSidebarTab('oefeningen')}>Oefeningen</button>
