@@ -10,6 +10,7 @@ import { makeBoardBlock } from '../board/boardBlocks';
 import { DEFAULT_BASE } from '../config/baseSettings';
 import { REGISTRY } from '../config/exerciseRegistry';
 import { useBoardStore } from '../board/useBoardStore';
+import { isTransparent } from '../board/settings/baseProps';
 import type { BoardPage, BoardWidget, WidgetKind } from '../board/boardTypes';
 
 // Board persistence is strict on read (never half-load a board) and forgiving on write
@@ -300,5 +301,25 @@ describe('ids', () => {
         const after = exerciseIds(useBoardStore.getState().pages[exPage]);
         expect(after).toHaveLength(before.length * 2);
         expect(unique(after)).toBe(true);
+    });
+});
+
+describe('transparent cards', () => {
+    test('props.transparent round-trips for a widget and a math card; absent or junk reads as a normal card', () => {
+        const s = useBoardStore.getState();
+        s.resetBoard();
+        s.addWidget({ ...widgetOf('tekst', 0), props: { text: 'hoi', transparent: true } });
+        s.addWidget({ ...widgetOf('exercise', 1), props: { transparent: true } });
+        s.addWidget({ ...widgetOf('klok', 2), props: { transparent: 'ja' } });
+        s.addWidget(widgetOf('timer', 3));
+        const st = useBoardStore.getState();
+        const file = JSON.stringify({ version: BOARD_FORMAT_VERSION, pages: st.pages, activePageIdx: 0 });
+        const loaded = parseBoardFile(file)!;
+        expect(loaded).not.toBeNull();
+        const ws = loaded.pages[0].widgets;
+        expect(ws.map(isTransparent)).toEqual([true, true, false, false]);
+        // The format stays v2: the flag is an ordinary prop, absent on a card that never set it.
+        expect(BOARD_FORMAT_VERSION).toBe(2);
+        expect(ws[3].props && 'transparent' in ws[3].props).toBe(false);
     });
 });

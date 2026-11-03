@@ -5,6 +5,7 @@ import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { EXERCISE_UI } from '../../config/exerciseUI';
 import { useBoardStore } from '../useBoardStore';
 import { regenerateBoardBlock, resizeBoardBlock } from '../boardBlocks';
+import { isTransparent } from '../settings/baseProps';
 import GenerationNote from '../../components/configurator/GenerationNote';
 import type { BoardWidget } from '../boardTypes';
 
@@ -99,6 +100,11 @@ export default function BoardInspector({ widget }: Props) {
                         <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>Titelbalk tonen</span>
                         <Switch checked={widget.props?.showHeader !== false} aria-label="Titelbalk tonen"
                             onChange={(v) => updateWidget(widgetId, { props: { ...widget.props, showHeader: v } })} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0 2px' }}>
+                        <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>Doorzichtig</span>
+                        <Switch checked={isTransparent(widget)} aria-label="Doorzichtig"
+                            onChange={(v) => updateWidget(widgetId, { props: { ...widget.props, transparent: v } })} />
                     </div>
                 </div>
 

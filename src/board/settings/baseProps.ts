@@ -4,7 +4,7 @@ import { naturalWidth } from '../widgetSizing';
 import { honderdveldMinLayoutWidth } from '../mathTools/honderdveld';
 
 // The baseline every widget kind gets (rendered by WidgetInspector under the kind's own
-// panel): props.title, props.fontSize, props.accent, props.showHeader. Readers here are the
+// panel): props.title, props.fontSize, props.accent, props.showHeader, props.transparent. Readers here are the
 // validation layer: a missing or junk value reads as today's look, so old boards load unchanged.
 
 export type FontSizeKey = 'klein' | 'normaal' | 'groot' | 'xl';
@@ -90,6 +90,12 @@ export const ACCENT_PALETTE: ReadonlyArray<{ name: string; hex: string }> = [
 export function colorName(hex: string | null): string {
     if (!hex) return 'Standaard';
     return ACCENT_PALETTE.find(c => c.hex.toLowerCase() === hex.toLowerCase())?.name ?? hex;
+}
+
+// Doorzichtig: no card background, border or shadow; the title bar floats in only while the
+// card is selected. Only a literal true counts, so an old or junk value reads as a normal card.
+export function isTransparent(widget: BoardWidget): boolean {
+    return widget.props?.transparent === true;
 }
 
 // null = the kind's own colour (today's look).

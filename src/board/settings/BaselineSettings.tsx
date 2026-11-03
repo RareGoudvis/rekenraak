@@ -1,5 +1,5 @@
 import { Section, TextField, FontSizeRow, ColorSwatches, Toggle, ResetRow, SaveDefaultRow } from './controls';
-import { fontSizeKey, widgetAccent, useSetProps } from './baseProps';
+import { fontSizeKey, widgetAccent, useSetProps, isTransparent } from './baseProps';
 import { TITLE_DEFAULTS } from '../widgetSizing';
 import type { BoardWidget } from '../boardTypes';
 
@@ -12,6 +12,7 @@ export default function BaselineSettings({ widget }: { widget: BoardWidget }) {
             <Section title="Kaart">
                 <TextField label="Titel" value={title} placeholder={TITLE_DEFAULTS[widget.kind]} onChange={(v) => set({ title: v })} />
                 <Toggle label="Titelbalk tonen" checked={widget.props?.showHeader !== false} onChange={(v) => set({ showHeader: v })} />
+                <Toggle label="Doorzichtig" checked={isTransparent(widget)} onChange={(v) => set({ transparent: v })} />
                 <FontSizeRow value={fontSizeKey(widget)} onChange={(v) => set({ fontSize: v })} />
                 <ColorSwatches label="Accentkleur" value={widgetAccent(widget)} onChange={(v) => set({ accent: v ?? undefined })} />
             </Section>
