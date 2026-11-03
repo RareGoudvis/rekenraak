@@ -18,7 +18,6 @@ in [UpdateState.md](UpdateState.md). Agents: append here, never fix silently.
 
 ## Config
 
-- Breuk van hoeveelheid: switching the variant wipes the teacher's noemer range and other settings (`FractionConfig.tsx`, variant row). Not touched by F1; `defaultsFor` in FractionConfig stays mostly unused on purpose. 2026-10-28 breuken review.
 - Geld configs: the denomination / betalen-met / bill pills in `GeldConfig`, `GeldTeruggevenConfig`, `GeldWisselConfig` are `<span onClick>`, not buttons — no keyboard, no `aria-pressed` (exempt from `configPills.ariaPressed.test.tsx`). Convert to buttons without shifting the layout. 2026-10-13.
 
 ## Generators
