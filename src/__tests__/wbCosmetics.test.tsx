@@ -85,7 +85,7 @@ describe('add panel tabs', () => {
         expect(getAllByRole('tab').map(t => t.textContent)).toEqual(['Rekenblok', 'Rekentool', 'Klasbeheer', 'Dagritme', 'Extra']);
         const tiles = (tab: string) => {
             fireEvent.click(getByRole('tab', { name: tab }));
-            return getAllByRole('button').filter(b => !b.getAttribute('role') && !b.getAttribute('aria-label')).map(b => b.textContent?.trim());
+            return getAllByRole('button').filter(b => !b.getAttribute('role') && !b.getAttribute('aria-label')).map(b => (b.querySelector('[data-widget-preview]') ? b.lastElementChild : b)?.textContent?.trim());
         };
         expect(tiles('Klasbeheer')).toEqual(expect.arrayContaining(['Namenkiezer', 'Groepjesmaker', 'Geluidsniveau', 'Timer', 'Stopwatch', 'Checklist', 'Werksymbolen', 'Stappenplan']));
         expect(tiles('Dagritme')).toEqual(expect.arrayContaining(['Datum', 'Weer', 'Ademhaling']));
