@@ -114,11 +114,19 @@ describe('GeldItemWidget real banknotes', () => {
         expect(img?.getAttribute('src')).toMatch(new RegExp(`geld/eur-${denom / 100}-front[.]jpg$`));
     });
 
-    test('tekening bills and realistic coins have no image', () => {
+    test.each([1, 2, 5, 10, 20, 50, 100, 200])('realistisch coin %i renders the ECB coin image', denom => {
+        const { container } = render(<GeldItemWidget widget={mk({ denom, type: denom >= 100 ? 'euro-coin' : 'cent-coin', geldStyle: 'realistisch' })} />);
+        expect(container.querySelector('img')?.getAttribute('src')).toMatch(new RegExp(`geld/coin-${denom}[.]png$`));
+    });
+
+    test('tekening bills and coins have no image', () => {
         const a = render(<GeldItemWidget widget={mk({ denom: 2000, type: 'bill', geldStyle: 'tekening' })} />);
         expect(a.container.querySelector('img')).toBeNull();
         a.unmount();
-        const b = render(<GeldItemWidget widget={mk({ denom: 200, type: 'euro-coin', geldStyle: 'realistisch' })} />);
+        const b = render(<GeldItemWidget widget={mk({ denom: 200, type: 'euro-coin', geldStyle: 'tekening' })} />);
         expect(b.container.querySelector('img')).toBeNull();
+        b.unmount();
+        const c = render(<GeldItemWidget widget={mk({ denom: 20, type: 'cent-coin', geldStyle: 'tekening' })} />);
+        expect(c.container.querySelector('img')).toBeNull();
     });
 });

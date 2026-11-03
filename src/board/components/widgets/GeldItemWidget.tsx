@@ -3,7 +3,7 @@ import { formatAmount } from '../../../services/geld/geldGenerator';
 import { geldItemProps } from '../../mathTools/geld';
 import type { BoardWidget } from '../../boardTypes';
 
-// Real ECB note fronts (public/geld, see README there); bills only, coins stay drawn.
+// Real ECB note fronts and coin faces (public/geld, see README there).
 const BILL_W = 120, BILL_H = 62;
 
 // The ECB specimen files carry their own diagonal "specimen" mark (reproduction rule), so no overlay.
@@ -17,22 +17,12 @@ function RealBill({ denom }: { denom: number }) {
 }
 
 function RealCoin({ denom }: { denom: number }) {
-    // 1c-5c copper, 10c-50c gold, €1 silver-in-gold, €2 gold-in-silver.
-    const copper = denom < 10, gold = denom >= 10 && denom < 100;
-    const outer = denom === 200 ? '#cfd8dc' : denom === 100 ? '#e0b64c' : copper ? '#b87333' : '#e0b64c';
-    const inner = denom === 200 ? '#e0b64c' : denom === 100 ? '#cfd8dc' : gold ? '#d4a017' : '#a05a2c';
     const size = denom >= 100 ? 62 : 52;
+    // The ECB common-side photo already carries the value, so no text; the PNG is circle-clipped with alpha.
     return (
-        <div style={{
-            width: size, height: size, borderRadius: '50%',
-            background: `radial-gradient(circle, ${inner} 55%, ${outer} 56%)`,
-            border: '1.5px solid rgba(0,0,0,0.4)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-sheet-math)', fontWeight: 800,
-            fontSize: denom >= 100 ? '20px' : '15px', color: '#3e2c12',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.25)',
-        }}>
-            {denom >= 100 ? `€${denom / 100}` : `${denom}c`}
+        <div style={{ width: size, height: size, borderRadius: '50%', boxShadow: '0 2px 5px rgba(0,0,0,0.25)' }}>
+            <img src={`${import.meta.env.BASE_URL}geld/coin-${denom}.png`} alt={denom >= 100 ? `€${denom / 100}` : `${denom}c`} draggable={false}
+                style={{ width: '100%', height: '100%', display: 'block', borderRadius: '50%', pointerEvents: 'none', userSelect: 'none' }} />
         </div>
     );
 }
