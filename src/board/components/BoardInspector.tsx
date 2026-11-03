@@ -141,7 +141,7 @@ export default function BoardInspector({ widget }: Props) {
 
 const S = {
     panel: {
-        position: 'absolute', top: '12px', right: '12px', bottom: '12px', width: '320px',
+        position: 'absolute', top: '72px', right: '12px', bottom: '12px', width: '320px',
         display: 'flex', flexDirection: 'column',
         background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '14px',
         boxShadow: '0 8px 30px rgba(0,0,0,0.25)', zIndex: 50, overflow: 'hidden',

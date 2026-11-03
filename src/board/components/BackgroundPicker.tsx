@@ -49,7 +49,7 @@ export default function BackgroundPicker() {
     );
 
     return (
-        <div ref={rootRef} role="dialog" aria-label="Achtergrond" style={S.root} onKeyDown={onKeyDown}>
+        <div ref={rootRef} role="group" aria-label="Achtergrond" style={S.root} onKeyDown={onKeyDown}>
             <div style={S.title}>Achtergrond</div>
 
             <div style={S.section}>Patroon</div>

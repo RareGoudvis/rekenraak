@@ -156,8 +156,9 @@ export default function WidgetFrame({ widget, selected, children, onRegenerate, 
             data-card-bar=""
             style={floating ? {
                 ...S.bar, ...S.floatingBar,
-                // Above the card; a card at the very top keeps it inside its own top edge.
-                ...(widget.y >= CARD_BAR_PX + 4 ? { bottom: 'calc(100% + 4px)' } : { top: 0 }),
+                // Above the card; a card at the board's very top gets it just below instead,
+                // never over its content (a one-exercise card is barely taller than the bar).
+                ...(widget.y >= CARD_BAR_PX + 4 ? { bottom: 'calc(100% + 4px)' } : { top: 'calc(100% + 4px)' }),
                 // Transparent: a quiet bar that does not cover the board (owner design, ~55 %).
                 opacity: barShown ? (transparent && !focusWithin && !moreOpen ? 0.55 : 1) : 0,
                 pointerEvents: barShown ? 'auto' : 'none',

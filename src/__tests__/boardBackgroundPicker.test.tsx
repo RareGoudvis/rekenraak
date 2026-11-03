@@ -2,7 +2,7 @@
 import { describe, test, expect, afterEach } from 'vitest';
 import { render, cleanup, fireEvent, within, screen } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
-import BoardBottomBar from '../board/components/BoardBottomBar';
+import BoardRail from '../board/components/BoardRail';
 import { PATTERN_LABELS, BACKGROUND_SCALES, backgroundStyle } from '../board/backgrounds';
 
 afterEach(() => {
@@ -12,9 +12,9 @@ afterEach(() => {
 
 const bg = () => useBoardStore.getState().pages[useBoardStore.getState().activePageIdx].background;
 const open = () => {
-    render(<BoardBottomBar onOpenWiskunde={() => {}} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Achtergrond' }));
-    return screen.getByRole('dialog', { name: 'Achtergrond' });
+    render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bordinstellingen' }));
+    return screen.getByRole('group', { name: 'Achtergrond' });
 };
 
 describe('background picker', () => {
@@ -36,16 +36,16 @@ describe('background picker', () => {
         fireEvent.click(within(dlg).getByLabelText('Bord: Donker'));
         expect(bg()).toEqual({ pattern: 'raster', scale: 1.5, dark: true });
         expect(within(dlg).getByLabelText('Bord: Donker').getAttribute('aria-pressed')).toBe('true');
-        expect(screen.queryByRole('dialog', { name: 'Achtergrond' })).not.toBeNull();
+        expect(screen.queryByRole('group', { name: 'Achtergrond' })).not.toBeNull();
     });
 
     test('Escape and a press outside close it', () => {
         open();
         fireEvent.keyDown(document, { key: 'Escape' });
-        expect(screen.queryByRole('dialog', { name: 'Achtergrond' })).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Achtergrond' }));
+        expect(screen.queryByRole('group', { name: 'Achtergrond' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Bordinstellingen' }));
         fireEvent.pointerDown(document.body);
-        expect(screen.queryByRole('dialog', { name: 'Achtergrond' })).toBeNull();
+        expect(screen.queryByRole('group', { name: 'Achtergrond' })).toBeNull();
     });
 
     test('focus starts on the current pattern; arrows move between tiles and Enter picks', () => {
@@ -59,11 +59,17 @@ describe('background picker', () => {
         expect(bg().pattern).toBe('schrijflijnen4');
     });
 
-    test('the ⚙ popup no longer carries the background section', () => {
-        render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+    test('Bordinstellingen merges achtergrond, raster, pagina\'s, Mijn borden, volledig scherm and Bord wissen', () => {
+        render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
         fireEvent.click(screen.getByRole('button', { name: 'Bordinstellingen' }));
-        expect(screen.queryByText('Cornell')).toBeNull();
-        expect(screen.getByText('Raster uitlijnen')).toBeTruthy();
+        const menu = screen.getByRole('dialog', { name: 'Bordinstellingen' });
+        expect(within(menu).getByText('Cornell')).toBeTruthy();
+        for (const t of ['Raster uitlijnen', 'Pagina toevoegen', 'Pagina verwijderen', 'Bord bewaren als…', 'Exporteren', 'Importeren', 'Bord wissen']) {
+            expect(within(menu).getByText(t)).toBeTruthy();
+        }
+        fireEvent.click(within(menu).getByText('Pagina toevoegen'));
+        expect(useBoardStore.getState().pages).toHaveLength(2);
+        expect(within(menu).getByText('Pagina 2 / 2')).toBeTruthy();
     });
 });
 

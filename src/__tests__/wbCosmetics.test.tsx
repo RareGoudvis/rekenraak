@@ -6,7 +6,7 @@ import KlokWidget from '../board/components/widgets/KlokWidget';
 import GeldPalet from '../board/components/GeldPalet';
 import WidgetInspector from '../board/components/WidgetInspector';
 import BoardAddPanel from '../board/components/BoardAddPanel';
-import BoardBottomBar from '../board/components/BoardBottomBar';
+import BoardRail from '../board/components/BoardRail';
 import { addBasicWidget } from '../board/addWidgets';
 import { makeBoardBlock } from '../board/boardBlocks';
 import WhiteboardView from '../board/components/WhiteboardView';
@@ -133,9 +133,9 @@ describe('add panel tabs', () => {
     });
 });
 
-describe('bottom bar popups', () => {
+describe('rail flyouts', () => {
     test('the board settings popup closes on Escape and on a press outside, not on one inside', () => {
-        const { getByRole, queryByText, getByText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
+        const { getByRole, queryByText, getByText } = render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
         const gear = getByRole('button', { name: 'Bordinstellingen' });
         fireEvent.click(gear);
         expect(queryByText('Raster uitlijnen')).not.toBeNull();
@@ -156,11 +156,14 @@ describe('bottom bar popups', () => {
     });
 
     test('the other popups share the same close rules', () => {
-        const { getByRole, queryByText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
-        fireEvent.click(getByRole('button', { name: 'Bewaren' }));
-        expect(queryByText('Bord bewaren als…')).not.toBeNull();
-        fireEvent.pointerDown(document.body);
-        expect(queryByText('Bord bewaren als…')).toBeNull();
+        const { getByRole, queryByText } = render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
+        for (const name of ['Meetinstrumenten', 'Pen']) {
+            fireEvent.click(getByRole('button', { name }));
+            expect(document.querySelector('[data-rail-flyout]')).not.toBeNull();
+            fireEvent.pointerDown(document.body);
+            expect(document.querySelector('[data-rail-flyout]')).toBeNull();
+        }
+        expect(queryByText('Alles verbergen')).toBeNull();
     });
 });
 

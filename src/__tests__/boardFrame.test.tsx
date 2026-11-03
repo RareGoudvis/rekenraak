@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach } from 'vitest';
 import { render, cleanup, fireEvent, within, screen } from '@testing-library/react';
-import BoardBottomBar from '../board/components/BoardBottomBar';
+import BoardRail from '../board/components/BoardRail';
+import BoardTopPill from '../board/components/BoardTopPill';
 import { useBoardStore } from '../board/useBoardStore';
 import WidgetFrame from '../board/components/WidgetFrame';
 import BoardPageCanvas from '../board/components/BoardPageCanvas';
@@ -242,27 +243,60 @@ describe('a dark board', () => {
     });
 });
 
-describe('bottom bar on a narrow board', () => {
-    // At 1280 px the exit button was cut off the right edge (BUGS 2026-10-08).
-    test('below 1600 px the exit is an icon button and the bar wraps instead of clipping', () => {
-        const real = window.matchMedia;
-        window.matchMedia = ((q: string) => ({ ...real(q), matches: q.includes('1599px') })) as typeof window.matchMedia;
-        try {
-            const { container } = render(<BoardBottomBar onOpenWiskunde={() => { }} />);
-            const exit = screen.getByRole('button', { name: 'Bordmodus verlaten' });
-            expect(exit.textContent).toBe('');
-            expect((container.firstElementChild as HTMLElement).style.flexWrap).toBe('wrap');
-        } finally { window.matchMedia = real; }
+describe('the rail (Zijrail)', () => {
+    const rail = () => render(<BoardRail addOpen={false} onToggleAdd={() => { }} />);
+    const labels = (c: HTMLElement) => [...c.querySelectorAll(':scope > nav button, :scope > nav > div > button')]
+        .map(b => b.getAttribute('aria-label'));
+
+    test('top → bottom: Bordinstellingen, tools, undo / redo, Toevoegen last', () => {
+        const { container } = rail();
+        expect(labels(container)).toEqual([
+            'Bordinstellingen', 'Selecteren', 'Pen', 'Markeerstift', 'Gom', 'Tekst (tik op het bord)',
+            'Lijn en vormen', 'Meetinstrumenten', 'Ongedaan maken', 'Opnieuw', 'Toevoegen',
+        ]);
     });
-    test('the bar and its popups sit above the ink strip and the inspectors', () => {
-        const { container } = render(<BoardBottomBar onOpenWiskunde={() => { }} />);
-        const bar = container.firstElementChild as HTMLElement;
-        expect(bar.style.position).toBe('relative');
-        // InkSettingsBar 40, BoardInspector / WidgetInspector 50
-        expect(Number(bar.style.zIndex)).toBeGreaterThan(50);
+
+    test('the rail and its flyouts sit above the inspectors and the add panel', () => {
+        const { container } = rail();
+        const nav = container.querySelector('[data-board-rail]') as HTMLElement;
+        expect(nav.style.position).toBe('relative');
+        // BoardInspector / WidgetInspector 50, add panel 60
+        expect(Number(nav.style.zIndex)).toBeGreaterThan(60);
+        expect(nav.style.width).toBe('72px');
     });
-    test('a wide board keeps the labelled exit', () => {
-        render(<BoardBottomBar onOpenWiskunde={() => { }} />);
-        expect(screen.getByRole('button', { name: 'Bordmodus verlaten' }).textContent).toContain('Bordmodus verlaten');
+
+    test('pen: picking it opens its flyout, tapping it again closes it, another tool closes it', () => {
+        rail();
+        const flyout = () => document.querySelector('[data-ink-flyout="pen"]');
+        fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
+        expect(useBoardStore.getState().tool).toBe('pen');
+        expect(flyout()).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
+        expect(flyout()).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
+        expect(flyout()).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Gom' }));
+        expect(flyout()).toBeNull();
+        expect(useBoardStore.getState().tool).toBe('eraser');
+    });
+
+    test('lijn en vormen: one button, the flyout picks lijn or a shape', () => {
+        rail();
+        fireEvent.click(screen.getByRole('button', { name: 'Lijn en vormen' }));
+        expect(useBoardStore.getState().tool).toBe('line');
+        fireEvent.click(screen.getByRole('button', { name: 'Ellips (Shift: cirkel)' }));
+        expect(useBoardStore.getState().tool).toBe('shape');
+        expect(useBoardStore.getState().drawOptions.shape).toBe('ellipse');
+        expect(screen.getByRole('button', { name: 'Zachte vulling' })).toBeTruthy();
+    });
+
+    test('no hover anywhere: the top-right pill carries its words in labels', () => {
+        render(<BoardTopPill />);
+        for (const n of ['Vorige pagina', 'Volgende pagina', 'Bewaren', 'Bordmodus verlaten']) {
+            const b = screen.getByRole('button', { name: n });
+            expect(b.textContent).toBe('');
+            expect(b.getAttribute('title')).toBeTruthy();
+        }
+        expect(screen.getByText('1 / 1')).toBeTruthy();
     });
 });

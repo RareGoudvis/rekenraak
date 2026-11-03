@@ -200,7 +200,7 @@ describe('presets (Mijn borden)', () => {
         expect(loadBoardPresets()).toEqual([]);
     });
 
-    // A board with a big image fills the quota: the save reports false (BoardBottomBar alerts)
+    // A board with a big image fills the quota: the save reports false (promptSaveBoard alerts)
     // instead of throwing out of the click handler, and the stored list is untouched.
     test('a quota failure on preset save returns false and keeps the list', () => {
         saveBoardPreset('Klein', emptyBoard(), 0);
