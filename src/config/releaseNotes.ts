@@ -58,7 +58,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'nieuw',
-                text: 'Bordmodus › Geld › Echt toont de echte eurobiljetten (ECB-specimens) zodat leerlingen ze leren herkennen; de munten blijven getekend.',
+                text: 'Bordmodus › Geld › Echt toont de echte eurobiljetten en -munten (beelden van de ECB) zodat leerlingen ze leren herkennen.',
             },
             // ── 2026-11-03: public beta of the two modules + Bordmodus Zijrail ──
             {

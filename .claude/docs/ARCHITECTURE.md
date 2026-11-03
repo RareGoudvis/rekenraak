@@ -1471,7 +1471,7 @@ src/
 │       ├── InstrumentLayer.tsx  # z 12 SVG: drag / rotate / snap / keyboard per instrument, passer opening + arc strokes, readout pill, snap dot
 │       ├── InstrumentShapes.tsx # LatShape / GeodriehoekShape / PasserShape in local frames, grips (body / rotate / open / draw)
 │       ├── instrumentStyle.ts   # IC token colours (frosted body), NO_POINTER
-│       ├── GeldPalet.tsx        # euro dock (Tekening / Echt = ECB specimen fronts from public/geld/), drag-to-create geld-item widgets, ⚙ dock settings, "Tel samen"
+│       ├── GeldPalet.tsx        # euro dock (Tekening / Echt = ECB specimen note fronts + common-side coin faces from public/geld/), drag-to-create geld-item widgets, ⚙ dock settings, "Tel samen"
 │       ├── BoardErrorBoundary.tsx # per-widget + ink-layer + instrument-layer crash guard with a local reset
 │       └── widgets/             # one component per WidgetKind (ExerciseWidget mounts EXERCISE_UI Viewer; KlokWidget on clockMath + BoardClockFace.tsx, the board's own face with styles / rings / seconds; …), each reading its settings model
 └── components/
@@ -1844,7 +1844,9 @@ is only the flyout: registry panel + baseline.
   dropped coin/bill, titleless). **GeldPalet** ([GeldPalet.tsx](../../src/board/components/GeldPalet.tsx))
   is a dock with the euro catalogue, Tekening (GeldViewer exports) or Echt style (bills = the ECB's own
   72 dpi specimen fronts in `public/geld/eur-<denom>-front.jpg`, €5–€200 Europa series + first-series
-  €500, 120 × 62 base, sources + the ECB reproduction rule in `public/geld/README.md`; coins stay drawn),
+  €500, 120 × 62 base; coins = the ECB common-side faces `public/geld/coin-<cents>.png`, 200 px circle-clipped;
+  sources + the ECB reproduction rule in `public/geld/README.md` — the ECB publishes note images only with
+  the specimen word, checked 2026-11-03),
   drag-to-create with pointer capture; its own ⚙ ([GeldPaletSettings.tsx](../../src/board/settings/GeldPaletSettings.tsx))
   is a **device** setting in `rekenraak_board_geldpalet_v1` (which pieces, style, caption, new
   piece size, grid snap on drop, "Tel samen"), not board content; a dropped piece copies style +
