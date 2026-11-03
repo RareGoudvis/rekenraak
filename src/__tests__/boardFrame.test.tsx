@@ -47,76 +47,180 @@ describe('print', () => {
     });
 });
 
-describe('headerless cards', () => {
-    const bare: BoardWidget = { id: 'g1', kind: 'getallenlijn', x: 40, y: 40, w: 640, z: 1, props: { showHeader: false } };
-    const seed = (w: BoardWidget) => {
-        const st = useBoardStore.getState();
-        useBoardStore.setState({ pages: st.pages.map((p, i) => (i === st.activePageIdx ? { ...p, widgets: [w] } : p)) });
-    };
-    const pill = (c: HTMLElement) => c.querySelector('[data-widget-pill]') as HTMLElement;
-    const widgets = () => useBoardStore.getState().pages[useBoardStore.getState().activePageIdx].widgets;
+const seed = (w: BoardWidget) => {
+    const st = useBoardStore.getState();
+    useBoardStore.setState({ pages: st.pages.map((p, i) => (i === st.activePageIdx ? { ...p, widgets: [w] } : p)) });
+};
+const widgets = () => useBoardStore.getState().pages[useBoardStore.getState().activePageIdx].widgets;
+const bar = (c: HTMLElement) => c.querySelector('[data-card-bar]') as HTMLElement;
 
-    test('the controls pill stays hidden until hover, and hover reveals all controls', () => {
-        const { container } = render(<WidgetFrame widget={bare} selected={false}><div /></WidgetFrame>);
-        const frame = container.firstElementChild as HTMLElement;
-        expect(pill(container).style.opacity).toBe('0');
-        expect(pill(container).style.pointerEvents).toBe('none');
-        fireEvent.pointerEnter(frame, { pointerType: 'mouse' });
-        expect(pill(container).style.opacity).toBe('1');
-        for (const label of ['Widget-instellingen', 'Dupliceren', 'Verwijderen']) {
-            expect(within(pill(container)).getByLabelText(label)).toBeTruthy();
-        }
-        fireEvent.pointerLeave(frame, { pointerType: 'mouse' });
-        expect(pill(container).style.opacity).toBe('0');
+describe('the title bar (no hover anywhere)', () => {
+    test('every card has its bar on screen without hover: title, Instellingen and Meer', () => {
+        const { container } = render(<WidgetFrame widget={widget} selected={false}><div /></WidgetFrame>);
+        expect(container.querySelector('[data-widget-pill]')).toBeNull();
+        const b = bar(container);
+        expect(b.style.opacity).toBe('');
+        expect(within(b).getByText('Notitie')).toBeTruthy();
+        for (const label of ['Instellingen', 'Meer']) expect(within(b).getByLabelText(label)).toBeTruthy();
+        // Nieuw and Oplossing are math-card buttons only.
+        expect(within(b).queryByLabelText('Nieuwe oefeningen')).toBeNull();
+        expect(within(b).queryByLabelText('Oplossing tonen')).toBeNull();
+        // Digibord touch targets.
+        for (const btn of within(b).getAllByRole('button')) expect(btn.style.width).toBe('40px');
     });
 
-    test('a selected card (tap / keyboard) shows the pill without hover, and its ⚙ opens the inspector', () => {
+    test('a math card adds Nieuw and Oplossing tonen, in that order before Instellingen', () => {
+        const { container } = render(
+            <WidgetFrame widget={{ ...widget, kind: 'exercise' }} selected={false} onRegenerate={() => {}} onToggleAnswer={() => {}}><div /></WidgetFrame>);
+        const labels = within(bar(container)).getAllByRole('button').map(b => b.getAttribute('aria-label'));
+        expect(labels).toEqual(['Nieuwe oefeningen', 'Oplossing tonen', 'Instellingen', 'Meer']);
+    });
+
+    test('Meer: Doorzichtig, Kleiner / Groter, Dupliceren, Verwijderen', () => {
+        seed(widget);
+        const { container } = render(<WidgetFrame widget={widget} selected><div /></WidgetFrame>);
+        fireEvent.click(within(bar(container)).getByLabelText('Meer'));
+        const menu = screen.getByRole('menu', { name: 'Meer' });
+        fireEvent.click(within(menu).getByText('Groter'));
+        expect(widgets()[0].w).toBe(Math.round(360 * 1.2));
+        fireEvent.click(within(menu).getByText('Kleiner'));
+        expect(widgets()[0].w).toBe(Math.round(Math.round(360 * 1.2) / 1.2));
+        fireEvent.click(within(menu).getByText('Dupliceren'));
+        expect(widgets()).toHaveLength(2);
+        expect(screen.queryByRole('menu')).toBeNull();
+        fireEvent.click(within(bar(container)).getByLabelText('Meer'));
+        fireEvent.click(within(screen.getByRole('menu')).getByText('Verwijderen'));
+        expect(widgets().map(w => w.id)).not.toContain('w1');
+    });
+
+    test('the Meer menu closes on Escape and on a press outside, not on one inside', () => {
+        render(<WidgetFrame widget={widget} selected><div /></WidgetFrame>);
+        fireEvent.click(screen.getByLabelText('Meer'));
+        fireEvent.pointerDown(within(screen.getByRole('menu')).getByText('Groter'));
+        expect(screen.queryByRole('menu')).not.toBeNull();
+        fireEvent.keyDown(document, { key: 'Escape' });
+        expect(screen.queryByRole('menu')).toBeNull();
+        fireEvent.click(screen.getByLabelText('Meer'));
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole('menu')).toBeNull();
+    });
+
+    test('Doorzichtig in Meer sets the per-card flag, and again clears it', () => {
+        seed(widget);
+        const { container, rerender } = render(<WidgetFrame widget={widget} selected><div /></WidgetFrame>);
+        fireEvent.click(within(bar(container)).getByLabelText('Meer'));
+        fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Doorzichtig/ }));
+        expect(widgets()[0].props?.transparent).toBe(true);
+        rerender(<WidgetFrame widget={widgets()[0]} selected><div /></WidgetFrame>);
+        fireEvent.click(within(bar(container)).getByLabelText('Meer'));
+        fireEvent.click(screen.getByRole('menuitemcheckbox', { name: /Doorzichtig/ }));
+        expect(widgets()[0].props?.transparent).toBe(false);
+    });
+
+    test('a tap on the title selects; a second tap on the selected card edits it', () => {
+        seed(widget);
+        const { container, rerender } = render(<WidgetFrame widget={widget} selected={false}><div /></WidgetFrame>);
+        const title = () => container.querySelector('[data-card-title]') as HTMLElement;
+        fireEvent.pointerDown(title(), { pointerId: 1 });
+        fireEvent.pointerUp(title(), { pointerId: 1 });
+        expect(useBoardStore.getState().selectedWidgetId).toBe('w1');
+        expect(container.querySelector('input[aria-label="Titel"]')).toBeNull();
+        rerender(<WidgetFrame widget={widget} selected><div /></WidgetFrame>);
+        fireEvent.pointerDown(title(), { pointerId: 1 });
+        fireEvent.pointerUp(title(), { pointerId: 1 });
+        expect(container.querySelector('input[aria-label="Titel"]')).not.toBeNull();
+    });
+
+    test('the bar is the drag handle', () => {
+        seed(widget);
+        const { container } = render(<WidgetFrame widget={widget} selected={false}><div /></WidgetFrame>);
+        fireEvent.pointerDown(bar(container), { clientX: 100, clientY: 100, pointerId: 1 });
+        fireEvent.pointerMove(bar(container), { clientX: 160, clientY: 130, pointerId: 1 });
+        fireEvent.pointerUp(bar(container), { pointerId: 1 });
+        expect([widgets()[0].x, widgets()[0].y]).toEqual([100, 330]);
+    });
+});
+
+describe('transparent cards', () => {
+    const glass: BoardWidget = { ...widget, props: { text: 'hoi', transparent: true } };
+    const card = (c: HTMLElement) => c.querySelector('[data-widget-card]') as HTMLElement;
+
+    test('no background, border or shadow; the bar hides until the card is selected', () => {
+        const { container } = render(<WidgetFrame widget={glass} selected={false}><div /></WidgetFrame>);
+        expect(card(container).style.background).toBe('transparent');
+        expect(card(container).style.boxShadow).toBe('none');
+        expect(card(container).style.borderColor).toBe('transparent');
+        expect(bar(container).style.opacity).toBe('0');
+        expect(bar(container).style.pointerEvents).toBe('none');
+    });
+
+    test('selected: the bar floats above the card at ~55 % and the card gets a dashed ring', () => {
+        const { container } = render(<WidgetFrame widget={glass} selected><div /></WidgetFrame>);
+        expect(bar(container).style.opacity).toBe('0.55');
+        expect(bar(container).style.position).toBe('absolute');
+        expect(card(container).style.outline).toContain('dashed');
+        // Floating, not in the card: selecting never shifts the content down.
+        expect(card(container).contains(bar(container))).toBe(false);
+    });
+
+    test('a math card can be transparent too', () => {
+        const { container } = render(
+            <WidgetFrame widget={{ ...glass, kind: 'exercise' }} selected onRegenerate={() => {}} onToggleAnswer={() => {}}><div /></WidgetFrame>);
+        expect(card(container).style.background).toBe('transparent');
+        expect(within(bar(container)).getByLabelText('Nieuwe oefeningen')).toBeTruthy();
+    });
+
+    test('a transparent card drags from its body', () => {
+        seed(glass);
+        const { container } = render(<WidgetFrame widget={glass} selected={false}><div /></WidgetFrame>);
+        const frame = container.firstElementChild as HTMLElement;
+        fireEvent.pointerDown(frame, { clientX: 100, clientY: 100, pointerId: 1 });
+        fireEvent.pointerMove(frame, { clientX: 160, clientY: 130, pointerId: 1 });
+        fireEvent.pointerUp(frame, { pointerId: 1 });
+        expect(useBoardStore.getState().selectedWidgetId).toBe('w1');
+        expect([widgets()[0].x, widgets()[0].y]).toEqual([100, 330]);
+    });
+});
+
+describe('titleless cards (Titelbalk tonen off)', () => {
+    const bare: BoardWidget = { id: 'g1', kind: 'getallenlijn', x: 40, y: 40, w: 640, z: 1, props: { showHeader: false } };
+
+    test('the bar is hidden until the card is selected, then shown in full', () => {
         seed(bare);
-        const { container } = render(<WidgetFrame widget={bare} selected><div /></WidgetFrame>);
-        expect(pill(container).style.opacity).toBe('1');
-        fireEvent.click(within(pill(container)).getByLabelText('Widget-instellingen'));
+        const { container, rerender } = render(<WidgetFrame widget={bare} selected={false}><div /></WidgetFrame>);
+        expect(bar(container).style.opacity).toBe('0');
+        rerender(<WidgetFrame widget={bare} selected><div /></WidgetFrame>);
+        expect(bar(container).style.opacity).toBe('1');
+        fireEvent.click(within(bar(container)).getByLabelText('Instellingen'));
         expect(useBoardStore.getState().inspectorOpen).toBe(true);
         expect(useBoardStore.getState().selectedWidgetId).toBe('g1');
     });
 
-    test('keyboard focus inside the card reveals the pill', () => {
+    test('keyboard focus inside the card reveals the bar', () => {
         const { container } = render(<WidgetFrame widget={bare} selected={false}><div /></WidgetFrame>);
-        fireEvent.focus(within(pill(container)).getByLabelText('Dupliceren'));
-        expect(pill(container).style.opacity).toBe('1');
+        fireEvent.focus(within(bar(container)).getByLabelText('Meer'));
+        expect(bar(container).style.opacity).toBe('1');
     });
 
-    test('delete in the pill removes the widget, exactly like the title-bar delete', () => {
-        seed(bare);
-        const { container } = render(<WidgetFrame widget={bare} selected><div /></WidgetFrame>);
-        fireEvent.click(within(pill(container)).getByLabelText('Verwijderen'));
-        expect(widgets()).toHaveLength(0);
-    });
-
-    test('a press on the pill does not start a body drag', () => {
+    test('a press on a bar button selects the card but does not start a drag', () => {
         seed(bare);
         const { container } = render(<WidgetFrame widget={bare} selected={false}><div /></WidgetFrame>);
-        fireEvent.pointerDown(within(pill(container)).getByLabelText('Dupliceren'));
-        expect(useBoardStore.getState().selectedWidgetId).toBeNull();
+        const more = within(bar(container)).getByLabelText('Meer');
+        fireEvent.pointerDown(more, { clientX: 100, clientY: 100, pointerId: 1 });
+        fireEvent.pointerMove(container.firstElementChild as HTMLElement, { clientX: 160, clientY: 130, pointerId: 1 });
+        expect(useBoardStore.getState().selectedWidgetId).toBe('g1');
+        expect([widgets()[0].x, widgets()[0].y]).toEqual([40, 40]);
     });
 
     test('the body is the drag handle in select mode', () => {
         seed(bare);
         const { container } = render(<WidgetFrame widget={bare} selected={false}><div /></WidgetFrame>);
         const frame = container.firstElementChild as HTMLElement;
-        frame.setPointerCapture = () => {};
         fireEvent.pointerDown(frame, { clientX: 100, clientY: 100, pointerId: 1 });
         fireEvent.pointerMove(frame, { clientX: 160, clientY: 130, pointerId: 1 });
         fireEvent.pointerUp(frame, { pointerId: 1 });
         expect(useBoardStore.getState().selectedWidgetId).toBe('g1');
         expect([widgets()[0].x, widgets()[0].y]).toEqual([100, 70]);
-    });
-
-    test('with the title bar on, the controls live in the bar and there is no pill', () => {
-        const withBar: BoardWidget = { ...bare, props: {} };
-        const { container } = render(<WidgetFrame widget={withBar} selected><div /></WidgetFrame>);
-        expect(pill(container)).toBeNull();
-        expect(within(container).getByLabelText('Verwijderen')).toBeTruthy();
-        expect(within(container).getByText('Getallenlijn')).toBeTruthy();
     });
 });
 

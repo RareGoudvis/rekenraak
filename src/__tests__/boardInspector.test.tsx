@@ -36,7 +36,7 @@ describe('board inspector: family sections', () => {
         expect((live().block!.constraints as Record<string, unknown>).scaffolding).toBe(1);
 
         expect(solutionCells(container)).toBe(0);
-        act(() => { fireEvent.click(screen.getByLabelText('Oplossing tonen/verbergen')); });
+        act(() => { fireEvent.click(screen.getByLabelText('Oplossing tonen')); });
         expect(live().showAnswer).toBe(true);
         expect(solutionCells(container)).toBeGreaterThan(0);
     });

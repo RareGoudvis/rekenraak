@@ -370,11 +370,11 @@ describe('the canvas: answers, text tool, deselect', () => {
         const a = st().addWidget({ kind: 'exercise', x: 0, y: 0, w: 660, block: cijferBlock(), showAnswer: false });
         const b = st().addWidget({ kind: 'exercise', x: 0, y: 400, w: 660, block: cijferBlock(), showAnswer: false });
         render(<BoardPageCanvas />);
-        const eyes = screen.getAllByLabelText('Oplossing tonen/verbergen');
+        const eyes = screen.getAllByLabelText('Oplossing tonen');
         act(() => { fireEvent.click(eyes[0]); });
         expect(find(a).showAnswer).toBe(true);
         expect(find(b).showAnswer).toBe(false);
-        act(() => { fireEvent.click(screen.getAllByLabelText('Oplossing tonen/verbergen')[0]); });
+        act(() => { fireEvent.click(screen.getAllByLabelText('Oplossing tonen')[0]); });
         expect(find(a).showAnswer).toBe(false);
     });
 

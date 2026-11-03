@@ -147,7 +147,7 @@ describe('every settings panel', () => {
         const id = addBasicWidget('klok', { hours: 9, minutes: 0 }, 300);
         st().selectWidget(null);
         render(<WhiteboardView />);
-        act(() => { fireEvent.click(screen.getByLabelText('Widget-instellingen')); });
+        act(() => { fireEvent.click(screen.getByLabelText('Instellingen')); });
         expect(st().selectedWidgetId).toBe(id);
         expect(st().inspectorOpen).toBe(true);
     });
