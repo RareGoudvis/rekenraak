@@ -1,7 +1,9 @@
-import type { ArrowHeads, ShapeKind, Stroke } from './boardTypes';
+import type { ArrowHeads, ShapeKind, Stroke, StrokeTool } from './boardTypes';
+import { DEFAULT_INK, INK_FOLLOWS_BOARD } from './boardTypes';
 
 // Pure ink geometry: grid / angle snapping, the exact SVG paths the line and shape tools
-// emit, and the per-stroke hit-test the eraser uses. No React, no store.
+// emit, the per-stroke hit-test the eraser uses, the ink strip's swatches and the gom's cursor.
+// No React, no store.
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
@@ -162,4 +164,30 @@ export function strokeBounds(s: Stroke): { x: number; y: number; w: number; h: n
         y0 = Math.min(y0, pts[i + 1]); y1 = Math.max(y1, pts[i + 1]);
     }
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+// Board ink, not UI chrome (UI-GUIDE §3 worksheet-ink): blauw, rood, then zwart for tools whose
+// default already is one of those (shape = blauw), so every strip offers three.
+const STANDARD_COLORS = ['#1d4ed8', '#dc2626', '#111827'];
+// The strip's fixed swatches: Standaard (A) for tools that follow the board, else the tool's
+// own default colour, then blauw / rood (/ zwart): three in all.
+export function stripColors(tool: StrokeTool): { auto: boolean; colors: string[] } {
+    const auto = INK_FOLLOWS_BOARD.includes(tool);
+    const own = auto ? [] : [DEFAULT_INK[tool].light];
+    const colors = [...own, ...STANDARD_COLORS.filter(c => !own.includes(c))].slice(0, auto ? 2 : 3);
+    return { auto, colors };
+}
+
+// The gom's cursor: a ring of its real reach (the old 'cell' plus read as a cross). An SVG data
+// URL cannot read CSS variables, so the theme tokens are resolved here; a browser that refuses the
+// image falls back to the crosshair.
+export function eraserCursor(r: number): string {
+    const css = typeof document !== 'undefined' ? getComputedStyle(document.documentElement) : null;
+    const ink = css?.getPropertyValue('--text-main').trim() || 'currentColor';
+    const halo = css?.getPropertyValue('--bg-surface').trim() || 'none';
+    const size = 2 * r + 4, c = r + 2;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`
+        + `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${halo}" stroke-width="3"/>`
+        + `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${ink}" stroke-width="1.5"/></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${c} ${c}, crosshair`;
 }

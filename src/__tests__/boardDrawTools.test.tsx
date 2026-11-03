@@ -240,7 +240,8 @@ describe('line options and shortcut', () => {
         expect(st().drawOptions.arrow).toBe('both');
         fireEvent.click(getByLabelText('Stippellijn'));
         expect(st().drawOptions.dashed).toBe(true);
-        fireEvent.click(getByLabelText('Dikte 7'));
+        fireEvent.click(getByLabelText('Dikte'));
+        fireEvent.change(getByLabelText('Dikte instellen'), { target: { value: '7' } });
         expect(st().inkSettings.line.width).toBe(7);
         expect(st().inkSettings.pen.width).toBe(4);
         rerender(<InkFlyout tool="pen" />);

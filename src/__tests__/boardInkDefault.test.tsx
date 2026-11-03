@@ -112,7 +112,7 @@ describe('settings bar', () => {
         expect(std.getAttribute('aria-pressed')).toBe('true');
         expect(std.style.background).toBe('rgb(255, 255, 255)');
         // the width dots show the ink the pen will draw with
-        expect((screen.getByRole('button', { name: 'Dikte 4' }).firstChild as HTMLElement).style.background).toBe('rgb(255, 255, 255)');
+        expect((screen.getByRole('button', { name: 'Dikte' }).firstChild as HTMLElement).style.background).toBe('rgb(255, 255, 255)');
         act(() => { fireEvent.click(screen.getByRole('button', { name: 'Kleur #dc2626' })); });
         expect(st().inkSettings.pen.color).toBe('#dc2626');
         expect(std.getAttribute('aria-pressed')).toBe('false');

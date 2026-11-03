@@ -61,6 +61,15 @@ export const DEFAULT_INK: Record<StrokeTool, { light: string; dark: string; widt
 export const INK_FOLLOWS_BOARD: StrokeTool[] = ['pen', 'line'];
 export const inkColor = (cfg: InkSettings, tool: StrokeTool, dark: boolean): string =>
     cfg.color ?? DEFAULT_INK[tool][dark ? 'dark' : 'light'];
+// The size slider's range per tool (px stroke width); a saved width outside it shows clamped.
+export const INK_WIDTH_RANGE: Record<StrokeTool, { min: number; max: number }> = {
+    pen: { min: 2, max: 10 }, marker: { min: 8, max: 32 }, line: { min: 2, max: 10 }, shape: { min: 2, max: 10 },
+};
+export const clampInkWidth = (tool: StrokeTool, w: number): number =>
+    Math.round(Math.min(INK_WIDTH_RANGE[tool].max, Math.max(INK_WIDTH_RANGE[tool].min, w)));
+// The gom's reach: a radius in board px around the pointer (14 = the old fixed reach).
+export const ERASER_RANGE = { min: 8, max: 40, default: 14 };
+export const clampEraserSize = (r: number): number => Math.round(Math.min(ERASER_RANGE.max, Math.max(ERASER_RANGE.min, r)));
 
 // Line / shape tool options (UI state, not persisted; the emitted stroke carries the result).
 export type ArrowHeads = 'none' | 'end' | 'both';

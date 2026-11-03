@@ -4,6 +4,7 @@ import {
     BOARD_AUTOSAVE_KEY, BOARD_FORMAT_VERSION, BOARD_PRESETS_KEY, MAX_BOARD_PRESETS,
     parseBoardFile, saveBoardAutosave, loadBoardAutosave, clearBoardAutosave,
     loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, emptyBoard, type BoardPreset,
+    BOARD_INK_KEY, saveInkSettings, loadInkSettings, loadEraserSize,
 } from '../board/boardPersistence';
 import { NATURAL_W } from '../board/widgetSizing';
 import { makeBoardBlock } from '../board/boardBlocks';
@@ -321,5 +322,27 @@ describe('transparent cards', () => {
         // The format stays v2: the flag is an ordinary prop, absent on a card that never set it.
         expect(BOARD_FORMAT_VERSION).toBe(2);
         expect(ws[3].props && 'transparent' in ws[3].props).toBe(false);
+    });
+});
+
+describe('eraser size (in the ink entry)', () => {
+    test('round-trips next to the pens; the pens still read as before', () => {
+        const ink = loadInkSettings();
+        saveInkSettings({ ...ink, pen: { color: '#dc2626', width: 6 } }, 30);
+        expect(JSON.parse(localStorage.getItem(BOARD_INK_KEY)!).eraserSize).toBe(30);
+        expect(loadEraserSize()).toBe(30);
+        expect(loadInkSettings().pen).toEqual({ color: '#dc2626', width: 6 });
+    });
+
+    test('the store saves it on change', () => {
+        useBoardStore.getState().setEraserSize(22);
+        expect(loadEraserSize()).toBe(22);
+        // Out of range is clamped in the store, junk in storage reads as the default.
+        useBoardStore.getState().setEraserSize(400);
+        expect(useBoardStore.getState().eraserSize).toBe(40);
+        localStorage.setItem(BOARD_INK_KEY, JSON.stringify({ eraserSize: 'groot' }));
+        expect(loadEraserSize()).toBe(14);
+        localStorage.setItem(BOARD_INK_KEY, '{nope');
+        expect(loadEraserSize()).toBe(14);
     });
 });

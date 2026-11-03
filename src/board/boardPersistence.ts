@@ -1,5 +1,5 @@
 import type { BoardPage, BoardSettings, BoardWidget, InkSettings, Instrument, Stroke, StrokeTool } from './boardTypes';
-import { DEFAULT_BOARD_SETTINGS, DEFAULT_INK, emptyPage } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, DEFAULT_INK, ERASER_RANGE, emptyPage } from './boardTypes';
 import { NATURAL_W } from './widgetSizing';
 import { BOARD_CM_PX, INSTRUMENT_KINDS, PASSER } from './instrumentGeometry';
 import { cleanWidgetProps } from './settings/propSchemas';
@@ -120,8 +120,19 @@ export function parseBoardFile(json: string): BoardFile | null {
 // pen that follows the board keeps following it.
 export const BOARD_INK_KEY = 'rekenraak_board_ink_v1';
 
-export function saveInkSettings(ink: Record<StrokeTool, InkSettings>): void {
-    try { localStorage.setItem(BOARD_INK_KEY, JSON.stringify(ink)); } catch { /* quota: the pens fall back to defaults */ }
+// The gom's size rides along in the same entry (`eraserSize`, a radius in px): it is pen setup too.
+export function saveInkSettings(ink: Record<StrokeTool, InkSettings>, eraserSize: number = ERASER_RANGE.default): void {
+    try { localStorage.setItem(BOARD_INK_KEY, JSON.stringify({ ...ink, eraserSize })); } catch { /* quota: the pens fall back to defaults */ }
+}
+
+// A junk or out-of-range size reads as the default.
+export function loadEraserSize(): number {
+    try {
+        const data: unknown = JSON.parse(localStorage.getItem(BOARD_INK_KEY) ?? 'null');
+        const r = isObj(data) ? data.eraserSize : undefined;
+        if (isNum(r) && r >= ERASER_RANGE.min && r <= ERASER_RANGE.max) return r;
+    } catch { /* unreadable: default */ }
+    return ERASER_RANGE.default;
 }
 
 // Each tool's entry read on its own: a junk colour reads as the default, a junk width too.

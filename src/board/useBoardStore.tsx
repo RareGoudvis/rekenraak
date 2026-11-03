@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground, DrawOptions, InkOp, InkSettings, Instrument, InstrumentKind, Stroke, StrokeTool } from './boardTypes';
-import { DEFAULT_BOARD_SETTINGS, emptyPage, inkColor, rndId } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, clampEraserSize, emptyPage, inkColor, rndId } from './boardTypes';
 import { defaultInstrument } from './instrumentGeometry';
 import { translateStroke } from './inkGeometry';
-import { loadBoardAutosave, loadInkSettings, saveBoardAutosave, saveInkSettings } from './boardPersistence';
+import { loadBoardAutosave, loadEraserSize, loadInkSettings, saveBoardAutosave, saveInkSettings } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
 import { loadWidgetDefaults } from './settings/widgetDefaults';
 
@@ -51,6 +51,9 @@ interface BoardState {
     // Lijn / vormen options (arrowheads, dashed, shape kind, soft fill); UI-only.
     drawOptions: DrawOptions;
     setDrawOptions: (patch: Partial<DrawOptions>) => void;
+    // The gom's reach (radius px), saved with the ink settings.
+    eraserSize: number;
+    setEraserSize: (r: number) => void;
 
     // ink (always the active page)
     addStroke: (s: Stroke) => void;
@@ -232,6 +235,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     })),
     drawOptions: { arrow: 'none', dashed: false, shape: 'rect', fill: false },
     setDrawOptions: (patch) => set((state) => ({ drawOptions: { ...state.drawOptions, ...patch } })),
+    eraserSize: loadEraserSize(),
+    setEraserSize: (r) => set({ eraserSize: clampEraserSize(r) }),
 
     _undoInk: [],
     _redoInk: [],
@@ -353,5 +358,5 @@ export function effectiveInk(state: Pick<BoardState, 'inkSettings' | 'pages' | '
 }
 
 useBoardStore.subscribe((state, prev) => {
-    if (state.inkSettings !== prev.inkSettings) saveInkSettings(state.inkSettings);
+    if (state.inkSettings !== prev.inkSettings || state.eraserSize !== prev.eraserSize) saveInkSettings(state.inkSettings, state.eraserSize);
 });
