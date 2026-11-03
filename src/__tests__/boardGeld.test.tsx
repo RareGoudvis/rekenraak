@@ -104,3 +104,23 @@ describe('geld dock', () => {
         expect(container.querySelector('[data-geld-sum]')!.textContent).toContain('€0');
     });
 });
+
+describe('GeldItemWidget real banknotes', () => {
+    const mk = (props: Record<string, unknown>) => ({ id: 'g', kind: 'geld-item', x: 0, y: 0, w: 110, z: 1, props } as unknown as BoardWidget);
+
+    test.each([500, 1000, 2000, 5000, 10000, 20000, 50000])('realistisch bill %i renders the ECB image + SPECIMEN overlay', denom => {
+        const { container } = render(<GeldItemWidget widget={mk({ denom, type: 'bill', geldStyle: 'realistisch' })} />);
+        const img = container.querySelector('img');
+        expect(img?.getAttribute('src')).toMatch(new RegExp(`geld/eur-${denom / 100}-front[.]jpg$`));
+        expect(container.querySelector('[data-specimen]')?.textContent).toBe('SPECIMEN');
+    });
+
+    test('tekening bills and realistic coins have no image or overlay', () => {
+        const a = render(<GeldItemWidget widget={mk({ denom: 2000, type: 'bill', geldStyle: 'tekening' })} />);
+        expect(a.container.querySelector('img')).toBeNull();
+        expect(a.container.querySelector('[data-specimen]')).toBeNull();
+        a.unmount();
+        const b = render(<GeldItemWidget widget={mk({ denom: 200, type: 'euro-coin', geldStyle: 'realistisch' })} />);
+        expect(b.container.querySelector('img')).toBeNull();
+    });
+});
