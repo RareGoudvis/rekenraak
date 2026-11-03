@@ -6,17 +6,12 @@ import type { BoardWidget } from '../../boardTypes';
 // Real ECB note fronts (public/geld, see README there); bills only, coins stay drawn.
 const BILL_W = 120, BILL_H = 62;
 
+// The ECB specimen files carry their own diagonal "specimen" mark (reproduction rule), so no overlay.
 function RealBill({ denom }: { denom: number }) {
     return (
         <div style={{ width: BILL_W + 'px', height: BILL_H + 'px', position: 'relative', overflow: 'hidden', borderRadius: '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
             <img src={`${import.meta.env.BASE_URL}geld/eur-${denom / 100}-front.jpg`} alt={`€${denom / 100}`} draggable={false}
                 style={{ width: '100%', height: '100%', display: 'block', objectFit: 'fill', pointerEvents: 'none', userSelect: 'none' }} />
-            {/* ECB rule: SPECIMEN diagonally at ~75 % of the note width, as an overlay so a crop cannot remove it */}
-            <span data-specimen aria-hidden style={{
-                position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-27deg)',
-                fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: 700, fontSize: '15px', letterSpacing: '1px',
-                color: 'rgba(60,60,60,0.3)', whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none',
-            }}>SPECIMEN</span>
         </div>
     );
 }

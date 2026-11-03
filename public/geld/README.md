@@ -10,7 +10,6 @@ Downloaded 2026-11-03 from the ECB "Banknotes: images" page
   https://www.ecb.europa.eu/euro/shared/img/Banknotes%20ES1%20Specimen%2072dpi.zip
 
 Reproduction rule (ECB, electronic reproductions): low resolution and the word SPECIMEN
-diagonally across the note, about 75 % of its width. The ECB files already carry a baked-in
-"specimen"; the board additionally draws a CSS SPECIMEN overlay in `RealBill`
-(src/board/components/widgets/GeldItemWidget.tsx) so it survives any crop of the widget.
-Do not remove that overlay and do not replace these files with higher-resolution versions.
+diagonally across the note. These are the ECB's own 72 dpi specimen files, which carry that mark
+baked in, so `RealBill` (src/board/components/widgets/GeldItemWidget.tsx) draws no extra overlay.
+Do not replace these files with unmarked or higher-resolution versions.
