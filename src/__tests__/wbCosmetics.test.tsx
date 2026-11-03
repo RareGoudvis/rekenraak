@@ -82,17 +82,17 @@ describe('add panel tabs', () => {
 
     test("the five tabs, and each widget sits in the owner's category", () => {
         const { getAllByRole, getByRole, queryByRole } = render(<BoardAddPanel onClose={() => {}} />);
-        expect(getAllByRole('tab').map(t => t.textContent)).toEqual(['Rekenblad', 'Rekentool', 'Klasbeheer', 'Dagritme', 'Tekst · beeld']);
+        expect(getAllByRole('tab').map(t => t.textContent)).toEqual(['Rekenblok', 'Rekentool', 'Klasbeheer', 'Dagritme', 'Extra']);
         const tiles = (tab: string) => {
             fireEvent.click(getByRole('tab', { name: tab }));
             return getAllByRole('button').filter(b => !b.getAttribute('role') && !b.getAttribute('aria-label')).map(b => b.textContent?.trim());
         };
         expect(tiles('Klasbeheer')).toEqual(expect.arrayContaining(['Namenkiezer', 'Groepjesmaker', 'Geluidsniveau', 'Timer', 'Stopwatch', 'Checklist', 'Werksymbolen', 'Stappenplan']));
         expect(tiles('Dagritme')).toEqual(expect.arrayContaining(['Datum', 'Weer', 'Ademhaling']));
-        expect(tiles('Tekst · beeld')).toEqual(expect.arrayContaining(['Tekst', 'Afbeelding']));
+        expect(tiles('Extra')).toEqual(['Afbeelding']);
         expect(tiles('Rekentool')).toEqual(expect.arrayContaining(['Getallenlijn', 'Honderdveld', 'MAB-materiaal']));
-        // Rekenblad = the exercise catalog, with its domain chips.
-        fireEvent.click(getByRole('tab', { name: 'Rekenblad' }));
+        // Rekenblok = the exercise catalog, with its domain chips.
+        fireEvent.click(getByRole('tab', { name: 'Rekenblok' }));
         expect(queryByRole('button', { name: 'Alles' })).not.toBeNull();
     });
 
@@ -120,12 +120,21 @@ describe('add panel tabs', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
+    test('an old favourite id for the dropped Tekst tile vanishes silently', () => {
+        localStorage.setItem('rekenraak_board_favorites_v1', JSON.stringify(['tekst', 'datum']));
+        const { getByLabelText } = render(<BoardAddPanel onClose={() => {}} />);
+        const favs = getByLabelText('Favorieten');
+        expect(within(favs).queryByRole('button', { name: /Tekst/ })).toBeNull();
+        expect(within(favs).queryByRole('button', { name: /Datum/ })).not.toBeNull();
+        localStorage.removeItem('rekenraak_board_favorites_v1');
+    });
+
     test('a star makes a favourite that shows on top of every tab and adds in one tap', () => {
         localStorage.removeItem('rekenraak_board_favorites_v1');
         const { getByRole, getByLabelText } = render(<BoardAddPanel onClose={() => {}} />);
         fireEvent.click(getByRole('tab', { name: 'Dagritme' }));
         fireEvent.click(getByLabelText('Favoriet Datum'));
-        fireEvent.click(getByRole('tab', { name: 'Rekenblad' }));
+        fireEvent.click(getByRole('tab', { name: 'Rekenblok' }));
         const favs = getByLabelText('Favorieten');
         fireEvent.click(within(favs).getByRole('button', { name: /Datum/ }));
         expect(useBoardStore.getState().pages[0].widgets.map(w => w.kind)).toEqual(['datum']);

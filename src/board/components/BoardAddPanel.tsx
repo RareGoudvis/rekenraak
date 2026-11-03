@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Star, X, MagnifyingGlass } from '@phosphor-icons/react';
 import { buildCatalog, catalogDomains, type CatalogItem, type CatalogVariant } from '../../config/exerciseCatalog';
+import ExercisePreview from '../../components/shared/ExercisePreview';
+import { seedConstraints } from '../../config/baseSettings';
 import { useBoardStore } from '../useBoardStore';
 import { makeBoardBlock, sheetSeedContext } from '../boardBlocks';
 import { addBasicWidget, staggerPos } from '../addWidgets';
 import { TOOL_CATALOG, TOOL_CATEGORIES, runTool, loadFavorites, toggleFavorite, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 
-type Tab = 'rekenblad' | ToolCategory;
+type Tab = 'rekenblok' | ToolCategory;
 
 const TABS: ReadonlyArray<{ id: Tab; label: string }> = [
-    { id: 'rekenblad', label: 'Rekenblad' },
+    { id: 'rekenblok', label: 'Rekenblok' },
     ...TOOL_CATEGORIES,
 ];
 
@@ -49,7 +51,7 @@ function toolMatches(t: BoardToolDef, needle: string): boolean {
 export default function BoardAddPanel({ onClose }: Props) {
     const catalog = useMemo(() => buildCatalog(), []);
     const domains = useMemo(() => catalogDomains(catalog), [catalog]);
-    const [tab, setTab] = useState<Tab>('rekenblad');
+    const [tab, setTab] = useState<Tab>('rekenblok');
     const [domain, setDomain] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [favorites, setFavorites] = useState<string[]>(loadFavorites);
@@ -79,8 +81,14 @@ export default function BoardAddPanel({ onClose }: Props) {
         () => catalog.filter(it => (needle || !domain || it.domainId === domain) && boardItemMatches(it, needle)),
         [catalog, domain, needle]);
     const tools = needle ? TOOL_CATALOG.filter(t => toolMatches(t, needle)) : TOOL_CATALOG.filter(t => t.category === tab);
-    const showItems = needle ? true : tab === 'rekenblad';
+    const showItems = needle ? true : tab === 'rekenblok';
     const favDefs = favorites.map(id => TOOL_CATALOG.find(t => t.id === id)).filter((t): t is BoardToolDef => !!t);
+
+    // Resolve the preview the way addExercise seeds the block, so the tile shows what a tap adds.
+    const previewConstraints = (item: CatalogItem) => {
+        const v = item.variants[0];
+        return seedConstraints({ typeId: item.typeId, override: v.constraints, leafId: v.key, ...sheetSeedContext() });
+    };
 
     const addExercise = (item: CatalogItem, variant: CatalogVariant) => {
         const block = makeBoardBlock(item.typeId, { override: variant.constraints, leafId: variant.key, ...sheetSeedContext() });
@@ -139,7 +147,7 @@ export default function BoardAddPanel({ onClose }: Props) {
                 </div>
             )}
 
-            {!needle && tab === 'rekenblad' && (
+            {!needle && tab === 'rekenblok' && (
                 <div style={S.chips} aria-label="Domein">
                     <button type="button" className="ui-hover" aria-pressed={domain === null}
                         style={{ ...S.chip, ...(domain === null ? S.chipOn : {}) }} onClick={() => setDomain(null)}>Alles</button>
@@ -174,7 +182,7 @@ export default function BoardAddPanel({ onClose }: Props) {
                     </div>
                 )}
                 {showItems && (
-                    <div style={S.itemGrid} aria-label="Rekenblad">
+                    <div style={S.itemGrid} aria-label="Rekenblok">
                         {items.map(item => item.variants.length === 1 ? (
                             <button key={item.typeId} type="button" className="ui-hover" style={S.itemTile} onClick={() => addExercise(item, item.variants[0])}>
                                 <span style={S.itemHead}>
@@ -182,6 +190,10 @@ export default function BoardAddPanel({ onClose }: Props) {
                                     <span style={S.itemLabel}>{item.label}</span>
                                 </span>
                                 <span style={S.itemContext}>{item.context}</span>
+                                {/* NOT centered: width:100% viewers collapse when centered. */}
+                                <span style={S.preview}>
+                                    <ExercisePreview typeId={item.typeId} constraints={previewConstraints(item)} height={110} />
+                                </span>
                             </button>
                         ) : (
                             <div key={item.typeId} style={{ ...S.itemTile, cursor: 'default' }}>
@@ -190,6 +202,10 @@ export default function BoardAddPanel({ onClose }: Props) {
                                     <span style={S.itemLabel}>{item.label}</span>
                                 </span>
                                 <span style={S.itemContext}>{item.context}</span>
+                                {/* NOT centered: width:100% viewers collapse when centered. */}
+                                <span style={S.preview}>
+                                    <ExercisePreview typeId={item.typeId} constraints={previewConstraints(item)} height={110} />
+                                </span>
                                 <span style={S.variants}>
                                     {item.variants.map(v => (
                                         <button key={v.key} type="button" className="ui-hover" style={S.variantBtn} onClick={() => addExercise(item, v)}>
@@ -215,7 +231,7 @@ const S = {
     // Docked to the rail's right edge and the board's bottom, no gap: it grows out of the rail.
     panel: {
         position: 'absolute', left: 0, bottom: 0, zIndex: 60,
-        width: 'min(820px, calc(100% - 16px))', height: 'min(560px, calc(100% - 72px))',
+        width: 'min(1100px, calc(100% - 16px))', height: 'min(720px, calc(100% - 72px))',
         display: 'flex', flexDirection: 'column', gap: '10px', padding: '14px 16px', boxSizing: 'border-box',
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderLeft: 'none', borderBottom: 'none',
         borderRadius: '0 var(--radius-lg) 0 0', boxShadow: 'var(--shadow-3)',
@@ -257,7 +273,7 @@ const S = {
     chipOn: { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--accent)' } as React.CSSProperties,
     dot: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 } as React.CSSProperties,
     scroll: { flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '2px' } as React.CSSProperties,
-    toolGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(132px, 1fr))', gap: '10px' } as React.CSSProperties,
+    toolGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' } as React.CSSProperties,
     toolTile: {
         width: '100%', minHeight: '88px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         gap: '8px', padding: '14px 8px', boxSizing: 'border-box',
@@ -269,7 +285,7 @@ const S = {
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', padding: 0,
     } as React.CSSProperties,
-    itemGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px', alignItems: 'start' } as React.CSSProperties,
+    itemGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '10px', alignItems: 'start' } as React.CSSProperties,
     itemTile: {
         width: '100%', minHeight: '64px', display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '4px',
         padding: '12px', boxSizing: 'border-box', textAlign: 'left',
@@ -279,6 +295,7 @@ const S = {
     itemHead: { display: 'flex', alignItems: 'center', gap: '8px' } as React.CSSProperties,
     itemLabel: { fontSize: 'var(--text-sm)', fontWeight: 600, lineHeight: 1.25 } as React.CSSProperties,
     itemContext: { fontSize: 'var(--text-xs)', color: 'var(--text-muted)', paddingLeft: '18px' } as React.CSSProperties,
+    preview: { display: 'block', marginTop: '4px', overflow: 'hidden' } as React.CSSProperties,
     variants: { display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' } as React.CSSProperties,
     variantBtn: {
         minHeight: '40px', padding: '0 10px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)',
