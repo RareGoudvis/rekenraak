@@ -270,6 +270,14 @@ input[type="range"]:focus-visible { box-shadow: none; }
 input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: var(--shadow-focus); }
 input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: var(--shadow-focus); }
 
+/* Bordmodus rail size slider: upright (writing-mode in InkRail.tsx) with a 22px thumb a finger
+   can hold on a digibord; the rail section dims itself, so the generic disabled fade is undone. */
+.board-ink-range::-webkit-slider-runnable-track { width: 4px; height: 100%; }
+.board-ink-range::-moz-range-track { width: 4px; height: 100%; }
+.board-ink-range::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: 0; margin-left: -7px; background: var(--bg-surface); border-color: var(--text-muted); }
+.board-ink-range::-moz-range-thumb { width: 22px; height: 22px; background: var(--bg-surface); border-color: var(--text-muted); }
+.board-ink-range:disabled { opacity: 1; cursor: not-allowed; }
+
 /* Apple-style keyboard focus: a soft accent ring, only for keyboard users
    (:focus-visible), never a hard browser outline. */
 button:focus-visible,
