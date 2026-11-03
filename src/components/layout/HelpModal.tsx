@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import ModalShell from '../ui/ModalShell';
+import { BETA_MODULES, BETA_TEXT, FEEDBACK_URL, type BetaModule } from '../../config/beta';
+import { resetFirstRun, resetBetaStrip } from '../../hooks/useFirstRun';
 
 interface Props {
     onClose: () => void;
@@ -8,13 +10,40 @@ interface Props {
     onShowReleaseNotes?: () => void;
 }
 
-type Tab = 'maken' | 'opslaan' | 'delen';
+type Tab = 'maken' | 'opslaan' | 'delen' | 'oefenmodus' | 'bordmodus';
+
+const MODULE_HELP: Record<BetaModule, { title: string; bullets: string[] }> = {
+    oefenmodus: {
+        title: 'Oefenmodus',
+        bullets: [
+            'Leerlingen oefenen zelfstandig op hun eigen toestel, via een link of QR-code.',
+            'Open Oefenmodus onderaan de linker zijbalk en kies een paar soorten oefeningen.',
+            'Stel per soort het aantal en de moeilijkheid in; de voorbeeldweergave toont meteen wat de leerling krijgt.',
+            'Kies de volgorde (afwisselen of willekeurig) en eventueel een timer.',
+            'Met testmodus bepaal je hoeveel pogingen een leerling heeft.',
+            'Klik op Delen voor de link en QR-code, of Opslaan om de sessie te bewaren.',
+            'De resultaten staan onder Resultaten op het toestel van de leerling; er verlaat niets dat toestel.',
+        ],
+    },
+    bordmodus: {
+        title: 'Bordmodus',
+        bullets: [
+            'Een digibord-canvas met RekenRaak-blokken en hulpmiddelen om op te tekenen en te meten.',
+            'Open Bordmodus onderaan de linker zijbalk.',
+            'De balk links bevat je gereedschap; het plusje onderaan voegt een kaart of hulpmiddel toe, het tandwiel bovenaan opent de instellingen.',
+            'Elke kaart heeft een titelbalk met Nieuw (nieuwe oefeningen) en Instellingen.',
+            'Via Meer in de titelbalk maak je een kaart doorzichtig.',
+            'Versleep een kaart om ze te verplaatsen en gebruik de hoek om het formaat aan te passen.',
+        ],
+    },
+};
 
 // Step-by-step usage guide in three levels: build a worksheet, save/load worksheets,
 // share worksheets. Kept in sync with the current chrome (topbar "Menu" and "Bewaren" buttons,
 // Oefeningen/Overzicht tabs, Bibliotheek presets). Reuses theme CSS variables.
 export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowReleaseNotes }: Props) {
     const [tab, setTab] = useState<Tab>('maken');
+    const [replayed, setReplayed] = useState<BetaModule | null>(null);
 
     return (
         <ModalShell onClose={onClose} ariaLabel="Hulp" variant="sheet" maxWidth={680}>
@@ -56,6 +85,8 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                     <TabBtn active={tab === 'maken'} onClick={() => setTab('maken')}>Eigen werkblad maken</TabBtn>
                     <TabBtn active={tab === 'opslaan'} onClick={() => setTab('opslaan')}>Werkbladen opslaan</TabBtn>
                     <TabBtn active={tab === 'delen'} onClick={() => setTab('delen')}>Werkbladen delen</TabBtn>
+                    {BETA_MODULES.oefenmodus && <TabBtn active={tab === 'oefenmodus'} onClick={() => setTab('oefenmodus')}>Oefenmodus</TabBtn>}
+                    {BETA_MODULES.bordmodus && <TabBtn active={tab === 'bordmodus'} onClick={() => setTab('bordmodus')}>Bordmodus</TabBtn>}
                 </div>
 
                 {/* LEVEL 1 — build & adjust a worksheet end-to-end */}
@@ -118,6 +149,25 @@ export default function HelpModal({ onClose, onStartTour, onShowVideo, onShowRel
                         <Section title="Bugs of suggesties?">
                             Laat het me weten via het <a href="https://forms.gle/jc1LcMXaRG3V3M556" target="_blank" rel="noopener noreferrer" style={linkStyle}>contactformulier</a> (Menu → Feedback geven).
                         </Section>
+                    </>
+                )}
+
+                {(tab === 'oefenmodus' || tab === 'bordmodus') && (
+                    <>
+                        <Section title={MODULE_HELP[tab].title}>
+                            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+                                {MODULE_HELP[tab].bullets.map(b => <li key={b}>{b}</li>)}
+                            </ul>
+                        </Section>
+                        {BETA_MODULES[tab] && (
+                            <Section title="Bèta">
+                                {BETA_TEXT.replace('Mail ons.', '')}<a href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer" style={linkStyle}>Mail ons.</a>
+                            </Section>
+                        )}
+                        <button type="button" style={secondaryBtnStyle} onClick={() => { resetFirstRun(tab); resetBetaStrip(tab); setReplayed(tab); }}>
+                            Toon de uitleg opnieuw
+                        </button>
+                        {replayed === tab && <span style={{ marginLeft: 10, fontSize: '13px', color: 'var(--text-muted)' }}>Klaar: je ziet de uitleg de volgende keer dat je de module opent.</span>}
                     </>
                 )}
             </div>

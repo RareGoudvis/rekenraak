@@ -9,6 +9,7 @@ import ExercisePreview from '../shared/ExercisePreview';
 import { LEERJAREN, leafAllowedForGrade, type Leerjaar } from '../../config/gradePresets';
 import PopupSelect from '../ui/PopupSelect';
 import Wordmark from '../ui/Wordmark';
+import BetaBadge from '../ui/BetaBadge';
 import OverzichtPanel from './OverzichtPanel';
 import OefenBuilderModal from '../oefenen/OefenBuilderModal';
 
@@ -360,12 +361,12 @@ export default function Sidebar() {
                 {!locked && (
                     <button type="button" className="sidebar-leaf" style={S.modeBtn} onClick={() => setOefenOpen(true)}
                         title="Oefenmodus: laat leerlingen oefenen via een link of QR-code" aria-label="Oefenmodus: laat leerlingen oefenen via een link of QR-code">
-                        <Student size={16} aria-hidden="true" /><span>Oefenmodus</span>
+                        <Student size={16} aria-hidden="true" /><span>Oefenmodus</span><BetaBadge module="oefenmodus" />
                     </button>
                 )}
                 <button type="button" className="sidebar-leaf" style={S.modeBtn} onClick={() => setView('whiteboard')}
                     title="Bordmodus: oefeningen en hulpmiddelen op het digibord" aria-label="Bordmodus: oefeningen en hulpmiddelen op het digibord">
-                    <Chalkboard size={16} aria-hidden="true" /><span>Bordmodus</span>
+                    <Chalkboard size={16} aria-hidden="true" /><span>Bordmodus</span><BetaBadge module="bordmodus" />
                 </button>
             </div>
 
