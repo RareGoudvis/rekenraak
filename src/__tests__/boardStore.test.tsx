@@ -242,7 +242,9 @@ describe('pages', () => {
     test('the background is per page', () => {
         st().setBackground({ pattern: 'raster', dark: true });
         st().addPage();
-        expect(page().background).toEqual({ pattern: 'blanco', dark: false });
+        // A new page starts with the current page's background (owner call 2026-11-03).
+        expect(page().background).toEqual({ pattern: 'raster', dark: true });
+        st().setBackground({ pattern: 'blanco', dark: false });
         expect(page(0).background.pattern).toBe('raster');
     });
 

@@ -8,7 +8,7 @@ export default function BetaCaption() {
     if (names.length === 0) return null;
     const list = names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' en ' + names[names.length - 1];
     return (
-        <div data-testid="beta-caption" style={{ padding: '0 var(--sp-4) var(--sp-2)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+        <div data-testid="beta-caption" style={{ padding: '0 var(--sp-4) var(--sp-2)', fontSize: 'var(--text-xs)', color: 'var(--text-muted)', lineHeight: 1.3, textAlign: 'center' }}>
             {list} {names.length === 1 ? 'is' : 'zijn'} in bèta
         </div>
     );

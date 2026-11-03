@@ -187,8 +187,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     geldPaletOpen: false,
     setGeldPaletOpen: (open) => set({ geldPaletOpen: open }),
 
+    // A new page keeps the current page's background: a teacher who picked ruitjes wants ruitjes again.
     addPage: () => set((state) => ({
-        pages: [...state.pages, emptyPage()],
+        pages: [...state.pages, { ...emptyPage(), background: { ...state.pages[state.activePageIdx].background } }],
         activePageIdx: state.pages.length,
         selectedWidgetId: null,
         selectedInstrumentId: null,

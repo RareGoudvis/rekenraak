@@ -1462,7 +1462,7 @@ src/
 │       ├── InkRail.tsx          # always-visible ink section of the rail: one column of 4 swatches (stripColors per tool) + picker chips popover, vertical Dikte / Gomgrootte slider with the dot + number under it, sizes scale with the rail height (cqh), follows the active tool, greyed for non-ink tools
 │       ├── WidgetPreview.tsx    # chromeless inert preview of a widget kind for the Toevoegen tool tiles (WidgetContent, default props, zoom ≤ 0.6, 100 px box)
 │       ├── BoardSettingsMenu.tsx # Bordinstellingen popover, reduced: BackgroundPicker, Raster uitlijnen + size, Bord wissen
-│       ├── BoardTopPill.tsx     # top-right pill: ◀ Pagina n/m ▾ (page actions popover) ▶, Bewaren ▾ (BoardLibraryPopover), Volledig scherm, Bordmodus verlaten (X)
+│       ├── BoardTopPill.tsx     # two pills: top-right Bewaren ▾ (BoardLibraryPopover) · Volledig scherm · Bordmodus verlaten (X); bottom-right ◀ Pagina n/m ▾ (page actions popover, opens upward) ▶
 │       ├── BoardLibraryPopover.tsx # Mijn borden: Bewaren / Bewaren als…, list with Openen / Hernoemen / Dupliceren / Verwijderen, Exporteren / Importeren
 │       ├── BackgroundPicker.tsx # achtergrond popover: live preview tiles for pattern / size / board colour, arrow-key grid
 │       ├── BoardAddPanel.tsx    # Toevoegen panel docked bottom-left (≤ 1100×720): tabs Rekenblok / Rekentool / Klasbeheer / Dagritme / Extra, ★ favourites row, search, exercise tiles with live ExercisePreview + variant buttons; adding selects + switches to Selecteren
@@ -1718,7 +1718,8 @@ under `src/board/`. Touchpoints with the main app are exactly five:
    overlay when `view === 'whiteboard'` (like the library views: the editor stays mounted
    underneath, so switching back loses nothing).
 3. **Sidebar-foot button** — "Bordmodus" (Chalkboard icon) in the mode row directly above the
-   wordmark ([sidebar.tsx](../../src/components/layout/sidebar.tsx)), beside Oefenmodus; nothing in
+   wordmark ([sidebar.tsx](../../src/components/layout/sidebar.tsx)), beside Oefenmodus, both with the
+   secondary IconButton chrome and the centred `BetaCaption` line under them; nothing in
    the TopBar, so its fold stages are the pre-whiteboard ones.
 4. **GeldViewer exports** — `EuroCoin` / `CentCoin` are exported (`Bill` already was) so the
    board's geld palette and geld-item widgets draw the same money as the sheet.
@@ -2008,9 +2009,10 @@ in [inkGeometry.ts](../../src/board/inkGeometry.ts), token colours read at runti
 fallback); erasing stays per stroke. **Bordinstellingen**
 ([BoardSettingsMenu.tsx](../../src/board/components/BoardSettingsMenu.tsx)) holds only what has no
 other home: the BackgroundPicker (`role="group"`), Raster uitlijnen + size, Bord wissen. The
-**top-right pill** ([BoardTopPill.tsx](../../src/board/components/BoardTopPill.tsx)) is
-`◀ [Pagina n / m ▾] ▶ | Bewaren ▾ | Volledig scherm | X`: the counter opens the page actions
-(toevoegen / dupliceren / leegmaken / verwijderen), Bewaren opens Mijn borden
+**two pills** ([BoardTopPill.tsx](../../src/board/components/BoardTopPill.tsx)): top-right
+`Bewaren ▾ | Volledig scherm | X`, bottom-right `◀ [Pagina n / m ▾] ▶` (where a hand rests on the
+board; its popover opens upward): the counter opens the page actions (toevoegen / dupliceren /
+leegmaken / verwijderen; a new page inherits the current page's background), Bewaren opens Mijn borden
 ([BoardLibraryPopover.tsx](../../src/board/components/BoardLibraryPopover.tsx), "Persistence" below),
 Volledig scherm uses the Fullscreen API via [boardChrome.ts](../../src/board/boardChrome.ts) (hidden
 without it), X = Bordmodus verlaten (label in `aria-label` / `title`); inspectors start at top 72 px to

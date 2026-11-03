@@ -63,7 +63,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             },
             {
                 kind: 'gewijzigd',
-                text: 'Bordmodus: pagina\u2019s en bewaren zitten alleen nog rechtsboven; het tandwiel houdt achtergrond, raster en Bord wissen.',
+                text: 'Bordmodus: pagina-knoppen rechtsonder, bewaren en volledig scherm rechtsboven; een nieuwe pagina krijgt de achtergrond van de vorige.',
             },
             {
                 kind: 'nieuw',

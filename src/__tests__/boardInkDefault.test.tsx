@@ -67,7 +67,9 @@ describe('store', () => {
 
     test('the default follows the page: a dark page and a light page each get their own', () => {
         setDark(true);
+        // A new page inherits the dark background, so switch the copy back to light by hand.
         act(() => { st().addPage(); });
+        setDark(false);
         expect(effectiveInk(st(), 'pen').color).toBe(BLACK);
         act(() => { st().gotoPage(0); });
         expect(effectiveInk(st(), 'pen').color).toBe(WHITE);

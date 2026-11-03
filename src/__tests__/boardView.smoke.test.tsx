@@ -180,17 +180,22 @@ describe('rail and pill (round 2)', () => {
         expect(errors()).toEqual([]);
     });
 
-    test('the pill: ◀ Pagina ▾ ▶ | Bewaren ▾ | (Volledig scherm) | X, the counter opens the page actions', () => {
+    test('two pills: bottom-right ◀ Pagina ▾ ▶, top-right Bewaren ▾ | (Volledig scherm) | X; the counter opens the page actions', () => {
         render(<WhiteboardView />);
         const pill = document.querySelector('[data-board-pill]') as HTMLElement;
-        const labels = [...pill.querySelectorAll('button')].map(b => b.getAttribute('aria-label'));
+        const pagesPill = document.querySelector('[data-board-pages-pill]') as HTMLElement;
+        const labelsOf = (el: HTMLElement) => [...el.querySelectorAll('button')].map(b => b.getAttribute('aria-label'));
         // jsdom has no Fullscreen API, so that button is left out there.
-        expect(labels).toEqual(['Vorige pagina', 'Pagina 1 van 1: pagina’s beheren', 'Volgende pagina', 'Bewaren', 'Bordmodus verlaten']);
+        expect(labelsOf(pill)).toEqual(['Bewaren', 'Bordmodus verlaten']);
+        expect(labelsOf(pagesPill)).toEqual(['Vorige pagina', 'Pagina 1 van 1: pagina’s beheren', 'Volgende pagina']);
+        expect(pagesPill.style.bottom).toBe('12px');
         act(() => { fireEvent.click(screen.getByRole('button', { name: /^Pagina 1 van 1/ })); });
         const pages = screen.getByRole('dialog', { name: 'Pagina’s' });
         act(() => { fireEvent.click(within(pages).getByText('Pagina toevoegen')); });
         expect(st().pages).toHaveLength(2);
         expect(screen.getByRole('button', { name: /^Pagina 2 van 2/ })).toBeTruthy();
+        // The new page inherits the previous page's background.
+        expect(st().pages[1].background).toEqual(st().pages[0].background);
         // Each action closes the popover.
         expect(screen.queryByRole('dialog', { name: 'Pagina’s' })).toBeNull();
         expect(errors()).toEqual([]);

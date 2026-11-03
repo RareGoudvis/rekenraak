@@ -7,9 +7,10 @@ import BoardLibraryPopover from './BoardLibraryPopover';
 
 type Pop = 'pages' | 'library';
 
-// Top-right pill (Zijrail design): ◀ [Pagina 1 / 2 ▾] ▶ | Bewaren ▾ | Volledig scherm | X. The
-// counter opens the page actions, Bewaren opens Mijn borden; both live only here (the gear menu
-// no longer repeats them). Icon buttons carry their words in aria-label + title.
+// Two pills (Zijrail design, owner call 2026-11-03): top-right `Bewaren ▾ | Volledig scherm | X`,
+// bottom-right `◀ [Pagina 1 / 2 ▾] ▶` so the page controls sit where a hand rests on the board.
+// The counter opens the page actions, Bewaren opens Mijn borden; both live only here (the gear
+// menu no longer repeats them). Icon buttons carry their words in aria-label + title.
 export default function BoardTopPill() {
     const setView = useWorksheetStore((s) => s.setView);
     const activePageIdx = useBoardStore((s) => s.activePageIdx);
@@ -39,8 +40,8 @@ export default function BoardTopPill() {
 
     const toggle = (p: Pop) => setPop(pop === p ? null : p);
 
-    return (
-        <div data-board-pill="" role="toolbar" aria-label="Bord" style={S.pill} onPointerDown={(e) => e.stopPropagation()}>
+    return (<>
+        <div data-board-pages-pill="" role="toolbar" aria-label="Pagina’s" style={S.pagesPill} onPointerDown={(e) => e.stopPropagation()}>
             <button type="button" className="ui-hover" aria-label="Vorige pagina" title="Vorige pagina" disabled={first}
                 style={{ ...S.btn, width: '40px', ...(first ? S.disabled : {}) }} onClick={() => gotoPage(activePageIdx - 1)}>
                 <CaretLeft size={18} />
@@ -52,7 +53,7 @@ export default function BoardTopPill() {
                     Pagina {activePageIdx + 1} / {pageCount} <CaretDown size={14} />
                 </button>
                 {pop === 'pages' && (
-                    <div role="dialog" aria-label="Pagina’s" style={S.popover}>
+                    <div role="dialog" aria-label="Pagina’s" style={S.popoverUp}>
                         <PageActions onDone={() => setPop(null)} />
                     </div>
                 )}
@@ -61,7 +62,8 @@ export default function BoardTopPill() {
                 style={{ ...S.btn, width: '40px', ...(last ? S.disabled : {}) }} onClick={() => gotoPage(activePageIdx + 1)}>
                 <CaretRight size={18} />
             </button>
-            <span style={S.sep} />
+        </div>
+        <div data-board-pill="" role="toolbar" aria-label="Bord" style={S.pill} onPointerDown={(e) => e.stopPropagation()}>
             <div data-pill-menu="library" style={S.slot}>
                 <button type="button" className="ui-hover" aria-label="Bewaren" title="Bewaren en Mijn borden" aria-expanded={pop === 'library'}
                     aria-haspopup="dialog" style={{ ...S.btn, width: '56px', gap: '2px', ...(pop === 'library' ? S.on : {}) }} onClick={() => toggle('library')}>
@@ -84,7 +86,7 @@ export default function BoardTopPill() {
                 <X size={20} />
             </button>
         </div>
-    );
+    </>);
 }
 
 // The page actions that used to sit in the gear menu.
@@ -116,6 +118,13 @@ const S = {
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-pill)',
         boxShadow: 'var(--shadow-2)',
     } as React.CSSProperties,
+    // Bottom-right twin of the pill: page controls where a hand rests on the board.
+    pagesPill: {
+        position: 'absolute', bottom: '12px', right: '16px', zIndex: 55,
+        display: 'flex', alignItems: 'center', gap: '2px', padding: '4px 6px',
+        background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-pill)',
+        boxShadow: 'var(--shadow-2)',
+    } as React.CSSProperties,
     slot: { position: 'relative' } as React.CSSProperties,
     btn: {
         width: '44px', height: '44px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -133,6 +142,12 @@ const S = {
     // Hangs under its button, right-aligned so it never runs off the board's right edge.
     popover: {
         position: 'absolute', top: 'calc(100% + 10px)', right: 0, zIndex: 1, width: 'max-content',
+        padding: '8px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
+        borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-2)',
+    } as React.CSSProperties,
+    // The pages pill sits at the bottom, so its popover opens upward.
+    popoverUp: {
+        position: 'absolute', bottom: 'calc(100% + 10px)', right: 0, zIndex: 1, width: 'max-content',
         padding: '8px', background: 'var(--bg-surface)', border: '1px solid var(--border-color)',
         borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-2)',
     } as React.CSSProperties,

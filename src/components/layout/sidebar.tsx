@@ -359,12 +359,12 @@ export default function Sidebar() {
                 (it would offer exercises outside the whitelist) but keeps Bordmodus. */}
             <div style={S.modeRow}>
                 {!locked && (
-                    <button type="button" className="sidebar-leaf" style={S.modeBtn} onClick={() => setOefenOpen(true)}
+                    <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => setOefenOpen(true)}
                         title="Oefenmodus: laat leerlingen oefenen via een link of QR-code" aria-label="Oefenmodus: laat leerlingen oefenen via een link of QR-code">
                         <Student size={16} aria-hidden="true" /><span>Oefenmodus</span>
                     </button>
                 )}
-                <button type="button" className="sidebar-leaf" style={S.modeBtn} onClick={() => setView('whiteboard')}
+                <button type="button" className="ui-icon-btn" style={S.modeBtn} onClick={() => setView('whiteboard')}
                     title="Bordmodus: oefeningen en hulpmiddelen op het digibord" aria-label="Bordmodus: oefeningen en hulpmiddelen op het digibord">
                     <Chalkboard size={16} aria-hidden="true" /><span>Bordmodus</span>
                 </button>
@@ -425,8 +425,10 @@ const S = {
     modeRow: { flex: 'none', display: 'flex', gap: 'var(--sp-1)', padding: 'var(--sp-1) var(--sp-2)', borderTop: '1px solid var(--separator)' } as React.CSSProperties,
     modeBtn: {
         flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-2)',
-        background: 'none', border: 'none', borderRadius: 'var(--radius-sm)', padding: '7px 10px',
-        color: 'var(--text-muted)', fontSize: 'var(--text-sm)', fontFamily: 'inherit', fontWeight: 500,
+        // Same chrome as the TopBar's secondary IconButtons (Oefeningen toevoegen / Menu): a
+        // bordered box, so these read as buttons and not as two labels.
+        background: 'var(--bg-surface)', border: '1px solid var(--separator)', borderRadius: 'var(--radius-sm)', height: 'var(--control-h)', padding: '0 10px',
+        color: 'var(--text-main)', fontSize: 'var(--text-sm)', fontFamily: 'inherit', fontWeight: 600,
         cursor: 'pointer', whiteSpace: 'nowrap',
     } as React.CSSProperties,
 
