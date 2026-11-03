@@ -35,6 +35,15 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
         date: '2026-11',
         summary: 'Oefenmodus en Bordmodus in bèta, aangepaste breukenoefeningen en extra opmaakinstellingen.',
         items: [
+            // ── 2026-11-03 (3): colours + size in the rail, widget previews, beta caption ──
+            {
+                kind: 'gewijzigd',
+                text: 'Bordmodus: kleur en dikte staan vast in de balk links en volgen het gekozen gereedschap (pen, stift, lijn, gom); geen uitklapmenu meer.',
+            },
+            {
+                kind: 'nieuw',
+                text: 'Bordmodus: Toevoegen toont nu ook een voorbeeld van elk hulpmiddel (timer, namenkiezer, klok, …), niet alleen van de rekenblokken.',
+            },
             // ── 2026-11-03 (2): Bordmodus round 2 after the owner's first try ──
             {
                 kind: 'gewijzigd',
@@ -63,7 +72,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             // ── 2026-11-03: public beta of the two modules + Bordmodus Zijrail ──
             {
                 kind: 'nieuw',
-                text: 'Oefenmodus en Bordmodus zijn open voor iedereen, in bèta: alles werkt, we schaven nog bij. Fouten of ideeën? Mail ons via de bèta-strook.',
+                text: 'Oefenmodus en Bordmodus zijn open voor iedereen, in bèta (zie de regel onder de knoppen): alles werkt, we schaven nog bij. Fouten of ideeën? Mail ons.',
             },
             {
                 kind: 'nieuw',

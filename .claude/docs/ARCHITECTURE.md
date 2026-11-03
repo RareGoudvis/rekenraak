@@ -1456,9 +1456,11 @@ src/
 │   ├── mathTools/               # settings models of the wiskunde-gereedschap: getallenlijn, positietabel, honderdveld, breukviz, mabmat, geld (dock key rekenraak_board_geldpalet_v1) + shared.ts validators / TOOL_COLORS / INK_COLORS
 │   └── components/
 │       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'; BetaStrip + FirstRunCard ('bordmodus') above the canvas; board Ctrl+Z / Ctrl+Y → ink undo / redo
-│       ├── BoardPageCanvas.tsx  # one page: background, isolated widget layer, ink layer, instrument layer, geld dock; text-tool placement, 🔄 / 👁 wiring
+│       ├── BoardPageCanvas.tsx  # one page (exports WidgetContent, the kind switch, for WidgetPreview): background, isolated widget layer, ink layer, instrument layer, geld dock; text-tool placement, 🔄 / 👁 wiring
 │       ├── WidgetFrame.tsx      # window-card chrome: always-on 48 px title bar (dot, title from cardTitle.ts, Nieuw / Oplossing (math), ⚙, Meer: Doorzichtig / Kleiner-Groter / Dupliceren / Verwijderen), transparent cards (bar floats at 55 % while selected), resize grip, zoom = w / NATURAL_W × font size, height cap; a third wrapper `[data-widget-fit]` at `cardLayoutWidth` zooms content wider than the body down (`cardFitZoom`, 0.97 margin, 0.01 dead-band against font-rounding loops)
-│       ├── BoardRail.tsx        # the 72 px LEFT rail (Zijrail, 2026-11-03): ⚙ Bordinstellingen top · tools (select/hand/aanwijzen combo, pen, marker, gom, tekst, lijn+vormen, instrumenten; L / V / S keys) · ink undo/redo · big + Toevoegen at the bottom; flyouts close on Escape/outside
+│       ├── BoardRail.tsx        # the 72 px LEFT rail (Zijrail, 2026-11-03): ⚙ Bordinstellingen top · tools (select/hand/aanwijzen combo, pen, marker, gom, tekst, lijn+vormen, instrumenten; L / V / S keys) · InkRail section · ink undo/redo · + Toevoegen at the bottom; 44 px buttons, 705 px total; flyouts close on Escape/outside
+│       ├── InkRail.tsx          # always-visible ink section of the rail: 2×2 swatches (stripColors per tool) + picker chips popover, vertical Dikte / Gomgrootte slider, follows the active tool, greyed for non-ink tools
+│       ├── WidgetPreview.tsx    # chromeless inert preview of a widget kind for the Toevoegen tool tiles (WidgetContent, default props, zoom ≤ 0.6, 100 px box)
 │       ├── BoardSettingsMenu.tsx # Bordinstellingen popover, reduced: BackgroundPicker, Raster uitlijnen + size, Bord wissen
 │       ├── BoardTopPill.tsx     # top-right pill: ◀ Pagina n/m ▾ (page actions popover) ▶, Bewaren ▾ (BoardLibraryPopover), Volledig scherm, Bordmodus verlaten (X)
 │       ├── BoardLibraryPopover.tsx # Mijn borden: Bewaren / Bewaren als…, list with Openen / Hernoemen / Dupliceren / Verwijderen, Exporteren / Importeren
@@ -1467,7 +1469,7 @@ src/
 │       ├── BoardInspector.tsx   # exercise card flyout: draftBlocks mirror, Config + StyleConfig + AdvancedConfig, Aantal/Witruimte/Tekstgrootte, GenerationNote
 │       ├── WidgetInspector.tsx  # non-exercise flyout: WIDGET_SETTINGS[kind] + BaselineSettings
 │       ├── InkLayer.tsx         # SVG strokes (pen/marker freehand, line/shape via ToolEngine + preview, guided lines on instruments), dashed shaft, per-stroke eraser
-│       ├── InkFlyout.tsx        # compact ink strip beside the rail: A / blauw / rood / picker (+ last 4 custom chips, rekenraak_board_colors_v1) / size dot → vertical slider; lijn / vormen rows; EraserFlyout slider (8–40)
+│       ├── LinesFlyout.tsx      # lijn / vormen flyout: tool row (lijn + 3 shapes) and options (arrowheads / dashed, shape / soft fill)
 │       ├── InstrumentLayer.tsx  # z 12 SVG: drag / rotate / snap / keyboard per instrument, passer opening + arc strokes, readout pill, snap dot
 │       ├── InstrumentShapes.tsx # LatShape / GeodriehoekShape / PasserShape in local frames, grips (body / rotate / open / draw)
 │       ├── instrumentStyle.ts   # IC token colours (frosted body), NO_POINTER
@@ -1979,18 +1981,23 @@ An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
 ### Rail — [BoardRail.tsx](../../src/board/components/BoardRail.tsx) (Zijrail, 2026-11-03; round 2 same day)
 
 A 72 px **left rail**, full height (the bottom bar is gone). Top → bottom: `[⚙ Bordinstellingen] |
-[select ▾][pen][marker][gom ▾][T][lijn+vormen ▾][📏 instrumenten] … [ink undo][ink redo] | [+ Toevoegen]`
-(undo / redo sit right above the `+`, after the flex spacer). Buttons with a corner mark hold several
-tools (select = Aanwijzen / Selecteren / hand; lijn+vormen = line + the three shapes); a tap on the
-active button opens the choice. Pen / marker / lijn / vormen open the **compact ink strip**
-([InkFlyout.tsx](../../src/board/components/InkFlyout.tsx)) beside the rail, never floating mid-board:
-one row `A` standaard (only `INK_FOLLOWS_BOARD` tools; vormen get zwart instead) · blauw · rood · a
-rainbow picker (native `<input type=color>`, kept on close; the last 4 picks from
-`rekenraak_board_colors_v1` as chips under it) · a size dot that opens a **vertical slider**
-(`INK_WIDTH_RANGE` / `clampInkWidth` in boardTypes: pen / lijn / vorm 2–10, marker 8–32; `InkSettings.width`
-stays a number); lijn / vormen keep their tool + options rows above the strip; re-tapping the active
-tool closes it. **Gom** has its own slider flyout (`ERASER_RANGE` 8–40, `eraserSize` in the store,
-persisted in `rekenraak_board_ink_v1`) and a round SVG data-URL cursor of that radius (`eraserCursor`
+[select ▾][pen][marker][gom][T][lijn+vormen ▾][📏 instrumenten] | [ink section] … [ink undo][ink redo] | [+ Toevoegen]`
+(44 px buttons, 2 px gaps, 9 px separators, 52 px `+`; 705 px of content, fits 800 px with the beta
+strip with ≈ 69 px to spare; the rail does not scroll because scrolling would clip its flyouts).
+Buttons with a corner mark hold several tools (select = Aanwijzen / Selecteren / hand; lijn+vormen =
+line + the three shapes); a tap on the active button opens the choice. The **ink section**
+([InkRail.tsx](../../src/board/components/InkRail.tsx), round 3 same day) is always visible and
+follows the active tool: a 2×2 grid of 28 px swatches from `stripColors` (pen / lijn: A standaard ·
+blauw · rood · picker; marker: geel · blauw · rood · picker; vormen: blauw · rood · zwart · picker) and
+under it a 72 px vertical slider with a 22 px thumb (`.board-ink-range` in index.css), a live size dot
+and the number (`INK_WIDTH_RANGE` / `clampInkWidth` in boardTypes: pen / lijn / vorm 2–10, marker 8–32;
+`InkSettings.width` stays a number). Gom → the slider is Gomgrootte (`ERASER_RANGE` 8–40, `eraserSize`
+in the store, persisted in `rekenraak_board_ink_v1`), the dot a scaled ring, the swatches disabled;
+select / hand / tekst / instruments → the last ink tool's settings stay visible at 50 %, not editable.
+The picker is the native `<input type=color>`; its last 4 picks (`rekenraak_board_colors_v1`) show as
+chips in a popover beside the rail only while the picker is open. Pen, marker and gom open no flyout;
+lijn+vormen keeps [LinesFlyout.tsx](../../src/board/components/LinesFlyout.tsx) (tool row + arrow /
+dashed / shape / fill options). The eraser cursor is a round SVG data-URL of `eraserSize` (`eraserCursor`
 in [inkGeometry.ts](../../src/board/inkGeometry.ts), token colours read at runtime, `crosshair`
 fallback); erasing stays per stroke. **Bordinstellingen**
 ([BoardSettingsMenu.tsx](../../src/board/components/BoardSettingsMenu.tsx)) holds only what has no
@@ -2007,11 +2014,15 @@ bottom-left, up to 1100 × 720: tabs **Rekenblok** · Rekentool · Klasbeheer ·
 Rekentool, klok = Dagritme, Extra = afbeelding only — tekst is the rail's T tool), a ★ favourites row
 on every tab (`rekenraak_board_favorites_v1`; unknown ids are dropped), search, and exercise tiles with
 a **live `ExercisePreview`** (110 px, `previewConstraints` on `seedConstraints`, mounted only for the
-active tab or a search) + variant buttons. Adding a widget selects it and switches to Selecteren.
+active tab or a search) + variant buttons; the Rekentool / Klasbeheer / Dagritme / Extra tiles (220 px
+min) show a live, inert [WidgetPreview.tsx](../../src/board/components/WidgetPreview.tsx) (the real widget
+via the exported `WidgetContent` of BoardPageCanvas, idle, `loadWidgetDefaults` merged like `addWidget`,
+CSS zoom to the tile width capped at 0.6, 100 px box, `aria-hidden`, inside a `BoardErrorBoundary`; the
+afbeelding picker and the geld palette keep their icon; weer previews Brussels so no location prompt).
+Adding a widget selects it and switches to Selecteren.
 Every popup closes on **Escape** and on a press outside it (capture-phase `pointerdown`).
 **Single-letter shortcuts** `L` = lijn, `V` = vormen, `S` = selecteren (`TOOL_KEYS`), ignored while
-typing and with Ctrl / Meta / Alt or key repeat. The rail does not scroll (scrolling would clip its
-flyouts): it fits 800 px with the beta strip; below ≈700 px its bottom is cut off.
+typing and with Ctrl / Meta / Alt or key repeat.
 Beta chrome: [WhiteboardView.tsx](../../src/board/components/WhiteboardView.tsx) mounts
 `<BetaStrip module="bordmodus"/>` (thin row above rail + board) and `<FirstRunCard module="bordmodus"/>`
 (beside the rail, once per device; copy in `src/config/firstRun.ts`).
@@ -2072,7 +2083,7 @@ never crashes (fix 0dd1cd5).
   `snapToGrid`, `snapAngle`, `headLength`, `linePath`, `dragBox`, `shapeGeometry`,
   `splitSubpaths` — pure, no React.
 - **`drawOptions`** — `{ arrow, dashed, shape, fill }` in the store (UI-only, not persisted;
-  the emitted stroke carries the result), set from the InkSettingsBar's option buttons; line
+  the emitted stroke carries the result), set from LinesFlyout's option buttons (colour and width from InkRail); line
   and shape have their own `inkSettings` rows (default black 4 px / blue 4 px).
 
 ### Meetinstrumenten — [InstrumentLayer.tsx](../../src/board/components/InstrumentLayer.tsx) + [instrumentGeometry.ts](../../src/board/instrumentGeometry.ts)
