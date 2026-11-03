@@ -166,7 +166,7 @@ describe('rail flyouts', () => {
 
     test('the other popups share the same close rules', () => {
         const { getByRole, queryByText } = render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
-        for (const name of ['Meetinstrumenten', 'Pen']) {
+        for (const name of ['Meetinstrumenten', 'Lijn en vormen']) {
             fireEvent.click(getByRole('button', { name }));
             expect(document.querySelector('[data-rail-flyout]')).not.toBeNull();
             fireEvent.pointerDown(document.body);
@@ -216,7 +216,8 @@ describe('board Aantal', () => {
         };
         // A board card starts with one exercise (owner call); Aantal grows it from there.
         expect(exercises()).toHaveLength(1);
-        const slider = container.querySelector('input[type="range"]') as HTMLInputElement;
+        // Not the rail's ink slider: the inspector's Aantal.
+        const slider = container.querySelector('input[type="range"]:not(.board-ink-range)') as HTMLInputElement;
         act(() => { fireEvent.change(slider, { target: { value: '9' } }); });
         const first = exercises().map(e => e.id);
         expect(first.length).toBe(9);

@@ -3,7 +3,8 @@ import { Cursor, Selection, PenNib, Highlighter, Eraser, Shapes, Ruler, Plus, Ar
 import { useBoardStore } from '../useBoardStore';
 import type { BoardTool, InstrumentKind, InstrumentSnap } from '../boardTypes';
 import { INSTRUMENT_KINDS, INSTRUMENT_LABELS, snapOf } from '../instrumentGeometry';
-import InkFlyout, { EraserFlyout } from './InkFlyout';
+import InkRail from './InkRail';
+import LinesFlyout from './LinesFlyout';
 import BoardSettingsMenu from './BoardSettingsMenu';
 
 // Single-letter tool shortcuts (shown in each tooltip): the ink tools.
@@ -18,16 +19,18 @@ const SELECT_GROUP: ReadonlyArray<{ key: BoardTool; icon: Icon; label: string }>
 ];
 const LINE_TOOLS: ReadonlyArray<BoardTool> = ['line', 'shape'];
 
-type Flyout = 'settings' | 'select' | 'pen' | 'marker' | 'eraser' | 'lines' | 'instruments';
+type Flyout = 'settings' | 'select' | 'lines' | 'instruments';
 
 interface Props {
     addOpen: boolean;
     onToggleAdd: () => void;
 }
 
-// The left rail of the board (Zijrail design, 72px): Bordinstellingen on top, the tools, then at
-// the bottom undo / redo right above the big Toevoegen (owner: undo lives by the add button). Settings grow out of the rail as flyouts next
-// to their button, never floating mid-board. Digibord-first: ≥ 40px targets, nothing on hover.
+// The left rail of the board (Zijrail design, 72px): Bordinstellingen on top, the tools, the ink
+// section (colour + size of the active ink tool, always visible), then at the bottom undo / redo
+// right above the big Toevoegen (owner: undo lives by the add button). The remaining settings grow
+// out of the rail as flyouts next to their button, never floating mid-board. Digibord-first:
+// ≥ 40px targets, nothing on hover.
 export default function BoardRail({ addOpen, onToggleAdd }: Props) {
     const tool = useBoardStore((s) => s.tool);
     const setTool = useBoardStore((s) => s.setTool);
@@ -73,13 +76,8 @@ export default function BoardRail({ addOpen, onToggleAdd }: Props) {
     }, [setTool]);
 
     const toggle = (f: Flyout) => setFlyout(flyout === f ? null : f);
-    // First tap picks the tool (and opens its settings for the ink tools); a tap on the tool that
-    // is already active toggles its flyout; any other tool closes it.
-    const pick = (key: BoardTool, f: Flyout | null, opensOnPick: boolean) => {
-        if (tool === key && f) { toggle(f); return; }
-        setTool(key);
-        setFlyout(opensOnPick ? f : null);
-    };
+    // A plain tool button: picks the tool and closes any open flyout.
+    const pick = (key: BoardTool) => { setTool(key); setFlyout(null); };
 
     const selectOn = SELECT_GROUP.some(t => t.key === tool);
     const selectDef = SELECT_GROUP.find(t => t.key === (selectOn ? tool : lastSelect)) ?? SELECT_GROUP[0];
@@ -118,35 +116,18 @@ export default function BoardRail({ addOpen, onToggleAdd }: Props) {
             </div>
 
             {(['pen', 'marker'] as const).map(key => (
-                <div key={key} data-board-menu={key} style={S.slot}>
-                    <RailButton icon={key === 'pen' ? PenNib : Highlighter} label={key === 'pen' ? 'Pen' : 'Markeerstift'}
-                        active={tool === key} expanded={flyout === key} onClick={() => pick(key, key, true)} />
-                    {flyout === key && tool === key && (
-                        <div data-rail-flyout="" style={S.flyout} role="group" aria-label={key === 'pen' ? 'Pen' : 'Markeerstift'}>
-                            <InkFlyout tool={key} />
-                        </div>
-                    )}
-                </div>
+                <RailButton key={key} icon={key === 'pen' ? PenNib : Highlighter} label={key === 'pen' ? 'Pen' : 'Markeerstift'}
+                    active={tool === key} onClick={() => pick(key)} />
             ))}
-
-            <div data-board-menu="eraser" style={S.slot}>
-                <RailButton icon={Eraser} label="Gom" active={tool === 'eraser'} expanded={flyout === 'eraser'} onClick={() => pick('eraser', 'eraser', true)} />
-                {flyout === 'eraser' && tool === 'eraser' && (
-                    <div data-rail-flyout="" style={S.flyout} role="group" aria-label="Gom">
-                        <EraserFlyout />
-                    </div>
-                )}
-            </div>
-            <div style={S.slot}>
-                <RailButton icon={TextT} label="Tekst (tik op het bord)" active={tool === 'text'} onClick={() => pick('text', null, false)} />
-            </div>
+            <RailButton icon={Eraser} label="Gom" active={tool === 'eraser'} onClick={() => pick('eraser')} />
+            <RailButton icon={TextT} label="Tekst (tik op het bord)" active={tool === 'text'} onClick={() => pick('text')} />
 
             <div data-board-menu="lines" style={S.slot}>
                 <RailButton icon={Shapes} label="Lijn en vormen" title="Lijn en vormen (L / V)" active={linesOn} expanded={flyout === 'lines'} group
                     onClick={() => { if (linesOn) toggle('lines'); else { setTool('line'); setFlyout('lines'); } }} />
                 {flyout === 'lines' && linesOn && (
                     <div data-rail-flyout="" style={S.flyout} role="group" aria-label="Lijn en vormen">
-                        <InkFlyout tool={tool as 'line' | 'shape'} />
+                        <LinesFlyout tool={tool as 'line' | 'shape'} />
                     </div>
                 )}
             </div>
@@ -161,6 +142,10 @@ export default function BoardRail({ addOpen, onToggleAdd }: Props) {
                     </div>
                 )}
             </div>
+
+            <span style={S.sep} />
+
+            <InkRail />
 
             <span style={{ flex: 1 }} />
 
@@ -188,7 +173,7 @@ function RailButton({ icon: I, label, title, active, expanded, disabled, muted, 
         <button type="button" className={disabled ? undefined : 'ui-hover'} aria-label={label} title={title ?? label}
             aria-pressed={active} aria-expanded={expanded} disabled={disabled} onClick={onClick}
             style={{ ...S.btn, ...(muted ? { color: 'var(--text-muted)' } : {}), ...(active ? S.btnOn : {}), ...(disabled ? S.disabled : {}) }}>
-            <I size={24} weight={active || filled ? 'fill' : 'regular'} />
+            <I size={22} weight={active || filled ? 'fill' : 'regular'} />
             {/* A group button holds more than one tool: a corner mark says a second tap opens the choice. */}
             {group && <span aria-hidden="true" style={S.groupMark} />}
         </button>
@@ -272,20 +257,21 @@ function SnapSettings({ kind }: { kind: InstrumentKind }) {
     );
 }
 
-// 72px rail, 52px buttons: the mockup's sizes (a digibord finger, well above 40px).
+// 72px rail, 44px buttons: still a digibord finger, small enough that the ink section fits 800px.
 const RAIL_W = 72;
+const BTN = 44;
 
 const S = {
     rail: {
         width: `${RAIL_W}px`, flexShrink: 0, boxSizing: 'border-box',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '12px 0',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '8px 0',
         background: 'var(--bg-surface)', borderRight: '1px solid var(--border-color)',
         // Above the board, the inspectors (50) and the add panel (60): flyouts open over them.
         position: 'relative', zIndex: 70,
     } as React.CSSProperties,
     slot: { position: 'relative' } as React.CSSProperties,
     btn: {
-        position: 'relative', width: '52px', height: '52px', flexShrink: 0,
+        position: 'relative', width: `${BTN}px`, height: `${BTN}px`, flexShrink: 0,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-main)',
         cursor: 'pointer', padding: 0,
@@ -294,19 +280,19 @@ const S = {
     btnOn: { background: 'var(--accent-soft)', color: 'var(--accent)', boxShadow: 'inset 0 0 0 2px var(--accent)' } as React.CSSProperties,
     disabled: { opacity: 0.35, cursor: 'not-allowed' } as React.CSSProperties,
     groupMark: {
-        position: 'absolute', right: '6px', bottom: '6px', width: 0, height: 0,
+        position: 'absolute', right: '4px', bottom: '4px', width: 0, height: 0,
         borderLeft: '6px solid transparent', borderBottom: '6px solid currentColor', opacity: 0.6,
     } as React.CSSProperties,
-    sep: { width: '36px', height: '1px', background: 'var(--border-color)', margin: '8px 0', flexShrink: 0 } as React.CSSProperties,
+    sep: { width: '36px', height: '1px', background: 'var(--border-color)', margin: '4px 0', flexShrink: 0 } as React.CSSProperties,
     addBtn: {
-        width: '56px', height: '56px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: '52px', height: '52px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: 'var(--accent-on)',
         cursor: 'pointer', padding: 0, boxShadow: 'var(--shadow-2)',
     } as React.CSSProperties,
-    // Grows out of the rail: starts at the rail's right edge (button 52 inside a 72 rail = 10px),
+    // Grows out of the rail: starts at the rail's right edge (button 44 inside a 72 rail = 14px),
     // no left border, rounded on the board side only.
     flyout: {
-        position: 'absolute', left: `calc(100% + ${(RAIL_W - 52) / 2}px)`, top: '-8px', zIndex: 1,
+        position: 'absolute', left: `calc(100% + ${(RAIL_W - BTN) / 2}px)`, top: '-8px', zIndex: 1,
         padding: '10px 12px', boxSizing: 'border-box', width: 'max-content',
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderLeft: 'none',
         borderRadius: '0 var(--radius-lg) var(--radius-lg) 0', boxShadow: '4px 4px 16px rgba(0, 0, 0, 0.08)',

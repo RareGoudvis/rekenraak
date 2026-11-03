@@ -245,7 +245,7 @@ describe('a dark board', () => {
 
 describe('the rail (Zijrail)', () => {
     const rail = () => render(<BoardRail addOpen={false} onToggleAdd={() => { }} />);
-    const labels = (c: HTMLElement) => [...c.querySelectorAll(':scope > nav button, :scope > nav > div > button')]
+    const labels = (c: HTMLElement) => [...c.querySelectorAll(':scope > nav > button, :scope > nav > div > button')]
         .map(b => b.getAttribute('aria-label'));
 
     test('top → bottom: Bordinstellingen, tools, undo / redo, Toevoegen last', () => {
@@ -265,19 +265,19 @@ describe('the rail (Zijrail)', () => {
         expect(nav.style.width).toBe('72px');
     });
 
-    test('pen: picking it opens its flyout, tapping it again closes it, another tool closes it', () => {
+    test('pen / marker / gom open no flyout: the ink section of the rail follows them', () => {
         rail();
-        const flyout = () => document.querySelector('[data-ink-flyout="pen"]');
+        const ink = () => document.querySelector('[data-ink-rail]') as HTMLElement;
         fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
         expect(useBoardStore.getState().tool).toBe('pen');
-        expect(flyout()).not.toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
-        expect(flyout()).toBeNull();
-        fireEvent.click(screen.getByRole('button', { name: 'Pen' }));
-        expect(flyout()).not.toBeNull();
+        expect(document.querySelector('[data-rail-flyout]')).toBeNull();
+        expect([ink().dataset.inkRail, ink().dataset.inkState]).toEqual(['pen', 'live']);
+        fireEvent.click(screen.getByRole('button', { name: 'Markeerstift' }));
+        expect([ink().dataset.inkRail, ink().dataset.inkState]).toEqual(['marker', 'live']);
         fireEvent.click(screen.getByRole('button', { name: 'Gom' }));
-        expect(flyout()).toBeNull();
         expect(useBoardStore.getState().tool).toBe('eraser');
+        expect([ink().dataset.inkRail, ink().dataset.inkState]).toEqual(['marker', 'eraser']);
+        expect(document.querySelector('[data-rail-flyout]')).toBeNull();
     });
 
     test('lijn en vormen: one button, the flyout picks lijn or a shape', () => {

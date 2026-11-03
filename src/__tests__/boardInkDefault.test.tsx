@@ -5,7 +5,7 @@ import { effectiveInk, useBoardStore } from '../board/useBoardStore';
 import { BOARD_INK_KEY, loadInkSettings } from '../board/boardPersistence';
 import { DEFAULT_INK } from '../board/boardTypes';
 import InkLayer from '../board/components/InkLayer';
-import InkFlyout from '../board/components/InkFlyout';
+import InkRail from '../board/components/InkRail';
 
 // Owner call: the pen's default colour follows the board (black on a light board, white on a
 // dark one) until the teacher picks a colour; a picked colour, black included, never changes.
@@ -107,12 +107,13 @@ describe('ink layer', () => {
 describe('settings bar', () => {
     test('Standaard swatch shows the effective default and is pressed while un-customised', () => {
         setDark(true);
-        render(<InkFlyout tool="pen" />);
+        act(() => { st().setTool('pen'); });
+        const { container } = render(<InkRail />);
         const std = screen.getByRole('button', { name: 'Standaardkleur (volgt het bord)' });
         expect(std.getAttribute('aria-pressed')).toBe('true');
         expect(std.style.background).toBe('rgb(255, 255, 255)');
         // the width dots show the ink the pen will draw with
-        expect((screen.getByRole('button', { name: 'Dikte' }).firstChild as HTMLElement).style.background).toBe('rgb(255, 255, 255)');
+        expect((container.querySelector('[data-ink-dot]') as HTMLElement).style.background).toBe('rgb(255, 255, 255)');
         act(() => { fireEvent.click(screen.getByRole('button', { name: 'Kleur #dc2626' })); });
         expect(st().inkSettings.pen.color).toBe('#dc2626');
         expect(std.getAttribute('aria-pressed')).toBe('false');
@@ -121,7 +122,8 @@ describe('settings bar', () => {
     });
 
     test('the marker has no Standaard swatch: its yellow is ringed as before', () => {
-        render(<InkFlyout tool="marker" />);
+        act(() => { st().setTool('marker'); });
+        render(<InkRail />);
         expect(screen.queryByRole('button', { name: 'Standaardkleur (volgt het bord)' })).toBeNull();
         expect(screen.getByRole('button', { name: 'Kleur #fde047' }).style.outline).toContain('solid');
     });
