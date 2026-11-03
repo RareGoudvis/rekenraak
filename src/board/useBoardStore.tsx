@@ -3,7 +3,7 @@ import type { BoardPage, BoardSettings, BoardWidget, BoardTool, BoardBackground,
 import { DEFAULT_BOARD_SETTINGS, clampEraserSize, emptyPage, inkColor, rndId } from './boardTypes';
 import { defaultInstrument } from './instrumentGeometry';
 import { translateStroke } from './inkGeometry';
-import { loadBoardAutosave, loadEraserSize, loadInkSettings, saveBoardAutosave, saveInkSettings } from './boardPersistence';
+import { loadBoardAutosave, loadEraserSize, loadInkSettings, loadSavedBoardId, saveBoardAutosave, saveInkSettings, storeSavedBoardId } from './boardPersistence';
 import { withFreshIds } from './boardBlocks';
 import { loadWidgetDefaults } from './settings/widgetDefaults';
 
@@ -81,8 +81,14 @@ interface BoardState {
     boardSettings: BoardSettings;
     setKeepHandles: (on: boolean) => void;
 
-    // persistence hooks (boardPersistence.ts); a board loaded with settings takes them over
-    loadBoard: (pages: BoardPage[], activeIdx?: number, settings?: BoardSettings) => void;
+    // The Mijn borden entry this board came from / was saved as (sheet twin: savedPresetId);
+    // null = not linked, so Bewaren asks for a name.
+    savedBoardId: string | null;
+    setSavedBoardId: (id: string | null) => void;
+
+    // persistence hooks (boardPersistence.ts); a board loaded with settings takes them over.
+    // savedId links the board to its Mijn borden entry; without one (import) the link drops.
+    loadBoard: (pages: BoardPage[], activeIdx?: number, settings?: BoardSettings, savedId?: string | null) => void;
     resetBoard: () => void;
 }
 
@@ -326,7 +332,11 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     boardSettings: restored?.settings ?? DEFAULT_BOARD_SETTINGS,
     setKeepHandles: (on) => set((state) => ({ boardSettings: { ...state.boardSettings, keepHandles: on } })),
 
-    loadBoard: (pages, activeIdx = 0, settings) => set({
+    savedBoardId: loadSavedBoardId(),
+    setSavedBoardId: (id) => set({ savedBoardId: id }),
+
+    loadBoard: (pages, activeIdx = 0, settings, savedId = null) => set({
+        savedBoardId: savedId,
         pages: pages.length ? pages : [emptyPage()],
         activePageIdx: Math.max(0, Math.min(pages.length - 1, activeIdx)),
         selectedWidgetId: null,
@@ -335,7 +345,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         ...(settings ? { boardSettings: settings } : {}),
     }),
 
-    resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null, ...freshInk }),
+    resetBoard: () => set({ pages: [emptyPage()], activePageIdx: 0, selectedWidgetId: null, selectedInstrumentId: null, savedBoardId: null, ...freshInk }),
 }));
 
 // Debounced autosave — 1.5s after the last board mutation (same cadence as the
@@ -359,4 +369,5 @@ export function effectiveInk(state: Pick<BoardState, 'inkSettings' | 'pages' | '
 
 useBoardStore.subscribe((state, prev) => {
     if (state.inkSettings !== prev.inkSettings || state.eraserSize !== prev.eraserSize) saveInkSettings(state.inkSettings, state.eraserSize);
+    if (state.savedBoardId !== prev.savedBoardId) storeSavedBoardId(state.savedBoardId);
 });

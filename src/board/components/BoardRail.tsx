@@ -89,7 +89,7 @@ export default function BoardRail({ addOpen, onToggleAdd }: Props) {
     return (
         <nav data-board-rail="" aria-label="Bordgereedschap" style={S.rail}>
             <div data-board-menu="settings" style={S.slot}>
-                <RailButton icon={GearSix} label="Bordinstellingen" title="Bordinstellingen: achtergrond, pagina’s, bewaren"
+                <RailButton icon={GearSix} label="Bordinstellingen" title="Bordinstellingen: achtergrond, raster, bord wissen"
                     active={flyout === 'settings'} expanded={flyout === 'settings'} onClick={() => toggle('settings')} />
                 {flyout === 'settings' && (
                     <div data-rail-flyout="" style={{ ...S.flyout, top: '-4px', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto' }} role="dialog" aria-label="Bordinstellingen">

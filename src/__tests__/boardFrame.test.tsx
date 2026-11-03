@@ -297,6 +297,6 @@ describe('the rail (Zijrail)', () => {
             expect(b.textContent).toBe('');
             expect(b.getAttribute('title')).toBeTruthy();
         }
-        expect(screen.getByText('1 / 1')).toBeTruthy();
+        expect(screen.getByRole('button', { name: /^Pagina 1 van 1/ }).textContent).toMatch(/^Pagina 1 \/ 1\s*$/);
     });
 });

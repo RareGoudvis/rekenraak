@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, test, expect, beforeAll, beforeEach, afterEach, vi, type MockInstance } from 'vitest';
-import { render, cleanup, act, fireEvent, screen } from '@testing-library/react';
+import { render, cleanup, act, fireEvent, screen, within } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import { TOOL_CATALOG, runTool } from '../board/toolCatalog';
 import { addBasicWidget } from '../board/addWidgets';
@@ -150,5 +150,85 @@ describe('every settings panel', () => {
         act(() => { fireEvent.click(screen.getByLabelText('Instellingen')); });
         expect(st().selectedWidgetId).toBe(id);
         expect(st().inspectorOpen).toBe(true);
+    });
+});
+
+describe('rail and pill (round 2)', () => {
+    const railLabels = () => [...document.querySelectorAll('[data-board-rail] > button, [data-board-rail] > div > button')]
+        .map(b => b.getAttribute('aria-label'));
+
+    test('the rail: gear, tools, then undo / redo right above the big +', () => {
+        render(<WhiteboardView />);
+        expect(railLabels()).toEqual([
+            'Bordinstellingen', 'Selecteren', 'Pen', 'Markeerstift', 'Gom', 'Tekst (tik op het bord)',
+            'Lijn en vormen', 'Meetinstrumenten', 'Ongedaan maken', 'Opnieuw', 'Toevoegen',
+        ]);
+        // A flexible spacer sits between the tools and undo, a separator between redo and +.
+        const kids = [...document.querySelector('[data-board-rail]')!.children] as HTMLElement[];
+        const undo = kids.findIndex(k => k.getAttribute('aria-label') === 'Ongedaan maken');
+        expect(kids[undo - 1].style.flex).toMatch(/^1/);
+        expect(kids[undo + 1].getAttribute('aria-label')).toBe('Opnieuw');
+        expect(kids[undo + 2].tagName).toBe('SPAN');
+        expect(kids[undo + 3].getAttribute('aria-label')).toBe('Toevoegen');
+        expect(errors()).toEqual([]);
+    });
+
+    test('the pill: ◀ Pagina ▾ ▶ | Bewaren ▾ | (Volledig scherm) | X, the counter opens the page actions', () => {
+        render(<WhiteboardView />);
+        const pill = document.querySelector('[data-board-pill]') as HTMLElement;
+        const labels = [...pill.querySelectorAll('button')].map(b => b.getAttribute('aria-label'));
+        // jsdom has no Fullscreen API, so that button is left out there.
+        expect(labels).toEqual(['Vorige pagina', 'Pagina 1 van 1: pagina’s beheren', 'Volgende pagina', 'Bewaren', 'Bordmodus verlaten']);
+        act(() => { fireEvent.click(screen.getByRole('button', { name: /^Pagina 1 van 1/ })); });
+        const pages = screen.getByRole('dialog', { name: 'Pagina’s' });
+        act(() => { fireEvent.click(within(pages).getByText('Pagina toevoegen')); });
+        expect(st().pages).toHaveLength(2);
+        expect(screen.getByRole('button', { name: /^Pagina 2 van 2/ })).toBeTruthy();
+        // Each action closes the popover.
+        expect(screen.queryByRole('dialog', { name: 'Pagina’s' })).toBeNull();
+        expect(errors()).toEqual([]);
+    });
+
+    test('Bewaren opens Mijn borden: save, then a second Bewaren updates the same entry', () => {
+        vi.spyOn(window, 'prompt').mockReturnValue('Rekenles');
+        render(<WhiteboardView />);
+        act(() => { fireEvent.click(screen.getByRole('button', { name: 'Bewaren' })); });
+        const lib = screen.getByRole('dialog', { name: 'Mijn borden' });
+        expect(within(lib).getByText('Nog geen borden bewaard.')).toBeTruthy();
+        act(() => { fireEvent.click(within(lib).getByText('Bewaren')); });
+        expect(within(lib).getByText('Rekenles')).toBeTruthy();
+        const id = st().savedBoardId;
+        expect(id).toBeTruthy();
+        act(() => { st().addPage(); });
+        act(() => { fireEvent.click(within(lib).getByText('Bewaren')); });
+        expect(window.prompt).toHaveBeenCalledTimes(1);
+        expect(within(lib).getByText(/^2 pagina’s/)).toBeTruthy();
+        expect(within(lib).getByText('Bijgewerkt: Rekenles')).toBeTruthy();
+        expect(st().savedBoardId).toBe(id);
+        expect(errors()).toEqual([]);
+    });
+
+    test('Openen: one tap; asks first only for an unsaved board with content', () => {
+        vi.spyOn(window, 'prompt').mockReturnValue('Sjabloon');
+        const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+        st().addPage();
+        render(<WhiteboardView />);
+        act(() => { fireEvent.click(screen.getByRole('button', { name: 'Bewaren' })); });
+        const lib = screen.getByRole('dialog', { name: 'Mijn borden' });
+        act(() => { fireEvent.click(within(lib).getByText('Bewaren')); });
+        // A fresh board with ink and no link: the confirm guards it, a no keeps it.
+        act(() => { st().resetBoard(); st().addStroke({ id: 's', tool: 'pen', color: '#111827', width: 4, path: 'M 0 0 L 9 9', pts: [0, 0, 9, 9] }); });
+        act(() => { fireEvent.click(within(lib).getByRole('button', { name: 'Openen: Sjabloon' })); });
+        expect(confirm).toHaveBeenCalledTimes(1);
+        expect(st().pages).toHaveLength(1);
+        confirm.mockReturnValue(true);
+        act(() => { fireEvent.click(within(lib).getByRole('button', { name: 'Openen: Sjabloon' })); });
+        expect(st().pages).toHaveLength(2);
+        expect(st().savedBoardId).toBeTruthy();
+        // Linked now: switching templates goes without a question.
+        act(() => { fireEvent.click(screen.getByRole('button', { name: 'Bewaren' })); });
+        act(() => { fireEvent.click(within(screen.getByRole('dialog', { name: 'Mijn borden' })).getByRole('button', { name: 'Openen: Sjabloon' })); });
+        expect(confirm).toHaveBeenCalledTimes(2);
+        expect(errors()).toEqual([]);
     });
 });

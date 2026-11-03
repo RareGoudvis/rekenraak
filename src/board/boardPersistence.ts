@@ -170,6 +170,27 @@ export function clearBoardAutosave(): void {
 }
 
 // ── Presets ("Mijn borden") ──────────────────────────────────────────────────
+function persistBoardPresets(list: BoardPreset[]): boolean {
+    try { localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(list)); return true; } catch { return false; }
+}
+
+const newBoardPresetId = () => Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+
+// Which Mijn borden entry the board on screen came from (or was last saved as), so Bewaren
+// updates it after a reload too; its own key keeps the board file format untouched.
+export const BOARD_SAVED_ID_KEY = 'rekenraak_board_saved_id_v1';
+
+export function loadSavedBoardId(): string | null {
+    try { return localStorage.getItem(BOARD_SAVED_ID_KEY) || null; } catch { return null; }
+}
+
+export function storeSavedBoardId(id: string | null): void {
+    try {
+        if (id) localStorage.setItem(BOARD_SAVED_ID_KEY, id);
+        else localStorage.removeItem(BOARD_SAVED_ID_KEY);
+    } catch { /* storage off: the link lasts this session only */ }
+}
+
 export function loadBoardPresets(): BoardPreset[] {
     try {
         const raw = localStorage.getItem(BOARD_PRESETS_KEY);
@@ -185,7 +206,7 @@ export function loadBoardPresets(): BoardPreset[] {
 export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number, settings?: BoardSettings): BoardPreset[] | false {
     const list = loadBoardPresets();
     const preset: BoardPreset = {
-        id: Math.random().toString(36).substring(2, 9),
+        id: newBoardPresetId(),
         name: name.trim() || 'Naamloos bord',
         savedAt: new Date().toISOString(),
         pageCount: pages.length,
@@ -204,6 +225,33 @@ export function deleteBoardPreset(id: string): BoardPreset[] {
     const next = loadBoardPresets().filter(p => p.id !== id);
     localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(next));
     return next;
+}
+
+// "Bewaren" on a board opened from Mijn borden overwrites that entry in place (like the sheet's
+// Mijn bladen); 'missing' = deleted meanwhile (another tab), so the caller saves a new one.
+export function updateBoardPreset(id: string, pages: BoardPage[], activePageIdx: number, settings?: BoardSettings): 'ok' | 'missing' | 'failed' {
+    const list = loadBoardPresets();
+    const i = list.findIndex(p => p.id === id);
+    if (i === -1) return 'missing';
+    list[i] = { ...list[i], savedAt: new Date().toISOString(), pageCount: pages.length, payload: makeFile(pages, activePageIdx, settings) };
+    return persistBoardPresets(list) ? 'ok' : 'failed';
+}
+
+export function renameBoardPreset(id: string, name: string): BoardPreset[] {
+    const trimmed = name.trim().slice(0, 80) || 'Naamloos bord';
+    const next = loadBoardPresets().map(p => (p.id === id ? { ...p, name: trimmed } : p));
+    persistBoardPresets(next);
+    return next;
+}
+
+// The copy lands right under its source with a fresh id; false = refused (quota) or source gone.
+export function duplicateBoardPreset(id: string): BoardPreset[] | false {
+    const list = loadBoardPresets();
+    const i = list.findIndex(p => p.id === id);
+    if (i === -1) return false;
+    const copy: BoardPreset = { ...JSON.parse(JSON.stringify(list[i])) as BoardPreset, id: newBoardPresetId(), name: `${list[i].name} (kopie)`, savedAt: new Date().toISOString() };
+    const next = [...list.slice(0, i + 1), copy, ...list.slice(i + 1)].slice(0, MAX_BOARD_PRESETS);
+    return persistBoardPresets(next) ? next : false;
 }
 
 // ── File export / import ─────────────────────────────────────────────────────

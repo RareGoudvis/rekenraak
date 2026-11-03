@@ -1,17 +1,29 @@
 import { useEffect, useState } from 'react';
 import { useBoardStore } from './useBoardStore';
-import { saveBoardPreset, type BoardPreset } from './boardPersistence';
+import { loadBoardPresets, saveBoardPreset, updateBoardPreset, type BoardPreset } from './boardPersistence';
 
-// Shared by the rail's Bordinstellingen and the top-right Bewaren: name the board, keep it in
-// Mijn borden. Returns the new list, or null when cancelled or refused (the alert says why).
-export function promptSaveBoard(): BoardPreset[] | null {
-    const name = window.prompt('Naam voor dit bord:', 'Mijn bord');
-    if (name === null) return null;
+export type BoardSaveOutcome = 'updated' | 'saved' | 'cancelled' | 'failed';
+
+// Same wording as the sheet's TopBar save error; Exporteren still works when storage is full.
+const BOARD_FULL_TEXT = 'Kon het bord niet bewaren (opslag vol?) — bewaar het als bestand via Exporteren.';
+
+// "Bewaren" for Mijn borden (twin of the sheet's saveToLibrary.ts): a board opened from or saved
+// to Mijn borden updates that entry, any other board (or asNew: Bewaren als…) asks a name once.
+export function promptSaveBoard(asNew = false): { outcome: BoardSaveOutcome; presets: BoardPreset[] } {
     const st = useBoardStore.getState();
+    if (st.savedBoardId && !asNew) {
+        const result = updateBoardPreset(st.savedBoardId, st.pages, st.activePageIdx, st.boardSettings);
+        if (result === 'ok') return { outcome: 'updated', presets: loadBoardPresets() };
+        if (result === 'failed') { window.alert(BOARD_FULL_TEXT); return { outcome: 'failed', presets: loadBoardPresets() }; }
+        // 'missing': deleted meanwhile, so it becomes a new entry below.
+    }
+    const current = st.savedBoardId ? loadBoardPresets().find(p => p.id === st.savedBoardId)?.name : undefined;
+    const name = window.prompt('Naam voor dit bord:', current ? `${current} (kopie)` : 'Mijn bord');
+    if (name === null) return { outcome: 'cancelled', presets: loadBoardPresets() };
     const saved = saveBoardPreset(name, st.pages, st.activePageIdx, st.boardSettings);
-    // Same wording as the sheet's TopBar save error; Exporteren still works when storage is full.
-    if (!saved) { window.alert('Kon het bord niet bewaren (opslag vol?) — bewaar het als bestand via Exporteren.'); return null; }
-    return saved;
+    if (!saved) { window.alert(BOARD_FULL_TEXT); return { outcome: 'failed', presets: loadBoardPresets() }; }
+    st.setSavedBoardId(saved[0].id);
+    return { outcome: 'saved', presets: saved };
 }
 
 // Volledig scherm on the board root (not the document), so the editor underneath never shows.
