@@ -8,6 +8,8 @@ import { makeDraftBlock } from '../curriculum/draftBlock';
 import ExercisePreview from '../shared/ExercisePreview';
 import ModalShell from '../ui/ModalShell';
 import Switch from '../ui/Switch';
+import BetaStrip from '../ui/BetaStrip';
+import FirstRunCard from '../ui/FirstRunCard';
 import OefenShareModal from './OefenShareModal';
 import OefenCatalogue from './OefenCatalogue';
 import { MAX_TITLE, MAX_TYPES, newSessieId, sessieContentHash } from '../../services/oefenen/session';
@@ -146,6 +148,8 @@ export default function OefenBuilderModal({ onClose, initial }: Props) {
                     <p style={S.subtitle}>Kies een paar soorten oefeningen en stel ze in. Leerlingen scannen de QR-code of openen de link en oefenen op hun eigen toestel; de resultaten blijven op dat toestel.</p>
                 </div>
 
+                <BetaStrip module="oefenmodus" />
+                <FirstRunCard module="oefenmodus" />
                 <div style={S.bodyRow}>
                     <OefenCatalogue leaves={leaves} countOf={id => rows.filter(r => r.leaf.id === id).length} onAdd={addLeaf} full={rows.length >= MAX_TYPES} />
 
