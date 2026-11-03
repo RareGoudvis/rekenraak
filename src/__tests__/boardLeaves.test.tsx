@@ -46,7 +46,7 @@ describe.each(leaves.map((l) => [l.id, l] as const))('%s', (_id, leaf) => {
         expect(block.id).toBe(made.id);
         expect(block.instructionMode).toBe('geen');
         expect(block.totalPoints).toBe(0);
-        expect(block.numberOfExercises).toBeLessThanOrEqual(6);
+        expect(block.numberOfExercises).toBe(1);
         const furniture = !!REGISTRY[leaf.typeId].isFurniture;
         if (furniture) expect(exercisesOf(block)).toEqual([]);
         else expect(exercisesOf(block).length).toBeGreaterThan(0);

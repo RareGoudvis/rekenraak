@@ -5,7 +5,7 @@ import { flattenLeaves } from '../config/appstructure';
 import { DEFAULT_BASE } from '../config/baseSettings';
 import { REGISTRY } from '../config/exerciseRegistry';
 import type { Leerjaar } from '../config/gradePresets';
-import { makeBoardBlock, sheetSeedContext } from '../board/boardBlocks';
+import { makeBoardBlock, sheetSeedContext, BOARD_START_COUNT } from '../board/boardBlocks';
 
 // A board widget must start from the block a sidebar click would make: same Basisinstellingen,
 // same leerjaar, same gradeSetsMax / SEED_FIT handling (seedConstraints.test.ts's approach).
@@ -34,5 +34,15 @@ describe.each([null, 1, 6] as Array<Leerjaar | null>)('board block == sidebar bl
         expect(board).not.toBeNull();
         expect(board!.leafId).toBe(leaf.id);
         expect(board!.constraints).toEqual(sidebarBlock(leaf.id).constraints);
+    });
+});
+
+describe('board start count', () => {
+    test("a new board card holds ONE exercise, whatever the type's sheet default", () => {
+        expect(BOARD_START_COUNT).toBe(1);
+        for (const leaf of leaves.filter((l) => !REGISTRY[l.typeId].isFurniture).slice(0, 40)) {
+            const block = makeBoardBlock(leaf.typeId, { override: leaf.defaultConstraints, leafId: leaf.id, base: DEFAULT_BASE, grade: null })!;
+            expect(block.numberOfExercises, leaf.id).toBe(1);
+        }
     });
 });

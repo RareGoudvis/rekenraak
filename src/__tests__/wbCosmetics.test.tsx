@@ -149,16 +149,18 @@ describe('board Aantal', () => {
             const b = useBoardStore.getState().pages[0].widgets.find(w => w.id === id)!.block!;
             return b[REGISTRY[b.typeId].exerciseField as keyof typeof b] as unknown as Array<{ id: string }>;
         };
-        const first = exercises().map(e => e.id);
-        expect(first.length).toBe(block.numberOfExercises);
-        expect(first.length).toBeGreaterThan(2);
-
+        // A board card starts with one exercise (owner call); Aantal grows it from there.
+        expect(exercises()).toHaveLength(1);
         const slider = container.querySelector('input[type="range"]') as HTMLInputElement;
+        act(() => { fireEvent.change(slider, { target: { value: '9' } }); });
+        const first = exercises().map(e => e.id);
+        expect(first.length).toBe(9);
+
         act(() => { fireEvent.change(slider, { target: { value: '2' } }); });
         expect(exercises().map(e => e.id)).toEqual(first.slice(0, 2));
 
-        act(() => { fireEvent.change(slider, { target: { value: '9' } }); });
-        expect(exercises().length).toBe(9);
+        act(() => { fireEvent.change(slider, { target: { value: '5' } }); });
+        expect(exercises().length).toBe(5);
         expect(exercises().slice(0, 2).map(e => e.id)).toEqual(first.slice(0, 2));
     });
 });
