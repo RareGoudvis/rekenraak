@@ -6,6 +6,9 @@ import { seedConstraints } from '../../config/baseSettings';
 import { useBoardStore } from '../useBoardStore';
 import { makeBoardBlock, sheetSeedContext } from '../boardBlocks';
 import { addBasicWidget, staggerPos } from '../addWidgets';
+import WidgetPreview from './WidgetPreview';
+import BoardErrorBoundary from './BoardErrorBoundary';
+import type { WidgetKind } from '../boardTypes';
 import { TOOL_CATALOG, TOOL_CATEGORIES, runTool, loadFavorites, toggleFavorite, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 
 type Tab = 'rekenblok' | ToolCategory;
@@ -39,6 +42,11 @@ function boardItemMatches(item: CatalogItem, needle: string): boolean {
     if (!needle) return true;
     const hay = [item.label, item.context, item.typeId, ...item.variants.flatMap(v => [v.label, variantLabel(item, v), v.key])];
     return hay.some(t => t.toLowerCase().includes(needle));
+}
+
+// Tools with a real widget behind them get a live preview; the picker and the geld palette keep the icon.
+function previewKind(t: BoardToolDef): WidgetKind | null {
+    return t.kind === 'afbeelding-picker' || t.kind === 'geld-palet' ? null : t.kind;
 }
 
 function toolMatches(t: BoardToolDef, needle: string): boolean {
@@ -166,10 +174,16 @@ export default function BoardAddPanel({ onClose }: Props) {
                     <div style={S.toolGrid} aria-label="Hulpmiddelen">
                         {tools.map(t => (
                             <div key={t.id} style={{ position: 'relative' }}>
-                                <button type="button" className="ui-hover" style={S.toolTile} onClick={() => addTool(t)}>
-                                    <t.icon size={26} />
-                                    <span>{t.label}</span>
-                                </button>
+                                {/* The tile is a div so the live preview (which holds buttons of its own) is never
+                                    nested in a button; the label button keeps keyboard + a11y, its click bubbles here. */}
+                                <div className="ui-hover" style={S.toolTile} onClick={() => addTool(t)}>
+                                    {previewKind(t) ? (
+                                        <BoardErrorBoundary label={t.label}>
+                                            <WidgetPreview kind={previewKind(t)!} props={t.props} />
+                                        </BoardErrorBoundary>
+                                    ) : <t.icon size={26} />}
+                                    <button type="button" style={S.toolLabel}>{previewKind(t) && <t.icon size={16} aria-hidden="true" />}{t.label}</button>
+                                </div>
                                 <button type="button" className="ui-hover"
                                     title={favorites.includes(t.id) ? 'Uit favorieten' : 'Aan favorieten toevoegen'}
                                     aria-label={`Favoriet ${t.label}`} aria-pressed={favorites.includes(t.id)}
@@ -273,15 +287,19 @@ const S = {
     chipOn: { background: 'var(--accent-soft)', color: 'var(--accent)', borderColor: 'var(--accent)' } as React.CSSProperties,
     dot: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0 } as React.CSSProperties,
     scroll: { flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '2px' } as React.CSSProperties,
-    toolGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px' } as React.CSSProperties,
+    toolGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' } as React.CSSProperties,
     toolTile: {
-        width: '100%', minHeight: '88px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: '8px', padding: '14px 8px', boxSizing: 'border-box',
+        width: '100%', height: '100%', minHeight: '88px', display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center',
+        gap: '8px', padding: '12px', textAlign: 'left', boxSizing: 'border-box',
         border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', background: '#ffffff',
         fontFamily: 'var(--font-ui)', fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--text-main)', cursor: 'pointer',
     } as React.CSSProperties,
+    toolLabel: {
+        display: 'inline-flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start', minHeight: '28px', border: 'none', background: 'transparent',
+        paddingRight: 0, fontFamily: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left',
+    } as React.CSSProperties,
     starBtn: {
-        position: 'absolute', top: '2px', right: '2px', width: '40px', height: '40px',
+        position: 'absolute', bottom: '2px', right: '2px', width: '40px', height: '40px',
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: 'var(--radius-sm)', background: 'transparent', cursor: 'pointer', padding: 0,
     } as React.CSSProperties,

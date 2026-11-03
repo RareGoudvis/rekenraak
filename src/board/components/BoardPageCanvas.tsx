@@ -109,7 +109,7 @@ export default function BoardPageCanvas() {
     );
 }
 
-function WidgetContent({ widget }: { widget: BoardWidget }) {
+export function WidgetContent({ widget }: { widget: BoardWidget }) {
     switch (widget.kind) {
         case 'exercise': return <ExerciseWidget widget={widget} />;
         case 'tekst': return <TekstWidget widget={widget} />;
