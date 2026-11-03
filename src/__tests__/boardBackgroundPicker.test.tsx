@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, test, expect, afterEach } from 'vitest';
+import { describe, test, expect, afterEach, vi } from 'vitest';
 import { render, cleanup, fireEvent, within, screen } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import BoardRail from '../board/components/BoardRail';
@@ -59,17 +59,25 @@ describe('background picker', () => {
         expect(bg().pattern).toBe('schrijflijnen4');
     });
 
-    test('Bordinstellingen merges achtergrond, raster, pagina\'s, Mijn borden, volledig scherm and Bord wissen', () => {
+    test('Bordinstellingen holds only achtergrond, raster and Bord wissen (pages and saving live in the pill)', () => {
         render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
         fireEvent.click(screen.getByRole('button', { name: 'Bordinstellingen' }));
         const menu = screen.getByRole('dialog', { name: 'Bordinstellingen' });
         expect(within(menu).getByText('Cornell')).toBeTruthy();
-        for (const t of ['Raster uitlijnen', 'Pagina toevoegen', 'Pagina verwijderen', 'Bord bewaren als…', 'Exporteren', 'Importeren', 'Bord wissen']) {
-            expect(within(menu).getByText(t)).toBeTruthy();
-        }
-        fireEvent.click(within(menu).getByText('Pagina toevoegen'));
-        expect(useBoardStore.getState().pages).toHaveLength(2);
-        expect(within(menu).getByText('Pagina 2 / 2')).toBeTruthy();
+        for (const t of ['Raster uitlijnen', 'Bord wissen']) expect(within(menu).getByText(t)).toBeTruthy();
+        for (const t of [/Pagina/, /bewaren/i, /Exporteren/, /Importeren/, /Volledig scherm/]) expect(within(menu).queryByText(t)).toBeNull();
+    });
+
+    test('Bord wissen empties the board and drops the Mijn borden link', () => {
+        useBoardStore.getState().setSavedBoardId('abc');
+        useBoardStore.getState().addPage();
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        render(<BoardRail addOpen={false} onToggleAdd={() => {}} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Bordinstellingen' }));
+        fireEvent.click(screen.getByText('Bord wissen'));
+        expect(useBoardStore.getState().pages).toHaveLength(1);
+        expect(useBoardStore.getState().savedBoardId).toBeNull();
+        vi.restoreAllMocks();
     });
 });
 

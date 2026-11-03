@@ -1,5 +1,5 @@
 import type { BoardPage, BoardSettings, BoardWidget, InkSettings, Instrument, Stroke, StrokeTool } from './boardTypes';
-import { DEFAULT_BOARD_SETTINGS, DEFAULT_INK, emptyPage } from './boardTypes';
+import { DEFAULT_BOARD_SETTINGS, DEFAULT_INK, ERASER_RANGE, emptyPage } from './boardTypes';
 import { NATURAL_W } from './widgetSizing';
 import { BOARD_CM_PX, INSTRUMENT_KINDS, PASSER } from './instrumentGeometry';
 import { cleanWidgetProps } from './settings/propSchemas';
@@ -120,8 +120,19 @@ export function parseBoardFile(json: string): BoardFile | null {
 // pen that follows the board keeps following it.
 export const BOARD_INK_KEY = 'rekenraak_board_ink_v1';
 
-export function saveInkSettings(ink: Record<StrokeTool, InkSettings>): void {
-    try { localStorage.setItem(BOARD_INK_KEY, JSON.stringify(ink)); } catch { /* quota: the pens fall back to defaults */ }
+// The gom's size rides along in the same entry (`eraserSize`, a radius in px): it is pen setup too.
+export function saveInkSettings(ink: Record<StrokeTool, InkSettings>, eraserSize: number = ERASER_RANGE.default): void {
+    try { localStorage.setItem(BOARD_INK_KEY, JSON.stringify({ ...ink, eraserSize })); } catch { /* quota: the pens fall back to defaults */ }
+}
+
+// A junk or out-of-range size reads as the default.
+export function loadEraserSize(): number {
+    try {
+        const data: unknown = JSON.parse(localStorage.getItem(BOARD_INK_KEY) ?? 'null');
+        const r = isObj(data) ? data.eraserSize : undefined;
+        if (isNum(r) && r >= ERASER_RANGE.min && r <= ERASER_RANGE.max) return r;
+    } catch { /* unreadable: default */ }
+    return ERASER_RANGE.default;
 }
 
 // Each tool's entry read on its own: a junk colour reads as the default, a junk width too.
@@ -159,6 +170,27 @@ export function clearBoardAutosave(): void {
 }
 
 // ── Presets ("Mijn borden") ──────────────────────────────────────────────────
+function persistBoardPresets(list: BoardPreset[]): boolean {
+    try { localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(list)); return true; } catch { return false; }
+}
+
+const newBoardPresetId = () => Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+
+// Which Mijn borden entry the board on screen came from (or was last saved as), so Bewaren
+// updates it after a reload too; its own key keeps the board file format untouched.
+export const BOARD_SAVED_ID_KEY = 'rekenraak_board_saved_id_v1';
+
+export function loadSavedBoardId(): string | null {
+    try { return localStorage.getItem(BOARD_SAVED_ID_KEY) || null; } catch { return null; }
+}
+
+export function storeSavedBoardId(id: string | null): void {
+    try {
+        if (id) localStorage.setItem(BOARD_SAVED_ID_KEY, id);
+        else localStorage.removeItem(BOARD_SAVED_ID_KEY);
+    } catch { /* storage off: the link lasts this session only */ }
+}
+
 export function loadBoardPresets(): BoardPreset[] {
     try {
         const raw = localStorage.getItem(BOARD_PRESETS_KEY);
@@ -174,7 +206,7 @@ export function loadBoardPresets(): BoardPreset[] {
 export function saveBoardPreset(name: string, pages: BoardPage[], activePageIdx: number, settings?: BoardSettings): BoardPreset[] | false {
     const list = loadBoardPresets();
     const preset: BoardPreset = {
-        id: Math.random().toString(36).substring(2, 9),
+        id: newBoardPresetId(),
         name: name.trim() || 'Naamloos bord',
         savedAt: new Date().toISOString(),
         pageCount: pages.length,
@@ -193,6 +225,33 @@ export function deleteBoardPreset(id: string): BoardPreset[] {
     const next = loadBoardPresets().filter(p => p.id !== id);
     localStorage.setItem(BOARD_PRESETS_KEY, JSON.stringify(next));
     return next;
+}
+
+// "Bewaren" on a board opened from Mijn borden overwrites that entry in place (like the sheet's
+// Mijn bladen); 'missing' = deleted meanwhile (another tab), so the caller saves a new one.
+export function updateBoardPreset(id: string, pages: BoardPage[], activePageIdx: number, settings?: BoardSettings): 'ok' | 'missing' | 'failed' {
+    const list = loadBoardPresets();
+    const i = list.findIndex(p => p.id === id);
+    if (i === -1) return 'missing';
+    list[i] = { ...list[i], savedAt: new Date().toISOString(), pageCount: pages.length, payload: makeFile(pages, activePageIdx, settings) };
+    return persistBoardPresets(list) ? 'ok' : 'failed';
+}
+
+export function renameBoardPreset(id: string, name: string): BoardPreset[] {
+    const trimmed = name.trim().slice(0, 80) || 'Naamloos bord';
+    const next = loadBoardPresets().map(p => (p.id === id ? { ...p, name: trimmed } : p));
+    persistBoardPresets(next);
+    return next;
+}
+
+// The copy lands right under its source with a fresh id; false = refused (quota) or source gone.
+export function duplicateBoardPreset(id: string): BoardPreset[] | false {
+    const list = loadBoardPresets();
+    const i = list.findIndex(p => p.id === id);
+    if (i === -1) return false;
+    const copy: BoardPreset = { ...JSON.parse(JSON.stringify(list[i])) as BoardPreset, id: newBoardPresetId(), name: `${list[i].name} (kopie)`, savedAt: new Date().toISOString() };
+    const next = [...list.slice(0, i + 1), copy, ...list.slice(i + 1)].slice(0, MAX_BOARD_PRESETS);
+    return persistBoardPresets(next) ? next : false;
 }
 
 // ── File export / import ─────────────────────────────────────────────────────

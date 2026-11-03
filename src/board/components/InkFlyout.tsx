@@ -1,45 +1,56 @@
-import { useState } from 'react';
-import { Plus } from '@phosphor-icons/react';
+import { useEffect, useRef, useState } from 'react';
 import { useBoardStore } from '../useBoardStore';
 import type { ArrowHeads, ShapeKind, StrokeTool } from '../boardTypes';
-import { DEFAULT_INK, INK_FOLLOWS_BOARD, inkColor } from '../boardTypes';
+import { DEFAULT_INK, ERASER_RANGE, INK_WIDTH_RANGE, clampInkWidth, inkColor } from '../boardTypes';
+import { stripColors } from '../inkGeometry';
 
 const SAVED_COLORS_KEY = 'rekenraak_board_colors_v1';
-// Board ink, not UI chrome (UI-GUIDE §3 worksheet-ink): the eight pens on the tray.
-const DEFAULT_COLORS = ['#111827', '#1d4ed8', '#dc2626', '#16a34a', '#ea580c', '#7c3aed', '#fde047', '#ffffff'];
-const PEN_WIDTHS = [2, 4, 7];
-const MARKER_WIDTHS = [12, 18, 28];
+// The picker's own colours under it: the last four the teacher picked (the list keeps eight).
+const SHOWN_CUSTOM = 4;
+const KEPT_CUSTOM = 8;
 
 function loadSavedColors(): string[] {
-    try { const v = JSON.parse(localStorage.getItem(SAVED_COLORS_KEY) ?? '[]'); return Array.isArray(v) ? v : []; }
+    try { const v: unknown = JSON.parse(localStorage.getItem(SAVED_COLORS_KEY) ?? '[]'); return Array.isArray(v) ? v.filter((c): c is string => typeof c === 'string') : []; }
     catch { return []; }
 }
 
-// The active ink tool's settings as a flyout growing out of the rail beside its button (Zijrail
-// design): colours in a 4-wide grid (Standaard first for pen / lijn, then the eight defaults, the
-// teacher's saved ones, a custom picker and its save), widths in a row; lijn / vormen add their
+// The active ink tool's settings as a compact strip beside the rail (owner: "3 standard colours
+// + picker and click to open size"): Standaard / blauw / rood, the rainbow picker with the last
+// custom colours under it, and a size dot that opens a vertical slider. Lijn / vormen add their
 // tool choice and options on top. The rail positions it; this is only its body.
 export default function InkFlyout({ tool }: { tool: StrokeTool }) {
     const cfg = useBoardStore((s) => s.inkSettings[tool]);
     const dark = useBoardStore((s) => s.pages[s.activePageIdx].background.dark);
     const color = inkColor(cfg, tool, dark);
-    const follows = INK_FOLLOWS_BOARD.includes(tool);
-    // The ringed palette swatch: the picked colour; a default that cannot change is its swatch too.
-    const ringed = cfg.color ?? (follows ? null : color);
     const setInkSetting = useBoardStore((s) => s.setInkSetting);
     const setTool = useBoardStore((s) => s.setTool);
     const drawOptions = useBoardStore((s) => s.drawOptions);
     const setDrawOptions = useBoardStore((s) => s.setDrawOptions);
     const [saved, setSaved] = useState<string[]>(loadSavedColors);
+    const [sizeOpen, setSizeOpen] = useState(false);
+    const pickerRef = useRef<HTMLInputElement>(null);
 
-    const saveCustom = () => {
-        // Max 8 saved colors, most recent first, no duplicates.
-        const next = [color, ...saved.filter(c => c !== color)].slice(0, 8);
-        setSaved(next);
-        localStorage.setItem(SAVED_COLORS_KEY, JSON.stringify(next));
-    };
+    const { auto, colors } = stripColors(tool);
+    // The ringed swatch: the picked colour; an untouched non-following default is its own swatch.
+    const ringed = cfg.color ?? (auto ? null : color);
+    const custom = saved.filter(c => !colors.includes(c)).slice(0, SHOWN_CUSTOM);
+    const pickerOn = ringed !== null && !colors.includes(ringed) && !custom.includes(ringed);
+    const width = clampInkWidth(tool, cfg.width);
 
-    const widths = tool === 'marker' ? MARKER_WIDTHS : PEN_WIDTHS;
+    // The native picker fires input while dragging and change once on close: only a closed pick
+    // becomes a saved colour, so the list is not flooded with every hue passed on the way.
+    useEffect(() => {
+        const el = pickerRef.current;
+        if (!el) return;
+        const keep = () => {
+            const next = [el.value, ...loadSavedColors().filter(c => c !== el.value)].slice(0, KEPT_CUSTOM);
+            try { localStorage.setItem(SAVED_COLORS_KEY, JSON.stringify(next)); } catch { /* quota: kept this session */ }
+            setSaved(next);
+        };
+        el.addEventListener('change', keep);
+        return () => el.removeEventListener('change', keep);
+    }, []);
+
     const lines = tool === 'line' || tool === 'shape';
 
     return (
@@ -92,8 +103,8 @@ export default function InkFlyout({ tool }: { tool: StrokeTool }) {
                 </>
             )}
 
-            <div style={S.grid}>
-                {follows && (
+            <div data-ink-strip="" style={S.strip}>
+                {auto && (
                     <button
                         type="button" data-ink-default aria-label="Standaardkleur (volgt het bord)" aria-pressed={cfg.color === null}
                         title="Standaard: zwart op een licht bord, wit op een donker bord"
@@ -106,41 +117,83 @@ export default function InkFlyout({ tool }: { tool: StrokeTool }) {
                         }}
                     >A</button>
                 )}
-                {[...DEFAULT_COLORS, ...saved.filter(c => !DEFAULT_COLORS.includes(c))].map(c => (
+                {colors.map(c => (
                     <button
                         key={c} type="button" aria-label={`Kleur ${c}`} aria-pressed={ringed === c}
                         onClick={() => setInkSetting(tool, { color: c })}
-                        style={{
-                            ...S.swatch, background: c,
-                            border: c === '#ffffff' ? '1px solid var(--border-color)' : '1px solid transparent',
-                            outline: ringed === c ? RING : 'none',
-                        }}
+                        style={{ ...S.swatch, background: c, border: '1px solid transparent', outline: ringed === c ? RING : 'none' }}
                     />
                 ))}
-                {/* Custom colour + save */}
-                <label style={{ ...S.swatch, overflow: 'hidden', position: 'relative', background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }} title="Eigen kleur">
-                    <input type="color" value={color} aria-label="Eigen kleur"
-                        onChange={(e) => setInkSetting(tool, { color: e.target.value })}
-                        style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-                </label>
-                <button type="button" className="ui-hover" title="Kleur bewaren" aria-label="Kleur bewaren" style={S.saveBtn} onClick={saveCustom}>
-                    <Plus size={16} />
-                </button>
-            </div>
-
-            <div style={S.sep} />
-
-            <div style={S.row}>
-                {widths.map(w => (
-                    <button
-                        key={w} type="button" aria-label={`Dikte ${w}`} aria-pressed={cfg.width === w}
-                        onClick={() => setInkSetting(tool, { width: w })}
-                        style={{ ...S.optBtn, ...(cfg.width === w ? S.optOn : {}) }}
-                    >
-                        <span style={{ width: Math.min(w + 6, 28), height: Math.min(w + 6, 28), borderRadius: '50%', background: color, display: 'block', border: color === '#ffffff' ? '1px solid var(--border-color)' : 'none' }} />
+                <div style={S.pickerCol}>
+                    <label title="Eigen kleur" style={{
+                        ...S.swatch, overflow: 'hidden', position: 'relative', outline: pickerOn ? RING : 'none',
+                        background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
+                    }}>
+                        <input ref={pickerRef} type="color" value={color} aria-label="Eigen kleur"
+                            onChange={(e) => setInkSetting(tool, { color: e.target.value })}
+                            style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                    </label>
+                    {custom.length > 0 && (
+                        <div style={S.chips}>
+                            {custom.map(c => (
+                                <button key={c} type="button" aria-label={`Kleur ${c}`} aria-pressed={ringed === c} title="Eerder gekozen kleur"
+                                    onClick={() => setInkSetting(tool, { color: c })}
+                                    style={{ ...S.chip, background: c, outline: ringed === c ? '2px solid var(--accent)' : 'none' }} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+                <div style={{ position: 'relative' }}>
+                    <button type="button" className="ui-hover" data-ink-size="" aria-label="Dikte" title={`Dikte: ${width} px — tik om te kiezen`}
+                        aria-expanded={sizeOpen} onClick={() => setSizeOpen(!sizeOpen)}
+                        style={{ ...S.optBtn, borderRadius: '50%', ...(sizeOpen ? S.optOn : {}) }}>
+                        <Dot size={width} color={color} max={30} />
                     </button>
-                ))}
+                    {sizeOpen && (
+                        <div data-size-slider="" style={S.sliderPop}>
+                            <VerticalSlider label="Dikte instellen" value={width} {...INK_WIDTH_RANGE[tool]}
+                                onChange={(w) => setInkSetting(tool, { width: clampInkWidth(tool, w) })}
+                                preview={<Dot size={width} color={color} max={34} />} />
+                        </div>
+                    )}
+                </div>
             </div>
+        </div>
+    );
+}
+
+// The gom's flyout: only its size, as the same vertical slider; the preview is the eraser's reach.
+export function EraserFlyout() {
+    const r = useBoardStore((s) => s.eraserSize);
+    const setEraserSize = useBoardStore((s) => s.setEraserSize);
+    return (
+        <div data-eraser-flyout="" style={S.body}>
+            <VerticalSlider label="Gomgrootte" value={r} min={ERASER_RANGE.min} max={ERASER_RANGE.max} onChange={setEraserSize}
+                preview={<span aria-hidden="true" style={{ ...S.ring, width: 2 * r, height: 2 * r }} />} previewBox={2 * ERASER_RANGE.max} />
+        </div>
+    );
+}
+
+// A width dot in the ink colour, capped so the fattest marker still fits its button; the thin
+// border keeps a white pen visible on the light surface.
+function Dot({ size, color, max }: { size: number; color: string; max: number }) {
+    const d = Math.min(size + 2, max);
+    return <span aria-hidden="true" style={{ width: d, height: d, borderRadius: '50%', background: color, display: 'block', boxShadow: '0 0 0 1px var(--border-color)' }} />;
+}
+
+// Big at the top, small at the bottom: a vertical range with a live preview above it.
+function VerticalSlider({ label, value, min, max, onChange, preview, previewBox = 36 }: {
+    label: string; value: number; min: number; max: number; onChange: (v: number) => void;
+    preview: React.ReactNode; previewBox?: number;
+}) {
+    return (
+        <div style={S.slider}>
+            <span style={{ ...S.previewBox, width: previewBox, height: previewBox }}>{preview}</span>
+            {/* orient: Firefox's older spelling of an upright range; others read the writing-mode. */}
+            <input type="range" min={min} max={max} step={1} value={value} aria-label={label}
+                {...{ orient: 'vertical' }}
+                onChange={(e) => onChange(Number(e.target.value))} style={S.range} />
+            <span style={S.value}>{value} px</span>
         </div>
     );
 }
@@ -186,7 +239,13 @@ const RING = '3px solid var(--accent)';
 const S = {
     body: { display: 'flex', flexDirection: 'column', gap: '8px' } as React.CSSProperties,
     row: { display: 'flex', gap: '6px' } as React.CSSProperties,
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(4, 40px)', gap: '8px' } as React.CSSProperties,
+    strip: { display: 'flex', gap: '8px', alignItems: 'flex-start' } as React.CSSProperties,
+    pickerCol: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '40px' } as React.CSSProperties,
+    chips: { display: 'grid', gridTemplateColumns: 'repeat(2, 18px)', gap: '4px' } as React.CSSProperties,
+    chip: {
+        width: '18px', height: '18px', borderRadius: '50%', cursor: 'pointer', padding: 0, outlineOffset: '1px',
+        boxSizing: 'border-box', border: '1px solid var(--border-color)',
+    } as React.CSSProperties,
     // The "A" of Standaard sits in the other default colour, so it reads on either fill.
     autoSwatch: {
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -196,11 +255,6 @@ const S = {
         width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', padding: 0, outlineOffset: '2px',
         display: 'inline-block', flexShrink: 0, boxSizing: 'border-box',
     } as React.CSSProperties,
-    saveBtn: {
-        width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', padding: 0,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        border: '1px dashed var(--border-color)', background: 'transparent', color: 'var(--text-main)',
-    } as React.CSSProperties,
     sep: { height: '1px', background: 'var(--border-color)' } as React.CSSProperties,
     // THE selected look (UI-GUIDE §2): soft fill + 1px accent ring.
     optOn: { background: 'var(--accent-soft)', boxShadow: 'inset 0 0 0 1px var(--accent)', borderColor: 'var(--accent)' } as React.CSSProperties,
@@ -209,4 +263,19 @@ const S = {
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: '1px solid var(--border-color)', background: 'transparent',
     } as React.CSSProperties,
+    // Opens to the right of the strip, over the board, so the strip itself never grows.
+    sliderPop: {
+        position: 'absolute', left: 'calc(100% + 18px)', top: '-10px', zIndex: 2, padding: '10px 8px',
+        background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-2)',
+    } as React.CSSProperties,
+    slider: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' } as React.CSSProperties,
+    previewBox: { display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } as React.CSSProperties,
+    // vertical-lr + rtl stands the range upright with the maximum at the top.
+    range: {
+        writingMode: 'vertical-lr', direction: 'rtl', width: '40px', height: '170px', margin: 0,
+        accentColor: 'var(--accent)', cursor: 'pointer',
+    } as React.CSSProperties,
+    value: { fontSize: 'var(--text-sm)', fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', whiteSpace: 'nowrap' } as React.CSSProperties,
+    ring: { display: 'block', borderRadius: '50%', border: '2px dashed var(--text-main)', boxSizing: 'border-box' } as React.CSSProperties,
 };

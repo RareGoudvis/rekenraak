@@ -4,7 +4,10 @@ import {
     BOARD_AUTOSAVE_KEY, BOARD_FORMAT_VERSION, BOARD_PRESETS_KEY, MAX_BOARD_PRESETS,
     parseBoardFile, saveBoardAutosave, loadBoardAutosave, clearBoardAutosave,
     loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, emptyBoard, type BoardPreset,
+    updateBoardPreset, renameBoardPreset, duplicateBoardPreset, BOARD_INK_KEY, BOARD_SAVED_ID_KEY,
+    saveInkSettings, loadInkSettings, loadEraserSize, loadSavedBoardId,
 } from '../board/boardPersistence';
+import { promptSaveBoard } from '../board/boardChrome';
 import { NATURAL_W } from '../board/widgetSizing';
 import { makeBoardBlock } from '../board/boardBlocks';
 import { DEFAULT_BASE } from '../config/baseSettings';
@@ -321,5 +324,101 @@ describe('transparent cards', () => {
         // The format stays v2: the flag is an ordinary prop, absent on a card that never set it.
         expect(BOARD_FORMAT_VERSION).toBe(2);
         expect(ws[3].props && 'transparent' in ws[3].props).toBe(false);
+    });
+});
+
+describe('Mijn borden as templates: update / rename / duplicate', () => {
+    const save = (name: string) => (saveBoardPreset(name, emptyBoard(), 0) as BoardPreset[])[0];
+
+    test('update overwrites the entry in place (pages, count, date), id and name stay', () => {
+        const a = save('A');
+        save('B');
+        const st = buildFullBoard();
+        expect(updateBoardPreset(a.id, st.pages, 1, st.boardSettings)).toBe('ok');
+        const list = loadBoardPresets();
+        expect(list.map(p => p.name)).toEqual(['B', 'A']);
+        const got = list.find(p => p.id === a.id)!;
+        expect(got.pageCount).toBe(2);
+        expect(got.payload.activePageIdx).toBe(1);
+        expect(got.payload.pages[0].strokes[0].id).toBe('st1');
+        expect(updateBoardPreset('gone', st.pages, 0)).toBe('missing');
+    });
+
+    test('update reports a full storage instead of throwing', () => {
+        const a = save('A');
+        vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('QuotaExceededError'); });
+        expect(updateBoardPreset(a.id, emptyBoard(), 0)).toBe('failed');
+    });
+
+    test('rename trims, falls back on an empty name, leaves the others alone', () => {
+        const a = save('A');
+        const b = save('B');
+        expect(renameBoardPreset(a.id, '  Les 3  ').find(p => p.id === a.id)!.name).toBe('Les 3');
+        expect(renameBoardPreset(a.id, '   ').find(p => p.id === a.id)!.name).toBe('Naamloos bord');
+        expect(loadBoardPresets().find(p => p.id === b.id)!.name).toBe('B');
+    });
+
+    test('duplicate puts a deep copy with a fresh id right under its source, within the cap', () => {
+        const a = save('A');
+        save('B');
+        const next = duplicateBoardPreset(a.id) as BoardPreset[];
+        expect(next.map(p => p.name)).toEqual(['B', 'A', 'A (kopie)']);
+        expect(next[2].id).not.toBe(a.id);
+        expect(next[2].payload).not.toBe(next[1].payload);
+        expect(duplicateBoardPreset('gone')).toBe(false);
+        for (let i = 0; i < MAX_BOARD_PRESETS; i++) save(`P${i}`);
+        expect(duplicateBoardPreset(loadBoardPresets()[0].id) as BoardPreset[]).toHaveLength(MAX_BOARD_PRESETS);
+    });
+
+    test('Bewaren saves once with a name, then updates; Bewaren als… always makes a new entry', () => {
+        const prompt = vi.spyOn(window, 'prompt').mockReturnValue('Les');
+        useBoardStore.getState().resetBoard();
+        expect(promptSaveBoard().outcome).toBe('saved');
+        const id = useBoardStore.getState().savedBoardId!;
+        expect(localStorage.getItem(BOARD_SAVED_ID_KEY)).toBe(id);
+        expect(promptSaveBoard().outcome).toBe('updated');
+        expect(prompt).toHaveBeenCalledTimes(1);
+        expect(promptSaveBoard(true).outcome).toBe('saved');
+        expect(useBoardStore.getState().savedBoardId).not.toBe(id);
+        expect(loadBoardPresets()).toHaveLength(2);
+        // An entry deleted meanwhile (another tab): Bewaren asks a name again.
+        deleteBoardPreset(useBoardStore.getState().savedBoardId!);
+        expect(promptSaveBoard().outcome).toBe('saved');
+        expect(prompt).toHaveBeenCalledTimes(3);
+    });
+
+    test('the link: loadBoard with an id sets it, an import (no id) and resetBoard drop it', () => {
+        const s = useBoardStore.getState();
+        s.loadBoard(emptyBoard(), 0, undefined, 'abc');
+        expect(useBoardStore.getState().savedBoardId).toBe('abc');
+        expect(loadSavedBoardId()).toBe('abc');
+        s.loadBoard(emptyBoard(), 0);
+        expect(useBoardStore.getState().savedBoardId).toBeNull();
+        expect(loadSavedBoardId()).toBeNull();
+        s.loadBoard(emptyBoard(), 0, undefined, 'abc');
+        s.resetBoard();
+        expect(useBoardStore.getState().savedBoardId).toBeNull();
+    });
+});
+
+describe('eraser size (in the ink entry)', () => {
+    test('round-trips next to the pens; the pens still read as before', () => {
+        const ink = loadInkSettings();
+        saveInkSettings({ ...ink, pen: { color: '#dc2626', width: 6 } }, 30);
+        expect(JSON.parse(localStorage.getItem(BOARD_INK_KEY)!).eraserSize).toBe(30);
+        expect(loadEraserSize()).toBe(30);
+        expect(loadInkSettings().pen).toEqual({ color: '#dc2626', width: 6 });
+    });
+
+    test('the store saves it on change', () => {
+        useBoardStore.getState().setEraserSize(22);
+        expect(loadEraserSize()).toBe(22);
+        // Out of range is clamped in the store, junk in storage reads as the default.
+        useBoardStore.getState().setEraserSize(400);
+        expect(useBoardStore.getState().eraserSize).toBe(40);
+        localStorage.setItem(BOARD_INK_KEY, JSON.stringify({ eraserSize: 'groot' }));
+        expect(loadEraserSize()).toBe(14);
+        localStorage.setItem(BOARD_INK_KEY, '{nope');
+        expect(loadEraserSize()).toBe(14);
     });
 });

@@ -3,7 +3,7 @@ import { Cursor, Selection, PenNib, Highlighter, Eraser, Shapes, Ruler, Plus, Ar
 import { useBoardStore } from '../useBoardStore';
 import type { BoardTool, InstrumentKind, InstrumentSnap } from '../boardTypes';
 import { INSTRUMENT_KINDS, INSTRUMENT_LABELS, snapOf } from '../instrumentGeometry';
-import InkFlyout from './InkFlyout';
+import InkFlyout, { EraserFlyout } from './InkFlyout';
 import BoardSettingsMenu from './BoardSettingsMenu';
 
 // Single-letter tool shortcuts (shown in each tooltip): the ink tools.
@@ -18,15 +18,15 @@ const SELECT_GROUP: ReadonlyArray<{ key: BoardTool; icon: Icon; label: string }>
 ];
 const LINE_TOOLS: ReadonlyArray<BoardTool> = ['line', 'shape'];
 
-type Flyout = 'settings' | 'select' | 'pen' | 'marker' | 'lines' | 'instruments';
+type Flyout = 'settings' | 'select' | 'pen' | 'marker' | 'eraser' | 'lines' | 'instruments';
 
 interface Props {
     addOpen: boolean;
     onToggleAdd: () => void;
 }
 
-// The left rail of the board (Zijrail design, 72px): Bordinstellingen on top, the tools, undo /
-// redo, and the big Toevoegen at the very bottom. Settings grow out of the rail as flyouts next
+// The left rail of the board (Zijrail design, 72px): Bordinstellingen on top, the tools, then at
+// the bottom undo / redo right above the big Toevoegen (owner: undo lives by the add button). Settings grow out of the rail as flyouts next
 // to their button, never floating mid-board. Digibord-first: ≥ 40px targets, nothing on hover.
 export default function BoardRail({ addOpen, onToggleAdd }: Props) {
     const tool = useBoardStore((s) => s.tool);
@@ -89,7 +89,7 @@ export default function BoardRail({ addOpen, onToggleAdd }: Props) {
     return (
         <nav data-board-rail="" aria-label="Bordgereedschap" style={S.rail}>
             <div data-board-menu="settings" style={S.slot}>
-                <RailButton icon={GearSix} label="Bordinstellingen" title="Bordinstellingen: achtergrond, pagina’s, bewaren"
+                <RailButton icon={GearSix} label="Bordinstellingen" title="Bordinstellingen: achtergrond, raster, bord wissen"
                     active={flyout === 'settings'} expanded={flyout === 'settings'} onClick={() => toggle('settings')} />
                 {flyout === 'settings' && (
                     <div data-rail-flyout="" style={{ ...S.flyout, top: '-4px', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto' }} role="dialog" aria-label="Bordinstellingen">
@@ -129,8 +129,13 @@ export default function BoardRail({ addOpen, onToggleAdd }: Props) {
                 </div>
             ))}
 
-            <div style={S.slot}>
-                <RailButton icon={Eraser} label="Gom" active={tool === 'eraser'} onClick={() => pick('eraser', null, false)} />
+            <div data-board-menu="eraser" style={S.slot}>
+                <RailButton icon={Eraser} label="Gom" active={tool === 'eraser'} expanded={flyout === 'eraser'} onClick={() => pick('eraser', 'eraser', true)} />
+                {flyout === 'eraser' && tool === 'eraser' && (
+                    <div data-rail-flyout="" style={S.flyout} role="group" aria-label="Gom">
+                        <EraserFlyout />
+                    </div>
+                )}
             </div>
             <div style={S.slot}>
                 <RailButton icon={TextT} label="Tekst (tik op het bord)" active={tool === 'text'} onClick={() => pick('text', null, false)} />
@@ -157,14 +162,14 @@ export default function BoardRail({ addOpen, onToggleAdd }: Props) {
                 )}
             </div>
 
-            <span style={S.sep} />
+            <span style={{ flex: 1 }} />
 
             <RailButton icon={ArrowUUpLeft} label="Ongedaan maken" title="Ongedaan maken (Ctrl+Z): alleen getekende inkt, widgets niet"
                 disabled={!canUndoInk} muted onClick={undoStroke} />
             <RailButton icon={ArrowUUpRight} label="Opnieuw" title="Opnieuw (Ctrl+Y): alleen getekende inkt"
                 disabled={!canRedoInk} muted onClick={redoStroke} />
 
-            <span style={{ flex: 1 }} />
+            <span style={S.sep} />
 
             {/* data-board-add: the panel treats a press here as its own, so + toggles it. */}
             <button type="button" data-board-add="" className="ui-hover" aria-label="Toevoegen" title="Toevoegen" aria-expanded={addOpen}

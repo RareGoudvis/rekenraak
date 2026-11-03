@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { effectiveInk, useBoardStore } from '../useBoardStore';
 import { rndId } from '../boardTypes';
 import type { BoardTool, Stroke, ToolContext, ToolEngine } from '../boardTypes';
-import { splitSubpaths, strokeHit } from '../inkGeometry';
+import { eraserCursor, splitSubpaths, strokeHit } from '../inkGeometry';
 import { createLineTool, createShapeTool } from '../drawTools';
 import { createSelectTool, selectionBox, type SelectEngine, type SelectPreview } from '../selectTool';
 import { pageInstrumentGeometry, startGuidedLine, type GuidedLine, type GuidedSegment } from '../instrumentGeometry';
@@ -57,6 +57,8 @@ export default function InkLayer({ active }: { active: boolean }) {
     const addStroke = useBoardStore((s) => s.addStroke);
     const removeStrokes = useBoardStore((s) => s.removeStrokes);
     const selectedIds = useBoardStore((s) => s.selectedStrokeIds);
+    const eraserSize = useBoardStore((s) => s.eraserSize);
+    const eraserCss = useMemo(() => eraserCursor(eraserSize), [eraserSize]);
 
     const drawing = useRef<number[] | null>(null);
     const [draft, setDraft] = useState<Stroke | null>(null);
@@ -126,7 +128,7 @@ export default function InkLayer({ active }: { active: boolean }) {
     };
 
     const erase = (x: number, y: number) => {
-        const ids = strokes.filter(s => strokeHit(s, x, y, 14)).map(s => s.id);
+        const ids = strokes.filter(s => strokeHit(s, x, y, eraserSize)).map(s => s.id);
         if (ids.length) removeStrokes(ids);
     };
 
@@ -276,7 +278,7 @@ export default function InkLayer({ active }: { active: boolean }) {
 
     const moving = selPreview && 'offset' in selPreview ? selPreview : null;
     const box = tool === 'lasso' ? selectionBox(strokes, selectedIds) : null;
-    const cursor = !active ? 'default' : tool === 'eraser' ? 'cell' : tool === 'lasso' ? (moving || overSelection ? 'move' : 'default') : 'crosshair';
+    const cursor = !active ? 'default' : tool === 'eraser' ? eraserCss : tool === 'lasso' ? (moving || overSelection ? 'move' : 'default') : 'crosshair';
 
     return (
         <svg
