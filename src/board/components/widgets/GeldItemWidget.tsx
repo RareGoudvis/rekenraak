@@ -3,29 +3,20 @@ import { formatAmount } from '../../../services/geld/geldGenerator';
 import { geldItemProps } from '../../mathTools/geld';
 import type { BoardWidget } from '../../boardTypes';
 
-// Realistic euro tints per denomination (bills) — close to the real notes.
-const BILL_COLORS: Record<number, { bg: string; border: string }> = {
-    50000: { bg: '#d1c4e9', border: '#7e57c2' },   // €500 paars
-    20000: { bg: '#fff3c4', border: '#d4a017' },   // €200 geel
-    10000: { bg: '#c8e6c9', border: '#43a047' },   // €100 groen
-    5000: { bg: '#ffe0b2', border: '#fb8c00' },    // €50 oranje
-    2000: { bg: '#bbdefb', border: '#1e88e5' },    // €20 blauw
-    1000: { bg: '#ffcdd2', border: '#e53935' },    // €10 rood
-    500: { bg: '#eceff1', border: '#78909c' },     // €5 grijs
-};
+// Real ECB note fronts (public/geld, see README there); bills only, coins stay drawn.
+const BILL_W = 120, BILL_H = 62;
 
 function RealBill({ denom }: { denom: number }) {
-    const c = BILL_COLORS[denom] ?? BILL_COLORS[500];
     return (
-        <div style={{
-            width: '96px', height: '52px', borderRadius: '6px',
-            background: `linear-gradient(120deg, ${c.bg}, #ffffff 130%)`,
-            border: `2px solid ${c.border}`, position: 'relative',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--font-sheet-math)', fontWeight: 800, fontSize: '18px', color: c.border,
-        }}>
-            <span style={{ position: 'absolute', left: '6px', top: '2px', fontSize: '9px' }}>EURO</span>
-            {denom / 100}
+        <div style={{ width: BILL_W + 'px', height: BILL_H + 'px', position: 'relative', overflow: 'hidden', borderRadius: '2px', boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>
+            <img src={`${import.meta.env.BASE_URL}geld/eur-${denom / 100}-front.jpg`} alt={`€${denom / 100}`} draggable={false}
+                style={{ width: '100%', height: '100%', display: 'block', objectFit: 'fill', pointerEvents: 'none', userSelect: 'none' }} />
+            {/* ECB rule: SPECIMEN diagonally at ~75 % of the note width, as an overlay so a crop cannot remove it */}
+            <span data-specimen aria-hidden style={{
+                position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-27deg)',
+                fontFamily: 'Arial, Helvetica, sans-serif', fontWeight: 700, fontSize: '15px', letterSpacing: '1px',
+                color: 'rgba(60,60,60,0.3)', whiteSpace: 'nowrap', pointerEvents: 'none', userSelect: 'none',
+            }}>SPECIMEN</span>
         </div>
     );
 }
