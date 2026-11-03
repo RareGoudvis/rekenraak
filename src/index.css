@@ -270,13 +270,42 @@ input[type="range"]:focus-visible { box-shadow: none; }
 input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: var(--shadow-focus); }
 input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: var(--shadow-focus); }
 
-/* Bordmodus rail size slider: upright (writing-mode in InkRail.tsx) with a 22px thumb a finger
+/* Bordmodus rail: its sizes follow the rail's own height (the board-rail size container, so a
+   dismissed beta strip counts; cqh and the query read the content box = rail - 16px padding).
+   Below a 833px rail the tool buttons go 44 -> 40, + 52 -> 44, separators lose 4px: the 565px of
+   rail around the ink section becomes 505px. */
+[data-board-rail] > * { --rail-btn: 44px; --rail-add: 52px; --rail-sep: 4px; }
+@container board-rail (height < 817px) {
+  [data-board-rail] > * { --rail-btn: 40px; --rail-add: 44px; --rail-sep: 2px; }
+}
+
+/* The ink section: --ink-b = the rail height left for 4 swatches + slider + dot box once the rest
+   of the rail (565 / 505px, minus the 16px padding cqh leaves out) and the section's fixed 50px
+   (gaps, number, 2px slack) are taken.
+   B 218 -> 332 maps linearly onto swatch 30 -> 44, slider 66 -> 120, dot box 32 -> 36
+   (4s + h + d = B): full sizes from a 947px rail, the minimum at 1280x800 with the beta strip
+   (774px rail, compact rest); the compact rail holds B at 218 so nothing jumps at the switch. */
+.board-ink {
+  --ink-b: calc(100cqh - 599px);
+  --ink-swatch: clamp(24px, calc(30px + (var(--ink-b) - 218px) * 14 / 114), 44px);
+  --ink-slider: clamp(50px, calc(66px + (var(--ink-b) - 218px) * 54 / 114), 120px);
+  --ink-dot: clamp(28px, calc(32px + (var(--ink-b) - 218px) * 4 / 114), 36px);
+}
+@container board-rail (height < 817px) {
+  .board-ink { --ink-b: min(calc(100cqh - 539px), 218px); }
+}
+.board-ink-swatches { display: grid; grid-template-columns: var(--ink-swatch, 30px); gap: 6px; justify-content: center; }
+.board-ink-swatch { width: var(--ink-swatch, 30px); height: var(--ink-swatch, 30px); }
+.board-ink-dotbox { width: var(--ink-dot, 32px); height: var(--ink-dot, 32px); }
+
+/* The size slider: upright (writing-mode in InkRail.tsx), an 8px track and a 26px thumb a finger
    can hold on a digibord; the rail section dims itself, so the generic disabled fade is undone. */
-.board-ink-range::-webkit-slider-runnable-track { width: 4px; height: 100%; }
-.board-ink-range::-moz-range-track { width: 4px; height: 100%; }
-.board-ink-range::-webkit-slider-thumb { width: 22px; height: 22px; margin-top: 0; margin-left: -7px; background: var(--bg-surface); border-color: var(--text-muted); }
-.board-ink-range::-moz-range-thumb { width: 22px; height: 22px; background: var(--bg-surface); border-color: var(--text-muted); }
-.board-ink-range:disabled { opacity: 1; cursor: not-allowed; }
+input.board-ink-range { width: 30px; height: var(--ink-slider, 66px); margin: 0; }
+input.board-ink-range::-webkit-slider-runnable-track { width: 8px; height: 100%; border-radius: var(--radius-pill); }
+input.board-ink-range::-moz-range-track { width: 8px; height: 100%; border-radius: var(--radius-pill); }
+input.board-ink-range::-webkit-slider-thumb { width: 26px; height: 26px; margin-top: 0; margin-left: -9px; background: var(--bg-surface); border-color: var(--text-muted); }
+input.board-ink-range::-moz-range-thumb { width: 26px; height: 26px; background: var(--bg-surface); border-color: var(--text-muted); }
+input.board-ink-range:disabled { opacity: 1; cursor: not-allowed; }
 
 /* Apple-style keyboard focus: a soft accent ring, only for keyboard users
    (:focus-visible), never a hard browser outline. */

@@ -18,8 +18,10 @@ function loadSavedColors(): string[] {
 }
 
 // The rail's ink section, always visible (owner: "the colour strip should live in the rail, same
-// goes for the slider"): a 2×2 grid (A standaard or the tool's own default, blauw, rood, picker)
-// over a vertical size slider with a live dot. It follows the active ink tool; the gom drives the
+// goes for the slider"; round 4: "colors underneath each other and bigger, same for slider"): one
+// column (A standaard or the tool's own default, blauw, rood, picker) over a vertical size slider,
+// the live dot and the number under it; sizes scale with the rail height (.board-ink in
+// index.css). It follows the active ink tool; the gom drives the
 // slider only; any other tool shows the last ink tool's settings greyed out and read-only.
 export default function InkRail() {
     const tool = useBoardStore((s) => s.tool);
@@ -84,12 +86,12 @@ export default function InkRail() {
     const pick = (c: string | null) => setInkSetting(ink, { color: c });
 
     return (
-        <div data-ink-rail={ink} data-ink-state={live ? 'live' : eraser ? 'eraser' : 'idle'} role="group" aria-label="Inkt"
+        <div className="board-ink" data-ink-rail={ink} data-ink-state={live ? 'live' : eraser ? 'eraser' : 'idle'} role="group" aria-label="Inkt"
             style={{ ...S.section, ...(idle ? { opacity: 0.5 } : {}) }}>
-            <div data-ink-swatches="" style={S.grid}>
+            <div data-ink-swatches="" className="board-ink-swatches">
                 {auto && (
                     <button
-                        type="button" data-ink-default aria-label="Standaardkleur (volgt het bord)" aria-pressed={cfg.color === null}
+                        type="button" className="board-ink-swatch" data-ink-default aria-label="Standaardkleur (volgt het bord)" aria-pressed={cfg.color === null}
                         title={live ? 'Standaard: zwart op een licht bord, wit op een donker bord' : offTitle} disabled={!live}
                         onClick={() => pick(null)}
                         style={{
@@ -102,13 +104,13 @@ export default function InkRail() {
                 )}
                 {colors.map(c => (
                     <button
-                        key={c} type="button" aria-label={`Kleur ${c}`} aria-pressed={ringed === c} disabled={!live}
+                        key={c} type="button" className="board-ink-swatch" aria-label={`Kleur ${c}`} aria-pressed={ringed === c} disabled={!live}
                         title={live ? undefined : offTitle} onClick={() => pick(c)}
                         style={{ ...S.swatch, background: c, border: '1px solid transparent', outline: ringed === c ? RING : 'none', ...swatchOff }}
                     />
                 ))}
                 <div data-ink-picker="" style={{ position: 'relative' }}>
-                    <label title={live ? 'Eigen kleur' : offTitle} style={{
+                    <label className="board-ink-swatch" title={live ? 'Eigen kleur' : offTitle} style={{
                         ...S.swatch, display: 'block', overflow: 'hidden', position: 'relative', outline: pickerOn ? RING : 'none',
                         background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)', ...swatchOff,
                     }}>
@@ -130,52 +132,49 @@ export default function InkRail() {
                 </div>
             </div>
 
-            <div style={S.sizeRow}>
-                {/* orient: Firefox's older spelling of an upright range; others read the writing-mode. */}
-                <input type="range" className="board-ink-range" step={1}
-                    {...(eraser
-                        ? { min: ERASER_RANGE.min, max: ERASER_RANGE.max, value: eraserSize, 'aria-label': 'Gomgrootte', title: `Gomgrootte: ${eraserSize} px` }
-                        : { ...INK_WIDTH_RANGE[ink], value: width, 'aria-label': 'Dikte', title: idle ? offTitle : `Dikte: ${width} px` })}
-                    {...{ orient: 'vertical' }}
-                    disabled={idle}
-                    onChange={(e) => {
-                        const v = Number(e.target.value);
-                        if (eraser) setEraserSize(v); else setInkSetting(ink, { width: clampInkWidth(ink, v) });
-                    }}
-                    style={S.range} />
-                <div style={S.preview}>
-                    <span style={S.dotBox}>
-                        {eraser
-                            // The gom's reach, scaled into the rail (40 → 34 px).
-                            ? <span aria-hidden="true" data-ink-dot="" style={{ ...S.ring, width: Math.round(eraserSize * 0.85), height: Math.round(eraserSize * 0.85) }} />
-                            : <Dot size={width} color={color} max={DOT_BOX} />}
-                    </span>
-                    <span style={S.value}>{eraser ? eraserSize : width}</span>
-                </div>
+            {/* orient: Firefox's older spelling of an upright range; others read the writing-mode. */}
+            <input type="range" className="board-ink-range" step={1}
+                {...(eraser
+                    ? { min: ERASER_RANGE.min, max: ERASER_RANGE.max, value: eraserSize, 'aria-label': 'Gomgrootte', title: `Gomgrootte: ${eraserSize} px` }
+                    : { ...INK_WIDTH_RANGE[ink], value: width, 'aria-label': 'Dikte', title: idle ? offTitle : `Dikte: ${width} px` })}
+                {...{ orient: 'vertical' }}
+                disabled={idle}
+                onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (eraser) setEraserSize(v); else setInkSetting(ink, { width: clampInkWidth(ink, v) });
+                }}
+                style={S.range} />
+            <div data-ink-preview="" style={S.preview}>
+                <span className="board-ink-dotbox" style={S.dotBox}>
+                    {eraser
+                        // The gom's reach, scaled into the rail (40 → 34 px, capped by the dot box).
+                        ? <span aria-hidden="true" data-ink-dot="" style={{ ...S.ring, width: Math.round(eraserSize * 0.85), height: Math.round(eraserSize * 0.85) }} />
+                        : <Dot size={width} color={color} max={DOT_BOX} />}
+                </span>
+                <span style={S.value}>{eraser ? eraserSize : width}</span>
             </div>
         </div>
     );
 }
 
-// A width dot in the ink colour, capped so the fattest marker still fits its box; the thin
-// border keeps a white pen visible on the light surface.
+// A width dot in the ink colour, capped so the fattest marker still fits its box (which shrinks
+// on a short rail, hence max-width); the thin border keeps a white pen visible on the light surface.
 function Dot({ size, color, max }: { size: number; color: string; max: number }) {
     const d = Math.min(size + 2, max);
-    return <span aria-hidden="true" data-ink-dot="" style={{ width: d, height: d, borderRadius: '50%', background: color, display: 'block', boxShadow: '0 0 0 1px var(--border-color)' }} />;
+    return <span aria-hidden="true" data-ink-dot="" style={{ width: d, height: d, borderRadius: '50%', background: color, display: 'block', maxWidth: '100%', maxHeight: '100%', boxShadow: '0 0 0 1px var(--border-color)' }} />;
 }
 
-// The swatch ring: 2px accent with a 1px gap, so a ringed swatch still fits inside the 72px rail.
+// The swatch ring: 2px accent with a 1px gap, so a ringed 44px swatch still fits inside the 72px rail.
 const RING = '2px solid var(--accent)';
-const SWATCH = 28;
-const DOT_BOX = 34;
+// The largest dot box (index.css .board-ink-dotbox scales 28–36px).
+const DOT_BOX = 36;
 
 const S = {
     section: {
         alignSelf: 'stretch', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', flexShrink: 0,
     } as React.CSSProperties,
-    grid: { display: 'grid', gridTemplateColumns: `repeat(2, ${SWATCH}px)`, gap: '6px' } as React.CSSProperties,
     swatch: {
-        width: `${SWATCH}px`, height: `${SWATCH}px`, borderRadius: '50%', cursor: 'pointer', padding: 0, outlineOffset: '1px',
+        borderRadius: '50%', cursor: 'pointer', padding: 0, outlineOffset: '1px',
         flexShrink: 0, boxSizing: 'border-box',
     } as React.CSSProperties,
     // The "A" of Standaard sits in the other default colour, so it reads on either fill.
@@ -184,10 +183,10 @@ const S = {
         fontSize: 'var(--text-sm)', fontWeight: 700, fontFamily: 'var(--font-ui)',
     } as React.CSSProperties,
     off: { opacity: 0.4, cursor: 'not-allowed' } as React.CSSProperties,
-    // Grows out of the rail beside the picker (its right edge sits 4px inside the 72px rail), over
-    // the board, so the rail itself never grows.
+    // Grows out of the rail beside the picker, from the rail's edge (the picker sits centred in
+    // the 72px rail, so its centre + 36px), over the board, so the rail itself never grows.
     chips: {
-        position: 'absolute', left: 'calc(100% + 4px)', top: '-8px', zIndex: 2, padding: '8px',
+        position: 'absolute', left: 'calc(50% + 36px)', top: '-8px', zIndex: 2, padding: '8px',
         display: 'grid', gridTemplateColumns: 'repeat(2, 24px)', gap: '6px',
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderLeft: 'none',
         borderRadius: '0 var(--radius-lg) var(--radius-lg) 0', boxShadow: 'var(--shadow-2)',
@@ -196,12 +195,12 @@ const S = {
         width: '24px', height: '24px', borderRadius: '50%', cursor: 'pointer', padding: 0, outlineOffset: '1px',
         boxSizing: 'border-box', border: '1px solid var(--border-color)',
     } as React.CSSProperties,
-    sizeRow: { display: 'flex', alignItems: 'center', gap: '2px' } as React.CSSProperties,
-    // vertical-lr + rtl stands the range upright with the maximum at the top; the thumb is sized
-    // for a finger in index.css (.board-ink-range).
-    range: { writingMode: 'vertical-lr', direction: 'rtl', width: '28px', height: '72px', margin: 0 } as React.CSSProperties,
-    preview: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', width: `${DOT_BOX}px` } as React.CSSProperties,
-    dotBox: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: `${DOT_BOX}px`, height: `${DOT_BOX}px` } as React.CSSProperties,
-    value: { fontSize: 'var(--text-xs)', fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', whiteSpace: 'nowrap' } as React.CSSProperties,
-    ring: { display: 'block', borderRadius: '50%', border: '2px solid var(--text-main)', boxSizing: 'border-box' } as React.CSSProperties,
+    // vertical-lr + rtl stands the range upright with the maximum at the top; its size, track and
+    // thumb live in index.css (.board-ink-range), scaled with the rail height.
+    range: { writingMode: 'vertical-lr', direction: 'rtl' } as React.CSSProperties,
+    // Dot over number, under the slider: SYNC the 2px gap and 16px line with the 50px in .board-ink.
+    preview: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' } as React.CSSProperties,
+    dotBox: { display: 'flex', alignItems: 'center', justifyContent: 'center' } as React.CSSProperties,
+    value: { fontSize: 'var(--text-xs)', lineHeight: '16px', fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', whiteSpace: 'nowrap' } as React.CSSProperties,
+    ring: { display: 'block', maxWidth: '100%', maxHeight: '100%', borderRadius: '50%', border: '2px solid var(--text-main)', boxSizing: 'border-box' } as React.CSSProperties,
 };

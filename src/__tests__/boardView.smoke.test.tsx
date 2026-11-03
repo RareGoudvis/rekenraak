@@ -166,12 +166,13 @@ describe('rail and pill (round 2)', () => {
         // A flexible spacer sits between the tools and undo, a separator between redo and +.
         const kids = [...document.querySelector('[data-board-rail]')!.children] as HTMLElement[];
         const undo = kids.findIndex(k => k.getAttribute('aria-label') === 'Ongedaan maken');
-        // Tools | separator | the ink section (2×2 swatches + size slider) | spacer | undo.
+        // Tools | separator | the ink section (a column of swatches, the slider, dot + number) | spacer | undo.
         expect(kids[undo - 2].getAttribute('aria-label')).toBe('Inkt');
         expect(kids[undo - 3].tagName).toBe('SPAN');
         expect(kids[undo - 4].getAttribute('data-board-menu')).toBe('instruments');
         expect(kids[undo - 2].querySelectorAll('[data-ink-swatches] > *')).toHaveLength(4);
         expect(within(kids[undo - 2]).getByRole('slider', { name: 'Dikte' })).toBeTruthy();
+        expect([...kids[undo - 2].children].map(k => k.className)).toEqual(['board-ink-swatches', 'board-ink-range', '']);
         expect(kids[undo - 1].style.flex).toMatch(/^1/);
         expect(kids[undo + 1].getAttribute('aria-label')).toBe('Opnieuw');
         expect(kids[undo + 2].tagName).toBe('SPAN');

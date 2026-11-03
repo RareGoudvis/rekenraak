@@ -257,9 +257,10 @@ function SnapSettings({ kind }: { kind: InstrumentKind }) {
     );
 }
 
-// 72px rail, 44px buttons: still a digibord finger, small enough that the ink section fits 800px.
+// 72px rail, 44px buttons: still a digibord finger. On a rail under 833px the buttons go to 40
+// (--rail-btn, index.css) so the ink column still fits 1280x800 with the beta strip.
 const RAIL_W = 72;
-const BTN = 44;
+const BTN = 'var(--rail-btn, 44px)';
 
 const S = {
     rail: {
@@ -268,10 +269,12 @@ const S = {
         background: 'var(--bg-surface)', borderRight: '1px solid var(--border-color)',
         // Above the board, the inspectors (50) and the add panel (60): flyouts open over them.
         position: 'relative', zIndex: 70,
+        // The ink section and button sizes read the rail's height (cqh / @container in index.css).
+        containerType: 'size', containerName: 'board-rail',
     } as React.CSSProperties,
     slot: { position: 'relative' } as React.CSSProperties,
     btn: {
-        position: 'relative', width: `${BTN}px`, height: `${BTN}px`, flexShrink: 0,
+        position: 'relative', width: BTN, height: BTN, flexShrink: 0,
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--text-main)',
         cursor: 'pointer', padding: 0,
@@ -283,16 +286,16 @@ const S = {
         position: 'absolute', right: '4px', bottom: '4px', width: 0, height: 0,
         borderLeft: '6px solid transparent', borderBottom: '6px solid currentColor', opacity: 0.6,
     } as React.CSSProperties,
-    sep: { width: '36px', height: '1px', background: 'var(--border-color)', margin: '4px 0', flexShrink: 0 } as React.CSSProperties,
+    sep: { width: '36px', height: '1px', background: 'var(--border-color)', margin: 'var(--rail-sep, 4px) 0', flexShrink: 0 } as React.CSSProperties,
     addBtn: {
-        width: '52px', height: '52px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 'var(--rail-add, 52px)', height: 'var(--rail-add, 52px)', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         border: 'none', borderRadius: 'var(--radius-md)', background: 'var(--accent)', color: 'var(--accent-on)',
         cursor: 'pointer', padding: 0, boxShadow: 'var(--shadow-2)',
     } as React.CSSProperties,
-    // Grows out of the rail: starts at the rail's right edge (button 44 inside a 72 rail = 14px),
+    // Grows out of the rail: starts at the rail's right edge (button 44 inside a 72 rail = 14px; 16 at 40),
     // no left border, rounded on the board side only.
     flyout: {
-        position: 'absolute', left: `calc(100% + ${(RAIL_W - BTN) / 2}px)`, top: '-8px', zIndex: 1,
+        position: 'absolute', left: `calc(100% + (${RAIL_W}px - ${BTN}) / 2)`, top: '-8px', zIndex: 1,
         padding: '10px 12px', boxSizing: 'border-box', width: 'max-content',
         background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderLeft: 'none',
         borderRadius: '0 var(--radius-lg) var(--radius-lg) 0', boxShadow: '4px 4px 16px rgba(0, 0, 0, 0.08)',
