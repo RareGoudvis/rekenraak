@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cursor, Selection, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, MathOperations, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, Star, CaretRight as SubCaret, GearSix, Wrench } from '@phosphor-icons/react';
+import { Cursor, Selection, PenNib, Highlighter, Eraser, ArrowUpRight, Shapes, Ruler, GridFour, PaintRoller, Plus, CaretLeft, CaretRight, X, Copy, Trash, FloppyDisk, DownloadSimple, UploadSimple, ArrowUUpLeft, ArrowUUpRight, HandGrabbing, Broom, TextT, GearSix } from '@phosphor-icons/react';
 import { useWorksheetStore } from '../../store/useWorksheetStore';
 import { useBoardStore } from '../useBoardStore';
-import { addBasicWidget } from '../addWidgets';
-import { TOOL_CATALOG, runTool, loadFavorites, toggleFavorite, MAX_FAVORITES, type ToolCategory, type BoardToolDef } from '../toolCatalog';
 import { loadBoardPresets, saveBoardPreset, deleteBoardPreset, exportBoardFile, parseBoardFile, parseBoardSettings, type BoardPreset } from '../boardPersistence';
 import type { BoardTool } from '../boardTypes';
 import { INSTRUMENT_KINDS, INSTRUMENT_LABELS, snapOf } from '../instrumentGeometry';
@@ -30,6 +28,7 @@ function useCompactBar(): boolean {
 const TOOL_KEYS: Record<string, BoardTool> = { l: 'line', v: 'shape', s: 'lasso' };
 
 interface Props {
+    // Toggles the docked Toevoegen panel (WhiteboardView owns it).
     onOpenWiskunde: () => void;
 }
 
@@ -59,20 +58,17 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
     const compact = useCompactBar();
     const instrumentKinds = useBoardStore((s) => (s.pages[s.activePageIdx].instruments ?? []).map(i => i.kind).join(','));
 
-    const [menu, setMenu] = useState<'add' | 'settings' | 'background' | 'page' | 'save' | 'instruments' | null>(null);
-    const [addSub, setAddSub] = useState<ToolCategory | null>(null);
-    const [favorites, setFavorites] = useState<string[]>(loadFavorites);
+    const [menu, setMenu] = useState<'settings' | 'background' | 'page' | 'save' | 'instruments' | null>(null);
     const [presets, setPresets] = useState<BoardPreset[]>([]);
     const importRef = useRef<HTMLInputElement>(null);
-    const imageRef = useRef<HTMLInputElement>(null);
 
-    const openMenu = (m: typeof menu) => { setMenu(menu === m ? null : m); setAddSub(null); };
+    const openMenu = (m: typeof menu) => setMenu(menu === m ? null : m);
 
     // Escape or a press outside the open popup (and its button) closes it. Capture phase:
     // widgets stop their pointerdown from bubbling past the board.
     useEffect(() => {
         if (!menu) return;
-        const close = () => { setMenu(null); setAddSub(null); };
+        const close = () => setMenu(null);
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
         const onDown = (e: PointerEvent) => {
             if (!(e.target instanceof Element && e.target.closest(`[data-board-menu="${menu}"]`))) close();
@@ -98,19 +94,6 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         document.addEventListener('keydown', onKey);
         return () => document.removeEventListener('keydown', onKey);
     }, [setTool]);
-
-    const handleTool = (def: BoardToolDef) => {
-        if (!runTool(def)) { imageRef.current?.click(); return; }
-        setMenu(null); setAddSub(null);
-    };
-    const handleImageWidget = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        e.target.value = '';
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => { addBasicWidget('afbeelding', { src: String(reader.result) }, 420); setMenu(null); setAddSub(null); };
-        reader.readAsDataURL(file);
-    };
 
     const handleSavePreset = () => {
         const name = window.prompt('Naam voor dit bord:', 'Mijn bord');
@@ -154,53 +137,17 @@ export default function BoardBottomBar({ onOpenWiskunde }: Props) {
         { key: 'instrument' as const, icon: Ruler, label: 'Meetinstrumenten', enabled: true },
     ];
 
-    const favDefs = favorites.map(id => TOOL_CATALOG.find(t => t.id === id)).filter(Boolean) as BoardToolDef[];
-
     return (
         <div className="mac-vibrant" style={compact ? { ...S.bar, columnGap: '6px' } : S.bar}>
-            <input ref={imageRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageWidget} />
             <input ref={importRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleImportFile} />
 
-            {/* ── Toevoegen (categorieën) ── */}
-            <div data-board-menu="add" style={{ position: 'relative' }}>
-                <button type="button" className="ui-hover" style={S.addBtn} aria-label="Toevoegen aan bord"
-                    onClick={() => openMenu('add')}>
+            {/* ── Toevoegen: opens the docked panel (tabs, search, favourites) ── */}
+            <div data-board-add="" style={{ position: 'relative' }}>
+                <button type="button" className="ui-hover" style={S.addBtn} aria-label="Toevoegen"
+                    onClick={onOpenWiskunde}>
                     <Plus size={18} /> Toevoegen
                 </button>
-                {menu === 'add' && (
-                    <div style={{ ...S.popup, minWidth: '250px' }}>
-                        <div style={S.popupSection}>Categorieën</div>
-                        <button type="button" className="ui-hover" style={S.popupItem} onClick={() => { setMenu(null); setAddSub(null); onOpenWiskunde(); }}>
-                            <MathOperations size={16} /> RekenRaak blok…
-                        </button>
-                        <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(addSub === 'wiskunde' ? S.popupItemOn : {}) }}
-                            onClick={() => setAddSub(addSub === 'wiskunde' ? null : 'wiskunde')}>
-                            <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}><Wrench size={16} /> Wiskunde-gereedschap</span> <SubCaret size={14} />
-                        </button>
-                        <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(addSub === 'klasmanagement' ? S.popupItemOn : {}) }}
-                            onClick={() => setAddSub(addSub === 'klasmanagement' ? null : 'klasmanagement')}>
-                            <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>Klasmanagement</span> <SubCaret size={14} />
-                        </button>
-                        <button type="button" className="ui-hover" style={{ ...S.popupItem, ...(addSub === 'organisatie' ? S.popupItemOn : {}) }}
-                            onClick={() => setAddSub(addSub === 'organisatie' ? null : 'organisatie')}>
-                            <span style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>Organisatie</span> <SubCaret size={14} />
-                        </button>
-                        {addSub && <CategoryPanel cat={addSub} favorites={favorites} onTool={handleTool} onStar={(id) => setFavorites(toggleFavorite(id))} />}
-                    </div>
-                )}
             </div>
-
-            {/* ── Favorieten (★, max 6) ── */}
-            {favDefs.length > 0 && (
-                <div style={compact ? { ...S.group, gap: '2px' } : S.group}>
-                    {favDefs.slice(0, MAX_FAVORITES).map(t => (
-                        <button key={t.id} type="button" className="ui-hover" title={t.label} aria-label={`Favoriet: ${t.label}`}
-                            style={S.toolBtn} onClick={() => handleTool(t)}>
-                            <t.icon size={22} />
-                        </button>
-                    ))}
-                </div>
-            )}
 
             {/* ── ⚙ Bordinstellingen (raster; the background has its own button) ── */}
             <div data-board-menu="settings" style={{ position: 'relative' }}>
@@ -454,34 +401,6 @@ function SnapSettings({ kind }: { kind: InstrumentKind }) {
                     <input type="checkbox" checked={snap[k]} disabled={!snap.on} onChange={(e) => set({ [k]: e.target.checked })} />
                     {label}
                 </label>
-            ))}
-        </div>
-    );
-}
-
-// Category tool tiles (side panel next to the add menu) with ★-favorite toggles.
-function CategoryPanel({ cat, favorites, onTool, onStar }: {
-    cat: ToolCategory; favorites: string[];
-    onTool: (t: BoardToolDef) => void; onStar: (id: string) => void;
-}) {
-    return (
-        <div style={S.subPanel}>
-            {TOOL_CATALOG.filter(t => t.category === cat).map(t => (
-                <div key={t.id} style={S.tile}>
-                    <button type="button" className="ui-hover" style={S.tileBtn} onClick={() => onTool(t)}>
-                        <t.icon size={24} />
-                        <span style={S.tileLabel}>{t.label}</span>
-                    </button>
-                    <button
-                        type="button" className="ui-hover"
-                        title={favorites.includes(t.id) ? 'Uit favorieten' : 'Aan favorieten toevoegen'}
-                        aria-label={`Favoriet ${t.label}`}
-                        style={{ ...S.starBtn, color: favorites.includes(t.id) ? '#eab308' : 'var(--text-muted)' }}
-                        onClick={() => onStar(t.id)}
-                    >
-                        <Star size={16} weight={favorites.includes(t.id) ? 'fill' : 'regular'} />
-                    </button>
-                </div>
             ))}
         </div>
     );

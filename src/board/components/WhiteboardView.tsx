@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import BoardBottomBar from './BoardBottomBar';
 import BoardPageCanvas from './BoardPageCanvas';
-import BoardAddModal from './BoardAddModal';
+import BoardAddPanel from './BoardAddPanel';
 import BoardInspector from './BoardInspector';
 import WidgetInspector from './WidgetInspector';
 import InkSettingsBar from './InkSettingsBar';
@@ -45,9 +45,9 @@ export default function WhiteboardView() {
                 {inspectorOpen && selectedWidget && selectedWidget.kind !== 'exercise' && <WidgetInspector key={selectedWidget.id} widget={selectedWidget} />}
                 {/* Ink tool settings strip (colors + widths, + line options) while an ink tool is active. */}
                 {(tool === 'pen' || tool === 'marker' || tool === 'line' || tool === 'shape') && <InkSettingsBar tool={tool} />}
+                {addOpen && <BoardAddPanel onClose={() => setAddOpen(false)} />}
             </div>
-            <BoardBottomBar onOpenWiskunde={() => setAddOpen(true)} />
-            {addOpen && <BoardAddModal onClose={() => setAddOpen(false)} />}
+            <BoardBottomBar onOpenWiskunde={() => setAddOpen(o => !o)} />
         </div>
     );
 }

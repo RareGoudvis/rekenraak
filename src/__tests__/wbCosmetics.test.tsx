@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { describe, test, expect, afterEach, beforeEach, vi } from 'vitest';
-import { render, cleanup, fireEvent, act } from '@testing-library/react';
+import { render, cleanup, fireEvent, act, within } from '@testing-library/react';
 import { useBoardStore } from '../board/useBoardStore';
 import KlokWidget from '../board/components/widgets/KlokWidget';
 import GeldPalet from '../board/components/GeldPalet';
 import WidgetInspector from '../board/components/WidgetInspector';
-import BoardAddModal from '../board/components/BoardAddModal';
+import BoardAddPanel from '../board/components/BoardAddPanel';
 import BoardBottomBar from '../board/components/BoardBottomBar';
 import { addBasicWidget } from '../board/addWidgets';
 import { makeBoardBlock } from '../board/boardBlocks';
@@ -42,9 +42,9 @@ describe('add panel search', () => {
     afterEach(() => { vi.unstubAllGlobals(); });
 
     test('"klok" finds the klok exercise variants and the clock tool', () => {
-        const { getByPlaceholderText, getAllByRole, queryByText } = render(<BoardAddModal onClose={() => {}} />);
+        const { getByPlaceholderText, getAllByRole, queryByText } = render(<BoardAddPanel onClose={() => {}} />);
         fireEvent.change(getByPlaceholderText('Zoeken…'), { target: { value: 'klok' } });
-        expect(queryByText('Geen oefeningen gevonden.')).toBeNull();
+        expect(queryByText('Niets gevonden.')).toBeNull();
         const labels = getAllByRole('button').map(b => b.textContent?.trim());
         expect(labels).toContain('Klok');
         expect(labels).toContain('Analoge klok · Lezen');
@@ -53,9 +53,9 @@ describe('add panel search', () => {
 
     test('the panel closes on Escape and on a press outside it, not on one inside', () => {
         const onClose = vi.fn();
-        const { getByPlaceholderText, getByText } = render(<BoardAddModal onClose={onClose} />);
+        const { getByPlaceholderText, getByText } = render(<BoardAddPanel onClose={onClose} />);
         fireEvent.pointerDown(getByPlaceholderText('Zoeken…'));
-        fireEvent.pointerDown(getByText('Wiskunde toevoegen'));
+        fireEvent.pointerDown(getByText('Klasbeheer'));
         expect(onClose).not.toHaveBeenCalled();
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
@@ -65,14 +65,71 @@ describe('add panel search', () => {
 
     test('a typeId finds its row and adding a found tool puts it on the board', () => {
         const onClose = vi.fn();
-        const { getByPlaceholderText, getByRole, queryByText } = render(<BoardAddModal onClose={onClose} />);
+        const { getByPlaceholderText, getByRole, queryByText } = render(<BoardAddPanel onClose={onClose} />);
         fireEvent.change(getByPlaceholderText('Zoeken…'), { target: { value: 'kloklezen' } });
-        expect(queryByText('Geen oefeningen gevonden.')).toBeNull();
+        expect(queryByText('Niets gevonden.')).toBeNull();
         fireEvent.change(getByPlaceholderText('Zoeken…'), { target: { value: 'klok' } });
         fireEvent.click(getByRole('button', { name: 'Klok' }));
         const s = useBoardStore.getState();
         expect(s.pages[s.activePageIdx].widgets.map(w => w.kind)).toEqual(['klok']);
         expect(onClose).toHaveBeenCalled();
+    });
+});
+
+describe('add panel tabs', () => {
+    beforeEach(() => { vi.stubGlobal('IntersectionObserver', class { observe() {} unobserve() {} disconnect() {} }); });
+    afterEach(() => { vi.unstubAllGlobals(); });
+
+    test("the five tabs, and each widget sits in the owner's category", () => {
+        const { getAllByRole, getByRole, queryByRole } = render(<BoardAddPanel onClose={() => {}} />);
+        expect(getAllByRole('tab').map(t => t.textContent)).toEqual(['Rekenblad', 'Rekentool', 'Klasbeheer', 'Dagritme', 'Tekst · beeld']);
+        const tiles = (tab: string) => {
+            fireEvent.click(getByRole('tab', { name: tab }));
+            return getAllByRole('button').filter(b => !b.getAttribute('role') && !b.getAttribute('aria-label')).map(b => b.textContent?.trim());
+        };
+        expect(tiles('Klasbeheer')).toEqual(expect.arrayContaining(['Namenkiezer', 'Groepjesmaker', 'Geluidsniveau', 'Timer', 'Stopwatch', 'Checklist', 'Werksymbolen', 'Stappenplan']));
+        expect(tiles('Dagritme')).toEqual(expect.arrayContaining(['Datum', 'Weer', 'Ademhaling']));
+        expect(tiles('Tekst · beeld')).toEqual(expect.arrayContaining(['Tekst', 'Afbeelding']));
+        expect(tiles('Rekentool')).toEqual(expect.arrayContaining(['Getallenlijn', 'Honderdveld', 'MAB-materiaal']));
+        // Rekenblad = the exercise catalog, with its domain chips.
+        fireEvent.click(getByRole('tab', { name: 'Rekenblad' }));
+        expect(queryByRole('button', { name: 'Alles' })).not.toBeNull();
+    });
+
+    test('adding a widget switches to Selecteren and closes the panel', () => {
+        useBoardStore.getState().setTool('pen');
+        const onClose = vi.fn();
+        const { getByRole, getByText } = render(<BoardAddPanel onClose={onClose} />);
+        fireEvent.click(getByRole('tab', { name: 'Klasbeheer' }));
+        fireEvent.click(getByText('Timer'));
+        const s = useBoardStore.getState();
+        expect(s.pages[s.activePageIdx].widgets.map(w => w.kind)).toEqual(['timer']);
+        expect(s.tool).toBe('select');
+        expect(onClose).toHaveBeenCalled();
+    });
+
+    test('a math tile adds a one-exercise card titled live by leaf and max', () => {
+        const onClose = vi.fn();
+        const { getByPlaceholderText, getAllByRole } = render(<BoardAddPanel onClose={onClose} />);
+        fireEvent.change(getByPlaceholderText('Zoeken…'), { target: { value: 'hr-std-optellen' } });
+        fireEvent.click(getAllByRole('button').find(b => /· Natuurlijke getallen$/.test(b.textContent ?? ''))!);
+        const w = useBoardStore.getState().pages[0].widgets[0];
+        expect(w.kind).toBe('exercise');
+        expect(w.block!.numberOfExercises).toBe(1);
+        expect(w.props?.title).toBeUndefined();
+        expect(onClose).toHaveBeenCalled();
+    });
+
+    test('a star makes a favourite that shows on top of every tab and adds in one tap', () => {
+        localStorage.removeItem('rekenraak_board_favorites_v1');
+        const { getByRole, getByLabelText } = render(<BoardAddPanel onClose={() => {}} />);
+        fireEvent.click(getByRole('tab', { name: 'Dagritme' }));
+        fireEvent.click(getByLabelText('Favoriet Datum'));
+        fireEvent.click(getByRole('tab', { name: 'Rekenblad' }));
+        const favs = getByLabelText('Favorieten');
+        fireEvent.click(within(favs).getByRole('button', { name: /Datum/ }));
+        expect(useBoardStore.getState().pages[0].widgets.map(w => w.kind)).toEqual(['datum']);
+        localStorage.removeItem('rekenraak_board_favorites_v1');
     });
 });
 
@@ -100,10 +157,6 @@ describe('bottom bar popups', () => {
 
     test('the other popups share the same close rules', () => {
         const { getByRole, queryByText } = render(<BoardBottomBar onOpenWiskunde={() => {}} />);
-        fireEvent.click(getByRole('button', { name: 'Toevoegen aan bord' }));
-        expect(queryByText('Categorieën')).not.toBeNull();
-        fireEvent.keyDown(document, { key: 'Escape' });
-        expect(queryByText('Categorieën')).toBeNull();
         fireEvent.click(getByRole('button', { name: 'Bewaren' }));
         expect(queryByText('Bord bewaren als…')).not.toBeNull();
         fireEvent.pointerDown(document.body);
