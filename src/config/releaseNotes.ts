@@ -38,7 +38,7 @@ export const RELEASE_NOTES: readonly ReleaseNote[] = [
             // ── 2026-11-03 (3): colours + size in the rail, widget previews, beta caption ──
             {
                 kind: 'gewijzigd',
-                text: 'Bordmodus: kleur en dikte staan vast in de balk links en volgen het gekozen gereedschap (pen, stift, lijn, gom); geen uitklapmenu meer.',
+                text: 'Bordmodus: kleur en dikte staan vast in de balk links, groot genoeg voor een vinger, en volgen het gekozen gereedschap (pen, stift, lijn, gom).',
             },
             {
                 kind: 'nieuw',

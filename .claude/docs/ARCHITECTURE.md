@@ -1458,8 +1458,8 @@ src/
 │       ├── WhiteboardView.tsx   # the full-screen .no-print overlay App mounts for view 'whiteboard'; BetaStrip + FirstRunCard ('bordmodus') above the canvas; board Ctrl+Z / Ctrl+Y → ink undo / redo
 │       ├── BoardPageCanvas.tsx  # one page (exports WidgetContent, the kind switch, for WidgetPreview): background, isolated widget layer, ink layer, instrument layer, geld dock; text-tool placement, 🔄 / 👁 wiring
 │       ├── WidgetFrame.tsx      # window-card chrome: always-on 48 px title bar (dot, title from cardTitle.ts, Nieuw / Oplossing (math), ⚙, Meer: Doorzichtig / Kleiner-Groter / Dupliceren / Verwijderen), transparent cards (bar floats at 55 % while selected), resize grip, zoom = w / NATURAL_W × font size, height cap; a third wrapper `[data-widget-fit]` at `cardLayoutWidth` zooms content wider than the body down (`cardFitZoom`, 0.97 margin, 0.01 dead-band against font-rounding loops)
-│       ├── BoardRail.tsx        # the 72 px LEFT rail (Zijrail, 2026-11-03): ⚙ Bordinstellingen top · tools (select/hand/aanwijzen combo, pen, marker, gom, tekst, lijn+vormen, instrumenten; L / V / S keys) · InkRail section · ink undo/redo · + Toevoegen at the bottom; 44 px buttons, 705 px total; flyouts close on Escape/outside
-│       ├── InkRail.tsx          # always-visible ink section of the rail: 2×2 swatches (stripColors per tool) + picker chips popover, vertical Dikte / Gomgrootte slider, follows the active tool, greyed for non-ink tools
+│       ├── BoardRail.tsx        # the 72 px LEFT rail (Zijrail, 2026-11-03): ⚙ Bordinstellingen top · tools (select/hand/aanwijzen combo, pen, marker, gom, tekst, lijn+vormen, instrumenten; L / V / S keys) · InkRail section · ink undo/redo · + Toevoegen at the bottom; 44/40 px buttons (size container), height-scaled ink section; flyouts close on Escape/outside
+│       ├── InkRail.tsx          # always-visible ink section of the rail: one column of 4 swatches (stripColors per tool) + picker chips popover, vertical Dikte / Gomgrootte slider with the dot + number under it, sizes scale with the rail height (cqh), follows the active tool, greyed for non-ink tools
 │       ├── WidgetPreview.tsx    # chromeless inert preview of a widget kind for the Toevoegen tool tiles (WidgetContent, default props, zoom ≤ 0.6, 100 px box)
 │       ├── BoardSettingsMenu.tsx # Bordinstellingen popover, reduced: BackgroundPicker, Raster uitlijnen + size, Bord wissen
 │       ├── BoardTopPill.tsx     # top-right pill: ◀ Pagina n/m ▾ (page actions popover) ▶, Bewaren ▾ (BoardLibraryPopover), Volledig scherm, Bordmodus verlaten (X)
@@ -1982,15 +1982,21 @@ An exercise widget holds a full `MathBlock`, built exactly like a sidebar block
 
 A 72 px **left rail**, full height (the bottom bar is gone). Top → bottom: `[⚙ Bordinstellingen] |
 [select ▾][pen][marker][gom][T][lijn+vormen ▾][📏 instrumenten] | [ink section] … [ink undo][ink redo] | [+ Toevoegen]`
-(44 px buttons, 2 px gaps, 9 px separators, 52 px `+`; 705 px of content, fits 800 px with the beta
-strip with ≈ 69 px to spare; the rail does not scroll because scrolling would clip its flyouts).
+(44 px buttons, 2 px gaps, 52 px `+`; the rail is a CSS size container `board-rail`: below an 833 px
+rail the buttons go 40, `+` 44, separator margins 2 — `--rail-btn` / `--rail-add` / `--rail-sep`; content
+945 px at full size, 771 px at 1280×800 with the beta strip; the rail does not scroll because scrolling
+would clip its flyouts).
 Buttons with a corner mark hold several tools (select = Aanwijzen / Selecteren / hand; lijn+vormen =
 line + the three shapes); a tap on the active button opens the choice. The **ink section**
 ([InkRail.tsx](../../src/board/components/InkRail.tsx), round 3 same day) is always visible and
-follows the active tool: a 2×2 grid of 28 px swatches from `stripColors` (pen / lijn: A standaard ·
-blauw · rood · picker; marker: geel · blauw · rood · picker; vormen: blauw · rood · zwart · picker) and
-under it a 72 px vertical slider with a 22 px thumb (`.board-ink-range` in index.css), a live size dot
-and the number (`INK_WIDTH_RANGE` / `clampInkWidth` in boardTypes: pen / lijn / vorm 2–10, marker 8–32;
+follows the active tool: ONE centred column of 4 swatches from `stripColors` (pen / lijn: A standaard ·
+blauw · rood · picker; marker: geel · blauw · rood · picker; vormen: blauw · rood · zwart · picker), under it
+a vertical slider (8 px track, 26 px thumb, `input.board-ink-range` in index.css) with the live size dot
+and the number stacked BELOW it (`[data-ink-preview]`). Sizes scale with the rail height (`.board-ink`,
+`--ink-b = 100cqh − 599px`, compact `min(100cqh − 539px, 218px)`): swatch `clamp(24, 30 + (B−218)·14/114, 44)`,
+slider `clamp(50, 66 + (B−218)·54/114, 120)`, dot box `clamp(28, 32 + (B−218)·4/114, 36)` — full size from a
+947 px rail, the minimum at 774 px (1280×800 + strip); 1366×768 shrinks further rather than clip
+(`INK_WIDTH_RANGE` / `clampInkWidth` in boardTypes: pen / lijn / vorm 2–10, marker 8–32;
 `InkSettings.width` stays a number). Gom → the slider is Gomgrootte (`ERASER_RANGE` 8–40, `eraserSize`
 in the store, persisted in `rekenraak_board_ink_v1`), the dot a scaled ring, the swatches disabled;
 select / hand / tekst / instruments → the last ink tool's settings stay visible at 50 %, not editable.
