@@ -1243,6 +1243,17 @@ All localStorage; nothing leaves the browser except share links the user copies.
   an exercise item renders a live `ExercisePreview` of its leaf via `seedLeafConstraints` plus an
   "Eerst → Nu" line). HelpModal links to it; `useOnboarding` holds the open state. **Every release
   prepends an entry** (short, teacher language, an example per exercise change).
+- **Upgrade modal (1.2.0)** — [UpgradeModal.tsx](../../src/components/onboarding/UpgradeModal.tsx),
+  copy in [upgradeNotes.ts](../../src/config/upgradeNotes.ts) (`UPGRADE_TITLE` / `_INTRO` / `_MODES` /
+  `_HIGHLIGHTS`, highlights ≤ 160 chars, tested). For RETURNING teachers only: `useBootLoad` sets
+  `upgradeVisible` when the tour key is set AND `rekenraak_release_seen_v1 !== RELEASE_VERSION` AND
+  `rekenraak_upgrade_seen_v1 !== RELEASE_VERSION` (`UPGRADE_SEEN_KEY`, persistence.ts), after the
+  share-link early return, never on bord.html; App mounts it only while the welcome modal is closed
+  (the releaseNotes test Harness never sees it). Two mode cards (Oefenmodus hidden when the curriculum
+  is locked) with a "Probeer" CTA — Bordmodus → `setView('whiteboard')`, Oefenmodus →
+  `setOefenBuilderOpen(true)` (uiSlice; the sidebar mounts `OefenBuilderModal` from that flag) — plus
+  the highlights, "Alles wat nieuw is" (ReleaseNotesModal) and "Sluiten"; every exit writes the key.
+  Brand-new users never see it: WelcomeModal gained one muted line naming the two modes.
 - **First-run tutorial** — [TourOverlay.tsx](../../src/components/onboarding/TourOverlay.tsx),
   an interactive spotlight tour (add → settings → generate → print → WIP/feedback finale).
   On a first visit [WelcomeModal.tsx](../../src/components/onboarding/WelcomeModal.tsx) comes
@@ -1301,6 +1312,7 @@ src/
 │   ├── worksheetTemplates.ts    # prebuilt worksheet templates (bibliotheek / presets)
 │   ├── releaseNotes.ts          # per-version "Wat is er nieuw" list (newest first) behind the banner (§10)
 │   ├── beta.ts                  # BETA_MODULES { oefenmodus, bordmodus } one-boolean beta flags, BETA_TEXT, FEEDBACK_URL (the contact form)
+│   ├── upgradeNotes.ts          # copy of the UpgradeModal (title, intro, two mode cards, ≤ 160-char highlights)
 │   ├── firstRun.ts              # first-run card copy per module (oefenmodus / bordmodus)
 │   └── version.ts               # RELEASE_VERSION / RELEASE_SUMMARY for the banner, derived from releaseNotes[0]
 ├── store/
@@ -1311,7 +1323,7 @@ src/
 │   └── slices/
 │       ├── blocksSlice.ts       # blocks + staleBlocks: add/remove/reorder/split/duplicate, exercises, generate
 │       ├── documentSlice.ts     # header/footer/docSettings/baseSettings/grade/curriculum/draft blocks, loadWorksheet
-│       ├── uiSlice.ts           # selection, tabs, view, sidebar preview, save state, block pages, debug flag
+│       ├── uiSlice.ts           # selection, tabs, view, sidebar preview, save state, block pages, oefenBuilderOpen (the Oefenmodus builder flag, set by the sidebar button and the upgrade modal), debug flag
 │       └── historySlice.ts      # undo/redo, pushHistory, commitBlocks
 ├── hooks/
 │   ├── usePrint.ts              # window.print() trigger + dynamic @page injection (awaits document.fonts.ready, then 2 rAF for the repack)
@@ -1501,7 +1513,8 @@ src/
     ├── library/{BibliotheekView.tsx,MijnBladenView.tsx}   # saved sheets / templates (uses shared/SheetThumbnail.tsx); Mijn bladen also lists the Oefensessies (Delen / Bewerken / hernoemen / verwijderen)
     ├── library/saveToLibrary.ts  # saveCurrentToLibrary: update the linked preset or ask a name; a refused write alerts (TopBar + Mijn bladen share it)
     ├── onboarding/TourOverlay.tsx                         # first-run spotlight tutorial
-    ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video)
+    ├── onboarding/WelcomeModal.tsx                        # first-visit chooser: tour / demo video / skip (also Help's video); one line names Oefenmodus + Bordmodus
+    ├── onboarding/UpgradeModal.tsx                        # once-per-version "Nieuw in RekenRaak 1.2" for returning users: two mode cards with CTAs + highlights (gate in useBootLoad)
     ├── massadd/MassAddModal.tsx                           # §13 "Toevoegen" modal
     ├── curriculum/CurriculumBuilderModal.tsx              # §13 curriculum builder (draftBlocks)
     ├── curriculum/draftBlock.ts                           # makeDraftBlock(typeId, constraints, id?): the off-sheet block both builders mount Configs on (§13)
