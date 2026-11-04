@@ -15,6 +15,7 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
     sidebarTab: 'oefeningen',
     inspectorTab: 'oefening',
     bladSection: 'koptekst',
+    oefenBuilderOpen: false,
     showSolutions: false,
     view: initialView(),
     sidebarPreview: INITIAL_SIDEBAR_PREVIEW,
@@ -34,6 +35,7 @@ export const createUiSlice: StateCreator<WorksheetState, [], [], UiSlice> = (set
     setSidebarTab: (t) => set({ sidebarTab: t }),
     setInspectorTab: (t) => set({ inspectorTab: t }),
     setBladSection: (s) => set({ bladSection: s }),
+    setOefenBuilderOpen: (open) => set({ oefenBuilderOpen: open }),
     setShowSolutions: (show) => set({ showSolutions: show }),
     setView: (view) => {
         // On bord.html the board IS the page, so leaving it leaves the page too.

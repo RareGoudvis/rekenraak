@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useWorksheetStore } from '../store/useWorksheetStore';
-import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY } from '../services/persistence';
+import { loadAutosave, decodeShareHash, RELEASE_SEEN_KEY, UPGRADE_SEEN_KEY } from '../services/persistence';
+import { TOUR_SEEN_KEY } from './useOnboarding';
+import { isBordPage } from '../bootEntry';
 import { RELEASE_VERSION } from '../config/version';
 
 // Boot-time hooks: share-link, autosave-restore offer, release-banner check.
 // Each runs exactly once. Order matters — a shared link wins over an autosave.
-export function useBootLoad(): { releaseBannerVisible: boolean; dismissReleaseBanner: () => void } {
+export function useBootLoad(): { releaseBannerVisible: boolean; dismissReleaseBanner: () => void; upgradeVisible: boolean; closeUpgrade: () => void } {
   const loadWorksheet = useWorksheetStore((state) => state.loadWorksheet);
   const [releaseBannerVisible, setReleaseBannerVisible] = useState(false);
+  const [upgradeVisible, setUpgradeVisible] = useState(false);
 
   useEffect(() => {
     // 1. Shared link in URL hash.
@@ -37,6 +40,13 @@ export function useBootLoad(): { releaseBannerVisible: boolean; dismissReleaseBa
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time boot init
       if (localStorage.getItem(RELEASE_SEEN_KEY) !== RELEASE_VERSION) setReleaseBannerVisible(true);
     } catch { /* ignore */ }
+    // 4. Upgrade modal: returning teachers only (tour key set), once per release, never on bord.html.
+    try {
+      const returning = !!localStorage.getItem(TOUR_SEEN_KEY);
+      const unseen = localStorage.getItem(RELEASE_SEEN_KEY) !== RELEASE_VERSION && localStorage.getItem(UPGRADE_SEEN_KEY) !== RELEASE_VERSION;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time boot init
+      if (returning && unseen && !isBordPage()) setUpgradeVisible(true);
+    } catch { /* ignore */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -45,5 +55,10 @@ export function useBootLoad(): { releaseBannerVisible: boolean; dismissReleaseBa
     setReleaseBannerVisible(false);
   };
 
-  return { releaseBannerVisible, dismissReleaseBanner };
+  const closeUpgrade = () => {
+    try { localStorage.setItem(UPGRADE_SEEN_KEY, RELEASE_VERSION); } catch { /* ignore */ }
+    setUpgradeVisible(false);
+  };
+
+  return { releaseBannerVisible, dismissReleaseBanner, upgradeVisible, closeUpgrade };
 }

@@ -216,6 +216,9 @@ export interface UiSlice {
     // state: no history, never persisted or shared.
     bladSection: 'koptekst' | 'opdrachten' | 'voettekst';
     setBladSection: (s: 'koptekst' | 'opdrachten' | 'voettekst') => void;
+    // Oefenmodus builder dialog: lifted out of the sidebar so the upgrade modal can open it too. Transient UI state.
+    oefenBuilderOpen: boolean;
+    setOefenBuilderOpen: (open: boolean) => void;
     setShowSolutions: (show: boolean) => void;
     setView: (view: WorksheetView) => void;
     setSidebarPreview: (on: boolean) => void;

@@ -16,6 +16,7 @@ import ReleaseNotesModal from './components/layout/ReleaseNotesModal';
 import PrintHintModal from './components/layout/PrintHintModal';
 import TourOverlay from './components/onboarding/TourOverlay';
 import WelcomeModal from './components/onboarding/WelcomeModal';
+import UpgradeModal from './components/onboarding/UpgradeModal';
 import { usePrint } from './hooks/usePrint';
 import { useMeasuredHeights } from './hooks/useMeasuredHeights';
 import { useFontEpoch } from './hooks/useFontEpoch';
@@ -61,7 +62,7 @@ export default function App() {
 
   const setActiveSelection = useWorksheetStore((state) => state.setActiveSelection);
   const onboarding = useOnboarding();
-  const { releaseBannerVisible, dismissReleaseBanner } = useBootLoad();
+  const { releaseBannerVisible, dismissReleaseBanner, upgradeVisible, closeUpgrade } = useBootLoad();
 
   // Browser tab title follows the worksheet title.
   useEffect(() => {
@@ -172,6 +173,7 @@ export default function App() {
       </nav>
     </div>
     {onboarding.welcomeOpen && <WelcomeModal onClose={onboarding.closeWelcome} onStartTour={onboarding.startTourFromWelcome} />}
+    {upgradeVisible && !onboarding.welcomeOpen && <UpgradeModal onClose={closeUpgrade} onOpenReleaseNotes={onboarding.openReleaseNotes} />}
     {onboarding.tourOpen && <TourOverlay onClose={onboarding.closeTour} />}
     <div className="print-root" style={styles.appShell}>
       <div className="print-body-row" style={styles.appBody}>
